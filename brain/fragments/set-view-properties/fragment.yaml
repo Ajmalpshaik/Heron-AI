@@ -153,6 +153,8 @@ compatibility-note: >
 #                                       under a template refuses the properties
 #                                       that template controls, and that is the
 #                                       commonest reason a set here does nothing
+#   "make this view look good"       -> APPLY_VISUAL_PRESET, a whole look in
+#                                       one call; this card is the style alone
 
 utterances:
   - set these views to 1 to 100

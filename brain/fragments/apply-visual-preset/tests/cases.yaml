@@ -1,0 +1,54 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# The count tracks the view (D-53): a view already given the preset changes
+# nothing the second time, and a plan takes fewer settings than a 3D view.
+
+positive:
+  - given: >
+      the perspective view "Heron Frame - Heater" framing a duct heater in a
+      scratch copy of Project1 (Revit 2020), preset Equipment Close-up,
+      renderFor check - REPORT_VISUAL_PRESET run first and its wouldChange
+      noted
+    expect: >
+      changed equal to that wouldChange, skipped 0, and readBack giving every
+      setting "(as the preset)": Realistic, sun 80, shadow 40, edges off, the
+      light grey gradient, lighting 135/35 relative to view, Draft, Screen,
+      Exterior: Sun only, colour 245,245,245, exposure 13 / 6500. A finding
+      names Cast Shadows and Ambient Shadows as the modeller's to tick. Open
+      the view: the heater drawn Realistic on a light grey ground, lit from
+      the top right. Revit's Rendering, Sun Settings and Graphic Display
+      Options dialogs show the same
+  - given: the same call again, straight after
+    expect: >
+      changed 0, alreadySo equal to the first run's changed plus its alreadySo
+      - the count follows the view (D-53)
+  - given: >
+      an elevation of the project, preset Presentation Elevation
+    expect: >
+      Shaded with Edges, silhouettes on, depth cueing start 0, end 100, fade
+      50 and a lighting study at 225/35 relative to the view read back; no
+      render setting in the preset, so none skipped. Open the elevation: the
+      light comes from the top left
+  - given: the floor plan "Level 1", preset Exterior Day
+    expect: >
+      the display and sun settings changed and read back; Render Quality,
+      Render Output, Render Lighting, Render Background and Exposure skipped,
+      each saying only a 3D view has Rendering Settings, and Display
+      Background skipped - a plan takes none
+
+negative:
+  - given: the schedule "Heron Render Schedule", preset Exterior Day
+    expect: >
+      changed 0, refused "takes none of Exterior Day's settings" and NOTHING
+      WAS CHANGED. THIS IS THE FIRST CASE TO RUN
+  - given: the camera view, preset "Studio Glow"
+    expect: >
+      changed 0, refused naming the seven presets; REPORT_RENDER_SETTINGS on
+      the view reads the same before and after
+  - given: the camera view, preset Clay, renderFor "print"
+    expect: refused, saying check or issue, nothing changed
+  - given: the camera view, preset Exterior Day, sunTime "teatime"
+    expect: refused, "not a time Heron can read", nothing changed
+
+second_route:
+  - the Rendering dialog (View Control Bar teapot), Sun Settings and Graphic Display Options on the same view, read before and after
+  - one Ctrl+Z takes the whole look back (Golden Rule 16)

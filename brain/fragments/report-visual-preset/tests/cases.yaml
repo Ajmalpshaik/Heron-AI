@@ -1,0 +1,36 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# Its count tracks the view (D-53): the same preset gives a different
+# wouldChange before and after APPLY_VISUAL_PRESET, and on a plan.
+
+positive:
+  - given: >
+      the perspective view "Heron Frame - Heater" in a scratch copy of
+      Project1 (Revit 2020), BEFORE any preset is given to it, preset
+      Equipment Close-up
+    expect: >
+      wouldChange above 0, presetsCompared 1, comparison giving each setting
+      now beside the preset's - each "now" matching REPORT_RENDER_SETTINGS and
+      the dialogs - and materialsWithoutAppearance counting the heaters'
+      materials with no render appearance, named
+  - given: the same view, preset all
+    expect: >
+      presetsCompared 7, one line per preset closest first, wouldChange the
+      first line's count
+  - given: >
+      the same view AFTER APPLY_VISUAL_PRESET Equipment Close-up was kept
+    expect: >
+      wouldChange 0 for Equipment Close-up - the count follows the view
+      (D-53)
+
+negative:
+  - given: the camera view, preset "Studio Glow"
+    expect: >
+      wouldChange 0, presetsCompared 0, refused naming the seven presets.
+      THIS IS THE FIRST CASE TO RUN
+  - given: the schedule "Heron Render Schedule", preset Exterior Day
+    expect: >
+      wouldChange 0, every setting skipped in comparison, each saying why
+
+second_route:
+  - the Rendering, Sun Settings and Graphic Display Options dialogs on the same view, opened by hand
+  - LIST_MATERIALS withAllTabs for the materials named as having no appearance

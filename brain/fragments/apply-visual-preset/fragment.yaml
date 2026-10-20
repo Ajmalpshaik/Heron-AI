@@ -1,0 +1,186 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-148
+semantic-identity: "give a view a whole ready-made look in one call - a named visual preset such as exterior day, interior night, equipment close-up or clay"
+kind: action
+domain: revit.views
+capability: APPLY_VISUAL_PRESET
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-20: four Heron-built duct heaters were placed in Project1 (Revit
+# 2020) and the owner asked for a render. The rendering and material tools
+# came first (Groups IA and IB); then his words: "make like a visualizer ...
+# what settings we normally do for good things ... what settings will normally
+# focus, normally change to [make it] good looking". A look is eight dialogs'
+# worth of settings that belong together, and one call sets them. The order
+# and the judgement - camera, materials, light, then the picture looked at -
+# are the method brain/skills/visualise-a-view.yaml.
+#
+# HOW IT BEHAVES - comments, not `purpose`.
+#
+# **THE PRESETS** - Heron's starting looks, what a visualiser tries first,
+# never a standard (D-33). The picture is the judge, and every setting can be
+# changed afterwards with its own tool. The full table is the shared block of
+# impl/any/fragment.cs; in short:
+#
+#   Exterior Day      Realistic; sun 80, shadow 50; edges off; display sky;
+#                     sun Still at 10:00 on the view's date; render Exterior:
+#                     Sun only, Sky: Few Clouds, exposure 14 / 6500 K
+#   Exterior Dusk     Realistic; sun 40, shadow 70; a dusk gradient; sun Still
+#                     30 minutes before Revit's sunset for the site; render
+#                     Exterior: Sun and Artificial, Sky: Very Few Clouds,
+#                     exposure 11 / 6500 K
+#   Interior Day      Realistic; sun 60, shadow 40; sun Still at 10:00; render
+#                     Interior: Sun and Artificial, Sky: Few Clouds, exposure
+#                     10 / 6500 K
+#   Interior Night    Realistic; sun 30, shadow 30; a night gradient; render
+#                     Interior: Artificial only, a dark blue colour, exposure
+#                     8 / 4000 K - the sun is not touched
+#   Equipment         Realistic; sun 80, shadow 40; a light grey gradient; a
+#   Close-up          lighting study at 135/35 relative to the view (from the
+#                     top right, whatever the site); render Exterior: Sun only,
+#                     plain 245,245,245, exposure 13 / 6500 K. The duct heater
+#   Clay              Hidden Line - a white model; edges and silhouettes on;
+#                     sun 80, shadow 60; a white gradient; lighting 135/35
+#                     relative to the view. No render settings: a rendered
+#                     clay needs every material white, which is the
+#                     materials' job, not a view's
+#   Presentation      Shaded with Edges; silhouettes on; depth cueing 0-100%,
+#   Elevation         fade 50; lighting 225/35 relative to the view (from the
+#                     top left - shadows fall down and to the right)
+#
+# Every preset but Clay and Presentation Elevation also sets the render
+# QUALITY and OUTPUT from `renderFor`: check is Draft on Screen - minutes;
+# issue is High at 300 DPI - an A3 that is issued. Every preset turns sketchy
+# lines off and smooth lines on, and wants Cast Shadows and Show Ambient
+# Shadows on.
+#
+# **NOTHING HERE IS NEW TO HERON.** Each setting is written with the same
+# Revit members its own tool calls - the visual style as SET_VIEW_PROPERTIES,
+# the display as SET_GRAPHIC_DISPLAY_OPTIONS, the sun as SET_SUN_SETTINGS,
+# the Rendering dialog as SET_RENDER_SETTINGS - and read back as
+# REPORT_RENDER_SETTINGS reads them. A setting the view already has is left
+# alone and counted in `alreadySo`.
+#
+# **A SETTING THE VIEW OR REVIT CANNOT TAKE IS SKIPPED AND NAMED, NEVER
+# FAKED.** A floor plan has no Rendering Settings; only an elevation or a
+# section has depth cueing; a display background is a 3D view's, an
+# elevation's or a section's. Cast Shadows and Show Ambient Shadows have NO
+# member on any release 2020 to 2027 (row 5b-1267): the answer names them as
+# the modeller's to tick - Shadows on the View Control Bar, Show Ambient
+# Shadows in Graphic Display Options. A view that takes none of a preset's
+# settings - a schedule, a sheet - is refused with nothing changed.
+#
+# **THE TIME OF DAY.** `sunTime` replaces a Still preset's time - 15:00 for an
+# afternoon when the faces that matter look west - on the site's clock,
+# through Revit's own conversion as SET_SUN_SETTINGS does it. The view's date
+# is kept: SET_SUN_SETTINGS changes it. Dusk is worked out from
+# SunAndShadowSettings.GetSunset for the site on the view's date, which the
+# API reference says returns UTC adjusted for daylight saving when the site
+# uses it - Group IC checks the time the Sun Settings dialog then shows.
+#
+# **READ BACK:** every setting is read again after the call; only one that
+# reads as the preset says counts in `changed`. A setting Revit refused is
+# named with Revit's words, and a view template that controls it is said.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Gives a view one of Heron's visual presets - Exterior Day, Exterior Dusk,
+  Interior Day, Interior Night, Equipment Close-up, Clay or Presentation
+  Elevation - so it looks good on screen and in a render: the whole look in
+  one call, every part of it read back, and what the view cannot take named.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The view, as the Project Browser names it.
+    - name: view
+      type: View
+      source: request
+    # The preset's name - Exterior Day, Exterior Dusk, Interior Day, Interior
+    # Night, Equipment Close-up, Clay or Presentation Elevation.
+    - name: preset
+      type: string
+      source: request
+    # What the render is for: check (Draft, Screen) or issue (High, 300 DPI).
+    - name: renderFor
+      type: string
+      source: request
+      optional: true
+      absent: check
+    # A time on the site's clock that replaces a Still preset's own - 15:00.
+    - name: sunTime
+      type: string
+      source: request
+      optional: true
+      absent: preset
+  provides:
+    - name: changed
+      # Settings this call set that read back as the preset says.
+      role: result
+      type: int
+    - name: alreadySo
+      # Settings the view had already, left alone.
+      role: accounting
+      type: int
+    - name: skipped
+      # Settings this view or Revit's API cannot take, each named in findings.
+      role: accounting
+      type: int
+    - name: readBack
+      # Every setting of the preset as the view holds it afterwards, and the
+      # materials on what it shows with no render appearance - filled on every
+      # run that reached the view, so evidence, never the count.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING WAS CHANGED, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, and no Revit member that
+  SET_VIEW_PROPERTIES, SET_GRAPHIC_DISPLAY_OPTIONS, SET_SUN_SETTINGS,
+  SET_RENDER_SETTINGS and LIST_MATERIALS do not already call, but two read on
+  2026-10-20 with tools/api-surface --members, present and alike on 2020 to
+  2027: SunAndShadowSettings.GetSunset (a date in, UTC out) and
+  View3D.IsPerspective. View.DisplayStyle is matched by name at run time, as
+  SET_VIEW_PROPERTIES does: DisplayStyle value 9 is Raytrace on 2020 and
+  Textures from 2024, so no member is typed.
+
+# ROUTING - the same rows are in the render, sun, display and view cards.
+#
+#   "make this view look good"                     -> here, a whole look
+#   "give this view the clay look"                 -> here
+#   "what would the exterior day preset do here"   -> REPORT_VISUAL_PRESET. A
+#                                                     question never reaches
+#                                                     this write (D-86)
+#   "put this view on realistic"                   -> SET_VIEW_PROPERTIES, the
+#                                                     visual style alone
+#   "set the render quality to best"               -> SET_RENDER_SETTINGS
+#   "set the sun to 10 am"                         -> SET_SUN_SETTINGS
+#   "turn on sketchy lines"                        -> SET_GRAPHIC_DISPLAY_OPTIONS
+#   "render it"                                    -> OPEN_RENDER_DIALOG. No API
+#                                                     runs the render
+
+utterances:
+  - make this view look good with the exterior day preset
+  - give this 3D view the equipment close-up look for the duct heater
+  - apply the clay look to this view
+  - use the interior night preset on this 3D view
+  - put the presentation elevation preset on this elevation
+  - visualise this view as an exterior dusk scene

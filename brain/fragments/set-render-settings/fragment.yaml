@@ -240,6 +240,8 @@ compatibility-note: >
 #   "render it" / "start the render"             -> OPEN_RENDER_DIALOG. No API
 #                                                   runs the render
 #   "save this view as a picture"                -> EXPORT_VIEW_IMAGE
+#   "make this view look good"                   -> APPLY_VISUAL_PRESET, a whole
+#                                                   look in one call
 
 utterances:
   - set the render quality of this 3D view to best
