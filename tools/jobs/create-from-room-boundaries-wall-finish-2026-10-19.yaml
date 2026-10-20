@@ -1,0 +1,67 @@
+# The proof of create-from-room-boundaries VERSION 2 - wall finishes by room
+# (CREATE_FROM_ROOM_BOUNDARIES, FRG-ELE-051), written 2026-10-19 -
+# NEEDS-CHECKING Group HX, rows HX1 and HX2. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/create-from-room-boundaries-wall-finish-2026-10-19.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-from-room-boundaries-wall-finish-2026-10-19.yaml
+#
+# MODIFY: every run here is ROLLED BACK. A kept run is HX3, by try-once, the
+# modeller's Keep or Discard (D-119, D-120).
+#
+# THE MODEL: a SCRATCH project, never a working model - "Heron Wall Finish",
+# from the default metric template, Revit 2020 first, SAVED before the rig.
+# The rig is built with Heron's own tools, each kept, before this file runs
+# (Group HX says how, with every coordinate):
+#
+#   Room A, 6000 x 4000 at the origin: four "Generic - 200mm" walls 3000 high,
+#     one door in the south wall, one window in the north wall, a room inside.
+#   Room B, 6000 x 4000 at x=10000: its north and east edges CURTAIN WALLS,
+#     its south and west edges ROOM SEPARATION LINES, a room inside - a room
+#     with no edge a finish may go on.
+#   The finish type "Finish - Plaster 15mm": DUPLICATE_TYPE of Generic - 200mm,
+#     its one layer set to 15 mm with SET_COMPOUND_LAYER_WIDTH.
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: room A got finish walls and room B, every edge of it glass or a
+#     line on the floor, got none
+#   - NEG NOT EMPTY: a finish was put on a curtain wall or a separation line -
+#     the failure the skip rules exist for, a defect, not an arrangement fault
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE (Group HX):
+#   - room A: `finishSummary` "... a gap at 1 door or opening to the floor,
+#     built round 1 window or opening"; the finish pieces' heights; the
+#     corners meeting in plan; room A's Area the same before and after
+#   - room B: `skippedSummary` naming "a curtain wall: 2" and "a room
+#     separation line: 2"
+
+model: 'Heron Wall Finish (scratch, default metric template, the HX rig built and saved), Revit 2020'
+
+defaults:
+  in: "Heron Wall Finish"
+  write: true
+  setup: [select-in-region, set-selection]
+
+jobs:
+  - fragment: create-from-room-boundaries
+    expect: [finishWalls]
+    set:
+      minMm: "-1000,-1000,-1000"
+      maxMm: "7000,5000,4000"
+      exact: "false"
+      categories: Rooms
+      hostType: "Basic Wall: Finish - Plaster 15mm"
+      heightAboveLevel: 2400
+    # THE SAME TOOL, THE SAME TYPE AND HEIGHT, ON ROOM B: a room whose every
+    # edge is a curtain wall or a separation line, so nothing may be lined.
+    negative-set:
+      minMm: "9000,-1000,-1000"
+      maxMm: "17000,5000,4000"
+      exact: "false"
+      categories: Rooms
+      hostType: "Basic Wall: Finish - Plaster 15mm"
+      heightAboveLevel: 2400
+    note: >
+      HX1 and HX2. Positive: finishWalls above zero, one line in
+      finishSummary for room A naming the door and the window. Negative:
+      finishWalls 0, skippedEdges 4, skippedSummary "a curtain wall: 2; a
+      room separation line: 2".
