@@ -1,16 +1,16 @@
-# NEEDS-CHECKING Group IA - the rendering tools, DRAFT since 2026-10-20.
+# NEEDS-CHECKING Group IB - the rendering tools, DRAFT since 2026-10-20.
 #
-#     python tools/batch-prove.py tools/jobs/rendering-ia-2026-10-20.yaml --dry-run
-#     python tools/batch-prove.py tools/jobs/rendering-ia-2026-10-20.yaml
+#     python tools/batch-prove.py tools/jobs/rendering-ib-2026-10-20.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/rendering-ib-2026-10-20.yaml
 #
-# THE MODEL is the scratch copy docs/needs-checking/group-ia.md describes - the
+# THE MODEL is the scratch copy docs/needs-checking/group-ib.md describes - the
 # owner's Project1 (Revit 2020) holding the four duct heaters placed on
-# 2026-10-20, saved to %TEMP%\heron-work\rendering-ia, with a floor plan
-# "Level 1" the heaters show in and a schedule named "Heron IA Schedule". Never
+# 2026-10-20, saved to %TEMP%\heron-work\rendering-ib, with a floor plan
+# "Level 1" the heaters show in and a schedule named "Heron Render Schedule". Never
 # a working model. Change "FloorPlan: Level 1" below if the heaters' plan has
 # another name.
 #
-# RUN IA1 FIRST, AND KEEP IT. Every job after the first names the perspective
+# RUN IB1 FIRST, AND KEEP IT. Every job after the first names the perspective
 # view "Heron Frame - Heater", and a batch rolls every write back - so make that
 # view once with FRAME_ELEMENTS_IN_CAMERA's try-once and press Keep:
 #
@@ -19,16 +19,16 @@
 #
 # with one heater selected. The first job below is then its negative too.
 #
-# NOT IN THIS FILE, ON PURPOSE: READ_RENDERED_IMAGES (IA8 and IA10 straddle the
+# NOT IN THIS FILE, ON PURPOSE: READ_RENDERED_IMAGES (IB8 and IB10 straddle the
 # render, which only the modeller can press - run them by name with `validate`),
-# and EXPORT_VIEW_IMAGE (IA11, a PUBLISH: no batch sends one, D-106).
+# and EXPORT_VIEW_IMAGE (IB11, a PUBLISH: no batch sends one, D-106).
 #
 # THE NEGATIVE IS A VALUE THAT MUST BE REFUSED OR A DIFFERENT VIEW, never a
 # cleared one: an isometric {3D} to frame, a level that does not exist, a
 # preset that does not exist, an intensity of 150, a schedule with no render
 # settings, a view that is not the one in front.
 
-model: Project1 scratch copy with the four duct heaters (rendering-ia), Revit 2020
+model: Project1 scratch copy with the four duct heaters (rendering-ib), Revit 2020
 
 defaults:
   write: true
@@ -53,7 +53,7 @@ jobs:
       lookDownDeg: "30"
     expect: framed
     note: >
-      IA1. The setup selects every heater in the plan, so framed is the number
+      IB1. The setup selects every heater in the plan, so framed is the number
       selected. OPEN THE VIEW AFTER THE KEPT RUN: the heaters fill it from the
       south-east - the check no number can make. The negative is the project's
       isometric {3D}, which must be refused and keep its camera.
@@ -72,8 +72,8 @@ jobs:
       levelName: "No Such Level"
     expect: readBack
     note: >
-      IA2. The eye and target are any two points in front of the heaters -
-      IA1's readBack gives better ones. The negative must be refused with the
+      IB2. The eye and target are any two points in front of the heaters -
+      IB1's readBack gives better ones. The negative must be refused with the
       camera unchanged.
 
   - fragment: set-render-settings
@@ -85,11 +85,11 @@ jobs:
       background: "Sky: Few Clouds"
       exposure: "value=13; white point=6500"
     negative-set:
-      view: "Heron IA Schedule"
+      view: "Heron Render Schedule"
       quality: Draft
     expect: changed
     note: >
-      IA3. Open the Rendering dialog on the view after: the same five. Say
+      IB3. Open the Rendering dialog on the view after: the same five. Say
       whether its Quality list shows Best (Heron's word for the API's VeryHigh)
       and which DPIs its Printer list offers.
 
@@ -104,7 +104,7 @@ jobs:
       preset: "No Such Preset"
     expect: changed
     note: >
-      IA4. The Sun Settings dialog shows 21 June 2026 at 10:00 - or 11:00 where
+      IB4. The Sun Settings dialog shows 21 June 2026 at 10:00 - or 11:00 where
       readBack says the site uses daylight saving: say which.
 
   - fragment: set-graphic-display-options
@@ -118,17 +118,17 @@ jobs:
       sunIntensity: "150"
     expect: changed
     note: >
-      IA5. Graphic Display Options on the view shows the same four after.
+      IB5. Graphic Display Options on the view shows the same four after.
 
   - fragment: report-render-settings
     write: false                       # risk READ
     set:
       view: "Heron Frame - Heater"
     negative-set:
-      view: "Heron IA Schedule"
+      view: "Heron Render Schedule"
     expect: sectionsRead
     note: >
-      IA6. 4 sections for the camera view, 0 for the schedule. The plan's 2 is
+      IB6. 4 sections for the camera view, 0 for the schedule. The plan's 2 is
       the tracking row (D-53), run by hand with view "Level 1".
 
   - fragment: open-render-dialog
@@ -141,6 +141,6 @@ jobs:
       command: render
     expect: posted
     note: >
-      IA7, LAST because its positive opens Revit's Render dialog. Bring "Heron
+      IB7, LAST because its positive opens Revit's Render dialog. Bring "Heron
       Frame - Heater" to the front before the batch. The negative names a view
       that is not in front and must be refused with no dialog.

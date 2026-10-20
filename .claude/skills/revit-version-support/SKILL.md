@@ -130,7 +130,7 @@ reinforcement is 2020-2023 only. `FabricSheet.SetUnobscuredInView` starts at **2
 rebar fragment - [`place-column-rebar`](../../../brain/fragments/place-column-rebar/impl/any/fragment.cs)
 and its siblings - carries the two routes in one `makeBar` adapter.
 
-**Rendering, read off the shipped assemblies and `RevitAPI.xml` on 2026-10-20** ([row 5b-1264](../../../docs/fragment-issues/section-5b-rows-401-425.md)):
+**Rendering, read off the shipped assemblies and `RevitAPI.xml` on 2026-10-20** ([row 5b-1267](../../../docs/fragment-issues/section-5b-rows-401-425.md)):
 the rendering, sun, Graphic Display Options and posted-command members are alike 2020-2027 - with four
 exceptions. `DisplayStyle` value 9 is `Raytrace` on 2020 only, absent 2021-2023 and `Textures` from 2024,
 so match a style by name. `SunStudyTimeInterval` gains `Seconds15`, `Seconds30`, `Seconds45` and `Minute`
