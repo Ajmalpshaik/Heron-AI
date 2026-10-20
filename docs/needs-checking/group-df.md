@@ -83,3 +83,28 @@ connected, `< /dev/null` on every line, and **Changes and Admin both on** in Rev
 | **DF8** | DF2 and DF4 on **Revit 2024** and **2027** - the ForgeTypeId side: `SpecUtils.GetAllSpecs`, `GetDataType` | the same answers; the file's word for Pipe Size the same as 2020's |
 | ~~**DF9**~~ | **DECIDED 2026-10-12 by Ajmal PS: "keep it ADMIN".** The card stays ADMIN for adding and replacing as well as creating; no mode is split out for the add-in to gate on its own | nothing to run - the decision is recorded here and in [row 5b-438](../fragment-issues/section-5b-rows-401-425.md) |
 | **DF10** | The signature, on the owner's word only, after DF2, DF3, DF4 and DF5 | `python brain/heron_validate.py accept add-family-shared-parameters --by "Ajmal PS"` |
+
+## The run of 2026-10-20 (Revit 2020, the owner's laptop) - version 4 signed, PROVEN
+
+**Arranged as DF1.** A scratch shared parameter file, `%TEMP%\heron-work\df\heron-df-shared.txt`, was written
+fresh: UTF-16 as Revit writes one, group `Heron Test` holding `Heron Test Tag` (Text), no `Refrigerant`. Revit's
+Manage > Shared Parameters was set to it by a rolled-back probe. Before, it was the office's
+`D:\04_BIM\06_Shared_Parameters\Shared_Parameters.txt`. It was set back to that file at the end and read back.
+The office file was never written: its time stayed 00:39. The family was made by `CREATE_FAMILY_DOCUMENT`
+(PROVEN) from `Metric Generic Model.rft`: `%TEMP%\heron-work\df\Heron Create Shared Test.rfa`, opened in a
+window. Changes and Admin were on. Every run was rolled back (`--write`, no `--apply`) except the arrangement
+steps, which used PROVEN tools on the scratch family.
+
+| # | Result |
+|---|---|
+| DF2 | **PASS** on version 3, and again on version 4. Version 3: `created` 2 - Heron Gas Pipe Diameter and Heron Liquid Pipe Diameter, Pipe Size, group Refrigerant - and `added` 2 with the same GUIDs (`f66b1ded...`, `8ed2844c...`). The file then held a `GROUP 2 Refrigerant` line and both `PARAM` lines with those GUIDs, `PIPE_SIZE`. Revit rewrote the header with a `HIDEWHENNOVALUE` column. Negative `Identity Data: Heron Test Tag [Length]`: refused, `created` 0, `Heron Test Tag` still TEXT. **The signed record is version 4's**, with fresh names (Heron Suction / Heron Discharge Pipe Diameter), because version 3's two were already in the file |
+| DF3 | **NOT RUN.** A kept run "through `revit_change`" cannot happen while a card is DRAFT ([D-117](../DECISIONS.md), later than this group), and `try-once` takes MODIFY only - this card is ADMIN. Now that the card is PROVEN, it can be run as written |
+| DF4 | **FAIL on version 3, fixed in version 4 ([row 5b-1276](../fragment-issues/section-5b-rows-401-425.md)).** The arrangement was Gas Pipe Diameter and Liquid Pipe Diameter as Length type parameters, with 12.7 and 6.35 mm in type `DF Test`. `[Pipe Size]` was **refused** - *"holds Length and the shared ... would hold Pipe Size"* - and the file's bytes were unchanged. `[Length]` on version 3: **Revit refused, "Parameter replacement failed."**, though no formula read either parameter. The family was rolled back, and the two definitions createMissing had written stayed in the scratch file, as the message said. Isolated: the same call with the definitions already there failed the same way. Replacing Gas Pipe Diameter with a shared `DF Gas Diameter` (another name) replaced it. A probe that renamed the family parameter first was then given the same-name shared one. **Version 4 renames it out of the way first:** `replaced` 2, Gas Pipe Diameter -> Gas Pipe Diameter and Liquid -> Liquid, Length, type, the values 12.7 and 6.35 mm kept (read back by type) |
+| DF5 | **PASS**, every leg rolled back with the file's bytes compared before and after - **unchanged every time**. No group: *"names no group ... The group is never chosen for you"*. No type: *"names no data type in its brackets"*. `Pipe Sise`: *"Close: Pipe Size (PipeSize)"*. createMissing left out: *"nothing is written to the file unless that is asked for"*. A family parameter `Heron Test Tag4` of that name: *"would be two under one name ... replace it instead: replaceExisting true"*. The file read-only: *"is read-only, so nothing can be created in it"*. Two earlier tries at the clash leg made nothing to clash with - the arrangement step failed both times (a wrong input name, then a heading split by the shell) - so `Heron Test Tag2` and `Heron Test Tag3` were created and added as asked, and are in the scratch file |
+| DF6 | **Refused, recorded:** *"'Velocity' is 3 data types in this Revit - Velocity (HVACVelocity), Velocity (PipingVelocity), Velocity (StructuralVelocity). Name one by the word in brackets."* The file was unchanged |
+| DF7 | **NOT RUN** - it needs the owner to turn Admin off |
+| DF8 | **NOT RUN** - Revit 2024 and 2027 |
+| DF10 | **Signed by Ajmal PS, 2026-10-20**, on his word ("finish it all"), on version 4's DF2 record. Fingerprint `d61152201bfbd446` |
+
+**Group DE's DE6, answered on the way:** Revit 2020 refuses a same-name replace with no formula reading it.
+DE6 expected it to be allowed. Version 4 makes it work by renaming first.

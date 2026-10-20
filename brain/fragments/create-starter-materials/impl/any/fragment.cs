@@ -131,7 +131,10 @@ var findings = new List<string>();
         var inDocument = documentAssets.FirstOrDefault(each => string.Equals(each.Name, look, StringComparison.OrdinalIgnoreCase));
         if (inDocument != null) { looks[starter.Item1] = inDocument; continue; }
         var inLibrary = libraryAssets().FirstOrDefault(each => string.Equals(shownName(each), look, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(each.Name, look, StringComparison.OrdinalIgnoreCase));
+            || string.Equals(each.Name, look, StringComparison.OrdinalIgnoreCase))
+            // As the browser writes it - "Glass (Clear)" for "Glass - clear" - with
+            // capitals, spaces and punctuation ignored (version 3, row 5b-1280).
+            ?? (squash(look).Length > 0 ? libraryAssets().FirstOrDefault(each => squash(shownName(each)) == squash(look)) : null);
         if (inLibrary != null) looks[starter.Item1] = inLibrary;
         else problems.Add("no appearance asset is called '" + look + "' in this document or in Revit's appearance library ("
             + libraryAssets().Count + " assets) - LIST_MATERIALS with withLibraryAppearances lists them");

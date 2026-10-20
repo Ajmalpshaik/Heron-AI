@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,13 @@ semantic-identity: "change a 3D view's render quality, output resolution, lighti
 kind: action
 domain: revit.views
 capability: SET_RENDER_SETTINGS
-version: 1
+version: 2
+# VERSION 2, 2026-10-20 - row 5b-1278, found running Group IB's IB3 on Revit
+# 2020. Asked for "150 DPI" on a view whose output was Screen, version 1
+# read the printer level first, to put it back if the DPI was not offered,
+# and Revit threw "The resolution target is not printer." - nothing set,
+# the call fragment_threw. The level is now read only when the output is
+# already Printer. Nothing else changed.
 source: OFFICIAL
 risk: MODIFY
 
@@ -145,6 +151,60 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-20'
+  by: Ajmal PS
+  model: Materials IA Test (3,790 elements), Revit 2020, session 29012
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, after Func`3,
+    asked 4, call Func`4, changed 4, colour Func`2, culture CultureInfo, findings 1 item(s)
+    [4 of 4 setting(s) read back as asked on ''Heron Frame - Colum...], fitWords 7 entry(ies),
+    groupName Func`2, groupOn Func`2, groups 0 item(s), isKeep Func`2, lightingNamespace Autodesk.Revit.DB.Lighting.,
+    lightingType Func`2, lightingWord Func`2, lightingWords 10 entry(ies), manager (null),
+    number Func`2, property Func`3, qualityWord Func`2, qualityWords 6 entry(ies), readBack
+    ''Heron Frame - Columns'': quality Medium; output Printer 300 DPI; lighting Exterior:
+    Sun and Artificial; background Sky: Cloudy; exposure value 14, highlights 0.25, shadows
+    0.2, saturation 1, white point 6500; region off., refused (null), show Func`2, squash
+    Func`2, styleWord Func`2, styleWords 6 entry(ies), view3D View3D, wantAccuracy (null),
+    wantColor (null), wantDpi 300, wantDuration (null), wantExposure 0 entry(ies), wantFit
+    (null), wantGroups 0 item(s), wantImage (null), wantLevel 0, wantLighting LightingSource,
+    wantOffset (null), wantQuality RenderingQuality, wantRegion (null), wantStyle BackgroundStyle,
+    wantTarget ResolutionTarget, wantTime 0. inputs came view as given; quality as given;
+    customQuality not given - "keep", the card''s own default (optional); lightingAccuracy
+    not given - "keep", the card''s own default (optional); output as given; lighting as given;
+    lightGroups not given - "keep", the card''s own default (optional); background as given;
+    backgroundImageFit not given - "keep", the card''s own default (optional); backgroundImageOffsetMm
+    not given - "keep", the card''s own default (optional); exposure not given - "keep", the
+    card''s own default (optional); regionRendering not given - "keep", the card''s own default
+    (optional). on Materials IA Test'
+  negative_case: run with view=Space Outdoor Air Schedule, quality=Draft instead - chosen
+    because it should not contain what this fragment reports - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
+    after Func`3, asked 0, call Func`4, changed 0, colour Func`2, culture CultureInfo, findings
+    1 item(s) ['Space Outdoor Air Schedule' is not a 3D view, and only a 3D...], fitWords
+    7 entry(ies), groupName Func`2, groupOn Func`2, groups 0 item(s), isKeep Func`2, lightingNamespace
+    Autodesk.Revit.DB.Lighting., lightingType Func`2, lightingWord Func`2, lightingWords 10
+    entry(ies), manager (null), number Func`2, property Func`3, qualityWord Func`2, qualityWords
+    6 entry(ies), readBack , refused 'Space Outdoor Air Schedule' is not a 3D view, and only
+    a 3D view has Rendering Settings. NOTHING WAS CHANGED., show Func`2, squash Func`2, styleWord
+    Func`2, styleWords 6 entry(ies), view3D (null), wantAccuracy (null), wantColor (null),
+    wantDpi 0, wantDuration (null), wantExposure 0 entry(ies), wantFit (null), wantGroups
+    0 item(s), wantImage (null), wantLevel 0, wantLighting (null), wantOffset (null), wantQuality
+    (null), wantRegion (null), wantStyle (null), wantTarget (null), wantTime 0. inputs came
+    view as given; quality as given; customQuality not given - "keep", the card's own default
+    (optional); lightingAccuracy not given - "keep", the card's own default (optional); output
+    not given - "keep", the card's own default (optional); lighting not given - "keep", the
+    card's own default (optional); lightGroups not given - "keep", the card's own default
+    (optional); background not given - "keep", the card's own default (optional); backgroundImageFit
+    not given - "keep", the card's own default (optional); backgroundImageOffsetMm not given
+    - "keep", the card's own default (optional); exposure not given - "keep", the card's own
+    default (optional); regionRendering not given - "keep", the card's own default (optional).
+    on Materials IA Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 55a7f9e09003f497
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

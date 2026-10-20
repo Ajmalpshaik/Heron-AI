@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -89,6 +89,28 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-20'
+  by: Ajmal PS
+  model: Materials IA Test (3,790 elements), Revit 2020, session 29012
+  positive_case: run as it would normally be run. returned active View3D, activeView Heron
+    Frame - Columns, findings 1 item(s) [Asked Revit for its Render dialog on 'Heron Frame
+    - Columns'...], noTransactionOpen true, posted true, refused (null), squash Func`2, which
+    PostableCommand, words 5 entry(ies). inputs came noTransactionOpen - run with no transaction
+    open (D-125); viewName as given; command as given. on Materials IA Test
+  negative_case: run with viewName=1 - Mech, command=Render instead - chosen because it should
+    not contain what this fragment reports. returned active View3D, activeView Heron Frame
+    - Columns, findings 1 item(s) ['1 - Mech' is not the view in front ('Heron Frame - Columns'...],
+    noTransactionOpen true, posted false, refused '1 - Mech' is not the view in front ('Heron
+    Frame - Columns'), and Revit's Render dialog renders the view in front. Open '1 - Mech'
+    first (OPEN_VIEW), then ask again. NOTHING HAS BEEN SENT TO REVIT., squash Func`2, which
+    PostableCommand, words 5 entry(ies). inputs came noTransactionOpen - run with no transaction
+    open (D-125); viewName as given; command as given. on Materials IA Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 04b30a7356b7465d
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -9,7 +9,13 @@ semantic-identity: "give materials a render appearance - a library asset, anothe
 kind: action
 domain: revit.elements
 capability: SET_MATERIAL_APPEARANCE
-version: 2
+version: 3
+# VERSION 3, 2026-10-20 - row 5b-1280. The owner saw Prism-152 in the Asset
+# Browser as "Glass (Clear)"; version 2 listed and matched it as "Glass -
+# clear" and refused the browser's spelling. With no exact match, a library
+# name is now matched with capitals, spaces and punctuation ignored, and the
+# answer names the asset taken. Version 2's proof below no longer describes
+# the code: DRAFT until it is proved again.
 source: OFFICIAL
 risk: MODIFY
 
@@ -135,31 +141,31 @@ contract:
 proof:
   date: '2026-10-20'
   by: Ajmal PS
-  model: Materials IA Test (3,780 elements), Revit 2020, session 29012
-  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
-    on 2026-10-20; the modeller saw the result in Revit and pressed Keep, and Revit kept it
-    as one undo step. returned appearanceReport IA Probe Wood: ''none'' (no appearance asset)
-    -> ''IA Probe Wood'' (Image C:\Program Files (x86)\Common Files\Autodesk Shared\Materials\Textures\1\Mats\ceramic_wood_color.jpg,
-    Highlights non-metallic), assetsMade 1 item(s) [IA Probe Wood], changedMaterialIds 1 item(s)
-    [1330331], findings 3 item(s) [1 material(s) given their appearance; 1 new appearance
-    asset..., A Realistic view and a rendering draw this appearance. A Sha..., An appearance
-    asset no material uses any more stays in the d...], matchShading false, refused , sharedBefore
-    . inputs came materialsNamed as given; appearance as given; appearanceValues as given;
-    matchShading not given - false (optional). on Materials IA Test'
-  negative_case: 'run with materialsNamed=IA Probe Wood, appearance=generic, appearanceValues=Image=C:\no\such\file.jpg
-    instead - chosen because it should not contain what this fragment reports - run inside
-    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    appearanceReport , assetsMade 0 item(s), changedMaterialIds 0 item(s), findings 1 item(s)
-    [Image: the file ''C:\no\such\file.jpg'' is not there - a missi...], matchShading false,
-    refused Image: the file ''C:\no\such\file.jpg'' is not there - a missing image renders
-    as plain colour. Nothing was changed, sharedBefore . inputs came materialsNamed as given;
-    appearance as given; appearanceValues as given; matchShading not given - false (optional).
-    on Materials IA Test'
+  model: Materials IA Test (3,804 elements), Revit 2020, session 29012
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned appearanceReport IA Probe Steel:
+    ''Steel - Satin'' (PrismMetalSchema) -> ''IA Probe Steel'' (PrismTransparentSchema), assetsMade
+    1 item(s) [IA Probe Steel], changedMaterialIds 1 item(s) [1330329], findings 4 item(s)
+    [1 material(s) given their appearance; 1 new appearance asset..., ''Glass (Clear)'' was
+    taken to mean Revit''s ''Glass - clear'' (P..., A Realistic view and a rendering draw
+    this appearance. A Sha..., ...], matchShading false, refused , sharedBefore . inputs came
+    materialsNamed as given; appearance as given; appearanceValues not given - "none", the
+    card''s own default (optional); matchShading not given - false (optional). on Materials
+    IA Test'
+  negative_case: 'run with materialsNamed=IA Probe Steel, appearance=No Such Look instead
+    - chosen because it should not contain what this fragment reports - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned appearanceReport
+    , assetsMade 0 item(s), changedMaterialIds 0 item(s), findings 1 item(s) [no appearance
+    asset is called ''No Such Look'' - in this docum...], matchShading false, refused no appearance
+    asset is called ''No Such Look'' - in this document closest: nothing close; in Revit''s
+    appearance library (3088 assets) closest: ''Brass - old look'', ''Brass - old matte look''.
+    Nothing was changed, sharedBefore . inputs came materialsNamed as given; appearance as
+    given; appearanceValues not given - "none", the card''s own default (optional); matchShading
+    not given - false (optional). on Materials IA Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: affdd751d0750c40
-
+  fingerprint: e0bb45a7f36cdb42
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
