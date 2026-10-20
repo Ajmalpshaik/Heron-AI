@@ -1,0 +1,39 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# NOT RUN - written 2026-10-20 for NEEDS-CHECKING Group IA (IA2, IA3).
+
+positive:
+  - given: >
+      the scratch project of Group IA with "IA Probe Steel" made by CREATE_MATERIAL;
+      materialsNamed "IA Probe Steel", fieldValues "Manufacturer=IA Maker;
+      Model=M-1; Class=Metal; Keynote=05 12 00; Mark=IA-1; Surface Pattern=<Solid fill>;
+      Surface Pattern Colour=128,128,128; Cut Pattern=Diagonal crosshatch"
+    expect: >
+      fieldsChanged 8, and the Material Browser's Identity tab reads IA Maker,
+      M-1, Metal, 05 12 00, IA-1; the Graphics tab a solid grey surface pattern
+      and a diagonal crosshatch cut pattern - every one in materialReport
+      before and after
+
+  - given: >
+      "IA Probe Steel" sharing its thermal asset with "IA Probe Copper";
+      fieldValues "Thermal: Thermal Conductivity=50"
+    expect: >
+      sharedAssets names "IA Probe Copper"; IA Probe Steel has a new thermal
+      asset named after it reading 50 in its project units, and IA Probe
+      Copper's conductivity is what it was
+
+negative:
+  - given: the same call again, straight after
+    expect: fieldsChanged 0, alreadyAsAsked 8 - nothing written twice
+  - given: materialsNamed "IA Probe Stel", fieldValues "Mark=IA-2"
+    expect: >
+      refused names no material matching 'IA Probe Stel' with IA Probe Steel
+      among the closest; no material's Mark changed
+  - given: materialsNamed "IA Probe*", fieldValues "Name=IA One"
+    expect: >
+      refused - Name renames one material and two were named; neither renamed
+  - given: fieldValues "Cut Pattern=No Such Hatch" on IA Probe Steel
+    expect: refused naming the closest fill patterns and CREATE_FILL_PATTERN; nothing changed
+
+second_route:
+  - Manage > Materials, the material's Identity, Graphics, Physical and Thermal tabs read by eye
+  - one Ctrl+Z takes every field back (Golden Rule 16)

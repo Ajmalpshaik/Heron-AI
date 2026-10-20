@@ -116,6 +116,10 @@ compatibility-note: >
 #   "what material is this element"  -> READ_ELEMENT_MATERIAL
 #   "swap one material for another"  -> REPLACE_MATERIAL
 
+# ROUTING (2026-10-20, the material tools of Group IA, row 5b-1263)
+#
+#   "fill in the identity tab of these materials"  -> SET_MATERIAL_PROPERTIES - every other field, many materials at once
+#   "the family looks grey in the realistic view"  -> SET_MATERIAL_APPEARANCE - the appearance asset, not this colour
 utterances:
   - set the material colour
   - this material has no colour

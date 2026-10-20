@@ -1,0 +1,158 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-124
+semantic-identity: "give materials a render appearance - a library asset, another material's, or a generic one of their own - and set its colour, image, gloss, reflection, transparency and bump"
+kind: action
+domain: revit.elements
+capability: SET_MATERIAL_APPEARANCE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# MEASURED 2026-10-20, Revit 2020, Project1: a duct heater family whose
+# materials CREATE_MATERIAL made drew in colour in a Shaded view and flat dark
+# grey in Realistic (EXPORT_VIEW_IMAGE) - a material made by Heron carries a
+# shading colour and no appearance asset (row 5b-1263). The owner asked the
+# same day for every part of a material to be covered.
+#
+# THE APPEARANCE TAB, in four ways (`appearance`):
+#   keep         edit the asset the material has, or with none give it a plain
+#                Generic one of its own
+#   generic      a new plain Generic asset of its own, whatever it had
+#   from <name>  a copy of that material's asset - one material's look onto
+#                many, by name or pattern
+#   <a name>     an appearance asset by name: one the document holds, else
+#                one of Revit's appearance library, matched on the name the
+#                asset browser shows (its UIName, else its title or name)
+#
+# EVERY MATERIAL GETS ITS OWN ASSET, NAMED AFTER IT; an asset another material
+# shares is never edited - this one gets its own copy and the answer names
+# who shared it. So nothing changes on a material nobody named.
+#
+# THE VALUES are the Generic appearance's, in the Material Browser's words -
+# Colour, Image (path, size in mm, rotation, offset), Image Fade, Glossiness,
+# Highlights, Reflectivity Direct and Oblique, Transparency, Refraction (or
+# air / water / glass), Translucency, Cutout, Luminance, Filter Colour,
+# Colour Temperature, Bump and Bump Amount, Tint. Percentages are given 0-100
+# as the browser shows them and stored as Revit's 0-1: Revit documents that
+# range for fade, transparency and translucency and documents NONE for
+# glossiness and reflectivity - NEEDS-CHECKING IA5 reads the browser after a
+# run. A library Metal or Glazing asset has properties of its own and is
+# refused by name rather than half set.
+#
+# matchShading - the one input a family built with CREATE_MATERIAL needs: the
+# appearance takes the material's shading colour and transparency, so
+# Realistic draws what Shaded draws.
+#
+# THE NAMESPACE. Editing an asset needs Revit's appearance edit scope, which
+# lives in a namespace the fragment contract did not supply until D-146
+# (2026-10-20); REPORT_MATERIAL_TEXTURES read assets without naming it.
+#
+# Nothing is written until every name and value has been checked; every value
+# is read back off the asset the material now holds, and one that does not
+# read as asked fails the call.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Gives materials the appearance a Realistic view and a rendering draw - a
+  library appearance asset by name, a copy of another material's, or a plain
+  generic one of their own - and sets its colour, image texture, glossiness,
+  highlights, reflectivity, transparency, refraction, cutout,
+  self-illumination, bump and tint, or matches it to the shading colour.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # One material's name, several with ';' between, or a pattern with * and
+    # ? - "TRG_*".
+    - name: materialsNamed
+      type: string
+      source: request
+    # keep, generic, "from <material>", or an appearance asset's name.
+    - name: appearance
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    # Generic appearance values, "Field=Value" with ';' between - "Colour=
+    # 200,200,200; Glossiness=80; Highlights=metallic".
+    - name: appearanceValues
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # The appearance takes the material's own shading colour and transparency.
+    - name: matchShading
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: changedMaterialIds
+      role: result
+      type: IList<ElementId>
+    - name: appearanceReport
+      # ONE STRING, a line per material: its appearance asset and the values
+      # asked, before and after.
+      role: result
+      type: string
+    - name: assetsMade
+      # The appearance assets given to a material by this call, by name.
+      role: result
+      type: IList<string>
+    - name: sharedBefore
+      # Assets other materials shared, so the material got its own copy.
+      role: accounting
+      type: string
+    - name: refused
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  AppearanceAssetEditScope (its constructor, Start, Commit, Cancel, IsActive),
+  AppearanceAssetElement Create, Duplicate and GetRenderingAsset,
+  Application.GetAssets with AssetType.Appearance, Asset Title and
+  LibraryName, AssetProperty AddConnectedAsset, RemoveConnectedAsset,
+  GetSingleConnectedAsset, IsValidSchemaIdentifier and
+  NumberOfConnectedProperties, the typed properties AssetPropertyDouble,
+  AssetPropertyFloat, AssetPropertyBoolean, AssetPropertyString,
+  AssetPropertyDoubleArray4d (SetValueAsColor) and AssetPropertyDistance, and
+  the property names on Generic (GenericDiffuse to CommonTintColor),
+  UnifiedBitmap and SchemaCommon are present 2020 through 2027 - read off the
+  shipped assemblies with tools/api-surface --members on 2026-10-20, with the
+  documented types and ranges read from the 2020 RevitAPI.xml. ONE SPLIT: an
+  image's size and offset are AssetPropertyDistance, whose unit is
+  DisplayUnitType on 2020 and GetUnitTypeId() from 2021 (DisplayUnitType is
+  obsolete at 2021 and gone at 2022), so the millimetre conversion is
+  `#if REVIT2020`.
+
+# ROUTING - the same rows are in SET_MATERIAL_PROPERTIES, SET_MATERIAL_COLOUR,
+# CREATE_STARTER_MATERIALS and REPORT_MATERIAL_TEXTURES.
+#
+#   "make the glass look like glass when rendered" -> here
+#   "give these materials a render appearance"     -> here
+#   "copy the appearance of steel to these"        -> here, appearance "from <material>"
+#   "the family is grey in realistic view"         -> here, matchShading
+#   "set the material colour"                      -> SET_MATERIAL_COLOUR - the shading colour
+#   "fill in the identity tab"                     -> SET_MATERIAL_PROPERTIES - every other tab
+#   "which material textures are missing"          -> REPORT_MATERIAL_TEXTURES
+#   "add a starter set of materials"               -> CREATE_STARTER_MATERIALS
+utterances:
+  - give these materials a render appearance
+  - the family looks grey in the realistic view
+  - use the stainless steel satin appearance for this material
+  - copy the appearance of one material to the others
+  - put an oak wood texture image on this material

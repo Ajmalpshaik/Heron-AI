@@ -214,6 +214,7 @@ an edit.
 | [D-143](#d-143--a-credential-in-a-tracked-file-fails-the-pull-request) | A credential in a tracked file fails the pull request | ✅ Accepted · 2026-10-18 |
 | [D-144](#d-144--a-superseded-decision-says-so-under-its-own-heading-where-its-citations-land) | A superseded decision says so under its own heading, where its citations land | ✅ Accepted · 2026-10-19 |
 | [D-145](#d-145--a-card-may-let-its-caller-answer-one-named-revit-dialog-for-one-job-and-every-other-dialog-is-still-declined) | A card may let its caller answer one named Revit dialog, for one job, and every other dialog is still declined | 🕐 Proposed - **owner has not read this back** |
+| [D-146](#d-146--a-fragment-may-name-revits-appearance-asset-namespace-so-a-materials-render-appearance-can-be-edited) | A fragment may name Revit's appearance-asset namespace, so a material's render appearance can be edited | 🕐 Proposed - **owner has not read this back** |
 
 ## Format
 
@@ -1265,3 +1266,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`HeronDialogNote.cs`](../revit/Heron.Revit.Addin/HeronDialogNote.cs) (`HeronDialogRule.CallerAnswer`), [`HeronDialogWatch.cs`](../revit/Heron.Revit.Addin/HeronDialogWatch.cs) (`AnswerForJob`), [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) (a need's `dialog:`), [`set-parameter-values-by-id`](../brain/fragments/set-parameter-values-by-id/fragment.yaml) version 5, [`test_dialog_note.py`](../tests/test_dialog_note.py), [row 5b-1221](fragment-issues/section-5b-rows-401-425.md), [Group HP](needs-checking/group-hp.md)
 
 **Full record:** [`decisions/D-145.md`](decisions/D-145.md)
+
+## D-146 — A fragment may name Revit's appearance-asset namespace, so a material's render appearance can be edited
+
+**Status:** Proposed · **Date:** 2026-10-20 · the owner has not read this back; it is what the 2026-10-20 task asked for ("in the material also ... all the parts should be covered"), written down so it can be accepted or overturned
+**Keeps:** [Article 21](../HERON_CONSTITUTION.md) - every fragment already in the library compiles with the namespace added, on every release it claims, 2020 to 2027 (measured 2026-10-20)
+**Affects:** [`check-fragments-compile.py`](../tools/check-fragments-compile.py) (`USINGS`), [`HeronFragmentImports.cs`](../revit/Heron.Revit.Addin/HeronFragmentImports.cs), [`set-material-appearance`](../brain/fragments/set-material-appearance/fragment.yaml), [`create-starter-materials`](../brain/fragments/create-starter-materials/fragment.yaml), [`list-materials`](../brain/fragments/list-materials/fragment.yaml) version 3, [row 5b-1264](fragment-issues/section-5b-rows-401-425.md), [Group IA](needs-checking/group-ia.md)
+
+**Full record:** [`decisions/D-146.md`](decisions/D-146.md)

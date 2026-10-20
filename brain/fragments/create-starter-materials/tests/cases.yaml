@@ -1,0 +1,24 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# NOT RUN - written 2026-10-20 for NEEDS-CHECKING Group IA (IA8).
+
+positive:
+  - given: the Group IA scratch project, which holds no TRG_ material, everything left out
+    expect: >
+      twelve materials made, TRG_Glass Clear to TRG_Pipe Copper, each with its
+      class, shading colour and an appearance asset named after it; a
+      Realistic view of twelve boxes, one painted with each, shows glass as
+      see-through and the metals glossy - not flat grey
+
+negative:
+  - given: the same call again, straight after
+    expect: >
+      createdMaterialIds empty and alreadyThere all twelve - nothing made
+      twice, nothing changed on the twelve
+  - given: starterPick "granite"
+    expect: refused naming the twelve starter materials; nothing made
+  - given: starterPick "copper", libraryLooks "Pipe Copper=No Such Look", namePrefix "IA_"
+    expect: refused - no appearance asset is called 'No Such Look'; no IA_ material made
+
+second_route:
+  - Manage > Materials, Project Materials - the twelve, each one's Graphics and Appearance tabs read by eye
+  - one Ctrl+Z takes all twelve back (Golden Rule 16)

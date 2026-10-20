@@ -1,0 +1,146 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-123
+semantic-identity: "fill in a material's identity, graphics patterns, physical and thermal fields - one material or every one a name pattern matches"
+kind: action
+domain: revit.elements
+capability: SET_MATERIAL_PROPERTIES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# THE OWNER'S WORDS, 2026-10-20: "in the material also ... all the parts should
+# be covered". Before this, Heron wrote a material's shading colour
+# (SET_MATERIAL_COLOUR) and nothing else of its Identity, Graphics, Physical or
+# Thermal tabs; the Appearance tab is SET_MATERIAL_APPEARANCE's.
+#
+# "FIELD=VALUE" PAIRS, the way SET_FAMILY_TYPE_VALUES takes a type's values, so
+# one call fills any mix of fields and a new field is a new word, not a new
+# input. The fields, in the Material Browser's own words:
+#   Identity  Name (one material only), Description, Class, Comments, Keywords,
+#             Manufacturer, Model, Cost, URL, Keynote, Mark
+#   Graphics  Shading Colour, Transparency (0-100), Use Render Appearance, and
+#             Surface / Cut Foreground / Background Pattern and Colour.
+#             "Surface Pattern" and "Cut Pattern" - a material's fields before
+#             Revit 2019 split each in two - mean the foreground. All four are
+#             on every release 2020-2027.
+#             A cut pattern must be a DRAFTING pattern - Revit's own rule,
+#             documented for both cut fields - so a model one is refused by
+#             name; a surface pattern may be either. A pattern is compared by
+#             its id, because a drafting and a model pattern can share a name.
+#   Physical  "Physical Asset=<name>" (one the document holds, or none),
+#             "Physical: Density=7850" (a value, in the project's units)
+#   Thermal   "Thermal Asset=<name>", "Thermal: Thermal Conductivity=0.5"
+#
+# MANY AT ONCE BY NAME PATTERN: materialsNamed takes names with ';' between
+# (a material's name may hold a comma) and `*` / `?` patterns - "TRG_*" is
+# every TRG material, the bulk change by name.
+#
+# SHADING COLOUR IS HERE AS ONE GRAPHICS FIELD AMONG THE REST. One material's
+# colour alone is still SET_MATERIAL_COLOUR, which is PROVEN and reports the
+# colour before; this card is for the tabs that had no tool at all.
+#
+# A SHARED PHYSICAL OR THERMAL ASSET IS NEVER EDITED: the material gets its own
+# copy first and the answer names who shared it. Sharing is read as it stood
+# before the call, so every named material that shared one gets its own; an
+# asset is assigned before any value of it is written. Nothing is written until
+# every name and value is checked; everything written is read back after one
+# regeneration, and a field that does not read as asked fails the call.
+#
+# KEYWORDS HAS NO REVIT PARAMETER OF ITS OWN on any release (BuiltInParameter
+# read 2026-10-20), so it is found by its name or refused saying so. Whether
+# Revit 2020 shows it by that name is NEEDS-CHECKING IA2.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Fills in the Identity, Graphics, Physical and Thermal tabs of materials -
+  manufacturer, model, cost, keynote, mark, class, surface and cut patterns
+  with their colours, physical and thermal assets and their values - on one
+  material or every one a name pattern matches, read back after.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # One material's name, several with ';' between, or a pattern with * and
+    # ? - "TRG_*". Each must match; nothing is made here.
+    - name: materialsNamed
+      type: string
+      source: request
+    # "Field=Value" pairs with ';' or a new line between - "Manufacturer=ACME;
+    # Cut Pattern=Diagonal crosshatch; Physical: Density=7850".
+    - name: fieldValues
+      type: string
+      source: request
+  provides:
+    - name: changedMaterialIds
+      # Materials at least one field of which now holds a value it did not.
+      role: result
+      type: IList<ElementId>
+    - name: materialReport
+      # ONE STRING, a line per material: every field asked, before and after,
+      # or "already". A string because a list reaches the chat as three items
+      # cut at sixty characters.
+      role: result
+      type: string
+    - name: fieldsChanged
+      role: result
+      type: int
+    - name: alreadyAsAsked
+      # Fields that already held the value asked - looked at, left (D-52).
+      role: accounting
+      type: int
+    - name: sharedAssets
+      # Physical or thermal assets another material shared, so this one got
+      # its own copy - and assets given to a material that had none.
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Material's Color, Transparency,
+  UseRenderAppearanceForShading, MaterialClass, the four Surface/Cut
+  Foreground/Background PatternId and PatternColor properties,
+  StructuralAssetId, ThermalAssetId, SetMaterialAspectByPropertySet and
+  ClearMaterialAspect; PropertySetElement.Create (structural and thermal) and
+  Duplicate; StructuralAsset and ThermalAsset constructors; FillPatternElement
+  and FillPattern.IsSolidFill and Target; and BuiltInParameter
+  ALL_MODEL_DESCRIPTION, ALL_MODEL_INSTANCE_COMMENTS, ALL_MODEL_TYPE_COMMENTS,
+  ALL_MODEL_MANUFACTURER, ALL_MODEL_MODEL, ALL_MODEL_COST, ALL_MODEL_URL,
+  KEYNOTE_PARAM and ALL_MODEL_MARK are present 2020 through 2027 - read off the
+  shipped assemblies with tools/api-surface --members on 2026-10-20. No unit
+  API is called: asset values go through SetValueString in the project's units.
+
+# ROUTING - the same rows are in SET_MATERIAL_COLOUR, SET_MATERIAL_APPEARANCE,
+# CREATE_STARTER_MATERIALS, SET_ELEMENT_MATERIAL and LIST_MATERIALS.
+#
+#   "set the manufacturer of this material"        -> here
+#   "give the material a cut pattern"              -> here
+#   "set the density of the steel material"        -> here
+#   "set the material colour"                      -> SET_MATERIAL_COLOUR
+#   "make the glass look like glass when rendered" -> SET_MATERIAL_APPEARANCE
+#   "change the material on these"                 -> REPLACE_MATERIAL
+#   "make these columns concrete"                  -> SET_ELEMENT_MATERIAL
+#   "show every property of the materials"         -> LIST_MATERIALS
+utterances:
+  - set the manufacturer and model of this material
+  - give the material a cut pattern and a surface pattern
+  - fill in the identity tab of these materials
+  - set the density and thermal conductivity of the steel material
+  - change the class of every TRG material to metal

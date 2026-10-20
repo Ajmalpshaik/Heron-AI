@@ -26,6 +26,9 @@ risk: READ
 # taken by `var` and a bitmap's text by its property name. REPATHING OR
 # REMOVING a texture needs an edit scope from that namespace and is not offered
 # - it waits on the decision to add the namespace (gap-fill plan, batch 5).
+# SINCE D-146 (2026-10-20) the namespace is supplied, and repathing or removing
+# a texture is SET_MATERIAL_APPEARANCE's Image, Cutout and Bump values - this
+# card still reads, and still reads without naming the types.
 #
 # A PATH WITH NO DRIVE OR SHARE is relative to Revit's texture folders and the
 # render appearance paths in Options, which are not readable here; it is
@@ -83,6 +86,9 @@ compatibility-note: >
 #   "list the materials"                      -> LIST_MATERIALS
 #   "replace this material with that one"     -> REPLACE_MATERIAL
 
+# ROUTING (2026-10-20, the material tools of Group IA, row 5b-1263)
+#
+#   "put an oak wood texture image on this material"  -> SET_MATERIAL_APPEARANCE - its Image value also repaths a missing file
 utterances:
   - which material textures are missing
   - where are the texture images for the materials stored
