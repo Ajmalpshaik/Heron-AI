@@ -92,3 +92,57 @@ offers (D-33).
 `set-material-appearance` IA4 + IA5 + IA6 + IA7, `create-starter-materials` IA8, `set-element-material`
 IA9 + IA10. The proof plan for the batch runner is
 [`tools/jobs/materials-ia-2026-10-20.yaml`](../../tools/jobs/materials-ia-2026-10-20.yaml).
+
+### Run 2026-10-20 - Revit 2020, the owner's laptop
+
+**The model** was built as above on Revit 2020 (session 29012), `Materials IA Test.rvt` in
+`%TEMP%\heron-work\materials-ia`. The Systems template's plans are `1 - Mech`, `2 - Mech` and the like - no
+`Level 1` - so the job file's `inViewOnly` now reads `FloorPlan: 1 - Mech`. Rolled-back runs went from the
+command line (`HERON_CLIENT_ID=ajmal-pc`). The KEPT runs went through `try-once` on the saved model, and the
+owner pressed Keep in Revit each time (D-119, D-120). Their negatives were run with `validate --kept`.
+**Nothing is signed.** The drafts wait in `brain/proof-drafts/` for the owner.
+
+**Every try-once needed a fresh Ctrl+S.** A rolled-back run still leaves Revit's model marked as changed
+(`IsModified`, as row 5b-350's detector reads it). D-121 then refuses an unproven tool's one run with
+*"has changes that are not saved"*. So the owner saved before each of the five kept runs, and the order
+was: every rolled-back run first, then the save, then the kept run.
+
+| # | Result | What was seen |
+|---|---|---|
+| **IA0** | **PASS** | Before the redeploy, `SET_MATERIAL_APPEARANCE` came back `compile_failed`. After the add-in was rebuilt and redeployed for Revit 2020, `LIST_MATERIALS` and `READ_ELEMENT_MATERIAL` ran as before |
+| **IA1** | **FAIL on version 3, fixed in version 4 ([row 5b-1272](../fragment-issues/section-5b-rows-401-425.md)), PASS on version 4** | Version 3 listed 3,088 library assets, every one by Revit's code - `ACADGen-001`, `Prism-113`. On Revit 2020 a library asset's Title is empty and its UIName IS the code. Version 4 lists 1,926 and leaves out 1,162 that Revit marks hidden. 674 are shown by the browser's name with the code - `Copper - polished [Prism-050]` - and 1,252 by the code alone. The three probes come back as three lines, `IA Probe Steel` and `IA Probe Copper` each *"shared with 1 other material(s)"*. `ZZZ*` gives `materialCount` 0. **Three library names for IA6:** `Copper - polished` (Prism-050), `Glass - clear` (Prism-152), `Concrete - Cast in Place` (Prism-1100). **By eye:** EYE1 below |
+| **IA2** | **PASS** | **Keywords: Revit 2020 has none a tool can reach.** The call was refused, *"Revit offers no 'Keywords' on the material 'IA Probe Steel' - not as a parameter of its own and not by that name"*, nothing kept, and it was run again without it. **Kept:** 8 fields changed and Use Render Appearance was already *no*: Manufacturer `IA Maker`, Model `M-1`, Class `Metal`, Keynote `05 12 00`, Mark `IA-1`, Surface Foreground `<Solid fill>` 128,128,128, Cut Foreground `Diagonal crosshatch` (id 6473). **Negatives, rolled back:** the repeat gave `fieldsChanged` 0 and `alreadyAsAsked` 9. `IA Probe Stel` was refused naming `IA Probe Steel` among the closest. `IA Probe*` with `Name=IA One` was refused, *"Name renames ONE material, and 3 were named"*. **By eye:** EYE2 |
+| **IA3** | **PASS** (rolled back) | `Thermal: Thermal Conductivity=50` read 45 -> 50 W/(m·K) on a copy named `IA Probe Steel`. `sharedAssets` says *"'Steel(2)' was shared with 'IA Probe Copper' - given its own copy ... and 'Steel(2)' was not touched"*. `Physical Asset=Iron - Ductile Cast A536 65-45-12` changed none -> that asset. `Thermal Asset=No Such Asset` was refused, nothing changed |
+| **IA4** | **NOT RUN** - put off by the owner, 2026-10-20 (*"leave it about the heater"*) | The heater copy is in the folder for it. `set-material-appearance`'s one kept run went to IA5 |
+| **IA5** | **PASS by Heron's read-back; the browser by eye is the owner's** | **Kept** on `IA Probe Wood`: a Generic asset of its own named after it, with the image `...\Textures\1\Mats\ceramic_wood_color.jpg`, Image Size 1200 x 600, Rotation 90, Offset 100,50, Glossiness 40 (stored 0.4), non-metallic, Reflectivity Direct 10, Bump Amount 30. Every value was read back off the asset, and a mismatch would have refused the call. **Negative:** `Image=C:\no\such\file.jpg` was refused, *"is not there - a missing image renders as plain colour"*, nothing changed. **By eye:** EYE5 |
+| **IA6** | **PASS** (rolled back, version 2) | **By the browser's name**, `Copper - Polished`, and **by its code**, `Prism-050`: Steel's asset `Steel - Satin` -> `IA Probe Steel` (PrismMetal). **From another material:** `from IA Probe Steel` on Wood - Wood had no asset to copy from until IA5 - gave a copy named `IA Probe Wood`. **The shared edit** ran on `Air Infiltration Barrier`, whose `Generic(1)` the template shares with `Vapour Retarder`. Steel and Copper share a Prism Metal asset, which takes no values, so they could not stand in. Colour 80,80,80 -> 10,20,30 on its own copy, `sharedBefore` names `Vapour Retarder`, and `Generic(1)` was not touched. **Negatives:** `No Such Look` was refused naming the library's closest. `Copper - Polished` with `Glossiness=50` was refused, *"a PrismMetalSchema appearance, not a Generic one"* |
+| **IA7** | **NOT RUN** - needs Revit 2026 or 2027 | Nothing reads the image size there yet. That release still has to be checked by eye |
+| **IA8** | **PASS, except the image** | **Kept:** twelve `TRG_` materials, each with its class, shading colour and a Generic appearance of its own named after it. Glass is 80% transparent shaded and 90 in its appearance, with refraction 1.52. **Negatives, rolled back:** the repeat made 0 and lists all 12 in `alreadyThere`. `granite` was refused naming the twelve. `starterPick` copper with `libraryLooks` `Pipe Copper=No Such Look` and `IA_` was refused, and no `IA_` material was made. **Version 2's library look:** `Pipe Copper=Copper - Polished` gave `IA_Pipe Copper` the appearance `Copper - polished` (rolled back). **NOT RUN:** the Realistic image of twelve painted boxes - the model has no twelve boxes |
+| **IA9** | **PASS** | **Kept,** with the two columns selected: the type `M_Rectangular Column: 457 x 475mm`'s Material <By Category> -> `TRG_Concrete Smooth`, *"a type change: all 2 placed element(s) of this type changed"*. **Rolled back:** the repeat gave `alreadyAsAsked` 1 and `writtenIds` 0. On the three ducts, `Duct System: Supply Air`'s Material -> `TRG_Duct Galvanised`, *"every element of this system type draws with it now"*. Both walls were skipped as *"built of layers - its material is a layer's, set with SET_COMPOUND_LAYER_WIDTH"*. The door was skipped as *"holds 2 material parameters - 'Trim Material' ..."*. With `materialParameter` `Trim Material`, its type's Trim Material `Paint - Sienna` -> `TRG_Wood Oak`. **Not seen:** the ducts galvanised in Realistic - that run was rolled back |
+| **IA10** | **NOT RUN** - no family was open. Put off with the heater (IA4) | |
+| **IA11** | **PASS** | `heron_method family-creation`, step 12: *"A FAMILY THAT WILL BE RENDERED ... SET_MATERIAL_APPEARANCE with materialsNamed the names CREATE_MATERIAL made ... and matchShading true"* |
+
+**By eye, the owner's** - none of these can be read by a tool:
+
+| # | Look at | Answer |
+|---|---|---|
+| **EYE1** | Asset Browser: do `Copper - Polished`, `Glass - Clear`, `Concrete - Cast in Place`, `Aluminum - Brushed` and `Wood - Cherry` appear by those names? (IA1) | owed |
+| **EYE2** | Material Browser, `IA Probe Steel`, Identity tab: is there a **Keywords** box at all on Revit 2020? (IA2) | owed |
+| **EYE5** | `IA Probe Wood`, Appearance tab: Glossiness **40**? Reflectivity Direct **10**? The image: 1200 x 600 mm, rotation 90, offset 100 / 50 in the texture editor? (IA5) | owed |
+
+**For the owner's signature** - one draft each, with a kept run as its positive wherever the tool changes the
+model:
+
+| Tool | Positive | Negative | Draft fingerprint |
+|---|---|---|---|
+| `list-materials` v4 | IA1, three probes with every tab and the library | `ZZZ*`, `materialCount` 0 | `83f80ac2b4c15190` |
+| `set-material-properties` | IA2, kept | `IA Probe Stel`, refused | `f5d8cadb4637b26c` |
+| `set-material-appearance` v2 | IA5, kept | a missing image, refused | `affdd751d0750c40` |
+| `create-starter-materials` v2 | IA8, kept | `granite`, refused | `37f530e6fab754bf` |
+| `set-element-material` | IA9, kept | the layered walls, skipped | `330f01f3a3fbd93d` |
+
+Each draft's gap is *"no second route was run"* - for `set-material-appearance` that route is IA7.
+`set-material-appearance`'s sign plan also names IA4 and IA7. Signing it with those two not run is the
+owner's decision, and the note goes with the signature. A repeat whose report reads back *"already ..."* is
+not empty by the draft's measure: the count is 0, but the sentence is not. So each recorded negative is a
+refusal, and each repeat is recorded above.
