@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-144
-semantic-identity: "set a view's graphic display options - sun intensity, shadow intensity, silhouette edges, smooth lines, transparency, sketchy lines, depth cueing and a gradient or image background"
+semantic-identity: "set a view's graphic display options - sun intensity, shadow intensity, silhouette edges, anti-aliasing, transparency, sketchy lines, depth cueing and a gradient or image background"
 kind: action
 domain: revit.views
 capability: SET_GRAPHIC_DISPLAY_OPTIONS
@@ -183,6 +183,6 @@ compatibility-note: >
 utterances:
   - switch on sketchy lines with a jitter of 5 in this view
   - turn the sun intensity up to 80 and the shadow intensity to 40 in this view
-  - show silhouette edges in wide lines in the 3D view
+  - show silhouette edges in the 3D view
   - use smooth lines with anti-aliasing in this view
   - give this 3D view a gradient background
