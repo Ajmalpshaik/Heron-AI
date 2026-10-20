@@ -229,22 +229,43 @@ var findings = new List<string>();
 
     findings.Add("Listed used or not - unused ones: FIND_UNUSED_MATERIALS");
 
-    // REVIT'S APPEARANCE LIBRARY, by the name its asset browser shows (version
-    // 3) - what SET_MATERIAL_APPEARANCE and CREATE_STARTER_MATERIALS take by
-    // name. What it holds depends on the PC's install, so it is read, never
-    // assumed. One line, sorted, each with its kind.
+    // REVIT'S APPEARANCE LIBRARY - what SET_MATERIAL_APPEARANCE and
+    // CREATE_STARTER_MATERIALS take by name. What it holds depends on the PC's
+    // install, so it is read, never assumed. One line, sorted, each with its
+    // kind.
+    //
+    // BY THE ASSET BROWSER'S NAME WHERE REVIT GIVES IT, AND BY ITS CODE
+    // ALWAYS (version 4, row 5b-1272). Version 3 listed the UIName, measured
+    // 2026-10-20 on Revit 2020 (Group IA, IA1) to be Revit's code for every
+    // library asset - "ACADGen-001", "Prism-256" - while Title is empty there.
+    // A Prism asset's description is the browser's name in another case
+    // ("Steel - satin" for "Steel - Satin"); an older asset's is a sentence its
+    // kind shares ("Generic material." on 557), so it is listed by its code
+    // alone and the finding says how many. Assets Revit marks Hidden (1,162 of
+    // 3,088 there) are left out, counted - the tools still take one by code.
     if (withLibraryAppearances)
     {
         var shown = new List<string>();
+        int byName = 0, byCode = 0, hiddenCount = 0;
         foreach (var asset in doc.Application.GetAssets(AssetType.Appearance) ?? new List<Asset>())
         {
-            var ui = asset.FindByName(SchemaCommon.UIName) as AssetPropertyString;
+            var hidden = asset.FindByName(SchemaCommon.Hidden) as AssetPropertyBoolean;
+            if (hidden != null && hidden.Value) { hiddenCount++; continue; }
             var schema = asset.FindByName(SchemaCommon.BaseSchema) as AssetPropertyString;
-            var name = ui != null && !string.IsNullOrEmpty(ui.Value) ? ui.Value : !string.IsNullOrEmpty(asset.Title) ? asset.Title : asset.Name;
-            shown.Add(name + " (" + (asset.FindByName(Generic.GenericDiffuse) != null ? "Generic" : schema == null ? "?" : schema.Value) + ")");
+            var description = asset.FindByName(SchemaCommon.Description) as AssetPropertyString;
+            var code = asset.Name ?? "";
+            var name = !string.IsNullOrEmpty(asset.Title) ? asset.Title
+                : description != null && !string.IsNullOrEmpty(description.Value) && schema != null && schema.Value != null
+                    && schema.Value.StartsWith("Prism", StringComparison.OrdinalIgnoreCase) ? description.Value
+                : null;
+            var assetKind = asset.FindByName(Generic.GenericDiffuse) != null ? "Generic" : schema == null ? "?" : schema.Value;
+            if (name == null || string.Equals(name, code, StringComparison.OrdinalIgnoreCase)) { byCode++; shown.Add(code + " (" + assetKind + ")"); }
+            else { byName++; shown.Add(name + " [" + code + "] (" + assetKind + ")"); }
         }
         shown.Sort(StringComparer.OrdinalIgnoreCase);
         libraryAppearances = string.Join("  ||  ", shown);
-        findings.Add(shown.Count + " appearance asset(s) in Revit's appearance library on this PC");
+        findings.Add(string.Format("{0} appearance asset(s) in Revit's appearance library on this PC - {1} by the Asset Browser's name "
+            + "with Revit's code in [ ], {2} by Revit's code alone, because this Revit gives no other name for them; {3} Revit marks hidden "
+            + "are left out. Either name or code is taken by SET_MATERIAL_APPEARANCE", shown.Count, byName, byCode, hiddenCount));
     }
 }

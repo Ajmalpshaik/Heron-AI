@@ -9,7 +9,7 @@ semantic-identity: "give materials a render appearance - a library asset, anothe
 kind: action
 domain: revit.elements
 capability: SET_MATERIAL_APPEARANCE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -29,8 +29,18 @@ risk: MODIFY
 #   from <name>  a copy of that material's asset - one material's look onto
 #                many, by name or pattern
 #   <a name>     an appearance asset by name: one the document holds, else
-#                one of Revit's appearance library, matched on the name the
-#                asset browser shows (its UIName, else its title or name)
+#                one of Revit's appearance library - by the name the asset
+#                browser shows where Revit gives it, and always by Revit's
+#                code ("Prism-256")
+#
+# VERSION 2, 2026-10-20 (row 5b-1272, Group IA, IA1). Version 1 matched a
+# library asset on its UIName, then its Title. Measured on Revit 2020: a
+# library asset's Title is empty and its UIName is Revit's code - "Prism-256",
+# "Plastic-024" - so the browser's name ("Steel - Satin") matched nothing and
+# only the code worked. Now: Title; else a Prism asset's description, which is
+# the browser's name in another case ("Steel - satin"); else the code. An older
+# asset's browser name is not readable on Revit 2020 (its description is a
+# sentence its kind shares, "Metal."), so it is named by its code.
 #
 # EVERY MATERIAL GETS ITS OWN ASSET, NAMED AFTER IT; an asset another material
 # shares is never edited - this one gets its own copy and the answer names

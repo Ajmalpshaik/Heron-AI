@@ -9,7 +9,7 @@ semantic-identity: "every material this project or family holds, by name, with i
 kind: filter
 domain: revit.elements
 capability: LIST_MATERIALS
-version: 3
+version: 4
 source: OFFICIAL
 risk: READ
 
@@ -97,6 +97,16 @@ risk: READ
 # name the PC has, never by one assumed. namePattern narrows the list. All
 # three are optional and absent reads as version 2 did. Version 2 was never
 # proved (Group CX), so nothing stales.
+
+# VERSION 4, 2026-10-20 - row 5b-1272, found running Group IA's IA1 on Revit
+# 2020. Version 3 listed the library by each asset's UIName and called it the
+# asset browser's name; measured, the UIName of every library asset there is
+# Revit's code ("ACADGen-001", "Prism-256") and Title is empty. The list now
+# gives the browser's name where Revit gives it - Title, else a Prism asset's
+# description - with the code in [ ], and the code alone for an older asset,
+# whose description is a sentence its kind shares ("Generic material." on 557
+# assets). Assets Revit marks Hidden are left out and counted. Only
+# withLibraryAppearances' answer changed.
 purpose: >
   Counts and lists everything the Material Browser shows for the document
   Heron is working on - a project, or a family open in the Family Editor: how
@@ -142,7 +152,8 @@ contract:
       source: request
       optional: true
     # Version 3. Every appearance asset of Revit's appearance library on this
-    # PC, by the name its asset browser shows, in libraryAppearances.
+    # PC, in libraryAppearances - by the asset browser's name where Revit gives
+    # it, and by Revit's code (version 4).
     - name: withLibraryAppearances
       type: bool
       source: request
@@ -185,10 +196,11 @@ contract:
       role: result
       type: IList<ElementId>
     - name: libraryAppearances
-      # Version 3, withLibraryAppearances: "Name (kind)" for every asset of
-      # Revit's appearance library, sorted, on ONE line - the names
-      # SET_MATERIAL_APPEARANCE and CREATE_STARTER_MATERIALS take. Empty
-      # when not asked.
+      # Version 3, withLibraryAppearances: every asset of Revit's appearance
+      # library Revit does not mark hidden, sorted, on ONE line - since
+      # version 4 "Browser name [code] (kind)", or "code (kind)" where Revit
+      # gives no other name - the names SET_MATERIAL_APPEARANCE and
+      # CREATE_STARTER_MATERIALS take. Empty when not asked.
       role: result
       type: string
     - name: findings
