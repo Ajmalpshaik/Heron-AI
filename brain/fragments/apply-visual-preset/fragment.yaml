@@ -9,7 +9,20 @@ semantic-identity: "give a view a whole ready-made look in one call - a named vi
 kind: action
 domain: revit.views
 capability: APPLY_VISUAL_PRESET
-version: 2
+version: 3
+# VERSION 3, 2026-10-21 - row 5b-1306, found 2026-10-21 making interior
+# renders for the owner on Revit 2020: a Still sun's time was written and read
+# through the SITE's time zone (SiteLocation.ConvertFromProjectTime /
+# ConvertToProjectTime), but Revit holds the dialog's clock turned to UTC by the
+# PC's OWN zone. On the owner's laptop (UTC+3, site Boston) 11:00 asked was
+# written as 19:00 - the sun at 0 degrees, a black render - and the dialog's
+# 10:00 read back as 02:00. Measured with the sun's own height: written as the
+# PC's local time turned to UTC, 11:00 stood 36.7 degrees up at a bearing of
+# 171 - the dialog's 11:00. Both directions now go through the PC's zone (the
+# rule row 5b-1282 found for Revit's sunset). The shared block's two conversions changed, byte for
+# byte the same in APPLY_ and REPORT_VISUAL_PRESET. Version 2's proof below no
+# longer describes the code.
+# DRAFT until NEEDS-CHECKING Group IN proves it.
 # VERSION 2, 2026-10-20 - rows 5b-1282 and 5b-1283, found running Group IC on
 # Revit 2020. The dusk Sun was skipped: GetSunset refused the project-time
 # date, whose Kind was Unspecified - it is now handed over as UTC. And depth
@@ -156,73 +169,70 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-20'
+  date: '2026-10-21'
   by: Ajmal PS
-  model: Materials IA Test (3,901 elements), Revit 2020, session 38288
-  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned alreadySo 5, askedTime (null),
-    barWord Func`2, barWords 8 item(s) [System.String[], System.String[], System.String[],
-    ...], before 15 item(s) [System.String[], System.String[], System.String[], ...], byHandKeys
-    2 item(s) [Cast Shadows, Ambient Shadows], changed 8, colour Func`2, compare Func`2, culture
-    CultureInfo, degrees Func`2, describe Func`2, duskUtc DateTime, findings 3 item(s) [8
-    of 8 setting(s) changed and read back as Exterior Dusk say..., Exterior Dusk also wants
-    Cast Shadows and Ambient Shadows on..., Dusk is half an hour before Revit''s sunset for
-    the site on 2...], forIssue false, hasDisplay true, inputProblem (null), lightingWord
-    Func`2, madeFor 7 entry(ies), materialsLine Materials 10 on what the view shows, 0 with
-    no render appearance, materialsRead true, materialsSeen 10 entry(ies), noAppearance 0
-    item(s), noCueingWhy Func`2, noDisplay ''Heron Frame - Columns'' has no Graphic Display
-    Options - Revit gives them to views with a visual style, noRender ''Heron Frame - Columns''
-    is not a 3D view, and only a 3D view has Rendering Settings, pairs Func`2, presetList
+  model: Cinematic ID Test (5,262 elements), Revit 2020, session 68704
+  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-10-21; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned alreadySo 7, askedTime (null), barWord Func`2, barWords 8 item(s)
+    [System.String[], System.String[], System.String[], ...], before 15 item(s) [System.String[],
+    System.String[], System.String[], ...], byHandKeys 2 item(s) [Cast Shadows, Ambient Shadows],
+    changed 6, colour Func`2, compare Func`2, culture CultureInfo, degrees Func`2, describe
+    Func`2, duskUtc (null), findings 2 item(s) [6 of 6 setting(s) changed and read back as
+    Interior Day says..., Interior Day also wants Cast Shadows and Ambient Shadows on....],
+    forIssue false, hasDisplay true, inputProblem (null), lightingWord Func`2, madeFor 7 entry(ies),
+    materialsLine Materials 104 on what the view shows, 0 with no render appearance, materialsRead
+    true, materialsSeen 104 entry(ies), noAppearance 0 item(s), noCueingWhy Func`2, noDisplay
+    ''Cinematic Living Room'' has no Graphic Display Options - Revit gives them to views with
+    a visual style, noRender ''Cinematic Living Room'' is not a 3D view, and only a 3D view
+    has Rendering Settings, pairs Func`2, presetList Exterior Day, Exterior Dusk, Interior
+    Day, Interior Night, Equipment Close-up, Clay, Presentation Elevation, presetName Interior
+    Day, presetNamed Func`2, presetTable 7 item(s) [[Exterior Day, System.String[][]], [Exterior
+    Dusk, System.String[][]], [Interior Day, System.String[][]], ...], purposeWord check,
+    qualityWord Func`2, readBack ''Cinematic Living Room'' (ThreeD) against Interior Day:  ||  Visual
+    Style Realistic (as the preset)  ||  Sun Intensity 60 (as the preset)  ||  Shadow Intensity
+    40 (as the preset)  ||  Silhouettes off (as the preset)  ||  Smooth Lines on (as the preset)  ||  Sketchy
+    Lines off (as the preset)  ||  Display Background sky (as the preset)  ||  Sun still 10:00
+    (as the preset)  ||  Render Quality Draft (as the preset)  ||  Render Output Screen (as
+    the preset)  ||  Render Lighting Interior: Sun and Artificial (as the preset)  ||  Render
+    Background Sky: Few Clouds (as the preset)  ||  Exposure value=10; white point=6500 (as
+    the preset)  ||  Cast Shadows on - by hand, Revit''s API has no member for it on any release
+    2020 to 2027  ||  Ambient Shadows on - by hand, Revit''s API has no member for it on any
+    release 2020 to 2027  ||  Materials 104 on what the view shows, 0 with no render appearance,
+    refused (null), revitStyles 8 entry(ies), settingNow Func`2, settingWant Func`3, show
+    Func`2, showColour Func`2, site SiteLocation, skipped 0, squash Func`2, styleWord Func`2,
+    sun SunAndShadowSettings, sunsetSaid (null), takesBackground true, timeWord preset, toProject
+    Func`2, toUtc Func`2, view3D View3D, viewKind 3d. inputs came view as given; preset as
+    given; renderFor not given - "check", the card''s own default (optional); sunTime not
+    given - "preset", the card''s own default (optional). on Cinematic ID Test'
+  negative_case: 'run with view=Cinematic Living Room, preset=Spielberg instead - chosen because
+    it should not contain what this fragment reports - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned alreadySo 0, askedTime
+    (null), barWord Func`2, barWords 8 item(s) [System.String[], System.String[], System.String[],
+    ...], before (null), byHandKeys 2 item(s) [Cast Shadows, Ambient Shadows], changed 0,
+    colour Func`2, compare Func`2, culture CultureInfo, degrees Func`2, describe Func`2, duskUtc
+    (null), findings 1 item(s) [No visual preset is called ''Spielberg''. The presets: Exterio...],
+    forIssue false, hasDisplay true, inputProblem (null), lightingWord Func`2, madeFor 7 entry(ies),
+    materialsLine Materials 104 on what the view shows, 0 with no render appearance, materialsRead
+    true, materialsSeen 104 entry(ies), noAppearance 0 item(s), noCueingWhy Func`2, noDisplay
+    ''Cinematic Living Room'' has no Graphic Display Options - Revit gives them to views with
+    a visual style, noRender ''Cinematic Living Room'' is not a 3D view, and only a 3D view
+    has Rendering Settings, pairs Func`2, presetList Exterior Day, Exterior Dusk, Interior
+    Day, Interior Night, Equipment Close-up, Clay, Presentation Elevation, presetName (null),
+    presetNamed Func`2, presetTable 7 item(s) [[Exterior Day, System.String[][]], [Exterior
+    Dusk, System.String[][]], [Interior Day, System.String[][]], ...], purposeWord check,
+    qualityWord Func`2, readBack , refused No visual preset is called ''Spielberg''. The presets:
     Exterior Day, Exterior Dusk, Interior Day, Interior Night, Equipment Close-up, Clay, Presentation
-    Elevation, presetName Exterior Dusk, presetNamed Func`2, presetTable 7 item(s) [[Exterior
-    Day, System.String[][]], [Exterior Dusk, System.String[][]], [Interior Day, System.String[][]],
-    ...], purposeWord check, qualityWord Func`2, readBack ''Heron Frame - Columns'' (ThreeD)
-    against Exterior Dusk:  ||  Visual Style Realistic (as the preset)  ||  Sun Intensity
-    40 (as the preset)  ||  Shadow Intensity 70 (as the preset)  ||  Silhouettes off (as the
-    preset)  ||  Smooth Lines on (as the preset)  ||  Sketchy Lines off (as the preset)  ||  Display
-    Background gradient sky=40,55,100; horizon=235,160,100; ground=70,70,70 (as the preset)  ||  Sun
-    still 18:52 (as the preset)  ||  Render Quality Draft (as the preset)  ||  Render Output
-    Screen (as the preset)  ||  Render Lighting Exterior: Sun and Artificial (as the preset)  ||  Render
-    Background Sky: Very Few Clouds (as the preset)  ||  Exposure value=11; white point=6500
-    (as the preset)  ||  Cast Shadows on - by hand, Revit''s API has no member for it on any
-    release 2020 to 2027  ||  Ambient Shadows on - by hand, Revit''s API has no member for
-    it on any release 2020 to 2027  ||  Materials 10 on what the view shows, 0 with no render
-    appearance, refused (null), revitStyles 8 entry(ies), settingNow Func`2, settingWant Func`3,
-    show Func`2, showColour Func`2, site SiteLocation, skipped 0, squash Func`2, styleWord
-    Func`2, sun SunAndShadowSettings, sunsetSaid Dusk is half an hour before Revit''s sunset
-    for the site on 21 June 2026: 19:22 project time, takesBackground true, timeWord preset,
+    Elevation. NOTHING WAS CHANGED., revitStyles 8 entry(ies), settingNow Func`2, settingWant
+    Func`3, show Func`2, showColour Func`2, site SiteLocation, skipped 0, squash Func`2, styleWord
+    Func`2, sun SunAndShadowSettings, sunsetSaid (null), takesBackground true, timeWord preset,
     toProject Func`2, toUtc Func`2, view3D View3D, viewKind 3d. inputs came view as given;
     preset as given; renderFor not given - "check", the card''s own default (optional); sunTime
-    not given - "preset", the card''s own default (optional). on Materials IA Test'
-  negative_case: run with view=Space Outdoor Air Schedule, preset=Exterior Dusk instead -
-    chosen because it should not contain what this fragment reports - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadySo 0,
-    askedTime (null), barWord Func`2, barWords 8 item(s) [System.String[], System.String[],
-    System.String[], ...], before 15 item(s) [System.String[], System.String[], System.String[],
-    ...], byHandKeys 2 item(s) [Cast Shadows, Ambient Shadows], changed 0, colour Func`2,
-    compare Func`2, culture CultureInfo, degrees Func`2, describe Func`2, duskUtc (null),
-    findings 1 item(s) ['Space Outdoor Air Schedule' takes none of Exterior Dusk's s...],
-    forIssue false, hasDisplay false, inputProblem (null), lightingWord Func`2, madeFor 7
-    entry(ies), materialsLine Materials not read, materialsRead false, materialsSeen 0 entry(ies),
-    noAppearance 0 item(s), noCueingWhy Func`2, noDisplay 'Space Outdoor Air Schedule' has
-    no Graphic Display Options - Revit gives them to views with a visual style, noRender 'Space
-    Outdoor Air Schedule' is not a 3D view, and only a 3D view has Rendering Settings, pairs
-    Func`2, presetList Exterior Day, Exterior Dusk, Interior Day, Interior Night, Equipment
-    Close-up, Clay, Presentation Elevation, presetName Exterior Dusk, presetNamed Func`2,
-    presetTable 7 item(s) [[Exterior Day, System.String[][]], [Exterior Dusk, System.String[][]],
-    [Interior Day, System.String[][]], ...], purposeWord check, qualityWord Func`2, readBack
-    , refused 'Space Outdoor Air Schedule' takes none of Exterior Dusk's settings - 'Space
-    Outdoor Air Schedule' has no Graphic Display Options - Revit gives them to views with
-    a visual style. NOTHING WAS CHANGED., revitStyles 8 entry(ies), settingNow Func`2, settingWant
-    Func`3, show Func`2, showColour Func`2, site SiteLocation, skipped 0, squash Func`2, styleWord
-    Func`2, sun (null), sunsetSaid (null), takesBackground false, timeWord preset, toProject
-    Func`2, toUtc Func`2, view3D (null), viewKind schedule. inputs came view as given; preset
-    as given; renderFor not given - "check", the card's own default (optional); sunTime not
-    given - "preset", the card's own default (optional). on Materials IA Test
+    not given - "preset", the card''s own default (optional). on Cinematic ID Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 7ba024b220400917
+  fingerprint: 0cdf07a1d84ab2df
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
