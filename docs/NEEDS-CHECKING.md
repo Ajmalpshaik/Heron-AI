@@ -934,7 +934,7 @@ Step 6 is finished, and not before. At that point:
 
 ## Group IH - one schedule filter rule changed, the others kept: `SET_SCHEDULE_FILTERS` and `REPORT_SCHEDULE_DEFINITION` version 2 (2026-10-21)
 
-**Its own file:** [`needs-checking/group-ih.md`](needs-checking/group-ig.md)
+**Its own file:** [`needs-checking/group-ih.md`](needs-checking/group-ih.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
