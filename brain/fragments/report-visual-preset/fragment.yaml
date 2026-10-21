@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,20 @@ semantic-identity: "how a view's look compares with a visual preset - each of th
 kind: action
 domain: revit.views
 capability: REPORT_VISUAL_PRESET
-version: 2
+version: 3
+# VERSION 3, 2026-10-21 - row 5b-1306, found 2026-10-21 making interior
+# renders for the owner on Revit 2020: a Still sun's time was written and read
+# through the SITE's time zone (SiteLocation.ConvertFromProjectTime /
+# ConvertToProjectTime), but Revit holds the dialog's clock turned to UTC by the
+# PC's OWN zone. On the owner's laptop (UTC+3, site Boston) 11:00 asked was
+# written as 19:00 - the sun at 0 degrees, a black render - and the dialog's
+# 10:00 read back as 02:00. Measured with the sun's own height: written as the
+# PC's local time turned to UTC, 11:00 stood 36.7 degrees up at a bearing of
+# 171 - the dialog's 11:00. Both directions now go through the PC's zone (the
+# rule row 5b-1282 found for Revit's sunset). The shared block's two conversions changed, byte for
+# byte the same in APPLY_ and REPORT_VISUAL_PRESET. Version 2's proof below no
+# longer describes the code.
+# DRAFT until NEEDS-CHECKING Group IN proves it.
 # VERSION 2, 2026-10-20 - rows 5b-1282 and 5b-1283: the same two repairs as
 # APPLY_VISUAL_PRESET version 2 - the sunset date handed over as UTC, and the
 # depth-cueing reason naming the view's discipline. Version 1's proof below

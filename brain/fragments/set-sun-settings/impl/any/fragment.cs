@@ -10,11 +10,17 @@
 // lighting sun's azimuth and altitude, the ground plane - or a preset the
 // project already holds, copied onto the view. Every input is a word or "keep".
 //
-// TIMES ARE THE PROJECT'S CLOCK. A time typed here is read as the site's own
-// time and turned to UTC by SiteLocation.ConvertFromProjectTime, the API's own
-// conversion - which, its reference says, does not apply daylight saving. The
-// read-back turns it back the same way and says when the site uses daylight
-// saving, because Revit's dialog may then show it an hour on.
+// TIMES ARE THE PROJECT'S CLOCK - the time Revit's Sun Settings dialog shows.
+// VERSION 2 (row 5b-1306): Revit holds that clock time turned to UTC by the
+// PC'S OWN time zone, not the site's. Measured 2026-10-21 on Revit 2020, on a
+// laptop at UTC+3 with the site in Boston: the dialog's 10:00 AM read 07:00
+// UTC, and the sun's height followed the dialog (33.3 degrees). Version 1 used
+// SiteLocation.ConvertFromProjectTime, the site's zone, so 11:00 asked was
+// written 16:00 UTC - 19:00 in the dialog, the sun at 0 degrees, and a render
+// lit by the sun came out black. A time is now written as the PC's local time
+// turned to UTC and read back with ToLocalTime, the rule row 5b-1282 found for
+// Revit's sunset - and the read-back gives the sun's height and bearing at the
+// still time, which the clock alone cannot show to be right.
 //
 // THE SITE ITSELF - city, latitude, longitude, time zone - is
 // SET_PROJECT_LOCATION's, an Admin change for the whole project, and is only
@@ -69,10 +75,12 @@ Func<string, TimeSpan?> readTime = text =>
         System.Globalization.DateTimeStyles.None, out d) ? (TimeSpan?)d.TimeOfDay : null;
 };
 var site = doc.SiteLocation;
-// UTC as Revit holds it, to the site's clock, and back.
-Func<DateTime, DateTime> toProject = utc => site.ConvertToProjectTime(DateTime.SpecifyKind(utc, DateTimeKind.Utc));
+// UTC as Revit holds it, to the dialog's clock, and back - through the PC's
+// own time zone, as Revit does (version 2, row 5b-1306).
+Func<DateTime, DateTime> toProject = utc =>
+    DateTime.SpecifyKind(DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime(), DateTimeKind.Unspecified);
 Func<DateTime, DateTime> toUtc = project =>
-    DateTime.SpecifyKind(site.ConvertFromProjectTime(DateTime.SpecifyKind(project, DateTimeKind.Unspecified)), DateTimeKind.Utc);
+    DateTime.SpecifyKind(DateTime.SpecifyKind(project, DateTimeKind.Local).ToUniversalTime(), DateTimeKind.Utc);
 Func<DateTime, string> showTime = t => t.ToString("yyyy-MM-dd HH:mm", culture);
 
 var studyWords = new Dictionary<string, SunAndShadowType>
@@ -324,6 +332,21 @@ if (refused == null)
             "ground plane " + groundPlaneLevel);
 
     var ground = sun.UsesGroundPlane ? doc.GetElement(sun.GroundPlaneLevelId) as Level : null;
+    // Where the sun stands at a still time - the check the clock cannot make.
+    string sunAt = "";
+    if (sun.SunAndShadowType == SunAndShadowType.StillImage)
+    {
+        try
+        {
+            var up = degrees(sun.GetFrameAltitude(sun.ActiveFrame));
+            sunAt = "; the sun " + up.ToString(culture) + "° up, bearing "
+                + degrees(sun.GetFrameAzimuth(sun.ActiveFrame)).ToString(culture) + "°";
+            if (up <= 0)
+                findings.Add("The sun is below the horizon at " + showTime(start) + " - a render lit by the sun will be "
+                    + "black. Give a daytime time, or Interior/Exterior: Artificial only lighting.");
+        }
+        catch (Exception) { sunAt = ""; }
+    }
     readBack = "'" + view.Name + "': " + studyWord(sun.SunAndShadowType) + " study"
         + (sun.SunAndShadowType == SunAndShadowType.Lighting
             ? ", azimuth " + degrees(sun.Azimuth) + "°, altitude " + degrees(sun.Altitude) + "°, "
@@ -331,13 +354,12 @@ if (refused == null)
             : ", " + showTime(start)
                 + (sun.SunAndShadowType == SunAndShadowType.StillImage ? ""
                     : " to " + showTime(end) + (sun.SunriseToSunset ? " (sunrise to sunset)" : "") + ", every "
-                        + sun.TimeInterval))
+                        + sun.TimeInterval)
+                + sunAt)
         + "; preset " + (string.IsNullOrEmpty(matching) ? "none matches" : "'" + matching + "'")
         + "; ground plane " + (ground != null ? "at " + ground.Name : "off")
         + "; site '" + sun.ProjectLocationName + "', latitude " + degrees(sun.Latitude) + "°, longitude "
-        + degrees(sun.Longitude) + "°, time zone " + sun.TimeZone.ToString(culture)
-        + (sun.UsesDST ? ", daylight saving in use - times are the site's clock without it, as Revit's API converts "
-            + "them, so the Sun Settings dialog may show them an hour on" : "") + ".";
+        + degrees(sun.Longitude) + "°, time zone " + sun.TimeZone.ToString(culture) + ".";
 
     findings.Add(changed + " of " + asked + " sun setting(s) read back as asked on '" + view.Name + "'"
         + (notTaken.Count == 0 ? "" : " - not taken: " + string.Join("; ", notTaken)));

@@ -209,9 +209,14 @@ var takesBackground = inputProblem == null && (view.ViewType == ViewType.ThreeD 
 var viewKind = inputProblem == null ? (view.ViewType == ViewType.ThreeD ? "3d" : view.ViewType == ViewType.Elevation
     ? "elevation" : view.ViewType == ViewType.Section ? "section" : view.ViewType.ToString().ToLowerInvariant()) : "";
 var site = doc.SiteLocation;
-Func<DateTime, DateTime> toProject = utc => site.ConvertToProjectTime(DateTime.SpecifyKind(utc, DateTimeKind.Utc));
+// A STILL SUN'S TIME is the dialog's clock, which Revit holds turned to UTC by
+// the PC's OWN time zone (row 5b-1306, version 3): the site's zone, which
+// version 2 used, wrote "still 10:00" as 18:00 on a laptop at UTC+3 with the
+// site in Boston - the sun below the horizon - and read 10:00 back as 02:00.
+Func<DateTime, DateTime> toProject = utc =>
+    DateTime.SpecifyKind(DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime(), DateTimeKind.Unspecified);
 Func<DateTime, DateTime> toUtc = project =>
-    DateTime.SpecifyKind(site.ConvertFromProjectTime(DateTime.SpecifyKind(project, DateTimeKind.Unspecified)), DateTimeKind.Utc);
+    DateTime.SpecifyKind(DateTime.SpecifyKind(project, DateTimeKind.Local).ToUniversalTime(), DateTimeKind.Utc);
 // WHY A VIEW TAKES NO DEPTH CUEING (version 2, row 5b-1283). Measured
 // 2026-10-20 on Revit 2020: every elevation of the metric Systems template -
 // View Discipline Mechanical or Electrical - answered CanUseDepthCueing
