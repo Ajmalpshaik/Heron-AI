@@ -9,7 +9,14 @@ semantic-identity: "give a view a whole ready-made look in one call - a named vi
 kind: action
 domain: revit.views
 capability: APPLY_VISUAL_PRESET
-version: 1
+version: 2
+# VERSION 2, 2026-10-20 - rows 5b-1282 and 5b-1283, found running Group IC on
+# Revit 2020. The dusk Sun was skipped: GetSunset refused the project-time
+# date, whose Kind was Unspecified - it is now handed over as UTC. And depth
+# cueing skipped on a Mechanical elevation said Revit offers it in
+# elevations; the reason now names the view's discipline, measured as what
+# Revit 2020 turns it on with. Version 1's proof below no longer describes
+# the code: DRAFT until it is proved again.
 source: OFFICIAL
 risk: MODIFY
 
@@ -151,70 +158,71 @@ contract:
 proof:
   date: '2026-10-20'
   by: Ajmal PS
-  model: Materials IA Test (3,891 elements), Revit 2020, session 43476
-  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
-    on 2026-10-20; the modeller saw the result in Revit and pressed Keep, and Revit kept it
-    as one undo step. returned alreadySo 7, askedTime (null), barWord Func`2, barWords 8 item(s)
-    [System.String[], System.String[], System.String[], ...], before 15 item(s) [System.String[],
-    System.String[], System.String[], ...], byHandKeys 2 item(s) [Cast Shadows, Ambient Shadows],
-    changed 6, colour Func`2, compare Func`2, culture CultureInfo, degrees Func`2, describe
-    Func`2, duskUtc (null), findings 2 item(s) [6 of 6 setting(s) changed and read back as
-    Equipment Close-u..., Equipment Close-up also wants Cast Shadows and Ambient Shado...],
-    forIssue false, hasDisplay true, inputProblem (null), lightingWord Func`2, madeFor 7 entry(ies),
-    materialsLine Materials 10 on what the view shows, 0 with no render appearance, materialsRead
-    true, materialsSeen 10 entry(ies), noAppearance 0 item(s), noDisplay ''Heron Frame - Columns''
-    has no Graphic Display Options - Revit gives them to views with a visual style, noRender
-    ''Heron Frame - Columns'' is not a 3D view, and only a 3D view has Rendering Settings,
-    pairs Func`2, presetList Exterior Day, Exterior Dusk, Interior Day, Interior Night, Equipment
-    Close-up, Clay, Presentation Elevation, presetName Equipment Close-up, presetNamed Func`2,
+  model: Materials IA Test (3,901 elements), Revit 2020, session 38288
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadySo 5, askedTime (null),
+    barWord Func`2, barWords 8 item(s) [System.String[], System.String[], System.String[],
+    ...], before 15 item(s) [System.String[], System.String[], System.String[], ...], byHandKeys
+    2 item(s) [Cast Shadows, Ambient Shadows], changed 8, colour Func`2, compare Func`2, culture
+    CultureInfo, degrees Func`2, describe Func`2, duskUtc DateTime, findings 3 item(s) [8
+    of 8 setting(s) changed and read back as Exterior Dusk say..., Exterior Dusk also wants
+    Cast Shadows and Ambient Shadows on..., Dusk is half an hour before Revit''s sunset for
+    the site on 2...], forIssue false, hasDisplay true, inputProblem (null), lightingWord
+    Func`2, madeFor 7 entry(ies), materialsLine Materials 10 on what the view shows, 0 with
+    no render appearance, materialsRead true, materialsSeen 10 entry(ies), noAppearance 0
+    item(s), noCueingWhy Func`2, noDisplay ''Heron Frame - Columns'' has no Graphic Display
+    Options - Revit gives them to views with a visual style, noRender ''Heron Frame - Columns''
+    is not a 3D view, and only a 3D view has Rendering Settings, pairs Func`2, presetList
+    Exterior Day, Exterior Dusk, Interior Day, Interior Night, Equipment Close-up, Clay, Presentation
+    Elevation, presetName Exterior Dusk, presetNamed Func`2, presetTable 7 item(s) [[Exterior
+    Day, System.String[][]], [Exterior Dusk, System.String[][]], [Interior Day, System.String[][]],
+    ...], purposeWord check, qualityWord Func`2, readBack ''Heron Frame - Columns'' (ThreeD)
+    against Exterior Dusk:  ||  Visual Style Realistic (as the preset)  ||  Sun Intensity
+    40 (as the preset)  ||  Shadow Intensity 70 (as the preset)  ||  Silhouettes off (as the
+    preset)  ||  Smooth Lines on (as the preset)  ||  Sketchy Lines off (as the preset)  ||  Display
+    Background gradient sky=40,55,100; horizon=235,160,100; ground=70,70,70 (as the preset)  ||  Sun
+    still 18:52 (as the preset)  ||  Render Quality Draft (as the preset)  ||  Render Output
+    Screen (as the preset)  ||  Render Lighting Exterior: Sun and Artificial (as the preset)  ||  Render
+    Background Sky: Very Few Clouds (as the preset)  ||  Exposure value=11; white point=6500
+    (as the preset)  ||  Cast Shadows on - by hand, Revit''s API has no member for it on any
+    release 2020 to 2027  ||  Ambient Shadows on - by hand, Revit''s API has no member for
+    it on any release 2020 to 2027  ||  Materials 10 on what the view shows, 0 with no render
+    appearance, refused (null), revitStyles 8 entry(ies), settingNow Func`2, settingWant Func`3,
+    show Func`2, showColour Func`2, site SiteLocation, skipped 0, squash Func`2, styleWord
+    Func`2, sun SunAndShadowSettings, sunsetSaid Dusk is half an hour before Revit''s sunset
+    for the site on 21 June 2026: 19:22 project time, takesBackground true, timeWord preset,
+    toProject Func`2, toUtc Func`2, view3D View3D, viewKind 3d. inputs came view as given;
+    preset as given; renderFor not given - "check", the card''s own default (optional); sunTime
+    not given - "preset", the card''s own default (optional). on Materials IA Test'
+  negative_case: run with view=Space Outdoor Air Schedule, preset=Exterior Dusk instead -
+    chosen because it should not contain what this fragment reports - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadySo 0,
+    askedTime (null), barWord Func`2, barWords 8 item(s) [System.String[], System.String[],
+    System.String[], ...], before 15 item(s) [System.String[], System.String[], System.String[],
+    ...], byHandKeys 2 item(s) [Cast Shadows, Ambient Shadows], changed 0, colour Func`2,
+    compare Func`2, culture CultureInfo, degrees Func`2, describe Func`2, duskUtc (null),
+    findings 1 item(s) ['Space Outdoor Air Schedule' takes none of Exterior Dusk's s...],
+    forIssue false, hasDisplay false, inputProblem (null), lightingWord Func`2, madeFor 7
+    entry(ies), materialsLine Materials not read, materialsRead false, materialsSeen 0 entry(ies),
+    noAppearance 0 item(s), noCueingWhy Func`2, noDisplay 'Space Outdoor Air Schedule' has
+    no Graphic Display Options - Revit gives them to views with a visual style, noRender 'Space
+    Outdoor Air Schedule' is not a 3D view, and only a 3D view has Rendering Settings, pairs
+    Func`2, presetList Exterior Day, Exterior Dusk, Interior Day, Interior Night, Equipment
+    Close-up, Clay, Presentation Elevation, presetName Exterior Dusk, presetNamed Func`2,
     presetTable 7 item(s) [[Exterior Day, System.String[][]], [Exterior Dusk, System.String[][]],
     [Interior Day, System.String[][]], ...], purposeWord check, qualityWord Func`2, readBack
-    ''Heron Frame - Columns'' (ThreeD) against Equipment Close-up:  ||  Visual Style Realistic
-    (as the preset)  ||  Sun Intensity 80 (as the preset)  ||  Shadow Intensity 40 (as the
-    preset)  ||  Silhouettes off (as the preset)  ||  Smooth Lines on (as the preset)  ||  Sketchy
-    Lines off (as the preset)  ||  Display Background gradient sky=235,235,235; horizon=250,250,250;
-    ground=205,205,205 (as the preset)  ||  Sun lighting 135/35 relative to view (as the preset)  ||  Render
-    Quality Draft (as the preset)  ||  Render Output Screen (as the preset)  ||  Render Lighting
-    Exterior: Sun only (as the preset)  ||  Render Background colour 245,245,245 (as the preset)  ||  Exposure
-    value=13; white point=6500 (as the preset)  ||  Cast Shadows on - by hand, Revit''s API
-    has no member for it on any release 2020 to 2027  ||  Ambient Shadows on - by hand, Revit''s
-    API has no member for it on any release 2020 to 2027  ||  Materials 10 on what the view
-    shows, 0 with no render appearance, refused (null), revitStyles 8 entry(ies), settingNow
-    Func`2, settingWant Func`3, show Func`2, showColour Func`2, site SiteLocation, skipped
-    0, squash Func`2, styleWord Func`2, sun SunAndShadowSettings, takesBackground true, timeWord
-    preset, toProject Func`2, toUtc Func`2, view3D View3D, viewKind 3d. inputs came view as
-    given; preset as given; renderFor as given; sunTime not given - "preset", the card''s
-    own default (optional). on Materials IA Test'
-  negative_case: run with view=Space Outdoor Air Schedule, preset=Exterior Day instead - chosen
-    because it should not contain what this fragment reports - run inside a transaction, and
-    Revit reported the transaction group ROLLED BACK afterwards. returned alreadySo 0, askedTime
-    (null), barWord Func`2, barWords 8 item(s) [System.String[], System.String[], System.String[],
-    ...], before 15 item(s) [System.String[], System.String[], System.String[], ...], byHandKeys
-    2 item(s) [Cast Shadows, Ambient Shadows], changed 0, colour Func`2, compare Func`2, culture
-    CultureInfo, degrees Func`2, describe Func`2, duskUtc (null), findings 1 item(s) ['Space
-    Outdoor Air Schedule' takes none of Exterior Day's se...], forIssue false, hasDisplay
-    false, inputProblem (null), lightingWord Func`2, madeFor 7 entry(ies), materialsLine Materials
-    not read, materialsRead false, materialsSeen 0 entry(ies), noAppearance 0 item(s), noDisplay
-    'Space Outdoor Air Schedule' has no Graphic Display Options - Revit gives them to views
-    with a visual style, noRender 'Space Outdoor Air Schedule' is not a 3D view, and only
-    a 3D view has Rendering Settings, pairs Func`2, presetList Exterior Day, Exterior Dusk,
-    Interior Day, Interior Night, Equipment Close-up, Clay, Presentation Elevation, presetName
-    Exterior Day, presetNamed Func`2, presetTable 7 item(s) [[Exterior Day, System.String[][]],
-    [Exterior Dusk, System.String[][]], [Interior Day, System.String[][]], ...], purposeWord
-    check, qualityWord Func`2, readBack , refused 'Space Outdoor Air Schedule' takes none
-    of Exterior Day's settings - 'Space Outdoor Air Schedule' has no Graphic Display Options
-    - Revit gives them to views with a visual style. NOTHING WAS CHANGED., revitStyles 8 entry(ies),
-    settingNow Func`2, settingWant Func`3, show Func`2, showColour Func`2, site SiteLocation,
-    skipped 0, squash Func`2, styleWord Func`2, sun (null), takesBackground false, timeWord
-    preset, toProject Func`2, toUtc Func`2, view3D (null), viewKind schedule. inputs came
-    view as given; preset as given; renderFor not given - "check", the card's own default
-    (optional); sunTime not given - "preset", the card's own default (optional). on Materials
-    IA Test
+    , refused 'Space Outdoor Air Schedule' takes none of Exterior Dusk's settings - 'Space
+    Outdoor Air Schedule' has no Graphic Display Options - Revit gives them to views with
+    a visual style. NOTHING WAS CHANGED., revitStyles 8 entry(ies), settingNow Func`2, settingWant
+    Func`3, show Func`2, showColour Func`2, site SiteLocation, skipped 0, squash Func`2, styleWord
+    Func`2, sun (null), sunsetSaid (null), takesBackground false, timeWord preset, toProject
+    Func`2, toUtc Func`2, view3D (null), viewKind schedule. inputs came view as given; preset
+    as given; renderFor not given - "check", the card's own default (optional); sunTime not
+    given - "preset", the card's own default (optional). on Materials IA Test
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: ff4359427b9e3f81
-
+  fingerprint: 7ba024b220400917
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
