@@ -24,9 +24,9 @@ risk: READ
 # TRANSFER_PROJECT_PARAMETERS_BETWEEN_DOCUMENTS (both set it for a moment and
 # put it back). Every question about the file reached one of those writes
 # (measured 2026-10-21 on main, lexical and the trained model - FRAGMENT-ISSUES
-# row 5b-1290 has the numbers), so the chat fell back to reading Revit.ini -
+# row 5b-1291 has the numbers), so the chat fell back to reading Revit.ini -
 # the SAVED setting, not the one Revit is using. Proof plan: NEEDS-CHECKING
-# Group IH.
+# Group II.
 #
 # NO EXISTING READ COULD BE WIDENED FOR IT. REPORT_FAMILY_PARAMETERS and
 # REPORT_PARAMETER_INVENTORY read the MODEL's parameters - a family's, an
