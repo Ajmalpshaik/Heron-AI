@@ -138,7 +138,13 @@ purpose: >
   2. ADD_FAMILY_PARAMETERS - the sizes the family is driven by, as TYPE
      lengths when they describe the product; a diameter is a length too. Any
      value a project must TAG or SCHEDULE is a shared parameter instead, from
-     the office's shared parameter file: ADD_FAMILY_SHARED_PARAMETERS. A family
+     the office's shared parameter file: ADD_FAMILY_SHARED_PARAMETERS. READ
+     FIRST, before any shared parameter is added: REPORT_SHARED_PARAMETER_FILE,
+     nameContains the names wanted and compareWithDocument true - which file
+     Revit is set to now, whether each name is in it and with which GUID, and
+     whether the family already carries that name with another GUID or not
+     shared. It changes nothing; tell the modeller the file and the GUIDs, then
+     add. A family
      parameter already labelling dimensions that must become the office's
      shared one is REPLACED in place - the same tool, replaceExisting true,
      "Width=Unit_Width" - never a second parameter driven by a formula, which
@@ -425,6 +431,9 @@ needs:
   - SET_FAMILY_CATEGORY
   - SET_FAMILY_SETTINGS
   - ADD_FAMILY_PARAMETERS
+  # Step 2's read first - the shared parameter file and its GUIDs, against
+  # the family, before ADD_FAMILY_SHARED_PARAMETERS writes anything.
+  - REPORT_SHARED_PARAMETER_FILE
   - ADD_FAMILY_SHARED_PARAMETERS
   # Values BEFORE labels - see step 3.
   - SET_FAMILY_TYPE_VALUES

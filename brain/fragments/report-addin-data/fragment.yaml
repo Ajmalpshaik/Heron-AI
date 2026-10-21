@@ -152,6 +152,11 @@ compatibility-note: >
 #   "what does this file depend on"      -> REPORT_EXTERNAL_REFERENCES - links,
 #                                           images, keynote files
 #   "what is this file"                  -> READ_MODEL_FILE_INFO
+#   "what is in my shared parameter file" -> REPORT_SHARED_PARAMETER_FILE.
+#                                           Measured 2026-10-21: on the model
+#                                           backend that card also takes "what
+#                                           data is hidden in this file" from
+#                                           here; lexical keeps it here
 #   "read a vendor's hidden values"      -> NOT ANSWERED HERE, on purpose. A
 #                                           closed schema's refusal is reported
 #                                           and obeyed
