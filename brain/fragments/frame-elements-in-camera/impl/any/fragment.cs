@@ -68,7 +68,7 @@
 // window Revit holds afterwards - and `framed` as before.
 //
 // VERSION 4 - FOUR FAULTS FOUND MAKING REAL VIEWS ON REVIT 2020'S SAMPLE HOUSE.
-//   - THE INTERIOR EYE (row 5b-1303) was 600 mm in from the room's BOUNDING
+//   - THE INTERIOR EYE (row 5b-1308) was 600 mm in from the room's BOUNDING
 //     BOX, and stood inside a double door's frame where the box ran past the
 //     wall: the Raytracer drew the picture black. The eye now comes in from
 //     the box's face until it is inside the room (Room.IsPointInRoom,
@@ -842,7 +842,7 @@ if (reachedCamera && cinematic)
     var lensFitted = false;
     if (interior)
     {
-        // INSIDE THE ROOM, looking straight across (version 4, row 5b-1303).
+        // INSIDE THE ROOM, looking straight across (version 4, row 5b-1308).
         // Version 3 stood the eye 600 mm in from the face of the elements' BOX.
         // On Revit 2020's sample house the box of 'Kitchen & Dining 101' ran to
         // x 7560 mm, past its wall line x 6860 to 7062, so side right put the
@@ -1057,7 +1057,7 @@ if (reachedCamera && cinematic)
         forward = lookFor(eye);
     }
 
-    // An interior with nowhere to stand was refused above (row 5b-1303): the
+    // An interior with nowhere to stand was refused above (row 5b-1308): the
     // view is then left as it is.
     if (refused == null) try
     {

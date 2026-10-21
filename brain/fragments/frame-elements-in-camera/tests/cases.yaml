@@ -43,8 +43,8 @@ positive:
       running to it (one-point)
   - given: shot front, lensMm 85, composition low-horizon
     expect: lens 85 read back, the horizon on the bottom third line, square to the front face (one-point)
-  # Version 4 - rows 5b-1303, 5b-1304, 5b-1307 and 5b-1302, on Revit 2020's sample house.
-  - given: room 'Kitchen & Dining 101' selected, shot interior, side right - the black Raytracer render of row 5b-1303
+  # Version 4 - rows 5b-1302, 5b-1304, 5b-1307 and 5b-1308, on Revit 2020's sample house.
+  - given: room 'Kitchen & Dining 101' selected, shot interior, side right - the black Raytracer render of row 5b-1308
     expect: >
       the eye inside the room, at least 600 mm in from its own east wall - not
       x 6960 mm, which was inside the double door's frame; the finding names

@@ -13,7 +13,7 @@ version: 4
 # VERSION 4, 2026-10-21 - four faults found making real cinematic views on
 # Revit 2020's sample house after version 3 was signed (Group IF). No input is
 # added or removed; a call that worked before frames as before, but for these:
-# (1) row 5b-1303 - the interior eye stood 600 mm in from the room's BOUNDING
+# (1) row 5b-1308 - the interior eye stood 600 mm in from the room's BOUNDING
 # BOX; on 'Kitchen & Dining 101', side right, that was inside a double door's
 # frame and the Raytracer render came out black. It now stands the inset in
 # from the room's OWN boundary (Room.IsPointInRoom, found coming in from the
@@ -172,7 +172,7 @@ risk: MODIFY
 # INTERIOR stands INSIDE the room - select the room, or its walls (the room at
 # their middle is then used) - 600 mm in from the room's OWN boundary on the
 # side named (distanceMm, when given, is that inset), looking straight across
-# at eye height. Version 4 (row 5b-1303): the boundary is found coming in from
+# at eye height. Version 4 (row 5b-1308): the boundary is found coming in from
 # the box's face until the point is in the room, and the eye steps further in,
 # 100 mm at a time, until nothing solid is within 150 mm - a wall, a door's
 # frame - never past half way across; with no such point it refuses, naming
