@@ -64,6 +64,9 @@ needs:
   - SET_FAMILY_PLANE_REFERENCE
   - LABEL_FAMILY_DIMENSION
   - DRAW_FAMILY_DETAIL_LINES
+  # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
+  # GUIDs, against the family, before ADD_FAMILY_SHARED_PARAMETERS writes.
+  - REPORT_SHARED_PARAMETER_FILE
   - ADD_FAMILY_SHARED_PARAMETERS
   # The proof, and never skipped.
   - FLEX_FAMILY

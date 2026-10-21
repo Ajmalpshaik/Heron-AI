@@ -141,6 +141,10 @@ compatibility-note: >
 #   "copy the comments into the
 #    mark"                           -> COPY_PARAMETER_VALUE
 #   "which ones are blank"           -> DESCRIBE_BLANK_PARAMETERS
+#   "which shared parameter file is Revit using"
+#                                    -> REPORT_SHARED_PARAMETER_FILE, the read
+#                                       (D-86) - run it first, to see the file,
+#                                       its groups and each name's GUID
 
 #   "show me the global parameters in this model" -> REPORT_GLOBAL_PARAMETERS -
 #                                        a global is ONE value for the whole
