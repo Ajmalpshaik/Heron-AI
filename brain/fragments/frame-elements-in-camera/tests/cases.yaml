@@ -43,6 +43,26 @@ positive:
       running to it (one-point)
   - given: shot front, lensMm 85, composition low-horizon
     expect: lens 85 read back, the horizon on the bottom third line, square to the front face (one-point)
+  # Version 4 - rows 5b-1303, 5b-1304, 5b-1307 and 5b-1302, on Revit 2020's sample house.
+  - given: room 'Kitchen & Dining 101' selected, shot interior, side right - the black Raytracer render of row 5b-1303
+    expect: >
+      the eye inside the room, at least 600 mm in from its own east wall - not
+      x 6960 mm, which was inside the double door's frame; the finding names
+      how far the room's wall is inside its box; the Raytracer picture NOT black
+  - given: the same room's walls selected instead of the room, shot interior, side right
+    expect: the same eye, the finding saying the room is the one at the elements' middle
+  - given: >
+      ten dining chairs and the tables selected, shot cinematic, side north,
+      distanceMm 2500 - row 5b-1304's picture of table legs
+    expect: >
+      the finding "wider and taller" (or one of them) "... centred on their
+      middle"; the window round the elements' middle, not Y -36 to -19 mm; the
+      picture: chair backs and table tops, not legs alone
+  - given: a new view made by any shot in a model with an existing phase
+    expect: >
+      the finding "The new view: phase ... phase filter 'Show Complete'";
+      readBack ends "Its phase '...', phase filter 'Show Complete'"; the
+      Properties palette agrees; earlier-phase walls not grey in the picture
 
 negative:
   - given: the heater selected, viewName naming the project's isometric {3D} view
@@ -63,6 +83,14 @@ negative:
     expect: refused - both say where the camera stands - nothing made
   - given: levelCamera true with lookDownDeg 30
     expect: refused - a level camera looks dead level - nothing made
+  - given: >
+      version 4 - a room selected, shot interior, eyeHeightMm 20000 (above the
+      room's top), an existing perspective view named
+    expect: >
+      refused "never enters the room ... lower than the eye", the view's
+      camera NOT moved - NOTHING WAS CHANGED
+  - given: version 4 - an existing view re-aimed
+    expect: no "The new view:" finding - a view that already existed keeps its phase and phase filter
 
 second_route:
   - open the view and look: the heater fills it; in a plan view the camera's triangle points at it from the direction asked

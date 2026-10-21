@@ -18,6 +18,14 @@
 // and the settings Revit's API cannot read (Cast Shadows, Ambient Shadows,
 // Ambient Light, Photographic Exposure) are named as such, never guessed.
 //
+// THE SUN'S TIME IS THE ONE REVIT'S DIALOG SHOWS (version 2, row 5b-1305).
+// Revit hands StartDateAndTime and EndDateAndTime back as the site's clock
+// turned to UTC by THIS PC's own time zone - not the site's - so it is turned
+// back with the PC's zone (ToLocalTime), the rule row 5b-1282 found for
+// GetSunset. Measured 2026-10-21 on Revit 2020, owner's laptop UTC+3, site
+// Boston -5: the dialog said 10:00 AM, the raw time read 07:00 UTC, and
+// version 1's SiteLocation.ConvertToProjectTime printed 02:00.
+//
 // THE LIGHT GROUPS ARE REACHED BY NAME at run time, as SET_FAMILY_LIGHT_SOURCE
 // reaches the lighting classes: the fragment executor does not import their
 // namespace.
@@ -110,8 +118,9 @@ else
     {
         try
         {
-            var site = doc.SiteLocation;
-            Func<DateTime, string> local = utc => site.ConvertToProjectTime(DateTime.SpecifyKind(utc, DateTimeKind.Utc))
+            // The site's clock, as the dialog shows it: the PC's zone taken off
+            // again (row 5b-1305, the header).
+            Func<DateTime, string> local = raw => DateTime.SpecifyKind(raw, DateTimeKind.Utc).ToLocalTime()
                 .ToString("yyyy-MM-dd HH:mm", culture);
             string preset = null;
             try { preset = sun.GetMatchingPreset(); } catch (Exception) { preset = null; }
@@ -130,7 +139,7 @@ else
                 + "; ground plane " + (ground != null ? "at " + ground.Name : "off")
                 + "; site '" + sun.ProjectLocationName + "', latitude " + degrees(sun.Latitude) + "°, longitude "
                 + degrees(sun.Longitude) + "°, time zone " + sun.TimeZone.ToString(culture)
-                + (sun.UsesDST ? ", daylight saving in use (times above are without it, as Revit's API converts them)" : ""));
+                + (sun.UsesDST ? ", daylight saving in use at the site" : ""));
             sectionsRead++;
         }
         catch (Exception ex) { findings.Add("The sun settings could not be read: " + ex.Message); }
