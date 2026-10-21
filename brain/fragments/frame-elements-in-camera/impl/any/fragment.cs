@@ -1,7 +1,8 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `viewName`, `direction`,
-// `lookDownDeg`, `distanceMm` and `marginPercent` are in scope; leaves
-// `camera`, `madeNew`, `framed`, `readBack`, `noGeometry`, `refused` and
-// `findings` behind.
+// `lookDownDeg`, `distanceMm`, `marginPercent`, `shot`, `side`,
+// `eyeHeightMm`, `lensMm`, `composition`, `levelCamera` and `aspect` are in scope;
+// leaves `camera`, `madeNew`, `framed`, `readBack`, `lens`, `noGeometry`,
+// `refused` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One call is one undo entry.
 //
@@ -26,6 +27,45 @@
 // `framed` counts the elements whose projected corners lie inside the window
 // Revit reads back afterwards; the proof row still has the picture looked at.
 //
+// VERSION 3 - CINEMATIC SHOTS (row 5b-1287). Six optional inputs - a named
+// `shot`, the `side` to stand on, `eyeHeightMm`, `lensMm`, `composition` and
+// `levelCamera`. With all six left out the version 2 road below runs line for
+// line, so a version 2 call frames exactly as before. With any of them:
+//   - THE SIDE. front, back, left, right and the four corners are the
+//     elements' own faces: their plan grid is the length-weighted direction of
+//     their straight location lines (walls, ducts, beams), or project north
+//     when they have none; the FRONT is the long face looking nearest project
+//     south - Heron's starting rule, said in the answer, never known - and
+//     left and right are as you face the front. A compass word or degrees is
+//     where the eye stands, exactly. Version 2's `direction` still works, but
+//     not beside `side`.
+//   - THE SHOT. Each one is Heron's STARTING values (D-33), the table on the
+//     card: how far the camera steps round off a face, the look angle, the eye
+//     height, the lens, the composition, and whether the camera is level.
+//     Any one of them given on its own wins over the shot's.
+//   - THE LENS. Revit's API has no field of view (row 5b-1267), but the crop
+//     window IS one: it sits on the near plane, so the angle across is
+//     2 x atan(half-width / near). A 35 mm-film lens of f mm is a window of
+//     half-width near x 18 / f and half-height near x 12 / f (a 36 x 24 frame).
+//     The window is that size, and the eye is pulled back - the smallest
+//     distance at which the elements fit with the margin - so the lens decides
+//     how close the camera stands, as it does for a photographer.
+//   - A LEVEL CAMERA looks dead level, so every vertical edge stays vertical:
+//     two-point perspective from a corner, one-point square to a face. The
+//     window is then SHIFTED up or down on the near plane to take in the
+//     elements - what an architectural photographer's shift lens does.
+//   - COMPOSITION moves the window, never the eye: centre, thirds (the
+//     elements' middle on the left or right third line) or low-horizon (the
+//     horizon on the bottom third line). One that cannot hold the elements
+//     from that angle falls back to centre and says so.
+//   - INTERIOR stands INSIDE the elements' box - a room, or its walls - 600 mm
+//     in from the face of the side named (distanceMm when given), looking
+//     straight across: nothing is pulled back, so the lens alone decides what
+//     is seen, and `framed` cannot count a room the eye stands inside.
+// The answer reads back the eye, the point aimed at, the eye height above the
+// base level, the look angle, the lens and the angle across - from the crop
+// window Revit holds afterwards - and `framed` as before.
+//
 // A VIEW A TEMPLATE CONTROLS is refused rather than half-changed.
 
 const double MmPerFoot = 304.8;
@@ -35,6 +75,7 @@ View3D camera = null;
 var madeNew = false;
 var framed = 0;
 var readBack = "";
+var lens = "";
 var noGeometry = new List<ElementId>();
 var culture = System.Globalization.CultureInfo.InvariantCulture;
 
@@ -47,6 +88,9 @@ Func<string, double?> number = text =>
     return double.TryParse(t, System.Globalization.NumberStyles.Float, culture, out value) ? (double?)value : null;
 };
 Func<double, string> mm = v => Math.Round(v * MmPerFoot).ToString(culture);
+Func<double, string> deg = v => Math.Round(v, 1).ToString(culture);
+// A version 3 input left out reads auto; so does an empty one or "none".
+Func<string, bool> isAuto = text => { var said = squash(text); return said.Length == 0 || said == "auto" || said == "none"; };
 
 // The compass, clockwise from project north (plan up).
 var compass = new Dictionary<string, double>
@@ -55,20 +99,199 @@ var compass = new Dictionary<string, double>
     { "southeast", 135 }, { "se", 135 }, { "south", 180 }, { "s", 180 }, { "southwest", 225 }, { "sw", 225 },
     { "west", 270 }, { "w", 270 }, { "northwest", 315 }, { "nw", 315 },
 };
-double azimuth = 0;
-var d = squash(direction);
-if (compass.ContainsKey(d)) azimuth = compass[d];
-else
+var compassNames = new[] { "north", "north-north-east", "north-east", "east-north-east", "east", "east-south-east",
+    "south-east", "south-south-east", "south", "south-south-west", "south-west", "west-south-west", "west",
+    "west-north-west", "north-west", "north-north-west" };
+Func<double, double> wrap = a => ((a % 360) + 360) % 360;
+Func<double, string> compassOf = a => compassNames[(int)Math.Round(wrap(a) / 22.5) % 16];
+
+// ---- version 3's inputs: read first, so `cinematic` decides the road ----
+// THE SHOTS - Heron's STARTING values (D-33), the card's table: how far the
+// camera steps round off a face (clockwise in plan), look-down degrees
+// (negative looks up), eye height in mm above the base level (-1: on the line
+// through the elements' centre at the look angle), lens mm, margin percent,
+// level camera (1) or not (0).
+var shots = new Dictionary<string, double[]>
 {
-    var a = number(direction);
-    if (a == null || a < 0 || a > 360)
-        refused = "'" + direction + "' is not a direction - say north, south-east and so on, or degrees clockwise from "
-            + "project north. NOTHING WAS CHANGED.";
-    else azimuth = a.Value;
+    { "eyelevel",     new double[] { 25,   0, 1600, 35, 10, 1 } },
+    { "lowangle",     new double[] { 30,  -6,  450, 24, 10, 0 } },
+    { "highangle",    new double[] { 30,  25,   -1, 35, 10, 0 } },
+    { "aerial",       new double[] { 45,  40,   -1, 35, 10, 0 } },
+    { "wormseye",     new double[] { 20, -25,  150, 20, 10, 0 } },
+    { "threequarter", new double[] { 45,   0, 1600, 35, 10, 1 } },
+    { "front",        new double[] {  0,   0, 1600, 50, 10, 1 } },
+    { "interior",     new double[] {  0,   0, 1400, 24, 10, 1 } },
+    { "closeup",      new double[] { 30,  20,   -1, 85, 15, 0 } },
+    { "cinematic",    new double[] { 30,   0, 1200, 28, 10, 1 } },
+};
+var shotComposition = new Dictionary<string, string>
+{
+    { "eyelevel", "centre" }, { "lowangle", "thirds-left" }, { "highangle", "centre" }, { "aerial", "centre" },
+    { "wormseye", "centre" }, { "threequarter", "thirds-left" }, { "front", "centre" }, { "interior", "centre" },
+    { "closeup", "centre" }, { "cinematic", "thirds-left" },
+};
+var shotTitle = new Dictionary<string, string>
+{
+    { "eyelevel", "Eye-Level" }, { "lowangle", "Low-Angle Hero" }, { "highangle", "High-Angle" },
+    { "aerial", "Aerial" }, { "wormseye", "Worms-Eye" }, { "threequarter", "Three-Quarter" },
+    { "front", "Front" }, { "interior", "Interior" }, { "closeup", "Close-Up" }, { "cinematic", "Cinematic" },
+};
+// THE PICTURE'S SHAPE, width over height: a 35 mm frame's 3:2 for every shot
+// but the cinematic one, which is the cinema's 2.39:1. `aspect` changes it.
+var shotAspect = new Dictionary<string, double> { { "cinematic", 2.39 } };
+var shotAlias = new Dictionary<string, string>
+{
+    { "none", "none" },
+    { "eyelevel", "eyelevel" }, { "twopoint", "eyelevel" }, { "twopointperspective", "eyelevel" },
+    { "street", "eyelevel" }, { "streetlevel", "eyelevel" },
+    { "lowangle", "lowangle" }, { "low", "lowangle" }, { "hero", "lowangle" }, { "lowanglehero", "lowangle" },
+    { "heroshot", "lowangle" },
+    { "highangle", "highangle" }, { "high", "highangle" },
+    { "aerial", "aerial" }, { "birdseye", "aerial" }, { "birdseyeview", "aerial" }, { "aerialoblique", "aerial" },
+    { "oblique", "aerial" }, { "drone", "aerial" },
+    { "wormseye", "wormseye" }, { "worms", "wormseye" }, { "worm", "wormseye" }, { "wormseyeview", "wormseye" },
+    { "threequarter", "threequarter" }, { "threequarters", "threequarter" }, { "34", "threequarter" },
+    { "corner", "threequarter" },
+    { "front", "front" }, { "frontelevation", "front" }, { "elevation", "front" }, { "onepoint", "front" },
+    { "onepointperspective", "front" }, { "straighton", "front" },
+    { "interior", "interior" }, { "interioronepoint", "interior" }, { "inside", "interior" },
+    { "closeup", "closeup" }, { "detail", "closeup" }, { "closeupdetail", "closeup" }, { "product", "closeup" },
+    { "cinematic", "cinematic" }, { "cinema", "cinematic" }, { "film", "cinematic" }, { "filmlook", "cinematic" },
+    { "movie", "cinematic" }, { "cinematiclook", "cinematic" }, { "cinematicview", "cinematic" },
+};
+// The elements' own faces, as degrees round from the FRONT, clockwise in plan:
+// standing outside the front and facing it, left is a quarter turn clockwise.
+var faces = new Dictionary<string, double>
+{
+    { "front", 0 }, { "left", 90 }, { "back", 180 }, { "rear", 180 }, { "right", 270 },
+    { "frontleft", 45 }, { "backleft", 135 }, { "rearleft", 135 }, { "backright", 225 }, { "rearright", 225 },
+    { "frontright", 315 },
+};
+
+var shotKey = squash(shot);
+if (shotKey.Length == 0) shotKey = "none";
+var sideKey = squash(side);
+if (sideKey.Length == 0) sideKey = "none";
+if (!shotAlias.ContainsKey(shotKey))
+    refused = "'" + shot + "' is not a shot - say eye-level, low-angle (hero), high-angle, aerial (bird's-eye), "
+        + "worm's-eye, three-quarter, front (one-point), interior, close-up (detail), cinematic, or none. NOTHING WAS CHANGED.";
+else shotKey = shotAlias[shotKey];
+double? sideCompass = null;
+if (refused == null && sideKey != "none" && !faces.ContainsKey(sideKey))
+{
+    if (compass.ContainsKey(sideKey)) sideCompass = compass[sideKey];
+    else
+    {
+        var a = number(side);
+        if (a == null || a < 0 || a > 360)
+            refused = "'" + side + "' is not a side - say front, back, left, right, front-left, front-right, back-left, "
+                + "back-right, a compass word such as south-west, degrees clockwise from project north, or none. "
+                + "NOTHING WAS CHANGED.";
+        else sideCompass = a.Value;
+    }
 }
-var lookDown = number(lookDownDeg);
+double? eyeHeightAsked = null;
+if (refused == null && !isAuto(eyeHeightMm))
+{
+    eyeHeightAsked = number((eyeHeightMm ?? "").Trim().ToLowerInvariant().Replace("mm", ""));
+    if (eyeHeightAsked == null || eyeHeightAsked < -100000 || eyeHeightAsked > 2000000)
+        refused = "'" + eyeHeightMm + "' is not an eye height - millimetres above the elements' base level, such as "
+            + "1600, or auto. NOTHING WAS CHANGED.";
+}
+double? lensAsked = null;
+if (refused == null && !isAuto(lensMm))
+{
+    var lensWords = new Dictionary<string, double>
+    {
+        { "ultrawide", 16 }, { "wide", 24 }, { "wideangle", 24 }, { "normal", 50 }, { "standard", 50 },
+        { "tele", 85 }, { "telephoto", 85 }, { "portrait", 85 },
+    };
+    if (lensWords.ContainsKey(squash(lensMm))) lensAsked = lensWords[squash(lensMm)];
+    else lensAsked = number((lensMm ?? "").Trim().ToLowerInvariant().Replace("mm", ""));
+    if (lensAsked == null || lensAsked < 12 || lensAsked > 300)
+        refused = "'" + lensMm + "' is not a lens - a 35 mm-film focal length from 12 to 300 (24 wide, 35, 50 "
+            + "normal, 85 tele), the words ultra-wide, wide, normal or tele, or auto. NOTHING WAS CHANGED.";
+}
+string compositionAsked = null;
+if (refused == null && !isAuto(composition))
+{
+    var c = squash(composition);
+    if (c == "centre" || c == "center" || c == "middle" || c == "centred" || c == "centered") compositionAsked = "centre";
+    else if (c == "thirds" || c == "ruleofthirds" || c == "thirdsleft" || c == "leftthird") compositionAsked = "thirds-left";
+    else if (c == "thirdsright" || c == "rightthird") compositionAsked = "thirds-right";
+    else if (c == "lowhorizon" || c == "horizonlow") compositionAsked = "low-horizon";
+    else
+        refused = "'" + composition + "' is not a composition - say centre, thirds (thirds-left or thirds-right), "
+            + "low-horizon, or auto. NOTHING WAS CHANGED.";
+}
+bool? levelAsked = null;
+if (refused == null && !isAuto(levelCamera))
+{
+    var l = squash(levelCamera);
+    if (l == "true" || l == "yes" || l == "on" || l == "level" || l == "1") levelAsked = true;
+    else if (l == "false" || l == "no" || l == "off" || l == "0" || l == "tilted" || l == "aim") levelAsked = false;
+    else
+        refused = "'" + levelCamera + "' is not a level-camera answer - say true (look dead level, verticals "
+            + "vertical), false (aim at the elements' middle), or auto. NOTHING WAS CHANGED.";
+}
+// THE PICTURE'S SHAPE (row 5b-1287): width over height - 16:9, 3:2, 4:3,
+// 2.39:1 (cinema), 1:1, 9:16 - or the words cinema, widescreen, square,
+// portrait; auto is the shot's own (3:2, cinematic 2.39:1).
+double? aspectAsked = null;
+if (refused == null && !isAuto(aspect))
+{
+    var aspectText = (aspect ?? "").Trim().ToLowerInvariant().Replace(" ", "");
+    var aspectWords = new Dictionary<string, double>
+    {
+        { "cinema", 2.39 }, { "cinemascope", 2.39 }, { "anamorphic", 2.39 }, { "widescreen", 16.0 / 9 },
+        { "square", 1 }, { "portrait", 2.0 / 3 }, { "landscape", 1.5 },
+    };
+    if (aspectWords.ContainsKey(aspectText)) aspectAsked = aspectWords[aspectText];
+    else
+    {
+        var parts = aspectText.Split(':', 'x', '/');
+        double aw, ah;
+        if (parts.Length == 2 && double.TryParse(parts[0], System.Globalization.NumberStyles.Float, culture, out aw)
+            && double.TryParse(parts[1], System.Globalization.NumberStyles.Float, culture, out ah) && aw > 0 && ah > 0)
+            aspectAsked = aw / ah;
+        else if (parts.Length == 1 && double.TryParse(parts[0], System.Globalization.NumberStyles.Float, culture, out aw) && aw > 0)
+            aspectAsked = aw;
+    }
+    if (aspectAsked == null || aspectAsked < 0.2 || aspectAsked > 5)
+        refused = "'" + aspect + "' is not a picture shape - say 16:9, 3:2, 4:3, 2.39:1 (cinema), 1:1, 9:16, the words "
+            + "cinema, widescreen, square or portrait, or auto. NOTHING WAS CHANGED.";
+}
+// Any of the seven turns version 3's road on; none of them, and version 2's runs.
+var cinematic = refused == null && (shotKey != "none" || sideKey != "none" || eyeHeightAsked != null
+    || lensAsked != null || compositionAsked != null || levelAsked != null || aspectAsked != null);
+
+// ---- version 2's inputs - `auto` is version 2's own default ----
+var directionGiven = squash(direction) != "auto";
+var directionAsked = directionGiven ? direction : "south-east";
+double azimuth = 0;
+var d = squash(directionAsked);
+if (refused == null)
+{
+    if (compass.ContainsKey(d)) azimuth = compass[d];
+    else
+    {
+        var a = number(directionAsked);
+        if (a == null || a < 0 || a > 360)
+            refused = "'" + direction + "' is not a direction - say north, south-east and so on, or degrees clockwise from "
+                + "project north. NOTHING WAS CHANGED.";
+        else azimuth = a.Value;
+    }
+}
+if (refused == null && directionGiven && sideKey != "none")
+    refused = "direction '" + direction + "' and side '" + side + "' both say where the camera stands - give one. "
+        + "NOTHING WAS CHANGED.";
+var lookDownGiven = squash(lookDownDeg) != "auto";
+var lookDown = lookDownGiven ? number(lookDownDeg) : 30;
 if (refused == null && (lookDown == null || lookDown < -60 || lookDown > 89))
     refused = "'" + lookDownDeg + "' is not a look-down angle - degrees below level, -60 to 89. NOTHING WAS CHANGED.";
+if (refused == null && lookDownGiven && levelAsked == true && Math.Abs(lookDown.Value) > 1e-9)
+    refused = "a level camera looks dead level, so lookDownDeg " + lookDownDeg + " cannot be kept with it - leave "
+        + "one out. NOTHING WAS CHANGED.";
 double? distance = null;
 if (refused == null && squash(distanceMm) != "auto")
 {
@@ -78,7 +301,8 @@ if (refused == null && squash(distanceMm) != "auto")
             + "NOTHING WAS CHANGED.";
     else distance = distance / MmPerFoot;
 }
-var margin = number(marginPercent);
+var marginGiven = squash(marginPercent) != "auto";
+var margin = marginGiven ? number(marginPercent) : (cinematic && shotKey != "none" ? shots[shotKey][4] : 10);
 if (refused == null && (margin == null || margin < 0 || margin > 200))
     refused = "'" + marginPercent + "' is not a margin - a percentage, 0 to 200. NOTHING WAS CHANGED.";
 
@@ -113,7 +337,8 @@ var name = (viewName ?? "").Trim();
 if (refused == null && (name.Length == 0 || squash(name) == "auto"))
 {
     var first = boxed[0];
-    name = "Heron Frame - " + (first.Category != null ? first.Category.Name + " " : "") + first.Name
+    name = (cinematic && shotKey != "none" ? "Heron " + shotTitle[shotKey] + " - " : "Heron Frame - ")
+        + (first.Category != null ? first.Category.Name + " " : "") + first.Name
         + (boxed.Count > 1 ? " and " + (boxed.Count - 1) + " more" : "");
 }
 
@@ -157,8 +382,15 @@ if (refused == null)
     }
 }
 
-if (refused == null && camera != null)
+Func<XYZ, XYZ> upFor = look =>
+    new XYZ(look.X, look.Y, 0).GetLength() < 1e-9 ? XYZ.BasisY
+        : look.CrossProduct(XYZ.BasisZ).Normalize().CrossProduct(look).Normalize();
+var cinematicText = "";
+var reachedCamera = refused == null && camera != null;
+
+if (reachedCamera && !cinematic)
 {
+    // ---- VERSION 2'S ROAD, line for line ----
     var centre = (low + high) * 0.5;
     var halfDiagonal = Math.Max((high - low).GetLength() * 0.5, 100 / MmPerFoot);
     var standOff = distance ?? halfDiagonal * 2.5;
@@ -222,7 +454,397 @@ if (refused == null && camera != null)
         refused = "Revit refused the camera: " + ex.Message + ". " + (madeNew ? "The new view was made; it is not framed."
             : "NOTHING WAS CHANGED.");
     }
+}
 
+if (reachedCamera && cinematic)
+{
+    // ---- VERSION 3'S ROAD - a named shot, a side, a height, a lens ----
+    var hasShot = shotKey != "none";
+    var shotValues = hasShot ? shots[shotKey] : null;
+    var interior = shotKey == "interior";
+
+    // THE PLAN GRID: the length-weighted direction of the elements' straight
+    // location lines, folded into a quarter turn (a wall and the wall square
+    // to it agree); project north when there are none.
+    var lines = new List<double[]>();
+    foreach (var element in boxed)
+    {
+        var lc = element.Location as LocationCurve;
+        var line = lc != null ? lc.Curve as Line : null;
+        if (line == null) continue;
+        var flat = new XYZ(line.Direction.X, line.Direction.Y, 0);
+        if (flat.GetLength() < 1e-6) continue;
+        var a = wrap(Math.Atan2(flat.X, flat.Y) * 180.0 / Math.PI) % 90;
+        lines.Add(new[] { a, line.Length * flat.GetLength() });
+    }
+    double grid = 0;
+    if (lines.Count > 0)
+    {
+        var bins = new double[180];
+        foreach (var l in lines) bins[(int)(l[0] * 2) % 180] += l[1];
+        // A bin and its two neighbours, round the quarter turn, so a grid on
+        // a bin's edge is not split in two.
+        Func<int, double> around = b => bins[(b + 179) % 180] + bins[b] + bins[(b + 1) % 180];
+        var best = 0;
+        for (var b = 1; b < 180; b++) if (around(b) > around(best)) best = b;
+        var middle = best / 2.0 + 0.25;
+        double sum = 0, weight = 0;
+        foreach (var l in lines)
+        {
+            var off = l[0] - middle;
+            if (off > 45) off -= 90;
+            if (off < -45) off += 90;
+            if (Math.Abs(off) <= 1.0) { sum += off * l[1]; weight += l[1]; }
+        }
+        grid = weight > 0 ? wrap(middle + sum / weight) % 90 : middle;
+    }
+    var gr = grid * Math.PI / 180.0;
+    var axis1 = new XYZ(Math.Sin(gr), Math.Cos(gr), 0);
+    var axis2 = new XYZ(Math.Cos(gr), -Math.Sin(gr), 0);
+    // THE ELEMENTS' BOX ON THAT GRID. An element on a straight location line
+    // gives its own plan rectangle - the line, widened by the width its box
+    // gives back once the line's slant is taken out (a box of a wall turned
+    // 20 degrees is metres wider than the wall, and the camera would stand
+    // back for nothing); any other element gives its box's corners.
+    double u0 = double.MaxValue, u1 = double.MinValue, v0 = double.MaxValue, v1 = double.MinValue;
+    foreach (var element in boxed)
+    {
+        var box = element.get_BoundingBox(null);
+        double bxLo = double.MaxValue, bxHi = double.MinValue, byLo = double.MaxValue, byHi = double.MinValue;
+        foreach (var x in new[] { box.Min.X, box.Max.X })
+            foreach (var y in new[] { box.Min.Y, box.Max.Y })
+                foreach (var z in new[] { box.Min.Z, box.Max.Z })
+                {
+                    var p = box.Transform.OfPoint(new XYZ(x, y, z));
+                    bxLo = Math.Min(bxLo, p.X); bxHi = Math.Max(bxHi, p.X);
+                    byLo = Math.Min(byLo, p.Y); byHi = Math.Max(byHi, p.Y);
+                }
+        var plan = new List<XYZ>
+        {
+            new XYZ(bxLo, byLo, 0), new XYZ(bxHi, byLo, 0), new XYZ(bxLo, byHi, 0), new XYZ(bxHi, byHi, 0),
+        };
+        var lc = element.Location as LocationCurve;
+        var line = lc != null ? lc.Curve as Line : null;
+        if (line != null)
+        {
+            var a = line.GetEndPoint(0);
+            var b = line.GetEndPoint(1);
+            var flat = new XYZ(b.X - a.X, b.Y - a.Y, 0);
+            var run = flat.GetLength();
+            if (run > 1e-6)
+            {
+                var along = flat / run;
+                var across = new XYZ(-along.Y, along.X, 0);
+                var c = Math.Abs(along.X);
+                var sn = Math.Abs(along.Y);
+                // A rectangle run long and t wide, slanted, has a box
+                // run*c + t*sn across X and run*sn + t*c across Y.
+                var thick = c >= sn ? (byHi - byLo - run * sn) / c : (bxHi - bxLo - run * c) / sn;
+                thick = Math.Max(0, thick) / 2;
+                plan = new List<XYZ>
+                {
+                    new XYZ(a.X, a.Y, 0) + across * thick, new XYZ(a.X, a.Y, 0) - across * thick,
+                    new XYZ(b.X, b.Y, 0) + across * thick, new XYZ(b.X, b.Y, 0) - across * thick,
+                };
+            }
+        }
+        foreach (var p in plan)
+        {
+            var u = p.X * axis1.X + p.Y * axis1.Y;
+            var v = p.X * axis2.X + p.Y * axis2.Y;
+            u0 = Math.Min(u0, u); u1 = Math.Max(u1, u); v0 = Math.Min(v0, v); v1 = Math.Max(v1, v);
+        }
+    }
+    var corners8 = new List<XYZ>();
+    foreach (var u in new[] { u0, u1 })
+        foreach (var v in new[] { v0, v1 })
+            foreach (var z in new[] { low.Z, high.Z })
+                corners8.Add(axis1 * u + axis2 * v + new XYZ(0, 0, z));
+    var centre = axis1 * ((u0 + u1) / 2) + axis2 * ((v0 + v1) / 2) + new XYZ(0, 0, (low.Z + high.Z) / 2);
+    var halfDiagonal = Math.Max(Math.Sqrt((u1 - u0) * (u1 - u0) + (v1 - v0) * (v1 - v0)
+        + (high.Z - low.Z) * (high.Z - low.Z)) * 0.5, 100 / MmPerFoot);
+
+    // THE FRONT: the long face looking nearest project south (Heron's
+    // starting rule - the modeller names a compass side when it is another).
+    var longU = u1 - u0;
+    var longV = v1 - v0;
+    var candidates = new List<double>();
+    if (longV >= longU * 0.95) { candidates.Add(wrap(grid)); candidates.Add(wrap(grid + 180)); }
+    if (longU >= longV * 0.95) { candidates.Add(wrap(grid + 90)); candidates.Add(wrap(grid + 270)); }
+    var frontAz = candidates.OrderBy(a => Math.Abs(wrap(a) - 180)).ThenBy(a => a).First();
+
+    // WHERE THE CAMERA STANDS - an azimuth from the elements, clockwise from
+    // project north; a face takes the shot's step round, a corner or a
+    // compass word is exact.
+    // A shot with no side stands on the front - an interior at the LEFT end,
+    // so it looks down the room's length.
+    var sideUsed = sideKey;
+    if (sideKey == "none" && !directionGiven && hasShot) sideUsed = interior ? "left" : "front";
+    double standAz;
+    string standText;
+    if (sideUsed != "none" && faces.ContainsKey(sideUsed))
+    {
+        var faceAz = wrap(frontAz + faces[sideUsed]);
+        var isFace = sideUsed == "front" || sideUsed == "back" || sideUsed == "rear" || sideUsed == "left"
+            || sideUsed == "right";
+        // The step round: a side face steps toward the front; the front and
+        // the back step toward the left side.
+        var toward = sideUsed == "front" ? "the left side" : sideUsed == "right" ? "the front" : sideUsed == "left"
+            ? "the front" : "the left side";
+        var sign = sideUsed == "front" || sideUsed == "right" ? 1 : -1;
+        var swing = isFace && hasShot ? shotValues[0] * sign : 0;
+        standAz = wrap(faceAz + swing);
+        standText = "the " + (sideKey == "none" ? sideUsed : side.Trim()) + " side (its face looks "
+            + compassOf(faceAz) + ")" + (swing != 0 ? ", stepped " + deg(Math.Abs(swing)) + "° round toward "
+                + toward : "")
+            + "; the front was taken as the " + (Math.Abs(longU - longV) <= Math.Max(longU, longV) * 0.05
+                ? "face" : "long face") + " looking " + compassOf(frontAz) + " (" + deg(frontAz) + "°)";
+    }
+    else if (sideCompass != null) { standAz = sideCompass.Value; standText = "the " + side.Trim() + " side"; }
+    else { standAz = azimuth; standText = "the " + directionAsked.Trim() + " of the elements"; }
+
+    // THE EYE HEIGHT - above the lowest level the elements stand on, or the
+    // bottom of their box when none has a level.
+    double baseZ = low.Z;
+    string baseName = "the bottom of the elements' box";
+    Level baseLevel = null;
+    foreach (var element in boxed)
+    {
+        var lv = element.LevelId != ElementId.InvalidElementId ? doc.GetElement(element.LevelId) as Level : null;
+        if (lv != null && (baseLevel == null || lv.ProjectElevation < baseLevel.ProjectElevation)) baseLevel = lv;
+    }
+    if (baseLevel != null) { baseZ = baseLevel.ProjectElevation; baseName = "'" + baseLevel.Name + "'"; }
+
+    // THE LOOK. lookDownDeg wins; then levelCamera; then the shot's own.
+    var level = levelAsked ?? (hasShot ? shotValues[5] > 0.5 : false);
+    var aimAtCentre = levelAsked == false && hasShot && shotValues[5] > 0.5 && !lookDownGiven;
+    double pitch = lookDownGiven ? lookDown.Value : level ? 0 : hasShot ? shotValues[1] : lookDown.Value;
+    if (lookDownGiven) level = Math.Abs(pitch) < 1e-9;
+    double? eyeH = eyeHeightAsked != null ? eyeHeightAsked / MmPerFoot
+        : hasShot && shotValues[2] >= 0 ? shotValues[2] / MmPerFoot
+        : level ? 1600 / MmPerFoot : (double?)null;
+    var lensF = lensAsked ?? (hasShot ? shotValues[3] : (compositionAsked != null && compositionAsked != "centre" ? 35 : (double?)null));
+    var comp = compositionAsked ?? (hasShot ? shotComposition[shotKey] : "centre");
+    var shape = aspectAsked ?? (hasShot && shotAspect.ContainsKey(shotKey) ? shotAspect[shotKey] : 1.5);
+    if (lensF == null && aspectAsked != null) lensF = 35;
+
+    var sa = Math.Sin(standAz * Math.PI / 180.0);
+    var ca = Math.Cos(standAz * Math.PI / 180.0);
+    var pr = pitch * Math.PI / 180.0;
+    var fixedLook = new XYZ(-sa * Math.Cos(pr), -ca * Math.Cos(pr), -Math.Sin(pr));
+    Func<double, XYZ> eyeFor = dist => eyeH != null
+        ? new XYZ(centre.X + sa * dist, centre.Y + ca * dist, baseZ + eyeH.Value)
+        : centre + fixedLook.Negate() * dist;
+    Func<XYZ, XYZ> lookFor = eyeAt => aimAtCentre ? (centre - eyeAt).Normalize() : fixedLook;
+
+    // The elements seen from an eye, as tangents on the picture (x across,
+    // y up) - the near plane's own size does not matter until the window is
+    // made: [x low, x high, y low, y high, nearest depth].
+    Func<XYZ, XYZ, double[]> seen = (eyeAt, look) =>
+    {
+        var upAt = upFor(look);
+        var rightAt = upAt.CrossProduct(look.Negate());
+        double xl = double.MaxValue, xh = double.MinValue, yl = double.MaxValue, yh = double.MinValue;
+        var nearest = double.MaxValue;
+        foreach (var c in corners8)
+        {
+            var q = c - eyeAt;
+            var depth = q.DotProduct(look);
+            nearest = Math.Min(nearest, depth);
+            if (depth <= 1e-6) continue;
+            var tx = q.DotProduct(rightAt) / depth;
+            var ty = q.DotProduct(upAt) / depth;
+            xl = Math.Min(xl, tx); xh = Math.Max(xh, tx); yl = Math.Min(yl, ty); yh = Math.Max(yh, ty);
+        }
+        return new[] { xl, xh, yl, yh, nearest };
+    };
+    // Where the window goes, in the same tangents, and whether the elements
+    // fit it with the margin: [x middle, y middle, fits].
+    var m = margin.Value / 100.0;
+    Func<double[], double, double, double, string, double[]> place = (b, tw, th, horizon, how) =>
+    {
+        var cx = (b[0] + b[1]) / 2;
+        var cy = (b[2] + b[3]) / 2;
+        var sw = (b[1] - b[0]) / 2 * (1 + m);
+        var sh = (b[3] - b[2]) / 2 * (1 + m);
+        double ox = cx, oy = cy;
+        var fits = sw <= tw;
+        if (how == "thirds-left") { ox = cx + tw / 3; fits = sw <= tw * 2 / 3; }
+        if (how == "thirds-right") { ox = cx - tw / 3; fits = sw <= tw * 2 / 3; }
+        if (how == "low-horizon") { oy = horizon + th / 3; fits = fits && cy + sh <= oy + th && cy - sh >= oy - th; }
+        else fits = fits && sh <= th;
+        return new[] { ox, oy, fits ? 1 : 0 };
+    };
+    Func<XYZ, double> horizonOf = look => Math.Tan(Math.Asin(Math.Max(-1, Math.Min(1, -look.Z))));
+
+    XYZ eye = null, forward = null;
+    double standOff = 0;
+    var compUsed = comp;
+    if (interior)
+    {
+        // INSIDE: 600 mm in from the face on that side, looking straight across.
+        var outward = new XYZ(sa, ca, 0);
+        var reach = corners8.Max(c => (c - centre).DotProduct(outward));
+        var inset = distance ?? 600 / MmPerFoot;
+        if (inset >= reach) inset = reach / 2;
+        standOff = reach - inset;
+        eye = new XYZ(centre.X + sa * standOff, centre.Y + ca * standOff, baseZ + (eyeH ?? 1400 / MmPerFoot));
+        forward = lookFor(eye);
+    }
+    else if (lensF == null)
+    {
+        // No lens: the window is fitted to the elements, as version 2 does.
+        standOff = distance ?? halfDiagonal * 2.5;
+        eye = eyeFor(standOff);
+        forward = lookFor(eye);
+    }
+    else if (distance != null)
+    {
+        standOff = distance.Value;
+        eye = eyeFor(standOff);
+        forward = lookFor(eye);
+    }
+    else
+    {
+        // THE LENS DECIDES THE DISTANCE: the nearest eye at which the elements
+        // fit the lens's window with the margin, found by stepping out 2% at a
+        // time and then halving the last step.
+        var tw0 = 18.0 / lensF.Value;
+        var th0 = tw0 / shape;
+        Func<double, string, bool> fitsAt = (dist, how) =>
+        {
+            var e = eyeFor(dist);
+            var f = lookFor(e);
+            var b = seen(e, f);
+            if (b[4] < 1.0 || b[0] > b[1]) return false;
+            return place(b, tw0, th0, horizonOf(f), how)[2] > 0.5;
+        };
+        Func<string, double?> nearestFit = how =>
+        {
+            var lowD = 1.0;
+            var highD = Math.Max(halfDiagonal * 400, 3300);
+            var steps = 600;
+            var ratio = Math.Pow(highD / lowD, 1.0 / steps);
+            double previous = lowD, found = -1;
+            for (var i = 0; i <= steps; i++)
+            {
+                var dist = lowD * Math.Pow(ratio, i);
+                if (fitsAt(dist, how)) { found = dist; break; }
+                previous = dist;
+            }
+            if (found < 0) return null;
+            if (found > lowD)
+                for (var i = 0; i < 40; i++)
+                {
+                    var mid = (previous + found) / 2;
+                    if (fitsAt(mid, how)) found = mid; else previous = mid;
+                }
+            return found;
+        };
+        var nearestD = nearestFit(comp);
+        if (nearestD == null && comp != "centre")
+        {
+            nearestD = nearestFit("centre");
+            if (nearestD != null)
+            {
+                findings.Add("A " + comp + " composition cannot hold the elements from this angle with this lens - "
+                    + "they were centred instead.");
+                compUsed = "centre";
+            }
+        }
+        if (nearestD == null)
+        {
+            findings.Add("The elements do not fit a " + deg(lensF.Value) + " mm lens from this angle at any distance "
+                + "up to " + mm(Math.Max(halfDiagonal * 400, 3300)) + " mm - the eye stands at two and a half "
+                + "times their half-diagonal and the picture may cut them.");
+            nearestD = halfDiagonal * 2.5;
+        }
+        standOff = nearestD.Value;
+        eye = eyeFor(standOff);
+        forward = lookFor(eye);
+    }
+
+    try
+    {
+        var upward = upFor(forward);
+        if (camera.IsLocked) camera.Unlock();
+        camera.SetOrientation(new ViewOrientation3D(eye, upward, forward));
+        doc.Regenerate();
+
+        // The window, in Revit's own frame for the view, on its own near plane
+        // (version 2's reading of both).
+        var frame = camera.CropBox.Transform;
+        var toView = frame.Inverse;
+        var nearPlane = -camera.CropBox.Max.Z;
+        if (nearPlane <= 0 || nearPlane > 1.0) nearPlane = 40.2 / MmPerFoot;
+        double xl = double.MaxValue, xh = double.MinValue, yl = double.MaxValue, yh = double.MinValue, deepest = 0;
+        foreach (var c in corners8)
+        {
+            var p = toView.OfPoint(c);
+            var depth = Math.Max(-p.Z, nearPlane);
+            deepest = Math.Max(deepest, depth);
+            xl = Math.Min(xl, p.X / depth); xh = Math.Max(xh, p.X / depth);
+            yl = Math.Min(yl, p.Y / depth); yh = Math.Max(yh, p.Y / depth);
+        }
+        double wxLo, wxHi, wyLo, wyHi;
+        var horizon = horizonOf(forward);
+        if (lensF == null)
+        {
+            var growX = (xh - xl) * (margin.Value / 200.0);
+            var growY = (yh - yl) * (margin.Value / 200.0);
+            wxLo = xl - growX; wxHi = xh + growX; wyLo = yl - growY; wyHi = yh + growY;
+        }
+        else
+        {
+            var tw = 18.0 / lensF.Value;
+            var th = tw / shape;
+            double ox, oy;
+            if (interior)
+            {
+                ox = compUsed == "thirds-left" ? tw / 3 : compUsed == "thirds-right" ? -tw / 3 : 0;
+                oy = compUsed == "low-horizon" ? horizon + th / 3 : 0;
+            }
+            else
+            {
+                var at = place(new[] { xl, xh, yl, yh }, tw, th, horizon, compUsed);
+                ox = at[0];
+                oy = at[1];
+            }
+            wxLo = ox - tw; wxHi = ox + tw; wyLo = oy - th; wyHi = oy + th;
+        }
+        var wanted = new BoundingBoxXYZ();
+        wanted.Transform = frame;
+        wanted.Min = new XYZ(wxLo * nearPlane, wyLo * nearPlane, Math.Min(camera.CropBox.Min.Z, -deepest * 1.1));
+        wanted.Max = new XYZ(wxHi * nearPlane, wyHi * nearPlane, -nearPlane);
+        camera.CropBoxActive = true;
+        camera.CropBox = wanted;
+        doc.Regenerate();
+
+        var target = eye + forward * Math.Max((centre - eye).DotProduct(forward), 1 / MmPerFoot);
+        var lookText = Math.Abs(forward.Z) < 1e-6 ? "level - verticals stay vertical"
+            : forward.Z < 0 ? "looking down " + deg(Math.Asin(-forward.Z) * 180 / Math.PI) + "°"
+            : "looking up " + deg(Math.Asin(forward.Z) * 180 / Math.PI) + "°";
+        cinematicText = (hasShot ? "Shot " + shotTitle[shotKey].ToLowerInvariant() + ": " : "Camera: ")
+            + "stood on " + standText + ", azimuth " + deg(standAz) + "° (" + compassOf(standAz) + "); eye "
+            + mm(eye.Z - baseZ) + " mm above " + baseName + ", " + mm(standOff) + " mm "
+            + (interior ? "out from the elements' middle, inside them" : eyeH != null ? "from their middle in plan"
+                : "from their middle") + "; aimed at " + mm(target.X) + "," + mm(target.Y) + "," + mm(target.Z)
+            + " mm; " + lookText + "; " + (lensF != null ? deg(lensF.Value) + " mm lens asked" : "no lens asked - "
+                + "the window fitted to the elements") + (lensF != null ? "; picture " + Math.Round(shape, 2).ToString(culture) + ":1" : "")
+            + "; composition " + compUsed + ".";
+        if (interior)
+            findings.Add("The camera stands inside the elements, so their boxes cannot be inside the picture - "
+                + "`framed` counts none of a room it stands in; look at the view.");
+    }
+    catch (Exception ex)
+    {
+        refused = "Revit refused the camera: " + ex.Message + ". " + (madeNew ? "The new view was made; it is not framed."
+            : "NOTHING WAS CHANGED.");
+    }
+}
+
+if (reachedCamera)
+{
     // ---- read back ----
     var o = camera.GetOrientation();
     var crop = camera.CropBox;
@@ -260,10 +882,36 @@ if (refused == null && camera != null)
         + (farActive != null && farActive.AsInteger() == 1
             ? "on at " + (farOffset != null ? mm(farOffset.AsDouble()) + " mm" : "an offset Revit did not give") : "off")
         + "; " + framed + " of " + boxed.Count + " element(s) inside that crop box.";
-    if (refused == null)
+
+    // THE LENS THE WINDOW AMOUNTS TO - version 3. The window sits on the near
+    // plane, so its angle across is the two edges' angles from the eye, and a
+    // 35 mm-film lens of that width is 36 x near / width.
+    var nearHere = -crop.Max.Z;
+    var width = crop.Max.X - crop.Min.X;
+    var height = crop.Max.Y - crop.Min.Y;
+    if (camera.IsPerspective && nearHere > 0 && width > 0 && height > 0)
+        lens = "about " + Math.Round(36 * nearHere / width).ToString(culture) + " mm on 35 mm film - "
+            + deg((Math.Atan(crop.Max.X / nearHere) - Math.Atan(crop.Min.X / nearHere)) * 180 / Math.PI) + "° across, "
+            + deg((Math.Atan(crop.Max.Y / nearHere) - Math.Atan(crop.Min.Y / nearHere)) * 180 / Math.PI)
+            + "° up and down, the window " + mm(width) + " x " + mm(height) + " mm at " + mm(nearHere)
+            + " mm in front of the eye";
+    if (cinematic)
+    {
+        var eyeElevation = camera.get_Parameter(BuiltInParameter.VIEWER_EYE_ELEVATION);
+        var targetElevation = camera.get_Parameter(BuiltInParameter.VIEWER_TARGET_ELEVATION);
+        readBack += " " + cinematicText + " Lens: " + (lens.Length > 0 ? lens : "not read") + "."
+            + (eyeElevation != null && targetElevation != null
+                ? " Revit shows Eye Elevation " + mm(eyeElevation.AsDouble()) + " mm and Target Elevation "
+                    + mm(targetElevation.AsDouble()) + " mm."
+                : "");
+    }
+    if (refused == null && !cinematic)
         findings.Add((madeNew ? "Made perspective view '" : "Re-aimed '") + camera.Name + "' at " + boxed.Count
-            + " element(s) from the " + (compass.ContainsKey(d) ? direction.Trim() : azimuth + "°") + ", looking down "
+            + " element(s) from the " + (compass.ContainsKey(d) ? directionAsked.Trim() : azimuth + "°") + ", looking down "
             + lookDown + "°: " + readBack);
+    if (refused == null && cinematic)
+        findings.Insert(0, (madeNew ? "Made perspective view '" : "Re-aimed '") + camera.Name + "' at " + boxed.Count
+            + " element(s): " + readBack);
 }
 if (noGeometry.Count > 0) findings.Add(noGeometry.Count + " element(s) have no geometry and were left out of the frame");
 if (refused != null) findings.Add(refused);

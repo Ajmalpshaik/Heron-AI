@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,18 @@ semantic-identity: "make a perspective camera view that frames these elements, f
 kind: action
 domain: revit.views
 capability: FRAME_ELEMENTS_IN_CAMERA
-version: 2
+version: 3
+# VERSION 3, 2026-10-20 (night) - row 5b-1287, on the owner's words: "I need
+# this building left side like in a cinematic camera look ... different
+# styles, camera angles, camera height ... all kind of camera settings". Six
+# OPTIONAL inputs - shot, side, eyeHeightMm, lensMm, composition and
+# levelCamera; left out, version 2's road runs line for line. direction,
+# lookDownDeg and marginPercent now read `auto` when left out, which means
+# version 2's own south-east, 30 and 10, so a version 2 call frames exactly as
+# before - and a shot can tell "not said" from "said". Version 2's proof below
+# no longer describes the code: DRAFT until NEEDS-CHECKING Group IF proves it,
+# with an exported picture of every shot looked at.
+#
 # VERSION 2, 2026-10-20 - row 5b-1281. Version 1, signed the same day on
 # numbers alone (IB1's look at the view was never made), set a perspective
 # view's crop box to the elements' box metres away; Revit draws a perspective
@@ -51,11 +62,99 @@ risk: MODIFY
 #
 # A view a template controls is refused, not half-changed.
 #
+# **VERSION 3 - THE SHOTS.** A visualisation artist does not type an eye point:
+# they pick a shot, a side, a height and a lens, and walk back until the
+# building fits. That is what the six inputs do.
+#
+# THE SHOT TABLE - Heron's STARTING values, never a standard (D-33). Any input
+# given on its own wins over the shot's. "Round" is how far the camera steps
+# clockwise round the building, seen in plan, off the face `side` names - to
+# your left as you face that face; a corner or a compass word is used exactly.
+#
+#   shot            round  look        eye height        lens   composition  camera
+#   eye-level        25°   level       1600 above base   35 mm  centre       level: two-point
+#   low-angle hero   30°   6° up       450               24 mm  thirds       tilted - verticals lean in a little
+#   high-angle       30°   25° down    on the look line  35 mm  centre       tilted
+#   aerial           45°   40° down    on the look line  35 mm  centre       tilted (bird's-eye, aerial oblique)
+#   worm's-eye       20°   25° up      150               20 mm  centre       tilted - the building towers
+#   three-quarter    45°   level       1600              35 mm  thirds       level: two-point, both faces alike
+#   front             0°   level       1600              50 mm  centre       level: one-point, elevation-like
+#   interior          0°   level       1400              24 mm  centre       level: one-point, from INSIDE
+#   close-up         30°   20° down    on the look line  85 mm  centre, 15%  tilted - a detail, little distortion
+#   cinematic        30°   level       1200              28 mm  thirds       level - and a 2.39:1 cinema picture
+#
+# THE PICTURE'S SHAPE (`aspect`): every shot's window is a 35 mm frame's 3:2
+# but the cinematic shot's, which is the cinema's 2.39:1 - a low, level, wide
+# camera with the building on a third and a letterbox picture. `aspect` sets
+# any shape: 16:9, 4:3, 1:1, 9:16 or a word - cinema, widescreen, square,
+# portrait. Asked without a lens, the window is a 35 mm lens's.
+#
+# WHY THESE. 1600 mm is a standing person's eye, so the picture reads as being
+# there; a level camera keeps verticals vertical - the commonest thing wrong
+# in a render is walls leaning in. Low and wide (450 mm, 24 mm) makes a
+# building tower over the viewer - the hero shot; a little look-up adds to it.
+# 35 mm is a natural exterior lens, 50 mm the eye's own and the flattest for
+# an elevation-like view, 24 mm what an interior needs to show a room, 85 mm a
+# product lens that does not stretch a unit's corners. 1400 mm inside shows
+# floor and ceiling alike. Thirds puts the building's middle on the left third
+# line, which a still from a film does more often than not.
+#
+# THE SIDE. front, back, left, right and the corners front-left, front-right,
+# back-left, back-right are the elements' OWN faces: their plan grid is the
+# length-weighted direction of their straight location lines (walls, ducts,
+# beams), or project north with none, and the FRONT is the long face looking
+# nearest project south - a STARTING RULE, said in the answer, because Heron
+# cannot know where the entrance is. left and right are as you face the
+# front. A compass word or degrees says where the eye stands, exactly.
+# `direction` still works as version 2's, but not beside `side`. A shot with
+# neither stands on the front.
+#
+# THE EYE HEIGHT is above the lowest level the elements stand on (their
+# Level), or the bottom of their box when none has one - named in the answer.
+#
+# THE LENS. Revit's API has no field-of-view value (row 5b-1267), but the
+# perspective crop window IS one: it lies on the near plane, about 40 mm in
+# front of the eye (measured, row 5b-1281), so its angle across is
+# 2 x atan(half-width / near). A lens of f mm on 35 mm film (36 x 24 mm) is a
+# window near x 18 / f wide each side of the middle and near x 12 / f high. The
+# window is made that size and the eye is moved out until the elements fit it
+# with the margin, so the lens decides how close the camera stands. lensMm
+# auto with no shot keeps version 2's window fitted to the elements.
+#
+# A LEVEL CAMERA looks dead level - forward has no up or down - and the window
+# is SHIFTED up or down on the near plane to take the elements in, which is
+# what an architectural photographer's shift lens does. levelCamera false on a
+# level shot aims at the elements' middle instead (three-point perspective).
+#
+# COMPOSITION moves the window, never the eye: centre; thirds (thirds-left,
+# or thirds-right) - the elements' middle on that third line; low-horizon -
+# the horizon on the bottom third line, a big sky. One that cannot hold the
+# elements from that angle falls back to centre and says so.
+#
+# INTERIOR stands INSIDE the elements' box - select the room, or its walls -
+# 600 mm in from the face of the side named (distanceMm, when given, is that
+# inset), looking straight across at eye height. Nothing is pulled back, so
+# the lens alone decides what is seen, and `framed` cannot count a room the
+# eye stands in: the answer says so and the picture is the check.
+#
+# THE READ-BACK adds, from what the view holds afterwards: the side stood on
+# and its azimuth, the eye height above the base level, the point aimed at,
+# the look angle, `lens` - the 35 mm-film lens the crop window amounts to and
+# its angles across and up - and Revit's own Eye Elevation and Target
+# Elevation. `framed` is version 2's count.
+#
+# NOT YET: a portrait (upright) picture - the window is 3:2 across; depth of
+# field; a camera path for a walkthrough.
+#
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 purpose: >
   Makes or re-aims a perspective camera view so the selected elements fill it -
   from a compass direction, looking down at an angle, with a margin round them -
-  and reads the camera and its crop box back.
+  and reads the camera and its crop box back. Version 3 takes a named shot -
+  eye-level, low-angle hero, bird's-eye aerial, worm's-eye, three-quarter,
+  front, interior, close-up, cinematic - the building's side to stand on, the
+  camera height, the lens and the picture's shape, the way a visualiser sets up
+  a cinematic camera.
 
 contract:
   needs:
@@ -71,28 +170,84 @@ contract:
       optional: true
       absent: auto
     # Where the camera stands, seen from the elements: north, north-east,
-    # east ... north-west, or degrees clockwise from project north.
+    # east ... north-west, or degrees clockwise from project north. auto
+    # (version 3) is version 2's south-east, or the shot's side.
     - name: direction
       type: string
       source: request
       optional: true
-      absent: south-east
+      absent: auto
+    # Degrees below level, -60 to 89; auto is 30, or the shot's angle.
     - name: lookDownDeg
       type: string
       source: request
       optional: true
-      absent: 30
+      absent: auto
     # Millimetres from the elements' centre to the eye, or auto.
     - name: distanceMm
       type: string
       source: request
       optional: true
       absent: auto
+    # auto is 10, or the shot's margin.
     - name: marginPercent
       type: string
       source: request
       optional: true
-      absent: 10
+      absent: auto
+    # VERSION 3. A named shot - the table above: eye-level, low-angle (hero),
+    # high-angle, aerial (bird's-eye), worm's-eye, three-quarter, front
+    # (one-point), interior, close-up (detail), cinematic; none is version 2.
+    - name: shot
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 3. The side to stand on: front, back, left, right, front-left,
+    # front-right, back-left, back-right - the elements' own faces - or a
+    # compass word, or degrees from project north; none uses `direction`.
+    - name: side
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 3. The eye in mm above the elements' base level; auto is the
+    # shot's.
+    - name: eyeHeightMm
+      type: string
+      source: request
+      optional: true
+      absent: auto
+    # VERSION 3. A 35 mm-film focal length, 12 to 300 (24 wide, 35, 50
+    # normal, 85 tele), or wide / normal / tele; auto is the shot's, or with
+    # no shot the window fitted to the elements as version 2.
+    - name: lensMm
+      type: string
+      source: request
+      optional: true
+      absent: auto
+    # VERSION 3. centre, thirds (thirds-left, thirds-right) or low-horizon;
+    # auto is the shot's, or centre.
+    - name: composition
+      type: string
+      source: request
+      optional: true
+      absent: auto
+    # VERSION 3. true looks dead level - verticals vertical; false aims at the
+    # elements' middle; auto is the shot's, or version 2's tilt.
+    - name: levelCamera
+      type: string
+      source: request
+      optional: true
+      absent: auto
+    # VERSION 3 (row 5b-1287). The picture's width over height - 16:9, 3:2,
+    # 4:3, 2.39:1 (cinema), 1:1, 9:16 - or cinema, widescreen, square,
+    # portrait; auto is the shot's own.
+    - name: aspect
+      type: string
+      source: request
+      optional: true
+      absent: auto
   provides:
     - name: camera
       role: result
@@ -106,7 +261,13 @@ contract:
       type: int
     - name: readBack
       # Eye, direction, crop box and far clip as the view holds them -
-      # evidence, never the count.
+      # evidence, never the count. Version 3 adds the side, eye height, the
+      # point aimed at, the look angle and the lens.
+      role: accounting
+      type: string
+    - name: lens
+      # Version 3: the 35 mm-film lens the crop window amounts to, its angles
+      # across and up, and the window's size on the near plane.
       role: accounting
       type: string
     - name: noGeometry
@@ -120,6 +281,10 @@ contract:
     - name: findings
       type: IList<string>
 
+# VERSION 2's PROOF, KEPT AS A RECORD. Version 3 changed impl/, so its
+# fingerprint no longer describes the code and the card is DRAFT until Group
+# ID proves version 3 (D-30). A call with none of the six new inputs still
+# takes the road this proof ran.
 proof:
   date: '2026-10-20'
   by: Ajmal PS
@@ -167,7 +332,12 @@ compatibility-note: >
   CropBoxActive and ViewTemplateId; Element.get_BoundingBox(null);
   BuiltInParameter VIEWER_BOUND_ACTIVE_FAR and VIEWER_BOUND_OFFSET_FAR - present
   and alike on every release. No member named for a field of view exists on any
-  release. Points are millimetres divided by 304.8 (D-20).
+  release. Points are millimetres divided by 304.8 (D-20). Version 3 adds
+  Element.Location as LocationCurve with Line.Direction and Curve.Length,
+  Element.LevelId with Level.ProjectElevation, and BuiltInParameter
+  VIEWER_EYE_ELEVATION and VIEWER_TARGET_ELEVATION - SET_VIEW_CAMERA already
+  calls the level's elevation and both parameters on every release - compiled
+  for all eight by tools/check-fragments-compile.py on 2026-10-20.
 
 # ROUTING - the same rows are in the render, sun, display and camera cards.
 #
@@ -179,6 +349,17 @@ compatibility-note: >
 #                                                  cuts the view, a camera
 #                                                  does not
 #   "make a 3D view"                            -> CREATE_3D_VIEW
+#
+# Version 3 - the owner's words of 2026-10-20 (night):
+#   "cinematic camera on the left side of this building" -> here
+#   "low angle hero shot"                       -> here
+#   "bird's eye view of the building"           -> here
+#   "two point perspective at eye level"        -> here
+#   "wide angle camera"                         -> here
+#   "camera height 1.6 m"                       -> here
+#   "put the camera eye 1600 above level 1 looking at the reception desk"
+#                                               -> SET_VIEW_CAMERA, an eye
+#                                                  point typed, not a shot
 
 utterances:
   - make a close-up perspective of this duct heater
@@ -187,3 +368,11 @@ utterances:
   - point a new perspective at the selection for a render
   # Declared because the routing table above claims it (check-routing).
   - a close-up camera of this duct heater
+  # Version 3 - the owner's own words, declared because the routing table
+  # claims them.
+  - cinematic camera on the left side of this building
+  - low angle hero shot
+  - bird's eye view of the building
+  - two point perspective at eye level
+  - wide angle camera
+  - camera height 1.6 m
