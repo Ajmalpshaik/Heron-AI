@@ -120,9 +120,11 @@ contract:
     - name: combinedFields
       # VERSION 3. One line per combined column: schedule, heading, column
       # number, how Revit draws it, and each part's parameter, prefix, suffix
-      # and the separator after it.
+      # and the separator after it. ONE string, lines joined by "  ||  ", for
+      # filterRules' reason: a list is shown as three entries cut to sixty
+      # characters. Empty when no combined column was found.
       role: result
-      type: IList<string>
+      type: string
     - name: filterCount
       role: result
       type: int

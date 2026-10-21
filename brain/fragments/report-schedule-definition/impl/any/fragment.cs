@@ -56,7 +56,7 @@
 var findings = new List<string>();
 var fieldNames = new List<string>();
 var hiddenFieldNames = new List<string>();
-var combinedFields = new List<string>();
+var combinedLines = new List<string>();
 
 // A part's parameter, by the name this schedule offers it under - matched on
 // the parameter's id, never read as a number.
@@ -188,7 +188,7 @@ foreach (var element in elements)
                             quoted(part.Separator)));
                     }
                     shown += string.Format("  [COMBINED - draws '{0}']", drawn);
-                    combinedFields.Add(string.Format("'{0}' / '{1}', column {2}: draws '{3}' - {4}",
+                    combinedLines.Add(string.Format("'{0}' / '{1}', column {2}: draws '{3}' - {4}",
                         schedule.Name, string.IsNullOrEmpty(heading) ? name : heading, columnNumber,
                         drawn, each.Count == 0 ? "no parts" : string.Join("; ", each)));
                 }
@@ -315,7 +315,10 @@ if (skippedNotSchedules > 0)
 findings.Insert(0, string.Format("{0} schedule(s) described. {1} column(s) in total, {2} of them "
     + "hidden, {5} combined; {3} filter rule(s); {4} sort/group field(s)",
     elements.Count - skippedNotSchedules, fieldNames.Count, hiddenFieldNames.Count,
-    filterCount, sortFieldCount, combinedFields.Count));
+    filterCount, sortFieldCount, combinedLines.Count));
 
-// VERSION 3. Each combined column's parts, after the schedule lines.
-foreach (var line in combinedFields) findings.Add("    combined column " + line);
+// VERSION 3. Each combined column's parts, after the schedule lines - and as
+// ONE string, a column per line joined by "  ||  ", for the reason filterRules
+// is one: a list is shown as three entries cut to sixty characters.
+foreach (var line in combinedLines) findings.Add("    combined column " + line);
+var combinedFields = string.Join("  ||  ", combinedLines);

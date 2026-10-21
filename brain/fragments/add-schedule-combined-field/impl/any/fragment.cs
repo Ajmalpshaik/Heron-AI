@@ -86,11 +86,15 @@ Func<Element, ViewSchedule> scheduleBehind = candidate =>
 
 int added = 0;
 int edited = 0;
-var columnNow = new List<string>();
+// The read-back and the refusals are each ONE string, a line per schedule
+// joined by "  ||  ", not a list: a list is shown as three entries of sixty
+// characters (RevitFragment.Describe), which cuts every line here in half -
+// the same lesson as REPORT_SCHEDULE_DEFINITION's filterRules (row 5b-1290).
+var nowLines = new List<string>();
 var partMissing = new List<ElementId>();
 var notASchedule = new List<ElementId>();
 var refused = new List<ElementId>();
-var refusedWhy = new List<string>();
+var whyLines = new List<string>();
 
 string wantedName = (columnName ?? "").Trim();
 
@@ -229,7 +233,7 @@ foreach (var element in elements)
     Action<string> refuse = why =>
     {
         refused.Add(schedule.Id);
-        refusedWhy.Add("'" + schedule.Name + "' - " + why + " Nothing was changed on this schedule.");
+        whyLines.Add("'" + schedule.Name + "' - " + why + " Nothing was changed on this schedule.");
     };
 
     if (positionProblem != null) { refuse(positionProblem); continue; }
@@ -361,7 +365,7 @@ foreach (var element in elements)
         if (missingName != null)
         {
             partMissing.Add(schedule.Id);
-            refusedWhy.Add("'" + schedule.Name + "' - '" + missingName + "' is not a parameter this "
+            whyLines.Add("'" + schedule.Name + "' - '" + missingName + "' is not a parameter this "
                 + "schedule can show, so no part of the column was made. Nothing was changed on "
                 + "this schedule.");
             continue;
@@ -496,7 +500,7 @@ foreach (var element in elements)
             // Once the parts are written, "nothing was changed" would be false.
             if (!partsWritten) { refuse("Revit refused the change to '" + headingOf(target) + "'."); continue; }
             refused.Add(schedule.Id);
-            refusedWhy.Add("'" + schedule.Name + "' - the parts of '" + headingOf(target) + "' were "
+            whyLines.Add("'" + schedule.Name + "' - the parts of '" + headingOf(target) + "' were "
                 + "replaced, then Revit refused the rest (its heading or its place). Look at this "
                 + "column before the change is kept.");
             continue;
@@ -538,7 +542,7 @@ foreach (var element in elements)
     if (!present)
     {
         refused.Add(schedule.Id);
-        refusedWhy.Add("'" + schedule.Name + "' - the change did not read back as asked: the column "
+        whyLines.Add("'" + schedule.Name + "' - the change did not read back as asked: the column "
             + "reads " + (now.Length == 0 ? "(nothing)" : now) + ". Look at this column before "
             + "the change is kept.");
         continue;
@@ -549,11 +553,14 @@ foreach (var element in elements)
     if (target == null)
     {
         added++;
-        columnNow.Add(line + " - added");
+        nowLines.Add(line + " - added");
     }
     else
     {
         edited++;
-        columnNow.Add(line + " - was " + was + (wantIndex >= 0 ? ", moved" : ", same place"));
+        nowLines.Add(line + " - was " + was + (wantIndex >= 0 ? ", moved" : ", same place"));
     }
 }
+
+string columnNow = string.Join("  ||  ", nowLines);
+string refusedWhy = string.Join("  ||  ", whyLines);

@@ -156,9 +156,11 @@ contract:
     - name: columnNow
       # VERSION 2. One line per column added or edited: the schedule, the
       # heading, its place, and how Revit will draw it - '[Width]x[Height]' -
-      # with what it was before an edit. Read back after the change.
+      # with what it was before an edit. Read back after the change. ONE
+      # string, lines joined by "  ||  ": a list is shown as three entries cut
+      # to sixty characters (row 5b-1290's filterRules lesson).
       role: result
-      type: IList<string>
+      type: string
     - name: partMissing
       # Parts of the combined name that did not resolve to a real parameter. A
       # PART THAT DOES NOT RESOLVE STOPS THE WHOLE COLUMN, so nothing was
@@ -180,9 +182,10 @@ contract:
     - name: refusedWhy
       # VERSION 2. The same refusals - and a part that did not resolve - as
       # sentences: which schedule, why, and that nothing was changed on it.
-      # Never a thing it found (D-52).
+      # One string, joined by "  ||  ", for columnNow's reason. Never a thing
+      # it found (D-52).
       role: accounting
-      type: IList<string>
+      type: string
 
 # VERSION 1's PROOF, KEPT AS A RECORD. Version 2 changed impl/, so its
 # fingerprint no longer describes the code and the card is DRAFT until
