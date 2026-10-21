@@ -609,10 +609,17 @@ including a photometric web (IES) - in the Family Editor; **API** `LightFamily` 
 distribution styles and `LightType` each type's emit size, spot angles, IES file, intensity and colour, all
 2020 to 2027 - [`SET_FAMILY_LIGHT_SOURCE`](../brain/fragments/set-family-light-source/fragment.yaml). **API,
 and UNSURE where it matters:** the reference gives emit sizes in feet, spot angles in RADIANS but a photometric
-web's tilt in DEGREES, illuminance in lux at a distance in feet - and a wattage or efficacy only as "a universal
-unit value", naming no unit, so the tool takes lumens, candelas or lux and refuses a wattage; it compares what
-Type Properties shows with what was asked (BV18). The Light Source tick box itself is set by hand: no call sets
-it, and `GetLightFamily` refuses a family without it. Revit 2022 added the Fire Protection, Medical Equipment and
+web's tilt in DEGREES, illuminance in lux at a distance in feet - and a wattage or efficacy as "a universal
+unit value" in the constructor's remark but W and lm/W in the properties', so since version 2 (2026-10-21) the
+tool writes a wattage as W at lm/W and keeps it only when Type Properties' own Wattage, out of internal units,
+reads what was asked; it compares what Type Properties shows with what was asked (BV18). **API, 2020 to 2027:**
+shape and distribution are "a family element parameter" - one for every type - and the rest of a light type
+"family type parameters", which Revit may lose when both change in one transaction (5b-1294), so the tool takes
+one half per call; `GetNumberOfLightTypes` can list fewer light types than the family has (5b-1295) and nothing
+makes one, so version 2 works through `FamilyManager.Types`, each made current and proved from its own Type
+Properties. The Light Source tick box is `SET_FAMILY_SETTINGS` "Light Source=yes" since 2026-10-21 - Revit's
+switch `LIGHTING_FIXTURE_LIGHT_EMITTER` ("Light Emitter"), the write proved by `GetLightFamily`, which refuses a
+family without it (**UNSURE** until Group IJ). Revit 2022 added the Fire Protection, Medical Equipment and
 Audio Visual Devices categories and 2023 Mechanical Control Devices and Plumbing Equipment - none exists on
 2020 or 2021. Room Calculation Point keeps a family at a room's edge in the right room. **API:** an
 electrical connector's "Apparent Load" was renamed "Apparent Power" in 2025 - parameters are found by their
@@ -631,7 +638,10 @@ distance - lumens give the most predictable renderings; **Initial Color** a pres
 separate Color Filter; **Light Loss Factor** a single value or the product of seven factors, 1 meaning no loss.
 The fixture's ELECTRICAL connector sits on the Ref. Level, its Load Classification, Voltage and Apparent Load
 linked to family parameters - `ADD_FAMILY_CONNECTOR` with a power system, then `LINK_FAMILY_PARAMETER`. Aiming a
-source on more than one axis by parameters is a forum question (**UNSURE**).
+source on more than one axis by parameters is a forum question (**UNSURE**). **API:** no release has a setter
+for `LightFamily.GetLightSourceTransform`; its remark says the transform follows the light source as the
+modeller moves or rotates it, so `SET_FAMILY_LIGHT_SOURCE` version 2 moves and rotates the element of the Light
+Source category with `ElementTransformUtils` and reads the transform back (**UNSURE** until Group IJ).
 
 ---
 
@@ -660,7 +670,7 @@ source on more than one axis by parameters is a forum question (**UNSURE**).
 | A label in a tag, symbol or title block | Revit's API cannot make one on any release (§8.3) |
 | Setting a pattern-based panel's tile pattern | `CurtainPanelTilePattern` is read-only (§7) |
 | A point hosted on a line at a ratio; a profile on a point's plane | **Built 2026-10-02** - `PLACE_ADAPTIVE_POINTS` hosts points on a line (`NewPointOnEdge`) or on a point's own plane (`PointOnPlane.NewPointOnPlane`), and `CREATE_CONCEPTUAL_FORM` sweeps a profile along a path (`NewSweptBlendForm`) - the two-point beam; owed BV19 and BV20 |
-| A connector's primary flag, linked connectors, a light source | **Built 2026-10-02** - `SET_FAMILY_CONNECTOR_ROLES` and `SET_FAMILY_LIGHT_SOURCE`, owed BV17 and BV18. Still by hand: the Light Source tick box, and a wattage (§10) |
+| A connector's primary flag, linked connectors, a light source | **Built 2026-10-02** - `SET_FAMILY_CONNECTOR_ROLES` and `SET_FAMILY_LIGHT_SOURCE`, owed BV17 and BV18. The Light Source tick, the light source's position and aim, a wattage, loss factor, dimming and filter **built 2026-10-21**, owed Group IJ (§10); by hand only unticking Light Source |
 | A hosted opening whose size follows a parameter | An opening's sketch cannot be locked through the API; a void is the route, owed BV12 |
 | Divide Surface on a mass, a revolve form in a conceptual family | **Built 2026-10-02** - `DIVIDE_FAMILY_SURFACE` (a number or a distance each way, and a tile pattern or a loaded panel family) and `CREATE_CONCEPTUAL_FORM` with an axis; owed BV21 and BV22 |
 | A structural family's Material for Model Behavior and Section Shape | **Built 2026-10-02** - `SET_FAMILY_SETTINGS`, owed BV23 |

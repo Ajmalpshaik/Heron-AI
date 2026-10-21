@@ -1,15 +1,15 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-036
-semantic-identity: "set the family's own Work Plane-Based, Shared, Always Vertical, Room Calculation Point, Cut with Voids When Loaded, Part Type, Profile Usage, Material for Model Behavior, Section Shape or OmniClass Number in the family being edited"
+semantic-identity: "set the family's own Work Plane-Based, Shared, Always Vertical, Room Calculation Point, Cut with Voids When Loaded, Part Type, Profile Usage, Material for Model Behavior, Section Shape, OmniClass Number or Light Source in the family being edited"
 kind: action
 domain: revit.families
 capability: SET_FAMILY_SETTINGS
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -53,6 +53,16 @@ purpose: >
   clear empties it. Version 1's proof no longer describes the code and is kept
   below as a record; the fragment is DRAFT until it is proved again.
 
+  **VERSION 3 (2026-10-21): LIGHT SOURCE** - "Light Source=yes" ticks the box
+  a Lighting Fixtures family needs before SET_FAMILY_LIGHT_SOURCE can define
+  its light, done by hand until then. The switch Revit hands the API is not
+  named Light Source in its reference, so the tick is PROVED: after the write,
+  Revit's lighting API must find a light source in the family, or the call
+  fails and nothing is kept. Only yes is taken - unticking removes the light
+  source and every photometric value, and is left to the modeller. Version 2's
+  proof is kept below as a record; the fragment is DRAFT until it is proved
+  again.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -71,6 +81,7 @@ contract:
     # family's category, written with its title; "OmniClass Number=",
     # "=none" or "=clear" empties it. The add-in's NamedValues keeps an empty
     # value as "" (RevitFragment.cs), and none and clear are taken either way.
+    # VERSION 3: "Light Source=yes" - yes only, proved by Revit's lighting API.
     - name: settings
       type: IDictionary<string, string>
       source: request
@@ -196,6 +207,16 @@ compatibility-note: >
   2020-2027. Whether an API write of the number fills OmniClass Title is
   Revit's - the title is read after the write and the answer reported
   (NEEDS-CHECKING).
+  VERSION 3, LIGHT SOURCE (read 2026-10-21 with `tools/api-surface --members
+  BuiltInParameter` over the 2020 to 2027 assemblies and their RevitAPI.xml):
+  `BuiltInParameter.LIGHTING_FIXTURE_LIGHT_EMITTER` (-1010508), labelled
+  "Light Emitter", is the only family-level light switch in the enum, the same
+  on all eight releases; no reference text says it is the Light Source box of
+  Family Category and Parameters, so the write is proved by
+  `LightFamily.GetLightFamily(Document)` succeeding afterwards (2020-2027,
+  reached by name - the Lighting namespace is not imported). Whether the
+  switch is on `Document.OwnerFamily` at all is Revit's to answer
+  (NEEDS-CHECKING Group IJ); where it is not, the call refuses by name.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
@@ -204,6 +225,10 @@ compatibility-note: >
 #   "set the part type of this fitting to elbow"  -> here
 #   "turn on cut with voids when loaded"          -> here
 #   "set the family category to air terminal"     -> SET_FAMILY_CATEGORY
+#   "tick light source for this family"           -> here (version 3)
+#   "set the light source of this fixture family" -> SET_FAMILY_LIGHT_SOURCE -
+#                                                    its shape, distribution
+#                                                    and values, once ticked
 #   "set the omniclass number of this family"     -> here (version 2)
 #   "set the omniclass number to 23.65.55.14.14"  -> here
 #   "clear the omniclass number"                  -> here
@@ -229,3 +254,4 @@ utterances:
   - set the omniclass number of this family
   - set the omniclass number to 23.65.55.14.14
   - clear the omniclass number
+  - tick light source for this family

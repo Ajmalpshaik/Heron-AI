@@ -62,6 +62,21 @@ positive:
       reaches the fragment as "" (NamedValues keeps it, by reading) or is lost
       on the way
 
+  # VERSION 3 - Light Source.
+  - given: >
+      a Generic Model family switched to Lighting Fixtures with
+      SET_FAMILY_CATEGORY, Light Source not ticked; settings "Light Source=yes"
+    expect: >
+      changed 1; settingReport "Light Source No -> Yes"; the finding that
+      Revit's lighting API finds the light source; Family Category and
+      Parameters showing Light Source ticked - LOOKED AT; SET_FAMILY_LIGHT_SOURCE
+      then runs on the family without refusing. Or the call fails saying the
+      switch written is not the Light Source tick, nothing kept - EITHER answer
+      is the measurement Group IJ wants
+
+  - given: the same call again
+    expect: changed 0, alreadySet 1, the light-source finding
+
 negative:
   - given: settings "Work Plane-Based=maybe"
     expect: refused - neither yes nor no - and nothing changed
@@ -111,6 +126,16 @@ negative:
       sample, that no code is valid for any category out of the box, and the
       path the office's own file goes at
 
+  - given: a Lighting Fixtures family with Light Source ticked; settings "Light Source=no"
+    expect: >
+      refused - unticking removes the light source and every photometric
+      value, left to the modeller - nothing changed. THE V3 NEGATIVE
+
+  - given: a Generic Model family (not Lighting Fixtures); settings "Light Source=yes"
+    expect: >
+      refused - the category has no Light Source setting Revit hands the API,
+      naming SET_FAMILY_CATEGORY - nothing changed
+
 second_route:
   - >
       Family Category and Parameters in the Family Editor: the Work Plane-Based,
@@ -119,3 +144,7 @@ second_route:
       Family Category and Parameters: the OmniClass Number and OmniClass Title
       rows (Classification Number and Title from 2026), and the dialog behind
       the number's button listing the same codes for the category
+  - >
+      Family Category and Parameters of a Lighting Fixtures family: the Light
+      Source box ticked, and the Light Source Definition button available in
+      the light source's Properties

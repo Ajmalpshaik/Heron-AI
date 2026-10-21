@@ -240,9 +240,11 @@ jobs:
     set:
       shape: "circle 200"
       distribution: "spot 30 60"
-      intensity: "1500 lm"
-      colorTemperature: "3000 K"
       typeName: ""
     note: >
-      Positive: Type Properties shows 30 and 60 degrees, 1500 lm, 3000 K -
-      record each display. Negative: no Light Source tick, refused naming it.
+      Positive: Type Properties shows 30 and 60 degrees - record each display.
+      Negative: no Light Source tick, refused naming SET_FAMILY_SETTINGS.
+      VERSION 2 (2026-10-21, 5b-1294) takes the family's light source OR the
+      types' values per call, so 1500 lm and 3000 K are a second call, by name
+      - and NEEDS-CHECKING Group IJ, tools/jobs/light-source-ij-2026-10-21.yaml,
+      proves version 2 on two types.

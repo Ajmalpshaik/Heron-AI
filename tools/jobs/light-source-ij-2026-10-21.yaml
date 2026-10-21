@@ -1,0 +1,56 @@
+# NEEDS-CHECKING Group IJ - SET_FAMILY_LIGHT_SOURCE v2 and SET_FAMILY_SETTINGS
+# v3, DRAFT since 2026-10-21 (rows 5b-1294 to 5b-1296).
+#
+#     python tools/batch-prove.py tools/jobs/light-source-ij-2026-10-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/light-source-ij-2026-10-21.yaml
+#
+# THE ARRANGEMENT is the one docs/needs-checking/group-ij.md describes: a COPY
+# of the owner's pendant family saved as "Heron IJ Pendant" in
+# %TEMP%\heron-work\light-ij - two family types, TRG_Standard and
+# TRG_Emergency, Light Source ticked, TRG_Emergency CURRENT - and a new Generic
+# Model family "Heron IJ Generic", switched to Lighting Fixtures, Light Source
+# NOT ticked. Both open. Never the office's library file.
+#
+# EVERY JOB IS A ROLLED-BACK WRITE: the family is as saved before each one.
+# IJ3 to IJ7 and IJ9 to IJ10 need a value read in Family Types or a section,
+# and are run by name, one at a time - this file runs the two whose verdict is
+# in the answer.
+#
+# THE NEGATIVES ARE A DIFFERENT FAMILY OR A DIFFERENT VALUE, never a cleared
+# one: the light values on a family with no light source, and "Light Source"
+# on a family whose category has no such switch.
+
+model: Heron IJ Pendant (copy of TRG_Lighting Fixture_LED Pendant_CoreLine WT120C) and Heron IJ Generic, Revit 2020
+
+defaults:
+  setup: []
+
+jobs:
+  - fragment: set-family-light-source
+    in: "Heron IJ Pendant"
+    negative-in: "Heron IJ Generic"
+    expect: lightReport
+    set:
+      intensity: "4500 lm"
+      colorTemperature: "4000 K"
+      typeName: ""
+    note: >
+      IJ2. Positive: both types read Luminous Flux 4500 lm and 4000 K in the
+      report, TRG_Emergency named as reached with it current - OR the call
+      fails naming TRG_Emergency and the hand fix. Record which, then look at
+      Family Types with each type chosen. Negative: the Generic family has no
+      light source - refused naming SET_FAMILY_SETTINGS "Light Source=yes".
+
+  - fragment: set-family-settings
+    in: "Heron IJ Generic"
+    negative-in: "Heron IJ Pendant"
+    expect: changed
+    set:
+      settings: "Light Source=yes"
+    negative-set:
+      settings: "Light Source=no"
+    note: >
+      IJ4. Positive: Light Source No -> Yes and the finding that the lighting
+      API finds the light source - OR a refusal or failure saying the switch
+      is not the tick. Record which. Negative: unticking is refused, nothing
+      changed.
