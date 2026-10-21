@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -91,6 +91,43 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (2,954 elements), Revit 2020, session 30308
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, alreadyMatching
+    0, created 2 item(s) [345472, 345473], findings 5 item(s) [From "HeronLinkSource.rvt :
+    2 : location <Not Shared>": 2 sp..., room 1 "Room": space made on Level 1, room 2 "Room":
+    space made on Level 1, ...], levelTolerance 0.0328083989501312, lift 0.984251968503937,
+    lines 4 item(s) [room 1 "Room": space made on Level 1, room 2 "Room": space made on Level
+    1, space 345472 reads back with NO AREA - placed where nothing ..., ...], linked Document,
+    loaded 1 item(s) [HeronLinkSource.rvt : 2 : location <Not Shared>], nameOf Func`2, notPlaced
+    0 item(s), onPhase Phase, orphans 0 item(s), refusal (null), renamed 0 item(s), report
+    room 1 "Room": space made on Level 1 | room 2 "Room": space made on Level 1 | space 345472
+    reads back with NO AREA - placed where nothing bounds it. Its link may not be Room Bounding
+    in this model | space 345473 reads back with NO AREA - placed where nothing bounds it.
+    Its link may not be Room Bounding in this model, source RevitLinkInstance, updateNames
+    false, wantedLink HeronLinkSource.rvt, wantedPhase . inputs came linkName as given; phaseName
+    as given; updateNames as given. on Project1'
+  negative_case: 'run with linkName=No Such Link, phaseName=, updateNames=False instead -
+    chosen because it should not contain what this fragment reports - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
+    alreadyMatching 0, created 0 item(s), findings 1 item(s) [No loaded link is named "No
+    Such Link", so NOTHING WAS MADE....], levelTolerance 0.0328083989501312, lift 0.984251968503937,
+    lines 1 item(s) [No loaded link is named "No Such Link", so NOTHING WAS MADE....], linked
+    (null), loaded 1 item(s) [HeronLinkSource.rvt : 2 : location <Not Shared>], nameOf Func`2,
+    notPlaced 0 item(s), onPhase (null), orphans 0 item(s), refusal No loaded link is named
+    "No Such Link", so NOTHING WAS MADE. Loaded: HeronLinkSource.rvt : 2 : location <Not Shared>.,
+    renamed 0 item(s), report No loaded link is named "No Such Link", so NOTHING WAS MADE.
+    Loaded: HeronLinkSource.rvt : 2 : location <Not Shared>., source (null), updateNames false,
+    wantedLink No Such Link, wantedPhase . inputs came linkName as given; phaseName as given;
+    updateNames as given. on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 74316f6f235adc0b
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
