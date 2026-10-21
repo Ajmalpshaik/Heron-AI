@@ -93,6 +93,9 @@ needs:
   - SET_FAMILY_CONNECTOR_ROLES
   - REPORT_FAMILY_FORMS
   # FAMILY-CREATION's steps, which this skill says still hold.
+  # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
+  # GUIDs, against the family, before ADD_FAMILY_SHARED_PARAMETERS writes.
+  - REPORT_SHARED_PARAMETER_FILE
   - ADD_FAMILY_SHARED_PARAMETERS
   - SET_FAMILY_PLANE_REFERENCE
   - EXTRUDE_BETWEEN_PLANES

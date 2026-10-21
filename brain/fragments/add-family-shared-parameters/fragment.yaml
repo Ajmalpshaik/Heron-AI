@@ -322,6 +322,12 @@ compatibility-note: >
 #    below is reached by identity. Recorded in Group DF, not chased.)
 #   "add a shared parameter to the project"       -> ADD_PROJECT_PARAMETER
 #   "add width and depth parameters to the family" -> ADD_FAMILY_PARAMETERS
+#   "which shared parameter file is Revit using"  -> REPORT_SHARED_PARAMETER_FILE,
+#                                     the read (D-86) - run it FIRST, before
+#                                     this, to see the file and its GUIDs
+#   "check the shared parameter GUIDs against this family"
+#                                  -> REPORT_SHARED_PARAMETER_FILE,
+#                                     compareWithDocument true
 
 utterances:
   - add the shared parameter Equipment Tag to this family
