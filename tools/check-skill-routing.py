@@ -667,8 +667,10 @@ def main():
     # the ONE store every chat on the PC reads from that worktree's unmerged
     # card, and every live heron_lookup answered from it until the store was
     # rebuilt from the main checkout. A refusal is exit 2: nothing was asked.
-    # The guard compares ROWS: a card changed only in its utterances or its
-    # purpose passes it, and is still re-indexed below (row 5b-1289).
+    # And it refuses the shared store from a worktree or a branch WHATEVER it
+    # holds, before opening it - a card changed only in its utterances or its
+    # purpose matched on rows, and was re-indexed below until 2026-10-21
+    # (row 5b-1289).
     if not store_checked("skill routing report"):
         return 2
 

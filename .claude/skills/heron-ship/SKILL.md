@@ -146,21 +146,21 @@ on the machine reads: until 2026-10-08, when `check-routing` found that store di
 branch's fragments it rebuilt it from your branch, and from then on every other session's
 `heron_lookup` named your unmerged fragments ([row 5b-233](../../../docs/FRAGMENT-ISSUES.md), measured
 2026-09-27). **From a worktree, or from the MAIN folder with any branch but `main` checked out, both
-now refuse, exit 2, when the shared store does not hold this tree's library** - its ids, or any row's
-content - and say to set `HERON_KNOWLEDGE`; so a 2 there is this, not your change. The
+now refuse, exit 2, whatever the shared store holds**, before opening it, and say to set
+`HERON_KNOWLEDGE`; so a 2 there is this, not your change. The
 rule is `heron_scope.rebuild_refusal()`, the one the lookup asks before it warms that store; the
 main folder on a branch was let through until 2026-10-09. (`check-intrusion` had no guard of its own
 until 2026-10-09, and rebuilt on a COUNT; it calls `check-routing`'s guard now, and so do
 `score-routing`, `measure-brain`, `measure-routes` and `measure-graph` - and since 2026-10-21
 `check-skill-routing`, `prove-skill` when it asks, and `check-risk-crossings --shared`, which asked
 nothing and re-indexed the shared store from a worktree's unmerged card,
-[row 5b-1288](../../../docs/FRAGMENT-ISSUES.md).) **Point every one of them at a scratch folder
-anyway.** The guard compares ROWS, so a worktree whose cards differ from main's only in words a row
-does not keep - an utterance, a purpose - passes it, and the open re-indexes the shared store from
-those words ([row 5b-1289](../../../docs/FRAGMENT-ISSUES.md), measured 2026-10-21); and from the main
-folder on `main` they still rebuild the shared store, which every live chat reads. If a store was
-rebuilt from a branch before this, put it back from the main checkout on `main` with
-`python brain/heron_scope.py --rebuild`.
+[row 5b-1288](../../../docs/FRAGMENT-ISSUES.md).) **Whatever it holds** is since 2026-10-21 too: the
+guard asked the rule only when the store's rows did not match this tree, so a card changed only in
+its words - an utterance, a purpose - passed, and the open re-indexed the shared store from those
+words ([row 5b-1289](../../../docs/FRAGMENT-ISSUES.md)). **Point every one of them at a scratch folder
+anyway**: from the main folder on `main` they still rebuild the shared store, which every live chat
+reads. If a store was rebuilt from a branch before this, put it back from the main checkout on `main`
+with `python brain/heron_scope.py --rebuild`.
 
 **`check-decision-titles` needs the whole git history** and exits **2** in a shallow clone, saying so:
 it reads what each decision was FIRST written as, and a clone cut short cannot show that. A cloud

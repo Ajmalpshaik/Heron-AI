@@ -21,23 +21,31 @@ store_for_this_tree() first (row 5b-233); this one did not, and neither did
 `tools/prove-skill.py` when it asks, nor `tools/check-risk-crossings.py
 --shared`. All three call it now.
 
-FOR EACH OF THE THREE, FOUR STORES:
+FRAGMENT-ISSUES ROW 5b-1289. That guard asked the rule only when the store
+did not match this tree, and a match is decided on ROWS - so a worktree card
+changed only in its utterances or purpose passed, and the open re-indexed
+the shared store from those words. The owner decided on 2026-10-21 that from
+a worktree or a branch a measurer never touches the shared store at all: the
+rule is asked FIRST, before the store is opened, whatever it holds. The
+first section asks the guard itself, which nine tools call.
+
+FOR EACH OF THE THREE TOOLS:
 
   1. THE SHARED STORE, ASKED FROM A LINKED WORKTREE. Not a planted answer: a
      real `.git` FILE naming a main checkout's `.git/worktrees/<name>`, read
      by heron_scope.main_checkout() as a worktree is read on the owner's PC.
      The shared folder is a scratch home (HERON_DATA), so the owner's own
-     store is never asked. Twice - holding this tree's library with one row
-     edited, as row 5b-1288's store held main's row for the worktree's edited
-     card, and empty, which the first open would build from the worktree
-     (row 5b-404). Each must be exit 2 - the edited store's file left byte
-     for byte as it was, and the empty one holding no card row (the guard's
-     own open makes an empty file where there was none, as every
-     measurer's does).
+     store is never asked. Three times - already holding this tree's library
+     (row 5b-1289), with one row edited as row 5b-1288's store held main's
+     row for the worktree's edited card, and with no file at all, which the
+     first open would build from the worktree (row 5b-404). Each must be
+     exit 2 with the store's file left byte for byte as it was - and where
+     there was none, none made.
   2. THE SHARED STORE, FROM THE MAIN FOLDER ON A FEATURE BRANCH -
      heron_scope.refreshes_from() and on_main_branch() planted, as
      tests/test_measure_routes.py plants them, because a test cannot check a
-     branch out in the main folder. Exit 2, nothing written.
+     branch out in the main folder. Matching, and with no file: exit 2, the
+     file left as it was.
   3. THE SHARED STORE, FROM THE MAIN CHECKOUT ON MAIN, and
   4. A PRIVATE STORE (HERON_KNOWLEDGE): both let through to the measurement,
      so the guard is the rule's and not a refusal of every store.
@@ -47,11 +55,10 @@ every open, which raises instead of indexing - so nothing is ranked and no
 sentence is asked. A raise of any other kind is recorded as the exit code,
 never let out (heron-ship s2a).
 
-WHAT IT DOES NOT HOLD. The guard compares the store's ROWS with this tree's
-cards. A worktree whose cards differ from main's only in words the row does
-not keep - utterances, purpose, an impl/ file - passes it, and the open
-re-indexes the shared store from them: row 5b-1289, measured, and row 136's
-open half. This suite does not claim to close it.
+WHAT IT DOES NOT HOLD. A chat whose own Heron server runs in a worktree
+still re-indexes the shared store from that worktree's files on every
+lookup - row 136's open half, in mcp/server/heron_brain.py, which no tool
+here calls.
 """
 
 import contextlib
@@ -187,6 +194,33 @@ def _tail(said):
     return " ".join(said.split())[-300:]
 
 
+# The shared stores a run from a worktree or a branch is handed. The first is
+# row 5b-1289's: rows that already match this tree, which the guard let
+# through until 2026-10-21 - and the open re-indexed the store from the
+# running tree's words.
+KINDS = ("holding this tree's library", "one row edited", "no file at all")
+
+
+def _planted_shared(home, built, kind):
+    """The shared folder under HOME, holding the store KIND names."""
+    shared = os.path.join(home, "knowledge")
+    os.makedirs(shared)
+    if kind != KINDS[2]:
+        shutil.copy(os.path.join(built, "global.db"), shared)
+    if kind == KINDS[1]:
+        _edit(shared)
+    return shared
+
+
+def _moved(before, after, shared):
+    """What became of the store's file, for a check's own line."""
+    if after == before:
+        return "unchanged"
+    if before is None:
+        return "a file was MADE, %d rows" % _rows(shared)
+    return "WRITTEN - %d rows now" % _rows(shared)
+
+
 def _linked_worktree(top):
     """(worktree, main): a folder whose .git is a FILE naming a main
     checkout's .git/worktrees/wt, as `git worktree add` writes it."""
@@ -255,36 +289,24 @@ def guarded(name, argv, built):
         check(False, "%s loads (%s: %s)" % (name, type(raised).__name__, raised))
         return
 
-    # 1. The shared store, from a linked worktree - edited, then empty.
-    for kind in ("one row edited", "empty"):
+    # 1. The shared store, from a linked worktree - matching this tree,
+    #    edited, then with no file at all.
+    for kind in KINDS:
         top = tempfile.mkdtemp(prefix="heron-skillguard-wt-")
         try:
             tree, main = _linked_worktree(top)
             home = os.path.join(top, "home")
-            shared = os.path.join(home, "knowledge")
-            os.makedirs(shared)
-            if kind != "empty":
-                shutil.copy(os.path.join(built, "global.db"), shared)
-                _edit(shared)
+            shared = _planted_shared(home, built, kind)
             before = _md5(os.path.join(shared, "global.db"))
             code, said = run(tool, argv, {"HERON_KNOWLEDGE": None,
                                           "HERON_DATA": home}, root=tree)
             after = _md5(os.path.join(shared, "global.db"))
-            if kind == "empty":
-                # No file at all: the guard's own open makes an empty one,
-                # as every measurer's does - so no ROW is the test here.
-                held = _rows(shared)
-                check(code == 2 and held == 0,
-                      "the SHARED store (empty), asked from a linked "
-                      "worktree, is exit 2 with no card row written (got "
-                      "%r, %d rows)" % (code, held))
-            else:
-                check(code == 2 and after == before,
-                      "the SHARED store (%s), asked from a linked worktree, "
-                      "is exit 2 and its file is left byte for byte as it "
-                      "was (got %r, %s)"
-                      % (kind, code, "unchanged" if after == before else
-                         "WRITTEN - %d rows now" % _rows(shared)))
+            check(code == 2 and after == before,
+                  "the SHARED store (%s), asked from a linked worktree, is "
+                  "exit 2 and its file is left byte for byte as it was - %s "
+                  "(got %r, %s)"
+                  % (kind, "no file made" if before is None else "not re-indexed",
+                     code, _moved(before, after, shared)))
             flat = " ".join(said.split())
             check("SHARED" in said and "HERON_KNOWLEDGE" in said
                   and "not the main checkout" in flat,
@@ -293,22 +315,27 @@ def guarded(name, argv, built):
         finally:
             shutil.rmtree(top, ignore_errors=True)
 
-    # 2. The shared store, from the main folder on a feature branch.
-    top = tempfile.mkdtemp(prefix="heron-skillguard-branch-")
-    try:
-        home = os.path.join(top, "home")
-        shared = os.path.join(home, "knowledge")
-        os.makedirs(shared)
-        code, said = run(tool, argv, {"HERON_KNOWLEDGE": None, "HERON_DATA": home},
-                         source=(FRAG.FRAGMENTS_DIR, None), on_main=False)
-        held = _rows(shared)
-        check(code == 2 and held == 0,
-              "from the MAIN folder with a feature branch checked out, the "
-              "same: exit 2, nothing written (got %r, %d rows)" % (code, held))
-        check("a branch that is not main" in " ".join(said.split()),
-              "and it says the branch is why")
-    finally:
-        shutil.rmtree(top, ignore_errors=True)
+    # 2. The shared store, from the main folder on a feature branch -
+    #    matching this tree, and with no file at all.
+    for kind in (KINDS[0], KINDS[2]):
+        top = tempfile.mkdtemp(prefix="heron-skillguard-branch-")
+        try:
+            home = os.path.join(top, "home")
+            shared = _planted_shared(home, built, kind)
+            before = _md5(os.path.join(shared, "global.db"))
+            code, said = run(tool, argv, {"HERON_KNOWLEDGE": None,
+                                          "HERON_DATA": home},
+                             source=(FRAG.FRAGMENTS_DIR, None), on_main=False)
+            after = _md5(os.path.join(shared, "global.db"))
+            check(code == 2 and after == before,
+                  "from the MAIN folder with a feature branch checked out, the "
+                  "SHARED store (%s) is the same: exit 2, its file left as it "
+                  "was (got %r, %s)"
+                  % (kind, code, _moved(before, after, shared)))
+            check("a branch that is not main" in " ".join(said.split()),
+                  "and it says the branch is why")
+        finally:
+            shutil.rmtree(top, ignore_errors=True)
 
     # 3. The shared store, from the main checkout on main - let through.
     top = tempfile.mkdtemp(prefix="heron-skillguard-main-")
@@ -339,14 +366,72 @@ def guarded(name, argv, built):
         shutil.rmtree(top, ignore_errors=True)
 
 
+def the_guard_itself(built):
+    """check-routing.py's store_for_this_tree(), asked directly - the one
+    function check-routing, check-intrusion, score-routing, the three
+    measure-* tools and the three above all call. Row 5b-1289: the shared
+    store holding exactly this tree's library, asked from a linked worktree,
+    is refused before it is opened at all."""
+    import heron_scope as SCOPE
+
+    print()
+    print("store_for_this_tree() - the guard nine tools call (row 5b-1289)")
+    try:
+        routing = load("check-routing.py")
+    except BaseException as raised:                      # noqa: BLE001
+        check(False, "check-routing.py loads (%s: %s)"
+              % (type(raised).__name__, raised))
+        return
+    top = tempfile.mkdtemp(prefix="heron-skillguard-direct-")
+    opened = []
+    real_open, real_root = SCOPE.open_scope, SCOPE.ROOT
+    kept = None
+    try:
+        tree, _main = _linked_worktree(top)
+        home = os.path.join(top, "home")
+        shared = _planted_shared(home, built, KINDS[0])
+        before = _md5(os.path.join(shared, "global.db"))
+
+        def counted(*args, **kwargs):
+            opened.append(args)
+            return real_open(*args, **kwargs)
+
+        SCOPE.open_scope, SCOPE.ROOT = counted, tree
+        kept = _set_env({"HERON_KNOWLEDGE": None, "HERON_DATA": home})
+        said = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(said), contextlib.redirect_stderr(said):
+                store = routing.store_for_this_tree("test of the guard")
+        except BaseException as raised:                  # noqa: BLE001
+            store = "raised %s: %s" % (type(raised).__name__, raised)
+        if store is not None and hasattr(store, "close"):
+            store.close()
+            store = "the store"
+        after = _md5(os.path.join(shared, "global.db"))
+        check(store is None,
+              "the SHARED store already holding this tree's library, asked "
+              "from a linked worktree, is refused (got %r)" % (store,))
+        check(not opened,
+              "and it is never opened - the rule is asked first (%d open(s))"
+              % len(opened))
+        check(after == before, "and its file is left byte for byte as it was")
+    finally:
+        SCOPE.open_scope, SCOPE.ROOT = real_open, real_root
+        if kept is not None:
+            _set_env(kept)
+        shutil.rmtree(top, ignore_errors=True)
+
+
 def main():
-    print("Row 5b-1288 - the store guard, in the three tools that lacked it")
+    print("Rows 5b-1288 and 5b-1289 - the store guard, asked first, in every")
+    print("tool that asks the store through heron_brain")
     print("-" * 66)
 
     built = tempfile.mkdtemp(prefix="heron-skillguard-built-")
     try:
         _built(built)
         check(_rows(built) > 0, "a store rebuilt from this tree holds its cards")
+        the_guard_itself(built)
         for name, argv in TOOLS:
             guarded(name, argv, built)
     finally:
@@ -359,8 +444,8 @@ def main():
             print("  %s" % line)
         return 1
 
-    print("PASSED - none of the three re-indexes the shared store from a")
-    print("checkout that is not main on main; each says so and exits 2.")
+    print("PASSED - the shared store is never opened from a checkout that is")
+    print("not main on main, whatever it holds; each tool says so and exits 2.")
     return 0
 
 
