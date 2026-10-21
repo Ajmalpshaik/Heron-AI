@@ -280,7 +280,11 @@ if (rulesGiven)
 }
 else
 {
-    asks.Add(new[] { fieldGiven ? filterFieldName.Trim() : "", matchType ?? "keep", filterValue ?? "keep" });
+    // A blank match type is one not given; a blank VALUE is a value - version 1
+    // was called with an empty one beside "has value".
+    asks.Add(new[] { fieldGiven ? filterFieldName.Trim() : "",
+        string.IsNullOrEmpty((matchType ?? "").Trim()) ? "keep" : matchType,
+        filterValue ?? "keep" });
 }
 
 if (ruleNumber < 0)
