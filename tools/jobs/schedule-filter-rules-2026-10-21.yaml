@@ -1,0 +1,65 @@
+# Group IH - SET_SCHEDULE_FILTERS version 2 and REPORT_SCHEDULE_DEFINITION
+# version 2 (row 5b-1290). docs/needs-checking/group-ih.md is the whole plan;
+# this file is its IH1 and IH2.
+#
+#     python tools/batch-prove.py tools/jobs/schedule-filter-rules-2026-10-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/schedule-filter-rules-2026-10-21.yaml
+#
+# THE VALUES ARE ARRANGED FOR GROUP IH's RIG (IH0), never for a working model:
+# four walls, Mark MFD and EDH on Level 1 and on Level 2, and three wall
+# schedules each placed on a sheet of its own -
+#   IH01 - LEVEL 1       'IH WALLS (LEVEL 1)'      1. Mark equals MFD
+#                                                  2. Base Constraint equals Level 1
+#   IH02 - LEVEL 2       'IH WALLS (LEVEL 2)'      a Duplicate of the first, its
+#                                                  rules still Level 1's
+#   IH03 - TWO ON MARK   'IH WALLS (TWO ON MARK)'  1. Mark begins with M
+#                                                  2. Mark ends with D
+# A schedule is a VIEW and cannot be selected in the model, so each is picked
+# as Schedule Graphics on its own sheet - one schedule per run.
+
+model: Heron Schedule Filters (scratch, default metric template), Revit 2020
+
+defaults:
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  set:
+    categoryName: Schedule Graphics
+    inViewOnly: "IH01 - LEVEL 1"
+
+jobs:
+  # The read. The negative is a DIFFERENT selection - the rig's walls - so the
+  # answer must be empty, with every wall counted as not a schedule.
+  - fragment: report-schedule-definition
+    expect: filterRules
+    negative-set:
+      categoryName: Walls
+      inViewOnly: "FloorPlan: Level 1"
+    note: >
+      Positive: filterRules "'IH WALLS (LEVEL 1)': 1. Mark equals 'MFD';
+      2. Base Constraint equals 'Level 1'" - the level by NAME, numbered in the
+      Filter tab's order. Negative: filterRules empty, skippedNotSchedules 2.
+
+  # The modeller's own job: change the value, keep the level rule. The
+  # negative is the schedule whose two rules BOTH use Mark - asked with no
+  # rule number, it must refuse and write nothing.
+  - fragment: set-schedule-filters
+    write: true
+    expect: rulesAfter
+    set:
+      filterAction: change
+      filterFieldName: Mark
+      filterValue: EDH
+    negative-set:
+      categoryName: Schedule Graphics
+      inViewOnly: "IH03 - TWO ON MARK"
+      filterAction: change
+      filterFieldName: Mark
+      filterValue: EDH
+    note: >
+      Positive: rulesAfter "'IH WALLS (LEVEL 1)': 1. Mark equals 'EDH';
+      2. Base Constraint equals 'Level 1'" - the level rule KEPT. Negative:
+      cannotFilterBy "2 filter rules on 'IH WALLS (TWO ON MARK)' use 'Mark' -
+      rules 1 and 2 - ... Say which with its rule number", rulesAfter empty,
+      filtered 0. Both rolled back.
