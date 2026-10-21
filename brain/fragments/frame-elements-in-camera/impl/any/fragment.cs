@@ -505,6 +505,9 @@ Func<View3D, double> windowDistance = view =>
 string farClipProblem = null;
 Action<View3D, double> reachFar = (view, deepest) =>
 {
+    // Far Clip Active off clips nothing, and Revit then greys the offset out.
+    var farOn = view.get_Parameter(BuiltInParameter.VIEWER_BOUND_ACTIVE_FAR);
+    if (farOn != null && farOn.AsInteger() == 0) return;
     var farClip = view.get_Parameter(BuiltInParameter.VIEWER_BOUND_OFFSET_FAR);
     if (farClip != null && farClip.AsDouble() >= deepest * 1.1) return;
     string why = farClip == null ? "the view has no far clip offset" : farClip.IsReadOnly ? "its far clip offset is read-only" : null;
@@ -848,8 +851,8 @@ if (reachedCamera && cinematic)
         // time and then halving, until it is inside the room - the room handed
         // in, or the one at the elements' middle - stands the inset in from
         // there, and steps further in, 100 mm at a time, until nothing solid is
-        // within 150 mm of it (ElementIntersectsSolidFilter on a cube round the
-        // eye), never past half way to the far side. No such point is refused,
+        // within 150 mm of it across (ElementIntersectsSolidFilter on a thin
+        // slab at eye height), never past half way to the far side. No such point is refused,
         // naming what is in the way.
         var outward = new XYZ(sa, ca, 0);
         var reach = corners8.Max(c => (c - centre).DotProduct(outward));
@@ -862,7 +865,15 @@ if (reachedCamera && cinematic)
         var roomFound = false;
         if (room == null && space == null)
         {
-            try { room = doc.GetRoomAtPoint(outAt(0)); } catch (Exception) { room = null; }
+            // In the view's own phase - the overload without one looks only in
+            // the project's last.
+            try
+            {
+                var viewPhase = camera.get_Parameter(BuiltInParameter.VIEW_PHASE);
+                var inPhase = viewPhase != null ? doc.GetElement(viewPhase.AsElementId()) as Phase : null;
+                room = inPhase != null ? doc.GetRoomAtPoint(outAt(0), inPhase) : doc.GetRoomAtPoint(outAt(0));
+            }
+            catch (Exception) { room = null; }
             roomFound = room != null;
         }
         var haveRoom = room != null || space != null;
@@ -893,9 +904,12 @@ if (reachedCamera && cinematic)
         var middle = (wallAt + farSide) / 2;
         var firstTry = wallAt - inset;
         if (firstTry <= middle) firstTry = (wallAt + middle) / 2;
-        // Nothing solid within 150 mm of the eye - a wall, a door's frame, a
-        // cupboard. Rooms, spaces and areas are not solids here.
+        // Nothing solid within 150 mm of the eye across - a wall, a door's
+        // frame, a cupboard - tested on a slab 20 mm thick at eye height, so a
+        // floor or a ceiling near a low or high eye is caught only when the
+        // eye is inside it. Rooms, spaces and areas are not solids here.
         var clearance = 150 / MmPerFoot;
+        var slabHalf = 10 / MmPerFoot;
         var notSolid = new List<ElementId> { new ElementId(BuiltInCategory.OST_Rooms),
             new ElementId(BuiltInCategory.OST_MEPSpaces), new ElementId(BuiltInCategory.OST_Areas) };
         string clearanceUnread = null;
@@ -904,7 +918,7 @@ if (reachedCamera && cinematic)
             var found = new List<Element>();
             try
             {
-                var lo = p - new XYZ(clearance, clearance, clearance);
+                var lo = p - new XYZ(clearance, clearance, slabHalf);
                 var c1 = lo;
                 var c2 = lo + new XYZ(2 * clearance, 0, 0);
                 var c3 = lo + new XYZ(2 * clearance, 2 * clearance, 0);
@@ -913,9 +927,9 @@ if (reachedCamera && cinematic)
                 {
                     CurveLoop.Create(new List<Curve>
                         { Line.CreateBound(c1, c2), Line.CreateBound(c2, c3), Line.CreateBound(c3, c4), Line.CreateBound(c4, c1) }),
-                }, XYZ.BasisZ, 2 * clearance);
+                }, XYZ.BasisZ, 2 * slabHalf);
                 foreach (var e in new FilteredElementCollector(doc).WhereElementIsNotElementType()
-                    .WherePasses(new BoundingBoxIntersectsFilter(new Outline(lo, p + new XYZ(clearance, clearance, clearance))))
+                    .WherePasses(new BoundingBoxIntersectsFilter(new Outline(lo, p + new XYZ(clearance, clearance, slabHalf))))
                     .WherePasses(new ElementIntersectsSolidFilter(cube)))
                     if (e.Category != null && e.Category.CategoryType == CategoryType.Model && !notSolid.Contains(e.Category.Id))
                         found.Add(e);
@@ -945,14 +959,18 @@ if (reachedCamera && cinematic)
             refused = "No point from " + mm(inset) + " mm in from " + roomName + (haveRoom ? "'s own boundary" : "") + " on the "
                 + sideWord + " side to half way across, " + mm(eyeZ - baseZ) + " mm up, is "
                 + (firstInTheWay != null ? "clear of solids - " + nameThem(firstInTheWay) + " in the way" : "inside the room")
-                + ". Give a distanceMm, another side, or stand the camera by hand with SET_VIEW_CAMERA.";
+                + ". Give a distanceMm, another side or another eyeHeightMm, or stand the camera by hand with SET_VIEW_CAMERA.";
         if (refused != null)
             refused += " " + (madeNew ? "The new view was made; it is not framed." : "NOTHING WAS CHANGED.");
         else
         {
             standOff = at;
             eye = outAt(at);
-            forward = lookFor(eye);
+            // Aimed rather than level, an interior looks at the far side at the
+            // elements' middle height: the eye may now stand at or past the
+            // box's middle, and aiming there would turn it round.
+            var farPoint = outAt(farSide);
+            forward = aimAtCentre ? (new XYZ(farPoint.X, farPoint.Y, centre.Z) - eye).Normalize() : lookFor(eye);
             findings.Add("Interior: the eye stands " + mm(wallAt - at) + " mm in from " + roomName
                 + (haveRoom ? "'s own boundary" : "") + " on the " + sideWord + " side"
                 + (haveRoom && reach - wallAt > 1 / MmPerFoot ? ", which is " + mm(reach - wallAt) + " mm inside the elements' "
