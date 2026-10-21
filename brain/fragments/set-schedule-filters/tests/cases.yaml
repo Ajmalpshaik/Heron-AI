@@ -14,6 +14,34 @@ positive:
       only unmarked elements listed, and NO value written - this is the branch
       that must not pass a string to a rule that takes none
 
+  - given: >
+      VERSION 2. A schedule with two rules - 1. Type Mark equals 'MFD';
+      2. Level equals a level - and filterAction change, filterFieldName
+      Type Mark, filterValue EDH, matchType left out
+    expect: >
+      rulesAfter "1. Type Mark equals 'EDH'; 2. Level equals '<the same
+      level>'" - the level rule KEPT, read back - rulesBefore naming both
+      old rules, and replacedRules "rule 1 was: Type Mark equals 'MFD'"
+
+  - given: >
+      VERSION 2. The same schedule, filterAction change, filterFieldName
+      Level, filterValue the name of another level in the model
+    expect: >
+      rule 2 now names the other level, read back by NAME; rule 1 untouched
+
+  - given: >
+      VERSION 2. filterAction add with Mark has value, then filterAction
+      remove with filterFieldName Mark
+    expect: >
+      three rules after the add, the old two still first; two after the
+      remove, the same two as before the add
+
+  - given: >
+      VERSION 2. filterRules "Type Mark | equals | EDH; Level | | <another
+      level>" with filterAction change
+    expect: >
+      both rules changed in one call, the level rule keeping its match type
+
 negative:
   - given: any of the above, then a count of the model's ducts before and after
     expect: >
@@ -50,6 +78,34 @@ negative:
     expect: >
       the filter applied and the schedule EMPTY - which is a correct outcome, not
       a failure, and must be distinguishable from the filter never being written
+
+  - given: >
+      VERSION 2. A schedule whose two rules BOTH use Type Mark, and
+      filterAction change on Type Mark with no ruleNumber
+    expect: >
+      cannotFilterBy "2 filter rules ... use 'Type Mark' - rules 1 and 2 -
+      ... Say which with its rule number", rulesAfter EMPTY and both rules
+      unchanged when the Filter tab is opened. Picking the first is a guess
+
+  - given: >
+      VERSION 2. filterAction change on a field that is not a column of the
+      schedule
+    expect: >
+      notPresent "... a schedule cannot filter on a field it does not
+      carry", rulesAfter empty, the rules unchanged
+
+  - given: >
+      VERSION 2. filterAction change on the Level rule to a name no level in
+      the model has
+    expect: >
+      notPresent naming the levels that ARE there, rulesAfter empty, the
+      rule unchanged
+
+  - given: >
+      VERSION 2. filterAction "roughly"
+    expect: >
+      REFUSED with the four actions, NOTHING written, rulesBefore empty -
+      the request is refused before any schedule is read
 
 second_route:
   - >
