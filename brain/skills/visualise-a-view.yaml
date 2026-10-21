@@ -64,15 +64,35 @@ purpose: >
        keep the camera level, and a level camera keeps every vertical line
        vertical - a two-point perspective. A camera tilted up or down makes
        walls lean in, the commonest thing that makes a render look wrong.
-     - Field of view: Revit's API has no field-of-view value on any release
-       2020 to 2027 (row 5b-1267). Aim for what a 35 to 50 mm lens shows -
-       the picture neither stretched at the corners nor cramped - by asking
-       the modeller to drag the crop region or use Size Crop, by hand.
+     - A NAMED SHOT (FRAME_ELEMENTS_IN_CAMERA version 3, row 5b-1287) - the
+       modeller's words pick it, and side picks where to stand (front =
+       south, back, left = west, right = east, project north up):
+         "cinematic", "film look"         shot cinematic - level camera at
+                                          1.2 m, 28 mm, 2.39:1, thirds
+         "hero", "dramatic", "low angle"  shot hero - 0.6 m, aimed up at the
+                                          centre, 24 mm, 16:9, thirds
+         "aerial", "bird's eye"           shot bird's-eye - 55 degrees down,
+                                          35 mm, 16:9
+         "eye level", "street view",      shot eye-level (or three-quarter
+         "two point perspective"          for a corner) - level at 1.6 m,
+                                          35 mm, 3:2
+         "front", "elevation-like"        shot front - level at half height,
+                                          one-point
+         "detail", "close-up"             shot close-up - 85 mm, 15 down
+         "plan view", "top down"          shot top-down
+       Any one setting is the modeller's to override: eyeHeightMm, lensMm,
+       aspect, composition. These are Heron's starting values, never a
+       standard (D-33).
+     - Field of view: a perspective view's crop window sits on Revit's own
+       near plane, 40 mm in front of the eye (row 5b-1281). lensMm sizes that
+       window to a 35 mm camera's angle - 24 wide, 35 and 50 natural, 85
+       close - and the camera steps back until the subject fills it. A wide
+       lens close up stretches the corners; prefer stepping back.
      - Composition: put the subject, or the line where floor meets wall or
        ground meets sky, about a third of the way in - the rule of thirds -
        rather than dead centre, except for a single piece of equipment,
-       which sits well in the middle with space round it. Heron cannot see
-       the composition: the modeller looks at the view and says.
+       which sits well in the middle with space round it. composition thirds
+       or low horizon does it; the modeller looks at the picture and says.
      CHECK IN THE PICTURE: verticals vertical (wall corners, columns, door
      edges parallel to the picture's sides); the subject not cut by the crop;
      corners not stretched; for equipment, the unit filling most of the view.

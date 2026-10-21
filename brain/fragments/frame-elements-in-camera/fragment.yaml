@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,35 @@ semantic-identity: "make a perspective camera view that frames these elements, f
 kind: action
 domain: revit.views
 capability: FRAME_ELEMENTS_IN_CAMERA
-version: 2
+version: 3
+# VERSION 3, 2026-10-21 - row 5b-1287, the owner's ask: "this building left
+# side like in a cinematic camera look ... different styles, camera angles,
+# camera height ... all kind of camera settings". Six optional inputs, each
+# absent reading as version 2 did:
+#   shot         eye-level, three-quarter, front (one-point), hero (low angle),
+#                worm's-eye, high-angle, bird's-eye (aerial), top-down,
+#                cinematic, close-up - each a turn from the side, a camera
+#                height or a look-down, a lens, a picture shape and a
+#                composition, in ONE table in the source: Heron's STARTING
+#                values, never a standard (D-33); the picture is the judge
+#   side         front (stand south, look north), back, left (west), right
+#                (east) with project north up, or a compass word or degrees
+#   eyeHeightMm  the camera's height above the elements' base; with it the
+#                camera is LEVEL - verticals stay vertical, a two-point
+#                perspective - unless the shot aims at the centre (hero,
+#                worm's-eye); a height and a look-down both given is refused
+#   lensMm       a 35 mm camera's focal length, 10 to 300 - 24 wide, 35, 50
+#                normal, 85 close. The crop window on Revit's near plane is
+#                sized to that angle (row 5b-1281's measurement: half width =
+#                near x 18 / lens) and the eye moves back until the elements
+#                fill it
+#   aspect       the picture's width over height - 16:9, 3:2, 4:3, 2.39:1
+#                (cinema), 1:1, 9:16 or auto
+#   composition  centre, thirds (the elements on the left third line) or low
+#                horizon (a level camera's horizon on the lower third)
+# direction, lookDownDeg and marginPercent now read `auto` when left out -
+# south-east, 30 and 10 as before, or the shot's own. Version 2's proof below
+# no longer describes the code: DRAFT until proved again, pictures looked at.
 # VERSION 2, 2026-10-20 - row 5b-1281. Version 1, signed the same day on
 # numbers alone (IB1's look at the view was never made), set a perspective
 # view's crop box to the elements' box metres away; Revit draws a perspective
@@ -76,12 +104,12 @@ contract:
       type: string
       source: request
       optional: true
-      absent: south-east
+      absent: auto
     - name: lookDownDeg
       type: string
       source: request
       optional: true
-      absent: 30
+      absent: auto
     # Millimetres from the elements' centre to the eye, or auto.
     - name: distanceMm
       type: string
@@ -92,7 +120,44 @@ contract:
       type: string
       source: request
       optional: true
-      absent: 10
+      absent: auto
+    # Version 3. A named shot - eye-level, three-quarter, front, hero, worm's-eye,
+    # high-angle, bird's-eye, top-down, cinematic, close-up - or none.
+    - name: shot
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # Version 3. Which side to stand on: front, back, left, right, or a compass word.
+    - name: side
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # Version 3. Camera height in mm above the elements' base - a level camera.
+    - name: eyeHeightMm
+      type: string
+      source: request
+      optional: true
+      absent: auto
+    # Version 3. Lens in mm on a 35 mm camera, 10 to 300.
+    - name: lensMm
+      type: string
+      source: request
+      optional: true
+      absent: auto
+    # Version 3. Picture width over height - 16:9, 2.39:1 and so on, or auto.
+    - name: aspect
+      type: string
+      source: request
+      optional: true
+      absent: auto
+    # Version 3. centre, thirds or low horizon.
+    - name: composition
+      type: string
+      source: request
+      optional: true
+      absent: auto
   provides:
     - name: camera
       role: result
@@ -172,6 +237,8 @@ compatibility-note: >
 # ROUTING - the same rows are in the render, sun, display and camera cards.
 #
 #   "a close-up camera of this duct heater"     -> here
+#   "cinematic camera on the left side of this building" -> here (version 3)
+#   "low angle hero shot of the selection"      -> here (version 3)
 #   "frame the selected equipment from the NE"  -> here
 #   "camera from this point to that point"      -> SET_VIEW_CAMERA, an eye and
 #                                                  a target typed in mm
@@ -187,3 +254,9 @@ utterances:
   - point a new perspective at the selection for a render
   # Declared because the routing table above claims it (check-routing).
   - a close-up camera of this duct heater
+  # Version 3, the owner's words of 2026-10-21 and the shots they name.
+  - cinematic camera on the left side of this building
+  - low angle hero shot of the selected building
+  - bird's eye view of these elements from the north-west
+  - eye level two point perspective camera of the building
+  - wide angle camera at 1600 mm height on the selection
