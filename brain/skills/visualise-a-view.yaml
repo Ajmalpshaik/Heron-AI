@@ -51,51 +51,63 @@ purpose: >
        an elevation or a section        Presentation Elevation
 
   1. THE CAMERA. A good picture starts with where the eye stands.
-     - Equipment and families: FRAME_ELEMENTS_IN_CAMERA on the selection - a
-       3/4 view, direction south-east (or whichever corner shows the faces
-       that matter: the connections, the access panel, the nameplate),
-       lookDownDeg 20 to 30, marginPercent 10 to 15. WHY: a 3/4 view from a
-       little above shows two sides and the top, which is what explains a
-       unit's shape; a straight-on view hides its depth.
-     - Rooms and street views: SET_VIEW_CAMERA (version 2) with levelName -
-       eyeMm with its height 1600 above the floor level and targetMm at the
-       SAME height, perspective on. WHY: 1.6 m is a standing person's eye,
-       so the picture reads as being there; eye and target at one height
-       keep the camera level, and a level camera keeps every vertical line
-       vertical - a two-point perspective. A camera tilted up or down makes
-       walls lean in, the commonest thing that makes a render look wrong.
-     - A NAMED SHOT (FRAME_ELEMENTS_IN_CAMERA version 3, row 5b-1287) - the
-       modeller's words pick it, and side picks where to stand (front =
-       south, back, left = west, right = east, project north up):
-         "cinematic", "film look"         shot cinematic - level camera at
-                                          1.2 m, 28 mm, 2.39:1, thirds
-         "hero", "dramatic", "low angle"  shot hero - 0.6 m, aimed up at the
-                                          centre, 24 mm, 16:9, thirds
-         "aerial", "bird's eye"           shot bird's-eye - 55 degrees down,
-                                          35 mm, 16:9
-         "eye level", "street view",      shot eye-level (or three-quarter
-         "two point perspective"          for a corner) - level at 1.6 m,
-                                          35 mm, 3:2
-         "front", "elevation-like"        shot front - level at half height,
-                                          one-point
-         "detail", "close-up"             shot close-up - 85 mm, 15 down
-         "plan view", "top down"          shot top-down
-       Any one setting is the modeller's to override: eyeHeightMm, lensMm,
-       aspect, composition. These are Heron's starting values, never a
-       standard (D-33).
-     - Field of view: a perspective view's crop window sits on Revit's own
-       near plane, 40 mm in front of the eye (row 5b-1281). lensMm sizes that
-       window to a 35 mm camera's angle - 24 wide, 35 and 50 natural, 85
-       close - and the camera steps back until the subject fills it. A wide
-       lens close up stretches the corners; prefer stepping back.
-     - Composition: put the subject, or the line where floor meets wall or
-       ground meets sky, about a third of the way in - the rule of thirds -
-       rather than dead centre, except for a single piece of equipment,
-       which sits well in the middle with space round it. composition thirds
-       or low horizon does it; the modeller looks at the picture and says.
+     FRAME_ELEMENTS_IN_CAMERA sets the whole camera in one call from a named
+     SHOT on the selection - the building's walls, a room, a unit - and each
+     shot's starting values are on its card (version 3, D-33). Pick the shot
+     from the modeller's words, and pass only what they said - the shot fills
+     the rest:
+       "cinematic", "film look", "movie"     cinematic - level at 1.2 m, a
+                                              28 mm lens, the building on a
+                                              third, a 2.39:1 cinema picture;
+                                              "moody" or "dramatic" ones the
+                                              low-angle hero shot
+       "hero", "make it look big"            low-angle
+       "dramatic", "towering", "from below"  worm's-eye
+       "aerial", "bird's eye", "drone"       aerial
+       "from above", "overview"              high-angle
+       "eye level", "street view",
+       "two-point perspective"               eye-level
+       "corner view", "three-quarter"        three-quarter
+       "straight on", "elevation-like",
+       "one-point perspective"               front
+       "interior", "inside the room"         interior - select the room
+       "detail", "close-up", "product shot"  close-up
+     The side is theirs too: "the left side" is side left, "from the
+     north-west" side north-west, "the corner" a corner (front-left ...).
+     Heron takes the FRONT to be the long face looking nearest south and says
+     so in the answer - when the front is another face, ask once and give the
+     compass side. A height ("camera at 1.6 m") is eyeHeightMm 1600, a lens
+     ("wide angle", "24 mm", "telephoto") lensMm, "keep the verticals
+     straight" levelCamera true, a picture shape ("widescreen", "16:9",
+     "cinema", "square") aspect, "put it on a third" or "a big sky"
+     composition thirds or low-horizon.
+     WHY: a standing eye (1600 mm) reads as being there; a level camera keeps
+     every vertical vertical - walls leaning in is the commonest thing that
+     makes a render look wrong; low and wide makes a building tower; the lens
+     decides how close the camera stands, so a wide lens is close and
+     dramatic, a long lens far and flat.
+     - Equipment and families with no shot named: version 2's call - a 3/4
+       view, direction south-east (or whichever corner shows the faces that
+       matter: the connections, the access panel, the nameplate),
+       lookDownDeg 20 to 30, marginPercent 10 to 15 - or the close-up shot.
+     - An eye point typed in millimetres ("from the entrance looking at the
+       lobby"): SET_VIEW_CAMERA (version 2) with levelName - eyeMm 1600 above
+       the floor level and targetMm at the SAME height, perspective on.
+     - Field of view: Revit's API has no field-of-view value on any release
+       2020 to 2027 (row 5b-1267), but a perspective crop window IS one, and
+       FRAME_ELEMENTS_IN_CAMERA sizes it from lensMm (35 mm film) and reads
+       back the lens and the angle across. A camera from SET_VIEW_CAMERA has
+       no lens - its crop stays the modeller's to drag.
+     LOOK BEFORE CALLING IT DONE. Heron cannot see the composition. Export the
+     view as a picture - EXPORT_VIEW_IMAGE after FRAME_ELEMENTS_IN_CAMERA in a
+     rolled-back run, or revit_view_image on the view once it is kept - and
+     look at it, or ask the modeller to look and say.
      CHECK IN THE PICTURE: verticals vertical (wall corners, columns, door
-     edges parallel to the picture's sides); the subject not cut by the crop;
-     corners not stretched; for equipment, the unit filling most of the view.
+     edges parallel to the picture's sides) unless the shot tilts on purpose
+     (low-angle, worm's-eye); the side asked for is the side seen; the
+     subject not cut by the crop (margin up); too small (a longer lens);
+     corners stretched (a longer lens, or stand further back); for
+     equipment, the unit filling most of the view.
 
   2. THE MATERIALS. Every element that can be seen needs a material WITH AN
      APPEARANCE. WHY: a Realistic view and a rendering draw a material's
@@ -202,8 +214,8 @@ purpose: >
 
   NOT YET: depth of field, a walkthrough, cloud rendering's own settings,
   decals and RPC people, cars and plants (families the modeller places),
-  and a field of view or a crop region drawn to a ratio - the API has no
-  field-of-view member, so the crop stays the modeller's.
+  and an upright (portrait) picture - FRAME_ELEMENTS_IN_CAMERA's lens
+  window is 3:2 across.
 
 # The words the modeller says when the picture is what matters.
 utterances:

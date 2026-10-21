@@ -12,6 +12,37 @@ positive:
       THE VIEW - that is the check the numbers cannot make
   - given: the same, run again with direction north-west
     expect: madeNew false - the same view re-aimed, the heater seen from the other side
+  # Version 3 - the shots. Every one is LOOKED AT in an exported picture.
+  - given: >
+      version 2's call with every version 3 input left out, on a new view
+    expect: >
+      the same eye, look and crop window as version 2 gave for the same
+      selection - version 2's road, line for line; `lens` filled in, readBack
+      with no shot sentence
+  - given: >
+      the walls of a building selected, shot eye-level, nothing else
+    expect: >
+      the eye 1600 mm above the walls' lowest level, the camera level
+      (readBack "level - verticals stay vertical"), stood 25 degrees round
+      from the front toward the left side, `lens` about 35 mm, framed every
+      wall; the picture: wall corners upright, the building filling the width
+  - given: >
+      the same walls, shot low-angle, side left - the owner's "building left
+      side ... cinematic camera look"
+    expect: >
+      the eye 450 mm up, looking up 6 degrees, stood off the left face stepped
+      30 degrees toward the front, `lens` about 24 mm, the building's middle on
+      the left third line; the picture: the left face and the front both seen
+  - given: each other shot in turn - high-angle, aerial, worm's-eye, three-quarter, front, close-up
+    expect: the card's table read back - look angle, eye height, lens, composition - and the picture looked at
+  - given: a room selected, shot interior
+    expect: >
+      the eye inside the room, 600 mm in from its left end, 1400 mm up,
+      level, looking down the room's length; framed 0 with the finding that
+      says why; the picture: the far wall in the middle, both side walls
+      running to it (one-point)
+  - given: shot front, lensMm 85, composition low-horizon
+    expect: lens 85 read back, the horizon on the bottom third line, square to the front face (one-point)
 
 negative:
   - given: the heater selected, viewName naming the project's isometric {3D} view
@@ -22,7 +53,18 @@ negative:
     expect: refused "has geometry to frame", nothing made
   - given: direction "upwards"
     expect: refused - not a direction - nothing made
+  - given: shot "cinematic"
+    expect: refused "is not a shot", naming every shot - nothing made
+  - given: side "upstairs"
+    expect: refused "is not a side", naming the faces and the compass - nothing made
+  - given: lensMm 5
+    expect: refused "is not a lens", 12 to 300 - nothing made
+  - given: side left and direction north together
+    expect: refused - both say where the camera stands - nothing made
+  - given: levelCamera true with lookDownDeg 30
+    expect: refused - a level camera looks dead level - nothing made
 
 second_route:
   - open the view and look: the heater fills it; in a plan view the camera's triangle points at it from the direction asked
+  - version 3 - export each shot's view as a picture (EXPORT_VIEW_IMAGE inside a rolled-back run) and look at it against the shot's row
   - one Ctrl+Z takes it back (Golden Rule 16)

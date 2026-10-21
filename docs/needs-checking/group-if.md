@@ -1,66 +1,121 @@
 # Needs checking — Group IF
 
-> One group of [the register](../NEEDS-CHECKING.md), in its own file since 2026-10-21 so that it can be read
+> One group of [the register](../NEEDS-CHECKING.md), in its own file since 2026-10-20 so that it can be read
 > alone. **The register's rules, and every group's place in it, are on that page.** A new row
 > for this group goes in this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py)
 > reads it back into the register for every tool that reads it, so a row here is seen
 > exactly as it was seen there.
 
-## Group IF - cinematic camera shots: a named shot, a side, a camera height, a lens, a picture shape and a composition (2026-10-21)
+## Group IF - cinematic camera shots: `FRAME_ELEMENTS_IN_CAMERA` version 3 (2026-10-20)
 
-From [row 5b-1287](../fragment-issues/section-5b-rows-401-425.md). On 2026-10-20 the owner asked: *"If I say OK I
-need this building left side like in a cinematic camera look ... cinematic style or the different styles,
-camera angles, camera height ... all kind of camera settings"*. `FRAME_ELEMENTS_IN_CAMERA` (PROVEN at version 2,
-[Group IB](group-ib.md)) was widened, not duplicated, to version 3: six optional inputs - `shot`, `side`,
-`eyeHeightMm`, `lensMm`, `aspect`, `composition` - each absent reading as version 2 did. The
-[`visualise-a-view`](../../brain/skills/visualise-a-view.yaml) method's step 1 says which shot a modeller's words
-pick.
+From [row 5b-1287](../fragment-issues/section-5b-rows-401-425.md). On the night of 2026-10-20, with the framing
+camera's version 2 signed ([Group IB](group-ib.md), [row 5b-1281](../fragment-issues/section-5b-rows-401-425.md)),
+the owner asked for more than a camera that fits: *"I need this building left side like in a cinematic camera
+look ... different styles, camera angles, camera height ... all kind of camera settings"*. Built the same night:
 
-| Shot | Turn from the side | Height or look-down | Lens | Picture | Composition | Camera |
-|---|---|---|---|---|---|---|
-| `eye-level` (two-point) | 0 | 1600 mm | 35 | 3:2 | centre | level |
-| `three-quarter` (corner) | 45 | 1600 mm | 35 | 3:2 | centre | level |
-| `front` (one-point) | 0 | half the elements' height | 35 | 3:2 | centre | level |
-| `hero` (low angle) | 30 | 600 mm | 24 | 16:9 | thirds | aimed at the centre |
-| `worm's-eye` | 20 | 150 mm | 20 | 3:2 | centre | aimed at the centre |
-| `high-angle` | 30 | 35 degrees down | 35 | 3:2 | centre | aimed |
-| `bird's-eye` (aerial) | 45 | 55 degrees down | 35 | 16:9 | centre | aimed |
-| `top-down` (plan) | 0 | 89 degrees down | 50 | 4:3 | centre | aimed |
-| `cinematic` | 30 | 1200 mm | 28 | 2.39:1 | thirds | level |
-| `close-up` (detail) | 35 | 15 degrees down | 85 | 4:3 | centre | aimed |
+| What | Where | What it does |
+|---|---|---|
+| `FRAME_ELEMENTS_IN_CAMERA` v3 | [`frame-elements-in-camera`](../../brain/fragments/frame-elements-in-camera/fragment.yaml) | MODIFY - six optional inputs: a named `shot`, the `side` to stand on, `eyeHeightMm`, `lensMm`, `composition`, `levelCamera`; reads back the side, the eye height, the point aimed at, the look angle and the lens |
+| `visualise-a-view` step 1 | [`brain/skills/visualise-a-view.yaml`](../../brain/skills/visualise-a-view.yaml) | the method's camera step: which shot for "cinematic", "hero", "dramatic", "aerial", "interior", "detail", and the picture looked at before it is called done |
 
-**These are Heron's starting values, not a standard** ([D-33](../DECISIONS.md)). The picture is the judge, and each
-value is the modeller's to change.
+**The shots, in Revit words** - each is Heron's starting set of values (D-33), in one table on the card:
 
-**The side** is where the camera stands: front is project south looking north, back north, left WEST, right EAST,
-with project north up the plan. A compass word or degrees is taken as given.
+| Shot | What the camera does in Revit |
+|---|---|
+| eye-level | stands 25° round from the front, eye 1600 mm above the building's level, looks dead level - every wall corner stays upright (two-point perspective), 35 mm lens |
+| low-angle (hero) | eye 450 mm up, looks up 6°, 24 mm wide lens, the building on the left third line - it towers a little, verticals lean in slightly |
+| high-angle | looks down 25° through the building's middle, 35 mm |
+| aerial (bird's-eye) | the corner, looking down 40°, 35 mm - the whole roof and two faces |
+| worm's-eye | eye 150 mm up, looks up 25°, 20 mm - the building towers, verticals lean in hard |
+| three-quarter | the corner, eye 1600 mm, level, 35 mm, on the left third - both faces alike, verticals upright |
+| front | square to the face, eye 1600 mm, level, 50 mm - one-point, like an elevation in perspective |
+| interior | INSIDE the room, 600 mm in from its end wall, 1400 mm up, level, 24 mm - looking down the room's length (one-point) |
+| close-up | 30° round, looking down 20°, 85 mm - a unit or a detail with little stretching, 15% margin |
 
-**The lens** sizes the crop window on Revit's near plane, measured 40 mm in front of the eye
-([row 5b-1281](../fragment-issues/section-5b-rows-401-425.md)): half its width is that distance times 18 over
-the focal length. The camera then steps back until the elements fill the window. `readBack` gives the lens and
-the picture shape the window amounts to, for any camera this tool makes.
+**What is done and what is not.** The card validates (`python brain/heron_fragment.py`) and the library compiles
+for 2020 to 2027 (`tools/check-fragments-compile.py`, 2026-10-20). Every Revit member version 3 adds is one
+`SET_VIEW_CAMERA` or other PROVEN fragments already call: `LocationCurve`, `Line.Direction`, `Curve.Length`,
+`Element.LevelId`, `Level.ProjectElevation`, `VIEWER_EYE_ELEVATION`, `VIEWER_TARGET_ELEVATION`. **The camera
+arithmetic was checked offline, with no Revit:** a scratch copy of the version 3 road in Python, run on a made-up
+building 40 x 12 x 9 m, square to north and turned 20°, drew what each shot's crop window would hold. Every shot
+landed as its row says - the level camera's verticals upright, the low horizon on the bottom third, the thirds on
+the third line - and the turned building gave the same distances as the square one, so the plan grid is read
+right. **That is arithmetic agreeing with itself, not Revit agreeing with it: nothing here has run in Revit.**
+The card is DRAFT, and D-117 refuses a kept change from it until these rows pass and the owner signs.
 
-**What is done and what is not.** The card validates (`python brain/heron_fragment.py`) and compiles for 2020 to
-2027 (`tools/check-fragments-compile.py`). **Nothing here has run in Revit.** Revit was closed when the code was
-ready. The card is DRAFT until the rows pass and the owner signs.
+**Version 2 still runs, untouched.** With none of the six new inputs the code takes version 2's road line for
+line; `direction`, `lookDownDeg` and `marginPercent` now read `auto` when left out, which means version 2's own
+south-east, 30 and 10. IF1 holds that to version 2's own signed numbers.
 
-**The model.** [Group IA](group-ia.md)'s scratch project, `Materials IA Test.rvt` in `%TEMP%\heron-work\materials-ia`.
-Its two original walls, `Exterior - Brick on Mtl. Stud` with the door between `x 0..6175`, `y 3825..8000`, stand in
-for a small building. Select them with `SELECT_IN_REGION` `minMm 100,3700,-100`, `maxMm 6300,8100,3100`,
-categories Walls. **Every picture is taken inside a rolled-back run**: `validate export-view-image --allow-publish
---write --keep-chain --setup select-in-region --setup frame-elements-in-camera`, with the frame's values and the
-export's together. That puts the camera in, exports it and rolls it back, so the PNG stays and the model does not
-change. Look at every picture before writing PASS.
+**What Revit has not yet been asked, and these rows ask:** whether a perspective crop window can be shifted
+well off the eye's line (the level camera's shift lens and the thirds both need it - version 2's windows were a
+few millimetres off, and drew right); whether a window as wide as a 20 mm lens (84° across) is kept; whether the
+view's Eye Elevation and Target Elevation read the height above the base level; and whether the front Heron
+takes - the long face looking nearest south - is the face a modeller calls the front on a real building.
+
+**The model.** A **scratch copy** of a Revit 2020 sample with a whole building in it - the architectural sample
+project that ships with Revit 2020 (`rac_basic_sample_project.rvt`; any sample with a whole building
+when that one is not on the laptop - named in the results) - saved to
+`%TEMP%\heron-work\cinematic-id` as `Cinematic ID Test.rvt`, never a working model; and Group IA's
+`Materials IA Test.rvt` for IF1, the model version 2 was signed on. Before the rows, select **the building's
+exterior walls** on the ground floor plan (`select-by-category-name` Walls, then `set-selection`) and note the
+count; IF9 selects one room, IF10 one piece of furniture or equipment. An empty scratch folder
+`%TEMP%\heron-work\cinematic-id\pictures` takes the pictures.
+Run every row on **Revit 2020**. **Every picture is exported inside a rolled-back run** - the camera made as a
+setup step, the picture written, the camera rolled back:
+
+```
+python mcp/client/heron_bridge_client.py validate export-view-image --allow-publish --write \
+    --setup frame-elements-in-camera --set "viewName=Heron IF2" --set shot=eye-level \
+    --set "views=Heron IF2" --set folder=%TEMP%\heron-work\cinematic-id\pictures --set filePrefix=id2 \
+    --set fileType=PNG
+```
+
+`EXPORT_VIEW_IMAGE` is a PUBLISH, so the owner's Publish switch is on for these runs (D-106), and off after.
+Each row's numbers come from `frame-elements-in-camera` run alone the same way (`validate
+frame-elements-in-camera --write`, rolled back) with the same values. **LOOK AT EVERY PICTURE** against the
+row's "Look for" before the row is called a pass - version 1 was signed on numbers and drew a dot
+([row 5b-1281](../fragment-issues/section-5b-rows-401-425.md)).
 
 | # | Run | Look for |
 |---|---|---|
-| **IF1** | The four shots without a lens or shape asked: `shot` cinematic `side` left; hero front; bird's-eye right; eye-level front | Each picture shows the two walls and the door filling the frame. **Cinematic:** wide (2.39:1), the walls on the left third, verticals vertical. **Hero:** looking up, the walls large. **Bird's-eye:** from above the east side. **Eye-level:** level, verticals vertical. `readBack` names the shot, the lens and the shape |
-| **IF2** | `lensMm` 24, then 85, the same `shot` eye-level `side` front | 24: the camera close, the corners stretched. 85: the camera far back, the walls flat. Both filled. `readBack` gives 24 and 85 |
-| **IF3** | `aspect` 16:9 and `composition` thirds with no `shot`; then `composition` low horizon with `eyeHeightMm` 1600 | The picture 16:9 with the walls on a third. Then the horizon on the lower third |
-| **IF4** | **Version 2 unchanged.** No new input: `direction` south-east, `lookDownDeg` 30 - Group IB's IB1 again | The same eye and the same crop as version 2's record: `framed` all, window about 33 x 26 mm at -40 mm |
-| **IF5** | **The negatives.** `shot` Spielberg; `side` upstairs; `lensMm` 5; `aspect` wide-ish; `composition` golden; `eyeHeightMm` 1600 with `lookDownDeg` 20 | Each refused, naming what it takes, NOTHING WAS CHANGED. The last is refused because a camera height and a look-down were both given |
-| **IF6** | **The kept run.** `try-once frame-elements-in-camera` `shot` cinematic `side` left on a new view; the owner presses Keep and looks at the view | The owner sees the walls framed wide, from the west. The proof is this kept run with IF5's first negative |
-| **IF7** | **The method.** `heron_method visualise-a-view` | Step 1 names the shots and which of a modeller's words pick each |
+| **IF0** | *Negatives FIRST, rolled back.* The walls selected: shot `Spielberg`; side `upstairs`; lensMm `5`; side `left` with direction `north`; levelCamera `true` with lookDownDeg `30`; eyeHeightMm `1.6 m` | Each refused, naming what it takes - the shots, the sides, 12 to 300, *"both say where the camera stands"*, *"a level camera looks dead level"*, millimetres - `madeNew` false, no new view in the Project Browser |
+| **IF1** | *Version 2 unchanged.* On `Materials IA Test`, the same two columns version 2 was signed on selected; viewName a new name, direction south-east, lookDownDeg 30, marginPercent 10, nothing else | readBack equal to version 2's signed record: eye **5572,-4072,5325 mm** looking -0.6124,0.6124,-0.5, window X -10 to 13, Y -17 to 16 mm; no shot sentence; `framed` 2. `lens` filled in - say what it reads |
+| **IF2** | *eye-level*, the walls, nothing else | readBack *"level - verticals stay vertical"*, eye 1600 mm above the walls' lowest level (named), stood 25° round from the front toward the left side, lens about 35 mm. **Picture:** every wall corner upright; the horizon at a standing eye; the front face and a sliver of the left; the building across the width |
+| **IF3** | *The owner's words: low-angle, side left.* The walls | eye 450 mm, looking up 6°, lens about 24 mm, composition thirds-left, stood off the left face stepped 30° toward the front. **Picture:** the LEFT face of the building and its front, the building's middle on the left third line, a low horizon and a lot of sky, verticals leaning in a little |
+| **IF4** | *high-angle* | looking down 25°, lens about 35. **Picture:** the roof seen, two faces, the building filling the frame |
+| **IF5** | *aerial* | looking down 40°, stood on the front-left corner. **Picture:** the whole roof and two faces, like a drone still |
+| **IF6** | *worm's-eye* | eye 150 mm, looking up 25°, lens about 20, angle across about 84°. **Picture:** the building towering, verticals leaning in hard. **Say** if Revit kept a window that wide |
+| **IF7** | *three-quarter* | level, eye 1600, stood on the front-left corner, thirds-left. **Picture:** both faces about alike, corners upright, the building on the left third |
+| **IF8** | *front*, then *front* with lensMm 85 and composition low-horizon | Square to the front, level, lens about 50, then 85. **Picture:** one-point - the front's horizontal lines level in the picture; the second with the horizon on the bottom third line and the building smaller, further away |
+| **IF9** | *interior*, one room selected | eye inside the room, 600 mm in from its left end, 1400 mm up, level, lens about 24; `framed` 0 with the finding that says why. **Picture:** the far wall in the middle, both side walls, floor and ceiling running to it (one-point). **Say** whether the room's own walls hide the view - a camera inside a room in a model with walls is the case |
+| **IF10** | *close-up*, one piece of furniture or equipment | looking down 20°, lens about 85, margin 15. **Picture:** the item filling most of the frame, corners not stretched |
+| **IF11** | *No shot - the inputs alone.* The walls: side north-west, eyeHeightMm 1600, lensMm 24, levelCamera true | Stood exactly north-west (no step round), level, eye 1600, lens about 24. **Picture:** the north and west faces, verticals upright |
+| **IF12** | *Eye Elevation.* IF2's view kept by `try-once` (D-119) - the walls selected, shot eye-level - the owner presses Keep | The view's Properties: Eye Elevation and Target Elevation beside readBack's eye height above the base level - **say** whether Revit's Eye Elevation is above that level or above the project's origin |
+| **IF13** | *The owner's request through a chat, on his PC (model and re-ranker).* In a chat: *"cinematic camera on the left side of this building"*, then *"low angle hero shot"*, *"bird's eye view of the building"*, *"two point perspective at eye level"*, *"wide angle camera"*, *"camera height 1.6 m"* | `heron_lookup` names `FRAME_ELEMENTS_IN_CAMERA` for each; the chat passes the method's shot for each and the picture is looked at |
 
-**Then sign** `frame-elements-in-camera` version 3 on IF6 with IF5, after the pictures of IF1 to IF4 have been looked
-at.
+| **IF14** | *cinematic* - the owner's own word (row 5b-1287) - side left, the walls | level, eye 1200 mm, lens about 28, composition thirds-left, readBack *"picture 2.39:1"*. **Picture:** a wide letterbox picture, the walls on the left third, verticals upright, from the west side stepped 30° |
+| **IF15** | *The picture's shape alone.* The walls: aspect `16:9`, then `1:1`, then `wide-ish` | readBack *"picture 1.78:1"*, then *"1:1"* - each with a 35 mm lens since no lens was given; the third refused naming the shapes it takes, NOTHING WAS CHANGED. **Picture:** the two shapes |
+
+**Then sign** `frame-elements-in-camera` - after IF14's cinematic picture has been looked at too - on IF12's kept run (the positive) with IF0's first negative - after IF1
+to IF11 have passed, every picture looked at. A row that fails reopens the card; the shot's starting values
+change on the owner's word, never to make a row pass.
+
+### Results
+
+| # | Result | What was seen |
+|---|---|---|
+| IF0 | NOT RUN - built in a session with no Revit | |
+| IF1 | NOT RUN | |
+| IF2 | NOT RUN | |
+| IF3 | NOT RUN | |
+| IF4 | NOT RUN | |
+| IF5 | NOT RUN | |
+| IF6 | NOT RUN | |
+| IF7 | NOT RUN | |
+| IF8 | NOT RUN | |
+| IF9 | NOT RUN | |
+| IF10 | NOT RUN | |
+| IF11 | NOT RUN | |
+| IF12 | NOT RUN | |
+| IF13 | NOT RUN | |

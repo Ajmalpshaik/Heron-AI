@@ -928,7 +928,7 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ic.md`](needs-checking/group-ic.md)
 
-## Group IF - cinematic camera shots: a named shot, a side, a camera height, a lens, a picture shape and a composition (2026-10-21)
+## Group IF - cinematic camera shots: `FRAME_ELEMENTS_IN_CAMERA` version 3 (2026-10-20)
 
 **Its own file:** [`needs-checking/group-if.md`](needs-checking/group-if.md)
 
