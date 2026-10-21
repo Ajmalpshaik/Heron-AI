@@ -940,9 +940,9 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ii.md`](needs-checking/group-ii.md)
 
-## Group IJ - a lighting fixture's light source, all of it Heron's: every family type, the Light Source tick, position and aim, a wattage, loss factor, dimming and filter (2026-10-21)
+## Group IK - a lighting fixture's light source, all of it Heron's: every family type, the Light Source tick, position and aim, a wattage, loss factor, dimming and filter (2026-10-21)
 
-**Its own file:** [`needs-checking/group-ij.md`](needs-checking/group-ij.md)
+**Its own file:** [`needs-checking/group-ik.md`](needs-checking/group-ik.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

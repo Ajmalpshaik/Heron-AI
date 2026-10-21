@@ -72,7 +72,7 @@ positive:
       Parameters showing Light Source ticked - LOOKED AT; SET_FAMILY_LIGHT_SOURCE
       then runs on the family without refusing. Or the call fails saying the
       switch written is not the Light Source tick, nothing kept - EITHER answer
-      is the measurement Group IJ wants
+      is the measurement Group IK wants
 
   - given: the same call again
     expect: changed 0, alreadySet 1, the light-source finding

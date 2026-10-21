@@ -25,11 +25,11 @@
 // family element parameters, otherwise the modifications to the family type
 // may be lost." Version 1 did both in one transaction, and on 2026-10-21 on
 // Revit 2020 a call with a shape, a distribution and 4500 lm read its intensity
-// back as the default wattage (FRAGMENT-ISSUES 5b-1294). Heron runs a fragment
+// back as the default wattage (FRAGMENT-ISSUES 5b-1297). Heron runs a fragment
 // in ONE transaction, so a call takes ONE half - the other half is refused with
 // that reason and goes in a second call.
 //
-// EVERY FAMILY TYPE, NOT ONLY THE ONES REVIT'S LIGHTING API LISTS (5b-1295).
+// EVERY FAMILY TYPE, NOT ONLY THE ONES REVIT'S LIGHTING API LISTS (5b-1298).
 // LightFamily listed one light type for a family with two family types on Revit
 // 2020, and the forum reports the same on other releases - one short, the first
 // missing. No member on any release 2020 to 2027 makes a light type. So the
@@ -949,7 +949,7 @@ if (refused == null && (intensityKind != null || kelvin.HasValue || lossKind != 
     if (reachedBy.Values.Any(v => v.Length > 0))
         findings.Add("Revit's lighting API does not list " + string.Join(", ", reachedBy.Where(r => r.Value.Length > 0)
             .Select(r => "\"" + r.Key + "\"")) + " among this family's light types; each was written with it current and "
-            + "proved from its own Type Properties (5b-1295).");
+            + "proved from its own Type Properties (5b-1298).");
 }
 
 if (refused == null)

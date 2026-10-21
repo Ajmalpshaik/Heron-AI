@@ -216,7 +216,7 @@ compatibility-note: >
   `LightFamily.GetLightFamily(Document)` succeeding afterwards (2020-2027,
   reached by name - the Lighting namespace is not imported). Whether the
   switch is on `Document.OwnerFamily` at all is Revit's to answer
-  (NEEDS-CHECKING Group IJ); where it is not, the call refuses by name.
+  (NEEDS-CHECKING Group IK); where it is not, the call refuses by name.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #

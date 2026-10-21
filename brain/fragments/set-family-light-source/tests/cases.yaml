@@ -17,7 +17,7 @@ positive:
       the type holds; then loaded into a test project and one copy rendered or
       shown in a lighting analysis
 
-  # VERSION 2 - 5b-1294 and 5b-1295, the family they were measured on.
+  # VERSION 2 - 5b-1297 and 5b-1298, the family they were measured on.
   - given: >
       'TRG_Lighting Fixture_LED Pendant_CoreLine WT120C' on Revit 2020, two
       family types TRG_Standard and TRG_Emergency, TRG_Emergency current;
@@ -28,7 +28,7 @@ positive:
       reached with it current; TRG_Emergency current again afterwards. Or, if
       Revit does not let it be reached, the call fails naming TRG_Emergency and
       the hand fix in Family Types, and nothing is kept - EITHER answer is the
-      measurement Group IJ wants
+      measurement Group IK wants
 
   - given: >
       the same family; intensity "35.5 W at 127 lm/W", typeName TRG_Standard

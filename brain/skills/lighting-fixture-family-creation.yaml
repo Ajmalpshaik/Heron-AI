@@ -41,7 +41,7 @@ purpose: >
      forms locked to planes - with the opening the light leaves by.
   3. THE LIGHT SOURCE, three Heron calls in this order (version 2 of
      SET_FAMILY_LIGHT_SOURCE, 2026-10-21 - Revit loses type values set in
-     the same transaction as the family's light source, 5b-1294):
+     the same transaction as the family's light source, 5b-1297):
      a. SET_FAMILY_SETTINGS "Light Source=yes" - the tick in Family Category
         and Parameters, proved by Revit's lighting API finding the light
         source; a family already ticked reads "already as asked".
@@ -74,11 +74,11 @@ purpose: >
      analysis, and the fixture joins a circuit.
 
   BY HAND, BECAUSE NO REVIT API CALL REACHES IT (read 2026-10-21 in the
-  RevitAPI of every release 2020 to 2027, 5b-1296): UNTICKING Light Source -
+  RevitAPI of every release 2020 to 2027, 5b-1299): UNTICKING Light Source -
   it deletes the light source and every photometric value, so Heron leaves it
   to the modeller; and, only if step 3c says so for a type Revit's lighting
   API does not list, that type's values in Family Types - no call makes a
-  light type (5b-1295). Until Group IJ runs in Revit, step 3a, the move and
+  light type (5b-1298). Until Group IK runs in Revit, step 3a, the move and
   aim of 3b and the wattage of 3c each fail safe - nothing kept, the reason
   said - where Revit answers differently from its reference.
 
@@ -147,8 +147,8 @@ revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 note: >
   Written 2026-10-02 when the owner asked for everything to be checked again,
   with SET_FAMILY_LIGHT_SOURCE built the same day, from the research recorded
-  in docs/43 §10. Step 3 rewritten 2026-10-21 (rows 5b-1294 to 5b-1296,
-  NEEDS-CHECKING Group IJ): the tick, the position and aim, the wattage, the
+  in docs/43 §10. Step 3 rewritten 2026-10-21 (rows 5b-1297 to 5b-1299,
+  NEEDS-CHECKING Group IK): the tick, the position and aim, the wattage, the
   loss factor, dimming and filter made Heron calls, and every family type
   reached. Every step is DRAFT until it has been run on a real family with a
   negative case (D-30).

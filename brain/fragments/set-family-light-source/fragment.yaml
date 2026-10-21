@@ -30,10 +30,10 @@ purpose: >
   kelvin; the LIGHT LOSS FACTOR, one number or seven; the DIMMING colour shift;
   the COLOUR FILTER. Revit's reference says type values may be lost when they
   change in one transaction with the family's light source, and that is what
-  version 1 met on Revit 2020 (5b-1294), so a call asking for both halves is
+  version 1 met on Revit 2020 (5b-1297), so a call asking for both halves is
   refused with that reason - the family's half first, the types' second.
 
-  **EVERY FAMILY TYPE (version 2, 5b-1295).** The types are the family's own,
+  **EVERY FAMILY TYPE (version 2, 5b-1298).** The types are the family's own,
   each made current before its values are written. A type Revit's lighting API
   does not list - it listed one light type for two family types on Revit 2020 -
   is written with it current and must then PROVE it was reached from its own
@@ -224,7 +224,7 @@ compatibility-note: >
   both found by name at run time, one implementation and no #if. Whether
   `GetLightType(n)` writes the type named or the current type, and why its list
   leaves a family type out, is not in the reference - the per-type proof is
-  how this call finds out (NEEDS-CHECKING Group IJ).
+  how this call finds out (NEEDS-CHECKING Group IK).
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #

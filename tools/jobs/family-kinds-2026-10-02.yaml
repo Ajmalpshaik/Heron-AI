@@ -244,7 +244,7 @@ jobs:
     note: >
       Positive: Type Properties shows 30 and 60 degrees - record each display.
       Negative: no Light Source tick, refused naming SET_FAMILY_SETTINGS.
-      VERSION 2 (2026-10-21, 5b-1294) takes the family's light source OR the
+      VERSION 2 (2026-10-21, 5b-1297) takes the family's light source OR the
       types' values per call, so 1500 lm and 3000 K are a second call, by name
-      - and NEEDS-CHECKING Group IJ, tools/jobs/light-source-ij-2026-10-21.yaml,
+      - and NEEDS-CHECKING Group IK, tools/jobs/light-source-ik-2026-10-21.yaml,
       proves version 2 on two types.
