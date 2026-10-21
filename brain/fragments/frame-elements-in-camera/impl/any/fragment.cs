@@ -388,6 +388,40 @@ Func<XYZ, XYZ> upFor = look =>
 var cinematicText = "";
 var reachedCamera = refused == null && camera != null;
 
+// WHERE THE CROP WINDOW REALLY IS (row 5b-1301). Measured 2026-10-21 on Revit
+// 2020: a perspective view's crop box reads its Z top as the far clip over a
+// thousand - 40.2 mm at Revit's 40232 mm far clip, 92.9 mm at 92888 mm - but
+// its X and Y are drawn on a plane 0.1 ft (30.48 mm) in front of the eye,
+// whatever the far clip. The crop SHAPE lies there (GetCropShape), it did not
+// move with the far clip at 40232, 92888 or 200000 mm, and the picture agreed:
+// a window worked out on the 92.9 mm reading drew the building three times too
+// small. So the window's distance is read from the crop shape, 0.1 ft when the
+// shape cannot be read.
+Func<View3D, double> windowDistance = view =>
+{
+    try
+    {
+        var o3 = view.GetOrientation();
+        foreach (var loop in view.GetCropRegionShapeManager().GetCropShape())
+            foreach (Curve c in loop)
+            {
+                var along = (c.GetEndPoint(0) - o3.EyePosition).DotProduct(o3.ForwardDirection);
+                if (along > 1e-6 && along < 1.0) return along;
+            }
+    }
+    catch (Exception) { }
+    return 0.1;
+};
+// The far clip is a parameter: Revit ignores a crop box's Z bottom on a
+// perspective view (row 5b-1301) - a camera 50 m away kept its 40232 mm far
+// clip and cut both columns out of the picture. Pushed out, never pulled in.
+Action<View3D, double> reachFar = (view, deepest) =>
+{
+    var farClip = view.get_Parameter(BuiltInParameter.VIEWER_BOUND_OFFSET_FAR);
+    if (farClip != null && !farClip.IsReadOnly && farClip.AsDouble() < deepest * 1.1)
+        farClip.Set(deepest * 1.1);
+};
+
 if (reachedCamera && !cinematic)
 {
     // ---- VERSION 2'S ROAD, line for line ----
@@ -420,10 +454,12 @@ if (reachedCamera && !cinematic)
         // is the projected corners plus the margin; the near plane is left
         // where Revit has it. A near plane a version-1 run moved metres away is
         // put back at 40.2 mm, a new view's.
+        // ROW 5b-1301 CORRECTED THE DISTANCE: the window is drawn 0.1 ft in
+        // front of the eye, and the 40.2 mm was the far clip over a thousand -
+        // windowDistance() above.
         var frame = camera.CropBox.Transform;
         var toView = frame.Inverse;
-        var nearPlane = -camera.CropBox.Max.Z;
-        if (nearPlane <= 0 || nearPlane > 1.0) nearPlane = 40.2 / MmPerFoot;
+        var nearPlane = windowDistance(camera);
         double? pxLo = null, pxHi = null, pyLo = null, pyHi = null, deepest = null;
         foreach (var x in new[] { low.X, high.X })
             foreach (var y in new[] { low.Y, high.Y })
@@ -441,10 +477,12 @@ if (reachedCamera && !cinematic)
                 }
         var growX = (pxHi.Value - pxLo.Value) * (margin.Value / 200.0);
         var growY = (pyHi.Value - pyLo.Value) * (margin.Value / 200.0);
+        reachFar(camera, deepest.Value);
+        doc.Regenerate();
         var wanted = new BoundingBoxXYZ();
         wanted.Transform = frame;
-        wanted.Min = new XYZ(pxLo.Value - growX, pyLo.Value - growY, Math.Min(camera.CropBox.Min.Z, -deepest.Value * 1.1));
-        wanted.Max = new XYZ(pxHi.Value + growX, pyHi.Value + growY, -nearPlane);
+        wanted.Min = new XYZ(pxLo.Value - growX, pyLo.Value - growY, camera.CropBox.Min.Z);
+        wanted.Max = new XYZ(pxHi.Value + growX, pyHi.Value + growY, camera.CropBox.Max.Z);
         camera.CropBoxActive = true;
         camera.CropBox = wanted;
         doc.Regenerate();
@@ -603,15 +641,31 @@ if (reachedCamera && cinematic)
     else if (sideCompass != null) { standAz = sideCompass.Value; standText = "the " + side.Trim() + " side"; }
     else { standAz = azimuth; standText = "the " + directionAsked.Trim() + " of the elements"; }
 
-    // THE EYE HEIGHT - above the lowest level the elements stand on, or the
-    // bottom of their box when none has a level.
+    // THE EYE HEIGHT - above the level MOST of the elements stand on (the
+    // lowest of those that tie), or the bottom of their box when none has a
+    // level. On the owner's word, 2026-10-21 (row 5b-1301): it was the LOWEST
+    // level any of them stood on, and on Revit 2020's sample house one
+    // partition on 'Foundation', 800 mm down, put the eye-level camera 800 mm
+    // above the ground floor and, on the hill side, inside the ground.
     double baseZ = low.Z;
     string baseName = "the bottom of the elements' box";
     Level baseLevel = null;
+    var standingOn = new Dictionary<ElementId, int>();
+    var levelsSeen = new Dictionary<ElementId, Level>();
     foreach (var element in boxed)
     {
         var lv = element.LevelId != ElementId.InvalidElementId ? doc.GetElement(element.LevelId) as Level : null;
-        if (lv != null && (baseLevel == null || lv.ProjectElevation < baseLevel.ProjectElevation)) baseLevel = lv;
+        if (lv == null) continue;
+        var key = lv.Id;
+        standingOn[key] = standingOn.ContainsKey(key) ? standingOn[key] + 1 : 1;
+        levelsSeen[key] = lv;
+    }
+    foreach (var key in standingOn.Keys)
+    {
+        var lv = levelsSeen[key];
+        if (baseLevel == null || standingOn[key] > standingOn[baseLevel.Id]
+            || (standingOn[key] == standingOn[baseLevel.Id] && lv.ProjectElevation < baseLevel.ProjectElevation))
+            baseLevel = lv;
     }
     if (baseLevel != null) { baseZ = baseLevel.ProjectElevation; baseName = "'" + baseLevel.Name + "'"; }
 
@@ -771,12 +825,11 @@ if (reachedCamera && cinematic)
         camera.SetOrientation(new ViewOrientation3D(eye, upward, forward));
         doc.Regenerate();
 
-        // The window, in Revit's own frame for the view, on its own near plane
-        // (version 2's reading of both).
+        // The window, in Revit's own frame for the view, at the distance it is
+        // drawn (row 5b-1301, windowDistance above).
         var frame = camera.CropBox.Transform;
         var toView = frame.Inverse;
-        var nearPlane = -camera.CropBox.Max.Z;
-        if (nearPlane <= 0 || nearPlane > 1.0) nearPlane = 40.2 / MmPerFoot;
+        var nearPlane = windowDistance(camera);
         double xl = double.MaxValue, xh = double.MinValue, yl = double.MaxValue, yh = double.MinValue, deepest = 0;
         foreach (var c in corners8)
         {
@@ -812,10 +865,12 @@ if (reachedCamera && cinematic)
             }
             wxLo = ox - tw; wxHi = ox + tw; wyLo = oy - th; wyHi = oy + th;
         }
+        reachFar(camera, deepest);
+        doc.Regenerate();
         var wanted = new BoundingBoxXYZ();
         wanted.Transform = frame;
-        wanted.Min = new XYZ(wxLo * nearPlane, wyLo * nearPlane, Math.Min(camera.CropBox.Min.Z, -deepest * 1.1));
-        wanted.Max = new XYZ(wxHi * nearPlane, wyHi * nearPlane, -nearPlane);
+        wanted.Min = new XYZ(wxLo * nearPlane, wyLo * nearPlane, camera.CropBox.Min.Z);
+        wanted.Max = new XYZ(wxHi * nearPlane, wyHi * nearPlane, camera.CropBox.Max.Z);
         camera.CropBoxActive = true;
         camera.CropBox = wanted;
         doc.Regenerate();
@@ -849,6 +904,7 @@ if (reachedCamera)
     var o = camera.GetOrientation();
     var crop = camera.CropBox;
     var back = crop.Transform.Inverse;
+    var drawnAt = camera.IsPerspective ? windowDistance(camera) : 0;
     foreach (var element in boxed)
     {
         var box = element.get_BoundingBox(null);
@@ -858,9 +914,9 @@ if (reachedCamera)
                 foreach (var z in new[] { box.Min.Z, box.Max.Z })
                 {
                     // Seen through the window: the corner projected onto the
-                    // crop box's near plane, as the view draws it (version 2).
+                    // plane the window is drawn on (row 5b-1301).
                     var p = back.OfPoint(box.Transform.OfPoint(new XYZ(x, y, z)));
-                    var near = -crop.Max.Z;
+                    var near = drawnAt;
                     var depthHere = -p.Z;
                     var tol = 0.01 / MmPerFoot;
                     if (depthHere <= 0) { inside = false; continue; }
@@ -881,12 +937,13 @@ if (reachedCamera)
         + mm(crop.Min.Z) + " to " + mm(crop.Max.Z) + " mm; far clip "
         + (farActive != null && farActive.AsInteger() == 1
             ? "on at " + (farOffset != null ? mm(farOffset.AsDouble()) + " mm" : "an offset Revit did not give") : "off")
-        + "; " + framed + " of " + boxed.Count + " element(s) inside that crop box.";
+        + "; " + framed + " of " + boxed.Count + " element(s) inside that crop box"
+        + (camera.IsPerspective ? ", its window drawn " + mm(drawnAt) + " mm in front of the eye." : ".");
 
     // THE LENS THE WINDOW AMOUNTS TO - version 3. The window sits on the near
     // plane, so its angle across is the two edges' angles from the eye, and a
     // 35 mm-film lens of that width is 36 x near / width.
-    var nearHere = -crop.Max.Z;
+    var nearHere = drawnAt;
     var width = crop.Max.X - crop.Min.X;
     var height = crop.Max.Y - crop.Min.Y;
     if (camera.IsPerspective && nearHere > 0 && width > 0 && height > 0)
