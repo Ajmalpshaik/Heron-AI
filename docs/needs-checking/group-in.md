@@ -39,8 +39,8 @@ Run 2026-10-21 on Revit 2020 (session 68704), every run rolled back unless it sa
 |---|---|---|
 | IN0 | PASS | *"'25:99' is not a time Heron can read - say 10:00, 14:30 or 10 am. NOTHING WAS CHANGED."*; *"No visual preset is called 'Spielberg'. The presets: Exterior Day, Exterior Dusk, Interior Day, Interior Night, Equipment Close-up, Clay, Presentation Elevation. NOTHING WAS CHANGED."* (apply) and *"... Nothing was read."* (report) |
 | IN1 | PASS | *"'Cinematic Dining Table': Still study, 2026-10-21 11:00; the sun 36.69° up, bearing 171.18°"*, 2 of 2 read back. Version 1 would have written 19:00, the sun at 0 degrees (row 5b-1306's probe) |
-| IN2 | NOT RUN | waits for the owner: the model saved, `try-once`, his Keep and his look at the dialog |
+| IN2 | PASS | The owner saved and pressed **Keep** (22:08): `try-once set-sun-settings` still 11:00 on `Cinematic Dining Table` - *"KEPT  You were asked in Revit and pressed KEEP after seeing the result"*, *"Still study, 2026-10-21 11:00; the sun 36.69° up, bearing 171.18°"*. Negative against the kept run (`--kept`, rolled back): time `25:99` refused. **Signed by Ajmal PS on 2026-10-21** - `SET_SUN_SETTINGS` v2 PROVEN. His look at the dialog's 11:00 AM was asked for and not reported in words |
 | IN3 | PASS on the numbers | 6 settings changed, every one *"as the preset"*, *"Sun still 10:00"*, Interior: Sun and Artificial, exposure value 10 |
 | IN4 | NOT RUN | waits for the owner, as IN2 |
-| IN5 | PASS | *"Sun still 10:00 (as the preset)"* on the kitchen view, the owner's own 10:00 AM |
+| IN5 | PASS | *"Sun still 10:00 (as the preset)"* on the kitchen view, the owner's own 10:00 AM - **signed by Ajmal PS on 2026-10-21**, `REPORT_VISUAL_PRESET` v3 PROVEN |
 | IN6 | PASS on the numbers | *"Sun still 16:23"* - 30 minutes before Revit's sunset for Boston on 21 October (16:53 on the site's standard clock; about 16:56 by an almanac) |
