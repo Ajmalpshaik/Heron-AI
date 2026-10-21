@@ -211,8 +211,12 @@ ROW_SEP = chr(30)
 INDEX_FORMAT = 3
 
 
-def library_digest(store):
+def library_digest(store, cards=None):
     """What `index()` would read, hashed without parsing any of it.
+
+    `cards` is the card folder `index()` reads - this checkout's by default,
+    the main checkout's for the shared store (heron_scope.builds_from, rows
+    136 and 5b-404).
 
     TWO HALVES, BECAUSE `index()` READS TWO SOURCES. The store supplies the
     fragment ROWS - id, semantic identity, capability, domain - and the files
@@ -242,7 +246,7 @@ def library_digest(store):
             row["capability"] or "", row["domain"] or ""]) + ROW_SEP)
             .encode("utf-8"))
 
-    root = FRAG.FRAGMENTS_DIR
+    root = cards or FRAG.FRAGMENTS_DIR
     if os.path.isdir(root):
         for name in sorted(os.listdir(root)):
             folder = os.path.join(root, name)
@@ -298,7 +302,7 @@ def _impl_marks(folder):
     return marks
 
 
-def index(store, force=False):
+def index(store, force=False, source=SCOPE.ASK):
     """Rebuild the searchable text from the fragments the scope holds.
 
     Reads the fragment files for their purpose - the store keeps the metadata,
@@ -328,15 +332,36 @@ def index(store, force=False):
     lookup in a shipped Heron, where there is one tree and it does not change
     between questions.
 
+    THAT HALF WAS CLOSED ON 2026-10-21, for the store where it mattered - the
+    SHARED one, every chat on the PC reads. The owner chose "Always build from
+    main": the cards read here are `source`, which defaults to
+    heron_scope.builds_from()'s answer for this store's own file - the main
+    checkout's cards for the shared store, from whichever checkout asks, so
+    every chat hashes the same files and the index is written once per change
+    on main, never back and forth between trees. A private store
+    (HERON_KNOWLEDGE of its own) still reads this checkout's cards. `source`
+    None - main's cards are not on disk anywhere - writes nothing at all, and
+    the store is served as it stands. A worktree's unmerged words reach a
+    lookup only through a store of its own.
+
     Returns `(written, skipped)`, matching `heron_embed.index` - a skip is
     `(0, rows)` and a rebuild is `(rows, 0)`, so `heron_index._counts` reports
     what actually happened rather than reading a bare number as work done.
 
-    `force=True` rebuilds regardless, matching `heron_embed.index`.
+    `force=True` rebuilds regardless, matching `heron_embed.index` - but never
+    from cards builds_from() refused.
     """
     ensure_tables(store)
 
-    want = library_digest(store)
+    if source is SCOPE.ASK:
+        source = SCOPE.builds_from(getattr(store, "path", None))
+    if source is None:
+        row = store.execute(
+            "SELECT COUNT(*) AS n FROM fragment_text").fetchone()
+        return 0, (row["n"] if row else 0)
+    cards, checkout = source
+
+    want = library_digest(store, cards)
     if not force:
         have = store.execute(
             "SELECT digest FROM index_state WHERE name = 'search'").fetchone()
@@ -366,7 +391,7 @@ def index(store, force=False):
     store.execute("DELETE FROM identities")
     store.execute("DELETE FROM rerank_said")
 
-    on_disk, _ = FRAG.load_all()
+    on_disk, _ = FRAG.load_all(cards, checkout=checkout)
 
     # D-61. The searchable text is rebuilt from the files every time, so a
     # fragment whose purpose changed is searched correctly the moment this
@@ -449,10 +474,15 @@ def index(store, force=False):
     # to the owner - and a library function that started refusing would
     # settle it by accident. Naming the tree is the half that cannot break a
     # caller, which is row 71's rule one layer down.
+    #
+    # THE OWNER SETTLED IT ON 2026-10-21 - "Always build from main" - and the
+    # rule is heron_scope.builds_from(), asked above: what is recorded here
+    # is the card folder this index was really made from, the main
+    # checkout's for the shared store whichever checkout asked.
     store.execute(
         "INSERT OR REPLACE INTO index_state (name, digest) "
         "VALUES ('search_root', ?)",
-        (os.path.abspath(FRAG.FRAGMENTS_DIR).replace(os.sep, "/"),))
+        (os.path.abspath(cards).replace(os.sep, "/"),))
 
     store.db.commit()
     # (written, skipped), MATCHING `heron_embed.index`. It used to return a

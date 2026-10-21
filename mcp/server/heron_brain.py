@@ -357,6 +357,14 @@ class _Open(object):
     differently and each still rebuilds from its own files. A routing repair is
     durable only once every tree declares it, which means MERGED.
 
+    FIXED 2026-10-21 for the store every chat shares (rows 136 and 5b-404):
+    the owner chose "Always build from main". _prepare asks
+    heron_scope.builds_from() once, by the store's own file, and the empty
+    store's rebuild, the row refresh and both indexes all read the MAIN
+    checkout's cards - so a chat in a worktree hashes main's files like every
+    other chat, and writes nothing until main moves. A private store
+    (HERON_KNOWLEDGE of its own) still reads this checkout's cards.
+
     AND "MERGED" WAS NOT ENOUGH FOR A CARD'S ROW until 2026-09-28 (row 5b-249):
     the rows were written by the rebuild alone, which runs only for an empty
     store, so a merged change to a card's identity never reached them. A
@@ -385,10 +393,26 @@ class _Open(object):
                     "Windows profile and no HERON_DATA on this machine, and HERON_KNOWLEDGE is not set. "
                     "Set HERON_KNOWLEDGE to a folder and ask again.")
             self.store = SCOPE.open_scope(SCOPE.GLOBAL)
+            # WHOSE CARDS this store is built and indexed from - ONE answer
+            # for this open, by the store's own file (rows 136 and 5b-404,
+            # the owner's "Always build from main" of 2026-10-21): the main
+            # checkout's for the store every chat on the PC reads, whichever
+            # chat's server asks; this checkout's for a private one; None -
+            # write nothing - where main's cards are not on disk anywhere.
+            source = SCOPE.builds_from(self.store.path)
             if self.store.count() == 0:
                 self.store.close()
                 self.store = None
-                built, problems = SCOPE.rebuild()
+                try:
+                    built, problems = SCOPE.rebuild()
+                except SCOPE.SharedStoreRefused as exc:
+                    # NOT "Heron could not open what it knows: <type>", which
+                    # the catch-all below would say: this is a rule keeping
+                    # one chat's unmerged cards out of every chat's answers,
+                    # and its own sentence says what to do about it.
+                    raise BrainUnavailable(
+                        "Heron's knowledge store is empty, and it is not "
+                        "filled from here. %s" % exc)
                 self.store = SCOPE.open_scope(SCOPE.GLOBAL)
                 if built == 0:
                     # AN EMPTY LIBRARY IS NOT AN EMPTY ANSWER.
@@ -420,8 +444,8 @@ class _Open(object):
             # indexes, because every one of them reads these rows.
             SCOPE.refresh(self.store, walked=self.walked)
             CAP.rebuild(self.store)
-            SEARCH.index(self.store)
-            EMBED.index(self.store)
+            SEARCH.index(self.store, source=source)
+            EMBED.index(self.store, source=source)
             # R-29: THE USER NEVER MANAGES THE INDEX BY HAND, and documents
             # were the half where that had stopped being true. Fragments were
             # re-indexed on every open here; chunks were not, so a document
