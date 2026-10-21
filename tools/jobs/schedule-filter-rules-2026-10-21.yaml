@@ -1,18 +1,18 @@
-# Group IG - SET_SCHEDULE_FILTERS version 2 and REPORT_SCHEDULE_DEFINITION
-# version 2 (row 5b-1289). docs/needs-checking/group-ig.md is the whole plan;
-# this file is its IG1 and IG2.
+# Group IH - SET_SCHEDULE_FILTERS version 2 and REPORT_SCHEDULE_DEFINITION
+# version 2 (row 5b-1290). docs/needs-checking/group-ih.md is the whole plan;
+# this file is its IH1 and IH2.
 #
 #     python tools/batch-prove.py tools/jobs/schedule-filter-rules-2026-10-21.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/schedule-filter-rules-2026-10-21.yaml
 #
-# THE VALUES ARE ARRANGED FOR GROUP IG's RIG (IG0), never for a working model:
+# THE VALUES ARE ARRANGED FOR GROUP IH's RIG (IH0), never for a working model:
 # four walls, Mark MFD and EDH on Level 1 and on Level 2, and three wall
 # schedules each placed on a sheet of its own -
-#   IG01 - LEVEL 1       'IG WALLS (LEVEL 1)'      1. Mark equals MFD
+#   IH01 - LEVEL 1       'IH WALLS (LEVEL 1)'      1. Mark equals MFD
 #                                                  2. Base Constraint equals Level 1
-#   IG02 - LEVEL 2       'IG WALLS (LEVEL 2)'      a Duplicate of the first, its
+#   IH02 - LEVEL 2       'IH WALLS (LEVEL 2)'      a Duplicate of the first, its
 #                                                  rules still Level 1's
-#   IG03 - TWO ON MARK   'IG WALLS (TWO ON MARK)'  1. Mark begins with M
+#   IH03 - TWO ON MARK   'IH WALLS (TWO ON MARK)'  1. Mark begins with M
 #                                                  2. Mark ends with D
 # A schedule is a VIEW and cannot be selected in the model, so each is picked
 # as Schedule Graphics on its own sheet - one schedule per run.
@@ -26,7 +26,7 @@ defaults:
 
   set:
     categoryName: Schedule Graphics
-    inViewOnly: "IG01 - LEVEL 1"
+    inViewOnly: "IH01 - LEVEL 1"
 
 jobs:
   # The read. The negative is a DIFFERENT selection - the rig's walls - so the
@@ -37,7 +37,7 @@ jobs:
       categoryName: Walls
       inViewOnly: "FloorPlan: Level 1"
     note: >
-      Positive: filterRules "'IG WALLS (LEVEL 1)': 1. Mark equals 'MFD';
+      Positive: filterRules "'IH WALLS (LEVEL 1)': 1. Mark equals 'MFD';
       2. Base Constraint equals 'Level 1'" - the level by NAME, numbered in the
       Filter tab's order. Negative: filterRules empty, skippedNotSchedules 2.
 
@@ -53,13 +53,13 @@ jobs:
       filterValue: EDH
     negative-set:
       categoryName: Schedule Graphics
-      inViewOnly: "IG03 - TWO ON MARK"
+      inViewOnly: "IH03 - TWO ON MARK"
       filterAction: change
       filterFieldName: Mark
       filterValue: EDH
     note: >
-      Positive: rulesAfter "'IG WALLS (LEVEL 1)': 1. Mark equals 'EDH';
+      Positive: rulesAfter "'IH WALLS (LEVEL 1)': 1. Mark equals 'EDH';
       2. Base Constraint equals 'Level 1'" - the level rule KEPT. Negative:
-      cannotFilterBy "2 filter rules on 'IG WALLS (TWO ON MARK)' use 'Mark' -
+      cannotFilterBy "2 filter rules on 'IH WALLS (TWO ON MARK)' use 'Mark' -
       rules 1 and 2 - ... Say which with its rule number", rulesAfter empty,
       filtered 0. Both rolled back.

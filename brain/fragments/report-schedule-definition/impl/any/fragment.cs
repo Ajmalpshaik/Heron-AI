@@ -19,7 +19,7 @@
 // and is forbidden here. A number converted by a guessed rule looks finished
 // and is wrong; a raw number carrying its caveat does not.
 //
-// EVERY FILTER RULE IS LISTED, NUMBERED, ON ONE LINE (version 2, row 5b-1289).
+// EVERY FILTER RULE IS LISTED, NUMBERED, ON ONE LINE (version 2, row 5b-1290).
 // `filterRules` names each rule's column by its printed heading, its match
 // type in words and its value as Revit shows it - an element value, such as a
 // Level rule's level, by NAME. Found on 2026-10-21 on a real project: two

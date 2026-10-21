@@ -13,7 +13,7 @@ version: 2
 source: OFFICIAL
 risk: MODIFY
 
-# VERSION 2 (2026-10-21, row 5b-1289). ONE RULE CHANGED, THE OTHERS KEPT.
+# VERSION 2 (2026-10-21, row 5b-1290). ONE RULE CHANGED, THE OTHERS KEPT.
 # Found on a real project in Revit 2020: a modeller duplicated a fire damper
 # schedule into two duct heater schedules, each carrying two filter rules -
 # one holding the value "MFD", the other most likely a level; nothing could
@@ -31,7 +31,7 @@ risk: MODIFY
 # HOW EACH ACTION BEHAVES - kept here rather than in `purpose`, because the
 # purpose is embedded for routing and its every repetition of "filter rules"
 # pulled "what is this schedule filtered by" onto this write on the model
-# backend, measured 2026-10-21 (row 5b-1289).
+# backend, measured 2026-10-21 (row 5b-1290).
 #   change  - one rule's value, match type or both; every other rule kept. The
 #             rule is picked by its column, name or printed heading; two rules
 #             on one column are REFUSED with their numbers until `ruleNumber`
@@ -64,7 +64,7 @@ risk: MODIFY
 # one line each, because a list is cut to three entries before anyone sees it.
 #
 # Version 1's proof below is kept as evidence of version 1; it no longer
-# describes this code (D-30), so this is DRAFT until NEEDS-CHECKING Group IG is
+# describes this code (D-30), so this is DRAFT until NEEDS-CHECKING Group IH is
 # run and signed.
 
 purpose: >
@@ -311,7 +311,7 @@ utterances:
   - limit the schedule to this level
   - only show these rows in the schedule
   - remove the other levels from the schedule
-  # ADDED 2026-10-21 (row 5b-1289), the modeller's own words on project
+  # ADDED 2026-10-21 (row 5b-1290), the modeller's own words on project
   # 4355-BHVD-3D-22S10-BL001A, and the two jobs that request carried.
   - change the schedule filter from MFD to EDH
   - change the level filter of this schedule to the roof

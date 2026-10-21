@@ -21,7 +21,7 @@
 // asked for Level 2. An unrecognised match type is REFUSED rather than
 // defaulted - a wrong default here is invisible on screen.
 //
-// VERSION 2 - FOUR WAYS TO WRITE, ONE OF THEM VERSION 1's (row 5b-1289).
+// VERSION 2 - FOUR WAYS TO WRITE, ONE OF THEM VERSION 1's (row 5b-1290).
 // `filterAction` left out is "replace": every rule the schedule had goes and
 // the rule given takes their place, exactly as version 1 did, and what was
 // there is reported before it goes. "change" alters ONE existing rule's value

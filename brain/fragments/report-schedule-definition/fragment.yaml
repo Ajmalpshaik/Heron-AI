@@ -13,7 +13,7 @@ version: 2
 source: OFFICIAL
 risk: READ
 
-# VERSION 2 (2026-10-21, row 5b-1289). EVERY FILTER RULE, NUMBERED, ON ONE
+# VERSION 2 (2026-10-21, row 5b-1290). EVERY FILTER RULE, NUMBERED, ON ONE
 # LINE. On a real project in Revit 2020 two duplicated duct heater schedules
 # came back "filterCount 4" and nothing a modeller could read: the rules were
 # one line inside `findings`, and a list is cut to three entries before anyone
@@ -26,7 +26,7 @@ risk: READ
 # changed: the same rule wording is in `findings`, columns, sorting and totals
 # are as version 1 reported them. Version 1's proof below is kept as evidence
 # of version 1; it no longer describes this code (D-30), so this is DRAFT
-# until NEEDS-CHECKING Group IG is run and signed.
+# until NEEDS-CHECKING Group IH is run and signed.
 
 purpose: >
   Reads back how a schedule is CONFIGURED - the columns it carries, the order
@@ -214,6 +214,6 @@ utterances:
   # SET_SCHEDULE_FILTERS, a write, on the trained backend. Nothing on any
   # frozen set became riskier (brain/retrieval-history.md, 2026-10-17).
   - is this schedule filtered
-  # ADDED 2026-10-21 (row 5b-1289) - the question the modeller's request on
+  # ADDED 2026-10-21 (row 5b-1290) - the question the modeller's request on
   # project 4355-BHVD-3D-22S10-BL001A needed answered first.
   - what filters does this schedule have
