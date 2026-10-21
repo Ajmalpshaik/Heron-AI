@@ -22,7 +22,15 @@ positive:
       looking at the sheet cannot see it
 
   - given: >
-      VERSION 2. 'DUCT HEATER SCHEDULE (ROOF FLOOR)' on 4355-BHVD-3D-21S10-BL001A
+      VERSION 2. Two schedules duplicated from one, each filtered on a type
+      value and on Level
+    expect: >
+      filterRules "'<first>': 1. <heading> equals 'MFD'; 2. Level equals
+      '<level name>'  ||  '<second>': ..." - the level shown by NAME, never
+      as a number, the numbering matching the order of Revit's Filter tab
+
+  - given: >
+      VERSION 3. 'DUCT HEATER SCHEDULE (ROOF FLOOR)' on 4355-BHVD-3D-21S10-BL001A
       (Revit 2020), carrying its own combined Size column and, if still there,
       the column version 1 of ADD_SCHEDULE_COMBINED_FIELD added at the end
     expect: >
@@ -31,12 +39,12 @@ positive:
       column - checked there before the list is believed. Version 1's column
       draws '[Duct_Accessory_Width][Duct_Accessory_Height]x': two parts, the
       first with separator none, the second with 'x' after it - the fault,
-      read back. After the version 2 edit of Size, its line draws
+      read back. After ADD_SCHEDULE_COMBINED_FIELD version 2 edits Size, its line draws
       '[Duct_Accessory_Width]x[Duct_Accessory_Height]'
 
 negative:
   - given: >
-      VERSION 2. A schedule whose columns are all plain - no combined column
+      VERSION 3. A schedule whose columns are all plain - no combined column
     expect: >
       `combinedFields` EMPTY and the first line saying 0 combined, every column
       still listed. A version that read every column as combined, or crashed
@@ -66,6 +74,14 @@ negative:
       reported as a presence rule with no value, NOT crashed on. Asking such a
       filter for its string value throws, and this is the case that catches a
       version reading every filter through one getter
+
+  - given: >
+      VERSION 2. A schedule whose column heading has been renamed, filtered
+      on that column
+    expect: >
+      the rule names the printed heading WITH the field's own name beside it
+      - "Heater Ref (field Type Mark) equals 'EDH'" - not the field name alone,
+      which is not what anyone sees on the sheet
 
 second_route:
   - >

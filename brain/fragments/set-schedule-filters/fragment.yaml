@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,63 @@ semantic-identity: "filter this schedule down to the rows that match, without to
 kind: action
 domain: revit.schedules
 capability: SET_SCHEDULE_FILTERS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-10-21, row 5b-1290). ONE RULE CHANGED, THE OTHERS KEPT.
+# Found on a real project in Revit 2020: a modeller duplicated a fire damper
+# schedule into two duct heater schedules, each carrying two filter rules -
+# one holding the value "MFD", the other most likely a level; nothing could
+# tell, REPORT_SCHEDULE_DEFINITION gave only their count - and asked to change
+# MFD to EDH. Version 1
+# clears every rule and writes one, so it would have taken the level rule with
+# it and nothing on screen would have said so. Widened rather than duplicated,
+# as that day's task required: `filterAction` - replace (left out: version
+# 1 exactly), change, add, remove - with `ruleNumber` to pick one of two rules
+# on one field and `filterRules` for several rules in one call. Every version 1
+# call runs as it did. `rulesBefore` and `rulesAfter` are the schedule's whole
+# set of rules, read before and read back after, each on one line.
+# REPORT_SCHEDULE_DEFINITION version 2 lists the same rules the same way.
+#
+# HOW EACH ACTION BEHAVES - kept here rather than in `purpose`, because the
+# purpose is embedded for routing and its every repetition of "filter rules"
+# pulled "what is this schedule filtered by" onto this write on the model
+# backend, measured 2026-10-21 (row 5b-1290).
+#   change  - one rule's value, match type or both; every other rule kept. The
+#             rule is picked by its column, name or printed heading; two rules
+#             on one column are REFUSED with their numbers until `ruleNumber`
+#             says which. A left-out match type or value keeps the rule's own.
+#   add     - a rule beside the existing ones, at the end.
+#   remove  - one rule out, picked as for change.
+#   replace - every rule goes and the one given (or `filterRules`) takes their
+#             place: version 1, and what a left-out `filterAction` means.
+# `filterRules` gives several rules in one call - `column | match type |
+# value`, a semicolon between - for any of the four.
+#
+# A CHANGED VALUE IS WRITTEN IN THE KIND THE RULE ALREADY HOLDS. Text takes
+# text. A rule that points at an element - a Level rule holds the level, not
+# its name - takes the NAME of another element of the SAME KIND as the one it
+# points at now, looked up in the model; no element or more than one with that
+# name is refused, with the names that are there. A name carries no unit, so
+# this is allowed where a number is not: a changed rule that holds a number is
+# refused and left as it was. A NEW rule is text; a field that needs an element
+# is refused by Revit in its own words, and the old set is put back.
+#
+# NOTHING IS WRITTEN UNTIL THE WHOLE NEW SET IS KNOWN, AND A REFUSAL FROM REVIT
+# PUTS THE OLD SET BACK. Version 1 cleared the rules and then added one, so a
+# rule Revit refused left the schedule with none - which reads as a filter that
+# matched everything. A has-a-value or has-no-value rule is now asked of
+# `CanFilterByValuePresence` before anything is written, for the same reason.
+#
+# `rulesBefore` (taken before anything is written) and `rulesAfter` (a second
+# look once it is) are each schedule's whole set, numbered as `ruleNumber`
+# counts, each column by its printed heading, each value as Revit shows it -
+# one line each, because a list is cut to three entries before anyone sees it.
+#
+# Version 1's proof below is kept as evidence of version 1; it no longer
+# describes this code (D-30), so this is DRAFT until NEEDS-CHECKING Group IH is
+# run and signed.
 
 purpose: >
   Sets the filter rules on a schedule - which rows it shows - and changes
@@ -42,16 +96,25 @@ purpose: >
   and inferring one from the shape of the text is how a schedule silently
   includes Level 20 when somebody asked for Level 2.
 
-  **THE FILTERS ARE REPLACED, NOT ADDED TO**, and what was there is reported
-  before it goes. A schedule that accumulates filters shows fewer and fewer
-  rows, and each addition looks correct on its own.
+  **LEFT TO ITSELF IT REPLACES THE FILTERS, NOT ADDS TO THEM**, and what was
+  there is reported before it goes. A schedule that accumulates filters shows
+  fewer and fewer rows, and each addition looks correct on its own. Adding
+  happens only when asked for (version 2).
 
-  **A VALUE IS WRITTEN AS TEXT, AND THAT IS A DELIBERATE LIMIT.** A numeric
+  **CHANGING ONE KEEPS THE OTHERS (version 2).** A change alters one rule's
+  value or match type and leaves the rest as they were; a remove takes one
+  out. Two rules on one column are refused until `ruleNumber` says which -
+  picking the first is a guess. Nothing is written until the whole new set is
+  known, and a refusal from Revit puts the old set back.
+
+  **A NEW VALUE IS WRITTEN AS TEXT, AND THAT IS A DELIBERATE LIMIT.** A numeric
   filter value would have to be handed to Revit in internal units, and knowing
   which unit a given parameter uses needs the units API - the call that breaks
   at Revit 2021 and is forbidden here. Text rules cover the sentences that were
   measured; a number rule would work on one release and silently mis-scale on
-  another, which is worse than not offering it.
+  another, which is worse than not offering it. A changed rule that points at
+  an element - a Level rule - takes another element's NAME instead, looked up
+  among elements of the same kind.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -61,23 +124,63 @@ contract:
       type: Document
     - name: elements
       type: IList<Element>
+    # The column to filter on, by its field name or its printed heading. For
+    # change and remove, the rule on this column is the one changed. Left out
+    # only with `filterRules`, or with `ruleNumber` for change or remove.
     - name: filterFieldName
       type: string
       source: request
+      optional: true
+      absent: none
+    # The value. Left out ("keep"): for change, the rule's own value is kept;
+    # for replace or add, a match type that needs a value is refused.
     - name: filterValue
       type: string
       source: request
+      optional: true
+      absent: keep
+    # equals, does not equal, contains, does not contain, begins with, does
+    # not begin with, ends with, does not end with, has value, has no value.
+    # Left out ("keep"): for change, the rule's own match type is kept; for
+    # replace or add, refused - a match type is never guessed.
     - name: matchType
       type: string
       source: request
+      optional: true
+      absent: keep
+    # VERSION 2. replace (every rule goes, the one given takes their place -
+    # version 1), change (one rule's value or match type, the rest kept), add
+    # (a rule beside the others) or remove (one rule out). Left out, replace.
+    - name: filterAction
+      type: string
+      source: request
+      optional: true
+      absent: replace
+    # VERSION 2. Which rule to change or remove, counting from 1 in the order
+    # the schedule holds them - REPORT_SCHEDULE_DEFINITION numbers them. Needed
+    # when two rules use the same column. Left out, 0: picked by the column.
+    - name: ruleNumber
+      type: int
+      source: request
+      optional: true
+      absent: 0
+    # VERSION 2. Several rules in one call: column | match type | value, a
+    # semicolon between rules - "Type Mark | equals | EDH; Level | equals |
+    # ROOF FLOOR". For change, a blank match type or value keeps the rule's
+    # own; for remove, the column alone. Left out, the single rule above.
+    - name: filterRules
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: filtered
       role: result
       type: int
     - name: replacedRules
-      # The rules that were there BEFORE - THE FILTERS ARE REPLACED, NOT ADDED
-      # TO, and what was there is reported before it goes. The prior state,
-      # never a rule it applied (D-52).
+      # The rules that went - every rule for replace, the old form of a
+      # changed rule, a removed rule - each named before it goes. The prior
+      # state, never a rule it applied (D-52).
       role: accounting
       type: IList<string>
     - name: cannotFilterBy
@@ -99,6 +202,17 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<string>
+    - name: rulesBefore
+      # VERSION 2. Every schedule's whole set of rules BEFORE anything was
+      # written, numbered, on one line. The prior state, read for every
+      # schedule looked at - also the ones refused - never a change (D-52).
+      role: accounting
+      type: string
+    - name: rulesAfter
+      # VERSION 2. Every changed schedule's whole set of rules, READ BACK after
+      # the write, numbered, on one line. Empty when nothing was written.
+      role: result
+      type: string
 
 proof:
   date: '2026-09-09'
@@ -136,11 +250,14 @@ tests: tests/
 
 compatibility-note: >
   One implementation for every release. `ScheduleDefinition.GetFilters`,
-  `ClearFilters`, `AddFilter`, `CanFilterByValue`, the
-  `ScheduleFilter(ScheduleFieldId, ScheduleFilterType, string)` constructor, and
-  the `ScheduleFilterType` enum members used here (`Equal`, `NotEqual`,
-  `Contains`, `NotContains`, `BeginsWith`, `EndsWith`, `HasValue`, `HasNoValue`)
-  are present and unchanged 2020 through 2027, with the same argument counts.
+  `SetFilters`, `ClearFilters`, `GetFilterCount`, `CanFilterByValue`,
+  `CanFilterByValuePresence`, every `ScheduleFilter` constructor (no value,
+  string, int, double, ElementId), its `FilterType` setter and five value
+  getters, `ScheduleFieldId`'s `==`, and every `ScheduleFilterType` member are
+  present and unchanged 2020 through 2027, with the same argument counts - read
+  off the shipped assemblies with `tools/api-surface --members` on 2026-10-21.
+  `FilteredElementCollector.OfClass` finds the element a changed element rule
+  names, on every release.
 
   Field identity is `ScheduleFieldId`, not an `ElementId`. **No units call is
   made anywhere**, which is why the value is text - see the purpose.
@@ -150,6 +267,20 @@ compatibility-note: >
 #   "filter the schedule to level 2 only" -> here. A TABLE changes; no element
 #                                            is touched
 #   "show only the supply ducts in it"    -> here
+#   "change the schedule filter from MFD  -> here, VERSION 2, filterAction
+#    to EDH"                                 change. The rule is picked by its
+#                                            column; REPORT_SCHEDULE_DEFINITION
+#                                            first, when which column holds MFD
+#                                            is not known
+#   "change the level filter of this      -> here, change - the level rule
+#    schedule to the roof"                   takes the roof level by name
+#   "remove the level filter from the     -> here, remove - one RULE goes.
+#    schedule"                               REMOVE_SCHEDULE_FIELDS takes a
+#                                            COLUMN out, and was what this
+#                                            sentence reached before version 2
+#   "what filters does this schedule      -> REPORT_SCHEDULE_DEFINITION, a
+#    have"                                   read - its version 2 lists every
+#                                            rule, numbered as ruleNumber counts
 #   "move these ducts to level 2"         -> SET_ELEMENT_LEVEL - which is what
 #                                            the FIRST sentence used to return.
 #                                            One changes a table, one changes
@@ -180,3 +311,7 @@ utterances:
   - limit the schedule to this level
   - only show these rows in the schedule
   - remove the other levels from the schedule
+  # ADDED 2026-10-21 (row 5b-1290), the modeller's own words on project
+  # 4355-BHVD-3D-22S10-BL001A, and the two jobs that request carried.
+  - change the schedule filter from MFD to EDH
+  - change the level filter of this schedule to the roof

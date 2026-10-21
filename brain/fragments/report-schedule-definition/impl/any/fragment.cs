@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc` and `elements` are in scope; leaves `findings`,
 // `fieldNames`, `hiddenFieldNames`, `combinedFields`, `filterCount`,
-// `sortFieldCount` and `skippedNotSchedules` behind.
+// `filterRules`, `sortFieldCount` and `skippedNotSchedules` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -19,6 +19,15 @@
 // and is forbidden here. A number converted by a guessed rule looks finished
 // and is wrong; a raw number carrying its caveat does not.
 //
+// EVERY FILTER RULE IS LISTED, NUMBERED, ON ONE LINE (version 2, row 5b-1290).
+// `filterRules` names each rule's column by its printed heading, its match
+// type in words and its value as Revit shows it - an element value, such as a
+// Level rule's level, by NAME. Found on 2026-10-21 on a real project: two
+// duplicated schedules came back "filterCount 4" and nothing else, because the
+// rules were only a line inside `findings`, and a list is cut to three entries
+// before anyone reads it - the filter line is the fourth. The numbers are the
+// ones SET_SCHEDULE_FILTERS' `ruleNumber` counts with.
+//
 // EVERY SCHEDULE IS GUARDED SEPARATELY. One schedule that refuses to describe
 // itself must not take the report for the other twelve down with it.
 //
@@ -28,8 +37,8 @@
 // Found 2026-09-08 by the owner doing exactly that: they placed 'Heat Recovery
 // Unit Summary' on a sheet, selected it, and this fragment answered
 // skippedNotSchedules 1. A view cannot be selected as an element - opening the
-// schedule selects its ROWS - and nothing in the library provides a
-// ViewSchedule to chain from. So the cast below refused the only input that
+// schedule selects its ROWS - and nothing in the 349 fragments the library
+// held on 2026-09-08 provided a ViewSchedule to chain from. So the cast below refused the only input that
 // could ever reach it, and the fragment was correct in isolation and unusable
 // in practice.
 //
@@ -37,7 +46,7 @@
 // here rather than refused. `skippedNotSchedules` now means what it says: the
 // thing was neither a schedule nor a placement of one.
 //
-// VERSION 2 - FRAGMENT-ISSUES 5b-1292. A COMBINED COLUMN IS READ OPEN. Its
+// VERSION 3 - FRAGMENT-ISSUES 5b-1292. A COMBINED COLUMN IS READ OPEN. Its
 // parts, each part's prefix and suffix, and the separator Revit draws AFTER
 // each part - the last one's too, because a separator after the last value is
 // exactly the fault that column showed on 2026-10-21 ("20001300x"). Each
@@ -75,7 +84,36 @@ Func<IList<SchedulableField>, ElementId, string> partName = (offered, paramId) =
 // separator and a missing one must not read alike.
 Func<string, string> quoted = text => string.IsNullOrEmpty(text) ? "none" : "'" + text + "'";
 var filterCount = 0;
+var filterRules = "";
+var filterRuleLines = new List<string>();
 var sortFieldCount = 0;
+
+// A match type in the words a person reads. Every member, because any of them
+// can be on a schedule somebody else set up.
+Func<ScheduleFilterType, string> matchWords = type =>
+{
+    switch (type)
+    {
+        case ScheduleFilterType.Equal: return "equals";
+        case ScheduleFilterType.NotEqual: return "does not equal";
+        case ScheduleFilterType.GreaterThan: return "is greater than";
+        case ScheduleFilterType.GreaterThanOrEqual: return "is greater than or equal to";
+        case ScheduleFilterType.LessThan: return "is less than";
+        case ScheduleFilterType.LessThanOrEqual: return "is less than or equal to";
+        case ScheduleFilterType.Contains: return "contains";
+        case ScheduleFilterType.NotContains: return "does not contain";
+        case ScheduleFilterType.BeginsWith: return "begins with";
+        case ScheduleFilterType.NotBeginsWith: return "does not begin with";
+        case ScheduleFilterType.EndsWith: return "ends with";
+        case ScheduleFilterType.NotEndsWith: return "does not end with";
+        case ScheduleFilterType.HasValue: return "has a value";
+        case ScheduleFilterType.HasNoValue: return "has no value";
+        case ScheduleFilterType.HasParameter: return "has the parameter";
+        case ScheduleFilterType.IsAssociatedWithGlobalParameter: return "is associated with a global parameter";
+        case ScheduleFilterType.IsNotAssociatedWithGlobalParameter: return "is not associated with a global parameter";
+        default: return type.ToString();
+    }
+};
 var skippedNotSchedules = 0;
 
 foreach (var element in elements)
@@ -125,7 +163,7 @@ foreach (var element in elements)
                 ? name
                 : string.Format("{0} (printed as '{1}')", name, heading);
 
-            // VERSION 2. A combined column, read open. Guarded on its own: one
+            // VERSION 3. A combined column, read open. Guarded on its own: one
             // column that will not open must not lose the schedule's report.
             bool combined = false;
             try { combined = field.IsCombinedParameterField; } catch { }
@@ -200,44 +238,57 @@ foreach (var element in elements)
             findings.Add("    sorted by: " + string.Join(", then ", sorts));
         }
 
-        // Filters. Each value read through the getter matching its kind.
+        // Filters. Each value read through the getter matching its kind, each
+        // column by the heading it prints under, numbered in the order the
+        // schedule holds them.
         var filters = definition.GetFilters();
         filterCount += filters.Count;
         if (filters.Count == 0)
         {
             findings.Add("    filters: none - every element of the category is in this schedule");
+            filterRuleLines.Add(string.Format("'{0}': no filter rules", schedule.Name));
         }
         else
         {
             var rules = new List<string>();
+            var number = 0;
             foreach (var filter in filters)
             {
+                number++;
                 var field = definition.GetField(filter.FieldId);
-                var fieldName = field == null
-                    ? "(a field no longer in the schedule)"
-                    : field.GetName();
+                var fieldName = "(a field no longer in the schedule)";
+                if (field != null)
+                {
+                    var name = field.GetName();
+                    var heading = field.ColumnHeading;
+                    fieldName = string.IsNullOrEmpty(heading) || heading == name
+                        ? name
+                        : string.Format("{0} (field {1})", heading, name);
+                }
 
                 string value;
-                if (filter.IsNullValue) value = "(no value - the rule is about presence, not content)";
-                else if (filter.IsStringValue) value = "'" + filter.GetStringValue() + "'";
-                else if (filter.IsIntegerValue) value = filter.GetIntegerValue().ToString();
+                if (filter.IsNullValue) value = "";
+                else if (filter.IsStringValue) value = " '" + filter.GetStringValue() + "'";
+                else if (filter.IsIntegerValue) value = " " + filter.GetIntegerValue().ToString();
                 else if (filter.IsElementIdValue)
                 {
                     var target = doc.GetElement(filter.GetElementIdValue());
-                    value = target == null ? "(an element no longer here)" : "'" + target.Name + "'";
+                    value = target == null ? " (an element no longer here)" : " '" + target.Name + "'";
                 }
                 else if (filter.IsDoubleValue)
                 {
-                    value = string.Format("{0} - REVIT INTERNAL UNITS, not converted; "
+                    value = string.Format(" {0} - REVIT INTERNAL UNITS, not converted; "
                         + "what unit that is depends on the parameter",
                         filter.GetDoubleValue());
                 }
-                else value = "(a kind of value this report does not read)";
+                else value = " (a kind of value this report does not read)";
 
-                rules.Add(string.Format("{0} {1} {2}", fieldName, filter.FilterType, value));
+                rules.Add(string.Format("{0}. {1} {2}{3}", number, fieldName,
+                    matchWords(filter.FilterType), value));
             }
             findings.Add(string.Format("    filters ({0}): {1}", filters.Count,
                 string.Join("  AND  ", rules)));
+            filterRuleLines.Add(string.Format("'{0}': {1}", schedule.Name, string.Join("; ", rules)));
         }
 
         findings.Add(string.Format("    {0}; grand total {1}",
@@ -253,6 +304,8 @@ foreach (var element in elements)
     }
 }
 
+filterRules = string.Join("  ||  ", filterRuleLines);
+
 if (skippedNotSchedules > 0)
 {
     findings.Add(string.Format("{0} of what was handed in was not a schedule and was skipped",
@@ -264,5 +317,5 @@ findings.Insert(0, string.Format("{0} schedule(s) described. {1} column(s) in to
     elements.Count - skippedNotSchedules, fieldNames.Count, hiddenFieldNames.Count,
     filterCount, sortFieldCount, combinedFields.Count));
 
-// VERSION 2. Each combined column's parts, after the schedule lines.
+// VERSION 3. Each combined column's parts, after the schedule lines.
 foreach (var line in combinedFields) findings.Add("    combined column " + line);

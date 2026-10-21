@@ -7,7 +7,7 @@
 # part ("20001300x" on the owner's DUCT HEATER SCHEDULE, Revit 2020, 2026-10-21)
 # and could only add a column at the end. Version 2 puts it between parts, edits
 # a combined column in place and moves a column; REPORT_SCHEDULE_DEFINITION
-# version 2 reads a combined column open. FRAGMENT-ISSUES row 5b-1292.
+# version 3 reads a combined column open. FRAGMENT-ISSUES row 5b-1292.
 #
 # THE MODEL: a NEW scratch project, never a working model and never a 4355-*
 # one. Revit 2020, the default metric template, saved as "Heron Combined
