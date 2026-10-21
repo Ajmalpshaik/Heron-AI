@@ -940,6 +940,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ii.md`](needs-checking/group-ii.md)
 
+## Group IJ - labels in tag, annotation and title block families: `REPORT_FAMILY_LABELS`, `SET_FAMILY_LABEL_LAYOUT`, `COPY_LABELS_FROM_FAMILY` and the `tag-family-creation` method (2026-10-21)
+
+**Its own file:** [`needs-checking/group-ij.md`](needs-checking/group-ij.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

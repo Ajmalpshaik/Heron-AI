@@ -1,0 +1,45 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# Arrange on the SCRATCH family NEEDS-CHECKING Group IJ names - "Heron Label
+# Test.rfa", a Pipe Tag holding ONE label and ONE text note "NOT A LABEL" -
+# saved first, a view showing both in front. Read the label's id and point with
+# REPORT_FAMILY_LABELS before each run.
+
+positive:
+  - given: >
+      Heron Label Test on Revit 2020, labelIds the label's id, positionMm
+      "0,5", widthMm "30", horizontalAlign "left", verticalAlign "middle",
+      keepReadable "yes"
+    expect: >
+      changed 1, readBack "at 0,5 mm | width 30 mm | Left/Middle | keep
+      readable yes" with no NOT AS ASKED; REPORT_FAMILY_LABELS afterwards
+      gives the same; the label's text, and on 2027 its parameters, unchanged;
+      one entry in the undo list
+  - given: >
+      the same family, labelIds "all", moveByMm "0,2.5"
+    expect: >
+      changed equal to the labels in the family, each label's point 2.5 mm
+      higher than before and nothing else moved - the text note stays where it
+      was
+
+negative:
+  - given: >
+      the same family, labelIds the TEXT NOTE's id, moveByMm "0,10"
+    expect: >
+      changed 0, a report naming that id as a text note, not a label, and
+      NOTHING WAS CHANGED - the note and the label both where they were. THIS
+      IS THE FIRST CASE TO RUN
+  - given: >
+      the same family, labelIds the label's id, widthMm "0.01"
+    expect: >
+      changed 0, a report giving the width Revit allows for that label, and
+      NOTHING WAS CHANGED
+  - given: >
+      the same family, labelIds the label's id and no setting at all
+    expect: >
+      changed 0 and a report saying nothing to change was given - and that
+      parameters, sample value, prefix, suffix, spaces, break and unit format
+      are Edit Label's, by hand
+
+second_route:
+  - pick the label in the Family Editor - its point by snapping a detail line to it, its width by the grip, and the alignment and Keep Readable in Properties
+  - REPORT_FAMILY_LABELS before and after - the same label id at the new point and width, its text unchanged

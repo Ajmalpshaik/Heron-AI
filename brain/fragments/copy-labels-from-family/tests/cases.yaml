@@ -1,0 +1,53 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# Arrange as NEEDS-CHECKING Group IJ names, on SCRATCH families only:
+#   "Heron Label Seed.rfa" - a Pipe Tag holding three labels, one per line,
+#     each set up in Edit Label: System Abbreviation; Diameter with prefix
+#     "Ø"; Bottom Elevation with prefix "BOP ", in mm with the + sign.
+#   "Heron Label Target.rfa" - a new Pipe Tag from the same Generic Tag
+#     template, category set to Pipe Tags, no labels; saved; in front.
+#   "Heron Duct Seed.rfa" - a Duct Tag holding one label.
+# All three open in the same Revit.
+
+positive:
+  - given: >
+      Heron Label Target in front on Revit 2020, sourceDocumentTitle "Heron
+      Label Seed", labelContains "all", placeAtMm "0,5"
+    expect: >
+      copied 3, kept 3, readBack naming each copy against its seed id, the
+      top left one at 0,5 mm and the other two keeping their spacing;
+      REPORT_FAMILY_LABELS on the target lists 3 labels; Edit Label on each
+      copy shows the seed's parameter, sample value, prefix, suffix and unit
+      format - IJ10 records each one; one entry in the target's undo list and
+      none in the seed's
+  - given: >
+      the same families upgraded on copies, Revit 2027, labelContains
+      "Bottom Elevation"
+    expect: >
+      copied 1, kept 1, readBack comparing Bottom Elevation parameter by
+      parameter - prefix "BOP ", the + sign, millimetres - the same on both
+      sides, or DIFFERS naming what Revit did not carry
+
+negative:
+  - given: >
+      Heron Label Target in front, sourceDocumentTitle "Heron Duct Seed",
+      labelContains "all"
+    expect: >
+      copied 0, a report quoting Revit's rule that labels are not pasted
+      across categories - Duct Tags against Pipe Tags - and NOTHING WAS
+      COPIED; the target has no labels afterwards. THIS IS THE FIRST CASE TO
+      RUN
+  - given: >
+      the same target, sourceDocumentTitle "No Such Seed"
+    expect: >
+      copied 0, a report naming the documents that are open, and NOTHING WAS
+      COPIED
+  - given: >
+      the same target, sourceDocumentTitle "Heron Label Seed", labelContains
+      "ZZZ_Not_A_Label"
+    expect: >
+      copied 0, a report saying no label in the seed matched and how many it
+      has, and NOTHING WAS COPIED
+
+second_route:
+  - by hand - pick the seed's label, Copy to Clipboard, switch to the target and Paste Aligned to Current View; Edit Label on both
+  - REPORT_FAMILY_LABELS on the seed and on the target - on 2027 the same parameter lines on both

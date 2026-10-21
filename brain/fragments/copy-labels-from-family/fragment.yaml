@@ -1,0 +1,139 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-151
+semantic-identity: "copy labels already set up in a seed tag or title block family, open in the same Revit, into the family in front - same category only, at a point - and read each copy back against its seed"
+kind: action
+domain: revit.families
+capability: COPY_LABELS_FROM_FAMILY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-21: Ajmal PS, building the pipe tag TRG_Pipe_Tag on Revit 2020,
+# asked for labels to be MADE as well as read. Revit's API cannot make one on
+# any release 2020 to 2027: 2027's AnnotationLabel.Create exists and is
+# INTERNAL in every 2027 package (docs/43 section 8.3a). Copying one can be
+# done on every release - so this is the seed route: a label set up once by
+# hand in Edit Label, in a seed family of the same category, copied into each
+# new tag. Proof plan: NEEDS-CHECKING Group IJ, which MEASURES whether a copy
+# keeps its parameter binding, sample value, prefix, suffix and unit format.
+#
+# CONSIDERED AND NOT WIDENED. COPY_ELEMENTS_BETWEEN_DOCUMENTS (PROVEN) copies
+# MODEL elements document to document and leaves view-specific ones by design
+# - a label is view-specific, and a change under its impl/ would make its
+# proof stale. COPY_ELEMENTS copies inside one model. Neither checks the
+# category rule Revit applies to labels, nor reads a label back against its
+# seed.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). The seed
+# is read and never written.
+purpose: >
+  Copies labels from a seed family open in the same Revit into the tag,
+  annotation or title block family in front - picked by id in the seed, by
+  part of a label's text or parameter name, or all - view to view, and puts
+  the first one at x,y in millimetres with the rest keeping their spacing.
+  Each copy is read back against its seed: its text and label type on every
+  release, and on Revit 2027 every parameter in order with its sample value,
+  prefix, suffix, spaces, break and unit format. A copy that differs is named
+  and not counted as kept.
+
+  **THE ROUTE TO A NEW LABEL.** Revit's API makes no label, from 2020 to
+  2027; copying one already set up in Edit Label works. Make the seed once by
+  hand - one label per line - and copy from it into every new tag.
+
+  **ONE CATEGORY ONLY.** Revit pastes a label only between families of the
+  same category, so a seed of another category is refused before anything is
+  copied - a Pipe Tags seed for a Pipe Tags family.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: app
+      type: Application
+    # Part of the seed family's title, as Revit shows it. The seed is open in
+    # this Revit.
+    - name: sourceDocumentTitle
+      type: string
+      source: request
+    # Label ids in the SEED, comma separated, as REPORT_FAMILY_LABELS lists
+    # them on the seed, or "all". Left out, "all".
+    - name: labelIds
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # Part of a label's text - or, on 2027, of a parameter's name, sample,
+    # prefix or suffix - such as "Diameter"; several with commas between.
+    # Left out, "all".
+    - name: labelContains
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # "x,y" in millimetres: where the first label picked - the top left one -
+    # lands; the rest keep their spacing. Left out, "keep": where they are in
+    # the seed.
+    - name: placeAtMm
+      type: string
+      source: request
+      optional: true
+      absent: keep
+  provides:
+    - name: copied
+      # Labels that arrived. Tracks the request (D-53).
+      role: result
+      type: int
+    - name: copiedIds
+      role: result
+      type: IList<ElementId>
+    - name: kept
+      # Copies that read back showing exactly what their seed shows.
+      role: result
+      type: int
+    - name: readBack
+      # One line per copy, joined by "  ||  ": its id, its seed's id, where it
+      # landed, and what it shows - or DIFFERS with both sides.
+      role: result
+      type: string
+    - name: report
+      # ONE STRING: picked, arrived, kept, a type-name clash named before the
+      # copy, or why nothing was copied (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ElementTransformUtils.CopyElements(View, ICollection<ElementId>, View,
+  Transform, CopyPasteOptions) and its Document form, Application.Documents,
+  Family.FamilyCategory, Element.OwnerViewId and GetTypeId, View.ViewType and
+  TextElement.Coord and Text read the same 2020 to 2027 (tools/api-surface
+  --members, all eight, 2026-10-21); BuiltInFailures.FamilyFailures.
+  CannotPasteLabelsAcrossFamilies is in every release. The parameter-by-
+  parameter comparison reads AnnotationLabel under #if REVIT2027_OR_GREATER -
+  2020 to 2026 compare text and type only.
+
+# ROUTING - the same rows are in REPORT_FAMILY_LABELS, COPY_ELEMENTS_BETWEEN_DOCUMENTS
+# and SET_FAMILY_LABEL_LAYOUT.
+#
+#   "copy the diameter label from the seed pipe tag into this tag"  -> here
+#   "add a label for Bottom Elevation from our seed family"         -> here
+#   "copy the extrusions from the valve family into this one"       -> COPY_ELEMENTS_BETWEEN_DOCUMENTS
+#   "read the labels in this tag family"                            -> REPORT_FAMILY_LABELS
+#   "move the diameter label up 2 mm"                               -> SET_FAMILY_LABEL_LAYOUT
+
+utterances:
+  - copy the diameter label from the seed pipe tag into this tag family
+  - add a label for bottom elevation from our seed tag family
+  - copy the sheet number label from our seed title block
+  - create a label in this tag family from the seed family
