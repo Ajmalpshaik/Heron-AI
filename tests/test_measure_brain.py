@@ -231,10 +231,17 @@ def store_guard(tool, check):
         code, said = _guarded(
             tool, {"HERON_KNOWLEDGE": home},
             source=(os.path.join("main", "brain", "fragments"), "main"))
+        # Before anything reads the folder back, which would make the file.
+        made = os.path.isfile(os.path.join(home, "global.db"))
         held = len(_store_rows(home))
         check(code == 2 and held == 0,
               "the SHARED store, asked from a checkout that is not main, is "
               "exit 2 with nothing written (got %r, %d rows)" % (code, held))
+        # Row 5b-1289: never touched, not even opened - so where there was
+        # no store file, the tool's own timed open must not make one.
+        check(not made,
+              "and no store file is made where there was none - the rule is "
+              "asked before this tool's own timed open (row 5b-1289)")
         check("SHARED" in said and "HERON_KNOWLEDGE" in said,
               "and it says to point HERON_KNOWLEDGE at a scratch folder")
     finally:
@@ -248,11 +255,13 @@ def store_guard(tool, check):
         code, said = _guarded(tool, {"HERON_KNOWLEDGE": None,
                                      "APPDATA": appdata},
                               source=(FRAG.FRAGMENTS_DIR, None), on_main=False)
+        made = os.path.isfile(os.path.join(shared, "global.db"))
         held = len(_store_rows(shared))
         check(code == 2 and held == 0,
               "and from the MAIN folder with a feature branch checked out, "
               "the same: exit 2, nothing written (got %r, %d rows)"
               % (code, held))
+        check(not made, "and no store file is made there either (row 5b-1289)")
         check("a branch that is not main" in " ".join(said.split()),
               "and it says the branch is why")
     finally:
