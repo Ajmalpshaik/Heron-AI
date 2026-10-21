@@ -21,12 +21,26 @@ version: 3
 # no longer describes the code: DRAFT until NEEDS-CHECKING Group IF proves it,
 # with an exported picture of every shot looked at.
 #
+# CORRECTED 2026-10-21, before its proof - row 5b-1301, found by Group IF's
+# first picture on Revit 2020's sample house: the building came out a third of
+# the width it should. (1) The crop window is drawn 0.1 ft (30.48 mm) in front
+# of the eye - where the view's crop SHAPE lies - and not at the crop box's Z
+# top, which is only the far clip over a thousand (40.2 mm at Revit's 40232 mm
+# far clip, 92.9 mm on the sample house). Both roads, the read-back and `lens`
+# now use the crop shape's distance. (2) A camera further than the far clip cut
+# the elements out: Revit ignores a crop box's Z bottom on a perspective view,
+# so the far clip PARAMETER is pushed out to reach the deepest corner. (3) On
+# the owner's word, the eye height is measured from the level MOST of the
+# elements stand on, not the lowest - one partition on 'Foundation' had put the
+# eye-level camera 800 mm above the ground floor.
+#
 # VERSION 2, 2026-10-20 - row 5b-1281. Version 1, signed the same day on
 # numbers alone (IB1's look at the view was never made), set a perspective
 # view's crop box to the elements' box metres away; Revit draws a perspective
 # crop window on its own near plane, 40 mm in front of the eye, so three
 # exported views showed the elements as a dot. The corners are now projected
-# onto that plane. Version 1's proof below no longer describes the code:
+# onto that plane. (The 40 mm was the far clip over a thousand; the window is
+# drawn 30.48 mm in front - row 5b-1301, above.) Version 1's proof below no longer describes the code:
 # DRAFT until it is proved again WITH the picture looked at.
 source: OFFICIAL
 risk: MODIFY
@@ -109,12 +123,14 @@ risk: MODIFY
 # `direction` still works as version 2's, but not beside `side`. A shot with
 # neither stands on the front.
 #
-# THE EYE HEIGHT is above the lowest level the elements stand on (their
-# Level), or the bottom of their box when none has one - named in the answer.
+# THE EYE HEIGHT is above the level most of the elements stand on (their
+# Level; the lowest of those that tie), or the bottom of their box when none
+# has one - named in the answer (row 5b-1301, the owner's word).
 #
 # THE LENS. Revit's API has no field-of-view value (row 5b-1267), but the
-# perspective crop window IS one: it lies on the near plane, about 40 mm in
-# front of the eye (measured, row 5b-1281), so its angle across is
+# perspective crop window IS one: it is drawn 0.1 ft (30.48 mm) in front of
+# the eye, where the view's crop shape lies (measured, row 5b-1301 - row
+# 5b-1281's 40 mm was the far clip over a thousand), so its angle across is
 # 2 x atan(half-width / near). A lens of f mm on 35 mm film (36 x 24 mm) is a
 # window near x 18 / f wide each side of the middle and near x 12 / f high. The
 # window is made that size and the eye is moved out until the elements fit it
