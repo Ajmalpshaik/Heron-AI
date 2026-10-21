@@ -90,6 +90,12 @@ class CrossScopeRefused(Exception):
     """Raised when a statement tries to reach beyond its own scope file."""
 
 
+class SharedStoreRefused(Exception):
+    """Raised by rebuild() when the SHARED store would have to be built from
+    cards that are not main's - see builds_from(). Its text is a plain
+    sentence saying why and what to do, written to be shown as it stands."""
+
+
 def _no_second_file(action, *_):
     """SQLite's authorizer: ATTACH and DETACH are denied at the engine, so the
     raw connection cannot open a second scope's file either. Everything else
@@ -389,19 +395,33 @@ def read_labels():
 # Rebuild - the proof that the index is derived
 # ---------------------------------------------------------------------------
 
-def rebuild(scope=GLOBAL, project_key=None):
+def rebuild(scope=GLOBAL, project_key=None, root=None):
     """Re-index every fragment on disk into one scope. Returns how many.
 
     Heron's own fragments are GLOBAL knowledge - they ship with it and belong
     to everyone. A project's own fragments would be rebuilt from that project's
     folder into its own store by the same function.
+
+    WHICH CARDS is builds_from()'s answer for this store's own file, asked as
+    the checkout `root` (this one by default): a private store's are this
+    checkout's, and the SHARED store's are always the main checkout's, from
+    whichever chat or worktree asks - rows 5b-404 and 136, the owner's
+    "Always build from main" of 2026-10-21. Where main's cards are not on
+    disk anywhere it writes nothing and raises SharedStoreRefused, saying why.
     """
+    path = scope_path(scope, project_key)
+    source = builds_from(path, root)
+    if source is None:
+        raise SharedStoreRefused(refused_because(root))
+    cards, checkout = source
     # THE CARDS ARE MARKED BEFORE THEY ARE READ, so a card saved while this
     # runs carries a newer mark than the one recorded and `refresh` looks at
     # it again, rather than trusting a row read from the older bytes.
-    marks = cards_on_disk()
-    raws = dict((name, _card(FRAG.FRAGMENTS_DIR, name)) for name in marks)
-    found, problems = FRAG.load_all()
+    marks = cards_on_disk(cards)
+    raws = dict((name, _card(cards, name)) for name in marks)
+    # Read AS THEIR CHECKOUT READS THEM, so a PROVEN card from the main
+    # checkout keeps the proof fingerprint main takes (refreshes_from()).
+    found, problems = FRAG.load_all(cards, checkout=checkout)
     store = open_scope(scope, project_key)
     try:
         store.execute("DELETE FROM fragments")
@@ -412,7 +432,7 @@ def rebuild(scope=GLOBAL, project_key=None):
                 raw = raws.get(os.path.basename(frag.folder))
                 if raw is not None:
                     rows_from[os.path.basename(frag.folder)] = _digest(raw)
-        _record(store, _key(FRAG.FRAGMENTS_DIR), marks, rows_from)
+        _record(store, _key(cards), marks, rows_from)
         store.db.commit()
         return store.count(), problems
     finally:
@@ -457,7 +477,9 @@ def rebuild(scope=GLOBAL, project_key=None):
 # a worktree's own cards, a private store, a card that will not validate.
 #
 # AND THE SHARED STORE FOLLOWS THE MAIN CHECKOUT - row 131's race, and the
-# reason for `refreshes_from()` below.
+# reason for `refreshes_from()` below. Since 2026-10-21 everything that
+# writes the store follows it, rebuild and both indexes too, through
+# `builds_from()` (rows 136 and 5b-404).
 
 CARDS_SEEN = "cards_seen:"      # + the card folder the marks describe
 ROWS_FROM = "rows_from"
@@ -725,6 +747,108 @@ def rebuild_refusal(root=None):
     return None
 
 
+# ---------------------------------------------------------------------------
+# Whose cards a store is built from - ONE rule, by the store's own path
+# ---------------------------------------------------------------------------
+#
+# ROWS 136 (the half left open) AND 5b-404, the owner's decision of
+# 2026-10-21: "Always build from main". Every Code-tab chat runs Heron's
+# server from its own folder, and refresh() already followed the main
+# checkout for the shared store's ROWS (row 131). Everything else that
+# writes the store did not: the search index and the vectors were made from
+# the asking checkout's cards on every lookup whose cards differed from the
+# last writer's (row 136), and the first open of an EMPTY shared store, and
+# `--rebuild`, filled every row from the asking checkout (row 5b-404). So a
+# worktree's unmerged words became every chat's answers. Now each of them -
+# rebuild(), refresh(), heron_search.index(), heron_embed.index(),
+# heron_brain._Open and this file's command line - asks builds_from(), and
+# a private store is told its own checkout's cards, as before.
+
+#: "Ask builds_from() for this store" - the default of the `source` that
+#: heron_search.index() and heron_embed.index() take, because None there
+#: already means "write nothing".
+ASK = object()
+
+
+def _within(path, folder):
+    """`path` is `folder` or inside it, however either is spelt - a link
+    included, as _same_folder() has it."""
+    here = os.path.normcase(os.path.realpath(path))
+    there = os.path.normcase(os.path.realpath(folder))
+    return here == there or here.startswith(there.rstrip(os.sep) + os.sep)
+
+
+def is_shared(path=None):
+    """True when the store at `path` is one every checkout on this machine
+    reads: its file is in the shared knowledge folder, or in that folder's
+    projects/. `path` is a store's own file (Store.path); None asks about the
+    folder knowledge_dir() names, as refreshes_from() does.
+
+    BY THE STORE'S OWN PATH, because that is what every chat shares - not by
+    whichever variable was set when the question was asked. A store opened
+    from a folder HERON_KNOWLEDGE names elsewhere is private, and keeps this
+    checkout's cards: every suite, every CI job, every scratch measurement.
+    """
+    shared = shared_dir()
+    if not shared:
+        return False
+    if path is None:
+        base = knowledge_dir()
+        return bool(base) and _same_folder(base, shared)
+    return _within(path, shared)
+
+
+def builds_from(path=None, root=None):
+    """(cards, checkout) the store at `path` is built, indexed and refreshed
+    from - or None: WRITE NOTHING.
+
+      (this checkout's cards, None)   a PRIVATE store (is_shared()).
+      (main's cards, main)            the SHARED store, asked from a linked
+                                      worktree whose main checkout is on main.
+      (this checkout's cards, None)   the SHARED store, asked from the main
+                                      checkout on main, or an installed Heron.
+      None                            the SHARED store, when main's cards are
+                                      not on disk anywhere: a worktree whose
+                                      main checkout cannot be found, or a main
+                                      checkout on a branch that is not main -
+                                      asked from it or from a worktree.
+
+    `root` is the asking checkout, this one by default. The cards come from
+    refreshes_from(), which the suites plant; the branch is on_main_branch()'s
+    answer for the checkout those cards are in.
+
+    WHY NONE RATHER THAN THE NEAREST CARDS. A main checkout on a feature
+    branch holds that branch's cards, and a worktree's are its session's
+    unmerged work or a library older than main: building from either is the
+    leak this exists to stop (row 5b-233). The store is left as it stands,
+    which every chat already reads, until main's cards are back on disk.
+    """
+    if not is_shared(path):
+        return FRAG.FRAGMENTS_DIR, None
+    source = refreshes_from(root)
+    if source is None:
+        return None
+    if not on_main_branch(source[1] or FRAG.ROOT):
+        return None
+    return source
+
+
+def refused_because(root=None):
+    """Why the shared store is not built from here, as plain sentences - the
+    text of SharedStoreRefused, shown to the person as it stands."""
+    if refreshes_from(root) is None:
+        why = "this is a worktree whose main checkout cannot be found"
+        fix = "Open this chat from the main checkout"
+    else:
+        why = ("the main checkout is on a branch that is not main, so main's "
+               "cards are not on disk anywhere")
+        fix = "Switch the main checkout back to main and ask again"
+    return ("The shared knowledge store - the one every chat on this PC "
+            "reads - is built only from the main checkout's cards on branch "
+            "main, and %s. Nothing was written. %s, or set HERON_KNOWLEDGE "
+            "to a folder of your own for a private store." % (why, fix))
+
+
 def _folder_name(folder):
     """A row's card folder, as the name its card has on disk. The row writes
     it against its checkout's root, with that system's separator - so only
@@ -822,8 +946,15 @@ def refresh(store, root=None, walked=None):
     stale until the card changed again (second review on PR #353). Every chat
     on the PC shares that store, so the transaction holds only stat calls, a
     read of the rows and the rows that changed.
+
+    WHOSE CARDS is builds_from()'s answer for this store's own file - the one
+    rule rebuild() and both indexes ask. Until 2026-10-21 this asked
+    refreshes_from() alone, which names the main checkout's cards whatever
+    branch it is on, so a card edited on a feature branch in the main folder
+    rewrote the shared store's row for every chat; only adding and removing
+    were held back (_library_moves). It writes nothing there now.
     """
-    source = refreshes_from(root)
+    source = builds_from(getattr(store, "path", None), root)
     if source is None:
         return []
     cards, checkout = source
@@ -1004,7 +1135,16 @@ def main(argv):
         return 1
 
     if argv[:1] == ["--rebuild"]:
-        count, problems = rebuild()
+        # FROM ANY CHECKOUT, THE SHARED STORE IS REBUILT FROM MAIN'S CARDS -
+        # row 5b-404: this command filled it from whichever checkout typed
+        # it. Where main's cards are not on disk it writes nothing and exits
+        # 2, the code the store checkers give a refused shared store.
+        try:
+            count, problems = rebuild()
+        except SharedStoreRefused as exc:
+            print("NOT REBUILT. %s" % exc)
+            return 2
+        source = builds_from(scope_path(GLOBAL))
         for line in problems:
             print("  skipped: %s" % line)
 
@@ -1050,6 +1190,10 @@ def main(argv):
             print("  Queries will answer from the OLD index until that is fixed.")
 
         print("Re-indexed %d fragment(s) into the global scope." % count)
+        if source is not None:
+            print("From the cards in %s%s." % (
+                source[0], " - the main checkout's, because this store is the "
+                "one every chat on this PC reads" if source[1] else ""))
         if indexed is not None:
             print("Searchable text and embeddings rebuilt for %d." % indexed)
         print()

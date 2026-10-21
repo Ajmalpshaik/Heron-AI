@@ -433,6 +433,11 @@ def refreshing(S, F):
         os.makedirs(pointer)
         io.open(os.path.join(pointer, "commondir"), "w",
                 encoding="utf-8").write(u"../..\n")
+        # ON BRANCH MAIN, as git writes it. refresh() reads the main
+        # checkout's branch since 2026-10-21 (heron_scope.builds_from, rows
+        # 136 and 5b-404), and a checkout with no HEAD is on no branch.
+        io.open(os.path.join(main_tree, ".git", "HEAD"), "w",
+                encoding="utf-8").write(u"ref: refs/heads/main\n")
         os.makedirs(os.path.join(installed, "brain", "fragments"))
         main_cards = os.path.join(main_tree, "brain", "fragments")
         wt_cards = os.path.join(worktree, "brain", "fragments")
@@ -517,8 +522,13 @@ def refreshing(S, F):
         os.environ.pop("HERON_KNOWLEDGE", None)
 
         # AND IN ACTION: a chat in the worktree asks, on the shared store.
+        # The rebuild is asked AS THAT WORKTREE: since 2026-10-21 the shared
+        # store is rebuilt from the asking checkout's MAIN checkout, and with
+        # no root that is the one running this suite (builds_from, rows 136
+        # and 5b-404). Both trees hold the same card here, so the row is the
+        # one this section starts from either way.
         F.FRAGMENTS_DIR = wt_cards
-        S.rebuild()
+        S.rebuild(root=worktree)
         _rewrite_card(wt_card, "a test fragment", "an unmerged edit")
         store = S.open_scope(S.GLOBAL)
         try:
@@ -671,7 +681,8 @@ def following_main(S, F, refresh):
         # on the owner's PC), so it is planted where this case expects it.
         os.environ["HERON_DATA"] = os.path.join(fake, "appdata", "Heron")
         F.FRAGMENTS_DIR = wt_cards
-        S.rebuild()
+        # Asked as the worktree, for the reason the section above gives.
+        S.rebuild(root=worktree)
 
         def ask():
             store = S.open_scope(S.GLOBAL)
