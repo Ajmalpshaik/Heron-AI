@@ -1295,12 +1295,20 @@ def _now_ns():
     return int(time.time() * 1000 * 1000 * 1000)
 
 
-def load_all(root=None):
+def load_all(root=None, checkout=None):
     """Every fragment under `root`, keyed BY ID rather than by path.
 
     Keying by id here is the whole of point 1 in this file's header: if two
     fragments ever collide on an id the library has a real problem, and it
     surfaces at load rather than as a silently preferred winner much later.
+
+    `root` is the CARDS folder, this checkout's by default. `checkout` is the
+    checkout those cards belong to when it is not this one - each card is
+    load()ed with it, so a PROVEN card from the main checkout, read from a
+    worktree, keeps the proof fingerprint main takes and still validates.
+    heron_scope.builds_from() hands over both (rows 136 and 5b-404). The
+    parse cache is keyed on each card's own path, so two checkouts' cards
+    never share an entry.
     """
     root = root or FRAGMENTS_DIR
     found, problems = {}, []
@@ -1312,7 +1320,7 @@ def load_all(root=None):
         if not os.path.isdir(folder):
             continue
         try:
-            frag = load(folder)
+            frag = load(folder, root=checkout)
         except ValueError as exc:
             problems.append(str(exc))
             continue

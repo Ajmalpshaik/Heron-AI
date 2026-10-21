@@ -932,6 +932,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-if.md`](needs-checking/group-if.md)
 
+## Group IN - a still sun's time through the PC's own time zone: `SET_SUN_SETTINGS` v2, `APPLY_VISUAL_PRESET` v3, `REPORT_VISUAL_PRESET` v3 (2026-10-21)
+
+**Its own file:** [`needs-checking/group-in.md`](needs-checking/group-in.md)
+
 ## Group IH - one schedule filter rule changed, the others kept: `SET_SCHEDULE_FILTERS` and `REPORT_SCHEDULE_DEFINITION` version 2 (2026-10-21)
 
 **Its own file:** [`needs-checking/group-ih.md`](needs-checking/group-ih.md)
