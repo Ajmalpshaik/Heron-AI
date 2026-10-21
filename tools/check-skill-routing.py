@@ -88,7 +88,9 @@ NAMES, not the number.**
 Exit 0 whatever it finds, exactly like both siblings. A crossing is a FINDING
 that a person judges; a tool that failed a build over one would teach people to
 weaken a skill's utterances to buy a number, which is the one response
-brain/retrieval-history.md rules out.
+brain/retrieval-history.md rules out. Exit 2 when it asked nothing: no store
+at all, or check-routing.py's store guard refused one - the shared store,
+from a checkout that is not the main one on main (row 5b-1288).
 
 THE CLASSIFIER IS SHARED, AND `prove-skill.py` IS WHAT IT IS SHARED WITH
 ------------------------------------------------------------------------
@@ -137,6 +139,46 @@ CHANGES_A_VIEW = ("EXECUTE",)
 # A skill at one of these is ASKING something. Its words reaching a write is
 # the crossing this tool exists to find.
 ASKS_A_QUESTION = ("READ", "ANALYZE")
+
+
+def routing():
+    """tools/check-routing.py as a module - its filename has a hyphen in it.
+
+    Loaded for its store guard, store_for_this_tree(), which this tool and
+    the two that ask the store through it - prove-skill.py and
+    check-risk-crossings.py --shared - call before the first open, as
+    score-routing.py, check-intrusion.py and the measure-* tools do (row
+    5b-1288). Loaded when asked, so importing this file loads nothing more.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "heron_tool_check_routing", os.path.join(ROOT, "tools", "check-routing.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def store_checked(what):
+    """True when the store may be asked from this checkout, having rebuilt it
+    to this tree's library where that is allowed; False having said why, and
+    the caller exits 2. WHAT names the result a refusal is not.
+
+    check-routing.py's store_for_this_tree(), CALLED, NOT COPIED, with the
+    one-line refusal score-routing.py makes when there is no store at all -
+    so these three tools ask what the other measurers ask, in their words.
+    """
+    import heron_scope as SCOPE
+    if SCOPE.knowledge_dir() is None:
+        sys.stderr.write(
+            "COULD NOT RUN: no HERON_DATA, no Windows profile and no HERON_KNOWLEDGE, so there is\n"
+            "nowhere to keep a knowledge store. Set HERON_KNOWLEDGE to a\n"
+            "folder - an empty one is enough - and run this again.\n")
+        return False
+    store = routing().store_for_this_tree(what)
+    if store is None:
+        return False
+    store.close()
+    return True
 
 
 def _index_fingerprint():
@@ -617,6 +659,18 @@ def main():
         print("    %-44s %s" % (key[:44], ", ".join(
             "%s (%s)" % (sid, risk) for sid, risk in claimants)))
     print("")
+
+    # THE STORE MUST HOLD THIS TREE'S LIBRARY, AND THE SHARED ONE IS NEVER
+    # REBUILT FROM A WORKTREE - check-routing.py's guard, as every other
+    # measurer asks it. Until 2026-10-21 this tool asked none (row 5b-1288):
+    # run from a worktree with no HERON_KNOWLEDGE, the open below re-indexed
+    # the ONE store every chat on the PC reads from that worktree's unmerged
+    # card, and every live heron_lookup answered from it until the store was
+    # rebuilt from the main checkout. A refusal is exit 2: nothing was asked.
+    # The guard compares ROWS: a card changed only in its utterances or its
+    # purpose passes it, and is still re-indexed below (row 5b-1289).
+    if not store_checked("skill routing report"):
+        return 2
 
     import heron_brain as brain
 
