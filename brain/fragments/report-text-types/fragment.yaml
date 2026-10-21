@@ -19,7 +19,7 @@ risk: READ
 # Heron read or changed a TEXT TYPE (checked that day by grep of
 # brain/fragments, DRAFT and PROVEN): ADD_FAMILY_MODEL_TEXT writes the size of
 # MODEL text, and EDIT_TEXT_VALUES / CREATE_TEXT_NOTE handle a note's wording,
-# not its type. Measured on main the same day (row 5b-1294): three of four
+# not its type. Measured on main the same day (row 5b-1300): three of four
 # questions about a text type reached a WRITE on lexical, two of four on the
 # trained model. This is the read; SET_TEXT_TYPE is the change.
 #
@@ -37,7 +37,7 @@ risk: READ
 # note's is - GetTypeId(), or TextElement.Symbol - on all eight. Which class a
 # label TYPE has in a real 2020 family is NOT known from the assemblies, and
 # nothing here depends on it: a type is called a label type by Revit's own
-# family name for it and by what uses it (NEEDS-CHECKING Group IJ, IJ2).
+# family name for it and by what uses it (NEEDS-CHECKING Group IL, IL2).
 #
 # READ ONLY - opens no transaction.
 purpose: >
@@ -117,7 +117,7 @@ compatibility-note: >
 #   "what does this text note say"                -> READ_ELEMENT_PARAMETERS,
 #                                                    parameterName Text
 #
-# MEASURED 2026-10-21 (row 5b-1294), main against the branch: "make the
+# MEASURED 2026-10-21 (row 5b-1300), main against the branch: "make the
 # label text bold" and "make the text note type italic" - changes - reach
 # THIS read on lexical and the trained model, with SET_TEXT_TYPE below it.
 # A change asked for and a read given changes nothing; recorded, not chased -
@@ -126,7 +126,7 @@ compatibility-note: >
 
 # Written in the session's words, not the modeller's - he gave only the
 # change (SET_TEXT_TYPE's four). Kept apart from the sentences frozen to
-# measure this card (row 5b-1294), so the measurement is not its own words
+# measure this card (row 5b-1300), so the measurement is not its own words
 # read back.
 utterances:
   - show the text type settings of the tag labels

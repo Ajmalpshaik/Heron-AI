@@ -47,16 +47,17 @@ purpose: >
      nested detail component of its own.
   6. FLEX_FAMILY at two really different sizes - for a line-based detail, two
      lengths.
-  7. A LABEL'S TEXT - size in mm, font, bold, background - is its TYPE, for
-     labels already in the family: REPORT_TEXT_TYPES textTypeName labels
-     reads it, SET_TEXT_TYPE changes it (duplicateAs keeps the original,
-     switchTo labels moves them onto the copy). Same for a text note's type.
 
   NOT POSSIBLE THROUGH REVIT'S API ON ANY RELEASE 2020 TO 2027: a LABEL - the
   text that shows a parameter's value in a tag, a symbol or a title block.
   Revit 2027 reads labels and cannot make them. A tag or title block is built
   by hand, or from a seed family that already holds its labels; say so before
   starting rather than after.
+
+  A LABEL'S TEXT - size in mm, font, bold, background - is its TYPE, for
+  labels already in the family: REPORT_TEXT_TYPES textTypeName labels reads
+  it, SET_TEXT_TYPE changes it (duplicateAs keeps the original, switchTo
+  labels moves them onto the copy). The same two serve a text note's type.
 
 utterances:
   - make a detail item family
@@ -75,6 +76,9 @@ needs:
   - CREATE_REFERENCE_PLANES
   - SET_FAMILY_PLANE_REFERENCE
   - LABEL_FAMILY_DIMENSION
+  # A label's or text note's TYPE, read then changed (row 5b-1300).
+  - REPORT_TEXT_TYPES
+  - SET_TEXT_TYPE
   - DRAW_FAMILY_DETAIL_LINES
   # Step 3's subcategory colour, weight and pattern (version 2, row 5b-463).
   - CREATE_LINE_STYLE
@@ -86,9 +90,6 @@ needs:
   - ADD_FAMILY_SHARED_PARAMETERS
   # The proof, and never skipped.
   - FLEX_FAMILY
-  # Step 7, a label's or text note's type (row 5b-1294).
-  - REPORT_TEXT_TYPES
-  - SET_TEXT_TYPE
 
 preconditions:
   - a family document is open in the Family Editor, started by the modeller from a Detail Item, line-based Detail Item or Generic Annotation template - Heron does not choose a template

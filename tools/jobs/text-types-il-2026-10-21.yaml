@@ -1,20 +1,20 @@
-# Group IJ - REPORT_TEXT_TYPES and SET_TEXT_TYPE, DRAFT since 2026-10-21
-# (row 5b-1294). docs/needs-checking/group-ij.md is the whole plan; this file
-# is its IJ1 to IJ4.
+# Group IL - REPORT_TEXT_TYPES and SET_TEXT_TYPE, DRAFT since 2026-10-21
+# (row 5b-1300). docs/needs-checking/group-il.md is the whole plan; this file
+# is its IL1 to IL4.
 #
-#     python tools/batch-prove.py tools/jobs/text-types-ij-2026-10-21.yaml --dry-run
-#     python tools/batch-prove.py tools/jobs/text-types-ij-2026-10-21.yaml
+#     python tools/batch-prove.py tools/jobs/text-types-il-2026-10-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/text-types-il-2026-10-21.yaml
 #
-# THE VALUES ARE ARRANGED FOR GROUP IJ's RIG (IJ0), never for a working
+# THE VALUES ARE ARRANGED FOR GROUP IL's RIG (IL0), never for a working
 # family: "Heron Text Type Test.rfa", a COPY of the modeller's pipe tag
-# family TRG_Pipe_Tag saved under that name in %TEMP%\heron-work\text-ij, its
+# family TRG_Pipe_Tag saved under that name in %TEMP%\heron-work\text-il, its
 # labels all on ONE label type, with one text note placed in its view on a
 # text type. Open in the Family Editor, in front. Nothing is selected - both
 # fragments find the types by name.
 #
 # THE NEGATIVE IS A TYPE NAME THE FAMILY HAS NOT GOT, never a cleared value.
 # The other negatives - a model text type's name, an arrowhead asked of a
-# label type, labels on two types - are rows of their own (IJ5, IJ7, IJ8),
+# label type, labels on two types - are rows of their own (IL5, IL7, IL8),
 # run by name.
 
 model: Heron Text Type Test (scratch copy of TRG_Pipe_Tag), Revit 2020
@@ -33,7 +33,7 @@ jobs:
     negative-set:
       textTypeName: "No Such Text Type"
     note: >
-      IJ1 and IJ2. Positive: typeCount 1, textTypes "Label: <the type> |
+      IL1 and IL2. Positive: typeCount 1, textTypes "Label: <the type> |
       Color ... | Text Size 2.5 mm | ... | used by N label(s) and 0 text
       note(s)" - Text Size as Type Properties shows it, and no Leader
       Arrowhead on a label type. Negative: typeCount 0, textTypes empty.
@@ -50,8 +50,8 @@ jobs:
       textTypeName: "No Such Text Type"
       changes: "Text Size=5"
     note: >
-      IJ3 and IJ4. Positive: changedTypeId the labels' type, typeAfter Text
+      IL3 and IL4. Positive: changedTypeId the labels' type, typeAfter Text
       Size 5 mm, typeBefore its old size, switched 0, usedBy every label.
       Negative: refused "No label or text type is named ... NOTHING WAS
       CHANGED", changedTypeId invalid. Both rolled back - the kept run is
-      IJ9, through try-once, on the modeller's yes.
+      IL9, through try-once, on the modeller's yes.

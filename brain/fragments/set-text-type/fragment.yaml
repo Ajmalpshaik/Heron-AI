@@ -18,7 +18,7 @@ risk: MODIFY
 # 2020, asked to change his labels' text - 2.5 to 5 mm, font, bold - and the
 # same for text notes. Nothing in Heron changed a TEXT TYPE (checked that day
 # by grep of brain/fragments, DRAFT and PROVEN). Measured on main the same day
-# (row 5b-1294): the four phrasings he would use reached ADD_FAMILY_MODEL_TEXT,
+# (row 5b-1300): the four phrasings he would use reached ADD_FAMILY_MODEL_TEXT,
 # CREATE_TEXT_NOTE, FORCE_TAG_LEADER_LSHAPE, MOVE_ANNOTATION or
 # SET_FAMILY_FORMULA - every one a write that does something else.
 #
@@ -51,7 +51,7 @@ risk: MODIFY
 # note's is, on all eight. Element.ChangeTypeId and IsValidType are on all
 # eight. Whether ChangeTypeId moves a LABEL in a 2020 family is not known
 # from the assemblies: the switch reads every label back and takes the whole
-# call back if one did not move (NEEDS-CHECKING Group IJ, IJ6). A label that
+# call back if one did not move (NEEDS-CHECKING Group IL, IL6). A label that
 # Revit hands back on no text type is refused in plain words.
 #
 # EVERYTHING IS CHECKED FIRST, AND READ BACK AFTER. The type, each setting
@@ -179,7 +179,7 @@ compatibility-note: >
 #                                                 note's own formatting, never
 #                                                 its type
 #
-# WHY "BOLD" IS NOT IN THE IDENTITY OR THE PURPOSE (row 5b-1294). The first
+# WHY "BOLD" IS NOT IN THE IDENTITY OR THE PURPOSE (row 5b-1300). The first
 # draft listed every setting there. Measured with tools/score-routing.py,
 # main against the branch, on lexical and the trained model: "is the first
 # line of the note bold" (a question) moved from READ_ELEMENT_PARAMETERS to

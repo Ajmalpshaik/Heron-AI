@@ -5,7 +5,7 @@
 # its labels on ONE label type, and a text note placed in its view on a text
 # type; and a scratch project with two text types and a few text notes. Every
 # change is a type change, so run the negative cases FIRST and the kept run
-# last (NEEDS-CHECKING Group IJ).
+# last (NEEDS-CHECKING Group IL).
 
 positive:
   - given: >

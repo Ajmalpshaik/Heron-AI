@@ -335,7 +335,7 @@ compatibility-note: >
 #                                           every label or note of it; one
 #                                           line or word of one note stays
 #                                           here (measured 2026-10-21, row
-#                                           5b-1294)
+#                                           5b-1300)
 #
 #   THE TEXT NOTES OF ONE VIEW, as a chain: SELECT_VISIBLE_IN_VIEW (PROVEN)
 #   with view=<the view> and categories=Text Notes, then this with
