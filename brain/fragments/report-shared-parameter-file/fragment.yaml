@@ -1,0 +1,215 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-035
+semantic-identity: "which shared parameter file Revit is set to now, and what is in it - every parameter with its GUID, data type and group - and whether the family or project in front carries them by GUID"
+kind: action
+domain: revit.parameters
+capability: REPORT_SHARED_PARAMETER_FILE
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-21: Ajmal PS was adding shared parameters from his office file to
+# the family TRG_Duct Accessory_Electric Duct Heater, to tag and schedule its
+# size, and asked whether Heron can read which shared parameter file Revit is
+# set to. Nothing could - checked by grep of brain/fragments, DRAFT and PROVEN
+# alike. Three tools touch the setting and all three WRITE:
+# ADD_FAMILY_SHARED_PARAMETERS (ADMIN, reads it inside and names the file in
+# its answer), ADD_PROJECT_PARAMETER and
+# TRANSFER_PROJECT_PARAMETERS_BETWEEN_DOCUMENTS (both set it for a moment and
+# put it back). Every question about the file reached one of those writes
+# (measured 2026-10-21 on main, lexical and the trained model - FRAGMENT-ISSUES
+# row 5b-1291 has the numbers), so the chat fell back to reading Revit.ini -
+# the SAVED setting, not the one Revit is using. Proof plan: NEEDS-CHECKING
+# Group II.
+#
+# NO EXISTING READ COULD BE WIDENED FOR IT. REPORT_FAMILY_PARAMETERS and
+# REPORT_PARAMETER_INVENTORY read the MODEL's parameters - a family's, an
+# element's. This reads a file outside the model and Revit's setting for it.
+# Both are PROVEN, and a change under their impl/ would make the proof stale
+# for a job they do not do.
+#
+# THE READ-FIRST STEP of the jobs that add shared parameters - the
+# build-a-family method's shared-parameter step and ADD_PROJECT_PARAMETER's
+# callers: run this, see the file and the GUIDs, then write.
+
+purpose: >
+  Reports the shared parameter file Revit is set to now - the path Manage >
+  Shared Parameters shows, or that none is set - whether the file is there,
+  marked read-only, and opens in Revit, and its groups. Then lists every
+  parameter in it: name, GUID, data type, group, whether it is visible, and
+  its description. nameContains and groupContains narrow the list.
+
+  **IS THIS NAME IN THE FILE, AND WITH WHICH GUID.** Each name asked for is
+  answered by itself: in the file exactly, under which group and GUID; in it
+  twice with two GUIDs; only with other capitals; or not there, with the names
+  that are close.
+
+  **CHECKING THE GUIDs AGAINST THE FAMILY OR PROJECT IN FRONT.** With
+  compareWithDocument, each parameter of the file the open family or project
+  already carries by its GUID is named, and so is the classic mistake - a
+  parameter carrying the file's NAME with a DIFFERENT GUID, or not shared at
+  all. A tag or schedule built on the file's parameter does not read either.
+
+  **IT NEVER CHANGES THE SETTING, THE FILE OR THE MODEL.** Run it before adding
+  shared parameters to a family or a project.
+
+# A READ, AND ONLY A READ. The setting is read, never set - the two
+# project-parameter writes set it for a moment, this never does. The file is
+# opened by Revit only when it is on disk, so a path to nothing is never
+# created. No transaction is opened.
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Part of a parameter's name - "Duct_Accessory" - or several with commas
+    # or semicolons between; any one matches, ignoring case. Each part is also
+    # answered as a whole name: in the file exactly, or not. Left out, "all":
+    # every parameter. ("all" as a part is read as left out - ask for a longer
+    # part to find names holding those three letters.)
+    - name: nameContains
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # Part of a group's name in the file - "Mechanical". Left out, "all".
+    - name: groupContains
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # true also reads the family or project in front: which of the listed
+    # parameters it carries by GUID, which it carries under the file's name
+    # with another GUID or not shared, and which shared ones it carries that
+    # the file has not got. Absent is false - the file alone.
+    # `optional: true` is what lets it be left out (HeronBindingNote.AbsentValue).
+    - name: compareWithDocument
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: parameterCount
+      # Parameters of the file listed, after narrowing.
+      role: result
+      type: int
+    - name: parameterList
+      # One line each, joined by "  ||  ": name | GUID | data type | group |
+      # visible or HIDDEN | description. A string, because a list reaches a
+      # chat as its first three.
+      role: result
+      type: string
+    - name: matchedByGuid
+      # Listed parameters the document in front carries by the file's GUID.
+      # Tracks the document (D-53). 0 when not compared.
+      role: result
+      type: int
+    - name: guidMismatches
+      # Parameters in the document carrying a listed file name with a
+      # DIFFERENT GUID. 0 when not compared.
+      role: result
+      type: int
+    - name: notShared
+      # Parameters in the document carrying a listed file name that are not
+      # shared at all - a family or project parameter. 0 when not compared.
+      role: result
+      type: int
+    - name: comparison
+      # The document's side, one line per parameter, joined by "  ||  ".
+      # Empty when not compared.
+      role: result
+      type: string
+    - name: sharedFile
+      # The path Revit is set to now, exactly as Revit holds it. Empty when
+      # none is set.
+      role: accounting
+      type: string
+    - name: fileState
+      # One line: none set / set, not on disk / on disk, marked read-only or
+      # not, opens in Revit or not, how many groups and parameters.
+      role: accounting
+      type: string
+    - name: fileExists
+      role: accounting
+      type: bool
+    - name: fileReadOnly
+      # The file's read-only mark. Whether this Windows user may write to it
+      # is not tested - testing would mean writing.
+      role: accounting
+      type: bool
+    - name: opensInRevit
+      role: accounting
+      type: bool
+    - name: groups
+      # Each group in the file with how many parameters it holds, joined by
+      # "  ||  ".
+      role: accounting
+      type: string
+    - name: inFile
+      # Every parameter in the file, before narrowing. Work done, never a
+      # thing found (D-52).
+      role: accounting
+      type: int
+    - name: comparedWith
+      # The document compared - its title and whether it is a family or a
+      # project. Empty when not compared.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Application.SharedParametersFilename` and `OpenSharedParameterFile`,
+  `DefinitionFile.Groups`, `DefinitionGroup.Name` and `Definitions`,
+  `ExternalDefinition.GUID`, `Visible`, `Description`, `UserModifiable` and
+  `HideWhenNoValue`, `FamilyManager.GetParameters`, `FamilyParameter.IsShared`,
+  `GUID` and `IsInstance`, `SharedParameterElement.GuidValue`,
+  `ParameterElement.GetDefinition` and `GlobalParameter` read the same 2020 to
+  2027 (tools/api-surface --members, read 2026-10-21 off all eight). The data
+  type is the one member that moved: `Definition.ParameterType` with
+  `LabelUtils.GetLabelFor(ParameterType)` 2020 to 2022, and
+  `Definition.GetDataType()` (a ForgeTypeId) from 2022, labelled with
+  `LabelUtils.GetLabelForSpec` when `SpecUtils.IsSpec` says it is a spec and
+  with the category's label when `Category.IsBuiltInCategory` says it is a
+  Family Type parameter's category - all three 2022 to 2027. One #if picks:
+  REVIT2020 or REVIT2021 the first, 2022 on the second.
+
+# ROUTING - the same rows are in ADD_FAMILY_SHARED_PARAMETERS and
+# ADD_PROJECT_PARAMETER.
+#
+#   "which shared parameter file is Revit using"       -> here
+#   "is Duct_Accessory_Width in the shared parameter file, with which GUID"
+#                                                      -> here, nameContains
+#   "check the shared parameter GUIDs against this family"
+#                                                      -> here,
+#                                                         compareWithDocument
+#   "add the shared parameter Equipment Tag to this family"
+#                                                      -> ADD_FAMILY_SHARED_PARAMETERS,
+#                                                         the write (D-86)
+#   "add a shared parameter to the project"            -> ADD_PROJECT_PARAMETER
+#   "what parameters does this family have"            -> REPORT_FAMILY_PARAMETERS,
+#                                                         the family's own list
+#   "list every parameter on this duct"                -> REPORT_PARAMETER_INVENTORY
+#   "what data is hidden in this file"                 -> REPORT_ADDIN_DATA,
+#                                                         add-ins' stored data
+#   (Measured 2026-10-21, score-routing main against the branch: the model
+#    backend sends that last one HERE - this card is all "file" - and lexical
+#    keeps it there. Recorded, not chased: no utterance was weakened for it.
+#    "list the parameters in our shared parameter file" still reaches
+#    ADD_FAMILY_SHARED_PARAMETERS, an ADMIN write, on both backends, with this
+#    card second - as it did before this card, when nothing read the file.)
+
+utterances:
+  - which shared parameter file is Revit using
+  - which shared parameter file is Revit set to
+  - what is in my shared parameter file
+  - is Duct_Accessory_Width in the shared parameter file
+  - check the shared parameter GUIDs against this family

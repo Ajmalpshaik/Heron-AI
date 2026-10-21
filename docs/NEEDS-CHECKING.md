@@ -932,6 +932,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-if.md`](needs-checking/group-if.md)
 
+## Group IH - one schedule filter rule changed, the others kept: `SET_SCHEDULE_FILTERS` and `REPORT_SCHEDULE_DEFINITION` version 2 (2026-10-21)
+
+**Its own file:** [`needs-checking/group-ih.md`](needs-checking/group-ih.md)
+
+## Group II - which shared parameter file Revit is set to, what is in it, and its GUIDs against the family in front: `REPORT_SHARED_PARAMETER_FILE` (2026-10-21)
+
+**Its own file:** [`needs-checking/group-ii.md`](needs-checking/group-ii.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
