@@ -1,0 +1,199 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-150
+semantic-identity: "change a text type - the type every label or text note of it is drawn in: its text size in mm, font, width factor, background and colour - or copy it under a new type name first"
+kind: action
+domain: revit.annotation
+capability: SET_TEXT_TYPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-21: Ajmal PS, building the pipe tag family TRG_Pipe_Tag on Revit
+# 2020, asked to change his labels' text - 2.5 to 5 mm, font, bold - and the
+# same for text notes. Nothing in Heron changed a TEXT TYPE (checked that day
+# by grep of brain/fragments, DRAFT and PROVEN). Measured on main the same day
+# (row 5b-1294): the four phrasings he would use reached ADD_FAMILY_MODEL_TEXT,
+# CREATE_TEXT_NOTE, FORCE_TAG_LEADER_LSHAPE, MOVE_ANNOTATION or
+# SET_FAMILY_FORMULA - every one a write that does something else.
+#
+# WHY NOTHING WAS WIDENED - each candidate the task named, read in full:
+#   DUPLICATE_TYPE (PROVEN) copies the type behind a SELECTION and sets
+#     nothing on the copy, on purpose. Its copy is the same call used here
+#     (ElementType.Duplicate); widening it to set text settings would make its
+#     proof stale for a job it says it will not do, and composing it - copy,
+#     then a set, then a switch - is three undo entries for one request where
+#     Article 8 asks one. SET_RAILING_TYPE is the precedent: a type's own
+#     settings, copied first when asked, in one call. "duplicate this type"
+#     stays DUPLICATE_TYPE's.
+#   ADD_FAMILY_MODEL_TEXT (PROVEN) places MODEL text - ModelTextType, 3D, in a
+#     model family - and writes MODEL_TEXT_SIZE. A label or a text note is a
+#     TextElementType, another class and other parameters.
+#   EDIT_TEXT_VALUES / CREATE_TEXT_NOTE (PROVEN) handle a note's wording and
+#     place a note in a type that exists; neither touches a type.
+#   SET_PARAMETER_VALUES_BY_ID types=yes (DRAFT v5) writes a number through
+#     Revit's own text (SetValueString), so "5" is 5 of the model's length
+#     units - not paper mm in an imperial family - and keys a type by a
+#     category and its name; which category a LABEL type answers to in a
+#     family is not known from the assemblies, and a colour is a number
+#     nobody types. It is a different job - a value per named element - and
+#     its proof is owed for three versions already (Groups FE, HZ, HP).
+#
+# WHAT A LABEL IS - read off the shipped RevitAPI.dll for 2020 to 2027 on
+# 2026-10-21 (tools/api-surface): a family's label is a TextElement that is
+# not a TextNote - a plain TextElement 2020 to 2026, an AnnotationLabel from
+# 2027 - and its type is a TextElementType reached by GetTypeId(), as a text
+# note's is, on all eight. Element.ChangeTypeId and IsValidType are on all
+# eight. Whether ChangeTypeId moves a LABEL in a 2020 family is not known
+# from the assemblies: the switch reads every label back and takes the whole
+# call back if one did not move (NEEDS-CHECKING Group IJ, IJ6). A label that
+# Revit hands back on no text type is refused in plain words.
+#
+# EVERYTHING IS CHECKED FIRST, AND READ BACK AFTER. The type, each setting
+# (known, on this type, writable, held as expected), each value (mm above
+# zero, yes/no, opaque/transparent, R,G,B, line weight 1-16, an arrowhead that
+# exists), the new name free. After one regeneration every value is read
+# back; a value other than asked, a refusal from Revit, or a label or note
+# that did not take the copy THROWS, so the copy, the settings and the switch
+# go back together - Article 8, nothing half-done kept.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Changes a text TYPE as its Type Properties does - for every label in a tag,
+  symbol or title block family, or every text note, of that type at once.
+  Sizes are paper millimetres. Can copy the type under a new name first,
+  change the copy, and move the labels or notes onto it. Every value is read
+  back.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # A type by its name - "2.5mm Arial" - or "Family: Type" when a label type
+    # and a text type share a name. Left out, "labels": the ONE type this
+    # family's labels use; labels on two or more types are refused, naming
+    # them.
+    - name: textTypeName
+      type: string
+      source: request
+      optional: true
+      absent: labels
+    # "Text Size=5; Bold=yes; Text Font=Arial Narrow" - each setting as Type
+    # Properties names it, then "=" and the value, ";" or a new line between.
+    # Sizes are paper mm. Background opaque/transparent; Color R,G,B, #RRGGBB,
+    # black or white; Line Weight 1-16; Leader Arrowhead a name or none. Left
+    # out, "none" - only a copy.
+    - name: changes
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # A new name: the type is copied first and the copy changed. Left out,
+    # "none" - the type itself is changed, and everything on it with it.
+    - name: duplicateAs
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # With duplicateAs: "labels", "text notes" or "all" - those on the
+    # original type move onto the copy. Left out, "none".
+    - name: switchTo
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: changedTypeId
+      # The type changed - the copy, or the type named. Invalid when refused.
+      role: result
+      type: ElementId
+    - name: typeAfter
+      # ONE STRING: the type as read back after the change - family: type |
+      # each setting it has.
+      role: result
+      type: string
+    - name: switched
+      # Labels and text notes moved onto the copy, each read back.
+      role: result
+      type: int
+    - name: typeBefore
+      # The type changed or copied, as it read before - context for the
+      # answer, never a thing found (D-52).
+      role: accounting
+      type: string
+    - name: usedBy
+      # How many labels and text notes are on the changed type afterwards -
+      # what changed with it (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, no #if. TextElement, TextNote,
+  TextElementType, ModelTextType, ElementType.Duplicate and FamilyName,
+  Element.ChangeTypeId(ElementId), Element.IsValidType(ElementId),
+  Document.IsFamilyDocument, Parameter.Set(double / int / string / ElementId)
+  and IsReadOnly, and the parameters TEXT_SIZE, TEXT_FONT, TEXT_WIDTH_SCALE,
+  TEXT_STYLE_BOLD, TEXT_STYLE_ITALIC, TEXT_STYLE_UNDERLINE, TEXT_BACKGROUND,
+  LINE_COLOR, TEXT_COLOR, LINE_PEN, TEXT_BOX_VISIBILITY, LEADER_OFFSET_SHEET,
+  TEXT_TAB_SIZE, LEADER_ARROWHEAD and ARROW_TYPE are present 2020 through
+  2027 - read off the shipped RevitAPI.dll for all eight with
+  tools/api-surface on 2026-10-21. Sizes are written in Revit's internal feet
+  from millimetres by 304.8 (D-20): a text size is paper size, so no units
+  API is called and neither the 2021 units change nor the 2022 spec change
+  reaches this code. AnnotationLabel (2027) is a TextElement, so it is a
+  label here with no #if.
+
+# ROUTING - rows for these sentences are in REPORT_TEXT_TYPES,
+# DUPLICATE_TYPE, ADD_FAMILY_MODEL_TEXT, CREATE_TEXT_NOTE and
+# EDIT_TEXT_VALUES.
+#
+#   "change the label text height to 5 mm"     -> here, changes Text Size=5
+#   "make the tag text bold"                   -> here, changes Bold=yes
+#   "change the text font to Arial Narrow"     -> here, textTypeName named
+#   "make a 2.5 mm text type"                  -> here, duplicateAs and
+#                                                 Text Size=2.5
+#   "what size is the label text"              -> REPORT_TEXT_TYPES, the read
+#   "duplicate this type"                      -> DUPLICATE_TYPE - a plain
+#                                                 copy of the selection's type
+#   "put these notes on the 3.5mm type"        -> CHANGE_ELEMENT_TYPE - the
+#                                                 type exists already
+#   "make the model text 200 high"             -> ADD_FAMILY_MODEL_TEXT
+#   "change what this note says"               -> EDIT_TEXT_VALUES
+#   "make the first word of this note bold"    -> EDIT_TEXT_VALUES - one
+#                                                 note's own formatting, never
+#                                                 its type
+#
+# WHY "BOLD" IS NOT IN THE IDENTITY OR THE PURPOSE (row 5b-1294). The first
+# draft listed every setting there. Measured with tools/score-routing.py,
+# main against the branch, on lexical and the trained model: "is the first
+# line of the note bold" (a question) moved from READ_ELEMENT_PARAMETERS to
+# this write, and "make the first word of this note bold" from
+# EDIT_TEXT_VALUES to here, on the model. With the settings named in comments
+# only, both stay where they were and no question in the set reaches this
+# card; "make the tag text bold" still comes here by the modeller's own
+# words. The cost, recorded and not chased: "make the label text bold" and
+# "make the text note type italic" reach REPORT_TEXT_TYPES - the read, which
+# shows the type, so nothing wrong is changed.
+
+# The four the modeller gave on 2026-10-21, in his words.
+utterances:
+  - change the label text height to 5 mm
+  - make the tag text bold
+  - change the text font to Arial Narrow
+  - make a 2.5 mm text type

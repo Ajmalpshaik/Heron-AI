@@ -1,0 +1,44 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+# Arrange on SCRATCH files (NEEDS-CHECKING Group IJ): "Heron Text Type Test",
+# a copy of the modeller's pipe tag family with its labels on one label type
+# and one text note on a text type; and a scratch project with two text types
+# and a few text notes. The counts track the document (D-53).
+
+positive:
+  - given: >
+      the scratch tag family, textTypeName left out ("all")
+    expect: >
+      typeCount the label and text types the family has - the count Project
+      Browser > Families > Annotation Symbols shows under Label and Text -
+      each line naming its family (Label / Text) and type, Text Size in mm as
+      Type Properties shows it, Text Font, Bold, Italic, Underline, Width
+      Factor, Background, Color, Line Weight, Show Border, Leader/Border
+      Offset and Tab Size; the label type's line "used by" every label;
+      labelCount the labels, textNoteCount 1. No Leader Arrowhead on the label
+      type's line
+  - given: >
+      the same family, textTypeName "labels"
+    expect: >
+      typeCount 1 - only the label type the labels use
+  - given: >
+      the scratch project, textTypeName "2.5mm Arial"
+    expect: >
+      typeCount 1, Text Size 2.5 mm, Leader Arrowhead named, used by the
+      text notes on it and 0 labels; labelCount 0
+
+negative:
+  - given: >
+      the scratch project, textTypeName "No Such Text Type"
+    expect: >
+      typeCount 0, textTypes empty, a finding naming the text types there
+      are - never another type's settings. THIS IS THE FIRST CASE TO RUN
+  - given: >
+      a scratch Generic Model family holding a model text type, textTypeName
+      that model text type's name
+    expect: >
+      typeCount 0, notTextTypes saying it is a MODEL TEXT type and naming
+      ADD_FAMILY_MODEL_TEXT
+
+second_route:
+  - Type Properties of each type in Revit - each setting
+  - the Properties palette's type selector on each label and text note, counted by hand

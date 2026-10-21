@@ -940,6 +940,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ii.md`](needs-checking/group-ii.md)
 
+## Group IJ - a label's or text note's TYPE read and changed in millimetres, copied and switched: `REPORT_TEXT_TYPES` and `SET_TEXT_TYPE` (2026-10-21)
+
+**Its own file:** [`needs-checking/group-ij.md`](needs-checking/group-ij.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

@@ -47,6 +47,10 @@ purpose: >
      nested detail component of its own.
   6. FLEX_FAMILY at two really different sizes - for a line-based detail, two
      lengths.
+  7. A LABEL'S TEXT - size in mm, font, bold, background - is its TYPE, for
+     labels already in the family: REPORT_TEXT_TYPES textTypeName labels
+     reads it, SET_TEXT_TYPE changes it (duplicateAs keeps the original,
+     switchTo labels moves them onto the copy). Same for a text note's type.
 
   NOT POSSIBLE THROUGH REVIT'S API ON ANY RELEASE 2020 TO 2027: a LABEL - the
   text that shows a parameter's value in a tag, a symbol or a title block.
@@ -82,6 +86,9 @@ needs:
   - ADD_FAMILY_SHARED_PARAMETERS
   # The proof, and never skipped.
   - FLEX_FAMILY
+  # Step 7, a label's or text note's type (row 5b-1294).
+  - REPORT_TEXT_TYPES
+  - SET_TEXT_TYPE
 
 preconditions:
   - a family document is open in the Family Editor, started by the modeller from a Detail Item, line-based Detail Item or Generic Annotation template - Heron does not choose a template
