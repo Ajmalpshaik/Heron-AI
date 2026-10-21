@@ -720,7 +720,11 @@ def following_main(S, F, refresh):
         store = S.open_scope(S.GLOBAL)
         try:
             CAP.rebuild(store)
-            SEARCH.index(store)
+            # AS THE WORKTREE'S CHAT INDEXES IT, as ask() refreshes. The index
+            # follows heron_scope.builds_from() since 2026-10-21, and with no
+            # root that is asked as the checkout running this suite: on a
+            # detached CI checkout it rightly writes nothing (rows 136, 5b-404).
+            SEARCH.index(store, source=S.builds_from(store.path, worktree))
             hit = SEARCH.short_circuit(store, "a newly merged thing")
             caps = set(r["name"] for r in store.execute(
                 "SELECT name FROM capabilities").fetchall())
