@@ -1,0 +1,54 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# Arrange on a SCRATCH COPY of a shared parameter file - never the office's
+# own - set in Manage > Shared Parameters, with two groups and at least one
+# parameter the family below carries. The counts track the file and the
+# document (D-53): a different file, or another family, gives other numbers.
+
+positive:
+  - given: >
+      Revit set to the scratch shared parameter file, nothing narrowed,
+      compareWithDocument left out
+    expect: >
+      sharedFile the path Manage > Shared Parameters shows, fileExists true,
+      opensInRevit true, groups naming each group with its count,
+      parameterCount equal to inFile and to the parameters the dialog lists,
+      parameterList giving each one's GUID - matching the PARAM line in the
+      file's text - its data type as the dialog names it, and its group.
+      comparison empty, matchedByGuid 0
+  - given: >
+      the same file, nameContains the exact name of one parameter in it
+    expect: >
+      parameterCount 1 or more, and a finding saying that name is in the file
+      exactly, naming its group and GUID
+  - given: >
+      a scratch family open for editing that carries one of the file's
+      parameters as a shared parameter, compareWithDocument true
+    expect: >
+      matchedByGuid at least 1, comparedWith naming the family, comparison
+      naming that parameter as carried by its GUID, guidMismatches 0
+
+negative:
+  - given: >
+      the same file, nameContains "ZZZ_Not_In_The_File"
+    expect: >
+      parameterCount 0 with inFile NON-ZERO, parameterList empty, and a
+      finding saying the name is not in the file. THIS IS THE FIRST CASE TO
+      RUN
+  - given: >
+      a scratch family carrying a SHARED parameter named as one in the file
+      but with ANOTHER GUID (made from a second scratch file with the same
+      name), and a family parameter - not shared - named as another file
+      parameter, compareWithDocument true
+    expect: >
+      matchedByGuid 0 for those two names, guidMismatches 1 naming both
+      GUIDs, notShared 1 - neither counted as carried
+  - given: >
+      Manage > Shared Parameters emptied, so no file is set
+    expect: >
+      sharedFile empty, fileState "none set", parameterCount 0, inFile 0 -
+      and the setting still empty afterwards: nothing set it
+
+second_route:
+  - Manage > Shared Parameters, opened by hand - the path, each group and each parameter's properties
+  - the file's own text in Notepad - each PARAM line's GUID, NAME, DATATYPE and GROUP
+  - Family Types in the Family Editor - each shared parameter's GUID under Modify

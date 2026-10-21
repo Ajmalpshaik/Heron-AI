@@ -1,0 +1,39 @@
+# NEEDS-CHECKING Group IG - REPORT_SHARED_PARAMETER_FILE, DRAFT since 2026-10-21.
+#
+#     python tools/batch-prove.py tools/jobs/report-shared-parameter-file-ig-2026-10-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-shared-parameter-file-ig-2026-10-21.yaml
+#
+# THE ARRANGEMENT is the one docs/needs-checking/group-ig.md describes: Revit
+# set (Manage > Shared Parameters) to a SCRATCH COPY of a shared parameter file
+# in %TEMP%\heron-work\spf-ig - never the office's own - and the scratch family
+# "Heron SPF Test" open in the Family Editor, carrying one of that file's
+# parameters as a shared parameter. Never a working model.
+#
+# A READ: nothing is written, so nothing is rolled back. The setting must read
+# the same after the run as before it - IG8 checks that by hand.
+#
+# THE NEGATIVE IS A NAME THE FILE HAS NOT GOT, never a cleared value. The
+# other negatives - a shared parameter under the file's name with another
+# GUID, a family parameter under the file's name, no file set - are rows of
+# their own (IG4 to IG6), run by name.
+
+model: Heron SPF Test (scratch family) with the scratch shared parameter file, Revit 2020
+
+defaults:
+  setup: []
+
+jobs:
+  - fragment: report-shared-parameter-file
+    write: false                       # risk READ
+    set:
+      compareWithDocument: "true"
+    negative-set:
+      nameContains: "ZZZ_Not_In_The_File"
+      compareWithDocument: "true"
+    expect: matchedByGuid
+    note: >
+      IG1 and IG2. The positive lists every parameter of the scratch file -
+      parameterCount equal to inFile - and matchedByGuid at least 1, the
+      parameter the family carries by its GUID. The negative lists nothing,
+      with inFile still non-zero, and a finding saying the name is not in the
+      file.
