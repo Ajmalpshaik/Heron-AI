@@ -66,7 +66,9 @@ reading, and widening the discriminator to excuse it would delete the check.
 
 That test is crude and deliberately so. A tool that tried to parse intent would
 be a second, worse retriever. Judgement stays with the reader - which is why
-this exits 0 whatever it finds, exactly like check-routing.
+this exits 0 whatever it finds, exactly like check-routing. `--shared` exits 2
+when it asked nothing: no store, or check-routing.py's store guard refused the
+shared one from a checkout that is not the main one on main (row 5b-1288).
 
 WHAT IT CANNOT SEE
 ------------------
@@ -457,6 +459,16 @@ def main():
 
 def _sweep(args, private):
     """The sweep itself, against whichever store main() chose."""
+    # A STORE THIS RUN DID NOT BUILD IS GUARDED FIRST - row 5b-1288. With
+    # `--shared` it is the one the environment names, which on the owner's
+    # PC is the store every chat reads, and the open below re-indexes it
+    # from this checkout's cards. check-routing.py's store guard, through
+    # check-skill-routing's store_checked(), as every other measurer asks
+    # it; a refusal is exit 2. The private store needs none: it was built
+    # empty for this run, and nobody else reads it.
+    if private is None and not _ROUTING.store_checked("count of crossings"):
+        return 2
+
     import heron_brain as brain
 
     # BUILT BEFORE THE FINGERPRINT, or the block below would describe a store

@@ -306,8 +306,41 @@ def store_for_this_tree(what):
     shared-store rule is not this file's either: it is
     heron_scope.rebuild_refusal(), which the lookup asks before it warms or
     advises a rebuild of the same store.
+
+    And it is asked FIRST, before the store is opened, whatever the store
+    holds - row 5b-1289, 2026-10-21. Until then it was asked only when the
+    store did not match this tree, and a match is decided on ROWS: a card
+    whose utterances or purpose alone differed from main's passed, and the
+    caller's first open re-indexed the shared store from those words, which
+    heron_search.index() reads from the running tree's files.
     """
     import heron_scope as SCOPE
+
+    # NOT THE SHARED STORE, EXCEPT FROM THE MAIN CHECKOUT ON MAIN - rows
+    # 5b-233 and 5b-1289, decided by the owner 2026-10-21: from a worktree or
+    # a feature branch a measurer never touches it, not even to open it. One
+    # store serves every checkout and every chat on the PC; rebuilt from a
+    # worktree it put that branch's unmerged cards into every other session's
+    # heron_lookup, and with its rows matching, the re-index still put the
+    # branch's WORDS there. heron_scope.rebuild_refusal() is the rule, and the
+    # lookup asks it too (heron_brain's _store_warm_allowed): a private store
+    # always, the shared one only from the main checkout on branch main. With
+    # no knowledge folder at all the rule refuses too; that case is left to
+    # the open below exactly as before - it raises, and a caller that asks
+    # knowledge_dir() first, as check-routing's own report() does, never
+    # gets here with none.
+    refused = SCOPE.rebuild_refusal() if SCOPE.knowledge_dir() else None
+    if refused is not None:
+        sys.stderr.write(
+            "NOT RUN: the knowledge store at %s is the SHARED one every chat on\n"
+            "this machine reads. It is rebuilt and re-indexed only from the main\n"
+            "checkout on branch main - %s.\n"
+            "Opened from here it would take this checkout's cards, and their\n"
+            "words, into every other session's answers - even when its rows\n"
+            "already match them (rows 5b-233 and 5b-1289).\n"
+            "Point HERON_KNOWLEDGE at a scratch folder - an empty one is enough -\n"
+            "and run this again.\n" % (SCOPE.knowledge_dir(), refused))
+        return None
 
     # The stores are DERIVED (Golden Rule 11), so an empty one is a fresh machine
     # rather than damage, and a checker should run on a fresh machine without a
@@ -343,27 +376,11 @@ def store_for_this_tree(what):
                  "%d card(s) edited since their row was written (%s)"
                  % (len(edited), ", ".join(edited[:4]) + (", and more" if len(edited) > 4 else "")))
         store.close()
-        # NOT THE SHARED STORE, EXCEPT FROM THE MAIN CHECKOUT ON MAIN - row
-        # 5b-233. One store serves every checkout and every chat on the PC;
-        # rebuilt from a worktree it put that branch's unmerged cards into
-        # every other session's heron_lookup. heron_scope.rebuild_refusal()
-        # is the rule, and the lookup asks it too (heron_brain's
-        # _store_warm_allowed): a private store always, the shared one only
-        # from the main checkout on branch main. Until 2026-10-09 this asked
-        # refreshes_from() alone, which names the main checkout whatever its
-        # branch - so a feature branch checked out in the main folder rebuilt
-        # the shared store from its own cards.
-        refused = SCOPE.rebuild_refusal()
-        if refused is not None:
-            sys.stderr.write(
-                "NOT RUN: the knowledge store at %s is the SHARED one every chat on\n"
-                "this machine reads, and it does not match this working tree (%s).\n"
-                "It is rebuilt only from the main checkout on branch main - %s.\n"
-                "Rebuilding it from here would put this branch's cards into every\n"
-                "other session's answers (row 5b-233).\n"
-                "Point HERON_KNOWLEDGE at a scratch folder - an empty one is enough -\n"
-                "and run this again.\n" % (SCOPE.knowledge_dir(), drift, refused))
-            return None
+        # The shared store from anywhere but the main checkout on main was
+        # refused above, before this was opened. Until 2026-10-09 that rule
+        # asked refreshes_from() alone, which names the main checkout
+        # whatever its branch - so a feature branch checked out in the main
+        # folder rebuilt the shared store from its own cards (row 5b-233).
         built, problems = SCOPE.rebuild()
         store = SCOPE.open_scope(SCOPE.GLOBAL)
         store_ids = set(row["id"] for row in store.fragments())
