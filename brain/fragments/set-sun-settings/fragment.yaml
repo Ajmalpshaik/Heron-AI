@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -160,58 +160,58 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-20'
+  date: '2026-10-21'
   by: Ajmal PS
-  model: Materials IA Test (3,790 elements), Revit 2020, session 29012
+  model: Cinematic ID Test (5,242 elements), Revit 2020, session 68704
   positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
-    on 2026-10-20; the modeller saw the result in Revit and pressed Keep, and Revit kept it
-    as one undo step. returned asked 3, askedEnd DateTime, askedStart DateTime, changed 3,
+    on 2026-10-21; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned asked 2, askedEnd DateTime, askedStart DateTime, changed 2,
     culture CultureInfo, dateFormats 9 item(s) [yyyy-MM-dd, d MMMM yyyy, d MMM yyyy, ...],
-    findings 1 item(s) [3 of 3 sun setting(s) read back as asked on ''Heron Frame - C...],
-    groundAsked true, intervalNames 16 entry(ies), isKeep Func`2, number Func`2, readBack
-    ''Heron Frame - Columns'': Still study, 2026-06-21 10:00; preset none matches; ground
-    plane at Level 1; site ''Boston, MA'', latitude 42.21°, longitude -71.03°, time zone -5.,
-    readDate Func`2, readTime Func`2, refused (null), showTime Func`2, site SiteLocation,
-    squash Func`2, studyWord Func`2, studyWords 6 entry(ies), sun SunAndShadowSettings, timeFormats
-    6 item(s) [H:mm, HH:mm, h:mm tt, ...], toProject Func`2, toUtc Func`2, wantAltitude (null),
-    wantAzimuth (null), wantDate DateTime, wantEndDate (null), wantEndTime (null), wantGround
-    Level, wantInterval (null), wantPreset (null), wantRelative (null), wantStudy SunAndShadowType,
-    wantSunrise (null), wantTime TimeSpan, yesNo Func`2. inputs came view as given; preset
-    not given - "keep", the card''s own default (optional); study as given; date as given;
-    time as given; endDate not given - "keep", the card''s own default (optional); endTime
-    not given - "keep", the card''s own default (optional); interval not given - "keep", the
-    card''s own default (optional); sunriseToSunset not given - "keep", the card''s own default
-    (optional); azimuthDeg not given - "keep", the card''s own default (optional); altitudeDeg
-    not given - "keep", the card''s own default (optional); relativeToView not given - "keep",
-    the card''s own default (optional); groundPlaneLevel as given. on Materials IA Test'
-  negative_case: run with view=Space Outdoor Air Schedule, study=Still instead - chosen because
+    findings 1 item(s) [2 of 2 sun setting(s) read back as asked on ''Cinematic Dinin...],
+    groundAsked false, intervalNames 16 entry(ies), isKeep Func`2, number Func`2, readBack
+    ''Cinematic Dining Table'': Still study, 2026-10-21 11:00; the sun 36.69° up, bearing
+    171.18°; preset none matches; ground plane at Level 1; site ''Boston, MA'', latitude 42.21°,
+    longitude -71.03°, time zone -5., readDate Func`2, readTime Func`2, refused (null), showTime
+    Func`2, site SiteLocation, squash Func`2, studyWord Func`2, studyWords 6 entry(ies), sun
+    SunAndShadowSettings, timeFormats 6 item(s) [H:mm, HH:mm, h:mm tt, ...], toProject Func`2,
+    toUtc Func`2, wantAltitude (null), wantAzimuth (null), wantDate (null), wantEndDate (null),
+    wantEndTime (null), wantGround (null), wantInterval (null), wantPreset (null), wantRelative
+    (null), wantStudy SunAndShadowType, wantSunrise (null), wantTime TimeSpan, yesNo Func`2.
+    inputs came view as given; preset not given - "keep", the card''s own default (optional);
+    study as given; date not given - "keep", the card''s own default (optional); time as given;
+    endDate not given - "keep", the card''s own default (optional); endTime not given - "keep",
+    the card''s own default (optional); interval not given - "keep", the card''s own default
+    (optional); sunriseToSunset not given - "keep", the card''s own default (optional); azimuthDeg
+    not given - "keep", the card''s own default (optional); altitudeDeg not given - "keep",
+    the card''s own default (optional); relativeToView not given - "keep", the card''s own
+    default (optional); groundPlaneLevel not given - "keep", the card''s own default (optional).
+    on Cinematic ID Test'
+  negative_case: run with view=Cinematic Dining Table, time=25:99 instead - chosen because
     it should not contain what this fragment reports - run inside a transaction, and Revit
     reported the transaction group ROLLED BACK afterwards. returned asked 0, askedEnd DateTime,
     askedStart DateTime, changed 0, culture CultureInfo, dateFormats 9 item(s) [yyyy-MM-dd,
-    d MMMM yyyy, d MMM yyyy, ...], findings 1 item(s) ['Space Outdoor Air Schedule' has no
-    sun settings - Revit giv...], groundAsked false, intervalNames 16 entry(ies), isKeep Func`2,
-    number Func`2, readBack , readDate Func`2, readTime Func`2, refused 'Space Outdoor Air
-    Schedule' has no sun settings - Revit gives them to views that can show the sun, such
-    as 3D views, plans and elevations. NOTHING WAS CHANGED., showTime Func`2, site SiteLocation,
-    squash Func`2, studyWord Func`2, studyWords 6 entry(ies), sun (null), timeFormats 6 item(s)
-    [H:mm, HH:mm, h:mm tt, ...], toProject Func`2, toUtc Func`2, wantAltitude (null), wantAzimuth
-    (null), wantDate (null), wantEndDate (null), wantEndTime (null), wantGround (null), wantInterval
-    (null), wantPreset (null), wantRelative (null), wantStudy (null), wantSunrise (null),
-    wantTime (null), yesNo Func`2. inputs came view as given; preset not given - "keep", the
-    card's own default (optional); study as given; date not given - "keep", the card's own
-    default (optional); time not given - "keep", the card's own default (optional); endDate
-    not given - "keep", the card's own default (optional); endTime not given - "keep", the
-    card's own default (optional); interval not given - "keep", the card's own default (optional);
-    sunriseToSunset not given - "keep", the card's own default (optional); azimuthDeg not
-    given - "keep", the card's own default (optional); altitudeDeg not given - "keep", the
-    card's own default (optional); relativeToView not given - "keep", the card's own default
-    (optional); groundPlaneLevel not given - "keep", the card's own default (optional). on
-    Materials IA Test
+    d MMMM yyyy, d MMM yyyy, ...], findings 1 item(s) ['25:99' is not a time Heron can read
+    - say 10:00, 14:30 or 1...], groundAsked false, intervalNames 16 entry(ies), isKeep Func`2,
+    number Func`2, readBack , readDate Func`2, readTime Func`2, refused '25:99' is not a time
+    Heron can read - say 10:00, 14:30 or 10 am. NOTHING WAS CHANGED., showTime Func`2, site
+    SiteLocation, squash Func`2, studyWord Func`2, studyWords 6 entry(ies), sun SunAndShadowSettings,
+    timeFormats 6 item(s) [H:mm, HH:mm, h:mm tt, ...], toProject Func`2, toUtc Func`2, wantAltitude
+    (null), wantAzimuth (null), wantDate (null), wantEndDate (null), wantEndTime (null), wantGround
+    (null), wantInterval (null), wantPreset (null), wantRelative (null), wantStudy (null),
+    wantSunrise (null), wantTime (null), yesNo Func`2. inputs came view as given; preset not
+    given - "keep", the card's own default (optional); study not given - "keep", the card's
+    own default (optional); date not given - "keep", the card's own default (optional); time
+    as given; endDate not given - "keep", the card's own default (optional); endTime not given
+    - "keep", the card's own default (optional); interval not given - "keep", the card's own
+    default (optional); sunriseToSunset not given - "keep", the card's own default (optional);
+    azimuthDeg not given - "keep", the card's own default (optional); altitudeDeg not given
+    - "keep", the card's own default (optional); relativeToView not given - "keep", the card's
+    own default (optional); groundPlaneLevel not given - "keep", the card's own default (optional).
+    on Cinematic ID Test
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 36559d43c2707b1a
-
+  fingerprint: 0da58caf3041591e
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
