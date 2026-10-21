@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "what this schedule is set up to do - its columns, its sortin
 kind: action
 domain: revit.schedules
 capability: REPORT_SCHEDULE_DEFINITION
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -46,6 +46,32 @@ purpose: >
   of value it holds first, which is also the honest way to report a filter that
   holds no value at all - "has a value" and "is blank" are real filter types.
 
+# VERSION 2 (2026-10-21, FRAGMENT-ISSUES row 5b-1292). Kept out of the purpose
+# on purpose: the purpose is searched. MEASURED: a two-line purpose paragraph
+# about prefixes and separators moved this card's own "show the schedule
+# filter rules" from first to second by nearness on the trained backend
+# (tools/check-routing.py), so it was taken out again.
+#
+#   Built so a combined column can be read back after ADD_SCHEDULE_COMBINED_
+#   FIELD edits it. On 2026-10-21, Revit 2020, the column that tool added to
+#   'DUCT HEATER SCHEDULE (ROOF FLOOR)' showed "20001300x" and nothing in
+#   Heron could say why: this report named the column and stopped. Now every
+#   combined column is listed in
+#   `combinedFields` - the schedule, its heading, its column number, how Revit
+#   draws it ('[Duct_Accessory_Width][Duct_Accessory_Height]x' showed that
+#   fault at a glance), and per part its parameter, prefix, suffix and the
+#   separator Revit draws AFTER it. An empty one is said "none", so a blank
+#   separator and a missing one do not read alike. Each parameter is named as
+#   the schedule offers it - matched on its id, never read as a number - so it
+#   can be typed straight back into ADD_SCHEDULE_COMBINED_FIELD. The column
+#   line in `findings` carries the same drawn form, and the first line counts
+#   the combined columns. A column whose parts will not open is said so and
+#   the rest of the report goes on.
+#
+#   Still READ ONLY. Version 1's proof below no longer describes the code and
+#   is kept as a record; the card is DRAFT until the version 2 proof
+#   (NEEDS-CHECKING Group IG) is signed.
+
 contract:
   needs:
     - name: doc
@@ -64,6 +90,12 @@ contract:
       # it.
       role: result
       type: IList<string>
+    - name: combinedFields
+      # VERSION 2. One line per combined column: schedule, heading, column
+      # number, how Revit draws it, and each part's parameter, prefix, suffix
+      # and the separator after it.
+      role: result
+      type: IList<string>
     - name: filterCount
       role: result
       type: int
@@ -76,6 +108,9 @@ contract:
       # A count of what was passed over, not of anything described.
       role: accounting
 
+# VERSION 1's PROOF, KEPT AS A RECORD. Version 2 changed impl/, so its
+# fingerprint no longer describes the code and the card is DRAFT until
+# NEEDS-CHECKING Group IG proves version 2 (D-30).
 proof:
   date: '2026-09-08'
   by: Ajmal PS
@@ -122,6 +157,13 @@ compatibility-note: >
   Field identity is `ScheduleFieldId`, which is not an `ElementId`, so nothing
   here reads an id as a number and 2024's 64-bit change does not reach it.
 
+  Version 2 adds `ScheduleField.IsCombinedParameterField`,
+  `GetCombinedParameters`, `TableCellCombinedParameterData`'s `ParamId`,
+  `Prefix`, `Suffix` and `Separator`, and `ScheduleDefinition.
+  GetSchedulableFields` - read off the shipped assemblies for 2020 to 2027 on
+  2026-10-21, present and unchanged on all eight. A part's parameter id is
+  compared with `==`, never read as a number.
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "what columns does this schedule have"  -> here
@@ -129,6 +171,10 @@ compatibility-note: >
 #   "add a column to the schedule"          -> ADD_SCHEDULE_FIELDS - a WRITE.
 #                                              This fragment is the question
 #                                              that one was answering
+#   "what is the size column made of"       -> here, VERSION 2 - a combined
+#                                              column's parts and separators
+#   "edit the size column to use width x    -> ADD_SCHEDULE_COMBINED_FIELD -
+#    height"                                   a WRITE, with editExisting
 #   "take a column out"                     -> REMOVE_SCHEDULE_FIELDS
 #   "sort the schedule by level"            -> SET_SCHEDULE_SORT_GROUP
 #   "filter the schedule to level 2"        -> SET_SCHEDULE_FILTERS
