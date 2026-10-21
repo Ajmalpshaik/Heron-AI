@@ -611,6 +611,39 @@ def private_store():
     finally:
         os.environ.pop("HERON_KNOWLEDGE", None)
 
+    # A FOLDER OF ITS OWN INSIDE THE SHARED ONE is still private: no other
+    # chat opens a store there. Found by review on PR #717 - "inside the
+    # shared folder" called it shared, and from a worktree its rebuild was
+    # refused while check-routing's guard let it through.
+    inside = os.path.join(HOME, "knowledge", "scratch")
+    os.environ["HERON_KNOWLEDGE"] = inside
+    try:
+        run_from(WT)
+        got = rebuild()
+        check(not isinstance(got, Exception)
+              and identity("FRG-ELE-001") == "the unmerged thing",
+              "a HERON_KNOWLEDGE folder INSIDE the shared knowledge folder is "
+              "private too - this checkout's cards (%r, %r)"
+              % (got, identity("FRG-ELE-001")))
+    finally:
+        os.environ.pop("HERON_KNOWLEDGE", None)
+
+    # A PROJECT'S STORE under the shared folder's projects/ IS read by every
+    # chat that opens that project, so it follows main like the global one.
+    empty_the_store()
+    run_from(WT)
+    got = rebuild(scope=S.PROJECT, project_key="a-test-project")
+    store = S.open_scope(S.PROJECT, "a-test-project")
+    try:
+        held = dict((r["id"], r) for r in store.fragments())
+    finally:
+        store.close()
+    check(not isinstance(got, Exception)
+          and (held.get("FRG-ELE-001") or {}).get("semantic_identity")
+          == "the merged thing" and "FRG-ELE-030" not in held,
+          "a project store in the shared folder's projects/ is built from "
+          "main's cards (%r; %s)" % (got, ", ".join(sorted(held))))
+
     # THE SAME PRIVATE STORE, its HERON_KNOWLEDGE gone again: the shared
     # store is untouched by any of it.
     check(not os.path.exists(shared_file()) or "FRG-ELE-030" not in rows(),

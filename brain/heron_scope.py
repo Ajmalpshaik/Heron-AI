@@ -770,24 +770,21 @@ def rebuild_refusal(root=None):
 ASK = object()
 
 
-def _within(path, folder):
-    """`path` is `folder` or inside it, however either is spelt - a link
-    included, as _same_folder() has it."""
-    here = os.path.normcase(os.path.realpath(path))
-    there = os.path.normcase(os.path.realpath(folder))
-    return here == there or here.startswith(there.rstrip(os.sep) + os.sep)
-
-
 def is_shared(path=None):
     """True when the store at `path` is one every checkout on this machine
-    reads: its file is in the shared knowledge folder, or in that folder's
-    projects/. `path` is a store's own file (Store.path); None asks about the
-    folder knowledge_dir() names, as refreshes_from() does.
+    reads: its file is IN the shared knowledge folder, or in that folder's
+    projects/ - where scope_path() puts the stores every chat opens. `path`
+    is a store's own file (Store.path); None asks about the folder
+    knowledge_dir() names, as refreshes_from() does.
 
     BY THE STORE'S OWN PATH, because that is what every chat shares - not by
     whichever variable was set when the question was asked. A store opened
     from a folder HERON_KNOWLEDGE names elsewhere is private, and keeps this
-    checkout's cards: every suite, every CI job, every scratch measurement.
+    checkout's cards: every suite, every CI job, every scratch measurement -
+    and a folder of its own made INSIDE the shared one, which no other chat
+    opens (review on PR #717: "anything under the shared folder" called it
+    shared, refused it from a worktree, and check-routing's guard, which
+    compares the folder itself, let the same rebuild through).
     """
     shared = shared_dir()
     if not shared:
@@ -795,7 +792,11 @@ def is_shared(path=None):
     if path is None:
         base = knowledge_dir()
         return bool(base) and _same_folder(base, shared)
-    return _within(path, shared)
+    folder = os.path.dirname(os.path.abspath(path))
+    if _same_folder(folder, shared):
+        return True
+    return (os.path.basename(folder) == "projects"
+            and _same_folder(os.path.dirname(folder), shared))
 
 
 def builds_from(path=None, root=None):
