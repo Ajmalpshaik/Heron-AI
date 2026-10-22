@@ -1277,3 +1277,46 @@ the one that file is in; the variable is the host's guess.
 **Ajmal PS decides.** Until he does, nothing changes.
 
 ---
+
+### 🔵 Q-82 — Revit's API cannot make a label or change what one shows. Should Heron ever drive the Edit Label dialog itself, by UI automation, or call 2027's internal label members? *(found 2026-10-21 building labels for a pipe tag)*
+
+**What was found.** Ajmal PS, building the pipe tag *TRG_Pipe_Tag* on Revit 2020, asked for labels end to end.
+Read that day off all eight releases' shipped assemblies ([docs/43 §8.3a](../43-building-revit-families.md)):
+no release has a public call that MAKES a label, and none can change which parameters a label shows, their
+sample value, prefix, suffix, spaces, break or unit format. Revit 2027 has those calls -
+`AnnotationLabel.Create`, `SetParameterFormatting`, every setter - and keeps them **internal** in every 2027
+package, 2027.0.0 to 2027.3.0. Built instead, DRAFT: `REPORT_FAMILY_LABELS`, `SET_FAMILY_LABEL_LAYOUT` and the
+seed route, `COPY_LABELS_FROM_FAMILY` ([Group IJ](../needs-checking/group-ij.md)). Two other routes were assessed
+and **not built**, because each needs a decision first:
+
+- **UI automation of Edit Label** - Heron opening the dialog and clicking and typing in it. A fragment runs
+  inside Revit's API, where a modal dialog cannot be driven; `PostableCommand.Label` only STARTS the Label tool,
+  after the API call has ended, and the modeller places the label. Anything else would be a program outside
+  Revit moving the modeller's mouse and keys. It breaks [Golden Rule 16](../14-golden-rules.md) - the change is
+  not one named `TransactionGroup` Heron can roll back, and Revit's own undo entry is not Heron's; it breaks
+  Constitution Article 9 - there is no Keep or Discard box around it; on 2020 to 2026 nothing can read the
+  result back to prove it worked; and it depends on the dialog's layout, language and screen scale, which change
+  between releases and PCs. `HeronDialogWatch` declines any dialog met during a job, by design, so Heron would
+  be fighting its own guard.
+- **Calling 2027's internal members by reflection.** Possible in code, and not part of the API Autodesk gives an
+  add-in: undocumented to it, free to change or vanish in any update, and nothing could prove it stays safe on a
+  modeller's model.
+
+**The shapes the owner chooses between:**
+
+1. **Neither - recommended.** Labels are made by hand or copied from a seed family of the same category; Heron
+   reads and lays them out. When a Revit release makes `AnnotationLabel.Create` public,
+   `tools/api-surface --members AnnotationLabel` shows it and a `CREATE_FAMILY_LABEL` for that release is a small
+   job. **Cost:** the first label of each kind is made by hand once, into the seed.
+2. **UI automation, as a separate tool outside the fragment library.** **Cost:** a new kind of component with no
+   rollback, no read-back on 2020 to 2026 and a dependency on screen layout; a decision on how Article 9 and
+   Golden Rule 16 apply to it; per-release, per-language maintenance.
+3. **Reflection into 2027's internal members, 2027 only.** **Cost:** an unsupported dependency on Autodesk's
+   internals, proved on one update and re-proved on every update after.
+
+**Why the first.** The seed route reaches every release with nothing Heron cannot undo or read back, and it is
+the way modellers already reuse labels. The other two trade the safety rules for a shortcut on one step.
+
+**Ajmal PS decides.** Until he does, nothing is built for either.
+
+---

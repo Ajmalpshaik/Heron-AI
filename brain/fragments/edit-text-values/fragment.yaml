@@ -331,6 +331,11 @@ compatibility-note: >
 #   "is this note numbered" / "which paragraphs are bold" -> READ_ELEMENT_PARAMETERS,
 #                                           parameterName Text - a check is a read
 #   "read what the text notes in this view say" -> READ_ELEMENT_PARAMETERS, parameterName Text
+#   "make the tag text bold"             -> SET_TEXT_TYPE - the TYPE, so
+#                                           every label or note of it; one
+#                                           line or word of one note stays
+#                                           here (measured 2026-10-21, row
+#                                           5b-1300)
 #
 #   THE TEXT NOTES OF ONE VIEW, as a chain: SELECT_VISIBLE_IN_VIEW (PROVEN)
 #   with view=<the view> and categories=Text Notes, then this with
