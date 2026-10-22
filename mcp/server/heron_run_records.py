@@ -163,9 +163,18 @@ def entries(record):
         lines.append("inputs    %s" % bound)
 
     provides = reply.get("provides")
+    # A dictionary's entries, where the add-in sent them beside its count
+    # (`providesEntries`, 2026-10-22, FRAGMENT-ISSUES 5b-1319) - one line
+    # each under the value, so the record holds what the chat was shown.
+    sent = reply.get("providesEntries")
+    sent = sent if isinstance(sent, dict) else {}
     if isinstance(provides, dict):
         for name in sorted(provides):
             lines.append("value     %s  %s" % (name, provides[name]))
+            held = sent.get(str(name))
+            if isinstance(held, dict):
+                for key in held:
+                    lines.append("entry     %s  %s: %s" % (name, key, held[key]))
 
     for one in record.get("elements") or []:
         if not isinstance(one, dict):

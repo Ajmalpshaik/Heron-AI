@@ -166,6 +166,23 @@ def paging(runs, folder):
     check(any(line.startswith("setup     deleted  7") and "Generic" not in line for line in every),
           "a deleted element is listed with no category - it had none left to read")
 
+    # A DICTIONARY'S ENTRIES, where the add-in sent them (5b-1319): one line
+    # each under the value, in the order sent, and nothing for a name that
+    # arrived as a count alone.
+    with_entries = dict(record, reply=dict(reply, provides=dict(reply["provides"],
+                                                               values="2 entry(ies)",
+                                                               resolvedFrom="2 entry(ies)"),
+                                           providesEntries={"values": {"14194": "Yes",
+                                                                       "7492": "No"}}))
+    paged = runs.entries(with_entries)
+    values_at = [i for i, line in enumerate(paged) if line.startswith("value     values  ")]
+    check(len(values_at) == 1
+          and paged[values_at[0] + 1] == "entry     values  14194: Yes"
+          and paged[values_at[0] + 2] == "entry     values  7492: No",
+          "a dictionary's entries follow its value line, one each, in the order sent")
+    check(not any(line.startswith("entry     resolvedFrom") for line in paged),
+          "and a dictionary whose entries did not come has no entry lines")
+
     first = runs.page(got, run, 0, 20)
     check(first.splitlines()[0].startswith("Run %s: create-family-extrusion in Panel" % run)
           and "KEPT" in first.splitlines()[0],

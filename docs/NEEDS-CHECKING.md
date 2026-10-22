@@ -976,6 +976,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-iq.md`](needs-checking/group-iq.md)
 
+## Group IT - a dictionary's entries reach the chat (`providesEntries`, `READ_ELEMENT_PARAMETERS` version 5), and the end a flex would move (`LABEL_FAMILY_DIMENSION` version 2) (2026-10-22)
+
+**Its own file:** [`needs-checking/group-it.md`](needs-checking/group-it.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

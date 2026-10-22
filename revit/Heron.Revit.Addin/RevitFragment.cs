@@ -2049,8 +2049,57 @@ namespace Heron.Revit.Addin
             parts.Add("\"provides\":{" + string.Join(",", left) + "}");
             parts.Add(Json.Num("providesCount", left.Count));
 
+            // WHAT EACH DICTIONARY HOLDS, BESIDE ITS COUNT. `Describe` renders
+            // a dictionary as "N entry(ies)" and nothing else, and it stays
+            // byte for byte what it is: every proof record carries that shape
+            // and heron_validate._as_count reads it as a quantity. So the
+            // entries travel in a field of their own - the first EntriesSent
+            // of each, "key": "value", each side cut as a list item is - and
+            // the server prints them under the count. Measured 2026-10-22 on
+            // Revit 2020 (session 78736): READ_ELEMENT_PARAMETERS asked for
+            // one parameter on four connectors answered `values 4 entry(ies)`
+            // and `resolvedFrom 4 entry(ies)`, and not one value reached the
+            // chat (FRAGMENT-ISSUES 5b-1319). Only a dictionary that holds
+            // something is listed; a value a fragment did not leave as a
+            // dictionary is not here, so nothing is sent twice.
+            var entries = new List<string>();
+            foreach (var variable in state)
+            {
+                object current = null;
+                try { current = variable.Value; } catch { continue; }
+
+                if (bound != null && bound.Contains(variable.Name)
+                    && StillTheHosts(handedIn, variable.Name, current)) continue;
+
+                var dictionary = current as IDictionary;
+                if (dictionary == null || dictionary.Count == 0) continue;
+
+                var rows = new List<string>();
+                var taken = 0;
+                foreach (DictionaryEntry pair in dictionary)
+                {
+                    if (taken++ >= EntriesSent) break;
+                    var held = pair.Value;
+                    var shown = held is IDictionary || (held is ICollection && !(held is string))
+                        ? Describe(held)
+                        : ShortName(held);
+                    rows.Add(Json.Str(ShortName(pair.Key), shown));
+                }
+                entries.Add("\"" + variable.Name + "\":" + Json.Obj(rows.ToArray()));
+            }
+            if (entries.Count > 0)
+                parts.Add("\"providesEntries\":{" + string.Join(",", entries) + "}");
+
             return Json.Ok(parts.ToArray());
         }
+
+        /// <summary>
+        /// How many of a dictionary's entries travel beside its count - the
+        /// first twelve, so a parameter read on a handful of elements arrives
+        /// whole and one on a thousand still arrives as its count and a
+        /// sample, the way a list sends its first three.
+        /// </summary>
+        private const int EntriesSent = 12;
 
         /// <summary>
         /// Is this variable STILL the object the host handed in?

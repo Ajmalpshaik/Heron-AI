@@ -16,7 +16,41 @@ positive:
       a height dimension labelled Height in an elevation, reading 250 mm, and
       equalised false
 
+  - given: >
+      VERSION 2 - the case of 2026-10-22. A NEW plane "Floor Top" at Z 0
+      (unpinned, no dimension or lock on it) and "Trap Top" at Z 300 carrying
+      two other labelled dimensions; "Trap Depth" holding 300; fromPlane
+      "Floor Top", toPlane "Trap Top", pinFreeEnd left out
+    expect: >
+      labelled reading 300 mm, AND `freeEnd` naming "Floor Top" as held by
+      nothing, "Trap Top" as held by the two labelled dimensions, and the pin
+      route (SET_PIN_STATE, or dimension it to a level). Nothing pinned:
+      `pinnedEnd` empty, Floor Top still unpinned in Properties. Then Trap
+      Depth typed as 400 moves FLOOR TOP, as the warning said
+
+  - given: the same, with pinFreeEnd=true
+    expect: >
+      `pinnedEnd` says "Floor Top" was pinned first and reads back pinned;
+      Floor Top shows the pin in Revit; Trap Depth typed as 400 now moves TRAP
+      TOP to Z 400 and Floor Top stays at 0
+
 negative:
+  - given: >
+      VERSION 2. fromPlane "Ref. Level" (a level), toPlane "Box Top" PINNED,
+      Height holding the distance, pinFreeEnd left out
+    expect: >
+      labelled as before and NO free-end warning: `freeEnd` empty, the
+      findings say each end is held ("Ref. Level" is a level; "Box Top" is
+      pinned), nothing pinned. This is the negative case - a label whose ends
+      are both held says nothing about a free end
+
+  - given: >
+      VERSION 2. Two planes at the same Z, "Trap Depth" holding 300
+    expect: >
+      refused as in the same place, and the refusal names the route - pin the
+      one that must stay (SET_PIN_STATE), move the other, SET_FAMILY_TYPE_VALUES
+      to the distance, then label. Nothing made, nothing pinned
+
   - given: >
       the same planes 600 apart and Width still holding 0 (never written)
     expect: >

@@ -19,6 +19,21 @@
 // ANY REFUSAL FROM REVIT AFTER THE CHECKS THROWS, so the host rolls the whole
 // call back: an EQ left without its label, or a label on the wrong planes, is
 // worse than neither.
+//
+// VERSION 2 - WHICH END A FLEX WOULD MOVE IS SAID BEFORE THE LABEL IS MADE.
+// A labelled dimension drives the distance between its two ends, and when the
+// parameter changes Revit moves whichever end is least held. Seen 2026-10-22
+// on Revit 2020 (session 78736, FRAGMENT-ISSUES 5b-1320): "Trap Depth" was
+// labelled from a NEW plane "Floor Top" - unpinned, no lock, no dimension on
+// it - to "Trap Top", which carried two labelled dimensions; the label read
+// back fine, and the next SET_FAMILY_TYPE_VALUES 300 -> 400 moved FLOOR TOP up
+// 100 mm and left Trap Top where it was, twice, until Floor Top was pinned.
+// So each end is read: a level, a pinned plane, a plane that defines the
+// origin, or one a labelled dimension, an EQ or a lock references, is HELD; a
+// plane none of those touch is FREE, and a free end is named in `freeEnd` and
+// the findings as the end a flex may move, with the pin route. Nothing is
+// pinned on this fragment's own initiative (Article 7): `pinFreeEnd` asks for
+// it, and the pin is read back after the regeneration like everything else.
 
 var findings = new List<string>();
 var labelled = "";
@@ -26,6 +41,8 @@ var equalised = false;
 var distanceMm = 0.0;
 var notAFamily = false;
 string refused = null;
+var freeEnd = "";
+var pinnedEnd = "";
 
 var flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static;
 var revitAssembly = typeof(Document).Assembly;
@@ -159,7 +176,10 @@ else
     {
         if (a.Item1.Id == b.Item1.Id) problems.Add("Both ends are \"" + a.Item5 + "\" - a dimension needs two planes.");
         else if (a.Item3 != b.Item3) problems.Add("\"" + a.Item5 + "\" controls " + axisWords[a.Item3] + " and \"" + b.Item5 + "\" controls " + axisWords[b.Item3] + " - they are not parallel.");
-        else if (Math.Abs(a.Item4 - b.Item4) < halfMillimetre) problems.Add("\"" + a.Item5 + "\" and \"" + b.Item5 + "\" are in the same place - there is no distance to label.");
+        else if (Math.Abs(a.Item4 - b.Item4) < halfMillimetre) problems.Add("\"" + a.Item5 + "\" and \"" + b.Item5
+            + "\" are in the same place - there is no distance to label. Pin the one that must stay (SET_PIN_STATE, "
+            + "pinned=true), move the other to where it belongs, set \"" + (parameter == null ? wantedParameter : parameter.Definition.Name)
+            + "\" to that distance (SET_FAMILY_TYPE_VALUES), then label - a label put on first would drive the free one.");
     }
 
     if (problems.Count == 0 && fm.CurrentType == null)
@@ -265,6 +285,94 @@ if (refused == null)
     Dimension dimension;
     Dimension eq = null;
 
+    // WHICH END A FLEX WOULD MOVE (version 2). What holds each end is read
+    // BEFORE the label exists: the dimension about to be made would otherwise
+    // count as holding both. A plain dimension - unlabelled, unlocked, no EQ -
+    // holds nothing, so it is not counted.
+    var holds = new Dictionary<ElementId, List<string>>();
+    foreach (var d in new FilteredElementCollector(doc).OfClass(typeof(Dimension)).Cast<Dimension>())
+    {
+        FamilyParameter label = null;
+        try { label = d.FamilyLabel; } catch (Exception) { }
+        var locked = false;
+        try { locked = d.IsLocked; } catch (Exception) { }
+        var equal = false;
+        try { equal = d.AreSegmentsEqual; } catch (Exception) { }
+        if (label == null && !locked && !equal) continue;
+
+        var what = label != null ? "the dimension labelled \"" + label.Definition.Name + "\"" : equal ? "an EQ" : "a lock";
+        try
+        {
+            foreach (Reference r in d.References)
+            {
+                List<string> by;
+                if (!holds.TryGetValue(r.ElementId, out by)) holds[r.ElementId] = by = new List<string>();
+                if (!by.Contains(what)) by.Add(what);
+            }
+        }
+        catch (Exception) { }
+    }
+
+    Func<Tuple<Element, Reference, int, double, string>, string> heldBy = end =>
+    {
+        if (end.Item1 is Level) return "a level";
+        var why = new List<string>();
+        var isPinned = false;
+        try { isPinned = end.Item1.Pinned; } catch (Exception) { }
+        if (isPinned) why.Add("pinned");
+        Parameter origin = null;
+        try { origin = end.Item1.get_Parameter(BuiltInParameter.DATUM_PLANE_DEFINES_ORIGIN); } catch (Exception) { }
+        if (origin != null && origin.AsInteger() == 1) why.Add("defines the origin");
+        List<string> by;
+        if (holds.TryGetValue(end.Item1.Id, out by)) why.Add("held by " + string.Join(" and ", by));
+        return string.Join(", ", why);
+    };
+
+    var aHeld = heldBy(a);
+    var bHeld = heldBy(b);
+    var free = new List<Tuple<Element, Reference, int, double, string>>();
+    if (aHeld.Length == 0) free.Add(a);
+    if (bHeld.Length == 0) free.Add(b);
+    var drives = parameter.Definition.Name;
+    var pinRoute = "Pin it (SET_PIN_STATE, pinned=true) or dimension it to a level";
+
+    if (free.Count == 2)
+        freeEnd = "Both ends are held by nothing - neither \"" + a.Item5 + "\" nor \"" + b.Item5 + "\" is pinned, a level "
+            + "or an origin plane, and no labelled dimension, EQ or lock references either - so which one a flex of \""
+            + drives + "\" moves is Revit's choice. Pin the one that must stay (SET_PIN_STATE, pinned=true) or dimension "
+            + "it to a level; asked with pinFreeEnd=true, this call pins \"" + a.Item5 + "\", the first named.";
+    else if (free.Count == 1)
+    {
+        var other = free[0] == a ? b : a;
+        var otherHeld = free[0] == a ? bHeld : aHeld;
+        freeEnd = "\"" + free[0].Item5 + "\" is held by nothing - not pinned, not a level, not an origin plane, and no "
+            + "labelled dimension, EQ or lock references it - while \"" + other.Item5 + "\" is " + otherHeld + ". A flex of \""
+            + drives + "\" may move \"" + free[0].Item5 + "\" and leave \"" + other.Item5 + "\" where it is. " + pinRoute
+            + "; asked with pinFreeEnd=true, this call pins it first.";
+    }
+    else if (aHeld == "pinned" && bHeld == "pinned")
+        findings.Add("Both \"" + a.Item5 + "\" and \"" + b.Item5 + "\" are pinned, so a flex of \"" + drives
+            + "\" may have nothing it can move - unpin the one meant to move (SET_PIN_STATE, pinned=false).");
+    else
+        findings.Add("Each end is held: \"" + a.Item5 + "\" is " + aHeld + "; \"" + b.Item5 + "\" is " + bHeld + ".");
+
+    // THE PIN IS THE MODELLER'S TO ASK FOR (Article 7), and it goes on BEFORE
+    // the label so that the first flex already moves the right end.
+    Element pinnedPlane = null;
+    if (pinFreeEnd && free.Count > 0)
+    {
+        pinnedPlane = free[0].Item1;
+        try { pinnedPlane.Pinned = true; }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("Revit would not pin \"" + free[0].Item5 + "\": " + ex.Message
+                + " NOTHING from this call was kept.");
+        }
+    }
+    else if (pinFreeEnd)
+        findings.Add("pinFreeEnd was asked and nothing was pinned: both ends are already held (\"" + a.Item5 + "\" is "
+            + aHeld + "; \"" + b.Item5 + "\" is " + bHeld + ").");
+
     try
     {
         if (centre != null)
@@ -332,6 +440,21 @@ if (refused == null)
                 + mm(now) + " mm when the dimension was labelled. NOTHING from this call was kept.");
     }
 
+    // THE PIN, READ BACK (version 2): asked for, set before the label, and
+    // still there after Revit regenerated - or nothing is kept.
+    if (pinnedPlane != null)
+    {
+        var stillPinned = false;
+        try { stillPinned = pinnedPlane.Pinned; } catch (Exception) { }
+        if (!stillPinned)
+            throw new InvalidOperationException("\"" + free[0].Item5 + "\" was pinned before the label and does not read "
+                + "back pinned afterwards. NOTHING from this call was kept.");
+        var stays = free[0] == a ? b : a;
+        pinnedEnd = "\"" + free[0].Item5 + "\" pinned first, as asked (pinFreeEnd), and reads back pinned: a flex of \""
+            + drives + "\" now leaves it where it is and moves \"" + stays.Item5 + "\"'s side.";
+        freeEnd += " Pinned now - see pinnedEnd.";
+    }
+
     labelled = parameter.Definition.Name + " drives \"" + first.Item5 + "\" to \"" + last.Item5 + "\", "
         + "reading " + distanceMm.ToString(invariant) + " mm";
 
@@ -345,6 +468,9 @@ if (refused == null)
     findings.Add("The planes now follow \"" + parameter.Definition.Name + "\". Geometry follows only if it "
         + "is LOCKED to them - EXTRUDE_BETWEEN_PLANES builds a box that is. FLEX_FAMILY proves it by "
         + "changing the value and reading the geometry back.");
+
+    if (freeEnd.Length > 0) findings.Add(freeEnd);
+    if (pinnedEnd.Length > 0) findings.Add(pinnedEnd);
 }
 
 if (refused != null) findings.Add(refused);

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,18 @@ semantic-identity: "reads one named parameter off every element"
 kind: action
 domain: revit.parameters
 capability: READ_ELEMENT_PARAMETERS
-version: 4
+# Version 5 (2026-10-22, row 5b-1319) changed impl/: the answer is said in
+# words. `values` and `resolvedFrom` are dictionaries, and a dictionary
+# reached a chat as its count alone - on Revit 2020 (session 78736) one
+# parameter read on four connectors answered "values 4 entry(ies)" and not
+# one value. The add-in now sends a dictionary's first entries beside its
+# count (the same row); `findings`, a string, is the same answer in this
+# card's own words - each element's id, value and where it came from, the
+# first twelve, then how many more, then the blank and the absent ones by id -
+# so it holds whatever carries it. Nothing it read changed. Version 4's proof
+# below no longer describes the code: DRAFT until NEEDS-CHECKING Group IT
+# proves version 5 (D-30).
+version: 5
 source: OFFICIAL
 risk: READ
 
@@ -36,6 +47,16 @@ purpose: >
   same name still wins - that is the one the modeller edited. `resolvedFrom`
   records which answered, because *"they share one value"* and *"they each carry
   the same value"* are different findings with different fixes.
+
+  **THE ANSWER IS SAID IN WORDS** (version 5). `values` and `resolvedFrom`
+  are dictionaries, and a dictionary reached a chat as its count alone: one
+  parameter read on four connectors answered *"values 4 entry(ies)"* and not
+  one value (Revit 2020, 2026-10-22). The add-in now sends a dictionary's
+  first entries beside its count; `findings` is the same answer in this
+  card's own words - *"Allow Slope Adjustments": 4 of 4 carry a value, 0
+  blank, 0 absent. 14194: Yes (instance); 7492: Yes (instance); ...* - the
+  first twelve, then how many more, then the blank and the absent ids. It is
+  one string, so no cut on the way to a chat can shorten it to a number.
 
   **LEVEL IS THE ONLY SPECIAL CASE.** Category, Family and Type are how a table
   is labelled rather than something read off an element, and D-20 keeps that at
@@ -130,6 +151,13 @@ contract:
       # the paragraphs that are bold, italic or underlined. Null when no note
       # was read.
       role: result
+      type: string
+    - name: findings
+      # Version 5. The answer in words, one string: "<parameter>": N of M carry
+      # a value, N blank, N absent, then each element's id, value (cut at 60
+      # characters) and where it came from - "14194: Yes (instance)" - the
+      # first twelve and how many more, then the blank and the absent ids. It
+      # survives the cut a dictionary takes on its way to a chat (5b-1319).
       type: string
 
 proof:
