@@ -222,7 +222,12 @@ purpose: >
      first, as in step 3.
   10. THE VOIDS, built as void forms in step 7, each cut into the solid it must
       cut with COMBINE_FAMILY_FORMS - a void made through the API cuts NOTHING
-      until it is combined, and the cut is measured. Solids that should read as
+      until it is combined, and the cut is measured. A void meant to cut a
+      HOSTED family's template host - a floor drain's hole through the floor -
+      is combined with nothing: Revit's API cannot make that cut on any
+      release, and HOSTED-FAMILY-CREATION step 5 says what the modeller does
+      by hand before loading (measured 2026-10-22 on Revit 2020, row 5b-1324).
+      Solids that should read as
       one piece are joined the same way. A solid is in one combination at
       most: to cut it again, name that combination's id with the new voids,
       never the solid. A void cuts every solid in its combination that it

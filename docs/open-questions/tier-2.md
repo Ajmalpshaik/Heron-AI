@@ -1320,3 +1320,44 @@ the way modellers already reuse labels. The other two trade the safety rules for
 **Ajmal PS decides.** Until he does, nothing is built for either.
 
 ---
+
+### 🔵 Q-85 — Revit's API cannot make a void cut a hosted family's template host, so the modeller cuts it by hand in the Family Editor. Should Heron do more than say so? *(found 2026-10-22 building a floor drain)*
+
+**What was found.** Ajmal PS, building a nested floor-drain family on Revit 2020 through Heron, found that the
+two voids Heron made through the template's floor cut nothing - not the sample floor, and not one floor in the
+project the family was loaded into, with *Cut with Voids When Loaded* off and then on. Revit's *Modify >
+Geometry > Cut* in the Family Editor, the sample floor first and then each void, and a reload, cut every host
+floor; finding that by hand cost him an hour. Read that day off all eight releases' own XML remarks
+([row 5b-1324](../fragment-issues/section-5b-rows-401-425.md), [docs/43 §7](../43-building-revit-families.md)):
+no public call makes that cut in an ordinary hosted family - `SolidSolidCutUtils` refuses the document and the
+floor in its own exception text, `Document.CombineElements` takes forms only, `JoinGeometryUtils` is not for
+family documents and joins rather than cuts, `InstanceVoidCutUtils` wants a loaded family in a project, and
+`FamilyItemFactory.NewOpening` takes a wall or a ceiling. `CREATE_FAMILY_HOST_OPENING` stays as it is - its
+wall and ceiling halves are PROVEN - and
+[`hosted-family-creation`](../../brain/skills/hosted-family-creation.yaml) step 5 now tells the modeller to
+cut by hand before loading.
+
+**The shapes the owner chooses between:**
+
+1. **Nothing more - recommended.** The method says to cut by hand, host first then void, before Load into
+   Project; `REPORT_FAMILY_FORMS` already lists the voids to cut. When a release gives the Family Editor's
+   Cut Geometry a public call, `tools/api-surface --members SolidSolidCutUtils` and a search of that release's
+   XML for *"family document"* beside *"cut"* show it, and widening `CREATE_FAMILY_HOST_OPENING` to a floor
+   and a roof is a small job. **Cost:** one Cut per void in every hosted family, by the modeller.
+2. **A nested-void route, if Revit takes it.** Build the voids in a small Generic Model family with *Cut with
+   Voids When Loaded* on, nest it in the hosted family, and call `InstanceVoidCutUtils.AddInstanceVoidCut` on
+   the template's host and the nested copy. Whether the call accepts a family document at all - its remarks
+   say *"Elements in a project"* - and whether that cut carries into the project's hosts on load, is NEEDS
+   REAL REVIT: a day's proving on Revit 2020, then 2024 and 2027. **Cost:** every hosted family's hole becomes
+   a nested family; a void that must follow a parameter needs that family's own labels and links; a proof on
+   three releases before any modeller relies on it.
+3. **UI automation of Cut Geometry.** Ruled out already for the label dialog (Q-82 above, the same reasons):
+   no transaction group of Heron's, no Keep or Discard box, nothing read back, and a dependence on the screen.
+
+**Why the first.** The hand step is one click per void and is how Revit's own help teaches it; the second
+changes how every hosted family is built on the strength of a call documented for projects; the third trades
+the safety rules for a shortcut.
+
+**Ajmal PS decides.** Until he does, nothing is built; the method's hand step stands.
+
+---
