@@ -1,0 +1,67 @@
+# The proof of SET_FAMILY_CONNECTOR_ROLES version 4 - a pipe connector's
+# "Allow Slope Adjustments" box, ticked and read back; the same box asked of a
+# duct connector, refused - NEEDS-CHECKING Group IR:
+#
+#   set-family-connector-roles   SET_FAMILY_CONNECTOR_ROLES   FRG-MEP-055
+#
+#     python tools/batch-prove.py tools/jobs/set-family-connector-ticks-2026-10-22.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-family-connector-ticks-2026-10-22.yaml
+#
+# NEVER ON ONE OF THE OWNER'S FAMILIES. THE ARRANGEMENT IS MADE ONCE, KEPT, IN
+# A NEW SCRATCH FAMILY: File, New, Family, Metric Mechanical Equipment.rft, on
+# Revit 2020 first. Type its title where `in:` says FAMILY-TITLE. Then, in it,
+# with the Heron tools (the commands are in docs/needs-checking/group-ir.md):
+#
+#   planes "Outlet Face" at -300 (left), "Inlet Face" at 300 (right) and
+#     "Duct Face" at 600 (height), CREATE_REFERENCE_PLANES
+#   one solid box: CREATE_FAMILY_FORMS "kind=extrusion workPlane=Ref. Level
+#     profile=rect -300,-150 300,150 startMm=0 endMm=600 solid=true"
+#   ADD_FAMILY_CONNECTOR, system "Sanitary", on the face lying on "Outlet
+#     Face" and again on "Inlet Face"; system "Supply Air" (a duct connector)
+#     on the face lying on "Duct Face"
+#
+# THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN - fill FAMILY-TITLE first.
+#
+# POSITIVE: "allowSlopeAdjustments=yes" on the two pipe connectors. `changed`
+# names both, "Allow Slope Adjustments no -> yes"; connectorReport reads
+# "slope adjustments allowed" on each; two findings quote what REVIT shows
+# for the box - record them whole. A positive refused "has no Allow Slope
+# Adjustments in this Revit" is the finding that stops the group: the box is
+# not the connector element's own parameter.
+#
+# NEGATIVE: the same key on the DUCT connector. Refused in one sentence
+# naming the connector and its domain - "... is a duct connector - Allow
+# Slope Adjustments is a pipe connector's"; `changed` EMPTY, nothing written.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# LOOK at the family afterwards anyway - the boxes unticked: rollback has
+# failed on this PC before (BD1).
+#
+# With two Revits connected to Heron, add `--session <process id>`.
+
+model: a scratch family from Metric Mechanical Equipment.rft, Revit 2020 first, then 2024 and 2027
+
+defaults:
+  in: "FAMILY-TITLE"
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: set-family-connector-roles
+    expect: changed
+    set:
+      connectors: "Outlet Face, Inlet Face"
+      settings: "allowSlopeAdjustments=yes"
+      primary: ""
+      links: ""
+    negative-set:
+      connectors: "Duct Face"
+      settings: "allowSlopeAdjustments=yes"
+      primary: ""
+      links: ""
+    note: >
+      The negative changes only the connector named: same family, same key,
+      a duct connector - which has no such box. The verdict is read off
+      `changed` - two entries, or none - and off `refused`, which must name
+      the connector and call it a duct connector's domain. Unticking,
+      Utility, Angle, Flow and the rest are run by hand, IR3 to IR11.

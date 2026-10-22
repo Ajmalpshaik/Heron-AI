@@ -268,7 +268,11 @@ purpose: >
       face on a NEW plane 2 mm beyond the flange, and name the connector by
       that plane; it then went on first time. A pipe or duct port is sized by a length
       parameter even in a fixed family - add it and its value (steps 2 and 3)
-      first. An ELECTRICAL connector is made with Revit's defaults and no
+      first. A DRAIN's pipe connectors need Allow Slope Adjustments ticked
+      before the pipework drawn from them can be given a fall:
+      SET_FAMILY_CONNECTOR_ROLES "allowSlopeAdjustments=yes" on each, a pipe
+      connector's box only (version 4, 2026-10-22, DRAFT until Group IR
+      passes). An ELECTRICAL connector is made with Revit's defaults and no
       load: SET_FAMILY_CONNECTOR_ROLES then gives it its Voltage, Number of
       Poles, Apparent Load and Power Factor - "voltage=400 V; poles=3;
       apparentLoad=1.5 kVA; powerFactor=0.85" - each a value the modeller
