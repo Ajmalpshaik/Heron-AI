@@ -3852,13 +3852,23 @@ namespace Heron.Revit.Addin
                 // against the wrong category and reports success.
                 if (source == "request")
                 {
-                    string givenText;
+                    string givenText = null;
                     string defaulted = null;
-                    if (supplied == null || !supplied.TryGetValue(name, out givenText))
-                    {
-                        string optional;
-                        need.TryGetValue("optional", out optional);
+                    string optional;
+                    need.TryGetValue("optional", out optional);
+                    var wasGiven = supplied != null && supplied.TryGetValue(name, out givenText);
+                    var absentHow = wasGiven ? " given empty - " : " not given - ";
 
+                    // A VALUE LEFT EMPTY IS A VALUE LEFT OUT, when the card says
+                    // it may be (row 5b-1320): inViewOnly= with nothing after it
+                    // was looked up as a view named "" and refused "No view
+                    // called". Asked BEFORE the text is converted. A need the
+                    // card does not mark optional converts its empty text as
+                    // before, and the type's own rule refuses it; one the card
+                    // marks optional but says nothing of - a string with no
+                    // `absent:` - binds its empty text as it did, below.
+                    if (!wasGiven || HeronBindingNote.EmptyMeansAbsent(givenText, optional))
+                    {
                         // THE CARD MAY SAY WHAT LEAVING IT OUT MEANS - `absent:`
                         // beside `optional: true` (row 5b-488). That text is
                         // then read below exactly as if the caller had typed
@@ -3869,24 +3879,33 @@ namespace Heron.Revit.Addin
 
                         if (defaulted == null)
                         {
-                            // ONE EXCEPTION: a bool the card marks optional is a
-                            // switch left off - D-59's "absent means host only".
-                            // Everything else is still the caller's to supply.
+                            // TWO EXCEPTIONS: a bool the card marks optional is a
+                            // switch left off - D-59's "absent means host only" -
+                            // and a View it marks optional is null, the whole
+                            // model (row 5b-1320). Everything else is still the
+                            // caller's to supply.
                             var absent = HeronBindingNote.AbsentValue(type, optional);
                             if (absent != null)
                             {
                                 bound.Add(name);
                                 lines.Append(type).Append(" ").Append(name)
                                      .Append(" = ").Append(absent).Append(";\n");
-                                how.Add(name + " not given - " + absent + " (optional)");
+                                how.Add(name + absentHow + absent + " (optional)");
                                 continue;
                             }
 
-                            fromRequest.Add(name + " (" + type + ")");
-                            continue;
+                            if (!wasGiven)
+                            {
+                                fromRequest.Add(name + " (" + type + ")");
+                                continue;
+                            }
+                            // Given empty, and the card says nothing of what
+                            // absent means: the empty text converts as before.
                         }
-
-                        givenText = defaulted;
+                        else
+                        {
+                            givenText = defaulted;
+                        }
                     }
 
                     // A VALUE THAT CANNOT BECOME ITS DECLARED TYPE STOPS THE
@@ -3943,7 +3962,7 @@ namespace Heron.Revit.Addin
                          .Append(name).Append("\"];\n");
 
                     how.Add(defaulted != null
-                        ? name + " not given - \"" + defaulted + "\", the card's own default (optional)"
+                        ? name + absentHow + "\"" + defaulted + "\", the card's own default (optional)"
                         : name + " as given" + Size(given));
                     continue;
                 }
@@ -5893,6 +5912,33 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// The words a modeller types for a category that Revit's own list
+        /// does not hold, each to the enum value it means.
+        ///
+        /// `doc.Settings.Categories` is what Visibility/Graphics shows, and
+        /// a connector is not a row there: "Connector Elements" and
+        /// "Connectors" were both refused "is not a category Revit knows" on
+        /// 2026-10-22 (Revit 2020, a floor-drain family) while the API name
+        /// OST_ConnectorElem bound, and no "OST_" guess spells that from
+        /// either word (FRAGMENT-ISSUES 5b-1321). This table is asked AFTER
+        /// the shown name and BEFORE the guess: a name Revit lists wins, so
+        /// nothing that bound before binds differently, and a known word
+        /// comes before a guess.
+        ///
+        /// ONE MEASURED REFUSAL AT A TIME. A name typed here from memory is
+        /// a guess about what a modeller says and about what the enum holds
+        /// (D-52); each row names the run that refused the word.
+        /// </summary>
+        private static readonly Dictionary<string, BuiltInCategory> CategoryAliases =
+            new Dictionary<string, BuiltInCategory>(StringComparer.OrdinalIgnoreCase)
+            {
+                // 2026-10-22, Revit 2020, session 78736, row 5b-1321.
+                { "Connector Elements", BuiltInCategory.OST_ConnectorElem },
+                { "Connectors", BuiltInCategory.OST_ConnectorElem },
+                { "Connector", BuiltInCategory.OST_ConnectorElem },
+            };
+
+        /// <summary>
         /// One category name to its BuiltInCategory, WITHOUT touching ElementId.
         ///
         /// The obvious route - read the Category's Id and cast it - crosses the
@@ -5948,6 +5994,11 @@ namespace Heron.Revit.Addin
                     }
                 }
             }
+
+            // Then a word Revit's own list does not hold - "Connector Elements"
+            // (row 5b-1321). After the shown name, before the guess.
+            if (CategoryAliases.TryGetValue(trimmed, out found)) return true;
+            found = BuiltInCategory.INVALID;
 
             // Last, the API name without its prefix - DuctCurves.
             try

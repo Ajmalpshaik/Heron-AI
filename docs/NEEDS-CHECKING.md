@@ -976,6 +976,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-iq.md`](needs-checking/group-iq.md)
 
+## Group IT - a selection that refuses a mode it does not know, takes the whole model when no view is named, and knows a connector by its name: `SELECT_BY_PARAMETER_VALUE` v3, `SELECT_BY_CATEGORIES` v3, `SELECT_OPENINGS` v3, the binder's absent View and category aliases (2026-10-22)
+
+**Its own file:** [`needs-checking/group-it.md`](needs-checking/group-it.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
