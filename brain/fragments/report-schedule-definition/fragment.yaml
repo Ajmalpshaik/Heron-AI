@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "what this schedule is set up to do - its columns, its sortin
 kind: action
 domain: revit.schedules
 capability: REPORT_SCHEDULE_DEFINITION
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -24,9 +24,8 @@ risk: READ
 # SET_SCHEDULE_FILTERS version 2 counts with in `ruleNumber`, so the rules can
 # be read before a change and after it. Only the filter part of the report
 # changed: the same rule wording is in `findings`, columns, sorting and totals
-# are as version 1 reported them. Version 1's proof below is kept as evidence
-# of version 1; it no longer describes this code (D-30), so this is DRAFT
-# until NEEDS-CHECKING Group IH is run and signed.
+# are as version 1 reported them. Version 2 was run and signed on Revit 2020
+# on 2026-10-21 (NEEDS-CHECKING Group IH, #721) - the proof below is that one.
 
 purpose: >
   Reads back how a schedule is CONFIGURED - the columns it carries, the order
@@ -72,6 +71,33 @@ purpose: >
   because a list is cut to three entries before anyone reads it - which is how
   four rules over two schedules came back as a count and nothing else.
 
+# VERSION 3 (2026-10-21, FRAGMENT-ISSUES row 5b-1292). Kept out of the purpose
+# on purpose: the purpose is searched. MEASURED: a two-line purpose paragraph
+# about prefixes and separators moved this card's own "show the schedule
+# filter rules" from first to second by nearness on the trained backend
+# (tools/check-routing.py), so it was taken out again.
+#
+#   Built so a combined column can be read back after ADD_SCHEDULE_COMBINED_
+#   FIELD edits it. On 2026-10-21, Revit 2020, the column that tool added to
+#   'DUCT HEATER SCHEDULE (ROOF FLOOR)' showed "20001300x" and nothing in
+#   Heron could say why: this report named the column and stopped. Now every
+#   combined column is listed in
+#   `combinedFields` - the schedule, its heading, its column number, how Revit
+#   draws it ('[Duct_Accessory_Width][Duct_Accessory_Height]x' showed that
+#   fault at a glance), and per part its parameter, prefix, suffix and the
+#   separator Revit draws AFTER it. An empty one is said "none", so a blank
+#   separator and a missing one do not read alike. Each parameter is named as
+#   the schedule offers it - matched on its id, never read as a number - so it
+#   can be typed straight back into ADD_SCHEDULE_COMBINED_FIELD. The column
+#   line in `findings` carries the same drawn form, and the first line counts
+#   the combined columns. A column whose parts will not open is said so and
+#   the rest of the report goes on.
+#
+#   Built on version 2 (row 5b-1290, filter rules) and changing none of it.
+#   Still READ ONLY. Version 2's proof below (signed 2026-10-21, #721) no
+#   longer describes the code and is kept as a record; the card is DRAFT until
+#   the version 3 proof (NEEDS-CHECKING Group IG) is signed.
+
 contract:
   needs:
     - name: doc
@@ -90,6 +116,14 @@ contract:
       # it.
       role: result
       type: IList<string>
+    - name: combinedFields
+      # VERSION 3. One line per combined column: schedule, heading, column
+      # number, how Revit draws it, and each part's parameter, prefix, suffix
+      # and the separator after it. ONE string, lines joined by "  ||  ", for
+      # filterRules' reason: a list is shown as three entries cut to sixty
+      # characters. Empty when no combined column was found.
+      role: result
+      type: string
     - name: filterCount
       role: result
       type: int
@@ -109,6 +143,10 @@ contract:
       # A count of what was passed over, not of anything described.
       role: accounting
 
+# VERSION 2's PROOF, KEPT AS A RECORD - signed by Ajmal PS on 2026-10-21
+# (Group IH, #721). Version 3 changed impl/, so its fingerprint no longer
+# describes the code and the card is DRAFT until NEEDS-CHECKING Group IG
+# proves version 3 (D-30).
 proof:
   date: '2026-10-21'
   by: Ajmal PS
@@ -159,6 +197,13 @@ compatibility-note: >
   Field identity is `ScheduleFieldId`, which is not an `ElementId`, so nothing
   here reads an id as a number and 2024's 64-bit change does not reach it.
 
+  Version 3 adds `ScheduleField.IsCombinedParameterField`,
+  `GetCombinedParameters`, `TableCellCombinedParameterData`'s `ParamId`,
+  `Prefix`, `Suffix` and `Separator`, and `ScheduleDefinition.
+  GetSchedulableFields` - read off the shipped assemblies for 2020 to 2027 on
+  2026-10-21, present and unchanged on all eight. A part's parameter id is
+  compared with `==`, never read as a number.
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "what columns does this schedule have"  -> here
@@ -172,6 +217,10 @@ compatibility-note: >
 #   "add a column to the schedule"          -> ADD_SCHEDULE_FIELDS - a WRITE.
 #                                              This fragment is the question
 #                                              that one was answering
+#   "what is the size column made of"       -> here, VERSION 3 - a combined
+#                                              column's parts and separators
+#   "edit the size column to use width x    -> ADD_SCHEDULE_COMBINED_FIELD -
+#    height"                                   a WRITE, with editExisting
 #   "take a column out"                     -> REMOVE_SCHEDULE_FIELDS
 #   "sort the schedule by level"            -> SET_SCHEDULE_SORT_GROUP
 #   "filter the schedule to level 2"        -> SET_SCHEDULE_FILTERS

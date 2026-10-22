@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc` and `elements` are in scope; leaves `findings`,
-// `fieldNames`, `hiddenFieldNames`, `filterCount`, `filterRules`,
-// `sortFieldCount` and `skippedNotSchedules` behind.
+// `fieldNames`, `hiddenFieldNames`, `combinedFields`, `filterCount`,
+// `filterRules`, `sortFieldCount` and `skippedNotSchedules` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -34,7 +34,7 @@
 // A SCHEDULE ON A SHEET IS A ScheduleSheetInstance, NOT A ViewSchedule, AND
 // CLICKING IT IS THE ONLY WAY A PERSON CAN POINT AT ONE.
 //
-// Found 2026-09-08 by the owner doing exactly that: he placed 'Heat Recovery
+// Found 2026-09-08 by the owner doing exactly that: they placed 'Heat Recovery
 // Unit Summary' on a sheet, selected it, and this fragment answered
 // skippedNotSchedules 1. A view cannot be selected as an element - opening the
 // schedule selects its ROWS - and nothing in the 349 fragments the library
@@ -45,10 +45,44 @@
 // The placement carries the id of the schedule it draws, so it is resolved
 // here rather than refused. `skippedNotSchedules` now means what it says: the
 // thing was neither a schedule nor a placement of one.
+//
+// VERSION 3 - FRAGMENT-ISSUES 5b-1292. A COMBINED COLUMN IS READ OPEN. Its
+// parts, each part's prefix and suffix, and the separator Revit draws AFTER
+// each part - the last one's too, because a separator after the last value is
+// exactly the fault that column showed on 2026-10-21 ("20001300x"). Each
+// part's parameter is named the way the schedule offers it, so a name read
+// here can be typed straight back into ADD_SCHEDULE_COMBINED_FIELD.
 
 var findings = new List<string>();
 var fieldNames = new List<string>();
 var hiddenFieldNames = new List<string>();
+var combinedLines = new List<string>();
+
+// A part's parameter, by the name this schedule offers it under - matched on
+// the parameter's id, never read as a number.
+Func<IList<SchedulableField>, ElementId, string> partName = (offered, paramId) =>
+{
+    if (offered != null)
+        foreach (var candidate in offered)
+        {
+            try
+            {
+                if (candidate.ParameterId == paramId) return candidate.GetName(doc) ?? "";
+            }
+            catch { }
+        }
+    try
+    {
+        var named = doc.GetElement(paramId);
+        if (named != null) return named.Name;
+    }
+    catch { }
+    return "(a parameter this schedule no longer offers)";
+};
+
+// Text as it is typed, quoted, and an empty one said to be empty - a blank
+// separator and a missing one must not read alike.
+Func<string, string> quoted = text => string.IsNullOrEmpty(text) ? "none" : "'" + text + "'";
 var filterCount = 0;
 var filterRules = "";
 var filterRuleLines = new List<string>();
@@ -110,9 +144,12 @@ foreach (var element in elements)
         var order = definition.GetFieldOrder();
 
         var columns = new List<string>();
+        IList<SchedulableField> offered = null;
+        int columnNumber = 0;
         foreach (var fieldId in order)
         {
             var field = definition.GetField(fieldId);
+            columnNumber++;
             if (field == null) continue;
 
             var name = field.GetName();
@@ -125,6 +162,41 @@ foreach (var element in elements)
             var shown = string.IsNullOrEmpty(heading) || heading == name
                 ? name
                 : string.Format("{0} (printed as '{1}')", name, heading);
+
+            // VERSION 3. A combined column, read open. Guarded on its own: one
+            // column that will not open must not lose the schedule's report.
+            bool combined = false;
+            try { combined = field.IsCombinedParameterField; } catch { }
+            if (combined)
+            {
+                try
+                {
+                    if (offered == null) offered = definition.GetSchedulableFields();
+                    var parts = field.GetCombinedParameters();
+                    var drawn = new System.Text.StringBuilder();
+                    var each = new List<string>();
+                    int partNumber = 0;
+                    foreach (var part in parts)
+                    {
+                        if (part == null) continue;
+                        partNumber++;
+                        var parameter = partName(offered, part.ParamId);
+                        drawn.Append(part.Prefix ?? "").Append("[").Append(parameter).Append("]")
+                             .Append(part.Suffix ?? "").Append(part.Separator ?? "");
+                        each.Add(string.Format("{0}. {1} - prefix {2}, suffix {3}, separator after it {4}",
+                            partNumber, parameter, quoted(part.Prefix), quoted(part.Suffix),
+                            quoted(part.Separator)));
+                    }
+                    shown += string.Format("  [COMBINED - draws '{0}']", drawn);
+                    combinedLines.Add(string.Format("'{0}' / '{1}', column {2}: draws '{3}' - {4}",
+                        schedule.Name, string.IsNullOrEmpty(heading) ? name : heading, columnNumber,
+                        drawn, each.Count == 0 ? "no parts" : string.Join("; ", each)));
+                }
+                catch (Exception ex)
+                {
+                    shown += "  [COMBINED - its parts could not be read: " + ex.Message + "]";
+                }
+            }
 
             if (field.IsHidden)
             {
@@ -241,6 +313,12 @@ if (skippedNotSchedules > 0)
 }
 
 findings.Insert(0, string.Format("{0} schedule(s) described. {1} column(s) in total, {2} of them "
-    + "hidden; {3} filter rule(s); {4} sort/group field(s)",
+    + "hidden, {5} combined; {3} filter rule(s); {4} sort/group field(s)",
     elements.Count - skippedNotSchedules, fieldNames.Count, hiddenFieldNames.Count,
-    filterCount, sortFieldCount));
+    filterCount, sortFieldCount, combinedLines.Count));
+
+// VERSION 3. Each combined column's parts, after the schedule lines - and as
+// ONE string, a column per line joined by "  ||  ", for the reason filterRules
+// is one: a list is shown as three entries cut to sixty characters.
+foreach (var line in combinedLines) findings.Add("    combined column " + line);
+var combinedFields = string.Join("  ||  ", combinedLines);

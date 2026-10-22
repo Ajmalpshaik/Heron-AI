@@ -15,9 +15,8 @@ numbers, and refuses by name every id that resolves to nothing. It compiles on 2
 member exists in each; **none of it has run in Revit.** Every row needs the add-in rebuilt and deployed from
 this change, Revit restarted, and the Claude app restarted.
 
-**Framing a form is a separate fix.** Row 5b-1311 (its own branch, not on main when this was written) is why a
-form left at the family's own subcategory is answered *"has no category"*. Until that is in the build, IP2 uses
-a form given a subcategory; once it is, IP2 is run again on a form with none.
+**Framing a form is a separate fix, merged first:** row 5b-1311, [Group IO](group-io.md). This group finds the
+form; that one frames it. Run IO's rows in the same build; IP3 below needs both.
 
 **The models - scratch, never a working one.** A new family from Revit 2020's `Generic Model.rft`, saved as
 *Heron Form Picture Test.rfa*, with two extrusions made through Heron (`CREATE_FAMILY_FORMS`): one a box, given
@@ -31,7 +30,7 @@ from `revit_parameters` on Ducts (each row's `id`).
 | **IP0** | *Negatives, in the family.* `revit_view_image` with `elements` = (a) the box's UniqueId with one hex digit of its GUID changed; (b) `abc` and the box's UniqueId; (c) the box's UniqueId twice | (a) `no_such_elements`, *"1 of the 1 id(s) name no placed element in ..."* and that id; (b) `bad_ids` naming `"abc"`; (c) refused, *"typed more than once"*. **Nothing pictured** each time, no 3D view left behind |
 | **IP1** | *Negative, in a project.* *Heron Capture Test* in front; `elements` = the box's UniqueId from IP0's family | `no_such_elements` naming it, *"An id belongs to one model, or one family"*. Nothing pictured. The D-30 negative for the project half |
 | **IP2** | *The positive, in the family.* Back in the family; `elements` = the box's UniqueId alone | **A picture of the box alone**, close up, in the chat; the words say 1 element framed. The D-30 positive |
-| **IP3** | *Both forms by UniqueId* | Both in the picture, 2 framed - or, without row 5b-1311 in the build, the box framed and the cylinder *"has no category"* in Left out of the frame. Write down which |
+| **IP3** | *Both forms by UniqueId* | Both in the picture, 2 framed - the cylinder, at the family's own subcategory, framed too (row 5b-1311). *"has no category"* for it means the build is missing that fix |
 | **IP4** | *Mixed, in the project.* `elements` = duct 1's number, duct 2's UniqueId; then duct 1's number and duct 1's UniqueId | The first: 2 ducts framed. The second: **1 framed** - one duct named two ways is pictured once |
 | **IP5** | *Nothing kept.* Count the family's forms (`REPORT_FAMILY_FORMS` "all") and the project's elements before IP2 and IP4, and after; open Undo's list | The same counts; no Heron entry in Undo; the words say the temporary view was rolled back |
 | **IP6** | *Numbers as before.* Group ER's ER2 call - the three duct numbers and the level's | The same answer ER2 records: 3 framed, the level *is a datum* |

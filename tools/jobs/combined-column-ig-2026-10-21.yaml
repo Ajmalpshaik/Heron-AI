@@ -1,0 +1,72 @@
+# The combined-column tools, version 2 - NEEDS-CHECKING Group IG, 2026-10-21.
+#
+#     python tools/batch-prove.py tools/jobs/combined-column-ig-2026-10-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/combined-column-ig-2026-10-21.yaml
+#
+# WHY. ADD_SCHEDULE_COMBINED_FIELD version 1 put the separator after the last
+# part ("20001300x" on the owner's DUCT HEATER SCHEDULE, Revit 2020, 2026-10-21)
+# and could only add a column at the end. Version 2 puts it between parts, edits
+# a combined column in place and moves a column; REPORT_SCHEDULE_DEFINITION
+# version 3 reads a combined column open. FRAGMENT-ISSUES row 5b-1292.
+#
+# THE MODEL: a NEW scratch project, never a working model and never a 4355-*
+# one. Revit 2020, the default metric template, saved as "Heron Combined
+# Column.rvt": four walls, each with Mark (W1..W4) and Comments (North, East,
+# South, West) filled. A Wall Schedule with the fields Type, Mark, Comments,
+# Length, then - BY HAND, in its Fields tab - one combined column headed
+# "Tag" made of Mark and Comments with "/" between them. Placed on a sheet
+# named "Heron Test Sheet". A second, plain Door Schedule (any fields, no
+# combined column) on a second sheet "Heron Test Sheet 2". Group IG in
+# docs/needs-checking/group-ig.md has the rows these jobs are.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# The read runs without it.
+model: Heron Combined Column (new scratch project, Revit 2020 metric template), Revit 2020
+defaults:
+  in: Heron Combined Column
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Schedule Graphics
+    inViewOnly: Heron Test Sheet
+  negative-set:
+    categoryName: Title Blocks
+    inViewOnly: Heron Test Sheet
+jobs:
+  # IG1 - a NEW column placed after Type - is NOT a job here: a run record is
+  # one per fragment (`batch-prove.py` record_name), so a second job for the
+  # same fragment would overwrite this one's. Group IG gives its command.
+  #
+  # IG2 and IG3 - THE D-30 PAIR VERSION 2 IS SIGNED ON. EDIT IN PLACE - "Tag"
+  # rebuilt as Comments x Mark, same column, same heading; `columnNow` says
+  # what it was. NEGATIVE: the same call on "Length", a PLAIN column - edited
+  # 0, `refusedWhy` says it is a plain column and nothing was changed.
+  - fragment: add-schedule-combined-field
+    write: true
+    expect: [edited, columnNow]
+    set:
+      columnName: Tag
+      editExisting: "true"
+      partFields: Comments,Mark
+      partSeparators: x
+    negative-set:
+      categoryName: Schedule Graphics
+      columnName: Length
+      editExisting: "true"
+      partFields: Comments,Mark
+      partSeparators: x
+    note: >
+      The negative is a VALUE, not a selection: the same schedule, a column
+      that must not be touched. Read Length in the schedule afterwards - its
+      values are the walls' lengths, exactly as before.
+
+  # IG7 and IG8. THE READ. "Tag" listed in `combinedFields` with its parts and
+  # separators exactly as Revit's own Edit Parameters dialog shows them.
+  # NEGATIVE: the plain Door Schedule on the second sheet - `combinedFields`
+  # empty, the first finding "0 combined", every column still listed.
+  - fragment: report-schedule-definition
+    expect: combinedFields
+    negative-set:
+      categoryName: Schedule Graphics
+      inViewOnly: Heron Test Sheet 2

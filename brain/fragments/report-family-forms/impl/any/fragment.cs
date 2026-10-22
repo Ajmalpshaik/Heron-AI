@@ -17,6 +17,15 @@
 // `which` NARROWS IT: "all" or nothing for every form, or kinds and sides with
 // commas between - "void", "extrusion", "solid, revolve". A form is kept when it
 // matches every word given, so "void, extrusion" is the void extrusions.
+//
+// OR THE IDS THE FORM TOOLS GAVE BACK (version 3, row 5b-1312) - the long
+// UniqueId each answers with and this lists, commas between - so one form's
+// extents are read after a flex without the rest. Read as SELECT_FAMILY_FORMS
+// reads them: a part that is not a kind or side is an id; ids and words are not
+// mixed in one call; and one id that is not a form of this family refuses the
+// whole call, each bad one named, before anything is read. The short number
+// Select by ID shows is refused with that said - an ElementId built from typed
+// text is the constructor that changed at 2024.
 
 var findings = new List<string>();
 var formCount = 0;
@@ -51,12 +60,38 @@ Func<GenericForm, string> planeOf = f =>
     return plane == null ? "(no sketch plane)" : "on " + plane.Name;
 };
 
-var words = (which ?? "").Split(',').Select(squash).Where(w => w.Length > 0 && w != "all").ToList();
 var known = new[] { "solid", "void", "extrusion", "revolve", "revolution", "blend", "sweep", "sweptblend" };
-var unknown = words.Where(w => !known.Contains(w)).ToList();
+var parts = (which ?? "").Split(',').Select(p => p.Trim()).Where(p => squash(p).Length > 0 && squash(p) != "all").ToList();
+var words = parts.Select(squash).Where(w => known.Contains(w)).ToList();
+var ids = parts.Where(p => !known.Contains(squash(p))).ToList();
 
 var rows = new List<string>();
 var joins = new List<string>();
+var named = new HashSet<string>();
+var problems = new List<string>();
+
+if (doc.IsFamilyDocument && words.Count == 0)
+{
+    foreach (var id in ids)
+    {
+        Element element = null;
+        try { element = doc.GetElement(id); }
+        catch (Exception) { element = null; }
+
+        var form = element as GenericForm;
+        if (element == null)
+            problems.Add("\"" + id + "\" is not an id in this family - "
+                + (id.All(char.IsDigit)
+                    ? "that is an element number; give the long id the form tools gave back"
+                    : "nor a kind of form or a side (solid, void, extrusion, revolve, blend, sweep, swept blend)"));
+        else if (form == null)
+            problems.Add("\"" + id + "\" is "
+                + (string.IsNullOrEmpty(element.Name) ? "an element" : "\"" + element.Name + "\"")
+                + (element.Category != null ? " (" + element.Category.Name + ")" : "") + ", not a form");
+        else
+            named.Add(form.UniqueId);
+    }
+}
 
 if (!doc.IsFamilyDocument)
 {
@@ -64,10 +99,15 @@ if (!doc.IsFamilyDocument)
     findings.Add("The document in front is a project, not a family open in the Family Editor. A family's forms are "
         + "read inside the family - open it first.");
 }
-else if (unknown.Count > 0)
+else if (words.Count > 0 && ids.Count > 0)
 {
-    findings.Add("Nothing was read. \"" + string.Join("\", \"", unknown) + "\" is not a kind of form or a side - "
-        + "name solid or void, and extrusion, revolve, blend, sweep or swept blend, or all.");
+    findings.Add("Nothing was read. Name forms by their ids OR by kind and side, not both in one call - \""
+        + string.Join(", ", ids) + "\" read as ids beside \"" + string.Join(", ", words) + "\". A word that is "
+        + "neither is read as an id: name solid or void, and extrusion, revolve, blend, sweep or swept blend, or all.");
+}
+else if (problems.Count > 0)
+{
+    findings.Add("Nothing was read. " + string.Join("; ", problems) + ".");
 }
 else
 {
@@ -78,7 +118,7 @@ else
         var kind = kindOf(f);
         var side = f.IsSolid ? "solid" : "void";
         var matches = words.All(w => w == side || w == squash(kind) || (w == "revolution" && kind == "revolve"));
-        if (!matches) continue;
+        if (!matches || (ids.Count > 0 && !named.Contains(f.UniqueId))) continue;
 
         var extent = "";
         var box = f.get_BoundingBox(null);
@@ -136,6 +176,6 @@ else
     formList = string.Join("  ||  ", rows);
     combinationList = string.Join("  ||  ", joins);
     findings.Add(formCount + " form(s) of " + scanned + " in the family" + (words.Count > 0 ? " match \""
-        + string.Join(", ", words) + "\"" : "") + "; " + joins.Count + " join(s) or cut(s).");
+        + string.Join(", ", words) + "\"" : ids.Count > 0 ? ", by id" : "") + "; " + joins.Count + " join(s) or cut(s).");
     if (scanned == 0) findings.Add("This family has no forms yet - nothing has been modelled in it.");
 }
