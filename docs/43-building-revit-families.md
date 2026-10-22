@@ -592,7 +592,8 @@ releases with [`tools/api-surface`](../tools/api-surface/) (`--dump` and `--memb
   **2027 only**, its parameters in order, each one's sample value, prefix, suffix, spaces and break, and -
   UNSURE - its unit format. `REPORT_FAMILY_LABELS`.
 - **Edited**: on every release, its position, width, alignment and Keep Readable
-  (`SET_FAMILY_LABEL_LAYOUT`), and its type (`CHANGE_ELEMENT_TYPE`). **Never through the API on any release**:
+  (`SET_FAMILY_LABEL_LAYOUT`), its type (`CHANGE_ELEMENT_TYPE`), and its type's text size, font and the
+  rest (`REPORT_TEXT_TYPES`, `SET_TEXT_TYPE`). **Never through the API on any release**:
   which parameters it shows, their order, sample value, prefix, suffix, spaces, break, unit format and
   Wrap between parameters only. Those are the Edit Label dialog's, by hand.
 - **UI automation of the Edit Label dialog** was assessed and not built: [Q-82](OPEN-QUESTIONS.md).

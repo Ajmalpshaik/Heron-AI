@@ -66,11 +66,14 @@ purpose: >
   5. SET_FAMILY_LABEL_LAYOUT puts each label where it goes against the
      insertion point - positionMm for one, moveByMm for several - sets the
      label box's width, alignment and Keep Readable, and reads them back.
-  6. THE LABEL TYPE: CHANGE_ELEMENT_TYPE, the label selected, to one of the
-     types REPORT_FAMILY_LABELS lists as ones it can take. The type's own
-     text size, font and the rest are a text type's properties - Type
-     Properties by hand, or Heron's label and text type tool where one is
-     built - never changed here.
+  6. THE LABEL TYPE - its text size in mm, font, bold, background.
+     REPORT_TEXT_TYPES with textTypeName "labels" reads the type the labels
+     use. SET_TEXT_TYPE changes it - "Text Size=2.5; Text Font=Arial" - or,
+     with duplicateAs a new name and switchTo "labels", copies it first and
+     moves the labels onto the copy, so the template's own type stays as it
+     was. One label onto another type the family already has:
+     CHANGE_ELEMENT_TYPE, the label selected, to a type REPORT_FAMILY_LABELS
+     lists as one it can take.
   7. THE BOX AND LINES: DRAW_FAMILY_DETAIL_LINES around the labels - a box,
      a divider between two lines - with a subcategory for each line weight;
      DRAW_FAMILY_FILLED_REGION for a filled or masked background.
@@ -104,6 +107,9 @@ needs:
   - COPY_LABELS_FROM_FAMILY
   - SET_FAMILY_LABEL_LAYOUT
   - CHANGE_ELEMENT_TYPE
+  # Step 6's type properties - size, font - read, then changed or copied.
+  - REPORT_TEXT_TYPES
+  - SET_TEXT_TYPE
   - DRAW_FAMILY_DETAIL_LINES
   - DRAW_FAMILY_FILLED_REGION
   - SET_FAMILY_SETTINGS
