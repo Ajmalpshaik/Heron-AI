@@ -23,11 +23,15 @@ WHAT IT PROVES
   whose outline or heads moved since the preview is named; the read-back finds
   the heads placed, says how far each is from where it was sent, and runs the
   spacing check on every head really in the room; answers carry between calls
-  and a blank clears one.
+  and a blank clears one. The chat's summary carries WHY each answer is asked -
+  a hosted type says it is hosted, and with no level-based type loaded the
+  family to load is named; `spaces` takes UniqueIds with ; or commas between
+  and refuses element ids by name, before Revit is asked (row 5b-1316).
 
 WHAT IT DOES NOT PROVE
   That a real model is read as format 1 says, or where Revit puts a head sent
-  at a z - that is NEEDS-CHECKING group CG.
+  at a z - that is NEEDS-CHECKING group CG. That the family named to load is
+  level-based on the modeller's install - NEEDS-CHECKING group IQ.
 """
 
 from __future__ import print_function
@@ -164,6 +168,86 @@ def test_a_face_based_type_is_not_placed():
     got = L.preview(read(), given)
     assert got["status"] == "asked"
     assert any("needs a face" in a["why"] for a in got["asked"] if a["input"] == "job.type")
+
+
+def test_the_summary_says_why_a_hosted_type_is_asked():
+    # Row 5b-1316, as seen on Revit 2020: every type loaded is a "- Hosted" one, the
+    # chat named one, and the summary said only "Still to answer: job.type".
+    data = read()
+    data["sprinkler_types"] = [
+        {"name": "M_Sprinkler - Pendent - Hosted: 15mm Pendent", "family":
+         "M_Sprinkler - Pendent - Hosted", "type": "15mm Pendent",
+         "placement": "WorkPlaneBased", "k": None},
+        {"name": "M_Sprinkler - Upright - Hosted: 15mm Upright", "family":
+         "M_Sprinkler - Upright - Hosted", "type": "15mm Upright",
+         "placement": "WorkPlaneBased", "k": None}]
+    given = answers()
+    given["job"]["type"] = "M_Sprinkler - Pendent - Hosted: 15mm Pendent"
+    got = L.preview(data, given)
+    said = L.summary_text(got)
+    assert got["status"] == "asked"
+    assert ("job.type - M_Sprinkler - Pendent - Hosted: 15mm Pendent is a WorkPlaneBased "
+            "family - it needs a face") in said, said
+    assert "None of the 2 sprinkler type(s) loaded is level-based" in said, said
+    assert L.LEVEL_BASED_FAMILY in said and "M_Sprinkler - Pendent.rfa" in said, said
+    # Asked with no type given, the same: what is loaded and what to load.
+    given["job"].pop("type")
+    said = L.summary_text(L.preview(data, given))
+    assert "job.type - the sprinkler type to place - a level-based one. None of the 2" in said
+    # With no sprinkler type loaded at all, that is said.
+    data["sprinkler_types"] = []
+    said = L.summary_text(L.preview(data, given))
+    assert "No sprinkler type is loaded in this model" in said and L.LEVEL_BASED_FAMILY in said
+
+
+def test_the_summary_names_the_level_based_types_loaded():
+    given = answers()
+    given["job"].pop("type")
+    said = L.summary_text(L.preview(read(), given))
+    assert ("job.type - the sprinkler type to place - a level-based one. Level-based type(s) "
+            "loaded: Sprinkler - Pendent: K80") in said, said
+    assert "Sprinkler - Hosted" not in said.split("Level-based type(s) loaded:")[1]
+    # Every question once, each with its why - a deflector left out says what it is.
+    given["job"].pop("deflector_mm")
+    said = L.summary_text(L.preview(read(), given))
+    assert said.count("job.type") == 1 and "job.deflector_mm - how far below the ceiling" in said
+
+
+def test_spaces_take_unique_ids_and_refuse_element_ids():
+    assert L.spaces_asked("") == "*" and L.spaces_asked(" * ") == "*" and L.spaces_asked(None) == "*"
+    a = "4ac1827e-89cc-4dd6-9110-78912bf81d6b-0005ce5e"
+    b = "fdad9ed8-b84e-4f19-a6f9-b6c394d5425a-0005cfbe"
+    assert L.spaces_asked(a) == a
+    both = "%s;%s" % (a, b)
+    assert L.spaces_asked(both) == both
+    assert L.spaces_asked("%s, %s" % (a, b)) == both
+    assert L.spaces_asked(a + chr(10) + b) == both
+    # As seen on Revit 2020: four element ids, refused before Revit is asked, each named.
+    try:
+        L.spaces_asked("918810, 918812, 918814, 918816")
+    except L.LayoutError as why:
+        said = str(why)
+        assert "918810, 918812, 918814, 918816 are Revit's element ids" in said, said
+        assert "UniqueIds" in said and "`spaces` empty" in said, said
+    else:
+        raise AssertionError("element ids were sent to a read that matches UniqueIds only")
+    try:
+        L.spaces_asked("%s, 918810" % a)
+    except L.LayoutError as why:
+        assert "918810 is Revit's element id" in str(why), str(why)
+    else:
+        raise AssertionError("an element id among UniqueIds was sent")
+
+
+def test_the_chat_tool_checks_spaces_before_revit_is_asked():
+    path = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
+    with open(path, encoding="utf-8") as fh:
+        source = fh.read()
+    body = source.split("def revit_sprinkler_layout(", 1)[1].split("@server.tool()", 1)[0]
+    check = body.index("LAYOUT.spaces_asked(spaces)")
+    sent = body.index('"REPORT_SPRINKLER_LAYOUT_SPACES", "spaces=" + rooms_asked')
+    assert check < sent, "the rooms are checked before the read is sent, and the checked list is sent"
+    assert "UniqueIds" in body.split('"""')[1], "the description says what `spaces` takes"
 
 
 def test_apply_sends_one_level_by_name_and_value():

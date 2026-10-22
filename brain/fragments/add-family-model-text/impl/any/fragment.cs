@@ -49,6 +49,17 @@
 // depth and alignment, any material or visibility asked for - and one that
 // Revit refuses or that reads back wrong throws, and the host rolls the whole
 // call back.
+//
+// WHERE THE LETTERS LAND IS MEASURED, NOT TRUSTED (version 2, row 5b-1315). On
+// Revit 2020 a text on a work plane offset -2560 mm from Center (Front/Back)
+// came out at Y -5120 - the offset twice - and an align=center text at X -650
+// ran from -650, as if aligned left: the point NewModelText is given is not
+// simply where the letters go. So each text is measured once placed - its left
+// end, centre or right end along the text, its foot against the baseline, its
+// back face against the plane - and one that missed by more than half a
+// millimetre is placed again moved by the miss, which lands it whichever way
+// Revit read the point. One that still misses by a millimetre refuses the whole
+// call, naming where it was asked and where it reached.
 
 var findings = new List<string>();
 var textIds = "";
@@ -619,20 +630,119 @@ if (refused == null)
         xyz[v] = rowAt[r][1] / 304.8;
         var position = new XYZ(xyz[0], xyz[1], xyz[2]);
         var depthFeet = rowDepth[r] / 304.8;
+        var heightFeet = rowHeight[r] / 304.8;
+        var surface = sketch.Item1.GetPlane();
+        var runs = surface.XVec.Normalize();
+        var rises = surface.YVec.Normalize();
+        // Toward the side the text is read from - the way the letters stand out.
+        var outward = runs.CrossProduct(rises).Normalize();
+        var alignWord = rowAlign[r] == HorizontalAlign.Center ? "centre"
+            : rowAlign[r] == HorizontalAlign.Right ? "right end" : "left end";
 
-        ModelText made;
-        try
+        Func<XYZ, ModelText> placeAt = point =>
         {
-            made = doc.FamilyCreate.NewModelText(rowText[r], type, sketch.Item1, position, rowAlign[r], depthFeet);
-        }
-        catch (Exception ex)
+            ModelText text;
+            try
+            {
+                text = doc.FamilyCreate.NewModelText(rowText[r], type, sketch.Item1, point, rowAlign[r], depthFeet);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Revit refused " + where + "'s text \"" + shortened(rowText[r]) + "\" on \""
+                    + plane.Item4 + "\": " + ex.Message + "." + keptNothing);
+            }
+            if (text == null)
+                throw new InvalidOperationException("Revit made nothing for " + where + "'s text \"" + shortened(rowText[r])
+                    + "\"." + keptNothing);
+            doc.Regenerate();
+            return text;
+        };
+
+        // WHERE THE LETTERS LANDED AGAINST WHERE THEY WERE ASKED (row 5b-1315), in feet
+        // from the asked point: how far the alignment point is along the text, the
+        // letters' foot up it and their back face out from the plane - each 0 when it
+        // landed - then the letters' extent along, up and out. Null with no extent.
+        // The foot is let off a band round the baseline - a descender hangs below it,
+        // and the box is the letters', not the line's.
+        Func<ModelText, double[]> landing = text =>
         {
-            throw new InvalidOperationException("Revit refused " + where + "'s text \"" + shortened(rowText[r]) + "\" on \""
-                + plane.Item4 + "\": " + ex.Message + "." + keptNothing);
+            var box = text.get_BoundingBox(null);
+            if (box == null) return null;
+            var low = new[] { double.MaxValue, double.MaxValue, double.MaxValue };
+            var high = new[] { double.MinValue, double.MinValue, double.MinValue };
+            foreach (var cx in new[] { box.Min.X, box.Max.X })
+                foreach (var cy in new[] { box.Min.Y, box.Max.Y })
+                    foreach (var cz in new[] { box.Min.Z, box.Max.Z })
+                    {
+                        var gap = new XYZ(cx, cy, cz) - position;
+                        var k = new[] { gap.DotProduct(runs), gap.DotProduct(rises), gap.DotProduct(outward) };
+                        for (var i = 0; i < 3; i++)
+                        {
+                            low[i] = Math.Min(low[i], k[i]);
+                            high[i] = Math.Max(high[i], k[i]);
+                        }
+                    }
+            var offAlong = rowAlign[r] == HorizontalAlign.Center ? (low[0] + high[0]) / 2
+                : rowAlign[r] == HorizontalAlign.Right ? high[0] : low[0];
+            var offUp = low[1] < -0.4 * heightFeet || low[1] > 0.25 * heightFeet ? low[1] : 0.0;
+            // The letters' face nearer the plane is the one that sits on it, whichever
+            // way they stand out.
+            var offOut = Math.Abs(low[2]) <= Math.Abs(high[2]) ? low[2] : high[2];
+            return new[] { offAlong, offUp, offOut, low[0], high[0], low[1], high[1], low[2], high[2] };
+        };
+        Func<double[], double, bool> lands = (off, within) =>
+            off != null && Math.Abs(off[0]) <= within && Math.Abs(off[1]) <= within && Math.Abs(off[2]) <= within;
+        Func<double[], string> offWords = off => mm(off[0]) + " mm along the text, " + mm(off[1]) + " mm up and "
+            + mm(off[2]) + " mm off the plane";
+        Func<ModelText, string> reachOf = text =>
+        {
+            var box = text.get_BoundingBox(null);
+            return box == null ? "nowhere - no extent" : string.Join(", ", new[] { 0, 1, 2 }.Select(i =>
+                axisLetters[i] + " " + mm(along(box.Min, i)) + " to " + mm(along(box.Max, i)))) + " mm";
+        };
+
+        var made = placeAt(position);
+        var landed = landing(made);
+        if (landed == null)
+            throw new InvalidOperationException(where + "'s text has no extent in the model - Revit made it with no "
+                + "geometry." + keptNothing);
+
+        // OFF WHERE ASKED: PLACED AGAIN ONCE, BY WHAT IT MISSED. Revit 2020 took the
+        // point as more than a point on the sketch plane - an offset plane's letters
+        // went to twice the offset, and an align=center text started at the point.
+        // Moving the point by the miss lands it whichever reading Revit made; a text
+        // that still misses refuses the whole call.
+        string placedAgain = null;
+        if (!lands(landed, halfMillimetre))
+        {
+            var missed = offWords(landed);
+            var firstReach = reachOf(made);
+            var corrected = position - runs.Multiply(landed[0]) - rises.Multiply(landed[1]) - outward.Multiply(landed[2]);
+            try { doc.Delete(made.Id); }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(where + "'s letters landed " + missed + " from where they were asked, and "
+                    + "Revit would not take them away to place them again: " + ex.Message + "." + keptNothing);
+            }
+            if (!sketch.Item1.IsValidObject)
+                throw new InvalidOperationException(where + "'s letters landed " + missed + " from where they were asked, and "
+                    + "their work plane went with them when they were taken away." + keptNothing);
+            made = placeAt(corrected);
+            landed = landing(made);
+            placedAgain = where + ": Revit put the letters " + missed + " from where they were asked (they reached "
+                + firstReach + "); placed again by that much";
         }
-        if (made == null)
-            throw new InvalidOperationException("Revit made nothing for " + where + "'s text \"" + shortened(rowText[r])
-                + "\"." + keptNothing);
+        if (!lands(landed, 1.0 / 304.8))
+            throw new InvalidOperationException(where + "'s letters do not land where they were asked - their " + alignWord
+                + " at " + axisLetters[u] + " " + plain(rowAt[r][0]) + ", " + axisLetters[v] + " " + plain(rowAt[r][1])
+                + " mm on " + axisLetters[axis] + " " + mm(xyz[axis]) + " mm: they reach " + reachOf(made)
+                + (landed == null ? "" : ", missing by " + offWords(landed)) + (placedAgain == null ? "" : ", even placed again")
+                + "." + keptNothing);
+        if (placedAgain != null)
+            findings.Add(placedAgain + ", they land where asked.");
+        if (landed[8] <= halfMillimetre)
+            findings.Add(where + ": the letters stand back into the plane, away from the " + rowSide[r]
+                + " they read from - look at it in the Family Editor.");
 
         // ITS MATERIAL, set and read back.
         var materialWords = "";
@@ -725,7 +835,6 @@ if (refused == null)
             throw new InvalidOperationException(where + "'s text has no extent in the model - Revit made it with no "
                 + "geometry." + keptNothing);
 
-        var surface = sketch.Item1.GetPlane();
         var thickness = along(bounds.Max, axis) - along(bounds.Min, axis);
         if (Math.Abs(thickness - depthFeet) > halfMillimetre)
             findings.Add(where + ": the letters measure " + mm(thickness) + " mm through the plane where " + plain(rowDepth[r])
@@ -742,7 +851,9 @@ if (refused == null)
             + (sketch.Item2 ? ", sketched on the plane itself" : ", on a work plane of its own that does NOT move with \""
                 + plane.Item4 + "\"")
             + materialWords + showsWords + ". Its letters reach " + string.Join(", ", new[] { 0, 1, 2 }.Select(i =>
-                axisLetters[i] + " " + mm(along(bounds.Min, i)) + " to " + mm(along(bounds.Max, i)))) + " mm");
+                axisLetters[i] + " " + mm(along(bounds.Min, i)) + " to " + mm(along(bounds.Max, i)))) + " mm - its "
+            + alignWord + " where asked, measured" + (placedAgain == null ? "" : ", placed a second time after Revit's "
+                + "first placing missed"));
     }
 
     textIds = string.Join(",", ids);

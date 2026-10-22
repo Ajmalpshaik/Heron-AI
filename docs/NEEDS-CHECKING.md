@@ -972,6 +972,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ip.md`](needs-checking/group-ip.md)
 
+## Group IQ - model text that lands where asked (`ADD_FAMILY_MODEL_TEXT` version 2), and a sprinkler layout that says why it asks (2026-10-22)
+
+**Its own file:** [`needs-checking/group-iq.md`](needs-checking/group-iq.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

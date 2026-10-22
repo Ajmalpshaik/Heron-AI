@@ -34,6 +34,7 @@ import hashlib
 import io
 import json
 import os
+import re
 
 import heron_fire as FIRE
 
@@ -51,6 +52,10 @@ LIMITS = ("max_spacing_m", "max_area_m2", "max_wall_distance_m", "min_spacing_m"
           "min_wall_distance_m")
 REQUIRED = ("max_spacing_m", "max_area_m2", "max_wall_distance_m", "min_wall_distance_m")
 LEVEL_BASED = "OneLevelBased"
+#: The level-based head named when every type loaded needs a face (row 5b-1316): Revit's
+#: own US Metric library holds it beside the "- Hosted" ones. That it loads as level-based
+#: on the modeller's install is NEEDS-CHECKING IQ, not known here.
+LEVEL_BASED_FAMILY = r"Fire Protection\Sprinklers\M_Sprinkler - Pendent.rfa"
 #: The bridge reads one line of at most 1 MiB; a points line stays well under it.
 POINTS_MAX_CHARS = 700000
 STATUS = ("ok", "fail", "asked", "skipped", "refused")
@@ -150,9 +155,59 @@ def types(data):
         out.append({"name": t.get("name"), "placement": t.get("placement"), "k": t.get("k"),
                     "usable": usable,
                     "why": None if usable else (
-                        "a %s family needs a face to sit on, which placing at points does "
-                        "not give" % (t.get("placement") or "non level-based"))})
+                        "%s is a %s family - it needs a face to sit on, which placing at "
+                        "points does not give" % (t.get("name"),
+                                                  t.get("placement") or "non level-based"))})
     return out
+
+
+def _type_why(said, loaded):
+    """Why job.type is asked, and what would answer it (row 5b-1316): the level-based
+    types loaded, or - when none is - that none is, and the family to load. The chat
+    has only this sentence to tell the modeller with."""
+    level_based = [t["name"] for t in loaded if t["usable"]]
+    if level_based:
+        named = ", ".join(level_based[:6])
+        if len(level_based) > 6:
+            named += " and %d more" % (len(level_based) - 6)
+        return "%s. Level-based type(s) loaded: %s" % (said, named)
+    if not loaded:
+        return ("%s. No sprinkler type is loaded in this model - load a level-based "
+                "sprinkler family; Revit's US Metric library has %s" % (said, LEVEL_BASED_FAMILY))
+    return ("%s. None of the %d sprinkler type(s) loaded is level-based - each needs a face "
+            "(%s) - so load a level-based sprinkler family; Revit's US Metric library has %s, "
+            "the head that is not \"- Hosted\"" % (
+                said, len(loaded),
+                ", ".join("%s: %s" % (t["name"], t["placement"] or "unknown")
+                          for t in loaded[:4]) + (" and %d more" % (len(loaded) - 4)
+                                                  if len(loaded) > 4 else ""),
+                LEVEL_BASED_FAMILY))
+
+
+def spaces_asked(said):
+    """
+    What `spaces` sends REPORT_SPRINKLER_LAYOUT_SPACES: "*" for the Spaces and Rooms
+    selected now, else the rooms' UniqueIds with ";" between - the read's own form. A
+    list given with commas, spaces or new lines between is taken too (row 5b-1316).
+
+    An ELEMENT id - digits only, as Revit's Properties and most of Heron's reads show
+    it - is refused here, every one named: the read matches UniqueIds only, and was
+    sent "918810, 918812" whole, as one id, and named it as no Space or Room.
+    """
+    text = (said or "").strip()
+    if not text or text == "*":
+        return "*"
+    parts = [p for p in re.split(r"[;,\s]+", text) if p]
+    numbers = [p for p in parts if p.isdigit()]
+    if numbers:
+        raise LayoutError(
+            "%s %s Revit's element id%s, and `spaces` takes the rooms' UniqueIds - the long "
+            "ids, with ; or commas between - or nothing at all, for the Spaces and Rooms "
+            "selected in Revit now. Select %s in Revit and ask again with `spaces` empty." % (
+                ", ".join(numbers), "is" if len(numbers) == 1 else "are",
+                "" if len(numbers) == 1 else "s",
+                "that Space" if len(numbers) == 1 else "those Spaces"))
+    return ";".join(parts)
 
 
 def heads_by_level(data):
@@ -258,14 +313,15 @@ def preview(data, inputs, recorded=None):
     job = inputs["job"]
     asked = []
     type_name = _value(job.get("type"))
-    usable = dict((t["name"], t) for t in types(data))
+    loaded = types(data)
+    usable = dict((t["name"], t) for t in loaded)
     if not type_name:
-        asked.append({"input": "job.type", "why": JOB_FIELDS[0][2]})
+        asked.append({"input": "job.type", "why": _type_why(JOB_FIELDS[0][2], loaded)})
     elif type_name not in usable:
-        asked.append({"input": "job.type", "why": "%s is not a sprinkler type loaded in this "
-                                                  "model" % type_name})
+        asked.append({"input": "job.type", "why": _type_why(
+            "%s is not a sprinkler type loaded in this model" % type_name, loaded)})
     elif not usable[type_name]["usable"]:
-        asked.append({"input": "job.type", "why": usable[type_name]["why"]})
+        asked.append({"input": "job.type", "why": _type_why(usable[type_name]["why"], loaded)})
     try:
         deflector = _number(job.get("deflector_mm"))
     except LayoutError as why:
@@ -557,9 +613,17 @@ def summary_text(result):
     text = ", ".join(parts) + "."
     if heads:
         text += " %d head(s) ready to place, level by level, from the Companion's Apply." % heads
-    if result.get("asked"):
-        text += " Still to answer: %s." % ", ".join(sorted(set(
-            a["input"] for a in result["asked"])))[:600]
+    # EACH QUESTION WITH ITS WHY (row 5b-1316). The names alone told the chat that
+    # job.type was wanted, never that every type loaded was a hosted one, so it could
+    # not tell the modeller what to load.
+    said, seen = [], set()
+    for a in result.get("asked") or []:
+        if a["input"] in seen:
+            continue
+        seen.add(a["input"])
+        said.append("%s - %s" % (a["input"], a["why"]) if a.get("why") else a["input"])
+    if said:
+        text += " Still to answer: %s." % "; ".join(said)
     return text
 
 
