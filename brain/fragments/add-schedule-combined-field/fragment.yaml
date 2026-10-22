@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "one column made of two parameters joined together"
 kind: action
 domain: revit.schedules
 capability: ADD_SCHEDULE_COMBINED_FIELD
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -41,7 +41,67 @@ purpose: >
   call correctly is worse than a narrower one that works. The separator carries
   the cases this is actually asked for.
 
+  **VERSION 2: THE SEPARATOR GOES BETWEEN TWO PARTS, AND AN EXISTING COLUMN
+  CAN BE EDITED IN PLACE OR MOVED.** Width x Height reads 2000x1300, never
+  20001300x. With editExisting the column named is rebuilt where it stands -
+  same heading, same place - and position puts a column first, last, or
+  after or before another.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+# VERSION 2 (2026-10-21, FRAGMENT-ISSUES row 5b-1292). The detail is kept out
+# of the purpose on purpose: the purpose is searched, and a paragraph about
+# headings and positions would pull other cards' sentences. The four lines
+# that are in it were measured moving no answer (tools/score-routing.py,
+# lexical and the trained backend, with and without them).
+#
+#   THE SEPARATOR FAULT. Revit draws a part's Separator AFTER that part.
+#   Version 1 read partSeparators[i] as what goes BEFORE part i, wrote it to
+#   part i's own Separator and forced part 0's empty. Measured 2026-10-21 on
+#   Revit 2020, real project 4355-BHVD-3D-21S10-BL001A, schedule 'DUCT HEATER
+#   SCHEDULE (ROOF FLOOR)': Duct_Accessory_Width, Duct_Accessory_Height with
+#   separators "-", "x" drew "20001300x". So no separator could ever land
+#   between two parts.
+#
+#   THE LIST NOW MEANS "BETWEEN". Entry i goes between part i and part i + 1
+#   and is written to part i's Separator, where Revit draws it. N parts take at
+#   most N - 1; fewer leave nothing in the rest; nothing is ever written after
+#   the last part. MORE than N - 1 is refused in words, nothing changed: N
+#   entries is version 1's shape (first ignored), and reading it either way
+#   would be a guess. A caller's version 1 call of one separator for two parts
+#   now gets it between them, where version 1 gave nothing.
+#
+#   SPACES AROUND A SEPARATOR DO NOT ARRIVE. Every list value is trimmed and
+#   an empty entry dropped before the fragment runs (row 5b-215), so " - "
+#   reaches it as "-". Not repaired here: it is every tool's, and row 215's.
+#
+#   editExisting (optional bool, absent false = version 1's add). True:
+#   columnName names a column ALREADY on the schedule - its printed heading,
+#   or its field name when no heading matches. Its parts and separators are
+#   replaced IN PLACE, on the same field: same heading, same place, so its
+#   sort, filter, width and totals stay. A parameter that was already in the
+#   column keeps the prefix and suffix it had. REFUSED IN WORDS, nothing
+#   changed on that schedule: no column of that name (its columns are listed),
+#   two columns answering to it, a plain column asked for new parts.
+#
+#   position (optional, absent "keep"): "keep" puts a new column last, as
+#   version 1 did, and leaves an edited one where it is; "first", "last",
+#   "after <column>", "before <column>", or a column number counted from 1 in
+#   Revit's Fields tab list, hidden columns included. A column named twice, or
+#   not there, is refused. With editExisting and neither parts nor separators
+#   given, the column is MOVED and nothing else changes - any column, plain or
+#   combined. No other tool in the library reorders schedule columns (none
+#   calls SetFieldOrder), so this is the one place that does.
+#
+#   partFields and partSeparators are optional since version 2 (absent
+#   "keep"), so a move or a new separator does not need the parts typed again.
+#   A new column with no parts is refused in words.
+#
+#   Every change is read back - the parts, the separators, the place and the
+#   heading - into columnNow, which says what the column was and is now; every
+#   refusal is a sentence in refusedWhy. Version 1's proof below no longer
+#   describes the code and is kept as a record; the card is DRAFT until the
+#   version 2 proof (NEEDS-CHECKING Group IG) is signed.
 
 contract:
   needs:
@@ -49,23 +109,58 @@ contract:
       type: Document
     - name: elements
       type: IList<Element>
+    # The new column's heading - or, with editExisting, the heading of the
+    # column already on the schedule to edit or move.
     - name: columnName
       type: string
       source: request
     # The parameters to join, in order, by the names the schedule offers.
+    # VERSION 2: left out ("keep"), an edited column keeps its parts.
     - name: partFields
       type: IList<string>
       source: request
-    # What goes BEFORE each part, same order. The first entry is ignored -
-    # nothing precedes the first value. Fewer entries than parts means no
-    # separator for the rest.
+      optional: true
+      absent: keep
+    # VERSION 2: what goes BETWEEN the parts - the first entry between parts 1
+    # and 2, the next between 2 and 3. N parts take N - 1 at most; fewer leave
+    # nothing in the rest; more is refused. Nothing ever follows the last part.
+    # Left out ("keep"): none on a new column, the old ones on an edited one.
     - name: partSeparators
       type: IList<string>
       source: request
+      optional: true
+      absent: keep
+    # VERSION 2. True: edit the column columnName names in place instead of
+    # adding one. Absent binds false (row 5b-227), version 1's add.
+    - name: editExisting
+      type: bool
+      source: request
+      optional: true
+    # VERSION 2. first | last | after <column> | before <column> | a column
+    # number from 1. Left out ("keep"): a new column last, an edited one where
+    # it is.
+    - name: position
+      type: string
+      source: request
+      optional: true
+      absent: keep
   provides:
     - name: added
       role: result
       type: int
+    - name: edited
+      # VERSION 2. Columns already on a schedule that were edited or moved,
+      # each read back.
+      role: result
+      type: int
+    - name: columnNow
+      # VERSION 2. One line per column added or edited: the schedule, the
+      # heading, its place, and how Revit will draw it - '[Width]x[Height]' -
+      # with what it was before an edit. Read back after the change. ONE
+      # string, lines joined by "  ||  ": a list is shown as three entries cut
+      # to sixty characters (row 5b-1290's filterRules lesson).
+      role: result
+      type: string
     - name: partMissing
       # Parts of the combined name that did not resolve to a real parameter. A
       # PART THAT DOES NOT RESOLVE STOPS THE WHOLE COLUMN, so nothing was
@@ -84,7 +179,17 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: refusedWhy
+      # VERSION 2. The same refusals - and a part that did not resolve - as
+      # sentences: which schedule, why, and that nothing was changed on it.
+      # One string, joined by "  ||  ", for columnNow's reason. Never a thing
+      # it found (D-52).
+      role: accounting
+      type: string
 
+# VERSION 1's PROOF, KEPT AS A RECORD. Version 2 changed impl/, so its
+# fingerprint no longer describes the code and the card is DRAFT until
+# NEEDS-CHECKING Group IG proves version 2 (D-30).
 proof:
   date: '2026-09-09'
   by: Ajmal PS
@@ -115,6 +220,12 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. The schedulable-field list, the
   combined-parameter data and the insert call are unchanged 2020 to 2027.
+  Version 2 adds `ScheduleField.IsCombinedParameterField`,
+  `GetCombinedParameters`, `SetCombinedParameters`,
+  `ScheduleDefinition.IsValidCombinedParameters`, `GetFieldIndex` and
+  `SetFieldOrder` - each read off the shipped assemblies for 2020 to 2027 on
+  2026-10-21 (`tools/api-surface --members`) and present and unchanged on all
+  eight, so no release is refused and no `#if` is needed.
   Formula-based calculated values are NOT used here: they have no public API on
   the older releases in this range, and a fragment that worked on half of them
   would be a version-shaped hole that reads as green.
@@ -129,6 +240,16 @@ compatibility-note: >
 #                                           value, a different mechanism with
 #                                           no public API across this whole
 #                                           release range
+#   "edit the size column to use width   -> here, VERSION 2, with
+#    x height"                              editExisting - the column is
+#                                           rebuilt where it stands
+#   "change what the combined column is  -> here, VERSION 2, editExisting
+#    made of"
+#   "move this column after Equipment    -> here, VERSION 2, editExisting
+#    Tag"                                   with position and no parts. No
+#                                           other tool reorders columns
+#   "what is the size column made of"    -> REPORT_SCHEDULE_DEFINITION - a
+#                                           question, never this write
 #   "add a column"                       -> ADD_SCHEDULE_FIELDS, for a plain
 #                                           parameter
 #   "rename the heading"                 -> SET_SCHEDULE_APPEARANCE
@@ -141,3 +262,6 @@ utterances:
   - combine these fields in the schedule
   - add a combined parameter column
   - join these two columns
+  - edit the size column to use width x height
+  - change what the combined column is made of
+  - move this column after Equipment Tag

@@ -3,18 +3,43 @@
 positive:
   - given: a door schedule, parts "Type" and "Mark", separator " - "
     expect: >
-      one new column reading Type - Mark on every row. Change a mark in the
-      model and watch the column follow: that is what makes it a field rather
-      than typed text
+      one new column reading Type-Mark on every row - the separator between
+      the two, its spaces trimmed before the tool sees it (row 5b-215). Change
+      a mark in the model and watch the column follow: that is what makes it a
+      field rather than typed text
 
   - given: three parts
     expect: >
-      all three joined in the order given, with the separator before the second
-      and third only
+      all three joined in the order given, the first separator between the
+      first and second and the second between the second and third - nothing
+      after the third (VERSION 2: the list means BETWEEN)
 
   - given: a separator list shorter than the field list
     expect: >
       the remaining parts joined with nothing between them, and no throw
+
+  - given: >
+      VERSION 2, the owner's job. 'DUCT HEATER SCHEDULE (ROOF FLOOR)' on
+      4355-BHVD-3D-21S10-BL001A (Revit 2020), editExisting true, columnName
+      Size, partFields Duct_Accessory_Width,Duct_Accessory_Height,
+      partSeparators x
+    expect: >
+      edited 1, added 0; the Size column in the same place with the same
+      heading; columnNow "'[Duct_Accessory_Width]x[Duct_Accessory_Height]'"
+      and a row reading 2000x1300 - never 20001300x. Its sort, filter and
+      width unchanged
+
+  - given: VERSION 2, a new column with position "after Equipment Tag"
+    expect: >
+      added 1, the new column straight after Equipment Tag, columnNow naming
+      its column number - not at the end
+
+  - given: >
+      VERSION 2, editExisting true, position "after Equipment Tag", partFields
+      and partSeparators left out
+    expect: >
+      the column moved there and nothing else changed - same parts, same
+      separators, same heading; columnNow ends "moved"
 
 negative:
   - given: a part name that is not schedulable for that schedule's category
@@ -42,6 +67,24 @@ negative:
   - given: an empty part list
     expect: >
       the schedule in `refused` and nothing added
+
+  - given: >
+      VERSION 2, editExisting true and a heading that is a PLAIN column - Mark
+      - with new parts
+    expect: >
+      refused, refusedWhy saying it is a plain column with no parts to replace
+      and that nothing was changed; Mark exactly as it was. THIS IS THE CASE
+      that catches an edit turning a plain column into something else
+
+  - given: >
+      VERSION 2, editExisting true and a heading two columns share
+    expect: >
+      refused, refusedWhy naming both column numbers; neither column changed
+
+  - given: VERSION 2, two parts and two separators, version 1's shape
+    expect: >
+      refused in words - two parts take one separator - and nothing changed.
+      Never a separator drawn after the last part
 
 second_route:
   - >
