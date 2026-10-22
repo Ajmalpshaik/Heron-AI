@@ -1369,7 +1369,7 @@ def _provides_lines(provides, entries=None):
     how many more it holds. Measured 2026-10-22 on Revit 2020 (session
     78736): READ_ELEMENT_PARAMETERS asked for one parameter on four connectors
     answered `values 4 entry(ies)` and `resolvedFrom 4 entry(ies)` and not one
-    value reached the chat (FRAGMENT-ISSUES 5b-1319). NOT SENT is now said
+    value reached the chat (FRAGMENT-ISSUES 5b-1325). NOT SENT is now said
     only of a dictionary whose entries did NOT arrive - an add-in from before
     this field - so an older add-in still says what it withheld.
 

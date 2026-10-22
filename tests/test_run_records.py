@@ -166,7 +166,7 @@ def paging(runs, folder):
     check(any(line.startswith("setup     deleted  7") and "Generic" not in line for line in every),
           "a deleted element is listed with no category - it had none left to read")
 
-    # A DICTIONARY'S ENTRIES, where the add-in sent them (5b-1319): one line
+    # A DICTIONARY'S ENTRIES, where the add-in sent them (5b-1325): one line
     # each under the value, in the order sent, and nothing for a name that
     # arrived as a count alone.
     with_entries = dict(record, reply=dict(reply, provides=dict(reply["provides"],

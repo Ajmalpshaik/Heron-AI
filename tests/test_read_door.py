@@ -623,7 +623,7 @@ def main():
     # word (5b-407) - still the reply's own `provides`, still the one copy of
     # how they are printed. tests/test_run_records.py holds what it leaves out.
     # Each door hands the formatter the reply's `providesEntries` beside its
-    # `provides` (5b-1319), so a dictionary's entries print under its count.
+    # `provides` (5b-1325), so a dictionary's entries print under its count.
     printed_through = {
         "revit_read": ('_provides_lines(reply.get("provides"), '
                        'reply.get("providesEntries"))',),
@@ -672,7 +672,7 @@ def main():
               "and a fragment's own sentence that says entry(ies) is not "
               "taken for a dictionary")
 
-        # THE ENTRIES THEMSELVES, since 2026-10-22 (5b-1319): the reply
+        # THE ENTRIES THEMSELVES, since 2026-10-22 (5b-1325): the reply
         # READ_ELEMENT_PARAMETERS gave on four connectors in Revit 2020,
         # session 78736 - `values 4 entry(ies)` and not one value - with the
         # `providesEntries` the add-in now sends beside it. A formatter from

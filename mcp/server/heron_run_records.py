@@ -164,7 +164,7 @@ def entries(record):
 
     provides = reply.get("provides")
     # A dictionary's entries, where the add-in sent them beside its count
-    # (`providesEntries`, 2026-10-22, FRAGMENT-ISSUES 5b-1319) - one line
+    # (`providesEntries`, 2026-10-22, FRAGMENT-ISSUES 5b-1325) - one line
     # each under the value, so the record holds what the chat was shown.
     sent = reply.get("providesEntries")
     sent = sent if isinstance(sent, dict) else {}

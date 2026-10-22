@@ -23,7 +23,7 @@
 // VERSION 2 - WHICH END A FLEX WOULD MOVE IS SAID BEFORE THE LABEL IS MADE.
 // A labelled dimension drives the distance between its two ends, and when the
 // parameter changes Revit moves whichever end is least held. Seen 2026-10-22
-// on Revit 2020 (session 78736, FRAGMENT-ISSUES 5b-1320): "Trap Depth" was
+// on Revit 2020 (session 78736, FRAGMENT-ISSUES 5b-1326): "Trap Depth" was
 // labelled from a NEW plane "Floor Top" - unpinned, no lock, no dimension on
 // it - to "Trap Top", which carried two labelled dimensions; the label read
 // back fine, and the next SET_FAMILY_TYPE_VALUES 300 -> 400 moved FLOOR TOP up

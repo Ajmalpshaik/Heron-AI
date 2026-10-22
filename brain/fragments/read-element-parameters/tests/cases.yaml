@@ -61,7 +61,7 @@ positive:
       blank, 0 absent. <id>: Yes (instance); <id>: Yes (instance); ...' - every
       id and value in words - and the chat's reply shows the four entries of
       `values` under its count, not "4 entry(ies)" alone. This is the case of
-      2026-10-22 (5b-1319)
+      2026-10-22 (5b-1325)
 
   - given: VERSION 5. Twenty walls, reading "Comments" where every one is filled in
     expect: >

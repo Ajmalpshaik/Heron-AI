@@ -9,7 +9,7 @@ semantic-identity: "tie the distance between two family planes to a parameter, k
 kind: action
 domain: revit.families
 capability: LABEL_FAMILY_DIMENSION
-# Version 2 (2026-10-22, row 5b-1320) changed impl/: which end a flex would
+# Version 2 (2026-10-22, row 5b-1326) changed impl/: which end a flex would
 # move is read BEFORE the label is made and said. Seen on Revit 2020 (session
 # 78736): "Trap Depth" labelled from a new, unpinned, unreferenced plane
 # "Floor Top" to "Trap Top" (two labelled dimensions on it) read back fine, and
@@ -20,7 +20,7 @@ capability: LABEL_FAMILY_DIMENSION
 # in `freeEnd` and the findings with the pin route, and `pinFreeEnd` may pin it
 # on the modeller's word, read back. The zero-distance refusal names the same
 # route. Version 1's proof below no longer describes the code: DRAFT until
-# NEEDS-CHECKING Group IT proves version 2 (D-30).
+# NEEDS-CHECKING Group IU proves version 2 (D-30).
 version: 2
 source: OFFICIAL
 risk: MODIFY
@@ -196,7 +196,7 @@ compatibility-note: >
   `BuiltInParameter.DATUM_PLANE_DEFINES_ORIGIN`, each in RevitAPI.xml for
   2020 and 2027 alike (read 2026-10-22). Whether Revit counts a locked
   alignment as a `Dimension` with `IsLocked` in every release, and which end
-  it moves when both are held, is what NEEDS-CHECKING Group IT has to show.
+  it moves when both are held, is what NEEDS-CHECKING Group IU has to show.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #

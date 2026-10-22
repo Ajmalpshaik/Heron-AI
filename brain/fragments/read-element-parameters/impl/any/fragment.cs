@@ -335,7 +335,7 @@ if (noteWording != null && noteWording.Length > 20000)
 // `values` and `resolvedFrom` are dictionaries, and a dictionary reached a
 // chat as its count alone: on 2026-10-22 (Revit 2020, session 78736) one
 // parameter read on four connectors answered "values 4 entry(ies)" and not
-// one value (FRAGMENT-ISSUES 5b-1319). The add-in now sends a dictionary's
+// one value (FRAGMENT-ISSUES 5b-1325). The add-in now sends a dictionary's
 // first entries beside its count; this line is the same answer in the
 // fragment's own words, so it holds whatever add-in or formatter carries it:
 // each element's id, its value and where the value came from, the first

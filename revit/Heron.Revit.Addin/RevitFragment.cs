@@ -2059,7 +2059,7 @@ namespace Heron.Revit.Addin
             // Revit 2020 (session 78736): READ_ELEMENT_PARAMETERS asked for
             // one parameter on four connectors answered `values 4 entry(ies)`
             // and `resolvedFrom 4 entry(ies)`, and not one value reached the
-            // chat (FRAGMENT-ISSUES 5b-1319). Only a dictionary that holds
+            // chat (FRAGMENT-ISSUES 5b-1325). Only a dictionary that holds
             // something is listed; a value a fragment did not leave as a
             // dictionary is not here, so nothing is sent twice.
             var entries = new List<string>();
