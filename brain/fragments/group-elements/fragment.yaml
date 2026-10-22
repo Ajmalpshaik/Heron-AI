@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -83,6 +83,32 @@ contract:
 # `refused`) was PROVEN on 2026-09-13 by Ajmal PS on test projject, Revit 2024 -
 # the record is in git history. Version 2 changes impl/, so it is DRAFT until it
 # is proved again: NEEDS-CHECKING Group CT.
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: Cinematic ID Test (5,262 elements), Revit 2020, session 68704
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-in-region with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned findings 1 item(s) [Grouped 10
+    elements in the project as 'Night C Group' - the ...], groupId 1 item(s) [id 1103448],
+    groupName Night C Group, grouped 10, ids 10 item(s) [989344, 989521, 990317, ...], inDoc
+    the project, inFamily false, refusalReason , refused false, wanted Night C Group. inputs
+    came elements from select-in-region (10); name as given. on Cinematic ID Test
+  negative_case: run with name=Array Group 1 arranged with categories=Furniture, exact=false,
+    maxMm=-1500,2200,750, minMm=-3600,-2600,0 instead - chosen because it should not contain
+    what this fragment reports - the arrangement was re-made first by running select-in-region
+    with this phase's own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned findings 0 item(s), groupId (null), groupName ,
+    grouped 0, ids 10 item(s) [989344, 989521, 990317, ...], inDoc the project, inFamily false,
+    refusalReason The name 'Array Group 1' is already used by another group in the project.
+    Choose another name, or give it empty for Revit's own - nothing has been grouped., refused
+    true, wanted Array Group 1. inputs came elements from select-in-region (10); name as given.
+    on Cinematic ID Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: b50dc00b7157022c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

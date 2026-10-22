@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CAT-009
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -158,6 +158,62 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: Cinematic ID Test (5,262 elements), Revit 2020, session 68704
+  positive_case: 'run with categories=Walls - the first of 3 tracked inputs. returned askedText
+    Walls, bindable 125, everySubcategory false, familySubcategories 0, findings 2 item(s)
+    [308 category/categories in this document, 125 of which can c..., Object Styles, 14 row(s),
+    read off each category - not a vie...], names 308 item(s) [Adaptive Points, Air Systems,
+    Air Terminal Tags, ...], narrowed true, objectStyles Object Styles, 14 row(s), read off
+    each category - not a view''s override. Only the name(s) asked: Walls.
+
+    category > subcategory | projection line colour R,G,B | projection line weight | cut line
+    weight (- not cut) | projection line pattern
+
+    Walls | 0,0,0 | 1 | 3 | Solid
+
+    Walls > Common Edges | 0,0,0 | 2 | - | Solid
+
+    Walls > Curtain Wall Grids | 0,0,0 | 1 | - | none
+
+    Walls > Cut Pattern | 0,0,0 | 1 | - | none
+
+    Walls > Finish 1 [4] | 0,0,0 | 2 | - | Solid
+
+    Walls > Finish 2 [5] | 0,0,0 | 2 | - | Solid
+
+    Walls > Hidden Lines | 0,0,0 | 2 | - | Dash
+
+    Walls > Membrane Layer | 0,0,0 | 1 | - | Solid
+
+    Walls > Structure [1] | 0,0,0 | 1 | - | Solid
+
+    Walls > Substrate [2] | 0,0,0 | 1 | - | Solid
+
+    Walls > Surface Pattern | 0,0,0 | 1 | - | none
+
+    Walls > Thermal/Air Layer [3] | 0,0,0 | 1 | - | Solid
+
+    Walls > Wall Sweep - Cornice | 0,0,0 | 1 | - | Solid
+
+    Walls > Wall Sweeps | 0,0,0 | 1 | - | none, settings Settings, styleRows 14, subTotal
+    436. inputs came everySubcategory not given - false (optional); categories as given. on
+    Cinematic ID Test'
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). list-categories\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 3 different inputs:\n\n      categories=Walls -> styleRows 14\n      categories=Doors\
+    \ -> styleRows 16\n      categories=Furniture -> styleRows 30\n\n    Different inputs,\
+    \ exact matches every time. A fragment falling back to the active view, the whole model,\
+    \ or a previous run could not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 78427d13fdc895b3
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -80,6 +80,43 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: Structure Night Test (9,179 elements), Revit 2020, session 68704
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name with this phase''s own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned add Action`1, alreadyAsAsked
+    0, changed 7 item(s) [153781, 153882, 153976, ...], findings 1 item(s) [''{3D}'': 7 reinforcement
+    element(s) looked at; 7 changed, uno...], lines 1 item(s) [''{3D}'': 7 reinforcement element(s)
+    looked at; 7 changed, uno...], readSolid Func`2, readUnobscured Func`2, refused , report
+    ''{3D}'': 7 reinforcement element(s) looked at; 7 changed, unobscured off, solid off;
+    0 setting(s) already as asked, seen HashSet`1, skipped 0 item(s), targets 7 item(s) [16M
+    : Shape M_T1, 16M : Shape M_00, 16M : Shape M_00, ...], view3D View3D, wantSolid false,
+    wantUnobscured false, writeSolid Action`2, writeUnobscured Action`2, yesNo Func`3. inputs
+    came elements from select-by-category-name (7); view as given; unobscured as given; solid
+    as given. on Structure Night Test'
+  negative_case: 'run with categoryName=Grids, inViewOnly=EngineeringPlan: 01 - Entry Level,
+    solid=false, unobscured=false, view={3D} instead - chosen because it should not contain
+    what this fragment reports - the arrangement was re-made first by running select-by-category-name
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned add Action`1, alreadyAsAsked 0, changed 0 item(s),
+    findings 28 item(s) [''{3D}'': 0 reinforcement element(s) looked at; 0 changed, uno...,
+    ''1'' (id 118715) is neither reinforcement nor a rebar host, ''2'' (id 118716) is neither
+    reinforcement nor a rebar host, ...], lines 1 item(s) [''{3D}'': 0 reinforcement element(s)
+    looked at; 0 changed, uno...], readSolid Func`2, readUnobscured Func`2, refused , report
+    ''{3D}'': 0 reinforcement element(s) looked at; 0 changed, unobscured off, solid off;
+    0 setting(s) already as asked, seen HashSet`1, skipped 27 item(s) [''1'' (id 118715) is
+    neither reinforcement nor a rebar host, ''2'' (id 118716) is neither reinforcement nor
+    a rebar host, ''3'' (id 118717) is neither reinforcement nor a rebar host, ...], targets
+    0 item(s), view3D View3D, wantSolid false, wantUnobscured false, writeSolid Action`2,
+    writeUnobscured Action`2, yesNo Func`3. inputs came elements from select-by-category-name
+    (27); view as given; unobscured as given; solid as given. on Structure Night Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: d0021491cce38c17
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
