@@ -24,9 +24,12 @@ selection was read before the delete. All three fixed the same day with no Revit
 **What is done and what is not.** [`tests/test_binding_note.py`](../../tests/test_binding_note.py) builds its host
 and proves every absent and empty case - 9 of its checks were red on main's code, including the one that
 held an optional View refused by name; [`tests/test_category_by_name.py`](../../tests/test_category_by_name.py)
-reads the table and its place in the order - 8 new checks, red on main's code. **Nothing here has run in
-Revit.** The three cards are DRAFT, and a DRAFT read still runs and says DRAFT, so none of the three tools
-is lost until the rows below are signed.
+reads the table and its place in the order - 8 new checks, red on main's code. The library compiles for
+2020 to 2027 (`tools/check-fragments-compile.py`, 2026-10-22), the add-in builds for 2020
+(`tools/check-compile.py 2020`, every project) and every Revit member it calls exists in every release
+(`tools/check-api-surface.py`) - `OST_ConnectorElem` is in the 2020 and 2024 reference assemblies, read by
+reflection on the owner's PC. **Nothing here has run in Revit.** The three cards are DRAFT, and a DRAFT
+read still runs and says DRAFT, so none of the three tools is lost until the rows below are signed.
 
 **What to restart.** IT0 to IT3 need nothing restarted - a fragment's C# is read live. IT4 to IT10 need the
 add-in **built and deployed for Revit 2020 and Revit restarted** (the binder is in the add-in), and the
