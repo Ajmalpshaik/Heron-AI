@@ -37,7 +37,9 @@ namespace Heron.Revit.Addin
     ///   filters, exactly what the modeller sees. No name means the view in
     ///   front. Nothing about the view is changed.
     ///
-    ///   ELEMENTS, BY ID. A temporary isometric 3D view, a section box round
+    ///   ELEMENTS, BY ID - Revit's number, or the long UniqueId the family
+    ///   form tools answer with (5b-1314), the two mixed as the chat has
+    ///   them. A temporary isometric 3D view, a section box round
     ///   the elements and a margin, and nothing in it but the model - every
     ///   annotation category and every datum hidden, because a level line
     ///   across a picture of three ducts is noise. Datums and link instances
@@ -276,41 +278,64 @@ namespace Heron.Revit.Addin
                     + "Nothing was pictured.");
             }
 
-            // THE BINDER'S OWN READING OF TYPED IDS: digits, comma separated,
-            // each once - so an id copied out of any Heron answer reads the
-            // same here as it does there. Never built into an ElementId: that
-            // constructor changed from int to long at Revit 2024 (D-05).
-            string problem;
-            var typed = HeronBindingNote.TypedIds(idText, out problem);
-            if (typed == null)
-            {
-                return Json.Error("bad_ids", problem ??
-                    "'" + idText + "' is not a list of element ids. Type them as Revit shows "
-                    + "them - digits only, comma separated. Nothing was pictured.");
-            }
+            // TWO SHAPES OF ID, EACH READ ITS OWN WAY (5b-1314). Revit's
+            // number goes through the binder's own reading of typed ids -
+            // digits, each once - so an id copied out of any Heron answer reads
+            // the same here as it does there. The UniqueId the family form
+            // tools answer with is looked up by Revit itself, below. Neither
+            // is ever built into an ElementId: that constructor changed from
+            // int to long at Revit 2024 (D-05), and a UniqueId needs none.
+            var typed = new List<string>();
+            var unique = new List<string>();
+            var problem = SplitIds(idText, typed, unique);
+            if (problem != null) return Json.Error("bad_ids", problem);
 
             var wanted = new Dictionary<string, bool>(StringComparer.Ordinal);
             foreach (var id in typed) wanted[id] = false;
 
             var framed = new List<Element>();
-            foreach (var element in new FilteredElementCollector(doc).WhereElementIsNotElementType())
+            if (typed.Count > 0)
             {
-                var key = element.Id.ToString();
-                if (!wanted.ContainsKey(key) || wanted[key]) continue;
-                wanted[key] = true;
-                framed.Add(element);
-                if (framed.Count == typed.Count) break;
+                foreach (var element in new FilteredElementCollector(doc).WhereElementIsNotElementType())
+                {
+                    var key = element.Id.ToString();
+                    if (!wanted.ContainsKey(key) || wanted[key]) continue;
+                    wanted[key] = true;
+                    framed.Add(element);
+                    if (framed.Count == typed.Count) break;
+                }
             }
 
             var missing = new List<string>();
             foreach (var id in typed) if (!wanted[id]) missing.Add(id);
+
+            // A UNIQUEID IS REVIT'S OWN LOOKUP, Document.GetElement(string), as
+            // SELECT_FAMILY_FORMS reads the same ids. One that names nothing
+            // here - another family's form, a project in front, a typing slip -
+            // or names an element type, which the collector above never
+            // matches either, is named with the numbers that name nothing. An
+            // element named both ways is framed once.
+            foreach (var id in unique)
+            {
+                Element element = null;
+                try { element = doc.GetElement(id); }
+                catch (Exception) { element = null; }
+
+                if (element == null || element is ElementType)
+                {
+                    missing.Add(id);
+                    continue;
+                }
+                if (!framed.Exists(e => e.Id.Equals(element.Id))) framed.Add(element);
+            }
+
             if (missing.Count > 0)
             {
                 return Json.Error("no_such_elements",
-                    missing.Count + " of the " + typed.Count + " id(s) name no placed element in \""
-                    + doc.Title + "\": " + string.Join(", ", missing.ToArray()) + ". An id "
-                    + "belongs to one model and is gone once its element is deleted. "
-                    + "Nothing was pictured.");
+                    missing.Count + " of the " + (typed.Count + unique.Count) + " id(s) name no "
+                    + "placed element in \"" + doc.Title + "\": " + string.Join(", ", missing.ToArray())
+                    + ". An id belongs to one model, or one family, and is gone once its element "
+                    + "is deleted. Nothing was pictured.");
             }
 
             // THE BOX ROUND WHAT IS LEFT ONCE DATUMS, LINKS AND ANNOTATION ARE
@@ -401,6 +426,83 @@ namespace Heron.Revit.Addin
                         + Undone(after));
                 }
             }
+        }
+
+        /// <summary>
+        /// The typed ids sorted by shape into Revit's numbers and UniqueIds,
+        /// or the refusal to give back (5b-1314).
+        ///
+        /// A FORM HAS NO NUMBER IN ANY HERON ANSWER. CREATE_FAMILY_FORMS,
+        /// REPORT_FAMILY_FORMS and SELECT_FAMILY_FORMS name a form by its
+        /// UniqueId and nothing else, so a list of digits only could never
+        /// picture one form out of a family the chat had just built.
+        ///
+        /// THE NUMBERS STILL GO THROUGH HeronBindingNote.TypedIds, so they
+        /// read exactly as they did - each once, digits only. A part that is
+        /// neither shape refuses the whole list, named, rather than being
+        /// dropped: a picture of fewer things than were asked for with no
+        /// reason given is the failure the refusals here exist to prevent.
+        /// </summary>
+        private static string SplitIds(string text, List<string> typed, List<string> unique)
+        {
+            var numbers = new List<string>();
+            foreach (var piece in text.Split(','))
+            {
+                var part = piece.Trim();
+                if (part.Length == 0) continue;
+
+                if (UniqueIdShaped(part))
+                {
+                    if (unique.Contains(part))
+                        return part + " is typed more than once - type each id once. "
+                             + "Nothing was pictured.";
+                    unique.Add(part);
+                }
+                else if (Digits(part)) numbers.Add(part);
+                else
+                    return "\"" + part + "\" is not an element id. Give the ids as Heron's "
+                         + "answers print them - Revit's number, digits only, or the long id "
+                         + "the family form tools give back - comma separated, with nothing "
+                         + "else in the list. Nothing was pictured.";
+            }
+
+            if (numbers.Count == 0 && unique.Count == 0)
+                return "'" + text + "' is not a list of element ids. Type them as Heron's "
+                     + "answers print them, comma separated. Nothing was pictured.";
+            if (numbers.Count == 0) return null;
+
+            string problem;
+            var read = HeronBindingNote.TypedIds(string.Join(",", numbers.ToArray()), out problem);
+            if (read == null)
+                return problem ?? "'" + text + "' is not a list of element ids. Type them as "
+                     + "Revit shows them - digits only, comma separated. Nothing was pictured.";
+            typed.AddRange(read);
+            return null;
+        }
+
+        /// <summary>
+        /// Whether TEXT has the shape of a Revit UniqueId: a GUID - eight,
+        /// four, four, four and twelve hex digits, hyphens between - then a
+        /// hyphen and hex digits, as in bfa50ce5-...-00000b71. The shape
+        /// only; whether the document has it is Document.GetElement's answer.
+        /// </summary>
+        private static bool UniqueIdShaped(string text)
+        {
+            if (text.Length < 38) return false;
+            for (var i = 0; i < text.Length; i++)
+            {
+                var hyphen = i == 8 || i == 13 || i == 18 || i == 23 || i == 36;
+                if (hyphen ? text[i] != '-' : !Uri.IsHexDigit(text[i])) return false;
+            }
+            return true;
+        }
+
+        /// <summary>Whether TEXT is one or more of the ten ASCII digits and nothing else.</summary>
+        private static bool Digits(string text)
+        {
+            foreach (var c in text)
+                if (c < '0' || c > '9') return false;
+            return text.Length > 0;
         }
 
         /// <summary>
