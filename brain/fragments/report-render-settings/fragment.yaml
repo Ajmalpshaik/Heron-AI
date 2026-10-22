@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,17 @@ semantic-identity: "how a view stands for rendering - its render quality, output
 kind: action
 domain: revit.views
 capability: REPORT_RENDER_SETTINGS
-version: 1
+version: 2
+# VERSION 2, 2026-10-21 - row 5b-1305. A Still sun's time printed 8 hours
+# early on the owner's laptop (UTC+3) for a site in Boston (-5): the Sun
+# Settings dialog said 10:00 AM, StartDateAndTime read 07:00 UTC, and version
+# 1's SiteLocation.ConvertToProjectTime printed 02:00. Revit hands the time
+# back as the site's clock turned to UTC by the PC's OWN zone, so it is turned
+# back with the PC's zone (ToLocalTime) - row 5b-1282's rule for GetSunset;
+# raw.ToLocalTime() read 10:00. On a PC in the site's own zone both rules give
+# the same time, which is why version 1's proof could not show it. Version 1's
+# proof below no longer describes the code: DRAFT until NEEDS-CHECKING Group IM
+# proves version 2 against the dialog.
 source: OFFICIAL
 risk: READ
 
@@ -64,6 +74,11 @@ contract:
     - name: findings
       type: IList<string>
 
+# VERSION 1's PROOF, KEPT AS A RECORD. Version 2 changed impl/, so its
+# fingerprint no longer describes the code and the card is DRAFT until Group
+# IM proves version 2 (D-30). Its "2026-06-21 10:00" was read through the rule
+# version 2 replaces, from a time SET_SUN_SETTINGS had written through that
+# rule's mirror - the two agreed with each other, not with the dialog.
 proof:
   date: '2026-10-20'
   by: Ajmal PS
