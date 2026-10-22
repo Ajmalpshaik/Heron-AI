@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -87,6 +87,40 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Family4 (2,168 elements), Revit 2020, session 64176
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    add-family-connector with this phase''s own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned all 1 item(s) [ConnectorElement],
+    connectorReport No connectors are left in the family., domainWords Func`2, drivers Func`2,
+    findings 4 item(s) [The family parameters that drove their size stay in the fami..., Deleted
+    1 connector(s) and read back that the family no long..., Before: duct connector 3534 on
+    "Duct Front", Supply Air, poi..., ...], fm FamilyManager, halfMillimetre 0.00164041994750656,
+    invariant CultureInfo, label Func`2, mm Func`2, notAFamily false, onPlanes 1 entry(ies),
+    ownName Func`2, pointing Func`2, problems 0 item(s), refused (null), removed 1 item(s)
+    [duct connector 3534 on "Duct Front", Supply Air, pointing ba...], row Func`2, spaced
+    Func`2, squash Func`2, targets 1 item(s) [ConnectorElement]. inputs came connectors as
+    given. on Family4'
+  negative_case: 'run with facePlane=Duct Front, system=Supply Air, sizeParameters=Frame Length,
+    Duct Height, connectors=Center (Front/Back) instead - chosen because it should not contain
+    what this fragment reports - the arrangement was re-made first by running add-family-connector
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned all 1 item(s) [ConnectorElement], connectorReport
+    , domainWords Func`2, drivers Func`2, findings 1 item(s) [Nothing was deleted. No connector
+    lies on a plane called "Ce...], fm FamilyManager, halfMillimetre 0.00164041994750656,
+    invariant CultureInfo, label Func`2, mm Func`2, notAFamily false, onPlanes 1 entry(ies),
+    ownName Func`2, pointing Func`2, problems 1 item(s) [No connector lies on a plane called
+    "Center (Front/Back)" or...], refused Nothing was deleted. No connector lies on a plane
+    called "Center (Front/Back)" or has that id. This family''s connectors: duct connector
+    3535 on "Duct Front"., removed 0 item(s), row Func`2, spaced Func`2, squash Func`2, targets
+    0 item(s). inputs came connectors as given. on Family4'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 0ec9545b9b877da9
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

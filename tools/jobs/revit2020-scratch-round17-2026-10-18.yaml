@@ -1,0 +1,53 @@
+# Batch 17, 2026-10-18 - Revit 2020 session 16356, scratch Project1 (never saved), kept: one Supply
+# Air duct at y=2000, 1000..9000 mm, z 2700; HeronLinkSource.rvt linked origin to origin, loaded,
+# Room Bounding ON (LINK_FILES, SET_LINK_ROOM_BOUNDING); HeronPlan.dwg imported into the Level 1
+# plan only (IMPORT_CAD). The link holds the batch 15 test building: walls 345432..345436, rooms,
+# doors, windows, ducts, a pipe. Every write ROLLED BACK.
+model: "Project1 (scratch) + linked HeronLinkSource.rvt + imported HeronPlan.dwg, Revit 2020"
+defaults:
+  in: "Project1"
+  write: true
+  setup: []
+jobs:
+  - fragment: set-link-path-type
+    expect: changed
+    set: {linkName: "HeronLinkSource.rvt", pathType: "absolute"}
+    negative-set: {linkName: "No Such Link", pathType: "absolute"}
+  - fragment: sync-spaces-with-linked-rooms
+    expect: created
+    set: {linkName: "HeronLinkSource.rvt", phaseName: "", updateNames: false}
+    negative-set: {linkName: "No Such Link", phaseName: "", updateNames: false}
+  - fragment: check-link-coordinates
+    write: false
+    expect: coordinates
+    set: {toleranceMm: 0}
+    negative-in: "Family1"
+    negative-set: {toleranceMm: 0}
+  - fragment: copy-from-link
+    expect: created
+    set: {linkInstance: "HeronLinkSource.rvt", linkedElementIds: "345432"}
+    negative-set: {linkInstance: "HeronLinkSource.rvt", linkedElementIds: "99999999"}
+  - fragment: zoom-to-linked-elements
+    expect: shown
+    set: {linkName: "HeronLinkSource.rvt", categories: "Walls", alsoSelect: false}
+    negative-set: {linkName: "HeronLinkSource.rvt", categories: "Sprinklers", alsoSelect: false}
+  - fragment: find-clashes
+    write: false
+    expect: clashes
+    setup: [select-by-category-name, set-selection]
+    set: {categoryName: "Ducts", inViewOnly: "Heron 3D", against: "", includeLinks: true, categories: "Walls", includeHost: false, compareParameter: "none"}
+    negative-set: {categoryName: "Ducts", inViewOnly: "Heron 3D", against: "", includeLinks: true, categories: "Furniture", includeHost: false, compareParameter: "none"}
+  - fragment: copy-elements-between-documents
+    expect: copiedIds
+    set: {sourceDocumentTitle: "HeronLinkSource", categories: "Furniture", elementIds: "", offsetMm: "0,20000,0"}
+    negative-set: {sourceDocumentTitle: "No Such File", categories: "Furniture", elementIds: "", offsetMm: "0,20000,0"}
+  - fragment: extract-cad-curves
+    expect: created
+    setup: [select-by-category-name, set-selection]
+    set: {categoryName: "HeronPlan.dwg", inViewOnly: "FloorPlan: Level 1", layerNames: "A-WALL", asDetailLines: true, view: "FloorPlan: Level 1", maxCurves: 500, listOnly: false}
+    negative-set: {categoryName: "HeronPlan.dwg", inViewOnly: "FloorPlan: Level 1", layerNames: "ZZZNOTHINGHERE", asDetailLines: true, view: "FloorPlan: Level 1", maxCurves: 500, listOnly: false}
+  - fragment: convert-cad-to-directshape
+    expect: created
+    setup: [select-by-category-name, set-selection]
+    set: {categoryName: "HeronPlan.dwg", inViewOnly: "FloorPlan: Level 1", category: "Generic Models"}
+    negative-set: {categoryName: "HeronPlan.dwg", inViewOnly: "FloorPlan: Level 1", category: "Ducts"}

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -133,6 +133,34 @@ contract:
       # revisions when the revision asked for is not among them (D-52).
       role: accounting
       type: string
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,027 elements), Revit 2020, session 13520
+  positive_case: run as it would normally be run. returned allRevisions 1 item(s) [Seq. 1
+    - Revision 1], byDate false, byDescription false, byList true, byRevision false, bySequence
+    false, chosen 0 item(s), describe Func`2, elements 1 item(s) [Heron Test Sheet], everyRevision
+    Func`1, given Func`3, listed 1 item(s) [A101], listedWithoutRevision , notFound , notRead
+    , placeholders 0 item(s), refused , revisionsMatched , sameWord Func`3, sequenceWanted
+    -1, squash Func`2. inputs came revisionSequence not given - "any", the card's own default
+    (optional); revisionDescription not given - "any", the card's own default (optional);
+    revisionDate not given - "any", the card's own default (optional); sheetNumbers as given.
+    on Project2
+  negative_case: 'run with categoryName=Text Notes, inViewOnly=FloorPlan: Level 1, sheetNumbers=Z999
+    instead - chosen because it should not contain what this fragment reports. returned allRevisions
+    1 item(s) [Seq. 1 - Revision 1], byDate false, byDescription false, byList true, byRevision
+    false, bySequence false, chosen 0 item(s), describe Func`2, elements 0 item(s), everyRevision
+    Func`1, given Func`3, listed 1 item(s) [Z999], listedWithoutRevision , notFound Z999,
+    notRead , placeholders 0 item(s), refused , revisionsMatched , sameWord Func`3, sequenceWanted
+    -1, squash Func`2. inputs came revisionSequence not given - "any", the card''s own default
+    (optional); revisionDescription not given - "any", the card''s own default (optional);
+    revisionDate not given - "any", the card''s own default (optional); sheetNumbers as given.
+    on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 5fde90680f45ccd8
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -9,9 +9,24 @@ semantic-identity: "what this schedule is set up to do - its columns, its sortin
 kind: action
 domain: revit.schedules
 capability: REPORT_SCHEDULE_DEFINITION
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
+
+# VERSION 2 (2026-10-21, row 5b-1290). EVERY FILTER RULE, NUMBERED, ON ONE
+# LINE. On a real project in Revit 2020 two duplicated duct heater schedules
+# came back "filterCount 4" and nothing a modeller could read: the rules were
+# one line inside `findings`, and a list is cut to three entries before anyone
+# reads it - the filter line is the fourth. `filterRules` is a new result, one
+# string: each schedule's rules numbered in the order the schedule holds them,
+# each column by its printed heading, the match type in words and the value as
+# Revit shows it - a Level rule's level by NAME. The numbers are the ones
+# SET_SCHEDULE_FILTERS version 2 counts with in `ruleNumber`, so the rules can
+# be read before a change and after it. Only the filter part of the report
+# changed: the same rule wording is in `findings`, columns, sorting and totals
+# are as version 1 reported them. Version 1's proof below is kept as evidence
+# of version 1; it no longer describes this code (D-30), so this is DRAFT
+# until NEEDS-CHECKING Group IH is run and signed.
 
 purpose: >
   Reads back how a schedule is CONFIGURED - the columns it carries, the order
@@ -46,6 +61,17 @@ purpose: >
   of value it holds first, which is also the honest way to report a filter that
   holds no value at all - "has a value" and "is blank" are real filter types.
 
+  **EVERY FILTER RULE IS LISTED, NUMBERED, IN ONE LINE (version 2).**
+  `filterRules` holds each schedule's rules - "'DUCT HEATER SCHEDULE': 1. Type
+  Mark equals 'MFD'; 2. Level equals 'FIRST FLOOR'" - each column by the
+  heading it prints under (and its field name beside it when the heading was
+  renamed), the match type in words, the value as Revit shows it. An element
+  value - a Level rule holds the level, not its name - is shown by the
+  element's NAME. A schedule with no rules says so. The numbers are the ones
+  SET_SCHEDULE_FILTERS' `ruleNumber` counts with. One string, not a list,
+  because a list is cut to three entries before anyone reads it - which is how
+  four rules over two schedules came back as a count and nothing else.
+
 contract:
   needs:
     - name: doc
@@ -67,6 +93,13 @@ contract:
     - name: filterCount
       role: result
       type: int
+    - name: filterRules
+      # VERSION 2. Every schedule's filter rules, numbered, on one line - the
+      # column by its printed heading, the match type in words, the value as
+      # Revit shows it, an element value by name. Empty when no schedule was
+      # described.
+      role: result
+      type: string
     - name: sortFieldCount
       role: result
       type: int
@@ -77,31 +110,33 @@ contract:
       role: accounting
 
 proof:
-  date: '2026-09-08'
+  date: '2026-10-21'
   by: Ajmal PS
-  model: Snowdon Towers Sample HVAC (9,702 elements), Revit 2024, session 42676
-  positive_case: 'the ''Heat Recovery Unit Summary'' schedule, placed on a sheet in Snowdon
-    Towers Sample HVAC and clicked - which is the only way a person can point at a schedule.
-    It read 6 columns (Space: Number, Space: Name, Mark and three more), 1 filter and 2 sort
-    fields. BOTH LEGS WERE RUN AFTER the ScheduleSheetInstance fix, on the same implementation
-    the fingerprint below covers. returned fieldNames 6 item(s) [Space: Number, Space: Name,
-    Mark, ...], filterCount 1, findings 5 item(s) [1 schedule(s) described. 6 column(s) in
-    total, 0 of them hid..., ''Heat Recovery Unit Summary''  - 6 column(s), in this order:
-    ...,     sorted by: Level ascending with footer + blank line, the..., ...], hiddenFieldNames
-    0 item(s), skippedNotSchedules 0, sortFieldCount 2. inputs came elements from the selection
-    (1). on Snowdon Towers Sample HVAC'
-  negative_case: 28 elements in the same model that are not schedules and not placements of
-    one - a section box and link instances among them - so the answer had to be empty. All
-    28 were accounted for as skippedNotSchedules rather than returning a bare zero. returned
-    fieldNames 0 item(s), filterCount 0, findings 2 item(s) [0 schedule(s) described. 0 column(s)
-    in total, 0 of them hid..., 28 of what was handed in was not a schedule and was skipped],
-    hiddenFieldNames 0 item(s), skippedNotSchedules 28, sortFieldCount 0. inputs came elements
-    from the selection (28). on Snowdon Towers Sample HVAC
+  model: MEP Night Test, Revit 2020, session 68704 - the count is NOT recorded because 5,262
+    elements was measured on Cinematic ID Test, the document in front, and this ran against
+    another one (row 15)
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values. returned fieldNames
+    8 item(s) [Mark, Manufacturer, Model, ...], filterCount 1, filterRuleLines 2 item(s) [''Level
+    2 WSHP Schedule'': 1. Mark begins with ''2-'', ''<Revision Schedule> 4'': no filter rules],
+    filterRules ''Level 2 WSHP Schedule'': 1. Mark begins with ''2-''  ||  ''<Revision Schedule>
+    4'': no filter rules, findings 9 item(s) [2 schedule(s) described. 8 column(s) in total,
+    1 of them hid..., ''Level 2 WSHP Schedule''  - 4 column(s), in this order: Mark ...,     sorted
+    by: nothing - the rows come back in Revit''s own o..., ...], hiddenFieldNames 1 item(s)
+    [Revision Sequence], matchWords Func`2, skippedNotSchedules 0, sortFieldCount 1. inputs
+    came elements from the selection (2). on MEP Night Test'
+  negative_case: run with categoryName=Title Blocks, inViewOnly=Mechanical Schedules instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running select-by-category-name, set-selection with this phase's own
+    values. returned fieldNames 0 item(s), filterCount 0, filterRuleLines 0 item(s), filterRules
+    , findings 2 item(s) [0 schedule(s) described. 0 column(s) in total, 0 of them hid...,
+    1 of what was handed in was not a schedule and was skipped], hiddenFieldNames 0 item(s),
+    matchWords Func`2, skippedNotSchedules 1, sortFieldCount 0. inputs came elements from
+    the selection (1). on MEP Night Test
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 368ebe95d0df13b7
-
+  fingerprint: 8b077ead30e333f7
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -112,7 +147,9 @@ compatibility-note: >
   `GetSortGroupFields`, `GetFilters`, `IsItemized`, `ShowGrandTotal`,
   `ScheduleField.GetName`, `ColumnHeading`, `IsHidden`, and `ScheduleFilter`'s
   `FilterType` and its five value getters are present and unchanged 2020
-  through 2027.
+  through 2027 - and so is every `ScheduleFilterType` member version 2 puts
+  into words, read off the shipped assemblies with `tools/api-surface
+  --members` on 2026-10-21.
 
   **No units call is made anywhere, deliberately.** `ScheduleField.UnitType`
   exists on 2020 and is GONE by 2027, where the replacement is `GetSpecTypeId`
@@ -126,6 +163,12 @@ compatibility-note: >
 #
 #   "what columns does this schedule have"  -> here
 #   "show the schedule filter rules"        -> here
+#   "what filters does this schedule have"  -> here, VERSION 2 - `filterRules`
+#                                              lists every rule, numbered
+#   "change the schedule filter from MFD    -> SET_SCHEDULE_FILTERS version 2,
+#    to EDH"                                   filterAction change - a WRITE.
+#                                              This read first, when which
+#                                              column holds MFD is not known
 #   "add a column to the schedule"          -> ADD_SCHEDULE_FIELDS - a WRITE.
 #                                              This fragment is the question
 #                                              that one was answering
@@ -173,3 +216,6 @@ utterances:
   # SET_SCHEDULE_FILTERS, a write, on the trained backend. Nothing on any
   # frozen set became riskier (brain/retrieval-history.md, 2026-10-17).
   - is this schedule filtered
+  # ADDED 2026-10-21 (row 5b-1290) - the question the modeller's request on
+  # project 4355-BHVD-3D-22S10-BL001A needed answered first.
+  - what filters does this schedule have

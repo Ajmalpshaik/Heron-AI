@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -125,30 +125,35 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-13'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: test projject (3,530 elements), Revit 2024, session 40932
+  model: Project1 (3,101 elements), Revit 2020, session 30308
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase''s own values. returned MillimetresPerFoot
-    304.8, findings 7 item(s) [6 device(s) checked against 1 host-model ceiling(s): 6 out
-    o..., Radius Elbows / Taps (id 925780): 500 mm BELOW the ceiling -..., Radius Elbows /
-    Taps (id 925782): 500 mm BELOW the ceiling -..., ...], hostCeilings 1, noCeilingAbove
-    0 item(s), outOfPlane 6 item(s) [925780, 925782, 925784, ...], rayView View3D, tolerance
-    0.00328083989501312. inputs came devices from the selection (6); tolerance as given. on
-    test projject'
-  negative_case: 'run with categoryName=Ducts, inViewOnly={3D}, tolerance=100000 instead -
-    chosen because it should not contain what this fragment reports - the arrangement was
-    re-made first by running select-by-category-name, set-selection with this phase''s own
-    values. returned MillimetresPerFoot 304.8, findings 7 item(s) [6 device(s) checked against
-    1 host-model ceiling(s): 0 out o..., Radius Elbows / Taps (id 925780): AT the ceiling,
-    500 mm bel..., Radius Elbows / Taps (id 925782): AT the ceiling, 500 mm bel..., ...],
-    hostCeilings 1, noCeilingAbove 0 item(s), outOfPlane 0 item(s), rayView View3D, tolerance
-    328.083989501312. inputs came devices from the selection (6); tolerance as given. on test
-    projject'
+    select-in-region, set-selection with this phase''s own values. returned MillimetresPerFoot
+    304.8, describeLinked Func`3, findings 2 item(s) [1 device(s) checked against 2 host-model
+    ceiling(s): 1 out o..., 600 x 600 Face 300 x 300 Connection (id 348258): 600 mm BELO...],
+    fireRatingOf Func`2, hostCeilings 2, includeLinks false, linkAt 0, linkBlocked , linkDocs
+    0 item(s), linkNone 0, linkOff 0, linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches
+    1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched 0, nestedLinks
+    0, noCeilingAbove 0 item(s), outOfPlane 1 item(s) [348258], rayView View3D, tolerance
+    0.0328083989501312. inputs came devices from the selection (1); tolerance as given; includeLinks
+    as given. on Project1'
+  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: Level 1, includeLinks=False,
+    tolerance=10 arranged with categories=Air Terminals, exact=False, maxMm=8000,3500,2800,
+    minMm=7000,2500,2400 instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running select-in-region, set-selection
+    with this phase''s own values. returned MillimetresPerFoot 304.8, describeLinked Func`3,
+    findings 2 item(s) [1 device(s) checked against 2 host-model ceiling(s): 0 out o..., 600
+    x 600 Face 300 x 300 Connection (id 348259): AT the ceil...], fireRatingOf Func`2, hostCeilings
+    2, includeLinks false, linkAt 0, linkBlocked , linkDocs 0 item(s), linkNone 0, linkOff
+    0, linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model
+    only - links not read], linkedTotal 0, linksSearched 0, nestedLinks 0, noCeilingAbove
+    0 item(s), outOfPlane 0 item(s), rayView View3D, tolerance 0.0328083989501312. inputs
+    came devices from the selection (1); tolerance as given; includeLinks as given. on Project1'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 4db71c18b96ed9bb
+  fingerprint: b117d749ca33ac65
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

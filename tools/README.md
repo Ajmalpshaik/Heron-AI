@@ -44,15 +44,17 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 
 | Tool | What it is for | When you run it |
 |---|---|---|
-| [`check-docs.py`](check-docs.py) | links, ids defined once, every derivable count, every tool, skill and NEEDS-CHECKING group named, text hygiene | before every push |
+| [`check-docs.py`](check-docs.py) | links, ids defined once, every derivable count, every tool, skill and NEEDS-CHECKING group named, text hygiene, a supersession written at both ends | before every push |
 | [`check-metadata.py`](check-metadata.py) | the five-field header on every source file, audited against the agent registry both ways | before every push |
 | [`check-structure.py`](check-structure.py) | each file in its part, the layering, `Autodesk.Revit` only inside `revit/` | before every push |
 | [`check-package.py`](check-package.py) | `Heron.addin` and the deploy would install: entry class, assembly, manifest shape | before every push |
 | [`check-signatures.py`](check-signatures.py) | a fragment the owner signed, still sitting at DRAFT | CI; `check-docs.py` §9 asks it too |
 | [`check-licence.py`](check-licence.py) | the licence on every fragment and skill Heron ships | CI; before bringing knowledge in from outside |
 | [`check-narrow-errors.py`](check-narrow-errors.py) | a broken database reported as an empty one | CI; after touching a `sqlite3` error handler |
+| [`check-secrets.py`](check-secrets.py) | a credential in a tracked file, or a tracked file named like one | CI; before pushing anything that holds a key, a token or a config |
 | [`check-products.py`](check-products.py) | the product manifest: a duplicate `addInId`, a `partOf` typo, a release the repository does not build | CI; after editing `platform/heron-products.json` |
 | [`check-decision-titles.py`](check-decision-titles.py) | a decision number keeps the title it was first written with | CI, on the whole history; before merging a new `D-nnn` |
+| [`check-supersessions.py`](check-supersessions.py) | a decision another one supersedes says so under its own heading, and names only a successor that says so too | `check-docs.py` §13 runs it, so before every push and in CI; after writing a `**Supersedes:**` field |
 | [`check-routing.py`](check-routing.py) | every fragment still wins its own sentences; a routing row naming no capability fails | CI; after any change to a card's words |
 | [`check-intrusion.py`](check-intrusion.py) | who turns up in shortlists they have no claim on - exits 0 on a finding | CI, beside `check-routing.py` |
 | [`check-compile.py`](check-compile.py) | every C# project against every Revit release | CI; after any C# change |
@@ -173,6 +175,9 @@ Verifies that:
   ([row 5b-381](../docs/fragment-issues/section-5b-rows-376-400.md)). Read from the file's table, not its
   name, so a row appended to the last file is rightly linked there until the split moves it; a link in
   code is an example, and one naming two rows is not judged
+- **a decision another one supersedes says so under its own heading** — section 13, added 2026-10-19,
+  **fails the run**. It runs [`check-supersessions.py`](check-supersessions.py), below
+  ([D-144](../docs/DECISIONS.md))
 
 Run it after any edit that moves or renames a document. It is how the Golden Rule renumbering
 (ten rules to fifteen, [D-12](../docs/DECISIONS.md)) was verified across 31 files.
@@ -1445,6 +1450,37 @@ a check on the message and a `raise` — not any particular wording. Exits 1 on 
 
 ---
 
+## `check-secrets.py` — a credential in a file this repository publishes
+
+```bash
+python tools/check-secrets.py
+```
+
+**Article 17 and [D-07](../docs/DECISIONS.md) in one gate ([D-143](../docs/DECISIONS.md)).** This
+repository is public, so a key in a tracked file is published to every clone the moment it reaches
+`main`. [docs/12 §5a](../docs/12-security-and-permissions.md) asked for a scan as the second layer behind
+the redactor, and nothing ran one until 2026-10-18.
+
+It asks two questions, each of the one place that already owns the answer:
+
+- **the contents** of every tracked file, against `heron_secrets.PATTERNS` - the shapes the redactor
+  already takes out of a log, so a shape added there is caught here with no edit;
+- **the names** of every tracked file, against the **Secrets** block of [`.gitignore`](../.gitignore),
+  matched by git itself and **ignoring case on every system** - a Windows checkout ignores case and the
+  Linux runner does not, so without that a tracked `.ENV` failed locally and passed CI. `.gitignore`
+  stops a new file; it does nothing about one added with `git add -f` or tracked before its line was
+  written.
+
+It **never prints a value** - a finding is a file, a line, a column and a shape, and a file *name* goes
+through the redactor first. It reads only tracked files, never history; a symbolic link is scanned as
+the target text git publishes, never followed; a file with a UTF-16 mark - what PowerShell 5 writes with
+`>` - is read as text; a file that is not text is counted, not read. **There is no allow-list:** a test
+that needs a fake builds it from pieces, the way `heron_secrets.FAKE_FORGE_TOKEN` does. Exits 1 on a
+finding and 2 when it could not look - no git, not a checkout, no entries in the Secrets block, or a
+tracked file it could not open.
+
+---
+
 ## `check-reachable.py` — built, tested, and called by nothing but a test
 
 ```bash
@@ -2391,6 +2427,31 @@ shrinks.
 it cannot see. `git fetch --unshallow` first; the gates job fetches the whole history for it.
 [`tests/test_check_decision_titles.py`](../tests/test_check_decision_titles.py) builds its own repositories, so
 it runs anywhere.
+
+---
+
+## `check-supersessions.py` - a superseded decision says so where its citations land
+
+```bash
+python tools/check-supersessions.py
+```
+
+**A gate, riding inside `check-docs.py` as its §13 ([D-144](../docs/DECISIONS.md)).** The log is append-only, so
+a reversal is a new decision whose header says what it supersedes. But every link to a decision in the
+repository lands on the OLD decision's heading, and on 2026-10-19 six of the ten supersessions an accepted
+decision declared were written only at the new end - a reader sent to D-105 read *"the chat only"* with no word
+of D-108's Companion page.
+
+It asks both ways. **Forward:** a decision in force whose `**Supersedes...**` field links D-X owes D-X's entry in
+[`docs/DECISIONS.md`](../docs/DECISIONS.md) a `**Superseded by:**` or `**Superseded in part by:**` line linking it
+back; the field is read from the full record and from the index entry, because an older index copy is sometimes
+cut short. **Back:** every such line links only decisions that exist and that name the old one in their own
+`**Supersedes...**` field. A proposed successor owes nothing until it is accepted and one that has itself been
+superseded owes nothing at all; both are printed, so a pending note is seen. It reads links, not sentences, and
+the `> **SUPERSEDED BY**` banner some full records carry is not asked for: the index is where a citation lands.
+Exits 1 on a finding and 2 when it could not look. [`tests/test_check_supersessions.py`](../tests/test_check_supersessions.py)
+builds its own logs, so it runs anywhere. It came from another project's documentation audit, re-authored
+([docs/33 §5.1](../docs/33-external-repository-research.md#51-affaan-mecc), third pass).
 
 ---
 

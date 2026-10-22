@@ -272,6 +272,7 @@ through revit_change; the switches still apply, and Revit always asks Keep or Di
 |---|---|---|
 | **Changes** button | Heron may read the model and nothing else until you turn it on. `write.enabled` defaults to `false` | [D-19](docs/DECISIONS.md) · `platform/Heron.Core/HeronConfig.cs` |
 | **Ask to Keep** button | Revit asks Keep or Discard before a change from a chat is kept. Off by default; its box can keep the rest of one job without asking | [D-126](docs/DECISIONS.md), [D-138](docs/DECISIONS.md) |
+| **The delete box** | Anything a change would delete is shown in Revit first - *Delete N elements?*, by category, with what goes along with them - and nothing goes until you press Delete. Ask to Keep on or off, and never skipped for a job. Built, not yet run in Revit | [D-142](docs/DECISIONS.md) |
 | **Admin** and **Publish** buttons | Off by default, and only the owner turns them on | [D-106](docs/DECISIONS.md) |
 | One request, one Undo | Every change is one named `TransactionGroup`; on any failure the whole of it rolls back | [Golden Rule 16](docs/14-golden-rules.md) |
 | The right model | With more than one Revit open Heron sends nothing until you choose; once bound it stays bound to that document | [Golden Rule 20](docs/14-golden-rules.md) · [Article 12a](HERON_CONSTITUTION.md) |

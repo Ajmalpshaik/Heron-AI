@@ -876,6 +876,78 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-hk.md`](needs-checking/group-hk.md)
 
+## Group HL - anything a kept change deletes is asked in Revit first: D-142 (2026-10-18)
+
+**Its own file:** [`needs-checking/group-hl.md`](needs-checking/group-hl.md)
+
+## Group HM - a wall and a slab edge along an arc: CREATE_WALL and CREATE_FLOOR version 2 (2026-10-19)
+
+**Its own file:** [`needs-checking/group-hm.md`](needs-checking/group-hm.md)
+
+## Group HN - when the file on disk was last saved: `REPORT_OPEN_DOCUMENTS` version 3 (2026-10-19)
+
+**Its own file:** [`needs-checking/group-hn.md`](needs-checking/group-hn.md)
+
+## Group HO - PLACE_STRUCTURAL_FAMILY v4: a beam is refused, a placement with no geometry is a failure (2026-10-19)
+
+**Its own file:** [`needs-checking/group-ho.md`](needs-checking/group-ho.md)
+
+## Group HP - SET_PARAMETER_VALUES_BY_ID v5: a level's name, and Revit's question about its views (2026-10-19)
+
+**Its own file:** [`needs-checking/group-hp.md`](needs-checking/group-hp.md)
+
+## Group HS - CREATE_STAIRS v4: one riser more, Revit's words, side stringers, nothing left behind (2026-10-19)
+
+**Its own file:** [`needs-checking/group-hs.md`](needs-checking/group-hs.md)
+
+## Group HT - FLIP_ELEMENTS v2: a flipped door's From and To Room follow its swing (2026-10-19)
+
+**Its own file:** [`needs-checking/group-ht.md`](needs-checking/group-ht.md)
+
+## Group HX - wall finishes by room: `CREATE_FROM_ROOM_BOUNDARIES` version 2 (2026-10-19)
+
+**Its own file:** [`needs-checking/group-hx.md`](needs-checking/group-hx.md)
+
+## Group HY - rebar: thirteen DRAFT tools that place and read reinforcement (2026-10-19)
+
+**Its own file:** [`needs-checking/group-hy.md`](needs-checking/group-hy.md)
+
+## Group HZ - a material, a level or a family type by name, and a type by key: the three parameter writers (2026-10-19)
+
+**Its own file:** [`needs-checking/group-hz.md`](needs-checking/group-hz.md)
+
+## Group IA - materials: every tab of the Material Browser, material adding, and giving elements a material (2026-10-20)
+
+**Its own file:** [`needs-checking/group-ia.md`](needs-checking/group-ia.md)
+
+## Group IB - rendering: render settings, sun, display options, a framing camera, Revit's Render dialog and the read-back (2026-10-20)
+
+**Its own file:** [`needs-checking/group-ib.md`](needs-checking/group-ib.md)
+
+## Group IC - the visualiser: a whole look in one call, what a look would do, and the method a visualisation artist follows (2026-10-20)
+
+**Its own file:** [`needs-checking/group-ic.md`](needs-checking/group-ic.md)
+
+## Group IF - cinematic camera shots: `FRAME_ELEMENTS_IN_CAMERA` version 3 (2026-10-20)
+
+**Its own file:** [`needs-checking/group-if.md`](needs-checking/group-if.md)
+
+## Group IN - a still sun's time through the PC's own time zone: `SET_SUN_SETTINGS` v2, `APPLY_VISUAL_PRESET` v3, `REPORT_VISUAL_PRESET` v3 (2026-10-21)
+
+**Its own file:** [`needs-checking/group-in.md`](needs-checking/group-in.md)
+
+## Group IH - one schedule filter rule changed, the others kept: `SET_SCHEDULE_FILTERS` and `REPORT_SCHEDULE_DEFINITION` version 2 (2026-10-21)
+
+**Its own file:** [`needs-checking/group-ih.md`](needs-checking/group-ih.md)
+
+## Group II - which shared parameter file Revit is set to, what is in it, and its GUIDs against the family in front: `REPORT_SHARED_PARAMETER_FILE` (2026-10-21)
+
+**Its own file:** [`needs-checking/group-ii.md`](needs-checking/group-ii.md)
+
+## Group IM - the interior camera inside its room, the close-range picture on the elements' middle, and a sun's time on the site's clock: `FRAME_ELEMENTS_IN_CAMERA` version 4 and `REPORT_RENDER_SETTINGS` version 2 (2026-10-21)
+
+**Its own file:** [`needs-checking/group-im.md`](needs-checking/group-im.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

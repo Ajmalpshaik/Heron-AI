@@ -1921,6 +1921,13 @@ def revit_change(capability: str = "", values: str = "",
     if supplied:
         args["values"] = supplied
 
+    # THE CHAT'S OWN WORDS, quoted by Revit's delete box (D-142) when the change
+    # would delete anything - "The chat asked: ...". Shown, never obeyed: the
+    # add-in decides nothing by them, and without them the box names the
+    # capability instead.
+    if (request or "").strip():
+        args["chatWords"] = request.strip()
+
     # idempotent=False for the reason revit_apply_move sets it: if the answer
     # is lost after the request left this machine, whether Revit ran it cannot
     # be known from here, and asking again would do it a second time.
@@ -3615,7 +3622,9 @@ def revit_building_loads(inputs: str = "", expect_from: str = "",
 
     `inputs` is a JSON object of what the modeller has answered so far -
     {"project": {...}, "profiles": {"Office": {...}}, "overrides":
-    {"<space id>": {...}}} - kept with the project, so nothing is asked twice.
+    {"<space id>": {...}}, "systems": {"<zone or unit>": {...}}} - kept with
+    the project, so nothing is asked twice. An air system's coil is sized once
+    its own inputs are given.
     `expect_from` is passed to that read, as revit_read takes it. Set
     `include_links` when the modeller says the walls are in a linked model
     (D-59); left false, linked faces read "unknown".

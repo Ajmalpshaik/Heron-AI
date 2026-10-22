@@ -1,0 +1,158 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-125
+semantic-identity: "add the office starter set of twelve materials, each made ready for rendering with a matching shading colour"
+kind: action
+domain: revit.elements
+capability: CREATE_STARTER_MATERIALS
+version: 3
+# VERSION 3, 2026-10-20 - row 5b-1280. The owner saw Prism-152 in the Asset
+# Browser as "Glass (Clear)"; version 2 listed and matched it as "Glass -
+# clear" and refused the browser's spelling. With no exact match, a library
+# name is now matched with capitals, spaces and punctuation ignored, and the
+# answer names the asset taken. Version 2's proof below no longer describes
+# the code: DRAFT until it is proved again.
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# THE OWNER'S WORDS, 2026-10-20: "for material adding also we need to make it".
+# One call adds a set of materials that read right in every view: a shading
+# colour for Shaded, and an appearance asset of each material's own for
+# Realistic and a rendering. CREATE_MATERIAL - PROVEN, and left as it is -
+# makes a material with a shading colour alone, which draws flat dark grey in
+# Realistic (row 5b-1263).
+#
+# THE TWELVE, named namePrefix + words, "TRG_" by the owner's naming rule with
+# the words spelled out: Glass Clear, Steel Stainless Satin, Steel Galvanised,
+# Aluminium Brushed, Concrete Smooth, Plaster Paint White, Floor Tile Grey,
+# Wood Oak, Carpet Grey, Ceiling Tile White, Duct Galvanised, Pipe Copper.
+# starterPick takes some by their words - "glass; copper" - or all.
+#
+# THE COLOURS, GLOSS AND REFLECTION ARE HERON'S STARTER VALUES, picked to read
+# as the material at a glance - not a standard, not a product (D-33: nothing
+# here is offered as a design value). SET_MATERIAL_PROPERTIES and
+# SET_MATERIAL_APPEARANCE change any of them afterwards.
+#
+# NO LIBRARY NAME IS ASSUMED. Each appearance is a plain Generic asset of the
+# material's own, set from those values, unless libraryLooks names one -
+# "Wood Oak=<a name LIST_MATERIALS lists with withLibraryAppearances>". What
+# Revit's appearance library holds depends on the PC's install; a name it
+# has not got refuses the call before anything is made. VERSION 2 (row
+# 5b-1272): a library look is matched on SET_MATERIAL_APPEARANCE's rule - a
+# Prism asset's description, most often the browser's name but not always,
+# and Revit's code ("Prism-256"), which always matches.
+# Version 1 read the UIName as the browser's name; on Revit 2020 it is the code.
+#
+# A NAME ALREADY IN USE IS LEFT AS IT IS AND REPORTED - never duplicated and
+# never changed.
+#
+# READ BACK: name, shading colour, class and an appearance of its own on every
+# material made, and a Generic appearance's colour; one that does not read as
+# made fails the call and nothing is kept.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Adds the office starter set of twelve materials - each made with its own
+  appearance asset and a matching shading colour, so it looks right drawn
+  and rendered - named with the office prefix; a name already taken is left
+  as it is.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The office prefix in front of each name. Left out, the owner's "TRG_".
+    - name: namePrefix
+      type: string
+      source: request
+      optional: true
+      absent: TRG_
+    # Which of the twelve, by their words with ';' between - "glass; copper".
+    - name: starterPick
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # "Starter words=Appearance name" pairs, for a library look instead of
+    # Heron's own Generic one.
+    - name: libraryLooks
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: createdMaterialIds
+      role: result
+      type: IList<ElementId>
+    - name: starterReport
+      # ONE STRING, a line per starter material: made, with its class, colour
+      # and appearance - or already there and left.
+      role: result
+      type: string
+    - name: alreadyThere
+      # Names already in use, left as they are. The evidence it looked (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-10-20'
+  by: Ajmal PS
+  model: Materials IA Test (3,804 elements), Revit 2020, session 29012
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyThere 0 item(s), createdMaterialIds
+    1 item(s) [1330483], findings 3 item(s) [1 starter material(s) made, 0 already there and
+    left as they..., Shaded views draw each shading colour; Realistic views and r..., Nothing
+    uses them yet - SET_ELEMENT_MATERIAL gives elements ...], refused , starterReport IA3_Glass
+    Clear: made - Glass, shading 176,205,214 at 80% transparency, the appearance ''Glass -
+    clear'' (''IA3_Glass Clear''). inputs came namePrefix as given; starterPick as given;
+    libraryLooks as given. on Materials IA Test'
+  negative_case: run with namePrefix=IA3_, starterPick=granite instead - chosen because it
+    should not contain what this fragment reports - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyThere 0 item(s), createdMaterialIds
+    0 item(s), findings 1 item(s) ['granite' is none of the starter materials - Glass Clear,
+    St...], refused 'granite' is none of the starter materials - Glass Clear, Steel Stainless
+    Satin, Steel Galvanised, Aluminium Brushed, Concrete Smooth, Plaster Paint White, Floor
+    Tile Grey, Wood Oak, Carpet Grey, Ceiling Tile White, Duct Galvanised, Pipe Copper. Nothing
+    was made, starterReport . inputs came namePrefix as given; starterPick as given; libraryLooks
+    not given - "none", the card's own default (optional). on Materials IA Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 4e2849f21d1086e9
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Material.Create, Color, Transparency,
+  MaterialClass, UseRenderAppearanceForShading and AppearanceAssetId;
+  AppearanceAssetElement Create and Duplicate; Application.GetAssets with
+  AssetType.Appearance; AppearanceAssetEditScope; and the Generic property
+  names GenericDiffuse, GenericGlossiness, GenericIsMetal,
+  GenericReflectivityAt0deg, GenericReflectivityAt90deg, GenericTransparency
+  and GenericRefractionIndex are present 2020 through 2027 - read off the
+  shipped assemblies with tools/api-surface --members on 2026-10-20.
+
+# ROUTING - the same rows are in CREATE_MATERIAL and SET_MATERIAL_APPEARANCE.
+#
+#   "add a starter set of materials"            -> here
+#   "set up good looking materials for a render" -> here
+#   "make a new material"                       -> CREATE_MATERIAL - one, by name and colour
+#   "give these materials a render appearance"  -> SET_MATERIAL_APPEARANCE
+#   "make these columns concrete"               -> SET_ELEMENT_MATERIAL
+utterances:
+  - add a starter set of materials
+  - set up a library of good looking materials for rendering
+  - add the standard TRG materials to this project

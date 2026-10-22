@@ -1,0 +1,23 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one 2000 x 1500 x 600 concrete pad footing with no rebar; bottomLength 16mm @ 150, bottomWidth 16mm @ 150, topLength none, topWidth none, outerLayer length, cover 75
+    expect: >
+      placed 2 sets, the bars along the 2000 mm length lowest, each set's count
+      what 150 mm or closer gives across the other side less cover, the bottom
+      layer 75 mm above the underside in a section
+
+negative:
+  - given: the same footing straight after, the same values
+    expect: >
+      placed 0, skipped as already holding rebar - nothing doubled
+  - given: the footing with no rebar, outerLayer "bottom"
+    expect: >
+      placed 0, refused - outerLayer must be length or width
+  - given: a foundation slab (a floor), the same values
+    expect: >
+      placed 0, skipped naming PLACE_AREA_REINFORCEMENT
+
+second_route:
+  - a section through the footing at Detail Level Fine, and each set's Quantity and Bar Spacing in Properties
+  - one Ctrl+Z takes every set back (Golden Rule 16)

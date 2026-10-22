@@ -98,7 +98,9 @@ README.md` puts it the way that settles it: *the machine never signs.*
 
 Exit 0 whatever it finds, the rule all three siblings set. A blocked skill is a
 finding a person judges, and a tool that failed a build over one would teach
-people to trim a skill's `needs` to buy a number.
+people to trim a skill's `needs` to buy a number. Exit 2 when the understanding
+half could not be asked: no store, or check-routing.py's store guard refused
+the shared one from a checkout that is not the main one on main (row 5b-1288).
 """
 
 import argparse
@@ -892,6 +894,13 @@ def main():
               % asked)
         print("the same seam a host uses. This is the slow half.")
         print("")
+        # check-routing.py's store guard first, through check-skill-routing's
+        # store_checked() - row 5b-1288. The open below re-indexes the store
+        # from this checkout's cards, and the shared one every chat on the PC
+        # reads is never to be rebuilt from a worktree or a feature branch.
+        # A refusal is exit 2: the understanding half was not asked.
+        if not ROUTING.store_checked("skill proof"):
+            return 2
         # BUILT BEFORE THE FINGERPRINT - row 5b-980, as check-skill-routing.py
         # does: on an empty scratch folder the block below described a store
         # that did not exist yet. One open, the preparation every lookup

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -80,6 +80,36 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,716 elements), Revit 2020, session 30308
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned angleDegrees
+    45, curve Duct, d1 9.84251968503937, d2 19.6850393700787, endMm 6000, findings 4 item(s)
+    [Duct 1328486: the stretch from 3000 to 6000 mm along it move..., NO ELBOW IS MADE HERE.
+    Run FIT_MEP_JOINTS on `runs` - it fit..., A RECTANGULAR LEG MAY BE TURNED: check the legs''
+    width runs ..., ...], go true, isDuct true, isPipe false, lean 1.64041994750656, length
+    39.3700787401575, line Line, mm 304.8, offsetMm 500, refused 0 item(s), runs 5 item(s)
+    [Duct, Duct, Duct, ...], startMm 3000. inputs came run as given; startMm as given; endMm
+    as given; offsetMm as given; angleDegrees as given. on Project2'
+  negative_case: run with angleDegrees=45, endMm=25000, offsetMm=500, run=selected, startMm=20000
+    arranged with categories=Ducts, exact=False, maxMm=11900,200,3200, minMm=100,-200,2800
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-in-region, set-selection with this phase's own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned angleDegrees 45, curve Duct, d1 65.6167979002625, d2 82.0209973753281, endMm
+    25000, findings 1 item(s) [The stretch 20000 to 25000 mm does not fall inside the run,
+    ...], go false, isDuct true, isPipe false, lean 1.64041994750656, length 39.3700787401575,
+    line Line, mm 304.8, offsetMm 500, refused 1 item(s) [The stretch 20000 to 25000 mm does
+    not fall inside the run, ...], runs 0 item(s), startMm 20000. inputs came run as given;
+    startMm as given; endMm as given; offsetMm as given; angleDegrees as given. on Project2
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 77d94e41d20c35d7
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

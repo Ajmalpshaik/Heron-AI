@@ -1,0 +1,293 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: visualise-a-view
+name: Make a view look good - camera, materials, light, render settings, preview and the render
+domain: revit.views
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+# The steps change views, materials and the sun; the image export in step 5
+# is a PUBLISH behind its own switch, and the site in step 3 an ADMIN change
+# asked for on its own - both said where they come.
+risk: MODIFY
+
+purpose: >
+  What a visualisation artist does to make a Revit view look good, in the
+  order it is done, each step naming the Heron capability that does it, why it
+  is done, and what to look for in the picture afterwards. It is the owner's
+  request of 2026-10-20 - "what settings we normally do for good things ...
+  what settings will normally focus, normally change to [make it] good
+  looking, and the materials also" - after four Heron-built duct heaters in
+  Project1 (Revit 2020) could only be shown in a Realistic view with flat grey
+  materials.
+
+  Every value below is a STARTING POINT a visualiser would try first, not a
+  standard and not a rule (D-33): the modeller changes any of them, and the
+  picture in step 6 is the judge. A look is never chosen for the modeller -
+  Heron proposes the preset that fits what is being shown and asks once.
+
+  The material tools of step 2 were signed PROVEN on Revit 2020 on
+  2026-10-20 (NEEDS-CHECKING Group IA). The rendering tools and this
+  method's own two were DRAFT that day - built and compiled for Revit 2020
+  to 2027, not yet run in Revit (Groups IB and IC). Until the owner proves
+  them, revit_change refuses to keep their changes (D-117); each may be run
+  once through try-once, behind Revit's Keep or Discard box (D-119). The list of capabilities after this method is read from the
+  library every time it is served: where the two differ, the list is right.
+
+  0. READ FIRST, CHANGE NOTHING. REPORT_VISUAL_PRESET on the view with no
+     preset named gives every preset and how many of its settings the view
+     already has; with one named it gives each setting now beside the
+     preset's, and the materials on what the view shows that have no render
+     appearance. REPORT_RENDER_SETTINGS gives the Rendering, Sun, Graphic
+     Display and Camera dialogs as they stand. Then propose ONE look and ask:
+       a building from outside          Exterior Day (or Exterior Dusk)
+       a room                           Interior Day (or Interior Night)
+       MEP equipment, a family, a unit  Equipment Close-up - the duct heater
+       massing, a design check          Clay
+       an elevation or a section        Presentation Elevation
+
+  1. THE CAMERA. A good picture starts with where the eye stands.
+     FRAME_ELEMENTS_IN_CAMERA sets the whole camera in one call from a named
+     SHOT on the selection - the building's walls, a room, a unit - and each
+     shot's starting values are on its card (version 3, D-33). Pick the shot
+     from the modeller's words, and pass only what they said - the shot fills
+     the rest:
+       "cinematic", "film look", "movie"     cinematic - level at 1.2 m, a
+                                              28 mm lens, the building on a
+                                              third, a 2.39:1 cinema picture;
+                                              "moody" or "dramatic" ones the
+                                              low-angle hero shot
+       "hero", "make it look big"            low-angle
+       "dramatic", "towering", "from below"  worm's-eye
+       "aerial", "bird's eye", "drone"       aerial
+       "from above", "overview"              high-angle
+       "eye level", "street view",
+       "two-point perspective"               eye-level
+       "corner view", "three-quarter"        three-quarter
+       "straight on", "elevation-like",
+       "one-point perspective"               front
+       "interior", "inside the room"         interior - select the room
+       "detail", "close-up", "product shot"  close-up
+     The side is theirs too: "the left side" is side left, "from the
+     north-west" side north-west, "the corner" a corner (front-left ...).
+     Heron takes the FRONT to be the long face looking nearest south and says
+     so in the answer - when the front is another face, ask once and give the
+     compass side. A height ("camera at 1.6 m") is eyeHeightMm 1600, a lens
+     ("wide angle", "24 mm", "telephoto") lensMm, "keep the verticals
+     straight" levelCamera true, a picture shape ("widescreen", "16:9",
+     "cinema", "square") aspect, "put it on a third" or "a big sky"
+     composition thirds or low-horizon.
+     WHY: a standing eye (1600 mm) reads as being there; a level camera keeps
+     every vertical vertical - walls leaning in is the commonest thing that
+     makes a render look wrong; low and wide makes a building tower; the lens
+     decides how close the camera stands, so a wide lens is close and
+     dramatic, a long lens far and flat.
+     - Equipment and families with no shot named: version 2's call - a 3/4
+       view, direction south-east (or whichever corner shows the faces that
+       matter: the connections, the access panel, the nameplate),
+       lookDownDeg 20 to 30, marginPercent 10 to 15 - or the close-up shot.
+     - An eye point typed in millimetres ("from the entrance looking at the
+       lobby"): SET_VIEW_CAMERA (version 2) with levelName - eyeMm 1600 above
+       the floor level and targetMm at the SAME height, perspective on.
+     - Field of view: Revit's API has no field-of-view value on any release
+       2020 to 2027 (row 5b-1267), but a perspective crop window IS one, and
+       FRAME_ELEMENTS_IN_CAMERA sizes it from lensMm (35 mm film) and reads
+       back the lens and the angle across. A camera from SET_VIEW_CAMERA has
+       no lens - its crop stays the modeller's to drag.
+     LOOK BEFORE CALLING IT DONE. Heron cannot see the composition. Export the
+     view as a picture - EXPORT_VIEW_IMAGE after FRAME_ELEMENTS_IN_CAMERA in a
+     rolled-back run, or revit_view_image on the view once it is kept - and
+     look at it, or ask the modeller to look and say.
+     CHECK IN THE PICTURE: verticals vertical (wall corners, columns, door
+     edges parallel to the picture's sides) unless the shot tilts on purpose
+     (low-angle, worm's-eye); the side asked for is the side seen; the
+     subject not cut by the crop (margin up); too small (a longer lens);
+     corners stretched (a longer lens, or stand further back); for
+     equipment, the unit filling most of the view.
+
+  2. THE MATERIALS. Every element that can be seen needs a material WITH AN
+     APPEARANCE. WHY: a Realistic view and a rendering draw a material's
+     appearance asset, not its shading colour - a material with no
+     appearance draws flat grey, measured on the duct heater on 2026-10-20.
+     - REPORT_VISUAL_PRESET names the materials on what the view shows that
+       have none; LIST_MATERIALS withAllTabs gives every tab of
+       them, and withLibraryAppearances the appearance names this PC's
+       library holds; READ_ELEMENT_MATERIAL reads the material of a
+       selection.
+     - Give each an appearance with SET_MATERIAL_APPEARANCE: a library asset
+       by its exact name, "from <material>" to copy a good look onto many, or
+       generic with matchShading so the render keeps the colour the modeller
+       chose.
+     - No suitable material yet: CREATE_STARTER_MATERIALS adds the TRG_
+       starter set - clear glass, stainless and galvanised steel, brushed
+       aluminium, smooth concrete, white painted plaster, grey floor tile,
+       oak, carpet, ceiling tile, galvanised duct, copper pipe - each with a
+       shading colour and an appearance of its own. SET_ELEMENT_MATERIAL
+       gives it to elements where their material lives; a layered wall or
+       floor is SET_COMPOUND_LAYER_WIDTH's, a family's own forms
+       SET_FAMILY_FORM_MATERIAL's in the Family Editor.
+     - What each kind wants, as a visualiser starts: GLASS clear, high
+       transparency, a little reflection; METALS glossy and reflective -
+       brushed or satin for equipment casings, galvanised a little duller;
+       PAINTED SURFACES matte, low gloss; FLOORS a little gloss so they pick
+       up light, tile or timber with its texture.
+     CHECK IN THE PICTURE: anything flat grey or with no texture - its
+     material has no appearance; metal that looks like plastic - too little
+     reflection; glass that looks solid - too little transparency; a colour
+     different in Realistic from Shaded - matchShading.
+
+  3. THE LIGHT. Light makes the shapes; flat light makes a flat picture.
+     - Exterior: the sun at the real site, at a flattering time - morning or
+       afternoon, never noon. WHY: at noon the sun is high, shadows are short
+       and straight down, and every face looks the same; a lower sun gives
+       long shadows that show depth. REPORT_LOCATION reads the site;
+       SET_PROJECT_LOCATION sets it for the WHOLE project - an Admin change,
+       asked on its own, never as part of this. SET_SUN_SETTINGS sets a
+       Still study on a date and time. Choose morning or afternoon so the sun
+       is BEHIND or BESIDE the camera and the faces in the picture are lit.
+     - Dusk: about half an hour before sunset, with the building's artificial
+       lights on - warm windows against a darkening sky.
+     - Interior: daylight through the windows with the lights on (Interior:
+       Sun and Artificial), or the lights alone at night (Interior: Artificial
+       only); SET_RENDER_SETTINGS lightGroups turns groups of lights on or off.
+     - Equipment, clay and elevations: a lighting study RELATIVE TO THE VIEW
+       - azimuth 135, altitude 35 lights from the top right; 225 from the top
+       left, the usual for elevations. WHY: it lights the subject the same
+       wherever the project's site is and whichever way the camera turns.
+     CHECK IN THE PICTURE: the faces that matter in shadow - move the sun
+     (afternoon for morning, or the other lighting angle); shadows black and
+     hard - lower shadow intensity, or Ambient Light up by hand; a room too
+     dark - more light (sun and artificial), or a lower exposure value.
+
+  4. THE RENDER SETTINGS. SET_RENDER_SETTINGS on the 3D view.
+     - Quality by purpose: Draft to check the picture - minutes; High for an
+       image that is issued; Best only when High still shows grain, and it
+       takes far longer.
+     - Resolution by output: Screen for a picture looked at on screen;
+       Printer 150 DPI for an A3 check print, 300 DPI for an A3 that is
+       issued - Revit sizes the image from the crop region and the DPI.
+     - Background: a Sky for an exterior; a plain light colour for equipment,
+       so nothing distracts from it.
+     - Exposure: the exposure value - HIGHER IS DARKER - about 14 for a
+       sunny exterior, 10 to 11 for a daylit interior, lower at night; white
+       point 6500 for daylight, about 4000 under warm artificial light.
+     ONE CALL FOR STEPS 3 AND 4, AND THE DISPLAY OF STEP 5: APPLY_VISUAL_PRESET
+     sets a whole look - visual style, display intensities, edges, sun,
+     render lighting, background, exposure, and the render quality and
+     output for renderFor check (Draft, Screen) or issue (High, 300 DPI) -
+     each read back, each setting the view or Revit's API cannot take named
+     and skipped. Then the single tools above change one thing at a time.
+
+  5. PREVIEW, THEN RENDER. A Realistic view with shadows shows in seconds
+     what a render shows in minutes - fix the picture there first.
+     - SET_VIEW_PROPERTIES visual style Realistic, SET_GRAPHIC_DISPLAY_OPTIONS
+       for sun and shadow intensity and smooth lines. Cast Shadows and Show
+       Ambient Shadows (ambient occlusion - the soft dark where surfaces
+       meet) have NO member in Revit's API on any release 2020 to 2027 (row
+       5b-1267): the modeller ticks them - Shadows on the View Control Bar,
+       and Graphic Display Options > Shadows. Say so; never claim them done.
+     - When the preview looks right: OPEN_VIEW to bring the 3D view to the
+       front, then OPEN_RENDER_DIALOG - Revit's own Render dialog. NO REVIT
+       RELEASE LETS AN ADD-IN RUN THE RENDER: the modeller presses Render,
+       then Save to Project or Export.
+     - A quick picture of the Realistic view itself is EXPORT_VIEW_IMAGE - a
+       PUBLISH, behind the owner's Publish switch (D-106).
+
+  6. READ BACK, AND LOOK, BEFORE SAYING IT IS DONE. READ_RENDERED_IMAGES
+     finds the saved rendering and the image files in a folder, with their
+     pixel sizes. Then the picture itself is looked at - opened and seen, or
+     the modeller asked to look and say - against this list:
+       too dark                 exposure value down 1 or 2, or more light
+       washed out, white        exposure value up 1 or 2
+       grey, flat materials     no appearance asset - step 2
+       walls leaning in         the camera is not level - step 1
+       grainy, speckled         quality too low - High
+       the wrong size           output or DPI - step 4
+       the subject cut off      the crop region - step 1
+       colours too orange/blue  white point - step 4
+     Nothing is called rendered until an image is read back (Group IB), and
+     nothing is called good until it has been looked at.
+
+  NOT YET: depth of field, a walkthrough, cloud rendering's own settings,
+  decals and RPC people, cars and plants (families the modeller places),
+  and an upright (portrait) picture - FRAME_ELEMENTS_IN_CAMERA's lens
+  window is 3:2 across.
+
+# The words the modeller says when the picture is what matters.
+utterances:
+  - make this view look good
+  - visualise this view
+  - set up this 3D view for a render
+  - render setup for the duct heater
+  - make a nice render of this equipment
+  - what settings make a good render
+  - make this look realistic with good materials and lighting
+
+# CAPABILITIES, never fragment ids - in the order the purpose gives.
+needs:
+  # Step 0 - read first, change nothing.
+  - REPORT_VISUAL_PRESET
+  - REPORT_RENDER_SETTINGS
+  # Step 1 - the camera.
+  - FRAME_ELEMENTS_IN_CAMERA
+  - SET_VIEW_CAMERA
+  - CREATE_3D_VIEW
+  - SET_VIEW_SECTION_BOX
+  # Step 2 - the materials.
+  - LIST_MATERIALS
+  - READ_ELEMENT_MATERIAL
+  - SET_MATERIAL_APPEARANCE
+  - CREATE_STARTER_MATERIALS
+  - SET_ELEMENT_MATERIAL
+  - SET_COMPOUND_LAYER_WIDTH
+  - SET_FAMILY_FORM_MATERIAL
+  # Step 3 - the light. SET_PROJECT_LOCATION is ADMIN, asked on its own.
+  - REPORT_LOCATION
+  - SET_PROJECT_LOCATION
+  - SET_SUN_SETTINGS
+  # Steps 3 to 5 in one call.
+  - APPLY_VISUAL_PRESET
+  # Step 4 - the render settings.
+  - SET_RENDER_SETTINGS
+  # Step 5 - preview, then render.
+  - SET_VIEW_PROPERTIES
+  - SET_GRAPHIC_DISPLAY_OPTIONS
+  - OPEN_VIEW
+  - OPEN_RENDER_DIALOG
+  - EXPORT_VIEW_IMAGE
+  # Step 6 - the read-back. Never skipped.
+  - READ_RENDERED_IMAGES
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - a project is open in front, and it is the model the modeller means
+  - the view to make look good is named, or the elements to frame are selected
+  - the look is the modeller's choice - proposed once, never assumed (D-33)
+  - the site is right before an exterior sun is trusted - REPORT_LOCATION reads it; changing it is an Admin change for the whole project, asked on its own
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  WHY A METHOD AND A PRESET, NOT ONE OR THE OTHER. A visualiser's knowledge is
+  an ORDER - camera before materials before light before settings before the
+  render, because each step changes what the next one sees - and judgement
+  at every step, which is the picture's, not a tool's. That is a method. A
+  whole look applied at once - eight dialogs' worth of settings that belong
+  together - is one call, so it is a fragment: APPLY_VISUAL_PRESET, with
+  REPORT_VISUAL_PRESET to read what it would do first (docs/39 s2, docs/45
+  s5: a recipe of capabilities in order is a skill; one bundle is a tool).
+
+  WHY THE STARTING VALUES ARE WRITTEN DOWN. Each is what a visualiser tries
+  first, and each is checked against the picture in step 6, never trusted:
+  the exposure value, the sun's time and the lighting angles are Heron's
+  starters (D-33), on the preset card in full.
+
+  DRAFT until the whole order has been run on the owner's Project1 with the
+  four duct heaters (Revit 2020) - framed, given materials with an
+  appearance, lit, set, previewed, rendered by the modeller's press, read
+  back and looked at (NEEDS-CHECKING Group IC).

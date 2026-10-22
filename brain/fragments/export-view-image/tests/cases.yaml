@@ -14,6 +14,15 @@ positive:
       Revit's own overwrite behaviour, whatever it is, and the folder reported
       both times. This fragment does not manage the files it wrote
 
+  - given: >
+      version 2 - one 3D view exported with fileType JPG and dpi 300 and no
+      pixelWidth, into an empty scratch folder
+    expect: >
+      exported 1, filesWritten 1, and fileReport naming one .jpg with its pixel
+      size - Revit's Zoom to 100% at 300 DPI. Open it: a JPEG
+  - given: version 2 - the same view with fileType TIFF, pixelWidth 1200
+    expect: filesWritten 1, a .tif 1200 px wide (its size is not read from the header)
+
 negative:
   - given: a view template among the views
     expect: >
@@ -33,8 +42,15 @@ negative:
 
   - given: the exact filenames predicted from the prefix
     expect: >
-      no such prediction in the report. Revit builds the names and a wrong list
-      is worse than none
+      no such prediction in the report. Revit builds the names; version 2 lists
+      only what it read off the folder after the export
+
+  - given: version 2 - fileType "webp"
+    expect: >
+      exported 0, filesWritten 0, a finding naming PNG, JPG, TIFF, BMP and TGA,
+      and nothing in the folder
+  - given: version 2 - dpi 400
+    expect: exported 0, the finding naming 72, 150, 300 and 600, nothing written
 
 second_route: >
   Open the folder and count the files, then open one and check its pixel width

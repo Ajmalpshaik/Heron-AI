@@ -1,0 +1,13 @@
+# Batch 14, 2026-10-18 - Revit 2020 session 2648, scratch Project1 (never saved), batch 13's
+# model. The circuit the report reads is made by a setup step inside the same rolled-back group:
+# the inline fan on a power circuit fed from the 100 A panel, Panel Name DB-1 (kept). ROLLED BACK.
+model: "Project1 (scratch, never saved), Revit 2020"
+defaults:
+  in: "Project1"
+  write: true
+jobs:
+  - fragment: report-panel-circuits
+    setup: [select-by-category-name, set-selection, create-electrical-circuit]
+    expect: schedule
+    set: {categoryName: "Mechanical Equipment", inViewOnly: "Heron 3D", systemType: "power", panel: "DB-1", panelName: ""}
+    negative-set: {categoryName: "Mechanical Equipment", inViewOnly: "Heron 3D", systemType: "power", panel: "DB-1", panelName: "NO-SUCH-PANEL"}

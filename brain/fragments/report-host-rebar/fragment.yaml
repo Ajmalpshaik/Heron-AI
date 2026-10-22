@@ -1,0 +1,171 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-111
+semantic-identity: "report the reinforcement in these concrete elements, host by host"
+kind: action
+domain: revit.elements
+capability: REPORT_HOST_REBAR
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# THE READ-BACK OF EVERY REBAR WRITE. A placing tool answering "placed 6" is
+# not the proof; the bars in the host are (D-30). This reads, for each element
+# handed in - a column, a beam, a footing, a slab, a wall:
+#   - whether Revit takes it as a rebar host at all (RebarHostData.IsValidHost);
+#   - its cover on every face it has one for, by Revit's own label for that
+#     face ("Rebar Cover - Top Face") and the cover type's name and distance;
+#   - every rebar set in it: bar type and nominal diameter, standard or
+#     stirrup/tie, shape, layout rule, bar count, spacing where the layout has
+#     one, the hook at each end, and total bar length;
+#   - every area reinforcement: each layer that is on, by Revit's own label,
+#     its bar type, spacing and number of lines;
+#   - every path reinforcement: bar type, spacing, number of bars, length;
+#   - fabric areas and fabric sheets, with their sheet type.
+# And a bar list across all of them - bars and total length per bar type.
+#
+# NO WEIGHT. A mass per length is a property of the bar type only from Revit
+# 2027; before it the API has none, and a density typed in here would be a
+# design value Heron chose (D-33). Revit's own rebar schedule gives weight
+# from the model's own material.
+#
+# READ ONLY. Opens no transaction and needs none.
+purpose: >
+  Answers what reinforcement is in each concrete element handed in - how many
+  bars, what bar size, what spacing and hooks, what rebar cover on each face,
+  and any area, path or fabric reinforcement - with a bar list by bar type,
+  so a placed bar can be read back.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: rebarSets
+      # Rebar elements found in the hosts. Something the read FOUND.
+      role: result
+      type: int
+    - name: bars
+      # Bars in those sets - the sum of each set's quantity.
+      role: result
+      type: int
+    - name: systems
+      # Area, path and fabric reinforcement elements found in the hosts.
+      role: result
+      type: int
+    - name: hostsWithRebar
+      role: result
+      type: int
+    - name: report
+      # HOST BY HOST, in words: cover, every set and every system. A STRING,
+      # because a reply cuts a list to three items and this is the answer.
+      role: accounting
+      type: string
+    - name: barList
+      # Bars and total length per bar type, across every host read.
+      role: accounting
+      type: string
+    - name: notHosts
+      # Elements Revit does not take as a rebar host, each with its category.
+      # What was handed in and could not be read, never a finding (D-52).
+      role: accounting
+      type: IList<string>
+    - name: withoutRebar
+      # Valid hosts that hold no reinforcement at all.
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: Structure Night Test (9,179 elements), Revit 2020, session 68704
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name with this phase''s own values. returned barList ''16M'' 59 bars,
+    149.28 m, bars 59, coverFaces 5 item(s) [CLEAR_COVER_TOP, CLEAR_COVER_BOTTOM, CLEAR_COVER_OTHER,
+    ...], findings 1 item(s) [1 host(s) with reinforcement, 0 without, 0 not a rebar host:...],
+    hostLines 1 item(s) [Structural Framing ''400 x 800mm'' (id 124765) - cover: Rebar ...],
+    hostsWithRebar 1, invariant CultureInfo, label Func`2, layers 8 item(s) [Autodesk.Revit.DB.BuiltInParameter[],
+    Autodesk.Revit.DB.BuiltInParameter[], Autodesk.Revit.DB.BuiltInParameter[], ...], listCount
+    1 entry(ies), listLength 1 entry(ies), mm Func`2, nameOf Func`2, nominalOf Func`2, notHosts
+    0 item(s), param Func`3, rebarSets 7, report Structural Framing ''400 x 800mm'' (id 124765)
+    - cover: Rebar Cover - Top Face none, Rebar Cover - Bottom Face ''Interior (shells) -
+    10M to 16M'' 13 mm, Rebar Cover - Other Faces ''Interior (shells) - 10M to 16M'' 13 mm
+    | rebar id 153781: 53 x ''16M'' 15.9 mm, stirrup/tie shape ''M_T1'', layout MaximumSpacing,
+    spacing 150 mm, hooks ''Stirrup/Tie Seismic - 135 deg.'' / ''Stirrup/Tie Seismic - 135
+    deg.'', total length 99149.9 mm | rebar id 153882: 1 x ''16M'' 15.9 mm, standard shape
+    ''M_00'', layout Single, hooks none / none, total length 8355 mm | rebar id 153976: 1
+    x ''16M'' 15.9 mm, standard shape ''M_00'', layout Single, hooks none / none, total length
+    8355 mm | rebar id 154029: 1 x ''16M'' 15.9 mm, standard shape ''M_00'', layout Single,
+    hooks none / none, total length 8355 mm | rebar id 154030: 1 x ''16M'' 15.9 mm, standard
+    shape ''M_00'', layout Single, hooks none / none, total length 8355 mm | rebar id 154062:
+    1 x ''16M'' 15.9 mm, standard shape ''M_00'', layout Single, hooks none / none, total
+    length 8355 mm | rebar id 154063: 1 x ''16M'' 15.9 mm, standard shape ''M_00'', layout
+    Single, hooks none / none, total length 8355 mm, systems 0, tally Action`3, tallySystemBars
+    Action`1, withoutRebar 0. inputs came elements from select-by-category-name (1). on Structure
+    Night Test'
+  negative_case: 'run with categoryName=Grids, inViewOnly=EngineeringPlan: 01 - Entry Level
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-by-category-name with this phase''s own values. returned
+    barList no bars, bars 0, coverFaces 5 item(s) [CLEAR_COVER_TOP, CLEAR_COVER_BOTTOM, CLEAR_COVER_OTHER,
+    ...], findings 28 item(s) [0 host(s) with reinforcement, 0 without, 27 not a rebar host...,
+    Grids ''1'' (id 118715) is not a rebar host - Revit hosts reba..., Grids ''2'' (id 118716)
+    is not a rebar host - Revit hosts reba..., ...], hostLines 0 item(s), hostsWithRebar 0,
+    invariant CultureInfo, label Func`2, layers 8 item(s) [Autodesk.Revit.DB.BuiltInParameter[],
+    Autodesk.Revit.DB.BuiltInParameter[], Autodesk.Revit.DB.BuiltInParameter[], ...], listCount
+    0 entry(ies), listLength 0 entry(ies), mm Func`2, nameOf Func`2, nominalOf Func`2, notHosts
+    27 item(s) [Grids ''1'' (id 118715) is not a rebar host - Revit hosts reba..., Grids ''2''
+    (id 118716) is not a rebar host - Revit hosts reba..., Grids ''3'' (id 118717) is not
+    a rebar host - Revit hosts reba..., ...], param Func`3, rebarSets 0, report , systems
+    0, tally Action`3, tallySystemBars Action`1, withoutRebar 0. inputs came elements from
+    select-by-category-name (27). on Structure Night Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 982324be590cba44
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation, one #if for the bar diameter (BarDiameter 2020-2021,
+  BarNominalDiameter from 2022). Read off the shipped assemblies 2020 to 2027
+  on 2026-10-19: RebarHostData.IsValidHost, GetRebarHostData, GetRebarsInHost,
+  GetAreaReinforcementsInHost, GetPathReinforcementsInHost,
+  GetFabricAreasInHost, GetFabricSheetsInHost; Rebar.Quantity, LayoutRule,
+  NumberOfBarPositions, TotalLength, GetHookTypeId, GetShapeId; the
+  BuiltInParameters CLEAR_COVER_TOP / BOTTOM / OTHER / EXTERIOR / INTERIOR,
+  REBAR_ELEM_BAR_SPACING, REBAR_SYSTEM_* and PATH_REIN_* used here - all on
+  every release.
+
+# ROUTING - the same rows are in every rebar card.
+#
+#   "what rebar is in these columns"            -> here
+#   "read back the bars in this beam"           -> here
+#   "what cover does this slab have"            -> here
+#   "what bar types are loaded"                 -> LIST_REBAR_TYPES
+#   "set the cover on these beams to 40"        -> SET_REBAR_COVER
+utterances:
+  - what rebar is in these columns
+  - what rebar cover do these beams have
+  - how many bars does this column have
+  - what bar size is in this slab
+  - what spacing are the links in this beam
+  - read back the bars in these footings
+  - report the reinforcement in this beam
+  - what cover does this slab have
+  - give me a bar list for these elements
+  - is this column reinforced
+  - what rebar cover is on these walls
+  - how much rebar is in these footings

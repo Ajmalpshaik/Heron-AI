@@ -1248,10 +1248,26 @@ if (refused == null && replaceExisting)
                 + "nothing was written to it.");
 
         // ----- REPLACE -----
+        // THE SAME NAME IS MOVED OUT OF THE WAY FIRST (version 4, row 5b-1276).
+        // Measured 2026-10-20 on Revit 2020 (Group DF, DF4): ReplaceParameter
+        // refuses with "Parameter replacement failed." when the family parameter
+        // is called what the shared one is - "Gas Pipe Diameter" with the shared
+        // "Gas Pipe Diameter" - though no formula read it; renamed first, the
+        // same call replaced it and the shared one took the name. The name it
+        // borrows for that moment is one the family does not have.
+        var swapNames = new HashSet<string>(fm.Parameters.Cast<FamilyParameter>()
+            .Where(x => x.Definition != null).Select(x => x.Definition.Name), StringComparer.OrdinalIgnoreCase);
         foreach (var step in plan)
         {
             try
             {
+                if (string.Equals(step.Item1.Definition.Name, step.Item3.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    var swapName = step.Item2 + " heron-swap";
+                    for (var swapIndex = 2; swapNames.Contains(swapName); swapIndex++) swapName = step.Item2 + " heron-swap " + swapIndex;
+                    fm.RenameParameter(step.Item1, swapName);
+                    swapNames.Add(swapName);
+                }
                 replaceParameter.Invoke(fm, new object[] { step.Item1, step.Item3, groupWanted[step.Item2],
                     scopeBefore[step.Item2] });
             }

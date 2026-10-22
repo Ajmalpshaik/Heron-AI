@@ -1,0 +1,14 @@
+# Batch 11, 2026-10-18 - Revit 2020 session 2648, scratch Project1 (never saved), batch 10's model.
+# One pipe this time: the Domestic Cold Water pipe at y=1500, 1000..9000 mm, z 2400. ROLLED BACK.
+model: "Project1 (scratch, never saved), Revit 2020"
+defaults:
+  in: "Project1"
+  write: true
+  setup: [select-in-region, set-selection]
+  setup-set: {minMm: "1500,1300,2200", maxMm: "8500,1700,2600", exact: false, categories: "Pipes"}
+  negative-setup-set: {minMm: "1500,1300,2200", maxMm: "8500,1700,2600", exact: false, categories: "Pipes"}
+jobs:
+  - fragment: place-accessory-on-run
+    expect: placed
+    set: {accessorySymbol: "M_Gate Valve - 50-300 mm: 100 mm", positionAlong: 0.5}
+    negative-set: {accessorySymbol: "ZZZNOTHINGHERE", positionAlong: 0.5}

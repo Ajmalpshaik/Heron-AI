@@ -1,0 +1,252 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-141
+semantic-identity: "change a 3D view's render quality, output resolution, lighting scheme, light groups, background and exposure to new values"
+kind: action
+domain: revit.views
+capability: SET_RENDER_SETTINGS
+version: 2
+# VERSION 2, 2026-10-20 - row 5b-1278, found running Group IB's IB3 on Revit
+# 2020. Asked for "150 DPI" on a view whose output was Screen, version 1
+# read the printer level first, to put it back if the DPI was not offered,
+# and Revit threw "The resolution target is not printer." - nothing set,
+# the call fragment_threw. The level is now read only when the output is
+# already Printer. Nothing else changed.
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-20: after a duct heater family was built and placed in Project1
+# (Revit 2020), the owner asked for a render of the 3D view, and Heron could
+# only switch the view to Realistic and export an image - nothing set the
+# Rendering dialog. His words: "for the rendering ... all type of rendering,
+# rendering settings all the things ... all the part should be covered".
+#
+# HOW IT BEHAVES - comments, not `purpose`.
+#
+# **WHAT REVIT'S RENDERING DIALOG HOLDS FOR ONE 3D VIEW**, each a word or left
+# out (keep):
+#   quality            Draft, Medium, High, Best or Custom. Best is the API's
+#                      VeryHigh; Revit's API has these five on 2020 to 2027
+#   customQuality      level N (1-40), time N (1-32768, Revit's own value) or
+#                      until satisfactory - and it means Custom
+#   lightingAccuracy   Simplified or Advanced
+#   output             Screen, Printer, or a printer DPI such as 300 DPI. The
+#                      DPI is FOUND: the printer level whose ResolutionValue
+#                      reads that DPI is the one set, never a typed table
+#   lighting           Exterior or Interior, Sun only / Sun and Artificial /
+#                      Artificial only
+#   lightGroups        "Lobby=on; Plant=off" or "all=off" - the Artificial
+#                      Lights dialog, per view
+#   background         Sky: No Clouds .. Sky: Very Cloudy, colour R,G,B,
+#                      image <file>, Transparent; with backgroundImageFit and
+#                      backgroundImageOffsetMm for an image
+#   exposure           "value=13; highlights=0.25; shadows=0.2; saturation=1;
+#                      white point=6500", inside Revit's ranges
+#   regionRendering    yes or no
+#
+# **EVERY WORD IS READ FIRST.** One word this cannot read refuses the whole
+# call and says which words it takes - nothing reaches the view half-filled.
+#
+# **WHERE REVIT'S API STOPS**, read off the API reference of every release
+# 2020 to 2027 on 2026-10-20: the sky's haze and the sun's own brightness in
+# the background have no member (SkyBackgroundSettings has none), exposure has
+# no "reset to automatic", and NO RELEASE LETS AN ADD-IN RUN THE RENDER -
+# View3D has GetRenderingSettings and SetRenderingSettings and nothing that
+# renders. OPEN_RENDER_DIALOG opens Revit's own dialog for the modeller to press
+# Render; READ_RENDERED_IMAGES reads back what was saved.
+#
+# **A VIEW TEMPLATE THAT CONTROLS RENDERING SETTINGS** refuses the write; the
+# answer carries Revit's words and points at the template.
+#
+# **READ BACK:** every setting asked is read again off the view; only one that
+# reads as asked counts. `readBack` is the whole dialog as it stands after.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Sets the Rendering dialog of a 3D view to new values - quality, output
+  resolution, lighting scheme, artificial light groups, background and
+  exposure - from Revit's own words.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The 3D view, as the Project Browser names it.
+    - name: view
+      type: View
+      source: request
+    - name: quality
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: customQuality
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: lightingAccuracy
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: output
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: lighting
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: lightGroups
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: background
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: backgroundImageFit
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: backgroundImageOffsetMm
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: exposure
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: regionRendering
+      type: string
+      source: request
+      optional: true
+      absent: keep
+  provides:
+    - name: changed
+      # Settings that read back as asked.
+      role: result
+      type: int
+    - name: readBack
+      # The whole Rendering dialog as the view holds it afterwards, filled on
+      # every run that reached the view - so evidence, never the count.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING WAS CHANGED, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-10-20'
+  by: Ajmal PS
+  model: Materials IA Test (3,790 elements), Revit 2020, session 29012
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, after Func`3,
+    asked 4, call Func`4, changed 4, colour Func`2, culture CultureInfo, findings 1 item(s)
+    [4 of 4 setting(s) read back as asked on ''Heron Frame - Colum...], fitWords 7 entry(ies),
+    groupName Func`2, groupOn Func`2, groups 0 item(s), isKeep Func`2, lightingNamespace Autodesk.Revit.DB.Lighting.,
+    lightingType Func`2, lightingWord Func`2, lightingWords 10 entry(ies), manager (null),
+    number Func`2, property Func`3, qualityWord Func`2, qualityWords 6 entry(ies), readBack
+    ''Heron Frame - Columns'': quality Medium; output Printer 300 DPI; lighting Exterior:
+    Sun and Artificial; background Sky: Cloudy; exposure value 14, highlights 0.25, shadows
+    0.2, saturation 1, white point 6500; region off., refused (null), show Func`2, squash
+    Func`2, styleWord Func`2, styleWords 6 entry(ies), view3D View3D, wantAccuracy (null),
+    wantColor (null), wantDpi 300, wantDuration (null), wantExposure 0 entry(ies), wantFit
+    (null), wantGroups 0 item(s), wantImage (null), wantLevel 0, wantLighting LightingSource,
+    wantOffset (null), wantQuality RenderingQuality, wantRegion (null), wantStyle BackgroundStyle,
+    wantTarget ResolutionTarget, wantTime 0. inputs came view as given; quality as given;
+    customQuality not given - "keep", the card''s own default (optional); lightingAccuracy
+    not given - "keep", the card''s own default (optional); output as given; lighting as given;
+    lightGroups not given - "keep", the card''s own default (optional); background as given;
+    backgroundImageFit not given - "keep", the card''s own default (optional); backgroundImageOffsetMm
+    not given - "keep", the card''s own default (optional); exposure not given - "keep", the
+    card''s own default (optional); regionRendering not given - "keep", the card''s own default
+    (optional). on Materials IA Test'
+  negative_case: run with view=Space Outdoor Air Schedule, quality=Draft instead - chosen
+    because it should not contain what this fragment reports - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
+    after Func`3, asked 0, call Func`4, changed 0, colour Func`2, culture CultureInfo, findings
+    1 item(s) ['Space Outdoor Air Schedule' is not a 3D view, and only a 3D...], fitWords
+    7 entry(ies), groupName Func`2, groupOn Func`2, groups 0 item(s), isKeep Func`2, lightingNamespace
+    Autodesk.Revit.DB.Lighting., lightingType Func`2, lightingWord Func`2, lightingWords 10
+    entry(ies), manager (null), number Func`2, property Func`3, qualityWord Func`2, qualityWords
+    6 entry(ies), readBack , refused 'Space Outdoor Air Schedule' is not a 3D view, and only
+    a 3D view has Rendering Settings. NOTHING WAS CHANGED., show Func`2, squash Func`2, styleWord
+    Func`2, styleWords 6 entry(ies), view3D (null), wantAccuracy (null), wantColor (null),
+    wantDpi 0, wantDuration (null), wantExposure 0 entry(ies), wantFit (null), wantGroups
+    0 item(s), wantImage (null), wantLevel 0, wantLighting (null), wantOffset (null), wantQuality
+    (null), wantRegion (null), wantStyle (null), wantTarget (null), wantTime 0. inputs came
+    view as given; quality as given; customQuality not given - "keep", the card's own default
+    (optional); lightingAccuracy not given - "keep", the card's own default (optional); output
+    not given - "keep", the card's own default (optional); lighting not given - "keep", the
+    card's own default (optional); lightGroups not given - "keep", the card's own default
+    (optional); background not given - "keep", the card's own default (optional); backgroundImageFit
+    not given - "keep", the card's own default (optional); backgroundImageOffsetMm not given
+    - "keep", the card's own default (optional); exposure not given - "keep", the card's own
+    default (optional); regionRendering not given - "keep", the card's own default (optional).
+    on Materials IA Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 55a7f9e09003f497
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read off the shipped reference
+  assemblies and RevitAPI.xml of 2020 through 2027 on 2026-10-20 (Nice3point
+  packages): View3D.GetRenderingSettings and SetRenderingSettings;
+  RenderingSettings' BackgroundStyle, LightingSource, PrinterResolution,
+  ResolutionTarget, ResolutionValue, UsesRegionRendering and the Get/Set of its
+  background, exposure and quality settings; RenderingQuality (Draft, Medium,
+  High, VeryHigh, Custom); RenderingQualitySettings' RenderDuration,
+  RenderLevel (1-40), RenderTime (1-32768) and LightAndMaterialAccuracyMode;
+  RenderingImageExposureSettings and its ranges; ColorBackgroundSettings,
+  ImageBackgroundSettings and BackgroundImageFit; LightGroupManager's
+  GetLightGroupManager, GetGroups, IsLightGroupOn and SetLightGroupOn - all
+  present and alike on every release. The lighting classes are reached by name
+  at run time because the fragment executor does not import their namespace.
+
+# ROUTING - the same rows are in the render, sun, display and camera cards.
+#
+#   "set the render quality to best"             -> here
+#   "render at 300 dpi"                          -> here
+#   "interior lighting with the lights on"       -> here
+#   "what are the render settings of this view"  -> REPORT_RENDER_SETTINGS. A
+#                                                   question never reaches
+#                                                   this write (D-86)
+#   "set the sun to 10 am"                       -> SET_SUN_SETTINGS
+#   "turn on sketchy lines"                      -> SET_GRAPHIC_DISPLAY_OPTIONS
+#   "put this view on realistic"                 -> SET_VIEW_PROPERTIES, the
+#                                                   visual style
+#   "render it" / "start the render"             -> OPEN_RENDER_DIALOG. No API
+#                                                   runs the render
+#   "save this view as a picture"                -> EXPORT_VIEW_IMAGE
+#   "make this view look good"                   -> APPLY_VISUAL_PRESET, a whole
+#                                                   look in one call
+
+utterances:
+  - set the render quality of this 3D view to best
+  - render this view at 300 dpi for printing
+  - make the rendering lighting interior with sun and artificial lights
+  - change the render background to a cloudy sky
+  - turn the lobby light group off for this render
+  - set the rendering exposure to 13 with a white point of 6500

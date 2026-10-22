@@ -132,6 +132,15 @@ turning a client's adjectives into design decisions. Heron asks for every input 
 environmental data, specifications, project scheduling. The host decides what the modeller meant
 ([D-01](DECISIONS.md)); Heron does the Revit.
 
+> **As built (2026-10-20):** rendering moved off that list on the owner's word, after four Heron-built duct
+> heaters in Project1 could only be shown with flat grey materials - *"make like a visualizer ... what
+> settings we normally do for good things"*. What a Revit model holds for a picture is Revit work: every
+> tab of a material ([Group IA](needs-checking/group-ia.md)), every rendering dialog
+> ([Group IB](needs-checking/group-ib.md)), and the visualiser - the method
+> [`visualise-a-view`](../brain/skills/visualise-a-view.yaml) and the tools `APPLY_VISUAL_PRESET` and
+> `REPORT_VISUAL_PRESET` ([Group IC](needs-checking/group-ic.md)). All DRAFT, none run in Revit. Design
+> language and style stay the modeller's: a preset is a starting look, never a judgement of the design.
+
 **The one idea worth recording: grade a change by what it reaches, not by its verb.** The prompt ranks a
 change by what it touches - a level, a grid, the coordinates, an issued sheet - rather than by whether it
 reads or writes. Heron's `risk:` grades a fragment, not a call, and **the same `MODIFY` on one wall and on
@@ -154,7 +163,7 @@ asked which, one at a time.
 | A wall's profile - an arched head | |
 | A ground surface | Revit 2024 brought in the toposolid in place of the toposurface, so it is two routes across Heron's eight releases |
 | ~~Stairs~~ and railings | **Stairs built as `CREATE_STAIRS`, DRAFT** - recorded 2026-10-04 by [45](45-five-more-downloaded-skill-files.md), which found this line out of date. Railings are still not built. *As built (2026-10-18): railings too - `CREATE_RAILING`, `EDIT_RAILING`, `SET_RAILING_TYPE`, DRAFT (#502)* |
-| Wall foundations, and reinforcement | Reinforcement needs its host to exist first |
+| Wall foundations, and ~~reinforcement~~ | **Reinforcement built 2026-10-19, DRAFT** - thirteen fragments, from `LIST_REBAR_TYPES` to `PLACE_COLUMN_REBAR` and `PLACE_AREA_REINFORCEMENT`, and the method [`reinforce-concrete`](../brain/skills/reinforce-concrete.yaml); not run in Revit ([Group HY](needs-checking/group-hy.md), [row 5b-1257](fragment-issues/section-5b-rows-401-425.md)). Wall (strip) foundations still have no tool |
 | Parts, and making an assembly | |
 | Point clouds | |
 | Masses, and the floors and walls made from one | |
@@ -169,6 +178,10 @@ asked which, one at a time.
 > `SET_PARTS_EXCLUDED`, `CREATE_ASSEMBLY`; and **floors from a mass** - `CREATE_MASS_FLOORS`. Still with
 > no route: a wall's profile, wall foundations and reinforcement, point clouds, and walls made from a
 > mass. Each card's `revit:` and `heron-status:` lines are the current word.
+
+> **As built (2026-10-19):** reinforcement has a route now - the thirteen DRAFT rebar fragments of
+> [row 5b-1257](fragment-issues/section-5b-rows-401-425.md), owed [Group HY](needs-checking/group-hy.md). Still with no route: a
+> wall's profile, wall foundations, point clouds, and walls made from a mass.
 
 ---
 

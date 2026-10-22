@@ -210,6 +210,11 @@ an edit.
 | [D-138](#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking) | The Keep or Discard question gets a switch on the ribbon, and its box can keep the rest of one job without asking | ✅ Accepted · 2026-10-18 · item 2 superseded in part by D-141 · 2026-10-18 |
 | [D-139](#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction) | The four parts of the specification are corrected in place where a fact is wrong or an accepted decision settled it, and the original words stay beside the correction | ✅ Accepted · 2026-10-18 |
 | [D-141](#d-141--one-model-is-used-by-one-chat-at-a-time-and-what-revit-keeps-for-a-chat-is-keyed-on-that-chat) | One model is used by one chat at a time, and what Revit keeps for a chat is keyed on that chat | ✅ Accepted · 2026-10-18 |
+| [D-142](#d-142--anything-a-kept-change-deletes-from-the-model-is-asked-in-revit-first-in-a-box-of-its-own-whatever-ask-to-keep-says-and-never-under-a-jobs-grant) | Anything a kept change deletes from the model is asked in Revit first, in a box of its own, whatever Ask to Keep says and never under a job's grant | ✅ Accepted · 2026-10-18 |
+| [D-143](#d-143--a-credential-in-a-tracked-file-fails-the-pull-request) | A credential in a tracked file fails the pull request | ✅ Accepted · 2026-10-18 |
+| [D-144](#d-144--a-superseded-decision-says-so-under-its-own-heading-where-its-citations-land) | A superseded decision says so under its own heading, where its citations land | ✅ Accepted · 2026-10-19 |
+| [D-145](#d-145--a-card-may-let-its-caller-answer-one-named-revit-dialog-for-one-job-and-every-other-dialog-is-still-declined) | A card may let its caller answer one named Revit dialog, for one job, and every other dialog is still declined | 🕐 Proposed - **owner has not read this back** |
+| [D-146](#d-146--a-fragment-may-name-revits-appearance-asset-namespace-so-a-materials-render-appearance-can-be-edited) | A fragment may name Revit's appearance-asset namespace, so a material's render appearance can be edited | 🕐 Proposed - **owner has not read this back** |
 
 ## Format
 
@@ -407,6 +412,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-11](OPEN-QUESTIONS.md)
 **Amended the same day by [D-26](#d-26--the-model-file-is-never-uploaded):** the cloud opt-in below is
+**Superseded in part by:** [D-82](#d-82--the-cloud-line-is-drawn-by-content-type-not-by-scope), accepted 2026-09-20 - its framing, *cloud opt-in per scope*: the line is drawn by content type instead, documents may go and model data never leaves the PC
 
 **Full record:** [`decisions/D-24.md`](decisions/D-24.md)
 
@@ -485,6 +491,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-37 — The name is Heron AI, and no trademark check has been done
 
 **Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-24](OPEN-QUESTIONS.md)
+**Superseded in part by:** [D-85](#d-85--the-tab-says-heron-the-panel-says-ai-bridge-and-the-product-is-still-heron-ai), accepted 2026-09-20 - one sentence: the name no longer *"stays in the ribbon tab"*, which reads **Heron**, with the panel **AI Bridge**; the product is still Heron AI
 
 **Full record:** [`decisions/D-37.md`](decisions/D-37.md)
 
@@ -877,6 +884,8 @@ What this makes easy. What this makes hard. What it locks in.
 **Status:** Accepted · **Date:** 2026-09-23 · **Source:** Ajmal PS, 2026-09-23, asked as decision D1 of the earlier-brain plan
 **Amends:** [Constitution Article 9](../HERON_CONSTITUTION.md) · **Breaks, on the record:** [Golden Rule 17](14-golden-rules.md) · **Keeps:** [D-55](#d-55--a-fragments-preview-is-the-run-itself-rolled-back), [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)
 **Superseded by:** [D-126](#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept), accepted by the owner 2026-10-17 - Revit asks the modeller Keep or Discard before a change from a chat is kept, and D-99's behaviour remains only as the owner's switch for that question
+**Superseded in part by:** [D-106](#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on), accepted 2026-09-28 - the row *"Publish and Admin refused"* in its table, which reads *refused unless the owner's switch for that level is on*
+**Superseded in part by:** [D-117](#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands), accepted 2026-10-17 - the row *"a warning line when the fragment is not `PROVEN`"*: that change is refused instead, before anything is sent
 
 **Full record:** [`decisions/D-99.md`](decisions/D-99.md)
 
@@ -891,6 +900,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Status:** Proposed · **Date:** 2026-08-31 · **Touches:** [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs), the risk ladder in the Constitution, [`tools/check-routing.py`](../tools/check-routing.py)
 **Numbering:** restored 2026-09-23 under a new number, on the owner's instruction, word for word from commit `5c84302`. This decision was D-47 from 2026-08-31 until the merge `1f884ae` (2026-09-02) left it out of the log, and commit `ec17e79` (2026-09-06) gave the number to a different decision. A citation of D-47 written before `ec17e79` means this decision.
+**Superseded in part by:** [D-128](#d-128--a-request-the-host-calls-a-question-is-never-offered-a-capability-that-changes-the-model), accepted 2026-10-17 - item 2, *"Resolution, proposed and not built"*; item 1, the reporting, stands unchanged
 
 **Full record:** [`decisions/D-101.md`](decisions/D-101.md)
 
@@ -924,6 +934,7 @@ What this makes easy. What this makes hard. What it locks in.
 **Status:** Accepted · **Date:** 2026-09-27 · **Source:** Ajmal PS, 2026-09-27, in conversation, when NEEDS-CHECKING row AS4 failed on his PC
 **Supersedes:** [D-104](#d-104--the-modeller-can-talk-to-the-open-chat-from-inside-revit) in full · **Restores:** the one sentence of [D-01](#d-01--execution-host-claude-code-plugin) that D-104 superseded - *"nothing is being built for it"* · **Keeps:** [D-01](#d-01--execution-host-claude-code-plugin), [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)
 **Affects:** removed - `mcp/server/heron_talk.py`, `mcp/heron-talk.cmd`, `HeronTalk.cs`, `HeronTalkMailbox.cs`, `HeronTalkWindow.cs`, `Resources/Talk.png`, `tests/Heron.Talk.TestHost/`, `tests/test_talk.py`, `tests/test_talk_contract.py`, `tests/test_talk_served.py`; put back as they were before #338 - [`.mcp.json`](../.mcp.json), [`HeronApplication.cs`](../revit/Heron.Revit.Addin/HeronApplication.cs), [`HeronPaths.cs`](../platform/Heron.Core/HeronPaths.cs), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), [`heron_dotnet.py`](../brain/heron_dotnet.py), [`gates.yml`](../.github/workflows/gates.yml)
+**Superseded in part by:** [D-108](#d-108--the-modeller-can-see-and-edit-herons-work-in-a-local-companion-page-and-the-chat-stays-the-only-place-to-talk-to-heron), accepted 2026-09-29 - point 2 only as far as *"works with Heron in the chat only"*: the modeller can see and edit Heron's work in a local Companion page, and the chat stays the only place to **talk** to Heron
 
 **Full record:** [`decisions/D-105.md`](decisions/D-105.md)
 
@@ -1222,3 +1233,44 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) (`CONVERSATION_ID`, `RESERVED_KEYS`, `hand_back_models`), [`heron_config.py`](../mcp/client/heron_config.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`revit_release`), [`heron_tools.py`](../mcp/server/heron_tools.py), [`heron_failure.py`](../mcp/server/heron_failure.py) (`model_in_use`), [`batch-prove.py`](../tools/batch-prove.py), [`HeronConversation.cs`](../revit/Heron.Revit.Addin/HeronConversation.cs), [`HeronModelHold.cs`](../revit/Heron.Revit.Addin/HeronModelHold.cs), [`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs), [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`HeronKeepGrant.cs`](../revit/Heron.Revit.Addin/HeronKeepGrant.cs), [`HeronApplication.cs`](../revit/Heron.Revit.Addin/HeronApplication.cs), [`Commands.cs`](../revit/Heron.Revit.Addin/Commands.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs), [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs), [25 §3](25-multi-session-and-binding.md), [`fragment-proving`](../.claude/skills/fragment-proving/SKILL.md), [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md), [`tests/test_model_hold.py`](../tests/test_model_hold.py), [`tests/Heron.ModelHold.TestHost`](../tests/Heron.ModelHold.TestHost/Program.cs), [NEEDS-CHECKING Group HK](needs-checking/group-hk.md)
 
 **Full record:** [`decisions/D-141.md`](decisions/D-141.md)
+
+## D-142 — Anything a kept change deletes from the model is asked in Revit first, in a box of its own, whatever Ask to Keep says and never under a job's grant
+
+**Status:** Accepted · **Date:** 2026-10-18 · **Accepted:** Ajmal PS, 2026-10-18, in conversation, his words as the task that asked for this condensed them: *"When I type delete, it means delete - that is OK. But anything deleting from the model should come through the pop-up, in any situation, Ask to Keep on or off. It shows: this many elements are going to be deleted - can we delete or not? If I agree, it deletes. If I disagree, no."* · **Source:** the architecture audit of 2026-10-18, which found *"delete these"* deleting the live selection in one call with nothing in code asking - [row 5b-161](fragment-issues/section-5b-rows-151-175.md) had said so since 2026-09-23
+**Numbering:** D-139 is held twice, by open pull requests #669 and #670, and one of them renames before it merges; another session is adding one more. This took D-142 to stay clear of all three, so D-140 and D-141 may stay unused
+**Meets:** [Constitution Article 7](../HERON_CONSTITUTION.md) for deleting elements, in code - the explicit confirmation is asked in Revit, of the modeller, for that specific change · **Amends:** [D-138](#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking) item 5 - what is still asked every time, grant or not, gains any change Revit counts a deletion in · **Keeps:** [D-126](#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept) and D-138 otherwise, [D-119](#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so) - a DRAFT's one run is still asked Keep or Discard, [D-117](#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands), [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit) - `write.enabled` stays off by default, Golden Rules 16 and 19
+**Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`RevitFragmentDelete.cs`](../revit/Heron.Revit.Addin/RevitFragmentDelete.cs), [`HeronDeleteQuestion.cs`](../revit/Heron.Revit.Addin/HeronDeleteQuestion.cs), [`RevitChangedSet.cs`](../revit/Heron.Revit.Addin/RevitChangedSet.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`HeronRunClock.cs`](../revit/Heron.Revit.Addin/HeronRunClock.cs), [`heron_config.py`](../mcp/client/heron_config.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_run_records.py`](../mcp/server/heron_run_records.py), [`heron_failure.py`](../mcp/server/heron_failure.py), [Constitution Enforcement](../HERON_CONSTITUTION.md), [`tests/test_delete_box.py`](../tests/test_delete_box.py), [`tests/test_keep_question.py`](../tests/test_keep_question.py), [`tests/Heron.KeepQuestion.TestHost`](../tests/Heron.KeepQuestion.TestHost/Program.cs)
+
+**Full record:** [`decisions/D-142.md`](decisions/D-142.md)
+
+## D-143 — A credential in a tracked file fails the pull request
+
+**Status:** Accepted · **Date:** 2026-10-18 · **Accepted:** Ajmal PS, 2026-10-18, in conversation, asked *"When Heron's new secret scanner finds a password or API key in a change, what should happen?"* and choosing *"Block it"* over *"Warn only"*
+**Keeps:** [D-07](#d-07--free-open-source-on-public-github) - the repository stays public, which is the reason for this · [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) - the idea was studied in another project and re-authored here, nothing imported
+**Affects:** [`check-secrets.py`](../tools/check-secrets.py), [`test_check_secrets.py`](../tests/test_check_secrets.py), [`heron_secrets.py`](../brain/heron_secrets.py) (`PATTERNS` gains `private key`, and `FAKE_PRIVATE_KEY`), [`test_secrets.py`](../tests/test_secrets.py), [`test_configuration.py`](../tests/test_configuration.py), [`gates.yml`](../.github/workflows/gates.yml), [`test_tag.py`](../tests/test_tag.py), [`AGENTS.md`](../AGENTS.md), [`CONTRIBUTING.md`](../CONTRIBUTING.md), [`heron-ship`](../.claude/skills/heron-ship/SKILL.md), [`tools/README.md`](../tools/README.md), [`check-gaps.py`](../tools/check-gaps.py), [12 §5a](12-security-and-permissions.md), [17](17-open-source-and-distribution.md)
+
+**Full record:** [`decisions/D-143.md`](decisions/D-143.md)
+
+## D-144 — A superseded decision says so under its own heading, where its citations land
+
+**Status:** Accepted · **Date:** 2026-10-19 · **Accepted:** Ajmal PS, 2026-10-19, in conversation: *"accept D-144, mark ready and merge"* · **Source:** the third file-level reading of an external project, which the owner asked for on 2026-10-18 so that its useful ideas could be taken into Heron ([33 §5.1](33-external-repository-research.md#51-affaan-mecc))
+**Keeps:** the log's own rule, in its preamble - append-only, a reversal is a new entry and the original stays · [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) - the idea was studied in another project and re-authored here, nothing imported
+**Affects:** [`check-supersessions.py`](../tools/check-supersessions.py), [`test_check_supersessions.py`](../tests/test_check_supersessions.py), [`check-docs.py`](../tools/check-docs.py) (§13), [`tools/README.md`](../tools/README.md), and six notes in this log, under D-24, D-37, D-99, D-101 and D-105
+
+**Full record:** [`decisions/D-144.md`](decisions/D-144.md)
+
+## D-145 — A card may let its caller answer one named Revit dialog, for one job, and every other dialog is still declined
+
+**Status:** Proposed · **Date:** 2026-10-19 · the owner has not read this back; it is what the 2026-10-19 task asked for, written down so it can be accepted or overturned
+**Keeps:** Article 7 of the [Constitution](../HERON_CONSTITUTION.md) - Heron still answers no dialog for the owner; the caller does, in words they typed
+**Affects:** [`HeronDialogNote.cs`](../revit/Heron.Revit.Addin/HeronDialogNote.cs) (`HeronDialogRule.CallerAnswer`), [`HeronDialogWatch.cs`](../revit/Heron.Revit.Addin/HeronDialogWatch.cs) (`AnswerForJob`), [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) (a need's `dialog:`), [`set-parameter-values-by-id`](../brain/fragments/set-parameter-values-by-id/fragment.yaml) version 5, [`test_dialog_note.py`](../tests/test_dialog_note.py), [row 5b-1221](fragment-issues/section-5b-rows-401-425.md), [Group HP](needs-checking/group-hp.md)
+
+**Full record:** [`decisions/D-145.md`](decisions/D-145.md)
+
+## D-146 — A fragment may name Revit's appearance-asset namespace, so a material's render appearance can be edited
+
+**Status:** Proposed · **Date:** 2026-10-20 · the owner has not read this back; it is what the 2026-10-20 task asked for ("in the material also ... all the parts should be covered"), written down so it can be accepted or overturned
+**Keeps:** [Article 21](../HERON_CONSTITUTION.md) - every fragment already in the library compiles with the namespace added, on every release it claims, 2020 to 2027 (measured 2026-10-20)
+**Affects:** [`check-fragments-compile.py`](../tools/check-fragments-compile.py) (`USINGS`), [`HeronFragmentImports.cs`](../revit/Heron.Revit.Addin/HeronFragmentImports.cs), [`set-material-appearance`](../brain/fragments/set-material-appearance/fragment.yaml), [`create-starter-materials`](../brain/fragments/create-starter-materials/fragment.yaml), [`list-materials`](../brain/fragments/list-materials/fragment.yaml) version 3, [row 5b-1264](fragment-issues/section-5b-rows-401-425.md), [Group IA](needs-checking/group-ia.md)
+
+**Full record:** [`decisions/D-146.md`](decisions/D-146.md)

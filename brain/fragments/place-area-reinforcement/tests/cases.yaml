@@ -1,0 +1,23 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one structural concrete floor with no rebar; majorDirection x, bottomMajor 12mm @ 200, bottomMinor 12mm @ 200, topMajor none, topMinor none
+    expect: >
+      placed 1 area reinforcement, `report` naming "Bottom Major Direction" and
+      "Bottom Minor Direction" on at 200 mm and both top layers off, and in a
+      section the bars inside the floor's own bottom cover
+
+negative:
+  - given: the same floor straight after, the same values
+    expect: >
+      placed 0, skipped as already holding area reinforcement - nothing doubled
+  - given: an architectural (non-structural) floor, the same values
+    expect: >
+      placed 0, skipped as not a rebar host
+  - given: a wall, majorDirection x
+    expect: >
+      placed 0, skipped - a wall's major direction is horizontal or vertical
+
+second_route:
+  - select the area reinforcement and read each layer's check box, bar type and spacing in Properties
+  - one Ctrl+Z takes it back (Golden Rule 16)

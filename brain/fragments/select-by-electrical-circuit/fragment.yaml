@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -117,6 +117,32 @@ contract:
       # up in THIS model (FRAGMENT-ISSUES row 75).
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,147 elements), Revit 2020, session 2648
+  positive_case: run as it would normally be run. returned electrical Func`2, elements 1 item(s)
+    [179 LPS], findings 2 item(s) [1 of 2 element(s) with an electrical connector are on NO
+    cir..., 1 piece(s) of electrical equipment have no supply circuit of...], includeLinks
+    false, linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s),
+    linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched
+    0, nestedLinks 0, onACircuit Func`2, panels 0 item(s), wantKind none, wantName , wantNone
+    true. inputs came circuitKind as given; circuitName as given; includeLinks as given. on
+    Project1
+  negative_case: run with categoryName=Walls, circuitKind=power, circuitName=ZZZNOTHINGHERE,
+    inViewOnly=Heron 3D, includeLinks=False instead - chosen because it should not contain
+    what this fragment reports. returned electrical Func`2, elements 0 item(s), findings 2
+    item(s) [0 element(s) across 0 circuit(s) with kind containing 'power..., No circuit matched.
+    A model with no electrical work at all g...], includeLinks false, linkBlocked , linkDocs
+    0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host
+    model only - links not read], linkedTotal 0, linksSearched 0, nestedLinks 0, onACircuit
+    Func`2, panels 0 item(s), wantKind power, wantName ZZZNOTHINGHERE, wantNone false. inputs
+    came circuitKind as given; circuitName as given; includeLinks as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 29f27257e88c03f6
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

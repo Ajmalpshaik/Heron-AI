@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "put the values from this table back onto the elements they c
 kind: action
 domain: revit.parameters
 capability: IMPORT_PARAMETER_VALUES
-version: 4
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -100,6 +100,20 @@ purpose: >
   is not yet measured: what the early read said never reached the chat.**
   DRAFT until NEEDS-CHECKING CD13 has run on a scratch model.
 
+  **Version 5 takes a material, a level or a family type by name.**
+
+# VERSION 5 - FRAGMENT-ISSUES 5b-1259. Measured 2026-10-19 on Revit 2020, the
+# owner's Kerala house: "Id,Material" with 346587,TRG_Material_Teak_Wood and
+# includeTypeParameters true reached the M_Round Column type's Material and
+# answered "Revit would not take 'TRG_Material_Teak_Wood' for 'Material'" -
+# an element reference was handed to SetValueString, which takes no name. Now
+# a cell for a parameter holding another element is a NAME: a material or a
+# level by its Name, a family type as "Family: Type", matched exactly, the
+# kind narrowed first by what the parameter holds or its definition. None, or
+# two, is refused for that cell with the reason, counted with the values Revit
+# would not take. The read-back compares the id Revit holds with the id the
+# name named - never the name Revit prints for it. Version 4's proof below no
+# longer describes the code: DRAFT until NEEDS-CHECKING Group HZ.
 contract:
   needs:
     - name: doc
@@ -135,7 +149,8 @@ contract:
       role: accounting
       type: int
     - name: valuesRejected
-      # Values Revit accepted and then read back different. EVERY VALUE
+      # Values Revit accepted and then read back different - for an element
+      # reference, a different id from the one its name named. EVERY VALUE
       # WRITTEN IS RE-READ, and these are the ones that did not take (D-52).
       role: accounting
       type: int
@@ -165,33 +180,55 @@ contract:
       role: accounting
       type: string
 
+# VERSION 4's PROOF, KEPT AS A RECORD. Version 5 changed impl/ (row 5b-1259), so
+# its fingerprint no longer describes the code and the card is DRAFT until
+# NEEDS-CHECKING Group HZ proves version 5 (D-30). Every value that is not an
+# element reference still takes the road this proof ran.
 proof:
-  date: '2026-09-11'
+  date: '2026-10-21'
   by: Ajmal PS
-  model: Project1 work_ajmal.al (3,471 elements), Revit 2024, session 24688
+  model: Cinematic ID Test (5,262 elements), Revit 2020, session 68704
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned byId 5 entry(ies),
-    findings 2 item(s) [5 value(s) written across 5 matched row(s). Every value writ..., Skipped:
-    0 because the parameter is not there, 0 because it ...], includeTypeParameters false,
-    quotingIsBroken false, rowsMatched 5, rowsUnmatched 0, splitRecords Func`2, splitRow Func`2,
-    valuesRejected 0, valuesWritten 5. inputs came elements from the selection (5); csvPath
-    as given; includeTypeParameters as given. on Project1 work_ajmal.al'
-  negative_case: 'run with categoryName=Ducts, csvPath=C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports/params-nomatch.csv,
-    inViewOnly=1 - Mech, includeTypeParameters=False instead - chosen because it should not
-    contain what this fragment reports - the arrangement was re-made first by running select-by-category-name,
-    set-selection with this phase''s own values - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned byId 5 entry(ies), findings 7 item(s)
-    [0 value(s) written across 0 matched row(s), 5 row(s) matched...,   row 2: ''1'' is not
-    one of the elements handed in,   row 3: ''2'' is not one of the elements handed in, ...],
-    includeTypeParameters false, quotingIsBroken false, rowsMatched 0, rowsUnmatched 5, splitRecords
-    Func`2, splitRow Func`2, valuesRejected 0, valuesWritten 0. inputs came elements from
-    the selection (5); csvPath as given; includeTypeParameters as given. on Project1 work_ajmal.al'
+    select-by-category-name with this phase''s own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned blankCellsSkipped
+    0, blankMode skip, blankWord skip, byId 24 entry(ies), cellsCleared 0, changedOnRegeneration
+    0, findings 3 item(s) [1 value(s) written across 1 matched row(s). Every value writ...,
+    Skipped: 0 because the parameter is not there, 0 because the..., 0 blank cell(s) skipped
+    - those elements keep the value they...], includeTypeParameters false, isYesNo Func`2,
+    materialSpec (null), materialSpecProperty (null), namedElements 617 item(s) [(material,
+    , Default, 23), (material, , Default Wall, 24), (material, , Default Roof, 25), ...],
+    pending 1 item(s) [(Autodesk.Revit.DB.Wall, Top Constraint, 2, Roof Line, , Up ...], pendingAt
+    1 entry(ies), quotingIsBroken false, readBack 0 item(s), readOf Func`3, referenceAt 1
+    entry(ies), referenceByName Func`3, rowFindings , rowsMatched 1, rowsUnmatched 0, splitRecords
+    Func`2, splitRow Func`2, tickOf Func`2, tickedWords 4 item(s) [yes, true, on, ...], untickedWords
+    4 item(s) [no, false, off, ...], valuesRejected 0, valuesWritten 1, yesNoProperty (null),
+    yesNoRoute ParameterType, yesNoSpec (null), yesNoSpecs (null). inputs came elements from
+    select-by-category-name (24); csvPath as given; includeTypeParameters as given; blankCells
+    as given. on Cinematic ID Test'
+  negative_case: 'run with blankCells=skip, categoryName=Walls, csvPath=C:/Users/ajmal/AppData/Local/Temp/heron-work/night/files-D/import-negative.csv,
+    inViewOnly=FloorPlan: Level 1, includeTypeParameters=False instead - chosen because it
+    should not contain what this fragment reports - the arrangement was re-made first by running
+    select-by-category-name with this phase''s own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned blankCellsSkipped
+    0, blankMode skip, blankWord skip, byId 24 entry(ies), cellsCleared 0, changedOnRegeneration
+    0, findings 4 item(s) [0 value(s) written across 1 matched row(s). Every value writ...,   row
+    2: ''No Such Level'' for ''Top Constraint'' on id 707722 -..., Skipped: 0 because the
+    parameter is not there, 0 because the..., ...], includeTypeParameters false, isYesNo Func`2,
+    materialSpec (null), materialSpecProperty (null), namedElements 617 item(s) [(material,
+    , Default, 23), (material, , Default Wall, 24), (material, , Default Roof, 25), ...],
+    pending 0 item(s), pendingAt 0 entry(ies), quotingIsBroken false, readBack 0 item(s),
+    readOf Func`3, referenceAt 0 entry(ies), referenceByName Func`3, rowFindings row 2: ''No
+    Such Level'' for ''Top Constraint'' on id 707722 - no level in this model is called ''No
+    Such Level''. Names are matched exactly. Left as it was, rowsMatched 1, rowsUnmatched
+    0, splitRecords Func`2, splitRow Func`2, tickOf Func`2, tickedWords 4 item(s) [yes, true,
+    on, ...], untickedWords 4 item(s) [no, false, off, ...], valuesRejected 0, valuesWritten
+    0, yesNoProperty (null), yesNoRoute ParameterType, yesNoSpec (null), yesNoSpecs (null).
+    inputs came elements from select-by-category-name (24); csvPath as given; includeTypeParameters
+    as given; blankCells as given. on Cinematic ID Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: cb8381c0c15c1e0a
-
+  fingerprint: e8fb7e0e7511ef70
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -230,6 +267,14 @@ compatibility-note: >
 
   **`System.IO` is written out in full**, as the fragment wrapper does not
   import it.
+
+  Since row 5b-1259 an element reference takes a name. `Parameter.Set(ElementId)`,
+  `AsElementId`, `ElementType.FamilyName`, `FilteredElementCollector.OfClass`
+  and `WhereElementIsElementType` are unchanged 2020 to 2027. What a reference
+  holding <By Category> may name is read by reflection, like the Yes/No:
+  `SpecTypeId.Reference.Material` from 2022 (read in the 2023 reference
+  assembly), `ParameterType.Material` and `ParameterType.FamilyType` on 2020
+  and 2021 (read in the 2020 one). No `ElementId` is built from a number.
 
 # ROUTING - the same rows are in the fragments named here.
 #

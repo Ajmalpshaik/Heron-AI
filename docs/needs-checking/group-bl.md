@@ -59,3 +59,9 @@ Test` and left open in front - a family nobody needs. The job file rolls every w
 **Not in this group, because not built here:** locking a form's faces to planes, labelling a round size, and
 cutting a solid with a void - the steps that make these forms parametric and make a void cut. Each form
 tool's findings say so in its own words.
+
+## Proven 2026-10-18 (Revit 2020, session 64176, the owner's scratch families Family3 and Family4)
+
+Each by `validate --write`, both legs rolled back, then signed by Ajmal PS and set PROVEN by him. This group's other rows were NOT RUN that day.
+
+- `create-family-extrusion` - positive Family4 *rect 0,0 50,50* Z 500 to 520: built; negative Z 500 to 500.5: refused, 0.5 mm is shorter than Revit's shortest line.

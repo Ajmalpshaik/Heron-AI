@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DOC-004
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -94,6 +94,41 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-20'
+  by: Ajmal PS
+  model: Project2, Revit 2020, session 29012 - the count is NOT recorded because 3,780 elements
+    was measured on Materials IA Test, the document in front, and this ran against another
+    one (row 15)
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned article a project, created Document,
+    exampleTemplate Mechanical-Default_Metric, fileExtension .rvt, findings 1 item(s) [New
+    project 'IA Project Proof' made from 'C:\ProgramData\Aut...], folder C:\ProgramData\Autodesk\RVT
+    2020\Templates\US Metric, kind project, makeNew Func`2, openNext (null), refused (null),
+    savedTo C:\Users\ajmal\AppData\Local\Temp\heron-work\materials-ia\IA Project Proof.rvt,
+    target C:\Users\ajmal\AppData\Local\Temp\heron-work\materials-ia\IA Project Proof.rvt,
+    targetExtension .rvt, template C:\ProgramData\Autodesk\RVT 2020\Templates\US Metric\Systems-Default_Metric.rte,
+    templateExtension .rte, templateFolder Func`1, templateUsed C:\ProgramData\Autodesk\RVT
+    2020\Templates\US Metric\Systems-Default_Metric.rte, title IA Project Proof. inputs came
+    templatePath as given; savePath as given. on Project2
+  negative_case: run with templatePath=No Such Template.rte, savePath=C:\Users\ajmal\AppData\Local\Temp\heron-work\materials-ia\IA
+    Negative 2.rvt instead - chosen because it should not contain what this fragment reports
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned article a project, created (null), exampleTemplate Mechanical-Default_Metric,
+    fileExtension .rvt, findings 1 item(s) [No template called 'No Such Template.rte' in 'C:\ProgramData...],
+    folder C:\ProgramData\Autodesk\RVT 2020\Templates\US Metric, kind project, makeNew Func`2,
+    openNext (null), refused No template called 'No Such Template.rte' in 'C:\ProgramData\Autodesk\RVT
+    2020\Templates\US Metric', the folder this Revit uses. Give the full path instead - nothing
+    here picks a near match, because a near match makes the wrong kind of project, savedTo
+    (null), target C:\Users\ajmal\AppData\Local\Temp\heron-work\materials-ia\IA Negative 2.rvt,
+    targetExtension .rvt, template No Such Template.rte, templateExtension .rte, templateFolder
+    Func`1, templateUsed (null), title (null). inputs came templatePath as given; savePath
+    as given. on Project2
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: addfd2e3614c9325
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

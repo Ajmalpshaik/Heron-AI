@@ -1,7 +1,8 @@
-// NOT STANDALONE. Assumes `doc`, `rows` and `keepFace` are in scope, and
-// leaves `written`, `resultJson`, `stale`, `refused` and `findings` behind.
-// `keepFace` is version 3's and the card reads it as "none" when it is left
-// out - see "keep a face" below.
+// NOT STANDALONE. Assumes `doc`, `rows`, `keepFace` and `renameViews` are in
+// scope, and leaves `written`, `resultJson`, `stale`, `refused` and `findings`
+// behind. `keepFace` is version 3's and the card reads it as "none" when it is
+// left out - see "keep a face" below. `renameViews` is version 5's, "none"
+// when left out - see "a level's name" below.
 //
 // ASSUMES AN OPEN TRANSACTION. It does not start one: the operation's
 // TransactionGroup makes the whole Apply one entry in Revit's undo list.
@@ -18,6 +19,13 @@
 //   at three - so giving 13 rooms 13 names took 26 calls, a find and a write
 //   per room (FRAGMENT-ISSUES 5b-459). A key that names no element, or more
 //   than one, refuses THAT ROW by name and never guesses.
+//
+//   VERSION 4 (5b-1260): `types=yes` on the first row looks among the TYPES
+//   in those categories, not the elements placed from them - a column type's
+//   Material is one row, `key=Type Name|in=Columns|types=yes`. Left out it is
+//   no, and the search is version 3's. And a parameter holding another
+//   element takes a NAME, by either shape (5b-1259) - see "an element
+//   reference takes a name".
 //
 // BY ID: TWO PASSES, AND THE FIRST WRITES NOTHING. Every row is checked
 // against the model before any row is written - still there, the same
@@ -121,6 +129,125 @@ Func<Parameter, bool> isYesNo = p =>
     }
 };
 
+// ===========================================================================
+// AN ELEMENT REFERENCE TAKES A NAME (FRAGMENT-ISSUES 5b-1259).
+// ===========================================================================
+//
+// A parameter that holds another element - a Material, a Level, a type - was
+// refused or handed to SetValueString, which takes no name: on Revit 2020 a
+// column type's Material was refused 'TRG_Material_Teak_Wood' that way, and a
+// mullion type's Material before it. So a NAME is now looked up, exactly:
+// a material and a level by Name, a family type as "Family: Type", the way
+// Properties shows it. Matching none, or two, is refused by name - never
+// guessed (D-33) - and the id Revit holds afterwards is read back.
+//
+// WHAT THE NAME MAY BE is narrowed first, so a name cannot land on the wrong
+// kind of element: by what the parameter holds now (a type: types of that
+// category only), else by its definition - Material, or on 2020 and 2021 a
+// FamilyType - read by reflection like the Yes/No above, since
+// `ParameterType` is gone from 2023 and `SpecTypeId.Reference` begins at
+// 2022. A parameter holding <By Category> and saying nothing more is matched
+// against all three kinds, and a name two of them share is refused.
+// Anything else it holds - a phase, a view - is refused by name.
+//
+// No ElementId is built from a number: the id comes from the element found.
+var materialSpecProperty = (typeof(Document).Assembly.GetType(typeof(Document).Namespace + ".SpecTypeId+Reference")
+    ?? typeof(object)).GetProperty("Material",
+    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+var materialSpec = materialSpecProperty == null ? null : materialSpecProperty.GetValue(null, null);
+
+// kind, category (types only), name, id - every material, level and type in
+// this document, read once, the first time a name is asked for.
+List<Tuple<string, ElementId, string, ElementId>> namedElements = null;
+
+// The id a name resolves to, or null and the reason in words.
+Func<Parameter, string, Tuple<ElementId, string>> referenceByName = (p, text) =>
+{
+    var said = (text ?? "").Trim();
+    var kind = "any";
+    ElementId categoryId = null;
+    try
+    {
+        var heldId = p.AsElementId();
+        var held = heldId == null || heldId == ElementId.InvalidElementId ? null : doc.GetElement(heldId);
+        if (held is Material) kind = "material";
+        else if (held is Level) kind = "level";
+        else if (held is ElementType)
+        {
+            kind = "type";
+            if (held.Category != null) categoryId = held.Category.Id;
+        }
+        else if (held != null)
+        {
+            return Tuple.Create((ElementId)null, "it holds a " + held.GetType().Name + " ('" + held.Name
+                + "'), and only a material, a level or a family type can be named");
+        }
+        else if (p.Definition != null)
+        {
+            var definition = p.Definition;
+            var getDataType = definition.GetType().GetMethod("GetDataType", System.Type.EmptyTypes);
+            if (getDataType != null && materialSpec != null)
+            {
+                var spec = getDataType.Invoke(definition, null);
+                var nameEquals = spec == null ? null
+                    : spec.GetType().GetMethod("NameEquals", new[] { materialSpec.GetType() });
+                if (spec != null && (nameEquals != null
+                        ? (bool)nameEquals.Invoke(spec, new[] { materialSpec })
+                        : spec.Equals(materialSpec)))
+                    kind = "material";
+            }
+            else
+            {
+                var parameterType = definition.GetType().GetProperty("ParameterType");
+                var dataKind = parameterType == null ? null : parameterType.GetValue(definition, null);
+                var word = dataKind == null ? "" : dataKind.ToString();
+                if (word == "Material") kind = "material";
+                else if (word == "FamilyType") kind = "type";
+            }
+        }
+    }
+    catch (Exception)
+    {
+        kind = "any";
+        categoryId = null;
+    }
+
+    var what = kind == "material" ? "material" : kind == "level" ? "level"
+        : kind == "type" ? "family type" + (categoryId == null ? "" : " of that category")
+        : "material, level or family type";
+    if (said.Length == 0) return Tuple.Create((ElementId)null, "a blank names no " + what);
+
+    if (namedElements == null)
+    {
+        namedElements = new List<Tuple<string, ElementId, string, ElementId>>();
+        foreach (var m in new FilteredElementCollector(doc).OfClass(typeof(Material)))
+            namedElements.Add(Tuple.Create("material", (ElementId)null, m.Name, m.Id));
+        foreach (var l in new FilteredElementCollector(doc).OfClass(typeof(Level)))
+            namedElements.Add(Tuple.Create("level", (ElementId)null, l.Name, l.Id));
+        foreach (var e in new FilteredElementCollector(doc).WhereElementIsElementType())
+        {
+            var t = e as ElementType;
+            if (t == null || string.IsNullOrEmpty(t.FamilyName)) continue;
+            namedElements.Add(Tuple.Create("type", t.Category == null ? null : t.Category.Id,
+                t.FamilyName + ": " + t.Name, t.Id));
+        }
+    }
+
+    var hits = namedElements.Where(n => (kind == "any" || n.Item1 == kind)
+        && (categoryId == null || categoryId.Equals(n.Item2))
+        && n.Item3 == said).ToList();
+    if (hits.Count == 1) return Tuple.Create(hits[0].Item4, (string)null);
+    if (hits.Count == 0)
+    {
+        return Tuple.Create((ElementId)null, "no " + what + " in this model is called '" + said + "'"
+            + (kind == "type" || kind == "any" ? " - a family type is named 'Family: Type', as Properties shows it" : "")
+            + ". Names are matched exactly");
+    }
+    return Tuple.Create((ElementId)null, hits.Count + " elements in this model are called '" + said + "' ("
+        + string.Join(", ", hits.Take(3).Select(n => n.Item1 + " " + n.Item4).ToArray())
+        + ") - which one is meant would be a guess");
+};
+
 var ticked = new[] { "yes", "true", "on", "1", "ticked" };
 var unticked = new[] { "no", "false", "off", "0", "unticked" };
 
@@ -160,6 +287,9 @@ Func<Parameter, string> storedValue = p =>
         if (p.StorageType == StorageType.Integer)
             return p.AsInteger().ToString(System.Globalization.CultureInfo.InvariantCulture);
         if (p.StorageType == StorageType.String) return p.AsString() ?? "";
+        // Version 4: the id it holds, as Revit prints it - never built back
+        // into an id from the number.
+        if (p.StorageType == StorageType.ElementId) return p.AsElementId().ToString();
     }
     catch { }
     return null;
@@ -178,6 +308,45 @@ Func<Element, Parameter, bool> groupLocked = (element, p) =>
         return definition == null || !definition.VariesAcrossGroups;
     }
     catch { return true; }
+};
+
+// ------------------------------------------------------------ a level's name
+// VERSION 5 (FRAGMENT-ISSUES 5b-1221, D-145). Writing a LEVEL's name makes
+// Revit ask "Would you like to rename corresponding views?" - dialog id
+// TaskDialog_Confirm_Level_Rename, measured 2026-10-19 on Revit 2020, model
+// 'Kerala house design'. Heron declines every dialog in a job, so the whole
+// run was rolled back. The question is the caller's to answer: renameViews
+// yes renames the plan and ceiling views that carry the level's name, no
+// renames the level alone. The add-in gives Revit that answer - the card's
+// `dialog:` line on the need - and nothing here touches the dialog.
+//
+// LEFT OUT ("none"), a level's name is REFUSED HERE, before anything is
+// written, saying what to send - rather than written, met by the dialog, and
+// rolled back with Revit's question as the only explanation. By id that is a
+// stale row and nothing is written; by key that row alone. Any other
+// parameter, and any element that is not a level, is version 4's run.
+//
+// THE NAME IS FOUND BY WHAT IT IS, not by the word "Name", which a Revit in
+// another language does not show: the level's built-in name parameter, or the
+// text parameter holding exactly the level's own name.
+Func<Element, Parameter, string> levelAsks = (element, p) =>
+{
+    if (!(element is Level) || p == null) return null;
+    var word = (renameViews ?? "none").Trim().ToLowerInvariant();
+    if (word == "yes" || word == "no") return null;
+    var isName = false;
+    try
+    {
+        var definition = p.Definition as InternalDefinition;
+        isName = definition != null && definition.BuiltInParameter == BuiltInParameter.DATUM_TEXT;
+        if (!isName && p.StorageType == StorageType.String)
+            isName = (p.AsString() ?? "") == (element.Name ?? "");
+    }
+    catch { }
+    if (!isName) return null;
+    return "renaming a level makes Revit ask whether to rename its views too - send renameViews=yes "
+         + "to rename the plan and ceiling views that carry the level's name as well, or renameViews=no "
+         + "to rename the level alone";
 };
 
 // ------------------------------------------------------------ keep a face
@@ -871,11 +1040,15 @@ foreach (var raw in (keyed ? "" : (rows ?? "")).Split(';'))
         else if (target == null)
             why = "two parameters on it are called " + name + " and more than one can be written";
         else if (target.IsReadOnly) why = name + " is read-only";
-        else if (target.StorageType == StorageType.ElementId
-                 || target.StorageType == StorageType.None)
+        else if (target.StorageType == StorageType.None)
             why = name + " holds a reference to another element, which cannot be typed as text";
+        else if (target.StorageType == StorageType.ElementId
+                 && referenceByName(target, want).Item1 == null)
+            why = name + ": " + referenceByName(target, want).Item2;
         else if (groupLocked(element, target))
             why = "it is in a model group, and " + name + " would change in every copy of the group";
+        else if (levelAsks(element, target) != null)
+            why = levelAsks(element, target);
         else if (!unchanged(target, was)
                  || (wasStored.Length > 0 && target.StorageType != StorageType.String
                      && storedValue(target) != wasStored))
@@ -927,11 +1100,14 @@ else if (plan.Count == 0)
 else
 {
     var refusedHere = new List<string>();
+    // Version 4: the id each element reference was set to, by plan row.
+    var askedIds = new List<ElementId>();
     foreach (var step in plan)
     {
         var p = theOne(step.Item1, step.Item2);
         var want = step.Item3;
         var ok = false;
+        ElementId askedId = null;
 
         if (isYesNo(p))
         {
@@ -943,10 +1119,16 @@ else
         {
             ok = p.Set(want ?? "");
         }
+        else if (p.StorageType == StorageType.ElementId)
+        {
+            askedId = referenceByName(p, want).Item1;
+            ok = askedId != null && p.Set(askedId);
+        }
         else
         {
             ok = p.SetValueString(want ?? "");
         }
+        askedIds.Add(askedId);
 
         if (!ok) refusedHere.Add(step.Item1.Id + ": Revit would not take '" + want + "' for " + step.Item2);
     }
@@ -969,12 +1151,15 @@ else
         if (notKept != null) throw new InvalidOperationException("Nothing was kept. " + notKept);
     }
 
-    foreach (var step in plan)
+    for (var at = 0; at < plan.Count; at++)
     {
+        var step = plan[at];
         var again = theOne(step.Item1, step.Item2);
         var now = again == null ? null : readValue(again);
         var nowRaw = again == null ? null : storedValue(again);
         written++;
+        if (askedIds[at] != null && (again == null || !askedIds[at].Equals(again.AsElementId())))
+            findings.Add(step.Item1.Id + ": " + step.Item2 + " reads back '" + now + "', not '" + step.Item3 + "'");
         readBack.Add("{" + esc("id") + ": " + esc(step.Item1.Id.ToString()) + ", "
                      + esc("name") + ": " + esc(step.Item2) + ", "
                      + esc("value") + ": " + esc(now) + ", "
@@ -1013,6 +1198,7 @@ if (keyed)
     // Any other name=value NARROWS the search to elements that hold that
     // value too - Level=Level 14 when every floor numbers its rooms from 1.
     string keyName = null;
+    var wantTypes = false;
     var categoryNames = new List<string>();
     var narrowing = new List<Tuple<string, string>>();
     string problem = null;
@@ -1032,6 +1218,21 @@ if (keyed)
         if (word.Equals("key", StringComparison.OrdinalIgnoreCase))
         {
             keyName = Uri.UnescapeDataString(said).Trim();
+        }
+        else if (word.Equals("types", StringComparison.OrdinalIgnoreCase))
+        {
+            // Version 4: types=yes looks among the TYPES in those categories
+            // - a column type's Material, a door type's Fire Rating - and not
+            // the elements placed from them. Left out, it is no.
+            var answer = same(Uri.UnescapeDataString(said)).ToLowerInvariant();
+            if (Array.IndexOf(ticked, answer) >= 0) wantTypes = true;
+            else if (Array.IndexOf(unticked, answer) >= 0) wantTypes = false;
+            else
+            {
+                problem = "types='" + Uri.UnescapeDataString(said) + "' is not yes or no - types=yes " +
+                          "writes the types in those categories, and leaving it out writes the elements.";
+                break;
+            }
         }
         else if (word.Equals("in", StringComparison.OrdinalIgnoreCase))
         {
@@ -1054,6 +1255,9 @@ if (keyed)
                   "in=Rooms, so a key cannot land on a kind of element you did not mean.";
     if (problem == null && faceKeeper != null && faceKeeper.Problem != null)
         problem = faceKeeper.Problem;
+    if (problem == null && faceKeeper != null && wantTypes)
+        problem = "keepFace moves an element to keep its face where it was, and a type is not placed " +
+                  "anywhere - types=yes and keepFace cannot go together.";
 
     var categories = new List<Category>();
     if (problem == null)
@@ -1079,7 +1283,7 @@ if (keyed)
         }
     }
 
-    var where = string.Join(", ", categoryNames.ToArray());
+    var where = string.Join(", ", categoryNames.ToArray()) + (wantTypes ? " types" : "");
     if (narrowing.Count > 0)
     {
         where += " with " + string.Join(" and ",
@@ -1101,15 +1305,26 @@ if (keyed)
     };
 
     var byKey = new Dictionary<string, List<Element>>(StringComparer.Ordinal);
+    // Version 4: by elements, the keys a TYPE in those categories holds - so
+    // a key that names no element but names a type says to add types=yes.
+    var typeKeys = new HashSet<string>(StringComparer.Ordinal);
     var candidates = 0;
     var carryingKey = 0;
     if (problem == null)
     {
         foreach (var category in categories)
         {
-            var collector = new FilteredElementCollector(doc)
-                .OfCategoryId(category.Id)
-                .WhereElementIsNotElementType();
+            var collector = wantTypes
+                ? new FilteredElementCollector(doc).OfCategoryId(category.Id).WhereElementIsElementType()
+                : new FilteredElementCollector(doc).OfCategoryId(category.Id).WhereElementIsNotElementType();
+            if (!wantTypes)
+            {
+                foreach (var type in new FilteredElementCollector(doc).OfCategoryId(category.Id).WhereElementIsElementType())
+                {
+                    if (narrowing.Any(n => !holds(type, n.Item1, n.Item2))) continue;
+                    foreach (var p in type.GetParameters(keyName)) typeKeys.Add(same(readValue(p)));
+                }
+            }
             foreach (var element in collector)
             {
                 if (narrowing.Any(n => !holds(element, n.Item1, n.Item2))) continue;
@@ -1158,20 +1373,26 @@ if (keyed)
         string.Join(", ", list.Take(5).Select(e => e.Id.ToString()).ToArray())
         + (list.Count > 5 ? " and " + (list.Count - 5) + " more" : "");
 
-    // The same five reasons a cell cannot be written as the id rows above,
+    // The same reasons a cell cannot be written as the id rows above,
     // in the same words.
-    Func<Element, string, string> whyNot = (element, name) =>
+    Func<Element, string, string, string> whyNot = (element, name, value) =>
     {
         var matches = element.GetParameters(name);
         var target = matches.Count > 0 ? theOne(element, name) : null;
         if (matches.Count == 0) return "it has no parameter called " + name;
         if (target == null) return "two parameters on it are called " + name + " and more than one can be written";
         if (target.IsReadOnly) return name + " is read-only";
-        if (target.StorageType == StorageType.ElementId || target.StorageType == StorageType.None)
+        if (target.StorageType == StorageType.None)
             return name + " holds a reference to another element, which cannot be typed as text";
         if (groupLocked(element, target))
             return "it is in a model group, and " + name + " would change in every copy of the group";
-        return null;
+        // Version 4: an element reference takes a name that names one element.
+        if (target.StorageType == StorageType.ElementId)
+        {
+            var named = referenceByName(target, value);
+            if (named.Item1 == null) return name + ": " + named.Item2;
+        }
+        return levelAsks(element, target);
     };
 
     var keyedPlan = new List<Tuple<string, Element, List<Tuple<string, string>>>>();
@@ -1214,6 +1435,9 @@ if (keyed)
             byKey.TryGetValue(key, out hits);
             if (timesGiven[key] > 1)
                 refuse(key, "given on " + timesGiven[key] + " rows, so which value is meant would be a guess - not written");
+            else if ((hits == null || hits.Count == 0) && typeKeys.Contains(key))
+                refuse(key, "no element in " + where + " has " + keyName + " '" + key + "', but a type does - "
+                       + "add types=yes to the first row to write the type - not written");
             else if (hits == null || hits.Count == 0)
                 refuse(key, "no element in " + where + " has " + keyName + " '" + key + "' - not written");
             else if (hits.Count > 1)
@@ -1243,7 +1467,7 @@ if (keyed)
             string why = null;
             foreach (var pair in row.Item3)
             {
-                why = whyNot(element, pair.Item1);
+                why = whyNot(element, pair.Item1, pair.Item2);
                 if (why != null) break;
             }
             // Version 3: the face to keep, found and measured before any row
@@ -1263,6 +1487,8 @@ if (keyed)
     // back that row's other values and no other row's. The whole call is
     // still ONE entry in Revit's undo list - the operation's TransactionGroup.
     var done = new List<Tuple<string, Element, List<Tuple<string, string>>>>();
+    // Version 4: the id each element reference was set to, by element and name.
+    var idAsked = new Dictionary<string, ElementId>(StringComparer.Ordinal);
     foreach (var row in keyedPlan)
     {
         var element = row.Item2;
@@ -1286,6 +1512,12 @@ if (keyed)
                     else if (target.StorageType == StorageType.String)
                     {
                         ok = target.Set(asked);
+                    }
+                    else if (target.StorageType == StorageType.ElementId)
+                    {
+                        var id = referenceByName(target, asked).Item1;
+                        ok = id != null && target.Set(id);
+                        if (ok) idAsked[element.Id + "|" + pair.Item1] = id;
                     }
                     else
                     {
@@ -1345,6 +1577,10 @@ if (keyed)
                          + (faceKeeper == null ? "" : faceKeeper.Json(row.Item2)) + "}");
             if (again != null && again.StorageType == StorageType.String && (now ?? "") != (pair.Item2 ?? ""))
                 findings.Add(row.Item1 + ": " + pair.Item1 + " reads back '" + now + "', not '" + pair.Item2 + "'");
+            ElementId idWanted;
+            if (idAsked.TryGetValue(row.Item2.Id + "|" + pair.Item1, out idWanted)
+                && (again == null || !idWanted.Equals(again.AsElementId())))
+                findings.Add(row.Item1 + ": " + pair.Item1 + " reads back '" + now + "', not '" + pair.Item2 + "'");
         }
     }
 
@@ -1360,6 +1596,7 @@ if (keyed)
                + esc("applied") + ": " + (written > 0 ? "true" : "false") + ", "
                + esc("written") + ": " + written + ", "
                + esc("key") + ": " + esc(keyName) + ", "
+               + esc("types") + ": " + (wantTypes ? "true" : "false") + ", "
                + esc("in") + ": [" + string.Join(", ", categoryNames.Select(n => esc(n)).ToArray()) + "], "
                + esc("where") + ": [" + string.Join(", ", narrowing.Select(n => "{" + esc("name") + ": "
                    + esc(n.Item1) + ", " + esc("value") + ": " + esc(n.Item2) + "}").ToArray()) + "], "

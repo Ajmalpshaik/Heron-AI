@@ -1,0 +1,108 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-121
+semantic-identity: "lay mesh fabric sheets over these slabs or walls"
+kind: action
+domain: revit.elements
+capability: PLACE_FABRIC_REINFORCEMENT
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# "A393 MESH BOTTOM, MAIN WIRES ALONG X" IS THE SENTENCE. Revit's fabric area
+# covers the whole host to its own boundary, inside its own cover, with sheets
+# of one fabric sheet type. Every value is the modeller's (D-33):
+#   fabricSheetType  the Fabric Sheet Type by its exact name - a mesh is its
+#                    wires, so none is ever chosen or made here
+#   majorDirection   a slab: x, y, or an angle in degrees from the model's x
+#                    axis; a wall: horizontal or vertical
+#   location         a slab's top or bottom, a wall's exterior or interior -
+#                    set on FabricArea.FabricLocation, a typed property
+#   fabricAreaType   by name, or left out: the only one loaded (Revit's
+#                    default is made if there is none, and said)
+#
+# SKIPPED AND NAMED: anything but a floor or a wall; a non-structural or
+# non-concrete host; a face word that is not the host's (a top face on a
+# wall); a host already holding fabric (a second run would double it).
+#
+# EACH HOST IS ALL OR NOTHING, and READ BACK after a regenerate: the sheet
+# type, the face and the number of sheets Revit laid.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Places fabric (welded mesh) reinforcement over whole concrete slabs and
+  walls - the fabric sheet type, direction and face the modeller gives.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: fabricSheetType
+      type: string
+      source: request
+    - name: majorDirection
+      type: string
+      source: request
+    - name: location
+      type: string
+      source: request
+    - name: fabricAreaType
+      type: string
+      source: request
+      optional: true
+      absent: only
+  provides:
+    - name: placed
+      role: result
+      type: IList<ElementId>
+    - name: hostsReinforced
+      role: result
+      type: IList<ElementId>
+    - name: sheets
+      # Fabric sheets Revit laid, read off each fabric area.
+      role: result
+      type: int
+    - name: skipped
+      role: accounting
+      type: IList<string>
+    - name: readBackWrong
+      role: accounting
+      type: IList<string>
+    - name: report
+      role: accounting
+      type: string
+    - name: refused
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  FabricArea.Create(Document, Element, XYZ, ElementId, ElementId) - the
+  host-boundary form - FabricArea.FabricLocation, FabricSheetTypeId,
+  GetFabricSheetElementIds, FabricLocation's two values and
+  FabricAreaType.CreateDefaultFabricAreaType are one signature on every
+  release 2020-2027 (read off the shipped assemblies 2026-10-19).
+
+# ROUTING - the same rows are in every rebar card.
+#
+#   "lay a mesh sheet in this slab"             -> here
+#   "A393 mesh bottom of the ground slab"       -> here
+#   "T12 at 200 both ways in this slab"         -> PLACE_AREA_REINFORCEMENT
+utterances:
+  - lay A393 mesh in the bottom of this slab
+  - add fabric reinforcement to these walls
+  - put welded mesh sheets in the ground slab

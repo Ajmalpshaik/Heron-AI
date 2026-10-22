@@ -121,6 +121,23 @@ same suite fails on `DEBUG` or a framework symbol, which the fragment gate defin
 Also removed or deprecated at 2027: AXM import, several `Mechanical.Zone` members, legacy rebar
 creation methods, and several `EnergyDataSettings` properties.
 
+**Rebar, read off the shipped assemblies on 2026-10-19** ([row 5b-1258](../../../docs/fragment-issues/section-5b-rows-401-425.md)):
+`Rebar.CreateFromCurves` (and `CreateFromCurvesAndShape`) taking two `RebarHookType`s and two
+`RebarHookOrientation`s is obsolete at **2026** and gone at **2027**, with the enum - 2026 on take a
+`BarTerminationsData` and a `RebarTerminationOrientation`. `RebarBarType.BarDiameter` is 2020-2022;
+`BarNominalDiameter` / `BarModelDiameter` arrive at **2022**. `SetSolidInView` on rebar, area and path
+reinforcement is 2020-2023 only. `FabricSheet.SetUnobscuredInView` starts at **2021**. Each placing
+rebar fragment - [`place-column-rebar`](../../../brain/fragments/place-column-rebar/impl/any/fragment.cs)
+and its siblings - carries the two routes in one `makeBar` adapter.
+
+**Rendering, read off the shipped assemblies and `RevitAPI.xml` on 2026-10-20** ([row 5b-1267](../../../docs/fragment-issues/section-5b-rows-401-425.md)):
+the rendering, sun, Graphic Display Options and posted-command members are alike 2020-2027 - with four
+exceptions. `DisplayStyle` value 9 is `Raytrace` on 2020 only, absent 2021-2023 and `Textures` from 2024,
+so match a style by name. `SunStudyTimeInterval` gains `Seconds15`, `Seconds30`, `Seconds45` and `Minute`
+at **2024**. `ImageType.WidthInPixels` / `HeightInPixels` arrive at **2021** - read
+`RASTER_SYMBOL_PIXELWIDTH` / `_PIXELHEIGHT` instead. `View3D.ScalePerspectiveCropBox` arrives at
+**2024**. **No release has a member that runs the render**, and none has a field of view.
+
 **The classification rename, and the file behind it.** Read 2026-10-11 off the shipped assemblies with
 `dotnet run --project tools/api-surface -- --members BuiltInParameter`: the four names above exist
 2020-2025 and are gone at 2026, where the same four numbers carry the new names. A fragment that types

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -116,6 +116,47 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (2,960 elements), Revit 2020, session 30308
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyAsAsked 0, badName Func`2,
+    boundaryAsked (null), boundaryChoices 4 item(s) [(Finish, At wall finish), (Center, At
+    wall center), (CoreBoundary, At wall core layer), ...], boundaryFrom Func`2, boundaryWords
+    Func`2, changed 1, computations AreaVolumeSettings, createsAsked 0 item(s), descriptionOf
+    Func`2, descriptionText Func`2, descriptionsAsked 0 item(s), findings 2 item(s) [1 setting(s)
+    changed and 0 already as asked, in "Project1" -..., Volumes now: 0 of 0 placed room(s)
+    and 0 of 0 placed space(s...], idsNamed Func`2, keyAliases 5 entry(ies), keys 5 item(s)
+    [(volumecomputations, Volume Computations), (roomareacomputation, Room Area Computation),
+    (newareascheme, New Area Scheme), ...], names 2 entry(ies), newNames 0 item(s), notAProject
+    false, planCreates 0 item(s), planDescriptions 0 item(s), planRenames 0 item(s), problems
+    0 item(s), refused (null), renamesAsked 0 item(s), roomsWithVolume 0, schemeList Func`1,
+    schemes 2 item(s) [Gross Building, Rentable], settingReport Volume Computations Areas
+    only -> Areas and Volumes, spacesWithVolume 0, squash Func`2, taken Func`2, volumeAsked
+    true, volumeChoices 3 entry(ies), volumeWords Func`2, volumesIn Func`2, whatIsCopied AreaScheme.
+    inputs came settings as given (1). on Project1'
+  negative_case: run with settings=Volume Computations=Areas only instead - chosen because
+    it should not contain what this fragment reports - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned alreadyAsAsked 1, badName
+    Func`2, boundaryAsked (null), boundaryChoices 4 item(s) [(Finish, At wall finish), (Center,
+    At wall center), (CoreBoundary, At wall core layer), ...], boundaryFrom Func`2, boundaryWords
+    Func`2, changed 0, computations AreaVolumeSettings, createsAsked 0 item(s), descriptionOf
+    Func`2, descriptionText Func`2, descriptionsAsked 0 item(s), findings 1 item(s) [0 setting(s)
+    changed and 1 already as asked, in "Project1" -...], idsNamed Func`2, keyAliases 5 entry(ies),
+    keys 5 item(s) [(volumecomputations, Volume Computations), (roomareacomputation, Room
+    Area Computation), (newareascheme, New Area Scheme), ...], names 2 entry(ies), newNames
+    0 item(s), notAProject false, planCreates 0 item(s), planDescriptions 0 item(s), planRenames
+    0 item(s), problems 0 item(s), refused (null), renamesAsked 0 item(s), roomsWithVolume
+    0, schemeList Func`1, schemes 2 item(s) [Gross Building, Rentable], settingReport , spacesWithVolume
+    0, squash Func`2, taken Func`2, volumeAsked (null), volumeChoices 3 entry(ies), volumeWords
+    Func`2, volumesIn Func`2, whatIsCopied AreaScheme. inputs came settings as given (1).
+    on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: e159275fc327d34e
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

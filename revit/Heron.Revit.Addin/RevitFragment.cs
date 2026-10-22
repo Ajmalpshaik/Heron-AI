@@ -68,7 +68,7 @@ namespace Heron.Revit.Addin
     /// compiles green and fails at the PC. HeronFragmentImports holds the one
     /// list and tests/test_fragment_imports.py proves the two agree.
     /// </summary>
-    internal static class RevitFragment
+    internal static partial class RevitFragment
     {
         /// <summary>
         /// Compiled scripts, keyed by the source itself.
@@ -686,6 +686,11 @@ namespace Heron.Revit.Addin
             string askedAgain = null;
             var offerRest = false;
 
+            // What the modeller pressed Delete for in D-142's delete box, once
+            // they have - the run is then made again and kept only if it
+            // deletes that. Null until then. See RevitFragmentDelete.cs.
+            ConfirmedDelete confirmed = null;
+
             // WHAT REVIT SAID WHILE THE JOB RAN - every setup step that writes
             // and the fragment itself - and what Heron did about each. Filled
             // by the preprocessor Discipline puts on every transaction below,
@@ -753,6 +758,16 @@ namespace Heron.Revit.Addin
                 // starts - the model it was asked of, whatever the run does.
                 var grantKey = RevitOperations.DocumentKey(target);
 
+                // D-142: THE MODEL'S OWN ELEMENT COUNT, before a run that may
+                // keep - for the one delete Revit's report cannot count, the one
+                // whose report never arrives. See DeleteGate.
+                var footprint = apply || asking ? ReadFootprint.Of(target) : null;
+
+                // WHERE A CONFIRMED DELETE IS RUN AGAIN - D-142. The whole run,
+                // setup steps and all, is what was measured and shown, so the
+                // whole run is what is made again, from its own new group: one
+                // copy of it, never a second written beside this one.
+            runAgain:
                 // WATCHED FROM BEFORE THE GROUP STARTS: the last kept job's
                 // elements are counted here, so what the modeller removed
                 // since is never blamed on this job's rollback, and every
@@ -801,7 +816,13 @@ namespace Heron.Revit.Addin
 
                     // NOW the fragment can be given what the setup just made.
                     // See bindAfterSetup above for why this waits.
-                    if (bindAfterSetup)
+                    //
+                    // AND AGAIN FOR D-142's SECOND RUN: what was bound is held as
+                    // Revit elements, and an element the first run deleted is not
+                    // the same object once the rollback has put it back - so the
+                    // second run is given its inputs afresh, from the modeller's
+                    // own selection, which the delete box has put back.
+                    if (bindAfterSetup || confirmed != null)
                     {
                         var late = bindAndCompile();
                         if (late != null)
@@ -941,9 +962,36 @@ namespace Heron.Revit.Addin
                     // counted as part of it, and the report is sealed.
                     described = changed.Describe();
 
+                    // D-142: ANYTHING A KEPT CHANGE DELETES IS ASKED FIRST, in a
+                    // box of its own, whatever Ask to Keep says and before D-138's
+                    // grant is looked at - by Revit's count, never a card's flag.
+                    // The run is rolled back and what it deletes is shown; on
+                    // Delete the same run is made again and kept only if it
+                    // deletes the same set. See DeleteGate.
+                    bool deleteAgain;
+                    var deleteRefused = DeleteGate(app, target, name, request, apply || asking,
+                                                   sendsOut, changed, described, footprint,
+                                                   group, watch, ref confirmed, out deleteAgain);
+                    if (deleteRefused != null) return deleteRefused;
+                    if (deleteAgain)
+                    {
+                        said = new HeronFailureNote();
+                        goto runAgain;
+                    }
+
                     keptUnderGrant = UnderTheGrant(client, grantKey, asking, askToKeep, apply,
                                                    sendsOut, out askedAgain, out offerRest);
                     if (keptUnderGrant != null) askToKeep = false;   // D-138: no box
+
+                    // D-142: A DELETE THE MODELLER CONFIRMED WAS ASKED, grant or
+                    // no grant, and its Delete is this change's yes - no second
+                    // box, and no "kept without asking". A DRAFT's one run is
+                    // still asked Keep or Discard (D-119).
+                    if (confirmed != null)
+                    {
+                        askToKeep = false;
+                        keptUnderGrant = null;
+                    }
 
                     // D-119 AND D-126: THE MODELLER DECIDES, here, with the work
                     // done and the group still open - so Keep and Discard are
@@ -1011,6 +1059,7 @@ namespace Heron.Revit.Addin
             Remember(name, state, target, bound, client, globals.__heron, ranWith);
             var answer = Report(name, state, target, uidoc, app.ActiveUIDocument, bound,
                                 globals.__heron);
+            if (confirmed != null) answer = confirmed.OnReply(answer);   // D-142
 
             if (!writing) return WithCount(answer, counted);
             var verdict = WithVerdict(answer, apply, name, rolledBack, keptNote, said,
@@ -2826,6 +2875,21 @@ namespace Heron.Revit.Addin
 
                 return new HeronFailureNote.Posted(severity, text, elements);
             }
+
+            /// <summary>
+            /// WHAT REVIT REFUSED SO FAR, IN ITS OWN WORDS - row 5b-1240. An
+            /// edit-mode fragment (D-112) is handed this object as an
+            /// IFailuresPreprocessor and cannot see the note behind it, so a
+            /// transaction of its own that Revit rolled back came back as
+            /// "Revit would not keep the stair's runs" with Revit's reason
+            /// lost. object.ToString needs no new type - FamilyReload's
+            /// precedent - and the fragment quotes it. Empty when nothing has
+            /// been refused yet.
+            /// </summary>
+            public override string ToString()
+            {
+                return _said.RefusedSentence();
+            }
         }
 
         /// <summary>
@@ -3844,6 +3908,32 @@ namespace Heron.Revit.Addin
                     var given = FromRequest(givenText, type, name, target, selected,
                                             reading, out problem, takesSubcategories);
                     if (problem != null) return Json.Error("bad_request_value", problem);
+
+                    // D-145: A VALUE THAT IS THE CALLER'S ANSWER TO ONE REVIT
+                    // DIALOG - `dialog:` beside it on the card. HeronDialogRule
+                    // says whether a caller may answer that dialog and what
+                    // the word means; the watch gives Revit that answer for
+                    // this job only. Left out ("none") the default stands and
+                    // the dialog is declined. Refused before anything runs.
+                    string dialogId;
+                    need.TryGetValue("dialog", out dialogId);
+                    dialogId = (dialogId ?? "").Trim();
+                    if (dialogId.Length > 0)
+                    {
+                        string dialogProblem;
+                        var answer = HeronDialogRule.CallerAnswer(dialogId, givenText, out dialogProblem);
+                        if (dialogProblem != null)
+                            return Json.Error("bad_request_value", name + ": " + dialogProblem);
+                        if (answer != 0 && !HeronDialogWatch.AnswerForJob(dialogId, answer))
+                        {
+                            return Json.Error("bad_request_value", name + ": Heron is not watching "
+                                + "Revit's dialogs for this run, so it cannot give your answer to "
+                                + dialogId + " - nothing was run.");
+                        }
+                        if (answer != 0)
+                            how.Add(name + " - Revit's " + dialogId + " is answered "
+                                    + HeronDialogNote.AnswerName(answer) + " in this job (D-145)");
+                    }
 
                     globals.__heron[name] = given;
                     bound.Add(name);

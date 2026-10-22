@@ -1,0 +1,84 @@
+# Batch 8, 2026-10-18 - Revit 2020 session 2648, scratch Project1 + Family1 (never saved).
+# Batch 7's model plus, kept: a flat Generic - 400mm roof on Level 2 over the 10000 x 6000
+# building, and parts made from the off-axis wall at y=8000. Every write ROLLED BACK.
+model: "Project1 + Family1 (scratch, never saved), Revit 2020"
+
+defaults:
+  in: "Project1"
+  write: false
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: "Walls"
+    inViewOnly: "FloorPlan: Level 1"
+  negative-set:
+    categoryName: "Text Notes"
+    inViewOnly: "FloorPlan: Level 1"
+
+jobs:
+  - fragment: select-by-numeric-parameter
+    setup: []
+    expect: elements
+    set: {parameterName: "Length", comparison: "between", compareValue: 30, compareValueMax: 35, tolerance: 0.001, includeTypeParameters: false, categories: "Walls"}
+    negative-set: {parameterName: "Length", comparison: "between", compareValue: 100, compareValueMax: 110, tolerance: 0.001, includeTypeParameters: false, categories: "Walls"}
+
+  - fragment: edit-revision-numbering-sequence
+    setup: []
+    write: true
+    expect: changed
+    set: {name: "Alphanumeric", newName: "", minimumDigits: "", startingNumber: "", prefix: "", suffix: "", customSequence: "AA, BB, CC, DD, EE, FF, GG, HH, II, JJ, KK, LL, MM, NN, OO, PP, QQ, RR, SS, TT, UU, VV, WW, XX, YY, ZZ"}
+    negative-set: {name: "Alphanumeric", newName: "", minimumDigits: "", startingNumber: "", prefix: "", suffix: "", customSequence: "AA, BB, CC, AA"}
+
+  - fragment: create-flex-pipe
+    setup: []
+    write: true
+    expect: created
+    set: {systemType: "Domestic Cold Water", flexPipeType: "Flex Pipe Round: Flex - Round", level: "Level 1", points: "20000,0,3000; 20000,0,2400", maxLengthMm: 1200}
+    negative-set: {systemType: "Domestic Cold Water", flexPipeType: "Flex Pipe Round: Flex - Round", level: "Level 1", points: "20000,0,3000; 20000,0,2400", maxLengthMm: 100}
+
+  - fragment: list-sheet-sets
+    setup: [find-sheets, manage-sheet-sets]
+    keep-chain: true
+    write: true
+    expect: setCount
+    set: {numberOrNameContains: "A10", setName: "Heron Set", mode: "create", newName: ""}
+    negative-in: "Family1"
+    negative-set: {numberOrNameContains: "A10", setName: "Heron Set", mode: "create", newName: ""}
+
+  - fragment: filter-elements-by-type
+    expect: elements
+    setup: [select-in-region, set-selection]
+    setup-set: {minMm: "2000,-300,-100", maxMm: "3000,300,100", exact: false, categories: "Walls"}
+    negative-setup-set: {minMm: "2000,-300,-100", maxMm: "3000,300,100", exact: false, categories: "Walls"}
+    set: {exemplar: "selected", inViewOnly: "FloorPlan: Level 1"}
+    negative-set: {exemplar: "selected", inViewOnly: "Heron Drafting"}
+
+  - fragment: report-mep-pressure-drop
+    setup: []
+    expect: uncalculated
+    set: {systemNameContains: ""}
+    negative-set: {systemNameContains: "ZZZ NO SUCH SYSTEM"}
+
+  - fragment: set-railing-type
+    setup: []
+    write: true
+    expect: railingType
+    set: {railingTypeName: "1100mm", duplicateAs: "Heron Guard", topRailTypeName: "", topRailHeightMm: 1100, handrailTypeName: "", handrailHeightMm: 0, handrailSide: "none"}
+    negative-set: {railingTypeName: "No Such Railing", duplicateAs: "", topRailTypeName: "", topRailHeightMm: 1100, handrailTypeName: "", handrailHeightMm: 0, handrailSide: "none"}
+
+  - fragment: slope-roof-edges
+    write: true
+    expect: sloped
+    set: {categoryName: "Roofs", inViewOnly: "Heron 3D", roofShape: "hip", pitchDegrees: 30}
+    negative-set: {categoryName: "Walls", inViewOnly: "Heron 3D", roofShape: "hip", pitchDegrees: 30}
+
+  - fragment: set-parts-excluded
+    write: true
+    set: {categoryName: "Parts", inViewOnly: "Heron 3D", include: false}
+    negative-set: {categoryName: "Walls", inViewOnly: "Heron 3D", include: false}
+
+  - fragment: offset-part-faces
+    write: true
+    set: {categoryName: "Parts", inViewOnly: "Heron 3D", faces: "top", offsetMm: 100}
+    negative-set: {categoryName: "Walls", inViewOnly: "Heron 3D", faces: "top", offsetMm: 100}

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -79,6 +79,30 @@ contract:
       # exporting the duct schedule why they got a third of the ducts.
       role: result
       type: int
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (2,960 elements), Revit 2020, session 30308
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    find-schedules with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned delimiter ,, folder C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/csv,
+    handed 1, missingAfterExport 0 item(s), refused 0 item(s), rowsWritten 3, scheduleBehind
+    Func`2, schedulesSeen 1, wanted ,, written 1 item(s) [C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/fi...].
+    inputs came elements from find-schedules (1); exportFolder as given; fieldDelimiter as
+    given. on Project1
+  negative_case: run with exportFolder=C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/csv,
+    fieldDelimiter=, arranged with nameContains=ZZZNOTHINGHERE instead - chosen because it
+    should not contain what this fragment reports - the arrangement was re-made first by running
+    find-schedules with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned delimiter ,, folder C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/csv,
+    handed 0, missingAfterExport 0 item(s), refused 0 item(s), rowsWritten 0, scheduleBehind
+    Func`2, schedulesSeen 0, wanted ,, written 0 item(s). inputs came elements from find-schedules
+    (0); exportFolder as given; fieldDelimiter as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: babd01e2c74dea27
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

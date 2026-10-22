@@ -1,0 +1,153 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-126
+semantic-identity: "give these elements a material - on the element, its type or its system type, wherever their material lives - and read it back"
+kind: action
+domain: revit.elements
+capability: SET_ELEMENT_MATERIAL
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# THE OWNER'S ASK, 2026-10-20: give elements a material by category, type or
+# selection, and read each one back. The tools before this each reach one
+# place: WRITE_ELEMENT_PARAMETERS a parameter named on the element itself,
+# SET_COMPOUND_LAYER_WIDTH one layer of a wall or floor type, REPLACE_MATERIAL
+# a swap of one named material for another. None found where an element's
+# material lives.
+#
+# WHERE IT LIVES, in this order: a material parameter on the element; else on
+# its type (every element of the type changes - counted for a family type);
+# else, for a duct, pipe, fitting or accessory in a system, on the system type
+# (every element of the system type draws with it). Two or more to choose from
+# - a door's frame and panel - skips the element naming them, and
+# materialParameter says which; nothing is guessed.
+#
+# BY CATEGORY OR TYPE is the selection handed in: SELECT_BY_CATEGORY_NAME,
+# SELECT_TYPES or the modeller's own selection. Types handed in are written
+# directly, and a type is written once however many of its elements arrive.
+#
+# A LAYERED WALL, FLOOR, ROOF OR CEILING is skipped naming
+# SET_COMPOUND_LAYER_WIDTH, which sets a layer's material. An element in a
+# group keeps its own parameters (REPLACE_MATERIAL's rule); its type's are
+# written. A family document is refused naming SET_FAMILY_FORM_MATERIAL and
+# SET_FAMILY_TYPE_VALUES.
+#
+# THE MATERIAL IS A NAME THE PROJECT HOLDS, or <By Category>; none is made.
+# After one regeneration every parameter written must hold it, or the call
+# fails and nothing is kept.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Gives the elements handed in a material by its name - written where each
+  one's material lives: its own material parameter, its type's, or for ducts,
+  pipes and fittings its system type's - and reads each one back, naming what
+  a type change also reaches.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # A material's name as the project holds it, or "<By Category>".
+    - name: material
+      type: string
+      source: request
+    # The material parameter meant when an element has more than one -
+    # "Frame Material". Left out, an element with one is written, and one
+    # with several is skipped naming them.
+    - name: materialParameter
+      type: string
+      source: request
+      optional: true
+      absent: any
+  provides:
+    - name: writtenIds
+      # The elements, types and system types whose parameter now holds the material.
+      role: result
+      type: IList<ElementId>
+    - name: materialAssignReport
+      # ONE STRING, a line per parameter written: whose, before and after, and
+      # what else a type change reached.
+      role: result
+      type: string
+    - name: alreadyAsAsked
+      # Parameters that already held the material - looked at, left (D-52).
+      role: accounting
+      type: int
+    - name: skippedElements
+      # Each element passed over, with its reason.
+      role: accounting
+      type: IList<string>
+    - name: refused
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-10-20'
+  by: Ajmal PS
+  model: Materials IA Test (3,779 elements), Revit 2020, session 29012
+  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-10-20; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned alreadyAsAsked 0, findings 2 item(s) [1 parameter(s) given
+    TRG_Concrete Smooth; 0 already held it;..., A type or system type was written, so elements
+    that were not...], materialAssignReport Columns type ''M_Rectangular Column: 457 x 475mm''
+    ''Material'' <By Category> -> TRG_Concrete Smooth - a type change: all 2 placed element(s)
+    of this type changed, 2 of them handed in, refused , skippedElements 0 item(s), writtenIds
+    1 item(s) [1328933]. inputs came elements from the selection (2); material as given; materialParameter
+    not given - "any", the card''s own default (optional). on Materials IA Test'
+  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: 1 - Mech, material=TRG_Concrete
+    Smooth instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running select-by-category-name, set-selection with this
+    phase''s own values - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned alreadyAsAsked 0, findings 2 item(s) [0 parameter(s)
+    given TRG_Concrete Smooth; 0 already held it;..., Skipped: Walls 1330316: a Walls type
+    ''Basic Wall: Exterior -...], materialAssignReport , refused , skippedElements 2 item(s)
+    [Walls 1330316: a Walls type ''Basic Wall: Exterior - Brick on..., Walls 1330317: a Walls
+    type ''Basic Wall: Exterior - Brick on...], writtenIds 0 item(s). inputs came elements
+    from the selection (2); material as given; materialParameter not given - "any", the card''s
+    own default (optional). on Materials IA Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 330f01f3a3fbd93d
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Parameter.Set(ElementId), AsElementId,
+  IsReadOnly and Id; MEPCurve.MEPSystem, FamilyInstance.MEPModel,
+  ConnectorManager.Connectors and Connector.MEPSystem;
+  HostObjAttributes.GetCompoundStructure and CompoundStructure.LayerCount;
+  Element.GroupId; and FamilyInstanceFilter are present 2020 through 2027 -
+  read off the shipped assemblies with tools/api-surface on 2026-10-20. Which
+  parameters hold a material is read by reflection - Definition.ParameterType
+  on 2020 to 2022, Definition.GetDataType against SpecTypeId.Reference.Material
+  from 2022 - the way WRITE_ELEMENT_PARAMETERS reads it.
+
+# ROUTING - the same rows are in REPLACE_MATERIAL, WRITE_ELEMENT_PARAMETERS,
+# SET_COMPOUND_LAYER_WIDTH and SELECT_BY_MATERIAL.
+#
+#   "make these columns concrete"                 -> here
+#   "give these ducts the galvanised material"    -> here
+#   "change the material on these"                -> REPLACE_MATERIAL - swap one for another
+#   "everything in galvanised steel"              -> SELECT_BY_MATERIAL
+#   "set the finish layer of this wall to plaster" -> SET_COMPOUND_LAYER_WIDTH
+#   "what material is this"                       -> READ_ELEMENT_MATERIAL
+utterances:
+  - make these columns concrete
+  - give these ducts the galvanised material
+  - assign the copper material to these pipes
+  - set the material of all the furniture to oak

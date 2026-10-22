@@ -51,8 +51,10 @@ It removes every registered value, and it removes strings shaped like the
 credentials that actually appear in this kind of work. It cannot recognise a
 secret it has never seen that looks like ordinary text, and saying so matters
 more than a reassuring sentence would: a redactor believed to be complete is
-how a token ends up in a log nobody re-reads. Pre-commit scanning is the second
-layer docs/12 s5a.4 asks for, and it is a different tool.
+how a token ends up in a log nobody re-reads. Scanning before anything is
+published is the second layer docs/12 s5a.4 asks for, and it is a different
+tool: tools/check-secrets.py (D-143), which reads PATTERNS below rather than a
+copy of them.
 
 The marker is a FIXED WIDTH. Replacing a value with stars of the same length
 publishes the length, and a length is a meaningful clue about which credential
@@ -77,6 +79,18 @@ PATTERNS = (
     ("aws access key",  re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
     ("slack token",     re.compile(r"\bxox[baprs]-[A-Za-z0-9\-]{10,}")),
     ("bearer token",    re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._\-]{20,}")),
+    # A private key is a block, not a token - PEM's, or PGP's with BLOCK on
+    # the end. In a log the whole block goes when its END line follows within
+    # 16 KB, and the BEGIN line alone when it does not; the repository scan
+    # reads line by line, so the BEGIN line is what it finds (D-143). The
+    # bound is not tidiness: unbounded, every BEGIN with no END searched to
+    # the end of the text, so a log of many BEGIN lines cost their number
+    # times its length, and an unrelated END far below swallowed everything
+    # between. The character class after BEGIN keeps this source line from
+    # matching itself.
+    ("private key",     re.compile(r"-----BEGIN[ A-Z]*PRIVATE KEY(?: BLOCK)?-----"
+                                   r"(?:[\s\S]{0,16384}?"
+                                   r"-----END[ A-Z]*PRIVATE KEY(?: BLOCK)?-----)?")),
 )
 
 
@@ -288,6 +302,7 @@ class Secrets(object):
 # same as a real one.
 FAKE_FORGE_TOKEN = "gh" + "p_" + ("A1b2C3d4E5f6" * 3)
 FAKE_CLOUD_KEY = "AK" + "IA" + "IOSFODNN7EXAMPLE"
+FAKE_PRIVATE_KEY = "-----BEGIN RSA " + "PRIVATE KEY-----"
 
 
 def main(argv):

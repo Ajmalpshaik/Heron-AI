@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -91,6 +91,40 @@ contract:
       # A summary line, then a line per view with none of the five, and any
       # template whose include list could not be read.
       type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: MEP Night Test, Revit 2020, session 68704 - the count is NOT recorded because 5,262
+    elements was measured on Cinematic ID Test, the document in front, and this ran against
+    another one (row 15)
+  positive_case: 'run with views=Level 1 HVAC Plan - the first of 3 tracked inputs. returned
+    findings 1 item(s) [1 view(s) read; 0 of them have at least one setting held by ...],
+    heldByTemplate 0, read 1, rows 1 item(s) [''Level 1 HVAC Plan'' (FloorPlan) Detail Level
+    = Medium, Visua...], viewSettings ''Level 1 HVAC Plan'' (FloorPlan) Detail Level = Medium,
+    Visual Style = Hidden Line, Discipline = Mechanical, Phase = New Construction, Phase Filter
+    = Show All, View Range = Top: Level 2 + 0 mm, Cut plane: Level 1 + 1200 mm, Bottom: Level
+    1 + 0 mm, View depth: Level 1 + 0 mm. inputs came views as given (1). on MEP Night Test'
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). report-view-settings\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 3 different inputs:\n\n      views=Level 1 HVAC Plan -> viewSettings 'Level 1\
+    \ HVAC Plan' (FloorPlan) Detail Level = Medium, Visual Style = Hidden Line, Discipline\
+    \ = Mechanical, Phase = New Construction, Phase Filter = Show All, View Range = Top: Level\
+    \ 2 + 0 mm, Cut plane: Level 1 + 1200 mm, Bottom: Level 1 + 0 mm, View depth: Level 1\
+    \ + 0 mm\n      views=Level 2 Lighting Plan -> viewSettings 'Level 2 Lighting Plan' (FloorPlan)\
+    \ Detail Level = Medium, Visual Style = Hidden Line, Discipline = Electrical, Phase =\
+    \ New Construction, Phase Filter = Show All, View Range = Top: Level 2 + 3500 mm, Cut\
+    \ plane: Level 2 + 1200 mm, Bottom: Level 2 + 0 mm, View depth: Level 2 + 0 mm\n     \
+    \ views=Duct Sections -> viewSettings 'Duct Sections' (DrawingSheet) Visual Style = Wireframe\
+    \ - not on this kind of view: Detail Level, Discipline, Phase, Phase Filter\n\n    Different\
+    \ inputs, exact matches every time. A fragment falling back to the active view, the whole\
+    \ model, or a previous run could not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: d3dc9538ef46ff28
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

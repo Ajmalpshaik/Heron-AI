@@ -1,0 +1,271 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-148
+semantic-identity: "give a view a whole ready-made look in one call - a named visual preset such as exterior day, interior night, equipment close-up or clay"
+kind: action
+domain: revit.views
+capability: APPLY_VISUAL_PRESET
+version: 3
+# VERSION 3, 2026-10-21 - row 5b-1306, found 2026-10-21 making interior
+# renders for the owner on Revit 2020: a Still sun's time was written and read
+# through the SITE's time zone (SiteLocation.ConvertFromProjectTime /
+# ConvertToProjectTime), but Revit holds the dialog's clock turned to UTC by the
+# PC's OWN zone. On the owner's laptop (UTC+3, site Boston) 11:00 asked was
+# written as 19:00 - the sun at 0 degrees, a black render - and the dialog's
+# 10:00 read back as 02:00. Measured with the sun's own height: written as the
+# PC's local time turned to UTC, 11:00 stood 36.7 degrees up at a bearing of
+# 171 - the dialog's 11:00. Both directions now go through the PC's zone (the
+# rule row 5b-1282 found for Revit's sunset). The shared block's two conversions changed, byte for
+# byte the same in APPLY_ and REPORT_VISUAL_PRESET. Version 2's proof below no
+# longer describes the code.
+# DRAFT until NEEDS-CHECKING Group IN proves it.
+# VERSION 2, 2026-10-20 - rows 5b-1282 and 5b-1283, found running Group IC on
+# Revit 2020. The dusk Sun was skipped: GetSunset refused the project-time
+# date, whose Kind was Unspecified - it is now handed over as UTC. And depth
+# cueing skipped on a Mechanical elevation said Revit offers it in
+# elevations; the reason now names the view's discipline, measured as what
+# Revit 2020 turns it on with. Version 1's proof below no longer describes
+# the code: DRAFT until it is proved again.
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-20: four Heron-built duct heaters were placed in Project1 (Revit
+# 2020) and the owner asked for a render. The rendering and material tools
+# came first (Groups IA and IB); then his words: "make like a visualizer ...
+# what settings we normally do for good things ... what settings will normally
+# focus, normally change to [make it] good looking". A look is eight dialogs'
+# worth of settings that belong together, and one call sets them. The order
+# and the judgement - camera, materials, light, then the picture looked at -
+# are the method brain/skills/visualise-a-view.yaml.
+#
+# HOW IT BEHAVES - comments, not `purpose`.
+#
+# **THE PRESETS** - Heron's starting looks, what a visualiser tries first,
+# never a standard (D-33). The picture is the judge, and every setting can be
+# changed afterwards with its own tool. The full table is the shared block of
+# impl/any/fragment.cs; in short:
+#
+#   Exterior Day      Realistic; sun 80, shadow 50; edges off; display sky;
+#                     sun Still at 10:00 on the view's date; render Exterior:
+#                     Sun only, Sky: Few Clouds, exposure 14 / 6500 K
+#   Exterior Dusk     Realistic; sun 40, shadow 70; a dusk gradient; sun Still
+#                     30 minutes before Revit's sunset for the site; render
+#                     Exterior: Sun and Artificial, Sky: Very Few Clouds,
+#                     exposure 11 / 6500 K
+#   Interior Day      Realistic; sun 60, shadow 40; sun Still at 10:00; render
+#                     Interior: Sun and Artificial, Sky: Few Clouds, exposure
+#                     10 / 6500 K
+#   Interior Night    Realistic; sun 30, shadow 30; a night gradient; render
+#                     Interior: Artificial only, a dark blue colour, exposure
+#                     8 / 4000 K - the sun is not touched
+#   Equipment         Realistic; sun 80, shadow 40; a light grey gradient; a
+#   Close-up          lighting study at 135/35 relative to the view (from the
+#                     top right, whatever the site); render Exterior: Sun only,
+#                     plain 245,245,245, exposure 13 / 6500 K. The duct heater
+#   Clay              Hidden Line - a white model; edges and silhouettes on;
+#                     sun 80, shadow 60; a white gradient; lighting 135/35
+#                     relative to the view. No render settings: a rendered
+#                     clay needs every material white, which is the
+#                     materials' job, not a view's
+#   Presentation      Shaded with Edges; silhouettes on; depth cueing 0-100%,
+#   Elevation         fade 50; lighting 225/35 relative to the view (from the
+#                     top left - shadows fall down and to the right)
+#
+# Every preset but Clay and Presentation Elevation also sets the render
+# QUALITY and OUTPUT from `renderFor`: check is Draft on Screen - minutes;
+# issue is High at 300 DPI - an A3 that is issued. Every preset turns sketchy
+# lines off and smooth lines on, and wants Cast Shadows and Show Ambient
+# Shadows on.
+#
+# **NOTHING HERE IS NEW TO HERON.** Each setting is written with the same
+# Revit members its own tool calls - the visual style as SET_VIEW_PROPERTIES,
+# the display as SET_GRAPHIC_DISPLAY_OPTIONS, the sun as SET_SUN_SETTINGS,
+# the Rendering dialog as SET_RENDER_SETTINGS - and read back as
+# REPORT_RENDER_SETTINGS reads them. A setting the view already has is left
+# alone and counted in `alreadySo`.
+#
+# **A SETTING THE VIEW OR REVIT CANNOT TAKE IS SKIPPED AND NAMED, NEVER
+# FAKED.** A floor plan has no Rendering Settings; only an elevation or a
+# section has depth cueing; a display background is a 3D view's, an
+# elevation's or a section's. Cast Shadows and Show Ambient Shadows have NO
+# member on any release 2020 to 2027 (row 5b-1267): the answer names them as
+# the modeller's to tick - Shadows on the View Control Bar, Show Ambient
+# Shadows in Graphic Display Options. A view that takes none of a preset's
+# settings - a schedule, a sheet - is refused with nothing changed.
+#
+# **THE TIME OF DAY.** `sunTime` replaces a Still preset's time - 15:00 for an
+# afternoon when the faces that matter look west - on the site's clock,
+# through Revit's own conversion as SET_SUN_SETTINGS does it. The view's date
+# is kept: SET_SUN_SETTINGS changes it. Dusk is worked out from
+# SunAndShadowSettings.GetSunset for the site on the view's date, which the
+# API reference says returns UTC adjusted for daylight saving when the site
+# uses it - Group IC checks the time the Sun Settings dialog then shows.
+#
+# **READ BACK:** every setting is read again after the call; only one that
+# reads as the preset says counts in `changed`. A setting Revit refused is
+# named with Revit's words, and a view template that controls it is said.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Gives a view one of Heron's visual presets - Exterior Day, Exterior Dusk,
+  Interior Day, Interior Night, Equipment Close-up, Clay or Presentation
+  Elevation - so it looks good on screen and in a render: the whole look in
+  one call, every part of it read back, and what the view cannot take named.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The view, as the Project Browser names it.
+    - name: view
+      type: View
+      source: request
+    # The preset's name - Exterior Day, Exterior Dusk, Interior Day, Interior
+    # Night, Equipment Close-up, Clay or Presentation Elevation.
+    - name: preset
+      type: string
+      source: request
+    # What the render is for: check (Draft, Screen) or issue (High, 300 DPI).
+    - name: renderFor
+      type: string
+      source: request
+      optional: true
+      absent: check
+    # A time on the site's clock that replaces a Still preset's own - 15:00.
+    - name: sunTime
+      type: string
+      source: request
+      optional: true
+      absent: preset
+  provides:
+    - name: changed
+      # Settings this call set that read back as the preset says.
+      role: result
+      type: int
+    - name: alreadySo
+      # Settings the view had already, left alone.
+      role: accounting
+      type: int
+    - name: skipped
+      # Settings this view or Revit's API cannot take, each named in findings.
+      role: accounting
+      type: int
+    - name: readBack
+      # Every setting of the preset as the view holds it afterwards, and the
+      # materials on what it shows with no render appearance - filled on every
+      # run that reached the view, so evidence, never the count.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING WAS CHANGED, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: Cinematic ID Test (5,262 elements), Revit 2020, session 68704
+  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-10-21; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned alreadySo 7, askedTime (null), barWord Func`2, barWords 8 item(s)
+    [System.String[], System.String[], System.String[], ...], before 15 item(s) [System.String[],
+    System.String[], System.String[], ...], byHandKeys 2 item(s) [Cast Shadows, Ambient Shadows],
+    changed 6, colour Func`2, compare Func`2, culture CultureInfo, degrees Func`2, describe
+    Func`2, duskUtc (null), findings 2 item(s) [6 of 6 setting(s) changed and read back as
+    Interior Day says..., Interior Day also wants Cast Shadows and Ambient Shadows on....],
+    forIssue false, hasDisplay true, inputProblem (null), lightingWord Func`2, madeFor 7 entry(ies),
+    materialsLine Materials 104 on what the view shows, 0 with no render appearance, materialsRead
+    true, materialsSeen 104 entry(ies), noAppearance 0 item(s), noCueingWhy Func`2, noDisplay
+    ''Cinematic Living Room'' has no Graphic Display Options - Revit gives them to views with
+    a visual style, noRender ''Cinematic Living Room'' is not a 3D view, and only a 3D view
+    has Rendering Settings, pairs Func`2, presetList Exterior Day, Exterior Dusk, Interior
+    Day, Interior Night, Equipment Close-up, Clay, Presentation Elevation, presetName Interior
+    Day, presetNamed Func`2, presetTable 7 item(s) [[Exterior Day, System.String[][]], [Exterior
+    Dusk, System.String[][]], [Interior Day, System.String[][]], ...], purposeWord check,
+    qualityWord Func`2, readBack ''Cinematic Living Room'' (ThreeD) against Interior Day:  ||  Visual
+    Style Realistic (as the preset)  ||  Sun Intensity 60 (as the preset)  ||  Shadow Intensity
+    40 (as the preset)  ||  Silhouettes off (as the preset)  ||  Smooth Lines on (as the preset)  ||  Sketchy
+    Lines off (as the preset)  ||  Display Background sky (as the preset)  ||  Sun still 10:00
+    (as the preset)  ||  Render Quality Draft (as the preset)  ||  Render Output Screen (as
+    the preset)  ||  Render Lighting Interior: Sun and Artificial (as the preset)  ||  Render
+    Background Sky: Few Clouds (as the preset)  ||  Exposure value=10; white point=6500 (as
+    the preset)  ||  Cast Shadows on - by hand, Revit''s API has no member for it on any release
+    2020 to 2027  ||  Ambient Shadows on - by hand, Revit''s API has no member for it on any
+    release 2020 to 2027  ||  Materials 104 on what the view shows, 0 with no render appearance,
+    refused (null), revitStyles 8 entry(ies), settingNow Func`2, settingWant Func`3, show
+    Func`2, showColour Func`2, site SiteLocation, skipped 0, squash Func`2, styleWord Func`2,
+    sun SunAndShadowSettings, sunsetSaid (null), takesBackground true, timeWord preset, toProject
+    Func`2, toUtc Func`2, view3D View3D, viewKind 3d. inputs came view as given; preset as
+    given; renderFor not given - "check", the card''s own default (optional); sunTime not
+    given - "preset", the card''s own default (optional). on Cinematic ID Test'
+  negative_case: 'run with view=Cinematic Living Room, preset=Spielberg instead - chosen because
+    it should not contain what this fragment reports - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned alreadySo 0, askedTime
+    (null), barWord Func`2, barWords 8 item(s) [System.String[], System.String[], System.String[],
+    ...], before (null), byHandKeys 2 item(s) [Cast Shadows, Ambient Shadows], changed 0,
+    colour Func`2, compare Func`2, culture CultureInfo, degrees Func`2, describe Func`2, duskUtc
+    (null), findings 1 item(s) [No visual preset is called ''Spielberg''. The presets: Exterio...],
+    forIssue false, hasDisplay true, inputProblem (null), lightingWord Func`2, madeFor 7 entry(ies),
+    materialsLine Materials 104 on what the view shows, 0 with no render appearance, materialsRead
+    true, materialsSeen 104 entry(ies), noAppearance 0 item(s), noCueingWhy Func`2, noDisplay
+    ''Cinematic Living Room'' has no Graphic Display Options - Revit gives them to views with
+    a visual style, noRender ''Cinematic Living Room'' is not a 3D view, and only a 3D view
+    has Rendering Settings, pairs Func`2, presetList Exterior Day, Exterior Dusk, Interior
+    Day, Interior Night, Equipment Close-up, Clay, Presentation Elevation, presetName (null),
+    presetNamed Func`2, presetTable 7 item(s) [[Exterior Day, System.String[][]], [Exterior
+    Dusk, System.String[][]], [Interior Day, System.String[][]], ...], purposeWord check,
+    qualityWord Func`2, readBack , refused No visual preset is called ''Spielberg''. The presets:
+    Exterior Day, Exterior Dusk, Interior Day, Interior Night, Equipment Close-up, Clay, Presentation
+    Elevation. NOTHING WAS CHANGED., revitStyles 8 entry(ies), settingNow Func`2, settingWant
+    Func`3, show Func`2, showColour Func`2, site SiteLocation, skipped 0, squash Func`2, styleWord
+    Func`2, sun SunAndShadowSettings, sunsetSaid (null), takesBackground true, timeWord preset,
+    toProject Func`2, toUtc Func`2, view3D View3D, viewKind 3d. inputs came view as given;
+    preset as given; renderFor not given - "check", the card''s own default (optional); sunTime
+    not given - "preset", the card''s own default (optional). on Cinematic ID Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 0cdf07a1d84ab2df
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, and no Revit member that
+  SET_VIEW_PROPERTIES, SET_GRAPHIC_DISPLAY_OPTIONS, SET_SUN_SETTINGS,
+  SET_RENDER_SETTINGS and LIST_MATERIALS do not already call, but two read on
+  2026-10-20 with tools/api-surface --members, present and alike on 2020 to
+  2027: SunAndShadowSettings.GetSunset (a date in, UTC out) and
+  View3D.IsPerspective. View.DisplayStyle is matched by name at run time, as
+  SET_VIEW_PROPERTIES does: DisplayStyle value 9 is Raytrace on 2020 and
+  Textures from 2024, so no member is typed.
+
+# ROUTING - the same rows are in the render, sun, display and view cards.
+#
+#   "make this view look good"                     -> here, a whole look
+#   "give this view the clay look"                 -> here
+#   "what would the exterior day preset do here"   -> REPORT_VISUAL_PRESET. A
+#                                                     question never reaches
+#                                                     this write (D-86)
+#   "put this view on realistic"                   -> SET_VIEW_PROPERTIES, the
+#                                                     visual style alone
+#   "set the render quality to best"               -> SET_RENDER_SETTINGS
+#   "set the sun to 10 am"                         -> SET_SUN_SETTINGS
+#   "turn on sketchy lines"                        -> SET_GRAPHIC_DISPLAY_OPTIONS
+#   "render it"                                    -> OPEN_RENDER_DIALOG. No API
+#                                                     runs the render
+
+utterances:
+  - make this view look good with the exterior day preset
+  - give this 3D view the equipment close-up look for the duct heater
+  - apply the clay look to this view
+  - use the interior night preset on this 3D view
+  - put the presentation elevation preset on this elevation
+  - visualise this view as an exterior dusk scene

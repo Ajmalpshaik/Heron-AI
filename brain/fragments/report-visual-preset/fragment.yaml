@@ -1,0 +1,222 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-149
+semantic-identity: "how a view's look compares with a visual preset - each of the preset's settings beside the view's own, and the materials it shows with no render appearance"
+kind: action
+domain: revit.views
+capability: REPORT_VISUAL_PRESET
+version: 3
+# VERSION 3, 2026-10-21 - row 5b-1306, found 2026-10-21 making interior
+# renders for the owner on Revit 2020: a Still sun's time was written and read
+# through the SITE's time zone (SiteLocation.ConvertFromProjectTime /
+# ConvertToProjectTime), but Revit holds the dialog's clock turned to UTC by the
+# PC's OWN zone. On the owner's laptop (UTC+3, site Boston) 11:00 asked was
+# written as 19:00 - the sun at 0 degrees, a black render - and the dialog's
+# 10:00 read back as 02:00. Measured with the sun's own height: written as the
+# PC's local time turned to UTC, 11:00 stood 36.7 degrees up at a bearing of
+# 171 - the dialog's 11:00. Both directions now go through the PC's zone (the
+# rule row 5b-1282 found for Revit's sunset). The shared block's two conversions changed, byte for
+# byte the same in APPLY_ and REPORT_VISUAL_PRESET. Version 2's proof below no
+# longer describes the code.
+# DRAFT until NEEDS-CHECKING Group IN proves it.
+# VERSION 2, 2026-10-20 - rows 5b-1282 and 5b-1283: the same two repairs as
+# APPLY_VISUAL_PRESET version 2 - the sunset date handed over as UTC, and the
+# depth-cueing reason naming the view's discipline. Version 1's proof below
+# no longer describes the code: DRAFT until it is proved again.
+source: OFFICIAL
+risk: READ
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-20: the owner asked for a visualiser - one call that gives a view a
+# good look (APPLY_VISUAL_PRESET). A modeller should see what a look would do
+# before it is done, and a chat should know which look a view is nearest; and
+# a Realistic view of the four duct heaters in Project1 drew their materials
+# flat grey because none had a render appearance. This is the read half: what
+# a preset would do to a view, setting by setting, and which materials on what
+# it shows will draw grey whatever the preset.
+#
+# HOW IT ANSWERS - comments, not `purpose`.
+#
+# **ONE PRESET NAMED**: a line per setting - the view's value beside the
+# preset's, and whether it is already so, would differ, is one this view
+# cannot take (a floor plan has no Rendering Settings), or is the modeller's
+# to tick by hand (Cast Shadows, Show Ambient Shadows - no member on any
+# release 2020 to 2027, row 5b-1267). `wouldChange` counts the ones that
+# would differ.
+#
+# **NONE NAMED ("all")**: one line per preset, closest first - how many of
+# its settings would differ, and which. `wouldChange` is the closest's count.
+#
+# **EVERY TIME**: the materials Revit names on the model elements the view
+# shows, and those with no render appearance - they draw flat grey in a
+# Realistic view and a render whatever the preset (SET_MATERIAL_APPEARANCE
+# gives them one). A face drawn By Category is not counted.
+#
+# **THE PRESETS, AND HOW EACH SETTING IS READ, ARE THE SHARED BLOCK** of
+# impl/any/fragment.cs - the same text as APPLY_VISUAL_PRESET's,
+# tests/test_visual_presets.py holding the two together - so what this says a
+# preset would do is what that one does. The presets themselves are listed on
+# APPLY_VISUAL_PRESET's card.
+#
+# **ONE STRING, LINES JOINED BY "  ||  "**, as READ_VIEW_SCALE does.
+#
+# `purpose` HOLDS NO CHANGE VERB, for the reason READ_VIEW_SCALE's card gives:
+# a read that answered a request for a look would change nothing.
+purpose: >
+  Answers how different one view is from a visual preset - Exterior Day,
+  Exterior Dusk, Interior Day, Interior Night, Equipment Close-up, Clay or
+  Presentation Elevation - each part of the look in turn, or which preset it
+  is closest to, and which materials on what it shows have no render
+  appearance and will draw flat grey. It only reads.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The view, as the Project Browser names it.
+    - name: view
+      type: View
+      source: request
+    # One preset's name, or all of them.
+    - name: preset
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # What the render would be for: check (Draft, Screen) or issue (High,
+    # 300 DPI) - the quality and output a preset is compared with.
+    - name: renderFor
+      type: string
+      source: request
+      optional: true
+      absent: check
+    # A time on the site's clock in place of a Still preset's own.
+    - name: sunTime
+      type: string
+      source: request
+      optional: true
+      absent: preset
+  provides:
+    - name: wouldChange
+      # Settings the preset would give differently - for "all", the closest
+      # preset's. Tracks the view and the preset (D-53).
+      role: result
+      type: int
+    - name: materialsWithoutAppearance
+      # Materials on what the view shows with no render appearance.
+      role: result
+      type: int
+    - name: presetsCompared
+      # How many presets were compared - one, or every one.
+      role: accounting
+      type: int
+    - name: comparison
+      # The lines, joined by "  ||  ". Filled whenever a view and a preset
+      # were read, so evidence beside the counts.
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was read, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: Cinematic ID Test (5,242 elements), Revit 2020, session 68704
+  positive_case: 'run as it would normally be run. returned asked 1 item(s) [Interior Day],
+    askedTime (null), barWord Func`2, barWords 8 item(s) [System.String[], System.String[],
+    System.String[], ...], byHandKeys 2 item(s) [Cast Shadows, Ambient Shadows], colour Func`2,
+    compare Func`2, comparison Interior Day on ''Cinematic Interior - Kitchen'' (ThreeD):
+    8 setting(s) would differ, 5 already so, 0 this view cannot take, 2 by hand  ||  Visual
+    Style Realistic (as the preset)  ||  Sun Intensity 30 -> 60  ||  Shadow Intensity 50 ->
+    40  ||  Silhouettes off (as the preset)  ||  Smooth Lines off -> on  ||  Sketchy Lines
+    off (as the preset)  ||  Display Background none -> sky  ||  Sun still 10:00 (as the preset)  ||  Render
+    Quality Medium -> Draft  ||  Render Output 300 DPI -> Screen  ||  Render Lighting Exterior:
+    Sun and Artificial -> Interior: Sun and Artificial  ||  Render Background Sky: Few Clouds
+    (as the preset)  ||  Exposure value=12.6; white point=10468.7 -> value=10; white point=6500  ||  Cast
+    Shadows on - by hand, Revit''s API has no member for it on any release 2020 to 2027  ||  Ambient
+    Shadows on - by hand, Revit''s API has no member for it on any release 2020 to 2027  ||  Materials
+    105 on what the view shows, 0 with no render appearance, culture CultureInfo, degrees
+    Func`2, describe Func`2, duskUtc (null), findings 1 item(s) [1 preset(s) compared on ''Cinematic
+    Interior - Kitchen''; 8 se...], forIssue false, hasDisplay true, inputProblem (null),
+    lightingWord Func`2, madeFor 7 entry(ies), materialsLine Materials 105 on what the view
+    shows, 0 with no render appearance, materialsRead true, materialsSeen 105 entry(ies),
+    materialsWithoutAppearance 0, noAppearance 0 item(s), noCueingWhy Func`2, noDisplay ''Cinematic
+    Interior - Kitchen'' has no Graphic Display Options - Revit gives them to views with a
+    visual style, noRender ''Cinematic Interior - Kitchen'' is not a 3D view, and only a 3D
+    view has Rendering Settings, pairs Func`2, presetList Exterior Day, Exterior Dusk, Interior
+    Day, Interior Night, Equipment Close-up, Clay, Presentation Elevation, presetNamed Func`2,
+    presetTable 7 item(s) [[Exterior Day, System.String[][]], [Exterior Dusk, System.String[][]],
+    [Interior Day, System.String[][]], ...], presetsCompared 1, purposeWord check, qualityWord
+    Func`2, refused (null), revitStyles 8 entry(ies), settingNow Func`2, settingWant Func`3,
+    show Func`2, showColour Func`2, site SiteLocation, squash Func`2, styleWord Func`2, sun
+    SunAndShadowSettings, sunsetSaid (null), takesBackground true, timeWord preset, toProject
+    Func`2, toUtc Func`2, view3D View3D, viewKind 3d, wouldChange 8. inputs came view as given;
+    preset as given; renderFor not given - "check", the card''s own default (optional); sunTime
+    not given - "preset", the card''s own default (optional). on Cinematic ID Test'
+  negative_case: 'run with view=Cinematic Interior - Kitchen, preset=Spielberg instead - chosen
+    because it should not contain what this fragment reports. returned asked 0 item(s), askedTime
+    (null), barWord Func`2, barWords 8 item(s) [System.String[], System.String[], System.String[],
+    ...], byHandKeys 2 item(s) [Cast Shadows, Ambient Shadows], colour Func`2, compare Func`2,
+    comparison , culture CultureInfo, degrees Func`2, describe Func`2, duskUtc (null), findings
+    1 item(s) [No visual preset is called ''Spielberg''. The presets: Exterio...], forIssue
+    false, hasDisplay true, inputProblem (null), lightingWord Func`2, madeFor 7 entry(ies),
+    materialsLine Materials 105 on what the view shows, 0 with no render appearance, materialsRead
+    true, materialsSeen 105 entry(ies), materialsWithoutAppearance 0, noAppearance 0 item(s),
+    noCueingWhy Func`2, noDisplay ''Cinematic Interior - Kitchen'' has no Graphic Display
+    Options - Revit gives them to views with a visual style, noRender ''Cinematic Interior
+    - Kitchen'' is not a 3D view, and only a 3D view has Rendering Settings, pairs Func`2,
+    presetList Exterior Day, Exterior Dusk, Interior Day, Interior Night, Equipment Close-up,
+    Clay, Presentation Elevation, presetNamed Func`2, presetTable 7 item(s) [[Exterior Day,
+    System.String[][]], [Exterior Dusk, System.String[][]], [Interior Day, System.String[][]],
+    ...], presetsCompared 0, purposeWord check, qualityWord Func`2, refused No visual preset
+    is called ''Spielberg''. The presets: Exterior Day, Exterior Dusk, Interior Day, Interior
+    Night, Equipment Close-up, Clay, Presentation Elevation. Nothing was read., revitStyles
+    8 entry(ies), settingNow Func`2, settingWant Func`3, show Func`2, showColour Func`2, site
+    SiteLocation, squash Func`2, styleWord Func`2, sun SunAndShadowSettings, sunsetSaid (null),
+    takesBackground true, timeWord preset, toProject Func`2, toUtc Func`2, view3D View3D,
+    viewKind 3d, wouldChange 0. inputs came view as given; preset as given; renderFor not
+    given - "check", the card''s own default (optional); sunTime not given - "preset", the
+    card''s own default (optional). on Cinematic ID Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: e9184eebf48a0f48
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, reading only members
+  REPORT_RENDER_SETTINGS, SET_VIEW_PROPERTIES and LIST_MATERIALS already read,
+  but SunAndShadowSettings.GetSunset - read on 2026-10-20 with
+  tools/api-surface --members, present and alike on 2020 to 2027 - and
+  Element.GetMaterialIds, the same on every release. View.DisplayStyle is
+  read by name, as SET_VIEW_PROPERTIES does.
+
+# ROUTING - the same rows are in the render, sun, display and view cards.
+#
+#   "what would the exterior day preset do here"  -> here
+#   "which preset is this view closest to"        -> here
+#   "which materials in this view render grey"    -> here
+#   "make this view look good"                    -> APPLY_VISUAL_PRESET, the
+#                                                    write (D-86)
+#   "what are the render settings of this view"   -> REPORT_RENDER_SETTINGS,
+#                                                    the four dialogs as they
+#                                                    stand
+#   "list the materials with their appearance"    -> LIST_MATERIALS, every
+#                                                    material in the project
+
+utterances:
+  - what would the exterior day preset do to this view
+  - how far is this 3D view from the equipment close-up look
+  - which visual preset is this view closest to
+  - which materials in this view have no render appearance
+  - what visual presets does Heron have

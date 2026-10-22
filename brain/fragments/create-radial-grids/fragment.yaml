@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LVL-027
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -72,6 +72,33 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, centreParts 2
+    item(s) [30000, 0], culture CultureInfo, endDegrees 90, findings 1 item(s) [Made 6 grid(s)
+    and read back their names: 2, 3, 4, 5, 6, 7.], gridIds 6 item(s) [345606, 345607, 345608,
+    ...], gridNames 6 item(s) [2, 3, 4, ...], made 6, numberStyle NumberStyles, numbers Func`2,
+    radii 2 item(s) [6000, 12000], refused (null), spokes 4 item(s) [0, 30, 60, ...], startDegrees
+    0. inputs came centreMm as given; radiiMm as given; spokeAnglesDegrees as given; startDegrees
+    as given; endDegrees as given. on Project2'
+  negative_case: 'run with categoryName=Text Notes, centreMm=30000,0, endDegrees=90, inViewOnly=FloorPlan:
+    Level 1, radiiMm=, spokeAnglesDegrees=0, 90, startDegrees=0 instead - chosen because it
+    should not contain what this fragment reports - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, centreParts 2
+    item(s) [30000, 0], culture CultureInfo, endDegrees 90, findings 1 item(s) [Spokes run
+    from the centre to the largest radius, and no rad...], gridIds 0 item(s), gridNames 0
+    item(s), made 0, numberStyle NumberStyles, numbers Func`2, radii 0 item(s), refused Spokes
+    run from the centre to the largest radius, and no radius was given. NOTHING WAS MADE.,
+    spokes 2 item(s) [0, 90], startDegrees 0. inputs came centreMm as given; radiiMm as given;
+    spokeAnglesDegrees as given; startDegrees as given; endDegrees as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: bc799847c4f2f57f
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

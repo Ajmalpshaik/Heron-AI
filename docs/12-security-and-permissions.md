@@ -378,9 +378,15 @@ This is Article 17 of the [Constitution](../HERON_CONSTITUTION.md).
 > handle that never prints its value, and one redactor that the brain's commit, release, repository,
 > import, sandbox and memory paths call. Item 1's store reaches that module as an injected backend, and
 > **no Credential Manager or DPAPI backend exists in the code**; the add-in's audit line does not pass
-> through the redactor. Item 4 is **not built**: no pre-commit hook or tool in this repository scans for
-> secrets. Searched 2026-10-18 (`grep -rln "CredentialManager\|ProtectedData\|DPAPI"`, the hooks in
+> through the redactor. Item 4 was **not built** when this note was written: no pre-commit hook or tool
+> in this repository scanned for secrets. Searched 2026-10-18 (`grep -rln "CredentialManager\|ProtectedData\|DPAPI"`, the hooks in
 > `.claude/settings.json`, and `tools/`).
+>
+> **Item 4, the same day ([D-143](DECISIONS.md)):** [`tools/check-secrets.py`](../tools/check-secrets.py)
+> is a gate CI runs on every pull request. It reads the redactor's own shapes and the Secrets block of
+> [`.gitignore`](../.gitignore), so the two layers cannot disagree about what a credential looks like. It
+> runs in CI rather than as a pre-commit hook, so it stops a merge, not a local commit, and it does not
+> read git history.
 
 ---
 

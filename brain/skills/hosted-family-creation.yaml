@@ -94,6 +94,9 @@ needs:
   - SET_PROJECT_UNITS
   - SET_FAMILY_CATEGORY
   - ADD_FAMILY_PARAMETERS
+  # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
+  # GUIDs, against the family, before ADD_FAMILY_SHARED_PARAMETERS writes.
+  - REPORT_SHARED_PARAMETER_FILE
   - ADD_FAMILY_SHARED_PARAMETERS
   - SET_FAMILY_TYPE_VALUES
   - SET_FAMILY_FORMULA

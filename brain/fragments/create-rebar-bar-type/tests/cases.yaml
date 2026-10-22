@@ -1,0 +1,21 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: typeName "TEST 16", diameter 16, standardBendDiameter 64, hookBendDiameter 64, stirrupBendDiameter 32, modelDiameter left out
+    expect: >
+      created 1, `readBack` nominal 16 mm, model 16 mm, bends 64 / 64 / 32 mm,
+      and Revit's Type Properties for "TEST 16" showing the same four values
+
+negative:
+  - given: the same values again, straight after
+    expect: >
+      created 0, refused naming the existing "TEST 16" at 16 mm - no second
+      type in the Project Browser
+  - given: typeName "TEST 25", diameter 25, stirrupBendDiameter 20
+    expect: >
+      created 0, refused because a 20 mm bend is not larger than a 25 mm bar
+      - nothing made
+
+second_route:
+  - Project Browser > Families > Structural Rebar > Rebar Bar - the new type and its Type Properties
+  - one Ctrl+Z takes it back (Golden Rule 16)

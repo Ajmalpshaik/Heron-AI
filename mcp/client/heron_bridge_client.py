@@ -1805,6 +1805,9 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
                 state = "ROLLED BACK"
             else:
                 state = "NOT ROLLED BACK"
+            # D-142: the delete box was asked first, and what the modeller chose.
+            if reply.get("deleteAsking"):
+                print("    ASKED  %s" % reply.get("deleteAsking"))
             print("    %s  %s" % (state, verdict))
 
         provides = reply.get("provides") or {}

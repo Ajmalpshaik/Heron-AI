@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -70,6 +70,43 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (2,997 elements), Revit 2020, session 16356
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, copied 2, copiedIds
+    2 item(s) [345614, 345615], culture CultureInfo, findings 2 item(s) [2 element(s) copied
+    from another open document., 2 element(s) picked in "HeronLinkSource"; 2 arrived in "Proj...],
+    lines 1 item(s) [2 element(s) picked in "HeronLinkSource"; 2 arrived in "Proj...], numberStyle
+    NumberStyles, offset XYZ, offsetText 0,20000,0, openTitles 14 item(s) [HeronLinkSource,
+    HeronLinkSource, HeronLinkSource, ...], picked 2 item(s) [345462, 345463], refusal (null),
+    report 2 element(s) picked in "HeronLinkSource"; 2 arrived in "Project1" and read back:
+    Furniture 2., source Document, viewOwned 0, wanted HeronLinkSource. inputs came sourceDocumentTitle
+    as given; categories as given; elementIds as given; offsetMm as given. on Project1'
+  negative_case: 'run with categories=Furniture, elementIds=, offsetMm=0,20000,0, sourceDocumentTitle=No
+    Such File instead - chosen because it should not contain what this fragment reports -
+    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned MmPerFoot 304.8, copied 0, copiedIds 0 item(s), culture CultureInfo, findings
+    2 item(s) [0 element(s) copied from another open document., No other open document matches
+    "No Such File" - both have to...], lines 1 item(s) [No other open document matches "No
+    Such File" - both have to...], numberStyle NumberStyles, offset XYZ, offsetText 0,20000,0,
+    openTitles 14 item(s) [HeronLinkSource, HeronLinkSource, HeronLinkSource, ...], picked
+    0 item(s), refusal No other open document matches "No Such File" - both have to be open
+    in this Revit; open now: HeronLinkSource, HeronLinkSource, HeronLinkSource, HeronLinkSource,
+    HeronLinkSource, Family1, HeronLinkSource, HeronLinkSource, HeronLinkSource, HeronLinkSource,
+    HeronLinkSource, HeronLinkSource, HeronLinkSource, HeronLinkSource. NOTHING WAS COPIED.,
+    report No other open document matches "No Such File" - both have to be open in this Revit;
+    open now: HeronLinkSource, HeronLinkSource, HeronLinkSource, HeronLinkSource, HeronLinkSource,
+    Family1, HeronLinkSource, HeronLinkSource, HeronLinkSource, HeronLinkSource, HeronLinkSource,
+    HeronLinkSource, HeronLinkSource, HeronLinkSource. NOTHING WAS COPIED., source (null),
+    viewOwned 0, wanted No Such File. inputs came sourceDocumentTitle as given; categories
+    as given; elementIds as given; offsetMm as given. on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: ae5af88184b52417
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

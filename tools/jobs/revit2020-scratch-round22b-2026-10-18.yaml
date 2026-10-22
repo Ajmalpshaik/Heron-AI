@@ -1,0 +1,12 @@
+# Batch 22b, 2026-10-18 - batch 22's model; the rooms' upper limit is raised to Level 2 by a
+# setup step inside the same rolled-back group, so the 2600 mm ceilings sit inside the rooms.
+model: "Project1 (scratch, never saved), Revit 2020"
+defaults:
+  in: "Project1"
+  write: true
+jobs:
+  - fragment: measure-ceiling-height
+    expect: mainHeight
+    setup: [select-by-category-name, set-selection, set-room-limits]
+    set: {categoryName: "Rooms", inViewOnly: "FloorPlan: Level 1", upperLevel: "Level 2", limitOffset: 0, includeLinks: false}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", upperLevel: "Level 2", limitOffset: 0, includeLinks: false}

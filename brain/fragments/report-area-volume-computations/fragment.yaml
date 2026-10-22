@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -106,6 +106,31 @@ contract:
       type: bool
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Project2, Family1 - active was Project2,
+    Revit 2020, session 13520'
+  positive_case: 'run as it would normally be run. returned areaSchemes 2 item(s) [Gross Building
+    (the Gross Building scheme) - description not..., Rentable - description not read - 0
+    area(s) on 0 area plan(s...], boundaryMeaning 4 entry(ies), boundaryWords 4 entry(ies),
+    descriptionOf Func`2, findings 4 item(s) [Volume Computations: Areas only - Revit computes
+    NO volumes,..., Room Area Computation: At wall finish - every room''s area is..., Revit
+    reports Spaces measured the same way, At wall finish., ...], hasVolume Func`2, isPlaced
+    Func`2, notAProject false, placedRooms 2, placedSpaces 2, roomAreaComputation At wall
+    finish, roomsWithVolume 0, spacesWithVolume 0, volumeComputation Areas only, wordsFor
+    Func`2. on Project2'
+  negative_case: run against 'Family1' with categoryName=Walls, inViewOnly=Heron 3D instead
+    - chosen because it should not contain what this fragment reports. returned areaSchemes
+    0 item(s), boundaryMeaning 4 entry(ies), boundaryWords 4 entry(ies), descriptionOf Func`2,
+    findings 1 item(s) [The document in front, "Family1", is a family. Area and Volu...],
+    hasVolume Func`2, isPlaced Func`2, notAProject true, placedRooms 0, placedSpaces 0, roomAreaComputation
+    , roomsWithVolume 0, spacesWithVolume 0, volumeComputation , wordsFor Func`2. on Family1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 08eb9294841fdab6
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

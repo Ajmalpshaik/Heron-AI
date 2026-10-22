@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -104,6 +104,49 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: 'run as it would normally be run. returned MillimetresPerFoot 304.8, adjustIds
+    2 item(s) [CURTAINGRID_ADJUST_BORDER_VERT, CURTAINGRID_ADJUST_BORDER_HORIZ], directions
+    2 item(s) [vertical, horizontal], findings 2 item(s) [''Curtain Wall: Storefront'' is
+    used by 0 walls in this model ..., 2 of 2 directions laid out with grid lines, 6 of 6
+    mullion p...], fullName Func`2, gridsLaidOut 2, label Curtain Wall: Storefront, layoutIds
+    2 item(s) [SPACING_LAYOUT_VERT, SPACING_LAYOUT_HORIZ], layoutShown 5 item(s) [None, Fixed
+    Distance, Fixed Number, ...], layoutValues 5 item(s) [0, 1, 2, ...], layoutWords 5 item(s)
+    [none, fixed distance, fixed number, ...], layoutsDisagreeing 0 item(s), mullionIds 6
+    item(s) [AUTO_MULLION_INTERIOR_VERT, AUTO_MULLION_BORDER1_VERT, AUTO_MULLION_BORDER2_VERT,
+    ...], mullionPositions 3 item(s) [interior, border 1, border 2], mullionPositionsFilled
+    6, plain Func`2, refused , settings vertical grid: layout Maximum Spacing (Revit''s value
+    3, shown as ''Maximum Spacing''); spacing 1524.0 mm; adjust for mullion size no. vertical
+    mullions: interior ''Rectangular Mullion: 50 x 150mm'', border 1 ''Rectangular Mullion:
+    50 x 150mm'', border 2 ''Rectangular Mullion: 50 x 150mm'' | horizontal grid: layout Fixed
+    Distance (Revit''s value 1, shown as ''Fixed Distance''); spacing 2400.0 mm; adjust for
+    mullion size no. horizontal mullions: interior ''Rectangular Mullion: 50 x 150mm'', border
+    1 ''Rectangular Mullion: 50 x 150mm'', border 2 ''Rectangular Mullion: 50 x 150mm'', spacingIds
+    2 item(s) [SPACING_LENGTH_VERT, SPACING_LENGTH_HORIZ], wallsOfType 0. inputs came curtainWallType
+    as given. on Project2'
+  negative_case: 'run with categoryName=Text Notes, curtainWallType=Generic - 200mm, inViewOnly=FloorPlan:
+    Level 1 instead - chosen because it should not contain what this fragment reports. returned
+    MillimetresPerFoot 304.8, adjustIds 2 item(s) [CURTAINGRID_ADJUST_BORDER_VERT, CURTAINGRID_ADJUST_BORDER_HORIZ],
+    directions 2 item(s) [vertical, horizontal], findings 1 item(s) [''Basic Wall: Generic
+    - 200mm'' is a basic wall type, not a cu...], fullName Func`2, gridsLaidOut 0, label Basic
+    Wall: Generic - 200mm, layoutIds 2 item(s) [SPACING_LAYOUT_VERT, SPACING_LAYOUT_HORIZ],
+    layoutShown 5 item(s) [None, Fixed Distance, Fixed Number, ...], layoutValues 5 item(s)
+    [0, 1, 2, ...], layoutWords 5 item(s) [none, fixed distance, fixed number, ...], layoutsDisagreeing
+    0 item(s), mullionIds 6 item(s) [AUTO_MULLION_INTERIOR_VERT, AUTO_MULLION_BORDER1_VERT,
+    AUTO_MULLION_BORDER2_VERT, ...], mullionPositions 3 item(s) [interior, border 1, border
+    2], mullionPositionsFilled 0, plain Func`2, refused ''Basic Wall: Generic - 200mm'' is
+    a basic wall type, not a curtain wall type - it has no curtain grid or mullions to read.
+    REPORT_COMPOUND_STRUCTURE reads a layered wall''s build-up, settings , spacingIds 2 item(s)
+    [SPACING_LENGTH_VERT, SPACING_LENGTH_HORIZ], wallsOfType 0. inputs came curtainWallType
+    as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 1e48a1f7a6add8b4
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

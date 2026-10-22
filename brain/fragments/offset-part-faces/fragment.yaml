@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -51,6 +51,31 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,067 elements), Revit 2020, session 2648
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
+    distance 0.328083989501312, findings 1 item(s) [1 top face(s) offset 100 mm on 1 part(s),
+    read back.], lines 0 item(s), offsetCount 1, offsetMm 100, partsTouched 1 item(s) [345879],
+    refusal (null), report , which top. inputs came elements from the selection (1); faces
+    as given; offsetMm as given. on Project1
+  negative_case: 'run with faces=top, offsetMm=100 arranged with categories=Walls, exact=False,
+    maxMm=3000,300,100, minMm=2000,-300,-100 instead - chosen because it should not contain
+    what this fragment reports - the arrangement was re-made first by running select-in-region,
+    set-selection with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, distance 0.328083989501312,
+    findings 2 item(s) [0 top face(s) offset 100 mm on 0 part(s), read back., 345432: not
+    a part.], lines 1 item(s) [345432: not a part.], offsetCount 0, offsetMm 100, partsTouched
+    0 item(s), refusal (null), report 345432: not a part., which top. inputs came elements
+    from the selection (1); faces as given; offsetMm as given. on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: a363c459a0b8cee9
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

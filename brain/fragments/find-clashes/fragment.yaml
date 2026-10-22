@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -183,6 +183,84 @@ contract:
       # element, its value, by how much, and what it passes through.
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: MEP Night Test, Revit 2020, session 68704 - the count is NOT recorded because 5,262
+    elements was measured on Cinematic ID Test, the document in front, and this ran against
+    another one (row 15)
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection, select-by-categories with this phase''s own values.
+    returned againstGiven true, agree 0, anyCategory false, boxSolidOf Func`2, buildingCategories
+    9 item(s) [OST_Walls, OST_Floors, OST_Roofs, ...], buildingOnly true, byBox 0, categoryWord
+    building, centreOf Func`2, clashes 59 entry(ies), clashing 59, clear 197, compareFailures
+    0 entry(ies), comparing false, comparison 1 item(s) [No parameter named - nothing compared.
+    Name one in comparePa...], dbNamespace Autodesk.Revit.DB, describeLinked Func`3, done
+    HashSet`1, elementLines 59 item(s) [  element 392168 ''Rectangular Duct: Mitered Elbows
+    / Taps'': ...,   element 392170 ''Rectangular Duct: Mitered Elbows / Taps'': ...,   element
+    392689 ''Rectangular Duct: Mitered Elbows / Taps'': ..., ...], extentAlong Func`3, facingOf
+    Func`2, findings 1 item(s) [256 element(s) checked against 70: 59 clash, 197 clear, 0
+    co...], fireRatingOf Func`2, flags BindingFlags, handed 256, handedIds HashSet`1, hitsUnmeasured
+    0, includeHost false, includeLinks false, isLength Func`2, isLengthSpec Func`2, isLookedFor
+    Func`2, lengthUnits 0 item(s), linkBlocked , linkDocs 0 item(s), linkHitElements 0 item(s),
+    linkHits 0 item(s), linkLines 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s),
+    linkUntested 0, linkedMatches 1 item(s) [Host model only - links not read], linkedTotal
+    0, linksSearched 0, lookFilter ElementMulticategoryFilter, lookFor 9 item(s) [-2000011,
+    -2000032, -2000035, ...], lookForNames 0 item(s), lookingFor walls, floors, roofs, ceilings,
+    columns, beams, foundations or stairs, measure Func`6, mismatchLines 0 item(s), mismatched
+    0 item(s), mm 304.8, nestedLinks 0, notChecked 0 item(s), notPassedThrough 4 item(s) [-2000160,
+    -2003600, -2003200, ...], notTested 0 item(s), nothingToCompare 0, oldLengthUnits 9 item(s)
+    [DUT_MILLIMETERS, DUT_CENTIMETERS, DUT_DECIMETERS, ...], outlineOf Func`2, overlapOf Func`3,
+    parameterOf Func`2, parameterWord none, passedThrough 61 item(s) [256 element(s) looked
+    at in `against`, for walls, floors, ro...,   element 392168 ''Rectangular Duct: Mitered
+    Elbows / Taps'': ...,   element 392170 ''Rectangular Duct: Mitered Elbows / Taps'': ...,
+    ...], places 1 item(s) [`against`], refusedAgainst 0 item(s), revitAssembly RuntimeAssembly,
+    runOf Func`2, sameKind Func`3, sameWord Func`3, searchHost false, searchLinks false, shownAsLength
+    Func`2, solidsIn Func`2, through 59, throughNothing 197 item(s) [392174, 392175, 392180,
+    ...], typeNameOf Func`2, unitOwner (null), unknownCategories 0 item(s), vertexTolerance
+    0.0005233832795, whyNot 0 entry(ies). inputs came elements from select-by-categories (256);
+    against as given (70); includeLinks not given - false (optional); categories not given
+    - "building", the card''s own default (optional); includeHost not given - false (optional);
+    compareParameter not given - "none", the card''s own default (optional). on MEP Night
+    Test'
+  negative_case: 'run with against=selected arranged with categories=Grids, categoryName=Walls,
+    inViewOnly=FloorPlan: Level 1 HVAC Plan instead - chosen because it should not contain
+    what this fragment reports - the arrangement was re-made first by running select-by-category-name,
+    set-selection, select-by-categories with this phase''s own values. returned againstGiven
+    true, agree 0, anyCategory false, boxSolidOf Func`2, buildingCategories 9 item(s) [OST_Walls,
+    OST_Floors, OST_Roofs, ...], buildingOnly true, byBox 0, categoryWord building, centreOf
+    Func`2, clashes 0 entry(ies), clashing 0, clear 0, compareFailures 0 entry(ies), comparing
+    false, comparison 1 item(s) [No parameter named - nothing compared. Name one in comparePa...],
+    dbNamespace Autodesk.Revit.DB, describeLinked Func`3, done HashSet`1, elementLines 0 item(s),
+    extentAlong Func`3, facingOf Func`2, findings 2 item(s) [22 element(s) checked against
+    70: 0 clash, 0 clear, 22 could..., 22 element(s) NOT CHECKED - Revit''s intersection test
+    refuse...], fireRatingOf Func`2, flags BindingFlags, handed 22, handedIds HashSet`1, hitsUnmeasured
+    0, includeHost false, includeLinks false, isLength Func`2, isLengthSpec Func`2, isLookedFor
+    Func`2, lengthUnits 0 item(s), linkBlocked , linkDocs 0 item(s), linkHitElements 0 item(s),
+    linkHits 0 item(s), linkLines 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s),
+    linkUntested 0, linkedMatches 1 item(s) [Host model only - links not read], linkedTotal
+    0, linksSearched 0, lookFilter ElementMulticategoryFilter, lookFor 9 item(s) [-2000011,
+    -2000032, -2000035, ...], lookForNames 0 item(s), lookingFor walls, floors, roofs, ceilings,
+    columns, beams, foundations or stairs, measure Func`6, mismatchLines 0 item(s), mismatched
+    0 item(s), mm 304.8, nestedLinks 0, notChecked 22 item(s) [586795, 586898, 586905, ...],
+    notPassedThrough 4 item(s) [-2000160, -2003600, -2003200, ...], notTested 0 item(s), nothingToCompare
+    0, oldLengthUnits 9 item(s) [DUT_MILLIMETERS, DUT_CENTIMETERS, DUT_DECIMETERS, ...], outlineOf
+    Func`2, overlapOf Func`3, parameterOf Func`2, parameterWord none, passedThrough 2 item(s)
+    [22 element(s) looked at in `against`, for walls, floors, roo...,   NOT tested - Revit
+    refused its test against `against` (fin...], places 1 item(s) [`against`], refusedAgainst
+    22 item(s) [586795, 586898, 586905, ...], revitAssembly RuntimeAssembly, runOf Func`2,
+    sameKind Func`3, sameWord Func`3, searchHost false, searchLinks false, shownAsLength Func`2,
+    solidsIn Func`2, through 0, throughNothing 0 item(s), typeNameOf Func`2, unitOwner (null),
+    unknownCategories 0 item(s), vertexTolerance 0.0005233832795, whyNot 1 entry(ies). inputs
+    came elements from select-by-categories (22); against as given (70); includeLinks not
+    given - false (optional); categories not given - "building", the card''s own default (optional);
+    includeHost not given - false (optional); compareParameter not given - "none", the card''s
+    own default (optional). on MEP Night Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 37296fedd1603830
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,0 +1,133 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-118
+semantic-identity: "put a bottom and top bar mesh in these isolated footings"
+kind: action
+domain: revit.elements
+capability: PLACE_FOOTING_REBAR
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# "T16 AT 150 BOTH WAYS BOTTOM, 75 COVER" IS THE SENTENCE. A pad footing or a
+# pile cap is a block with up to four layers - bottom and top, each running
+# along the footing's length and along its width. Every value is the
+# modeller's (D-33):
+#   bottomLength  bottom bars running along the length, "<bar type> @
+#                 <spacing in mm>" - "16mm @ 150" - or "none"
+#   bottomWidth   bottom bars running along the width, the same, or "none"
+#   topLength     top bars along the length, or "none"
+#   topWidth      top bars along the width, or "none"
+#   outerLayer    "length" or "width": which bars sit outermost - lowest at
+#                 the bottom, highest at the top. ASKED, never chosen: it
+#                 moves both layers' depth, which is the engineer's call
+#   barHook       a hook for both ends of every bar, turned into the footing
+#                 - or left out: straight bars
+#   cover         millimetres on every face - or left out: the footing's own
+#                 Rebar Cover parameters
+# The LENGTH is the longer side of the footing in its own axes; a square
+# footing's length is its own X, and the answer says which way each layer ran.
+#
+# A BAR TYPE IS ITS EXACT NAME OR A DIAMETER IN MILLIMETRES (D-71), read the
+# way PLACE_COLUMN_REBAR reads it.
+#
+# EACH LAYER IS ONE REBAR SET at the spacing asked as a MAXIMUM (Maximum
+# Spacing), first and last bar included, from side cover to side cover.
+#
+# NOT HERE: a foundation SLAB (a floor) takes PLACE_AREA_REINFORCEMENT; a wall
+# (strip) foundation has no tool yet; a footing that is not a plain level
+# rectangular block is skipped and named; one already holding rebar is
+# skipped, so a second run does not double it.
+#
+# ONE FOOTING IS ALL OR NOTHING, and READ BACK after a regenerate: each set's
+# host and quantity against what the spacing gives.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Places bottom and top bar layers both ways in isolated pad footings and pile
+  caps from the bar types, spacings, outer layer, hooks and cover the modeller
+  gives.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: bottomLength
+      type: string
+      source: request
+    - name: bottomWidth
+      type: string
+      source: request
+    - name: topLength
+      type: string
+      source: request
+    - name: topWidth
+      type: string
+      source: request
+    - name: outerLayer
+      type: string
+      source: request
+    - name: barHook
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: cover
+      type: string
+      source: request
+      optional: true
+      absent: host
+  provides:
+    - name: placed
+      role: result
+      type: IList<ElementId>
+    - name: footingsReinforced
+      role: result
+      type: IList<ElementId>
+    - name: skipped
+      role: accounting
+      type: IList<string>
+    - name: readBackWrong
+      role: accounting
+      type: IList<string>
+    - name: report
+      role: accounting
+      type: string
+    - name: refused
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  The same two routes as PLACE_COLUMN_REBAR, read off the shipped assemblies
+  2020 to 2027 on 2026-10-19: Rebar.CreateFromCurves with hook types and
+  RebarHookOrientation for 2020-2025, the BarTerminationsData form for 2026
+  on. BarDiameter on 2020-2021, BarModelDiameter from 2022.
+  SetLayoutAsMaximumSpacing, FamilyInstance.GetTransform, RebarHostData and
+  the CLEAR_COVER_* parameters are one signature on all eight.
+
+# ROUTING - the same rows are in every rebar card.
+#
+#   "bottom mesh in these pad footings"         -> here
+#   "T16 at 150 both ways in the pile caps"     -> here
+#   "T12 at 200 both ways in this slab"         -> PLACE_AREA_REINFORCEMENT
+#   "reinforce the raft"                        -> PLACE_AREA_REINFORCEMENT
+utterances:
+  - put T16 at 150 both ways bottom in these pad footings, 75 cover
+  - reinforce these footings with a bottom and top mesh
+  - add rebar to the pile caps
+  - place footing bars both ways

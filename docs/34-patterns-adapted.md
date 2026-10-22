@@ -27,8 +27,8 @@ transfers; the shape almost never does.
 
 | | |
 |---|---|
-| **Patterns extracted** | **20**, from **20** repositories — `gbrain` was added by the owner on 2026-09-09 and is the only one that **measured** a question Heron had open. §2.15 to §2.19 came from a second round on 2026-09-11, against three repositories named by the improvement-gate plans |
-| **Adopted and built** | **6** — tiered depth, the cut marker, **the boundary hook** ([§2.9](#29--built--enforce-at-the-moment-of-the-act-not-afterwards)), and the three the improvement gate is made of ([§2.15](#215-built---compare-the-finished-diff-against-what-the-change-said-it-was-for), [§2.16](#216-built---a-file-no-rule-recognises-widens-the-checks-rather-than-passing-quietly), [§2.17](#217-built---check-the-thing-that-gets-delivered-not-the-tree-it-was-built-from)). All tested |
+| **Patterns extracted** | **22**, from **20** repositories — `gbrain` was added by the owner on 2026-09-09 and is the only one that **measured** a question Heron had open. §2.15 to §2.19 came from a second round on 2026-09-11, against three repositories named by the improvement-gate plans, §2.20 from a second reading of ECC on 2026-10-18, and §2.21 from a third on 2026-10-19 |
+| **Adopted and built** | **8** — tiered depth, the cut marker, **the boundary hook** ([§2.9](#29--built--enforce-at-the-moment-of-the-act-not-afterwards)), the three the improvement gate is made of ([§2.15](#215-built---compare-the-finished-diff-against-what-the-change-said-it-was-for), [§2.16](#216-built---a-file-no-rule-recognises-widens-the-checks-rather-than-passing-quietly), [§2.17](#217-built---check-the-thing-that-gets-delivered-not-the-tree-it-was-built-from)), the secret gate ([§2.20](#220-built---scan-what-is-about-to-be-published-against-the-lists-that-already-exist)) and the supersession check ([§2.21](#221-built---a-superseded-record-says-so-where-a-citation-of-it-lands)). All tested |
 | **Adopted as a rule rather than as code** | **1** — [§2.18](#218-adopted-as-a-rule---mock-only-the-thing-you-genuinely-cannot-have) |
 | **Already held** | **7** — Heron had them, and in five cases more strictly |
 | **Blocked on an owner decision** | **3** — `Q-50`, `Q-51`, `Q-53`, one each for §2.10 to §2.12. `Q-49` was answered and built; `Q-52` was answered by **measuring it** |
@@ -386,6 +386,32 @@ would produce green suites and no knowledge whatever, which is why nothing here 
 | **Why it works** | Severity says what must happen; the snippet lets a reader settle it in one look instead of trusting the tool |
 | **What Heron already had** | Both halves, more strictly. `check-revit-gate.py` has four verdicts about **evidence** rather than severity, and `check-routing.py` exits 0 on purpose because *"a tool that failed a build over two fragments both answering to 'grey the background' would teach people to weaken their own utterances to buy a green tick"* |
 | **What was added** | The same habit in the new gates: every signal in `check-change.py` names the paths that raised it, and every packaging problem names the file and what Revit would do about it |
+
+---
+
+### 2.20 BUILT - scan what is about to be published, against the lists that already exist
+
+| | |
+|---|---|
+| **Where from** | [`affaan-m/ECC`](https://github.com/affaan-m/ECC), MIT, read a second time on 2026-10-18 at `76aaa77d` - its open-source sanitizer agent ([33 §5.1](33-external-repository-research.md#51-affaan-mecc), second pass) |
+| **Their mechanism** | Before a project is released, a read-only pass that trusts nothing the author did greps every text file for credential shapes, personal data and home-directory paths, fails on files whose names say they hold secrets, reads the git history, and lists the files it could not read as text for a person to open. One critical finding fails the release, and no value is printed whole |
+| **Why it works** | It runs at the one moment that cannot be undone, by something other than the author, and it says what it did **not** read rather than letting a clean result imply it read everything |
+| **What Heron already had** | Every input, and no scan. The shapes, in `heron_secrets.PATTERNS`, used only on the way **out** - logs, errors, evidence. The file names, in the Secrets block of [`.gitignore`](../.gitignore), which stops only a **new** file. A refusal for a credential in a commit **message**, in `heron_commit.stage()`, which never reads the files. And [12 §5a](12-security-and-permissions.md) asking for the scan as item 4, recording it as not built |
+| **What Heron built instead** | [`tools/check-secrets.py`](../tools/check-secrets.py), a **gate** ([D-143](DECISIONS.md)). It owns **no list**: the shapes are `PATTERNS`, the names are `.gitignore`'s, matched by git itself. Tracked files only, because only they are published; no value printed; files that are not text counted, and the count printed; exit 2 rather than a guess when the Secrets block is missing. **No allow-list** - a fake in a test is built from pieces, which Heron already did. `PATTERNS` gained the private key that neither layer recognised |
+| **Not taken** | The history audit - a public repository's history is already public, so the answer to a key found there is rotation, not a gate. The personal-data and home-path greps - paths are the path manager's, and personal data is 17's other half, still not built. The release-time placement - Heron's gates run on every pull request, which is earlier |
+
+---
+
+### 2.21 BUILT - a superseded record says so where a citation of it lands
+
+| | |
+|---|---|
+| **Where from** | [`affaan-m/ECC`](https://github.com/affaan-m/ECC), MIT, read a third time on 2026-10-19 at `76aaa77d` - the read-only audit in its documentation-governance skill ([33 §5.1](33-external-repository-research.md#51-affaan-mecc), third pass). Its script was read for what it checks and not run |
+| **Their mechanism** | Each architecture record carries a status - proposed, accepted, deprecated, superseded - and a record marked superseded must name its successor inline, and the successor must exist. A record's *Supersedes* section must point at records that exist. A missing successor fails the audit; anything a pattern cannot read is a warning for a person |
+| **Why it works** | A superseded record is still read - by whoever arrives from an old link - and it is the one place that reader looks. Making the old record point forward costs a line, and the audit is what keeps that line from being forgotten |
+| **What Heron already had** | The other end. A reversal here is a new decision whose header says, in a `**Supersedes...**` field, what it supersedes; the old one keeps every word. Four supersessions were also written under the old decision's heading in the index, and six were not - D-24, D-37, D-99 twice, D-101 and D-105. Every link to a decision lands on that heading. `check-docs.py` asked that a number is defined once and `check-decision-titles.py` that it keeps its title; nothing asked that a superseded one says so |
+| **What Heron built instead** | [`tools/check-supersessions.py`](../tools/check-supersessions.py), run by `check-docs.py` as its §13 ([D-144](DECISIONS.md)), so it fails the gate run before every push and CI's gates job with no step of its own. It starts from the **new** end, because that is where this log declares a supersession, and checks **both ways**: a decision in force that supersedes another owes a `**Superseded by:**` or `**Superseded in part by:**` line under the old heading, and every such line names only a decision that says so itself. A *proposed* successor owes nothing until it is accepted, and one that has itself been superseded owes nothing; both are printed. The six missing notes are written |
+| **Not taken** | Their status vocabulary - Heron's log has its own, and a reversal here is a new decision, never an edit of the old one's status. Their *deletion zone* - one removal is on record, Talk, and nothing has come back. A banner on the full record - the index is where a citation lands |
 
 ---
 

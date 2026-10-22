@@ -134,6 +134,23 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// An element the model no longer holds, though no commit said it was
+        /// deleted - row 5b-1241. Revit's StairsEditScope.Cancel takes back the
+        /// stair and the type that Start made without a committed transaction,
+        /// so no DocumentChanged ever names them deleted: every refused stair
+        /// was reported "2 added ((no category) 2)" and the job kept two
+        /// elements that did not exist. Added and gone is nothing, as Deleted
+        /// rules; modified and gone is deleted. Called before Describe, by a
+        /// caller that has asked the model; ignored once sealed.
+        /// </summary>
+        internal void Vanished(string id)
+        {
+            if (_sealed) return;
+            _fragment.Vanished(id);
+            _setup.Vanished(id);
+        }
+
+        /// <summary>
         /// Seal, and read each surviving element's category once.
         ///
         /// `categoryOf` is handed an id as text and answers its category's
@@ -188,6 +205,12 @@ namespace Heron.Revit.Addin
                 }
                 if (!_state.ContainsKey(id)) _order.Add(id);
                 _state[id] = "deleted";
+            }
+
+            internal void Vanished(string id)
+            {
+                if (string.IsNullOrEmpty(id) || !_state.ContainsKey(id)) return;
+                Deleted(id);
             }
 
             internal Counted Read(Func<string, string> categoryOf)

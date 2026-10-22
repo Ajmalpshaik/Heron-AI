@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -85,6 +85,41 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,126 elements), Revit 2020, session 2648
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned baseEquipmentId
+    (null), created MechanicalSystem, createdName Heron Supply, describe Func`2, findings
+    2 item(s) [Air Terminals 352028 (Mark 1) left out: no free duct connect..., Made duct
+    system "Heron Supply" of type "Supply Air" with 2 ...], given 3 item(s) [600 x 600 Face
+    300 x 300 Connection, 225 mm Face 150 mmx150 mm Neck, 225 mm Face 150 mmx150 mm Neck],
+    isDuct true, isPipe false, memberIds 2 item(s) [352031, 352034], refused (null), skipped
+    1 item(s) [352028], suiting Func`2, wantedClass SupplyAir, wantedDomain Domain. inputs
+    came elements from the selection (3); systemType as given; systemName as given; baseEquipment
+    as given. on Project1'
+  negative_case: 'run with baseEquipment=, categoryName=Walls, inViewOnly=Heron 3D, systemName=Heron
+    Supply, systemType=Supply Air instead - chosen because it should not contain what this
+    fragment reports - the arrangement was re-made first by running select-by-category-name,
+    set-selection with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned baseEquipmentId (null), created
+    (null), createdName , describe Func`2, findings 7 item(s) [Walls 345432 left out: ducts,
+    pipes and fittings join a syst..., Walls 345433 left out: ducts, pipes and fittings join
+    a syst..., Walls 345434 left out: ducts, pipes and fittings join a syst..., ...], given
+    6 item(s) [Generic - 200mm, Generic - 200mm, Generic - 200mm, ...], isDuct true, isPipe
+    false, memberIds 0 item(s), refused Not one element handed in has a free duct connector
+    of the SupplyAir kind, so NOTHING WAS MADE. A second run over elements already on a system
+    finds exactly this, and makes nothing twice., skipped 6 item(s) [345432, 345433, 345434,
+    ...], suiting Func`2, wantedClass SupplyAir, wantedDomain Domain. inputs came elements
+    from the selection (6); systemType as given; systemName as given; baseEquipment as given.
+    on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 5ed7a6ee1add0e0d
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

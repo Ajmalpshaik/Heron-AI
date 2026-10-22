@@ -1,0 +1,14 @@
+# Batch 11, 2026-10-18 - Revit 2020 session 2648, scratch Project1 (never saved), batch 10's model.
+# One duct this time: the Supply Air main at y=1000, 1000..9000 mm, z 2700. ROLLED BACK.
+model: "Project1 (scratch, never saved), Revit 2020"
+defaults:
+  in: "Project1"
+  write: true
+  setup: [select-in-region, set-selection]
+  setup-set: {minMm: "1500,800,2500", maxMm: "8500,1200,2900", exact: false, categories: "Ducts"}
+  negative-setup-set: {minMm: "1500,800,2500", maxMm: "8500,1200,2900", exact: false, categories: "Ducts"}
+jobs:
+  - fragment: place-accessory-on-run
+    expect: placed
+    set: {accessorySymbol: "M_Balancing Damper - Rectangular: Standard", positionAlong: 0.5}
+    negative-set: {accessorySymbol: "ZZZNOTHINGHERE", positionAlong: 0.5}

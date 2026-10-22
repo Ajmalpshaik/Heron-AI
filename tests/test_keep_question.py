@@ -373,9 +373,12 @@ def wiring():
     values = dict(CFG.DEFAULTS)
     check(CFG.fragment_timeout(values) == 180.0,
           "a read still waits exactly the 180 it always did")
-    check(CFG.fragment_timeout(values, keeping=True) == 180.0,
-          "and with the owner's question off - the default since D-138 - a keep does not "
-          "wait for one")
+    # CHANGED BY D-142, 2026-10-18: this asserted that a keep with the owner's
+    # question off waits only the 180. The delete box is asked with it off too,
+    # so a keep now waits for a box whatever the switch says.
+    check(CFG.fragment_timeout(values, keeping=True) == 180.0 + ask_timeout(values),
+          "and with the owner's question off - the default since D-138 - a keep still "
+          "waits for a box: D-142's delete box is asked whatever the switch says")
     values["write.askBeforeKeeping"] = "true"
     check(CFG.fragment_timeout(values, keeping=True) == CFG.try_once_timeout(values),
           "and a keep the owner's switch asks about waits what D-119's try-once waits - "

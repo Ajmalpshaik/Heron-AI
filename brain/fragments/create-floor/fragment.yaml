@@ -9,7 +9,7 @@ semantic-identity: "make a floor slab over this area"
 kind: action
 domain: revit.elements
 capability: CREATE_FLOOR
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -32,6 +32,15 @@ purpose: >
   **The boundary closes itself** and must not cross itself. A self-crossing loop
   is refused by Revit, and that refusal is reported rather than swallowed.
 
+  **AN EDGE CAN BE AN ARC (version 2, row 5b-1216).** `arc MX,MY X,Y` after a
+  corner makes the next edge an arc: through MX,MY, ending at X,Y - the writing
+  CREATE_FAMILY_EXTRUSION's loops take, so one writing works for a family and a
+  project. A round slab is two arcs, the second ending where the first began; a
+  boundary with an arc in it may end on its first corner, because a round one
+  has to. A boundary with no `arc` in it makes exactly the floor version 1 made,
+  and a last corner repeating the first is still refused there. An arc whose
+  three points are in a line, or two in one place, makes nothing.
+
   **It makes one floor, not a storey.** Openings, shafts and penetrations are
   separate jobs; nothing here cuts a hole in anything.
 
@@ -47,8 +56,15 @@ contract:
     - name: floorType
       type: FloorType
       source: request
+    # Millimetres, as typed: corners "X,Y,Z" with semicolons between - the Z
+    # is taken from the level - and an arc "arc MX,MY X,Y" after a corner: a
+    # point the edge passes through, then where it ends. Closed back to the
+    # first corner. A round slab is "R,0,0; arc 0,R -R,0; arc 0,-R R,0". TEXT
+    # SINCE VERSION 2, read in the fragment exactly as the add-in read an
+    # IList<XYZ> before - the same numbers, refusals, bound and division by
+    # 304.8 - so a boundary without an arc is unchanged (5b-1216).
     - name: boundary
-      type: IList<XYZ>
+      type: string
       source: request
   provides:
     - name: created
@@ -57,26 +73,41 @@ contract:
     - name: findings
       type: IList<string>
 
+# VERSION 2's PROOF (NEEDS-CHECKING Group HM, Revit 2020, 2026-10-19). The
+# positive is the run kept through try-once (D-120): a round slab of radius
+# 5000 mm through the pre-2022 call, its Area between 78.50 and 78.58 m2 by
+# SELECT_BY_NUMERIC_PARAMETER - a circle, not the 77.25 m2 20-sided polygon.
+# Version 1's proof (2026-09-10) described the code before arcs (row 5b-1216).
 proof:
-  date: '2026-09-10'
+  date: '2026-10-19'
   by: Ajmal PS
-  model: Project1 work_ajmal.al (3,435 elements), Revit 2024, session 24688
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned created 1 item(s) [id 925687],
-    creation Document, findings 1 item(s) [Floor created on 'Level 1' using the Revit 2022
-    and later ca...], newStyle RuntimeMethodInfo, oldStyle (null). inputs came level as given;
-    floorType as given; boundary as given (4). on Project1 work_ajmal.al
-  negative_case: run with boundary=0,0,0; 6000,0,0, floorType=Generic 300mm, level=Level 1
-    instead - chosen because it should not contain what this fragment reports - run inside
-    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    created (null), creation Document, findings 1 item(s) [A floor needs at least three boundary
-    points and 2 were give...], newStyle RuntimeMethodInfo, oldStyle (null). inputs came level
-    as given; floorType as given; boundary as given (2). on Project1 work_ajmal.al
+  model: HM floor test (2,943 elements), Revit 2020, session 15072
+  positive_case: run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-10-19; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned MillimetresPerFoot 304.8, arcs 2, corners 2 item(s) [(16.404199475,
+    196.850393701, 0.000000000), (-16.404199475, 196.850393701, 0.000000000)], created 1 item(s)
+    [id 345453], creation Document, findings 2 item(s) [Floor created on 'Level 1' using the
+    pre-2022 call. It is a ..., 2 of its 2 edges are arcs. Its Area in Properties is measure...],
+    invariant CultureInfo, mm Func`2, newStyle (null), numbers Func`2, oldStyle RuntimeMethodInfo,
+    pointOf Func`3, problem (null), shortest 0.00256026455729167, through 2 item(s) [(0.000000000,
+    213.254593176, 0.000000000), (0.000000000, 180.446194226, 0.000000000)]. inputs came level
+    as given; floorType as given; boundary as given. on HM floor test
+  negative_case: run with level=Level 1, floorType=Generic 300mm, boundary=5000,60000,0; arc
+    0,60000 -5000,60000; arc 0,55000 5000,60000 instead - chosen because it should not contain
+    what this fragment reports - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, arcs 2, corners 2 item(s)
+    [(16.404199475, 196.850393701, 0.000000000), (-16.404199475, 196.850393701, 0.000000000)],
+    created (null), creation Document, findings 1 item(s) [The arc from 5000,60000 through
+    0,60000 to -5000,60000 is no...], invariant CultureInfo, mm Func`2, newStyle (null), numbers
+    Func`2, oldStyle RuntimeMethodInfo, pointOf Func`3, problem The arc from 5000,60000 through
+    0,60000 to -5000,60000 is not an arc - its three points are in a line, or two are in the
+    same place., shortest 0.00256026455729167, through 2 item(s) [(0.000000000, 196.850393701,
+    0.000000000), (0.000000000, 180.446194226, 0.000000000)]. inputs came level as given;
+    floorType as given; boundary as given. on HM floor test
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: af71eb48a7154b12
-
+  fingerprint: afec7d7a9549e170
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -88,7 +119,9 @@ compatibility-note: >
   2020 and is gone by 2024. Naming either in source breaks the other build, so
   both are looked up at run time and whichever this release has is used.
   `Level.ProjectElevation`, `CurveLoop.Create` and `Line.CreateBound` are
-  present throughout.
+  present throughout, and so is `Arc.Create` taking two ends and a point on the
+  arc - what version 2 hands both calls for a curved edge, read off the
+  reference assemblies on 2026-10-19 with tools/api-surface.
 
 # THE OLD CALL WANTS A CurveArray AND THE NEW ONE WANTS CurveLoops, so the
 # boundary is built into both shapes and the one the found method needs is
@@ -98,6 +131,12 @@ compatibility-note: >
 #
 #   "make a floor slab over this area" -> here
 #   "add a slab here"                  -> here
+#   "draw a slab with an arc edge"     -> here, with "arc MX,MY X,Y" edges in
+#                                         the boundary (version 2, 5b-1216).
+#                                         "make a round floor slab" does NOT
+#                                         reach here on the lexical backend:
+#                                         CREATE_EDGE_SWEEPS, measured
+#                                         2026-10-19 by check-routing
 #   "make a ceiling over this area"    -> CREATE_CEILING - the other flat thing,
 #                                         and the one MEP actually hides above
 #   "how much concrete is in this"     -> REPORT_MATERIAL_TAKEOFF
@@ -121,3 +160,4 @@ utterances:
   - create the floor
   - draw the slab for this area
   - model the floor
+  - draw a slab with an arc edge

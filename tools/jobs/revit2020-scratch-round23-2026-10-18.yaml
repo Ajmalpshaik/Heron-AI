@@ -1,0 +1,47 @@
+# Batch 23, 2026-10-18 - Revit 2020 session 30308, scratch Project2 made by the owner from Revit's
+# Systems-Default_Metric.rte (never saved). Kept: a Supply Air main (Rectangular Duct: Radius
+# Elbows / Taps) along y=0, 0..12000 mm, z 3000; an UNJOINED supply L (1000,4000 -> 4000,4000 ->
+# 4000,7000); a Return Air L joined by CONNECT_OPEN_ENDS (7000,4000 -> 10000,4000 -> 10000,7000);
+# two M_Supply Diffuser 600 x 600 at 3000,1500 and 8000,1500, z 2700 (ids 1328501, 1328502).
+# Pipes could not be drawn: another add-in's updater (RevitModelingHost.PipePropertyUpdater)
+# cancels every new pipe. Every write ROLLED BACK.
+model: "Project2 (Systems template, scratch, never saved), Revit 2020"
+defaults:
+  in: "Project2"
+  write: true
+  setup: [select-in-region, set-selection]
+  setup-set: {minMm: "100,-200,2800", maxMm: "11900,200,3200", exact: false, categories: "Ducts"}
+  negative-setup-set: {minMm: "100,-200,2800", maxMm: "11900,200,3200", exact: false, categories: "Ducts"}
+jobs:
+  - fragment: fit-mep-joints
+    setup-set: {minMm: "900,3800,2800", maxMm: "4100,7100,3200", exact: false, categories: "Ducts"}
+    set: {toleranceMm: 10}
+    negative-set: {toleranceMm: 10}
+  - fragment: connect-air-terminals
+    setup-set: {minMm: "2500,1000,2500", maxMm: "8500,2000,2900", exact: false, categories: "Air Terminals"}
+    negative-setup-set: {minMm: "2500,1000,2500", maxMm: "8500,2000,2900", exact: false, categories: "Air Terminals"}
+    set: {ducts: "Ducts", maxDistanceMm: 3000}
+    negative-set: {ducts: "Ducts", maxDistanceMm: 10}
+  - fragment: trace-connectivity
+    write: false
+    expect: reached
+    setup-set: {minMm: "7100,3800,2800", maxMm: "9900,4200,3200", exact: false, categories: "Ducts"}
+    set: {start: "selected", tolerance: 10}
+    negative-set: {start: "selected", tolerance: 10}
+  - fragment: offset-mep-section
+    expect: runs
+    set: {run: "selected", startMm: 3000, endMm: 6000, offsetMm: 500, angleDegrees: 45}
+    negative-set: {run: "selected", startMm: 6000, endMm: 3000, offsetMm: 500, angleDegrees: 45}
+  - fragment: place-accessory-on-run
+    expect: placed
+    set: {accessorySymbol: "M_Fire Damper - Rectangular - Simple: Standard", positionAlong: 0.5}
+    negative-set: {accessorySymbol: "ZZZNOTHINGHERE", positionAlong: 0.5}
+  - fragment: set-mep-justification
+    expect: set
+    set: {horizontalOffsetMm: 50, verticalOffsetMm: 50}
+    negative-set: {horizontalOffsetMm: 0, verticalOffsetMm: 0}
+  - fragment: set-air-terminal-flow
+    setup-set: {minMm: "2500,1000,2500", maxMm: "8500,2000,2900", exact: false, categories: "Air Terminals"}
+    negative-setup-set: {minMm: "2500,1000,2500", maxMm: "8500,2000,2900", exact: false, categories: "Air Terminals"}
+    set: {csvPath: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/flow-positive.csv"}
+    negative-set: {csvPath: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/flow-negative.csv"}

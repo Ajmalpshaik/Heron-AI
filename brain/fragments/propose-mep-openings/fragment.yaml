@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -140,29 +140,34 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-19'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: test projject (3,565 elements), Revit 2024, session 27244
+  model: Project2 (3,035 elements), Revit 2020, session 13520
   positive_case: run as it would normally be run - the arrangement was re-made first by running
     select-by-category-name, set-selection with this phase's own values. returned allowanceMm
-    50, findings 2 item(s) [2 opening(s) proposed across 8 service(s) and 28 host(s), ea...,
-    NOTHING WAS CREATED. This is a proposal to read and argue wi...], hostIds 2 item(s) [926515,
-    926515], mmPerFoot 304.8, proposals 2 item(s) [host 926515 - service 926509 - opening
-    405 x 405 mm, passing..., host 926515 - service 926511 - opening 405 x 405 mm, passing...],
-    runIds 2 item(s) [926509, 926511], unmeasured 0 item(s). inputs came elements from the
-    selection (8); hosts as given (28); allowanceMm as given. on test projject
-  negative_case: run with allowanceMm=50, categoryName=Ducts, hosts=Roofs, inViewOnly=HERON
-    ROOM TEST instead - chosen because it should not contain what this fragment reports -
-    the arrangement was re-made first by running select-by-category-name, set-selection with
-    this phase's own values. returned allowanceMm 50, findings 1 item(s) [Both services and
-    hosts are needed, and at least one list wa...], hostIds 0 item(s), mmPerFoot 304.8, proposals
-    0 item(s), runIds 0 item(s), unmeasured 0 item(s). inputs came elements from the selection
-    (8); hosts as given (0); allowanceMm as given. on test projject
+    50, describeLinked Func`3, findings 2 item(s) [1 opening(s) proposed across 2 service(s)
+    and 5 host(s), eac..., NOTHING WAS CREATED. This is a proposal to read and argue wi...],
+    fireRatingOf Func`2, hostCount 5, hostIds 1 item(s) [345436], includeLinks false, linkBlocked
+    , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s)
+    [Host model only - links not read], linkedTotal 0, linksSearched 0, mmPerFoot 304.8, nestedLinks
+    0, proposals 1 item(s) [host 345436 - service 345448 - opening 405 x 405 mm, passing...],
+    runIds 1 item(s) [345448], unmeasured 0 item(s). inputs came elements from the selection
+    (2); hosts as given (5); allowanceMm as given; includeLinks not given - false (optional).
+    on Project2
+  negative_case: run with allowanceMm=50, categoryName=Ducts, hosts=Roofs, inViewOnly=Heron
+    3D instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-by-category-name, set-selection with this phase's
+    own values. returned allowanceMm 50, describeLinked Func`3, findings 1 item(s) [Both services
+    and hosts are needed, and at least one list wa...], fireRatingOf Func`2, hostCount 0,
+    hostIds 0 item(s), includeLinks false, linkBlocked , linkDocs 0 item(s), linkPlacements
+    0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
+    linkedTotal 0, linksSearched 0, mmPerFoot 304.8, nestedLinks 0, proposals 0 item(s), runIds
+    0 item(s), unmeasured 0 item(s). inputs came elements from the selection (2); hosts as
+    given (0); allowanceMm as given; includeLinks not given - false (optional). on Project2
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 8895380f8a96df24
-
+  fingerprint: 25bddf3b9abe50e7
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

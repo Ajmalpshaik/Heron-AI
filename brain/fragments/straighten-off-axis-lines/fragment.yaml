@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-WRN-016
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -89,6 +89,37 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,047 elements), Revit 2020, session 2648
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned Exact 1E-09,
+    alreadyOnAxis 0, attempted 1 item(s) [Generic - 200mm], findings 3 item(s) [1 straightened
+    onto a 90-degree axis and read back, 0 alread..., Each was turned about its start; a wall''s
+    joined neighbour m..., Walls 345557: was 0.171887 degrees off.], label Func`2, limit 1,
+    lines 1 item(s) [Walls 345557: was 0.171887 degrees off.], maxOffDegrees 1, notStraightened
+    0 item(s), offAxis Func`3, planLine Func`2, report Walls 345557: was 0.171887 degrees
+    off., snap 90, snapDegrees 0, straightened 1, straightenedIds 1 item(s) [345557], tooFarOff
+    0 item(s). inputs came elements from the selection (1); snapDegrees as given; maxOffDegrees
+    as given. on Project1'
+  negative_case: 'run with categoryName=Text Notes, inViewOnly=FloorPlan: Level 1, maxOffDegrees=1,
+    snapDegrees=0 arranged with categories=Walls, exact=False, maxMm=3000,300,100, minMm=2000,-300,-100
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-in-region, set-selection with this phase''s own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned Exact 1E-09, alreadyOnAxis 1, attempted 0 item(s), findings 1 item(s) [0 straightened
+    onto a 90-degree axis and read back, 1 alread...], label Func`2, limit 1, lines 0 item(s),
+    maxOffDegrees 1, notStraightened 0 item(s), offAxis Func`3, planLine Func`2, report ,
+    snap 90, snapDegrees 0, straightened 0, straightenedIds 0 item(s), tooFarOff 0 item(s).
+    inputs came elements from the selection (1); snapDegrees as given; maxOffDegrees as given.
+    on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 2f690260cd4efbeb
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

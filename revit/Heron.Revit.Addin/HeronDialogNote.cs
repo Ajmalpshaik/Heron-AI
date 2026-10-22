@@ -147,6 +147,93 @@ namespace Heron.Revit.Addin
             }
             return null;
         }
+
+        /// <summary>
+        /// The word a caller sends to leave a dialog to the default - declined,
+        /// and the job stops. What a card's `absent:` says for such a need.
+        /// </summary>
+        internal const string CallerLeavesIt = "none";
+
+        /// <summary>
+        /// A dialog whose answer is the CALLER's to give, for one job (D-145).
+        ///
+        /// NOT A ROW OF THE TABLE ABOVE. A row answers every job the same way,
+        /// for the owner, and so needs a run that showed the answer is right.
+        /// This is a question with two right answers, and which one is wanted
+        /// is the caller's - "rename the views as well?" - so the caller says
+        /// it, in a request value a card declares with `dialog:` beside it.
+        /// Heron picks nothing: no word, no answer, and the default stands.
+        ///
+        /// CLOSED, AND EACH ENTRY NAMES WHERE ITS ID WAS SEEN. A card cannot
+        /// name a dialog that is not here - the run is refused before it
+        /// starts - so no fragment can declare its way past the decline.
+        /// </summary>
+        internal sealed class CallerChoice
+        {
+            /// <summary>The words a caller may send, lower case, each with Revit's answer.</summary>
+            internal readonly IDictionary<string, int> Words;
+
+            /// <summary>The run in which Revit reported this DialogId.</summary>
+            internal readonly string Evidence;
+
+            internal CallerChoice(IDictionary<string, int> words, string evidence)
+            {
+                Words = words ?? new Dictionary<string, int>();
+                Evidence = evidence;
+            }
+        }
+
+        private static readonly Dictionary<string, CallerChoice> CallerChoices =
+            new Dictionary<string, CallerChoice>(StringComparer.Ordinal)
+            {
+                // "Would you like to rename corresponding views?" - raised when
+                // a level's name is written. Yes renames the plan and ceiling
+                // views that carry the old name; No renames the level alone.
+                // Left to the default it is declined and the job is rolled back.
+                {
+                    "TaskDialog_Confirm_Level_Rename",
+                    new CallerChoice(
+                        new Dictionary<string, int>(StringComparer.Ordinal) { { "yes", Yes }, { "no", No } },
+                        "Kerala house design, Revit 2020, 2026-10-19 - SET_PARAMETER_VALUES_BY_ID "
+                        + "renaming Level 1 to Ground Floor met it and was rolled back (FRAGMENT-ISSUES 5b-1221)")
+                },
+            };
+
+        /// <summary>Every dialog a caller may answer, for the test host to check.</summary>
+        internal static IEnumerable<KeyValuePair<string, CallerChoice>> CallerChoicesAll
+        {
+            get { return CallerChoices; }
+        }
+
+        /// <summary>
+        /// Revit's answer for the word a caller sent for one dialog: 0 when the
+        /// caller left it (`none`, or nothing), so the default stands. A
+        /// dialog no entry names, or a word it does not take, sets problem
+        /// and returns 0 - the caller's run is then refused before it starts.
+        /// </summary>
+        internal static int CallerAnswer(string dialogId, string word, out string problem)
+        {
+            problem = null;
+            CallerChoice choice;
+            if (string.IsNullOrEmpty(dialogId) || !CallerChoices.TryGetValue(dialogId, out choice) || choice == null)
+            {
+                problem = "the card names dialog '" + (dialogId ?? "") + "', which is not one a caller may "
+                        + "answer - Heron declines it, and this card needs fixing (D-145)";
+                return 0;
+            }
+
+            var said = (word ?? "").Trim().ToLowerInvariant();
+            if (said.Length == 0 || said == CallerLeavesIt) return 0;
+
+            int code;
+            if (choice.Words.TryGetValue(said, out code)) return code;
+
+            var words = new List<string>(choice.Words.Keys);
+            words.Sort(StringComparer.Ordinal);
+            problem = "'" + (word ?? "").Trim() + "' is not an answer to it - say "
+                    + string.Join(" or ", words.ToArray()) + ", or leave it out";
+            return 0;
+        }
     }
 
     /// <summary>

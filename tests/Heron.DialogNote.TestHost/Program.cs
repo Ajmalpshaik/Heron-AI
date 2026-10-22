@@ -114,6 +114,55 @@ namespace Heron.DialogNote.TestHost
                   && HeronDialogRule.Problem("Dialog_X", null) != null,
                   "a row with no id, no answer to try, or no answer at all is refused");
 
+            Console.WriteLine("\n2b. a dialog the CALLER answers, for one job (D-145)");
+            const string LevelRename = "TaskDialog_Confirm_Level_Rename";
+            string why;
+            Check(HeronDialogRule.CallerAnswer(LevelRename, "yes", out why) == Yes && why == null,
+                  "renameViews yes answers the level-rename question Yes");
+            Check(HeronDialogRule.CallerAnswer(LevelRename, " No ", out why) == No && why == null,
+                  "and no answers it No, whatever the case or spaces");
+            Check(HeronDialogRule.CallerAnswer(LevelRename, "none", out why) == 0 && why == null
+                  && HeronDialogRule.CallerAnswer(LevelRename, "", out why) == 0 && why == null
+                  && HeronDialogRule.CallerAnswer(LevelRename, null, out why) == 0 && why == null,
+                  "left out - none, empty or nothing - gives no answer, so the default decline stands");
+            Check(HeronDialogRule.CallerAnswer(LevelRename, "maybe", out why) == 0
+                  && Has(why, "'maybe' is not an answer") && Has(why, "no or yes"),
+                  "a word it does not take is refused by name, saying what it does take");
+            Check(HeronDialogRule.CallerAnswer(LevelRename, "ok", out why) == 0 && why != null,
+                  "OK is not one of its words - only the two the question has");
+            Check(HeronDialogRule.CallerAnswer("Dialog_Later_Version", "yes", out why) == 0
+                  && Has(why, "not one a caller may answer"),
+                  "a card cannot name a dialog that is not in the caller's list - row 300's stays declined");
+            Check(HeronDialogRule.CallerAnswer("", "yes", out why) == 0 && why != null
+                  && HeronDialogRule.CallerAnswer(null, "yes", out why) == 0 && why != null,
+                  "nor a dialog with no id");
+            Check(ReferenceEquals(HeronDialogRule.For(LevelRename), HeronDialogRule.Unknown),
+                  "and the level-rename dialog is NOT a table row: with no caller's word it is declined");
+            var choices = 0;
+            foreach (var choice in HeronDialogRule.CallerChoicesAll)
+            {
+                choices++;
+                Check(!string.IsNullOrEmpty(choice.Key) && !string.IsNullOrEmpty(choice.Value.Evidence)
+                      && choice.Value.Words.Count > 0,
+                      "caller's dialog '" + choice.Key + "' names the run its id was seen in, and its words");
+                foreach (var word in choice.Value.Words)
+                {
+                    Check(word.Key == word.Key.Trim().ToLowerInvariant() && word.Key != HeronDialogRule.CallerLeavesIt
+                          && !HeronDialogRule.Declines(word.Value) && word.Value != 0,
+                          "'" + word.Key + "' is a lower-case word that picks an answer, not a decline");
+                }
+            }
+            Console.WriteLine("  (" + choices + " dialog(s) a caller may answer)");
+
+            var chosen = new HeronDialogNote();
+            chosen.Add(LevelRename, "task dialog", "Would you like to rename corresponding views?", Yes, false);
+            Check(!chosen.Refused && chosen.Answered == 1 && chosen.RefusedSentence() == "",
+                  "the caller's answer, taken by Revit: met, answered, and the job goes on");
+            var notTaken = new HeronDialogNote();
+            notTaken.Add(LevelRename, "task dialog", "Would you like to rename corresponding views?", 0, false);
+            Check(notTaken.Refused,
+                  "the caller's answer Revit would not take: the job stops, as for any dialog left open");
+
             Console.WriteLine("\n3. the record");
             var none = new HeronDialogNote();
             Check(none.Count == 0 && none.Answered == 0 && !none.Refused && none.RefusedSentence() == "",

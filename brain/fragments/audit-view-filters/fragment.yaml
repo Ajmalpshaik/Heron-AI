@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -110,26 +110,49 @@ contract:
 # changed and the fingerprint below no longer matches it. NEEDS-CHECKING Group
 # ED is the run that replaces it.
 proof:
-  date: '2026-09-08'
+  date: '2026-10-21'
   by: Ajmal PS
-  model: Snowdon Towers Sample HVAC (9,628 elements), Revit 2024, session 9668
-  positive_case: run as it would normally be run. returned blankOverride 4 item(s) [576429,
-    576430, 727741, ...], disabled 0 item(s), filterCount 4, findings 9 item(s) [The view
-    template 'Mechanical Plan' owns the filters on this..., 'Domestic' has its VISIBILITY
-    off, so everything it matches ..., 'Domestic' has an EMPTY override - nothing is set on
-    it. Add..., ...], hidden 4 item(s) [576429, 576430, 727741, ...], isBlank Func`2, nothingToActOn
-    0 item(s), overridesAllowed true, templateOwned true. inputs came view as given. on Snowdon
-    Towers Sample HVAC
-  negative_case: run with view=How to use this project 1 instead - chosen because it should
-    not contain what this fragment reports. returned blankOverride 0 item(s), disabled 0 item(s),
-    filterCount 0, findings 1 item(s) [No filters are applied to 'How to use this project
-    1' at all...], hidden 0 item(s), isBlank Func`2, nothingToActOn 0 item(s), overridesAllowed
-    true, templateOwned false. inputs came view as given. on Snowdon Towers Sample HVAC
+  model: MEP Night Test, Revit 2020, session 68704 - the count is NOT recorded because 5,262
+    elements was measured on Cinematic ID Test, the document in front, and this ran against
+    another one (row 15)
+  positive_case: "run as it would normally be run. returned blankOverride 2 item(s) [638892,\
+    \ 638893], disabled 0 item(s), everyFilter true, filterCount 5, filterList 5 filter(s)\
+    \ on 'Level 1 HVAC Plan', in the order Revit returns them - this release cannot give the\
+    \ dialog's order. Where two filters set the same thing on the same element, the one HIGHER\
+    \ in this list wins. 'catches' counts host elements this view draws - a filter also acts\
+    \ on linked models drawn By Host View, which are not counted. This release has no Enable\
+    \ Filter tick; every filter here is in effect.\n  1. 'Mechanical - Supply' (rule) - Visibility\
+    \ ON | categories (7): Air Terminals, Duct Accessories, Duct Fittings, Duct Insulations,\
+    \ Duct Linings, Ducts, Flex Ducts | rule: System Classification contains 'Supply' | catches\
+    \ 361 host element(s) drawn here | override: projection lines colour 0,0,255\n  2. 'Mechanical\
+    \ - Return' (rule) - Visibility ON | categories (7): Air Terminals, Duct Accessories,\
+    \ Duct Fittings, Duct Insulations, Duct Linings, Ducts, Flex Ducts | rule: System Classification\
+    \ contains 'Return' | catches 147 host element(s) drawn here | override: projection lines\
+    \ colour 255,0,255\n  3. 'Mechanical - Exhaust' (rule) - Visibility ON | categories (7):\
+    \ Air Terminals, Duct Accessories, Duct Fittings, Duct Insulations, Duct Linings, Ducts,\
+    \ Flex Ducts | rule: System Classification contains 'Exhaust' | catches 41 host element(s)\
+    \ drawn here | override: projection lines colour 0,255,0\n  4. 'Domestic' (rule) - Visibility\
+    \ OFF - what it catches is HIDDEN | categories (4): Pipe Accessories, Pipe Fittings, Pipe\
+    \ Insulations, Pipes | rule: System Classification contains 'Domestic' | catches 0 host\
+    \ element(s) drawn here | override: none\n  5. 'Sanitary' (rule) - Visibility OFF - what\
+    \ it catches is HIDDEN | categories (4): Pipe Accessories, Pipe Fittings, Pipe Insulations,\
+    \ Pipes | rule: System Classification contains 'Sanitary' | catches 0 host element(s)\
+    \ drawn here | override: none, findings 5 item(s) [This release has no enabled/disabled\
+    \ switch for view filters..., 'Domestic' has its VISIBILITY off, so everything it matches\
+    \ ..., 'Domestic' has an EMPTY override - nothing is set on it. Add..., ...], hidden 2\
+    \ item(s) [638892, 638893], isBlank Func`2, nothingToActOn 0 item(s), overridesAllowed\
+    \ true, templateOwned false. inputs came view as given; everyFilter as given. on MEP Night\
+    \ Test"
+  negative_case: 'run with everyFilter=true, view=DraftingView: Vent thru roof instead - chosen
+    because it should not contain what this fragment reports. returned blankOverride 0 item(s),
+    disabled 0 item(s), everyFilter true, filterCount 0, filterList , findings 1 item(s) [No
+    filters are applied to ''Vent thru roof'' at all.], hidden 0 item(s), isBlank Func`2,
+    nothingToActOn 0 item(s), overridesAllowed true, templateOwned false. inputs came view
+    as given; everyFilter as given. on MEP Night Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 6b03045dc1fa4019
-
+  fingerprint: aaed623a81c3e848
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

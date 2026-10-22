@@ -21,6 +21,14 @@ positive:
       was written for - the column is still in the schedule and the person
       looking at the sheet cannot see it
 
+  - given: >
+      VERSION 2. Two schedules duplicated from one, each filtered on a type
+      value and on Level
+    expect: >
+      filterRules "'<first>': 1. <heading> equals 'MFD'; 2. Level equals
+      '<level name>'  ||  '<second>': ..." - the level shown by NAME, never
+      as a number, the numbering matching the order of Revit's Filter tab
+
 negative:
   - given: a schedule with no filters and no sorting at all
     expect: >
@@ -46,6 +54,14 @@ negative:
       reported as a presence rule with no value, NOT crashed on. Asking such a
       filter for its string value throws, and this is the case that catches a
       version reading every filter through one getter
+
+  - given: >
+      VERSION 2. A schedule whose column heading has been renamed, filtered
+      on that column
+    expect: >
+      the rule names the printed heading WITH the field's own name beside it
+      - "Heater Ref (field Type Mark) equals 'EDH'" - not the field name alone,
+      which is not what anyone sees on the sheet
 
 second_route:
   - >

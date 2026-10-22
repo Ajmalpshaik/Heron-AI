@@ -1,6 +1,6 @@
 heron-agent: HERON-QA-BIM-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -129,30 +129,35 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-19'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: test projject (3,565 elements), Revit 2024, session 27244
+  model: Project1 (3,126 elements), Revit 2020, session 2648
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-in-region, set-selection with this phase''s own values. returned findings 6 item(s)
-    [''Ducts'': 8 found across everything handed in, Room 1  - short of: Ducts (0 of 1), Room
-    4  - short of: Ducts (0 of 1), ...], noRule 0 item(s), ruleCount 1, shortRooms 4 item(s)
-    [925710, 926001, 926536, ...], unbounded 0 item(s). inputs came elements from the selection
-    (4); devices as given (8); ruleRoomNames as given (1); ruleCategories as given (1); ruleMinimums
-    as given (1). on test projject'
-  negative_case: 'run with categories=Ducts, devices=Ducts, exact=False, maxMm=200000,200000,100000,
-    minMm=-200000,-200000,-50000, ruleCategories=Ducts, ruleMinimums=1, ruleRoomNames=Room
+    select-by-category-name, set-selection with this phase''s own values. returned findings
+    4 item(s) [''Air Terminals'': 3 found across everything handed in, Room 1  - short of:
+    Air Terminals (1 of 2), Room 2  - short of: Air Terminals (1 of 2), ...], includeLinks
+    false, linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s),
+    linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched
+    0, nestedLinks 0, noRule 0 item(s), ruleCount 1, shortRooms 2 item(s) [345437, 345439],
+    unbounded 0 item(s). inputs came elements from the selection (2); devices as given (3);
+    ruleRoomNames as given (1); ruleCategories as given (1); ruleMinimums as given (1); includeLinks
+    as given. on Project1'
+  negative_case: 'run with categoryName=Rooms, devices=Air Terminals, inViewOnly=FloorPlan:
+    Level 1, includeLinks=False, ruleCategories=Air Terminals, ruleMinimums=1, ruleRoomNames=Room
     instead - chosen because it should not contain what this fragment reports - the arrangement
-    was re-made first by running select-in-region, set-selection with this phase''s own values.
-    returned findings 2 item(s) [''Ducts'': 8 found across everything handed in, 0 room(s)
-    short of what the rules ask for. 0 had no area and...], noRule 8 item(s) [925780, 925782,
-    925784, ...], ruleCount 1, shortRooms 0 item(s), unbounded 0 item(s). inputs came elements
-    from the selection (8); devices as given (8); ruleRoomNames as given (1); ruleCategories
-    as given (1); ruleMinimums as given (1). on test projject'
+    was re-made first by running select-by-category-name, set-selection with this phase''s
+    own values. returned findings 2 item(s) [''Air Terminals'': 3 found across everything
+    handed in, 0 room(s) short of what the rules ask for. 0 had no area and...], includeLinks
+    false, linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s),
+    linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched
+    0, nestedLinks 0, noRule 0 item(s), ruleCount 1, shortRooms 0 item(s), unbounded 0 item(s).
+    inputs came elements from the selection (2); devices as given (3); ruleRoomNames as given
+    (1); ruleCategories as given (1); ruleMinimums as given (1); includeLinks as given. on
+    Project1'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 59bc429fd9f9bbee
-
+  fingerprint: 168a4d94490708b2
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

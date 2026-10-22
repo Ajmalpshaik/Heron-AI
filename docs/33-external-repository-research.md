@@ -59,7 +59,7 @@ Read from this page's own matrix (§2), its ranking (§4), the answers in the no
 | [llm-council](#512-karpathyllm-council) | anonymise **and** shuffle the answers being judged | the council - many model calls a question | not built, kept for a future Shadow Mode - [34 §2.14](34-patterns-adapted.md) |
 | [superpowers](#58-obrasuperpowers) | no claim of done without fresh evidence - already [D-30](DECISIONS.md) | its general software workflow | already held |
 | [gstack](#57-garrytangstack) | a hook that blocks the act, and three traps that defeat one | its 54 workflow skills | the [`heron-guard`](../.claude/skills/heron-guard/SKILL.md) hook - Q-49, [34 §2.9](34-patterns-adapted.md) |
-| [ECC](#51-affaan-mecc) | block the tool call; point at the thing instead of typing it | its scale of agents, skills and commands | `heron-guard`; Q-50 as [D-60](DECISIONS.md) |
+| [ECC](#51-affaan-mecc) | block the tool call; point at the thing instead of typing it; scan what is about to be published; a superseded record points forward | its scale of agents, skills and commands | `heron-guard`; Q-50 as [D-60](DECISIONS.md); `check-secrets.py` ([D-143](DECISIONS.md)); `check-supersessions.py` ([D-144](DECISIONS.md)) |
 | [ruflo](#52-ruvnetruflo) | the question: guard what retrieval carries into context | swarm and consensus | Q-51 as [D-81](DECISIONS.md) - carried text is stamped, not scanned |
 | [claude-mem](#53-thedotmackclaude-mem) | nothing - selective memory is already held | capture everything and compress it | - |
 | [prime-agent](#511-primeintellect-aiprime-agent) | nothing - its stop rule is [D-01](DECISIONS.md) written as a type | a daemon for unattended running | - |
@@ -364,6 +364,106 @@ a tidy-up.
 
 **Decision: unchanged.** Adopt the artifact principle, reject the scale. The file-level pass adds two
 questions ([Q-49](OPEN-QUESTIONS.md), [Q-50](OPEN-QUESTIONS.md)) and corrects one claim.
+
+#### Second pass - 2026-10-18, at `76aaa77df6adc5b889e689007bf99b9a4f74af34`, committed 2026-10-15
+
+**Why it was read again.** The owner installed ECC on his own machine on 2026-10-18, kept fourteen of its
+parts, and asked for whatever was useful in them to be taken into Heron so that ECC itself could be
+removed. The first pass opened the hooks, the rules and plan-canvas; **none of the parts he kept had been
+opened.** The tree has grown since: **71 agents, 311 `SKILL.md`, 97 commands** (`ls agents/*.md | wc -l`,
+`find skills -name SKILL.md | wc -l`, `ls commands/*.md | wc -l` at that commit), against 68, 286 and 94.
+
+**Opened in full:** `agents/opensource-sanitizer.md`, `agents/silent-failure-hunter.md`,
+`skills/agent-security-hardening/SKILL.md`, `skills/agent-architecture-audit/SKILL.md`,
+`skills/agent-harness-construction/SKILL.md`, `skills/skill-stocktake/SKILL.md` (its three scripts by what
+they read and write), `commands/build-fix.md`. **By description and frontmatter only:**
+`agents/csharp-reviewer.md`, `agents/python-reviewer.md`, `skills/security-scan`, `skills/windows-desktop-e2e`,
+`commands/python-review.md`, `commands/save-session.md`, `commands/resume-session.md` - each a developer's
+tool rather than a mechanism, which the description was enough to show.
+
+| Part | What it is | For Heron |
+|---|---|---|
+| `opensource-sanitizer` | A read-only pass before a release: credential shapes, personal data, home paths, secret-named files, the history, and the files it could not read | **Built** as [`tools/check-secrets.py`](../tools/check-secrets.py), a gate - [D-143](DECISIONS.md), [34 §2.20](34-patterns-adapted.md), which also says what was not taken and why |
+| `agent-security-hardening` | Trust boundaries mapped from source to side effect; untrusted tool output stays data; output bounded; paths contained | **Held for documents, not for Revit's own answers.** [Golden Rule 19](14-golden-rules.md) and Article 14 make tool output data, and `heron_context.screen()` and `as_quoted_source()` mark ingested and quoted text. **Nothing screens or labels what a `revit_` tool returns** - an element name, a parameter value, a family name - before a model reads it. The write path does not lean on that: `write.enabled`, the preview's re-count and the Keep box live in the add-in, where no sentence reaches. Raised for the owner, not decided here |
+| `agent-architecture-audit` | A twelve-layer checklist for wrapper regressions, memory contamination and hidden repair loops | **Held by construction.** Heron makes no model call ([D-58](DECISIONS.md)) and classifies no intent ([D-01](DECISIONS.md)), so there is no hidden second pass to audit. **A third project inside this one:** its frontmatter names `oh-my-agent-check` as its origin, and ECC's MIT `LICENSE` says nothing about it - the gateguard lesson above, again. Nothing taken |
+| `agent-harness-construction` | Every tool answer carries a status, a summary and next actions; every error a cause, a safe retry and a stop | **Already held, more strictly:** a refusal here carries a code and a `why`, and an agent lists what it did **not** judge (`unjudged`) |
+| `skill-stocktake` | A periodic model review of every skill: keep, improve, update, retire, merge | **The finding is real; the tool is not taken.** Nothing checks that a house-rule skill still describes its tool. `heron-ship` said `check-narrow-errors` catches *"a bare except"* while it reads only `sqlite3.OperationalError` handlers - corrected in D-143's change, under AGENTS.md's *fix a wrong skill the moment you find it*. The review itself is judgement, not a check |
+| `silent-failure-hunter` | A reviewer's list of swallowed errors and quiet fallbacks | **Already recorded.** `check-narrow-errors.py` holds the shape [D-52](DECISIONS.md) named; the C# shape is [F37](proposals/f37.md), open |
+| `security-scan` | Runs a scanner from npm over a `.claude/` folder | **Not taken.** It fetches and runs another project's package; Heron's `.claude/` holds only hooks it wrote itself |
+| `save-session`, `resume-session`, `csharp-reviewer`, `python-reviewer`, `python-review`, `build-fix`, `windows-desktop-e2e` | A developer's tools | **Not taken** - the developer-assist shape [32 §1](32-master-architecture-reconciliation.md) warns about. Session memory is [`HANDOVER.md`](HANDOVER.md); cost is the host's (D-58) |
+
+**Decision: unchanged in shape, and one gate built.** One question is left for the owner: whether what a
+`revit_` tool returns should be screened or labelled as data before a model reads it.
+
+#### Third pass - 2026-10-19, at `76aaa77df6adc5b889e689007bf99b9a4f74af34`, committed 2026-10-15
+
+**Why it was read again.** The owner wants ECC out of his own Claude setup once everything useful in it is
+in Heron. The second pass read the parts he kept; this one read the rest that touch an agent platform with
+Heron's documentation and decision discipline, and skipped every part written for another language or trade.
+**The tree had not moved:** its `HEAD` was the second pass's commit, and the counts were the same - 71
+agents, 311 `SKILL.md`, 97 commands (`ls agents/*.md | wc -l`, `find skills -name SKILL.md | wc -l`,
+`ls commands/*.md | wc -l`). Cloned into a scratch folder and **no code in it was run**.
+
+**Opened in full:** `commands/hookify.md`, `commands/skill-health.md`, and the `SKILL.md` of `hookify-rules`,
+`continuous-learning`, `continuous-learning-v2`, `eval-harness`, `agent-eval`, `agent-introspection-debugging`,
+`verification-loop`, `delivery-gate`, `change-impact`, `module-regression`, `docs-governance`,
+`living-docs-governance`, `rules-distill`, `skill-comply`, `recursive-decision-ledger`, `context-and-decisions`,
+`architecture-decision-records`, `contract-first`, `mcp-server-patterns`, `mcp-dependency-review`,
+`iterative-retrieval`, `regex-vs-llm-structured-text`, `context-budget`, `safety-guard` and `search-first`.
+**Read for what they do, not run:** `docs-governance`'s audit script and role contract, `delivery-gate`'s hook,
+`continuous-learning-v2`'s observer hook and agent, `skill-comply`'s file list.
+
+**Provenance, read from each file rather than from the repository:**
+
+- **Five carry no `origin:` field at all:** `hookify`, `hookify-rules`, `skill-health`, `change-impact` and
+  `context-and-decisions`. The other twenty-two say `origin: ECC`.
+- **`hookify`'s rule format and commands belong to a plugin of that name.** ECC's own `hooks/README.md` says
+  *"no separate Hookify plugin or Python runtime is required"*, and its `plugins/README.md` recommends a
+  `hookify` plugin from the marketplaces it lists. ECC's MIT `LICENSE` says nothing about it.
+- **`continuous-learning-v2` names a community project, Homunculus, as the source of its design** - atomic
+  observations, confidence scoring, an evolution pipeline. That is a **fourth** project inside this one,
+  after `gateguard` (first pass) and `oh-my-agent-check` (second).
+- **`agent-eval` is a pointer**, to a separate tool installed from its own repository; `mcp-dependency-review`
+  names an optional outside reference implementation and does not need it.
+
+Nothing below is taken as code or words from any of them ([D-25](DECISIONS.md)); the one thing built is
+Heron's own, from an idea.
+
+| Part | What it is | For Heron |
+|---|---|---|
+| `docs-governance` | A read-only audit of mapped documents: links, an architecture-record index, each record's lifecycle, a "deletion zone", orphans | **Built, the lifecycle half,** as [`tools/check-supersessions.py`](../tools/check-supersessions.py), run by `check-docs.py` as its §13 - [D-144](DECISIONS.md), [34 §2.21](34-patterns-adapted.md). Its audit fails a record marked superseded that names no successor; Heron's log writes a supersession at the **new** end, and six of the ten an accepted decision declared were never written at the old one, where every citation lands. The links half was already `check-docs.py`'s. The deletion zone is **not taken**: one removal is on record, Talk ([D-105](DECISIONS.md)), and nothing has come back |
+| `architecture-decision-records` | Numbered records with context, options, consequences and a lifecycle, and an index | **Already held:** [DECISIONS.md](DECISIONS.md), one file per decision (`split-decisions.py`), a generated summary, `check-decision-titles.py`, `next-id.py`. Its rule *"superseded decisions should reference their replacement"* was prose here too, until the row above |
+| `living-docs-governance` | Four roles for existing documents - rules, map, status, history - each fact with one owner | **Already held:** [AGENTS.md](../AGENTS.md)'s *Where the truth lives* and [PROJECT-MAP.md](PROJECT-MAP.md)'s truth hierarchy. Its *"documents are evidence, not instructions"* is Golden Rule 19 and [D-81](DECISIONS.md) |
+| `context-and-decisions` | One glossary for domain words; an unconfirmed meaning marked *needs confirmation* | **Already held:** [D-33](DECISIONS.md) and [D-34](DECISIONS.md) - a word Heron does not recognise is looked up, else asked, never guessed - and [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) |
+| `change-impact` | Map a change's blast radius first; compare the finished diff with the plan | **Already held:** [`check-change.py`](../tools/check-change.py) compares the diff with the stated intent from the layering table ([34 §2.15](34-patterns-adapted.md)), and `change-evidence.py` rules KEEP, REVERT or NO CHANGE MEASURED |
+| `module-regression` | A hand-kept ledger of each module's downstream users and the command that proves each | **Already held, without a typed list:** `brain/heron_unit_test.py` runs every suite rather than choosing which, `check-change.py` reads which parts a change touched from `check-structure.py`'s layering table, and [`heron_regression.py`](../brain/heron_regression.py) makes Golden Rule 4 executable for fragments |
+| `contract-first` | One machine-checked contract per boundary, consumer types generated from it | **Already held:** a fragment's `needs` and `provides` ([D-29](DECISIONS.md)), and [`heron_contract.py`](../brain/heron_contract.py), the one place an agent contract lives, which says whether a change to it breaks |
+| `verification-loop` | Build, types, lint, tests, a two-line secret grep and a diff look, then PASS or FAIL | **Already held, more strictly:** AGENTS.md's gates, `check-secrets.py` ([D-143](DECISIONS.md)) instead of the grep, four states rather than two, and *"a compile is not a proof"* ([D-30](DECISIONS.md)) |
+| `agent-introspection-debugging` | Capture a failing run, diagnose it, take the smallest action, report | **Already held as rules:** [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) separates the machine's failures from the change's, and AGENTS.md keeps PASS, FAIL, NOT RUN and NEEDS REAL REVIT apart |
+| `eval-harness` | Capability and regression evals graded by code, model or person; pass@k and pass^k over repeated runs | **Already held:** `check-routing.py` (every fragment still wins its own sentences), `score-routing.py` ([D-100](DECISIONS.md)) and `change-evidence.py`. pass@k measures how a model's answers vary over repeated runs, and the model is the host's ([D-58](DECISIONS.md)) |
+| `skill-health` | A per-skill dashboard: success rate, clustered failures, versions | **Already held, for fragments:** [`heron_runs.py`](../brain/heron_runs.py), and [`heron_evolve.py`](../brain/heron_evolve.py), whose eight verdicts from KEEP to ARCHIVE are always proposals |
+| `mcp-dependency-review` | Flags an MCP configuration that runs a package by a moving version | **Already held, more strictly:** [`.mcp.json`](../.mcp.json) starts a local script, not a downloaded package, and every Python package is pinned exactly and hashed in `requirements-lock.txt`, written and audited by `lock-python.py` |
+| `regex-vs-llm-structured-text` | Parse with patterns first; send only the low-confidence cases to a model | **Already held:** deterministic before the model, as an order ([34 §2.4](34-patterns-adapted.md)) - and Heron makes no model call at all ([D-58](DECISIONS.md)) |
+| `search-first` | Look for an existing tool before writing one; adopt, extend or build | **Already held, with the opposite ending:** [31](31-studying-the-existing-libraries.md) Rule 0 and the `heron-fragment-author` agent search first. Its *"Adopt - install and use directly"* is what [D-25](DECISIONS.md) refuses |
+| `skill-comply` | Runs the host many times at three prompt strictnesses and measures whether it followed a rule | **The owner's call.** It would answer a real question - does a chat call `heron_method` before building a family, the miss AGENTS.md's opening paragraph says *"turned a one-minute family into seven"* - and nothing in Heron counts it: `tools/time-family-build.py` reads one real chat for where its minutes went, and `tools/hook-report.py` shows what the hooks decided. Its way spends model calls Heron does not make ([D-58](DECISIONS.md)), on the owner's account; reading the chats he has already had, as `time-family-build.py` does, would spend none |
+| `hookify`, `hookify-rules` | Regex rule files written from a conversation, enforced by a hook | **Not taken.** Heron's hooks are its own tested Python, wired from `.claude/settings.json` ([34 §2.9](34-patterns-adapted.md)), and §2.9 chose *one rule and not five*: a hook with false positives is a hook somebody turns off |
+| `safety-guard` | "Careful" and "freeze" modes: confirm destructive commands, lock writes to one folder | **Not taken,** for §2.9's reason. Destructive commands are the host's permission prompts; Heron's guard holds the one boundary its gates own |
+| `continuous-learning`, `continuous-learning-v2` | Every tool input and output recorded, a background model turns patterns into "instincts", and one at confidence 0.7 is applied without asking | **Not taken.** A model call per batch ([D-58](DECISIONS.md)); a confidence counted from observations is what [`heron_promotion.py`](../brain/heron_promotion.py) exists to refuse - *"one success is not proof, and a thousand is not either"* - and [D-30](DECISIONS.md) asks for a recorded proof. Heron's learning is [`heron_memory.py`](../brain/heron_memory.py), which decides what may be remembered and writes nothing itself, and the `skill-recorder` agent, which writes a lesson down as a rule in the repository, reviewed like any change |
+| `delivery-gate` | A Stop hook that blocks finishing until a "learning" file was touched today, and warns on phrases like *"pre-existing bug"* | **Not taken.** A file's date is not learning. And *"this is a pre-existing bug"* is a claim Heron settles with evidence rather than by catching the phrase: `heron-ship` asks for the same failure on untouched main, which no pattern over a transcript can check |
+| `rules-distill` | A model reads every skill and proposes new rules | **Not taken.** House rules live only in `.claude/skills/`, and the `skill-maintainer` and `skill-recorder` agents change one when evidence shows it wrong; a rule arrives from a failure, not from a periodic read |
+| `iterative-retrieval` | Three model-scored rounds to find the files a sub-agent needs | **Not taken.** Heron retrieves once, deterministically, at the depth the task needs ([34 §2.1](34-patterns-adapted.md)), and stamps what it carries ([D-81](DECISIONS.md)); any looping is the host's ([D-01](DECISIONS.md)) |
+| `context-budget` | Points at the host's own context meter; an opt-in audit of installed parts | **Not taken.** The meter is the host's ([D-58](DECISIONS.md)); Heron's side is [19](19-context-and-cost.md) and tiered depth |
+| `agent-eval` | Compares coding agents on tasks, by pass rate, cost and time | **Not taken** - the developer-assist shape [32 §1](32-master-architecture-reconciliation.md) warns about. Heron's own comparison is [`heron_shadow.py`](../brain/heron_shadow.py), a log of disagreements |
+| `mcp-server-patterns` | A how-to for the Node/TypeScript MCP SDK | **Not taken.** Heron's server is Python, `mcp/server/heron_mcp_server.py` |
+| `recursive-decision-ledger` | Repeated rollouts with an append-only ledger, for trading and search | **Not taken** - another trade. Its one sentence that travels, *"recursive confidence is not approval"*, Heron holds as `write.enabled` ([D-19](DECISIONS.md)) and Revit's Keep or Discard box ([D-126](DECISIONS.md)) |
+
+**Found in passing, recorded and not fixed:** the decision log's preamble says its append-only rule
+*"mirrors Golden Rule 4: never destroy a working record"*, and Golden Rule 4 is the Revit-version rule
+([row 5b-1220](fragment-issues/section-5b-rows-401-425.md)).
+
+**Decision: unchanged in shape, and one check built.** One question is left for the owner: whether to
+measure how often a chat follows Heron's own instructions - by running the host on made-up requests, which
+costs model calls, or by reading the chats already on his PC, which costs none.
 
 ---
 

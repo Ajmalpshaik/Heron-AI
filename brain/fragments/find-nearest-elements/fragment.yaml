@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -100,6 +100,88 @@ contract:
       # The evidence it looked, never a thing it found (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: MEP Night Test, Revit 2020, session 68704 - the count is NOT recorded because 5,262
+    elements was measured on Cinematic ID Test, the document in front, and this ran against
+    another one (row 15)
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values. returned MillimetresPerFoot
+    304.8, TieTolerance 0.00328083989501312, axisGap Func`5, boxOf Func`2, centreOf Func`2,
+    distancesMm 105 entry(ies), how centre, nearest 105 entry(ies), radius 9.84251968503937,
+    targetBoxes 105 item(s) [[383543, Autodesk.Revit.DB.BoundingBoxXYZ], [386293, Autodesk.Revit.DB.BoundingBoxXYZ],
+    [386336, Autodesk.Revit.DB.BoundingBoxXYZ], ...], tied 4 item(s) [480165, 480184, 480454,
+    ...], unmeasurable 0 item(s), useGap false, useManhattan false, withinLines 100 item(s)
+    [383543: 386293 2513 mm, 386293: 383543 2513 mm, 412614 2527 mm, 386336 3000 mm, 386336:
+    412141 1245 mm, 412155 1316 mm, 412887 2116 mm, 4128..., ...], withinMm 3000, withinRadius
+    383543: 386293 2513 mm | 386293: 383543 2513 mm, 412614 2527 mm, 386336 3000 mm | 386336:
+    412141 1245 mm, 412155 1316 mm, 412887 2116 mm, 412889 2159 mm, 412614 2415 mm, 412708
+    2796 mm, 386552 2902 mm, 386293 3000 mm | 386464: 412078 2119 mm, 412118 2196 mm | 386552:
+    412887 1099 mm, 412889 1167 mm, 412141 2031 mm, 412708 2054 mm, 412155 2069 mm, 386336
+    2902 mm, 386553 3000 mm | 386553: 386706 2346 mm, 386552 3000 mm | 386706: 386553 2346
+    mm, 386707 2500 mm | 386707: 386706 2500 mm | 393958: none within 3000 mm | 393959: none
+    within 3000 mm | 393972: none within 3000 mm | 393983: 410535 2584 mm | 393984: none within
+    3000 mm | 394029: 410510 2402 mm | 396193: none within 3000 mm | 396223: 409174 2209 mm
+    | 396293: none within 3000 mm | 399597: 399662 1603 mm | 399643: 399663 1603 mm | 399662:
+    399597 1603 mm | 399663: 399643 1603 mm, 408521 2830 mm | 399690: none within 3000 mm
+    | 399691: 408625 2787 mm | 401770: 401772 1603 mm | 401771: 401773 1603 mm, 410880 2969
+    mm | 401772: 401770 1603 mm | 401773: 401771 1603 mm | 402932: none within 3000 mm | 402933:
+    411147 2589 mm | 403378: 403380 1603 mm | 403379: 403381 1603 mm | 403380: 403378 1603
+    mm | 403381: 403379 1603 mm, 411451 2973 mm | 403734: 403736 1603 mm | 403735: 403737
+    1603 mm | 403736: 403734 1603 mm | 403737: 403735 1603 mm, 411600 2973 mm | 404201: 404203
+    1603 mm | 404202: 404204 1603 mm | 404203: 404201 1603 mm | 404204: 404202 1603 mm, 411619
+    2973 mm | 404233: 404235 1603 mm | 404234: 404236 1603 mm | 404235: 404233 1603 mm | 404236:
+    404234 1603 mm, 411657 2810 mm | 404255: none within 3000 mm | 404256: 411674 2862 mm
+    | 404775: 404777 1603 mm | 404776: 404778 1603 mm | 404777: 404775 1603 mm | 404778: 404776
+    1603 mm | 408521: 408652 800 mm, 399663 2830 mm | 408625: 399691 2787 mm, 408652 2861
+    mm | 408652: 408521 800 mm, 408625 2861 mm | 409174: 396223 2209 mm | 410510: 410535 1199
+    mm, 394029 2402 mm | 410535: 410510 1199 mm, 393983 2584 mm | 410879: 410880 800 mm |
+    410880: 410879 800 mm, 401771 2969 mm | 411147: 402933 2589 mm | 411303: 411451 900 mm
+    | 411451: 411303 900 mm, 403381 2973 mm | 411597: 411600 900 mm | 411600: 411597 900 mm,
+    403737 2973 mm | 411617: 411619 900 mm | 411619: 411617 900 mm, 404204 2973 mm | 411656:
+    411657 900 mm | 411657: 411656 900 mm, 404236 2810 mm | 411674: 404256 2862 mm | 412006:
+    412613 2282 mm | 412008: none within 3000 mm | 412078: 412118 116 mm, 386464 2119 mm |
+    412118: 412078 116 mm, 386464 2196 mm | 412141: 412155 116 mm, 412887 1028 mm, 412889
+    1034 mm, 386336 1245 mm, 412708 1616 mm, 386552 2031 mm, 412614 2698 mm | 412155: 412141
+    116 mm, 412889 1028 mm, 412887 1034 mm, 386336 1316 mm, 412708 1529 mm, 386552 2069 mm,
+    412614 2647 mm | 412613: 412006 2282 mm, 412614 2800 mm | 412614: 386336 2415 mm, 386293
+    2527 mm, 412155 2647 mm, 412141 2698 mm, 412613 2800 mm | 412707: 412802 2279 mm, 412708
+    2800 mm | 412708: 412889 1118 mm, 412887 1234 mm, 412155 1529 mm, 412141 1616 mm, 386552
+    2054 mm, 386336 2796 mm, 412707 2800 mm | 412802: 412707 2279 mm | 412887: 412889 116
+    mm, 412141 1028 mm, 412155 1034 mm, 386552 1099 mm, 412708 1234 mm, 386336 2116 mm | 412889:
+    412887 116 mm, 412155 1028 mm, 412141 1034 mm, 412708 1118 mm, 386552 1167 mm, 386336
+    2159 mm | 412912: 412940 1475 mm, 413134 1600 mm, 414031 1963 mm, 414115 2010 mm, 413135
+    2183 mm, 414096 2736 mm, 414117 2770 mm | 412940: 414096 1425 mm, 412912 1475 mm, 414117
+    1488 mm, 413135 1600 mm, 413134 2170 mm, 520071 2699 mm | 413124: 413125 1475 mm | 413125:
+    413124 1475 mm | 413134: 413135 1475 mm, 412912 1600 mm, 414115 1839 mm, 414031 1873 mm,
+    412940 2170 mm, 413899 2367 mm, 414117 2649 mm, 414096 2672 mm, 413949 2984 mm | 413135:
+    414117 1261 mm, 414096 1310 mm, 413134 1475 mm, 412940 1600 mm, 413949 1884 mm, 412912
+    2183 mm, 520071 2640 mm | 413899: 414115 2159 mm, 414031 2256 mm, 413134 2367 mm | 413949:
+    413135 1884 mm, 414117 2159 mm, 414096 2256 mm, 520071 2697 mm, 413134 2984 mm | 414031:
+    414115 98 mm, 413134 1873 mm, 412912 1963 mm, 413899 2256 mm | 414096: 414117 98 mm, 413135
+    1310 mm, 412940 1425 mm, 520071 1439 mm, 413949 2256 mm, 413134 2672 mm, 412912 2736 mm
+    | 414115: 414031 98 mm, 413134 1839 mm, 412912 2010 mm, 413899 2159 mm | 414117: 414096
+    98 mm, 413135 1261 mm, 520071 1442 mm, 412940 1488 mm, 413949 2159 mm, 413134 2649 mm,
+    412912 2770 mm | 480021: none within 3000 mm | 480165: none within 3000 mm | 480184: none
+    within 3000 mm | 480248: none within 3000 mm | 480453: none within 3000 mm | 480454: none
+    within 3000 mm. inputs came elements from set-selection (105); targets from set-selection
+    as ''elements'' (105); metric as given; withinMm as given. on MEP Night Test'
+  negative_case: 'run with categoryName=Levels, inViewOnly=Elevation: North - Mech, metric=centre,
+    withinMm=3000 instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running select-by-category-name, set-selection
+    with this phase''s own values. returned MillimetresPerFoot 304.8, TieTolerance 0.00328083989501312,
+    axisGap Func`5, boxOf Func`2, centreOf Func`2, distancesMm 0 entry(ies), how centre, nearest
+    0 entry(ies), radius 9.84251968503937, targetBoxes 0 item(s), tied 0 item(s), unmeasurable
+    4 item(s) [378117, 378118, 378119, ...], useGap false, useManhattan false, withinLines
+    0 item(s), withinMm 3000, withinRadius . inputs came elements from set-selection (4);
+    targets from set-selection as ''elements'' (4); metric as given; withinMm as given. on
+    MEP Night Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 38206cde28a1f8cd
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

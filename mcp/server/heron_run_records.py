@@ -381,7 +381,7 @@ def verdict_line(reply, batch):
     if reply.get("verdictKind") != "kept":
         return str(verdict)
     line = str(verdict) if not brief or batch.whole_kept() else str(brief)
-    return _with_asking(line, reply.get("asking"))
+    return _with_asking(_with_asking(line, reply.get("asking")), reply.get("deleteAsking"))
 
 
 def _with_asking(line, asking):
@@ -395,6 +395,12 @@ def _with_asking(line, asking):
     the modeller's own answer; once, because a verdict that already says it is
     left alone. A Discard is never given it: its own verdict says who chose.
     No `asking` - an add-in from before D-126 - and the line is as it was.
+
+    AND THE DELETE BOX'S SENTENCE BEFORE IT - D-142, `deleteAsking`: how many
+    the modeller was shown and that they pressed Delete. Its own field, never
+    `asking`, because a DRAFT's one run is asked both questions; it comes
+    first because it was asked first. A refused delete never reaches here: it
+    is an error reply, and its message says who chose.
     """
     said = str(asking or "").strip()
     if not said or said in line:

@@ -37,6 +37,19 @@ positive:
       Concrete's line carries its physical asset's density and its thermal
       asset's conductivity as Revit shows them in Properties (version 2)
 
+  - given: >
+      version 3 - the Group IA scratch project after CREATE_STARTER_MATERIALS,
+      withAllTabs true, namePattern "TRG_*"
+    expect: >
+      twelve lines, each with its identity, its shading colour and patterns,
+      and "appearance 'TRG_...' (Generic) colour ..." equal to its shading
+      colour; a material with no appearance asset reads "appearance NONE"
+
+  - given: version 3, withLibraryAppearances true
+    expect: >
+      libraryAppearances lists the asset browser's library assets by the
+      names it shows - compare five of them by eye (IA1)
+
 negative:
   - given: >
       "Heron Materials Annotation", a family new from Metric Generic
@@ -64,6 +77,11 @@ negative:
       second finding says "Listed used or not - unused ones:
       FIND_UNUSED_MATERIALS". Which are unused is that tool's walk over every
       element, type and painted face, which this does not make
+
+  - given: version 3, namePattern "ZZZ*"
+    expect: >
+      materialCount 0, materialList empty, and the first finding "No material
+      matches 'ZZZ*'" - never "No materials at all", which would be untrue
 
 second_route:
   - >

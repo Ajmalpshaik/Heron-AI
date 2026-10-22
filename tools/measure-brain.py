@@ -335,6 +335,16 @@ def main(argv):
     # in the tool written to catch exactly that.
     backend, _why = clock.time("load the trained encoder", EMBED.backend)
 
+    # THE RULE BEFORE THE TIMED OPEN - row 5b-1289. From a worktree or a
+    # feature branch the shared store is never touched, not even opened, and
+    # this open would make a store file where there was none. So when
+    # heron_scope.rebuild_refusal() refuses, check-routing.py's guard is
+    # asked now - it says why and returns None - and nothing is timed. With
+    # no knowledge folder at all, the open below raises as it always has.
+    if SCOPE.knowledge_dir() and SCOPE.rebuild_refusal() is not None:
+        if routing().store_for_this_tree("latency baseline") is None:
+            return 2
+
     # The first open is the one timed, as it always was; the store is then
     # handed to check-routing.py's guard and re-opened by it.
     store = clock.time("open the scope", lambda: SCOPE.open_scope(SCOPE.GLOBAL))

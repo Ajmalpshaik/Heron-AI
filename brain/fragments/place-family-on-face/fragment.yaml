@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -93,6 +93,36 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,147 elements), Revit 2020, session 2648
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, along (null),
+    created 2 item(s) [FamilyInstance, FamilyInstance], culture CultureInfo, findings 2 item(s)
+    ["Standard" was not activated in this project and has been., Placed 2 of 2 instance(s)
+    of "Standard", each read back as h...], look XYZ, numberStyle NumberStyles, placed 2,
+    points 2 item(s) [(6.561679790, 1.640419948, 0.984251969), (22.965879265, 1.640419948,
+    0.984251969)], rayText south, readXyz Func`2, refused 0 item(s), searchLinks false, stop
+    (null). inputs came symbol as given; pointsMm as given; ray as given; view3D as given;
+    facing as given; searchLinks as given. on Project1
+  negative_case: 'run with categoryName=Walls, facing=, inViewOnly=Heron 3D, pointsMm=2000,-20000,300,
+    ray=south, searchLinks=False, symbol=M_Duplex Receptacle: Standard, view3D=Heron 3D instead
+    - chosen because it should not contain what this fragment reports - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
+    along (null), created 0 item(s), culture CultureInfo, findings 3 item(s) ["Standard" was
+    not activated in this project and has been., Placed 0 of 1 instance(s) of "Standard",
+    each read back as h..., 1 point(s) placed nothing: point 1 (2000, -20000, 300) - no ...],
+    look XYZ, numberStyle NumberStyles, placed 0, points 1 item(s) [(6.561679790, -65.616797900,
+    0.984251969)], rayText south, readXyz Func`2, refused 1 item(s) [point 1 (2000, -20000,
+    300) - no face that way in "Heron 3D"], searchLinks false, stop (null). inputs came symbol
+    as given; pointsMm as given; ray as given; view3D as given; facing as given; searchLinks
+    as given. on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 481e9f52332d8bf8
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

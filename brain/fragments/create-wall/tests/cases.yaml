@@ -7,6 +7,24 @@ positive:
   - given: two points 4 m apart
     expect: one wall of that length, standing 3000 mm above the level
 
+  - given: >
+      a curtain wall type and "0,0,0; arc 5000,5000 10000,0" - a half circle of
+      radius 5000 mm (version 2, 5b-1216)
+    expect: >
+      ONE curtain wall whose location line is an arc: its Length in Properties
+      reads 15708 mm (pi x 5000), not the 10000 mm chord, and the findings say 1
+      of them follows an arc. How its panels sit on the arc is recorded as seen
+
+  - given: a basic wall type and "5000,0,0; arc 0,5000 -5000,0; arc 0,-5000 5000,0"
+    expect: >
+      TWO walls, each a half circle - a closed round wall of radius 5000 mm,
+      lengths 15708 mm each
+
+  - given: the version 1 run again - five points around a room, no arc in them
+    expect: >
+      exactly what version 1 built: four straight walls, endpoints as typed, and
+      the same findings sentence word for word
+
 negative:
   - given: a model set out to a survey datum, where Elevation and ProjectElevation differ
     expect: >
@@ -23,6 +41,17 @@ negative:
   - given: two points at the same coordinates
     expect: "`tooShort` counts it and no wall is created"
 
+  - given: '"0,0,0; arc 5000,0 10000,0" - an arc whose three points are in a line'
+    expect: >
+      refused before anything is built - `created` empty, `refused` 1, and the
+      findings name the arc from 0,0 through 5000,0 to 10000,0 as not an arc.
+      Also "0,0,0; arc 5000,5000 0,0", which ends where it starts
+
+  - given: '"0,0,0; 6000,0,0; arc 9000,3000 6000,6000; arc 1,1 1,1" - one good arc, then a bad one'
+    expect: >
+      NOTHING built, not the straight wall and the good arc - the whole run is
+      refused, because the walls after a bad arc would start in the wrong place
+
   - given: a wall type Revit refuses for this level
     expect: >
       counted in `refused`, the rest of the run still built. Not an exception
@@ -36,3 +65,4 @@ negative:
 
 second_route:
   - Revit's own Architecture then Wall between the same two points, and the two compared in a section
+  - For an arc, Revit's own Wall with Start-End-Radius Arc through the same three points, and the two Lengths compared

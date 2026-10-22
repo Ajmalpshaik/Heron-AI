@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -67,6 +67,32 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, findings 1 item(s)
+    [Made line pattern "Heron Centre": dash 12, space 3, dot, spa...], madeNew true, name
+    Heron Centre, pattern LinePatternElement, refused (null), replaceExisting false, segments
+    4 item(s) [Autodesk.Revit.DB.LinePatternSegment, Autodesk.Revit.DB.LinePatternSegment,
+    Autodesk.Revit.DB.LinePatternSegment, ...], segmentsRead dash 12, space 3, dot, space
+    3. inputs came patternName as given; segmentsMm as given; replaceExisting as given. on
+    Project2'
+  negative_case: 'run with categoryName=Text Notes, inViewOnly=FloorPlan: Level 1, patternName=Heron
+    Centre Bad, replaceExisting=False, segmentsMm=space 3, dash 12 instead - chosen because
+    it should not contain what this fragment reports - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, findings
+    1 item(s) [A line pattern starts with a dash or a dot, not a space. NOT...], madeNew false,
+    name Heron Centre Bad, pattern (null), refused A line pattern starts with a dash or a
+    dot, not a space. NOTHING WAS MADE., replaceExisting false, segments 2 item(s) [Autodesk.Revit.DB.LinePatternSegment,
+    Autodesk.Revit.DB.LinePatternSegment], segmentsRead . inputs came patternName as given;
+    segmentsMm as given; replaceExisting as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 59696829bf17c94b
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,0 +1,22 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      a scratch copy of Project1 (Revit 2020) after a Draft render of a 3D view
+      saved to the project with Save to Project, and the same render exported
+      to a scratch folder as PNG; folder that scratch folder, sinceMinutes 30
+    expect: >
+      renderings 2 - the saved rendering by its name and pixel size, and the PNG
+      with the same pixel size read from its header. Compare with the Renderings
+      node of the Project Browser and the file's properties in Windows
+
+negative:
+  - given: a model with no saved rendering, folder an empty scratch folder
+    expect: >
+      renderings 0 and the report "Nothing rendered was read back". THIS IS THE
+      FIRST CASE TO RUN - an empty answer must never read as a render
+  - given: folder "Q:/no-such-folder"
+    expect: the folder named as not existing, and only the project's renderings counted
+
+second_route:
+  - the Renderings node of the Project Browser, and the folder opened in Windows Explorer

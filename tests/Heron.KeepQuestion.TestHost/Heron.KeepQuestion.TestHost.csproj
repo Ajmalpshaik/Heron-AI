@@ -39,6 +39,10 @@
          request - an older client that sent none - holds no grant. -->
     <Compile Include="..\..\revit\Heron.Revit.Addin\HeronConversation.cs"
              Link="HeronConversation.cs" />
+    <!-- D-142: the delete box's words, its grouping by category and the
+         same-set rule a second run is kept by - no Autodesk type either. -->
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronDeleteQuestion.cs"
+             Link="HeronDeleteQuestion.cs" />
   </ItemGroup>
 
 </Project>

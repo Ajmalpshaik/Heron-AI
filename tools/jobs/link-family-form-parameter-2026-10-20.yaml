@@ -1,0 +1,32 @@
+# Re-proof of link-family-form-parameter (LINK_FAMILY_FORM_PARAMETER, FRG-PAR-029) version 2 -
+# signed 2026-10-03 on version 1, STALE since version 2 added nested parts. NEEDS-CHECKING Group BP.
+#
+#     HERON_CLIENT_ID=ajmal-pc python tools/batch-prove.py tools/jobs/link-family-form-parameter-2026-10-20.yaml --dry-run
+#     HERON_CLIENT_ID=ajmal-pc python tools/batch-prove.py tools/jobs/link-family-form-parameter-2026-10-20.yaml
+#
+# THE ARRANGEMENT is the owner's real family, built 2026-10-20 on Revit 2020:
+# "TRG_Duct Accessory_Electric Duct Heater" (a parametric duct accessory, 5 types). It has an
+# instance Yes/No parameter "Show Clearance Zones" and a solid extrusion - the upstream
+# straight-duct clearance box - whose id is d0642db1-...-00003e36. `write: true` runs both legs in a
+# transaction group and ROLLS THEM BACK: nothing in the family is kept.
+#
+# POSITIVE: that box's Visible linked to "Show Clearance Zones" - `changed` 1, `linkReport` reading
+# Visible not linked -> "Show Clearance Zones".
+# NEGATIVE: the same box's Visible given "Heater Width L", a LENGTH parameter - refused naming both
+# kinds, `changed` 0.
+
+model: TRG_Duct Accessory_Electric Duct Heater (owner's family, 2026-10-20), Revit 2020
+
+defaults:
+  in: "TRG_Duct Accessory_Electric Duct Heater"
+  write: true
+
+jobs:
+  - fragment: link-family-form-parameter
+    expect: changed
+    set:
+      forms: "d0642db1-e030-465e-9df4-6ae5bb9724d5-00003e36"
+      links: "Visible=Show Clearance Zones"
+    negative-set:
+      forms: "d0642db1-e030-465e-9df4-6ae5bb9724d5-00003e36"
+      links: "Visible=Heater Width L"

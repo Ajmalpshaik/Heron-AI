@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -63,8 +63,11 @@ contract:
       role: result
       type: IList<ElementId>
     - name: measured
-      # ONE STRING, each element's references and segment values (D-52).
-      role: result
+      # ONE STRING, each element's references and segment values (D-52). On a
+      # refusal it carries the reason instead, so it is the read-back and
+      # `created` is the evidence (D-51) - found 2026-10-18 on Revit 2020, a
+      # 3D view refused with NOTHING WAS DRAWN in it.
+      role: accounting
       type: string
     - name: noFaces
       # Elements that offered fewer than two faces that way, or were refused.
@@ -72,6 +75,40 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
+    created 5 item(s) [345642, 345643, 345644, ...], findings 6 item(s) [5 dimension string(s)
+    drawn across in "Level 1" and read bac..., 345432 (Walls): 2 references, 200 mm, 345433
+    (Walls): 2 references, 200 mm, ...], lines 5 item(s) [345432 (Walls): 2 references, 200
+    mm, 345433 (Walls): 2 references, 200 mm, 345434 (Walls): 2 references, 200 mm, ...],
+    measured 345432 (Walls): 2 references, 200 mm | 345433 (Walls): 2 references, 200 mm |
+    345434 (Walls): 2 references, 200 mm | 345435 (Walls): 2 references, 200 mm | 345436 (Walls):
+    2 references, 200 mm, noFaces 0 item(s), offsetMm 0, options Options, refusal (null),
+    tolerance 0.00164041994750656, way across. inputs came view as given; elements from filter-elements-by-category
+    (5); direction as given; offsetMm as given. on Project2'
+  negative_case: 'run with categoryName=Text Notes, direction=across, inViewOnly=FloorPlan:
+    Level 1, offsetMm=0, view=Heron 3D arranged with category=Walls, levelId=Level 1 instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running filter-elements-by-category with this phase''s own values - run
+    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned MmPerFoot 304.8, created 0 item(s), findings 1 item(s) ["Heron 3D" is not a plan,
+    section, elevation or detail view ...], lines 1 item(s) ["Heron 3D" is not a plan, section,
+    elevation or detail view ...], measured "Heron 3D" is not a plan, section, elevation or
+    detail view - a dimension is drawn in one of those. NOTHING WAS DRAWN., noFaces 0 item(s),
+    offsetMm 0, options Options, refusal "Heron 3D" is not a plan, section, elevation or detail
+    view - a dimension is drawn in one of those. NOTHING WAS DRAWN., tolerance 0.00164041994750656,
+    way across. inputs came view as given; elements from filter-elements-by-category (5);
+    direction as given; offsetMm as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: c55cd672a5a779a5
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

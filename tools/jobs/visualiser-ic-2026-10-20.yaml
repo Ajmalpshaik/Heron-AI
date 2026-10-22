@@ -1,0 +1,60 @@
+# NEEDS-CHECKING Group IC - the visualiser's two tools, DRAFT since 2026-10-20.
+#
+#     python tools/batch-prove.py tools/jobs/visualiser-ic-2026-10-20.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/visualiser-ic-2026-10-20.yaml
+#
+# THE MODEL is the scratch copy docs/needs-checking/group-ic.md describes - the
+# owner's Project1 (Revit 2020) holding the four duct heaters placed on
+# 2026-10-20, saved to %TEMP%\heron-work\visualiser-ic, with the perspective
+# view "Heron Frame - Heater" (Group IB's IB1, made by FRAME_ELEMENTS_IN_CAMERA
+# and kept) and a schedule named "Heron Render Schedule". Never a working
+# model.
+#
+# BOTH JOBS ASK FOR EXTERIOR DAY, ON PURPOSE. A batch rolls every write back,
+# and the kept run of the group is IC4 - Equipment Close-up, through try-once.
+# Exterior Day differs from that look and from the camera view as IB1 left it,
+# so these give a number above 0 whether they run before IC4 or after it.
+#
+# NOT IN THIS FILE: IC4 (the one kept run, try-once), IC5 (the count after
+# IC4), IC6 to IC9 (each a preset or a view of its own - run them by name with
+# `validate apply-visual-preset --write`), IC10 (the method in a chat) and
+# IC11 (routing on the PC's backend).
+#
+# THE NEGATIVE IS A VIEW THAT TAKES NO PRESET OR A PRESET THAT DOES NOT EXIST,
+# never a cleared value.
+
+model: Project1 scratch copy with the four duct heaters (visualiser-ic), Revit 2020
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: report-visual-preset
+    write: false                       # risk READ
+    set:
+      view: "Heron Frame - Heater"
+      preset: "Exterior Day"
+    negative-set:
+      view: "Heron Frame - Heater"
+      preset: "Studio Glow"
+    expect: wouldChange
+    note: >
+      IC1 and IC2's read. The positive's comparison gives each setting now
+      beside Exterior Day's - check the "now" side against
+      REPORT_RENDER_SETTINGS. The negative is refused, naming the seven
+      presets.
+
+  - fragment: apply-visual-preset
+    set:
+      view: "Heron Frame - Heater"
+      preset: "Exterior Day"
+      renderFor: check
+    negative-set:
+      view: "Heron Render Schedule"
+      preset: "Exterior Day"
+    expect: changed
+    note: >
+      IC3's negative and a rolled-back positive. changed equal to the read's
+      wouldChange just above; the schedule must be refused with nothing
+      changed - it takes none of the preset's settings.

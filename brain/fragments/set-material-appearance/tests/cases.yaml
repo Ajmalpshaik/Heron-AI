@@ -1,0 +1,48 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# NOT RUN - written 2026-10-20 for NEEDS-CHECKING Group IA (IA4 to IA7).
+
+positive:
+  - given: >
+      the Group IA duct heater family copy, whose materials CREATE_MATERIAL
+      made with shading colours and no appearance asset; materialsNamed
+      "TRG_*", matchShading true
+    expect: >
+      every TRG material holds an appearance asset named after it, assetsMade
+      one per material, each asset's Generic colour equal to that material's
+      shading colour; a Realistic view (EXPORT_VIEW_IMAGE) draws the family in
+      those colours, not flat dark grey
+
+  - given: >
+      "IA Probe Steel" with appearance "Stainless Steel - Satin" or another
+      name the PC's appearance library holds (read it off the asset browser
+      first), no values
+    expect: >
+      the material's Appearance tab shows that asset under the material's own
+      name; appearanceReport names the library asset
+
+  - given: >
+      "IA Probe Wood", appearance generic, values "Image=<a jpg that exists>;
+      Image Size=1200 x 600; Image Rotation=90; Glossiness=40; Highlights=non-metallic"
+    expect: >
+      the Generic asset's Color/Image is that file, 1200 x 600 mm and 90
+      degrees in the texture editor, Glossiness 40 and Highlights
+      Non-Metallic in the Material Browser (IA5 - the 0-100 scale)
+
+negative:
+  - given: >
+      "IA Probe Steel" and "IA Probe Copper" sharing one appearance asset;
+      materialsNamed "IA Probe Steel", values "Colour=10,20,30"
+    expect: >
+      sharedBefore names "IA Probe Copper"; IA Probe Steel has its own copy
+      coloured 10,20,30 and IA Probe Copper's colour is what it was
+  - given: appearance "No Such Look" on IA Probe Steel
+    expect: refused naming the closest appearance assets in the document and the library; nothing changed
+  - given: values "Image=C:\\no\\such\\file.jpg" on IA Probe Wood
+    expect: refused - the file is not there; nothing changed
+  - given: a library Metal asset named in appearance with values "Glossiness=50"
+    expect: refused - it is not a Generic appearance; nothing changed
+
+second_route:
+  - Manage > Materials, the material's Appearance tab and its asset browser read by eye
+  - a Realistic view of the elements using the material, before and after
+  - one Ctrl+Z takes every asset and value back (Golden Rule 16)

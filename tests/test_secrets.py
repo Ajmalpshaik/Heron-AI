@@ -218,6 +218,35 @@ def main():
               "%s has no token-shaped literal in it" % name)
 
     print()
+    print("10. A private key goes whole, and a lone BEGIN line goes too")
+    body = "MIIBOgIBAAJBAKj34GkxFhD90vcNLYLInFEX6Ppy1tPf9Cnzj4p4WGeKLs1Pt8Qu"
+    end = "-----END RSA " + "PRIVATE KEY-----"
+    block = "%s\n%s\n%s" % (SECRETS.FAKE_PRIVATE_KEY, body, end)
+    clean, found = secrets.redact("deploy failed with key:\n%s\ndone" % block)
+    check(body not in clean and SECRETS.FAKE_PRIVATE_KEY not in clean,
+          "neither the BEGIN line nor the key's body survives redaction")
+    check(clean == "deploy failed with key:\n%s\ndone" % SECRETS.MARKER,
+          "the whole block becomes one marker, END line included")
+    check("private key" in found, "the shape is named as a private key")
+    clean, found = secrets.redact("half a paste: %s" % SECRETS.FAKE_PRIVATE_KEY)
+    check(clean == "half a paste: %s" % SECRETS.MARKER and "private key" in found,
+          "a BEGIN line with no END after it is still redacted")
+    pgp = "-----BEGIN PGP " + "PRIVATE KEY BLOCK-----"
+    clean, found = secrets.redact("exported %s here" % pgp)
+    check(pgp not in clean and "private key" in found,
+          "a PGP private key block, BLOCK on the end, is caught too")
+    prose = "ordinary words. " * 2000
+    clean, found = secrets.redact("%s\n%s\n%s" % (SECRETS.FAKE_PRIVATE_KEY,
+                                                  prose, end))
+    check(prose.strip() in clean,
+          "an END line 32 KB below a BEGIN does not swallow the text between")
+    source = io.open(os.path.join(ROOT, "brain/heron_secrets.py"),
+                     encoding="utf-8").read()
+    clean, found = secrets.redact(source)
+    check("private key" not in found,
+          "the pattern's own source line does not match itself")
+
+    print()
     if FAILURES:
         print("FAILED  %d check(s)" % len(FAILURES))
         for line in FAILURES:

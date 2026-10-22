@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -59,7 +59,11 @@ contract:
       role: result
       type: double
     - name: newOrigin
-      role: result
+      # Where the plane's origin reads back afterwards, in mm - written whether
+      # or not anything moved, so it is the read-back, never the evidence;
+      # movedMm is (D-51, D-52). Found 2026-10-18 on Revit 2020: the North
+      # elevation moved 0 mm and still filled it.
+      role: accounting
       type: string
     - name: refused
       # Why NOTHING WAS MOVED, as one sentence; null otherwise (D-52).
@@ -67,6 +71,31 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, answering 1 item(s)
+    [Section 1], bare Section 1, colon 7, findings 1 item(s) ["Section 1" cut plane moved
+    500 mm along the way it looks (r...], movedMm 500, newOrigin -100,600,-500, offsetMm 500,
+    refused (null), step XYZ, toMove 1 item(s) [id 345541], view ViewSection, wanted Section:
+    Section 1, wantedKind Section. inputs came viewName as given; offsetMm as given; throughMm
+    as given. on Project2'
+  negative_case: 'run with categoryName=Text Notes, inViewOnly=FloorPlan: Level 1, offsetMm=500,
+    throughMm=, viewName=Elevation: North instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned MmPerFoot 304.8, answering 1 item(s) [North], bare North,
+    colon 9, findings 2 item(s) [Asked to move 500 mm, and the cut plane reads back moved
+    0 m..., "North" cut plane moved 0 mm along the way it looks (read ba...], movedMm 0, newOrigin
+    489,25237,1200, offsetMm 500, refused (null), step XYZ, toMove 1 item(s) [id 8142], view
+    ViewSection, wanted Elevation: North, wantedKind Elevation. inputs came viewName as given;
+    offsetMm as given; throughMm as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: ede7f8eddd79ed9d
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

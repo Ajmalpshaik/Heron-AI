@@ -1,0 +1,102 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-113
+semantic-identity: "make a rebar cover type of this distance"
+kind: action
+domain: revit.elements
+capability: CREATE_REBAR_COVER_TYPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# A COVER IS A TYPE IN REVIT, NOT A NUMBER ON THE HOST. A column's "Rebar
+# Cover - Other Faces" points at a Rebar Cover Type, so "40 cover" can only be
+# set when a cover type of 40 mm exists. SET_REBAR_COVER takes a distance and
+# finds the cover type that gives it; when none does it refuses and names this
+# tool. The NAME is the modeller's - his naming rules decide it.
+#
+# A name already used is refused, naming that type's distance. A cover type of
+# the same distance under another name is made, and said, because two names
+# for one distance is the modeller's choice.
+#
+# READ BACK: the type's name and distance after a regenerate.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Makes a new rebar cover type with the name and cover distance the modeller
+  gives, so a host's rebar cover can be set to it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: coverName
+      type: string
+      source: request
+    # Millimetres (D-71).
+    - name: distance
+      type: string
+      source: request
+  provides:
+    - name: created
+      role: result
+      type: IList<ElementId>
+    - name: readBack
+      # The new type's name and distance as Revit now holds them (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: Cinematic ID Test (5,262 elements), Revit 2020, session 68704
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned asked 45, covers 1 item(s) [Rebar
+    Cover 1], created 1 item(s) [1103443], findings 1 item(s) [Made Rebar Cover Type 'Night
+    C Cover 45' 45 mm.], invariant CultureInfo, mm Func`2, name Night C Cover 45, parsed true,
+    readBack 'Night C Cover 45' 45 mm, refused , text 45. inputs came coverName as given;
+    distance as given. on Cinematic ID Test
+  negative_case: run with coverName=Night C Cover 45, distance=not a distance instead - chosen
+    because it should not contain what this fragment reports - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned asked 0, covers
+    1 item(s) [Rebar Cover 1], created 0 item(s), findings 1 item(s) ['not a distance' is
+    not a cover distance. Give it in millime...], invariant CultureInfo, mm Func`2, name Night
+    C Cover 45, parsed false, readBack , refused 'not a distance' is not a cover distance.
+    Give it in millimetres - 40 or 40 mm. Nothing was made, text not a distance. inputs came
+    coverName as given; distance as given. on Cinematic ID Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 762d8b4a1bff396a
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  RebarCoverType.Create(Document, string, double) and CoverDistance are on
+  every release 2020-2027, one signature (read off the shipped assemblies
+  2026-10-19). The distance arrives in millimetres and becomes feet by
+  / 304.8 (D-20).
+
+# ROUTING - the same rows are in every rebar card.
+#
+#   "make a 40 mm cover type"                   -> here
+#   "set the cover on these beams to 40"        -> SET_REBAR_COVER
+#   "what cover types are there"                -> LIST_REBAR_TYPES
+utterances:
+  - make a 40 mm rebar cover type
+  - create a cover type for 50 mm cover
+  - add a rebar cover setting of 75 mm

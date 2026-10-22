@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -120,6 +120,44 @@ contract:
       role: accounting
       type: IList<string>
 
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: MEP Night Test, Revit 2020, session 68704 - the count is NOT recorded because 5,262
+    elements was measured on Cinematic ID Test, the document in front, and this ran against
+    another one (row 15)
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values. returned disagreements
+    37 item(s) [Door 573692 (''88.5 x 2.26'') - Revit says (outside) -> Admin ..., Door 573693
+    (''88.5 x 2.26'') - Revit says Admin 47 -> Admin 4..., Door 573694 (''88.5 x 2.26'') -
+    Revit says (outside) -> Stock ..., ...], doorsChecked 47, findings 48 item(s) [47 door(s)
+    checked on phase ''New Construction''. 37 disagree ..., Door 573692 (''88.5 x 2.26''):
+    (outside) -> Admin 47   <-- DIS..., Door 573693 (''88.5 x 2.26''): Admin 47 -> Admin 47   <--
+    DISA..., ...], includeLinks false, linkBlocked , linkDocs 0 item(s), linkPhaseWanted New
+    Construction, linkPlacements 0 item(s), linkProbeFt 0.984251968503937, linkTypes 0 item(s),
+    linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched
+    0, nestedLinks 0, noRoomEitherSide 6 item(s) [Door 575897 (''Türelement 2-flg - Drehflügel
+    - Glas'') - no ro..., Door 576742 (''Türelement 1-flg - Drehflügel - Glas'') - no ro...,
+    Door 576790 (''Türelement 1-flg - Drehflügel - Glas'') - no ro..., ...], phase Phase,
+    phaseUsed New Construction, probeDistanceMm 300. inputs came elements from the selection
+    (47); phaseName as given; probeDistanceMm as given; includeLinks not given - false (optional).
+    on MEP Night Test'
+  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: Level 2, phaseName=New
+    Construction, probeDistanceMm=300 instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running select-by-category-name,
+    set-selection with this phase''s own values. returned disagreements 0 item(s), doorsChecked
+    0, findings 1 item(s) [0 door(s) checked on phase ''New Construction''. 0 disagree wi...],
+    includeLinks false, linkBlocked , linkDocs 0 item(s), linkPhaseWanted New Construction,
+    linkPlacements 0 item(s), linkProbeFt 0.984251968503937, linkTypes 0 item(s), linkedMatches
+    1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched 0, nestedLinks
+    0, noRoomEitherSide 0 item(s), phase Phase, phaseUsed New Construction, probeDistanceMm
+    300. inputs came elements from the selection (86); phaseName as given; probeDistanceMm
+    as given; includeLinks not given - false (optional). on MEP Night Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 39f9933d840b60f2
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -150,6 +188,10 @@ compatibility-note: >
 #   "place the rooms"                      -> PLACE_ROOMS. One reads, one makes
 #   "how big is this room"                 -> MEASURE_ROOM_DIMENSIONS
 #   "what is in this room"                 -> FILTER_ELEMENTS_IN_ROOM
+#   "fix the from and to room on these
+#    doors"                                -> FLIP_ELEMENTS with fromToRoomOnly.
+#                                             It CHANGES the model; this names
+#                                             which doors need it
 #   "write it into the door parameters"    -> NOT here. This reports; it does not
 #                                             write. WRITE_ELEMENT_PARAMETERS
 #                                             takes the answer, and keeping the
