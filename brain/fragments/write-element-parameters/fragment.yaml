@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -149,36 +149,37 @@ contract:
 # NEEDS-CHECKING Group HZ proves version 5 (D-30). Every value that is not an
 # element reference still takes the road this proof ran.
 proof:
-  date: '2026-10-18'
+  date: '2026-10-21'
   by: Ajmal PS
-  model: Family3, Revit 2020, session 64176 - the count is NOT recorded because 2,157 elements
-    was measured on Family4, the document in front, and this ran against another one (row
-    15)
+  model: Cinematic ID Test (5,262 elements), Revit 2020, session 68704
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-family-forms with this phase's own values - run inside a transaction, and Revit
+    select-by-category-name with this phase's own values - run inside a transaction, and Revit
     reported the transaction group ROLLED BACK afterwards. returned absent 0 item(s), alreadyThat
-    0 item(s), ambiguous 0 item(s), asked 2 item(s) [0, 0], findings 0 item(s), isYesNo Func`2,
-    notAYesNoWord 0, numericValue Func`2, pending 2 item(s) [Extrusion, Extrusion], readOnly
-    0 item(s), refused 0 item(s), said no, snapped 0 item(s), tickAsked 0, tickedWords 5 item(s)
-    [yes, true, on, ...], untickedWords 5 item(s) [no, false, off, ...], unverified 0 item(s),
-    written 2, yesNoProperty (null), yesNoSpec (null), yesNoSpecs (null). inputs came elements
-    from select-family-forms (2); parameterName as given; value as given. on Family3
-  negative_case: run with parameterName=No Such Parameter, value=No arranged with forms=323e861b-0aef-4bc5-a21e-480e0d84cd7e-00000d5e,
-    323e861b-0aef-4bc5-a21e-480e0d84cd7e-00000d59 instead - chosen because it should not contain
-    what this fragment reports - the arrangement was re-made first by running select-family-forms
-    with this phase's own values - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned absent 2 item(s) [3422, 3417], alreadyThat 0 item(s),
-    ambiguous 0 item(s), asked 0 item(s), findings 0 item(s), isYesNo Func`2, notAYesNoWord
-    0, numericValue Func`2, pending 0 item(s), readOnly 0 item(s), refused 0 item(s), said
-    no, snapped 0 item(s), tickAsked 0, tickedWords 5 item(s) [yes, true, on, ...], untickedWords
-    5 item(s) [no, false, off, ...], unverified 0 item(s), written 0, yesNoProperty (null),
-    yesNoSpec (null), yesNoSpecs (null). inputs came elements from select-family-forms (2);
-    parameterName as given; value as given. on Family3
+    0 item(s), ambiguous 0 item(s), asked 0 item(s), askedReference 0 item(s), findings 0
+    item(s), isYesNo Func`2, materialSpec (null), materialSpecProperty (null), namedElements
+    (null), notAYesNoWord 0, numericValue Func`2, pending 0 item(s), pendingReference 0 item(s),
+    readOnly 0 item(s), referenceByName Func`3, refused 0 item(s), said night proof 2026-10-21,
+    snapped 0 item(s), tickAsked (null), tickedWords 5 item(s) [yes, true, on, ...], untickedWords
+    5 item(s) [no, false, off, ...], unverified 0 item(s), written 24, yesNoProperty (null),
+    yesNoSpec (null), yesNoSpecs (null). inputs came elements from select-by-category-name
+    (24); parameterName as given; value as given. on Cinematic ID Test
+  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: Level 1, parameterName=Zz
+    No Such Parameter, value=Night proof 2026-10-21 instead - chosen because it should not
+    contain what this fragment reports - the arrangement was re-made first by running select-by-category-name
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned absent 24 item(s) [198749, 418079, 422243, ...],
+    alreadyThat 0 item(s), ambiguous 0 item(s), asked 0 item(s), askedReference 0 item(s),
+    findings 0 item(s), isYesNo Func`2, materialSpec (null), materialSpecProperty (null),
+    namedElements (null), notAYesNoWord 0, numericValue Func`2, pending 0 item(s), pendingReference
+    0 item(s), readOnly 0 item(s), referenceByName Func`3, refused 0 item(s), said night proof
+    2026-10-21, snapped 0 item(s), tickAsked (null), tickedWords 5 item(s) [yes, true, on,
+    ...], untickedWords 5 item(s) [no, false, off, ...], unverified 0 item(s), written 0,
+    yesNoProperty (null), yesNoSpec (null), yesNoSpecs (null). inputs came elements from select-by-category-name
+    (24); parameterName as given; value as given. on Cinematic ID Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: da5a900c473f6d4b
-
+  fingerprint: cc1d5b73b8662362
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

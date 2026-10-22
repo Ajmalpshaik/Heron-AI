@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -51,6 +51,104 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: Structure Night Test (9,179 elements), Revit 2020, session 68704
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name with this phase''s own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned alreadyCoped 0,
+    columnCategory 1 item(s) [id -2001330], coped 567, copedIds 147 item(s) [124559, 124565,
+    124568, ...], findings 148 item(s) [567 coping cut(s) made and read back on 147 beam(s);
+    0 alrea..., beam 124559: coped by 2 member(s)., beam 124565: coped by 4 member(s)., ...],
+    framingCategory 1 item(s) [id -2001320], lines 147 item(s) [beam 124559: coped by 2 member(s).,
+    beam 124565: coped by 4 member(s)., beam 124568: coped by 4 member(s)., ...], report beam
+    124559: coped by 2 member(s). | beam 124565: coped by 4 member(s). | beam 124568: coped
+    by 4 member(s). | beam 124571: coped by 4 member(s). | beam 124574: coped by 4 member(s).
+    | beam 124577: coped by 2 member(s). | beam 124579: coped by 2 member(s). | beam 124582:
+    coped by 2 member(s). | beam 124585: coped by 2 member(s). | beam 124587: coped by 2 member(s).
+    | beam 124590: coped by 2 member(s). | beam 124592: coped by 3 member(s). | beam 124594:
+    coped by 4 member(s). | beam 124598: coped by 4 member(s). | beam 124600: coped by 4 member(s).
+    | beam 124602: coped by 4 member(s). | beam 124604: coped by 4 member(s). | beam 124606:
+    coped by 4 member(s). | beam 124608: coped by 4 member(s). | beam 124610: coped by 4 member(s).
+    | beam 124612: coped by 3 member(s). | beam 124614: coped by 3 member(s). | beam 124616:
+    coped by 4 member(s). | beam 124620: coped by 4 member(s). | beam 124622: coped by 4 member(s).
+    | beam 124624: coped by 4 member(s). | beam 124626: coped by 3 member(s). | beam 124628:
+    coped by 1 member(s). | beam 124630: coped by 1 member(s). | beam 124632: coped by 3 member(s).
+    | beam 124634: coped by 3 member(s). | beam 124636: coped by 2 member(s). | beam 124638:
+    coped by 3 member(s). | beam 124645: coped by 3 member(s). | beam 124647: coped by 3 member(s).
+    | beam 124653: coped by 3 member(s). | beam 124655: coped by 3 member(s). | beam 124657:
+    coped by 3 member(s). | beam 124659: coped by 3 member(s). | beam 124661: coped by 3 member(s).
+    | beam 124666: coped by 1 member(s). | beam 124669: coped by 2 member(s). | beam 124672:
+    coped by 2 member(s). | beam 124674: coped by 2 member(s). | beam 124677: coped by 2 member(s).
+    | beam 124680: coped by 3 member(s). | beam 124684: coped by 1 member(s). | beam 124686:
+    coped by 3 member(s). | beam 124688: coped by 4 member(s). | beam 124690: coped by 4 member(s).
+    | beam 124692: coped by 3 member(s). | beam 124694: coped by 2 member(s). | beam 124696:
+    coped by 3 member(s). | beam 124698: coped by 3 member(s). | beam 124707: coped by 2 member(s).
+    | beam 124709: coped by 3 member(s). | beam 124713: coped by 2 member(s). | beam 124715:
+    coped by 3 member(s). | beam 124724: coped by 2 member(s). | beam 124726: coped by 3 member(s).
+    | beam 124730: coped by 2 member(s). | beam 124732: coped by 3 member(s). | beam 124736:
+    coped by 2 member(s). | beam 124742: coped by 1 member(s). | beam 124745: coped by 2 member(s).
+    | beam 124747: coped by 2 member(s). | beam 124749: coped by 2 member(s). | beam 124751:
+    coped by 2 member(s). | beam 124753: coped by 2 member(s). | beam 124755: coped by 2 member(s).
+    | beam 124757: coped by 2 member(s). | beam 124759: coped by 2 member(s). | beam 124761:
+    coped by 3 member(s). | beam 124765: coped by 1 member(s). | beam 124767: coped by 2 member(s).
+    | beam 124769: coped by 2 member(s). | beam 124771: coped by 2 member(s). | beam 124773:
+    coped by 2 member(s). | beam 124775: coped by 2 member(s). | beam 124777: coped by 2 member(s).
+    | beam 124779: coped by 3 member(s). | beam 124782: coped by 3 member(s). | beam 124784:
+    coped by 2 member(s). | beam 124788: coped by 2 member(s). | beam 124790: coped by 2 member(s).
+    | beam 124792: coped by 2 member(s). | beam 124794: coped by 2 member(s). | beam 124796:
+    coped by 2 member(s). | beam 124798: coped by 2 member(s). | beam 124800: coped by 2 member(s).
+    | beam 124802: coped by 2 member(s). | beam 124804: coped by 2 member(s). | beam 124806:
+    coped by 2 member(s). | beam 124808: coped by 2 member(s). | beam 124810: coped by 3 member(s).
+    | beam 124812: coped by 2 member(s). | beam 124818: coped by 3 member(s). | beam 124820:
+    coped by 3 member(s). | beam 124822: coped by 3 member(s). | beam 125944: coped by 9 member(s).
+    | beam 125958: coped by 10 member(s). | beam 125972: coped by 4 member(s). | beam 126003:
+    coped by 7 member(s). | beam 127308: coped by 40 member(s). | beam 128135: coped by 5
+    member(s). | beam 128137: coped by 2 member(s). | beam 128139: coped by 2 member(s). |
+    beam 128141: coped by 2 member(s). | beam 128143: coped by 2 member(s). | beam 128145:
+    coped by 2 member(s). | beam 128147: coped by 5 member(s). | beam 128213: coped by 2 member(s).
+    | beam 128264: coped by 2 member(s). | beam 128318: coped by 2 member(s). | beam 128344:
+    coped by 2 member(s). | beam 128372: coped by 2 member(s). | beam 128397: coped by 2 member(s).
+    | beam 128432: coped by 2 member(s). | beam 128473: coped by 2 member(s). | beam 132740:
+    coped by 16 member(s). | beam 132741: coped by 16 member(s). | beam 132742: coped by 4
+    member(s). | beam 132744: coped by 4 member(s). | beam 132745: coped by 4 member(s). |
+    beam 132746: coped by 4 member(s). | beam 132748: coped by 4 member(s). | beam 132749:
+    coped by 6 member(s). | beam 132750: coped by 6 member(s). | beam 132751: coped by 6 member(s).
+    | beam 132752: coped by 6 member(s). | beam 132753: coped by 6 member(s). | beam 132754:
+    coped by 6 member(s). | beam 133227: coped by 16 member(s). | beam 133228: coped by 16
+    member(s). | beam 133229: coped by 5 member(s). | beam 133230: coped by 5 member(s). |
+    beam 133231: coped by 5 member(s). | beam 133232: coped by 5 member(s). | beam 133233:
+    coped by 5 member(s). | beam 133234: coped by 7 member(s). | beam 133235: coped by 6 member(s).
+    | beam 133236: coped by 7 member(s). | beam 133237: coped by 7 member(s). | beam 133238:
+    coped by 7 member(s). | beam 133239: coped by 7 member(s). | beam 187046: coped by 9 member(s).
+    | beam 187137: coped by 8 member(s).. inputs came elements from select-by-category-name
+    (159). on Structure Night Test'
+  negative_case: 'run with categoryName=Grids, inViewOnly=EngineeringPlan: 02 - Floor instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running select-by-category-name with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    alreadyCoped 0, columnCategory 1 item(s) [id -2001330], coped 0, copedIds 0 item(s), findings
+    28 item(s) [0 coping cut(s) made and read back on 0 beam(s); 0 already t..., 118715: not
+    structural framing., 118716: not structural framing., ...], framingCategory 1 item(s)
+    [id -2001320], lines 27 item(s) [118715: not structural framing., 118716: not structural
+    framing., 118717: not structural framing., ...], report 118715: not structural framing.
+    | 118716: not structural framing. | 118717: not structural framing. | 118718: not structural
+    framing. | 118719: not structural framing. | 118720: not structural framing. | 118721:
+    not structural framing. | 118722: not structural framing. | 118723: not structural framing.
+    | 118724: not structural framing. | 118725: not structural framing. | 118726: not structural
+    framing. | 118727: not structural framing. | 118728: not structural framing. | 118729:
+    not structural framing. | 118730: not structural framing. | 118731: not structural framing.
+    | 118732: not structural framing. | 118733: not structural framing. | 118734: not structural
+    framing. | 118735: not structural framing. | 118736: not structural framing. | 119464:
+    not structural framing. | 119778: not structural framing. | 119916: not structural framing.
+    | 125791: not structural framing. | 127020: not structural framing.. inputs came elements
+    from select-by-category-name (27). on Structure Night Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: c0402eea5b165bdd
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

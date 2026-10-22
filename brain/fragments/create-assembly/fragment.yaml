@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-GRP-033
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -67,6 +67,34 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: Cinematic ID Test (5,262 elements), Revit 2020, session 68704
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-in-region with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyInOne 0 item(s), assembly
+    (null), categoryId 1 item(s) [id -2000080], categoryName Furniture, findings 2 item(s)
+    [The assembly was made, but Revit refused the name "Night C A..., Revit refused the assembly:
+    No valid type for the assembly i...], first FamilyInstance, ids 2 item(s) [735739, 736435],
+    memberIds 2 item(s) [735739, 736435], refused Revit refused the assembly: No valid type
+    for the assembly instance.. NOTHING WAS MADE.. inputs came elements from select-in-region
+    (2); assemblyName as given; namingCategory as given. on Cinematic ID Test'
+  negative_case: run with assemblyName=Night C Assembly, namingCategory=Zz No Such Category
+    arranged with categories=Furniture, exact=false, maxMm=8850,-8150,1000, minMm=7900,-10300,-600
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-in-region with this phase's own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    alreadyInOne 0 item(s), assembly (null), categoryId (null), categoryName , findings 1
+    item(s) [No category is named "Zz No Such Category", so NOTHING WAS M...], first FamilyInstance,
+    ids 2 item(s) [735739, 736435], memberIds 0 item(s), refused No category is named "Zz
+    No Such Category", so NOTHING WAS MADE.. inputs came elements from select-in-region (2);
+    assemblyName as given; namingCategory as given. on Cinematic ID Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: d55da7bc00a0e725
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

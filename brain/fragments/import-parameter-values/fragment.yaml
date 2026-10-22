@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -185,51 +185,50 @@ contract:
 # NEEDS-CHECKING Group HZ proves version 5 (D-30). Every value that is not an
 # element reference still takes the road this proof ran.
 proof:
-  date: '2026-10-18'
+  date: '2026-10-21'
   by: Ajmal PS
-  model: Project1 (3,081 elements), Revit 2020, session 30308
+  model: Cinematic ID Test (5,262 elements), Revit 2020, session 68704
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned blankCellsSkipped
-    0, blankMode skip, blankWord skip, byId 5 entry(ies), cellsCleared 0, changedOnRegeneration
-    0, findings 3 item(s) [5 value(s) written across 5 matched row(s). Every value writ...,
+    select-by-category-name with this phase''s own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned blankCellsSkipped
+    0, blankMode skip, blankWord skip, byId 24 entry(ies), cellsCleared 0, changedOnRegeneration
+    0, findings 3 item(s) [1 value(s) written across 1 matched row(s). Every value writ...,
     Skipped: 0 because the parameter is not there, 0 because the..., 0 blank cell(s) skipped
     - those elements keep the value they...], includeTypeParameters false, isYesNo Func`2,
-    pending 5 item(s) [(Autodesk.Revit.DB.Wall, Comments, 2, HERON CSV 1, , HERON C..., (Autodesk.Revit.DB.Wall,
-    Comments, 3, HERON CSV 2, , HERON C..., (Autodesk.Revit.DB.Wall, Comments, 4, HERON CSV
-    3, , HERON C..., ...], pendingAt 5 entry(ies), quotingIsBroken false, readBack 0 item(s),
-    readOf Func`3, rowFindings , rowsMatched 5, rowsUnmatched 0, splitRecords Func`2, splitRow
-    Func`2, tickOf Func`2, tickedWords 4 item(s) [yes, true, on, ...], untickedWords 4 item(s)
-    [no, false, off, ...], valuesRejected 0, valuesWritten 5, yesNoProperty (null), yesNoRoute
-    ParameterType, yesNoSpec (null), yesNoSpecs (null). inputs came elements from the selection
-    (5); csvPath as given; includeTypeParameters as given; blankCells as given. on Project1'
-  negative_case: 'run with blankCells=skip, categoryName=Walls, csvPath=C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/params-negative.csv,
+    materialSpec (null), materialSpecProperty (null), namedElements 617 item(s) [(material,
+    , Default, 23), (material, , Default Wall, 24), (material, , Default Roof, 25), ...],
+    pending 1 item(s) [(Autodesk.Revit.DB.Wall, Top Constraint, 2, Roof Line, , Up ...], pendingAt
+    1 entry(ies), quotingIsBroken false, readBack 0 item(s), readOf Func`3, referenceAt 1
+    entry(ies), referenceByName Func`3, rowFindings , rowsMatched 1, rowsUnmatched 0, splitRecords
+    Func`2, splitRow Func`2, tickOf Func`2, tickedWords 4 item(s) [yes, true, on, ...], untickedWords
+    4 item(s) [no, false, off, ...], valuesRejected 0, valuesWritten 1, yesNoProperty (null),
+    yesNoRoute ParameterType, yesNoSpec (null), yesNoSpecs (null). inputs came elements from
+    select-by-category-name (24); csvPath as given; includeTypeParameters as given; blankCells
+    as given. on Cinematic ID Test'
+  negative_case: 'run with blankCells=skip, categoryName=Walls, csvPath=C:/Users/ajmal/AppData/Local/Temp/heron-work/night/files-D/import-negative.csv,
     inViewOnly=FloorPlan: Level 1, includeTypeParameters=False instead - chosen because it
     should not contain what this fragment reports - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned blankCellsSkipped
-    0, blankMode skip, blankWord skip, byId 5 entry(ies), cellsCleared 0, changedOnRegeneration
-    0, findings 8 item(s) [0 value(s) written across 5 matched row(s). Every value writ...,   row
-    2: no parameter called ''ZZZNOTHINGHERE'' on id 345492 -...,   row 3: no parameter called
-    ''ZZZNOTHINGHERE'' on id 345493 -..., ...], includeTypeParameters false, isYesNo Func`2,
+    select-by-category-name with this phase''s own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned blankCellsSkipped
+    0, blankMode skip, blankWord skip, byId 24 entry(ies), cellsCleared 0, changedOnRegeneration
+    0, findings 4 item(s) [0 value(s) written across 1 matched row(s). Every value writ...,   row
+    2: ''No Such Level'' for ''Top Constraint'' on id 707722 -..., Skipped: 0 because the
+    parameter is not there, 0 because the..., ...], includeTypeParameters false, isYesNo Func`2,
+    materialSpec (null), materialSpecProperty (null), namedElements 617 item(s) [(material,
+    , Default, 23), (material, , Default Wall, 24), (material, , Default Roof, 25), ...],
     pending 0 item(s), pendingAt 0 entry(ies), quotingIsBroken false, readBack 0 item(s),
-    readOf Func`3, rowFindings row 2: no parameter called ''ZZZNOTHINGHERE'' on id 345492
-    - fix the header, or the category has not got that parameter at all | row 3: no parameter
-    called ''ZZZNOTHINGHERE'' on id 345493 - fix the header, or the category has not got that
-    parameter at all | row 4: no parameter called ''ZZZNOTHINGHERE'' on id 345494 - fix the
-    header, or the category has not got that parameter at all | row 5: no parameter called
-    ''ZZZNOTHINGHERE'' on id 345495 - fix the header, or the category has not got that parameter
-    at all | row 6: no parameter called ''ZZZNOTHINGHERE'' on id 345496 - fix the header,
-    or the category has not got that parameter at all, rowsMatched 5, rowsUnmatched 0, splitRecords
-    Func`2, splitRow Func`2, tickOf Func`2, tickedWords 4 item(s) [yes, true, on, ...], untickedWords
-    4 item(s) [no, false, off, ...], valuesRejected 0, valuesWritten 0, yesNoProperty (null),
-    yesNoRoute ParameterType, yesNoSpec (null), yesNoSpecs (null). inputs came elements from
-    the selection (5); csvPath as given; includeTypeParameters as given; blankCells as given.
-    on Project1'
+    readOf Func`3, referenceAt 0 entry(ies), referenceByName Func`3, rowFindings row 2: ''No
+    Such Level'' for ''Top Constraint'' on id 707722 - no level in this model is called ''No
+    Such Level''. Names are matched exactly. Left as it was, rowsMatched 1, rowsUnmatched
+    0, splitRecords Func`2, splitRow Func`2, tickOf Func`2, tickedWords 4 item(s) [yes, true,
+    on, ...], untickedWords 4 item(s) [no, false, off, ...], valuesRejected 0, valuesWritten
+    0, yesNoProperty (null), yesNoRoute ParameterType, yesNoSpec (null), yesNoSpecs (null).
+    inputs came elements from select-by-category-name (24); csvPath as given; includeTypeParameters
+    as given; blankCells as given. on Cinematic ID Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 54d4e6bf68d40f09
+  fingerprint: e8fb7e0e7511ef70
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
