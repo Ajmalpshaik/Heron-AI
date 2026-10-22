@@ -35,6 +35,16 @@
 // one that does not read as asked fails the call, and the host rolls the whole
 // call back.
 //
+// VERSION 3 (2026-10-21): LIGHT SOURCE - the tick a Lighting Fixtures family
+// needs before it has a light source to define, done by hand until then. Revit's
+// switch for it is the built-in LIGHTING_FIXTURE_LIGHT_EMITTER ("Light Emitter"
+// in the reference, the only Family-level light switch there, 2020 to 2027),
+// and whether it is the box Family Category and Parameters calls Light Source is
+// not in the reference - so the tick is PROVED, not trusted: after the write,
+// Revit's lighting API must find a light source in the family, or the call
+// fails and nothing is kept. Only YES is taken. Unticking removes the light
+// source and every photometric value with it - by hand, never by Heron.
+//
 // VERSION 2 (2026-10-11): ONE SETTING THAT TAKES TEXT - THE OMNICLASS NUMBER
 // ("Classification Number" from Revit 2026), the code a schedule, an export or
 // a library sorts the family by. Only a code the classification file files
@@ -68,6 +78,9 @@ var switches = new List<Tuple<string, string, BuiltInParameter>>
     Tuple.Create("rotatewithcomponent", "Rotate with Component", BuiltInParameter.FAMILY_ROTATE_WITH_COMPONENT),
     Tuple.Create("keeptextreadable", "Keep Text Readable", BuiltInParameter.FAMILY_KEEP_TEXT_READABLE),
     Tuple.Create("enablecuttinginviews", "Enable Cutting in Views", BuiltInParameter.FAMILY_ENABLE_CUTTING_IN_VIEWS),
+    // VERSION 3: the Light Source tick of a Lighting Fixtures family - proved
+    // after the write by Revit's lighting API finding a light source.
+    Tuple.Create("lightsource", "Light Source", BuiltInParameter.LIGHTING_FIXTURE_LIGHT_EMITTER),
     Tuple.Create("parttype", "Part Type", BuiltInParameter.FAMILY_CONTENT_PART_TYPE),
     Tuple.Create("profileusage", "Profile Usage", BuiltInParameter.FAM_PROFILE_USAGE),
     Tuple.Create("materialformodelbehavior", "Material for Model Behavior", BuiltInParameter.FAMILY_STRUCT_MATERIAL_TYPE),
@@ -128,6 +141,25 @@ Func<Parameter, int?> stored = p =>
     catch (Exception) { return null; }
 };
 Func<int?, string> yesNo = v => v == 1 ? "Yes" : v == 0 ? "No" : "unread";
+
+// VERSION 3: does Revit's lighting API find a light source in this family? Its
+// classes live in a namespace the executor does not import, so they are found
+// by name; null when it does, Revit's reason when it does not.
+Func<string> noLightSource = () =>
+{
+    var lightFamilyType = typeof(Document).Assembly.GetType(typeof(Document).Namespace + ".Lighting.LightFamily");
+    if (lightFamilyType == null) return "Revit's lighting classes could not be found in this release";
+    try
+    {
+        lightFamilyType.GetMethod("GetLightFamily", new[] { typeof(Document) }).Invoke(null, new object[] { doc });
+        return null;
+    }
+    catch (System.Reflection.TargetInvocationException ex)
+    {
+        return ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+    }
+    catch (Exception ex) { return ex.Message; }
+};
 
 // ---------------------------------------------------------------------------
 // VERSION 2: THE OMNICLASS NUMBER
@@ -347,11 +379,23 @@ else
                 problems.Add("\"" + (pair.Value ?? "") + "\" for " + match.Item2 + " is neither yes nor no.");
                 continue;
             }
+            if (match.Item1 == "lightsource" && value == 0)
+            {
+                problems.Add("Light Source is not unticked by Heron: unticking removes the light source and every "
+                    + "photometric value of every type with it. Untick it by hand in Family Category and Parameters if "
+                    + "that is meant.");
+                continue;
+            }
             var row = family.get_Parameter(match.Item3);
             if (row == null || row.StorageType != StorageType.Integer)
             {
                 problems.Add("This family's category, " + (family.FamilyCategory == null ? "unknown"
-                    : family.FamilyCategory.Name) + ", has no " + match.Item2 + " setting.");
+                    : family.FamilyCategory.Name) + ", has no " + match.Item2 + " setting"
+                    + (match.Item1 == "lightsource"
+                        ? " that Revit hands the API (LIGHTING_FIXTURE_LIGHT_EMITTER) - a light source belongs to a "
+                          + "Lighting Fixtures family (SET_FAMILY_CATEGORY first); if it already is one, tick Light Source "
+                          + "by hand in Family Category and Parameters"
+                        : "") + ".");
                 continue;
             }
             plans.Add(Tuple.Create(match, value));
@@ -443,6 +487,24 @@ if (refused == null)
             throw new InvalidOperationException(plan.Item1.Item2 + " reads " + wordsFor(plan.Item1.Item1, now)
                 + " after the call, not " + wordsFor(plan.Item1.Item1, plan.Item2) + ". The call failed, and Heron "
                 + "rolls the whole call back.");
+    }
+
+    // VERSION 3: LIGHT SOURCE READING YES IS NOT ENOUGH - Revit's lighting API
+    // must now find a light source, or the switch written was not the tick.
+    if (plans.Any(p => p.Item1.Item1 == "lightsource"))
+    {
+        var why = noLightSource();
+        var wasOn = before.Any(b => b.Item1.Item1 == "lightsource" && b.Item2 == 1);
+        if (why != null && !wasOn)
+            throw new InvalidOperationException("Light Source reads Yes after the call, but Revit's lighting API still "
+                + "finds no light source in this family (" + why + ") - the switch Heron wrote is not the Light Source "
+                + "tick here. The call failed, and Heron rolls the whole call back; tick Light Source by hand in Family "
+                + "Category and Parameters.");
+        findings.Add(why == null
+            ? "Light Source is ticked and Revit's lighting API finds the light source - SET_FAMILY_LIGHT_SOURCE sets its "
+              + "shape, distribution, position and aim, then each type's intensity and colour."
+            : "Light Source already read Yes, yet Revit's lighting API finds no light source in this family (" + why
+              + ") - nothing was written. Look at Family Category and Parameters by hand.");
     }
 
     foreach (var was in before)

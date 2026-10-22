@@ -39,13 +39,31 @@ purpose: >
      manufacturer gives one.
   2. THE BODY as FAMILY-CREATION steps 2 to 8 - parameters, planes, labels,
      forms locked to planes - with the opening the light leaves by.
-  3. THE LIGHT SOURCE BOX: the modeller ticks Light Source in Family Category
-     and Parameters by hand - no call sets it. Then SET_FAMILY_LIGHT_SOURCE:
-     the shape and its size, the distribution (spot angles, or the IES file),
-     the lumens and the colour temperature; it reads back what Type
-     Properties shows. A WATTAGE IS NOT TAKEN - Revit's reference names no
-     unit for it; give lumens. One light source per family - more lights are
-     nested fixtures (PLACE_NESTED_FAMILY).
+  3. THE LIGHT SOURCE, three Heron calls in this order (version 2 of
+     SET_FAMILY_LIGHT_SOURCE, 2026-10-21 - Revit loses type values set in
+     the same transaction as the family's light source, 5b-1297):
+     a. SET_FAMILY_SETTINGS "Light Source=yes" - the tick in Family Category
+        and Parameters, proved by Revit's lighting API finding the light
+        source; a family already ticked reads "already as asked".
+     b. SET_FAMILY_LIGHT_SOURCE, the FAMILY'S light source, typeName empty:
+        the shape and its size, the distribution (spot angles, or the IES
+        file and its tilt), `position` - below the opening, touching no
+        geometry: a point in millimetres or "plane <reference plane> offset
+        -10" - and `aim`, "tilt 15 about x" for an asymmetric fitting. Every
+        type takes these.
+     c. SET_FAMILY_LIGHT_SOURCE, EACH TYPE'S values, every type or one by
+        `typeName`: the lumens - or the datasheet's wattage with its lumens,
+        "4500 lm at 35.5 W", or its efficacy, "35.5 W at 127 lm/W" - the
+        colour temperature, the light loss factor, the dimming colour shift
+        and a colour filter. Each family type is made current, written, and
+        proved from its own Type Properties; one type of several that the
+        lighting API cannot be proved to reach fails the call with the hand
+        fix, and nothing is kept.
+     It reads back what Type Properties shows, and reports every light value.
+     One light source per family - more lights are nested fixtures
+     (PLACE_NESTED_FAMILY). A shape size or angle that must DIFFER by type is
+     linked to a family type parameter first (LINK_FAMILY_PARAMETER naming
+     the Light Source element), then set per type (SET_FAMILY_TYPE_VALUES).
   4. THE POWER: ADD_FAMILY_CONNECTOR with a power system on the face the
      supply enters by, then LINK_FAMILY_PARAMETER for its Voltage, Load
      Classification and Apparent Load, so the types carry them.
@@ -55,10 +73,14 @@ purpose: >
      project: placed on its host, the light renders or shows in a lighting
      analysis, and the fixture joins a circuit.
 
-  BY HAND, NOT YET BY A HERON TOOL: the Light Source tick; MOVING or AIMING
-  the light source - it is placed below the opening touching no geometry in
-  the Family Editor, and SET_FAMILY_LIGHT_SOURCE reports where it is; a
-  wattage, until BV18 settles its unit.
+  BY HAND, BECAUSE NO REVIT API CALL REACHES IT (read 2026-10-21 in the
+  RevitAPI of every release 2020 to 2027, 5b-1299): UNTICKING Light Source -
+  it deletes the light source and every photometric value, so Heron leaves it
+  to the modeller; and, only if step 3c says so for a type Revit's lighting
+  API does not list, that type's values in Family Types - no call makes a
+  light type (5b-1298). Until Group IK runs in Revit, step 3a, the move and
+  aim of 3b and the wattage of 3c each fail safe - nothing kept, the reason
+  said - where Revit answers differently from its reference.
 
 utterances:
   - make a lighting fixture family
@@ -125,5 +147,8 @@ revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 note: >
   Written 2026-10-02 when the owner asked for everything to be checked again,
   with SET_FAMILY_LIGHT_SOURCE built the same day, from the research recorded
-  in docs/43 §10. Every step is DRAFT until it has been run on a real family
-  with a negative case (D-30).
+  in docs/43 §10. Step 3 rewritten 2026-10-21 (rows 5b-1297 to 5b-1299,
+  NEEDS-CHECKING Group IK): the tick, the position and aim, the wattage, the
+  loss factor, dimming and filter made Heron calls, and every family type
+  reached. Every step is DRAFT until it has been run on a real family with a
+  negative case (D-30).
