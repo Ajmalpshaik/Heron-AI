@@ -1,0 +1,43 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# Arrange on a SCRATCH family - never the office's own tag - the one
+# NEEDS-CHECKING Group IJ names: "Heron Label Test.rfa", a Pipe Tag made from
+# the Generic Tag template, holding ONE label (System Abbreviation, Diameter
+# with prefix "Ø", Bottom Elevation with prefix "BOP " in mm with the + sign,
+# one line) and ONE text note reading "NOT A LABEL". The counts track the
+# family (D-53): another family gives other numbers.
+
+positive:
+  - given: >
+      Heron Label Test open in the Family Editor on Revit 2020, nothing
+      narrowed
+    expect: >
+      labelCount 1, textNotes 1, textElements 2, familyCategory "Pipe Tags",
+      labelList naming the label's view, type, position in mm and width,
+      canReadParameters false, parameterCount 0, and a finding saying Revit
+      2020 cannot say which parameters a label shows
+  - given: >
+      the same family upgraded on a copy, open on Revit 2027, nothing
+      narrowed
+    expect: >
+      labelCount 1, canReadParameters true, parameterCount 3, parameterList
+      in the label's order - System Abbreviation, Diameter with prefix "Ø",
+      Bottom Elevation with prefix "BOP " - each with its sample value and
+      break no; Bottom Elevation's unit format as Edit Label shows it, or a
+      recorded difference
+
+negative:
+  - given: >
+      the same family, labelContains "ZZZ_Not_A_Label"
+    expect: >
+      labelCount 0 with textElements STILL 2 - the family was read - labelList
+      empty, and a finding that no label holds that text. THIS IS THE FIRST
+      CASE TO RUN
+  - given: >
+      a project open in front instead of a family
+    expect: >
+      notAFamily true, labelCount 0, and a finding saying labels live in a
+      family open in the Family Editor - nothing read, nothing changed
+
+second_route:
+  - pick the label in the Family Editor - Properties shows its type, and Edit Label lists its parameters in order with sample value, prefix, suffix, spaces, break and each one's unit format
+  - Revit Lookup on the label - its class (TextElement on 2020 to 2026, AnnotationLabel on 2027) and Coord

@@ -1,0 +1,170 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-053
+semantic-identity: "every label in the tag, annotation or title block family open in the Family Editor - where it is, its type, width and alignment, and on Revit 2027 the parameters it shows in order with each one's sample value, prefix, suffix, spaces, break and unit format"
+kind: action
+domain: revit.families
+capability: REPORT_FAMILY_LABELS
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-21: Ajmal PS, building the pipe tag TRG_Pipe_Tag on Revit 2020,
+# found Heron could not touch a label at all - every tag and title block went
+# through the Edit Label dialog by hand - and asked for labels end to end:
+# made, placed, edited, read. Nothing read one - checked by grep of
+# brain/fragments, DRAFT and PROVEN alike. LABEL_FAMILY_DIMENSION and
+# LABEL_FAMILY_RADIUS tie a DIMENSION to a parameter, a different "label".
+# Proof plan: NEEDS-CHECKING Group IJ.
+#
+# WHAT REVIT'S API GIVES, PER RELEASE - read off all eight releases' shipped
+# assemblies on 2026-10-21 (docs/43 section 8.3a). 2020 to 2026: a label is a
+# text element with no members of its own - where, type, width, alignment,
+# text. 2027: AnnotationLabel, whose GetParameterFormatting() lists the
+# parameters in order with sample value, prefix, suffix, spaces and break -
+# READ only; every setter, and AnnotationLabel.Create, is internal.
+#
+# CONSIDERED AND NOT WIDENED. REPORT_FAMILY_TEMPLATE (PROVEN) reads the kind,
+# planes, views and types of the family - labels are another question, and a
+# change under its impl/ would make its proof stale for a job it does not do.
+# REPORT_FAMILY_PARAMETERS (PROVEN) lists the family's OWN parameters; a tag's
+# label shows the TAGGED category's parameters, which that list never holds.
+# REPORT_TAGS_AND_TARGETS reads tags placed in a project, not the family.
+#
+# THE READ-FIRST STEP of every label job - SET_FAMILY_LABEL_LAYOUT,
+# CHANGE_ELEMENT_TYPE on a label, COPY_LABELS_FROM_FAMILY - and of the
+# tag-family-creation method.
+
+purpose: >
+  Lists every label in the family open in the Family Editor - a tag, a
+  generic annotation, a title block, any category - with where it sits in
+  millimetres, its view, its label type and the label types it can take, its
+  width, horizontal and vertical alignment, angle, Keep Readable, what its
+  Visible is linked to, and the text Revit gives for it. labelContains narrows
+  the list. Text notes are counted and left out: they are not labels.
+
+  **WHICH PARAMETERS A LABEL SHOWS, AND HOW - REVIT 2027 ONLY.** On 2027 each
+  label's parameters come back in the label's order: the parameter's name and
+  whether it is built-in, shared with its GUID or the family's own, its sample
+  value, prefix, suffix, spaces before it, whether it starts a new line, and
+  its unit format - units, rounding, symbol, + sign, digit grouping, as a
+  Bottom Elevation label in millimetres with the + sign shows it - as Revit
+  returns it for that label. Revit 2020 to 2026 have no way to read
+  those, and the answer says so rather than guessing from the text.
+
+  **IT NEVER CHANGES A LABEL.** Run it before moving, sizing or copying one.
+
+# A READ, AND ONLY A READ. No transaction is opened.
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Part of a label's text - or, on 2027, of a parameter's name, sample
+    # value, prefix or suffix - such as "Diameter"; several with commas or
+    # semicolons between, any one matches, ignoring case. Left out, "all":
+    # every label.
+    - name: labelContains
+      type: string
+      source: request
+      optional: true
+      absent: all
+  provides:
+    - name: labelCount
+      # Labels listed, after narrowing. Tracks the family (D-53).
+      role: result
+      type: int
+    - name: labelIds
+      # The ids of the labels listed, for SET_FAMILY_LABEL_LAYOUT and
+      # CHANGE_ELEMENT_TYPE.
+      role: result
+      type: IList<ElementId>
+    - name: labelList
+      # One line per label, joined by "  ||  ": id | view | type | at x,y mm |
+      # width mm | horizontal/vertical alignment | angle | keep readable |
+      # visible | text. A string, because a list reaches a chat as its first
+      # three.
+      role: result
+      type: string
+    - name: parameterCount
+      # Parameters read from the labels listed, on 2027. 0 on 2020 to 2026,
+      # with a finding saying that Revit cannot read them.
+      role: result
+      type: int
+    - name: parameterList
+      # On 2027, one line per parameter per label, in the label's order,
+      # joined by "  ||  ": name (kind) | sample | prefix | suffix | spaces |
+      # break | unit format. Empty on 2020 to 2026.
+      role: result
+      type: string
+    - name: labelProperties
+      # Every parameter Revit shows on each label element itself, name=value,
+      # one line per label - what Properties shows when the label is picked.
+      role: accounting
+      type: string
+    - name: labelTypes
+      # The label types of the labels listed and every type they can take,
+      # by name - what CHANGE_ELEMENT_TYPE is given.
+      role: accounting
+      type: string
+    - name: canReadParameters
+      # true on Revit 2027 and later; false on 2020 to 2026.
+      role: accounting
+      type: bool
+    - name: familyCategory
+      role: accounting
+      type: string
+    - name: textElements
+      # Text elements looked at - labels and text notes. Work done, never a
+      # thing found (D-52).
+      role: accounting
+      type: int
+    - name: textNotes
+      # Text notes looked at and left out.
+      role: accounting
+      type: int
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  TextElement's Coord, Width, BaseDirection, HorizontalAlignment,
+  VerticalAlignment, KeepRotatedTextReadable and Text, Element.GetTypeId,
+  GetValidTypes and GetParameterFormatOptions, FamilyManager.
+  GetAssociatedFamilyParameter, Family.FamilyCategory and
+  BuiltInParameter.IS_VISIBLE_PARAM read the same 2020 to 2027
+  (tools/api-surface --members, all eight, 2026-10-21). TextElement's only
+  public subclass is TextNote on 2020 to 2026, and TextNote and
+  AnnotationLabel on 2027. AnnotationLabel, AnnotationLabelParameterFormatting
+  (SampleText, Prefix, Suffix, LeadingSpaces, LeadingLineBreak,
+  GetParameterDefinition) and FormatOptions.GetUnitTypeId / GetSymbolTypeId
+  with LabelUtils.GetLabelForUnit / GetLabelForSymbol are read under
+  #if REVIT2027_OR_GREATER - AnnotationLabel is in no earlier release.
+
+# ROUTING - the same rows are in SET_FAMILY_LABEL_LAYOUT,
+# COPY_LABELS_FROM_FAMILY and LABEL_FAMILY_DIMENSION.
+#
+#   "read the labels in this tag family"                    -> here
+#   "which parameters does this label show"                 -> here (2027)
+#   "what prefix and suffix are on the diameter label"      -> here (2027)
+#   "move the diameter label 5 mm up"                       -> SET_FAMILY_LABEL_LAYOUT
+#   "copy the labels from the seed pipe tag"                -> COPY_LABELS_FROM_FAMILY
+#   "label this dimension with Width"                       -> LABEL_FAMILY_DIMENSION
+#   "tag the pipes in this view"                            -> TAG_ELEMENTS_IN_VIEW
+
+utterances:
+  - read the labels in this tag family
+  - which parameters does this label show and in what order
+  - what is the sample value prefix and suffix of each label parameter
+  - show the unit format of the label parameters in this family
+  - list the labels in this title block family

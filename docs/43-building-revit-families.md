@@ -197,7 +197,7 @@ built.
 | Pattern-based curtain panel | `IsCurtainPanelFamily` true, with reference points in it - only a conceptual family holds them, and the flag alone is not trusted to tell it from a classic curtain wall panel (BV1) | applied to a divided surface, one per cell | a tile pattern grid, its points and lines (**SOURCED**) | `pattern-based-family-creation` |
 | Detail item / line-based detail | `ViewBased` / `CurveBasedDetail` | in one view; the line-based one with two clicks | its view, its planes | `detail-family-creation` |
 | Profile | the Profiles category | chosen in a sweep, wall sweep, reveal, railing or mullion | one plan view and two planes (**SOURCED**) | `profile-family-creation` |
-| Annotation, tag, title block | an annotation category | in a view or on a sheet | its view | `detail-family-creation` - labels are by hand, §8.3 |
+| Annotation, tag, title block | an annotation category | in a view or on a sheet | its view | `detail-family-creation`; a tag `tag-family-creation` - labels by hand or copied from a seed, §8.3 |
 
 **Which template to start from - the order that decides it.** **SOURCED** (Autodesk's content team, via The
 Building Coder): decide by FUNCTION first - is it hosted, and on what; if not, is it level-based, two-level,
@@ -546,10 +546,75 @@ for both. Before 2024 a filled region type with its Masking box ticked hides wha
 
 **8.3 Annotations, tags and title blocks - the one wall (SOURCED, API).** A **LABEL** - the text that shows a
 parameter's value - **cannot be created through Revit's API on any release from 2020 to 2027**: there is no
-call for it, Autodesk's developers said so, and 2027 adds only a read-only `AnnotationLabel`. A text note can be
-placed in a family's view where the family allows text. So a tag or title block is made by hand, or from a seed
-family that already holds its labels - and a Heron skill says so BEFORE starting, never after. Rotate with
-Component, Keep Text Readable and, from 2021, Rotate Text with Component are the family's own switches.
+public call for it, and 2027 adds a public `AnnotationLabel` that READS a label and nothing more. A text note
+can be placed in a family's view where the family allows text. So a tag or title block gets its labels by
+hand, or copied from a seed family of the same category that already holds them (§8.3a) - and a Heron skill
+says so BEFORE starting, never after. Rotate with Component, Keep Text Readable and, from 2021, Rotate Text with
+Component are the family's own switches.
+
+**8.3a Labels, member by member, 2020 to 2027 (API, read 2026-10-21).** Asked by Ajmal PS while building the
+pipe tag *TRG_Pipe_Tag* on Revit 2020: can Heron make, place, edit and read a label - its parameters in order,
+each one's sample value, prefix, suffix, spaces, break, and its unit format (*Edit parameter's unit format*:
+units, rounding, symbol, + sign, digit grouping). Read off the shipped reference assemblies of all eight
+releases with [`tools/api-surface`](../tools/api-surface/) (`--dump` and `--members`, the cache
+[`tools/check-api-surface.py`](../tools/check-api-surface.py) fills), and for 2027 every package from
+2027.0.0 to 2027.3.0 with each member's visibility - public or internal - and `RevitAPI.xml`'s text.
+
+| What the Edit Label dialog does | 2020 - 2026 | 2027 (2027.0.0 to 2027.3.0) |
+|---|---|---|
+| Find the labels in a family | No class of their own. `TextElement`'s one public subclass is `TextNote`, so a label is a text element that is not a text note. **UNSURE** that Revit hands a label back that way - row IJ1 | `AnnotationLabel : TextElement`, public |
+| Which parameters it shows, in order | **No member** | `GetParameterFormatting()`, in the label's order; each entry's `GetParameterDefinition(doc)` names the parameter. Public, read |
+| Sample value | No member | `SampleText` - read public, **set internal** |
+| Prefix, suffix | No member | `Prefix`, `Suffix` - read public, set internal |
+| Spaces | No member | `LeadingSpaces` - read public, set internal |
+| Break (a new line before it) | No member | `LeadingLineBreak` - read public, set internal |
+| Wrap between parameters only | No member | `UseNonBreakingSpaces` - read public, set internal |
+| Unit format of one parameter | `Element.GetParameterFormatOptions(ElementId)` exists, but needs the parameter's id, which nothing here gives | The same call, with the id the definition gives. Whether it returns the label's own override is **UNSURE** - row IJ3. **No release has a setter**: `SetParameterFormatOptions` is in none |
+| Make a label | **No member on any release.** `FamilyItemFactory` has no label call | `AnnotationLabel.Create(doc, viewId, position, formatting, typeId)` and `CanCreateAnnotationLabels` **exist and are INTERNAL** in every 2027 package; `RevitAPI.xml` documents them as if public |
+| Change its parameters, sample, prefix, suffix, spaces, break | No member | `SetParameterFormatting`, every setter, and the `AnnotationLabelParameterFormatting(Document, InternalDefinition)` constructor - **all internal** |
+| Move it | `TextElement.Coord` read and set; `ElementTransformUtils.MoveElement` | the same |
+| Its width | `TextElement.Width` read and set, inside `GetMinimumAllowedWidth` and `GetMaximumAllowedWidth` | the same |
+| Horizontal and vertical alignment | `HorizontalAlignment` (Left, Center, Right), `VerticalAlignment` (Top, Middle, Bottom), read and set | the same |
+| Keep Readable | `KeepRotatedTextReadable`, read and set | the same |
+| Its label type | `Element.ChangeTypeId` to one of `GetValidTypes()`; the type's own properties are a text type's | the same |
+| Its text | `TextElement.Text` read and set. What it returns for a label, and what setting it does, is **UNSURE** - Heron never sets it | the same |
+| Copy one | `ElementTransformUtils.CopyElements(View, ids, View, Transform, CopyPasteOptions)`. Revit's own failure `FamilyFailures.CannotPasteLabelsAcrossFamilies` - *"Can't paste Labels across Families of different Categories"* - is in every release, so Revit itself pastes a label only between families of ONE category | the same |
+| Start the Label tool for the modeller | `PostableCommand.Label` - places nothing; the modeller clicks and fills the dialog | the same |
+
+**What that means for a modeller, plainly.**
+
+- **Made**: by hand on every release, or copied from a seed family of the same category (§8.3b). Not by the
+  API - on 2027 the call is there and Autodesk has not opened it. **Heron does not call an internal member**:
+  it is not part of the API an add-in is given, can change in any update without notice, and nothing could
+  prove it stays safe. When a release makes `AnnotationLabel.Create` public, `tools/api-surface --members
+  AnnotationLabel` shows it and a `CREATE_FAMILY_LABEL` for that release is a small job.
+- **Read**: on every release, where it is, its type, width, alignment and what Revit says its text is; on
+  **2027 only**, its parameters in order, each one's sample value, prefix, suffix, spaces and break, and -
+  UNSURE - its unit format. `REPORT_FAMILY_LABELS`.
+- **Edited**: on every release, its position, width, alignment and Keep Readable
+  (`SET_FAMILY_LABEL_LAYOUT`), and its type (`CHANGE_ELEMENT_TYPE`). **Never through the API on any release**:
+  which parameters it shows, their order, sample value, prefix, suffix, spaces, break, unit format and
+  Wrap between parameters only. Those are the Edit Label dialog's, by hand.
+- **UI automation of the Edit Label dialog** was assessed and not built: [Q-82](OPEN-QUESTIONS.md).
+
+**8.3b The seed route - copy a label that is already right (DRAFT, NEEDS REAL REVIT).**
+`COPY_LABELS_FROM_FAMILY` copies labels view to view from a seed family open in the same Revit into the family
+in front, refuses a seed of another category in Revit's own words, puts the first label at a point, and reads
+each copy back against its seed - on 2027 parameter by parameter. **Whether a copied label keeps its parameter
+binding, sample value, prefix, suffix and unit format is measured by NEEDS-CHECKING
+[Group IJ](needs-checking/group-ij.md), not claimed here.** If it does, the seed library is small and made once
+by hand, in Revit, per office:
+
+| Seed family (one per tag category, made from that category's tag template) | One label per line, sample value set, each from Edit Label |
+|---|---|
+| `Heron Seed - Pipe Tags.rfa` | System Abbreviation · Diameter, prefix `Ø` · Bottom Elevation, prefix `BOP `, mm, + sign · Top Elevation, prefix `TOP ` · Centerline Elevation, prefix `CL ` · Size · Length · Slope · Type Mark · Comments |
+| `Heron Seed - Duct Tags.rfa` | System Abbreviation · Size · Width x Height · Diameter, prefix `Ø` · Bottom Elevation, prefix `BOD ` · Flow · Velocity · Type Mark · Comments |
+| `Heron Seed - Mechanical Equipment Tags.rfa` | Mark · Type Mark · Family Name · Type Name · Comments, and the office's shared parameters for capacity and power |
+| `Heron Seed - Title Blocks.rfa` | Sheet Number · Sheet Name · Drawn By · Checked By · Sheet Issue Date · Project Name · Project Number · Current Revision |
+
+One label per line, so a copy picks exactly one; the office's own shared parameters go into the seed from the
+office's shared parameter file, so the GUID that travels is the office's. The library is the office's to keep
+where it keeps families; Heron names no folder for it.
 
 ---
 
@@ -657,6 +722,7 @@ Source category with `ElementTransformUtils` and reads the transform back (**UNS
 | Adaptive component | [`adaptive-family-creation`](../brain/skills/adaptive-family-creation.yaml) | `PLACE_ADAPTIVE_POINTS` (free or hosted), `DRAW_FAMILY_POINT_CURVES`, `CREATE_CONCEPTUAL_FORM` (a sweep along a path for a two-point beam) |
 | Profile | [`profile-family-creation`](../brain/skills/profile-family-creation.yaml) | `DRAW_FAMILY_DETAIL_LINES`, `SET_FAMILY_SETTINGS` (Profile Usage), `SET_FAMILY_SWEEP_PROFILE` |
 | Detail item, annotation symbol | [`detail-family-creation`](../brain/skills/detail-family-creation.yaml) | `DRAW_FAMILY_DETAIL_LINES`, `DRAW_FAMILY_FILLED_REGION` |
+| Tag - pipe, duct, equipment, any tag category | [`tag-family-creation`](../brain/skills/tag-family-creation.yaml) | `REPORT_FAMILY_LABELS`, `COPY_LABELS_FROM_FAMILY`, `SET_FAMILY_LABEL_LAYOUT` (DRAFT, Group IJ), with the category, line, type and load tools already built |
 | Duct or pipe fitting | [`mep-fitting-family-creation`](../brain/skills/mep-fitting-family-creation.yaml) | `SET_FAMILY_SETTINGS` (Part Type) with the size table and connector tools already built, `SET_FAMILY_CONNECTOR_ROLES` |
 | Door, window, curtain wall door | [`door-window-family-creation`](../brain/skills/door-window-family-creation.yaml) | `REPORT_FAMILY_TEMPLATE`, `ADD_FAMILY_TYPE_PARAMETER`, `ADD_FAMILY_FLIP_CONTROL` with the form, symbol and nesting tools already built |
 | Structural framing, structural column | [`structural-family-creation`](../brain/skills/structural-family-creation.yaml) | `REPORT_FAMILY_TEMPLATE`, `SET_FAMILY_SETTINGS` (Material for Model Behavior, Section Shape) with the extrusion, lock and delete tools already built |
@@ -667,7 +733,7 @@ Source category with `ElementTransformUtils` and reads the transform back (**UNS
 | Not built | Why |
 |---|---|
 | A part that rotates about a reference line | No documented call gives a reference line's planes (§9) |
-| A label in a tag, symbol or title block | Revit's API cannot make one on any release (§8.3) |
+| A label in a tag, symbol or title block | Revit's API cannot make one on any release, and cannot change what one shows (§8.3a). **Built 2026-10-21, DRAFT:** `REPORT_FAMILY_LABELS` reads them (their parameters on 2027 only), `SET_FAMILY_LABEL_LAYOUT` moves and sizes them, `COPY_LABELS_FROM_FAMILY` copies them from a seed family of the same category (§8.3b) - owed Group IJ |
 | Setting a pattern-based panel's tile pattern | `CurtainPanelTilePattern` is read-only (§7) |
 | A point hosted on a line at a ratio; a profile on a point's plane | **Built 2026-10-02** - `PLACE_ADAPTIVE_POINTS` hosts points on a line (`NewPointOnEdge`) or on a point's own plane (`PointOnPlane.NewPointOnPlane`), and `CREATE_CONCEPTUAL_FORM` sweeps a profile along a path (`NewSweptBlendForm`) - the two-point beam; owed BV19 and BV20 |
 | A connector's primary flag, linked connectors, a light source | **Built 2026-10-02** - `SET_FAMILY_CONNECTOR_ROLES` and `SET_FAMILY_LIGHT_SOURCE`, owed BV17 and BV18. The Light Source tick, the light source's position and aim, a wattage, loss factor, dimming and filter **built 2026-10-21**, owed Group IK (§10); by hand only unticking Light Source |

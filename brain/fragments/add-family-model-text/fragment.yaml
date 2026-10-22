@@ -199,6 +199,9 @@ compatibility-note: >
 #   "set the material of the lettering"          -> SET_FAMILY_FORM_MATERIAL is
 #                                                   for FORMS; model text takes
 #                                                   material= here, as it is placed
+#   "change the label text height to 5 mm"       -> SET_TEXT_TYPE - a label's or
+#                                                   a text note's TYPE (2D);
+#                                                   model text is sized here
 
 utterances:
   - add model text to a family

@@ -131,6 +131,9 @@ compatibility-note: >
 # ROUTING (2026-10-13, the gap fill)
 #
 #   "copy the guard rail type with a 1100 top rail" -> SET_RAILING_TYPE
+#   "make a 2.5 mm text type"            -> SET_TEXT_TYPE - copies a label
+#                                        or text type BY NAME and sets its
+#                                        size in the same undo
 utterances:
   - make a new duct type
   - duplicate this type

@@ -1,0 +1,85 @@
+# NEEDS-CHECKING Group IJ - REPORT_FAMILY_LABELS, SET_FAMILY_LABEL_LAYOUT and
+# COPY_LABELS_FROM_FAMILY, DRAFT since 2026-10-21.
+#
+#     python tools/batch-prove.py tools/jobs/family-labels-ij-2026-10-21.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/family-labels-ij-2026-10-21.yaml
+#
+# NOT RUN. Written 2026-10-21 in a cloud session with no Revit: the three
+# cards are compiled for 2020 to 2027 and nothing more.
+#
+# THE ARRANGEMENT is the one docs/needs-checking/group-ij.md describes, on
+# Revit 2020, in %TEMP%\heron-work\labels-ij - SCRATCH families only, never
+# the office's tags and never a working model. All four open in one Revit:
+#
+#   "Heron Label Test"    a Pipe Tag from the Metric Generic Tag template,
+#                         category Pipe Tags, ONE label (System Abbreviation;
+#                         Diameter, prefix "Ø"; Bottom Elevation, prefix
+#                         "BOP ", mm with the + sign; one line) and ONE text
+#                         note reading NOT A LABEL
+#   "Heron Label Seed"    a Pipe Tag holding three labels, one per line, each
+#                         set up in Edit Label as above
+#   "Heron Label Target"  a new Pipe Tag, category Pipe Tags, no labels, saved
+#   "Heron Duct Seed"     a Duct Tag holding one label
+#
+# THE NEGATIVES ARE A DIFFERENT ARRANGEMENT, never a cleared value: a text
+# the family has not got; a family with no labels; a seed of ANOTHER
+# category. The rows the batch cannot hold - a text note's id, a width Revit
+# refuses, Revit 2027, a duplicate label type, the measurement of what a copy
+# keeps - are run by name, IJ3 to IJ14.
+#
+# THE WRITES ARE ROLLED BACK (`write: true`). The kept run of each MODIFY card
+# is the modeller's try-once (D-119), never this file's.
+
+model: Heron Label Test, Heron Label Seed, Heron Label Target and Heron Duct Seed (scratch Pipe and Duct Tag families), Revit 2020
+
+defaults:
+  in: "Heron Label Test"
+
+jobs:
+  - fragment: report-family-labels
+    write: false                       # risk READ
+    set:
+      labelContains: "all"
+    negative-set:
+      labelContains: "ZZZ_Not_A_Label"
+    expect: labelCount
+    note: >
+      IJ1 and IJ2. The positive lists the one label - labelCount 1, textNotes
+      1, familyCategory Pipe Tags. The negative lists nothing, with
+      textElements STILL 2: the family was read.
+
+  - fragment: set-family-label-layout
+    write: true
+    set:
+      labelIds: "all"
+      moveByMm: "0,2.5"
+    negative-in: "Heron Label Target"
+    negative-set:
+      labelIds: "all"
+      moveByMm: "0,2.5"
+    expect: changed
+    note: >
+      IJ6's batch half. The positive moves the one label 2.5 mm up and reads
+      it back - changed 1, nothing NOT AS ASKED; the text note does not move.
+      The negative is the target, which has no labels: changed 0, "This
+      family has no labels. NOTHING WAS CHANGED."
+
+  - fragment: copy-labels-from-family
+    in: "Heron Label Target"
+    write: true
+    set:
+      sourceDocumentTitle: "Heron Label Seed"
+      labelContains: "all"
+      placeAtMm: "0,5"
+    negative-in: "Heron Label Target"
+    negative-set:
+      sourceDocumentTitle: "Heron Duct Seed"
+      labelContains: "all"
+      placeAtMm: "0,5"
+    expect: [copied, kept]
+    note: >
+      IJ8 and IJ10's batch half. The positive copies the seed's three labels
+      into the target - copied 3, and kept is what Revit actually carried:
+      read readBack before reading kept. The negative is a Duct Tags seed
+      for a Pipe Tags family: copied 0, Revit's own rule quoted, NOTHING WAS
+      COPIED.

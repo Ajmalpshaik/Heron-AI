@@ -48,11 +48,20 @@ purpose: >
   6. FLEX_FAMILY at two really different sizes - for a line-based detail, two
      lengths.
 
-  NOT POSSIBLE THROUGH REVIT'S API ON ANY RELEASE 2020 TO 2027: a LABEL - the
-  text that shows a parameter's value in a tag, a symbol or a title block.
-  Revit 2027 reads labels and cannot make them. A tag or title block is built
-  by hand, or from a seed family that already holds its labels; say so before
-  starting rather than after.
+  7. LABELS - the text that shows a parameter's value in a symbol or a title
+     block. SAY BEFORE STARTING: Revit's API cannot MAKE a label on any
+     release 2020 to 2027, nor change what one SHOWS - its parameters, sample
+     value, prefix, suffix, spaces, break and unit format (docs/43 section
+     8.3a). COPY_LABELS_FROM_FAMILY copies them from a seed family of the
+     same category open in the same Revit; otherwise the modeller makes them
+     by hand in Edit Label. REPORT_FAMILY_LABELS reads them back - their
+     parameters on Revit 2027 only - and SET_FAMILY_LABEL_LAYOUT moves and
+     sizes them. A TAG has a method of its own: TAG-FAMILY-CREATION.
+
+  A LABEL'S TEXT - size in mm, font, bold, background - is its TYPE, for
+  labels already in the family: REPORT_TEXT_TYPES textTypeName labels reads
+  it, SET_TEXT_TYPE changes it (duplicateAs keeps the original, switchTo
+  labels moves them onto the copy). The same two serve a text note's type.
 
 utterances:
   - make a detail item family
@@ -71,6 +80,9 @@ needs:
   - CREATE_REFERENCE_PLANES
   - SET_FAMILY_PLANE_REFERENCE
   - LABEL_FAMILY_DIMENSION
+  # A label's or text note's TYPE, read then changed (row 5b-1300).
+  - REPORT_TEXT_TYPES
+  - SET_TEXT_TYPE
   - DRAW_FAMILY_DETAIL_LINES
   # Step 3's subcategory colour, weight and pattern (version 2, row 5b-463).
   - CREATE_LINE_STYLE
@@ -82,11 +94,15 @@ needs:
   - ADD_FAMILY_SHARED_PARAMETERS
   # The proof, and never skipped.
   - FLEX_FAMILY
+  # Step 7's labels: read, copied from a seed of the same category, laid out.
+  - REPORT_FAMILY_LABELS
+  - COPY_LABELS_FROM_FAMILY
+  - SET_FAMILY_LABEL_LAYOUT
 
 preconditions:
   - a family document is open in the Family Editor, started by the modeller from a Detail Item, line-based Detail Item or Generic Annotation template - Heron does not choose a template
   - every size, parameter name and type name has been given for THIS request
-  - nothing asked for needs a label - a label is made by hand
+  - every label asked for is in a seed family of the same category, or the modeller makes it by hand - Revit's API cannot make one
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 

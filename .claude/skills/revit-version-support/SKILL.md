@@ -183,6 +183,20 @@ release; the `isDiameter` flag is the only route to a diameter dimension in a pr
 reference assemblies on 2026-09-19. Phases are made by hand in Revit and the API can only read them and
 assign elements to them. Do not plan a fragment for it; the answer will not change with a release.
 
+## Labels in a family — read on 2027 only, made on no release
+
+**Read 2026-10-21 off all eight releases' shipped assemblies, and every 2027 package 2027.0.0 to 2027.3.0
+with member visibility.** 2020-2026 have no label class: `TextElement`'s one public subclass is `TextNote`,
+so a label is a text element that is not a text note, with only `TextElement`'s members - point, width,
+alignment, Keep Readable, text. 2027 adds `AnnotationLabel : TextElement` whose `GetParameterFormatting()`
+READS each parameter in order with `SampleText`, `Prefix`, `Suffix`, `LeadingSpaces`, `LeadingLineBreak`.
+**`AnnotationLabel.Create`, `SetParameterFormatting`, every setter and the formatting constructor are
+INTERNAL** - `RevitAPI.xml` documents them as if they were public, so the XML is not the authority; the
+assembly is. Never call an internal member. When a release makes them public,
+`tools/api-surface --members AnnotationLabel` shows it. Copying a label is the one creation route, and only
+within one category (`FamilyFailures.CannotPasteLabelsAcrossFamilies`). The full table is
+[docs/43 §8.3a](../../../docs/43-building-revit-families.md).
+
 ## Members that simply ARRIVED — the class the table above misses
 
 Everything above is something that **changed**. The failure that actually reached this repository was
