@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-GRP-033
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -71,6 +71,29 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: Cinematic ID Test, Revit 2020, session 68704 - the count is NOT recorded because
+    1,576 elements was measured on Night Family Test, the document in front, and this ran
+    against another one (row 15)
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase''s own values. returned assembly (null),
+    containerKind group, elements 1 item(s) [Bar Chair], findings 2 item(s) [Group instance
+    id 988384, of group type ''Array Group 3'' hold..., These are safe to read. CHANGING one
+    is not: Revit either re...], instance Group, nestedGroups 0. inputs came group as given.
+    on Cinematic ID Test'
+  negative_case: run with minMm=6400,0,500, maxMm=6500,100,600, exact=false, categories=Doors,
+    group=selected instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running select-in-region, set-selection with this
+    phase's own values. returned assembly (null), containerKind , elements 0 item(s), findings
+    1 item(s) ['1730 x 2134mm' (id 906937) is neither a model group nor an ...], instance
+    (null), nestedGroups 0. inputs came group as given. on Cinematic ID Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 159a448533762402
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

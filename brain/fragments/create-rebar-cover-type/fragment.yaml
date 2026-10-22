@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -57,6 +57,29 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: Cinematic ID Test (5,262 elements), Revit 2020, session 68704
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned asked 45, covers 1 item(s) [Rebar
+    Cover 1], created 1 item(s) [1103443], findings 1 item(s) [Made Rebar Cover Type 'Night
+    C Cover 45' 45 mm.], invariant CultureInfo, mm Func`2, name Night C Cover 45, parsed true,
+    readBack 'Night C Cover 45' 45 mm, refused , text 45. inputs came coverName as given;
+    distance as given. on Cinematic ID Test
+  negative_case: run with coverName=Night C Cover 45, distance=not a distance instead - chosen
+    because it should not contain what this fragment reports - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned asked 0, covers
+    1 item(s) [Rebar Cover 1], created 0 item(s), findings 1 item(s) ['not a distance' is
+    not a cover distance. Give it in millime...], invariant CultureInfo, mm Func`2, name Night
+    C Cover 45, parsed false, readBack , refused 'not a distance' is not a cover distance.
+    Give it in millimetres - 40 or 40 mm. Nothing was made, text not a distance. inputs came
+    coverName as given; distance as given. on Cinematic ID Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 762d8b4a1bff396a
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

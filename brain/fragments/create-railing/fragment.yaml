@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -66,6 +66,35 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: Cinematic ID Test (5,262 elements), Revit 2020, session 68704
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, elements 0 item(s),
+    findings 2 item(s) [1 railing(s) of "SH_1100mm" made and read back., along the path: 1
+    railing.], hosts 0 item(s), lines 1 item(s) [along the path: 1 railing.], made 1, path
+    2 item(s) [(-65.616797900, -82.020997375, 0.000000000), (-52.493438320, -82.020997375,
+    0.000000000)], railingIds 1 item(s) [1103859], refusal (null), report along the path:
+    1 railing., type RailingType, types 1 item(s) [SH_1100mm], where treads. inputs came elements
+    not given - none (optional); railingTypeName as given; placement as given; pathMm as given;
+    level as given. on Cinematic ID Test'
+  negative_case: run with level=Level 1, pathMm=-20000,-25000, placement=treads, railingTypeName=SH_1100mm
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    MmPerFoot 304.8, elements 0 item(s), findings 1 item(s) [A railing path needs two points
+    or more. NOTHING WAS MADE.], hosts 0 item(s), lines 1 item(s) [A railing path needs two
+    points or more. NOTHING WAS MADE.], made 0, path 1 item(s) [(-65.616797900, -82.020997375,
+    0.000000000)], railingIds 0 item(s), refusal A railing path needs two points or more.
+    NOTHING WAS MADE., report A railing path needs two points or more. NOTHING WAS MADE.,
+    type RailingType, types 1 item(s) [SH_1100mm], where treads. inputs came elements not
+    given - none (optional); railingTypeName as given; placement as given; pathMm as given;
+    level as given. on Cinematic ID Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 22059cc669eefbc0
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

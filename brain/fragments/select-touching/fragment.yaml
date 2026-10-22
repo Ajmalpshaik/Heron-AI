@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -105,6 +105,33 @@ contract:
       # value (D-54 s3, FRAGMENT-ISSUES 5b-203).
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: Cinematic ID Test (5,262 elements), Revit 2020, session 68704
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase's own values. returned describeLinked
+    Func`3, elements 2 item(s) [Wall - Timber Clad, Interior - 165 Partition (1-hr)], findings
+    1 item(s) [2 element(s) physically overlap '1730 x 2134mm' (id 906937),...], fireRatingOf
+    Func`2, includeLinks false, linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s),
+    linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal
+    0, linksSearched 0, nestedLinks 0. inputs came target as given; categories as given (2);
+    includeLinks not given - false (optional). on Cinematic ID Test
+  negative_case: run with categories=Planting, target=selected arranged with categories=Doors,
+    exact=False, maxMm=6650,300,1200, minMm=6450,200,800 instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase's own values. returned describeLinked
+    Func`3, elements 0 item(s), findings 2 item(s) [0 element(s) physically overlap '1730
+    x 2134mm' (id 906937),..., Nothing OVERLAPS it. That is not the same as nothing being
+    r...], fireRatingOf Func`2, includeLinks false, linkBlocked , linkDocs 0 item(s), linkPlacements
+    0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
+    linkedTotal 0, linksSearched 0, nestedLinks 0. inputs came target as given; categories
+    as given (1); includeLinks not given - false (optional). on Cinematic ID Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: b2eb31859e1a8978
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
