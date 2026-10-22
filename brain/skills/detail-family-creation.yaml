@@ -58,6 +58,11 @@ purpose: >
      parameters on Revit 2027 only - and SET_FAMILY_LABEL_LAYOUT moves and
      sizes them. A TAG has a method of its own: TAG-FAMILY-CREATION.
 
+  A LABEL'S TEXT - size in mm, font, bold, background - is its TYPE, for
+  labels already in the family: REPORT_TEXT_TYPES textTypeName labels reads
+  it, SET_TEXT_TYPE changes it (duplicateAs keeps the original, switchTo
+  labels moves them onto the copy). The same two serve a text note's type.
+
 utterances:
   - make a detail item family
   - build a line based detail component for insulation
@@ -75,6 +80,9 @@ needs:
   - CREATE_REFERENCE_PLANES
   - SET_FAMILY_PLANE_REFERENCE
   - LABEL_FAMILY_DIMENSION
+  # A label's or text note's TYPE, read then changed (row 5b-1300).
+  - REPORT_TEXT_TYPES
+  - SET_TEXT_TYPE
   - DRAW_FAMILY_DETAIL_LINES
   # Step 3's subcategory colour, weight and pattern (version 2, row 5b-463).
   - CREATE_LINE_STYLE

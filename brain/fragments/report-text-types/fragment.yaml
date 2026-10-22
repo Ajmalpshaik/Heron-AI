@@ -1,0 +1,135 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-151
+semantic-identity: "which text types are there - the types labels and text notes are drawn in - with each one's text size in mm, font, bold, background and colour, and what uses it"
+kind: action
+domain: revit.annotation
+capability: REPORT_TEXT_TYPES
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-21: Ajmal PS, building the pipe tag family TRG_Pipe_Tag on Revit
+# 2020, wanted his labels' text changed - 2.5 to 5 mm, font, bold. Nothing in
+# Heron read or changed a TEXT TYPE (checked that day by grep of
+# brain/fragments, DRAFT and PROVEN): ADD_FAMILY_MODEL_TEXT writes the size of
+# MODEL text, and EDIT_TEXT_VALUES / CREATE_TEXT_NOTE handle a note's wording,
+# not its type. Measured on main the same day (row 5b-1300): three of four
+# questions about a text type reached a WRITE on lexical, two of four on the
+# trained model. This is the read; SET_TEXT_TYPE is the change.
+#
+# NO EXISTING READ COULD BE WIDENED. READ_ELEMENT_PARAMETERS reads an
+# element's parameters in project units, by name, and needs the element;
+# REPORT_VIEWPORT_TYPES lists viewport title types. Both are PROVEN, and a
+# change under their impl/ would make the proof stale for a job they do not
+# do.
+#
+# WHAT A LABEL IS - read off the shipped RevitAPI.dll for 2020 to 2027 on
+# 2026-10-21 (tools/api-surface): TextElement's only subclass is TextNote
+# 2020 to 2026, and TextNote and AnnotationLabel from 2027 - so a family's
+# label is a plain TextElement before 2027. TextElementType's only subclass
+# is TextNoteType on every release. A label's type is reached as a text
+# note's is - GetTypeId(), or TextElement.Symbol - on all eight. Which class a
+# label TYPE has in a real 2020 family is NOT known from the assemblies, and
+# nothing here depends on it: a type is called a label type by Revit's own
+# family name for it and by what uses it (NEEDS-CHECKING Group IL, IL2).
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Lists the text types - the type of each label in a tag, symbol or title
+  block family, and of each text note in a project or a family - with what
+  Type Properties shows: text size in millimetres, font, width factor, bold,
+  italic, underline, background, colour, line weight, border, leader offset,
+  tab size and arrowhead, and how many labels and text notes use each. Name a
+  type, or "labels" for the ones a family's labels use.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # A type by its name - "2.5mm Arial" - or "Family: Type" when a label type
+    # and a text type share a name; "labels" for the types this family's
+    # labels use. Left out, "all".
+    - name: textTypeName
+      type: string
+      source: request
+      optional: true
+      absent: all
+  provides:
+    - name: textTypes
+      # ONE STRING, a line per type joined by "  ||  ", because a list reaches
+      # the chat cut to three entries: family: type | each setting it has |
+      # used by N label(s) and M text note(s).
+      role: result
+      type: string
+    - name: typeCount
+      role: result
+      type: int
+    - name: labelCount
+      # Labels in the document - 0 in a project. Work done, never a thing
+      # found (D-52).
+      role: accounting
+      type: int
+    - name: textNoteCount
+      # Text notes in the document (D-52).
+      role: accounting
+      type: int
+    - name: notTextTypes
+      # A name asked for that is a model text type or another type carrying
+      # text settings of its own - said so, never listed (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, no #if. TextElement, TextNote,
+  TextElementType, ModelTextType, ElementType.FamilyName,
+  Document.IsFamilyDocument, Element.GetTypeId and the parameters TEXT_SIZE,
+  TEXT_FONT, TEXT_WIDTH_SCALE, TEXT_STYLE_BOLD, TEXT_STYLE_ITALIC,
+  TEXT_STYLE_UNDERLINE, TEXT_BACKGROUND, LINE_COLOR, TEXT_COLOR, LINE_PEN,
+  TEXT_BOX_VISIBILITY, LEADER_OFFSET_SHEET, TEXT_TAB_SIZE and
+  LEADER_ARROWHEAD are present 2020 through 2027 - read off the shipped
+  RevitAPI.dll for all eight with tools/api-surface on 2026-10-21. Lengths are
+  read in Revit's internal feet and turned into millimetres by 304.8 (D-20),
+  so neither the 2021 units change nor the 2022 spec change reaches this code.
+  AnnotationLabel (2027) is a TextElement, so it is counted as a label with
+  no #if.
+
+# ROUTING - rows for these sentences are in SET_TEXT_TYPE too.
+#
+#   "how big is the label text in this family"    -> here, textTypeName labels
+#   "which text styles does this project have"    -> here
+#   "change the label text height to 5 mm"        -> SET_TEXT_TYPE, the write
+#   "make a 2.5 mm text type"                     -> SET_TEXT_TYPE, duplicateAs
+#   "make the model text 200 high"                -> ADD_FAMILY_MODEL_TEXT -
+#                                                    model text is 3D, not a
+#                                                    text type here
+#   "what does this text note say"                -> READ_ELEMENT_PARAMETERS,
+#                                                    parameterName Text
+#
+# MEASURED 2026-10-21 (row 5b-1300), main against the branch: "make the
+# label text bold" and "make the text note type italic" - changes - reach
+# THIS read on lexical and the trained model, with SET_TEXT_TYPE below it.
+# A change asked for and a read given changes nothing; recorded, not chased -
+# the wording that pulled them to the write also pulled "is the first line
+# of the note bold" there (SET_TEXT_TYPE's comment).
+
+# Written in the session's words, not the modeller's - he gave only the
+# change (SET_TEXT_TYPE's four). Kept apart from the sentences frozen to
+# measure this card (row 5b-1300), so the measurement is not its own words
+# read back.
+utterances:
+  - show the text type settings of the tag labels
+  - how big is the label text in this family
+  - which text styles does this project have
+  - what font and size is this text type

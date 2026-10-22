@@ -952,6 +952,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ik.md`](needs-checking/group-ik.md)
 
+## Group IL - a label's or text note's TYPE read and changed in millimetres, copied and switched: `REPORT_TEXT_TYPES` and `SET_TEXT_TYPE` (2026-10-21)
+
+**Its own file:** [`needs-checking/group-il.md`](needs-checking/group-il.md)
+
 ## Group IM - the interior camera inside its room, the close-range picture on the elements' middle, and a sun's time on the site's clock: `FRAME_ELEMENTS_IN_CAMERA` version 4 and `REPORT_RENDER_SETTINGS` version 2 (2026-10-21)
 
 **Its own file:** [`needs-checking/group-im.md`](needs-checking/group-im.md)
