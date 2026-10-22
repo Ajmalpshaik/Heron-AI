@@ -61,6 +61,36 @@
 //
 // ALL OR NOTHING, READ BACK after Revit regenerates: the label, and the value
 // the dimension reads, must be the parameter's. Anything else fails the call.
+//
+// THE TWO REFERENCES ARE CHECKED BEFORE REVIT IS ASKED - version 5, row
+// 5b-1318. On Revit 2020 (2026-10-22, session 78736, the owner's floor drain
+// families) the revolve route threw Revit's own "Invalid number of
+// references" three times from the dimension call - in an elevation from a
+// made plane, in a plan from a template plane - while the extrusion route
+// labelled three sketched circles in the same session. Revit says that when
+// one of the two references it is handed is not one it will measure to, not
+// only when it is handed fewer than two: row 5b-306 saw it for a circle's
+// centre point on 2024, and Group EH for a whole element inside a link on
+// 2020 until ":0:SURFACE" named its first surface. So the plane's reference
+// and the profile line's (or the centre plane's) are read first - that each
+// exists and names the element it should - and a call with one MISSING is
+// REFUSED naming which, and the release, before Revit is asked; the one
+// exception is a centre plane made at the label, checked once it is made,
+// after the axis lock, and a miss there throws the same sentence for the
+// transaction group to roll back. Each reference's kind is read and said -
+// a surface for a plane, a line for a sketch curve are what a straight
+// dimension is expected to take - but a kind other than that is a note, not
+// a refusal: which kinds Revit takes is not measured here, and a refusal on
+// an assumption would turn away a pair that labelled fine on 2024. When
+// Revit refuses the dimension with both in hand, it is asked again with
+// each reference read back from its written form - the way row 5b-306's
+// centre point was taken for an alignment - so the answer names the one
+// Revit would not take as first read; and the sentence that reaches the
+// modeller is Heron's, counting the tries made, with Revit's words after it
+// in quotes, never Revit's alone. The retry fires on Revit's English words;
+// on a Revit in another language the refusal is wrapped as version 4 did.
+// Which of the two it is on 2020 is NOT known here: NEEDS-CHECKING Group IS
+// asks Revit, on 2020 and again on 2024.
 
 var findings = new List<string>();
 var labelled = "";
@@ -204,6 +234,88 @@ Func<Dimension, ElementId, bool> measures = (d, curveId) =>
 {
     try { return d.References.Cast<Reference>().Any(r => r.ElementId == curveId); }
     catch (Exception) { return false; }
+};
+
+// VERSION 5: the two references of a straight dimension from the axis's
+// plane, read and checked before Revit is asked - see the header. The
+// release they were read on goes into every sentence about them.
+Reference planeReference = null;
+Reference otherReference = null;
+var referenceNotes = new List<string>();
+var release = "";
+try { release = doc.Application.VersionNumber; } catch (Exception) { release = ""; }
+// What Revit calls a reference - surface, linear, none, instance... - in
+// lower case; "no" for one that was not given at all.
+Func<Reference, string> kindOf = r =>
+{
+    if (r == null) return "no";
+    try { return r.ElementReferenceType.ToString().Replace("REFERENCE_TYPE_", "").ToLowerInvariant(); }
+    catch (Exception) { return "unreadable"; }
+};
+// A reference's written form, empty when Revit gives it none.
+Func<Reference, string> writtenOf = r =>
+{
+    if (r == null) return "";
+    try { return r.ConvertToStableRepresentation(doc) ?? ""; } catch (Exception) { return ""; }
+};
+// A reference read back from a written form; null when Revit will not.
+Func<string, Reference> readBack = s =>
+{
+    if (string.IsNullOrEmpty(s)) return null;
+    try { return Reference.ParseFromStableRepresentation(doc, s); } catch (Exception) { return null; }
+};
+// A plane's reference as the dimension will be handed it: MISSING when it is
+// not given at all, names no element, or names another element - that is
+// refused before Revit is asked. Its kind is read and said - a plane's is
+// expected to be a surface - but a kind other than the expected one is a
+// note, not a refusal: which kinds Revit takes is Revit's to say, the
+// retry at the dimension call reads it back from its written form, and the
+// sentence after a refusal names the kind. Item1 is the reference to hand
+// on, null when it is missing; Item2 says what was read.
+Func<ReferencePlane, Tuple<Reference, string>> planeReferenceOf = plane =>
+{
+    Reference r = null;
+    try { r = plane.GetReference(); } catch (Exception) { r = null; }
+    var written = writtenOf(r);
+    Element owner = null;
+    try { owner = r == null ? null : doc.GetElement(r); } catch (Exception) { owner = null; }
+    var kind = kindOf(r);
+    var fault = r == null ? "gave no reference"
+        : owner == null ? "gave a " + kind + " reference that names no element"
+        : owner.Id != plane.Id ? "gave a " + kind + " reference that names another element" : null;
+    var said = "the plane \"" + plane.Name + "\" " + (fault ?? "gave a " + kind + " reference"
+            + (kind == "surface" ? "" : " - not the surface a straight dimension is expected to take"))
+        + (written.Length > 0 ? " (" + written + ")" : "");
+    return Tuple.Create(fault == null ? r : null, said);
+};
+// A sketch curve's reference the same way: MISSING when not given, naming no
+// element, or naming something that is not a sketch line of this family; a
+// line's kind is expected to be linear, and any other is said, not refused.
+Func<Curve, string, Tuple<Reference, string>> curveReferenceOf = (curve, called) =>
+{
+    var r = curve.Reference;
+    var written = writtenOf(r);
+    Element owner = null;
+    try { owner = r == null ? null : doc.GetElement(r); } catch (Exception) { owner = null; }
+    var kind = kindOf(r);
+    var fault = r == null ? "gave no reference"
+        : owner == null ? "gave a " + kind + " reference that names no element"
+        : !(owner is CurveElement) ? "gave a " + kind + " reference that names no sketch line" : null;
+    var said = called + " " + (fault ?? "gave a " + kind + " reference"
+            + (kind == "linear" ? "" : " - not the line a straight dimension is expected to take"))
+        + (written.Length > 0 ? " (" + written + ")" : "");
+    return Tuple.Create(fault == null ? r : null, said);
+};
+// A reference read back from its written form for a second try - a plane's
+// with ":0:SURFACE" after it when that is missing, the form Group EH
+// measured Revit 2020 to need for a whole element (row 5b-486); null when
+// Revit gives it no written form or will not read it back.
+Func<Reference, bool, Reference> readAgain = (r, isPlane) =>
+{
+    var written = writtenOf(r);
+    if (written.Length == 0) return null;
+    if (isPlane && !written.EndsWith(":SURFACE", StringComparison.Ordinal)) written += ":0:SURFACE";
+    return readBack(written);
 };
 
 if (!doc.IsFamilyDocument)
@@ -485,6 +597,36 @@ else
                     along = Line.CreateBound(foot, middle);
                 }
             }
+
+            // VERSION 5: BOTH REFERENCES READ AND CHECKED BEFORE REVIT IS
+            // ASKED. The plane's, and the profile line's or the centre
+            // plane's when the family already has one; a centre plane made at
+            // the label is checked there. A dimension the parameter already
+            // labels is used as it is and needs neither.
+            if (problems.Count == 0 && arc == null && already == null)
+            {
+                var first = planeReferenceOf(axisPlane);
+                planeReference = first.Item1;
+                referenceNotes.Add(first.Item2);
+                Tuple<Reference, string> second = null;
+                if (centreArc == null) second = curveReferenceOf(sideLine, "the profile line");
+                else if (centrePlane != null) second = planeReferenceOf(centrePlane);
+                if (second != null)
+                {
+                    otherReference = second.Item1;
+                    referenceNotes.Add(second.Item2);
+                }
+                var missing = new List<string>();
+                if (planeReference == null) missing.Add("the plane \"" + axisPlane.Name + "\"");
+                if (second != null && otherReference == null)
+                    missing.Add(centreArc == null ? "the profile line" : "the plane \"" + centrePlane.Name + "\"");
+                if (missing.Count > 0)
+                    problems.Add("On Revit " + release + " " + string.Join(" and ", missing)
+                        + (missing.Count > 1 ? " give" : " gives") + " no reference a straight dimension can measure to, so the "
+                        + (centreArc == null ? "revolve's radius" : "circle's distance from the axis") + " cannot be labelled from \""
+                        + axisPlane.Name + "\": " + string.Join("; ", referenceNotes) + ". A dimension needs both - label it by hand "
+                        + "in Edit Revolve.");
+            }
         }
     }
 
@@ -715,6 +857,10 @@ if (refused == null && blend == null)
             + "circle's centre, " + mm(along.Length) + " mm out"
         : "radius of the revolve, from \"" + axisPlane.Name + "\" to its profile line " + mm(along.Length) + " mm out";
     var lockNote = "";
+    // A sentence of Heron's own from inside the try below - a reference
+    // checked and found missing, or Revit's refusal put into words - thrown
+    // as it is, never wrapped as "Revit refused".
+    string ownProblem = null;
     try
     {
         if (arc != null)
@@ -778,16 +924,81 @@ if (refused == null && blend == null)
             if (already != null) dimension = already;
             else
             {
-                var references = new ReferenceArray();
-                references.Append(axisPlane.GetReference());
-                references.Append(centrePlane != null ? centrePlane.GetReference() : sideLine.Reference);
-                dimension = doc.FamilyCreate.NewDimension(view, along, references);
+                if (otherReference == null)
+                {
+                    // The centre plane made just above, checked as the others were.
+                    var made = planeReferenceOf(centrePlane);
+                    referenceNotes.Add(made.Item2);
+                    if (made.Item1 == null)
+                    {
+                        ownProblem = "On Revit " + release + " the plane \"" + centrePlane.Name + "\" made through the circle's "
+                            + "centre gives no reference a straight dimension can measure to, so the circle's distance from the "
+                            + "axis cannot be labelled: " + string.Join("; ", referenceNotes) + ". Label it by hand in Edit Revolve.";
+                        throw new InvalidOperationException(ownProblem);
+                    }
+                    otherReference = made.Item1;
+                }
+                // THE DIMENSION. Both references were read and checked before
+                // this; when Revit answers "Invalid number of references" it
+                // is asked again with each reference read back from its
+                // written form - the plane's, the other's, both - so the
+                // answer names the one it would not take as first read. A
+                // reference Revit will not read back is not tried; the tries
+                // made are counted into the sentence. Any other refusal is
+                // thrown as it comes.
+                var secondName = centreArc == null ? "the profile line's" : "the centre plane's";
+                var planeAgain = readAgain(planeReference, true);
+                var otherAgain = readAgain(otherReference, centreArc != null);
+                var tries = new[] {
+                    Tuple.Create(planeReference, otherReference, ""),
+                    Tuple.Create(planeAgain, otherReference, "the plane's"),
+                    Tuple.Create(planeReference, otherAgain, secondName),
+                    Tuple.Create(planeAgain, otherAgain, "both") };
+                dimension = null;
+                Exception last = null;
+                var asked = new List<string>();
+                foreach (var attempt in tries)
+                {
+                    if (attempt.Item1 == null || attempt.Item2 == null) continue;
+                    asked.Add(attempt.Item3.Length == 0 ? "as read" : "with " + attempt.Item3 + " read back");
+                    var references = new ReferenceArray();
+                    references.Append(attempt.Item1);
+                    references.Append(attempt.Item2);
+                    try { dimension = doc.FamilyCreate.NewDimension(view, along, references); }
+                    catch (Exception refusal)
+                    {
+                        last = refusal;
+                        dimension = null;
+                        if ((refusal.Message ?? "").IndexOf("Invalid number of references", StringComparison.OrdinalIgnoreCase) < 0)
+                            throw;
+                        continue;
+                    }
+                    if (dimension == null) continue;
+                    if (attempt.Item3 == "both")
+                        lockNote += " Revit took the dimension only once both references were read again from their written "
+                            + "forms - neither as first read.";
+                    else if (attempt.Item3.Length > 0)
+                        lockNote += " Revit took the dimension only once " + attempt.Item3 + " reference was read again from its "
+                            + "written form - that is the one it would not take as first read.";
+                    break;
+                }
+                if (dimension == null)
+                {
+                    ownProblem = "Revit " + release + " would not take one of the two references for the " + what
+                        + ", asked " + asked.Count + (asked.Count == 1 ? " time" : " times") + " (" + string.Join(", ", asked)
+                        + ") with both read before the call: " + string.Join("; ", referenceNotes) + "." + lockNote
+                        + " Which of the two it refused Revit does not say; "
+                        + (last == null ? "it gave no dimension and no words." : "its words were \"" + last.Message + "\".");
+                    throw new InvalidOperationException(ownProblem);
+                }
             }
         }
         if (dimension != already) dimension.FamilyLabel = parameter;
     }
     catch (Exception ex)
     {
+        if (ownProblem != null)
+            throw new InvalidOperationException("Nothing was labelled. " + ownProblem + " NOTHING from this call was kept.");
         throw new InvalidOperationException("Revit refused to label the " + what + " with \"" + parameter.Definition.Name
             + "\": " + ex.Message + " NOTHING from this call was kept.");
     }
@@ -828,6 +1039,9 @@ if (refused == null && blend == null)
         + parameter.Definition.Name + "\" inside the form's sketch, reading "
         + mm(reads.Value) + " mm." + lockNote;
     findings.Add(labelled);
+    if (referenceNotes.Count > 0)
+        findings.Add("Its two references, read on Revit " + release + " before the dimension was asked for: "
+            + string.Join("; ", referenceNotes) + ".");
     findings.Add("The dimension is in the sketch, where Edit " + (target is Extrusion ? "Extrusion" : "Revolve") + " shows it. "
         + "FLEX_FAMILY with \"" + parameter.Definition.Name + "\" at two different sizes is what shows the form following.");
 }
