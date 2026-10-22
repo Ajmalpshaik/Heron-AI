@@ -18,6 +18,17 @@ positive:
       note reads `which not given - "all", the card's own default (optional)`;
       never refused for a missing value
 
+  - given: >
+      the same family, which = the void's id exactly as create-family-extrusion
+      gave it back (VERSION 3, row 5b-1312)
+    expect: >
+      formCount 1, the void alone with that same id, X and Y -50 to 50 mm, Z
+      -10 to 510 mm; scanned 2; the finding ends "1 form(s) of 2 in the family,
+      by id"
+
+  - given: which = both forms' ids, commas between, the solid's typed twice
+    expect: formCount 2, each form once; scanned 2
+
 negative:
   - given: which "revolve" on the same family, which holds no revolve
     expect: formCount 0, formList empty, scanned 2 - the forms were looked at and none matched
@@ -27,6 +38,29 @@ negative:
 
   - given: a project in front
     expect: notAFamily true and nothing read
+
+  - given: a project in front, which = the solid's id copied from the family (VERSION 3)
+    expect: notAFamily true and nothing read - the id is never looked up in the project
+
+  - given: >
+      which = the solid's id with its FIRST character changed, so it is the
+      shape of a form id and names no element of this family (VERSION 3) -
+      never the last: the last eight characters are the element's number, and
+      changed they can name another element
+    expect: >
+      refused by name - "is not an id in this family" - nothing read,
+      formCount 0, formList empty, scanned 0
+
+  - given: which = the solid's id and a reference plane's UniqueId (VERSION 3)
+    expect: >
+      refused naming the reference plane "..., not a form"; the solid is not
+      read either - all or nothing, formCount 0
+
+  - given: which = "void, <the solid's id>" (VERSION 3)
+    expect: refused - ids and words are not mixed in one call - nothing read, formCount 0
+
+  - given: which = the solid's element number as Select by ID shows it, digits only (VERSION 3)
+    expect: refused - "that is an element number; give the long id the form tools gave back"
 
 second_route:
   - >

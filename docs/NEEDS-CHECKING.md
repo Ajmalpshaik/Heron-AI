@@ -964,6 +964,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-in.md`](needs-checking/group-in.md)
 
+## Group IO - one form of a family pictured and read on its own: `revit_view_image` with `elements` in a family, and `REPORT_FAMILY_FORMS` version 3 (2026-10-22)
+
+**Its own file:** [`needs-checking/group-io.md`](needs-checking/group-io.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
