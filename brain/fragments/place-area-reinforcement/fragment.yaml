@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -104,6 +104,78 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-22'
+  by: Ajmal PS
+  model: Structure Night Test (9,179 elements), Revit 2020, session 60544
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name with this phase''s own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned areaType AreaReinforcementType,
+    areaTypeMade false, areaTypeText only, areaTypes 1 item(s) [Structural Area Reinforcement
+    1], barList Func`1, barTypeFrom Func`3, barTypes 11 item(s) [13M, 10M, 16M, ...], direction
+    horizontal, either Func`4, findings 2 item(s) [5 area reinforcement(s) placed and read
+    back in 5 host(s); 1..., Walls ''Exterior - 300mm Concrete'' (id 123276): already holds...],
+    floorIds 4 item(s) [Autodesk.Revit.DB.BuiltInParameter[], Autodesk.Revit.DB.BuiltInParameter[],
+    Autodesk.Revit.DB.BuiltInParameter[], ...], genericIds 4 item(s) [Autodesk.Revit.DB.BuiltInParameter[],
+    Autodesk.Revit.DB.BuiltInParameter[], Autodesk.Revit.DB.BuiltInParameter[], ...], hookText
+    none, hookType (null), hookTypes 5 item(s) [Standard - 90 deg., Standard - 180 deg., Stirrup/Tie
+    - 90 deg., ...], hostsReinforced 5 item(s) [123964, 124071, 124110, ...], invariant CultureInfo,
+    layerAsks 4 item(s) [(top major, 10M @ 150), (top minor, none), (bottom major, none),
+    ...], layerValues 4 item(s) [(Autodesk.Revit.DB.Structure.RebarBarType, 0.492125984251968...,
+    (, 0), (, 0), ...], lines 5 item(s) [Walls ''Exterior - 300mm Concrete'' (id 123964):
+    area reinforc..., Walls ''Exterior - 300mm Concrete'' (id 124071): area reinforc..., Walls
+    ''Exterior - 300mm Concrete'' (id 124110): area reinforc..., ...], mm Func`2, nominalOf
+    Func`2, param Func`3, placed 5 item(s) [272534, 272539, 272544, ...], readBackWrong 0
+    item(s), refused , report Walls ''Exterior - 300mm Concrete'' (id 123964): area reinforcement
+    id 272534, major direction horizontal, layout Maximum Spacing, 0 bar set(s) in it; Exterior
+    Major Direction ''10M'' @ 150 mm, 75 lines | Walls ''Exterior - 300mm Concrete'' (id 124071):
+    area reinforcement id 272539, major direction horizontal, layout Maximum Spacing, 0 bar
+    set(s) in it; Exterior Major Direction ''10M'' @ 150 mm, 75 lines | Walls ''Exterior -
+    300mm Concrete'' (id 124110): area reinforcement id 272544, major direction horizontal,
+    layout Maximum Spacing, 0 bar set(s) in it; Exterior Major Direction ''10M'' @ 150 mm,
+    75 lines | Walls ''Exterior - 300mm Concrete'' (id 138817): area reinforcement id 272549,
+    major direction horizontal, layout Maximum Spacing, 0 bar set(s) in it; Exterior Major
+    Direction ''10M'' @ 150 mm, 75 lines | Walls ''Exterior - 300mm Concrete'' (id 139121):
+    area reinforcement id 272554, major direction horizontal, layout Maximum Spacing, 0 bar
+    set(s) in it; Exterior Major Direction ''10M'' @ 150 mm, 75 lines, skipped 1 item(s) [Walls
+    ''Exterior - 300mm Concrete'' (id 123276): already holds...], styleFloat NumberStyles,
+    typeAndSpacing Func`3, wallIds 4 item(s) [Autodesk.Revit.DB.BuiltInParameter[], Autodesk.Revit.DB.BuiltInParameter[],
+    Autodesk.Revit.DB.BuiltInParameter[], ...]. inputs came elements from select-by-category-name
+    (6); majorDirection as given; topMajor as given; topMinor as given; bottomMajor as given;
+    bottomMinor as given; hook not given - "none", the card''s own default (optional); areaReinforcementType
+    not given - "only", the card''s own default (optional). on Structure Night Test'
+  negative_case: 'run with bottomMajor=none, bottomMinor=none, majorDirection=x, topMajor=10M
+    @ 150, topMinor=none arranged with categoryName=Walls, inViewOnly=ThreeD: {3D} instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running select-by-category-name with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    areaType AreaReinforcementType, areaTypeMade false, areaTypeText only, areaTypes 1 item(s)
+    [Structural Area Reinforcement 1], barList Func`1, barTypeFrom Func`3, barTypes 11 item(s)
+    [13M, 10M, 16M, ...], direction x, either Func`4, findings 7 item(s) [0 area reinforcement(s)
+    placed and read back in 0 host(s); 6..., Walls ''Exterior - 300mm Concrete'' (id 123276):
+    already holds..., Walls ''Exterior - 300mm Concrete'' (id 123964): a wall''s majo...,
+    ...], floorIds 4 item(s) [Autodesk.Revit.DB.BuiltInParameter[], Autodesk.Revit.DB.BuiltInParameter[],
+    Autodesk.Revit.DB.BuiltInParameter[], ...], genericIds 4 item(s) [Autodesk.Revit.DB.BuiltInParameter[],
+    Autodesk.Revit.DB.BuiltInParameter[], Autodesk.Revit.DB.BuiltInParameter[], ...], hookText
+    none, hookType (null), hookTypes 5 item(s) [Standard - 90 deg., Standard - 180 deg., Stirrup/Tie
+    - 90 deg., ...], hostsReinforced 0 item(s), invariant CultureInfo, layerAsks 4 item(s)
+    [(top major, 10M @ 150), (top minor, none), (bottom major, none), ...], layerValues 4
+    item(s) [(Autodesk.Revit.DB.Structure.RebarBarType, 0.492125984251968..., (, 0), (, 0),
+    ...], lines 0 item(s), mm Func`2, nominalOf Func`2, param Func`3, placed 0 item(s), readBackWrong
+    0 item(s), refused , report , skipped 6 item(s) [Walls ''Exterior - 300mm Concrete'' (id
+    123276): already holds..., Walls ''Exterior - 300mm Concrete'' (id 123964): a wall''s
+    majo..., Walls ''Exterior - 300mm Concrete'' (id 124071): a wall''s majo..., ...], styleFloat
+    NumberStyles, typeAndSpacing Func`3, wallIds 4 item(s) [Autodesk.Revit.DB.BuiltInParameter[],
+    Autodesk.Revit.DB.BuiltInParameter[], Autodesk.Revit.DB.BuiltInParameter[], ...]. inputs
+    came elements from select-by-category-name (6); majorDirection as given; topMajor as given;
+    topMinor as given; bottomMajor as given; bottomMinor as given; hook not given - "none",
+    the card''s own default (optional); areaReinforcementType not given - "only", the card''s
+    own default (optional). on Structure Night Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 0c96ff45f458cde3
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

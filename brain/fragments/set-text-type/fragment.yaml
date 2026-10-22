@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -138,6 +138,57 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-22'
+  by: Ajmal PS
+  model: Heron Capture Test (21,317 elements), Revit 2020, session 60544
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, asked 2.5mm Arial,
+    changedTypeId 1 item(s) [id 361], describe Func`2, findings 2 item(s) [Changed "Text:
+    2.5mm Arial": Text Size 5 - read back as aske..., 0 label(s) and 0 text note(s) are on
+    "Text: 2.5mm Arial" and...], fullName Func`2, invariant CultureInfo, labels 0 item(s),
+    move none, moveLabels false, moveNotes false, newName , notes 355 item(s) [3/32" Arial,
+    3/32" Arial, 3/32" Arial, ...], parameterOf Func`3, refused (null), said Text Size=5,
+    settings 13 item(s) [(Color, Autodesk.Revit.DB.BuiltInParameter[], color, System....,
+    (Line Weight, Autodesk.Revit.DB.BuiltInParameter[], integer,..., (Background, Autodesk.Revit.DB.BuiltInParameter[],
+    backgroun..., ...], shown Func`3, squash Func`2, start TextNoteType, storageFor Func`2,
+    switched 0, textElementTypes 8 item(s) [Label 1, 1.5mm Arial, 1/4" ARIAL, ...], typeAfter
+    Text: 2.5mm Arial | Color 0,0,0 | Line Weight 1 | Background Opaque | Show Border no |
+    Leader/Border Offset 2.032 mm | Leader Arrowhead Arrow Filled 15 Degree | Text Font Arial
+    | Text Size 5 mm | Tab Size 12.7 mm | Bold no | Italic no | Underline no | Width Factor
+    1, typeBefore Text: 2.5mm Arial | Color 0,0,0 | Line Weight 1 | Background Opaque | Show
+    Border no | Leader/Border Offset 2.032 mm | Leader Arrowhead Arrow Filled 15 Degree |
+    Text Font Arial | Text Size 2.5 mm | Tab Size 12.7 mm | Bold no | Italic no | Underline
+    no | Width Factor 1, typeList Label: Label 1, Text: 1.5mm Arial, Text: 1/4" ARIAL, Text:
+    1/8" Arial, Text: 2.5mm Arial, Text: 3/32" Arial, Text: 5mm Arial, Text: Schedule Default,
+    usedBy 0 label(s) and 0 text note(s) are on "Text: 2.5mm Arial", wanted 1 item(s) [((Text
+    Size, Autodesk.Revit.DB.BuiltInParameter[], mm, Syste...]. inputs came textTypeName as
+    given; changes as given; duplicateAs not given - "none", the card''s own default (optional);
+    switchTo not given - "none", the card''s own default (optional). on Heron Capture Test'
+  negative_case: 'run with changes=Text Size=5, textTypeName=No Such Text Type instead - chosen
+    because it should not contain what this fragment reports - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
+    asked No Such Text Type, changedTypeId (null), describe Func`2, findings 1 item(s) [No
+    label or text type is named "No Such Text Type". The labe...], fullName Func`2, invariant
+    CultureInfo, labels 0 item(s), move none, moveLabels false, moveNotes false, newName ,
+    notes 355 item(s) [3/32" Arial, 3/32" Arial, 3/32" Arial, ...], parameterOf Func`3, refused
+    No label or text type is named "No Such Text Type". The label and text types here are:
+    Label: Label 1, Text: 1.5mm Arial, Text: 1/4" ARIAL, Text: 1/8" Arial, Text: 2.5mm Arial,
+    Text: 3/32" Arial, Text: 5mm Arial, Text: Schedule Default. NOTHING WAS CHANGED., said
+    Text Size=5, settings 13 item(s) [(Color, Autodesk.Revit.DB.BuiltInParameter[], color,
+    System...., (Line Weight, Autodesk.Revit.DB.BuiltInParameter[], integer,..., (Background,
+    Autodesk.Revit.DB.BuiltInParameter[], backgroun..., ...], shown Func`3, squash Func`2,
+    start (null), storageFor Func`2, switched 0, textElementTypes 8 item(s) [Label 1, 1.5mm
+    Arial, 1/4" ARIAL, ...], typeAfter , typeBefore , typeList Label: Label 1, Text: 1.5mm
+    Arial, Text: 1/4" ARIAL, Text: 1/8" Arial, Text: 2.5mm Arial, Text: 3/32" Arial, Text:
+    5mm Arial, Text: Schedule Default, usedBy , wanted 0 item(s). inputs came textTypeName
+    as given; changes as given; duplicateAs not given - "none", the card''s own default (optional);
+    switchTo not given - "none", the card''s own default (optional). on Heron Capture Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 2f35bb82ca669905
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

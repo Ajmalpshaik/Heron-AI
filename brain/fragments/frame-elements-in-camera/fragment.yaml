@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -344,78 +344,71 @@ contract:
 # its elements still takes the road this proof ran; a new view now also gets
 # its phase (row 5b-1307).
 proof:
-  date: '2026-10-21'
+  date: '2026-10-22'
   by: Ajmal PS
-  model: Cinematic ID Test (5,198 elements), Revit 2020, session 68704
-  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
-    on 2026-10-21; the modeller saw the result in Revit and pressed Keep, and Revit kept it
-    as one undo step. returned MmPerFoot 304.8, aspectAsked (null), azimuth 135, boxed 24
-    item(s) [Wall - Timber Clad, Wall - Timber Clad, Wall - Timber Clad, ...], camera View3D,
-    cinematic true, cinematicText Shot eye-level: stood on the front side (its face looks
-    south), stepped 25° round toward the left side; the front was taken as the long face looking
-    south (180°), azimuth 205° (south-south-west); eye 1600 mm above ''Level 1'', 44397 mm
-    from their middle in plan; aimed at 5290,-5989,1600 mm; level - verticals stay vertical;
-    35 mm lens asked; picture 1.5:1; composition centre., compass 16 entry(ies), compassNames
-    16 item(s) [north, north-north-east, north-east, ...], compassOf Func`2, compositionAsked
+  model: Heron Capture Test (21,317 elements), Revit 2020, session 60544
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
+    aspectAsked (null), azimuth 135, boxed 105 item(s) [450 x 200, 450 x 200, 450 x 200, ...],
+    camera View3D, cinematic false, cinematicText , compass 16 entry(ies), compassNames 16
+    item(s) [north, north-north-east, north-east, ...], compassOf Func`2, compositionAsked
     (null), culture CultureInfo, d southeast, deg Func`2, directionAsked south-east, directionGiven
-    false, distance (null), eyeHeightAsked (null), faces 11 entry(ies), findings 1 item(s)
-    [Made perspective view ''Heron IF12 Eye Level'' at 24 element(s...], framed 24, high XYZ,
-    isAuto Func`2, lens about 35 mm on 35 mm film - 54.4° across, 37.8° up and down, the window
-    31 x 21 mm at 30 mm in front of the eye, lensAsked (null), levelAsked (null), lookDown
-    30, lookDownGiven false, low XYZ, madeNew true, margin 10, marginGiven false, mm Func`2,
-    name Heron IF12 Eye Level, noGeometry 0 item(s), number Func`2, reachFar Action`2, reachedCamera
-    true, readBack ''Heron IF12 Eye Level'': eye -13473,-46226,1600 mm looking 0.4226,0.9063,0,
-    perspective; crop box in the view''s frame X -14 to 17, Y -10 to 11, Z -92888 to -93 mm;
-    far clip on at 92888 mm; 24 of 24 element(s) inside that crop box, its window drawn 30
-    mm in front of the eye. Shot eye-level: stood on the front side (its face looks south),
-    stepped 25° round toward the left side; the front was taken as the long face looking south
-    (180°), azimuth 205° (south-south-west); eye 1600 mm above ''Level 1'', 44397 mm from
-    their middle in plan; aimed at 5290,-5989,1600 mm; level - verticals stay vertical; 35
-    mm lens asked; picture 1.5:1; composition centre. Lens: about 35 mm on 35 mm film - 54.4°
-    across, 37.8° up and down, the window 31 x 21 mm at 30 mm in front of the eye. Revit shows
-    Eye Elevation 1600 mm and Target Elevation 1600 mm., refused (null), shotAlias 47 entry(ies),
-    shotAspect 1 entry(ies), shotComposition 10 entry(ies), shotKey eyelevel, shotTitle 10
-    entry(ies), shots 10 entry(ies), sideCompass (null), sideKey none, squash Func`2, upFor
-    Func`2, windowDistance Func`2, wrap Func`2. inputs came elements from the selection (24);
-    viewName as given; direction not given - "auto", the card''s own default (optional); lookDownDeg
-    not given - "auto", the card''s own default (optional); distanceMm not given - "auto",
+    true, distance (null), eyeHeightAsked (null), faces 11 entry(ies), farClipProblem (null),
+    findings 2 item(s) [The new view: phase ''New Construction'' (the active view''s, ''...,
+    Made perspective view ''N22 Frame - Air Terminals'' at 105 ele...], framed 105, high XYZ,
+    isAuto Func`2, lens about 41 mm on 35 mm film - 47.5° across, 28.2° up and down, the window
+    27 x 15 mm at 30 mm in front of the eye, lensAsked (null), levelAsked (null), lookDown
+    30, lookDownGiven true, low XYZ, madeNew true, margin 10, marginGiven false, mm Func`2,
+    name N22 Frame - Air Terminals, noGeometry 0 item(s), number Func`2, phaseOf Func`2, reachFar
+    Action`2, reachedCamera true, readBack ''N22 Frame - Air Terminals'': eye 77840,-45917,51837
+    mm looking -0.6124,0.6124,-0.5, perspective; crop box in the view''s frame X -13 to 14,
+    Y -10 to 5, Z -144630 to -145 mm; far clip on at 144630 mm; 105 of 105 element(s) inside
+    that crop box, its window drawn 30 mm in front of the eye. Its phase ''New Construction'',
+    phase filter ''Show Complete''., refused (null), shotAlias 47 entry(ies), shotAspect 1
+    entry(ies), shotComposition 10 entry(ies), shotKey none, shotTitle 10 entry(ies), shots
+    10 entry(ies), sideCompass (null), sideKey none, squash Func`2, upFor Func`2, windowAssumed
+    false, windowDistance Func`2, wrap Func`2. inputs came elements from the selection (105);
+    viewName as given; direction as given; lookDownDeg as given; distanceMm not given - "auto",
     the card''s own default (optional); marginPercent not given - "auto", the card''s own
-    default (optional); shot as given; side not given - "none", the card''s own default (optional);
-    eyeHeightMm not given - "auto", the card''s own default (optional); lensMm not given -
-    "auto", the card''s own default (optional); composition not given - "auto", the card''s
-    own default (optional); levelCamera not given - "auto", the card''s own default (optional);
-    aspect not given - "auto", the card''s own default (optional). on Cinematic ID Test'
-  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: Level 1, viewName=Heron
-    IF12 neg, shot=Spielberg instead - chosen because it should not contain what this fragment
-    reports - the arrangement was re-made first by running select-by-category-name, set-selection
-    with this phase''s own values - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned MmPerFoot 304.8, aspectAsked (null), azimuth 0,
-    boxed 0 item(s), camera (null), cinematic false, cinematicText , compass 16 entry(ies),
-    compassNames 16 item(s) [north, north-north-east, north-east, ...], compassOf Func`2,
-    compositionAsked (null), culture CultureInfo, d southeast, deg Func`2, directionAsked
-    south-east, directionGiven false, distance (null), eyeHeightAsked (null), faces 11 entry(ies),
-    findings 1 item(s) [''Spielberg'' is not a shot - say eye-level, low-angle (hero),...],
-    framed 0, high (null), isAuto Func`2, lens , lensAsked (null), levelAsked (null), lookDown
-    30, lookDownGiven false, low (null), madeNew false, margin 10, marginGiven false, mm Func`2,
-    name Heron IF12 neg, noGeometry 0 item(s), number Func`2, reachFar Action`2, reachedCamera
-    false, readBack , refused ''Spielberg'' is not a shot - say eye-level, low-angle (hero),
-    high-angle, aerial (bird''s-eye), worm''s-eye, three-quarter, front (one-point), interior,
-    close-up (detail), cinematic, or none. NOTHING WAS CHANGED., shotAlias 47 entry(ies),
-    shotAspect 1 entry(ies), shotComposition 10 entry(ies), shotKey spielberg, shotTitle 10
-    entry(ies), shots 10 entry(ies), sideCompass (null), sideKey none, squash Func`2, upFor
-    Func`2, windowDistance Func`2, wrap Func`2. inputs came elements from the selection (24);
-    viewName as given; direction not given - "auto", the card''s own default (optional); lookDownDeg
-    not given - "auto", the card''s own default (optional); distanceMm not given - "auto",
-    the card''s own default (optional); marginPercent not given - "auto", the card''s own
-    default (optional); shot as given; side not given - "none", the card''s own default (optional);
-    eyeHeightMm not given - "auto", the card''s own default (optional); lensMm not given -
-    "auto", the card''s own default (optional); composition not given - "auto", the card''s
-    own default (optional); levelCamera not given - "auto", the card''s own default (optional);
-    aspect not given - "auto", the card''s own default (optional). on Cinematic ID Test'
+    default (optional); shot not given - "none", the card''s own default (optional); side
+    not given - "none", the card''s own default (optional); eyeHeightMm not given - "auto",
+    the card''s own default (optional); lensMm not given - "auto", the card''s own default
+    (optional); composition not given - "auto", the card''s own default (optional); levelCamera
+    not given - "auto", the card''s own default (optional); aspect not given - "auto", the
+    card''s own default (optional). on Heron Capture Test'
+  negative_case: 'run with direction=south-east, lookDownDeg=30, viewName=N22 Frame - Air
+    Terminals arranged with categoryName=Levels, inViewOnly=Elevation: North - Mech instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running select-by-category-name, set-selection with this phase''s own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned MmPerFoot 304.8, aspectAsked (null), azimuth 135, boxed 0 item(s),
+    camera (null), cinematic false, cinematicText , compass 16 entry(ies), compassNames 16
+    item(s) [north, north-north-east, north-east, ...], compassOf Func`2, compositionAsked
+    (null), culture CultureInfo, d southeast, deg Func`2, directionAsked south-east, directionGiven
+    true, distance (null), eyeHeightAsked (null), faces 11 entry(ies), farClipProblem (null),
+    findings 2 item(s) [4 element(s) have no geometry and were left out of the frame, None
+    of the 4 element(s) has geometry to frame. NOTHING WAS ...], framed 0, high (null), isAuto
+    Func`2, lens , lensAsked (null), levelAsked (null), lookDown 30, lookDownGiven true, low
+    (null), madeNew false, margin 10, marginGiven false, mm Func`2, name N22 Frame - Air Terminals,
+    noGeometry 4 item(s) [378117, 378118, 378119, ...], number Func`2, phaseOf Func`2, reachFar
+    Action`2, reachedCamera false, readBack , refused None of the 4 element(s) has geometry
+    to frame. NOTHING WAS CHANGED., shotAlias 47 entry(ies), shotAspect 1 entry(ies), shotComposition
+    10 entry(ies), shotKey none, shotTitle 10 entry(ies), shots 10 entry(ies), sideCompass
+    (null), sideKey none, squash Func`2, upFor Func`2, windowAssumed false, windowDistance
+    Func`2, wrap Func`2. inputs came elements from the selection (4); viewName as given; direction
+    as given; lookDownDeg as given; distanceMm not given - "auto", the card''s own default
+    (optional); marginPercent not given - "auto", the card''s own default (optional); shot
+    not given - "none", the card''s own default (optional); side not given - "none", the card''s
+    own default (optional); eyeHeightMm not given - "auto", the card''s own default (optional);
+    lensMm not given - "auto", the card''s own default (optional); composition not given -
+    "auto", the card''s own default (optional); levelCamera not given - "auto", the card''s
+    own default (optional); aspect not given - "auto", the card''s own default (optional).
+    on Heron Capture Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: ab00074b918a3af9
+  fingerprint: ab7cee56e7e2cc06
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
