@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -67,6 +67,33 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned created ViewSection,
+    findings 3 item(s) [Made ''Elevation 1 - a'' (Building Elevation) looking at the e...,
+    Read back: the view faces the wall square (0 degrees off)., The view keeps Revit''s default
+    extents - SET_VIEW_CROP crops...], line Line, marker ElevationMarker, mm 304.8, offsetMm
+    3000, refused 0 item(s), scale 100, target Wall, wantedSide exterior. inputs came planView
+    as given; wall as given; side as given; offsetMm as given; scale as given. on Project2'
+  negative_case: 'run with categories=Pipes, categoryName=Text Notes, exact=False, inViewOnly=FloorPlan:
+    Level 1, maxMm=3000,1700,2600, minMm=2000,1300,2200, offsetMm=3000, planView=FloorPlan:
+    Level 1, scale=100, side=exterior, wall=selected instead - chosen because it should not
+    contain what this fragment reports - the arrangement was re-made first by running select-in-region,
+    set-selection with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned created (null), findings 1 item(s)
+    [The element given is not a wall. NOTHING WAS MADE.], line (null), marker (null), mm 304.8,
+    offsetMm 3000, refused 1 item(s) [The element given is not a wall. NOTHING WAS MADE.],
+    scale 100, target (null), wantedSide exterior. inputs came planView as given; wall as
+    given; side as given; offsetMm as given; scale as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 076ebf6a0697303a
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -489,16 +489,29 @@ def _text_for(row, frag):
                     ([frag.data.get("purpose", "")] if frag else []))
 
 
-def index(store, force=False):
+def index(store, force=False, source=SCOPE.ASK):
     """Embed every fragment whose text has CHANGED. Returns (embedded, skipped).
 
     Content-hashed, per docs/05 s7: a git checkout moves every file's mtime and
     changes none of their content, so anything keyed on time re-embeds the whole
     library for nothing. Keyed on content, that costs zero.
+
+    THE TEXT COMES FROM `source`'s CARDS - heron_scope.builds_from()'s answer
+    for this store's own file unless a caller hands one over: the MAIN
+    checkout's cards for the shared store, whichever checkout asks (rows 136
+    and 5b-404, the owner's "Always build from main" of 2026-10-21). Read from
+    a worktree's own cards, a vector here was that session's unmerged words
+    for every chat on the PC. None - main's cards are not on disk anywhere -
+    embeds nothing and loads no encoder.
     """
     ensure_tables(store)
+    if source is SCOPE.ASK:
+        source = SCOPE.builds_from(getattr(store, "path", None))
+    if source is None:
+        return 0, store.count()
+    cards, checkout = source
     name, embed = encoder()
-    on_disk, _ = FRAG.load_all()
+    on_disk, _ = FRAG.load_all(cards, checkout=checkout)
 
     embedded = skipped = 0
     for row in store.fragments():

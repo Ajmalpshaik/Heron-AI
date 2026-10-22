@@ -9,7 +9,13 @@ semantic-identity: "set a view's graphic display options - sun intensity, shadow
 kind: action
 domain: revit.views
 capability: SET_GRAPHIC_DISPLAY_OPTIONS
-version: 2
+version: 3
+# VERSION 3, 2026-10-20 - row 5b-1283. A view that takes no depth cueing was
+# refused "Revit offers it in elevations and sections" - on an elevation.
+# Measured on Revit 2020: the elevations of the Systems template, Mechanical
+# or Electrical, take it once their View Discipline is Architectural; the
+# refusal now names the discipline. Version 2's proof below no longer
+# describes the code: DRAFT until it is proved again.
 # VERSION 2, 2026-10-20 - row 5b-1279, found running Group IB's IB5 on Revit
 # 2020. On a perspective camera view, version 1's read-back called
 # GetDepthCueing whatever was asked, and Revit threw "This view cannot use
@@ -160,58 +166,58 @@ contract:
 proof:
   date: '2026-10-20'
   by: Ajmal PS
-  model: Materials IA Test (3,790 elements), Revit 2020, session 29012
-  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
-    on 2026-10-20; the modeller saw the result in Revit and pressed Keep, and Revit kept it
-    as one undo step. returned asked 4, backgroundWord , byHand 1 item(s) [Cast Shadows],
-    changed 4, colour Func`2, culture CultureInfo, findings 3 item(s) [Revit''s API has no
-    member for Cast Shadows on any release 20..., ''Heron Frame - Columns'' had no silhouette
-    line style, and Re..., 4 of 4 display setting(s) read back as asked on ''Heron Frame...],
-    isKeep Func`2, number Func`2, pairs Func`2, percent Func`5, readBack ''Heron Frame - Columns''
-    (HLR): sun intensity 80, shadow intensity 40; silhouettes off, smooth lines on, transparency
-    0, hidden lines ByDiscipline; sketchy lines on, jitter 5, extension 3; depth cueing not
-    offered in this view; background None. Cast Shadows, Ambient Shadows, Ambient Light and
-    Photographic Exposure are not readable through Revit''s API., refused (null), showColour
+  model: Materials IA Test (3,901 elements), Revit 2020, session 38288
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned asked 2, backgroundWord , byHand
+    0 item(s), changed 2, colour Func`2, culture CultureInfo, findings 1 item(s) [2 of 2 display
+    setting(s) read back as asked on ''Heron Frame...], isKeep Func`2, number Func`2, pairs
+    Func`2, percent Func`5, readBack ''Heron Frame - Columns'' (Realistic): sun intensity
+    60, shadow intensity 50; silhouettes off, smooth lines on, transparency 0, hidden lines
+    ByDiscipline; sketchy lines off; depth cueing not offered in this view; background Gradient
+    235,235,235 / 250,250,250 / 205,205,205. Cast Shadows, Ambient Shadows, Ambient Light
+    and Photographic Exposure are not readable through Revit''s API., refused (null), showColour
     Func`2, silhouetteStyleName (null), squash Func`2, wantBackground (null), wantCueing (null),
-    wantEnd (null), wantExtension 3, wantFade (null), wantHidden (null), wantJitter 5, wantShadow
-    40, wantSilhouetteStyle (null), wantSilhouettes (null), wantSketchy true, wantSmooth true,
-    wantStart (null), wantSun 80, wantTransparency (null), yesNo Func`2. inputs came view
-    as given; sunIntensity as given; shadowIntensity as given; silhouettes not given - "keep",
-    the card''s own default (optional); smoothLines as given; transparency not given - "keep",
-    the card''s own default (optional); hiddenLines not given - "keep", the card''s own default
-    (optional); sketchyLines as given; depthCueing not given - "keep", the card''s own default
-    (optional); background not given - "keep", the card''s own default (optional); backgroundImage
-    not given - "keep", the card''s own default (optional); castShadows as given; ambientShadows
-    not given - "keep", the card''s own default (optional); ambientLight not given - "keep",
-    the card''s own default (optional); photographicExposure not given - "keep", the card''s
-    own default (optional). on Materials IA Test'
-  negative_case: run with view=Space Outdoor Air Schedule, sunIntensity=80 instead - chosen
-    because it should not contain what this fragment reports - run inside a transaction, and
-    Revit reported the transaction group ROLLED BACK afterwards. returned asked 0, backgroundWord
-    , byHand 0 item(s), changed 0, colour Func`2, culture CultureInfo, findings 1 item(s)
-    ['Space Outdoor Air Schedule' has no Graphic Display Options ...], isKeep Func`2, number
-    Func`2, pairs Func`2, percent Func`5, readBack , refused 'Space Outdoor Air Schedule'
-    has no Graphic Display Options - Revit gives them to views with a visual style. NOTHING
-    WAS CHANGED., showColour Func`2, silhouetteStyleName (null), squash Func`2, wantBackground
-    (null), wantCueing (null), wantEnd (null), wantExtension (null), wantFade (null), wantHidden
-    (null), wantJitter (null), wantShadow (null), wantSilhouetteStyle (null), wantSilhouettes
-    (null), wantSketchy (null), wantSmooth (null), wantStart (null), wantSun (null), wantTransparency
-    (null), yesNo Func`2. inputs came view as given; sunIntensity as given; shadowIntensity
-    not given - "keep", the card's own default (optional); silhouettes not given - "keep",
-    the card's own default (optional); smoothLines not given - "keep", the card's own default
-    (optional); transparency not given - "keep", the card's own default (optional); hiddenLines
-    not given - "keep", the card's own default (optional); sketchyLines not given - "keep",
-    the card's own default (optional); depthCueing not given - "keep", the card's own default
-    (optional); background not given - "keep", the card's own default (optional); backgroundImage
-    not given - "keep", the card's own default (optional); castShadows not given - "keep",
-    the card's own default (optional); ambientShadows not given - "keep", the card's own default
+    wantEnd (null), wantExtension (null), wantFade (null), wantHidden (null), wantJitter (null),
+    wantShadow 50, wantSilhouetteStyle (null), wantSilhouettes (null), wantSketchy (null),
+    wantSmooth (null), wantStart (null), wantSun 60, wantTransparency (null), yesNo Func`2.
+    inputs came view as given; sunIntensity as given; shadowIntensity as given; silhouettes
+    not given - "keep", the card''s own default (optional); smoothLines not given - "keep",
+    the card''s own default (optional); transparency not given - "keep", the card''s own default
+    (optional); hiddenLines not given - "keep", the card''s own default (optional); sketchyLines
+    not given - "keep", the card''s own default (optional); depthCueing not given - "keep",
+    the card''s own default (optional); background not given - "keep", the card''s own default
+    (optional); backgroundImage not given - "keep", the card''s own default (optional); castShadows
+    not given - "keep", the card''s own default (optional); ambientShadows not given - "keep",
+    the card''s own default (optional); ambientLight not given - "keep", the card''s own default
+    (optional); photographicExposure not given - "keep", the card''s own default (optional).
+    on Materials IA Test'
+  negative_case: run with view=South - Mech, depthCueing=on instead - chosen because it should
+    not contain what this fragment reports - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned asked 1, backgroundWord , byHand
+    0 item(s), changed 0, colour Func`2, culture CultureInfo, findings 1 item(s) ['South -
+    Mech' cannot use depth cueing - its View Discipline...], isKeep Func`2, number Func`2,
+    pairs Func`2, percent Func`5, readBack , refused 'South - Mech' cannot use depth cueing
+    - its View Discipline is Mechanical, and Revit 2020 offered depth cueing in an elevation
+    only once that was Architectural (Properties, View Discipline). NOTHING WAS CHANGED.,
+    showColour Func`2, silhouetteStyleName (null), squash Func`2, wantBackground (null), wantCueing
+    true, wantEnd (null), wantExtension (null), wantFade (null), wantHidden (null), wantJitter
+    (null), wantShadow (null), wantSilhouetteStyle (null), wantSilhouettes (null), wantSketchy
+    (null), wantSmooth (null), wantStart (null), wantSun (null), wantTransparency (null),
+    yesNo Func`2. inputs came view as given; sunIntensity not given - "keep", the card's own
+    default (optional); shadowIntensity not given - "keep", the card's own default (optional);
+    silhouettes not given - "keep", the card's own default (optional); smoothLines not given
+    - "keep", the card's own default (optional); transparency not given - "keep", the card's
+    own default (optional); hiddenLines not given - "keep", the card's own default (optional);
+    sketchyLines not given - "keep", the card's own default (optional); depthCueing as given;
+    background not given - "keep", the card's own default (optional); backgroundImage not
+    given - "keep", the card's own default (optional); castShadows not given - "keep", the
+    card's own default (optional); ambientShadows not given - "keep", the card's own default
     (optional); ambientLight not given - "keep", the card's own default (optional); photographicExposure
     not given - "keep", the card's own default (optional). on Materials IA Test
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: a3a872abcb1113e7
-
+  fingerprint: dac047b8201f26bf
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

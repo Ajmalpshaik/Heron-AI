@@ -9,7 +9,29 @@ semantic-identity: "make a perspective camera view that frames these elements, f
 kind: action
 domain: revit.views
 capability: FRAME_ELEMENTS_IN_CAMERA
-version: 3
+version: 4
+# VERSION 4, 2026-10-21 - four faults found making real cinematic views on
+# Revit 2020's sample house after version 3 was signed (Group IF). No input is
+# added or removed; a call that worked before frames as before, but for these:
+# (1) row 5b-1308 - the interior eye stood 600 mm in from the room's BOUNDING
+# BOX; on 'Kitchen & Dining 101', side right, that was inside a double door's
+# frame and the Raytracer render came out black. It now stands the inset in
+# from the room's OWN boundary (Room.IsPointInRoom, found coming in from the
+# box), steps further in until nothing solid is within 150 mm, and refuses,
+# naming what is in the way, when no point is clear. (2) row 5b-1304 - a window
+# that cannot hold the elements (distanceMm given, or no distance found for the
+# lens) was centred on their box's projected corners, which slid it to the
+# floor: ten chairs and tables at 2500 mm gave a picture of table legs. It now
+# drops a composition that cannot hold them, and when even centred cannot,
+# centres on their middle, and says so. (3) row 5b-1307
+# - a new view took Revit's phase filter 'Show All' and drew earlier phases
+# grey in renders; it now takes the active view's phase (else the project's
+# last) and the model's own 'Show Complete'. (4) row 5b-1302, folded in - the
+# crop box's Z bottom is again set past the deepest corner, and a far clip that
+# could not be pushed out, or a crop shape that could not be read, is said.
+# Version 3's proof below no longer describes the code: DRAFT until
+# NEEDS-CHECKING Group IM proves version 4, with the pictures looked at.
+#
 # VERSION 3, 2026-10-20 (night) - row 5b-1287, on the owner's words: "I need
 # this building left side like in a cinematic camera look ... different
 # styles, camera angles, camera height ... all kind of camera settings". Six
@@ -21,12 +43,26 @@ version: 3
 # no longer describes the code: DRAFT until NEEDS-CHECKING Group IF proves it,
 # with an exported picture of every shot looked at.
 #
+# CORRECTED 2026-10-21, before its proof - row 5b-1301, found by Group IF's
+# first picture on Revit 2020's sample house: the building came out a third of
+# the width it should. (1) The crop window is drawn 0.1 ft (30.48 mm) in front
+# of the eye - where the view's crop SHAPE lies - and not at the crop box's Z
+# top, which is only the far clip over a thousand (40.2 mm at Revit's 40232 mm
+# far clip, 92.9 mm on the sample house). Both roads, the read-back and `lens`
+# now use the crop shape's distance. (2) A camera further than the far clip cut
+# the elements out: Revit ignores a crop box's Z bottom on a perspective view,
+# so the far clip PARAMETER is pushed out to reach the deepest corner. (3) On
+# the owner's word, the eye height is measured from the level MOST of the
+# elements stand on, not the lowest - one partition on 'Foundation' had put the
+# eye-level camera 800 mm above the ground floor.
+#
 # VERSION 2, 2026-10-20 - row 5b-1281. Version 1, signed the same day on
 # numbers alone (IB1's look at the view was never made), set a perspective
 # view's crop box to the elements' box metres away; Revit draws a perspective
 # crop window on its own near plane, 40 mm in front of the eye, so three
 # exported views showed the elements as a dot. The corners are now projected
-# onto that plane. Version 1's proof below no longer describes the code:
+# onto that plane. (The 40 mm was the far clip over a thousand; the window is
+# drawn 30.48 mm in front - row 5b-1301, above.) Version 1's proof below no longer describes the code:
 # DRAFT until it is proved again WITH the picture looked at.
 source: OFFICIAL
 risk: MODIFY
@@ -109,12 +145,14 @@ risk: MODIFY
 # `direction` still works as version 2's, but not beside `side`. A shot with
 # neither stands on the front.
 #
-# THE EYE HEIGHT is above the lowest level the elements stand on (their
-# Level), or the bottom of their box when none has one - named in the answer.
+# THE EYE HEIGHT is above the level most of the elements stand on (their
+# Level; the lowest of those that tie), or the bottom of their box when none
+# has one - named in the answer (row 5b-1301, the owner's word).
 #
 # THE LENS. Revit's API has no field-of-view value (row 5b-1267), but the
-# perspective crop window IS one: it lies on the near plane, about 40 mm in
-# front of the eye (measured, row 5b-1281), so its angle across is
+# perspective crop window IS one: it is drawn 0.1 ft (30.48 mm) in front of
+# the eye, where the view's crop shape lies (measured, row 5b-1301 - row
+# 5b-1281's 40 mm was the far clip over a thousand), so its angle across is
 # 2 x atan(half-width / near). A lens of f mm on 35 mm film (36 x 24 mm) is a
 # window near x 18 / f wide each side of the middle and near x 12 / f high. The
 # window is made that size and the eye is moved out until the elements fit it
@@ -131,17 +169,36 @@ risk: MODIFY
 # the horizon on the bottom third line, a big sky. One that cannot hold the
 # elements from that angle falls back to centre and says so.
 #
-# INTERIOR stands INSIDE the elements' box - select the room, or its walls -
-# 600 mm in from the face of the side named (distanceMm, when given, is that
-# inset), looking straight across at eye height. Nothing is pulled back, so
+# INTERIOR stands INSIDE the room - select the room, or its walls (the room at
+# their middle is then used) - 600 mm in from the room's OWN boundary on the
+# side named (distanceMm, when given, is that inset), looking straight across
+# at eye height. Version 4 (row 5b-1308): the boundary is found coming in from
+# the box's face until the point is in the room, and the eye steps further in,
+# 100 mm at a time, until nothing solid is within 150 mm - a wall, a door's
+# frame - never past half way across; with no such point it refuses, naming
+# what is in the way. Nothing is pulled back, so
 # the lens alone decides what is seen, and `framed` cannot count a room the
 # eye stands in: the answer says so and the picture is the check.
+#
+# A WINDOW THAT CANNOT HOLD THE ELEMENTS - distanceMm too close for the lens,
+# or no distance found - drops a composition that cannot hold them for centre,
+# and when even centred cannot, is centred on the elements' MIDDLE, with a
+# finding saying so (version 4, row 5b-1304). Version 3 put it
+# on the middle of their box's projected corners, and the corners nearest the
+# eye pulled it to the floor.
+#
+# A NEW VIEW'S PHASE (version 4, row 5b-1307): the active view's phase, or the
+# project's last, and the model's own phase filter 'Show Complete' - looked up
+# by name, never made; with none by that name the view keeps Revit's default
+# and the finding says so. A view that already existed keeps its own.
 #
 # THE READ-BACK adds, from what the view holds afterwards: the side stood on
 # and its azimuth, the eye height above the base level, the point aimed at,
 # the look angle, `lens` - the 35 mm-film lens the crop window amounts to and
 # its angles across and up - and Revit's own Eye Elevation and Target
-# Elevation. `framed` is version 2's count.
+# Elevation. `framed` is version 2's count. Version 4 adds the view's phase
+# and phase filter, and says when the far clip could not be pushed out or the
+# crop shape could not be read (row 5b-1302).
 #
 # NOT YET: a portrait (upright) picture - the window is 3:2 across; depth of
 # field; a camera path for a walkthrough.
@@ -281,45 +338,84 @@ contract:
     - name: findings
       type: IList<string>
 
-# VERSION 2's PROOF, KEPT AS A RECORD. Version 3 changed impl/, so its
-# fingerprint no longer describes the code and the card is DRAFT until Group
-# ID proves version 3 (D-30). A call with none of the six new inputs still
-# takes the road this proof ran.
+# VERSION 3's PROOF (Group IF, IF12), KEPT AS A RECORD. Version 4 changed
+# impl/, so its fingerprint no longer describes the code and the card is DRAFT
+# until Group IM proves version 4 (D-30). An exterior call whose window holds
+# its elements still takes the road this proof ran; a new view now also gets
+# its phase (row 5b-1307).
 proof:
-  date: '2026-10-20'
+  date: '2026-10-21'
   by: Ajmal PS
-  model: Materials IA Test (3,901 elements), Revit 2020, session 43476
+  model: Cinematic ID Test (5,198 elements), Revit 2020, session 68704
   positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
-    on 2026-10-20; the modeller saw the result in Revit and pressed Keep, and Revit kept it
-    as one undo step. returned MmPerFoot 304.8, azimuth 135, boxed 2 item(s) [457 x 475mm,
-    457 x 475mm], camera View3D, compass 16 entry(ies), culture CultureInfo, d southeast,
-    distance (null), findings 1 item(s) [Made perspective view ''Heron Frame v2 Look'' at
-    2 element(s) ...], framed 2, high XYZ, lookDown 30, low XYZ, madeNew true, margin 10,
-    mm Func`2, name Heron Frame v2 Look, noGeometry 0 item(s), number Func`2, readBack ''Heron
-    Frame v2 Look'': eye 5572,-4072,5325 mm looking -0.6124,0.6124,-0.5, perspective; crop
-    box in the view''s frame X -10 to 13, Y -17 to 16, Z -40232 to -40 mm; far clip on at
-    40232 mm; 2 of 2 element(s) inside that crop box., refused (null), squash Func`2. inputs
-    came elements from the selection (2); viewName as given; direction as given; lookDownDeg
-    as given; distanceMm not given - "auto", the card''s own default (optional); marginPercent
-    as given. on Materials IA Test'
-  negative_case: run with minMm=-300,-300,-100, maxMm=3300,300,4100, exact=false, categories=Columns,
-    viewName={3D}, direction=south-east, lookDownDeg=30, marginPercent=10 instead - chosen
-    because it should not contain what this fragment reports - the arrangement was re-made
-    first by running select-in-region, set-selection with this phase's own values - run inside
-    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    MmPerFoot 304.8, azimuth 135, boxed 2 item(s) [457 x 475mm, 457 x 475mm], camera (null),
-    compass 16 entry(ies), culture CultureInfo, d southeast, distance (null), findings 1 item(s)
-    ['{3D}' is an isometric 3D view. This frames elements in a pe...], framed 0, high XYZ,
-    lookDown 30, low XYZ, madeNew false, margin 10, mm Func`2, name {3D}, noGeometry 0 item(s),
-    number Func`2, readBack , refused '{3D}' is an isometric 3D view. This frames elements
-    in a perspective view - name a new one, or turn this one perspective with SET_VIEW_CAMERA
-    first. NOTHING WAS CHANGED., squash Func`2. inputs came elements from the selection (2);
-    viewName as given; direction as given; lookDownDeg as given; distanceMm not given - "auto",
-    the card's own default (optional); marginPercent as given. on Materials IA Test
+    on 2026-10-21; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned MmPerFoot 304.8, aspectAsked (null), azimuth 135, boxed 24
+    item(s) [Wall - Timber Clad, Wall - Timber Clad, Wall - Timber Clad, ...], camera View3D,
+    cinematic true, cinematicText Shot eye-level: stood on the front side (its face looks
+    south), stepped 25° round toward the left side; the front was taken as the long face looking
+    south (180°), azimuth 205° (south-south-west); eye 1600 mm above ''Level 1'', 44397 mm
+    from their middle in plan; aimed at 5290,-5989,1600 mm; level - verticals stay vertical;
+    35 mm lens asked; picture 1.5:1; composition centre., compass 16 entry(ies), compassNames
+    16 item(s) [north, north-north-east, north-east, ...], compassOf Func`2, compositionAsked
+    (null), culture CultureInfo, d southeast, deg Func`2, directionAsked south-east, directionGiven
+    false, distance (null), eyeHeightAsked (null), faces 11 entry(ies), findings 1 item(s)
+    [Made perspective view ''Heron IF12 Eye Level'' at 24 element(s...], framed 24, high XYZ,
+    isAuto Func`2, lens about 35 mm on 35 mm film - 54.4° across, 37.8° up and down, the window
+    31 x 21 mm at 30 mm in front of the eye, lensAsked (null), levelAsked (null), lookDown
+    30, lookDownGiven false, low XYZ, madeNew true, margin 10, marginGiven false, mm Func`2,
+    name Heron IF12 Eye Level, noGeometry 0 item(s), number Func`2, reachFar Action`2, reachedCamera
+    true, readBack ''Heron IF12 Eye Level'': eye -13473,-46226,1600 mm looking 0.4226,0.9063,0,
+    perspective; crop box in the view''s frame X -14 to 17, Y -10 to 11, Z -92888 to -93 mm;
+    far clip on at 92888 mm; 24 of 24 element(s) inside that crop box, its window drawn 30
+    mm in front of the eye. Shot eye-level: stood on the front side (its face looks south),
+    stepped 25° round toward the left side; the front was taken as the long face looking south
+    (180°), azimuth 205° (south-south-west); eye 1600 mm above ''Level 1'', 44397 mm from
+    their middle in plan; aimed at 5290,-5989,1600 mm; level - verticals stay vertical; 35
+    mm lens asked; picture 1.5:1; composition centre. Lens: about 35 mm on 35 mm film - 54.4°
+    across, 37.8° up and down, the window 31 x 21 mm at 30 mm in front of the eye. Revit shows
+    Eye Elevation 1600 mm and Target Elevation 1600 mm., refused (null), shotAlias 47 entry(ies),
+    shotAspect 1 entry(ies), shotComposition 10 entry(ies), shotKey eyelevel, shotTitle 10
+    entry(ies), shots 10 entry(ies), sideCompass (null), sideKey none, squash Func`2, upFor
+    Func`2, windowDistance Func`2, wrap Func`2. inputs came elements from the selection (24);
+    viewName as given; direction not given - "auto", the card''s own default (optional); lookDownDeg
+    not given - "auto", the card''s own default (optional); distanceMm not given - "auto",
+    the card''s own default (optional); marginPercent not given - "auto", the card''s own
+    default (optional); shot as given; side not given - "none", the card''s own default (optional);
+    eyeHeightMm not given - "auto", the card''s own default (optional); lensMm not given -
+    "auto", the card''s own default (optional); composition not given - "auto", the card''s
+    own default (optional); levelCamera not given - "auto", the card''s own default (optional);
+    aspect not given - "auto", the card''s own default (optional). on Cinematic ID Test'
+  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: Level 1, viewName=Heron
+    IF12 neg, shot=Spielberg instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running select-by-category-name, set-selection
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned MmPerFoot 304.8, aspectAsked (null), azimuth 0,
+    boxed 0 item(s), camera (null), cinematic false, cinematicText , compass 16 entry(ies),
+    compassNames 16 item(s) [north, north-north-east, north-east, ...], compassOf Func`2,
+    compositionAsked (null), culture CultureInfo, d southeast, deg Func`2, directionAsked
+    south-east, directionGiven false, distance (null), eyeHeightAsked (null), faces 11 entry(ies),
+    findings 1 item(s) [''Spielberg'' is not a shot - say eye-level, low-angle (hero),...],
+    framed 0, high (null), isAuto Func`2, lens , lensAsked (null), levelAsked (null), lookDown
+    30, lookDownGiven false, low (null), madeNew false, margin 10, marginGiven false, mm Func`2,
+    name Heron IF12 neg, noGeometry 0 item(s), number Func`2, reachFar Action`2, reachedCamera
+    false, readBack , refused ''Spielberg'' is not a shot - say eye-level, low-angle (hero),
+    high-angle, aerial (bird''s-eye), worm''s-eye, three-quarter, front (one-point), interior,
+    close-up (detail), cinematic, or none. NOTHING WAS CHANGED., shotAlias 47 entry(ies),
+    shotAspect 1 entry(ies), shotComposition 10 entry(ies), shotKey spielberg, shotTitle 10
+    entry(ies), shots 10 entry(ies), sideCompass (null), sideKey none, squash Func`2, upFor
+    Func`2, windowDistance Func`2, wrap Func`2. inputs came elements from the selection (24);
+    viewName as given; direction not given - "auto", the card''s own default (optional); lookDownDeg
+    not given - "auto", the card''s own default (optional); distanceMm not given - "auto",
+    the card''s own default (optional); marginPercent not given - "auto", the card''s own
+    default (optional); shot as given; side not given - "none", the card''s own default (optional);
+    eyeHeightMm not given - "auto", the card''s own default (optional); lensMm not given -
+    "auto", the card''s own default (optional); composition not given - "auto", the card''s
+    own default (optional); levelCamera not given - "auto", the card''s own default (optional);
+    aspect not given - "auto", the card''s own default (optional). on Cinematic ID Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 3a6baca91e087869
+  fingerprint: ab00074b918a3af9
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -337,7 +433,14 @@ compatibility-note: >
   Element.LevelId with Level.ProjectElevation, and BuiltInParameter
   VIEWER_EYE_ELEVATION and VIEWER_TARGET_ELEVATION - SET_VIEW_CAMERA already
   calls the level's elevation and both parameters on every release - compiled
-  for all eight by tools/check-fragments-compile.py on 2026-10-20.
+  for all eight by tools/check-fragments-compile.py on 2026-10-20. Version 4
+  adds Room.IsPointInRoom, Space.IsPointInSpace and Document.GetRoomAtPoint
+  (FILTER_ELEMENTS_IN_ROOM calls the first two), CurveLoop.Create,
+  GeometryCreationUtilities.CreateExtrusionGeometry, ElementIntersectsSolidFilter
+  and BoundingBoxIntersectsFilter with Outline (CHECK_EQUIPMENT_CLEARANCE's
+  clash test), Document.ActiveView, Document.Phases, PhaseFilter and
+  BuiltInParameter VIEW_PHASE and VIEW_PHASE_FILTER (SET_VIEW_PHASE's) -
+  compiled for all eight by tools/check-fragments-compile.py on 2026-10-21.
 
 # ROUTING - the same rows are in the render, sun, display and camera cards.
 #
