@@ -174,3 +174,17 @@ signs it on IC4's kept run, which is not run yet.
 `wouldChange` 6 against `Studio Glow` refused) and `apply-visual-preset` (IC4 kept, against the schedule refused),
 both PROVEN. Still owed: IC6 and IC7's repairs (rows 5b-1282 and 5b-1283, the owner's word), IC10 (the method
 end to end, his Render), and the method's own signature.
+
+**IC6 and IC7 again, after the repairs (rows 5b-1282, 5b-1283), on the owner's word - same evening, Revit 2020:**
+
+| # | Result | What was seen |
+|---|---|---|
+| IC6 | PASS - pending the owner's dialog look | Rolled back, `Exterior Dusk`: `changed` 8, `skipped` 0. *"Sun still 18:52 (as the preset)"* and *"Dusk is half an hour before Revit's sunset for the site on 21 June 2026: 19:22 project time"*. On the way, measured: Revit 2020's `GetSunset` hands back the site's time turned to UTC by the PC's own zone - row 5b-1282. **Owed:** the Sun Settings dialog's sunset, by hand, against 19:22 |
+| IC7 | PASS on the reason | Rolled back, `Presentation Elevation` on `South - Mech`: `changed` 4. Depth Cueing skipped, *"its View Discipline is Mechanical, and Revit 2020 offered depth cueing in an elevation only once that was Architectural (Properties, View Discipline)"*. A preset does not change the discipline |
+
+New proof drafts, rolled back, not signed:
+- `apply-visual-preset` v2: Exterior Dusk on the camera view, `changed` 8, against the schedule refused.
+- `report-visual-preset` v2: Exterior Dusk read, against `Studio Glow` refused.
+- `set-graphic-display-options` v3: sun 60 / shadow 50, against `South - Mech` depth cueing refused with the new reason.
+
+**Signed 2026-10-20 by Ajmal PS** on his word (*"Sign sign"*): `apply-visual-preset` v2, `report-visual-preset` v2 and `set-graphic-display-options` v3 - PROVEN on the rolled-back records above.

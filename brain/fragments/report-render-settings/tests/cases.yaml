@@ -11,6 +11,13 @@ positive:
     expect: >
       sectionsRead 2 (Sun Settings and Graphic Display), Rendering said to be
       a 3D view's only, no Camera section
+  # Version 2 (row 5b-1305) - the PC's time zone is not the site's.
+  - given: >
+      on a PC whose time zone is not the site's (the owner's laptop, UTC+3,
+      and Revit 2020's sample house, site Boston -5), a 3D view whose Sun
+      Settings dialog shows a Still sun at 10:00 AM
+    expect: >
+      Sun Settings reads 10:00 - the dialog's time, not version 1's 02:00
 
 negative:
   - given: a schedule
