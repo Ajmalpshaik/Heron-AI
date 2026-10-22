@@ -5824,10 +5824,14 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> l
       template, crop and filters - and nothing about it is changed. If two
       views share the name, the answer lists each as "ViewType: Name" to type
       back.
-    - `elements`: element ids, comma separated, as Heron's answers print them.
-      Heron frames just those in a temporary isometric 3D view - a section box
-      round them with a margin, model categories only, levels, grids and links
-      left out of the box - and takes the view away again.
+    - `elements`: element ids, comma separated, as Heron's answers print them
+      - Revit's number, or the long id the family form tools give back for a
+      form (`formIds` of CREATE_FAMILY_FORMS, REPORT_FAMILY_FORMS,
+      SELECT_FAMILY_FORMS); the two may be mixed. Heron frames just those in a
+      temporary isometric 3D view - a section box round them with a margin,
+      model categories only, levels, grids and links left out of the box - and
+      takes the view away again. An id the model or family in front has not
+      got refuses the whole picture, naming it.
 
     `width` is the picture's width in pixels, 320 to 2400 (default 1280).
 
