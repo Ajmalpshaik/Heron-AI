@@ -980,6 +980,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ir.md`](needs-checking/group-ir.md)
 
+## Group IS - a revolve's radius labelled on Revit 2020, both references checked before Revit is asked: `LABEL_FAMILY_RADIUS` version 5 (2026-10-22)
+
+**Its own file:** [`needs-checking/group-is.md`](needs-checking/group-is.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
