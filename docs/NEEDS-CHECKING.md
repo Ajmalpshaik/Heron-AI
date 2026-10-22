@@ -932,6 +932,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-if.md`](needs-checking/group-if.md)
 
+## Group IN - a still sun's time through the PC's own time zone: `SET_SUN_SETTINGS` v2, `APPLY_VISUAL_PRESET` v3, `REPORT_VISUAL_PRESET` v3 (2026-10-21)
+
+**Its own file:** [`needs-checking/group-in.md`](needs-checking/group-in.md)
+
 ## Group IH - one schedule filter rule changed, the others kept: `SET_SCHEDULE_FILTERS` and `REPORT_SCHEDULE_DEFINITION` version 2 (2026-10-21)
 
 **Its own file:** [`needs-checking/group-ih.md`](needs-checking/group-ih.md)
@@ -943,6 +947,10 @@ Step 6 is finished, and not before. At that point:
 ## Group IK - a lighting fixture's light source, all of it Heron's: every family type, the Light Source tick, position and aim, a wattage, loss factor, dimming and filter (2026-10-21)
 
 **Its own file:** [`needs-checking/group-ik.md`](needs-checking/group-ik.md)
+
+## Group IM - the interior camera inside its room, the close-range picture on the elements' middle, and a sun's time on the site's clock: `FRAME_ELEMENTS_IN_CAMERA` version 4 and `REPORT_RENDER_SETTINGS` version 2 (2026-10-21)
+
+**Its own file:** [`needs-checking/group-im.md`](needs-checking/group-im.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

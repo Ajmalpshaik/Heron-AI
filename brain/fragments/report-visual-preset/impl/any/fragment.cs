@@ -202,9 +202,29 @@ var takesBackground = inputProblem == null && (view.ViewType == ViewType.ThreeD 
 var viewKind = inputProblem == null ? (view.ViewType == ViewType.ThreeD ? "3d" : view.ViewType == ViewType.Elevation
     ? "elevation" : view.ViewType == ViewType.Section ? "section" : view.ViewType.ToString().ToLowerInvariant()) : "";
 var site = doc.SiteLocation;
-Func<DateTime, DateTime> toProject = utc => site.ConvertToProjectTime(DateTime.SpecifyKind(utc, DateTimeKind.Utc));
+// A STILL SUN'S TIME is the dialog's clock, which Revit holds turned to UTC by
+// the PC's OWN time zone (row 5b-1306, version 3): the site's zone, which
+// version 2 used, wrote "still 10:00" as 18:00 on a laptop at UTC+3 with the
+// site in Boston - the sun below the horizon - and read 10:00 back as 02:00.
+Func<DateTime, DateTime> toProject = utc =>
+    DateTime.SpecifyKind(DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime(), DateTimeKind.Unspecified);
 Func<DateTime, DateTime> toUtc = project =>
-    DateTime.SpecifyKind(site.ConvertFromProjectTime(DateTime.SpecifyKind(project, DateTimeKind.Unspecified)), DateTimeKind.Utc);
+    DateTime.SpecifyKind(DateTime.SpecifyKind(project, DateTimeKind.Local).ToUniversalTime(), DateTimeKind.Utc);
+// WHY A VIEW TAKES NO DEPTH CUEING (version 2, row 5b-1283). Measured
+// 2026-10-20 on Revit 2020: every elevation of the metric Systems template -
+// View Discipline Mechanical or Electrical - answered CanUseDepthCueing
+// false, whatever its Far Clipping or visual style, and true once its View
+// Discipline was Architectural. The reason names the discipline the view has;
+// the discipline is the modeller's to change, never this tool's.
+Func<View, string> noCueingWhy = cueView =>
+{
+    var discipline = cueView.get_Parameter(BuiltInParameter.VIEW_DISCIPLINE);
+    var disciplineWord = discipline == null ? null : discipline.AsValueString();
+    if ((cueView.ViewType == ViewType.Elevation || cueView.ViewType == ViewType.Section) && !string.IsNullOrEmpty(disciplineWord))
+        return "'" + cueView.Name + "' cannot use depth cueing - its View Discipline is " + disciplineWord
+            + ", and Revit 2020 offered depth cueing in an elevation only once that was Architectural (Properties, View Discipline)";
+    return "'" + cueView.Name + "' cannot use depth cueing - Revit offers it in elevations and sections only";
+};
 var noDisplay = inputProblem == null ? "'" + view.Name + "' has no Graphic Display Options - Revit gives them to views with "
     + "a visual style" : "";
 var noRender = inputProblem == null ? "'" + view.Name + "' is not a 3D view, and only a 3D view has Rendering Settings" : "";
@@ -299,7 +319,7 @@ Func<string, string[]> settingNow = key =>
         if (key == "Depth Cueing")
         {
             if (!view.CanUseDepthCueing())
-                return new[] { "", "'" + view.Name + "' cannot use depth cueing - Revit offers it in elevations and sections" };
+                return new[] { "", noCueingWhy(view) };
             var cueing = view.GetDepthCueing();
             return new[] { cueing.EnableDepthCueing ? "start=" + cueing.StartPercentage + "; end=" + cueing.EndPercentage
                 + "; fade=" + cueing.FadeTo : "off", null };
@@ -323,6 +343,7 @@ Func<string, string[]> settingNow = key =>
 
 // ---- what the preset wants on THIS view: { value, why it cannot be worked out } ----
 DateTime? duskUtc = null;
+string sunsetSaid = null;
 Func<string, string, string[]> settingWant = (key, value) =>
 {
     if (value == "by purpose")
@@ -333,9 +354,26 @@ Func<string, string, string[]> settingWant = (key, value) =>
     if (sun == null) return new[] { "", "'" + view.Name + "' has no sun settings" };
     try
     {
-        var sunset = sun.GetSunset(toProject(sun.StartDateAndTime).Date);
-        duskUtc = DateTime.SpecifyKind(sunset, DateTimeKind.Utc).AddMinutes(-30);
-        return new[] { "still " + toProject(duskUtc.Value).ToString("HH:mm", culture), null };
+        // THE DATE IS HANDED OVER AS UTC (version 2, row 5b-1282). Revit
+        // refused the project-time date, whose Kind is Unspecified: "Revit
+        // does not accept input DateTime objects if they are of kind
+        // DateTypeKind.Unspecified" (Revit 2020, Group IC's IC6). Only the
+        // date part is used, so the day stays the view's own.
+        var sunset = sun.GetSunset(DateTime.SpecifyKind(toProject(sun.StartDateAndTime).Date, DateTimeKind.Utc));
+        // WHAT REVIT 2020 HANDS BACK IS THE SITE'S SUNSET IN PROJECT TIME, TURNED
+        // TO UTC BY THIS PC'S OWN TIME ZONE (row 5b-1282). Measured 2026-10-20
+        // on the owner's laptop (Arabian Standard Time, +3), site Boston, time
+        // zone -5, 21 June: GetSunset gave 16:22 UTC and GetSunrise 01:10 UTC -
+        // Boston's 19:22 and 04:10 standard time, each less the PC's 3 hours,
+        // not the true 00:24 and 09:10 UTC. So the PC's own zone is taken off
+        // again (ToLocalTime) to give the sunset in project time, and the
+        // half hour is taken from that.
+        var sunsetProject = DateTime.SpecifyKind(DateTime.SpecifyKind(sunset, DateTimeKind.Utc).ToLocalTime(), DateTimeKind.Unspecified);
+        var duskProject = sunsetProject.AddMinutes(-30);
+        duskUtc = toUtc(duskProject);
+        sunsetSaid = "Dusk is half an hour before Revit's sunset for the site on " + sunsetProject.ToString("d MMMM yyyy", culture)
+            + ": " + sunsetProject.ToString("HH:mm", culture) + " project time";
+        return new[] { "still " + duskProject.ToString("HH:mm", culture), null };
     }
     catch (Exception ex) { return new[] { "", "Revit would not give the sunset for the site: " + ex.Message }; }
 };
@@ -455,4 +493,5 @@ if (refused == null)
         findings.Add("'" + view.Name + "' has a view template - a setting the template controls cannot be given to the "
             + "view itself");
 }
+if (refused == null && sunsetSaid != null) findings.Add(sunsetSaid);
 if (refused != null) findings.Add(refused);

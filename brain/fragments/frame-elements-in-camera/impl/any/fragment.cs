@@ -58,13 +58,35 @@
 //     elements' middle on the left or right third line) or low-horizon (the
 //     horizon on the bottom third line). One that cannot hold the elements
 //     from that angle falls back to centre and says so.
-//   - INTERIOR stands INSIDE the elements' box - a room, or its walls - 600 mm
-//     in from the face of the side named (distanceMm when given), looking
-//     straight across: nothing is pulled back, so the lens alone decides what
-//     is seen, and `framed` cannot count a room the eye stands inside.
+//   - INTERIOR stands INSIDE the room - the room handed in, or the room at
+//     the elements' middle - 600 mm in from the room's own boundary on the
+//     side named (distanceMm when given), looking straight across: nothing is
+//     pulled back, so the lens alone decides what is seen, and `framed` cannot
+//     count a room the eye stands inside.
 // The answer reads back the eye, the point aimed at, the eye height above the
 // base level, the look angle, the lens and the angle across - from the crop
 // window Revit holds afterwards - and `framed` as before.
+//
+// VERSION 4 - FOUR FAULTS FOUND MAKING REAL VIEWS ON REVIT 2020'S SAMPLE HOUSE.
+//   - THE INTERIOR EYE (row 5b-1308) was 600 mm in from the room's BOUNDING
+//     BOX, and stood inside a double door's frame where the box ran past the
+//     wall: the Raytracer drew the picture black. The eye now comes in from
+//     the box's face until it is inside the room (Room.IsPointInRoom,
+//     Space.IsPointInSpace), stands the inset in from there, and steps further
+//     in, 100 mm at a time, until nothing solid is within 150 mm of it - or
+//     refuses, naming what is in the way.
+//   - A WINDOW THAT CANNOT HOLD THE ELEMENTS (row 5b-1304) - distanceMm given,
+//     or no distance found for the lens - was centred on the projected corners
+//     of their box, and the corners nearest the eye project far off, so the
+//     picture slid down to the floor. Such a window is now centred on the
+//     elements' middle, and the answer says so.
+//   - A NEW VIEW'S PHASE (row 5b-1307): Revit gives a new view the phase
+//     filter 'Show All', which draws earlier-phase work grey. A view made here
+//     takes the active view's phase (else the project's last) and the model's
+//     own 'Show Complete' filter, and the answer names both.
+//   - THE FAR CLIP AND THE WINDOW'S DISTANCE (row 5b-1302) say when they could
+//     not do their job, and the crop box's Z bottom is again set past the
+//     deepest corner, for a release that honours it.
 //
 // A VIEW A TEMPLATE CONTROLS is refused rather than half-changed.
 
@@ -382,11 +404,123 @@ if (refused == null)
     }
 }
 
+// A NEW VIEW'S PHASE (version 4, row 5b-1307). Revit gives a new view the
+// phase filter 'Show All', and on the sample house that drew the existing
+// building in its grey override - the owner's interior renders came out grey
+// until he changed the Phase Filter by hand. A view made here takes the active
+// view's phase, or the project's last when the active view has none, and the
+// model's own filter named 'Show Complete' - looked up, never made. A view
+// that already existed keeps the phase its modeller gave it.
+Func<View, string> phaseOf = v =>
+{
+    var ph = v.get_Parameter(BuiltInParameter.VIEW_PHASE);
+    var pf = v.get_Parameter(BuiltInParameter.VIEW_PHASE_FILTER);
+    var phaseElement = ph != null ? doc.GetElement(ph.AsElementId()) : null;
+    var filterElement = pf != null ? doc.GetElement(pf.AsElementId()) : null;
+    return "phase " + (phaseElement != null ? "'" + phaseElement.Name + "'" : "none") + ", phase filter "
+        + (filterElement != null ? "'" + filterElement.Name + "'" : "none");
+};
+if (refused == null && madeNew && camera != null)
+{
+    try
+    {
+        Phase phaseWanted = null;
+        var phaseFrom = "";
+        var active = doc.ActiveView;
+        var activePhase = active != null ? active.get_Parameter(BuiltInParameter.VIEW_PHASE) : null;
+        if (activePhase != null) phaseWanted = doc.GetElement(activePhase.AsElementId()) as Phase;
+        if (phaseWanted != null) phaseFrom = "the active view's, '" + active.Name + "'";
+        else
+        {
+            foreach (Phase candidate in doc.Phases) phaseWanted = candidate;
+            if (phaseWanted != null) phaseFrom = "the project's last";
+        }
+        var complete = new FilteredElementCollector(doc).OfClass(typeof(PhaseFilter)).Cast<PhaseFilter>()
+            .FirstOrDefault(f => string.Equals(f.Name, "Show Complete", StringComparison.OrdinalIgnoreCase));
+        var phaseParameter = camera.get_Parameter(BuiltInParameter.VIEW_PHASE);
+        var filterParameter = camera.get_Parameter(BuiltInParameter.VIEW_PHASE_FILTER);
+        var said = new List<string>();
+        if (phaseWanted != null && phaseParameter != null && !phaseParameter.IsReadOnly)
+        {
+            if (phaseParameter.AsElementId() != phaseWanted.Id) phaseParameter.Set(phaseWanted.Id);
+            said.Add(phaseParameter.AsElementId() == phaseWanted.Id ? "phase '" + phaseWanted.Name + "' (" + phaseFrom + ")"
+                : "phase '" + phaseWanted.Name + "' NOT taken - Revit kept its own");
+        }
+        else said.Add("its phase left as Revit made it - " + (phaseWanted == null ? "the project has no phase to give it"
+            : "the view's phase cannot be set"));
+        if (complete != null && filterParameter != null && !filterParameter.IsReadOnly)
+        {
+            if (filterParameter.AsElementId() != complete.Id) filterParameter.Set(complete.Id);
+            said.Add(filterParameter.AsElementId() == complete.Id ? "phase filter 'Show Complete', so earlier phases are not drawn grey"
+                : "phase filter 'Show Complete' NOT taken - Revit kept its own");
+        }
+        else said.Add(complete == null ? "no phase filter named 'Show Complete' is in this model, so the view keeps Revit's "
+            + "default - choose one in its Properties if earlier phases draw grey" : "the view's phase filter cannot be set");
+        findings.Add("The new view: " + string.Join("; ", said) + ".");
+    }
+    catch (Exception ex)
+    {
+        findings.Add("The new view's phase could not be set (" + ex.Message + ") - it keeps Revit's default, which may draw "
+            + "earlier phases grey.");
+    }
+}
+
 Func<XYZ, XYZ> upFor = look =>
     new XYZ(look.X, look.Y, 0).GetLength() < 1e-9 ? XYZ.BasisY
         : look.CrossProduct(XYZ.BasisZ).Normalize().CrossProduct(look).Normalize();
 var cinematicText = "";
 var reachedCamera = refused == null && camera != null;
+
+// WHERE THE CROP WINDOW REALLY IS (row 5b-1301). Measured 2026-10-21 on Revit
+// 2020: a perspective view's crop box reads its Z top as the far clip over a
+// thousand - 40.2 mm at Revit's 40232 mm far clip, 92.9 mm at 92888 mm - but
+// its X and Y are drawn on a plane 0.1 ft (30.48 mm) in front of the eye,
+// whatever the far clip. The crop SHAPE lies there (GetCropShape), it did not
+// move with the far clip at 40232, 92888 or 200000 mm, and the picture agreed:
+// a window worked out on the 92.9 mm reading drew the building three times too
+// small. So the window's distance is read from the crop shape, 0.1 ft when the
+// shape cannot be read - and since version 4 (row 5b-1302) that is SAID: the
+// same number places the window and checks it, so nothing else would show it.
+var windowAssumed = false;
+Func<View3D, double> windowDistance = view =>
+{
+    try
+    {
+        var o3 = view.GetOrientation();
+        foreach (var loop in view.GetCropRegionShapeManager().GetCropShape())
+            foreach (Curve c in loop)
+            {
+                var along = (c.GetEndPoint(0) - o3.EyePosition).DotProduct(o3.ForwardDirection);
+                if (along > 1e-6 && along < 1.0) return along;
+            }
+    }
+    catch (Exception) { }
+    windowAssumed = true;
+    return 0.1;
+};
+// The far clip is a parameter: Revit ignores a crop box's Z bottom on a
+// perspective view (row 5b-1301) - a camera 50 m away kept its 40232 mm far
+// clip and cut both columns out of the picture. Pushed out, never pulled in;
+// since version 4 (row 5b-1302) a far clip that cannot be pushed out is said.
+string farClipProblem = null;
+Action<View3D, double> reachFar = (view, deepest) =>
+{
+    // Far Clip Active off clips nothing, and Revit then greys the offset out.
+    var farOn = view.get_Parameter(BuiltInParameter.VIEWER_BOUND_ACTIVE_FAR);
+    if (farOn != null && farOn.AsInteger() == 0) return;
+    var farClip = view.get_Parameter(BuiltInParameter.VIEWER_BOUND_OFFSET_FAR);
+    if (farClip != null && farClip.AsDouble() >= deepest * 1.1) return;
+    string why = farClip == null ? "the view has no far clip offset" : farClip.IsReadOnly ? "its far clip offset is read-only" : null;
+    if (why == null)
+    {
+        try { if (!farClip.Set(deepest * 1.1)) why = "Revit did not take the new offset"; }
+        catch (Exception ex) { why = ex.Message; }
+    }
+    if (why != null)
+        farClipProblem = "The far clip could not be pushed out to " + mm(deepest * 1.1) + " mm (" + why + "), so elements "
+            + "further from the eye than " + (farClip != null ? mm(farClip.AsDouble()) + " mm" : "its far clip")
+            + " may be cut out of the picture - look at the view.";
+};
 
 if (reachedCamera && !cinematic)
 {
@@ -420,10 +554,12 @@ if (reachedCamera && !cinematic)
         // is the projected corners plus the margin; the near plane is left
         // where Revit has it. A near plane a version-1 run moved metres away is
         // put back at 40.2 mm, a new view's.
+        // ROW 5b-1301 CORRECTED THE DISTANCE: the window is drawn 0.1 ft in
+        // front of the eye, and the 40.2 mm was the far clip over a thousand -
+        // windowDistance() above.
         var frame = camera.CropBox.Transform;
         var toView = frame.Inverse;
-        var nearPlane = -camera.CropBox.Max.Z;
-        if (nearPlane <= 0 || nearPlane > 1.0) nearPlane = 40.2 / MmPerFoot;
+        var nearPlane = windowDistance(camera);
         double? pxLo = null, pxHi = null, pyLo = null, pyHi = null, deepest = null;
         foreach (var x in new[] { low.X, high.X })
             foreach (var y in new[] { low.Y, high.Y })
@@ -441,10 +577,14 @@ if (reachedCamera && !cinematic)
                 }
         var growX = (pxHi.Value - pxLo.Value) * (margin.Value / 200.0);
         var growY = (pyHi.Value - pyLo.Value) * (margin.Value / 200.0);
+        reachFar(camera, deepest.Value);
+        doc.Regenerate();
         var wanted = new BoundingBoxXYZ();
         wanted.Transform = frame;
+        // The Z bottom past the deepest corner, for a release that honours it -
+        // Revit 2020 ignores it on a perspective view (rows 5b-1301, 5b-1302).
         wanted.Min = new XYZ(pxLo.Value - growX, pyLo.Value - growY, Math.Min(camera.CropBox.Min.Z, -deepest.Value * 1.1));
-        wanted.Max = new XYZ(pxHi.Value + growX, pyHi.Value + growY, -nearPlane);
+        wanted.Max = new XYZ(pxHi.Value + growX, pyHi.Value + growY, camera.CropBox.Max.Z);
         camera.CropBoxActive = true;
         camera.CropBox = wanted;
         doc.Regenerate();
@@ -603,15 +743,31 @@ if (reachedCamera && cinematic)
     else if (sideCompass != null) { standAz = sideCompass.Value; standText = "the " + side.Trim() + " side"; }
     else { standAz = azimuth; standText = "the " + directionAsked.Trim() + " of the elements"; }
 
-    // THE EYE HEIGHT - above the lowest level the elements stand on, or the
-    // bottom of their box when none has a level.
+    // THE EYE HEIGHT - above the level MOST of the elements stand on (the
+    // lowest of those that tie), or the bottom of their box when none has a
+    // level. On the owner's word, 2026-10-21 (row 5b-1301): it was the LOWEST
+    // level any of them stood on, and on Revit 2020's sample house one
+    // partition on 'Foundation', 800 mm down, put the eye-level camera 800 mm
+    // above the ground floor and, on the hill side, inside the ground.
     double baseZ = low.Z;
     string baseName = "the bottom of the elements' box";
     Level baseLevel = null;
+    var standingOn = new Dictionary<ElementId, int>();
+    var levelsSeen = new Dictionary<ElementId, Level>();
     foreach (var element in boxed)
     {
         var lv = element.LevelId != ElementId.InvalidElementId ? doc.GetElement(element.LevelId) as Level : null;
-        if (lv != null && (baseLevel == null || lv.ProjectElevation < baseLevel.ProjectElevation)) baseLevel = lv;
+        if (lv == null) continue;
+        var key = lv.Id;
+        standingOn[key] = standingOn.ContainsKey(key) ? standingOn[key] + 1 : 1;
+        levelsSeen[key] = lv;
+    }
+    foreach (var key in standingOn.Keys)
+    {
+        var lv = levelsSeen[key];
+        if (baseLevel == null || standingOn[key] > standingOn[baseLevel.Id]
+            || (standingOn[key] == standingOn[baseLevel.Id] && lv.ProjectElevation < baseLevel.ProjectElevation))
+            baseLevel = lv;
     }
     if (baseLevel != null) { baseZ = baseLevel.ProjectElevation; baseName = "'" + baseLevel.Name + "'"; }
 
@@ -680,16 +836,152 @@ if (reachedCamera && cinematic)
     XYZ eye = null, forward = null;
     double standOff = 0;
     var compUsed = comp;
+    // True when the lens found the distance at which the elements fit: the
+    // window then holds them by construction, on the edge of fitting, and is
+    // never second-guessed below (row 5b-1304's change is for the other roads).
+    var lensFitted = false;
     if (interior)
     {
-        // INSIDE: 600 mm in from the face on that side, looking straight across.
+        // INSIDE THE ROOM, looking straight across (version 4, row 5b-1308).
+        // Version 3 stood the eye 600 mm in from the face of the elements' BOX.
+        // On Revit 2020's sample house the box of 'Kitchen & Dining 101' ran to
+        // x 7560 mm, past its wall line x 6860 to 7062, so side right put the
+        // eye at x 6960 - inside a double door's frame - and the Raytracer drew
+        // the picture black. So the eye comes in from the box's face, 50 mm at a
+        // time and then halving, until it is inside the room - the room handed
+        // in, or the one at the elements' middle - stands the inset in from
+        // there, and steps further in, 100 mm at a time, until nothing solid is
+        // within 150 mm of it across (ElementIntersectsSolidFilter on a thin
+        // slab at eye height), never past half way to the far side. No such point is refused,
+        // naming what is in the way.
         var outward = new XYZ(sa, ca, 0);
         var reach = corners8.Max(c => (c - centre).DotProduct(outward));
+        var farSide = -corners8.Max(c => (c - centre).DotProduct(outward.Negate()));
         var inset = distance ?? 600 / MmPerFoot;
-        if (inset >= reach) inset = reach / 2;
-        standOff = reach - inset;
-        eye = new XYZ(centre.X + sa * standOff, centre.Y + ca * standOff, baseZ + (eyeH ?? 1400 / MmPerFoot));
-        forward = lookFor(eye);
+        var eyeZ = baseZ + (eyeH ?? 1400 / MmPerFoot);
+        Func<double, XYZ> outAt = s => new XYZ(centre.X + sa * s, centre.Y + ca * s, eyeZ);
+        var room = boxed.OfType<Room>().FirstOrDefault();
+        var space = room == null ? boxed.OfType<Space>().FirstOrDefault() : null;
+        var roomFound = false;
+        if (room == null && space == null)
+        {
+            // In the view's own phase - the overload without one looks only in
+            // the project's last.
+            try
+            {
+                var viewPhase = camera.get_Parameter(BuiltInParameter.VIEW_PHASE);
+                var inPhase = viewPhase != null ? doc.GetElement(viewPhase.AsElementId()) as Phase : null;
+                room = inPhase != null ? doc.GetRoomAtPoint(outAt(0), inPhase) : doc.GetRoomAtPoint(outAt(0));
+            }
+            catch (Exception) { room = null; }
+            roomFound = room != null;
+        }
+        var haveRoom = room != null || space != null;
+        var roomName = room != null ? "'" + room.Name + "'" : space != null ? "'" + space.Name + "'" : "the elements' box";
+        Func<XYZ, bool> inRoom = p =>
+        {
+            try { return room != null ? room.IsPointInRoom(p) : space == null || space.IsPointInSpace(p); }
+            catch (Exception) { return false; }
+        };
+        // Where the room really starts on that side, coming in from the box.
+        var wallAt = reach;
+        var entered = !haveRoom;
+        if (haveRoom)
+        {
+            double? lastOut = null;
+            for (var s = reach; s >= farSide; s -= 50 / MmPerFoot)
+            {
+                if (inRoom(outAt(s))) { wallAt = s; entered = true; break; }
+                lastOut = s;
+            }
+            if (entered && lastOut != null)
+            {
+                double o = lastOut.Value, i = wallAt;
+                for (var k = 0; k < 12; k++) { var mid = (o + i) / 2; if (inRoom(outAt(mid))) i = mid; else o = mid; }
+                wallAt = i;
+            }
+        }
+        var middle = (wallAt + farSide) / 2;
+        var firstTry = wallAt - inset;
+        if (firstTry <= middle) firstTry = (wallAt + middle) / 2;
+        // Nothing solid within 150 mm of the eye across - a wall, a door's
+        // frame, a cupboard - tested on a slab 20 mm thick at eye height, so a
+        // floor or a ceiling near a low or high eye is caught only when the
+        // eye is inside it. Rooms, spaces and areas are not solids here.
+        var clearance = 150 / MmPerFoot;
+        var slabHalf = 10 / MmPerFoot;
+        var notSolid = new List<ElementId> { new ElementId(BuiltInCategory.OST_Rooms),
+            new ElementId(BuiltInCategory.OST_MEPSpaces), new ElementId(BuiltInCategory.OST_Areas) };
+        string clearanceUnread = null;
+        Func<XYZ, List<Element>> inTheWayAt = p =>
+        {
+            var found = new List<Element>();
+            try
+            {
+                var lo = p - new XYZ(clearance, clearance, slabHalf);
+                var c1 = lo;
+                var c2 = lo + new XYZ(2 * clearance, 0, 0);
+                var c3 = lo + new XYZ(2 * clearance, 2 * clearance, 0);
+                var c4 = lo + new XYZ(0, 2 * clearance, 0);
+                var cube = GeometryCreationUtilities.CreateExtrusionGeometry(new List<CurveLoop>
+                {
+                    CurveLoop.Create(new List<Curve>
+                        { Line.CreateBound(c1, c2), Line.CreateBound(c2, c3), Line.CreateBound(c3, c4), Line.CreateBound(c4, c1) }),
+                }, XYZ.BasisZ, 2 * slabHalf);
+                foreach (var e in new FilteredElementCollector(doc).WhereElementIsNotElementType()
+                    .WherePasses(new BoundingBoxIntersectsFilter(new Outline(lo, p + new XYZ(clearance, clearance, slabHalf))))
+                    .WherePasses(new ElementIntersectsSolidFilter(cube)))
+                    if (e.Category != null && e.Category.CategoryType == CategoryType.Model && !notSolid.Contains(e.Category.Id))
+                        found.Add(e);
+            }
+            catch (Exception ex) { clearanceUnread = ex.Message; }
+            return found;
+        };
+        Func<List<Element>, string> nameThem = list => string.Join(", ", list.Take(3).Select(e => e.Category.Name + " '"
+            + e.Name + "' (id " + e.Id + ")")) + (list.Count > 3 ? " and " + (list.Count - 3) + " more" : "");
+        var at = firstTry;
+        var clear = false;
+        List<Element> firstInTheWay = null;
+        if (entered)
+            for (; at >= middle - 1e-9; at -= 100 / MmPerFoot)
+            {
+                if (!inRoom(outAt(at))) continue;
+                var there = inTheWayAt(outAt(at));
+                if (there.Count == 0) { clear = true; break; }
+                if (firstInTheWay == null) firstInTheWay = there;
+            }
+        var sideWord = sideKey != "none" ? side.Trim() : sideUsed != "none" ? sideUsed : directionAsked.Trim();
+        if (!entered)
+            refused = "The line through the middle of " + roomName + " toward its " + sideWord + " side never enters the room "
+                + mm(eyeZ - baseZ) + " mm up - the room may be unplaced, not enclosed, or lower than the eye. Select its "
+                + "walls, or stand the camera by hand with SET_VIEW_CAMERA.";
+        else if (!clear)
+            refused = "No point from " + mm(inset) + " mm in from " + roomName + (haveRoom ? "'s own boundary" : "") + " on the "
+                + sideWord + " side to half way across, " + mm(eyeZ - baseZ) + " mm up, is "
+                + (firstInTheWay != null ? "clear of solids - " + nameThem(firstInTheWay) + " in the way" : "inside the room")
+                + ". Give a distanceMm, another side or another eyeHeightMm, or stand the camera by hand with SET_VIEW_CAMERA.";
+        if (refused != null)
+            refused += " " + (madeNew ? "The new view was made; it is not framed." : "NOTHING WAS CHANGED.");
+        else
+        {
+            standOff = at;
+            eye = outAt(at);
+            // Aimed rather than level, an interior looks at the far side at the
+            // elements' middle height: the eye may now stand at or past the
+            // box's middle, and aiming there would turn it round.
+            var farPoint = outAt(farSide);
+            forward = aimAtCentre ? (new XYZ(farPoint.X, farPoint.Y, centre.Z) - eye).Normalize() : lookFor(eye);
+            findings.Add("Interior: the eye stands " + mm(wallAt - at) + " mm in from " + roomName
+                + (haveRoom ? "'s own boundary" : "") + " on the " + sideWord + " side"
+                + (haveRoom && reach - wallAt > 1 / MmPerFoot ? ", which is " + mm(reach - wallAt) + " mm inside the elements' "
+                    + "box there" : "")
+                + (at < firstTry - 1e-9 ? " - " + mm(firstTry - at) + " mm further in than " + mm(wallAt - firstTry) + " mm"
+                    + (firstInTheWay != null ? ", to be clear of " + nameThem(firstInTheWay) : "") : "")
+                + (roomFound ? "; the room is the one at the elements' middle" : "")
+                + (haveRoom ? "" : "; no room was handed in or found at their middle, so the room's boundary was not used")
+                + (clearanceUnread == null ? "; nothing solid is within 150 mm of it." : "; whether anything solid is near it "
+                    + "could not be checked (" + clearanceUnread + ") - look at the view."));
+        }
     }
     else if (lensF == null)
     {
@@ -752,6 +1044,7 @@ if (reachedCamera && cinematic)
                 compUsed = "centre";
             }
         }
+        lensFitted = nearestD != null;
         if (nearestD == null)
         {
             findings.Add("The elements do not fit a " + deg(lensF.Value) + " mm lens from this angle at any distance "
@@ -764,19 +1057,20 @@ if (reachedCamera && cinematic)
         forward = lookFor(eye);
     }
 
-    try
+    // An interior with nowhere to stand was refused above (row 5b-1308): the
+    // view is then left as it is.
+    if (refused == null) try
     {
         var upward = upFor(forward);
         if (camera.IsLocked) camera.Unlock();
         camera.SetOrientation(new ViewOrientation3D(eye, upward, forward));
         doc.Regenerate();
 
-        // The window, in Revit's own frame for the view, on its own near plane
-        // (version 2's reading of both).
+        // The window, in Revit's own frame for the view, at the distance it is
+        // drawn (row 5b-1301, windowDistance above).
         var frame = camera.CropBox.Transform;
         var toView = frame.Inverse;
-        var nearPlane = -camera.CropBox.Max.Z;
-        if (nearPlane <= 0 || nearPlane > 1.0) nearPlane = 40.2 / MmPerFoot;
+        var nearPlane = windowDistance(camera);
         double xl = double.MaxValue, xh = double.MinValue, yl = double.MaxValue, yh = double.MinValue, deepest = 0;
         foreach (var c in corners8)
         {
@@ -809,13 +1103,57 @@ if (reachedCamera && cinematic)
                 var at = place(new[] { xl, xh, yl, yh }, tw, th, horizon, compUsed);
                 ox = at[0];
                 oy = at[1];
+                // A WINDOW THAT CANNOT HOLD THEM (version 4, row 5b-1304). With
+                // distanceMm given, or no distance found for the lens, the window
+                // was still put on the middle of the box's projected corners -
+                // and the corners nearest the eye project far off the picture,
+                // so on Revit 2020's sample house ten dining chairs and their
+                // tables at 2500 mm, cinematic, gave a window at Y -36 to -19 mm
+                // and a picture of table legs. A composition that cannot hold
+                // them is dropped for centre; a window that cannot hold them even
+                // centred is put on the elements' MIDDLE - straight ahead when the
+                // middle is behind the window - on each side it is too small for,
+                // and the answer says so.
+                if (at[2] < 0.5 && !lensFitted)
+                {
+                    var box4 = new[] { xl, xh, yl, yh };
+                    var centred = compUsed == "centre" ? at : place(box4, tw, th, horizon, "centre");
+                    var compWas = compUsed;
+                    compUsed = "centre";
+                    if (centred[2] > 0.5)
+                    {
+                        ox = centred[0];
+                        oy = centred[1];
+                        findings.Add("A " + compWas + " composition cannot hold the elements from here with this lens - they "
+                            + "were centred instead.");
+                    }
+                    else
+                    {
+                        var middleSeen = toView.OfPoint(centre);
+                        var middleDepth = -middleSeen.Z;
+                        var mx = middleDepth > nearPlane ? middleSeen.X / middleDepth : 0;
+                        var my = middleDepth > nearPlane ? middleSeen.Y / middleDepth : 0;
+                        var wide = (xh - xl) / 2 * (1 + margin.Value / 100.0) > tw * (1 + 1e-6);
+                        var tall = (yh - yl) / 2 * (1 + margin.Value / 100.0) > th * (1 + 1e-6);
+                        ox = wide ? mx : centred[0];
+                        oy = tall ? my : centred[1];
+                        findings.Add("At " + mm(standOff) + " mm from their middle the elements are "
+                            + (wide && tall ? "wider and taller" : wide ? "wider" : "taller") + " than a " + deg(lensF.Value)
+                            + " mm lens takes in, so the picture is centred on their middle and shows only the part of them "
+                            + "that fits" + (compWas != "centre" ? " (composition " + compWas + " dropped)" : "")
+                            + " - give a larger distanceMm, a wider lens, or leave distanceMm out for the lens to set it.");
+                    }
+                }
             }
             wxLo = ox - tw; wxHi = ox + tw; wyLo = oy - th; wyHi = oy + th;
         }
+        reachFar(camera, deepest);
+        doc.Regenerate();
         var wanted = new BoundingBoxXYZ();
         wanted.Transform = frame;
+        // The Z bottom past the deepest corner, as on version 2's road (row 5b-1302).
         wanted.Min = new XYZ(wxLo * nearPlane, wyLo * nearPlane, Math.Min(camera.CropBox.Min.Z, -deepest * 1.1));
-        wanted.Max = new XYZ(wxHi * nearPlane, wyHi * nearPlane, -nearPlane);
+        wanted.Max = new XYZ(wxHi * nearPlane, wyHi * nearPlane, camera.CropBox.Max.Z);
         camera.CropBoxActive = true;
         camera.CropBox = wanted;
         doc.Regenerate();
@@ -849,6 +1187,7 @@ if (reachedCamera)
     var o = camera.GetOrientation();
     var crop = camera.CropBox;
     var back = crop.Transform.Inverse;
+    var drawnAt = camera.IsPerspective ? windowDistance(camera) : 0;
     foreach (var element in boxed)
     {
         var box = element.get_BoundingBox(null);
@@ -858,9 +1197,9 @@ if (reachedCamera)
                 foreach (var z in new[] { box.Min.Z, box.Max.Z })
                 {
                     // Seen through the window: the corner projected onto the
-                    // crop box's near plane, as the view draws it (version 2).
+                    // plane the window is drawn on (row 5b-1301).
                     var p = back.OfPoint(box.Transform.OfPoint(new XYZ(x, y, z)));
-                    var near = -crop.Max.Z;
+                    var near = drawnAt;
                     var depthHere = -p.Z;
                     var tol = 0.01 / MmPerFoot;
                     if (depthHere <= 0) { inside = false; continue; }
@@ -881,12 +1220,15 @@ if (reachedCamera)
         + mm(crop.Min.Z) + " to " + mm(crop.Max.Z) + " mm; far clip "
         + (farActive != null && farActive.AsInteger() == 1
             ? "on at " + (farOffset != null ? mm(farOffset.AsDouble()) + " mm" : "an offset Revit did not give") : "off")
-        + "; " + framed + " of " + boxed.Count + " element(s) inside that crop box.";
+        + "; " + framed + " of " + boxed.Count + " element(s) inside that crop box"
+        + (camera.IsPerspective ? ", its window drawn " + mm(drawnAt) + " mm in front of the eye." : ".");
+    // Version 4 (row 5b-1307): the view's phase and phase filter, as it holds them.
+    readBack += " Its " + phaseOf(camera) + ".";
 
     // THE LENS THE WINDOW AMOUNTS TO - version 3. The window sits on the near
     // plane, so its angle across is the two edges' angles from the eye, and a
     // 35 mm-film lens of that width is 36 x near / width.
-    var nearHere = -crop.Max.Z;
+    var nearHere = drawnAt;
     var width = crop.Max.X - crop.Min.X;
     var height = crop.Max.Y - crop.Min.Y;
     if (camera.IsPerspective && nearHere > 0 && width > 0 && height > 0)
@@ -913,5 +1255,10 @@ if (reachedCamera)
         findings.Insert(0, (madeNew ? "Made perspective view '" : "Re-aimed '") + camera.Name + "' at " + boxed.Count
             + " element(s): " + readBack);
 }
+// Version 4 (row 5b-1302): what the two helpers could not do, said.
+if (reachedCamera && windowAssumed)
+    findings.Add("The view's crop shape could not be read, so its window was taken as drawn 30 mm (0.1 ft) in front of "
+        + "the eye, as Revit 2020 draws it - the lens and `framed` above lean on that; look at the picture.");
+if (reachedCamera && farClipProblem != null) findings.Add(farClipProblem);
 if (noGeometry.Count > 0) findings.Add(noGeometry.Count + " element(s) have no geometry and were left out of the frame");
 if (refused != null) findings.Add(refused);
