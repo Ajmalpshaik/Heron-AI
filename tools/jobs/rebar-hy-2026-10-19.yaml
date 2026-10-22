@@ -36,14 +36,11 @@ defaults:
     inViewOnly: "FloorPlan: Level 1"
 
 jobs:
-  - fragment: list-rebar-types
-    write: false                       # risk READ
-    setup: []
-    expect: barTypes
-    note: >
-      The positive is this model; the negative is HY1's second project, from an
-      ARCHITECTURAL template, where every count must come back 0. The runner
-      cannot switch documents in one job, so the negative leg is run by hand.
+  # list-rebar-types is not run from this file: HY17 replaces HY1's negative
+  # with a family document (row 5b-1330), another document, so it has a job
+  # file of its own - tools/jobs/list-rebar-types-hy17-2026-10-22.yaml. Run
+  # here, its negative would read this structural model and come back
+  # NEG NOT EMPTY.
 
   - fragment: report-host-rebar
     write: false                       # risk READ

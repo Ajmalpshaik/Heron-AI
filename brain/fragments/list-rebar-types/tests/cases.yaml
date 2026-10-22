@@ -8,11 +8,17 @@ positive:
       Properties shows, to 0.1 mm
 
 negative:
-  - given: a project from an architectural template, with no rebar types loaded
+  # A FAMILY, NOT A PROJECT. Revit keeps a Rebar Cover Type in every document,
+  # so coverTypes is never 0 and is accounting (row 5b-1330). Whether a project
+  # from an architectural template also holds Revit's own 'Structural Area
+  # Reinforcement 1' and 'Structural Path Reinforcement 1' - the structural
+  # sample does - is not measured; a family read 0 of each on 2026-10-21.
+  - given: a family document with no rebar content - a furniture or MEP family
     expect: >
-      barTypes 0, hookTypes 0, coverTypes 0 and shapes 0, `listing` saying
-      "none" for each, and a finding that no bar can be placed until a bar
-      type is made or loaded - nothing invented
+      barTypes 0, hookTypes 0, shapes 0 and systemTypes 0, `listing` saying
+      "none" for each of those, and a finding that no bar can be placed until
+      a bar type is made or loaded - nothing invented. coverTypes is Revit's
+      own cover type (1 in a family), read and listed, not judged
 
 second_route:
   - Structure tab > Reinforcement > Rebar Cover Settings, and the Project Browser's Families > Structural Rebar, Rebar Shape and Hook nodes
