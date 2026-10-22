@@ -259,6 +259,10 @@ compatibility-note: >
 #                                             reached THIS card on both
 #                                             backends; #586 declares it on the
 #                                             read, and it reaches the read now
+#   "make a 2.5 mm text type"              -> SET_TEXT_TYPE, duplicateAs -
+#                                             this card places a note in a
+#                                             type that exists and never
+#                                             changes or makes one
 utterances:
   - add a text note
   - put a note here

@@ -1,0 +1,64 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and
+# here, "changed the wrong type".
+# Arrange on SCRATCH files, never a working model: a copy of the modeller's
+# pipe tag family (TRG_Pipe_Tag, Revit 2020) saved as "Heron Text Type Test",
+# its labels on ONE label type, and a text note placed in its view on a text
+# type; and a scratch project with two text types and a few text notes. Every
+# change is a type change, so run the negative cases FIRST and the kept run
+# last (NEEDS-CHECKING Group IL).
+
+positive:
+  - given: >
+      the scratch tag family, textTypeName left out ("labels"), changes
+      "Text Size=5"
+    expect: >
+      the labels' one type changed: typeBefore Text Size 2.5 mm (or what it
+      was), typeAfter Text Size 5 mm, changedTypeId that type, switched 0,
+      usedBy naming every label in the family. Type Properties shows 5 mm
+  - given: >
+      the same family, textTypeName left out, changes "Bold=yes; Text
+      Font=Arial Narrow; Background=transparent; Color=255,0,0", duplicateAs
+      "5mm Arial Narrow Bold", switchTo "labels"
+    expect: >
+      a new label type "5mm Arial Narrow Bold" read back with each value as
+      asked - Background reading Transparent in Type Properties, Color red;
+      the original type unchanged; switched equal to the labels that were on
+      the original, each now on the copy; usedBy those labels and 0 text notes
+  - given: >
+      the scratch project, textTypeName "2.5mm Arial", changes
+      "Text Size=3.5", duplicateAs "3.5mm Arial", switchTo "text notes"
+    expect: >
+      "3.5mm Arial" made at 3.5 mm, the text notes that were on 2.5mm Arial
+      on it, switched their count; 2.5mm Arial still 2.5 mm and holding none
+
+negative:
+  - given: >
+      the scratch project, textTypeName "No Such Text Type", changes
+      "Text Size=5"
+    expect: >
+      refused naming the text types there are, changedTypeId invalid,
+      switched 0, NOTHING WAS CHANGED - no type made or changed. THIS IS THE
+      FIRST CASE TO RUN
+  - given: >
+      a scratch Generic Model family holding a model text type, textTypeName
+      that model text type's name, changes "Text Size=5"
+    expect: >
+      refused saying it is a MODEL TEXT type and naming ADD_FAMILY_MODEL_TEXT;
+      the model text type's size unchanged
+  - given: >
+      the scratch tag family, textTypeName left out, changes "Leader
+      Arrowhead=Arrow 30 Degree"
+    expect: >
+      refused - a label type has no Leader Arrowhead - naming the settings
+      it has; nothing changed
+  - given: >
+      the scratch tag family with its labels moved by hand onto TWO label
+      types, textTypeName left out, changes "Text Size=5"
+    expect: >
+      refused naming both types and how many labels each holds; neither
+      changed
+
+second_route:
+  - Type Properties of the type in Revit - each setting as read back here
+  - the Properties palette's type selector on a label or text note - which type it is on
+  - REPORT_TEXT_TYPES on the same file - the same values, from the read

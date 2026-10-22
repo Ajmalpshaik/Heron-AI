@@ -1,0 +1,129 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: tag-family-creation
+name: Build a tag family - a pipe, duct or equipment tag - with its labels, box and label type, then load it
+domain: revit.families
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Builds a TAG family - a pipe tag, a duct tag, an equipment tag, any tag
+  category - from a Generic Tag template: its category, its labels, the box
+  or lines around them, its label type, and then loads it and tags with it,
+  so the next tag is one method rather than an afternoon in Edit Label.
+
+  SAY THIS BEFORE STARTING, NEVER AFTER: Revit's API cannot MAKE a label on
+  any release 2020 to 2027, and cannot change what a label SHOWS - which
+  parameters, their order, sample value, prefix, suffix, spaces, break, unit
+  format (docs/43 section 8.3a). A label comes from a SEED family of the same
+  category, copied in (step 3), or is made by hand in Edit Label once - and
+  that family then becomes the seed for the next tag.
+
+  0. THE TEMPLATE. The modeller starts it - File > New > Annotation Symbol,
+     the Generic Tag template or the category's own tag template - or
+     CREATE_FAMILY_DOCUMENT with that template's name and a save path the
+     modeller gives (the Admin switch). REPORT_FAMILY_TEMPLATE FIRST: it must
+     read as an annotation; read its view and the two reference planes whose
+     crossing is the tag's insertion point. CHECK THE UNITS
+     (FAMILY-CREATION step 0): IMPERIAL where the modeller works in
+     millimetres is said before anything is built, with SET_PROJECT_UNITS or
+     the Metric template offered.
+  1. SET_FAMILY_CATEGORY to the tag category - Pipe Tags, Duct Tags,
+     Mechanical Equipment Tags - BEFORE any label: a label shows the tagged
+     category's parameters, and a label copied from a seed is refused across
+     categories. Whether that tool switches a Generic Tag's category the way
+     Family Category and Parameters does is NEEDS-CHECKING IJ13; until then,
+     where it refuses, the modeller sets it there by hand.
+  2. A LABEL THAT SHOWS AN OFFICE SHARED PARAMETER: REPORT_SHARED_PARAMETER_FILE
+     first, and the GUID the seed carries checked against the office's file -
+     a tag reads a shared parameter by its GUID, never by its name.
+  3. THE LABELS - copied from a seed of the SAME category. ACTIVATE_DOCUMENT
+     opens the seed (the office's seed for that category, named by the
+     modeller - docs/43 section 8.3b), REPORT_FAMILY_LABELS on it lists its
+     labels, ACTIVATE_DOCUMENT brings the new tag back in front, then
+     COPY_LABELS_FROM_FAMILY with the labels wanted and placeAtMm at the
+     insertion point - "0,0" for a label centred on it. Its readBack compares
+     each copy with its seed: a copy that DIFFERS is said, never hidden.
+     Whether a copy keeps its parameter, sample value, prefix, suffix and unit
+     format is NEEDS-CHECKING IJ10 - until it passes, the modeller opens Edit
+     Label on one copy and confirms. NO SEED, OR NO LABEL IN IT FOR THIS
+     PARAMETER: the modeller makes the label by hand - Create > Label, click
+     at the insertion point, Edit Label - with the parameters, prefixes,
+     suffixes, break and unit format said here in one list first. Ajmal PS's
+     first one (2026-10-21, TRG_Pipe_Tag): ONE label, ONE line - System
+     Abbreviation; Diameter, prefix "Ø"; Bottom Elevation, prefix "BOP ",
+     millimetres with the + sign. Then save that family as the seed.
+  4. REPORT_FAMILY_LABELS reads every label back: on Revit 2027 each
+     parameter in order with sample value, prefix, suffix, spaces, break and
+     unit format; on 2020 to 2026 where it is, its type and its text - and
+     the answer says what that Revit cannot read.
+  5. SET_FAMILY_LABEL_LAYOUT puts each label where it goes against the
+     insertion point - positionMm for one, moveByMm for several - sets the
+     label box's width, alignment and Keep Readable, and reads them back.
+  6. THE LABEL TYPE: CHANGE_ELEMENT_TYPE, the label selected, to one of the
+     types REPORT_FAMILY_LABELS lists as ones it can take. The type's own
+     text size, font and the rest are a text type's properties:
+     REPORT_TEXT_TYPES textTypeName labels reads them in mm, and
+     SET_TEXT_TYPE changes them - on a copy with duplicateAs, which
+     switchTo labels then puts the labels on, so the original is kept.
+  7. THE BOX AND LINES: DRAW_FAMILY_DETAIL_LINES around the labels - a box,
+     a divider between two lines - with a subcategory for each line weight;
+     DRAW_FAMILY_FILLED_REGION for a filled or masked background.
+  8. SET_FAMILY_SETTINGS "Rotate with Component=..." and "Keep Text
+     Readable=..." as the office's tags have them.
+  9. SAVE: the modeller saves it (Ctrl+S) - Revit will not save the family
+     in front while Heron holds it - checked with REPORT_OPEN_DOCUMENTS'
+     fileTimes, never taken from "I saved".
+  10. LOAD_FAMILY into the project, then TAG_ELEMENTS_IN_VIEW on a few
+     elements of that category in a view the modeller names, so the tag is
+     SEEN on real values - a Bottom Elevation of +1200 reading "BOP +1200" -
+     before it is used on a whole drawing.
+
+utterances:
+  - build a pipe tag family
+  - make a tag family for pipes showing system diameter and bottom elevation
+  - create a duct tag family with labels
+  - make a new equipment tag family and load it into the project
+
+needs:
+  - REPORT_FAMILY_TEMPLATE
+  # Step 0's units check, as FAMILY-CREATION's.
+  - REPORT_PROJECT_UNITS
+  - SET_PROJECT_UNITS
+  - CREATE_FAMILY_DOCUMENT
+  - SET_FAMILY_CATEGORY
+  - REPORT_SHARED_PARAMETER_FILE
+  # Step 3: the seed opened, read, and its labels copied in.
+  - ACTIVATE_DOCUMENT
+  - REPORT_FAMILY_LABELS
+  - COPY_LABELS_FROM_FAMILY
+  - SET_FAMILY_LABEL_LAYOUT
+  - CHANGE_ELEMENT_TYPE
+  # Step 6: the label type's text, read and changed (row 5b-1300).
+  - REPORT_TEXT_TYPES
+  - SET_TEXT_TYPE
+  - DRAW_FAMILY_DETAIL_LINES
+  - DRAW_FAMILY_FILLED_REGION
+  - SET_FAMILY_SETTINGS
+  - REPORT_OPEN_DOCUMENTS
+  - LOAD_FAMILY
+  - TAG_ELEMENTS_IN_VIEW
+
+preconditions:
+  - a tag family is open in the Family Editor, started from a Generic Tag or tag template, or CREATE_FAMILY_DOCUMENT has started one from a template the modeller named
+  - the tag category, and every label's parameters, prefixes, suffixes and unit format have been given for THIS request
+  - for copied labels, a seed family of the same category is named by the modeller - Heron names no seed library folder
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Written 2026-10-21 on Ajmal PS's request while building TRG_Pipe_Tag on
+  Revit 2020, from the label research in docs/43 section 8.3a. Every step is
+  DRAFT until it has been run on a real family with a negative case (D-30):
+  NEEDS-CHECKING Group IJ.

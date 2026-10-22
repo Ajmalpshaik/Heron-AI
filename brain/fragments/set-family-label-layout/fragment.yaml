@@ -1,0 +1,154 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-150
+semantic-identity: "place, move or lay out labels already in the family open in the Family Editor - a point, a move, the label box's width, left, center or right and top, middle or bottom alignment, and Keep Readable - read back after"
+kind: action
+domain: revit.families
+capability: SET_FAMILY_LABEL_LAYOUT
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-21: Ajmal PS, building the pipe tag TRG_Pipe_Tag on Revit 2020,
+# asked for labels end to end - placed, edited, updated, not only read.
+# Read off all eight releases' shipped assemblies that day (docs/43 section
+# 8.3a): what a program may change on a label, on every release, is where it
+# sits, its width, its alignment and Keep Readable - TextElement's own
+# members. What it SHOWS has no public setter on any release. This changes the
+# first and refuses the second in plain words. Proof plan: NEEDS-CHECKING
+# Group IJ.
+#
+# CONSIDERED AND NOT WIDENED. MOVE_ANNOTATION (PROVEN) moves tags, dimensions
+# and text notes in a PROJECT view, a text note by its LocationPoint - which a
+# label may not have, and a change under its impl/ would make its proof stale.
+# The width, the alignment and Keep Readable are not its job. CHANGE_ELEMENT_TYPE
+# (PROVEN) already changes any element's type, a label's too - so the label
+# type is not repeated here.
+#
+# WHAT A LABEL SHOWS IS NOT CHANGED, ON ANY RELEASE - which parameters, in
+# which order, each one's sample value, prefix, suffix, spaces, break and unit
+# format. Revit's API has no public way to change them from 2020 to 2027, so
+# they are Edit Label's, by hand, and the answer says so when nothing else was
+# asked. Kept here, out of `purpose`: measured 2026-10-21 with score-routing,
+# that list in the purpose pulled READ questions - "what labels are in this
+# title block", "what unit format is the bottom elevation label using" - to
+# this write (FRAGMENT-ISSUES row 5b-1294).
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Lays out labels already in the family open in the Family Editor: puts one
+  label's point at x,y in millimetres, or moves every label named by dx,dy;
+  sets the label box's width; aligns each label left, center or right and
+  top, middle or bottom; turns Keep Readable on or off.
+  Labels are named by id or "all", and each one is read back after the change;
+  only a label that reads as asked is counted.
+
+  **IT MOVES AND SIZES A LABEL AND NEVER CHANGES WHAT IT SHOWS** - that is
+  Edit Label's, by hand. A text note is refused by name.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Label ids, comma separated, as REPORT_FAMILY_LABELS lists them, or
+    # "all" for every label in the family.
+    - name: labelIds
+      type: string
+      source: request
+    # "x,y" in millimetres in the family's view: where ONE label's point goes.
+    # Left out, "keep".
+    - name: positionMm
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    # "dx,dy" in millimetres: every label named moves by that much. Left out,
+    # "keep". Not with positionMm.
+    - name: moveByMm
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    # The label box's width in millimetres, inside what Revit allows for the
+    # label's type. Left out, "keep".
+    - name: widthMm
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    # left, center or right. Left out, "keep".
+    - name: horizontalAlign
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    # top, middle or bottom. Left out, "keep".
+    - name: verticalAlign
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    # yes or no. Left out, "keep".
+    - name: keepReadable
+      type: string
+      source: request
+      optional: true
+      absent: keep
+  provides:
+    - name: changed
+      # Labels that read back as asked. Tracks the request (D-53).
+      role: result
+      type: int
+    - name: changedIds
+      role: result
+      type: IList<ElementId>
+    - name: readBack
+      # One line per label named, after the change, joined by "  ||  ": at
+      # x,y mm | width mm | alignment | keep readable - and NOT AS ASKED where
+      # Revit kept something else.
+      role: result
+      type: string
+    - name: report
+      # ONE STRING: how many read back as asked, what Revit refused, or why
+      # nothing was changed (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. TextElement.Coord, Width,
+  GetMinimumAllowedWidth, GetMaximumAllowedWidth, HorizontalAlignment,
+  VerticalAlignment and KeepRotatedTextReadable, the HorizontalTextAlignment
+  (Left, Right, Center) and VerticalTextAlignment (Top, Bottom, Middle) enums
+  and ElementTransformUtils.MoveElement read the same 2020 to 2027
+  (tools/api-surface --members, all eight, 2026-10-21). Whether Revit accepts
+  each setter on a LABEL, as it does on a text note, is NEEDS-CHECKING IJ5 to
+  IJ7 - the read-back counts only what took.
+
+# ROUTING - the same rows are in REPORT_FAMILY_LABELS, MOVE_ANNOTATION and
+# CHANGE_ELEMENT_TYPE.
+#
+#   "move the diameter label up 2 mm"                        -> here, moveByMm
+#   "put this label at 0,5"                                  -> here, positionMm
+#   "make the label box 30 mm wide and align it left"        -> here
+#   "move this tag to the right of the pipe"                 -> MOVE_ANNOTATION
+#   "change this label to the 2.5 mm label type"             -> CHANGE_ELEMENT_TYPE
+#   "add a prefix to the diameter label"                     -> by hand, Edit Label (no API on any release)
+#   "read the labels in this tag family"                     -> REPORT_FAMILY_LABELS
+
+utterances:
+  - place this label at 0,5 in the tag family
+  - move the diameter label up 2 mm
+  - make the label box 30 mm wide and align it left
+  - align all the labels to the center
+  - turn keep readable on for these labels
