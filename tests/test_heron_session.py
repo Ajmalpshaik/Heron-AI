@@ -44,7 +44,10 @@ WHAT THIS PROVES
      matcher anchored so update_pull_request_branch is not mistaken for
      update_pull_request, and the local-only note on every prompt - and the
      exact commands it gives run under bash, and still find their scripts
-     when $CLAUDE_PROJECT_DIR names another folder.
+     when $CLAUDE_PROJECT_DIR names another folder - the real scripts, by
+     what they answer. With no script to find at all, outside any git
+     repository, the three advice hooks are silent and exit 0, and the
+     guard still fails closed (OPEN-QUESTIONS Q-80).
   6. THE LOCAL-ONLY NOTE warns when a prompt is marked LOCAL and the session
      is in a cloud container - by the documented CLAUDE_CODE_REMOTE, by the
      two variables seen in one on 2026-10-17, or, failing both, by not being
@@ -781,7 +784,10 @@ def run_all(home):
     check(len(prompts) == 1, "UserPromptSubmit runs local_only.py exactly once")
     pmatcher, pentry = prompts[0] if prompts else ("", {})
     pcommand = pentry.get("command", "")
-    check(pcommand.startswith("python ") and "$CLAUDE_PROJECT_DIR" in pcommand,
+    # The script is run by `python`, as the others are; since 2026-10-19 the
+    # command first looks for it, so `python` is no longer its first word.
+    check(re.search(r'(^|; )python "', pcommand) is not None
+          and "$CLAUDE_PROJECT_DIR" in pcommand,
           "as the same python command, found from $CLAUDE_PROJECT_DIR: %s"
           % pcommand)
     check(not pmatcher,
@@ -828,6 +834,68 @@ def run_all(home):
                   "with $CLAUDE_PROJECT_DIR naming another folder, the command "
                   "still finds its script and exits 0: %s"
                   % wired.rsplit("/", 1)[-1].rstrip('"'))
+
+        # Exit 0 alone would pass for a command that found no script and gave
+        # up quietly. So each fallback is asked something only ITS script
+        # answers: the guard refuses the forbidden edit, and the prompt hook
+        # warns on a LOCAL prompt in a cloud container.
+        def run_wired(wired, payload, cwd, **extra):
+            return subprocess.run(["bash", "-c", wired],
+                                  input=json.dumps(payload),
+                                  capture_output=True, text=True,
+                                  encoding="utf-8", cwd=cwd,
+                                  env=dict(env, CLAUDE_PROJECT_DIR=plain,
+                                           **extra),
+                                  timeout=120)
+
+        guard = [one.get("command", "") for _m, one in commands("PreToolUse")
+                 if "heron_guard.py" in one.get("command", "")]
+        vendor = "Autodesk" + ".Revit"
+        forbidden = {"session_id": "s-5g", "cwd": ROOT, "tool_name": "Write",
+                     "tool_input": {"file_path": os.path.join(
+                         ROOT, "brain", "x.py"),
+                         "content": "using %s.DB;" % vendor}}
+        got = run_wired(guard[0], forbidden, ROOT) if guard else None
+        check(got is not None and '"deny"' in got.stdout,
+              "and the guard found that way is the real one - it REFUSES the "
+              "forbidden edit")
+        got = run_wired(pcommand, {"session_id": "s-5p",
+                                   "prompt": "LOCAL SESSION - prove D3"},
+                        ROOT, CLAUDE_CODE_REMOTE="true")
+        check(got.returncode == 0 and "cloud container" in got.stdout,
+              "and the prompt hook found that way is the real one - it warns "
+              "on a LOCAL prompt in a cloud container")
+
+        # Outside any git repository the fallback has nothing to find. The
+        # three advice hooks are never a gate, so they say nothing and exit 0
+        # - where python would have exited 2 on a path that is not there, and
+        # 2 is "block" to the host. GIT_CEILING_DIRECTORIES stops git looking
+        # above `plain`, wherever the temporary folder is.
+        nowhere = dict(GIT_CEILING_DIRECTORIES=os.path.dirname(plain))
+        for one in every:
+            wired = one.get("command", "")
+            if "heron_guard.py" in wired:
+                continue
+            got = run_wired(wired, {"session_id": "s-5n", "cwd": plain,
+                                    "source": "startup",
+                                    "prompt": "LOCAL SESSION - prove D3",
+                                    "tool_name": "Bash",
+                                    "tool_input": {"command": "gh pr merge 1"}},
+                            plain, CLAUDE_CODE_REMOTE="true", **nowhere)
+            check(got.returncode == 0 and not got.stdout.strip()
+                  and not got.stderr.strip(),
+                  "outside any git repository, with no script to find, the "
+                  "advice hook is silent and exits 0: %s"
+                  % wired.rsplit("/", 1)[-1].rstrip('"'))
+        # The guard is deny-tier, and is left failing closed there on
+        # purpose: with no script to run, a refusal is the boundary holding.
+        # Whether that should change is the owner's call - OPEN-QUESTIONS
+        # Q-80. This pins today's answer, so a change to it is deliberate.
+        got = run_wired(guard[0], forbidden, plain, **nowhere) if guard \
+            else None
+        check(got is not None and got.returncode != 0,
+              "and the guard, in the same place, still does NOT exit 0 - it "
+              "fails closed until the owner decides Q-80")
     else:
         print("  note  the commands were not run with another folder in "
               "$CLAUDE_PROJECT_DIR: no bash here, or Windows - a real session "

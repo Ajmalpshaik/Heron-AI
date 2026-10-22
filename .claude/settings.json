@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$([ -f \"$CLAUDE_PROJECT_DIR/.claude/skills/heron-session/bin/session_line.py\" ] && printf %s \"$CLAUDE_PROJECT_DIR\" || git rev-parse --show-toplevel)/.claude/skills/heron-session/bin/session_line.py\"",
+            "command": "d=\"$CLAUDE_PROJECT_DIR\"; [ -f \"$d/.claude/skills/heron-session/bin/session_line.py\" ] || d=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -f \"$d/.claude/skills/heron-session/bin/session_line.py\" ] || exit 0; python \"$d/.claude/skills/heron-session/bin/session_line.py\"",
             "timeout": 15
           }
         ]
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$([ -f \"$CLAUDE_PROJECT_DIR/.claude/skills/heron-session/bin/local_only.py\" ] && printf %s \"$CLAUDE_PROJECT_DIR\" || git rev-parse --show-toplevel)/.claude/skills/heron-session/bin/local_only.py\"",
+            "command": "d=\"$CLAUDE_PROJECT_DIR\"; [ -f \"$d/.claude/skills/heron-session/bin/local_only.py\" ] || d=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -f \"$d/.claude/skills/heron-session/bin/local_only.py\" ] || exit 0; python \"$d/.claude/skills/heron-session/bin/local_only.py\"",
             "timeout": 10
           }
         ]
@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$([ -f \"$CLAUDE_PROJECT_DIR/.claude/skills/heron-session/bin/main_moved.py\" ] && printf %s \"$CLAUDE_PROJECT_DIR\" || git rev-parse --show-toplevel)/.claude/skills/heron-session/bin/main_moved.py\"",
+            "command": "d=\"$CLAUDE_PROJECT_DIR\"; [ -f \"$d/.claude/skills/heron-session/bin/main_moved.py\" ] || d=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -f \"$d/.claude/skills/heron-session/bin/main_moved.py\" ] || exit 0; python \"$d/.claude/skills/heron-session/bin/main_moved.py\"",
             "timeout": 60
           }
         ]
