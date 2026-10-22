@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,20 @@ semantic-identity: "tie the radius or diameter of a round family form to a lengt
 kind: action
 domain: revit.families
 capability: LABEL_FAMILY_RADIUS
-version: 4
+# Version 5 (2026-10-22, row 5b-1318) changed impl/: the revolve route reads
+# and checks both references of its straight dimension before Revit is asked.
+# On Revit 2020 (session 78736, the owner's floor drain families) that route
+# threw Revit's own "Invalid number of references" three times - from a made
+# plane in an elevation and from a template plane in a plan - while the
+# extrusion route labelled three sketched circles in the same session. Version
+# 5 refuses, naming which of the two references is missing (not given, or
+# naming no element or the wrong one) and the release; says each one's kind
+# without refusing on it; never lets Revit's words out alone; and when Revit
+# refuses with both in hand asks again with each read back from its written
+# form so the answer names the one it would not take. Version 4's proof below
+# no longer describes the code: DRAFT until NEEDS-CHECKING Group IS proves
+# version 5 (D-30).
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -62,6 +75,29 @@ purpose: >
   blends; a rise reuses its plane. Measured on scratch families: radius 40 to
   60 and 25, wire 5 to 8 and 3, rise 15 to 30 and 6, each followed.
   Proved again 2026-10-07 on scratch SpringProof, signed by Ajmal PS.
+
+  **BOTH REFERENCES ARE CHECKED BEFORE REVIT IS ASKED** (version 5,
+  2026-10-22, row 5b-1318). On Revit 2020 the revolve route threw Revit's
+  own "Invalid number of references" three times in the owner's floor drain
+  families - a trap's two outlet sockets and a floor-based host's end disc,
+  in an elevation and in a plan, from a made plane and from a template one -
+  while the extrusion route labelled three sketched circles in the same
+  session. Revit says that when one of the two references it is handed is
+  not one it will measure to. Version 5 reads the plane's reference and the
+  profile line's (or the centre plane's) before the call - that each exists
+  and names the element it should - and refuses in one sentence naming
+  which one is missing and the release when one is not; each reference's
+  kind is read and said (a surface for a plane, a line for a sketch curve
+  are what a straight dimension is expected to take), but a kind other than
+  that is a note, not a refusal - which kinds Revit takes is Revit's to say.
+  When Revit refuses the dimension with both in hand, it is asked again
+  with each reference read back from its written form, so the answer names
+  the one Revit would not take as first read; and the sentence that reaches
+  the modeller is Heron's, counting the tries made, with Revit's words after
+  it in quotes, never Revit's alone. A labelled call's answer says what was
+  read of both. Which reference it is on 2020 is NOT known: NEEDS-CHECKING
+  Group IS asks Revit, on 2020 and again on 2024. The extrusion and swept
+  blend routes are untouched.
 
   **ONE FAMILY RESIZES WITH THE PIPE SIZE.** With the round sizes labelled,
   one body follows Nominal Diameter through formulas, instead of one shape set
@@ -191,7 +227,17 @@ compatibility-note: >
   `Level.GetPlaneReference()` and `Dimension.DimensionShape` (read
   2026-10-07). No `SketchEditScope` is used -
   it exists only from 2022 and refuses a family document. A parameter's kind is
-  read by reflection, because it moved at 2022.
+  read by reflection, because it moved at 2022. Version 5's
+  `Reference.ElementReferenceType`, `Reference.ConvertToStableRepresentation`,
+  `Reference.ParseFromStableRepresentation`, `Curve.Reference` and
+  `ReferencePlane.GetReference()` read the same 2020 through 2027 (the
+  reference assemblies, read 2026-10-22 with `tools/api-surface --members`),
+  and `GetReference()` is the only way to a plane's reference on every
+  release - no `Reference` property exists on any of them; `Sketch.GetAllElements()`
+  exists from 2022 only and is not used. So no call changed between Revit
+  2024, where the revolve route was proved, and 2020, where it threw: the
+  difference is in what Revit makes of the two references, which only a run
+  on 2020 can read - NEEDS-CHECKING Group IS.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #

@@ -89,6 +89,44 @@ positive:
       "Mean Radius" and "Wire Radius" labelled on this one too, beside the
       first's. Ran 2026-10-07 building TRG_Spring_One Turn
 
+  - given: >
+      version 5, the fault's own case (row 5b-1318), on Revit 2020. A new
+      metric Generic Model family; a length instance parameter "Outlet
+      Radius" 41; a horizontal reference plane "Outlet Axis" at Z -140 made
+      in the Front elevation; a solid revolve "56,-140; 56,-99; 118,-99;
+      118,-140" about "56,-140 118,-140" on Center (Front/Back) - the floor
+      drain trap's outlet socket; form = its id, "Outlet Radius", diameter
+      false
+    expect: >
+      EITHER a straight dimension in the revolve's sketch from "Outlet Axis"
+      to the profile line 41 mm out, labelled "Outlet Radius" reading 41,
+      the axis locked to the plane, and a finding "Its two references, read
+      on Revit 2020 before the dimension was asked for: the plane "Outlet
+      Axis" gave a surface reference (...); the profile line gave a linear
+      reference (...)" - then FLEX_FAMILY "Outlet Radius=60 | Outlet
+      Radius=30" and the revolve MEASURED 120 and 60 across; OR nothing
+      labelled, in Heron's own sentence naming the plane or the profile line
+      and "Revit 2020", with Revit's words after it in quotes - never "Revit
+      refused to label ... Invalid number of references" alone. Whichever,
+      copied whole: it is the finding. NOT RUN - NEEDS-CHECKING Group IS,
+      IS1
+
+  - given: >
+      version 5, the same family on Revit 2020, "Outlet Disc Radius" 41; a
+      solid revolve sketched on the horizontal plane "Outlet Axis", profile
+      X,Y "170,0; 172,0; 172,41; 170,41" about "170,0 172,0" - the floor
+      based host's end disc, which the tool dimensions from Center
+      (Front/Back) in the Ref. Level plan
+    expect: the same two outcomes as the case above, copied whole. NOT RUN - IS3
+
+  - given: version 5, the "Bell Radius" revolve of the second case, on Revit 2020 and again on 2024
+    expect: >
+      labelled from "Center (Left/Right)" 60 mm out as version 4 did on 2024,
+      and the flex 600 and 80 across - the checks let a working pair through.
+      If version 5 REFUSES on 2024 what version 4 labelled there, the check's
+      reading of the reference kinds is wrong, not Revit: narrow it, reopen
+      row 5b-1318. NOT RUN - IS4, IS5
+
 negative:
   - given: a revolve about "1000,300 1000,500" - no reference plane runs through its axis
     expect: >
@@ -126,6 +164,23 @@ negative:
 
   - given: the parameter "Half Pitch" while it already labels a straight dimension between two other planes
     expect: refused as already labelling another dimension, and nothing labelled
+
+  - given: >
+      version 5: a revolve whose plane's reference, or whose profile line's,
+      is MISSING on the release in front - not given at all, naming no
+      element, or naming another element than the plane or a sketch line
+    expect: >
+      refused before Revit is asked, in one sentence naming WHICH of the two
+      and the release ("On Revit 2020 the profile line gives no reference a
+      straight dimension can measure to ..."), what was read of both with
+      each one's kind, and Edit Revolve; nothing labelled, nothing locked,
+      nothing in Undo. A reference of an unexpected KIND is said, never
+      refused - Revit decides. Revit's "Invalid number of references" never
+      reaches the modeller alone: when Revit refuses with both references in
+      hand, Heron's sentence counts the tries made (as read, then each read
+      back from its written form), names both references as read with their
+      kinds, whether the axis was locked, and Revit's words in quotes after
+      it. NOT RUN - Group IS reads which outcome 2020 gives
 
 second_route:
   - >

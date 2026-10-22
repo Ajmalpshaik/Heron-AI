@@ -976,6 +976,9 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-iq.md`](needs-checking/group-iq.md)
 
+## Group IS - a revolve's radius labelled on Revit 2020, both references checked before Revit is asked: `LABEL_FAMILY_RADIUS` version 5 (2026-10-22)
+
+**Its own file:** [`needs-checking/group-is.md`](needs-checking/group-is.md)
 ## Group IU - a dictionary's entries reach the chat (`providesEntries`, `READ_ELEMENT_PARAMETERS` version 5), and the end a flex would move (`LABEL_FAMILY_DIMENSION` version 2) (2026-10-22)
 
 **Its own file:** [`needs-checking/group-iu.md`](needs-checking/group-iu.md)
