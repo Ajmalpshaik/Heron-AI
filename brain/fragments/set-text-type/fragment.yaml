@@ -4,7 +4,7 @@ heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
-id: FRG-VIEW-150
+id: FRG-VIEW-152
 semantic-identity: "change a text type - the type every label or text note of it is drawn in: its text size in mm, font, width factor, background and colour - or copy it under a new type name first"
 kind: action
 domain: revit.annotation
