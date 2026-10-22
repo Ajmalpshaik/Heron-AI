@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -132,6 +132,43 @@ contract:
       # answer.
       role: result
       type: IList<ElementId>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: MEP Night Test, Revit 2020, session 68704 - the count is NOT recorded because 5,262
+    elements was measured on Cinematic ID Test, the document in front, and this ran against
+    another one (row 15)
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name with this phase''s own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned connectorsOf Func`2,
+    cubicMetresPerCubicFoot 0.028316846592, findings 136 item(s) [528352: flow 10.31 L/s,
+    was 100 mm, needs 104.6 mm bore, now..., 530080: flow 0.57 L/s, was 20 mm, needs 24.6
+    mm bore, now 25..., 530081: flow 0.57 L/s, was 20 mm, needs 24.6 mm bore, now 25..., ...],
+    fittingsIn Func`2, haveBores true, isFitting Func`2, mmPerFoot 304.8, noFlow 2 item(s)
+    [531211, 817493], openAround Func`1, openConnectorsAfter 45, openConnectorsBefore 45,
+    openEnds Func`2, openedByResize 0 item(s), pipeFittingCategory 1 item(s) [id -2008049],
+    refused 0 item(s), sized 134, targetVelocity 1.2, velocityIsApproximate false. inputs
+    came elements from select-by-category-name (136); targetVelocity as given; nominalSizesMm
+    as given (13); boresMm as given (13). on MEP Night Test'
+  negative_case: 'run with boresMm=1, nominalSizesMm=1, targetVelocity=1.2 arranged with categoryName=Pipes,
+    inViewOnly=FloorPlan: Level 1 HVAC Pipe Plan_A instead - chosen because it should not
+    contain what this fragment reports - the arrangement was re-made first by running select-by-category-name
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned connectorsOf Func`2, cubicMetresPerCubicFoot 0.028316846592,
+    findings 1 item(s) [2 pipe(s) carry no flow and were NOT sized. That is not a pa...],
+    fittingsIn Func`2, haveBores true, isFitting Func`2, mmPerFoot 304.8, noFlow 2 item(s)
+    [531211, 817493], openAround Func`1, openConnectorsAfter 45, openConnectorsBefore 45,
+    openEnds Func`2, openedByResize 0 item(s), pipeFittingCategory 1 item(s) [id -2008049],
+    refused 134 item(s) [528352: needs 104.6 mm bore, which is larger than every size...,
+    530080: needs 24.6 mm bore, which is larger than every size ..., 530081: needs 24.6 mm
+    bore, which is larger than every size ..., ...], sized 0, targetVelocity 1.2, velocityIsApproximate
+    false. inputs came elements from select-by-category-name (136); targetVelocity as given;
+    nominalSizesMm as given (1); boresMm as given (1). on MEP Night Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 6dee5263f2dc0a83
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

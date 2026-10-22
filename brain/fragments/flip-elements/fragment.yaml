@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -116,27 +116,34 @@ contract:
 # NEEDS-CHECKING Group HT proves version 2 (D-30). Version 1's flip is still
 # the path every hand flip and every non-door facing flip takes.
 proof:
-  date: '2026-09-10'
+  date: '2026-10-21'
   by: Ajmal PS
-  model: Project1 work_ajmal.al (3,471 elements), Revit 2024, session 24688
+  model: Cinematic ID Test (5,262 elements), Revit 2020, session 68704
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned cannotFlip 0
-    item(s), flipFacing false, flipHand true, flipped 1, notFamilyInstance 0 item(s). inputs
-    came elements from the selection (1); flipHand as given; flipFacing as given. on Project1
-    work_ajmal.al
-  negative_case: run with categoryName=Doors, flipFacing=False, flipHand=False, inViewOnly=1
-    - Mech instead - chosen because it should not contain what this fragment reports - the
-    arrangement was re-made first by running select-by-category-name, set-selection with this
-    phase's own values - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned cannotFlip 1 item(s) [926314], flipFacing false, flipHand
-    false, flipped 0, notFamilyInstance 0 item(s). inputs came elements from the selection
-    (1); flipHand as given; flipFacing as given. on Project1 work_ajmal.al
+    select-by-category-name with this phase's own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned cannotFlip 0 item(s),
+    doorCategory 1 item(s) [id -2000023], flipFacing true, flipHand false, flipped 5, fromToRoomOnly
+    false, isDoor Func`2, labelOf Func`2, notFamilyInstance 0 item(s), roomsLeft 5 item(s)
+    [Door 422466 ('800 x 2100') - no room on either side, so noth..., Door 425292 ('800 x
+    2100') - no room on either side, so noth..., Door 704276 ('Curtain Wall Dbl Glass') -
+    no room on either s..., ...], roomsSwapped 0 item(s), toCheck 5 item(s) [800 x 2100, 800
+    x 2100, Curtain Wall Dbl Glass, ...], windowCategory 1 item(s) [id -2000014]. inputs came
+    elements from select-by-category-name (5); flipHand as given; flipFacing as given; fromToRoomOnly
+    not given - false (optional). on Cinematic ID Test
+  negative_case: 'run with flipFacing=True, flipHand=False arranged with categoryName=Walls,
+    inViewOnly=FloorPlan: Level 1 instead - chosen because it should not contain what this
+    fragment reports - the arrangement was re-made first by running select-by-category-name
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned cannotFlip 0 item(s), doorCategory 1 item(s) [id
+    -2000023], flipFacing true, flipHand false, flipped 0, fromToRoomOnly false, isDoor Func`2,
+    labelOf Func`2, notFamilyInstance 24 item(s) [198749, 418079, 422243, ...], roomsLeft
+    0 item(s), roomsSwapped 0 item(s), toCheck 0 item(s), windowCategory 1 item(s) [id -2000014].
+    inputs came elements from select-by-category-name (24); flipHand as given; flipFacing
+    as given; fromToRoomOnly not given - false (optional). on Cinematic ID Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: dbab535b4e248758
-
+  fingerprint: 437b569d99c81fef
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -64,6 +64,84 @@ contract:
     - name: findings
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: MEP Night Test, Revit 2020, session 68704 - the count is NOT recorded because 5,262
+    elements was measured on Cinematic ID Test, the document in front, and this ran against
+    another one (row 15)
+  positive_case: 'run with spaces=4ac1827e-89cc-4dd6-9110-78912bf81d6b-0005ce5e - the first
+    of 3 tracked inputs. returned FeetToMetres 0.3048, asked 4ac1827e-89cc-4dd6-9110-78912bf81d6b-0005ce5e,
+    backslash \, ceilings 43 item(s) [Abgehängte Decke 5.0cm - 600 x 600, Abgehängte Decke
+    5.0cm - 600 x 600, Abgehängte Decke 5.0cm - 600 x 600, ...], doubleOf Func`3, esc Func`2,
+    findings 0 item(s), firstRoom false, firstType false, heads 6 item(s) [15 mm Pendent on
+    Drop with Guard, 15 mm Pendent on Drop with Guard, 15 mm Pendent on Drop with Guard, ...],
+    headsRead true, invariant CultureInfo, isCategory Func`3, json StringBuilder, kParameter
+    Func`2, layoutJson {"format":1,"document":"MEP Night Test","asked":"4ac1827e-89cc-4dd6-9110-78912bf81d6b-0005ce5e","heads_read":true,"spaces":[{"id":"4ac1827e-89cc-4dd6-9110-78912bf81d6b-0005ce5e","element_id":"380510","kind":"space","number":"53","name":"EDP
+    II 53","level":"Level 2","level_elevation_m":3.8,"level_project_elevation_m":3.8,"area_m2":94.615665,"location":[-9.072,-8.199],"outline":[[-4.518,-5.145],[-4.518,-4.646],[-4.633,-4.646],[-4.633,-4.445],[-4.633,-1.202],[-12.57,-1.202],[-12.768,-1.202],[-12.768,-12.719],[-4.518,-12.719],[-4.518,-5.145]],"holes":[],"separation_edges":0,"ceilings":[{"id":"580567","type":"Abgehängte
+    Decke 5.0cm - 600 x 600","height_m":2.45}],"sprinklers":[{"id":"545673","type":"M_Sprinkler
+    - Pendent - Hosted: 15 mm Pendent on Drop with Guard","x":-10.139,"y":-9.688,"z":6.25,"offset_m":2.45},{"id":"545696","type":"M_Sprinkler
+    - Pendent - Hosted: 15 mm Pendent on Drop with Guard","x":-5.939,"y":-9.688,"z":6.25,"offset_m":2.45},{"id":"545726","type":"M_Sprinkler
+    - Pendent - Hosted: 15 mm Pendent on Drop with Guard","x":-10.139,"y":-6.088,"z":6.25,"offset_m":2.45},{"id":"545728","type":"M_Sprinkler
+    - Pendent - Hosted: 15 mm Pendent on Drop with Guard","x":-5.939,"y":-6.088,"z":6.25,"offset_m":2.45},{"id":"545736","type":"M_Sprinkler
+    - Pendent - Hosted: 15 mm Pendent on Drop with Guard","x":-10.139,"y":-2.488,"z":6.25,"offset_m":2.45},{"id":"545737","type":"M_Sprinkler
+    - Pendent - Hosted: 15 mm Pendent on Drop with Guard","x":-5.939,"y":-2.488,"z":6.25,"offset_m":2.45}]}],"sprinkler_types":[{"name":"M_Sprinkler
+    - Pendent - Hosted: 15 mm Pendent on Drop with Guard","family":"M_Sprinkler - Pendent
+    - Hosted","type":"15 mm Pendent on Drop with Guard","placement":"WorkPlaneBased","k":"K-Factor
+    = 81"}],"findings":[]}, levelIdOf Func`2, metres Func`2, metresOrNull Func`2, numOrNull
+    Func`2, quote ", rooms 1 item(s) [EDP II 53], spaceCount 1, takeRoom Action`1, taken HashSet`1,
+    typeName Func`2. inputs came spaces as given. on MEP Night Test'
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). report-sprinkler-layout-spaces\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 3 different inputs:\n\n      spaces=4ac1827e-89cc-4dd6-9110-78912bf81d6b-0005ce5e\
+    \ -> layoutJson {\"format\":1,\"document\":\"MEP Night Test\",\"asked\":\"4ac1827e-89cc-4dd6-9110-78912bf81d6b-0005ce5e\"\
+    ,\"heads_read\":true,\"spaces\":[{\"id\":\"4ac1827e-89cc-4dd6-9110-78912bf81d6b-0005ce5e\"\
+    ,\"element_id\":\"380510\",\"kind\":\"space\",\"number\":\"53\",\"name\":\"EDP II 53\"\
+    ,\"level\":\"Level 2\",\"level_elevation_m\":3.8,\"level_project_elevation_m\":3.8,\"\
+    area_m2\":94.615665,\"location\":[-9.072,-8.199],\"outline\":[[-4.518,-5.145],[-4.518,-4.646],[-4.633,-4.646],[-4.633,-4.445],[-4.633,-1.202],[-12.57,-1.202],[-12.768,-1.202],[-12.768,-12.719],[-4.518,-12.719],[-4.518,-5.145]],\"\
+    holes\":[],\"separation_edges\":0,\"ceilings\":[{\"id\":\"580567\",\"type\":\"Abgehängte\
+    \ Decke 5.0cm - 600 x 600\",\"height_m\":2.45}],\"sprinklers\":[{\"id\":\"545673\",\"\
+    type\":\"M_Sprinkler - Pendent - Hosted: 15 mm Pendent on Drop with Guard\",\"x\":-10.139,\"\
+    y\":-9.688,\"z\":6.25,\"offset_m\":2.45},{\"id\":\"545696\",\"type\":\"M_Sprinkler - Pendent\
+    \ - Hosted: 15 mm Pendent on Drop with Guard\",\"x\":-5.939,\"y\":-9.688,\"z\":6.25,\"\
+    offset_m\":2.45},{\"id\":\"545726\",\"type\":\"M_Sprinkler - Pendent - Hosted: 15 mm Pendent\
+    \ on Drop with Guard\",\"x\":-10.139,\"y\":-6.088,\"z\":6.25,\"offset_m\":2.45},{\"id\"\
+    :\"545728\",\"type\":\"M_Sprinkler - Pendent - Hosted: 15 mm Pendent on Drop with Guard\"\
+    ,\"x\":-5.939,\"y\":-6.088,\"z\":6.25,\"offset_m\":2.45},{\"id\":\"545736\",\"type\":\"\
+    M_Sprinkler - Pendent - Hosted: 15 mm Pendent on Drop with Guard\",\"x\":-10.139,\"y\"\
+    :-2.488,\"z\":6.25,\"offset_m\":2.45},{\"id\":\"545737\",\"type\":\"M_Sprinkler - Pendent\
+    \ - Hosted: 15 mm Pendent on Drop with Guard\",\"x\":-5.939,\"y\":-2.488,\"z\":6.25,\"\
+    offset_m\":2.45}]}],\"sprinkler_types\":[{\"name\":\"M_Sprinkler - Pendent - Hosted: 15\
+    \ mm Pendent on Drop with Guard\",\"family\":\"M_Sprinkler - Pendent - Hosted\",\"type\"\
+    :\"15 mm Pendent on Drop with Guard\",\"placement\":\"WorkPlaneBased\",\"k\":\"K-Factor\
+    \ = 81\"}],\"findings\":[]}\n      spaces=fdad9ed8-b84e-4f19-a6f9-b6c394d5425a-0005cfbe\
+    \ -> layoutJson {\"format\":1,\"document\":\"MEP Night Test\",\"asked\":\"fdad9ed8-b84e-4f19-a6f9-b6c394d5425a-0005cfbe\"\
+    ,\"heads_read\":true,\"spaces\":[{\"id\":\"fdad9ed8-b84e-4f19-a6f9-b6c394d5425a-0005cfbe\"\
+    ,\"element_id\":\"380862\",\"kind\":\"space\",\"number\":\"83\",\"name\":\"Corridor 83\"\
+    ,\"level\":\"Level 3\",\"level_elevation_m\":7.3,\"level_project_elevation_m\":7.3,\"\
+    area_m2\":304.584749,\"location\":[0.117,6.961],\"outline\":[[4.121,12.234],[-4.518,12.234],[-4.518,6.838],[-4.518,2.858],[-4.518,-3.145],[-4.518,-4.445],[-4.318,-4.445],[-4.318,-4.646],[-4.318,-12.649],[-1.618,-12.649],[-1.618,-4.502],[4.371,-4.502],[6.059,-4.502],[7.584,-4.502],[9.371,-4.502],[9.471,-4.502],[9.473,-4.502],[17.471,-4.502],[25.471,-4.502],[33.471,-4.502],[41.471,-4.502],[50.432,-4.502],[50.432,-12.581],[50.432,-12.695],[52.782,-12.695],[52.782,-4.502],[53.097,-4.502],[53.097,-2.045],[4.121,-2.045],[4.121,3.654],[3.856,3.654],[3.856,3.754],[3.856,9.554],[3.856,9.654],[4.121,9.654],[4.121,12.234]],\"\
+    holes\":[],\"separation_edges\":1,\"ceilings\":[],\"sprinklers\":[]}],\"sprinkler_types\"\
+    :[{\"name\":\"M_Sprinkler - Pendent - Hosted: 15 mm Pendent on Drop with Guard\",\"family\"\
+    :\"M_Sprinkler - Pendent - Hosted\",\"type\":\"15 mm Pendent on Drop with Guard\",\"placement\"\
+    :\"WorkPlaneBased\",\"k\":\"K-Factor = 81\"}],\"findings\":[]}\n      spaces=b22d5285-8aa3-423c-b58a-2f123a2ec2cc-0005cacd\
+    \ -> layoutJson {\"format\":1,\"document\":\"MEP Night Test\",\"asked\":\"b22d5285-8aa3-423c-b58a-2f123a2ec2cc-0005cacd\"\
+    ,\"heads_read\":true,\"spaces\":[{\"id\":\"b22d5285-8aa3-423c-b58a-2f123a2ec2cc-0005cacd\"\
+    ,\"element_id\":\"379597\",\"kind\":\"space\",\"number\":\"20\",\"name\":\"MZR 20\",\"\
+    level\":\"Level 1\",\"level_elevation_m\":0.094,\"level_project_elevation_m\":0.094,\"\
+    area_m2\":156.319531,\"location\":[-3.971,36.051],\"outline\":[[-12.768,32.155],[-6.918,32.155],[-4.683,32.155],[-4.518,32.155],[-4.518,31.99],[4.872,31.99],[4.959,31.99],[4.959,40.885],[-12.768,40.885],[-12.768,32.155]],\"\
+    holes\":[],\"separation_edges\":0,\"ceilings\":[],\"sprinklers\":[]}],\"sprinkler_types\"\
+    :[{\"name\":\"M_Sprinkler - Pendent - Hosted: 15 mm Pendent on Drop with Guard\",\"family\"\
+    :\"M_Sprinkler - Pendent - Hosted\",\"type\":\"15 mm Pendent on Drop with Guard\",\"placement\"\
+    :\"WorkPlaneBased\",\"k\":\"K-Factor = 81\"}],\"findings\":[]}\n\n    Different inputs,\
+    \ exact matches every time. A fragment falling back to the active view, the whole model,\
+    \ or a previous run could not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 336dc7f6de40fdf5
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
