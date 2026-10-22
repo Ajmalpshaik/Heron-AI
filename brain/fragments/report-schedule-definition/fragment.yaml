@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -24,9 +24,8 @@ risk: READ
 # SET_SCHEDULE_FILTERS version 2 counts with in `ruleNumber`, so the rules can
 # be read before a change and after it. Only the filter part of the report
 # changed: the same rule wording is in `findings`, columns, sorting and totals
-# are as version 1 reported them. Version 1's proof below is kept as evidence
-# of version 1; it no longer describes this code (D-30), so this is DRAFT
-# until NEEDS-CHECKING Group IH is run and signed.
+# are as version 1 reported them. Version 2 was run and signed on Revit 2020
+# on 2026-10-21 (NEEDS-CHECKING Group IH, #721) - the proof below is that one.
 
 purpose: >
   Reads back how a schedule is CONFIGURED - the columns it carries, the order
@@ -95,9 +94,9 @@ purpose: >
 #   the rest of the report goes on.
 #
 #   Built on version 2 (row 5b-1290, filter rules) and changing none of it.
-#   Still READ ONLY. Version 1's proof below no longer describes the code and
-#   is kept as a record; the card is DRAFT until the version 2 proof
-#   (NEEDS-CHECKING Group IH) and the version 3 proof (Group IG) are signed.
+#   Still READ ONLY. Version 2's proof below (signed 2026-10-21, #721) no
+#   longer describes the code and is kept as a record; the card is DRAFT until
+#   the version 3 proof (NEEDS-CHECKING Group IG) is signed.
 
 contract:
   needs:
@@ -144,9 +143,10 @@ contract:
       # A count of what was passed over, not of anything described.
       role: accounting
 
-# VERSION 1's PROOF, KEPT AS A RECORD. Versions 2 and 3 changed impl/, so
-# its fingerprint no longer describes the code and the card is DRAFT until
-# NEEDS-CHECKING Groups IH and IG prove them (D-30).
+# VERSION 2's PROOF, KEPT AS A RECORD - signed by Ajmal PS on 2026-10-21
+# (Group IH, #721). Version 3 changed impl/, so its fingerprint no longer
+# describes the code and the card is DRAFT until NEEDS-CHECKING Group IG
+# proves version 3 (D-30).
 proof:
   date: '2026-10-21'
   by: Ajmal PS
