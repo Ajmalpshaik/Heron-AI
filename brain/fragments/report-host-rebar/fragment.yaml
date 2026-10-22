@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -85,6 +85,54 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: Structure Night Test (9,179 elements), Revit 2020, session 68704
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name with this phase''s own values. returned barList ''16M'' 59 bars,
+    149.28 m, bars 59, coverFaces 5 item(s) [CLEAR_COVER_TOP, CLEAR_COVER_BOTTOM, CLEAR_COVER_OTHER,
+    ...], findings 1 item(s) [1 host(s) with reinforcement, 0 without, 0 not a rebar host:...],
+    hostLines 1 item(s) [Structural Framing ''400 x 800mm'' (id 124765) - cover: Rebar ...],
+    hostsWithRebar 1, invariant CultureInfo, label Func`2, layers 8 item(s) [Autodesk.Revit.DB.BuiltInParameter[],
+    Autodesk.Revit.DB.BuiltInParameter[], Autodesk.Revit.DB.BuiltInParameter[], ...], listCount
+    1 entry(ies), listLength 1 entry(ies), mm Func`2, nameOf Func`2, nominalOf Func`2, notHosts
+    0 item(s), param Func`3, rebarSets 7, report Structural Framing ''400 x 800mm'' (id 124765)
+    - cover: Rebar Cover - Top Face none, Rebar Cover - Bottom Face ''Interior (shells) -
+    10M to 16M'' 13 mm, Rebar Cover - Other Faces ''Interior (shells) - 10M to 16M'' 13 mm
+    | rebar id 153781: 53 x ''16M'' 15.9 mm, stirrup/tie shape ''M_T1'', layout MaximumSpacing,
+    spacing 150 mm, hooks ''Stirrup/Tie Seismic - 135 deg.'' / ''Stirrup/Tie Seismic - 135
+    deg.'', total length 99149.9 mm | rebar id 153882: 1 x ''16M'' 15.9 mm, standard shape
+    ''M_00'', layout Single, hooks none / none, total length 8355 mm | rebar id 153976: 1
+    x ''16M'' 15.9 mm, standard shape ''M_00'', layout Single, hooks none / none, total length
+    8355 mm | rebar id 154029: 1 x ''16M'' 15.9 mm, standard shape ''M_00'', layout Single,
+    hooks none / none, total length 8355 mm | rebar id 154030: 1 x ''16M'' 15.9 mm, standard
+    shape ''M_00'', layout Single, hooks none / none, total length 8355 mm | rebar id 154062:
+    1 x ''16M'' 15.9 mm, standard shape ''M_00'', layout Single, hooks none / none, total
+    length 8355 mm | rebar id 154063: 1 x ''16M'' 15.9 mm, standard shape ''M_00'', layout
+    Single, hooks none / none, total length 8355 mm, systems 0, tally Action`3, tallySystemBars
+    Action`1, withoutRebar 0. inputs came elements from select-by-category-name (1). on Structure
+    Night Test'
+  negative_case: 'run with categoryName=Grids, inViewOnly=EngineeringPlan: 01 - Entry Level
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-by-category-name with this phase''s own values. returned
+    barList no bars, bars 0, coverFaces 5 item(s) [CLEAR_COVER_TOP, CLEAR_COVER_BOTTOM, CLEAR_COVER_OTHER,
+    ...], findings 28 item(s) [0 host(s) with reinforcement, 0 without, 27 not a rebar host...,
+    Grids ''1'' (id 118715) is not a rebar host - Revit hosts reba..., Grids ''2'' (id 118716)
+    is not a rebar host - Revit hosts reba..., ...], hostLines 0 item(s), hostsWithRebar 0,
+    invariant CultureInfo, label Func`2, layers 8 item(s) [Autodesk.Revit.DB.BuiltInParameter[],
+    Autodesk.Revit.DB.BuiltInParameter[], Autodesk.Revit.DB.BuiltInParameter[], ...], listCount
+    0 entry(ies), listLength 0 entry(ies), mm Func`2, nameOf Func`2, nominalOf Func`2, notHosts
+    27 item(s) [Grids ''1'' (id 118715) is not a rebar host - Revit hosts reba..., Grids ''2''
+    (id 118716) is not a rebar host - Revit hosts reba..., Grids ''3'' (id 118717) is not
+    a rebar host - Revit hosts reba..., ...], param Func`3, rebarSets 0, report , systems
+    0, tally Action`3, tallySystemBars Action`1, withoutRebar 0. inputs came elements from
+    select-by-category-name (27). on Structure Night Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 982324be590cba44
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
