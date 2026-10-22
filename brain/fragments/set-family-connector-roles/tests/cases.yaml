@@ -68,6 +68,55 @@ positive:
       Apparent Load driven by Rated Load and reading 0 VA until a value is
       given; Family Types shows both
 
+  - given: >
+      VERSION 4. A scratch Mechanical Equipment family with a Sanitary pipe
+      connector on the face lying on "Outlet Face" (flow Out), a second on
+      "Inlet Face" (flow In), and a Supply Air duct connector on "Duct Face",
+      each made by ADD_FAMILY_CONNECTOR; connectors "Outlet Face, Inlet
+      Face", settings "allowSlopeAdjustments=yes"
+    expect: >
+      changed names both pipe connectors "Allow Slope Adjustments no -> yes";
+      connectorReport reads "slope adjustments allowed" on each; a finding
+      per connector quotes what Revit shows ("Yes"); the connector's
+      Properties in the Family Editor show the box ticked; then
+      "allowSlopeAdjustments=no" unticks it and reads "no slope adjustments"
+
+  - given: >
+      the same family; connectors "Outlet Face", settings
+      "flowConfiguration=Preset; presetFlow=12 L/s"
+    expect: >
+      changed names the configuration and the flow; connectorReport reads
+      "flow configuration Preset, preset flow 12 L/s"; the finding quotes
+      Revit's own display of the Flow. A flow shown as 0.34 L/s or 423.8 L/s
+      is the unit factor wrong, and the refusal that checks it against
+      UnitUtils should have stopped it first
+
+  - given: >
+      the same family; connectors "Duct Face", settings
+      "flowConfiguration=System; flowFactor=50%"
+    expect: >
+      the duct connector reads "flow configuration System, flow factor 0.5"
+
+  - given: >
+      a duct fitting family - Part Type Elbow - with two Fitting duct
+      connectors on "Inlet" and "Outlet", and a type Angle parameter;
+      connectors "all", settings "angle=90 [Angle]"
+    expect: >
+      both connectors' Angle driven by Angle, Angle holding 90 degrees in the
+      current type, each row reading "angle 90 degrees (<- Angle)"; the
+      elbow flexes when Angle changes
+
+  - given: >
+      the Electrical Equipment family of version 3; connectors "Box Top",
+      settings "powerFactorState=Leading"
+    expect: the connector reads "power factor state Leading" and its Properties agree
+
+  - given: connectors "all", settings "utility=yes" on the Mechanical Equipment family above
+    expect: >
+      each connector that carries the Utility box reads "utility"; one that
+      has none is refused by name - which domains carry it is RECORDED, not
+      assumed (Group IR)
+
 negative:
   - given: connectors "Port Middle", where no connector lies on such a plane
     expect: refused, naming the family's connectors - nothing changed. MEASURED 2026-10-04
@@ -113,6 +162,30 @@ negative:
 
   - given: the same; settings "poles=4"
     expect: refused - 1, 2 or 3 - and nothing changed
+
+  - given: >
+      VERSION 4. The Mechanical Equipment family above; connectors "Duct
+      Face", settings "allowSlopeAdjustments=yes" - a duct connector
+    expect: >
+      refused in one sentence naming the connector and its domain - 'duct
+      connector NNNN on "Duct Face" is a duct connector - Allow Slope
+      Adjustments is a pipe connector's' - changed empty, nothing written;
+      the same for "allowSlopeAdjustments=yes" on an electrical connector
+
+  - given: connectors "Outlet Face", settings "allowSlopeAdjustments=maybe"
+    expect: refused - yes or no - and nothing changed
+
+  - given: connectors "Outlet Face", settings "powerFactorState=Lagging" - a pipe connector
+    expect: refused naming the connector and its domain - Power Factor State is an electrical connector's
+
+  - given: connectors "Box Top", settings "angle=90" - an electrical connector
+    expect: refused naming the connector and its domain - Angle is a fitting's connector's
+
+  - given: connectors "Duct Face", settings "presetFlow=12 L/s; presetFlow=13 L/s"
+    expect: refused - Flow is given twice - and nothing changed
+
+  - given: connectors "Outlet Face", settings "presetFlow=-5 L/s"
+    expect: refused - a flow of 0 or more - and nothing changed
 
   - given: a project in front
     expect: notAFamily true and nothing changed

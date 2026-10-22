@@ -1,15 +1,15 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-055
-semantic-identity: "edit a connector already in the family being edited - set its system classification, flow, size parameters, voltage, poles, load and power factor, flip it, make it primary, link a pair"
+semantic-identity: "edit a connector already in the family being edited - set its system classification, flow, size parameters, voltage, poles, load and power factor, tick or untick its Allow Slope Adjustments and Utility boxes, set a fitting connector's angle, a preset flow or flow factor, flip it, make it primary, link a pair"
 kind: action
 domain: revit.families
 capability: SET_FAMILY_CONNECTOR_ROLES
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -26,9 +26,12 @@ purpose: >
   **`settings` IS ONE VALUE** - "system=Global; flowDirection=In; flip=true" -
   holding only what should change, for every connector `connectors` names.
   Keys: system, flowDirection, flowConfiguration, lossMethod,
-  lossCoefficient, pressureDrop (Pa), description, flip, sizeParameters;
-  and on an electrical connector voltage, poles, apparentLoad, powerFactor
-  and loadClassification.
+  lossCoefficient, pressureDrop (Pa), description, flip, sizeParameters,
+  utility (yes/no); on a pipe connector allowSlopeAdjustments (yes/no); on a
+  duct or pipe connector flowFactor and presetFlow (L/s); on a
+  fitting's connector angle (degrees); and on an electrical connector
+  voltage, poles, apparentLoad, powerFactor, powerFactorState and
+  loadClassification.
 
   **AN ELECTRICAL VALUE IS A NUMBER, A FAMILY PARAMETER, OR BOTH** -
   "voltage=400 V; poles=3; apparentLoad=1.5 kVA; powerFactor=0.85" sets
@@ -46,9 +49,19 @@ purpose: >
   back with what Revit shows. Load Classification is a classification's
   name in the family, set as a value only.
 
-  **VERSION 3 (2026-10-12).** The electrical values are new; version 2's
-  proof no longer describes the code and is kept below as a record, and the
-  fragment is DRAFT until it is proved again (NEEDS-CHECKING Group DD).
+  **VERSION 4 (2026-10-22).** A connector's TICK BOXES and the other typed
+  values its Properties show: "allowSlopeAdjustments=yes" on a PIPE
+  connector - the box a drain family's connectors need ticked before the
+  pipework from them can be given a fall - "utility=yes", a fitting
+  connector's "angle=90", a duct or pipe connector's "flowFactor=0.5" and
+  "presetFlow=12 L/s" (each a value, a [family parameter] or both, as the
+  electrical values are), and an electrical connector's
+  "powerFactorState=Lagging". A KEY ANOTHER DOMAIN'S CONNECTOR HAS NOT GOT
+  IS REFUSED naming the connector and its domain - Allow Slope Adjustments
+  asked of a duct connector changes nothing. Version 3 was proved on Revit
+  2020 on 2026-10-18 (Group DD); that proof no longer describes the code and
+  is kept below as a record, and the fragment is DRAFT until it is proved
+  again (NEEDS-CHECKING Group IR).
 
   **REVIT DECIDES WHICH SYSTEM A CONNECTOR MAY TAKE.** Each connector is
   asked (IsSystemClassificationValid) before anything changes, so a system
@@ -84,10 +97,17 @@ contract:
     # "name=value" with `;` between, only the settings to change:
     # system, flowDirection, flowConfiguration, lossMethod, lossCoefficient,
     # pressureDrop (Pa), description, flip, sizeParameters (diameter; or
-    # width, height); on an electrical connector voltage (V, kV), poles (1-3),
-    # apparentLoad (VA, kVA), powerFactor (0-1 or %), each a value, a
-    # [family parameter] or both - "voltage=400 V [Voltage]" - and
-    # loadClassification (a name). Empty changes none of them.
+    # width, height), utility (yes/no); on a PIPE connector
+    # allowSlopeAdjustments (yes/no - Revit's "Allow Slope Adjustments" box);
+    # on a duct or pipe connector flowFactor (0-1 or %) and presetFlow (L/s,
+    # m3/h or cfm); on a FITTING's connector - duct, pipe, cable
+    # tray, conduit - angle (degrees); on an electrical connector voltage
+    # (V, kV), poles (1-3), apparentLoad (VA, kVA), powerFactor (0-1 or %),
+    # powerFactorState (Lagging, Leading) and loadClassification (a name).
+    # angle, flowFactor, presetFlow and the four electrical numbers are each a
+    # value, a [family parameter] or both - "voltage=400 V [Voltage]". A key
+    # another domain's connector has not got is refused by name. Empty
+    # changes none of them.
     - name: settings
       type: string
       source: request
@@ -214,7 +234,22 @@ compatibility-note: >
   DUT_VOLTS / DUT_VOLT_AMPERES to 2021, UnitTypeId.Volts / VoltAmperes from
   2021) - tools/api-surface --members, read 2026-10-12 off all eight
   releases. Compiles on 2020 to 2027 (tools/check-fragments-compile.py,
-  2026-10-12); not yet run in Revit.
+  2026-10-12); proved on Revit 2020, 2026-10-18.
+  Version 4 adds the built-in parameters RBS_ADJUSTABLE_CONNECTOR ("Allow
+  Slope Adjustments"), CONNECTOR_UTILITY_PARAM ("Utility"), CONNECTOR_ANGLE
+  ("Angle"), RBS_FLOW_FACTOR_PARAM ("Flow Factor"), RBS_DUCT_FLOW_PARAM and
+  RBS_PIPE_FLOW_PARAM ("Flow") and RBS_ELEC_POWER_FACTOR_STATE ("Power
+  Factor State") with the enum PowerFactorStateType (Leading, Lagging) -
+  every one present 2020 to 2027 with one value each (tools/api-surface
+  --members BuiltInParameter, read 2026-10-22 off all eight releases; the
+  labels from the Revit 2020 API reference). The angle and flow unit checks
+  reach UnitTypeId.Degrees / LitersPerSecond (2021 on) or DisplayUnitType
+  DUT_DECIMAL_DEGREES / DUT_LITERS_PER_SECOND (to 2021) by the same
+  reflection as the voltage's, and a new family parameter for an angle or a
+  flow is filed under PG_GEOMETRY / GroupTypeId.Geometry or PG_MECHANICAL /
+  GroupTypeId.Mechanical the same way. Which domains' connectors carry
+  Utility, and whether a pipe connector's Allow Slope Adjustments box is the
+  element's own parameter, is what Group IR measures; not yet run in Revit.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
@@ -235,6 +270,19 @@ compatibility-note: >
 #                                                   electrical connector
 #   "make the connector 3 phase 400 V"          -> here, "poles=3;
 #                                                   voltage=400 V"
+#   "tick allow slope adjustments on the outlet connector" -> here, settings
+#                                                   "allowSlopeAdjustments=yes"
+#                                                   on a PIPE connector
+#   "turn off slope adjustment on the pipe connectors" -> here,
+#                                                   "allowSlopeAdjustments=no"
+#   "set the connector angle to 90 degrees"      -> here, "angle=90" on a
+#                                                   fitting's connector
+#   "slope these drain pipes at 1:100"           -> SET_MEP_SLOPE - pipes in
+#                                                   a project, not a family
+#                                                   connector's box
+#   "does the outlet connector allow slope adjustments"
+#                                                -> REPORT_FAMILY_CONNECTORS,
+#                                                   a read
 #   "link the connector flow to a family parameter"
 #                                                -> LINK_FAMILY_PARAMETER - a
 #                                                   connector's VALUE to a
@@ -255,3 +303,6 @@ utterances:
   - pair the two connectors of this coil family
   - set the connector voltage and poles
   - make the connector 3 phase 400 V
+  - allow slope adjustments on the connector
+  - tick allow slope adjustment on the outlet connector
+  - turn off slope adjustment on the pipe connectors
