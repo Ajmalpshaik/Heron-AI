@@ -2,32 +2,88 @@ positive:
   - given: >
       a new family from the metric Lighting Fixture template, Light Source
       ticked in Family Category and Parameters, one type; shape "circle 200",
-      distribution "spot 30 60", intensity "1500 lm", colorTemperature "3000 K"
+      distribution "spot 30 60"
     expect: >
-      the report reads circle 200 mm, spot beam 30°, field 60°, tilt 0°,
-      Luminous Flux as Type Properties shows it (1500 lm), 3000 K, and the
-      light source's position; Type Properties LOOKED AT - Spot Beam Angle 30°,
-      Spot Field Angle 60° (BV18); then loaded into a test project and one copy
-      rendered or shown in a lighting analysis
+      the report reads the family's light source circle 200 mm, spot beam 30°,
+      field 60°, tilt 0°, and the light source's position and Z axis; Type
+      Properties LOOKED AT - Spot Beam Angle 30°, Spot Field Angle 60° (BV18)
 
   - given: >
-      the same family with two types; typeName "600x600", shape "rectangle 600
-      x 600", distribution "web <a real .ies file>"
+      the same family, a second call: intensity "1500 lm", colorTemperature
+      "3000 K"
     expect: >
-      the shape and distribution STYLES change for the family; only type
-      600x600 takes the 600 x 600 emit size and the web file - read back by name
+      Luminous Flux 1500 lm and 3000 K read back through the lighting API and
+      from the type's own Type Properties; the report lists every light value
+      the type holds; then loaded into a test project and one copy rendered or
+      shown in a lighting analysis
+
+  # VERSION 2 - 5b-1297 and 5b-1298, the family they were measured on.
+  - given: >
+      'TRG_Lighting Fixture_LED Pendant_CoreLine WT120C' on Revit 2020, two
+      family types TRG_Standard and TRG_Emergency, TRG_Emergency current;
+      typeName empty; intensity "4500 lm", colorTemperature "4000 K"
+    expect: >
+      both types read Luminous Flux 4500 lm and 4000 K in their own Type
+      Properties; TRG_Emergency, which the lighting API does not list, named as
+      reached with it current; TRG_Emergency current again afterwards. Or, if
+      Revit does not let it be reached, the call fails naming TRG_Emergency and
+      the hand fix in Family Types, and nothing is kept - EITHER answer is the
+      measurement Group IK wants
+
+  - given: >
+      the same family; intensity "35.5 W at 127 lm/W", typeName TRG_Standard
+    expect: >
+      TRG_Standard's Type Properties read Wattage 35.5 W and Efficacy 127 lm/W
+      out of Revit's internal units, Luminous Flux about 4508.5 lm, and the
+      BV18 finding; TRG_Emergency's light values exactly as before. Or the
+      call fails saying this Revit did not take W, nothing kept
+
+  - given: the same family; intensity "4500 lm at 35.5 W"
+    expect: >
+      a wattage intensity of 35.5 W at 126.76 lm/W on both types, Luminous Flux
+      4500 lm in Type Properties
+
+  - given: >
+      the same family; lightLossFactor "0.8", dimming "incandescent",
+      colorFilter "255 240 200", typeName TRG_Standard
+    expect: >
+      light loss factor 0.8, dimming incandescent and the filter read back
+      through the lighting API; Total Light Loss Factor 0.8 in TRG_Standard's
+      Type Properties; TRG_Emergency unchanged
+
+  - given: the same family; position "z 2400", then aim "tilt 15 about x"
+    expect: >
+      the light source at Z 2400 mm with X and Y as they were, read from its
+      transform; then its Z axis turned 15° about the family's X, at the same
+      place - LOOKED AT in a section of the family
+
+  - given: >
+      the same family, a reference plane named "Bottom of Fixture"; position
+      "plane Bottom of Fixture offset -10"
+    expect: the light source 10 mm below that plane, read back from its transform
 
 negative:
   - given: >
       a Generic Model family, Light Source not ticked; shape "point"
     expect: >
-      refused - no light source to define, naming the Light Source tick box in
-      Family Category and Parameters - and nothing changed
+      refused - no light source to define, naming SET_FAMILY_SETTINGS "Light
+      Source=yes" - and nothing changed
+
+  - given: shape "line 1160", distribution "hemispherical", intensity "4500 lm"
+    expect: >
+      refused before anything is written - the family's light source and the
+      types' values in one call, with Revit's reason - nothing changed
+
+  - given: >
+      the two-type family; typeName "TRG_Standard", shape "line 1160"
+    expect: >
+      refused - the shape is the family's light source, every type takes it -
+      nothing changed
 
   - given: intensity "60 W"
     expect: >
-      refused - a wattage is a "universal unit" value in Revit's reference, so
-      it is not taken; lumens, candelas or lux named - nothing changed
+      refused - a wattage with no efficacy or lumens says nothing about how
+      much light - nothing changed
 
   - given: distribution "spot 30 200"
     expect: refused - a field angle over 160° - nothing changed
@@ -35,11 +91,19 @@ negative:
   - given: distribution "web C:\nowhere\missing.ies"
     expect: refused - no IES file at that path - nothing changed
 
+  - given: dimming "bright"
+    expect: refused, naming None and Incandescent - nothing changed
+
+  - given: position "plane No Such Plane"
+    expect: refused, naming the reference planes there - nothing changed
+
   - given: a project in front
     expect: notAFamily true and nothing changed
 
 second_route:
   - >
       In the Family Editor, Family Category and Parameters shows Light Source
-      ticked; the Light Source Definition button and Type Properties show the
-      shape, distribution, intensity and colour
+      ticked; the Light Source Definition button, the light source's own
+      position in a section, and Family Types with each type chosen in turn
+      show the shape, distribution, intensity or wattage, colour, loss factor,
+      dimming and filter

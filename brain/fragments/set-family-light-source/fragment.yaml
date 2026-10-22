@@ -1,45 +1,68 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-056
-semantic-identity: "define the light source of the lighting fixture family being edited - its shape, distribution, intensity and colour"
+semantic-identity: "define the light source of the lighting fixture family being edited - its shape, distribution, position and aim, and each type's intensity or wattage, colour, light loss factor, dimming and colour filter"
 kind: action
 domain: revit.families
 capability: SET_FAMILY_LIGHT_SOURCE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
   Defines the LIGHT SOURCE of a lighting fixture family open in the Family
-  Editor - the Light Source Definition and the photometric values in Type
-  Properties - through Revit's LightFamily and LightType.
+  Editor - the Light Source Definition, where the light source sits and which
+  way it points, and the photometric values in Type Properties - through
+  Revit's LightFamily and LightType.
 
-  **FOUR THINGS, EACH OPTIONAL.** The SHAPE light leaves - point, line,
-  rectangle or circle, sizes in millimetres; the DISTRIBUTION - spherical,
-  hemispherical, spot (beam and field angles, tilt) or a photometric web from an
-  IES file on this computer; the initial INTENSITY - lumens, candelas, or lux at
-  a distance; and the initial COLOUR TEMPERATURE in kelvin. The shape and
-  distribution styles are the family's; the sizes, angles, intensity and colour
-  are set on every type, or on the one type named.
+  **TWO HALVES, ONE PER CALL.** The FAMILY'S light source, one for every type:
+  the SHAPE light leaves - point, line, rectangle or circle, sizes in
+  millimetres; the DISTRIBUTION - spherical, hemispherical, spot (beam and field
+  angles, tilt) or a photometric web from an IES file on this computer, with its
+  tilt; its POSITION - a point in millimetres or onto a named reference plane;
+  and its AIM - tilted or rotated about the family's X, Y or Z. And EACH TYPE'S
+  values: the initial INTENSITY - lumens, candelas, lux at a distance, or a
+  WATTAGE with its efficacy or its lumens; the initial COLOUR TEMPERATURE in
+  kelvin; the LIGHT LOSS FACTOR, one number or seven; the DIMMING colour shift;
+  the COLOUR FILTER. Revit's reference says type values may be lost when they
+  change in one transaction with the family's light source, and that is what
+  version 1 met on Revit 2020 (5b-1297), so a call asking for both halves is
+  refused with that reason - the family's half first, the types' second.
+
+  **EVERY FAMILY TYPE (version 2, 5b-1298).** The types are the family's own,
+  each made current before its values are written. A type Revit's lighting API
+  does not list - it listed one light type for two family types on Revit 2020 -
+  is written with it current and must then PROVE it was reached from its own
+  Type Properties; every type not asked for must read as it did. No call on any
+  release makes a light type: a type that cannot be proved reached fails the
+  call, and the refusal gives the hand fix. The family's half cannot be asked
+  for one type of several - every type takes it.
 
   **LIGHT SOURCE MUST ALREADY BE TICKED** in Family Category and Parameters -
-  Revit's GetLightFamily refuses a family without it, and Heron does not tick it.
-  The refusal says where the tick box is.
+  Revit's GetLightFamily refuses a family without it. SET_FAMILY_SETTINGS
+  "Light Source=yes" ticks it, and the refusal says so.
 
-  **A WATTAGE IS NOT TAKEN.** Revit's reference calls a wattage and an efficacy
-  "universal unit" values and names no unit; rather than guess one, a wattage is
-  refused with the units that are taken. A light's position is read back, not
-  set - the light source is moved in the Family Editor.
+  **A WATTAGE (BV18).** Revit's reference names a wattage's unit two ways - its
+  constructor "a universal unit value", its properties W and lm/W. It is
+  written as W at lm/W, and Type Properties' own Wattage and Efficacy, out of
+  Revit's internal units, must then read what was asked for every type, or the
+  call fails and nothing is kept. A wattage alone, with no efficacy or lumens,
+  is refused: it says nothing about how much light.
 
-  **READ BACK, AND WHAT TYPE PROPERTIES SHOWS IS THE TEST.** The styles and
-  every type's shape, distribution, intensity and colour are read again, and
-  the Spot Beam Angle and the intensity Type Properties shows are compared with
-  what was asked, wherever the display can be read one way only - a value shown
-  differently fails the call, because the reference's units would be wrong.
+  **THE LIGHT SOURCE IS MOVED AND AIMED AS AN ELEMENT** - no release has a
+  setter for its transform - and the transform is read again: one that did not
+  go where it was sent fails the call.
+
+  **READ BACK, AND WHAT TYPE PROPERTIES SHOWS IS THE TEST.** Everything asked is
+  read again through the lighting API and through each type's own Type
+  Properties, and the report gives every light value each type changed holds,
+  with the family's shape, distribution, IES file, tilt, position and aim.
+  Version 1's proof (below) no longer describes the code; this is DRAFT until
+  it is proved again.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -57,7 +80,9 @@ contract:
     - name: distribution
       type: string
       source: request
-    # "1500 lm", "1200 cd" or "500 lx at 1000 mm". Empty leaves it.
+    # "1500 lm", "1200 cd" or "500 lx at 1000 mm"; VERSION 2 a wattage with
+    # its efficacy or its lumens - "35.5 W at 127 lm/W", "4500 lm at 35.5 W".
+    # Empty leaves it.
     - name: intensity
       type: string
       source: request
@@ -65,17 +90,48 @@ contract:
     - name: colorTemperature
       type: string
       source: request
-    # The one type to change. Empty changes every type. A CHANGE of shape or
-    # distribution STYLE is the whole family's in Revit, so with one type named
-    # it is refused; that type's values within the style are its own.
+    # The one type to change - a FAMILY type, as Family Types lists them. Empty
+    # changes every type. VERSION 2: the shape, distribution, position and aim
+    # are the family's light source, so with one type of several named they
+    # are refused (version 1 let a size within the same style through).
     - name: typeName
+      type: string
+      source: request
+    # VERSION 2. "0.8" (0 to 4), or "advanced" and seven factors in Revit's
+    # order: ballast, lamp lumen depreciation, lamp tilt, luminaire dirt,
+    # surface depreciation (each 0 to 1), temperature and voltage (each 0 to
+    # 2). Empty leaves it.
+    - name: lightLossFactor
+      type: string
+      source: request
+    # VERSION 2. "incandescent" or "none" - the Dimming Lamp Color Temperature
+    # Shift. Empty leaves it.
+    - name: dimming
+      type: string
+      source: request
+    # VERSION 2. "255 240 200", "#FFF0C8", or "white" for none. Empty leaves it.
+    - name: colorFilter
+      type: string
+      source: request
+    # VERSION 2. Where the light source sits - "x 0 y 0 z 2400", any of the
+    # three, millimetres in the family's own coordinates; "0 0 2400"; or "plane
+    # <reference plane name>" with an optional "offset -10", along the plane's
+    # normal turned up (or along +X/+Y for a vertical plane). Empty leaves it.
+    - name: position
+      type: string
+      source: request
+    # VERSION 2. Which way it points - "tilt 15 about x", "rotate 90 about z",
+    # degrees, about an axis through the light source parallel to the family's
+    # X, Y or Z, several with semicolons between, in order. Empty leaves it.
+    - name: aim
       type: string
       source: request
   provides:
     - name: lightReport
-      # Every type changed as read back - shape, distribution, intensity as
-      # Type Properties shows it, colour - and where the light source sits, on
-      # ONE line.
+      # The family's light source - shape, distribution, IES file, tilt - and
+      # every type changed as read back, with every light value its Type
+      # Properties holds, and where the light source sits and which way its Z
+      # axis points, on ONE line.
       role: result
       type: string
     - name: changed
@@ -144,6 +200,31 @@ compatibility-note: >
   spot angles in radians, a photometric web's tilt in degrees, illuminance in
   lux at a distance in feet, colour 1800 to 20000. They live in a namespace the
   fragment executor does not import, so they are reached by name at run time.
+  VERSION 2, read 2026-10-21 with `tools/api-surface --members` over the
+  shipped assemblies and the RevitAPI.xml of all eight releases, every one the
+  same 2020 to 2027: `LightType.GetLossFactor`/`SetLossFactor` with
+  `BasicLossFactor(double)` (0 to 4) and `AdvancedLossFactor` (seven doubles,
+  five 0 to 1 and two 0 to 2), `LossFactor.LossFactorValue`;
+  `LightType.DimmingColor` with the `LightDimmingColor` enum (None,
+  Incandescent); `LightType.ColorFilter` (`Color`); `InitialWattageIntensity`
+  (efficacy, wattage) - constructor remark "universal unit", property remarks
+  W and lm/W. `LightFamily` has NO setter for the light source transform and
+  no member that makes a light type, on any release. The light source is
+  moved with `ElementTransformUtils.MoveElement`/`RotateElement` on the one
+  element of `BuiltInCategory.OST_LightingFixtureSource`, with
+  `Transform.CreateTranslation`/`CreateRotationAtPoint` for the expected
+  result; a plane is found as a `ReferencePlane` by name and read with
+  `GetPlane()`. Each type's own values are read with `FamilyType.AsDouble`,
+  `AsValueString` and `HasValue` for the `FBX_LIGHT_*` built-in parameters
+  (all 2020 to 2027), labelled with `LabelUtils.GetLabelFor`, and converted out
+  of internal units with `UnitUtils.ConvertFromInternalUnits` - by
+  `DisplayUnitType` (`DUT_WATTS`, `DUT_LUMENS_PER_WATT`, `DUT_LUMENS`,
+  `DUT_CANDELAS`, `DUT_LUX`, `DUT_KELVIN`) on 2020-2021 and by `UnitTypeId`
+  (`Watts`, `LumensPerWatt`, `Lumens`, `Candelas`, `Lux`, `Kelvin`) from 2021,
+  both found by name at run time, one implementation and no #if. Whether
+  `GetLightType(n)` writes the type named or the current type, and why its list
+  leaves a family type out, is not in the reference - the per-type proof is
+  how this call finds out (NEEDS-CHECKING Group IK).
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
@@ -152,8 +233,24 @@ compatibility-note: >
 #                                                   fixture's power
 #   "set the family category"                    -> SET_FAMILY_CATEGORY
 
+# VERSION 2 - asked by the owner on 2026-10-21, building a pendant LED family
+# on Revit 2020: the Light Source tick, placing or aiming the source and the
+# wattage, each done by hand until then, made Heron's job.
+#
+#   "place the light source in the fixture family"  -> here (position)
+#   "aim the light source"                          -> here (aim)
+#   "set the wattage of the light"                  -> here (a wattage with
+#                                                      its efficacy or lumens)
+#   "set the light loss factor of the fixture"      -> here
+#   "tick light source for this family"             -> SET_FAMILY_SETTINGS -
+#                                                      a Family Category and
+#                                                      Parameters switch
+
 utterances:
   - set the light source of this fixture family
   - make the light source a spot light with a 30 degree beam
   - use this IES file for the light distribution
   - set the lumens and colour temperature of the light fixture
+  - place the light source in the fixture family
+  - aim the light source
+  - set the wattage of the light
