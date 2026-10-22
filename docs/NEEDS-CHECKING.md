@@ -972,6 +972,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ip.md`](needs-checking/group-ip.md)
 
+## Group IQ - model text that lands where asked (`ADD_FAMILY_MODEL_TEXT` version 2), and a sprinkler layout that says why it asks (2026-10-22)
+
+**Its own file:** [`needs-checking/group-iq.md`](needs-checking/group-iq.md)
+
 ## Group IR - a connector's tick boxes, above all Allow Slope Adjustments: `SET_FAMILY_CONNECTOR_ROLES` version 4 and `REPORT_FAMILY_CONNECTORS` version 2 (2026-10-22)
 
 **Its own file:** [`needs-checking/group-ir.md`](needs-checking/group-ir.md)

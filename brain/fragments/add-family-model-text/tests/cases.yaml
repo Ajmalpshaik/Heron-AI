@@ -28,6 +28,29 @@ positive:
       Z 600, the second from the right on its right face at X 300, shown at
       medium and fine only
 
+  - given: >
+      VERSION 2, row 5b-1315 - the case seen on Revit 2020 (session 40628):
+      a scratch Generic Model family with a box whose front face is at
+      Y -2560; texts 'text=1 workPlane=Center (Front/Back) at=-650,510
+      heightMm=100 depthMm=3 align=center offsetMm=-2560'
+    expect: >
+      placed reads "1" on "Center (Front/Back)", offset -2560 mm, aligned
+      center, and its letters reach Y -2560 to -2563 (version 1 read Y -5120
+      to -5123 - the offset twice) and are centred on X -650 - their X extent
+      runs about equally either side of -650, not from -650 (version 1: X
+      -650 to -542.32); findings say whether Revit's first placing missed
+      and by how much - THAT LINE IS THE MEASUREMENT of how Revit reads the
+      point, to be copied into the run record; the Front elevation shows the
+      1 on the box's face, centred where asked
+
+  - given: >
+      the same family; texts 'text=PANEL workPlane=Center (Front/Back)
+      at=0,400 heightMm=40 depthMm=2 align=right' - no offset, on the named
+      plane itself
+    expect: >
+      sketched on the plane itself, its letters' right end at X 0 (their X
+      extent ends at 0 within a millimetre), Y 0 to -2
+
 negative:
   - given: >
       the same family; texts 'text=PANEL workPlane=Center (Front Back)

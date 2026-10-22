@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,17 @@ semantic-identity: "place 3D model text - a raised or engraved label, a nameplat
 kind: action
 domain: revit.families
 capability: ADD_FAMILY_MODEL_TEXT
-version: 1
+# Version 2 (2026-10-22, row 5b-1315) changed impl/: where the letters land is
+# MEASURED, not trusted. Seen on Revit 2020 (session 40628): a text on
+# Center (Front/Back) with offsetMm=-2560 came out at Y -5123 to -5120 - the
+# offset twice - and align=center at=-650,510 ran X -650 to -542.32, as if
+# aligned left; version 1's answer printed both and kept them. Version 2
+# measures each text once placed - its left end, centre or right end along
+# the text, its foot against the baseline, its back against the plane -
+# places one that missed again moved by the miss, and refuses the whole call
+# when it still misses. Version 1's proof below no longer describes the code:
+# DRAFT until NEEDS-CHECKING Group IQ proves version 2 (D-30).
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -50,6 +60,15 @@ purpose: >
   when the family has one; otherwise the first type by name is copied as
   "<height> mm" - "40 mm", "2.5 mm" - keeping its font. A family holding no
   Model Text type at all is refused.
+
+  **WHERE THE LETTERS LAND IS MEASURED.** Once placed, each text's left
+  end, centre or right end (by `align`) is measured against `at` along the
+  text, its foot against the baseline and its back against the plane plus
+  `offsetMm`. Revit 2020 put an offset text at twice its offset and started
+  a centred one at `at`, so a text that missed by more than half a
+  millimetre is placed again moved by the miss, and the answer says so; one
+  that still misses refuses the whole call, naming where it was asked and
+  where it reached.
 
   **ALL OR NOTHING, READ BACK.** Every row is checked before anything is
   placed. Each text is read back - its words, type and size, depth,
@@ -92,7 +111,8 @@ contract:
       # plane and where on it, type and size, depth, alignment, the side it
       # reads from and which way it runs, whether it sits on the named plane
       # or a work plane of its own, material, visibility, and where its
-      # letters reach on X, Y and Z in millimetres.
+      # letters reach on X, Y and Z in millimetres - measured where asked, and
+      # whether it had to be placed a second time (version 2).
       role: result
       type: string
     - name: notAFamily
@@ -184,7 +204,14 @@ compatibility-note: >
   its normal is what the code assumes and the answer reports), whether `at`
   is the start, middle or end of the baseline per alignment, whether the
   metric templates hold a Model Text type, and that model text takes
-  MATERIAL_ID_PARAM - NEEDS-CHECKING Group DC.
+  MATERIAL_ID_PARAM - NEEDS-CHECKING Group DC. Seen on Revit 2020 and fixed
+  by measuring in version 2 (row 5b-1315): the point given is not simply
+  where the letters go - on a work plane offset from the named one they went
+  to twice the offset, and a centred text started at the point. Which reading
+  Revit makes is not known, and version 2 does not assume one; it places
+  again by the measured miss. `Document.Delete`, `Element.IsValidObject`,
+  `XYZ.CrossProduct` and `DotProduct` are the same 2020 to 2027.
+  NEEDS-CHECKING Group IQ.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
