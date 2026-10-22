@@ -8,7 +8,7 @@
 
 ## Group IP - a form pictured by the id the form tools give it: `revit_view_image` with `elements` takes a UniqueId (2026-10-22)
 
-From [row 5b-1313](../fragment-issues/section-5b-rows-401-425.md). `revit_view_image` with `elements` took only
+From [row 5b-1314](../fragment-issues/section-5b-rows-401-425.md). `revit_view_image` with `elements` took only
 Revit's numbers, and `CREATE_FAMILY_FORMS`, `REPORT_FAMILY_FORMS` and `SELECT_FAMILY_FORMS` name a form only by
 its UniqueId. `RevitCapture.OfElements` now looks a UniqueId up through `Document.GetElement(string)` beside the
 numbers, and refuses by name every id that resolves to nothing. It compiles on 2020 to 2027 and every Revit
@@ -37,5 +37,5 @@ from `revit_parameters` on Ducts (each row's `id`).
 | **IP6** | *Numbers as before.* Group ER's ER2 call - the three duct numbers and the level's | The same answer ER2 records: 3 framed, the level *is a datum* |
 | **IP7** | *Revit 2024 and 2027* - IP0 (a), IP2 and IP4 again, a family and a project made the same way on each | The same. 2024 is the first release with 64-bit ids, so a UniqueId's hex tail is read there for the first time |
 
-**Then** row 5b-1313 can close, and the family method's step 13 can move from views by name to `elements` with
+**Then** row 5b-1314 can close, and the family method's step 13 can move from views by name to `elements` with
 `SELECT_FAMILY_FORMS`' ids - once row 5b-1311's fix has passed its own rows too.
