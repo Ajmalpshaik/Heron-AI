@@ -10,9 +10,23 @@ positive:
       at X 49, each round with "diameter <- Nominal Diameter", their system and
       flow direction
 
+  - given: >
+      VERSION 2. The same family after SET_FAMILY_CONNECTOR_ROLES
+      "allowSlopeAdjustments=yes" on Port Left and "flowConfiguration=Preset;
+      presetFlow=12 L/s" on Port Right, in the same rolled-back run
+    expect: >
+      Port Left's row reads "slope adjustments allowed" and Port Right's "no
+      slope adjustments" and "preset flow 12 L/s"; an electrical connector's
+      row reads its voltage, poles, load, power factor and power factor state
+
 negative:
   - given: the same family with one connector flipped by SET_FAMILY_CONNECTOR_ROLES in the same rolled-back run
     expect: that connector reads pointing the other way - the report reads the connector, not the face
+
+  - given: VERSION 2. A duct connector in the same family
+    expect: >
+      its row says nothing of slope adjustments - the box is a pipe
+      connector's - and nothing of an angle unless its system is Fitting
 
   - given: a project in front
     expect: notAFamily true, connectorCount 0, nothing read

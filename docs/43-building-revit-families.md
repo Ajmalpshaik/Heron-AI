@@ -659,7 +659,15 @@ per domain (`AssignAsPrimary`); linked connectors pass flow through only when th
 reports a linked pair that is not Global rather than changing its system, and whether Revit links the second
 end by itself is BV17's question. A
 FITTING's connectors take the Fitting system, which is what shows their Angle - and an elbow whose connector
-Angle is not linked to its Angle parameter does not flex in a run.
+Angle is not linked to its Angle parameter does not flex in a run. **API, read off all eight releases
+2026-10-22 (row 5b-1317):** a connector element's tick boxes and the rest of its typed values are ordinary
+built-in parameters on it - `RBS_ADJUSTABLE_CONNECTOR` ("Allow Slope Adjustments", the box a drain's pipe
+connectors need ticked), `CONNECTOR_UTILITY_PARAM` ("Utility"), `CONNECTOR_ANGLE` ("Angle"),
+`RBS_FLOW_FACTOR_PARAM` ("Flow Factor"), `RBS_DUCT_FLOW_PARAM` / `RBS_PIPE_FLOW_PARAM` (a preset "Flow") and
+`RBS_ELEC_POWER_FACTOR_STATE` ("Power Factor State") - which `SET_FAMILY_CONNECTOR_ROLES` version 4 sets as
+`allowSlopeAdjustments`, `utility`, `angle`, `flowFactor`, `presetFlow` and `powerFactorState`, and
+`REPORT_FAMILY_CONNECTORS` version 2 reads; **UNSURE** which domains carry Utility until
+[Group IR](needs-checking/group-ir.md).
 
 **Part Type (API, SOURCED).** `FAMILY_CONTENT_PART_TYPE`, the `PartType` enum. It decides which routing
 preference group offers a fitting and what a part may be swapped for: pipe fittings Cap, Cross, Elbow, Flange,
