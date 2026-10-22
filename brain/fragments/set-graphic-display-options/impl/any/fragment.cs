@@ -214,8 +214,17 @@ if (refused == null && !isKeep(depthCueing))
     if (refused == null && wantStart != null && wantStart >= wantEnd)
         refused = "Depth cueing must start before it ends. NOTHING WAS CHANGED.";
     if (refused == null && !view.CanUseDepthCueing())
-        refused = "'" + view.Name + "' cannot use depth cueing - Revit offers it in elevations and sections. "
-            + "NOTHING WAS CHANGED.";
+    {
+        // The reason names the view's discipline (version 3, row 5b-1283):
+        // Revit 2020 offered depth cueing in an elevation only once its View
+        // Discipline was Architectural, measured 2026-10-20.
+        var discipline = view.get_Parameter(BuiltInParameter.VIEW_DISCIPLINE);
+        var disciplineWord = discipline == null ? null : discipline.AsValueString();
+        refused = (view.ViewType == ViewType.Elevation || view.ViewType == ViewType.Section) && !string.IsNullOrEmpty(disciplineWord)
+            ? "'" + view.Name + "' cannot use depth cueing - its View Discipline is " + disciplineWord + ", and Revit 2020 offered "
+                + "depth cueing in an elevation only once that was Architectural (Properties, View Discipline). NOTHING WAS CHANGED."
+            : "'" + view.Name + "' cannot use depth cueing - Revit offers it in elevations and sections only. NOTHING WAS CHANGED.";
+    }
 }
 if (refused == null && !isKeep(background))
 {
