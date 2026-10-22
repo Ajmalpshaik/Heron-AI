@@ -3787,11 +3787,14 @@ def revit_sprinkler_layout(spaces: str = "", inputs: str = "", ctx: _Context = N
     the user asks to "place sprinklers in these rooms" or "how many sprinklers
     for these rooms - and put them in".
 
-    `spaces` is empty for the Spaces and Rooms selected now. `inputs` is a JSON
-    object of what the modeller has answered so far - {"standards": {...},
+    `spaces` is empty for the Spaces and Rooms selected now, or their
+    UniqueIds with ; or commas between. Element ids (digits, as Properties
+    shows them) are refused - select those rooms and leave it empty.
+    `inputs` is a JSON object of what the modeller has answered so far - {"standards": {...},
     "job": {...}, "limits": {...}, "rooms": {"<room id>": {...}}} - kept with
-    the project; the answer names each missing value by its path, and the
-    panel is the easier place to give them.
+    the project; the answer names each missing value by its path with why it
+    is asked - a hosted sprinkler type says so, and which family to load -
+    and the panel is the easier place to give them.
 
     HERON SUPPLIES NO DESIGN VALUE THE MODELLER DID NOT GIVE (D-33): the
     ceiling height and wall angle the model shows are OFFERED, never used until
@@ -3820,10 +3823,17 @@ def revit_sprinkler_layout(spaces: str = "", inputs: str = "", ctx: _Context = N
         _ended("refused")
         return ("The Heron Companion is switched off in Revit, so the rooms were not read. "
                 "To turn it on, click the arrow under the Companion button on the Heron tab.")
+    # WHICH ROOMS, checked before Revit is asked (row 5b-1316): commas taken as
+    # the read's own ";", and element ids refused by name - the read matches
+    # UniqueIds only, and "918810, 918812" went whole, as one id it could not find.
+    import heron_sprinkler_layout as LAYOUT
+    try:
+        rooms_asked = LAYOUT.spaces_asked(spaces)
+    except LAYOUT.LayoutError as why:
+        return _ended("refused", "No room was read: %s" % why)
     out = {}
     said = _through(revit_read, reply_out=out)(
-        "REPORT_SPRINKLER_LAYOUT_SPACES", "spaces=" + ((spaces or "").strip() or "*"),
-        ctx=ctx)
+        "REPORT_SPRINKLER_LAYOUT_SPACES", "spaces=" + rooms_asked, ctx=ctx)
     reply = out.get("reply")
     # Labelled as revit_building_loads labels its endings (row 5b-389).
     if not isinstance(reply, dict) or not reply.get("ok"):
