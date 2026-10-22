@@ -287,9 +287,24 @@ if (refused == null)
 
     // WHICH END A FLEX WOULD MOVE (version 2). What holds each end is read
     // BEFORE the label exists: the dimension about to be made would otherwise
-    // count as holding both. A plain dimension - unlabelled, unlocked, no EQ -
-    // holds nothing, so it is not counted.
+    // count as holding both. Three grades:
+    //
+    //   HARD  a level, a pinned plane, or one that defines the origin - a flex
+    //         never moves it
+    //   SOFT  a labelled dimension drives it from elsewhere, or an EQ or a lock
+    //         ties it to another plane or level - a flex moves it only through
+    //         that chain, and Revit would sooner move an end it holds less
+    //   FREE  none of those - Revit's first choice to move
+    //
+    // A lock or an EQ to GEOMETRY ties the geometry to the plane, not the plane
+    // to anything (EXTRUDE_BETWEEN_PLANES leaves one on every plane it uses),
+    // so only one whose other references are all planes or levels counts. A
+    // lock or an EQ running between these two ends holds them to each other,
+    // not either to anything: it is named, and not counted. A plain dimension
+    // - unlabelled, unlocked, no EQ - holds nothing.
+    var datumIds = new HashSet<ElementId>(datums.Select(d => d.Item1.Id));
     var holds = new Dictionary<ElementId, List<string>>();
+    string betweenEnds = null;
     foreach (var d in new FilteredElementCollector(doc).OfClass(typeof(Dimension)).Cast<Dimension>())
     {
         FamilyParameter label = null;
@@ -300,20 +315,28 @@ if (refused == null)
         try { equal = d.AreSegmentsEqual; } catch (Exception) { }
         if (label == null && !locked && !equal) continue;
 
-        var what = label != null ? "the dimension labelled \"" + label.Definition.Name + "\"" : equal ? "an EQ" : "a lock";
-        try
+        var refs = new List<ElementId>();
+        try { foreach (Reference r in d.References) refs.Add(r.ElementId); } catch (Exception) { }
+        if (refs.Contains(a.Item1.Id) && refs.Contains(b.Item1.Id))
         {
-            foreach (Reference r in d.References)
-            {
-                List<string> by;
-                if (!holds.TryGetValue(r.ElementId, out by)) holds[r.ElementId] = by = new List<string>();
-                if (!by.Contains(what)) by.Add(what);
-            }
+            // A labelled one was refused above; a lock or an EQ here holds the
+            // two ends to each other.
+            if (label == null) betweenEnds = equal ? "An EQ" : "A lock";
+            continue;
         }
-        catch (Exception) { }
+        if (label == null && refs.Any(id => !datumIds.Contains(id))) continue;
+
+        var what = label != null ? "the dimension labelled \"" + label.Definition.Name + "\"" : equal ? "an EQ" : "a lock";
+        foreach (var id in refs)
+        {
+            List<string> by;
+            if (!holds.TryGetValue(id, out by)) holds[id] = by = new List<string>();
+            if (!by.Contains(what)) by.Add(what);
+        }
     }
 
-    Func<Tuple<Element, Reference, int, double, string>, string> heldBy = end =>
+    // What holds an end fast, in words - "" when nothing does.
+    Func<Tuple<Element, Reference, int, double, string>, string> hardHold = end =>
     {
         if (end.Item1 is Level) return "a level";
         var why = new List<string>();
@@ -323,55 +346,107 @@ if (refused == null)
         Parameter origin = null;
         try { origin = end.Item1.get_Parameter(BuiltInParameter.DATUM_PLANE_DEFINES_ORIGIN); } catch (Exception) { }
         if (origin != null && origin.AsInteger() == 1) why.Add("defines the origin");
-        List<string> by;
-        if (holds.TryGetValue(end.Item1.Id, out by)) why.Add("held by " + string.Join(" and ", by));
-        return string.Join(", ", why);
+        return string.Join(" and ", why);
     };
+    // What holds an end through a chain, in words - "" when nothing does.
+    Func<Tuple<Element, Reference, int, double, string>, string> softHold = end =>
+    {
+        List<string> by;
+        return holds.TryGetValue(end.Item1.Id, out by) ? "held by " + string.Join(" and ", by) : "";
+    };
+    Func<string, string, string> holdWords = (hard, soft) =>
+        hard.Length > 0 && soft.Length > 0 ? hard + ", " + soft : hard.Length > 0 ? hard : soft.Length > 0 ? soft : "held by nothing";
 
-    var aHeld = heldBy(a);
-    var bHeld = heldBy(b);
-    var free = new List<Tuple<Element, Reference, int, double, string>>();
-    if (aHeld.Length == 0) free.Add(a);
-    if (bHeld.Length == 0) free.Add(b);
+    var aHard = hardHold(a);
+    var aSoft = softHold(a);
+    var bHard = hardHold(b);
+    var bSoft = softHold(b);
+    var aFree = aHard.Length == 0 && aSoft.Length == 0;
+    var bFree = bHard.Length == 0 && bSoft.Length == 0;
     var drives = parameter.Definition.Name;
     var pinRoute = "Pin it (SET_PIN_STATE, pinned=true) or dimension it to a level";
 
-    if (free.Count == 2)
+    // The end pinFreeEnd may pin, and - when it may pin nothing - why.
+    Tuple<Element, Reference, int, double, string> toPin = null;
+    string noPinWhy = null;
+
+    if (centre != null)
+    {
+        // THE EQ SETTLES IT: both ends move equally about the centre plane, so
+        // neither is free on its own, and a pinned end would fight the EQ.
+        findings.Add("With the EQ across \"" + centre.Item5 + "\", \"" + a.Item5 + "\" and \"" + b.Item5
+            + "\" move equally about it when \"" + drives + "\" changes - no end is free to move on its own.");
+        noPinWhy = "the EQ across \"" + centre.Item5 + "\" moves both ends equally, and a pinned end would fight it";
+    }
+    else if (aHard.Length > 0 && bHard.Length > 0)
+    {
+        findings.Add("Both ends are held fast - \"" + a.Item5 + "\" is " + aHard + "; \"" + b.Item5 + "\" is " + bHard
+            + " - so a flex of \"" + drives + "\" has nothing it can move. Unpin the one meant to move "
+            + "(SET_PIN_STATE, pinned=false), or label from a plane that can.");
+        noPinWhy = "both ends are already held fast";
+    }
+    else if (aFree && bFree)
+    {
         freeEnd = "Both ends are held by nothing - neither \"" + a.Item5 + "\" nor \"" + b.Item5 + "\" is pinned, a level "
             + "or an origin plane, and no labelled dimension, EQ or lock references either - so which one a flex of \""
             + drives + "\" moves is Revit's choice. Pin the one that must stay (SET_PIN_STATE, pinned=true) or dimension "
             + "it to a level; asked with pinFreeEnd=true, this call pins \"" + a.Item5 + "\", the first named.";
-    else if (free.Count == 1)
-    {
-        var other = free[0] == a ? b : a;
-        var otherHeld = free[0] == a ? bHeld : aHeld;
-        freeEnd = "\"" + free[0].Item5 + "\" is held by nothing - not pinned, not a level, not an origin plane, and no "
-            + "labelled dimension, EQ or lock references it - while \"" + other.Item5 + "\" is " + otherHeld + ". A flex of \""
-            + drives + "\" may move \"" + free[0].Item5 + "\" and leave \"" + other.Item5 + "\" where it is. " + pinRoute
-            + "; asked with pinFreeEnd=true, this call pins it first.";
+        toPin = a;
     }
-    else if (aHeld == "pinned" && bHeld == "pinned")
-        findings.Add("Both \"" + a.Item5 + "\" and \"" + b.Item5 + "\" are pinned, so a flex of \"" + drives
-            + "\" may have nothing it can move - unpin the one meant to move (SET_PIN_STATE, pinned=false).");
+    else if (aFree || bFree)
+    {
+        var loose = aFree ? a : b;
+        var other = aFree ? b : a;
+        var otherHard = aFree ? bHard : aHard;
+        var otherSoft = aFree ? bSoft : aSoft;
+        if (otherHard.Length > 0)
+        {
+            // THE ORDINARY HEIGHT: one end fixed, the other free to follow the
+            // parameter. Nothing to warn of, and nothing to pin - pinned, the
+            // flex would have nothing left to move.
+            findings.Add("\"" + other.Item5 + "\" is " + otherHard + " and \"" + loose.Item5 + "\" is held by nothing, "
+                + "so a flex of \"" + drives + "\" moves \"" + loose.Item5 + "\" - the ordinary case, as a height from "
+                + "Ref. Level is.");
+            noPinWhy = "\"" + other.Item5 + "\" is " + otherHard + ", so \"" + loose.Item5 + "\" is the only end a flex "
+                + "can move - pinned, the flex would have nothing";
+        }
+        else
+        {
+            // THE CASE OF 2026-10-22: the other end is held only through a
+            // chain, so Revit moves the free one and the geometry stays.
+            freeEnd = "\"" + loose.Item5 + "\" is held by nothing - not pinned, not a level, not an origin plane, and no "
+                + "labelled dimension, EQ or lock references it - while \"" + other.Item5 + "\" is " + otherSoft + ". A flex "
+                + "of \"" + drives + "\" may move \"" + loose.Item5 + "\" and leave \"" + other.Item5 + "\" where it is. "
+                + pinRoute + "; asked with pinFreeEnd=true, this call pins it first.";
+            toPin = loose;
+        }
+    }
     else
-        findings.Add("Each end is held: \"" + a.Item5 + "\" is " + aHeld + "; \"" + b.Item5 + "\" is " + bHeld + ".");
+    {
+        findings.Add("Each end is held: \"" + a.Item5 + "\" is " + holdWords(aHard, aSoft) + "; \"" + b.Item5 + "\" is "
+            + holdWords(bHard, bSoft) + ".");
+        noPinWhy = "both ends are already held";
+    }
+
+    if (betweenEnds != null)
+        findings.Add(betweenEnds + " already runs between \"" + a.Item5 + "\" and \"" + b.Item5 + "\" and holds their "
+            + "distance - the label will fight it at the first flex. Unlock or remove it first.");
 
     // THE PIN IS THE MODELLER'S TO ASK FOR (Article 7), and it goes on BEFORE
     // the label so that the first flex already moves the right end.
     Element pinnedPlane = null;
-    if (pinFreeEnd && free.Count > 0)
+    if (pinFreeEnd && toPin != null)
     {
-        pinnedPlane = free[0].Item1;
+        pinnedPlane = toPin.Item1;
         try { pinnedPlane.Pinned = true; }
         catch (Exception ex)
         {
-            throw new InvalidOperationException("Revit would not pin \"" + free[0].Item5 + "\": " + ex.Message
+            throw new InvalidOperationException("Revit would not pin \"" + toPin.Item5 + "\": " + ex.Message
                 + " NOTHING from this call was kept.");
         }
     }
     else if (pinFreeEnd)
-        findings.Add("pinFreeEnd was asked and nothing was pinned: both ends are already held (\"" + a.Item5 + "\" is "
-            + aHeld + "; \"" + b.Item5 + "\" is " + bHeld + ").");
+        findings.Add("pinFreeEnd was asked and nothing was pinned: " + noPinWhy + ".");
 
     try
     {
@@ -447,11 +522,11 @@ if (refused == null)
         var stillPinned = false;
         try { stillPinned = pinnedPlane.Pinned; } catch (Exception) { }
         if (!stillPinned)
-            throw new InvalidOperationException("\"" + free[0].Item5 + "\" was pinned before the label and does not read "
+            throw new InvalidOperationException("\"" + toPin.Item5 + "\" was pinned before the label and does not read "
                 + "back pinned afterwards. NOTHING from this call was kept.");
-        var stays = free[0] == a ? b : a;
-        pinnedEnd = "\"" + free[0].Item5 + "\" pinned first, as asked (pinFreeEnd), and reads back pinned: a flex of \""
-            + drives + "\" now leaves it where it is and moves \"" + stays.Item5 + "\"'s side.";
+        var moves = toPin == a ? b : a;
+        pinnedEnd = "\"" + toPin.Item5 + "\" pinned first, as asked (pinFreeEnd), and reads back pinned: a flex of \""
+            + drives + "\" now leaves it where it is and moves \"" + moves.Item5 + "\" instead.";
         freeEnd += " Pinned now - see pinnedEnd.";
     }
 

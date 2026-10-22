@@ -2074,18 +2074,32 @@ namespace Heron.Revit.Addin
                 var dictionary = current as IDictionary;
                 if (dictionary == null || dictionary.Count == 0) continue;
 
-                var rows = new List<string>();
-                var taken = 0;
-                foreach (DictionaryEntry pair in dictionary)
+                // THIS RUNS AFTER THE FRAGMENT, on other people's objects, so
+                // a dictionary that will not be read is left out rather than
+                // turning a kept change into an error reply. Two keys that
+                // read the same once cut - two elements of one name - would
+                // be one JSON key twice, so the second is left out too.
+                try
                 {
-                    if (taken++ >= EntriesSent) break;
-                    var held = pair.Value;
-                    var shown = held is IDictionary || (held is ICollection && !(held is string))
-                        ? Describe(held)
-                        : ShortName(held);
-                    rows.Add(Json.Str(ShortName(pair.Key), shown));
+                    var rows = new List<string>();
+                    var keys = new HashSet<string>();
+                    var taken = 0;
+                    foreach (DictionaryEntry pair in dictionary)
+                    {
+                        if (taken >= EntriesSent) break;
+                        var key = ShortName(pair.Key);
+                        if (!keys.Add(key)) continue;
+                        taken++;
+                        var held = pair.Value;
+                        var shown = held is IDictionary || (held is ICollection && !(held is string))
+                            ? Describe(held)
+                            : ShortName(held);
+                        rows.Add(Json.Str(key, shown));
+                    }
+                    if (rows.Count > 0)
+                        entries.Add("\"" + variable.Name + "\":" + Json.Obj(rows.ToArray()));
                 }
-                entries.Add("\"" + variable.Name + "\":" + Json.Obj(rows.ToArray()));
+                catch { }
             }
             if (entries.Count > 0)
                 parts.Add("\"providesEntries\":{" + string.Join(",", entries) + "}");

@@ -1418,7 +1418,7 @@ def _provides_lines(provides, entries=None):
         is not that exact shape - a fragment's own sentence is left alone."""
         words = str(value).strip().split(" ")
         if (len(words) == 2 and words[1] == "entry(ies)"
-                and words[0].isdigit()):
+                and words[0].isdecimal()):
             return int(words[0])
         return None
 

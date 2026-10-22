@@ -64,21 +64,31 @@ purpose: >
 
   **WHICH END A FLEX WOULD MOVE IS SAID FIRST** (version 2). When the
   parameter changes, Revit moves whichever end of the labelled dimension is
-  least held. A level, a pinned plane, a plane that defines the origin, or
-  one that a labelled dimension, an EQ or a lock references is HELD; a plane
-  none of those touch is FREE, and a flex may move it rather than the
-  geometry. Seen on Revit 2020: a height labelled from a new, free plane to
-  a plane carrying two other labels moved the FREE plane when flexed, and
-  did until that plane was pinned. So each end is read before the label is
-  made, and a free end is named in `freeEnd` and the findings as the end a
-  flex may move - *pin it (SET_PIN_STATE) or dimension it to a level*. The
-  label is still made: a free end is a warning, not a refusal, because a
-  plane meant to move with the parameter is free on purpose. Nothing is
-  pinned unasked (Article 7); `pinFreeEnd=true` pins the free end - the
-  first named, when both are - before the label, and reads the pin back.
-  Two planes in the same place are refused as before, and that refusal
-  names the same route. A plain dimension - unlabelled, unlocked, no EQ -
-  holds nothing and is not counted.
+  least held. Each end is read before the label is made, in three grades: a
+  level, a pinned plane or one that defines the origin is held FAST - a
+  flex never moves it; a plane that a labelled dimension drives from
+  elsewhere, or that an EQ or a lock ties to another plane or level, is
+  held SOFTLY - a flex moves it only through that chain; a plane none of
+  those touch is FREE, Revit's first choice to move. Seen on Revit 2020: a
+  height labelled from a new, free plane to a plane carrying two other
+  labels moved the FREE plane when flexed, and did until that plane was
+  pinned. So a free end beside a softly held one, or two free ends, is
+  named in `freeEnd` and the findings as the end a flex may move - *pin it
+  (SET_PIN_STATE) or dimension it to a level*. A free end beside one held
+  fast is the ordinary height from Ref. Level: the free end is the only one
+  a flex can move, so the findings say so and nothing is warned of. Two
+  ends held fast have nothing a flex can move, and the findings say that.
+  With a centre plane the EQ moves both ends equally, so no end is free on
+  its own. The label is still made in every case: a free end is a warning,
+  not a refusal. Nothing is pinned unasked (Article 7); `pinFreeEnd=true`
+  pins the free end - the first named, when both are - before the label
+  and reads the pin back, and pins nothing, saying why, where a pin would
+  leave the flex nothing to move or fight the EQ. Two planes in the same
+  place are refused as before, and that refusal names the same route. A
+  lock or an EQ to geometry ties the geometry to the plane, not the plane
+  to anything, and does not count; a lock or EQ running between the two
+  ends is named as what the label will fight; a plain dimension holds
+  nothing.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -106,7 +116,9 @@ contract:
     # Version 2. true pins a FREE end - one held by nothing - before the label
     # goes on, so a flex moves the other end; left out, nothing is pinned and
     # the free end is only named (Article 7). With both ends free, the
-    # fromPlane is the one pinned.
+    # fromPlane is the one pinned. Nothing is pinned, and the findings say
+    # why, when the other end is a level, pinned or the origin (the free end
+    # is then the only one a flex can move) or a centre plane's EQ is asked.
     - name: pinFreeEnd
       type: bool
       source: request
@@ -118,9 +130,10 @@ contract:
       role: result
       type: string
     - name: freeEnd
-      # Version 2. The end a flex may move, whole: which plane is held by
-      # nothing, what holds the other, and the pin route. Empty when both
-      # ends are held - the negative case.
+      # Version 2. The warning, whole: which plane is held by nothing, what
+      # holds the other, and the pin route. Empty when which end moves is
+      # settled - both ends held, one end held fast and the other free (the
+      # ordinary height), or an EQ across a centre plane - the negative case.
       role: result
       type: string
     - name: pinnedEnd

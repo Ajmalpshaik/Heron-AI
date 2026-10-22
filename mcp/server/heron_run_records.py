@@ -366,19 +366,37 @@ class Batch(object):
             self._kept = True
             return first
 
-    def repeated(self, capability, provides):
+    def repeated(self, capability, provides, entries=None):
         """
         The names whose value is exactly what the last reply of this capability
         in this batch showed - and remember this reply's values for the next.
+
+        A DICTIONARY'S COUNT ALONE CANNOT SAY ITS ENTRIES ARE THE SAME: two
+        replies in a row may each say "1 entry(ies)" and hold two different
+        elements, and the second would have printed as unchanged with its
+        entries dropped (found in review, 2026-10-22, with `providesEntries`).
+        So the entries the add-in sent beside a value, `entries`, are part of
+        what is remembered and compared, in the order they came; a name
+        counts as repeated only when its count AND its entries match.
         """
         if not isinstance(provides, dict):
             return []
+        sent = entries if isinstance(entries, dict) else {}
+
+        def seen(name):
+            held = sent.get(str(name))
+            if not isinstance(held, dict):
+                return (str(provides[name]), None)
+            return (str(provides[name]),
+                    tuple((str(k), str(v)) for k, v in held.items()))
+
+        now = dict((str(name), seen(name)) for name in provides)
         key = str(capability or "").upper()
         with self._lock:
             before = self._values.get(key) or {}
-            self._values[key] = dict((str(k), str(v)) for k, v in provides.items())
-        return sorted(str(name) for name in provides
-                      if str(name) in before and before[str(name)] == str(provides[name]))
+            self._values[key] = now
+        return sorted(name for name in now
+                      if name in before and before[name] == now[name])
 
 
 def verdict_line(reply, batch):
@@ -428,7 +446,7 @@ def shown_values(reply, capability, batch):
     provides = reply.get("provides") if isinstance(reply, dict) else None
     if not isinstance(provides, dict):
         return provides, []
-    same = batch.repeated(capability, provides)
+    same = batch.repeated(capability, provides, reply.get("providesEntries"))
     if not same or not is_run_id(reply.get("run")):
         return provides, []
     left = set(same)

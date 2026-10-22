@@ -36,13 +36,35 @@ positive:
 
 negative:
   - given: >
-      VERSION 2. fromPlane "Ref. Level" (a level), toPlane "Box Top" PINNED,
-      Height holding the distance, pinFreeEnd left out
+      VERSION 2 - the ordinary height. fromPlane "Ref. Level" (a level),
+      toPlane "Box Top" held by nothing, Height holding the distance,
+      pinFreeEnd left out; then again with pinFreeEnd=true
     expect: >
-      labelled as before and NO free-end warning: `freeEnd` empty, the
-      findings say each end is held ("Ref. Level" is a level; "Box Top" is
-      pinned), nothing pinned. This is the negative case - a label whose ends
-      are both held says nothing about a free end
+      labelled as before and NO free-end warning: `freeEnd` empty, a finding
+      saying "Ref. Level" is a level and "Box Top" is held by nothing, so a
+      flex moves "Box Top" - the ordinary case. With pinFreeEnd=true NOTHING
+      is pinned and the finding says why - pinned, the flex would have
+      nothing to move. This is the negative case: the end a flex moves is
+      settled, so nothing is warned of and nothing is pinned
+
+  - given: >
+      VERSION 2. fromPlane "Ref. Level" (a level), toPlane "Box Top" PINNED,
+      Height holding the distance
+    expect: >
+      labelled, `freeEnd` empty, and a finding that both ends are held fast
+      so a flex of Height has nothing it can move - unpin the one meant to
+      move. Nothing pinned. Then Height typed as 400 in Family Types: record
+      what Revit does - a refusal, or no movement
+
+  - given: >
+      VERSION 2. fromPlane "Box Left", toPlane "Box Right", centrePlane
+      "Center (Left/Right)" (defines the origin), both ends held by nothing,
+      pinFreeEnd=true
+    expect: >
+      labelled with the EQ as version 1 did, `freeEnd` empty, a finding that
+      the EQ moves both ends equally about the centre so no end is free on
+      its own, and NOTHING pinned - the finding says a pinned end would fight
+      the EQ
 
   - given: >
       VERSION 2. Two planes at the same Z, "Trap Depth" holding 300

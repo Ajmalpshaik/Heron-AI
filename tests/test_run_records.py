@@ -378,6 +378,27 @@ def batching(runs):
     shown, same = runs.shown_values(refusing, "CREATE_FAMILY_EXTRUSION", values)
     check(shown.get("problems") == "1 item(s) [no such plane]" and "problems" not in same,
           "a value that changed - a refusal above all - is printed as ever")
+
+    # A DICTIONARY'S COUNT IS NOT ITS CONTENTS (review, 2026-10-22): two replies
+    # saying "1 entry(ies)" that hold different entries are two answers, and
+    # the second must print them, not be left out as unchanged.
+    moved_one = dict(reply_with(run=run), provides={"moved": "1 entry(ies)"},
+                     providesEntries={"moved": {"101": "1200"}})
+    moved_two = dict(reply_with(run=run), provides={"moved": "1 entry(ies)"},
+                     providesEntries={"moved": {"202": "300"}})
+    moved_same = dict(reply_with(run=run), provides={"moved": "1 entry(ies)"},
+                      providesEntries={"moved": {"202": "300"}})
+    entries_batch = runs.Batch()
+    entries_batch.turn(2.0, 2.1)
+    runs.shown_values(moved_one, "MOVE_ELEMENTS", entries_batch)
+    entries_batch.turn(2.2, 2.3)
+    shown, same = runs.shown_values(moved_two, "MOVE_ELEMENTS", entries_batch)
+    check(shown == {"moved": "1 entry(ies)"} and same == [],
+          "the same count with different entries is printed, never 'unchanged'")
+    entries_batch.turn(2.4, 2.5)
+    shown, same = runs.shown_values(moved_same, "MOVE_ELEMENTS", entries_batch)
+    check(shown == {} and same == ["moved"],
+          "and the same count with the same entries is left out, as before")
     other = dict(two)
     values.turn(1.6, 1.7)
     shown, same = runs.shown_values(other, "SET_FAMILY_FORM_MATERIAL", values)

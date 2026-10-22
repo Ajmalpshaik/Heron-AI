@@ -687,22 +687,30 @@ def main():
                 return provides_lines(provides)
             return provides_lines(provides, entries)
 
-        four = {"14194": "Yes", "7492": "Yes", "7513": "Yes", "7534": "Yes"}
+        # The ids in an order neither a text sort nor a number sort gives, so
+        # a formatter that sorted them would be caught (review, 2026-10-22).
+        four = {"7534": "Yes", "14194": "Yes", "7492": "Yes", "7513": "Yes"}
         whole = with_entries({"values": "4 entry(ies)",
                               "resolvedFrom": "4 entry(ies)",
                               "blank": "0 item(s)", "absent": "0 item(s)"},
                              {"values": four,
                               "resolvedFrom": dict((k, "instance") for k in four)})
-        check(any(line.strip() == "values  4 entry(ies)" for line in whole)
-              or any(line.split() == ["values", "4", "entry(ies)"] for line in whole),
+        stripped = [line.strip() for line in whole]
+        count_at = [i for i, line in enumerate(stripped)
+                    if line.split() == ["values", "4", "entry(ies)"]]
+        check(len(count_at) == 1,
               "the count line is as it was - every proof record carries that shape")
-        check(all(any(line.strip() == "%s: Yes" % key for line in whole) for key in four),
-              "and under it every entry that arrived prints on its own line, key: value")
+        under = stripped[count_at[0] + 1:count_at[0] + 5] if count_at else []
+        check(under == ["%s: Yes" % key for key in four],
+              "and directly under it every entry that arrived prints on its own line, "
+              "key: value, in the order the add-in sent them, never sorted - %s" % under)
+        from_at = [i for i, line in enumerate(stripped)
+                   if line.split() == ["resolvedFrom", "4", "entry(ies)"]]
+        check(from_at and stripped[from_at[0] + 1:from_at[0] + 5]
+              == ["%s: instance" % key for key in four],
+              "and so do the second dictionary's, under its own count line")
         check(not any("NOT SENT" in line for line in whole),
               "so nothing is said to be NOT SENT when the entries came")
-        order = [line.strip() for line in whole if line.strip().endswith(": Yes")]
-        check(order == ["%s: Yes" % key for key in four],
-              "in the order the add-in sent them, never sorted - %s" % order)
 
         bigger = with_entries({"values": "20 entry(ies)"},
                               {"values": dict(("%d" % i, "v%d" % i) for i in range(12))})
