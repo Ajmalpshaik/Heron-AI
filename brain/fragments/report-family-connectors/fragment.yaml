@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -54,6 +54,46 @@ contract:
       type: bool
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Night MEP Family, Night Family Test - active
+    was Night Family Test, Revit 2020, session 68704'
+  positive_case: 'run as it would normally be run. returned all 6 item(s) [Supply Air, Return
+    Air, Other, ...], connectorCount 6, connectorList duct connector 2630, Supply Air, rectangular
+    400 x 150 mm (width <- Supply Air Width, height <- Supply Air Height), flow Out, flow
+    configuration Calculated, pointing front (-Y), at X 263.6, Y -12.7, Z 125.4 mm - PRIMARY,
+    linked to 2864; duct connector 2864, Return Air, rectangular 475 x 260.4 mm (width <-
+    Return Air Width, height <- no parameter), flow In, flow configuration Calculated, pointing
+    back (+Y), at X 251.5, Y 495.3, Z 92.1 mm - secondary, linked to 2630; pipe connector
+    2903, Other Pipe, round 15.9 mm (size driven by no parameter), flow In, flow configuration
+    Preset, described "Refrigerant, In", pointing right (+X), at X 489, Y 54, Z 114.3 mm -
+    PRIMARY, linked to 2904; pipe connector 2904, Other Pipe, round 15.9 mm (size driven by
+    no parameter), flow Out, flow configuration Preset, described "Refrigerant, Out", pointing
+    right (+X), at X 489, Y 107.9, Z 114.3 mm - secondary, linked to 2903; electrical connector
+    2935 on "Center (Left/Right)", Power Balanced, no size, pointing left (-X), at X 0, Y
+    431.8, Z 187.4 mm - PRIMARY, not linked; pipe connector 3088, Sanitary, round 22.2 mm
+    (size driven by no parameter), flow Out, flow configuration Preset, described "Drain,
+    Out", pointing back (+Y), at X 514.4, Y 209.5, Z 19.1 mm - secondary, not linked, domainWords
+    Func`2, drivenBy Func`3, enumRead Func`3, findings 1 item(s) [6 connector(s): duct connector
+    2630, Supply Air, rectangular...], flowConfigurationOf Func`2, flowDirectionOf Func`2,
+    fm FamilyManager, halfMillimetre 0.00164041994750656, invariant CultureInfo, label Func`2,
+    lossMethodOf Func`2, mm Func`2, notAFamily false, onPlanes 6 entry(ies), ownName Func`2,
+    parameterOf Func`3, pointing Func`2, row Func`2, shownAs 6 entry(ies), sizeWords Func`2,
+    spaced Func`2, squash Func`2. on Night MEP Family'
+  negative_case: run against 'Night Family Test' instead - chosen because it should not contain
+    what this fragment reports. returned all 0 item(s), connectorCount 0, connectorList ,
+    domainWords Func`2, drivenBy Func`3, enumRead Func`3, findings 1 item(s) ["Night Family
+    Test" has no connectors - ADD_FAMILY_CONNECTOR...], flowConfigurationOf Func`2, flowDirectionOf
+    Func`2, fm FamilyManager, halfMillimetre 0.00164041994750656, invariant CultureInfo, label
+    Func`2, lossMethodOf Func`2, mm Func`2, notAFamily false, onPlanes 0 entry(ies), ownName
+    Func`2, parameterOf Func`3, pointing Func`2, row Func`2, shownAs 6 entry(ies), sizeWords
+    Func`2, spaced Func`2, squash Func`2. on Night Family Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 9ff4274e77d5d674
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

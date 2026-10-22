@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -56,6 +56,212 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: MEP Night Test, Revit 2020, session 68704 - the count is NOT recorded because 5,262
+    elements was measured on Cinematic ID Test, the document in front, and this ran against
+    another one (row 15)
+  positive_case: "run as it would normally be run. returned byPanel 19 entry(ies), circuitCount\
+    \ 155, findings 1 item(s) [19 panel(s), 155 circuit(s) on them, 34 circuit(s) on no pan...],\
+    \ panelCount 19, panelOrder 19 item(s) [581483, 622027, 471596, ...], rows 175 item(s)\
+    \ [PANEL PP-1B - 4 circuit(s), connected load 3420 VA, demand l...,   1 | Power Technology\
+    \ 28 | 20 A | 1 pole(s) | 1620 VA | 120...,   2 | Power Cleaning 27 | 20 A | 1 pole(s)\
+    \ | 1800 VA | 120 V..., ...], schedule PANEL PP-1B - 4 circuit(s), connected load 3420\
+    \ VA, demand load 3420 VA, demand current 9 A\n  1 | Power Technology 28 | 20 A | 1 pole(s)\
+    \ | 1620 VA | 120 V | 9 device(s) | PowerCircuit\n  2 | Power Cleaning 27 | 20 A | 1 pole(s)\
+    \ | 1800 VA | 120 V | 10 device(s) | PowerCircuit\n  3,5,7 | EP-1A | 20 A | 3 pole(s)\
+    \ | 0 VA | 208 V | 1 device(s) | PowerCircuit\n  4,6,8 | EP-1B | 20 A | 3 pole(s) | 0\
+    \ VA | 208 V | 1 device(s) | PowerCircuit\nPANEL PP-1A - 17 circuit(s), connected load\
+    \ 21600 VA, demand load 15800 VA, demand current 44 A\n  1 | Power Workshop I 14 | 20\
+    \ A | 1 pole(s) | 180 VA | 120 V | 1 device(s) | PowerCircuit\n  3 | Power Washing Room\
+    \ 25 | 20 A | 1 pole(s) | 1620 VA | 120 V | 9 device(s) | PowerCircuit\n  4 | Power MZR\
+    \ 20 | 20 A | 1 pole(s) | 1800 VA | 120 V | 10 device(s) | PowerCircuit\n  5 | Power WF\
+    \ 51 | 20 A | 1 pole(s) | 1620 VA | 120 V | 9 device(s) | PowerCircuit\n  6 | Power Cafeteria\
+    \ 50 | 20 A | 1 pole(s) | 1620 VA | 120 V | 9 device(s) | PowerCircuit\n  7 | Power Workshop\
+    \ 4 | 20 A | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n  8 | Power Stock\
+    \ 3 | 20 A | 1 pole(s) | 1080 VA | 120 V | 6 device(s) | PowerCircuit\n  9 | Power CH/PH\
+    \ I 2 | 20 A | 1 pole(s) | 1260 VA | 120 V | 7 device(s) | PowerCircuit\n  10 | Power\
+    \ CH/PH Stock 1 | 20 A | 1 pole(s) | 1080 VA | 120 V | 6 device(s) | PowerCircuit\n  11\
+    \ | Power Leader 6 | 20 A | 1 pole(s) | 1800 VA | 120 V | 10 device(s) | PowerCircuit\n\
+    \  12 | Power Room 9, 10 | 20 A | 1 pole(s) | 360 VA | 120 V | 2 device(s) | PowerCircuit\n\
+    \  13 | Power Workshop I 14 | 20 A | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n\
+    \  14 | Power Workshop II 31 | 20 A | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n\
+    \  15 | Power Workshop III 16 | 20 A | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n\
+    \  16 | Power Workshop IV 17 | 20 A | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n\
+    \  17 | Power Stock 18 | 20 A | 1 pole(s) | 1080 VA | 120 V | 6 device(s) | PowerCircuit\n\
+    \  18 | Power Corridor 49d | 20 A | 1 pole(s) | 900 VA | 120 V | 5 device(s) | PowerCircuit\n\
+    PANEL PP-2B - 22 circuit(s), connected load 95672 VA, demand load 88606 VA, demand current\
+    \ 246 A\n  1 | Power Manager 66 | 20 A | 1 pole(s) | 720 VA | 120 V | 4 device(s) | PowerCircuit\n\
+    \  2 | Power EDP II 53 | 20 A | 1 pole(s) | 1620 VA | 120 V | 9 device(s) | PowerCircuit\n\
+    \  3 | Power WC 40 | 20 A | 1 pole(s) | 720 VA | 120 V | 4 device(s) | PowerCircuit\n\
+    \  4 | Power Staff Room 57a | 20 A | 1 pole(s) | 1620 VA | 120 V | 9 device(s) | PowerCircuit\n\
+    \  5 | Power Meeting Room 69 | 20 A | 1 pole(s) | 900 VA | 120 V | 5 device(s) | PowerCircuit\n\
+    \  6 | Power Corridor 56 | 20 A | 1 pole(s) | 1260 VA | 120 V | 7 device(s) | PowerCircuit\n\
+    \  7 | Power EDP III 52 | 20 A | 1 pole(s) | 1620 VA | 120 V | 9 device(s) | PowerCircuit\n\
+    \  8 | Power Meeting Room 36 | 20 A | 1 pole(s) | 1080 VA | 120 V | 6 device(s) | PowerCircuit\n\
+    \  9 | Power Admin 47 | 20 A | 1 pole(s) | 1800 VA | 120 V | 10 device(s) | PowerCircuit\n\
+    \  10 | Power Server Space 39 | 20 A | 1 pole(s) | 1080 VA | 120 V | 6 device(s) | PowerCircuit\n\
+    \  11 | Power Copy 56 | 20 A | 1 pole(s) | 1800 VA | 120 V | 9 device(s) | PowerCircuit\n\
+    \  12 | Power Student Council 35 | 20 A | 1 pole(s) | 1080 VA | 120 V | 6 device(s) |\
+    \ PowerCircuit\n  13 | Power EDP 37 | 20 A | 1 pole(s) | 1080 VA | 120 V | 6 device(s)\
+    \ | PowerCircuit\n  14 | Laboratory | 20 A | 1 pole(s) | 1080 VA | 120 V | 6 device(s)\
+    \ | PowerCircuit\n  15 | Power EDP Management 38 | 20 A | 1 pole(s) | 1080 VA | 120 V\
+    \ | 6 device(s) | PowerCircuit\n  16 | Power Cleaning 34 | 20 A | 1 pole(s) | 1080 VA\
+    \ | 120 V | 6 device(s) | PowerCircuit\n  17 | Power LIZ 55 | 20 A | 1 pole(s) | 1080\
+    \ VA | 120 V | 6 device(s) | PowerCircuit\n  18 | Power Corridor 59 | 20 A | 1 pole(s)\
+    \ | 1080 VA | 120 V | 6 device(s) | PowerCircuit\n  19 | Power Archive 58 | 20 A | 1 pole(s)\
+    \ | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n  20,22,24 | EP-2 | 20 A | 3 pole(s)\
+    \ | 73502 VA | 208 V | 1 device(s) | PowerCircuit\n  21 | Power Assembly 55 | 20 A | 1\
+    \ pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n  23 | Power EDP I 54 | 20 A\
+    \ | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\nPANEL LP-2 - 18 circuit(s),\
+    \ connected load 9780 VA, demand load 12225 VA, demand current 15 A\n  1 | Lighting Doctor\
+    \ 68 | 20 A | 1 pole(s) | 0 VA | 277 V | 2 device(s) | PowerCircuit\n  2 | Lighting Manager\
+    \ 66 | 20 A | 1 pole(s) | 248 VA | 277 V | 6 device(s) | PowerCircuit\n  3 | Lighting\
+    \ Copy 56 | 20 A | 1 pole(s) | 682 VA | 277 V | 14 device(s) | PowerCircuit\n  4 | Lighting\
+    \ Staff Room 57a | 20 A | 1 pole(s) | 512 VA | 277 V | 9 device(s) | PowerCircuit\n  5\
+    \ | Lighting Meeting Room 69 | 20 A | 1 pole(s) | 900 VA | 277 V | 8 device(s) | PowerCircuit\n\
+    \  6 | Lighting EDP I 54 | 20 A | 1 pole(s) | 496 VA | 277 V | 9 device(s) | PowerCircuit\n\
+    \  7 | Lighting EDP III 52 | 20 A | 1 pole(s) | 496 VA | 277 V | 9 device(s) | PowerCircuit\n\
+    \  8 | Lighting EDP II 53 | 20 A | 1 pole(s) | 496 VA | 277 V | 9 device(s) | PowerCircuit\n\
+    \  9 | Lighting Corridor 57 | 20 A | 1 pole(s) | 800 VA | 277 V | 8 device(s) | PowerCircuit\n\
+    \  10 | Lighting Corridor 58 | 20 A | 1 pole(s) | 800 VA | 277 V | 8 device(s) | PowerCircuit\n\
+    \  11 | Lighting Assembly 55 | 20 A | 1 pole(s) | 600 VA | 277 V | 6 device(s) | PowerCircuit\n\
+    \  12 | Lighting Admin 47 | 20 A | 1 pole(s) | 744 VA | 277 V | 16 device(s) | PowerCircuit\n\
+    \  13 | Lighting Laboratory ! 32 | 20 A | 1 pole(s) | 558 VA | 277 V | 11 device(s) |\
+    \ PowerCircuit\n  15 | Lighting Student Council 35 | 20 A | 1 pole(s) | 744 VA | 277 V\
+    \ | 15 device(s) | PowerCircuit\n  16 | Lighting Laboratory II 33 | 20 A | 1 pole(s) |\
+    \ 186 VA | 277 V | 4 device(s) | PowerCircuit\n  17 | Lighting Stair 91 | 20 A | 1 pole(s)\
+    \ | 300 VA | 277 V | 5 device(s) | PowerCircuit\n  18 | Lighting EDP Management 38 | 20\
+    \ A | 1 pole(s) | 558 VA | 277 V | 11 device(s) | PowerCircuit\n  20 | Lighting Stair\
+    \ 85 | 20 A | 1 pole(s) | 660 VA | 277 V | 11 device(s) | PowerCircuit\nPANEL LP-3 - 22\
+    \ circuit(s), connected load 10162 VA, demand load 12703 VA, demand current 15 A\n  1\
+    \ | Lighting Hall 84 | 20 A | 1 pole(s) | 434 VA | 277 V | 8 device(s) | PowerCircuit\n\
+    \  2 | Lighting Hall 83 | 20 A | 1 pole(s) | 372 VA | 277 V | 7 device(s) | PowerCircuit\n\
+    \  3 | Lighting Hall 82 | 20 A | 1 pole(s) | 372 VA | 277 V | 7 device(s) | PowerCircuit\n\
+    \  4 | Lighting Preparation 86 | 20 A | 1 pole(s) | 620 VA | 277 V | 11 device(s) | PowerCircuit\n\
+    \  5 | Lighting Hall 87 | 20 A | 1 pole(s) | 372 VA | 277 V | 7 device(s) | PowerCircuit\n\
+    \  6 | Lighting Chemistry 88 | 20 A | 1 pole(s) | 372 VA | 277 V | 7 device(s) | PowerCircuit\n\
+    \  7 | Lighting Physics 89 | 20 A | 1 pole(s) | 372 VA | 277 V | 7 device(s) | PowerCircuit\n\
+    \  8 | Lighting Auditorium 90 | 20 A | 1 pole(s) | 372 VA | 277 V | 7 device(s) | PowerCircuit\n\
+    \  9 | Lighting Auditorium 91 | 20 A | 1 pole(s) | 496 VA | 277 V | 9 device(s) | PowerCircuit\n\
+    \  10 | Lighting Reserve 78 | 20 A | 1 pole(s) | 372 VA | 277 V | 7 device(s) | PowerCircuit\n\
+    \  11 | Lighting WC 76 | 20 A | 1 pole(s) | 368 VA | 277 V | 8 device(s) | PowerCircuit\n\
+    \  12 |  Hall I 70 | 20 A | 1 pole(s) | 496 VA | 277 V | 9 device(s) | PowerCircuit\n\
+    \  13 | Lighting Hall II 71 | 20 A | 1 pole(s) | 496 VA | 277 V | 9 device(s) | PowerCircuit\n\
+    \  14 | Lighting Hall III 72 | 20 A | 1 pole(s) | 496 VA | 277 V | 9 device(s) | PowerCircuit\n\
+    \  15 | Lighting Hall IV 73 | 20 A | 1 pole(s) | 496 VA | 277 V | 9 device(s) | PowerCircuit\n\
+    \  16 | Lighting Hall 74 | 20 A | 1 pole(s) | 496 VA | 277 V | 9 device(s) | PowerCircuit\n\
+    \  17 | Lighting Stair 92 | 20 A | 1 pole(s) | 300 VA | 277 V | 5 device(s) | PowerCircuit\n\
+    \  18 | Lighting Corridor 82 | 20 A | 1 pole(s) | 360 VA | 277 V | 6 device(s) | PowerCircuit\n\
+    \  19 | Lighting Corridor 82 | 20 A | 1 pole(s) | 800 VA | 277 V | 8 device(s) | PowerCircuit\n\
+    \  20 | Lighting Corridor 83 | 20 A | 1 pole(s) | 800 VA | 277 V | 8 device(s) | PowerCircuit\n\
+    \  21 | Lighting Stair 87 | 20 A | 1 pole(s) | 660 VA | 277 V | 11 device(s) | PowerCircuit\n\
+    \  22 | Lighting Corridor 57 | 20 A | 1 pole(s) | 240 VA | 277 V | 4 device(s) | PowerCircuit\n\
+    PANEL PP-3B - 19 circuit(s), connected load 97533 VA, demand load 91299 VA, demand current\
+    \ 253 A\n  1 | Power Hall 84 | 20 A | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n\
+    \  2 | Power Hall 83 | 20 A | 1 pole(s) | 1080 VA | 120 V | 6 device(s) | PowerCircuit\n\
+    \  3 | Power Hall 82 | 20 A | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n\
+    \  4 | Power Preparation 86 | 20 A | 1 pole(s) | 1800 VA | 120 V | 10 device(s) | PowerCircuit\n\
+    \  5 | Power Hall 87 | 20 A | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n\
+    \  6 | Power Chemistry 88 | 20 A | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n\
+    \  7 | Power Physics 89 | 20 A | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n\
+    \  8 | Power Auditorium 90 | 20 A | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n\
+    \  9 | Power Auditorium 91 | 20 A | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n\
+    \  10 | Power Reserve 78 | 20 A | 1 pole(s) | 1080 VA | 120 V | 6 device(s) | PowerCircuit\n\
+    \  11 | Power WC 76 | 20 A | 1 pole(s) | 360 VA | 120 V | 2 device(s) | PowerCircuit\n\
+    \  12 | Power Hall I 70 | 20 A | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n\
+    \  13 | Power Hall II 71 | 20 A | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n\
+    \  14 | Power Hall III 72 | 20 A | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n\
+    \  15 | Power Hall IV 73 | 20 A | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n\
+    \  16 | Power Hall 74 | 20 A | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n\
+    \  17 | Power Corridor 81 | 20 A | 1 pole(s) | 1440 VA | 120 V | 8 device(s) | PowerCircuit\n\
+    \  18 | Power Corridor 83 | 20 A | 1 pole(s) | 1260 VA | 120 V | 7 device(s) | PowerCircuit\n\
+    \  19,21,23 | EP-3 | 20 A | 3 pole(s) | 76997 VA | 208 V | 1 device(s) | PowerCircuit\n\
+    PANEL EP-2 - 13 circuit(s), connected load 73502 VA, demand load 73502 VA, demand current\
+    \ 204 A\n  1,3,5 | HVAC Corridor 56 | 30 A | 3 pole(s) | 5283 VA | 208 V | 1 device(s)\
+    \ | PowerCircuit\n  2,4,6 | HVAC Corridor 59 | 30 A | 3 pole(s) | 6780 VA | 208 V | 1\
+    \ device(s) | PowerCircuit\n  7,9,11 | HVAC Corridor 56 | 30 A | 3 pole(s) | 5283 VA |\
+    \ 208 V | 1 device(s) | PowerCircuit\n  8,10,12 | HVAC Corridor 57 | 30 A | 3 pole(s)\
+    \ | 6780 VA | 208 V | 1 device(s) | PowerCircuit\n  13,15,17 | HVAC Corridor 57 | 30 A\
+    \ | 3 pole(s) | 6780 VA | 208 V | 1 device(s) | PowerCircuit\n  14,16,18 | HVAC Corridor\
+    \ 57 | 30 A | 3 pole(s) | 5283 VA | 208 V | 1 device(s) | PowerCircuit\n  19,21,23 | HVAC\
+    \ Corridor 58 | 30 A | 3 pole(s) | 5283 VA | 208 V | 1 device(s) | PowerCircuit\n  20,22,24\
+    \ | HVAC Corridor 58 | 30 A | 3 pole(s) | 6780 VA | 208 V | 1 device(s) | PowerCircuit\n\
+    \  25,27,29 | HVAC Corridor 58 | 30 A | 3 pole(s) | 3952 VA | 208 V | 1 device(s) | PowerCircuit\n\
+    \  26,28,30 | HVAC Corridor 58 | 30 A | 3 pole(s) | 5283 VA | 208 V | 1 device(s) | PowerCircuit\n\
+    \  31,33,35 | HVAC Corridor 58 | 30 A | 3 pole(s) | 5283 VA | 208 V | 1 device(s) | PowerCircuit\n\
+    \  32,34,36 | HVAC Corridor 58 | 30 A | 3 pole(s) | 3952 VA | 208 V | 1 device(s) | PowerCircuit\n\
+    \  38,40,42 | HVAC Corridor 59 | 30 A | 3 pole(s) | 6780 VA | 208 V | 1 device(s) | PowerCircuit\n\
+    PANEL EP-3 - 13 circuit(s), connected load 76997 VA, demand load 76997 VA, demand current\
+    \ 214 A\n  1,3,5 | HVAC Corridor 81 | 30 A | 3 pole(s) | 3952 VA | 208 V | 1 device(s)\
+    \ | PowerCircuit\n  2,4,6 | HVAC Corridor 81 | 30 A | 3 pole(s) | 3952 VA | 208 V | 1\
+    \ device(s) | PowerCircuit\n  7,9,11 | HVAC Corridor 81 | 30 A | 3 pole(s) | 3952 VA |\
+    \ 208 V | 1 device(s) | PowerCircuit\n  8,10,12 | HVAC Corridor 81 | 30 A | 3 pole(s)\
+    \ | 6780 VA | 208 V | 1 device(s) | PowerCircuit\n  13,15,17 | HVAC Corridor 82 | 30 A\
+    \ | 3 pole(s) | 5283 VA | 208 V | 1 device(s) | PowerCircuit\n  14,16,18 | HVAC Corridor\
+    \ 82 | 30 A | 3 pole(s) | 6780 VA | 208 V | 1 device(s) | PowerCircuit\n  19,21,23 | HVAC\
+    \ Corridor 83 | 30 A | 3 pole(s) | 6780 VA | 208 V | 1 device(s) | PowerCircuit\n  20,22,24\
+    \ | HVAC Corridor 83 | 30 A | 3 pole(s) | 5283 VA | 208 V | 1 device(s) | PowerCircuit\n\
+    \  25,27,29 | HVAC Corridor 83 | 30 A | 3 pole(s) | 5283 VA | 208 V | 1 device(s) | PowerCircuit\n\
+    \  26,28,30 | HVAC Corridor 83 | 30 A | 3 pole(s) | 6780 VA | 208 V | 1 device(s) | PowerCircuit\n\
+    \  31,33,35 | HVAC Corridor 83 | 30 A | 3 pole(s) | 6780 VA | 208 V | 1 device(s) | PowerCircuit\n\
+    \  32,34,36 | HVAC Corridor 83 | 30 A | 3 pole(s) | 7696 VA | 208 V | 1 device(s) | PowerCircuit\n\
+    \  37,39,41 | HVAC Corridor 83 | 30 A | 3 pole(s) | 7696 VA | 208 V | 1 device(s) | PowerCircuit\n\
+    PANEL AHP - 1 circuit(s), connected load 47007 VA, demand load 47007 VA, demand current\
+    \ 130 A\n  1,3,5 | HVAC | 20 A | 3 pole(s) | 47007 VA | 208 V | 1 device(s) | PowerCircuit\n\
+    PANEL CTP - 1 circuit(s), connected load 42300 VA, demand load 42300 VA, demand current\
+    \ 51 A\n  1,3,5 | Cooling Tower | 200 A | 3 pole(s) | 42300 VA | 480 V | 1 device(s) |\
+    \ PowerCircuit\nPANEL TP-1A - 1 circuit(s), connected load 21600 VA, demand load 15800\
+    \ VA, demand current 44 A\n  1 | PP-1B | 20 A | 3 pole(s) | 21600 VA | 208 V | 1 device(s)\
+    \ | PowerCircuit\nPANEL MDP-1 - 5 circuit(s), connected load 22612 VA, demand load 16817\
+    \ VA, demand current 20 A\n  1,3,5 | MP-1B | 20 A | 3 pole(s) | 0 VA | 480 V | 1 device(s)\
+    \ | PowerCircuit\n  2,4,6 | LP-1B | 20 A | 3 pole(s) | 0 VA | 480 V | 1 device(s) | PowerCircuit\n\
+    \  7,9,11 | LP-1 | 20 A | 3 pole(s) | 0 VA | 480 V | 1 device(s) | PowerCircuit\n  8,10,12\
+    \ | TP-1B | 20 A | 3 pole(s) | 21600 VA | 480 V | 1 device(s) | PowerCircuit\n  13,15,17\
+    \ | HVAC | 20 A | 3 pole(s) | 1250 VA | 480 V | 1 device(s) | PowerCircuit\nPANEL TP-3A\
+    \ - 1 circuit(s), connected load 144183 VA, demand load 138108 VA, demand current 383\
+    \ A\n  1 | PP-1B | 20 A | 3 pole(s) | 144183 VA | 208 V | 1 device(s) | PowerCircuit\n\
+    PANEL SWB - 7 circuit(s), connected load 324543 VA, demand load 300878 VA, demand current\
+    \ 362 A\n  1 | MDP-1 | 20 A | 3 pole(s) | 22612 VA | 480 V | 1 device(s) | PowerCircuit\n\
+    \  2 | MDP-2 | 20 A | 3 pole(s) | 108528 VA | 480 V | 1 device(s) | PowerCircuit\n  3\
+    \ | MP-3B | 20 A | 3 pole(s) | 0 VA | 480 V | 1 device(s) | PowerCircuit\n  4 | CTP |\
+    \ 20 A | 3 pole(s) | 42300 VA | 480 V | 1 device(s) | PowerCircuit\n  5 | LP-3B | 20 A\
+    \ | 3 pole(s) | 0 VA | 480 V | 1 device(s) | PowerCircuit\n  7 | TP-1B | 20 A | 3 pole(s)\
+    \ | 144183 VA | 480 V | 1 device(s) | PowerCircuit\n  8 | LP-3 | 20 A | 3 pole(s) | 10162\
+    \ VA | 480 V | 1 device(s) | PowerCircuit\nPANEL TP-2A - 1 circuit(s), connected load\
+    \ 98843 VA, demand load 90248 VA, demand current 251 A\n  1 | PP-2B | 20 A | 3 pole(s)\
+    \ | 98843 VA | 208 V | 1 device(s) | PowerCircuit\nPANEL MDP-2 - 4 circuit(s), connected\
+    \ load 108528 VA, demand load 102271 VA, demand current 123 A\n  1,3,5 | MP-2B | 20 A\
+    \ | 3 pole(s) | 0 VA | 480 V | 1 device(s) | PowerCircuit\n  2,4,6 | LP-2B | 20 A | 3\
+    \ pole(s) | 0 VA | 480 V | 1 device(s) | PowerCircuit\n  7,9,11 | TP-2B | 20 A | 3 pole(s)\
+    \ | 98843 VA | 480 V | 1 device(s) | PowerCircuit\n  8,10,12 | LP-2 | 20 A | 3 pole(s)\
+    \ | 9780 VA | 480 V | 1 device(s) | PowerCircuit\nPANEL T-SVC - 1 circuit(s), connected\
+    \ load 324543 VA, demand load 300878 VA, demand current 362 A\n  1 | 762mmx965mm, 277\
+    \ V/480 V, Three Phase, 4 Wires, Wye | 20 A | 3 pole(s) | 324543 VA | 480 V | 1 device(s)\
+    \ | PowerCircuit\nPANEL PP-2A - 3 circuit(s), connected load 98843 VA, demand load 90248\
+    \ VA, demand current 251 A\n  1,3,5 | PP-1 | 20 A | 3 pole(s) | 3420 VA | 208 V | 1 device(s)\
+    \ | PowerCircuit\n  2,4,6 | PP-2 | 20 A | 3 pole(s) | 95672 VA | 208 V | 1 device(s) |\
+    \ PowerCircuit\n  7 | HVAC | 20 A | 1 pole(s) | 125 VA | 120 V | 1 device(s) | PowerCircuit\n\
+    PANEL PP-3A - 2 circuit(s), connected load 144183 VA, demand load 138108 VA, demand current\
+    \ 383 A\n  1,3,5 | EP-4 | 20 A | 3 pole(s) | 47007 VA | 208 V | 1 device(s) | PowerCircuit\n\
+    \  2,4,6 | PP-3 | 20 A | 3 pole(s) | 97533 VA | 208 V | 1 device(s) | PowerCircuit\nON\
+    \ NO PANEL - 34 circuit(s), on no panel schedule anywhere: 473648, 473760, 473787, 473861,\
+    \ 473889, 474183, 474208, 474232, 474274, 474302, 474330, 474354, 474394, 474449, 474514,\
+    \ 474541, 474606, 474984, 510933, 510959, 510985, 511011, 511037, 511063, 511089, 511115,\
+    \ 511141, 511167, 511193, 511219, 511245, 511271, 511297, 512293, shown Func`3, unassigned\
+    \ 34 item(s) [473648, 473760, 473787, ...], wanted . inputs came panelName as given. on\
+    \ MEP Night Test"
+  negative_case: run with panelName=NO-SUCH-PANEL instead - chosen because it should not contain
+    what this fragment reports. returned byPanel 0 entry(ies), circuitCount 0, findings 1
+    item(s) [No circuit is fed from a panel named "NO-SUCH-PANEL". The pa...], panelCount
+    0, panelOrder 0 item(s), rows 0 item(s), schedule , shown Func`3, unassigned 0 item(s),
+    wanted NO-SUCH-PANEL. inputs came panelName as given. on MEP Night Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 8738c9955e37ed57
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

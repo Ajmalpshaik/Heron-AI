@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -69,6 +69,30 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-10-21'
+  by: Ajmal PS
+  model: Cinematic ID Test (5,262 elements), Revit 2020, session 68704
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    read-room-geometry with this phase's own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8,
+    applied true, joinTolerance 0.00328083989501312, refused 1 item(s) [the shape was repaired
+    - the worst gap bridged was 0 mm. Che...], worstGap 7.105427357601E-15. inputs came view
+    as given; boundary from read-room-geometry (17); joinTolerance as given. on Cinematic
+    ID Test
+  negative_case: 'run with joinTolerance=1, room=Kitchen & Dining 101, view=DrawingSheet:
+    Site Plan instead - chosen because it should not contain what this fragment reports -
+    the arrangement was re-made first by running read-room-geometry with this phase''s own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned MillimetresPerFoot 304.8, applied false, joinTolerance 0.00328083989501312,
+    refused 1 item(s) [''Site Plan'' is a SHEET - crop the VIEW placed on it, not the...],
+    worstGap 0. inputs came view as given; boundary from read-room-geometry (17); joinTolerance
+    as given. on Cinematic ID Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 50fadf6680d65a6d
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
