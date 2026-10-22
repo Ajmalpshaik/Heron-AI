@@ -45,6 +45,10 @@ namespace Heron.Revit.Addin
     ///   box runs the whole width of the model, and framing it would picture
     ///   the building instead of the elements.
     ///
+    ///   IN A FAMILY, its forms are framed the same way, by their extents -
+    ///   a form at the family's own subcategory has no category, and is
+    ///   framed all the same (row 5b-1311, NEEDS-CHECKING Group IO).
+    ///
     /// WHY IT IS ANALYZE AND OPENS A TRANSACTION
     /// -------------------------------------------
     /// The second way needs a new view, and Revit makes nothing outside a
@@ -407,6 +411,15 @@ namespace Heron.Revit.Addin
         private static string LeftOut(Element element)
         {
             if (element is RevitLinkInstance) return "is a linked model";
+
+            // A FORM IN A FAMILY IS FRAMED BY ITS BOX, WHATEVER ITS CATEGORY.
+            // Left at the family's own subcategory a form's Category is null,
+            // and given one it is that subcategory (row 5b-370, measured), so
+            // asking the category first refused every form nobody had given a
+            // subcategory - "2829 has no category" (row 5b-1311). A form is
+            // what the family is made of, never a datum or annotation. Never
+            // run in Revit: NEEDS-CHECKING Group IO.
+            if (element is GenericForm && element.Document.IsFamilyDocument) return null;
 
             var category = element.Category;
             if (category == null) return "has no category";

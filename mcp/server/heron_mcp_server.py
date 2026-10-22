@@ -5827,7 +5827,9 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> l
     - `elements`: element ids, comma separated, as Heron's answers print them.
       Heron frames just those in a temporary isometric 3D view - a section box
       round them with a margin, model categories only, levels, grids and links
-      left out of the box - and takes the view away again.
+      left out of the box - and takes the view away again. In a family open
+      in the Family Editor its forms are framed the same way, by their
+      extents.
 
     `width` is the picture's width in pixels, 320 to 2400 (default 1280).
 
