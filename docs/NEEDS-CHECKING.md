@@ -994,6 +994,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-iv.md`](needs-checking/group-iv.md)
 
+## Group IW - a night with nobody at the keyboard: `batch-prove --unattended` waits out a held Revit and closes only Revit's memory warning (2026-10-23)
+
+**Its own file:** [`needs-checking/group-iw.md`](needs-checking/group-iw.md)
+
 ## Group IY - a simplify counts only the toposolids it changed: `EDIT_TOPOSOLID` version 2 (2026-10-23)
 
 **Its own file:** [`needs-checking/group-iy.md`](needs-checking/group-iy.md)
