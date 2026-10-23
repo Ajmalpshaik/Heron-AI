@@ -80,3 +80,19 @@ Each by `validate --write`, both legs rolled back, then signed by Ajmal PS and s
 
 - `report-family-template` - positive Family4: `familyKind` level-based, every plane listed; negative Project1: `notAFamily` true, every result empty.
 - `set-family-connector-roles` - positive Family4 on a connector made by the run's own `add-family-connector` setup step: flow Out and a description, `changed` 2; negative on *Center (Front/Back)*: no connector, nothing changed.
+
+## Measured 2026-10-22 (Revit 2020, the owner's floor-drain family from the Metric Plumbing Fixture floor based template) - BV12's void question, for a FLOOR
+
+Not a run of this group's rows. Building a nested floor-drain family through Heron, the owner made a round
+void 130 mm across (Z +5 to -600 mm) and later a square one 150 x 150 mm (Z -10 to +5 mm) through the
+template's floor with the form tools. Neither cut the sample floor in the Family Editor, and loaded into a
+project neither cut any host floor - the floor read six faces and its volume unchanged, the grate stayed
+buried - with *Cut with Voids When Loaded* off and then on. *Modify > Geometry > Cut* in the Family Editor,
+the sample floor first and then each void, and a reload: every host floor cut. **So for a FLOOR the answer
+BV12 asks for is: a void does NOT cut the template's host by itself, and a cut made by hand in the Family
+Editor carries into every placement.** Revit's API 2020 to 2027 has no call that makes that cut - read in
+the eight releases' own XML remarks, [row 5b-1324](../fragment-issues/section-5b-rows-401-425.md) and
+[Q-85](../open-questions/tier-2.md) - so `create-family-host-opening`'s floor refusal stays as it is, and
+[`hosted-family-creation`](../../brain/skills/hosted-family-creation.yaml) step 5 now tells the modeller to
+cut by hand before loading. **Still open in BV12:** the same question for a WALL and a CEILING template,
+and for a ROOF, which nobody has measured - record each as the row says.

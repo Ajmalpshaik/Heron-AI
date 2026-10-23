@@ -54,10 +54,29 @@ purpose: >
   5. WHAT IS CUT OUT OF THE HOST. In a wall- or ceiling-based family,
      CREATE_FAMILY_HOST_OPENING cuts an opening of a FIXED size in the
      template's wall or ceiling, and every placement cuts it in its own host.
-     A cut that must resize with a parameter is a VOID form locked to planes -
-     whether a void cuts the template's host by itself, without Cut Geometry,
-     is not yet known (NEEDS-CHECKING BV12). A floor- or roof-based family
-     has no opening call; its cut is a void.
+     A cut that must resize with a parameter is a VOID form locked to planes.
+     A floor- or roof-based family has no opening call; its cut is a void.
+     A VOID HERON MAKES DOES NOT CUT THE TEMPLATE'S HOST, AND NOTHING IN
+     REVIT'S API MAKES IT - THE MODELLER CUTS IT BY HAND BEFORE LOADING.
+     Measured 2026-10-22 on Revit 2020, a floor-based floor drain (row
+     5b-1324): a round void and a square one through the template's floor
+     cut neither that floor nor any floor the family was placed on, with
+     Cut with Voids When Loaded off and then on - the grate stayed buried.
+     Read the same day in all eight releases' own API remarks, 2020 to 2027:
+     the solid-cut call refuses an ordinary family and a floor, the geometry
+     combination COMBINE_FAMILY_FORMS uses takes forms only, the join call is
+     not for family documents, and the void-instance call wants a loaded
+     family in a project. So once the voids are built and read back, SAY
+     THIS, AND SAY THAT HERON CANNOT DO IT: in the Family Editor, Modify >
+     Geometry > Cut, click the template's host FIRST - the sample floor,
+     roof, wall or ceiling - then the void, once per void, then Load into
+     Project. Revit's own message for a void left uncut says the same:
+     "Some Void Forms of this family do not cut anything and will be
+     deleted. To make a Void Form cut something else use the Cut Geometry
+     tool." Never COMBINE_FAMILY_FORMS such a void with a solid of the
+     family to stand in for the host's cut: a void cuts the solids in its
+     combination and nothing else. Measured on a floor; a wall-, ceiling-
+     or roof-based template's void is NEEDS-CHECKING BV12 until measured.
      In a FACE-BASED family an UNATTACHED void cuts nothing on placement: turn
      on Cut with Voids When Loaded with SET_FAMILY_SETTINGS and the modeller
      cuts with Cut Geometry in the project.
@@ -72,10 +91,13 @@ purpose: >
      project, where the modeller places it on two walls (or ceilings) of
      different thickness.
 
-  NOT YET: cutting a face-based family's host in the Family Editor itself (Cut
-  Geometry with the host extrusion, so every placement cuts automatically);
-  the plane a reference line carries; a door's or window's own opening cut
-  locked to its planes - an opening's sketch cannot be locked through the API.
+  NOT YET: cutting a template's host with a void through the API - a floor's
+  or a roof's above all, where no opening call exists, and a face-based
+  family's host extrusion the same: Revit has no public call for the Family
+  Editor's Cut Geometry between a void and the host on any release 2020 to
+  2027 (row 5b-1324, Q-85), so step 5's hand cut stands; the plane a
+  reference line carries; a door's or window's own opening cut locked to its
+  planes - an opening's sketch cannot be locked through the API.
 
 # The words people say when they want a hosted family made.
 utterances:
@@ -146,4 +168,6 @@ note: >
   Written 2026-10-02 on the owner's request for "line based, ceiling based,
   floor based, wall based ... all kind" of family creation, from the research
   recorded in docs/43-building-revit-families.md. Every step is DRAFT until
-  it has been run on a real family with a negative case (D-30).
+  it has been run on a real family with a negative case (D-30). Step 5's
+  hand cut was added 2026-10-22, from the floor drain measured that day on
+  Revit 2020 and a read of all eight releases' API remarks (row 5b-1324).
