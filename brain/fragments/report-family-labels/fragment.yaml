@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -132,6 +132,38 @@ contract:
       type: bool
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-22'
+  by: Ajmal PS
+  model: N22 M_Pipe Size Tag, Revit 2020, session 60544 - the count is NOT recorded because
+    21,317 elements was measured on Heron Capture Test, the document in front, and this ran
+    against another one (row 15)
+  positive_case: "run as it would normally be run. returned MmPerFoot 304.8, canReadParameters\
+    \ false, culture CultureInfo, familyCategory Pipe Tags, findings 2 item(s) [1 label(s)\
+    \ in \"N22 M_Pipe Size Tag\" (Pipe Tags); 1 text elem..., Revit 2020 cannot say which\
+    \ parameters a label shows, their ...], holds Func`2, labelCount 1, labelIds 1 item(s)\
+    \ [1008], labelList label 1008 | view Sheet | type 2.5 | at 0,-0.2 mm | width 6.8 mm |\
+    \ Center/Middle | angle 0 deg | keep readable yes | visible always | text \"Size\", labelProperties\
+    \ label 1008: Category=, Category=, Design Option=-1, Family and Type=Label: 2.5, Family\
+    \ Name=, Family=Label, Horizontal Align=Center, Keep Readable=Yes, Label=, Sample Text=Size\r\
+    , Type Id=14, Type Name=, Type=2.5, Vertical Align=Middle, Visible=Yes, Wrap between parameters\
+    \ only=No, labelTypes 2.5, mm Func`2, nameOf Func`2, notAFamily false, parameterCount\
+    \ 0, parameterList , parts 0 item(s), release 2020, said all, textElements 1, textNotes\
+    \ 0, textOf Func`2. inputs came labelContains as given. on N22 M_Pipe Size Tag"
+  negative_case: run with labelContains=ZZZ_Not_A_Label instead - chosen because it should
+    not contain what this fragment reports. returned MmPerFoot 304.8, canReadParameters false,
+    culture CultureInfo, familyCategory Pipe Tags, findings 2 item(s) [0 label(s) in "N22
+    M_Pipe Size Tag" (Pipe Tags) holding "ZZZ..., No label holds "ZZZ_Not_A_Label" - 1 label(s)
+    are in the fam...], holds Func`2, labelCount 0, labelIds 0 item(s), labelList , labelProperties
+    , labelTypes , mm Func`2, nameOf Func`2, notAFamily false, parameterCount 0, parameterList
+    , parts 1 item(s) [ZZZ_Not_A_Label], release 2020, said ZZZ_Not_A_Label, textElements
+    1, textNotes 0, textOf Func`2. inputs came labelContains as given. on N22 M_Pipe Size
+    Tag
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 692b135056023a41
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
