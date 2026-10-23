@@ -858,6 +858,309 @@ def test_a_value_with_a_space_is_quoted_when_printed():
           "a value holding a space is quoted: %s" % line)
 
 
+# ---------------------------------------------------------------------------
+# --unattended - a night with nobody at the keyboard
+# ---------------------------------------------------------------------------
+#
+# WHAT `validate` PRINTS WHEN IT NEVER REACHED THE MODEL. Each is the sentence
+# the add-in or the client prints, laid out as the client prints it - the
+# lease's as FRAGMENT-ISSUES section 3i quotes it from a batch on 2026-09-09.
+# The last test reads every marker back out of the file that prints it, so a
+# sentence reworded there fails here rather than a night later.
+
+OPENING = ("Could not identify the active model:\n  %s\n"
+           "Refusing to record evidence about a model that will not name itself.\n")
+
+LEASE_HELD = OPENING % (       # HeronLease.Claim, refused - session_in_use
+    "This Revit is in use by another chat, so Heron has refused rather than "
+    "taking it over mid-job. Nothing was sent to Revit.\nIt frees up after "
+    "about 4 minute(s) without activity there, or immediately if that chat "
+    "disconnects from the Heron button.")
+
+MODEL_HELD = ("Model 'Materials IA Test' is in use by another chat. It is free "
+              "when that chat says it is done, after 3 quiet minutes, or with "
+              "Free this model on the Heron ribbon - at the latest in about 2 "
+              "minutes from now. Nothing was sent to the model.")   # HeronModelHold.InUse
+
+BUSY = ("Revit is busy and did not take the request. A dialog may be open, or "
+        "a command may be running. Finish what is open in Revit and ask again.")
+
+KEEP_TITLE = "Heron - keep this change?"    # HeronKeepQuestion.Title, read back below
+
+
+def phase(name, error=None, message=None, provides=None):
+    return {"phase": name, "ok": error is None, "error": error,
+            "message": message, "provides": provides or {}}
+
+
+def test_unattended_asks_again_only_when_revit_was_never_reached():
+    print("--unattended asks again when Revit was held or busy, and never after a verdict")
+    frag = FakeFragment("unattended-sample", [{"name": "found", "role": "result"}])
+
+    # NOTHING WAS WRITTEN, so the verdict is DID NOT RUN on the first line
+    # of what `validate` said - and the reason is on the line after it.
+    first = LEASE_HELD.splitlines()[0]
+    check(BP.retry_reason(BP.DID_NOT_RUN, first + "\n" + LEASE_HELD) == BP.HELD,
+          "the lease held by another chat is waited out")
+    check(BP.retry_reason(BP.DID_NOT_RUN, first) == BP.HELD,
+          "and so is the opening's first line alone - all the wrapper ever saw")
+    busy = OPENING % BUSY
+    check(BP.retry_reason(BP.DID_NOT_RUN, busy.splitlines()[0] + "\n" + busy) == BP.BUSY,
+          "a busy Revit is BUSY, though its refusal opens the same way")
+
+    # A RECORD WAS WRITTEN AND A PHASE WAS REFUSED - judged as without the flag.
+    cases = [
+        ("the positive refused model_in_use",
+         {"phases": [phase("positive", "model_in_use", MODEL_HELD)]}, BP.DID_NOT_RUN, BP.HELD),
+        ("the positive refused revit_busy",
+         {"phases": [phase("positive", "revit_busy", BUSY)]}, BP.DID_NOT_RUN, BP.BUSY),
+        ("the negative refused model_in_use",
+         {"phases": [phase("positive", provides={"found": "3"}),
+                     phase("negative", "model_in_use", MODEL_HELD)]}, BP.NO_NEGATIVE, BP.HELD),
+        ("the negative refused session_in_use",
+         {"phases": [phase("positive", provides={"found": "3"}),
+                     phase("negative", "session_in_use", "refused")]}, BP.NO_NEGATIVE, BP.HELD),
+        ("the negative refused revit_busy",
+         {"phases": [phase("positive", provides={"found": "3"}),
+                     phase("negative", "revit_busy", BUSY)]}, BP.NO_NEGATIVE, BP.BUSY),
+        ("a value the contract asks for, never given",
+         {"phases": [phase("positive", "needs_request_values",
+                           "this needs 'categoryName'")]}, BP.DID_NOT_RUN, None),
+        ("a pass",
+         {"phases": [phase("positive", provides={"found": "3"}),
+                     phase("negative", provides={"found": "0"})]}, BP.PASS, None),
+        # JUDGED, SO NEVER ASKED AGAIN. The positive found nothing before the
+        # negative was refused: that is a finding about the arrangement, and
+        # the held negative rides along in its detail.
+        ("a positive that found nothing, the negative held",
+         {"phases": [phase("positive", provides={"found": "0"}),
+                     phase("negative", "model_in_use", MODEL_HELD)]}, BP.POSITIVE_EMPTY, None),
+    ]
+    for label, rec, expected_verdict, expected_reason in cases:
+        verdict, why = BP.judge(rec, frag)
+        if expected_verdict is not None:
+            check(verdict == expected_verdict,
+                  "%s reads %s (%s)" % (label, expected_verdict, verdict))
+        else:
+            check(verdict not in BP.NOTHING_JUDGED,
+                  "%s is judged - %s" % (label, verdict))
+        check(BP.retry_reason(verdict, why) == expected_reason,
+              "%s: asked again as %s" % (label, expected_reason))
+
+    for verdict in (BP.TIMEOUT, BP.POSITIVE_EMPTY, BP.NEG_NOT_EMPTY, BP.PASS):
+        check(BP.retry_reason(verdict, LEASE_HELD + BUSY) is None,
+              "%s is never asked again, whatever the text says" % verdict)
+
+
+def test_unattended_waits_and_stops_at_the_limit():
+    print("--unattended waits 30 s when held, 10 s when busy, and gives up at the limit")
+    import argparse
+    args = argparse.Namespace(session="4242", verbose=False, release=None)
+    job = {"fragment": "unattended-sample", "expect": None}
+    real_prove = BP.prove
+    try:
+        def scripted(answers):
+            calls = []
+
+            def fake(job, library, env, args, transcript=None):
+                said, verdict, why = answers[min(len(calls), len(answers) - 1)]
+                calls.append(1)
+                if transcript is not None and said:
+                    transcript.append(said)
+                return verdict, why
+            return fake, calls
+
+        lease = (LEASE_HELD, BP.DID_NOT_RUN, LEASE_HELD.splitlines()[0])
+        busy = (OPENING % BUSY, BP.DID_NOT_RUN, "Could not identify the active model:")
+        passed = ("", BP.PASS, "positive: found 3")
+
+        waits, closed = [], []
+        BP.prove, calls = scripted([lease, lease, passed])
+        verdict, why, tries = BP.prove_unattended(
+            job, {}, {}, args, wait=waits.append,
+            close=lambda pids: closed.append(pids) or [])
+        check((verdict, tries) == (BP.PASS, 3) and waits == [30, 30] and not closed,
+              "held twice, then a pass: three tries, two 30 s waits, nothing closed "
+              "(%s, %d, %s)" % (verdict, tries, waits))
+
+        waits, closed = [], []
+        BP.prove, calls = scripted([busy, passed])
+        verdict, why, tries = BP.prove_unattended(
+            job, {}, {}, args, wait=waits.append,
+            close=lambda pids: closed.append(pids) or ["closed it"])
+        check((verdict, tries) == (BP.PASS, 2) and waits == [10] and closed == [[4242]],
+              "busy once: the closer is asked about Revit 4242 alone, one 10 s wait "
+              "(%s, %d, %s, %s)" % (verdict, tries, waits, closed))
+
+        waits = []
+        BP.prove, calls = scripted([lease])
+        verdict, why, tries = BP.prove_unattended(
+            job, {}, {}, args, wait=waits.append, close=lambda pids: [],
+            attempts=BP.ATTEMPTS)
+        check(tries == BP.ATTEMPTS == len(calls) and len(waits) == BP.ATTEMPTS - 1,
+              "held every time: %d tries and no more" % BP.ATTEMPTS)
+        check(verdict == BP.DID_NOT_RUN and why == LEASE_HELD.splitlines()[0],
+              "and the last try's own verdict stands: %s %s" % (verdict, why))
+
+        waits = []
+        BP.prove, calls = scripted([("", BP.POSITIVE_EMPTY, "found 0")])
+        verdict, _, tries = BP.prove_unattended(job, {}, {}, args, wait=waits.append)
+        check((verdict, tries, waits) == (BP.POSITIVE_EMPTY, 1, []),
+              "a finding is reported at once, never asked again")
+
+        def broken(*a, **k):
+            raise ValueError("a record nobody could read")
+        BP.prove = broken
+        verdict, why, tries = BP.prove_unattended(job, {}, {}, args, wait=waits.append)
+        check(verdict == BP.DID_NOT_RUN and "ValueError" in why and tries == 1,
+              "a job that raises is that job's DID NOT RUN, not the night's end: %s" % why)
+    finally:
+        BP.prove = real_prove
+
+
+def test_the_closer_closes_revits_memory_warning_and_nothing_else():
+    print("The closer posts WM_CLOSE to the memory warning alone, and prints the rest")
+    warning = BP.MEMORY_WARNING
+    check(warning == "Virtual Memory - High Usage",
+          "it is looking for Revit's own title: %s" % warning)
+    windows = [
+        {"hwnd": 1, "pid": 4242, "name": warning, "owned": True},
+        {"hwnd": 2, "pid": 4242, "name": KEEP_TITLE, "owned": True},
+        {"hwnd": 3, "pid": 4242, "name": warning.lower(), "owned": True},
+        {"hwnd": 4, "pid": 4242, "name": warning + " (2)", "owned": True},
+        {"hwnd": 5, "pid": 9999, "name": warning, "owned": True},
+        {"hwnd": 6, "pid": 4242, "owned": False,
+         "name": "Autodesk Revit 2020 - [Materials IA Test - Floor Plan: Level 1]"},
+        {"hwnd": 7, "pid": 4242, "name": "", "owned": True},
+    ]
+    posted = []
+    lines = BP.close_memory_warning([4242], windows=windows,
+                                    post=lambda hwnd: posted.append(hwnd) or True)
+    check(posted == [1], "WM_CLOSE went to the exact warning on Revit 4242 alone: %s" % posted)
+    check(any(line.startswith("closed") and warning in line for line in lines),
+          "and it says so")
+    for name in (KEEP_TITLE, warning.lower(), warning + " (2)"):
+        check(any("left as it is" in line and '"%s"' % name in line for line in lines),
+              "%s is left open and printed for a person" % name)
+    check(not any("9999" in line for line in lines),
+          "another process's windows are neither closed nor printed")
+
+    posted = []
+    lines = BP.close_memory_warning([4242], windows=windows[1:2],
+                                    post=lambda hwnd: posted.append(hwnd) or True)
+    check(not posted and any("nothing was closed" in line for line in lines),
+          "with only the Keep or Discard box up, nothing is closed")
+
+    if not BP.ON_WINDOWS:
+        lines = BP.close_memory_warning([4242])
+        check(lines and lines[0].startswith("not on Windows"),
+              "off Windows it says so and closes nothing: %s" % lines)
+
+
+def test_the_log_has_one_line_per_fragment():
+    print("The log gets the time, the fragment, its verdict and why's first line")
+    workspace = tempfile.mkdtemp(prefix="heron-batch-log-")
+    try:
+        log = os.path.join(workspace, "logs", "batch-prove.log")
+        BP.append_log(log, BP.fragment_line(
+            "set-railing-type", BP.DID_NOT_RUN, LEASE_HELD, tries=3),
+            when="2026-10-23 03:14:07")
+        BP.append_log(log, BP.fragment_line(
+            "read-room-tags", BP.PASS, u"positive: names R�om 1"),
+            when="2026-10-23 03:15:00")
+        lines = io.open(log, encoding="utf-8").read().splitlines()
+        check(lines[0] == ("2026-10-23 03:14:07  set-railing-type  DID NOT RUN  "
+                           "Could not identify the active model:  (after 3 tries)"),
+              "one line, the first line of why, and the tries: %s" % lines[0])
+        check(len(lines) == 2 and u"�" in lines[1] and "(after" not in lines[1],
+              "a U+FFFD from Revit is written, not a crash; one try says nothing")
+    finally:
+        shutil.rmtree(workspace)
+
+
+def test_an_unattended_batch_logs_reports_and_hands_back_each_fragment():
+    print("An unattended batch: a line and a report after each fragment, models handed back")
+    library = {"night-one": FakeFragment("night-one", [{"name": "found", "role": "result"}]),
+               "night-two": FakeFragment("night-two", [{"name": "found", "role": "result"}]),
+               "night-done": FakeFragment("night-done", [], status="PROVEN")}
+    workspace = tempfile.mkdtemp(prefix="heron-batch-night-")
+    real = (BP.prove, BP.HF.load_all, BP.free_models, BP.HELD_WAIT)
+    freed, seen = [], []
+    try:
+        job_file = os.path.join(workspace, "night.yaml")
+        with io.open(job_file, "w", encoding="utf-8") as fh:
+            fh.write(u"defaults:\n  set: {a: 1}\n  negative-set: {a: 2}\n"
+                     u"jobs:\n  - fragment: night-one\n  - fragment: night-done\n"
+                     u"  - fragment: night-two\n")
+        answers = {"night-one": [(LEASE_HELD, BP.DID_NOT_RUN, "Could not identify the active model:"),
+                                 ("", BP.PASS, "positive: found 3")],
+                   "night-two": [("", BP.POSITIVE_EMPTY, "found 0")]}
+
+        def fake(job, lib, env, args, transcript=None):
+            said, verdict, why = answers[job["fragment"]].pop(0)
+            if transcript is not None and said:
+                transcript.append(said)
+            report = os.path.join(workspace, "findings.json")
+            if os.path.isfile(report):
+                seen.append(len(json.loads(io.open(report, encoding="utf-8").read())["results"]))
+            return verdict, why
+
+        BP.prove = fake
+        BP.HF.load_all = lambda *a, **k: (dict(library), [])
+        BP.free_models = lambda conversation, session=None: freed.append(conversation)
+        BP.HELD_WAIT = 0
+        log = os.path.join(workspace, "night.log")
+        report = os.path.join(workspace, "findings.json")
+        code = BP.main([job_file, "--unattended", "--log", log, "--report", report])
+
+        lines = io.open(log, encoding="utf-8").read().splitlines()
+        check(code == 0, "the batch exits 0 (%s)" % code)
+        check(len(lines) == 5 and "3 job(s), unattended" in lines[0]
+              and lines[-1].split("  ", 1)[1].startswith("finished:"),
+              "the log opens, has one line per fragment, and closes: %d line(s)" % len(lines))
+        check("night-one  PASS" in lines[1] and "(after 2 tries)" in lines[1],
+              "a fragment that waited once says so: %s" % lines[1])
+        check("night-done  ALREADY" in lines[2],
+              "a fragment never sent still has its line: %s" % lines[2])
+        check(len(freed) == 3 and len(set(freed)) == 1,
+              "models handed back after each sent fragment and at the end: %d" % len(freed))
+        check(seen == [2],
+              "the report held the first two fragments before the third ran: %s" % seen)
+        findings = json.loads(io.open(report, encoding="utf-8").read())
+        check(findings["finished"] and findings["unattended"]
+              and [r["verdict"] for r in findings["results"]]
+              == [BP.PASS, BP.ALREADY, BP.POSITIVE_EMPTY],
+              "and the last report is the whole night, marked finished")
+    finally:
+        BP.prove, BP.HF.load_all, BP.free_models, BP.HELD_WAIT = real
+        shutil.rmtree(workspace)
+
+
+def test_every_marker_is_still_what_its_source_prints():
+    print("Every marker --unattended reads is still in the file that prints it")
+    sources = {
+        "in use by another chat": [
+            os.path.join(ROOT, "platform", "Heron.Core", "HeronLease.cs"),
+            os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronModelHold.cs")],
+        "session_in_use": [os.path.join(ROOT, "revit", "Heron.Bridge", "BridgeServer.cs")],
+        "model_in_use": [os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitOperations.cs")],
+        "Could not identify the active model": [
+            os.path.join(ROOT, "mcp", "client", "heron_bridge_client.py")],
+        "revit_busy": [os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitDispatcher.cs")],
+        "Revit is busy": [os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitDispatcher.cs")],
+        KEEP_TITLE: [os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronKeepQuestion.cs")],
+    }
+    markers = set(BP.HELD_ELSEWHERE) | set(BP.REVIT_BUSY)
+    check(markers <= set(sources), "every marker has a source to check against")
+    for marker, paths in sorted(sources.items()):
+        for path in paths:
+            text = io.open(path, encoding="utf-8").read()
+            check(marker in text, "%r is printed by %s" % (marker, os.path.basename(path)))
+    for sentence, marker in ((LEASE_HELD, "in use by another chat"),
+                             (MODEL_HELD, "in use by another chat"), (BUSY, "Revit is busy")):
+        check(marker in sentence, "the test's own copy carries %r" % marker)
+
+
 def main():
     for test in (test_unreadable_is_not_evidence_of_work,
                  test_a_flag_that_flips_is_evidence_and_one_that_does_not_is_not,
@@ -876,7 +1179,13 @@ def main():
                  test_an_admin_or_publish_fragment_is_never_sent_by_a_batch,
                  test_defaults_merge_key_by_key,
                  test_the_command_line_is_one_the_client_actually_parses,
-                 test_a_value_with_a_space_is_quoted_when_printed):
+                 test_a_value_with_a_space_is_quoted_when_printed,
+                 test_unattended_asks_again_only_when_revit_was_never_reached,
+                 test_unattended_waits_and_stops_at_the_limit,
+                 test_the_closer_closes_revits_memory_warning_and_nothing_else,
+                 test_the_log_has_one_line_per_fragment,
+                 test_an_unattended_batch_logs_reports_and_hands_back_each_fragment,
+                 test_every_marker_is_still_what_its_source_prints):
         test()
         print("")
 

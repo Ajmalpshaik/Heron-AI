@@ -14,6 +14,7 @@ The Revit Test Agent's running half - many fragments proved in one pass.
     python tools/batch-prove.py jobs.yaml               run it against Revit
     python tools/batch-prove.py jobs.yaml --only set-mep-size
     python tools/batch-prove.py jobs.yaml --release 2025   PROVEN ones, on one more release
+    python tools/batch-prove.py jobs.yaml --unattended     a night with nobody at the keyboard
 
 WHY THIS EXISTS
 ---------------
@@ -96,6 +97,24 @@ Choosing which fragments to attempt, on which selection, with which values, and
 what the negative case should be, is where every failure of 2026-09-09 came from
 - not from the fragments and not from the runner. That is written down in
 `.claude/skills/fragment-proving/SKILL.md` and it is the harder half.
+
+UNATTENDED, FOR A NIGHT
+-----------------------
+`--unattended` is the overnight run, and it is here because two nights running
+(2026-10-21 and 2026-10-22) a session wrote the same private wrapper round this
+file to prove fragments while the owner slept. What the wrapper added is now
+section 6, and nothing in it judges differently: a job is run, drafted and
+judged exactly as without the flag. It only decides whether to ask again.
+
+    * Revit held by another chat - "in use by another chat", session_in_use,
+      model_in_use, "Could not identify the active model" - on a job whose
+      verdict is DID NOT RUN or NO NEGATIVE: wait 30 s, ask again, up to 25
+      tries in all.
+    * Revit busy: close Revit's own "Virtual Memory - High Usage" warning and
+      NOTHING ELSE, print every other window that Revit has open, wait 10 s,
+      ask again. On Windows only; anywhere else it says so and closes nothing.
+    * One line per fragment, appended with the time to a log, and the models
+      handed back after each fragment so another chat can get in between.
 """
 
 import argparse
@@ -707,12 +726,17 @@ def readable_command(argv):
     return " ".join('"%s"' % a if " " in a else a for a in argv)
 
 
-def run_one(job, env, quiet=True, session=None, release=None):
+def run_one(job, env, quiet=True, session=None, release=None, transcript=None):
     """Run and draft one fragment. Returns (record, verdict, why).
 
     `record` is None when the run produced nothing to judge. With `release`
     the record is `<slug>@<year>.json`, so a run on another release never
     replaces the record a proof was signed on (D-131).
+
+    `transcript`, a list when given, gets everything `validate` printed.
+    `--unattended` reads the reason a run was refused there: the verdict's
+    own line carries only the first line, and "Could not identify the active
+    model:" is followed by the sentence that says why.
     """
     record_path = os.path.join(RUNS, "%s.json"
                                % HV.proof_key(job["fragment"], release=release))
@@ -752,6 +776,8 @@ def run_one(job, env, quiet=True, session=None, release=None):
                                "selection" % job["timeout"])
 
     output = (result.stdout or b"").decode("utf-8", "replace")
+    if transcript is not None:
+        transcript.append(output)
     if not quiet:
         sys.stdout.write(output)
 
@@ -876,6 +902,305 @@ def free_models(conversation, session=None):
             print("models:    %s" % reply["message"])
 
 
+def write_report(path, args, results, finished=True):
+    """The findings as JSON. `--unattended` writes it after every fragment, so
+    a night that dies at three in the morning still says what it found."""
+    with io.open(path, "w", encoding="utf-8") as fh:
+        fh.write(json.dumps({
+            "job_file": args.jobs,
+            "date": time.strftime("%Y-%m-%d"),
+            "dry_run": args.dry_run,
+            "release": args.release,
+            "unattended": args.unattended,
+            "finished": finished,
+            "results": results,
+        }, indent=2, sort_keys=True))
+
+
+# ---------------------------------------------------------------------------
+# 6. Unattended - a night with nobody at the keyboard
+# ---------------------------------------------------------------------------
+#
+# EVERY PIECE OF THIS WAS IN A WRAPPER BEFORE IT WAS HERE. On 2026-10-21 and
+# again on 2026-10-22 a session proving fragments while the owner slept wrote
+# the same 62 lines round this file, in a temp folder, and each of them answers
+# something that happened on one of those nights. A wrapper written twice is a
+# missing feature; a third copy would have been retyped from memory.
+#
+# NOTHING HERE JUDGES. A job is run, drafted and judged by `prove`, exactly as
+# without the flag. This section only decides whether to ask Revit again, and
+# it asks only when a leg never reached the model - DID NOT RUN, NO NEGATIVE.
+# A verdict about the fragment is never asked again: a POSITIVE EMPTY on the
+# fifth try is the same finding as on the first.
+
+HELD = "held by another chat"
+BUSY = "Revit busy"
+
+# WHAT `validate` SAYS WHEN SOMEBODY ELSE HAS THE REVIT OR THE MODEL. The lease
+# (session_in_use, HeronLease.cs) and the model hold (model_in_use, D-141) both
+# refuse before anything is sent, and both free themselves after a few quiet
+# minutes - so waiting is the whole remedy. "Could not identify the active
+# model" heads every refusal of `validate`'s opening question; the wrapper saw
+# only that first line, and it is kept because a Revit that did not answer at
+# all is also worth waiting for at night.
+OPENING_REFUSED = "Could not identify the active model"
+HELD_ELSEWHERE = ("in use by another chat", "session_in_use", "model_in_use",
+                  OPENING_REFUSED)
+REVIT_BUSY = ("revit_busy", "Revit is busy")
+
+# ONLY A JOB NOTHING WAS JUDGED ON IS ASKED AGAIN.
+NOTHING_JUDGED = (DID_NOT_RUN, NO_NEGATIVE)
+
+HELD_WAIT = 30
+BUSY_WAIT = 10
+ATTEMPTS = 25
+
+# REVIT 2020 PUTS THIS UP AFTER ABOUT SIXTY JOBS, and while it is up every job
+# is refused revit_busy. The add-in cannot answer it: HeronDialogWatch is armed
+# only around a job, and a dialog already open before one stops the job from
+# starting at all. So it is closed from outside, by its exact name, and no
+# other window ever is - a Keep or Discard box is a person's question, and so
+# is anything this list does not name.
+MEMORY_WARNING = "Virtual Memory - High Usage"
+ON_WINDOWS = sys.platform == "win32"
+WM_CLOSE = 0x0010
+GW_OWNER = 4
+
+LOG_NAME = "batch-prove.log"
+
+
+def first_line(text):
+    """The first line that says something - what a log has room for."""
+    lines = [line.strip() for line in (text or "").splitlines() if line.strip()]
+    return lines[0] if lines else ""
+
+
+def refusal_line(text):
+    """The line that says why Revit refused, rather than the heading above it.
+
+    "Could not identify the active model:" is a heading; the sentence under
+    it names who holds the model, or that Revit is busy.
+    """
+    for line in (text or "").splitlines():
+        if (OPENING_REFUSED not in line
+                and any(m in line for m in HELD_ELSEWHERE + REVIT_BUSY)):
+            return line.strip()
+    return first_line(text)
+
+
+def retry_reason(verdict, text):
+    """HELD, BUSY or None: whether an unattended run asks this job again.
+
+    `text` is the verdict's own line with what `validate` printed. BUSY is
+    asked first: a busy Revit's refusal is headed "Could not identify the
+    active model" too, and busy is the one case where waiting alone may
+    never help.
+    """
+    if verdict not in NOTHING_JUDGED:
+        return None
+    text = text or ""
+    if any(marker in text for marker in REVIT_BUSY):
+        return BUSY
+    if any(marker in text for marker in HELD_ELSEWHERE):
+        return HELD
+    return None
+
+
+def revit_pids(session=None):
+    """The process ids of the Revits this batch may be talking to.
+
+    `--session` names one. Without it, every Revit in the bridge's address
+    book, read off the files' names: nothing is asked of a Revit that is
+    busy, and nothing is pruned.
+    """
+    if session:
+        try:
+            return [int(session)]
+        except ValueError:
+            return []
+    try:
+        names = os.listdir(BRIDGE.DISCOVERY_DIR)
+    except OSError:
+        return []
+    pids = [BRIDGE.pid_from_filename(name) for name in names
+            if name.endswith(".json")]
+    return sorted(pid for pid in pids if pid is not None)
+
+
+def revit_windows(pids):
+    """Every visible top-level window those Revits own. Windows only.
+
+    A dialog Revit puts up is a top-level window it owns, so the windows of
+    its process are enumerated and read by title - the title is what UI
+    Automation calls the window's name, and it was the name the wrapper
+    matched on both nights.
+    """
+    import ctypes
+    from ctypes import wintypes
+
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND,
+                                                ctypes.POINTER(wintypes.DWORD)]
+    user32.GetWindowThreadProcessId.restype = wintypes.DWORD
+    user32.IsWindowVisible.argtypes = [wintypes.HWND]
+    user32.GetWindowTextLengthW.argtypes = [wintypes.HWND]
+    user32.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+    user32.GetWindow.argtypes = [wintypes.HWND, wintypes.UINT]
+    user32.GetWindow.restype = wintypes.HWND
+
+    wanted = set(pids)
+    found = []
+
+    def visit(hwnd, _lparam):
+        pid = wintypes.DWORD()
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        if pid.value in wanted and user32.IsWindowVisible(hwnd):
+            size = user32.GetWindowTextLengthW(hwnd) + 1
+            title = ctypes.create_unicode_buffer(size)
+            user32.GetWindowTextW(hwnd, title, size)
+            found.append({"hwnd": hwnd, "pid": pid.value, "name": title.value,
+                          "owned": bool(user32.GetWindow(hwnd, GW_OWNER))})
+        return True
+
+    callback = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    user32.EnumWindows(callback(visit), 0)
+    return found
+
+
+def post_close(hwnd):
+    """WM_CLOSE posted to one window - the window's own close, never a button."""
+    import ctypes
+    from ctypes import wintypes
+
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    user32.PostMessageW.argtypes = [wintypes.HWND, wintypes.UINT,
+                                    wintypes.WPARAM, wintypes.LPARAM]
+    user32.PostMessageW.restype = wintypes.BOOL
+    return bool(user32.PostMessageW(hwnd, WM_CLOSE, 0, 0))
+
+
+def memory_warnings(windows, pids):
+    """(to close, left as they are) among those Revits' windows.
+
+    To close: a window whose name is EXACTLY Revit's memory warning - not
+    one that contains it, not one that differs only in case. Left: every
+    other window with a name, printed so a person decides.
+    """
+    wanted = set(pids)
+    theirs = [w for w in windows if w.get("pid") in wanted]
+    close = [w for w in theirs if w.get("name") == MEMORY_WARNING]
+    left = [w for w in theirs
+            if w not in close and (w.get("name") or "").strip()]
+    return close, left
+
+
+def close_memory_warning(pids, windows=None, post=None):
+    """Close Revit's memory warning and nothing else. Returns lines to print.
+
+    `windows` and `post` are the two halves that need Windows. A test hands
+    in its own, so the rule that picks the window is the one tested.
+    """
+    if windows is None:
+        if not ON_WINDOWS:
+            return ["not on Windows - no Revit window can be reached from "
+                    "here, so nothing was closed"]
+        if not pids:
+            return ["no Revit in the bridge's address book - nothing was closed"]
+        try:
+            windows = revit_windows(pids)
+        except Exception as exc:                          # noqa: BLE001
+            # A closer that fails costs one wait, never the night.
+            return ["could not list Revit's windows (%s) - nothing was closed"
+                    % exc]
+    post = post or post_close
+
+    close, left = memory_warnings(windows, pids)
+    lines = []
+    for window in close:
+        lines.append("%s Revit's \"%s\" warning (Revit %s)" % (
+            "closed" if post(window["hwnd"]) else "could not close",
+            MEMORY_WARNING, window["pid"]))
+    if not close:
+        lines.append("no \"%s\" warning is open - nothing was closed"
+                     % MEMORY_WARNING)
+    for window in left:
+        lines.append("left as it is, for a person: \"%s\" (Revit %s)"
+                     % (window["name"], window["pid"]))
+    return lines
+
+
+def prove(job, library, env, args, transcript=None):
+    """One job, once: run it, draft it, judge it. Returns (verdict, why)."""
+    name = job["fragment"]
+    record, verdict, why = run_one(job, env, quiet=not args.verbose,
+                                   session=args.session, release=args.release,
+                                   transcript=transcript)
+    if record is not None:
+        draft(name, record["run_record"], env, args.release)
+        verdict, why = judge(record, library[name], job["expect"])
+        elsewhere = (wrong_release(record, args.release)
+                     if args.release else None)
+        if elsewhere:
+            verdict, why = WRONG_RELEASE, elsewhere
+    return verdict, why
+
+
+def prove_unattended(job, library, env, args, wait=time.sleep,
+                     close=close_memory_warning, attempts=ATTEMPTS):
+    """`prove`, asked again while Revit is held elsewhere or busy.
+
+    Returns (verdict, why, tries). The last try's verdict is the one that
+    stands, so a fragment Revit never took is reported DID NOT RUN with
+    Revit's own reason, as it would be without the flag.
+    """
+    tries = 0
+    while True:
+        tries += 1
+        said = []
+        try:
+            verdict, why = prove(job, library, env, args, said)
+        except Exception as exc:                          # noqa: BLE001
+            # ONE JOB'S FAULT IS NOT THE NIGHT'S. The wrapper ran each
+            # fragment as its own process for this; here it is one job's
+            # verdict, and the batch goes on to the next.
+            verdict, why = DID_NOT_RUN, (
+                "batch-prove failed on this job before judging it - %s: %s"
+                % (type(exc).__name__, exc))
+        text = "\n".join([why or ""] + said)
+        reason = retry_reason(verdict, text)
+        if reason is None or tries >= attempts:
+            return verdict, why, tries
+        if reason == BUSY:
+            for line in close(revit_pids(args.session)):
+                print("        %s" % line)
+            pause = BUSY_WAIT
+        else:
+            pause = HELD_WAIT
+        print("        %s, asking again in %d s (try %d of %d): %s"
+              % (reason, pause, tries + 1, attempts, refusal_line(text)))
+        wait(pause)
+
+
+def append_log(path, text, when=None):
+    """Append one line to the log, with the time in front. Returns the line."""
+    line = "%s  %s" % (when or time.strftime("%Y-%m-%d %H:%M:%S"), text)
+    folder = os.path.dirname(path)
+    if folder and not os.path.isdir(folder):
+        os.makedirs(folder)
+    with io.open(path, "a", encoding="utf-8", errors="replace") as fh:
+        fh.write(line + "\n")
+    return line
+
+
+def fragment_line(name, verdict, why, tries=1):
+    """One fragment's line in the log: the fragment, its verdict and the first
+    line of why - and how many tries it took, when it took more than one."""
+    text = "%s  %s  %s" % (name, verdict, first_line(why))
+    if tries > 1:
+        text += "  (after %d tries)" % tries
+    return text
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Prove many fragments in one pass. It never signs one.")
@@ -898,7 +1223,27 @@ def main(argv=None):
                         help="prove again, on this Revit release, fragments "
                              "already PROVEN on another (D-131), e.g. 2025. "
                              "Runs only those with no record for it")
+    parser.add_argument("--unattended", action="store_true",
+                        help="a night with nobody at the keyboard: ask again "
+                             "while Revit is held by another chat or busy, "
+                             "close Revit's '%s' warning and no other window, "
+                             "hand the models back after each fragment, and "
+                             "log one line per fragment" % MEMORY_WARNING)
+    parser.add_argument("--log",
+                        help="append one line per fragment to this file. "
+                             "--unattended logs to %s in Heron's log folder "
+                             "unless this names another" % LOG_NAME)
     args = parser.parse_args(argv)
+
+    # A U+FFFD IN REVIT'S OUTPUT ENDED A NIGHT. `run_one` decodes what
+    # `validate` printed with "replace", and printing that line to a pipe on
+    # Windows - cp1252 - raised UnicodeEncodeError and killed the first
+    # overnight run, 2026-10-21. Any run whose output goes to a file or a pipe
+    # meets it, so this is not `--unattended`'s alone. A stream that cannot be
+    # reconfigured - a test's StringIO - is left as it is.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
 
     if args.release and not HV.RELEASE_SHAPE.match(args.release):
         print("--release takes a year, e.g. --release 2025")
@@ -946,14 +1291,36 @@ def main(argv=None):
     if args.release:
         print("release:   Revit %s - PROVEN fragments not yet proved on it (D-131)"
               % args.release)
+    # A DRY RUN SENDS NOTHING, so it has nothing to wait for and nothing to log.
+    log = None
+    if not args.dry_run and (args.log or args.unattended):
+        log = args.log or os.path.join(BRIDGE.LOG_DIR, LOG_NAME)
     if args.dry_run:
         print("mode:      DRY RUN - nothing will be sent to Revit")
+    elif args.unattended:
+        print("mode:      UNATTENDED - asks again while Revit is held or busy, "
+              "closes only Revit's \"%s\" warning" % MEMORY_WARNING)
+    if log:
+        print("log:       %s" % log)
     print("")
+
+    def note(text):
+        """Log a line; a log that cannot be written costs the log, not the batch."""
+        if not log:
+            return
+        try:
+            append_log(log, text)
+        except (IOError, OSError) as exc:
+            print("        the log could not be written: %s" % exc)
+
+    note("batch-prove %s: %d job(s)%s" % (
+        args.jobs, len(jobs), ", unattended" if args.unattended else ""))
 
     results = []
     for index, job in enumerate(jobs, 1):
         name = job["fragment"]
         verdict, why = job_refusal(job, library, args.release)
+        tries, sent = 1, False
 
         if verdict is None and args.dry_run:
             # WHAT IT WOULD SEND, printed in full. A job file is read by a
@@ -964,16 +1331,11 @@ def main(argv=None):
 
         elif verdict is None:
             print("[%d/%d] %s" % (index, len(jobs), name))
-            record, verdict, why = run_one(job, env, quiet=not args.verbose,
-                                           session=args.session,
-                                           release=args.release)
-            if record is not None:
-                draft(name, record["run_record"], env, args.release)
-                verdict, why = judge(record, library[name], job["expect"])
-                elsewhere = (wrong_release(record, args.release)
-                             if args.release else None)
-                if elsewhere:
-                    verdict, why = WRONG_RELEASE, elsewhere
+            sent = True
+            if args.unattended:
+                verdict, why, tries = prove_unattended(job, library, env, args)
+            else:
+                verdict, why = prove(job, library, env, args)
             print("        %s  %s" % (verdict, why))
         else:
             print("[%d/%d] %s" % (index, len(jobs), name))
@@ -981,6 +1343,17 @@ def main(argv=None):
 
         results.append({"fragment": name, "verdict": verdict, "why": why,
                         "note": job.get("note")})
+        note(fragment_line(name, verdict, why, tries))
+
+        if args.unattended and not args.dry_run:
+            # BETWEEN FRAGMENTS, AS THE WRAPPER WAS. It ran each fragment as a
+            # batch of its own, so the models went back after every one and
+            # another chat could get in; and its findings were on disk as each
+            # one finished. Both are kept.
+            if sent:
+                free_models(env["HERON_CONVERSATION_ID"], args.session)
+            if args.report:
+                write_report(args.report, args, results, finished=False)
 
     if not args.dry_run:
         free_models(env["HERON_CONVERSATION_ID"], args.session)
@@ -1011,15 +1384,12 @@ def main(argv=None):
 
     report(results, args.dry_run, args.release)
 
+    note("finished: %s" % ", ".join(
+        "%d %s" % (len([r for r in results if r["verdict"] == v]), v)
+        for v in ORDER if any(r["verdict"] == v for r in results)))
+
     if args.report:
-        with io.open(args.report, "w", encoding="utf-8") as fh:
-            fh.write(json.dumps({
-                "job_file": args.jobs,
-                "date": time.strftime("%Y-%m-%d"),
-                "dry_run": args.dry_run,
-                "release": args.release,
-                "results": results,
-            }, indent=2, sort_keys=True))
+        write_report(args.report, args, results)
         print("")
         print("Findings written to %s" % args.report)
 

@@ -1,6 +1,6 @@
 ---
 name: fragment-proving
-description: Use when proving fragments against a real Revit model - one at a time or a batch at once, or proving a fragment already PROVEN again on another Revit release, or adding its second route. Covers which fragments may be attempted at all, how to arrange a case so the answer means something, the five mistakes that account for nearly every failed proof (a selection too big, a positive case the model cannot fill, a category not visible in the view chosen, a value in the wrong units or shape, an answer given on a stale selection), how to write a job file for tools/batch-prove.py, how to read each verdict it reports, and what it deliberately cannot judge. Trigger on "prove this fragment", "prove a batch", "run fragments against the model", "why did the negative case fail", "arrange a proof", "batch-prove", or any work that ends in a proof draft.
+description: Use when proving fragments against a real Revit model - one at a time or a batch at once, overnight with nobody at the keyboard, or proving a fragment already PROVEN again on another Revit release, or adding its second route. Covers which fragments may be attempted at all, how to arrange a case so the answer means something, the five mistakes that account for nearly every failed proof (a selection too big, a positive case the model cannot fill, a category not visible in the view chosen, a value in the wrong units or shape, an answer given on a stale selection), how to write a job file for tools/batch-prove.py, how to read each verdict it reports, and what it deliberately cannot judge. Trigger on "prove this fragment", "prove a batch", "run fragments against the model", "why did the negative case fail", "arrange a proof", "batch-prove", "prove overnight", "while I sleep", or any work that ends in a proof draft.
 ---
 
 # Proving fragments
@@ -192,6 +192,35 @@ press **Free this model** on the ribbon. For a series of hand-run commands where
 another left (`--expect-from`), set **`HERON_CONVERSATION_ID`** to one value of your own for all of them:
 the carried chain belongs to a conversation, and a series with it set is not handed back at each exit -
 `revit_release` or the button frees it.
+
+## A night run, with nobody at the keyboard
+
+**Never write a wrapper round `batch-prove` for this - use `--unattended`.** A session wrote the same one
+on 2026-10-21 and again on 2026-10-22; what it did is the tool's own now.
+
+```bash
+python tools/batch-prove.py night.yaml --dry-run                                         # first, as always
+python tools/batch-prove.py night.yaml --unattended --session <pid> --report night.json  # then leave it
+```
+
+- **It waits out a Revit somebody else holds.** A job whose verdict is `DID NOT RUN` or `NO NEGATIVE`
+  because another chat held the Revit or the model is asked again after 30 s, 25 tries in all. A verdict
+  about the fragment - `POSITIVE EMPTY`, `PASS`, any other - is never asked again.
+- **A busy Revit gets one window closed, and only one.** Revit 2020 puts up **"Virtual Memory - High
+  Usage"** after about sixty jobs, and every job after it is refused `revit_busy`. The run closes that
+  warning - by its exact title, with Windows' own close message - waits 10 s and asks again. **Every other
+  window is left open and printed** - a Keep or Discard box is the modeller's question, and so is anything
+  else Revit asks. Never widen the list; a dialog that keeps a night busy is reported for a person.
+- **It hands the models back after each fragment**, so another chat can get in between.
+- **What it found is on disk as it goes**: one line per fragment, with the time, in `batch-prove.log` in
+  Heron's log folder (`%LOCALAPPDATA%\Heron\logs`, or `--log`), and `--report` rewritten after every
+  fragment until it says `"finished": true`. Read the report in the morning, not the scrollback.
+- **Pin `--session`.** The closer looks only at that Revit's windows; without it, at every Revit in the
+  bridge's address book.
+
+It runs nothing a batch would not run, signs nothing and keeps nothing - every run is rolled back as by
+day. **The closer itself has not met a real Revit yet** ([Group IW](../../../docs/needs-checking/group-iw.md)).
+Until IW1 passes, check in the morning that the log shows the warning closed when the night went busy.
 
 ## Reading the report
 
