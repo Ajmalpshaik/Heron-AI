@@ -10,13 +10,13 @@
 # never the library files and never a working model:
 #
 #   HY17 Structure  a copy of Revit 2020's rst_advanced_sample_project.rvt
-#   HY17 Family     a copy of a furniture family from Revit 2020's metric
-#                   library - no rebar content
+#   HY17 Family     a copy of Revit 2020's Samples\rac_basic_sample_family.rfa,
+#                   an end table (Furniture) - no rebar content
 #
 # WHAT THE POSITIVE SHOULD READ, from the 2026-10-21 night's run on such a copy
 # (Structure Night Test, Revit 2020, session 68704): 11 bar types (10M to 57M),
 # 5 hook types, 9 cover types, 38 shapes, systemTypes 2 (one area, one path type,
-# no fabric). The negative, from the same night in an end table family: bar
+# no fabric). The negative, from the same night in that end table: bar
 # types, hooks, shapes and system types 0, coverTypes 1 ('Rebar Cover 1' 25 mm).
 
 model: HY17 Structure (scratch copy of Revit 2020's rst_advanced_sample_project), Revit 2020

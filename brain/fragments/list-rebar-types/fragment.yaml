@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -84,6 +84,71 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-23'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: HY17 Structure, HY17 Family - active was
+    HY17 Family, Revit 2020, session 55456'
+  positive_case: 'run as it would normally be run. returned areaNames 1 item(s) [Structural
+    Area Reinforcement 1], barTypes 11, barWords 11 item(s) [''10M'' 9.5 mm, bend diameters:
+    standard 60, hook 60, stirrup/..., ''13M'' 12.7 mm, bend diameters: standard 80, hook
+    80, stirrup..., ''16M'' 15.9 mm, bend diameters: standard 95, hook 95, stirrup..., ...],
+    bars 11 item(s) [10M, 13M, 16M, ...], coverTypes 9, covers 9 item(s) [Interior (shells)
+    - 10M to 16M, Interior (shells) - 19M to 57M, Interior (slabs, walls, joists) - 10M to
+    36M, ...], fabricAreaNames 0 item(s), findings 1 item(s) [11 bar type(s), 5 hook type(s),
+    9 cover type(s), 38 rebar sh...], hookTypes 5, hooks 5 item(s) [Standard - 180 deg., Standard
+    - 90 deg., Stirrup/Tie - 135 deg., ...], invariant CultureInfo, listing Rebar Bar Types
+    (11): ''10M'' 9.5 mm, bend diameters: standard 60, hook 60, stirrup/tie 40 mm; ''13M''
+    12.7 mm, bend diameters: standard 80, hook 80, stirrup/tie 50 mm; ''16M'' 15.9 mm, bend
+    diameters: standard 95, hook 95, stirrup/tie 65 mm; ''19M'' 19.1 mm, bend diameters: standard
+    115, hook 115, stirrup/tie 115 mm; ''22M'' 22.2 mm, bend diameters: standard 135, hook
+    135, stirrup/tie 135 mm; ''25M'' 25.4 mm, bend diameters: standard 155, hook 155, stirrup/tie
+    155 mm; ''29M'' 28.7 mm, bend diameters: standard 240, hook 240, stirrup/tie 240 mm; ''32M''
+    32.3 mm, bend diameters: standard 275, hook 275, stirrup/tie 275 mm; ''36M'' 35.8 mm,
+    bend diameters: standard 305, hook 305, stirrup/tie 305 mm; ''43M'' 43 mm, bend diameters:
+    standard 465, hook 465, stirrup/tie 465 mm; ''57M'' 57.3 mm, bend diameters: standard
+    610, hook 610, stirrup/tie 610 mm | Rebar Hook Types (5): ''Standard - 180 deg.'' 180
+    deg, extension 4 x bar diameter, for standard bars; ''Standard - 90 deg.'' 90 deg, extension
+    12 x bar diameter, for standard bars; ''Stirrup/Tie - 135 deg.'' 135 deg, extension 6
+    x bar diameter, for stirrup/tie bars; ''Stirrup/Tie - 90 deg.'' 90 deg, extension 6 x
+    bar diameter, for stirrup/tie bars; ''Stirrup/Tie Seismic - 135 deg.'' 135 deg, extension
+    6 x bar diameter, for stirrup/tie bars | Rebar Cover Types (9): ''Interior (shells) -
+    10M to 16M'' 13 mm; ''Interior (shells) - 19M to 57M'' 20 mm; ''Interior (slabs, walls,
+    joists) - 10M to 36M'' 20 mm; ''Rebar Cover 1'' 30 mm; ''Exterior - 10M to 16M'' 40 mm;
+    ''Interior (framing, columns)'' 40 mm; ''Interior (slabs, walls, joists) - 43M to 57M''
+    40 mm; ''Exterior - 19M to 57M'' 50 mm; ''Cast against earth'' 75 mm | Rebar Shapes (38):
+    25 standard [M_00, M_01, M_02, M_03, M_04, M_05, M_06, M_07, M_08, M_09, M_10, M_11, M_12,
+    M_13, M_14, M_16, M_17, M_17A, M_18, M_19, M_20, M_22, M_23, M_24, Rebar Shape 1], 13
+    stirrup/tie [M_S1, M_S2, M_S3, M_S4, M_S5, M_S6, M_T1, M_T2, M_T3, M_T6, M_T7, M_T8, M_T9]
+    | Area Reinforcement Types (1): ''Structural Area Reinforcement 1'' | Path Reinforcement
+    Types (1): ''Structural Path Reinforcement 1'' | Fabric Area Types (0): none | Fabric
+    Sheet Types (0): none | Reinforcement Settings: rebar shape defines hooks yes, mm Func`2,
+    modelOf Func`2, namesOf Func`2, nominalOf Func`2, pathNames 1 item(s) [Structural Path
+    Reinforcement 1], quoted Func`2, sections 9 item(s) [Rebar Bar Types (11): ''10M'' 9.5
+    mm, bend diameters: standard..., Rebar Hook Types (5): ''Standard - 180 deg.'' 180 deg,
+    extensi..., Rebar Cover Types (9): ''Interior (shells) - 10M to 16M'' 13 m..., ...], shapeList
+    38 item(s) [M_00, M_01, M_02, ...], shapes 38, sheetWords 0 item(s), sheets 0 item(s),
+    standardShapes 25 item(s) [M_00, M_01, M_02, ...], styleWord Func`2, systemTypes 2, tieShapes
+    13 item(s) [M_S1, M_S2, M_S3, ...]. on HY17 Structure'
+  negative_case: 'run against ''HY17 Family'' instead - chosen because it should not contain
+    what this fragment reports. returned areaNames 0 item(s), barTypes 0, barWords 0 item(s),
+    bars 0 item(s), coverTypes 1, covers 1 item(s) [Rebar Cover 1], fabricAreaNames 0 item(s),
+    findings 4 item(s) [The reinforcement settings could not be read: cda is not a p..., 0
+    bar type(s), 0 hook type(s), 1 cover type(s), 0 rebar shap..., No Rebar Bar Type is loaded,
+    so no bar can be placed. CREATE..., ...], hookTypes 0, hooks 0 item(s), invariant CultureInfo,
+    listing Rebar Bar Types (0): none | Rebar Hook Types (0): none | Rebar Cover Types (1):
+    ''Rebar Cover 1'' 25 mm | Rebar Shapes (0): none | Area Reinforcement Types (0): none
+    | Path Reinforcement Types (0): none | Fabric Area Types (0): none | Fabric Sheet Types
+    (0): none, mm Func`2, modelOf Func`2, namesOf Func`2, nominalOf Func`2, pathNames 0 item(s),
+    quoted Func`2, sections 8 item(s) [Rebar Bar Types (0): none, Rebar Hook Types (0): none,
+    Rebar Cover Types (1): ''Rebar Cover 1'' 25 mm, ...], shapeList 0 item(s), shapes 0, sheetWords
+    0 item(s), sheets 0 item(s), standardShapes 0 item(s), styleWord Func`2, systemTypes 0,
+    tieShapes 0 item(s). on HY17 Family'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: ffb2ca64e5d760b8
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
