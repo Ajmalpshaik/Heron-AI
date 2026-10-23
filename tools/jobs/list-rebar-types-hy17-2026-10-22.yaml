@@ -1,0 +1,35 @@
+# NEEDS-CHECKING Group HY, row HY17 - LIST_REBAR_TYPES with the contract row
+# 5b-1330 gave it: `coverTypes` is accounting, so a family document with no
+# rebar content is a clean negative.
+#
+#     python tools/batch-prove.py tools/jobs/list-rebar-types-hy17-2026-10-22.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/list-rebar-types-hy17-2026-10-22.yaml
+#
+# BOTH DOCUMENTS OPEN IN ONE REVIT 2020 at the run; `in:` and `negative-in:`
+# bring each to the front. Both are scratch copies in %TEMP%\heron-work\rebar-hy17,
+# never the library files and never a working model:
+#
+#   HY17 Structure  a copy of Revit 2020's rst_advanced_sample_project.rvt
+#   HY17 Family     a copy of a furniture family from Revit 2020's metric
+#                   library - no rebar content
+#
+# WHAT THE POSITIVE SHOULD READ, from the 2026-10-21 night's run on such a copy
+# (Structure Night Test, Revit 2020, session 68704): 11 bar types (10M to 57M),
+# 5 hook types, 9 cover types, 38 shapes, systemTypes 2 (one area, one path type,
+# no fabric). The negative, from the same night in an end table family: bar
+# types, hooks, shapes and system types 0, coverTypes 1 ('Rebar Cover 1' 25 mm).
+
+model: HY17 Structure (scratch copy of Revit 2020's rst_advanced_sample_project), Revit 2020
+
+jobs:
+  - fragment: list-rebar-types
+    write: false                       # risk READ
+    in: HY17 Structure
+    negative-in: HY17 Family
+    expect: barTypes
+    note: >
+      Positive - a structural project's bar, hook, cover and shape types.
+      Negative - a family document, which holds no bar, hook or shape type and
+      no area, path or fabric type; its one cover type is Revit's own and is
+      accounting. HY1's negative, a project from an architectural template,
+      is replaced: a project keeps Revit's cover type too.
