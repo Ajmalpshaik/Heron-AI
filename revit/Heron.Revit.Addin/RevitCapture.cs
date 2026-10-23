@@ -585,8 +585,8 @@ namespace Heron.Revit.Addin
         /// or a style it will not set, costs that one setting and never the
         /// picture.
         ///
-        /// IN A FAMILY, EVERY CONNECTOR NOT ASKED FOR IS HIDDEN, ONE ELEMENT AT
-        /// A TIME (row 5b-1327). Seen on Revit 2020 on 2026-10-22: a CCTV
+        /// IN A FAMILY, EVERY CONNECTOR NOT ASKED FOR IS HIDDEN, BY ELEMENT AND
+        /// NOT BY CATEGORY (row 5b-1327). Seen on Revit 2020 on 2026-10-22: a CCTV
         /// family's three electrical connectors drew their symbols at the same
         /// pixels in every picture, outside a section box that could not hold
         /// them, and FitToPage fitted the picture to them, so the form asked
@@ -659,9 +659,11 @@ namespace Heron.Revit.Addin
             }
             if (connectors.Count == 0) return;
 
-            // ALL AT ONCE, AND ON ITS OWN: one connector Revit will not hide
-            // costs the connectors, never the picture - the same rule as a
-            // category above.
+            // ONE CALL FOR ALL OF THEM, AND ON ITS OWN: if Revit refuses it,
+            // the connectors stay and the picture is still taken - the same
+            // rule as a category above. CanBeHidden above is not guarded: the
+            // API documents it throwing only for a null view, and a throw
+            // there would end the capture with its reason, never silently.
             try { view.HideElements(connectors); }
             catch (Autodesk.Revit.Exceptions.ArgumentException) { }
             catch (Autodesk.Revit.Exceptions.InvalidOperationException) { }
