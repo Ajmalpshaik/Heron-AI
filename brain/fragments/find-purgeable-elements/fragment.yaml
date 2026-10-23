@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -57,6 +57,29 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-23'
+  by: Ajmal PS
+  model: N23 Snowdon HVAC 2024, Revit 2024, session 83588 - the count is NOT recorded because
+    9,433 elements was measured on N23 Structure Night 2024, the document in front, and this
+    ran against another one (row 15)
+  positive_case: 'run as it would normally be run. returned byCategory Family 5, Section Marks
+    4, Material Assets 2, ElementType 2, Callout Heads 2, View Titles 2, Detail Items 1, AppearanceAssetElement
+    1, counts 8 entry(ies), elements 19 item(s) [Diagonal Crosshatch, Satin, Aluminum, ...],
+    findings 1 item(s) [19 element(s) Purge Unused would offer in "N23 Snowdon HVAC ...],
+    purgeableNames 19 item(s) [Detail Items: Diagonal Crosshatch, AppearanceAssetElement:
+    Satin, Material Assets: Aluminum, ...], refusal (null), scope HashSet`1, wanted HashSet`1.
+    inputs came categories as given. on N23 Snowdon HVAC 2024'
+  negative_case: run with categories=Rooms instead - chosen because it should not contain
+    what this fragment reports. returned byCategory , counts 0 entry(ies), elements 0 item(s),
+    findings 1 item(s) [0 element(s) Purge Unused would offer in "N23 Snowdon HVAC 2...],
+    purgeableNames 0 item(s), refusal (null), scope HashSet`1, wanted HashSet`1. inputs came
+    categories as given. on N23 Snowdon HVAC 2024
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 850270d4166a24ce
 
 revit: ["2024", "2025", "2026", "2027"]
 runtime: [net48, net8.0-windows, net10.0-windows]
