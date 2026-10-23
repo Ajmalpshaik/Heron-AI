@@ -22,10 +22,12 @@
 //
 // READ BACK: excavation by reading Revit's own check again, a split by the
 // new toposolids looked up, a simplify by the shape points counted before
-// and after, smoothing by its setting read again.
+// and after - a toposolid whose count did not change is named as left as it
+// was, never counted as edited - smoothing by its setting read again.
 
 const double MmPerFoot = 304.8;
 var edited = 0;
+var unchanged = 0;
 var resultIds = new List<ElementId>();
 var lines = new List<string>();
 var findings = new List<string>();
@@ -134,6 +136,17 @@ if (refusal == null)
                 topo.Simplify(share / 100.0);
                 doc.Regenerate();
                 var after = topo.GetSlabShapeEditor().SlabShapeVertices.Size;
+                // Only a toposolid whose shape points changed is edited (row
+                // 5b-1331): on Revit 2024.3 one of ten read 2399 -> 1293 and
+                // nine read 0 -> 0, and all ten were counted.
+                if (after == before)
+                {
+                    unchanged++;
+                    lines.Add("toposolid " + topo.Id + ": " + (before == 0
+                        ? "nothing to simplify - 0 shape points, left as it was."
+                        : "unchanged - " + before + " shape point(s) before and after."));
+                    continue;
+                }
                 edited++;
                 resultIds.Add(topo.Id);
                 lines.Add("toposolid " + topo.Id + ": " + before + " shape point(s) before, " + after + " after.");
@@ -163,7 +176,8 @@ if (refusal == null)
         }
         catch (Exception ex) { lines.Add("toposolid " + topo.Id + ": Revit refused - " + ex.Message); }
     }
-    findings.Add(edited + " toposolid(s) edited (" + how + ") and read back.");
+    findings.Add(edited + " toposolid(s) edited (" + how + ") and read back."
+        + (unchanged > 0 ? " " + unchanged + " toposolid(s) unchanged - the shape point count did not change." : ""));
 }
 
 if (refusal != null) lines.Add(refusal);

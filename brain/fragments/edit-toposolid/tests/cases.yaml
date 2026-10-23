@@ -10,6 +10,18 @@ positive:
     expect: >
       the shape points before and after reported, about half after
 
+  - given: >
+      VERSION 2, row 5b-1331. Revit 2024: a copy of Revit 2024's Snowdon
+      Towers Sample Site.rvt, all 10 of its toposolids, mode simplify, value
+      "50"
+    expect: >
+      edited 1 and resultIds the one toposolid whose shape points dropped
+      (1264746 on the 2026-10-23 copy, 2399 before, about 1293 after); the
+      other nine named in the report, each "nothing to simplify - 0 shape
+      points, left as it was", and none of them in resultIds. The first
+      finding reads "1 toposolid(s) edited (simplify) and read back. 9
+      toposolid(s) unchanged". Never "10 toposolid(s) edited"
+
 negative:
   - given: two walls, mode simplify, value "50"
     expect: >
