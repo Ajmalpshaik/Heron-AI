@@ -158,6 +158,30 @@ def main():
           "and no ElementId is built to do it")
 
     print()
+    print("Row 5b-1321: a name Revit's own list does not hold, as a modeller types it")
+    # "Connector Elements" and "Connectors" were refused "not a category Revit
+    # knows" on 2026-10-22 (Revit 2020, a floor-drain family) while the API
+    # name OST_ConnectorElem bound: doc.Settings.Categories never lists that
+    # category, so the shown-name lookup cannot find it and no "OST_" guess
+    # spells it. A small table of the names a modeller types for it sits
+    # between the shown name and the guess - a known word before a guess.
+    table = body_of(text, "CategoryAliases =")
+    check(table is not None, "a CategoryAliases table is there to read")
+    table_code = code_only(table or "")
+    check("StringComparer.OrdinalIgnoreCase" in table_code,
+          "it matches however the word is capitalised")
+    for word in ("Connector Elements", "Connectors", "Connector"):
+        check(re.search(r'\{\s*"%s"\s*,\s*BuiltInCategory\.OST_ConnectorElem\s*\}'
+                        % re.escape(word), table_code) is not None,
+              "\"%s\" names OST_ConnectorElem" % word)
+    alias = code.find("CategoryAliases.TryGetValue(trimmed, out found)")
+    check(alias >= 0, "OneBuiltInCategory asks the table (at %d)" % alias)
+    check(shown >= 0 and alias >= 0 and shown < alias,
+          "the name Revit shows is tried BEFORE the table - a name Revit lists wins")
+    check(alias >= 0 and guess >= 0 and alias < guess,
+          "and the table BEFORE the \"OST_\" guess - a known word before a guess")
+
+    print()
     print("Both fragments of row 5b-444 still reach it")
     single = re.search(r'wanted == "BuiltInCategory"\)\s*\{\s*BuiltInCategory one;\s*'
                        r'if \(OneBuiltInCategory\(doc, text, out one\)\)', text)

@@ -72,13 +72,24 @@ namespace Heron.Revit.Addin
         /// 5b-227), so adding `includeLinks` to a fragment would have stopped
         /// it running for every caller who did not know the switch was there.
         ///
-        /// ONLY A `bool` DECLARED `optional: true`. A view, a name or a
-        /// number has no value that means "not asked", and inventing one is
-        /// how a job runs against the wrong thing and reports success - so
-        /// those still refuse, and so does a bool nobody marked optional. The
-        /// three cards row 5b-227 found carrying the key on a View or a string
-        /// are refused exactly as they were. A card that NAMES what leaving a
-        /// value out means is DeclaredAbsent's, asked first (row 5b-488).
+        /// A SECOND CASE SINCE 2026-10-22: A `View` DECLARED `optional: true`
+        /// BINDS NULL (FRAGMENT-ISSUES row 5b-1320). SELECT_BY_CATEGORIES said
+        /// "Null means the whole model" of its view and could not be asked
+        /// for the whole model: left out, the need was refused as the
+        /// caller's to supply, and nothing could hand the code the null it
+        /// read. A view has no empty form but null, and every card that
+        /// marks one optional reads null as the whole model - so null is not
+        /// an invented value here, it is the one the card declared. Row
+        /// 5b-227 had left this case open; CREATE_LINE's optional view, the
+        /// case it named, binds null through this too.
+        ///
+        /// NOTHING ELSE. A name or a number has no value that means "not
+        /// asked", and inventing one is how a job runs against the wrong
+        /// thing and reports success - so those still refuse, and so does a
+        /// bool or a View nobody marked optional. Row 5b-227's two string
+        /// cards are refused exactly as they were. A card that NAMES what
+        /// leaving a value out means is DeclaredAbsent's, asked first (row
+        /// 5b-488).
         ///
         /// Returns the C# literal to bind, which the caller writes into the
         /// generated prologue. Nothing here touches an Autodesk type, so it is
@@ -89,7 +100,33 @@ namespace Heron.Revit.Addin
             if (!string.Equals((optional ?? "").Trim(), "true", System.StringComparison.OrdinalIgnoreCase))
                 return null;
 
-            return (type ?? "").Trim() == "bool" ? "false" : null;
+            var wanted = (type ?? "").Trim();
+            if (wanted == "bool") return "false";
+            if (wanted == "View") return "null";
+            return null;
+        }
+
+        /// <summary>
+        /// Is a value the caller GAVE to be read as one they left out?
+        ///
+        /// A VALUE LEFT EMPTY IS A VALUE LEFT OUT, when the card says it may
+        /// be (FRAGMENT-ISSUES row 5b-1320). `inViewOnly=` with nothing after
+        /// it reached OneView as a view named "" and was refused "No view
+        /// called """ - the one answer the modeller could not have meant.
+        /// True for an empty or blank text on a need marked `optional: true`;
+        /// the binder then treats it exactly as absent - DeclaredAbsent, then
+        /// AbsentValue - and where neither has a value for it, converts the
+        /// empty text as it always did. False for a need the card does not
+        /// mark optional: its empty text converts as before, and the type's
+        /// own rule refuses it, because the card never said the value may be
+        /// left out. A text that is not blank is never read as absent.
+        /// </summary>
+        internal static bool EmptyMeansAbsent(string given, string optional)
+        {
+            if (!string.Equals((optional ?? "").Trim(), "true", System.StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            return (given ?? "").Trim().Length == 0;
         }
 
         /// <summary>

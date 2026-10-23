@@ -52,6 +52,10 @@ contract:
     - name: asDetail
       type: bool
       source: request
+    # Left out, this binds null since 2026-10-22 (row 5b-1320; the binder
+    # refused it before, row 5b-227): a model line needs no view, and the code
+    # refuses a detail line without one in its own words. Not run in Revit -
+    # NEEDS-CHECKING Group IT.
     - name: view
       type: View
       source: request

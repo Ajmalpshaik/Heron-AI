@@ -51,6 +51,24 @@ negative:
   - given: an empty parameter name
     expect: refused, with the reason
 
+  # Row 5b-1319, added 2026-10-22 with version 3. NOT RUN. THIS IS THE
+  # SECOND CASE TO RUN: an unknown mode used to fall through to "contains"
+  # with nothing said, and the wider selection fed a delete.
+  - given: >
+      matchMode "exactly" - or any word that is not contains, equals, begins,
+      ends, notcontains or notequals - with a parameter name and text that
+      WOULD match something
+    expect: >
+      refused before anything is scanned, naming the six modes, with no
+      `elements` left behind for the next step. NOT a zero, and NOT the
+      contains answer
+
+  - given: matchMode "exact", and then "is", for a Name that another Name begins with
+    expect: >
+      the equals answer - ONE element, the one whose Name is exactly the text -
+      and the finding line reading "equals". The contains answer, both
+      elements, comes only when contains is asked for by name
+
   # Row 5b-203, added 2026-10-09. NOT RUN - it needs a model that carries a
   # duplicated name, and none has been arranged yet.
   - given: >

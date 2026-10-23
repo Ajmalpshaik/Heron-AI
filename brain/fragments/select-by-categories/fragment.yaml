@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CAT-009
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,21 @@ semantic-identity: "all the ductwork - the ducts, the fittings, the accessories 
 kind: filter
 domain: revit.selection
 capability: SELECT_BY_CATEGORIES
-version: 2
+# Version 3 (2026-10-22, row 5b-1320) changed the CONTRACT, not impl/:
+# `inViewOnly` is marked optional, so left out - or given empty - it binds
+# null, which the code has always read as the whole model. Seen on Revit 2020
+# (session 78736): with no view named the call was refused "'inViewOnly
+# (View)' is a value the CALLER supplies", and with an empty one it was looked
+# up as a view named "". The code under version 2's proof is unchanged, so its
+# fingerprint still holds; the absent case was never measured, and the binding
+# that makes it work is in the add-in. DRAFT until NEEDS-CHECKING Group IT
+# proves version 3 (D-30); `proof-held:` below says so for check-signatures.
+version: 3
+proof-held: >
+  Version 3 (2026-10-22, row 5b-1320) made inViewOnly optional - absent or
+  empty binds the whole model through the add-in's binder - which the
+  2026-10-18 proof never measured. NEEDS-CHECKING Group IT proves it, on
+  the add-in rebuilt.
 source: OFFICIAL
 risk: READ
 
@@ -58,9 +72,16 @@ contract:
       type: IList<BuiltInCategory>
       source: request
     # Null means the whole model; a view narrows it to what that view draws.
+    # `optional: true` is what lets it be LEFT OUT (version 3, row 5b-1320):
+    # the binder binds an absent View marked optional to null, and a value
+    # given empty the same (HeronBindingNote.AbsentValue, EmptyMeansAbsent).
+    # Until then the sentence above described what the code did with a null
+    # nothing could hand it - left out was refused, and empty was looked up
+    # as a view named "". A view NAMED and not found is still refused.
     - name: inViewOnly
       type: View
       source: request
+      optional: true
     - name: includeLinks
       # D-59. THE MODELLER DECIDES, JOB BY JOB, and absent means host only -
       # which is what this fragment did before and what its proof measured.

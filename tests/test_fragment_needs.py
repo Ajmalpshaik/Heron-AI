@@ -99,8 +99,9 @@ IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 # passes every gate and answers about the wrong elements.
 # `optional` was listed here until 2026-10-08 as "read by NOTHING". The binder
 # has read it since rows 5b-252 and 5b-322 - for a bool and an element list -
-# and what is still not honoured, `optional` on a View or a string, is row
-# 5b-227's question for the owner, not a key nobody reads.
+# and since row 5b-1320 (2026-10-22) for a View, which binds null, the whole
+# model. What is still not honoured, `optional` on a string with no `absent:`,
+# is row 5b-227's question for the owner, not a key nobody reads.
 UNREAD_KEYS = {}
 
 

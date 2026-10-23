@@ -94,12 +94,51 @@ namespace Heron.BindingNote.TestHost
                   "a bool NOT marked optional is still refused");
             Check(HeronBindingNote.AbsentValue("bool", "false") == null,
                   "and so is one marked optional: false");
-            Check(HeronBindingNote.AbsentValue("View", "true") == null,
-                  "an optional View is still refused - row 5b-227's create-line case");
+            // FRAGMENT-ISSUES row 5b-1320: A VIEW MARKED OPTIONAL BINDS NULL,
+            // which is the fragment's own "whole model". Row 5b-227 left the
+            // case open because nothing read the word; the binder reads it
+            // now, for a View alone - a view has no empty form but null, and
+            // every card that marks one optional reads null as the whole
+            // model. Nothing else gains a value it was not given.
+            Check(HeronBindingNote.AbsentValue("View", "true") == "null",
+                  "an absent View marked optional binds null - the whole model (row 5b-1320)");
+            Check(HeronBindingNote.AbsentValue("View", " True ") == "null",
+                  "however the card spells true");
+            Check(HeronBindingNote.AbsentValue("View", null) == null,
+                  "a View NOT marked optional is still refused - the view is the caller's to name");
+            Check(HeronBindingNote.AbsentValue("View", "false") == null,
+                  "and so is one marked optional: false");
             Check(HeronBindingNote.AbsentValue("string", "true") == null,
                   "an optional string is still refused - row 5b-227's other two");
             Check(HeronBindingNote.AbsentValue("double", "true") == null,
                   "an optional number is still refused - no number means 'not asked'");
+
+            // FRAGMENT-ISSUES row 5b-1320, the other half: A VALUE LEFT EMPTY
+            // IS A VALUE LEFT OUT, when the card says it may be. inViewOnly=
+            // with nothing after it was looked up as a view named "" and
+            // refused "No view called """; the binder now asks this before
+            // converting, and reads yes as absent. A need the card does not
+            // mark optional converts its empty text as before, and is refused
+            // by the type's own rule. Asked by reflection so that the method's
+            // absence is ONE clean failure here rather than a host that will
+            // not build (heron-ship 2a).
+            var empty = typeof(HeronBindingNote).GetMethod("EmptyMeansAbsent",
+                BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+            Check(empty != null, "HeronBindingNote has EmptyMeansAbsent at all (row 5b-1320)");
+            Func<string, string, bool> emptyMeansAbsent = (given, optional) =>
+                empty != null && (bool)empty.Invoke(null, new object[] { given, optional });
+            Check(emptyMeansAbsent("", "true"),
+                  "an empty value on a need marked optional is read as absent");
+            Check(emptyMeansAbsent("   ", " True "),
+                  "so is a blank one, however the card spells true");
+            Check(emptyMeansAbsent(null, "true"),
+                  "and a null one");
+            Check(empty != null && !emptyMeansAbsent("", null),
+                  "an empty value on a need NOT marked optional is converted as typed - the type's own refusal");
+            Check(empty != null && !emptyMeansAbsent("", "false"),
+                  "and so with optional: false");
+            Check(empty != null && !emptyMeansAbsent("Level 1", "true"),
+                  "a value actually given is never read as absent");
 
             // FRAGMENT-ISSUES row 5b-488: A CARD MAY NAME WHAT LEAVING A VALUE
             // OUT MEANS. `absent:` beside `optional: true` is read as typed;
