@@ -1,11 +1,11 @@
-# NEEDS-CHECKING Group IW - EDIT_TOPOSOLID version 2's simplify, which counts
+# NEEDS-CHECKING Group IY - EDIT_TOPOSOLID version 2's simplify, which counts
 # a toposolid as edited only when its shape point count changed (row 5b-1331).
 #
-#     python tools/batch-prove.py tools/jobs/edit-toposolid-iw-2026-10-23.yaml --dry-run
-#     python tools/batch-prove.py tools/jobs/edit-toposolid-iw-2026-10-23.yaml
+#     python tools/batch-prove.py tools/jobs/edit-toposolid-iy-2026-10-23.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/edit-toposolid-iy-2026-10-23.yaml
 #
 # ONE SCRATCH COPY, OPEN IN REVIT 2024, never the library file and never a
-# working model: %TEMP%\heron-work\toposolid-iw\IW Snowdon Site 2024.rvt, a copy
+# working model: %TEMP%\heron-work\toposolid-iy\IY Snowdon Site 2024.rvt, a copy
 # of Revit 2024's Snowdon Towers Sample Site.rvt. `in:` brings it to the front.
 #
 # WHAT THE POSITIVE SHOULD READ, from the 2026-10-23 run of version 1 on such a
@@ -20,14 +20,14 @@
 # must read "elements from select-by-categories (10)" on both legs, or the run
 # proves nothing.
 
-model: IW Snowdon Site 2024 (scratch copy of Revit 2024's Snowdon Towers Sample Site), Revit 2024
+model: IY Snowdon Site 2024 (scratch copy of Revit 2024's Snowdon Towers Sample Site), Revit 2024
 
 jobs:
   - fragment: edit-toposolid
     expect: resultIds
     write: true                        # rolled back
     keep-chain: true
-    in: IW Snowdon Site 2024
+    in: IY Snowdon Site 2024
     setup: [select-by-categories]
     setup-set: {categories: Toposolid}
     negative-setup-set: {categories: Walls}

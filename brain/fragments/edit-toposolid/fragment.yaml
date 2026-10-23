@@ -17,7 +17,7 @@ capability: EDIT_TOPOSOLID
 # Each one left as it was is now named in the report - "nothing to simplify -
 # 0 shape points" or "unchanged" - and counted in the findings' first line.
 # Excavate, split and smooth are as version 1 had them. DRAFT, never proven:
-# NEEDS-CHECKING Group IW is the proof plan (D-30).
+# NEEDS-CHECKING Group IY is the proof plan (D-30).
 version: 2
 source: OFFICIAL
 risk: MODIFY
