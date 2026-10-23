@@ -47,6 +47,11 @@ namespace Heron.Revit.Addin
     ///   box runs the whole width of the model, and framing it would picture
     ///   the building instead of the elements.
     ///
+    ///   IN A PROJECT, the floors, ceilings and roofs lying wholly above the
+    ///   elements are hidden in that view, and named in the answer: an
+    ///   isometric looks down, and a slab inside the margin over three ducts
+    ///   was the picture, not the ducts (row 5b-1328). See HideCoversAbove.
+    ///
     ///   IN A FAMILY, its forms are framed the same way, by their extents -
     ///   a form at the family's own subcategory has no category, and is
     ///   framed all the same (row 5b-1311, NEEDS-CHECKING Group IO). Every
@@ -107,6 +112,14 @@ namespace Heron.Revit.Addin
         /// </summary>
         private const double MarginShare = 0.10;
         private const double SmallestMargin = 1.0;
+
+        /// <summary>
+        /// How far below the framed elements' top a floor, ceiling or roof may
+        /// reach and still count as lying over them, in feet - under a
+        /// millimetre, so a slab drawn hard on the ducts' top is not kept over
+        /// them by a rounding in its box (row 5b-1328).
+        /// </summary>
+        private const double Touching = 0.003;
 
         private const string Label = "Heron: a picture for the chat (always undone)";
 
@@ -196,7 +209,8 @@ namespace Heron.Revit.Addin
                 try
                 {
                     if (group != null) group.Start();
-                    return Exported(doc, view, width, clamped, "view", null, 0, ref after, group, watch);
+                    return Exported(doc, view, width, clamped, "view", null, null, 0,
+                                    ref after, group, watch);
                 }
                 catch (Exception ex)
                 {
@@ -395,6 +409,7 @@ namespace Heron.Revit.Addin
                     group.Start();
 
                     View3D view;
+                    string hidden = null;
                     using (var transaction = new Transaction(doc, Label))
                     {
                         transaction.Start();
@@ -406,6 +421,15 @@ namespace Heron.Revit.Addin
                         view = View3D.CreateIsometric(doc, threeD.Id);
                         Prepare(doc, view, section, inFrame);
                         doc.Regenerate();
+
+                        // WHAT LIES OVER THEM, hidden and named now - while
+                        // every element is still in the model, never after the
+                        // rollback (5b-1090). A family keeps today's picture.
+                        if (!doc.IsFamilyDocument)
+                        {
+                            hidden = HideCoversAbove(doc, view, section, high.Z, framed);
+                            if (hidden != null) doc.Regenerate();
+                        }
 
                         // COMMITTED INSIDE THE GROUP, so Revit has drawn the
                         // view before it is asked to export it - and the
@@ -420,7 +444,7 @@ namespace Heron.Revit.Addin
                     }
 
                     return Exported(doc, view, width, clamped, "elements",
-                                    string.Join("; ", left.ToArray()), shown,
+                                    string.Join("; ", left.ToArray()), hidden, shown,
                                     ref after, group, watch);
                 }
                 catch (Exception ex)
@@ -669,6 +693,74 @@ namespace Heron.Revit.Addin
             catch (Autodesk.Revit.Exceptions.InvalidOperationException) { }
         }
 
+        /// <summary>
+        /// Hide in VIEW the floors, ceilings and roofs lying wholly above the
+        /// framed elements and inside the section box, and answer what was
+        /// hidden - "id (Category)", "; " between - or null for nothing.
+        ///
+        /// WHY (row 5b-1328). The margin is at least a foot on every side, so
+        /// a slab just over ducts is inside the box, and an isometric looks
+        /// down on it. Seen on Revit 2020 on 2026-10-22 in a copy of its
+        /// rme_basic_sample_project: three ducts at about 3.16 m came out as
+        /// the top of the slab over them, the ducts only dark rectangles where
+        /// the box cut them. Of the three ways the row named, this one leaves
+        /// the box, the camera and everything else as it was:
+        ///   - A SMALLER MARGIN ABOVE moves the top of every picture's box, and
+        ///     a slab hard on the ducts is inside any margin that still keeps
+        ///     their own top faces whole.
+        ///   - A VIEW FROM BELOW pictures ducts above a ceiling as the ceiling.
+        ///   - THIS hides only what lies over them, and the answer names it, so
+        ///     a modeller checking a clearance is never told the slab is gone.
+        ///
+        /// WHOLLY ABOVE: its lowest point at or above TOP, the framed
+        /// elements' own top before the margin. A floor the ducts pass through,
+        /// a ceiling under them, a roof whose eave comes down among them - each
+        /// reaches below TOP, and stays. An id asked for is never hidden. Only
+        /// these three categories: a beam over the ducts still shows, and one
+        /// seen covering them is a row of its own. A floor in a linked model
+        /// stays too: the collector reads this model alone.
+        ///
+        /// FROM THE VIEW'S OWN COLLECTOR, the elements Revit says the view
+        /// shows, so one it does not show is never named as hidden. An element
+        /// Revit will not hide is passed over; a hide Revit refuses costs the
+        /// hide, never the picture, and names nothing.
+        /// </summary>
+        private static string HideCoversAbove(Document doc, View3D view, BoundingBoxXYZ section,
+                                              double top, List<Element> framed)
+        {
+            var covers = new ElementMulticategoryFilter(new List<BuiltInCategory>
+            {
+                BuiltInCategory.OST_Floors,
+                BuiltInCategory.OST_Ceilings,
+                BuiltInCategory.OST_Roofs,
+            });
+            var inBox = new BoundingBoxIntersectsFilter(new Outline(section.Min, section.Max));
+
+            var ids = new List<ElementId>();
+            var named = new List<string>();
+            foreach (var element in new FilteredElementCollector(doc, view.Id)
+                         .WhereElementIsNotElementType().WherePasses(covers).WherePasses(inBox))
+            {
+                if (framed.Exists(e => e.Id.Equals(element.Id))) continue;
+                var box = element.get_BoundingBox(null);
+                if (box == null) continue;
+
+                XYZ low = null, high = null;
+                Grow(box, ref low, ref high);
+                if (low.Z < top - Touching) continue;
+                if (!element.CanBeHidden(view)) continue;
+
+                ids.Add(element.Id);
+                named.Add(element.Id + " (" + element.Category.Name + ")");
+            }
+            if (ids.Count == 0) return null;
+
+            try { view.HideElements(ids); }
+            catch (Autodesk.Revit.Exceptions.ArgumentException) { return null; }
+            catch (Autodesk.Revit.Exceptions.InvalidOperationException) { return null; }
+            return string.Join("; ", named.ToArray());
+        }
+
         // -------------------------------------------------- the export itself
 
         /// <summary>
@@ -680,7 +772,7 @@ namespace Heron.Revit.Addin
         /// whatever picture lands in it is the one.
         /// </summary>
         private static string Exported(Document doc, View view, int width, bool clamped,
-                                       string mode, string leftOut, int shown,
+                                       string mode, string leftOut, string hidden, int shown,
                                        ref HeronRollbackWitness.Outcome after,
                                        TransactionGroup group,
                                        HeronRollbackWitness.Watch watch)
@@ -758,6 +850,9 @@ namespace Heron.Revit.Addin
                 Json.Num("bytes", picture.Length),
                 Json.Num("shown", shown),
                 Json.Str("leftOut", string.IsNullOrEmpty(leftOut) ? null : leftOut),
+                // IN THE FRAME AND NOT IN THE PICTURE - said, so a modeller
+                // checking a clearance is never shown a slab as not there.
+                Json.Str("hiddenAbove", string.IsNullOrEmpty(hidden) ? null : hidden),
                 // HELD, AS FAR AS IT WAS CHECKED: Revit's status, and the
                 // temporary view counted back (RevitFragment.RollBackAndCheck).
                 // `keptLost` and `rollbackNote` say what the rollback took from

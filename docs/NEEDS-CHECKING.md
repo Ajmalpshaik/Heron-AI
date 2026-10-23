@@ -998,6 +998,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-iw.md`](needs-checking/group-iw.md)
 
+## Group IX - the floor over the ducts hidden from a picture of them: `revit_view_image` with `elements` in a project (2026-10-23)
+
+**Its own file:** [`needs-checking/group-ix.md`](needs-checking/group-ix.md)
+
 ## Group IY - a simplify counts only the toposolids it changed: `EDIT_TOPOSOLID` version 2 (2026-10-23)
 
 **Its own file:** [`needs-checking/group-iy.md`](needs-checking/group-iy.md)
