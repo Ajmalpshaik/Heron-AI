@@ -58,13 +58,22 @@ contract:
       role: result
       type: int
     - name: coverTypes
-      role: result
+      # ACCOUNTING, NOT A RESULT (row 5b-1330). Revit keeps a Rebar Cover
+      # Type in every document, whether or not rebar was ever loaded - read
+      # 'Rebar Cover 1' 25 mm in a furniture family (Revit 2020, 2026-10-21),
+      # and a string scan of rme_basic_sample_project finds the same name.
+      # So this count is never 0, says the read looked rather than that the
+      # model holds rebar content, and as a result left no document a D-30
+      # negative. Still counted, and every cover named in `listing`.
+      role: accounting
       type: int
     - name: shapes
       role: result
       type: int
     - name: systemTypes
       # Area, path and fabric reinforcement types, and fabric sheet types.
+      # Stays a result: it read 0 in the same family (2026-10-21), so it does
+      # not stop a family negative, and it must be 0 there too.
       role: result
       type: int
     - name: listing
