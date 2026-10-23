@@ -85,7 +85,7 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 
 | Tool | What it is for | When you run it |
 |---|---|---|
-| [`batch-prove.py`](batch-prove.py) | many fragments against a real model in one pass; never accepts, never promotes | on the PC, Revit open; `--dry-run` first |
+| [`batch-prove.py`](batch-prove.py) | many fragments against a real model in one pass; never accepts, never promotes | on the PC, Revit open; `--dry-run` first; `--unattended` overnight |
 | [`generate-jobs.py`](generate-jobs.py) | the derivable half of a job file - names, risk, setup chain | before writing a job file |
 | [`jobs/`](jobs/example.yaml) | the job files of past proving rounds, and `example.yaml` to start from | when writing the next one |
 | [`prove-skill.py`](prove-skill.py) | is a skill proved: its words, its chain, and the Revit half written out as a job file | before proving a skill |
@@ -1052,6 +1052,7 @@ python tools/batch-prove.py tools/jobs/example.yaml --dry-run   # read it, run n
 python tools/batch-prove.py my-jobs.yaml                        # run it against Revit
 python tools/batch-prove.py my-jobs.yaml --only set-mep-size
 python tools/batch-prove.py my-jobs.yaml --release 2025 --session <pid>   # PROVEN ones, on one more release
+python tools/batch-prove.py my-jobs.yaml --unattended --session <pid> --report night.json   # overnight
 ```
 
 Proving fragments one at a time costs a round trip each. On 2026-09-09 a throwaway script proved
@@ -1111,6 +1112,27 @@ library rather than typed, so it cannot go stale.
 was run to find out — and exiting non-zero on them would make a successful proving run
 indistinguishable from a broken one. What earns a non-zero code is a job file that cannot be run, or
 a `--release` batch that ran on another Revit.
+
+**`--unattended` is a night with nobody at the keyboard.** On 2026-10-21 and again on 2026-10-22 a
+session proving fragments while the owner slept wrote the same private wrapper round this tool, in a temp
+folder. What it added is now the tool's own, and none of it judges differently - each job is run, drafted
+and judged as without the flag; the flag only decides whether to ask Revit again:
+
+| When | What it does |
+|---|---|
+| Revit held by another chat - *"in use by another chat"*, `session_in_use`, `model_in_use`, *"Could not identify the active model"* - and the verdict is `DID NOT RUN` or `NO NEGATIVE` | waits 30 s and asks again, 25 tries in all; the last try's verdict stands |
+| Revit busy - `revit_busy`, *"Revit is busy"* - same verdicts | closes Revit's **"Virtual Memory - High Usage"** warning, which Revit 2020 puts up after about sixty jobs, waits 10 s and asks again. **Only that window, matched by its exact title, and only with Windows' own close message.** Every other window that Revit has open - a Keep or Discard box above all - is left and printed for a person. Off Windows it says so and closes nothing |
+| After each fragment | hands the models back, so another chat can get in; writes `--report` again, marked `"finished": false` until the end; appends the time, fragment, verdict and first line of why to `batch-prove.log` in Heron's log folder (`--log` names another) |
+| A job that raises | that job's `DID NOT RUN`, naming the error - never the end of the night |
+
+A verdict about the fragment - a `POSITIVE EMPTY`, a `PASS` - is never asked again. Output goes to the
+screen as UTF-8 with anything unprintable replaced, in every mode: on 2026-10-21 a U+FFFD in Revit's
+output, printed to a pipe in Windows' cp1252, raised `UnicodeEncodeError` and ended the first night.
+[`tests/test_batch_prove.py`](../tests/test_batch_prove.py) runs the retry rules on the refusals the
+add-in and the client print, the closer on a list of windows with the Keep or Discard box among them,
+and a whole unattended batch - and reads every marker back out of the file that prints it. **The closer
+has not met a real Revit**: the wrapper found the warning with UI Automation and this finds it among
+Revit's top-level windows, so [Group IW](../docs/needs-checking/group-iw.md) is owed on the PC.
 
 ---
 

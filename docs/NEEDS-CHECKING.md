@@ -994,6 +994,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-iv.md`](needs-checking/group-iv.md)
 
+## Group IW - a night with nobody at the keyboard: `batch-prove --unattended` waits out a held Revit and closes only Revit's memory warning (2026-10-23)
+
+**Its own file:** [`needs-checking/group-iw.md`](needs-checking/group-iw.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
