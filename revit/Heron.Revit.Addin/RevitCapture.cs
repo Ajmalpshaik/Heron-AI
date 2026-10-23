@@ -49,10 +49,10 @@ namespace Heron.Revit.Addin
     ///
     ///   IN A FAMILY, its forms are framed the same way, by their extents -
     ///   a form at the family's own subcategory has no category, and is
-    ///   framed all the same (row 5b-1311, NEEDS-CHECKING Group IO). Its
-    ///   connectors are hidden too, unless one is among the ids framed: their
-    ///   symbols drew past the section box and the picture was fitted to
-    ///   them (row 5b-1327). See Prepare.
+    ///   framed all the same (row 5b-1311, NEEDS-CHECKING Group IO). Every
+    ///   connector not among the ids framed is hidden, element by element:
+    ///   their symbols drew past the section box and the picture was fitted
+    ///   to them (row 5b-1327). See Prepare.
     ///
     /// WHY IT IS ANALYZE AND OPENS A TRANSACTION
     /// -------------------------------------------
@@ -347,7 +347,7 @@ namespace Heron.Revit.Addin
             var left = new List<string>();
             XYZ low = null, high = null;
             var shown = 0;
-            var connectorAsked = false;
+            var inFrame = new List<ElementId>();
             foreach (var element in framed)
             {
                 var why = LeftOut(element);
@@ -361,7 +361,7 @@ namespace Heron.Revit.Addin
 
                 Grow(box, ref low, ref high);
                 shown++;
-                if (IsOf(element, Connectors)) connectorAsked = true;
+                inFrame.Add(element.Id);
             }
 
             if (shown == 0)
@@ -404,7 +404,7 @@ namespace Heron.Revit.Addin
                         transaction.SetFailureHandlingOptions(options);
 
                         view = View3D.CreateIsometric(doc, threeD.Id);
-                        Prepare(doc, view, section, !connectorAsked);
+                        Prepare(doc, view, section, inFrame);
                         doc.Regenerate();
 
                         // COMMITTED INSIDE THE GROUP, so Revit has drawn the
@@ -549,26 +549,6 @@ namespace Heron.Revit.Addin
         };
 
         /// <summary>
-        /// A family's connectors - ConnectorElement, which the API documents
-        /// as occurring in families only, so a project has none to hide.
-        /// </summary>
-        private const BuiltInCategory Connectors = BuiltInCategory.OST_ConnectorElem;
-
-        /// <summary>
-        /// Whether ELEMENT's category is CATEGORY, or a sub-category of it -
-        /// hiding a category hides its sub-categories too, so a connector
-        /// whose category were one of the X, Y or Z axis sub-categories would
-        /// otherwise be framed and hidden, an empty box.
-        /// </summary>
-        private static bool IsOf(Element element, BuiltInCategory category)
-        {
-            var own = element.Category;
-            if (own == null) return false;
-            var wanted = new ElementId(category);
-            return own.Id.Equals(wanted) || (own.Parent != null && own.Parent.Id.Equals(wanted));
-        }
-
-        /// <summary>
         /// Widen LOW and HIGH to take in all eight corners of BOX, in model
         /// coordinates - a box's Min and Max are in its own Transform, which is
         /// not promised to be the identity.
@@ -605,28 +585,25 @@ namespace Heron.Revit.Addin
         /// or a style it will not set, costs that one setting and never the
         /// picture.
         ///
-        /// IN A FAMILY, ITS CONNECTORS ARE HIDDEN TOO, unless one of them is
-        /// what was asked for - HIDECONNECTORS is false then, because hiding
-        /// the thing being framed would picture an empty box (row 5b-1327).
-        /// Seen on Revit 2020 on 2026-10-22: a CCTV family's three electrical
-        /// connectors drew their symbols at the same pixels in every picture,
-        /// outside a section box that could not hold them, and FitToPage
-        /// fitted the picture to them, so the form asked for came out small.
-        /// WHY THE LOOP BELOW MISSED THEM IS NOT SETTLED: it walks
-        /// doc.Settings.Categories and passes over model categories, so either
-        /// the connectors' category is a model one or that list has not got it
-        /// - FILTER_ELEMENTS_BY_CATEGORY, which looks a name up in the same
-        /// list, found no "Connectors" in a family on Revit 2024 (row 5b-354),
-        /// though Revit may simply name it otherwise. Named by its
-        /// BuiltInCategory it is reached either way. And a third case this
-        /// cannot help: the category hidden already and the symbols drawn
-        /// regardless - NEEDS-CHECKING IV0 and IV2 tell the three apart. A
-        /// project is never touched: it has no connector elements.
+        /// IN A FAMILY, EVERY CONNECTOR NOT ASKED FOR IS HIDDEN, ONE ELEMENT AT
+        /// A TIME (row 5b-1327). Seen on Revit 2020 on 2026-10-22: a CCTV
+        /// family's three electrical connectors drew their symbols at the same
+        /// pixels in every picture, outside a section box that could not hold
+        /// them, and FitToPage fitted the picture to them, so the form asked
+        /// for came out small. A connector in ASKED stays - hiding the thing
+        /// being framed would picture an empty box - and the others still go,
+        /// so they cannot pull the fit out again. A connector id left out of
+        /// the frame (no extent) is hidden like the rest, and named in leftOut.
         ///
-        /// ONE CONNECTOR ASKED FOR SHOWS THEM ALL, and the fit may take in the
-        /// others again - the chat asked for a connector, so that is the
-        /// picture. A connector id LEFT OUT (no extent) is still hidden, and
-        /// named in leftOut as every left-out id is.
+        /// BY ELEMENT, BECAUSE REVIT REFUSES THE CATEGORY - measured on Revit
+        /// 2020 on 2026-10-23 (NEEDS-CHECKING IV0), in that CCTV family: the
+        /// connectors' category, "Connector Element", is a MODEL category that
+        /// doc.Settings.Categories has not got, Category.GetCategory returns
+        /// null for it, and View.CanCategoryBeHidden says false - so the loop
+        /// below never meets it, and naming it outright was skipped (IV2, the
+        /// circles still there). Element.CanBeHidden said true for each of the
+        /// three. ConnectorElement occurs in families only, so a project has
+        /// none to hide.
         ///
         /// NOTHING ELSE IN A FAMILY IS HIDDEN WITH THEM. A reference line is a
         /// ModelCurve (IsReferenceLine) - model geometry, which the section
@@ -636,7 +613,7 @@ namespace Heron.Revit.Addin
         /// seen doing what the connectors did is a row of its own.
         /// </summary>
         private static void Prepare(Document doc, View3D view, BoundingBoxXYZ section,
-                                    bool hideConnectors)
+                                    ICollection<ElementId> asked)
         {
             view.ViewTemplateId = ElementId.InvalidElementId;
             view.SetSectionBox(section);
@@ -661,8 +638,6 @@ namespace Heron.Revit.Addin
                 hide.Add(category.Id);
             }
 
-            if (hideConnectors && doc.IsFamilyDocument) hide.Add(new ElementId(Connectors));
-
             foreach (var category in hide)
             {
                 try
@@ -673,6 +648,23 @@ namespace Heron.Revit.Addin
                 catch (Autodesk.Revit.Exceptions.ArgumentException) { }
                 catch (Autodesk.Revit.Exceptions.InvalidOperationException) { }
             }
+
+            if (!doc.IsFamilyDocument) return;
+
+            var connectors = new List<ElementId>();
+            foreach (var connector in new FilteredElementCollector(doc).OfClass(typeof(ConnectorElement)))
+            {
+                if (asked.Contains(connector.Id)) continue;
+                if (connector.CanBeHidden(view)) connectors.Add(connector.Id);
+            }
+            if (connectors.Count == 0) return;
+
+            // ALL AT ONCE, AND ON ITS OWN: one connector Revit will not hide
+            // costs the connectors, never the picture - the same rule as a
+            // category above.
+            try { view.HideElements(connectors); }
+            catch (Autodesk.Revit.Exceptions.ArgumentException) { }
+            catch (Autodesk.Revit.Exceptions.InvalidOperationException) { }
         }
 
         // -------------------------------------------------- the export itself

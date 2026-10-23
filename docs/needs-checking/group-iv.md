@@ -18,7 +18,8 @@ temporary 3D view, **in a family only and only when no connector is among the id
 hide as every other category it hides: one Revit refuses costs that one setting, never the picture. A project
 is pictured exactly as before. Light sources and reference lines are not hidden with them - the comment on
 `Prepare` says why. It compiles on 2020 to 2027 and every Revit member exists in each; **none of it has run in
-Revit.**
+Revit.** **Superseded 2026-10-23 - read the results at the end first:** IV0 found Revit refuses to hide the
+connectors' category, IV2 failed, and the connectors are now hidden element by element.
 
 **What is not known, and IV0 asks it.** Why the old loop missed the connectors: it walks
 `doc.Settings.Categories` and passes over model categories, so either the connectors' category is a model one,
@@ -53,3 +54,27 @@ Capture Test.rvt* (a project). Open each with `ACTIVATE_DOCUMENT`. Every row on 
 fragment. A row that fails reopens 5b-1327; nothing in a row changes to make it pass. Restarting the Claude app
 also picks up `revit_view_image`'s description, which now says a family's connectors are hidden unless one is
 among the ids.
+
+### Results - 2026-10-23, the owner's laptop: Revit 2020, session 83240
+
+**The add-in that ran:** main `6952d298` (#735 and #737 in it), built Debug for 2020, 2024, 2026 and 2027 and
+deployed with `tools/deploy-addin.ps1` while every Revit was closed; each release's three Heron DLLs hash-equal to
+the build and stamped `0.1.0+6952d298`. The add-in log: *"Heron loaded. Revit 2020 ... pid 83240"*. The Claude
+app was restarted after the deploy (the tool's description carried the connectors sentence). The CCTV copy was
+opened with `ACTIVATE_DOCUMENT` (PROVEN) and the chat moved onto it.
+
+| # | Release | What was run and what came back | State |
+|---|---|---|---|
+| IV0 | 2020 | The read-only probe, as the row says (scratch C# under `find-views`' contract, `run_fragment_read`, no transaction; never in the repository). The three connectors `7571`, `7572`, `7573`: category *"Connector Element"*, id `-2007000` (= `OST_ConnectorElem`), **`Model`**, no parent, domain Electrical, `Element.CanBeHidden(View 1)` **true** each. `Category.GetCategory(doc, OST_ConnectorElem)` **null**; `doc.Settings.Categories` **has not got it**; *View 1* (3D): `CanCategoryBeHidden` **false**, `GetCategoryHidden` false. In *View 1*: 99 extrusions and 12 revolves (no category), the 3 connectors, 1 camera, 1 element with no category | **Done** - both causes at once, and the category route is closed: Revit will not hide it |
+| IV1 | 2020 | **Not run.** The new add-in was deployed before the run, so no picture on the old one could be taken. The before stands as recorded on 2026-10-22 on add-in `239d0b17`, same family, 1280 px: [Group IO](group-io.md) IO1 and IO7, [Group IP](group-ip.md) IP3 - the circles over every picture, the screen about a quarter of the width | **NOT RUN** - the earlier records stand in |
+| IV2 | 2020 | Before: 111 forms, 6,398 elements, 9 views (2 3D) - IO1's numbers. `elements` = `2713`: *"A picture of 1 element(s) in IO7 scratch - CCTV Monitor 24 Inch (Revit 2020, session 83240), in a temporary 3D view, 1280 px wide. The temporary view is gone - Revit rolled it back. Nothing was changed."* **The picture: the green circles with their cross lines still over the screen**, a small green connector mark at their centre and a blue marker beside it; the screen about a quarter of the width, the stand's two columns below | **FAIL** - as IV0 says it must: the category was asked, refused, and skipped |
+
+**What changed after IV2 (row 5b-1327 reopened).** `Prepare` no longer names the category. In a family it hides
+every `ConnectorElement` that is NOT among the ids framed, element by element - `Element.CanBeHidden` for each,
+then one `View.HideElements` - guarded so a refusal costs the connectors and never the picture. A connector asked
+for stays and the others go, so they cannot pull the fit out again.
+
+**Run again on that build, every row as written except these:** IV1 is not run (above). **IV4 (b) now looks for
+the screen with connector `7571` beside it and NOT `7572` or `7573`**, so its fit is the two of them only. An
+empty box in (a) means the asked connector was hidden - reopen 5b-1327. IV0 needs no repeat. Then row 5b-1327
+closes on IV0, IV2 to IV6 and the records IV1 points at.
