@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -212,6 +212,69 @@ contract:
       # must not count toward "did this come back empty" (D-52).
       role: accounting
       type: string
+
+proof:
+  date: '2026-10-23'
+  by: Ajmal PS
+  model: N23 Snowdon HVAC 2024, Revit 2024, session 83588 - the count is NOT recorded because
+    9,433 elements was measured on N23 Structure Night 2024, the document in front, and this
+    ran against another one (row 15)
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned allFacts view ''L2'' (FloorPlan,
+    1:96, crop region on, annotation crop off, view template ''Mechanical Plan''), allTake
+    Func`2, areaSchemeId (null), areaSchemeName , askedColours 0 item(s), bandWord , builtIns
+    (null), categoryName Spaces, clearScheme false, clearing false, copied false, copyFrom
+    (null), copyName , copyTitle , entries 20 item(s) [Cafe - RGB 250,230,230, Cafe Kitchen
+    - RGB 250,240,230, Commercial/Retail - RGB 250,248,230, ...], factsOf Func`2, findings
+    0 item(s), keyOf Func`2, labelOf Func`2, legendAtMm ''L2'' 10 mm right of the crop region''s
+    right edge and 0 mm below its top edge, on the sheet at 1:96, legendMode default, legendPlaced
+    true, legendWord , legendXMm 0, legendYMm 0, legendsInView 1, legendsOf Func`2, namedExplicitly
+    false, namedScheme , otherUsers Func`2, parameterId 1 item(s) [id -1006900], recolouring
+    false, refused , rowIs Func`3, rowsRecoloured 0, sample Space, schemeApplied true, schemeName
+    Schema 1, schemeSource used the scheme already in the model that colours Spaces by Name,
+    as it stands, schemes 1 item(s) [Schema 1], specOf ForgeTypeId, summary view ''L2'' (FloorPlan,
+    1:96, crop region on, annotation crop off, view template ''Mechanical Plan''): Spaces
+    coloured by Name with ''Schema 1'' (used the scheme already in the model that colours
+    Spaces by Name, as it stands); read back SET on every view (1 changed); 0 row(s) re-coloured;
+    20 row(s): Cafe - RGB 250,230,230; Cafe Kitchen - RGB 250,240,230; Commercial/Retail -
+    RGB 250,248,230; Corridor - RGB 241,250,230; Electrical - RGB 230,250,230; Elevator -
+    RGB 230,250,240; Exit Lobby - RGB 230,250,250; Live/Work Loft Unit - RGB 230,240,250;
+    Live/Work Unit - RGB 230,235,250; Mezzanine Dining - RGB 237,230,250; Office Unit - RGB
+    250,230,250; Parking Garage - RGB 250,230,239; Residential Lobby - RGB 243,230,250; Restroom
+    - RGB 231,230,250; Stair - RGB 246,250,230; Studio Unit - RGB 235,250,230; Trash - RGB
+    250,230,244; Two Story Studio Unit - RGB 250,235,230; Utility - RGB 230,250,235; Water
+    Heater - RGB 230,250,245. Legend PLACED; colour fill legends for Spaces in these views
+    now: 1 - ''L2'' 10 mm right of the crop region''s right edge and 0 mm below its top edge,
+    on the sheet at 1:96., target ColorFillScheme, viewNames ''L2'', views 1 item(s) [L2],
+    viewsChanged 1, wanted Name, whyNot Func`2. inputs came view as given (1); category as
+    given; parameterName as given; colours as given; schemeToUse as given; legend as given;
+    clearScheme not given - false (optional). on N23 Snowdon HVAC 2024'
+  negative_case: 'run with category=Walls, colours=, legend=, parameterName=Name, schemeToUse=,
+    view=FloorPlan: L2 instead - chosen because it should not contain what this fragment reports
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned allFacts view ''L2'' (FloorPlan, 1:96, crop region on, annotation crop off, view
+    template ''Mechanical Plan''), allTake Func`2, areaSchemeId (null), areaSchemeName , askedColours
+    0 item(s), bandWord , builtIns (null), categoryName Walls, clearScheme false, clearing
+    false, copied false, copyFrom (null), copyName , copyTitle , entries 0 item(s), factsOf
+    Func`2, findings 0 item(s), keyOf Func`2, labelOf Func`2, legendAtMm , legendMode default,
+    legendPlaced false, legendWord , legendXMm 0, legendYMm 0, legendsInView 0, legendsOf
+    Func`2, namedExplicitly false, namedScheme , otherUsers Func`2, parameterId (null), recolouring
+    false, refused view ''L2'' (FloorPlan, 1:96, crop region on, annotation crop off, view
+    template ''Mechanical Plan'') cannot take a colour scheme for Walls. It takes: Ducts,
+    HVAC Zones, Pipes, Rooms, Spaces. Nothing was changed., rowIs Func`3, rowsRecoloured 0,
+    sample (null), schemeApplied false, schemeName , schemeSource , schemes 0 item(s), specOf
+    (null), summary NOT DONE on view ''L2'' (FloorPlan, 1:96, crop region on, annotation crop
+    off, view template ''Mechanical Plan''): view ''L2'' (FloorPlan, 1:96, crop region on,
+    annotation crop off, view template ''Mechanical Plan'') cannot take a colour scheme for
+    Walls. It takes: Ducts, HVAC Zones, Pipes, Rooms, Spaces. Nothing was changed., target
+    (null), viewNames ''L2'', views 1 item(s) [L2], viewsChanged 0, wanted Name, whyNot Func`2.
+    inputs came view as given (1); category as given; parameterName as given; colours as given;
+    schemeToUse as given; legend as given; clearScheme not given - false (optional). on N23
+    Snowdon HVAC 2024'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: aef426ae07d5f1af
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

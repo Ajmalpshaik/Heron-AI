@@ -61,3 +61,19 @@ Keep - so each row starts from the family as saved.
 **The order matters.** IK1 before IK2, so the refusal is seen on a family nothing has changed. IK2 is the row
 that decides whether 5b-1298's every-type route works; if it fails safe, the cards' purposes say so and the
 method's BY HAND list gains the hand fix for an unlisted type.
+
+### Results - 2026-10-22/23 nights: NOT the rows above - two library families, rolled back, for the IK2 question
+
+None of IK0 to IK10 was run (their family is the owner's). `set-family-light-source` ran rolled back (`validate --write`)
+with IK2's values - `intensity` "4500 lm", `colorTemperature` "4000 K", every other value empty - on Revit's own library
+lighting families copied to `%TEMP%\heron-work\night-1022\families`; negative a family with no light source.
+
+| # | Release | What was run and what came back | State |
+|---|---|---|---|
+| IK2-like | 2020.2.1 | *N22 M_Downlight - Recessed Can* (6 types): `changed` *"Initial intensity set on 6 type(s)."*, *"Initial colour set to 4000 K on 6 type(s)."*; the lighting API read every type back as *Luminous Flux 4500 lm, 4000 K* - but the same report's *"Type Properties now: Initial Intensity 0, Initial Color 0, Light Loss Factor 0, Dimming Lamp Color Temperature Shift 0, Color Filter 16777215"* for every type. Negative (a pipe tag): refused, *"This family has no light source to define"* | both legs held; **the Type Properties 0s are IK2's question - not signed** |
+| IK2-like | 2024.3 | *N22 M_Pendant Light - Hemisphere* (4 types): the same two changes on 4 types, every type read back *Luminous Flux 4500 lm, 4000 K*; Type Properties listed only *"Dimming Lamp Color Temperature Shift 0, Color Filter 16777215"* - no Initial Intensity, Initial Color or Light Loss Factor line at all. Negative (*GIP M_Skylight-Pyramid*): refused the same way | both legs held |
+
+**What the two say.** On 2020 the three type parameters behind the lighting API read 0 after a write the API reads back
+as made; on 2024 the report does not list them. So the 0s look like how Revit 2020 exposes those parameters to
+`get_Parameter`, not a write that missed - but only Family Types, looked at by eye with each type chosen, answers
+IK2. `set-family-light-source` stays DRAFT until it is looked at.
