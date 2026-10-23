@@ -74,3 +74,19 @@ plane, but Revit's own words do not name either, and the four tries (each refere
 written form) were all refused. Not checked: whether *Light Axis* is a reference plane or a reference line in that
 family (the revolve's work plane and its locked axis both carry the name), and what kind the same plane's
 reference reads on Revit 2024. Row 5b-1318 stays open; `label-family-radius` stays DRAFT.
+
+### Results - 2026-10-23, the owner's laptop: Revit 2024.3 (24.3.60.12), session 83588 - IS5's question, on the same revolve
+
+The same library copy, *N22 M_Pendant Light - Hemisphere*, opened in Revit 2024 (upgraded in memory, never saved);
+the same rolled-back `validate --write` with the same two setup steps and *N22 Radius* 76.2.
+
+| # | Release | What was run and what came back | State |
+|---|---|---|---|
+| IS5-like | 2024 | The canopy revolve `85a96555-88e2-46b1-8ccb-716595067a3b-00000773`: **labelled** - *"The radius of the revolve, from "Light Axis" to its profile line 76.2 mm out, labelled "N22 Radius" inside the form's sketch, reading 76.2 mm. Its axis is locked to "Light Axis"."* - and the finding whole (read by running the card's own source, rolled back, with one joined string added): *"Its two references, read on Revit 2024 before the dimension was asked for: the plane "Light Axis" gave a none reference - not the surface a straight dimension is expected to take (85a96555-88e2-46b1-8ccb-716595067a3b-0000071c); the profile line gave a linear reference (85a96555-88e2-46b1-8ccb-716595067a3b-00000775:0:LINEAR)."* *N22 Radius* 1: refused, *"Nothing in the revolve's profile is 1 mm in size ..."*, `valueMm` 0 | **PASS** on 2024 |
+
+**What 2020 and 2024 together say.** The two references read the same on both releases - the plane's kind *none*,
+the profile line's *linear*, the same written forms - and Revit 2024 takes the dimension while Revit 2020 refuses it
+with *"Invalid number of references."*. So version 5's check reads nothing wrong (IS5's warning does not apply:
+it refused nothing 2024 takes), and the fault is in what Revit 2020 accepts for this pair, not in the references
+Heron hands it. The run record and draft for the 2024 pass are in the night worktree's `brain/proof-drafts/`
+(`label-family-radius`, Revit 2024) - a proof on 2024 only, which leaves row 5b-1318's 2020 revolve fault standing.
