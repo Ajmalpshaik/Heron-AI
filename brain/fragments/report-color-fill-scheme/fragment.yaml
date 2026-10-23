@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -74,6 +74,67 @@ contract:
     - name: refused
       role: accounting
       type: string
+
+proof:
+  date: '2026-10-22'
+  by: Ajmal PS
+  model: Heron Capture Test (21,317 elements), Revit 2020, session 60544
+  positive_case: 'run as it would normally be run. returned asked 14 item(s) [Level 1 HVAC
+    Zone Plan, Level 2 HVAC Zone Plan, Level 3 HVAC Zone Plan, ...], findings 1 item(s) [Revit
+    2020''s API has no colour scheme calls - which scheme a...], headOf Func`2, legends 3,
+    lines 15 item(s) [''Level 1 HVAC Zone Plan'' (FloorPlan): 1 colour fill legend(s..., ''Level
+    2 HVAC Zone Plan'' (FloorPlan): 1 colour fill legend(s..., ''Level 3 HVAC Zone Plan''
+    (FloorPlan): 1 colour fill legend(s..., ...], refused , report Revit 2020 - ''Level 1
+    HVAC Zone Plan'' (FloorPlan): 1 colour fill legend(s); which scheme it shows per category
+    is not something Revit 2020''s API can read || ''Level 2 HVAC Zone Plan'' (FloorPlan):
+    1 colour fill legend(s); which scheme it shows per category is not something Revit 2020''s
+    API can read || ''Level 3 HVAC Zone Plan'' (FloorPlan): 1 colour fill legend(s); which
+    scheme it shows per category is not something Revit 2020''s API can read || ''Level 1
+    HVAC Plan'' (FloorPlan): 0 colour fill legend(s); which scheme it shows per category is
+    not something Revit 2020''s API can read || ''Level 2 HVAC Plan'' (FloorPlan): 0 colour
+    fill legend(s); which scheme it shows per category is not something Revit 2020''s API
+    can read || ''Level 3 HVAC Plan'' (FloorPlan): 0 colour fill legend(s); which scheme it
+    shows per category is not something Revit 2020''s API can read || ''Roof Level HVAC Plan''
+    (FloorPlan): 0 colour fill legend(s); which scheme it shows per category is not something
+    Revit 2020''s API can read || ''North Level 1 HVAC Plan'' (FloorPlan): 0 colour fill legend(s);
+    which scheme it shows per category is not something Revit 2020''s API can read || ''Level
+    1 HVAC Duct Plan'' (FloorPlan): 0 colour fill legend(s); which scheme it shows per category
+    is not something Revit 2020''s API can read || ''Level 2 HVAC Duct Plan'' (FloorPlan):
+    0 colour fill legend(s); which scheme it shows per category is not something Revit 2020''s
+    API can read || ''Level 2'' (FloorPlan): 0 colour fill legend(s); which scheme it shows
+    per category is not something Revit 2020''s API can read || ''Level 1 Ceiling Plan'' (CeilingPlan):
+    0 colour fill legend(s); which scheme it shows per category is not something Revit 2020''s
+    API can read || ''Level 2 Ceiling Plan'' (CeilingPlan): 0 colour fill legend(s); which
+    scheme it shows per category is not something Revit 2020''s API can read || ''Level 3
+    Ceiling Plan'' (CeilingPlan): 0 colour fill legend(s); which scheme it shows per category
+    is not something Revit 2020''s API can read || this model holds 15 colour scheme(s): Cooling
+    Load by Zone, Department, DIN 277-2 Nutzungsgruppe, Duct Color Fill, Duct Color Fill -
+    Flow, Duct Color Fill - Velocity, FU Color Fill, Name, Number, Pipe Color Fill, Pipe Color
+    Fill - Size, Schema 1, Scheme 1 (3 by that name) || CHECKS: Revit 2020''s API has no colour
+    scheme calls - which scheme a view shows per category, its rows and its colours arrived
+    in Revit 2022. Read them in Revit: Properties > Color Scheme > Edit, schemes 0 item(s),
+    version 2020. inputs came views as given (14). on Heron Capture Test'
+  negative_case: 'run with views=DraftingView: Vent thru roof, DraftingView: Condensate Drain
+    instead - chosen because it should not contain what this fragment reports. returned asked
+    2 item(s) [Vent thru roof, Condensate Drain], findings 1 item(s) [Revit 2020''s API has
+    no colour scheme calls - which scheme a...], headOf Func`2, legends 0, lines 3 item(s)
+    [''Vent thru roof'' (DraftingView): 0 colour fill legend(s); wh..., ''Condensate Drain''
+    (DraftingView): 0 colour fill legend(s); ..., this model holds 15 colour scheme(s): Cooling
+    Load by Zone, ...], refused , report Revit 2020 - ''Vent thru roof'' (DraftingView): 0
+    colour fill legend(s); which scheme it shows per category is not something Revit 2020''s
+    API can read || ''Condensate Drain'' (DraftingView): 0 colour fill legend(s); which scheme
+    it shows per category is not something Revit 2020''s API can read || this model holds
+    15 colour scheme(s): Cooling Load by Zone, Department, DIN 277-2 Nutzungsgruppe, Duct
+    Color Fill, Duct Color Fill - Flow, Duct Color Fill - Velocity, FU Color Fill, Name, Number,
+    Pipe Color Fill, Pipe Color Fill - Size, Schema 1, Scheme 1 (3 by that name) || CHECKS:
+    Revit 2020''s API has no colour scheme calls - which scheme a view shows per category,
+    its rows and its colours arrived in Revit 2022. Read them in Revit: Properties > Color
+    Scheme > Edit, schemes 0 item(s), version 2020. inputs came views as given (2). on Heron
+    Capture Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 71e437ef293bb6c9
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

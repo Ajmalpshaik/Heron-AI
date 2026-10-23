@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -215,35 +215,51 @@ contract:
       type: string
 
 proof:
-  date: '2026-09-09'
+  date: '2026-10-22'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 43652
+  model: Heron Capture Test (21,317 elements), Revit 2020, session 60544
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase''s own values - run inside a transaction
-    and ROLLED BACK, so the model was left exactly as it was. returned appliedRules 1 item(s)
-    [''Heat Recovery Unit Summary'': Mark HasValue ], cannotFilterBy 0 item(s), filterType
-    ScheduleFilterType, filtered 1, handed 3, matchIsKnown true, notPresent 2 item(s) [''Mark''
-    on ''Space Schedule'' - a schedule cannot filter on a f..., ''Mark'' on ''<Revision Schedule>
-    15'' - a schedule cannot filte...], refused 0 item(s), replacedRules 1 item(s) [''Heat
-    Recovery Unit Summary'' was filtered on Type Contains], requestUnusable false, scheduleBehind
-    Func`2, schedulesSeen 3, wantedMatch has value, wantsAValue false. inputs came elements
-    from the selection (3); filterFieldName as given; filterValue as given; matchType as given.
-    on Snowdon-scratch_ajmal.al'
-  negative_case: run with categoryName=Title Blocks, filterFieldName=Mark, filterValue=, inViewOnly=Notes,
-    Symbols & Schedules, matchType=has value instead - chosen because it should not contain
-    what this fragment reports - the arrangement was re-made first by running select-by-category-name,
-    set-selection with this phase's own values - run inside a transaction and ROLLED BACK,
-    so the model was left exactly as it was. returned appliedRules 0 item(s), cannotFilterBy
-    0 item(s), filterType ScheduleFilterType, filtered 0, handed 1, matchIsKnown true, notPresent
-    0 item(s), refused 1 item(s) [not one of the 1 element(s) handed in is a schedule, so
-    NOTH...], replacedRules 0 item(s), requestUnusable false, scheduleBehind Func`2, schedulesSeen
-    0, wantedMatch has value, wantsAValue false. inputs came elements from the selection (1);
-    filterFieldName as given; filterValue as given; matchType as given. on Snowdon-scratch_ajmal.al
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned action change,
+    afterLines 1 item(s) [''Level 2 WSHP Schedule'': 1. Mark begins with ''3-''], appliedRules
+    1 item(s) [''Level 2 WSHP Schedule'' rule 1: Mark begins with ''3-''], asks 1 item(s)
+    [System.String[]], beforeLines 2 item(s) [''Level 2 WSHP Schedule'': 1. Mark begins with
+    ''2-'', ''<Revision Schedule> 4'': no filter rules], cannotFilterBy 0 item(s), copyOf
+    Func`2, describeAll Func`3, describeRule Func`3, fieldCalled Func`3, fieldGiven true,
+    fieldLabel Func`3, filtered 1, handed 2, leftOut Func`2, matchFrom Func`2, matchWords
+    Func`2, notPresent 1 item(s) [''Mark'' on ''<Revision Schedule> 4'' - a schedule cannot
+    filter...], refused 0 item(s), replacedRules 1 item(s) [''Level 2 WSHP Schedule'' rule
+    1 was: Mark begins with ''2-''], requestUnusable false, ruleNumber 0, rulesAfter ''Level
+    2 WSHP Schedule'': 1. Mark begins with ''3-'', rulesBefore ''Level 2 WSHP Schedule'':
+    1. Mark begins with ''2-''  ||  ''<Revision Schedule> 4'': no filter rules, rulesGiven
+    false, scheduleBehind Func`2, schedulesSeen 2, takesNoValue Func`2. inputs came elements
+    from the selection (2); filterFieldName as given; filterValue as given; matchType not
+    given - "keep", the card''s own default (optional); filterAction as given; ruleNumber
+    not given - "0", the card''s own default (optional); filterRules not given - "none", the
+    card''s own default (optional). on Heron Capture Test'
+  negative_case: 'run with filterAction=change, filterFieldName=Model, filterValue=3- arranged
+    with categoryName=Schedule Graphics, inViewOnly=Mechanical Schedules instead - chosen
+    because it should not contain what this fragment reports - the arrangement was re-made
+    first by running select-by-category-name, set-selection with this phase''s own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned action change, afterLines 0 item(s), appliedRules 0 item(s), asks 1 item(s) [System.String[]],
+    beforeLines 2 item(s) [''Level 2 WSHP Schedule'': 1. Mark begins with ''2-'', ''<Revision
+    Schedule> 4'': no filter rules], cannotFilterBy 0 item(s), copyOf Func`2, describeAll
+    Func`3, describeRule Func`3, fieldCalled Func`3, fieldGiven true, fieldLabel Func`3, filtered
+    0, handed 2, leftOut Func`2, matchFrom Func`2, matchWords Func`2, notPresent 2 item(s)
+    [no filter rule on ''Level 2 WSHP Schedule'' uses ''Model'' - it ..., ''Model'' on ''<Revision
+    Schedule> 4'' - a schedule cannot filte...], refused 0 item(s), replacedRules 0 item(s),
+    requestUnusable false, ruleNumber 0, rulesAfter , rulesBefore ''Level 2 WSHP Schedule'':
+    1. Mark begins with ''2-''  ||  ''<Revision Schedule> 4'': no filter rules, rulesGiven
+    false, scheduleBehind Func`2, schedulesSeen 2, takesNoValue Func`2. inputs came elements
+    from the selection (2); filterFieldName as given; filterValue as given; matchType not
+    given - "keep", the card''s own default (optional); filterAction as given; ruleNumber
+    not given - "0", the card''s own default (optional); filterRules not given - "none", the
+    card''s own default (optional). on Heron Capture Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 850b3b2dc7072631
-
+  fingerprint: e4da863e5f3f06d2
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

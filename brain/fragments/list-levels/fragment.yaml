@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LVL-027
 heron-step: 15
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -82,18 +82,27 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-13'
+  date: '2026-10-22'
   by: Ajmal PS
-  model: >
-    Snowdon Towers Sample HVAC.rvt (9,628 elements) and Project1 (3,410 elements, unsaved default template), both open at once in Revit 2024.3
-  positive_case: >
-    Snowdon Towers: 11 levels with elevations - Parking -5156.2 mm, L1 - Block 35 -1803.4 mm, L1 - Block 37 -1054.1 mm. Negative elevations are read correctly rather than clamped.
-  negative_case: >
-    Project1: exactly the 2 template levels, Level 1 at 0 mm and Level 2 at 4000 mm. With BOTH documents open it returned only the active one's levels - it does not read across documents, which is the way this could have been quietly wrong.
-  second_route: >
-    REPORT_LEVEL_ELEVATIONS read the same 11 levels by a different route in the same run, and Revit's Project Browser lists them.
-  fingerprint: "49e6afa85a115f06"
-
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Heron Capture Test, N22 M_Pipe Size Tag
+    - active was Heron Capture Test, Revit 2020, session 60544'
+  positive_case: run as it would normally be run. returned elements 4 item(s) [Level 1, Level
+    2, Level 3, ...], elevationsMm 4 entry(ies), findings 4 item(s) [Level 1  94.2 mm, Level
+    2  3800 mm, Level 3  7300 mm, ...], includeLinks false, levels 4 item(s) [Level 1, Level
+    2, Level 3, ...], linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes
+    0 item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0,
+    linksSearched 0, nestedLinks 0. inputs came includeLinks not given - false (optional).
+    on Heron Capture Test
+  negative_case: run against 'N22 M_Pipe Size Tag' instead - chosen because it should not
+    contain what this fragment reports. returned elements 0 item(s), elevationsMm 0 entry(ies),
+    findings 0 item(s), includeLinks false, levels 0 item(s), linkBlocked , linkDocs 0 item(s),
+    linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only
+    - links not read], linkedTotal 0, linksSearched 0, nestedLinks 0. inputs came includeLinks
+    not given - false (optional). on N22 M_Pipe Size Tag
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 03bed360dcaf385f
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

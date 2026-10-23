@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -103,6 +103,63 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-22'
+  by: Ajmal PS
+  model: Structure Night Test (9,179 elements), Revit 2020, session 60544
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name with this phase''s own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned alreadyAsAsked 0,
+    asks 2 item(s) [(CLEAR_COVER_BOTTOM, bottom, Autodesk.Revit.DB.Structure.Reb..., (CLEAR_COVER_OTHER,
+    other faces, Autodesk.Revit.DB.Structure...], changedIds 1 item(s) [124765], coverFrom
+    Func`3, covers 9 item(s) [Interior (shells) - 10M to 16M, Interior (shells) - 19M to 57M,
+    Interior (slabs, walls, joists) - 10M to 36M, ...], facesChanged 2, findings 1 item(s)
+    [2 face(s) changed and read back on 1 host(s); 0 already as a...], invariant CultureInfo,
+    lines 1 item(s) [Structural Framing ''400 x 800mm'' (id 124765): Rebar Cover - ...], loaded
+    ''Interior (shells) - 10M to 16M'' 13 mm, ''Interior (shells) - 19M to 57M'' 20 mm, ''Interior
+    (slabs, walls, joists) - 10M to 36M'' 20 mm, ''Rebar Cover 1'' 30 mm, ''Interior (framing,
+    columns)'' 40 mm, ''Exterior - 10M to 16M'' 40 mm, ''Interior (slabs, walls, joists) -
+    43M to 57M'' 40 mm, ''Exterior - 19M to 57M'' 50 mm, ''Cast against earth'' 75 mm, mm
+    Func`2, refused , report Structural Framing ''400 x 800mm'' (id 124765): Rebar Cover -
+    Bottom Face ''Interior (shells) - 10M to 16M'' -> ''Interior (framing, columns)'' 40 mm;
+    Rebar Cover - Other Faces ''Interior (shells) - 10M to 16M'' -> ''Interior (framing, columns)''
+    40 mm; 7 rebar set(s) in it - bars tied to the cover move with it, skipped 0 item(s),
+    wanted 5 item(s) [(CLEAR_COVER_TOP, top, keep), (CLEAR_COVER_BOTTOM, bottom, Interior
+    (framing, columns)), (CLEAR_COVER_OTHER, other faces, Interior (framing, columns)...,
+    ...]. inputs came elements from select-by-category-name (1); coverTop not given - "keep",
+    the card''s own default (optional); coverBottom as given; coverOther as given; coverExterior
+    not given - "keep", the card''s own default (optional); coverInterior not given - "keep",
+    the card''s own default (optional). on Structure Night Test'
+  negative_case: 'run with coverBottom=Interior (shells) - 10M to 16M, coverOther=Interior
+    (shells) - 10M to 16M arranged with categoryName=Structural Framing, inViewOnly=Section:
+    Reinf - Beam instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running select-by-category-name with this phase''s
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned alreadyAsAsked 2, asks 2 item(s) [(CLEAR_COVER_BOTTOM, bottom,
+    Autodesk.Revit.DB.Structure.Reb..., (CLEAR_COVER_OTHER, other faces, Autodesk.Revit.DB.Structure...],
+    changedIds 0 item(s), coverFrom Func`3, covers 9 item(s) [Interior (shells) - 10M to 16M,
+    Interior (shells) - 19M to 57M, Interior (slabs, walls, joists) - 10M to 36M, ...], facesChanged
+    0, findings 1 item(s) [0 face(s) changed and read back on 0 host(s); 2 already as a...],
+    invariant CultureInfo, lines 1 item(s) [Structural Framing ''400 x 800mm'' (id 124765):
+    Rebar Cover - ...], loaded ''Interior (shells) - 10M to 16M'' 13 mm, ''Interior (shells)
+    - 19M to 57M'' 20 mm, ''Interior (slabs, walls, joists) - 10M to 36M'' 20 mm, ''Rebar
+    Cover 1'' 30 mm, ''Interior (framing, columns)'' 40 mm, ''Exterior - 10M to 16M'' 40 mm,
+    ''Interior (slabs, walls, joists) - 43M to 57M'' 40 mm, ''Exterior - 19M to 57M'' 50 mm,
+    ''Cast against earth'' 75 mm, mm Func`2, refused , report Structural Framing ''400 x 800mm''
+    (id 124765): Rebar Cover - Bottom Face already ''Interior (shells) - 10M to 16M''; Rebar
+    Cover - Other Faces already ''Interior (shells) - 10M to 16M''; 7 rebar set(s) in it -
+    bars tied to the cover move with it, skipped 0 item(s), wanted 5 item(s) [(CLEAR_COVER_TOP,
+    top, keep), (CLEAR_COVER_BOTTOM, bottom, Interior (shells) - 10M to 16M), (CLEAR_COVER_OTHER,
+    other faces, Interior (shells) - 10M to ..., ...]. inputs came elements from select-by-category-name
+    (1); coverTop not given - "keep", the card''s own default (optional); coverBottom as given;
+    coverOther as given; coverExterior not given - "keep", the card''s own default (optional);
+    coverInterior not given - "keep", the card''s own default (optional). on Structure Night
+    Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 0b2befd4a3d19641
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

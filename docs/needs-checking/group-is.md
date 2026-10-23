@@ -54,3 +54,23 @@ of the day. Run every row on **Revit 2020** first, then IS5 on the newest Revit 
 **Then** close row 5b-1318 with IS1's finding line copied whole: it says which reference Revit 2020 would not
 take, or that version 5 labels there as 2024 does. IS1 run on 2020 is also [BM7](group-bm.md)'s answer for the
 revolve route. A row that fails reopens its row; nothing in a row changes to make it pass.
+
+### Results - 2026-10-22 night, the owner's laptop: Revit 2020.2.1 (20.2.1.1), session 60544 - NOT the rows above
+
+**None of IS0 to IS7 was run:** the scratch family above needs kept build steps, and the owner was asleep with
+*Ask to Keep* on. What ran instead is evidence for IS1's question, on Revit 2020's own library families copied to
+`%TEMP%\heron-work\night-1022\families`, each call a rolled-back `validate --write` whose two setup steps
+(`add-family-parameters`, `set-family-type-values`, both PROVEN) made a TYPE length *N22 Radius* and set it
+inside the same group. Nothing was kept.
+
+| # | Release | What was run and what came back | State |
+|---|---|---|---|
+| IS1-like | 2020 | *N22 M_Pendant Light - Hemisphere* (`M_Pendant Light - Hemisphere.rfa`): the canopy, `solid revolve 85a96555-88e2-46b1-8ccb-716595067a3b-00000773 (on Light Axis): X -76.2 to 76.2, Y -76.2 to 76.2, Z 2377.5 to 2438.4 mm`, *N22 Radius* 76.2. Threw, nothing kept - the finding whole: *"Nothing was labelled. Revit 2020 would not take one of the two references for the radius of the revolve, from "Light Axis" to its profile line 76.2 mm out, asked 4 times (as read, with the plane's read back, with the profile line's read back, with both read back) with both read before the call: the plane "Light Axis" gave a none reference - not the surface a straight dimension is expected to take (85a96555-88e2-46b1-8ccb-716595067a3b-0000071c); the profile line gave a linear reference (85a96555-88e2-46b1-8ccb-716595067a3b-00000775:0:LINEAR). Its axis is locked to "Light Axis". Which of the two it refused Revit does not say; its words were "Invalid number of references.". NOTHING from this call was kept."* The same with *N22 Radius* 1: *"Nothing was labelled. Nothing in the revolve's profile is 1 mm in size ... its lines alongside the axis lie 0, 76.2 mm from it - set the parameter to one of those first."* | **FAIL** - 5b-1318's fault, reproduced in a library family |
+| circle route | 2020 | *N22 M_Downlight - Recessed Can*: an EXTRUSION, `solid extrusion c34a5d43-c948-47d7-8db8-cd73aa6d2c43-000008bf`, *N22 Radius* 100 in type *203mm Incandescent - 120V*: labelled, `valueMm` 100; 1 mm refused, `valueMm` 0. Version 5 left this route untouched, so it says nothing about IS1 | **PASS**, not IS's route |
+
+**What the IS1-like run adds.** Version 5 read the two references before asking Revit, and on Revit 2020 the
+plane's reference reads as kind **none**, not a surface - while the profile line's is a line. That points at the
+plane, but Revit's own words do not name either, and the four tries (each reference also read back from its
+written form) were all refused. Not checked: whether *Light Axis* is a reference plane or a reference line in that
+family (the revolve's work plane and its locked axis both carry the name), and what kind the same plane's
+reference reads on Revit 2024. Row 5b-1318 stays open; `label-family-radius` stays DRAFT.

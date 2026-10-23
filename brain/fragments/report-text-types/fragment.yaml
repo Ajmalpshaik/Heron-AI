@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -86,6 +86,66 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-22'
+  by: Ajmal PS
+  model: Heron Capture Test (21,317 elements), Revit 2020, session 60544
+  positive_case: 'run as it would normally be run. returned MmPerFoot 304.8, asked all, chosen
+    8 item(s) [Label 1, 1.5mm Arial, 1/4" ARIAL, ...], findings 1 item(s) [8 text type(s)
+    listed of 8 in this project; 0 label(s) and 3...], fullName Func`2, invariant CultureInfo,
+    labelCount 0, labels 0 item(s), lines 8 item(s) [Label: Label 1 | Color 0,0,0 | Line Weight
+    1 | Background Op..., Text: 1.5mm Arial | Color 0,0,0 | Line Weight 1 | Background...,
+    Text: 1/4" ARIAL | Color 0,0,0 | Line Weight 1 | Background ..., ...], notTextTypes 0
+    item(s), notes 355 item(s) [3/32" Arial, 3/32" Arial, 3/32" Arial, ...], parameterOf Func`3,
+    settings 13 item(s) [(Color, Autodesk.Revit.DB.BuiltInParameter[], color), (Line Weight,
+    Autodesk.Revit.DB.BuiltInParameter[], integer), (Background, Autodesk.Revit.DB.BuiltInParameter[],
+    backgroun..., ...], shown Func`3, textElementTypes 8 item(s) [Label 1, 1.5mm Arial, 1/4"
+    ARIAL, ...], textNoteCount 355, textTypes Label: Label 1 | Color 0,0,0 | Line Weight 1
+    | Background Opaque | Show Border no | Leader/Border Offset 2.032 mm | Text Font Arial
+    | Text Size 2.381 mm | Tab Size 12.7 mm | Bold no | Italic no | Underline no | Width Factor
+    1 | used by 0 label(s) and 0 text note(s)  ||  Text: 1.5mm Arial | Color 0,0,0 | Line
+    Weight 1 | Background Opaque | Show Border no | Leader/Border Offset 2.032 mm | Leader
+    Arrowhead Arrow Filled 15 Degree | Text Font Arial | Text Size 1.5 mm | Tab Size 12.7
+    mm | Bold no | Italic no | Underline no | Width Factor 1 | used by 0 label(s) and 316
+    text note(s)  ||  Text: 1/4" ARIAL | Color 0,0,0 | Line Weight 1 | Background Opaque |
+    Show Border no | Leader/Border Offset 2.032 mm | Leader Arrowhead Arrow 30 Degree | Text
+    Font Arial | Text Size 6.35 mm | Tab Size 12.7 mm | Bold yes | Italic no | Underline no
+    | Width Factor 1 | used by 0 label(s) and 6 text note(s)  ||  Text: 1/8" Arial | Color
+    0,0,0 | Line Weight 1 | Background Opaque | Show Border no | Leader/Border Offset 2.032
+    mm | Leader Arrowhead Arrow Filled 15 Degree | Text Font Arial | Text Size 3.175 mm |
+    Tab Size 12.7 mm | Bold no | Italic no | Underline no | Width Factor 1 | used by 0 label(s)
+    and 13 text note(s)  ||  Text: 2.5mm Arial | Color 0,0,0 | Line Weight 1 | Background
+    Opaque | Show Border no | Leader/Border Offset 2.032 mm | Leader Arrowhead Arrow Filled
+    15 Degree | Text Font Arial | Text Size 2.5 mm | Tab Size 12.7 mm | Bold no | Italic no
+    | Underline no | Width Factor 1 | used by 0 label(s) and 0 text note(s)  ||  Text: 3/32"
+    Arial | Color 0,0,0 | Line Weight 1 | Background Opaque | Show Border no | Leader/Border
+    Offset 2.032 mm | Leader Arrowhead Arrow Filled 15 Degree | Text Font Arial | Text Size
+    2.381 mm | Tab Size 12.7 mm | Bold no | Italic no | Underline no | Width Factor 1 | used
+    by 0 label(s) and 8 text note(s)  ||  Text: 5mm Arial | Color 0,0,0 | Line Weight 1 |
+    Background Opaque | Show Border no | Leader/Border Offset 2.032 mm | Leader Arrowhead
+    Arrow Filled 15 Degree | Text Font Arial | Text Size 5 mm | Tab Size 12.7 mm | Bold no
+    | Italic no | Underline no | Width Factor 1 | used by 0 label(s) and 12 text note(s)  ||  Text:
+    Schedule Default | Color 0,0,0 | Line Weight 1 | Background Opaque | Show Border no |
+    Leader/Border Offset 2.032 mm | Leader Arrowhead Arrow 30 Degree | Text Font Arial | Text
+    Size 3.175 mm | Tab Size 12 mm | Bold no | Italic no | Underline no | Width Factor 1 |
+    used by 0 label(s) and 0 text note(s), typeCount 8, wantAll true, wantLabels false. inputs
+    came textTypeName as given. on Heron Capture Test'
+  negative_case: run with textTypeName=No Such Text Type instead - chosen because it should
+    not contain what this fragment reports. returned MmPerFoot 304.8, asked No Such Text Type,
+    chosen 0 item(s), findings 2 item(s) [No label or text type is named "No Such Text Type".
+    The labe..., 0 text type(s) listed of 8 in this project; 0 label(s) and 3...], fullName
+    Func`2, invariant CultureInfo, labelCount 0, labels 0 item(s), lines 0 item(s), notTextTypes
+    0 item(s), notes 355 item(s) [3/32" Arial, 3/32" Arial, 3/32" Arial, ...], parameterOf
+    Func`3, settings 13 item(s) [(Color, Autodesk.Revit.DB.BuiltInParameter[], color), (Line
+    Weight, Autodesk.Revit.DB.BuiltInParameter[], integer), (Background, Autodesk.Revit.DB.BuiltInParameter[],
+    backgroun..., ...], shown Func`3, textElementTypes 8 item(s) [Label 1, 1.5mm Arial, 1/4"
+    ARIAL, ...], textNoteCount 355, textTypes , typeCount 0, wantAll false, wantLabels false.
+    inputs came textTypeName as given. on Heron Capture Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: ac39995049bb882a
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -191,28 +191,49 @@ contract:
 # fingerprint no longer describes the code and the card is DRAFT until
 # NEEDS-CHECKING Group IG proves version 2 (D-30).
 proof:
-  date: '2026-09-09'
+  date: '2026-10-22'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 43652
-  positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction
-    and ROLLED BACK, so the model was left exactly as it was. returned added 1, notASchedule
-    0 item(s), partMissing 2 item(s) [1422218, 1542843], refused 0 item(s), scheduleBehind
-    Func`2. inputs came elements from the selection (3); columnName as given; partFields as
-    given (2); partSeparators as given (1). on Snowdon-scratch_ajmal.al
-  negative_case: run with categoryName=Title Blocks, columnName=AJ Combined, inViewOnly=Notes,
-    Symbols & Schedules, partFields=Mark,Comments, partSeparators= -  instead - chosen because
-    it should not contain what this fragment reports - the arrangement was re-made first by
-    running select-by-category-name, set-selection with this phase's own values - run inside
-    a transaction and ROLLED BACK, so the model was left exactly as it was. returned added
-    0, notASchedule 1 item(s) [1488980], partMissing 0 item(s), refused 0 item(s), scheduleBehind
-    Func`2. inputs came elements from the selection (1); columnName as given; partFields as
-    given (2); partSeparators as given (1). on Snowdon-scratch_ajmal.al
+  model: Heron Capture Test (21,317 elements), Revit 2020, session 60544
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned added 1, columnNow
+    ''Level 2 WSHP Schedule'' / ''N22 Combined'', column 5 of 5: ''[Mark]x[Model]'' - added,
+    columnsCalled Func`3, drawn Func`4, editExisting false, edited 0, headingOf Func`2, keepParts
+    false, keepSeparators false, notASchedule 0 item(s), nowLines 1 item(s) [''Level 2 WSHP
+    Schedule'' / ''N22 Combined'', column 5 of 5: ''[M...], parameterName Func`4, partMissing
+    1 item(s) [890413], positionAnchor , positionKind keep, positionNumber 0, positionProblem
+    (null), positionText keep, refused 0 item(s), refusedWhy ''<Revision Schedule> 4'' - ''Mark''
+    is not a parameter this schedule can show, so no part of the column was made. Nothing
+    was changed on this schedule., saysKeep Func`2, scheduleBehind Func`2, separatorList 1
+    item(s) [x], wantedName N22 Combined, whyLines 1 item(s) [''<Revision Schedule> 4'' -
+    ''Mark'' is not a parameter this sch...]. inputs came elements from the selection (2);
+    columnName as given; partFields as given (2); partSeparators as given (1); editExisting
+    not given - false (optional); position not given - "keep", the card''s own default (optional).
+    on Heron Capture Test'
+  negative_case: 'run with columnName=Mark, editExisting=true, partFields=Mark,Model, partSeparators=x
+    arranged with categoryName=Schedule Graphics, inViewOnly=Mechanical Schedules instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running select-by-category-name, set-selection with this phase''s own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned added 0, columnNow , columnsCalled Func`3, drawn Func`4, editExisting
+    true, edited 0, headingOf Func`2, keepParts false, keepSeparators false, notASchedule
+    0 item(s), nowLines 0 item(s), parameterName Func`4, partMissing 0 item(s), positionAnchor
+    , positionKind keep, positionNumber 0, positionProblem (null), positionText keep, refused
+    2 item(s) [545985, 890413], refusedWhy ''Level 2 WSHP Schedule'' - ''Mark'' is a plain
+    column of one parameter, not a combined column, so it has no parts to replace. Add a combined
+    column instead (without editExisting), then hide or remove the plain one. Nothing was
+    changed on this schedule.  ||  ''<Revision Schedule> 4'' - no column is headed ''Mark''.
+    Its columns are: No. | Description | Date | Revision Sequence Number. Nothing was changed
+    on this schedule., saysKeep Func`2, scheduleBehind Func`2, separatorList 1 item(s) [x],
+    wantedName Mark, whyLines 2 item(s) [''Level 2 WSHP Schedule'' - ''Mark'' is a plain column
+    of one pa..., ''<Revision Schedule> 4'' - no column is headed ''Mark''. Its co...]. inputs
+    came elements from the selection (2); columnName as given; partFields as given (2); partSeparators
+    as given (1); editExisting as given; position not given - "keep", the card''s own default
+    (optional). on Heron Capture Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: c2cf660f12db68da
-
+  fingerprint: f9790bebcf26d52e
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
