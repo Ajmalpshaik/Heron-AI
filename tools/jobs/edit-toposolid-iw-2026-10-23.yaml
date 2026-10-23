@@ -1,0 +1,39 @@
+# NEEDS-CHECKING Group IW - EDIT_TOPOSOLID version 2's simplify, which counts
+# a toposolid as edited only when its shape point count changed (row 5b-1331).
+#
+#     python tools/batch-prove.py tools/jobs/edit-toposolid-iw-2026-10-23.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/edit-toposolid-iw-2026-10-23.yaml
+#
+# ONE SCRATCH COPY, OPEN IN REVIT 2024, never the library file and never a
+# working model: %TEMP%\heron-work\toposolid-iw\IW Snowdon Site 2024.rvt, a copy
+# of Revit 2024's Snowdon Towers Sample Site.rvt. `in:` brings it to the front.
+#
+# WHAT THE POSITIVE SHOULD READ, from the 2026-10-23 run of version 1 on such a
+# copy (N23 Snowdon Site 2024, Revit 2024.3, session 83588): 10 toposolids, one
+# of them 1264746 with 2399 shape points (1293 after), the other nine with 0.
+# Version 2 should give resultIds 1 - that one - and name the nine "nothing to
+# simplify - 0 shape points, left as it was". The negative, the same night: 10
+# walls, each "not a toposolid", resultIds 0.
+#
+# select-by-categories is version 3, DRAFT: with no inViewOnly it takes the whole
+# model. It is the arrangement, not what is judged - the answer's binding note
+# must read "elements from select-by-categories (10)" on both legs, or the run
+# proves nothing.
+
+model: IW Snowdon Site 2024 (scratch copy of Revit 2024's Snowdon Towers Sample Site), Revit 2024
+
+jobs:
+  - fragment: edit-toposolid
+    expect: resultIds
+    write: true                        # rolled back
+    keep-chain: true
+    in: IW Snowdon Site 2024
+    setup: [select-by-categories]
+    setup-set: {categories: Toposolid}
+    negative-setup-set: {categories: Walls}
+    set: {mode: simplify, value: "50"}
+    negative-set: {mode: simplify, value: "50"}
+    note: >
+      Positive - every toposolid in the site, one with shape points and nine
+      without: resultIds 1, the nine named as left as they were. Negative -
+      the walls, each "not a toposolid", resultIds 0.
