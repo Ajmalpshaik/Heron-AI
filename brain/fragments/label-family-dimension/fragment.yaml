@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,19 @@ semantic-identity: "tie the distance between two family planes to a parameter, k
 kind: action
 domain: revit.families
 capability: LABEL_FAMILY_DIMENSION
-version: 1
+# Version 2 (2026-10-22, row 5b-1326) changed impl/: which end a flex would
+# move is read BEFORE the label is made and said. Seen on Revit 2020 (session
+# 78736): "Trap Depth" labelled from a new, unpinned, unreferenced plane
+# "Floor Top" to "Trap Top" (two labelled dimensions on it) read back fine, and
+# the next SET_FAMILY_TYPE_VALUES 300 -> 400 moved Floor Top up 100 mm and left
+# Trap Top where it was - twice - until Floor Top was pinned. Each end is now
+# read (a level, pinned, defines the origin, or referenced by a labelled
+# dimension, an EQ or a lock = held; none of those = FREE); a free end is named
+# in `freeEnd` and the findings with the pin route, and `pinFreeEnd` may pin it
+# on the modeller's word, read back. The zero-distance refusal names the same
+# route. Version 1's proof below no longer describes the code: DRAFT until
+# NEEDS-CHECKING Group IU proves version 2 (D-30).
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -50,6 +62,34 @@ purpose: >
   the regeneration; a plane that moved or a reading that differs fails the
   call, and nothing is kept.
 
+  **WHICH END A FLEX WOULD MOVE IS SAID FIRST** (version 2). When the
+  parameter changes, Revit moves whichever end of the labelled dimension is
+  least held. Each end is read before the label is made, in three grades: a
+  level, a pinned plane or one that defines the origin is held FAST - a
+  flex never moves it; a plane that a labelled dimension drives from
+  elsewhere, or that an EQ or a lock ties to another plane or level, is
+  held SOFTLY - a flex moves it only through that chain; a plane none of
+  those touch is FREE, Revit's first choice to move. Seen on Revit 2020: a
+  height labelled from a new, free plane to a plane carrying two other
+  labels moved the FREE plane when flexed, and did until that plane was
+  pinned. So a free end beside a softly held one, or two free ends, is
+  named in `freeEnd` and the findings as the end a flex may move - *pin it
+  (SET_PIN_STATE) or dimension it to a level*. A free end beside one held
+  fast is the ordinary height from Ref. Level: the free end is the only one
+  a flex can move, so the findings say so and nothing is warned of. Two
+  ends held fast have nothing a flex can move, and the findings say that.
+  With a centre plane the EQ moves both ends equally, so no end is free on
+  its own. The label is still made in every case: a free end is a warning,
+  not a refusal. Nothing is pinned unasked (Article 7); `pinFreeEnd=true`
+  pins the free end - the first named, when both are - before the label
+  and reads the pin back, and pins nothing, saying why, where a pin would
+  leave the flex nothing to move or fight the EQ. Two planes in the same
+  place are refused as before, and that refusal names the same route. A
+  lock or an EQ to geometry ties the geometry to the plane, not the plane
+  to anything, and does not count; a lock or EQ running between the two
+  ends is named as what the label will fight; a plain dimension holds
+  nothing.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -73,10 +113,32 @@ contract:
     - name: centrePlane
       type: string
       source: request
+    # Version 2. true pins a FREE end - one held by nothing - before the label
+    # goes on, so a flex moves the other end; left out, nothing is pinned and
+    # the free end is only named (Article 7). With both ends free, the
+    # fromPlane is the one pinned. Nothing is pinned, and the findings say
+    # why, when the other end is a level, pinned or the origin (the free end
+    # is then the only one a flex can move) or a centre plane's EQ is asked.
+    - name: pinFreeEnd
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: labelled
       # The dimension made, read back: which parameter now drives which two
       # planes, and the distance it reads.
+      role: result
+      type: string
+    - name: freeEnd
+      # Version 2. The warning, whole: which plane is held by nothing, what
+      # holds the other, and the pin route. Empty when which end moves is
+      # settled - both ends held, one end held fast and the other free (the
+      # ordinary height), or an EQ across a centre plane - the negative case.
+      role: result
+      type: string
+    - name: pinnedEnd
+      # Version 2. The plane pinned on pinFreeEnd=true, read back pinned.
+      # Empty when nothing was pinned.
       role: result
       type: string
     - name: equalised
@@ -142,7 +204,12 @@ compatibility-note: >
   `ReferencePlane.GetReference()` and `new Reference(Element)` read the same 2020
   through 2027 (api-surface, read 2026-09-24). A parameter's kind is read by
   reflection, because it moved at 2022 - `Definition.ParameterType` before,
-  `Definition.GetDataType()` from.
+  `Definition.GetDataType()` from. Version 2 adds `Element.Pinned`,
+  `Dimension.IsLocked`, `Dimension.References` and
+  `BuiltInParameter.DATUM_PLANE_DEFINES_ORIGIN`, each in RevitAPI.xml for
+  2020 and 2027 alike (read 2026-10-22). Whether Revit counts a locked
+  alignment as a `Dimension` with `IsLocked` in every release, and which end
+  it moves when both are held, is what NEEDS-CHECKING Group IU has to show.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #

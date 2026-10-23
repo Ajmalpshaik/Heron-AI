@@ -166,6 +166,23 @@ def paging(runs, folder):
     check(any(line.startswith("setup     deleted  7") and "Generic" not in line for line in every),
           "a deleted element is listed with no category - it had none left to read")
 
+    # A DICTIONARY'S ENTRIES, where the add-in sent them (5b-1325): one line
+    # each under the value, in the order sent, and nothing for a name that
+    # arrived as a count alone.
+    with_entries = dict(record, reply=dict(reply, provides=dict(reply["provides"],
+                                                               values="2 entry(ies)",
+                                                               resolvedFrom="2 entry(ies)"),
+                                           providesEntries={"values": {"14194": "Yes",
+                                                                       "7492": "No"}}))
+    paged = runs.entries(with_entries)
+    values_at = [i for i, line in enumerate(paged) if line.startswith("value     values  ")]
+    check(len(values_at) == 1
+          and paged[values_at[0] + 1] == "entry     values  14194: Yes"
+          and paged[values_at[0] + 2] == "entry     values  7492: No",
+          "a dictionary's entries follow its value line, one each, in the order sent")
+    check(not any(line.startswith("entry     resolvedFrom") for line in paged),
+          "and a dictionary whose entries did not come has no entry lines")
+
     first = runs.page(got, run, 0, 20)
     check(first.splitlines()[0].startswith("Run %s: create-family-extrusion in Panel" % run)
           and "KEPT" in first.splitlines()[0],
@@ -361,6 +378,27 @@ def batching(runs):
     shown, same = runs.shown_values(refusing, "CREATE_FAMILY_EXTRUSION", values)
     check(shown.get("problems") == "1 item(s) [no such plane]" and "problems" not in same,
           "a value that changed - a refusal above all - is printed as ever")
+
+    # A DICTIONARY'S COUNT IS NOT ITS CONTENTS (review, 2026-10-22): two replies
+    # saying "1 entry(ies)" that hold different entries are two answers, and
+    # the second must print them, not be left out as unchanged.
+    moved_one = dict(reply_with(run=run), provides={"moved": "1 entry(ies)"},
+                     providesEntries={"moved": {"101": "1200"}})
+    moved_two = dict(reply_with(run=run), provides={"moved": "1 entry(ies)"},
+                     providesEntries={"moved": {"202": "300"}})
+    moved_same = dict(reply_with(run=run), provides={"moved": "1 entry(ies)"},
+                      providesEntries={"moved": {"202": "300"}})
+    entries_batch = runs.Batch()
+    entries_batch.turn(2.0, 2.1)
+    runs.shown_values(moved_one, "MOVE_ELEMENTS", entries_batch)
+    entries_batch.turn(2.2, 2.3)
+    shown, same = runs.shown_values(moved_two, "MOVE_ELEMENTS", entries_batch)
+    check(shown == {"moved": "1 entry(ies)"} and same == [],
+          "the same count with different entries is printed, never 'unchanged'")
+    entries_batch.turn(2.4, 2.5)
+    shown, same = runs.shown_values(moved_same, "MOVE_ELEMENTS", entries_batch)
+    check(shown == {} and same == ["moved"],
+          "and the same count with the same entries is left out, as before")
     other = dict(two)
     values.turn(1.6, 1.7)
     shown, same = runs.shown_values(other, "SET_FAMILY_FORM_MATERIAL", values)

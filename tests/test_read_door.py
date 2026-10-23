@@ -296,9 +296,9 @@ def show_door(text, cs, door_refusal):
           "it aims at the pin, classifies a failure by its own registry row, and "
           "marks a run that consumes the chain not safe to ask twice")
     check("undeclared_values(" in body and "_ignored_lines(undeclared, takeable)" in body
-          and '_provides_lines(reply.get("provides"))' in body,
+          and '_provides_lines(reply.get("provides"), reply.get("providesEntries"))' in body,
           "it names an ignored value and what a fragment did not send, through the "
-          "one copy each door uses")
+          "one copy each door uses - with the entries the add-in sent beside the counts")
     check("_proof_line(capability, folder)" in body
           and "Nothing in the model was changed" in body,
           "and says how far it is proven and that nothing in the model was changed")
@@ -622,10 +622,13 @@ def main():
     # after counting those the last reply of the batch already showed word for
     # word (5b-407) - still the reply's own `provides`, still the one copy of
     # how they are printed. tests/test_run_records.py holds what it leaves out.
+    # Each door hands the formatter the reply's `providesEntries` beside its
+    # `provides` (5b-1325), so a dictionary's entries print under its count.
     printed_through = {
-        "revit_read": ('_provides_lines(reply.get("provides"))',),
+        "revit_read": ('_provides_lines(reply.get("provides"), '
+                       'reply.get("providesEntries"))',),
         "revit_change": ("runs.shown_values(reply, capability, _BATCH)",
-                         "_provides_lines(shown)"),
+                         '_provides_lines(shown, reply.get("providesEntries"))'),
     }
     for door in ("revit_read", "revit_change"):
         door_body = body_of(text, door) or ""
@@ -668,6 +671,66 @@ def main():
         check(not any("NOT SENT" in line for line in prose),
               "and a fragment's own sentence that says entry(ies) is not "
               "taken for a dictionary")
+
+        # THE ENTRIES THEMSELVES, since 2026-10-22 (5b-1325): the reply
+        # READ_ELEMENT_PARAMETERS gave on four connectors in Revit 2020,
+        # session 78736 - `values 4 entry(ies)` and not one value - with the
+        # `providesEntries` the add-in now sends beside it. A formatter from
+        # before the field takes one argument: that is ONE clean failure, and
+        # the checks below still run on what it prints (heron-ship §2a).
+        takes_entries = provides_lines.__code__.co_argcount >= 2
+        check(takes_entries,
+              "_provides_lines takes the entries the add-in sent, beside the counts")
+
+        def with_entries(provides, entries):
+            if not takes_entries:
+                return provides_lines(provides)
+            return provides_lines(provides, entries)
+
+        # The ids in an order neither a text sort nor a number sort gives, so
+        # a formatter that sorted them would be caught (review, 2026-10-22).
+        four = {"7534": "Yes", "14194": "Yes", "7492": "Yes", "7513": "Yes"}
+        whole = with_entries({"values": "4 entry(ies)",
+                              "resolvedFrom": "4 entry(ies)",
+                              "blank": "0 item(s)", "absent": "0 item(s)"},
+                             {"values": four,
+                              "resolvedFrom": dict((k, "instance") for k in four)})
+        stripped = [line.strip() for line in whole]
+        count_at = [i for i, line in enumerate(stripped)
+                    if line.split() == ["values", "4", "entry(ies)"]]
+        check(len(count_at) == 1,
+              "the count line is as it was - every proof record carries that shape")
+        under = stripped[count_at[0] + 1:count_at[0] + 5] if count_at else []
+        check(under == ["%s: Yes" % key for key in four],
+              "and directly under it every entry that arrived prints on its own line, "
+              "key: value, in the order the add-in sent them, never sorted - %s" % under)
+        from_at = [i for i, line in enumerate(stripped)
+                   if line.split() == ["resolvedFrom", "4", "entry(ies)"]]
+        check(from_at and stripped[from_at[0] + 1:from_at[0] + 5]
+              == ["%s: instance" % key for key in four],
+              "and so do the second dictionary's, under its own count line")
+        check(not any("NOT SENT" in line for line in whole),
+              "so nothing is said to be NOT SENT when the entries came")
+
+        bigger = with_entries({"values": "20 entry(ies)"},
+                              {"values": dict(("%d" % i, "v%d" % i) for i in range(12))})
+        check(sum(1 for line in bigger if line.strip().startswith(tuple("0123456789"))
+                  and ": v" in line) == 12
+              and any("and 8 more" in line and "first 12 of 20" in line for line in bigger),
+              "a dictionary larger than what arrived shows what came and says how many more")
+
+        older = with_entries({"values": "4 entry(ies)", "blank": "0 item(s)"}, None)
+        check(any("NOT SENT" in line and "values" in line for line in older),
+              "with no entries at all - an add-in from before the field - NOT SENT is said as before")
+        stray = with_entries({"values": "4 entry(ies)"}, {"other": {"1": "x"}})
+        check(any("NOT SENT" in line for line in stray)
+              and not any("1: x" in line for line in stray),
+              "entries for a name the reply does not carry print nowhere, and that "
+              "name's own dictionary is still NOT SENT")
+        none = with_entries({"values": "0 entry(ies)"}, {"values": {}})
+        check(not any("NOT SENT" in line for line in none)
+              and not any(":" in line.strip() and line.startswith("    ") for line in none),
+              "an empty dictionary prints no entries and is not said to be withheld")
 
         # WHAT CREATE_FAMILY_EXTRUSION LEFT on 2026-10-09, cut to one of each
         # shape: 29% of a 107-form family's replies were helpers like these,

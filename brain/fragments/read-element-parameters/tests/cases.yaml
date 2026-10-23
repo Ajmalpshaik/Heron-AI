@@ -53,12 +53,30 @@ positive:
       and a plain note beside it says "no list" and nothing about styles. NOT
       RUN: it needs Revit (NEEDS-CHECKING FD3)
 
+  - given: >
+      VERSION 5. Four duct connectors (FILTER_ELEMENTS_BY_ID), reading "Allow
+      Slope Adjustments"
+    expect: >
+      `findings` reads '"Allow Slope Adjustments": 4 of 4 carry a value, 0
+      blank, 0 absent. <id>: Yes (instance); <id>: Yes (instance); ...' - every
+      id and value in words - and the chat's reply shows the four entries of
+      `values` under its count, not "4 entry(ies)" alone. This is the case of
+      2026-10-22 (5b-1325)
+
+  - given: VERSION 5. Twenty walls, reading "Comments" where every one is filled in
+    expect: >
+      `findings` names the first twelve by id and value and says "... and 8
+      more - read fewer at a time, or GROUP_AND_COUNT"; the chat shows twelve
+      entries and "... and 8 more"
+
 negative:
   - given: the same 4 ducts, reading a parameter name that does not exist
     expect: >
       0 in values, 0 blank, 4 ABSENT - and it must not throw. This is the case
       that proves blank and absent are genuinely separated rather than merged,
-      and that the version 2 type fallback did not turn every miss into a hit
+      and that the version 2 type fallback did not turn every miss into a hit.
+      VERSION 5: `findings` reads '"<name>": 0 of 4 carry a value, 0 blank, 4
+      absent. Absent: <the four ids>.' - no value invented for any of them
 
   - given: >
       an element carrying BOTH an instance and a type parameter of the same

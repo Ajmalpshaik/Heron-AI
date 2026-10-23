@@ -398,7 +398,7 @@ def replay(server):
                                       "runs.change_lines(reply)",
                                       "_ignored_lines(undeclared, takeable)",
                                       "runs.shown_values(reply, capability, _BATCH)",
-                                      'lines.extend(_provides_lines(shown) or ([""] if same else []))',
+                                      '_provides_lines(shown, reply.get("providesEntries"))',
                                       "runs.unchanged_line(same)",
                                       "runs.verdict_line(reply, _BATCH)")]
     check(all(o > 0 for o in order) and order == sorted(order),

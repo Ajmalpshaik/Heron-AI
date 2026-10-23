@@ -1335,7 +1335,7 @@ def _ignored_lines(undeclared, takeable):
     ]
 
 
-def _provides_lines(provides):
+def _provides_lines(provides, entries=None):
     """
     What a fragment left behind, one aligned line each - both doors, one copy.
 
@@ -1359,6 +1359,19 @@ def _provides_lines(provides):
     a change there costs a rebuild and a Revit restart on every release. It
     is recognised by its exact shape, a whole number and that one word, so a
     fragment's own sentence that happens to say "entry(ies)" is left alone.
+
+    THE ENTRIES THEMSELVES TRAVEL BESIDE THE COUNT, SINCE 2026-10-22. The
+    add-in's `Report` sends `providesEntries` - for every dictionary that
+    holds something, its first twelve entries as "key": "value", each side
+    cut as a list item is - and `Describe` is left byte for byte as it was.
+    `entries` is that field. Each entry prints on its own line under the
+    count, "    14194: Yes", and a dictionary larger than what arrived says
+    how many more it holds. Measured 2026-10-22 on Revit 2020 (session
+    78736): READ_ELEMENT_PARAMETERS asked for one parameter on four connectors
+    answered `values 4 entry(ies)` and `resolvedFrom 4 entry(ies)` and not one
+    value reached the chat (FRAGMENT-ISSUES 5b-1325). NOT SENT is now said
+    only of a dictionary whose entries did NOT arrive - an add-in from before
+    this field - so an older add-in still says what it withheld.
 
     A VALUE THAT IS CODE, NOT DATA, IS NAMED AND NOT PRINTED. `Report` hands
     over every variable a fragment's script declared, and many hold a helper:
@@ -1400,20 +1413,48 @@ def _provides_lines(provides):
     data = dict((name, provides[name]) for name in provides
                 if str(name) not in code)
 
+    def dictionary_size(value):
+        """How many entries a value's "N entry(ies)" says, or None when it
+        is not that exact shape - a fragment's own sentence is left alone."""
+        words = str(value).strip().split(" ")
+        if (len(words) == 2 and words[1] == "entry(ies)"
+                and words[0].isdecimal()):
+            return int(words[0])
+        return None
+
+    def arrived(name):
+        """The entries the add-in sent for this dictionary, in the order it
+        sent them - or None when none came."""
+        if not isinstance(entries, dict):
+            return None
+        sent = entries.get(str(name))
+        if not isinstance(sent, dict) or not sent:
+            return None
+        return sent
+
     lines = [""]
     if data:
         width = max(len(str(name)) for name in data)
-        lines += ["  %-*s  %s" % (width, name, data[name])
-                  for name in sorted(data)]
+        for name in sorted(data):
+            lines.append("  %-*s  %s" % (width, name, data[name]))
+            size = dictionary_size(data[name])
+            sent = arrived(name) if size else None
+            if not sent:
+                continue
+            for key in sent:
+                lines.append("    %s: %s" % (key, sent[key]))
+            if size > len(sent):
+                lines.append("    ... and %d more: the first %d of %d are shown. "
+                             "Read fewer at a time to see every one."
+                             % (size - len(sent), len(sent), size))
     if code:
         lines.append("  NOT PRINTED, holding code rather than data: %s."
                      % ", ".join(code))
 
     held = []
     for name in sorted(data):
-        words = str(data[name]).strip().split(" ")
-        if (len(words) == 2 and words[1] == "entry(ies)"
-                and words[0].isdigit() and int(words[0]) > 0):
+        size = dictionary_size(data[name])
+        if size and not arrived(name):
             held.append(str(name))
     if held:
         one = len(held) == 1
@@ -2033,7 +2074,8 @@ def revit_change(capability: str = "", values: str = "",
     # NOT PRINTED AGAIN (5b-407) - only within a batch, only word for word, and
     # only when the reply names a run record, where every value can be read.
     shown, same = runs.shown_values(reply, capability, _BATCH)
-    lines.extend(_provides_lines(shown) or ([""] if same else []))
+    lines.extend(_provides_lines(shown, reply.get("providesEntries"))
+                 or ([""] if same else []))
     lines.extend(runs.unchanged_line(same))
 
     # THE VERDICT IS THE ADD-IN'S TO WRITE, NOT THIS TOOL'S. It is the only
@@ -3091,7 +3133,7 @@ def revit_read(capability: str = "", values: str = "",
 
     lines.extend(_ignored_lines(undeclared, takeable))
 
-    left = _provides_lines(reply.get("provides"))
+    left = _provides_lines(reply.get("provides"), reply.get("providesEntries"))
     lines.extend(left or ["", "  It left nothing behind to report."])
 
     lines.append("")
@@ -3295,7 +3337,7 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
 
     lines.extend(_ignored_lines(undeclared, takeable))
 
-    left = _provides_lines(reply.get("provides"))
+    left = _provides_lines(reply.get("provides"), reply.get("providesEntries"))
     lines.extend(left or ["", "  It left nothing behind to report."])
 
     lines.append("")
