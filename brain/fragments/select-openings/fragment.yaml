@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,20 @@ semantic-identity: "where are the shafts and the holes in the slab"
 kind: filter
 domain: revit.selection
 capability: SELECT_OPENINGS
-version: 2
+# Version 3 (2026-10-22, row 5b-1320) changed the CONTRACT, not impl/:
+# `inViewOnly` is marked optional, so left out - or given empty - it binds
+# null, which the code has always read as the whole model; until then "Null
+# means the whole model" below described a null nothing could hand it, and
+# the call was refused without a view. The same change as
+# SELECT_BY_CATEGORIES, where it was measured. The code under version 2's
+# proof is unchanged; the absent case was never measured. DRAFT until
+# NEEDS-CHECKING Group IT proves version 3 (D-30); `proof-held:` says so.
+version: 3
+proof-held: >
+  Version 3 (2026-10-22, row 5b-1320) made inViewOnly optional - absent or
+  empty binds the whole model through the add-in's binder - which the
+  proof never measured. NEEDS-CHECKING Group IT proves it, on the add-in
+  rebuilt.
 source: OFFICIAL
 risk: READ
 
@@ -55,9 +68,14 @@ contract:
     - name: doc
       type: Document
     # Null means the whole model; a view narrows it to what that view draws.
+    # `optional: true` is what lets it be LEFT OUT (version 3, row 5b-1320):
+    # the binder binds an absent View marked optional to null, and a value
+    # given empty the same (HeronBindingNote.AbsentValue, EmptyMeansAbsent).
+    # A view NAMED and not found is still refused.
     - name: inViewOnly
       type: View
       source: request
+      optional: true
     - name: includeLinks
       # D-59. THE MODELLER DECIDES, JOB BY JOB, and absent means host only -
       # which is what this fragment did before.

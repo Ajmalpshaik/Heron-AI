@@ -262,18 +262,27 @@ def need_may_be_absent(entry):
 
     THE ADD-IN'S RULE, MIRRORED: HeronBindingNote.AbsentValue binds an absent
     request need when it is a `bool` marked `optional: true` - D-59's
-    `includeLinks`, where a switch not mentioned is a switch left off - and
-    HeronBindingNote.DeclaredAbsent binds one whose card names what leaving it
-    out means (`absent:`, need_absent_text). Every other request need is still
-    refused when absent (FRAGMENT-ISSUES rows 5b-227 and 5b-252), so it answers
-    False for them. One rule on both sides, or the Python half calls runnable
-    what Revit refuses - row 96's lesson.
+    `includeLinks`, where a switch not mentioned is a switch left off - or a
+    `View` marked so, which binds null, the whole model, since 2026-10-22
+    (FRAGMENT-ISSUES row 5b-1320: "select the plumbing fixtures" could not be
+    asked of the whole model, and this mirror handed the call back for want of
+    a view before Revit was asked) - and HeronBindingNote.DeclaredAbsent binds
+    one whose card names what leaving it out means (`absent:`,
+    need_absent_text). Every other request need is still refused when absent
+    (FRAGMENT-ISSUES rows 5b-227 and 5b-252), so it answers False for them.
+    One rule on both sides, or the Python half calls runnable what Revit
+    refuses - row 96's lesson.
     """
     if need_absent_text(entry) is not None:
         return True
     return (need_source(entry) == "request"
-            and str(entry.get("type") or "").strip() == "bool"
+            and str(entry.get("type") or "").strip() in ABSENT_BINDS
             and str(entry.get("optional")).strip().lower() == "true")
+
+
+# The types HeronBindingNote.AbsentValue binds when absent and marked optional -
+# its switch, word for word: a bool to false, a View to null.
+ABSENT_BINDS = ("bool", "View")
 
 
 # The element lists HeronBindingNote.EmptyWhenAbsent binds empty - its switch,

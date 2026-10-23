@@ -350,6 +350,16 @@ def main():
     print("  %s  the binder asks EmptyWhenAbsent before refusing an unfilled "
           "element list" % ("ok  " if empties else "FAIL"))
 
+    # Row 5b-1320's other half: the host proves what EmptyMeansAbsent answers;
+    # only this can see that the binder asks it BEFORE converting a given
+    # value - inViewOnly= was looked up as a view named "" and refused.
+    asked_at = text.find("HeronBindingNote.EmptyMeansAbsent(givenText, optional)")
+    converts_at = text.find("FromRequest(givenText, type, name, target, selected,")
+    blanks = asked_at >= 0 and converts_at >= 0 and asked_at < converts_at
+    print("  %s  the binder asks EmptyMeansAbsent of a value given, before "
+          "converting it (row 5b-1320)" % ("ok  " if blanks else "FAIL"))
+    empties = empties and blanks
+
     linked = linked_carry_is_refused(text)
     for ok_here, said_here in linked:
         print("  %s  %s" % ("ok  " if ok_here else "FAIL", said_here))
@@ -398,6 +408,16 @@ def main():
           "optional": "true", "absent": "   "}, None, False),
         ({"name": "includeLinks", "type": "bool", "source": "request",
           "optional": "true"}, None, True),
+        # Row 5b-1320: a View marked optional binds null - the whole model.
+        ({"name": "inViewOnly", "type": "View", "source": "request",
+          "optional": "true"}, None, True),
+        ({"name": "inViewOnly", "type": " View ", "source": "request",
+          "optional": " True "}, None, True),
+        ({"name": "inViewOnly", "type": "View", "source": "request"}, None, False),
+        ({"name": "inViewOnly", "type": "View", "source": "request",
+          "optional": "false"}, None, False),
+        ({"name": "view", "type": "View", "source": "model",
+          "optional": "true"}, None, False),
     ]
     mirrored = absent_text is not None and all(
         absent_text(need) == text and HF.need_may_be_absent(need) == may

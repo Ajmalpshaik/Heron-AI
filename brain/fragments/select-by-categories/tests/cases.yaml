@@ -41,6 +41,21 @@ negative:
     expect: >
       an empty set with the breakdown still listing each category at 0
 
+  # Row 5b-1320, added 2026-10-22 with version 3. NOT RUN. Needs the add-in
+  # built with HeronBindingNote.AbsentValue's View case and Revit restarted.
+  - given: inViewOnly LEFT OUT, and then given EMPTY, on a model with a view that draws only part of a category
+    expect: >
+      the WHOLE model's count both times - more than the view's - and the
+      binding note reading "inViewOnly not given - null (optional)" and then
+      "inViewOnly given empty - null (optional)". If either run refuses with
+      needs_request_values or "No view called", the add-in in Revit is older
+      than this change
+
+  - given: inViewOnly naming a view the model has not got
+    expect: >
+      still refused "No view called ..." - optional lets the view be left
+      out, never lets a wrong name mean the whole model
+
   - given: a set spanning categories whose names differ from the enum names
     expect: >
       the breakdown keyed by Revit's own category NAME, which is what the

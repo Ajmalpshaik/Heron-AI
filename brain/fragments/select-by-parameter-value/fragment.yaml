@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,15 @@ semantic-identity: "the elements whose parameter text matches what i typed"
 kind: filter
 domain: revit.selection
 capability: SELECT_BY_PARAMETER_VALUE
-version: 2
+# Version 3 (2026-10-22, row 5b-1319) changed impl/: a matchMode the code does
+# not know is REFUSED before anything is scanned, naming the modes it takes,
+# and "exact" and "is" are read as equals. Seen on Revit 2020 (session 78736):
+# matchMode=exact fell through to contains without a word, "Outlet Port"
+# answered "Outlet Port" AND "Outlet Port Bore", and the next call would have
+# deleted the plane carrying a connector. Version 2's proof below no longer
+# describes the code: DRAFT until NEEDS-CHECKING Group IT proves version 3
+# (D-30).
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -73,6 +81,11 @@ contract:
     - name: matchText
       type: string
       source: request
+    # ONE OF: contains (also what an empty value means), equals, begins, ends,
+    # notcontains, notequals - whatever the capitals; "exact" and "is" are
+    # read as equals. Any other word is REFUSED before anything is scanned,
+    # naming these (version 3, row 5b-1319): until then an unknown word fell
+    # through to contains in silence and widened a selection that fed a delete.
     - name: matchMode
       type: string
       source: request
