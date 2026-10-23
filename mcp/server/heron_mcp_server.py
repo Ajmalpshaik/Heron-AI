@@ -5882,7 +5882,8 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> l
       frames just those in a temporary isometric 3D view - a section box round
       them with a margin, model categories only, levels, grids and links left
       out of the box - and takes the view away again. In a family open in the
-      Family Editor its forms are framed too, by their extents. An id the
+      Family Editor its forms are framed too, by their extents; its
+      connectors are hidden unless asked for. An id the
       model or family in front has not got refuses the whole picture, naming
       it.
 
