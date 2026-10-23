@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -117,6 +117,72 @@ contract:
       # Lines that are not two different ids, or repeat an old id (D-52).
       role: accounting
       type: int
+
+proof:
+  date: '2026-10-22'
+  by: Ajmal PS
+  model: Heron Capture Test (21,317 elements), Revit 2020, session 60544
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MmToFeet 0.00328083989501312,
+    alreadyThere 0 item(s), badRows 0, elbowOf Func`2, fileRead true, issue Action`2, leaderEndOf
+    Func`2, lines 0 item(s), localIdsOf Func`2, made 8, madeTags 8 item(s) [890560, 890561,
+    890562, ...], newById 6 entry(ies), newFor 7 entry(ies), newIds HashSet`1, notReproduced
+    0 item(s), oldTagsFor 4 entry(ies), oldWithNoTags 3 item(s) [412141, 412155, 412887],
+    onNew 3 entry(ies), referenceCountOf Func`2, referenceOf Func`2, refused 0 item(s), report
+    Made 8 tag(s) on the new elements, across 2 view(s). No old tag was deleted - deleting
+    the old element removes them.
+
+    Pairs read 7, usable 7, unmatched 0, bad rows 0.
+
+    Old 412141 has no tag on it anywhere in the model, so nothing was made for it (if it was
+    already deleted, its tags went with it).
+
+    Old 412155 has no tag on it anywhere in the model, so nothing was made for it (if it was
+    already deleted, its tags went with it).
+
+    Old 412887 has no tag on it anywhere in the model, so nothing was made for it (if it was
+    already deleted, its tags went with it).
+
+    ''Level 1 HVAC Plan'' (FloorPlan): made 4 of 4.
+
+    ''North Level 1 HVAC Plan'' (FloorPlan): made 4 of 4., rotationProperty (null), rowsUnmatched
+    0, setElbow Func`3, setLeaderEnd Func`3, summary 7 item(s) [Made 8 tag(s) on the new elements,
+    across 2 view(s). No old ..., Pairs read 7, usable 7, unmatched 0, bad rows 0., Old 412141
+    has no tag on it anywhere in the model, so nothin..., ...], usable 7 entry(ies), viewIssues
+    0 entry(ies), viewMade 2 entry(ies), viewOf 2 entry(ies), viewOrder 2 item(s) [378466,
+    534568], visibleIn 6 entry(ies), wantedNew HashSet`1. inputs came elements from the selection
+    (105); csvPath as given. on Heron Capture Test'
+  negative_case: 'run with csvPath=C:/Users/ajmal/AppData/Local/Temp/heron-work/night-1022/copytags-negative.csv
+    arranged with categoryName=Air Terminals, inViewOnly=CeilingPlan: Level 1 Ceiling Plan
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-by-category-name, set-selection with this phase''s
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned MmToFeet 0.00328083989501312, alreadyThere 0 item(s), badRows
+    0, elbowOf Func`2, fileRead true, issue Action`2, leaderEndOf Func`2, lines 0 item(s),
+    localIdsOf Func`2, made 0, madeTags 0 item(s), newById 2 entry(ies), newFor 2 entry(ies),
+    newIds HashSet`1, notReproduced 0 item(s), oldTagsFor 0 entry(ies), oldWithNoTags 2 item(s)
+    [586795, 378117], onNew 2 entry(ies), referenceCountOf Func`2, referenceOf Func`2, refused
+    0 item(s), report Made 0 tag(s) on the new elements, across 0 view(s). No old tag was
+    deleted - deleting the old element removes them.
+
+    Pairs read 2, usable 2, unmatched 0, bad rows 0.
+
+    Old 586795 has no tag on it anywhere in the model, so nothing was made for it (if it was
+    already deleted, its tags went with it).
+
+    Old 378117 has no tag on it anywhere in the model, so nothing was made for it (if it was
+    already deleted, its tags went with it)., rotationProperty (null), rowsUnmatched 0, setElbow
+    Func`3, setLeaderEnd Func`3, summary 4 item(s) [Made 0 tag(s) on the new elements, across
+    0 view(s). No old ..., Pairs read 2, usable 2, unmatched 0, bad rows 0., Old 586795 has
+    no tag on it anywhere in the model, so nothin..., ...], usable 2 entry(ies), viewIssues
+    0 entry(ies), viewMade 0 entry(ies), viewOf 0 entry(ies), viewOrder 0 item(s), visibleIn
+    0 entry(ies), wantedNew HashSet`1. inputs came elements from the selection (105); csvPath
+    as given. on Heron Capture Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 235975b01a090d49
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

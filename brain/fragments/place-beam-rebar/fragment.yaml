@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -110,6 +110,1069 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-22'
+  by: Ajmal PS
+  model: Structure Night Test (9,179 elements), Revit 2020, session 60544
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-family with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned barHookType (null), barList Func`1,
+    barTypeFrom Func`3, barTypes 11 item(s) [13M, 10M, 16M, ...], beamsReinforced 335 item(s)
+    [124559, 124565, 124568, ...], bottom Tuple`2, countAndType Func`3, coverGiven 0.0984251968503937,
+    coverText 30, extentsIn Func`3, findings 26 item(s) [1005 rebar set(s) placed and read
+    back in 335 beam(s); 22 be..., Structural Framing ''400 x 800mm'' (id 124574): its section
+    is..., Structural Framing ''400 x 800mm'' (id 124579): its section is..., ...], framingCategory
+    1 item(s) [id -2001320], hookFrom Func`4, hookTypes 5 item(s) [Standard - 90 deg., Standard
+    - 180 deg., Stirrup/Tie - 90 deg., ...], hostCover Func`3, invariant CultureInfo, lengthFrom
+    Func`3, lines 335 item(s) [Structural Framing ''400 x 800mm'' (id 124559): 400 x 500 mm,
+    ..., Structural Framing ''400 x 800mm'' (id 124565): 400 x 500 mm, ..., Structural Framing
+    ''400 x 800mm'' (id 124568): 400 x 500 mm, ..., ...], makeBar Func`10, mm Func`2, modelOf
+    Func`2, nominalOf Func`2, onRight Func`4, placed 1005 item(s) [272558, 272559, 272561,
+    ...], readBackWrong 3 item(s) [Structural Framing ''600 x 900'' (id 124792): 23 stirrups
+    read..., Structural Framing ''600 x 900'' (id 151778): 23 stirrups read..., Structural
+    Framing ''600 x 900'' (id 152086): 23 stirrups read...], refused , report Structural Framing
+    ''400 x 800mm'' (id 124559): 400 x 500 mm, 7109 mm of concrete; cover sides and ends 30,
+    top 30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272558), top bars 2 x ''13M''
+    (id 272559), stirrups 37 x ''10M'' at 200 mm max (id 272561) | Structural Framing ''400
+    x 800mm'' (id 124565): 400 x 500 mm, 3045 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272567), top bars 2 x ''13M''
+    (id 272568), stirrups 16 x ''10M'' at 200 mm max (id 272569) | Structural Framing ''400
+    x 800mm'' (id 124568): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272572), top bars 2 x ''13M''
+    (id 272573), stirrups 32 x ''10M'' at 200 mm max (id 272574) | Structural Framing ''400
+    x 800mm'' (id 124571): 400 x 500 mm, 4273 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272578), top bars 2 x ''13M''
+    (id 272579), stirrups 23 x ''10M'' at 200 mm max (id 272580) | Structural Framing ''400
+    x 800mm'' (id 124577): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272584), top bars 2 x ''13M''
+    (id 272585), stirrups 32 x ''10M'' at 200 mm max (id 272586) | Structural Framing ''400
+    x 800mm'' (id 124582): 400 x 500 mm, 4149.9 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272592), top bars 2 x ''13M''
+    (id 272593), stirrups 22 x ''10M'' at 200 mm max (id 272594) | Structural Framing ''400
+    x 800mm'' (id 124585): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272600), top bars 2 x ''13M''
+    (id 272601), stirrups 32 x ''10M'' at 200 mm max (id 272602) | Structural Framing ''400
+    x 800mm'' (id 124587): 400 x 500 mm, 3045 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272605), top bars 2 x ''13M''
+    (id 272606), stirrups 16 x ''10M'' at 200 mm max (id 272607) | Structural Framing ''400
+    x 800mm'' (id 124590): 400 x 500 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272611), top bars 2 x ''13M''
+    (id 272612), stirrups 37 x ''10M'' at 200 mm max (id 272613) | Structural Framing ''400
+    x 800mm'' (id 124592): 400 x 500 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272617), top bars 2 x ''13M''
+    (id 272618), stirrups 37 x ''10M'' at 200 mm max (id 272619) | Structural Framing ''400
+    x 800mm'' (id 124594): 400 x 500 mm, 3045 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272625), top bars 2 x ''13M''
+    (id 272626), stirrups 16 x ''10M'' at 200 mm max (id 272627) | Structural Framing ''400
+    x 800mm'' (id 124598): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272631), top bars 2 x ''13M''
+    (id 272632), stirrups 32 x ''10M'' at 200 mm max (id 272633) | Structural Framing ''400
+    x 800mm'' (id 124600): 400 x 500 mm, 4273 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272638), top bars 2 x ''13M''
+    (id 272639), stirrups 23 x ''10M'' at 200 mm max (id 272640) | Structural Framing ''400
+    x 800mm'' (id 124604): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272644), top bars 2 x ''13M''
+    (id 272645), stirrups 32 x ''10M'' at 200 mm max (id 272646) | Structural Framing ''400
+    x 800mm'' (id 124608): 400 x 500 mm, 4149.9 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272652), top bars 2 x ''13M''
+    (id 272653), stirrups 22 x ''10M'' at 200 mm max (id 272654) | Structural Framing ''400
+    x 800mm'' (id 124610): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272660), top bars 2 x ''13M''
+    (id 272661), stirrups 32 x ''10M'' at 200 mm max (id 272662) | Structural Framing ''400
+    x 800mm'' (id 124612): 400 x 500 mm, 3045 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272666), top bars 2 x ''13M''
+    (id 272667), stirrups 16 x ''10M'' at 200 mm max (id 272668) | Structural Framing ''300
+    x 600mm'' (id 124614): 300 x 300 mm, 6979.8 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272672), top bars 2 x ''13M''
+    (id 272673), stirrups 36 x ''10M'' at 200 mm max (id 272674) | Structural Framing ''300
+    x 600mm'' (id 124616): 300 x 300 mm, 2883.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272676), top bars 2 x ''13M''
+    (id 272677), stirrups 16 x ''10M'' at 200 mm max (id 272678) | Structural Framing ''400
+    x 800mm'' (id 124620): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272680), top bars 2 x ''13M''
+    (id 272681), stirrups 32 x ''10M'' at 200 mm max (id 272682) | Structural Framing ''400
+    x 800mm'' (id 124622): 400 x 500 mm, 4273 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272686), top bars 2 x ''13M''
+    (id 272687), stirrups 23 x ''10M'' at 200 mm max (id 272688) | Structural Framing ''400
+    x 800mm'' (id 124626): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272692), top bars 2 x ''13M''
+    (id 272693), stirrups 32 x ''10M'' at 200 mm max (id 272694) | Structural Framing ''400
+    x 800mm'' (id 124628): 400 x 500 mm, 2040 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272698), top bars 2 x ''13M''
+    (id 272699), stirrups 11 x ''10M'' at 200 mm max (id 272700) | Structural Framing ''400
+    x 800mm'' (id 124630): 400 x 500 mm, 4053 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272702), top bars 2 x ''13M''
+    (id 272703), stirrups 21 x ''10M'' at 200 mm max (id 272704) | Structural Framing ''400
+    x 800mm'' (id 124632): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272707), top bars 2 x ''13M''
+    (id 272708), stirrups 32 x ''10M'' at 200 mm max (id 272709) | Structural Framing ''400
+    x 800mm'' (id 124634): 400 x 500 mm, 3045 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272712), top bars 2 x ''13M''
+    (id 272713), stirrups 16 x ''10M'' at 200 mm max (id 272714) | Structural Framing ''400
+    x 800mm'' (id 124636): 400 x 500 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272718), top bars 2 x ''13M''
+    (id 272719), stirrups 37 x ''10M'' at 200 mm max (id 272720) | Structural Framing ''300
+    x 600mm'' (id 124638): 300 x 300 mm, 6979.8 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272725), top bars 2 x ''13M''
+    (id 272726), stirrups 36 x ''10M'' at 200 mm max (id 272727) | Structural Framing ''300
+    x 600mm'' (id 124645): 300 x 300 mm, 6979.8 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272729), top bars 2 x ''13M''
+    (id 272730), stirrups 36 x ''10M'' at 200 mm max (id 272731) | Structural Framing ''300
+    x 600mm'' (id 124647): 300 x 300 mm, 6979.8 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272733), top bars 2 x ''13M''
+    (id 272734), stirrups 36 x ''10M'' at 200 mm max (id 272735) | Structural Framing ''300
+    x 600mm'' (id 124653): 300 x 300 mm, 6979.8 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272737), top bars 2 x ''13M''
+    (id 272738), stirrups 36 x ''10M'' at 200 mm max (id 272739) | Structural Framing ''300
+    x 600mm'' (id 124655): 300 x 300 mm, 6979.8 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272741), top bars 2 x ''13M''
+    (id 272742), stirrups 36 x ''10M'' at 200 mm max (id 272743) | Structural Framing ''300
+    x 600mm'' (id 124657): 300 x 300 mm, 6979.8 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272745), top bars 2 x ''13M''
+    (id 272746), stirrups 36 x ''10M'' at 200 mm max (id 272747) | Structural Framing ''300
+    x 600mm'' (id 124659): 300 x 300 mm, 6979.8 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272749), top bars 2 x ''13M''
+    (id 272750), stirrups 36 x ''10M'' at 200 mm max (id 272751) | Structural Framing ''300
+    x 600mm'' (id 124661): 300 x 300 mm, 6979.8 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272753), top bars 2 x ''13M''
+    (id 272754), stirrups 36 x ''10M'' at 200 mm max (id 272755) | Structural Framing ''400
+    x 800mm'' (id 124666): 400 x 500 mm, 4716.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272757), top bars 2 x ''13M''
+    (id 272758), stirrups 25 x ''10M'' at 200 mm max (id 272759) | Structural Framing ''400
+    x 800mm'' (id 124669): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272762), top bars 2 x ''13M''
+    (id 272763), stirrups 33 x ''10M'' at 200 mm max (id 272764) | Structural Framing ''400
+    x 800mm'' (id 124672): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272767), top bars 2 x ''13M''
+    (id 272768), stirrups 32 x ''10M'' at 200 mm max (id 272769) | Structural Framing ''400
+    x 800mm'' (id 124674): 400 x 500 mm, 5686.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272772), top bars 2 x ''13M''
+    (id 272773), stirrups 30 x ''10M'' at 200 mm max (id 272774) | Structural Framing ''400
+    x 800mm'' (id 124677): 400 x 500 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272775), top bars 2 x ''13M''
+    (id 272776), stirrups 12 x ''10M'' at 200 mm max (id 272777) | Structural Framing ''400
+    x 800mm'' (id 124680): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272778), top bars 2 x ''13M''
+    (id 272779), stirrups 36 x ''10M'' at 200 mm max (id 272780) | Structural Framing ''400
+    x 800mm'' (id 124684): 400 x 500 mm, 4716.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272782), top bars 2 x ''13M''
+    (id 272783), stirrups 25 x ''10M'' at 200 mm max (id 272784) | Structural Framing ''400
+    x 800mm'' (id 124686): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272787), top bars 2 x ''13M''
+    (id 272788), stirrups 33 x ''10M'' at 200 mm max (id 272789) | Structural Framing ''400
+    x 800mm'' (id 124688): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272792), top bars 2 x ''13M''
+    (id 272793), stirrups 32 x ''10M'' at 200 mm max (id 272794) | Structural Framing ''400
+    x 800mm'' (id 124690): 400 x 500 mm, 5686.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272797), top bars 2 x ''13M''
+    (id 272798), stirrups 30 x ''10M'' at 200 mm max (id 272799) | Structural Framing ''400
+    x 800mm'' (id 124692): 400 x 500 mm, 2141.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272800), top bars 2 x ''13M''
+    (id 272801), stirrups 12 x ''10M'' at 200 mm max (id 272802) | Structural Framing ''400
+    x 800mm'' (id 124694): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272803), top bars 2 x ''13M''
+    (id 272804), stirrups 36 x ''10M'' at 200 mm max (id 272805) | Structural Framing ''400
+    x 800mm'' (id 124696): 400 x 500 mm, 5686.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272806), top bars 2 x ''13M''
+    (id 272807), stirrups 30 x ''10M'' at 200 mm max (id 272808) | Structural Framing ''400
+    x 800mm'' (id 124698): 400 x 500 mm, 2141.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272809), top bars 2 x ''13M''
+    (id 272810), stirrups 12 x ''10M'' at 200 mm max (id 272811) | Structural Framing ''400
+    x 800mm'' (id 124707): 400 x 500 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272812), top bars 2 x ''13M''
+    (id 272813), stirrups 12 x ''10M'' at 200 mm max (id 272814) | Structural Framing ''400
+    x 800mm'' (id 124709): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272815), top bars 2 x ''13M''
+    (id 272816), stirrups 36 x ''10M'' at 200 mm max (id 272817) | Structural Framing ''400
+    x 800mm'' (id 124713): 400 x 500 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272818), top bars 2 x ''13M''
+    (id 272819), stirrups 12 x ''10M'' at 200 mm max (id 272820) | Structural Framing ''400
+    x 800mm'' (id 124715): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272822), top bars 2 x ''13M''
+    (id 272823), stirrups 36 x ''10M'' at 200 mm max (id 272824) | Structural Framing ''400
+    x 800mm'' (id 124724): 400 x 500 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272826), top bars 2 x ''13M''
+    (id 272827), stirrups 12 x ''10M'' at 200 mm max (id 272828) | Structural Framing ''400
+    x 800mm'' (id 124726): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272829), top bars 2 x ''13M''
+    (id 272830), stirrups 36 x ''10M'' at 200 mm max (id 272831) | Structural Framing ''400
+    x 800mm'' (id 124730): 400 x 500 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272832), top bars 2 x ''13M''
+    (id 272833), stirrups 12 x ''10M'' at 200 mm max (id 272834) | Structural Framing ''400
+    x 800mm'' (id 124732): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272835), top bars 2 x ''13M''
+    (id 272836), stirrups 36 x ''10M'' at 200 mm max (id 272837) | Structural Framing ''400
+    x 800mm'' (id 124736): 400 x 500 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272838), top bars 2 x ''13M''
+    (id 272839), stirrups 12 x ''10M'' at 200 mm max (id 272840) | Structural Framing ''400
+    x 800mm'' (id 124742): 400 x 500 mm, 7867.7 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272842), top bars 2 x ''13M''
+    (id 272843), stirrups 40 x ''10M'' at 200 mm max (id 272844) | Structural Framing ''400
+    x 800mm'' (id 124745): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272848), top bars 2 x ''13M''
+    (id 272849), stirrups 33 x ''10M'' at 200 mm max (id 272850) | Structural Framing ''400
+    x 800mm'' (id 124747): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272854), top bars 2 x ''13M''
+    (id 272855), stirrups 33 x ''10M'' at 200 mm max (id 272856) | Structural Framing ''400
+    x 800mm'' (id 124749): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272860), top bars 2 x ''13M''
+    (id 272861), stirrups 33 x ''10M'' at 200 mm max (id 272862) | Structural Framing ''400
+    x 800mm'' (id 124751): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272866), top bars 2 x ''13M''
+    (id 272867), stirrups 33 x ''10M'' at 200 mm max (id 272868) | Structural Framing ''400
+    x 800mm'' (id 124753): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272872), top bars 2 x ''13M''
+    (id 272873), stirrups 33 x ''10M'' at 200 mm max (id 272874) | Structural Framing ''400
+    x 800mm'' (id 124755): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272877), top bars 2 x ''13M''
+    (id 272878), stirrups 32 x ''10M'' at 200 mm max (id 272879) | Structural Framing ''400
+    x 800mm'' (id 124757): 400 x 500 mm, 5589.7 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272880), top bars 2 x ''13M''
+    (id 272881), stirrups 29 x ''10M'' at 200 mm max (id 272882) | Structural Framing ''400
+    x 800mm'' (id 124759): 400 x 500 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272883), top bars 2 x ''13M''
+    (id 272884), stirrups 12 x ''10M'' at 200 mm max (id 272885) | Structural Framing ''400
+    x 800mm'' (id 124761): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272886), top bars 2 x ''13M''
+    (id 272887), stirrups 36 x ''10M'' at 200 mm max (id 272888) | Structural Framing ''400
+    x 800mm'' (id 124767): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272890), top bars 2 x ''13M''
+    (id 272891), stirrups 33 x ''10M'' at 200 mm max (id 272892) | Structural Framing ''400
+    x 800mm'' (id 124769): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272895), top bars 2 x ''13M''
+    (id 272896), stirrups 33 x ''10M'' at 200 mm max (id 272897) | Structural Framing ''400
+    x 800mm'' (id 124771): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272900), top bars 2 x ''13M''
+    (id 272901), stirrups 33 x ''10M'' at 200 mm max (id 272902) | Structural Framing ''400
+    x 800mm'' (id 124773): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272905), top bars 2 x ''13M''
+    (id 272906), stirrups 33 x ''10M'' at 200 mm max (id 272907) | Structural Framing ''400
+    x 800mm'' (id 124775): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272910), top bars 2 x ''13M''
+    (id 272911), stirrups 33 x ''10M'' at 200 mm max (id 272912) | Structural Framing ''400
+    x 800mm'' (id 124777): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272915), top bars 2 x ''13M''
+    (id 272916), stirrups 32 x ''10M'' at 200 mm max (id 272917) | Structural Framing ''400
+    x 800mm'' (id 124779): 400 x 500 mm, 8131.3 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272918), top bars 2 x ''13M''
+    (id 272919), stirrups 42 x ''10M'' at 200 mm max (id 272920) | Structural Framing ''400
+    x 800mm'' (id 124782): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272921), top bars 2 x ''13M''
+    (id 272922), stirrups 36 x ''10M'' at 200 mm max (id 272923) | Structural Framing ''600
+    x 900'' (id 124784): 600 x 600 mm, 7715.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272925), top bars 2 x ''13M''
+    (id 272926), stirrups 40 x ''10M'' at 200 mm max (id 272927) | Structural Framing ''600
+    x 900'' (id 124788): 600 x 600 mm, 3251.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272929), top bars 2 x ''13M''
+    (id 272930), stirrups 17 x ''10M'' at 200 mm max (id 272931) | Structural Framing ''600
+    x 900'' (id 124790): 600 x 600 mm, 6299.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272933), top bars 2 x ''13M''
+    (id 272934), stirrups 33 x ''10M'' at 200 mm max (id 272935) | Structural Framing ''600
+    x 900'' (id 124792): 600 x 600 mm, 4479.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272937), top bars 2 x ''13M''
+    (id 272938), stirrups 23 x ''10M'' at 200 mm max (id 272939) | Structural Framing ''600
+    x 900'' (id 124796): 600 x 600 mm, 6299.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272941), top bars 2 x ''13M''
+    (id 272942), stirrups 33 x ''10M'' at 200 mm max (id 272943) | Structural Framing ''600
+    x 900'' (id 124800): 600 x 600 mm, 4356.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272946), top bars 2 x ''13M''
+    (id 272947), stirrups 23 x ''10M'' at 200 mm max (id 272948) | Structural Framing ''600
+    x 900'' (id 124802): 600 x 600 mm, 6299.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272951), top bars 2 x ''13M''
+    (id 272952), stirrups 33 x ''10M'' at 200 mm max (id 272953) | Structural Framing ''600
+    x 900'' (id 124804): 600 x 600 mm, 3251.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272955), top bars 2 x ''13M''
+    (id 272956), stirrups 17 x ''10M'' at 200 mm max (id 272957) | Structural Framing ''600
+    x 900'' (id 124806): 600 x 600 mm, 7315.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272959), top bars 2 x ''13M''
+    (id 272960), stirrups 38 x ''10M'' at 200 mm max (id 272961) | Structural Framing ''400
+    x 800mm'' (id 124808): 400 x 500 mm, 5589.7 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272962), top bars 2 x ''13M''
+    (id 272963), stirrups 29 x ''10M'' at 200 mm max (id 272964) | Structural Framing ''400
+    x 800mm'' (id 124810): 400 x 500 mm, 2141.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272967), top bars 2 x ''13M''
+    (id 272968), stirrups 12 x ''10M'' at 200 mm max (id 272969) | Structural Framing ''400
+    x 800mm'' (id 124812): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272970), top bars 2 x ''13M''
+    (id 272971), stirrups 36 x ''10M'' at 200 mm max (id 272972) | Structural Framing ''400
+    x 800mm'' (id 124818): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272974), top bars 2 x ''13M''
+    (id 272975), stirrups 36 x ''10M'' at 200 mm max (id 272976) | Structural Framing ''400
+    x 800mm'' (id 124820): 400 x 500 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272977), top bars 2 x ''13M''
+    (id 272978), stirrups 12 x ''10M'' at 200 mm max (id 272979) | Structural Framing ''400
+    x 800mm'' (id 124822): 400 x 500 mm, 5589.7 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272980), top bars 2 x ''13M''
+    (id 272981), stirrups 29 x ''10M'' at 200 mm max (id 272982) | Structural Framing ''400
+    x 800mm'' (id 127484): 400 x 500 mm, 6815.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272985), top bars 2 x ''13M''
+    (id 272986), stirrups 35 x ''10M'' at 200 mm max (id 272987) | Structural Framing ''400
+    x 800mm'' (id 127485): 400 x 500 mm, 6815.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272989), top bars 2 x ''13M''
+    (id 272990), stirrups 35 x ''10M'' at 200 mm max (id 272991) | Structural Framing ''400
+    x 800mm'' (id 127486): 400 x 500 mm, 6815.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272993), top bars 2 x ''13M''
+    (id 272994), stirrups 35 x ''10M'' at 200 mm max (id 272995) | Structural Framing ''400
+    x 800mm'' (id 127516): 400 x 500 mm, 9150.4 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 272997), top bars 2 x ''13M''
+    (id 272998), stirrups 47 x ''10M'' at 200 mm max (id 272999) | Structural Framing ''400
+    x 800mm'' (id 127517): 400 x 500 mm, 9150.4 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273001), top bars 2 x ''13M''
+    (id 273002), stirrups 47 x ''10M'' at 200 mm max (id 273003) | Structural Framing ''400
+    x 800mm'' (id 127518): 400 x 500 mm, 9150.4 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273005), top bars 2 x ''13M''
+    (id 273006), stirrups 47 x ''10M'' at 200 mm max (id 273007) | Structural Framing ''400
+    x 800mm'' (id 127581): 400 x 500 mm, 6815.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273009), top bars 2 x ''13M''
+    (id 273010), stirrups 35 x ''10M'' at 200 mm max (id 273011) | Structural Framing ''400
+    x 800mm'' (id 127582): 400 x 500 mm, 6815.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273013), top bars 2 x ''13M''
+    (id 273014), stirrups 35 x ''10M'' at 200 mm max (id 273015) | Structural Framing ''400
+    x 800mm'' (id 127583): 400 x 500 mm, 6815.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273017), top bars 2 x ''13M''
+    (id 273018), stirrups 35 x ''10M'' at 200 mm max (id 273019) | Structural Framing ''400
+    x 800mm'' (id 127649): 400 x 500 mm, 9150.4 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273021), top bars 2 x ''13M''
+    (id 273022), stirrups 47 x ''10M'' at 200 mm max (id 273023) | Structural Framing ''400
+    x 800mm'' (id 127650): 400 x 500 mm, 9150.4 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273025), top bars 2 x ''13M''
+    (id 273026), stirrups 47 x ''10M'' at 200 mm max (id 273027) | Structural Framing ''400
+    x 800mm'' (id 127651): 400 x 500 mm, 9150.4 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273029), top bars 2 x ''13M''
+    (id 273030), stirrups 47 x ''10M'' at 200 mm max (id 273031) | Structural Framing ''300
+    x 600mm'' (id 128213): 300 x 300 mm, 2964.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273033), top bars 2 x ''13M''
+    (id 273034), stirrups 16 x ''10M'' at 200 mm max (id 273035) | Structural Framing ''300
+    x 600mm'' (id 128264): 300 x 300 mm, 2964.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273037), top bars 2 x ''13M''
+    (id 273038), stirrups 16 x ''10M'' at 200 mm max (id 273039) | Structural Framing ''300
+    x 600mm'' (id 128318): 300 x 300 mm, 2823.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273040), top bars 2 x ''13M''
+    (id 273041), stirrups 15 x ''10M'' at 200 mm max (id 273042) | Structural Framing ''300
+    x 600mm'' (id 128344): 300 x 300 mm, 2823.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273043), top bars 2 x ''13M''
+    (id 273044), stirrups 15 x ''10M'' at 200 mm max (id 273045) | Structural Framing ''300
+    x 600mm'' (id 128372): 300 x 300 mm, 2823.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273046), top bars 2 x ''13M''
+    (id 273047), stirrups 15 x ''10M'' at 200 mm max (id 273048) | Structural Framing ''300
+    x 600mm'' (id 128397): 300 x 300 mm, 2823.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273049), top bars 2 x ''13M''
+    (id 273050), stirrups 15 x ''10M'' at 200 mm max (id 273051) | Structural Framing ''300
+    x 600mm'' (id 128432): 300 x 300 mm, 2823.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273052), top bars 2 x ''13M''
+    (id 273053), stirrups 15 x ''10M'' at 200 mm max (id 273054) | Structural Framing ''300
+    x 600mm'' (id 128473): 300 x 300 mm, 2823.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273055), top bars 2 x ''13M''
+    (id 273056), stirrups 15 x ''10M'' at 200 mm max (id 273057) | Structural Framing ''400
+    x 800mm'' (id 151693): 400 x 500 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273059), top bars 2 x ''13M''
+    (id 273060), stirrups 37 x ''10M'' at 200 mm max (id 273061) | Structural Framing ''400
+    x 800mm'' (id 151694): 400 x 500 mm, 3045 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273067), top bars 2 x ''13M''
+    (id 273068), stirrups 16 x ''10M'' at 200 mm max (id 273069) | Structural Framing ''400
+    x 800mm'' (id 151695): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273072), top bars 2 x ''13M''
+    (id 273073), stirrups 32 x ''10M'' at 200 mm max (id 273074) | Structural Framing ''400
+    x 800mm'' (id 151696): 400 x 500 mm, 4273 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273078), top bars 2 x ''13M''
+    (id 273079), stirrups 23 x ''10M'' at 200 mm max (id 273080) | Structural Framing ''400
+    x 800mm'' (id 151698): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273084), top bars 2 x ''13M''
+    (id 273085), stirrups 32 x ''10M'' at 200 mm max (id 273086) | Structural Framing ''400
+    x 800mm'' (id 151700): 400 x 500 mm, 4149.9 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273092), top bars 2 x ''13M''
+    (id 273093), stirrups 22 x ''10M'' at 200 mm max (id 273094) | Structural Framing ''400
+    x 800mm'' (id 151701): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273100), top bars 2 x ''13M''
+    (id 273101), stirrups 32 x ''10M'' at 200 mm max (id 273102) | Structural Framing ''400
+    x 800mm'' (id 151702): 400 x 500 mm, 3045 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273105), top bars 2 x ''13M''
+    (id 273106), stirrups 16 x ''10M'' at 200 mm max (id 273107) | Structural Framing ''400
+    x 800mm'' (id 151703): 400 x 500 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273111), top bars 2 x ''13M''
+    (id 273112), stirrups 37 x ''10M'' at 200 mm max (id 273113) | Structural Framing ''400
+    x 800mm'' (id 151704): 400 x 500 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273117), top bars 2 x ''13M''
+    (id 273118), stirrups 37 x ''10M'' at 200 mm max (id 273119) | Structural Framing ''400
+    x 800mm'' (id 151705): 400 x 500 mm, 3045 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273125), top bars 2 x ''13M''
+    (id 273126), stirrups 16 x ''10M'' at 200 mm max (id 273127) | Structural Framing ''400
+    x 800mm'' (id 151706): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273131), top bars 2 x ''13M''
+    (id 273132), stirrups 32 x ''10M'' at 200 mm max (id 273133) | Structural Framing ''400
+    x 800mm'' (id 151707): 400 x 500 mm, 4273 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273138), top bars 2 x ''13M''
+    (id 273139), stirrups 23 x ''10M'' at 200 mm max (id 273140) | Structural Framing ''400
+    x 800mm'' (id 151709): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273144), top bars 2 x ''13M''
+    (id 273145), stirrups 32 x ''10M'' at 200 mm max (id 273146) | Structural Framing ''400
+    x 800mm'' (id 151711): 400 x 500 mm, 4149.9 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273152), top bars 2 x ''13M''
+    (id 273153), stirrups 22 x ''10M'' at 200 mm max (id 273154) | Structural Framing ''400
+    x 800mm'' (id 151712): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273160), top bars 2 x ''13M''
+    (id 273161), stirrups 32 x ''10M'' at 200 mm max (id 273162) | Structural Framing ''400
+    x 800mm'' (id 151713): 400 x 500 mm, 3045 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273166), top bars 2 x ''13M''
+    (id 273167), stirrups 16 x ''10M'' at 200 mm max (id 273168) | Structural Framing ''400
+    x 800mm'' (id 151714): 400 x 500 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273172), top bars 2 x ''13M''
+    (id 273173), stirrups 37 x ''10M'' at 200 mm max (id 273174) | Structural Framing ''400
+    x 800mm'' (id 151715): 400 x 500 mm, 3045 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273180), top bars 2 x ''13M''
+    (id 273181), stirrups 16 x ''10M'' at 200 mm max (id 273182) | Structural Framing ''400
+    x 800mm'' (id 151716): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273186), top bars 2 x ''13M''
+    (id 273187), stirrups 32 x ''10M'' at 200 mm max (id 273188) | Structural Framing ''400
+    x 800mm'' (id 151717): 400 x 500 mm, 4273 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273191), top bars 2 x ''13M''
+    (id 273192), stirrups 23 x ''10M'' at 200 mm max (id 273193) | Structural Framing ''400
+    x 800mm'' (id 151719): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273197), top bars 2 x ''13M''
+    (id 273198), stirrups 32 x ''10M'' at 200 mm max (id 273199) | Structural Framing ''400
+    x 800mm'' (id 151720): 400 x 500 mm, 2040 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273203), top bars 2 x ''13M''
+    (id 273204), stirrups 11 x ''10M'' at 200 mm max (id 273205) | Structural Framing ''400
+    x 800mm'' (id 151721): 400 x 500 mm, 4053 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273207), top bars 2 x ''13M''
+    (id 273208), stirrups 21 x ''10M'' at 200 mm max (id 273209) | Structural Framing ''400
+    x 800mm'' (id 151722): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273212), top bars 2 x ''13M''
+    (id 273213), stirrups 32 x ''10M'' at 200 mm max (id 273214) | Structural Framing ''400
+    x 800mm'' (id 151723): 400 x 500 mm, 3045 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273217), top bars 2 x ''13M''
+    (id 273218), stirrups 16 x ''10M'' at 200 mm max (id 273219) | Structural Framing ''400
+    x 800mm'' (id 151724): 400 x 500 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273223), top bars 2 x ''13M''
+    (id 273224), stirrups 37 x ''10M'' at 200 mm max (id 273225) | Structural Framing ''400
+    x 800mm'' (id 151725): 400 x 500 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273230), top bars 2 x ''13M''
+    (id 273231), stirrups 37 x ''10M'' at 200 mm max (id 273232) | Structural Framing ''400
+    x 800mm'' (id 151726): 400 x 500 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273237), top bars 2 x ''13M''
+    (id 273238), stirrups 37 x ''10M'' at 200 mm max (id 273239) | Structural Framing ''400
+    x 800mm'' (id 151727): 400 x 500 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273244), top bars 2 x ''13M''
+    (id 273245), stirrups 37 x ''10M'' at 200 mm max (id 273246) | Structural Framing ''400
+    x 800mm'' (id 151728): 400 x 500 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273252), top bars 2 x ''13M''
+    (id 273253), stirrups 37 x ''10M'' at 200 mm max (id 273254) | Structural Framing ''400
+    x 800mm'' (id 151729): 400 x 500 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273260), top bars 2 x ''13M''
+    (id 273261), stirrups 37 x ''10M'' at 200 mm max (id 273262) | Structural Framing ''400
+    x 800mm'' (id 151730): 400 x 500 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273268), top bars 2 x ''13M''
+    (id 273269), stirrups 37 x ''10M'' at 200 mm max (id 273270) | Structural Framing ''400
+    x 800mm'' (id 151731): 400 x 500 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273276), top bars 2 x ''13M''
+    (id 273277), stirrups 37 x ''10M'' at 200 mm max (id 273278) | Structural Framing ''400
+    x 800mm'' (id 151732): 400 x 500 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273284), top bars 2 x ''13M''
+    (id 273285), stirrups 37 x ''10M'' at 200 mm max (id 273286) | Structural Framing ''400
+    x 800mm'' (id 151733): 400 x 500 mm, 4716.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273292), top bars 2 x ''13M''
+    (id 273293), stirrups 25 x ''10M'' at 200 mm max (id 273294) | Structural Framing ''400
+    x 800mm'' (id 151734): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273295), top bars 2 x ''13M''
+    (id 273296), stirrups 33 x ''10M'' at 200 mm max (id 273297) | Structural Framing ''400
+    x 800mm'' (id 151735): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273298), top bars 2 x ''13M''
+    (id 273299), stirrups 32 x ''10M'' at 200 mm max (id 273300) | Structural Framing ''400
+    x 800mm'' (id 151736): 400 x 500 mm, 5686.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273301), top bars 2 x ''13M''
+    (id 273302), stirrups 30 x ''10M'' at 200 mm max (id 273303) | Structural Framing ''400
+    x 800mm'' (id 151737): 400 x 500 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273304), top bars 2 x ''13M''
+    (id 273305), stirrups 12 x ''10M'' at 200 mm max (id 273306) | Structural Framing ''400
+    x 800mm'' (id 151738): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273307), top bars 2 x ''13M''
+    (id 273308), stirrups 36 x ''10M'' at 200 mm max (id 273309) | Structural Framing ''400
+    x 800mm'' (id 151739): 400 x 500 mm, 4716.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273311), top bars 2 x ''13M''
+    (id 273312), stirrups 25 x ''10M'' at 200 mm max (id 273313) | Structural Framing ''400
+    x 800mm'' (id 151740): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273314), top bars 2 x ''13M''
+    (id 273315), stirrups 33 x ''10M'' at 200 mm max (id 273316) | Structural Framing ''400
+    x 800mm'' (id 151741): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273317), top bars 2 x ''13M''
+    (id 273318), stirrups 32 x ''10M'' at 200 mm max (id 273319) | Structural Framing ''400
+    x 800mm'' (id 151742): 400 x 500 mm, 5589.7 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273320), top bars 2 x ''13M''
+    (id 273321), stirrups 29 x ''10M'' at 200 mm max (id 273322) | Structural Framing ''400
+    x 800mm'' (id 151743): 400 x 500 mm, 2141.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273323), top bars 2 x ''13M''
+    (id 273324), stirrups 12 x ''10M'' at 200 mm max (id 273325) | Structural Framing ''400
+    x 800mm'' (id 151744): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273326), top bars 2 x ''13M''
+    (id 273327), stirrups 36 x ''10M'' at 200 mm max (id 273328) | Structural Framing ''400
+    x 800mm'' (id 151745): 400 x 500 mm, 5686.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273329), top bars 2 x ''13M''
+    (id 273330), stirrups 30 x ''10M'' at 200 mm max (id 273331) | Structural Framing ''400
+    x 800mm'' (id 151746): 400 x 500 mm, 2141.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273332), top bars 2 x ''13M''
+    (id 273333), stirrups 12 x ''10M'' at 200 mm max (id 273334) | Structural Framing ''400
+    x 800mm'' (id 151747): 400 x 500 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273335), top bars 2 x ''13M''
+    (id 273336), stirrups 12 x ''10M'' at 200 mm max (id 273337) | Structural Framing ''400
+    x 800mm'' (id 151748): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273338), top bars 2 x ''13M''
+    (id 273339), stirrups 36 x ''10M'' at 200 mm max (id 273340) | Structural Framing ''400
+    x 800mm'' (id 151749): 400 x 500 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273341), top bars 2 x ''13M''
+    (id 273342), stirrups 12 x ''10M'' at 200 mm max (id 273343) | Structural Framing ''400
+    x 800mm'' (id 151750): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273345), top bars 2 x ''13M''
+    (id 273346), stirrups 36 x ''10M'' at 200 mm max (id 273347) | Structural Framing ''400
+    x 800mm'' (id 151751): 400 x 500 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273349), top bars 2 x ''13M''
+    (id 273350), stirrups 12 x ''10M'' at 200 mm max (id 273351) | Structural Framing ''400
+    x 800mm'' (id 151752): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273352), top bars 2 x ''13M''
+    (id 273353), stirrups 36 x ''10M'' at 200 mm max (id 273354) | Structural Framing ''400
+    x 800mm'' (id 151753): 400 x 500 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273355), top bars 2 x ''13M''
+    (id 273356), stirrups 12 x ''10M'' at 200 mm max (id 273357) | Structural Framing ''400
+    x 800mm'' (id 151754): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273358), top bars 2 x ''13M''
+    (id 273359), stirrups 36 x ''10M'' at 200 mm max (id 273360) | Structural Framing ''400
+    x 800mm'' (id 151755): 400 x 500 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273361), top bars 2 x ''13M''
+    (id 273362), stirrups 12 x ''10M'' at 200 mm max (id 273363) | Structural Framing ''400
+    x 800mm'' (id 151756): 400 x 500 mm, 7867.7 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273365), top bars 2 x ''13M''
+    (id 273366), stirrups 40 x ''10M'' at 200 mm max (id 273367) | Structural Framing ''400
+    x 800mm'' (id 151757): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273368), top bars 2 x ''13M''
+    (id 273369), stirrups 33 x ''10M'' at 200 mm max (id 273370) | Structural Framing ''400
+    x 800mm'' (id 151758): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273372), top bars 2 x ''13M''
+    (id 273373), stirrups 33 x ''10M'' at 200 mm max (id 273374) | Structural Framing ''400
+    x 800mm'' (id 151759): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273376), top bars 2 x ''13M''
+    (id 273377), stirrups 33 x ''10M'' at 200 mm max (id 273378) | Structural Framing ''400
+    x 800mm'' (id 151760): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273380), top bars 2 x ''13M''
+    (id 273381), stirrups 33 x ''10M'' at 200 mm max (id 273382) | Structural Framing ''400
+    x 800mm'' (id 151761): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273384), top bars 2 x ''13M''
+    (id 273385), stirrups 33 x ''10M'' at 200 mm max (id 273386) | Structural Framing ''400
+    x 800mm'' (id 151762): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273388), top bars 2 x ''13M''
+    (id 273389), stirrups 32 x ''10M'' at 200 mm max (id 273390) | Structural Framing ''400
+    x 800mm'' (id 151763): 400 x 500 mm, 5589.7 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273392), top bars 2 x ''13M''
+    (id 273393), stirrups 29 x ''10M'' at 200 mm max (id 273394) | Structural Framing ''400
+    x 800mm'' (id 151764): 400 x 500 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273395), top bars 2 x ''13M''
+    (id 273396), stirrups 12 x ''10M'' at 200 mm max (id 273397) | Structural Framing ''400
+    x 800mm'' (id 151765): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273398), top bars 2 x ''13M''
+    (id 273399), stirrups 36 x ''10M'' at 200 mm max (id 273400) | Structural Framing ''400
+    x 800mm'' (id 151766): 400 x 500 mm, 7867.7 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273402), top bars 2 x ''13M''
+    (id 273403), stirrups 40 x ''10M'' at 200 mm max (id 273404) | Structural Framing ''400
+    x 800mm'' (id 151767): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273405), top bars 2 x ''13M''
+    (id 273406), stirrups 33 x ''10M'' at 200 mm max (id 273407) | Structural Framing ''400
+    x 800mm'' (id 151768): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273408), top bars 2 x ''13M''
+    (id 273409), stirrups 33 x ''10M'' at 200 mm max (id 273410) | Structural Framing ''400
+    x 800mm'' (id 151769): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273411), top bars 2 x ''13M''
+    (id 273412), stirrups 33 x ''10M'' at 200 mm max (id 273413) | Structural Framing ''400
+    x 800mm'' (id 151770): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273414), top bars 2 x ''13M''
+    (id 273415), stirrups 33 x ''10M'' at 200 mm max (id 273416) | Structural Framing ''400
+    x 800mm'' (id 151771): 400 x 500 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273417), top bars 2 x ''13M''
+    (id 273418), stirrups 33 x ''10M'' at 200 mm max (id 273419) | Structural Framing ''400
+    x 800mm'' (id 151772): 400 x 500 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273420), top bars 2 x ''13M''
+    (id 273421), stirrups 32 x ''10M'' at 200 mm max (id 273422) | Structural Framing ''400
+    x 800mm'' (id 151773): 400 x 500 mm, 8131.3 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273423), top bars 2 x ''13M''
+    (id 273424), stirrups 42 x ''10M'' at 200 mm max (id 273425) | Structural Framing ''400
+    x 800mm'' (id 151774): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273426), top bars 2 x ''13M''
+    (id 273427), stirrups 36 x ''10M'' at 200 mm max (id 273428) | Structural Framing ''600
+    x 900'' (id 151775): 600 x 600 mm, 7715.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273430), top bars 2 x ''13M''
+    (id 273431), stirrups 40 x ''10M'' at 200 mm max (id 273432) | Structural Framing ''600
+    x 900'' (id 151776): 600 x 600 mm, 3251.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273434), top bars 2 x ''13M''
+    (id 273435), stirrups 17 x ''10M'' at 200 mm max (id 273436) | Structural Framing ''600
+    x 900'' (id 151777): 600 x 600 mm, 6299.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273438), top bars 2 x ''13M''
+    (id 273439), stirrups 33 x ''10M'' at 200 mm max (id 273440) | Structural Framing ''600
+    x 900'' (id 151778): 600 x 600 mm, 4479.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273442), top bars 2 x ''13M''
+    (id 273443), stirrups 23 x ''10M'' at 200 mm max (id 273444) | Structural Framing ''600
+    x 900'' (id 151780): 600 x 600 mm, 6299.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273446), top bars 2 x ''13M''
+    (id 273447), stirrups 33 x ''10M'' at 200 mm max (id 273448) | Structural Framing ''600
+    x 900'' (id 151782): 600 x 600 mm, 4356.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273451), top bars 2 x ''13M''
+    (id 273452), stirrups 23 x ''10M'' at 200 mm max (id 273453) | Structural Framing ''600
+    x 900'' (id 151783): 600 x 600 mm, 6299.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273456), top bars 2 x ''13M''
+    (id 273457), stirrups 33 x ''10M'' at 200 mm max (id 273458) | Structural Framing ''600
+    x 900'' (id 151784): 600 x 600 mm, 3251.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273460), top bars 2 x ''13M''
+    (id 273461), stirrups 17 x ''10M'' at 200 mm max (id 273462) | Structural Framing ''600
+    x 900'' (id 151785): 600 x 600 mm, 7315.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273464), top bars 2 x ''13M''
+    (id 273465), stirrups 38 x ''10M'' at 200 mm max (id 273466) | Structural Framing ''400
+    x 800mm'' (id 151786): 400 x 500 mm, 5589.7 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273467), top bars 2 x ''13M''
+    (id 273468), stirrups 29 x ''10M'' at 200 mm max (id 273469) | Structural Framing ''400
+    x 800mm'' (id 151787): 400 x 500 mm, 2141.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273472), top bars 2 x ''13M''
+    (id 273473), stirrups 12 x ''10M'' at 200 mm max (id 273474) | Structural Framing ''400
+    x 800mm'' (id 151788): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273475), top bars 2 x ''13M''
+    (id 273476), stirrups 36 x ''10M'' at 200 mm max (id 273477) | Structural Framing ''400
+    x 800mm'' (id 151789): 400 x 500 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273479), top bars 2 x ''13M''
+    (id 273480), stirrups 36 x ''10M'' at 200 mm max (id 273481) | Structural Framing ''400
+    x 800mm'' (id 151790): 400 x 500 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273482), top bars 2 x ''13M''
+    (id 273483), stirrups 12 x ''10M'' at 200 mm max (id 273484) | Structural Framing ''400
+    x 800mm'' (id 151791): 400 x 500 mm, 5589.7 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273485), top bars 2 x ''13M''
+    (id 273486), stirrups 29 x ''10M'' at 200 mm max (id 273487) | Structural Framing ''400
+    x 800mm'' (id 151802): 400 x 500 mm, 6815.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273490), top bars 2 x ''13M''
+    (id 273491), stirrups 35 x ''10M'' at 200 mm max (id 273492) | Structural Framing ''400
+    x 800mm'' (id 151803): 400 x 500 mm, 6815.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273494), top bars 2 x ''13M''
+    (id 273495), stirrups 35 x ''10M'' at 200 mm max (id 273496) | Structural Framing ''400
+    x 800mm'' (id 151804): 400 x 500 mm, 6815.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273498), top bars 2 x ''13M''
+    (id 273499), stirrups 35 x ''10M'' at 200 mm max (id 273500) | Structural Framing ''400
+    x 800mm'' (id 151814): 400 x 500 mm, 9150.4 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273502), top bars 2 x ''13M''
+    (id 273503), stirrups 47 x ''10M'' at 200 mm max (id 273504) | Structural Framing ''400
+    x 800mm'' (id 151815): 400 x 500 mm, 9150.4 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273506), top bars 2 x ''13M''
+    (id 273507), stirrups 47 x ''10M'' at 200 mm max (id 273508) | Structural Framing ''400
+    x 800mm'' (id 151816): 400 x 500 mm, 9150.4 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273510), top bars 2 x ''13M''
+    (id 273511), stirrups 47 x ''10M'' at 200 mm max (id 273512) | Structural Framing ''400
+    x 800mm'' (id 151824): 400 x 500 mm, 6815.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273514), top bars 2 x ''13M''
+    (id 273515), stirrups 35 x ''10M'' at 200 mm max (id 273516) | Structural Framing ''400
+    x 800mm'' (id 151825): 400 x 500 mm, 6815.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273518), top bars 2 x ''13M''
+    (id 273519), stirrups 35 x ''10M'' at 200 mm max (id 273520) | Structural Framing ''400
+    x 800mm'' (id 151826): 400 x 500 mm, 6815.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273522), top bars 2 x ''13M''
+    (id 273523), stirrups 35 x ''10M'' at 200 mm max (id 273524) | Structural Framing ''400
+    x 800mm'' (id 151836): 400 x 500 mm, 9150.4 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273526), top bars 2 x ''13M''
+    (id 273527), stirrups 47 x ''10M'' at 200 mm max (id 273528) | Structural Framing ''400
+    x 800mm'' (id 151837): 400 x 500 mm, 9150.4 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273530), top bars 2 x ''13M''
+    (id 273531), stirrups 47 x ''10M'' at 200 mm max (id 273532) | Structural Framing ''400
+    x 800mm'' (id 151838): 400 x 500 mm, 9150.4 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273534), top bars 2 x ''13M''
+    (id 273535), stirrups 47 x ''10M'' at 200 mm max (id 273536) | Structural Framing ''400
+    x 800mm'' (id 151839): 400 x 500 mm, 2964.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273538), top bars 2 x ''13M''
+    (id 273539), stirrups 16 x ''10M'' at 200 mm max (id 273540) | Structural Framing ''400
+    x 800mm'' (id 151840): 400 x 500 mm, 2964.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273542), top bars 2 x ''13M''
+    (id 273543), stirrups 16 x ''10M'' at 200 mm max (id 273544) | Structural Framing ''400
+    x 800mm'' (id 151841): 400 x 500 mm, 2823.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273545), top bars 2 x ''13M''
+    (id 273546), stirrups 15 x ''10M'' at 200 mm max (id 273547) | Structural Framing ''400
+    x 800mm'' (id 151842): 400 x 500 mm, 2823.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273548), top bars 2 x ''13M''
+    (id 273549), stirrups 15 x ''10M'' at 200 mm max (id 273550) | Structural Framing ''400
+    x 800mm'' (id 151843): 400 x 500 mm, 2823.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273551), top bars 2 x ''13M''
+    (id 273552), stirrups 15 x ''10M'' at 200 mm max (id 273553) | Structural Framing ''400
+    x 800mm'' (id 151844): 400 x 500 mm, 2823.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273554), top bars 2 x ''13M''
+    (id 273555), stirrups 15 x ''10M'' at 200 mm max (id 273556) | Structural Framing ''400
+    x 800mm'' (id 151845): 400 x 500 mm, 2823.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273557), top bars 2 x ''13M''
+    (id 273558), stirrups 15 x ''10M'' at 200 mm max (id 273559) | Structural Framing ''400
+    x 800mm'' (id 151846): 400 x 500 mm, 2823.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273560), top bars 2 x ''13M''
+    (id 273561), stirrups 15 x ''10M'' at 200 mm max (id 273562) | Structural Framing ''400
+    x 800mm'' (id 152001): 400 x 400 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273564), top bars 2 x ''13M''
+    (id 273565), stirrups 37 x ''10M'' at 200 mm max (id 273566) | Structural Framing ''400
+    x 800mm'' (id 152002): 400 x 400 mm, 3045 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273572), top bars 2 x ''13M''
+    (id 273573), stirrups 16 x ''10M'' at 200 mm max (id 273574) | Structural Framing ''400
+    x 800mm'' (id 152003): 400 x 400 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273577), top bars 2 x ''13M''
+    (id 273578), stirrups 32 x ''10M'' at 200 mm max (id 273579) | Structural Framing ''400
+    x 800mm'' (id 152004): 400 x 400 mm, 4273 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273583), top bars 2 x ''13M''
+    (id 273584), stirrups 23 x ''10M'' at 200 mm max (id 273585) | Structural Framing ''400
+    x 800mm'' (id 152006): 400 x 400 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273589), top bars 2 x ''13M''
+    (id 273590), stirrups 32 x ''10M'' at 200 mm max (id 273591) | Structural Framing ''400
+    x 800mm'' (id 152008): 400 x 400 mm, 4149.9 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273597), top bars 2 x ''13M''
+    (id 273598), stirrups 22 x ''10M'' at 200 mm max (id 273599) | Structural Framing ''400
+    x 800mm'' (id 152009): 400 x 400 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273605), top bars 2 x ''13M''
+    (id 273606), stirrups 32 x ''10M'' at 200 mm max (id 273607) | Structural Framing ''400
+    x 800mm'' (id 152010): 400 x 400 mm, 3045 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273610), top bars 2 x ''13M''
+    (id 273611), stirrups 16 x ''10M'' at 200 mm max (id 273612) | Structural Framing ''400
+    x 800mm'' (id 152011): 400 x 400 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273616), top bars 2 x ''13M''
+    (id 273617), stirrups 37 x ''10M'' at 200 mm max (id 273618) | Structural Framing ''400
+    x 800mm'' (id 152012): 400 x 400 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273622), top bars 2 x ''13M''
+    (id 273623), stirrups 37 x ''10M'' at 200 mm max (id 273624) | Structural Framing ''400
+    x 800mm'' (id 152013): 400 x 400 mm, 3045 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273630), top bars 2 x ''13M''
+    (id 273631), stirrups 16 x ''10M'' at 200 mm max (id 273632) | Structural Framing ''400
+    x 800mm'' (id 152014): 400 x 400 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273636), top bars 2 x ''13M''
+    (id 273637), stirrups 32 x ''10M'' at 200 mm max (id 273638) | Structural Framing ''400
+    x 800mm'' (id 152015): 400 x 400 mm, 4273 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273643), top bars 2 x ''13M''
+    (id 273644), stirrups 23 x ''10M'' at 200 mm max (id 273645) | Structural Framing ''400
+    x 800mm'' (id 152017): 400 x 400 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273649), top bars 2 x ''13M''
+    (id 273650), stirrups 32 x ''10M'' at 200 mm max (id 273651) | Structural Framing ''400
+    x 800mm'' (id 152019): 400 x 400 mm, 4149.9 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273657), top bars 2 x ''13M''
+    (id 273658), stirrups 22 x ''10M'' at 200 mm max (id 273659) | Structural Framing ''400
+    x 800mm'' (id 152020): 400 x 400 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273665), top bars 2 x ''13M''
+    (id 273666), stirrups 32 x ''10M'' at 200 mm max (id 273667) | Structural Framing ''400
+    x 800mm'' (id 152021): 400 x 400 mm, 3045 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273671), top bars 2 x ''13M''
+    (id 273672), stirrups 16 x ''10M'' at 200 mm max (id 273673) | Structural Framing ''400
+    x 800mm'' (id 152022): 400 x 400 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273677), top bars 2 x ''13M''
+    (id 273678), stirrups 37 x ''10M'' at 200 mm max (id 273679) | Structural Framing ''400
+    x 800mm'' (id 152023): 400 x 400 mm, 3045 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273685), top bars 2 x ''13M''
+    (id 273686), stirrups 16 x ''10M'' at 200 mm max (id 273687) | Structural Framing ''400
+    x 800mm'' (id 152024): 400 x 400 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273691), top bars 2 x ''13M''
+    (id 273692), stirrups 32 x ''10M'' at 200 mm max (id 273693) | Structural Framing ''400
+    x 800mm'' (id 152025): 400 x 400 mm, 4273 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273696), top bars 2 x ''13M''
+    (id 273697), stirrups 23 x ''10M'' at 200 mm max (id 273698) | Structural Framing ''400
+    x 800mm'' (id 152027): 400 x 400 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273702), top bars 2 x ''13M''
+    (id 273703), stirrups 32 x ''10M'' at 200 mm max (id 273704) | Structural Framing ''400
+    x 800mm'' (id 152028): 400 x 400 mm, 2040 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273708), top bars 2 x ''13M''
+    (id 273709), stirrups 11 x ''10M'' at 200 mm max (id 273710) | Structural Framing ''400
+    x 800mm'' (id 152029): 400 x 400 mm, 4053 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273712), top bars 2 x ''13M''
+    (id 273713), stirrups 21 x ''10M'' at 200 mm max (id 273714) | Structural Framing ''400
+    x 800mm'' (id 152030): 400 x 400 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273717), top bars 2 x ''13M''
+    (id 273718), stirrups 32 x ''10M'' at 200 mm max (id 273719) | Structural Framing ''400
+    x 800mm'' (id 152031): 400 x 400 mm, 3045 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273722), top bars 2 x ''13M''
+    (id 273723), stirrups 16 x ''10M'' at 200 mm max (id 273724) | Structural Framing ''400
+    x 800mm'' (id 152032): 400 x 400 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273728), top bars 2 x ''13M''
+    (id 273729), stirrups 37 x ''10M'' at 200 mm max (id 273730) | Structural Framing ''400
+    x 800mm'' (id 152033): 400 x 400 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273735), top bars 2 x ''13M''
+    (id 273736), stirrups 37 x ''10M'' at 200 mm max (id 273737) | Structural Framing ''400
+    x 800mm'' (id 152034): 400 x 400 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273742), top bars 2 x ''13M''
+    (id 273743), stirrups 37 x ''10M'' at 200 mm max (id 273744) | Structural Framing ''400
+    x 800mm'' (id 152035): 400 x 400 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273749), top bars 2 x ''13M''
+    (id 273750), stirrups 37 x ''10M'' at 200 mm max (id 273751) | Structural Framing ''400
+    x 800mm'' (id 152036): 400 x 400 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273757), top bars 2 x ''13M''
+    (id 273758), stirrups 37 x ''10M'' at 200 mm max (id 273759) | Structural Framing ''400
+    x 800mm'' (id 152037): 400 x 400 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273765), top bars 2 x ''13M''
+    (id 273766), stirrups 37 x ''10M'' at 200 mm max (id 273767) | Structural Framing ''400
+    x 800mm'' (id 152038): 400 x 400 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273773), top bars 2 x ''13M''
+    (id 273774), stirrups 37 x ''10M'' at 200 mm max (id 273775) | Structural Framing ''400
+    x 800mm'' (id 152039): 400 x 400 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273781), top bars 2 x ''13M''
+    (id 273782), stirrups 37 x ''10M'' at 200 mm max (id 273783) | Structural Framing ''400
+    x 800mm'' (id 152040): 400 x 400 mm, 7109 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273789), top bars 2 x ''13M''
+    (id 273790), stirrups 37 x ''10M'' at 200 mm max (id 273791) | Structural Framing ''400
+    x 800mm'' (id 152041): 400 x 400 mm, 4716.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273797), top bars 2 x ''13M''
+    (id 273798), stirrups 25 x ''10M'' at 200 mm max (id 273799) | Structural Framing ''400
+    x 800mm'' (id 152042): 400 x 400 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273800), top bars 2 x ''13M''
+    (id 273801), stirrups 33 x ''10M'' at 200 mm max (id 273802) | Structural Framing ''400
+    x 800mm'' (id 152043): 400 x 400 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273803), top bars 2 x ''13M''
+    (id 273804), stirrups 32 x ''10M'' at 200 mm max (id 273805) | Structural Framing ''400
+    x 800mm'' (id 152044): 400 x 400 mm, 5686.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273806), top bars 2 x ''13M''
+    (id 273807), stirrups 30 x ''10M'' at 200 mm max (id 273808) | Structural Framing ''400
+    x 800mm'' (id 152045): 400 x 400 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273809), top bars 2 x ''13M''
+    (id 273810), stirrups 12 x ''10M'' at 200 mm max (id 273811) | Structural Framing ''400
+    x 800mm'' (id 152046): 400 x 400 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273812), top bars 2 x ''13M''
+    (id 273813), stirrups 36 x ''10M'' at 200 mm max (id 273814) | Structural Framing ''400
+    x 800mm'' (id 152047): 400 x 400 mm, 4716.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273816), top bars 2 x ''13M''
+    (id 273817), stirrups 25 x ''10M'' at 200 mm max (id 273818) | Structural Framing ''400
+    x 800mm'' (id 152048): 400 x 400 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273819), top bars 2 x ''13M''
+    (id 273820), stirrups 33 x ''10M'' at 200 mm max (id 273821) | Structural Framing ''400
+    x 800mm'' (id 152049): 400 x 400 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273822), top bars 2 x ''13M''
+    (id 273823), stirrups 32 x ''10M'' at 200 mm max (id 273824) | Structural Framing ''400
+    x 800mm'' (id 152050): 400 x 400 mm, 5589.7 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273825), top bars 2 x ''13M''
+    (id 273826), stirrups 29 x ''10M'' at 200 mm max (id 273827) | Structural Framing ''400
+    x 800mm'' (id 152051): 400 x 400 mm, 2141.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273828), top bars 2 x ''13M''
+    (id 273829), stirrups 12 x ''10M'' at 200 mm max (id 273830) | Structural Framing ''400
+    x 800mm'' (id 152052): 400 x 400 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273831), top bars 2 x ''13M''
+    (id 273832), stirrups 36 x ''10M'' at 200 mm max (id 273833) | Structural Framing ''400
+    x 800mm'' (id 152053): 400 x 400 mm, 5686.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273834), top bars 2 x ''13M''
+    (id 273835), stirrups 30 x ''10M'' at 200 mm max (id 273836) | Structural Framing ''400
+    x 800mm'' (id 152054): 400 x 400 mm, 2141.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273837), top bars 2 x ''13M''
+    (id 273838), stirrups 12 x ''10M'' at 200 mm max (id 273839) | Structural Framing ''400
+    x 800mm'' (id 152055): 400 x 400 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273840), top bars 2 x ''13M''
+    (id 273841), stirrups 12 x ''10M'' at 200 mm max (id 273842) | Structural Framing ''400
+    x 800mm'' (id 152056): 400 x 400 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273843), top bars 2 x ''13M''
+    (id 273844), stirrups 36 x ''10M'' at 200 mm max (id 273845) | Structural Framing ''400
+    x 800mm'' (id 152057): 400 x 400 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273846), top bars 2 x ''13M''
+    (id 273847), stirrups 12 x ''10M'' at 200 mm max (id 273848) | Structural Framing ''400
+    x 800mm'' (id 152058): 400 x 400 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273850), top bars 2 x ''13M''
+    (id 273851), stirrups 36 x ''10M'' at 200 mm max (id 273852) | Structural Framing ''400
+    x 800mm'' (id 152059): 400 x 400 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273854), top bars 2 x ''13M''
+    (id 273855), stirrups 12 x ''10M'' at 200 mm max (id 273856) | Structural Framing ''400
+    x 800mm'' (id 152060): 400 x 400 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273857), top bars 2 x ''13M''
+    (id 273858), stirrups 36 x ''10M'' at 200 mm max (id 273859) | Structural Framing ''400
+    x 800mm'' (id 152061): 400 x 400 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273860), top bars 2 x ''13M''
+    (id 273861), stirrups 12 x ''10M'' at 200 mm max (id 273862) | Structural Framing ''400
+    x 800mm'' (id 152062): 400 x 400 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273863), top bars 2 x ''13M''
+    (id 273864), stirrups 36 x ''10M'' at 200 mm max (id 273865) | Structural Framing ''400
+    x 800mm'' (id 152063): 400 x 400 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273866), top bars 2 x ''13M''
+    (id 273867), stirrups 12 x ''10M'' at 200 mm max (id 273868) | Structural Framing ''400
+    x 800mm'' (id 152064): 400 x 400 mm, 7867.7 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273870), top bars 2 x ''13M''
+    (id 273871), stirrups 40 x ''10M'' at 200 mm max (id 273872) | Structural Framing ''400
+    x 800mm'' (id 152065): 400 x 400 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273873), top bars 2 x ''13M''
+    (id 273874), stirrups 33 x ''10M'' at 200 mm max (id 273875) | Structural Framing ''400
+    x 800mm'' (id 152066): 400 x 400 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273877), top bars 2 x ''13M''
+    (id 273878), stirrups 33 x ''10M'' at 200 mm max (id 273879) | Structural Framing ''400
+    x 800mm'' (id 152067): 400 x 400 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273881), top bars 2 x ''13M''
+    (id 273882), stirrups 33 x ''10M'' at 200 mm max (id 273883) | Structural Framing ''400
+    x 800mm'' (id 152068): 400 x 400 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273885), top bars 2 x ''13M''
+    (id 273886), stirrups 33 x ''10M'' at 200 mm max (id 273887) | Structural Framing ''400
+    x 800mm'' (id 152069): 400 x 400 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273889), top bars 2 x ''13M''
+    (id 273890), stirrups 33 x ''10M'' at 200 mm max (id 273891) | Structural Framing ''400
+    x 800mm'' (id 152070): 400 x 400 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273893), top bars 2 x ''13M''
+    (id 273894), stirrups 32 x ''10M'' at 200 mm max (id 273895) | Structural Framing ''400
+    x 800mm'' (id 152071): 400 x 400 mm, 5589.7 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273897), top bars 2 x ''13M''
+    (id 273898), stirrups 29 x ''10M'' at 200 mm max (id 273899) | Structural Framing ''400
+    x 800mm'' (id 152072): 400 x 400 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273900), top bars 2 x ''13M''
+    (id 273901), stirrups 12 x ''10M'' at 200 mm max (id 273902) | Structural Framing ''400
+    x 800mm'' (id 152073): 400 x 400 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273903), top bars 2 x ''13M''
+    (id 273904), stirrups 36 x ''10M'' at 200 mm max (id 273905) | Structural Framing ''400
+    x 800mm'' (id 152074): 400 x 400 mm, 7867.7 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273907), top bars 2 x ''13M''
+    (id 273908), stirrups 40 x ''10M'' at 200 mm max (id 273909) | Structural Framing ''400
+    x 800mm'' (id 152075): 400 x 400 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273910), top bars 2 x ''13M''
+    (id 273911), stirrups 33 x ''10M'' at 200 mm max (id 273912) | Structural Framing ''400
+    x 800mm'' (id 152076): 400 x 400 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273913), top bars 2 x ''13M''
+    (id 273914), stirrups 33 x ''10M'' at 200 mm max (id 273915) | Structural Framing ''400
+    x 800mm'' (id 152077): 400 x 400 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273916), top bars 2 x ''13M''
+    (id 273917), stirrups 33 x ''10M'' at 200 mm max (id 273918) | Structural Framing ''400
+    x 800mm'' (id 152078): 400 x 400 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273919), top bars 2 x ''13M''
+    (id 273920), stirrups 33 x ''10M'' at 200 mm max (id 273921) | Structural Framing ''400
+    x 800mm'' (id 152079): 400 x 400 mm, 6296.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273922), top bars 2 x ''13M''
+    (id 273923), stirrups 33 x ''10M'' at 200 mm max (id 273924) | Structural Framing ''400
+    x 800mm'' (id 152080): 400 x 400 mm, 6093 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273925), top bars 2 x ''13M''
+    (id 273926), stirrups 32 x ''10M'' at 200 mm max (id 273927) | Structural Framing ''400
+    x 800mm'' (id 152081): 400 x 400 mm, 8131.3 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273928), top bars 2 x ''13M''
+    (id 273929), stirrups 42 x ''10M'' at 200 mm max (id 273930) | Structural Framing ''400
+    x 800mm'' (id 152082): 400 x 400 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273931), top bars 2 x ''13M''
+    (id 273932), stirrups 36 x ''10M'' at 200 mm max (id 273933) | Structural Framing ''600
+    x 900'' (id 152083): 600 x 500 mm, 7715.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273935), top bars 2 x ''13M''
+    (id 273936), stirrups 40 x ''10M'' at 200 mm max (id 273937) | Structural Framing ''600
+    x 900'' (id 152084): 600 x 500 mm, 3251.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273939), top bars 2 x ''13M''
+    (id 273940), stirrups 17 x ''10M'' at 200 mm max (id 273941) | Structural Framing ''600
+    x 900'' (id 152085): 600 x 500 mm, 6299.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273943), top bars 2 x ''13M''
+    (id 273944), stirrups 33 x ''10M'' at 200 mm max (id 273945) | Structural Framing ''600
+    x 900'' (id 152086): 600 x 500 mm, 4479.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273947), top bars 2 x ''13M''
+    (id 273948), stirrups 23 x ''10M'' at 200 mm max (id 273949) | Structural Framing ''600
+    x 900'' (id 152088): 600 x 500 mm, 6299.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273951), top bars 2 x ''13M''
+    (id 273952), stirrups 33 x ''10M'' at 200 mm max (id 273953) | Structural Framing ''600
+    x 900'' (id 152090): 600 x 500 mm, 4356.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273956), top bars 2 x ''13M''
+    (id 273957), stirrups 23 x ''10M'' at 200 mm max (id 273958) | Structural Framing ''600
+    x 900'' (id 152091): 600 x 500 mm, 6299.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273961), top bars 2 x ''13M''
+    (id 273962), stirrups 33 x ''10M'' at 200 mm max (id 273963) | Structural Framing ''600
+    x 900'' (id 152092): 600 x 500 mm, 3251.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273965), top bars 2 x ''13M''
+    (id 273966), stirrups 17 x ''10M'' at 200 mm max (id 273967) | Structural Framing ''600
+    x 900'' (id 152093): 600 x 500 mm, 7315.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273969), top bars 2 x ''13M''
+    (id 273970), stirrups 38 x ''10M'' at 200 mm max (id 273971) | Structural Framing ''400
+    x 800mm'' (id 152094): 400 x 400 mm, 5589.7 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273972), top bars 2 x ''13M''
+    (id 273973), stirrups 29 x ''10M'' at 200 mm max (id 273974) | Structural Framing ''400
+    x 800mm'' (id 152095): 400 x 400 mm, 2141.6 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273977), top bars 2 x ''13M''
+    (id 273978), stirrups 12 x ''10M'' at 200 mm max (id 273979) | Structural Framing ''400
+    x 800mm'' (id 152096): 400 x 400 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273980), top bars 2 x ''13M''
+    (id 273981), stirrups 36 x ''10M'' at 200 mm max (id 273982) | Structural Framing ''400
+    x 800mm'' (id 152097): 400 x 400 mm, 6912.1 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273984), top bars 2 x ''13M''
+    (id 273985), stirrups 36 x ''10M'' at 200 mm max (id 273986) | Structural Framing ''400
+    x 800mm'' (id 152098): 400 x 400 mm, 2238.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273987), top bars 2 x ''13M''
+    (id 273988), stirrups 12 x ''10M'' at 200 mm max (id 273989) | Structural Framing ''400
+    x 800mm'' (id 152099): 400 x 400 mm, 5589.7 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273990), top bars 2 x ''13M''
+    (id 273991), stirrups 29 x ''10M'' at 200 mm max (id 273992) | Structural Framing ''400
+    x 800mm'' (id 152110): 400 x 400 mm, 6815.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273995), top bars 2 x ''13M''
+    (id 273996), stirrups 35 x ''10M'' at 200 mm max (id 273997) | Structural Framing ''400
+    x 800mm'' (id 152111): 400 x 400 mm, 6815.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 273999), top bars 2 x ''13M''
+    (id 274000), stirrups 35 x ''10M'' at 200 mm max (id 274001) | Structural Framing ''400
+    x 800mm'' (id 152112): 400 x 400 mm, 6815.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 274003), top bars 2 x ''13M''
+    (id 274004), stirrups 35 x ''10M'' at 200 mm max (id 274005) | Structural Framing ''400
+    x 800mm'' (id 152122): 400 x 400 mm, 9150.4 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 274007), top bars 2 x ''13M''
+    (id 274008), stirrups 47 x ''10M'' at 200 mm max (id 274009) | Structural Framing ''400
+    x 800mm'' (id 152123): 400 x 400 mm, 9150.4 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 274011), top bars 2 x ''13M''
+    (id 274012), stirrups 47 x ''10M'' at 200 mm max (id 274013) | Structural Framing ''400
+    x 800mm'' (id 152124): 400 x 400 mm, 9150.4 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 274015), top bars 2 x ''13M''
+    (id 274016), stirrups 47 x ''10M'' at 200 mm max (id 274017) | Structural Framing ''400
+    x 800mm'' (id 152132): 400 x 400 mm, 6815.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 274019), top bars 2 x ''13M''
+    (id 274020), stirrups 35 x ''10M'' at 200 mm max (id 274021) | Structural Framing ''400
+    x 800mm'' (id 152133): 400 x 400 mm, 6815.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 274023), top bars 2 x ''13M''
+    (id 274024), stirrups 35 x ''10M'' at 200 mm max (id 274025) | Structural Framing ''400
+    x 800mm'' (id 152134): 400 x 400 mm, 6815.2 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 274027), top bars 2 x ''13M''
+    (id 274028), stirrups 35 x ''10M'' at 200 mm max (id 274029) | Structural Framing ''400
+    x 800mm'' (id 152144): 400 x 400 mm, 9150.4 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 274031), top bars 2 x ''13M''
+    (id 274032), stirrups 47 x ''10M'' at 200 mm max (id 274033) | Structural Framing ''400
+    x 800mm'' (id 152145): 400 x 400 mm, 9150.4 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 274035), top bars 2 x ''13M''
+    (id 274036), stirrups 47 x ''10M'' at 200 mm max (id 274037) | Structural Framing ''400
+    x 800mm'' (id 152146): 400 x 400 mm, 9150.4 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 274039), top bars 2 x ''13M''
+    (id 274040), stirrups 47 x ''10M'' at 200 mm max (id 274041) | Structural Framing ''400
+    x 800mm'' (id 152147): 400 x 400 mm, 2964.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 274043), top bars 2 x ''13M''
+    (id 274044), stirrups 16 x ''10M'' at 200 mm max (id 274045) | Structural Framing ''400
+    x 800mm'' (id 152148): 400 x 400 mm, 2964.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 274047), top bars 2 x ''13M''
+    (id 274048), stirrups 16 x ''10M'' at 200 mm max (id 274049) | Structural Framing ''400
+    x 800mm'' (id 152149): 400 x 400 mm, 2823.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 274050), top bars 2 x ''13M''
+    (id 274051), stirrups 15 x ''10M'' at 200 mm max (id 274052) | Structural Framing ''400
+    x 800mm'' (id 152150): 400 x 400 mm, 2823.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 274053), top bars 2 x ''13M''
+    (id 274054), stirrups 15 x ''10M'' at 200 mm max (id 274055) | Structural Framing ''400
+    x 800mm'' (id 152151): 400 x 400 mm, 2823.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 274056), top bars 2 x ''13M''
+    (id 274057), stirrups 15 x ''10M'' at 200 mm max (id 274058) | Structural Framing ''400
+    x 800mm'' (id 152152): 400 x 400 mm, 2823.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 274059), top bars 2 x ''13M''
+    (id 274060), stirrups 15 x ''10M'' at 200 mm max (id 274061) | Structural Framing ''400
+    x 800mm'' (id 152153): 400 x 400 mm, 2823.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 274062), top bars 2 x ''13M''
+    (id 274063), stirrups 15 x ''10M'' at 200 mm max (id 274064) | Structural Framing ''400
+    x 800mm'' (id 152154): 400 x 400 mm, 2823.5 mm of concrete; cover sides and ends 30, top
+    30, bottom 30 mm (as given); bottom bars 3 x ''16M'' (id 274065), top bars 2 x ''13M''
+    (id 274066), stirrups 15 x ''10M'' at 200 mm max (id 274067), shapeCount 38, sideText
+    none, sides Tuple`2, skipped 22 item(s) [Structural Framing ''400 x 800mm'' (id 124574):
+    its section is..., Structural Framing ''400 x 800mm'' (id 124579): its section is...,
+    Structural Framing ''400 x 800mm'' (id 124602): its section is..., ...], stirrup Tuple`2,
+    stirrupHookType RebarHookType, styleFloat NumberStyles, tangentAt Func`3, topLayer Tuple`2,
+    typeAndSpacing Func`3, useHostCover false. inputs came elements from select-by-family
+    (357); bottomBars as given; topBars as given; sideBars not given - "none", the card''s
+    own default (optional); stirrups as given; stirrupHook as given; barHook not given - "none",
+    the card''s own default (optional); cover as given. on Structure Night Test'
+  negative_case: 'run with bottomBars=3 x T16, cover=30, stirrupHook=Stirrup/Tie - 135 deg.,
+    stirrups=10M @ 200, topBars=2 x 13M arranged with categories=Structural Framing, exactMatch=false,
+    familyName=Concrete-Rectangular Beam instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running select-by-family
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned barHookType (null), barList Func`1, barTypeFrom
+    Func`3, barTypes 11 item(s) [13M, 10M, 16M, ...], beamsReinforced 0 item(s), bottom (null),
+    countAndType Func`3, coverGiven 0, coverText 30, extentsIn Func`3, findings 1 item(s)
+    [No Rebar Bar Type is named ''T16'' (the bottom bars asked). Lo...], framingCategory 1
+    item(s) [id -2001320], hookFrom Func`4, hookTypes 5 item(s) [Standard - 90 deg., Standard
+    - 180 deg., Stirrup/Tie - 90 deg., ...], hostCover Func`3, invariant CultureInfo, lengthFrom
+    Func`3, lines 0 item(s), makeBar Func`10, mm Func`2, modelOf Func`2, nominalOf Func`2,
+    onRight Func`4, placed 0 item(s), readBackWrong 0 item(s), refused No Rebar Bar Type is
+    named ''T16'' (the bottom bars asked). Loaded: ''10M'' 9.5 mm, ''13M'' 12.7 mm, ''16M''
+    15.9 mm, ''19M'' 19.1 mm, ''22M'' 22.2 mm, ''25M'' 25.4 mm, ''29M'' 28.7 mm, ''32M'' 32.3
+    mm, ''36M'' 35.8 mm, ''43M'' 43 mm, ''57M'' 57.3 mm. Give one of these names, or the diameter
+    in millimetres. If ''T16'' is a bar mark from the drawings, say which type or diameter
+    it means. Nothing was placed, report , shapeCount 38, sideText none, sides (null), skipped
+    0 item(s), stirrup (null), stirrupHookType (null), styleFloat NumberStyles, tangentAt
+    Func`3, topLayer (null), typeAndSpacing Func`3, useHostCover false. inputs came elements
+    from select-by-family (357); bottomBars as given; topBars as given; sideBars not given
+    - "none", the card''s own default (optional); stirrups as given; stirrupHook as given;
+    barHook not given - "none", the card''s own default (optional); cover as given. on Structure
+    Night Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: a6a6bff2d4a8ba6a
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

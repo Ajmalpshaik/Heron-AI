@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -111,6 +111,43 @@ contract:
       # said no, never a thing it centred (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-10-22'
+  by: Ajmal PS
+  model: Heron Capture Test (21,317 elements), Revit 2020, session 60544
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    find-sheets with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyCentred 0 item(s), ambiguous
+    4 item(s) [624550, 541389, 617750, ...], apartOnPaper Func`3, at Func`2, centred 1, findings
+    E101 Electrical Power Riser Diagram: 2 viewports - which one is the plan is not answerable,
+    nothing moved | E201 Unnamed (FloorPlan: Level 2 - Lighting Plan): was (532, 443) mm,
+    title block centre (594, 420) mm, moved by (63, -23) mm, reads back (594, 420) mm; viewport
+    box 839 x 700 mm in a title block 1188 x 840 mm | E301 North Level 1 - Lighting Plan:
+    3 viewports - which one is the plan is not answerable, nothing moved | E601 Panel Schedules:
+    no viewport on it - nothing to centre | M100 MECHANICAL LEGEND: 6 viewports - which one
+    is the plan is not answerable, nothing moved | M601 Duct Sections: 3 viewports - which
+    one is the plan is not answerable, nothing moved | M701 Mechanical Schedules: no viewport
+    on it - nothing to centre, invariant CultureInfo, lines 7 item(s) [E101 Electrical Power
+    Riser Diagram: 2 viewports - which one..., E201 Unnamed (FloorPlan: Level 2 - Lighting
+    Plan): was (532,..., E301 North Level 1 - Lighting Plan: 3 viewports - which one ...,
+    ...], mm Func`2, noTitleBlock 0 item(s), noViewport 2 item(s) [541359, 545991], refused
+    0 item(s), severalTitleBlocks 0 item(s), tolerance 0.00164041994750656. inputs came elements
+    from find-sheets (7). on Heron Capture Test'
+  negative_case: 'run arranged with numberOrNameContains=M601 instead - chosen because it
+    should not contain what this fragment reports - the arrangement was re-made first by running
+    find-sheets with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyCentred 0 item(s), ambiguous
+    1 item(s) [545964], apartOnPaper Func`3, at Func`2, centred 0, findings M601 Duct Sections:
+    3 viewports - which one is the plan is not answerable, nothing moved, invariant CultureInfo,
+    lines 1 item(s) [M601 Duct Sections: 3 viewports - which one is the plan is n...], mm
+    Func`2, noTitleBlock 0 item(s), noViewport 0 item(s), refused 0 item(s), severalTitleBlocks
+    0 item(s), tolerance 0.00164041994750656. inputs came elements from find-sheets (1). on
+    Heron Capture Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: ceb918d6e9800a09
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
