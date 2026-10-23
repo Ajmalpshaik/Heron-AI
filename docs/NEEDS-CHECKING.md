@@ -994,6 +994,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-iv.md`](needs-checking/group-iv.md)
 
+## Group IX - the floor over the ducts hidden from a picture of them: `revit_view_image` with `elements` in a project (2026-10-23)
+
+**Its own file:** [`needs-checking/group-ix.md`](needs-checking/group-ix.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

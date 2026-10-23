@@ -1713,6 +1713,18 @@ async def exercise_view_image(module):
               and "temporary view is gone" in said,
               "and the words say how many were framed, which were left out and why, "
               "and that the temporary view is gone")
+        check("Hidden from the picture" not in said,
+              "with nothing hidden over them, no hidden line is said")
+
+        # WHAT LIES OVER THEM IS HIDDEN AND NAMED (row 5b-1328): a slab in
+        # the frame and not in the picture is said, never left to look absent.
+        revit.reply = dict(PICTURE_REPLY, mode="elements", view="{3D}", viewType="ThreeD",
+                           shown=3, hiddenAbove="401 (Floors); 402 (Ceilings)")
+        said, images = await call({"elements": "310, 312, 313"})
+        check(len(images) == 1 and "Hidden from the picture" in said
+              and "401 (Floors); 402 (Ceilings)" in said and "still in the model" in said,
+              "a floor and a ceiling hidden over the elements are named, and said to "
+              "be still in the model")
 
         revit.reply = dict(PICTURE_REPLY, mode="elements", rolledBack=False, shown=1)
         said, images = await call({"elements": "310"})

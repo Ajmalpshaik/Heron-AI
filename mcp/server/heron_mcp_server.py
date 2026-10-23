@@ -5865,9 +5865,8 @@ def revit_views() -> str:
 @server.tool()
 def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> list:
     """
-    Take a picture of a Revit view and LOOK at it - so you can check what you
-    just did the way a modeller glances at the screen, instead of trusting a
-    count.
+    Take a picture of a Revit view and LOOK at it - to check what you just
+    did, instead of trusting a count.
 
     Say what to picture in one of two ways:
 
@@ -5881,9 +5880,10 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> l
       REPORT_FAMILY_FORMS or SELECT_FAMILY_FORMS; the two may be mixed. Heron
       frames just those in a temporary isometric 3D view - a section box round
       them with a margin, model categories only, levels, grids and links left
-      out of the box - and takes the view away again. In a family open in the
-      Family Editor its forms are framed too, by their extents; its
-      connectors are hidden unless asked for. An id the
+      out of the box - and takes the view away again. In a project, floors,
+      ceilings and roofs over them are hidden, and named. In a family its
+      forms are framed too, by their extents; its connectors are hidden
+      unless asked for. An id the
       model or family in front has not got refuses the whole picture, naming
       it.
 
@@ -5945,6 +5945,11 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> l
                  % (reply.get("shown", 0), where, reply.get("pixelWidth"))]
         if reply.get("leftOut"):
             lines.append("Left out of the frame: %s." % reply.get("leftOut"))
+        # IN THE FRAME, HIDDEN FROM THE PICTURE (row 5b-1328): what lies over
+        # the elements, named so the chat never reads it as not there.
+        if reply.get("hiddenAbove"):
+            lines.append("Hidden from the picture, as they lie over them: %s. They are "
+                         "still in the model." % reply.get("hiddenAbove"))
     else:
         lines = ["A picture of %r (%s) in %s, %s px wide."
                  % (reply.get("view"), reply.get("viewType"), where, reply.get("pixelWidth"))]
