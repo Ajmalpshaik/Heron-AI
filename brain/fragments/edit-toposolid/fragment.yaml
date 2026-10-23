@@ -9,7 +9,16 @@ semantic-identity: "cut the terrain with this floor or pad, split it, simplify i
 kind: action
 domain: revit.geometry
 capability: EDIT_TOPOSOLID
-version: 1
+# Version 2 (2026-10-23, row 5b-1331) changed impl/: a simplify counts a
+# toposolid as edited, and puts it in `resultIds`, only when its shape point
+# count changed. Seen on Revit 2024.3 (session 83588) in a copy of Revit 2024's
+# Snowdon Towers Sample Site.rvt, rolled back, simplify to 50%: "10
+# toposolid(s) edited" where one read 2399 -> 1293 points and nine read 0 -> 0.
+# Each one left as it was is now named in the report - "nothing to simplify -
+# 0 shape points" or "unchanged" - and counted in the findings' first line.
+# Excavate, split and smooth are as version 1 had them. DRAFT, never proven:
+# NEEDS-CHECKING Group IY is the proof plan (D-30).
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -28,7 +37,8 @@ risk: MODIFY
 # ADD_TOPOSOLID_SUBDIVISION paints a region on it; CREATE_TOPOSOLID makes it.
 #
 # READ BACK: Revit's own excavation check, the split's new toposolids looked
-# up, shape points counted before and after a simplify, smoothing read again.
+# up, shape points counted before and after a simplify - a toposolid whose
+# count did not change is named, never counted as edited - smoothing read again.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 purpose: >
