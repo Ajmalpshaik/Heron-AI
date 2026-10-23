@@ -411,6 +411,29 @@ placement cuts its host, or **Cut with Voids When Loaded** is switched on and th
 host elements and Generic Model or structural copies. **Two Autodesk pages list different categories** a
 family's voids may cut (one adds Casework, Furniture and Specialty Equipment): both recorded, **UNSURE**.
 
+**Measured 2026-10-22 on Revit 2020, a FLOOR-based family** (Metric Plumbing Fixture floor based, a floor
+drain built through Heron - [row 5b-1324](fragment-issues/section-5b-rows-401-425.md)): a void extrusion made
+through the API does NOT cut the template's floor by itself, and loaded into a project the family cut no
+floor - the host read six faces and its volume unchanged, the drain's grate stayed buried - with *Cut with
+Voids When Loaded* off and then on. After *Modify > Geometry > Cut* in the Family Editor, the sample floor
+first and then each void, and a reload, every host floor was cut. So the UNSURE above is answered for a
+floor: **the cut is made in the Family Editor, by hand, before loading**, and **API:** nothing makes it on
+any release 2020 to 2027, read in the eight releases' own XML remarks, word for word the same -
+`SolidSolidCutUtils.AddCutBetweenSolids` throws for *"a project document or ... a conceptual model, pattern
+based curtain panel, or adaptive component family"* and for an element that is not *"solid and ... a
+GenericForm, GeomCombination, or a FamilyInstance"* (a void is not solid; a floor is none of the three);
+`Document.CombineElements` takes a `CombinableElement`, and a `Floor`, `RoofBase`, `Wall` or `Ceiling` is a
+`HostObject`; `JoinGeometryUtils.JoinGeometry` is *"not available for family documents"* and joins rather
+than cuts; `InstanceVoidCutUtils.AddInstanceVoidCut` cuts with *"the unattached voids inside a cutting
+instance"* - a loaded family, in a project; `FamilyItemFactory.NewOpening` takes a wall or a ceiling; and no
+member of `GenericForm`, `Extrusion`, `Floor` or `HostObject` is about a cut. Revit's own message for the
+case, on every release (`FormFailures.VoidFormsNotUsed`): *"Some Void Forms of this family do not cut
+anything and will be deleted. To make a Void Form cut something else use the Cut Geometry tool."*
+[`hosted-family-creation`](../brain/skills/hosted-family-creation.yaml) step 5 now says so and tells the
+modeller the hand step; whether Heron should do more - a nested void family through `InstanceVoidCutUtils`,
+if Revit takes it in a family document, which is NEEDS REAL REVIT - is [Q-85](open-questions/tier-2.md). A
+wall-, ceiling- or roof-based template's void was not measured: BV12 still asks.
+
 **Line-based.** Its Length is a built-in INSTANCE parameter, set by the two clicks; geometry runs the full
 length by being locked to the start and end planes, and a part that repeats is an array whose last member is
 locked to the end plane, its count a formula of the Length. **API:** a line-based model family is placed with
@@ -745,7 +768,7 @@ Source category with `ElementTransformUtils` and reads the transform back (**UNS
 | Setting a pattern-based panel's tile pattern | `CurtainPanelTilePattern` is read-only (§7) |
 | A point hosted on a line at a ratio; a profile on a point's plane | **Built 2026-10-02** - `PLACE_ADAPTIVE_POINTS` hosts points on a line (`NewPointOnEdge`) or on a point's own plane (`PointOnPlane.NewPointOnPlane`), and `CREATE_CONCEPTUAL_FORM` sweeps a profile along a path (`NewSweptBlendForm`) - the two-point beam; owed BV19 and BV20 |
 | A connector's primary flag, linked connectors, a light source | **Built 2026-10-02** - `SET_FAMILY_CONNECTOR_ROLES` and `SET_FAMILY_LIGHT_SOURCE`, owed BV17 and BV18. The Light Source tick, the light source's position and aim, a wattage, loss factor, dimming and filter **built 2026-10-21**, owed Group IK (§10); by hand only unticking Light Source |
-| A hosted opening whose size follows a parameter | An opening's sketch cannot be locked through the API; a void is the route, owed BV12 |
+| A hosted opening whose size follows a parameter | An opening's sketch cannot be locked through the API; a void is the route, owed BV12. **Measured 2026-10-22 on a floor-based family:** the void does not cut the template's host by itself and no API call makes it cut - the modeller cuts it with Cut Geometry in the Family Editor, host first then the void, before loading (§7, row 5b-1324, Q-85) |
 | Divide Surface on a mass, a revolve form in a conceptual family | **Built 2026-10-02** - `DIVIDE_FAMILY_SURFACE` (a number or a distance each way, and a tile pattern or a loaded panel family) and `CREATE_CONCEPTUAL_FORM` with an axis; owed BV21 and BV22 |
 | A structural family's Material for Model Behavior and Section Shape | **Built 2026-10-02** - `SET_FAMILY_SETTINGS`, owed BV23 |
 | A structural family's Symbolic Representation | Its built-in parameter exists, but no source gave the values it stores - set by hand until one does |
