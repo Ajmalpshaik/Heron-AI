@@ -56,6 +56,19 @@ var wantName = string.IsNullOrEmpty(parameterName) ? "" : parameterName.Trim();
 var needle = matchText == null ? "" : matchText;
 var mode = string.IsNullOrEmpty(matchMode) ? "contains" : matchMode.Trim().ToLowerInvariant();
 
+// THE MODE IS CHECKED BEFORE ANYTHING IS SCANNED (FRAGMENT-ISSUES 5b-1319). A
+// word this did not know fell through to "contains" with nothing said:
+// matchMode=exact for "Outlet Port" answered "Outlet Port" AND "Outlet Port
+// Bore", and the next call would have deleted the plane carrying a connector.
+// "exact" and "is" are what a modeller says for equals, so they are read as
+// it; any other word is refused here, naming the modes, and no element is read.
+if (mode == "exact" || mode == "is") mode = "equals";
+var knownModes = new List<string> { "contains", "equals", "begins", "ends", "notcontains", "notequals" };
+if (!knownModes.Contains(mode))
+    throw new InvalidOperationException("matchMode '" + matchMode.Trim() + "' is not a way of matching "
+        + "this knows, so NOTHING was scanned. Use contains, equals (or exact, is), begins, ends, "
+        + "notcontains or notequals");
+
 // ---- D-59: which links, only when asked for --------------------------------
 
 var linksSearched = 0;

@@ -983,6 +983,9 @@ Step 6 is finished, and not before. At that point:
 ## Group IS - a revolve's radius labelled on Revit 2020, both references checked before Revit is asked: `LABEL_FAMILY_RADIUS` version 5 (2026-10-22)
 
 **Its own file:** [`needs-checking/group-is.md`](needs-checking/group-is.md)
+## Group IT - a selection that refuses a mode it does not know, takes the whole model when no view is named, and knows a connector by its name: `SELECT_BY_PARAMETER_VALUE` v3, `SELECT_BY_CATEGORIES` v3, `SELECT_OPENINGS` v3, the binder's absent View and category aliases (2026-10-22)
+
+**Its own file:** [`needs-checking/group-it.md`](needs-checking/group-it.md)
 
 ## Group IV - a family's connectors hidden from a picture of its forms: `revit_view_image` with `elements` in a family (2026-10-22)
 

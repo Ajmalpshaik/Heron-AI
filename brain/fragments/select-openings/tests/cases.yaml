@@ -62,6 +62,20 @@ negative:
       "Links NOT read: this Revit cannot read a link through a view" and
       linksSearched 0 - never the whole link reported as if it were the view
 
+  # Row 5b-1320, added 2026-10-22 with version 3. NOT RUN. Needs the add-in
+  # built with HeronBindingNote.AbsentValue's View case and Revit restarted.
+  - given: inViewOnly LEFT OUT, and then given EMPTY, on a model whose openings are not all in one view
+    expect: >
+      the WHOLE model's openings both times, and the binding note reading
+      "inViewOnly not given - null (optional)" and then "inViewOnly given
+      empty - null (optional)". A refusal with needs_request_values or
+      "No view called" means the add-in in Revit is older than this change
+
+  - given: inViewOnly naming a view the model has not got
+    expect: >
+      still refused "No view called ..." - optional lets the view be left
+      out, never lets a wrong name mean the whole model
+
 second_route:
   - >
     switch to a 3D view, isolate the opening categories in Revit, and count
