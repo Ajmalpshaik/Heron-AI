@@ -78,3 +78,28 @@ for stays and the others go, so they cannot pull the fit out again.
 the screen with connector `7571` beside it and NOT `7572` or `7573`**, so its fit is the two of them only. An
 empty box in (a) means the asked connector was hidden - reopen 5b-1327. IV0 needs no repeat. Then row 5b-1327
 closes on IV0, IV2 to IV6 and the records IV1 points at.
+
+### Results - the second run, 2026-10-23, the same laptop: Revit 2020, session 65912
+
+**The add-in that ran:** this change, commit `abcabf73`, built Debug for 2020, 2024, 2026 and 2027 and deployed
+with Revit closed (Revit 2020 ended without saving on the owner's word - an unsaved *Project1* and the scratch
+family were all it held); each release's three Heron DLLs hash-equal to the build and stamped `0.1.0+abcabf73`.
+Revit 2020 was started on the CCTV copy; the add-in log: *"Heron loaded. Revit 2020 ... pid 65912"*; the owner
+pressed Heron. The skylight and the project were opened with `ACTIVATE_DOCUMENT` and the chat moved onto each.
+Element counts are each read's own *"Heron counted N element(s) before ... and the same after"*; Undo is the
+ribbon's Undo control read with UI Automation, read-only.
+
+| # | Release | What was run and what came back | State |
+|---|---|---|---|
+| IV2 | 2020 | CCTV copy, before: 6,398 elements, 9 views (2 3D). `elements` = `2713`: *"A picture of 1 element(s) in IO7 scratch - CCTV Monitor 24 Inch (Revit 2020, session 65912), in a temporary 3D view, 1280 px wide. The temporary view is gone - Revit rolled it back. Nothing was changed."* **The picture: the screen, black in its white bezel, across nearly the whole width; the stand's two columns behind and below it, cut by the box. No green circle, no cross lines, no blue marker** - against the first run's same call, where they covered the screen and it was a quarter of the width | **PASS** |
+| IV3 | 2020 | (a) The screen and the box behind it by UniqueId: *"A picture of 2 element(s) ..."* - the same close frame, no circles (the box sits behind the screen at this angle). (b) The base plate alone, `...-00001b6d`: *"A picture of 1 element(s) ..."* - the stand's H base, castors and both columns fill the frame, no circles | **PASS** |
+| IV4 | 2020 | (a) `7571`: *"None of the 1 element(s) can be framed in 3D: 7571 has no extent in the model. Give the ids of model elements, or name a view. Nothing was pictured."* (b) `2713, 7571`: *"A picture of 1 element(s) ... Left out of the frame: 7571 has no extent in the model."* - the screen alone, as IV2, no circles. **A connector has no bounding box, so it is never framed and never kept shown** - the row's second outcome, as it allows; never an empty picture | **PASS** |
+| IV5 | 2020 | (a) Skylight, before 1,872 elements, 9 forms, 10 views (1 3D); the Glass solid alone, IP2's call: *"A picture of 1 element(s) in GIP M_Skylight-Pyramid ..."* - IP2's picture: the skylight close up from above, brown curb, sloped glass, blue frame, on a square-cut slab of host roof. (b) *Heron Capture Test*, `392168,392170,392174,378117`: *"A picture of 3 element(s) in Heron Capture Test (Revit 2020, session 65912), in a temporary 3D view, 1000 px wide. Left out of the frame: 378117 is a datum (Levels). The temporary view is gone - Revit rolled it back. Nothing was changed."* - IP6's words; the picture again mostly the slab over the ducts ([row 5b-1328](../fragment-issues/section-5b-rows-401-425.md)), drawn low and right in the frame | **PASS** |
+| IV6 | 2020 | CCTV copy after IV2 to IV4: 111 forms, 6,398 elements, 9 views (2 3D), Undo disabled. Skylight after IV5 (a): 9 forms, 1,872 elements, 10 views. Project after IV5 (b): 21,317 elements - IP5's number - 140 views (11 3D), Undo disabled with it in front | **PASS** |
+| IV7 | 2024, 2027 | Not run - not needed to close the row. The add-in carrying this change is deployed on both, stamped `0.1.0+abcabf73` | **NOT RUN** |
+
+**Row 5b-1327 closes** on IV0, IV2 to IV6 here and the first run's IV1 records. Nothing to sign: `capture_view`
+is the add-in's own. **Seen beside the rows, not a new row:** IV5 (b)'s picture sits low and right in its frame
+with empty space above and left - that call's box reaches the slab over the ducts (5b-1328), and a project is
+pictured by code this change never reaches, so it is that row's, not this one's; no earlier picture of the same
+call was kept to compare it with.
