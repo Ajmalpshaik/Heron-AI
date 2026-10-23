@@ -85,3 +85,19 @@ frame follows what is asked for: the base plate alone pictured the stand's H bas
 
 **Left for the owner.** IP7 on Revit 2024 and 2027 - open each on a scratch family and project, press Heron.
 Row 5b-1314 closes on IP0 to IP6 here and IP7 there; there is no card to sign, `capture_view` being the add-in's own.
+
+### Results - 2026-10-23, the owner's laptop: Revit 2024.3 (24.3.60.12), session 83588 - IP7's 2024 half
+
+The add-in deployed 2026-10-22 from main at `239d0b17` (stamp `0.1.0+239d0b17`). Revit 2024 started on a scratch
+copy of its own `Snowdon Towers Sample HVAC.rvt` (*N23 Snowdon HVAC 2024*, `%TEMP%\heron-work\night-1023\models`),
+the owner pressed Heron; *GIP M_Skylight-Pyramid* - the same Revit 2020 library copy as above - opened in 2024
+and upgraded in memory, never saved. The forms' UniqueIds read the same as on 2020; ducts' ids from the probe.
+
+| # | Release | What was run and what came back | State |
+|---|---|---|---|
+| IP7 (a) | 2024 | Skylight, the Glass solid's id with its GUID's last digit 3 made 4: *"1 of the 1 id(s) name no placed element in "GIP M_Skylight-Pyramid": a8cc9e63-4da8-4dd2-9b35-df4c8c3f3d64-00009df9. An id belongs to one model, or one family, ..."*. Nothing pictured | **PASS** |
+| IP7 IP2 | 2024 | Skylight, `a8cc9e63-4da8-4dd2-9b35-df4c8c3f3d63-00009df9` alone: *"A picture of 1 element(s) in GIP M_Skylight-Pyramid (Revit 2024, session 83588) ... The temporary view is gone - Revit rolled it back. Nothing was changed."* **The picture:** the same framing as 2020's IP2 - the skylight close up on its roof - on 2024's dark background | **PASS** |
+| IP7 IP4 | 2024 | *N23 Snowdon HVAC 2024*: `1365662, 0b202da0-7e91-481c-adf0-ed84186e6285-00150c2e` (duct 1 by number, duct 2 by UniqueId): *"A picture of 2 element(s)"* - two short round duct runs meeting at a tee in front of a box-shaped unit. `1365662, ee75abd3-0b00-4374-8f65-b8d52f0bb76e-0014d69e` (duct 1 both ways): *"A picture of 1 element(s)"* - the tee alone, the frame closed in. 2024 is the first release with 64-bit ids; the UniqueIds' hex tails resolved | **PASS** |
+| IP7 | 2027 | Not run: Revit 2027 not open | **NOT RUN** |
+
+Row 5b-1314: IP0 to IP6 on 2020 and IP7 on 2024 pass; IP7 on 2027 is the one row left.
