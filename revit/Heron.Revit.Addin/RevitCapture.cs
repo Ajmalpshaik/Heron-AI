@@ -50,7 +50,7 @@ namespace Heron.Revit.Addin
     ///   IN A FAMILY, its forms are framed the same way, by their extents -
     ///   a form at the family's own subcategory has no category, and is
     ///   framed all the same (row 5b-1311, NEEDS-CHECKING Group IO). Its
-    ///   connectors are hidden too, unless one is among the ids: their
+    ///   connectors are hidden too, unless one is among the ids framed: their
     ///   symbols drew past the section box and the picture was fitted to
     ///   them (row 5b-1327). See Prepare.
     ///
@@ -554,11 +554,18 @@ namespace Heron.Revit.Addin
         /// </summary>
         private const BuiltInCategory Connectors = BuiltInCategory.OST_ConnectorElem;
 
-        /// <summary>Whether ELEMENT's category is CATEGORY itself.</summary>
+        /// <summary>
+        /// Whether ELEMENT's category is CATEGORY, or a sub-category of it -
+        /// hiding a category hides its sub-categories too, so a connector
+        /// whose category were one of the X, Y or Z axis sub-categories would
+        /// otherwise be framed and hidden, an empty box.
+        /// </summary>
         private static bool IsOf(Element element, BuiltInCategory category)
         {
             var own = element.Category;
-            return own != null && own.Id.Equals(new ElementId(category));
+            if (own == null) return false;
+            var wanted = new ElementId(category);
+            return own.Id.Equals(wanted) || (own.Parent != null && own.Parent.Id.Equals(wanted));
         }
 
         /// <summary>
@@ -606,12 +613,20 @@ namespace Heron.Revit.Addin
         /// outside a section box that could not hold them, and FitToPage
         /// fitted the picture to them, so the form asked for came out small.
         /// WHY THE LOOP BELOW MISSED THEM IS NOT SETTLED: it walks
-        /// doc.Settings.Categories and passes over model categories, and either
+        /// doc.Settings.Categories and passes over model categories, so either
         /// the connectors' category is a model one or that list has not got it
-        /// at all - FILTER_ELEMENTS_BY_CATEGORY, which looks a name up in the
-        /// same list, found no "Connectors" in a family on Revit 2024 (row
-        /// 5b-354). Named by its BuiltInCategory it is reached either way. A
+        /// - FILTER_ELEMENTS_BY_CATEGORY, which looks a name up in the same
+        /// list, found no "Connectors" in a family on Revit 2024 (row 5b-354),
+        /// though Revit may simply name it otherwise. Named by its
+        /// BuiltInCategory it is reached either way. And a third case this
+        /// cannot help: the category hidden already and the symbols drawn
+        /// regardless - NEEDS-CHECKING IV0 and IV2 tell the three apart. A
         /// project is never touched: it has no connector elements.
+        ///
+        /// ONE CONNECTOR ASKED FOR SHOWS THEM ALL, and the fit may take in the
+        /// others again - the chat asked for a connector, so that is the
+        /// picture. A connector id LEFT OUT (no extent) is still hidden, and
+        /// named in leftOut as every left-out id is.
         ///
         /// NOTHING ELSE IN A FAMILY IS HIDDEN WITH THEM. A reference line is a
         /// ModelCurve (IsReferenceLine) - model geometry, which the section
