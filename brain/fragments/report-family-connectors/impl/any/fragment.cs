@@ -13,6 +13,15 @@
 // are read here. The row is SET_FAMILY_CONNECTOR_ROLES' read-back, word for
 // word, so the two never describe one connector two ways.
 //
+// VERSION 2 (2026-10-22): THE TICK BOXES AND THE OTHER TYPED VALUES that
+// SET_FAMILY_CONNECTOR_ROLES version 4 sets are read here too, so a modeller
+// reads them back without a write: a pipe connector's Allow Slope Adjustments
+// either way, Utility where ticked, a fitting connector's Angle, a preset
+// Flow, a System flow's Flow Factor - and an electrical connector's Voltage,
+// Number of Poles, Apparent Load, Power Factor, Power Factor State and Load
+// Classification, which version 3 of the write read back and version 1 here
+// did not. A connector without such a field says nothing of it.
+//
 // ONE LINE, as REPORT_FAMILY_FORMS answers: a list is cut to three entries
 // before anyone reads it.
 
@@ -22,6 +31,12 @@ var connectorList = "";
 var notAFamily = false;
 
 var halfMillimetre = 0.5 / 304.8;
+// Revit keeps a voltage and a power in feet-based units, an angle in radians
+// and a flow in cubic feet per second - the factors SET_FAMILY_CONNECTOR_ROLES
+// writes with, read back here the same way.
+var perVolt = 1.0 / (0.3048 * 0.3048);
+var perDegree = Math.PI / 180.0;
+var perLitrePerSecond = 0.001 / (0.3048 * 0.3048 * 0.3048);
 var invariant = System.Globalization.CultureInfo.InvariantCulture;
 Func<double, string> mm = feet => Math.Round(feet * 304.8, 1).ToString(invariant);
 Func<string, string> squash = text =>
@@ -90,6 +105,15 @@ Func<ConnectorElement, Tuple<BuiltInParameter, Type>> lossMethodOf = c =>
     : c.Domain == Domain.DomainPiping ? Tuple.Create(BuiltInParameter.RBS_PIPE_FITTING_LOSS_METHOD_PARAM, typeof(PipeLossMethodType))
     : null;
 
+// A fitting's connectors carry an Angle - duct, pipe, cable tray, conduit; the
+// preset Flow is one parameter on a duct connector and another on a pipe one.
+Func<ConnectorElement, BuiltInParameter?> angleOf = c =>
+    c.Domain == Domain.DomainHvac || c.Domain == Domain.DomainPiping || c.Domain == Domain.DomainCableTrayConduit
+    ? BuiltInParameter.CONNECTOR_ANGLE : (BuiltInParameter?)null;
+Func<ConnectorElement, BuiltInParameter?> flowOf = c =>
+    c.Domain == Domain.DomainHvac ? BuiltInParameter.RBS_DUCT_FLOW_PARAM
+    : c.Domain == Domain.DomainPiping ? BuiltInParameter.RBS_PIPE_FLOW_PARAM : (BuiltInParameter?)null;
+
 Func<ConnectorElement, Tuple<BuiltInParameter, Type>, Parameter> parameterOf = (c, which) =>
     which == null ? null : c.get_Parameter(which.Item1);
 
@@ -145,10 +169,88 @@ Func<ConnectorElement, string> sizeWords = c =>
     catch (Exception) { return "size unreadable"; }
 };
 
+// One typed value as Heron reads it - "400 V", "3 poles", "90 degrees",
+// "12 L/s", "Lagging" - with the family parameter driving it, or null where
+// the connector has no such field. Word for word SET_FAMILY_CONNECTOR_ROLES'.
+Func<ConnectorElement, BuiltInParameter, string> typedValue = (c, bip) =>
+{
+    var p = c.get_Parameter(bip);
+    if (p == null) return null;
+    string value;
+    if (p.StorageType == StorageType.Integer)
+    {
+        var n = p.AsInteger();
+        value = bip == BuiltInParameter.RBS_ELEC_POWER_FACTOR_STATE && Enum.IsDefined(typeof(PowerFactorStateType), n)
+            ? Enum.ToObject(typeof(PowerFactorStateType), n).ToString() : n.ToString(invariant);
+    }
+    else if (p.StorageType == StorageType.ElementId)
+    {
+        var named = p.AsElementId() == null ? null : doc.GetElement(p.AsElementId());
+        value = named == null ? "none" : named.Name;
+    }
+    else if (p.StorageType == StorageType.Double)
+    {
+        var d = p.AsDouble();
+        value = bip == BuiltInParameter.RBS_ELEC_VOLTAGE ? Math.Round(d / perVolt, 2).ToString(invariant) + " V"
+            : bip == BuiltInParameter.RBS_ELEC_APPARENT_LOAD ? Math.Round(d / perVolt, 2).ToString(invariant) + " VA"
+            : bip == BuiltInParameter.CONNECTOR_ANGLE ? Math.Round(d / perDegree, 2).ToString(invariant) + " degrees"
+            : bip == BuiltInParameter.RBS_DUCT_FLOW_PARAM || bip == BuiltInParameter.RBS_PIPE_FLOW_PARAM
+                ? Math.Round(d / perLitrePerSecond, 3).ToString(invariant) + " L/s"
+            : Math.Round(d, 4).ToString(invariant);
+    }
+    else value = p.AsString() ?? "";
+    var by = drivenBy(c, bip);
+    return value + (by == null ? "" : " (<- " + by + ")");
+};
+
+Func<ConnectorElement, string> electricalWords = c =>
+{
+    if (c.Domain != Domain.DomainElectrical) return "";
+    var parts = new List<string>();
+    var voltage = typedValue(c, BuiltInParameter.RBS_ELEC_VOLTAGE);
+    if (voltage != null) parts.Add(voltage);
+    var poles = typedValue(c, BuiltInParameter.RBS_ELEC_NUMBER_OF_POLES);
+    if (poles != null) parts.Add(poles + " pole(s)");
+    var load = typedValue(c, BuiltInParameter.RBS_ELEC_APPARENT_LOAD);
+    if (load != null) parts.Add(load);
+    var factor = typedValue(c, BuiltInParameter.RBS_ELEC_POWER_FACTOR);
+    if (factor != null) parts.Add("power factor " + factor);
+    var state = typedValue(c, BuiltInParameter.RBS_ELEC_POWER_FACTOR_STATE);
+    if (state != null) parts.Add("power factor state " + state);
+    var loadClass = typedValue(c, BuiltInParameter.RBS_ELEC_LOAD_CLASSIFICATION);
+    if (loadClass != null) parts.Add("load classification " + loadClass);
+    return parts.Count == 0 ? "" : ", " + string.Join(", ", parts);
+};
+
+// VERSION 2: THE TICK BOXES AND THE OTHER TYPED VALUES as read - Allow Slope
+// Adjustments on a pipe connector either way, Utility where it is ticked, a
+// fitting connector's Angle, the preset Flow of a connector whose Flow
+// Configuration is Preset and the Flow Factor of one whose configuration is
+// System. A connector that has no such field says nothing of it.
+Func<ConnectorElement, string> moreWords = c =>
+{
+    var parts = new List<string>();
+    var slope = c.Domain == Domain.DomainPiping ? c.get_Parameter(BuiltInParameter.RBS_ADJUSTABLE_CONNECTOR) : null;
+    if (slope != null && slope.StorageType == StorageType.Integer)
+        parts.Add(slope.AsInteger() == 1 ? "slope adjustments allowed" : "no slope adjustments");
+    var utility = c.get_Parameter(BuiltInParameter.CONNECTOR_UTILITY_PARAM);
+    if (utility != null && utility.StorageType == StorageType.Integer && utility.AsInteger() == 1) parts.Add("utility");
+    var fitting = c.SystemClassification == MEPSystemClassification.Fitting || c.Domain == Domain.DomainCableTrayConduit;
+    var angle = fitting && angleOf(c).HasValue ? typedValue(c, angleOf(c).Value) : null;
+    if (angle != null) parts.Add("angle " + angle);
+    var configuration = enumRead(c, flowConfigurationOf(c));
+    var flow = configuration == "Preset" && flowOf(c).HasValue ? typedValue(c, flowOf(c).Value) : null;
+    if (flow != null) parts.Add("preset flow " + flow);
+    var factor = configuration == "System" && (c.Domain == Domain.DomainHvac || c.Domain == Domain.DomainPiping)
+        ? typedValue(c, BuiltInParameter.RBS_FLOW_FACTOR_PARAM) : null;
+    if (factor != null) parts.Add("flow factor " + factor);
+    return parts.Count == 0 ? "" : ", " + string.Join(", ", parts);
+};
+
 Func<ConnectorElement, string> row = c =>
 {
     var linked = c.GetLinkedConnectorElement();
-    var text = label(c) + ", " + spaced(c.SystemClassification.ToString()) + ", " + sizeWords(c);
+    var text = label(c) + ", " + spaced(c.SystemClassification.ToString()) + ", " + sizeWords(c) + electricalWords(c);
     var direction = enumRead(c, flowDirectionOf(c));
     if (direction != null) text += ", flow " + spaced(direction);
     var configuration = enumRead(c, flowConfigurationOf(c));
@@ -157,6 +259,7 @@ Func<ConnectorElement, string> row = c =>
     if (loss != null && loss != "NotDefined") text += ", loss method " + spaced(loss);
     var description = c.get_Parameter(BuiltInParameter.RBS_CONNECTOR_DESCRIPTION);
     if (description != null && !string.IsNullOrEmpty(description.AsString())) text += ", described \"" + description.AsString() + "\"";
+    text += moreWords(c);
     var at = c.Origin;
     text += ", pointing " + pointing(c.Direction)
         + (at == null ? "" : ", at X " + mm(at.X) + ", Y " + mm(at.Y) + ", Z " + mm(at.Z) + " mm")

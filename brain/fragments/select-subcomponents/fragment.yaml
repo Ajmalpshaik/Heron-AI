@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -61,6 +61,30 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-22'
+  by: Ajmal PS
+  model: Structure Night Test, Revit 2020, session 60544 - the count is NOT recorded because
+    21,317 elements was measured on Heron Capture Test, the document in front, and this ran
+    against another one (row 15)
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-family, set-selection with this phase's own values. returned elements 96 item(s)
+    [400mm Diameter, 400mm Diameter, 400mm Diameter, ...], findings 2 item(s) [96 nested element(s)
+    found under 48 parent(s), one level onl..., These are the elements a category sweep of
+    the model does NO...], recursive false, withoutSubComponents 0. inputs came parents from
+    the selection (48); recursive as given. on Structure Night Test
+  negative_case: run with recursive=False arranged with categories=Structural Columns, exactMatch=false,
+    familyName=M_Concrete-Round-Column instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running select-by-family,
+    set-selection with this phase's own values. returned elements 0 item(s), findings 1 item(s)
+    [0 nested element(s) found under 196 parent(s), one level onl...], recursive false, withoutSubComponents
+    196. inputs came parents from the selection (196); recursive as given. on Structure Night
+    Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: cda02b60f449fd2e
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

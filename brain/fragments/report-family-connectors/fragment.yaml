@@ -1,15 +1,15 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-057
-semantic-identity: "what connectors this open family has, where each points, its system, size and flow"
+semantic-identity: "what connectors this open family has, where each points, its system, size and flow, whether its Allow Slope Adjustments and Utility boxes are ticked, its angle, preset flow and electrical values"
 kind: action
 domain: revit.families
 capability: REPORT_FAMILY_CONNECTORS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -29,6 +29,16 @@ purpose: >
   face moved, or a valve port still Domestic Cold Water rather than Global,
   shows here. REPORT_CONNECTORS is for placed elements in a project.
 
+  **VERSION 2 (2026-10-22).** The tick boxes and the other typed values that
+  SET_FAMILY_CONNECTOR_ROLES version 4 sets are read here too, so they can
+  be read back without a write: a pipe connector's Allow Slope Adjustments
+  either way ("slope adjustments allowed" / "no slope adjustments"), Utility
+  where ticked, a fitting connector's Angle, a preset Flow, a System flow's
+  Flow Factor, and an electrical connector's Voltage, Number of Poles,
+  Apparent Load, Power Factor, Power Factor State and Load Classification.
+  Version 1's proof of 2026-10-21 no longer describes the code and is kept
+  below as a record; DRAFT until proved again (NEEDS-CHECKING Group IR).
+
   **ONE LINE**, as REPORT_FAMILY_FORMS answers: a list is cut to three entries
   before anyone reads it.
 
@@ -44,8 +54,11 @@ contract:
       type: int
     - name: connectorList
       # Every connector on ONE line: domain, id, the plane it lies on, system,
-      # size and driving parameters, flow, pointing, position, primary,
-      # linked.
+      # size and driving parameters, an electrical one's voltage, poles,
+      # load, power factor, power factor state and load classification, flow
+      # direction and configuration, loss method, description, a pipe one's
+      # slope adjustments box, utility where ticked, a fitting's angle, a
+      # preset flow or flow factor, pointing, position, primary, linked.
       role: result
       type: string
     - name: notAFamily
@@ -106,13 +119,21 @@ compatibility-note: >
   and the built-in parameters RBS_DUCT/PIPE_FLOW_DIRECTION_PARAM,
   RBS_DUCT/PIPE_FLOW_CONFIGURATION_PARAM, RBS_DUCT/PIPE_FITTING_LOSS_METHOD_PARAM
   and RBS_CONNECTOR_DESCRIPTION are present 2020, 2024 and 2027 (api-surface,
-  read 2026-10-04).
+  read 2026-10-04). Version 2 reads RBS_ADJUSTABLE_CONNECTOR,
+  CONNECTOR_UTILITY_PARAM, CONNECTOR_ANGLE, RBS_FLOW_FACTOR_PARAM,
+  RBS_DUCT_FLOW_PARAM, RBS_PIPE_FLOW_PARAM, RBS_ELEC_VOLTAGE,
+  RBS_ELEC_NUMBER_OF_POLES, RBS_ELEC_APPARENT_LOAD, RBS_ELEC_POWER_FACTOR,
+  RBS_ELEC_POWER_FACTOR_STATE and RBS_ELEC_LOAD_CLASSIFICATION, and the enum
+  PowerFactorStateType - every one present 2020 to 2027 (tools/api-surface
+  --members, read 2026-10-22 off all eight releases); not yet run in Revit.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
 #   "list this family's connectors"              -> here
 #   "which way does the connector point"         -> here
+#   "does the outlet connector allow slope adjustments" -> here, a read
 #   "set the connectors to Global", "flip it"    -> SET_FAMILY_CONNECTOR_ROLES
+#   "tick allow slope adjustments on the outlet connector" -> SET_FAMILY_CONNECTOR_ROLES
 #   "put a connector on this face"               -> ADD_FAMILY_CONNECTOR
 #   "delete the connector on Air Outlet"         -> REMOVE_FAMILY_CONNECTOR -
 #                                                   takes the ids listed here
@@ -120,6 +141,11 @@ compatibility-note: >
 #                                                   elements in a project
 
 utterances:
+  - does the outlet connector allow slope adjustments
+  - which connectors allow slope adjustments
+  - is the connector a utility connector
+  - what flow factor does the duct connector have
   - list the connectors in this family
+  - list this family's connectors
   - which way does each connector in this family point
   - what system is each connector of this family

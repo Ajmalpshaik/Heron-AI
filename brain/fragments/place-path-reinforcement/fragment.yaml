@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -102,6 +102,52 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-22'
+  by: Ajmal PS
+  model: Structure Night Test, Revit 2020, session 60544 - the count is NOT recorded because
+    21,317 elements was measured on Heron Capture Test, the document in front, and this ran
+    against another one (row 15)
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned asked Tuple`2,
+    barList Func`1, barTypeFrom Func`3, barTypes 11 item(s) [13M, 10M, 16M, ...], barsInPath
+    20, curves 1 item(s) [Autodesk.Revit.DB.Line], faceWord top, findings 1 item(s) [Placed
+    path reinforcement and read it back: path reinforceme...], flip false, hookText none,
+    hookType (null), hookTypes 5 item(s) [Standard - 90 deg., Standard - 180 deg., Stirrup/Tie
+    - 90 deg., ...], host Floor, hosts 1 item(s) [Generic 300mm], invariant CultureInfo, lengthMm
+    1200, lengthText 1200, mm Func`2, nominalOf Func`2, param Func`3, pathType PathReinforcementType,
+    pathTypeText only, pathTypes 1 item(s) [Structural Path Reinforcement 1], placed 1 item(s)
+    [275499], readBackWrong 0 item(s), refused , report path reinforcement id 275499 on ''Generic
+    300mm'' (id 139467): 20 x ''16M'' @ 200 mm, each 1200 mm long, face Top, path 4000 mm
+    long, styleFloat NumberStyles, typeAndSpacing Func`3. inputs came elements from the selection
+    (1); path as given (1); bars as given; barLength as given; face as given; flip not given
+    - false (optional); hook not given - "none", the card''s own default (optional); pathReinforcementType
+    not given - "only", the card''s own default (optional). on Structure Night Test'
+  negative_case: 'run with barLength=1200, bars=16M @ 200, face=top, path=20000,0,0; 24000,0,0
+    arranged with categoryName=Floors, inViewOnly=EngineeringPlan: 02 - Floor instead - chosen
+    because it should not contain what this fragment reports - the arrangement was re-made
+    first by running select-by-category-name, set-selection with this phase''s own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned asked (null), barList Func`1, barTypeFrom Func`3, barTypes 11 item(s) [13M, 10M,
+    16M, ...], barsInPath 0, curves 1 item(s) [Autodesk.Revit.DB.Line], faceWord top, findings
+    1 item(s) [A path is drawn on ONE slab or wall, and 2 element(s) were h...], flip false,
+    hookText none, hookType (null), hookTypes 5 item(s) [Standard - 90 deg., Standard - 180
+    deg., Stirrup/Tie - 90 deg., ...], host (null), hosts 2 item(s) [Generic Concrete 300mm,
+    160mm Concrete With 50mm Metal Deck], invariant CultureInfo, lengthMm 0, lengthText 1200,
+    mm Func`2, nominalOf Func`2, param Func`3, pathType (null), pathTypeText only, pathTypes
+    1 item(s) [Structural Path Reinforcement 1], placed 0 item(s), readBackWrong 0 item(s),
+    refused A path is drawn on ONE slab or wall, and 2 element(s) were handed in. Select the
+    one it goes on. Nothing was placed, report , styleFloat NumberStyles, typeAndSpacing Func`3.
+    inputs came elements from the selection (2); path as given (1); bars as given; barLength
+    as given; face as given; flip not given - false (optional); hook not given - "none", the
+    card''s own default (optional); pathReinforcementType not given - "only", the card''s
+    own default (optional). on Structure Night Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 112d434fe9ce5723
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

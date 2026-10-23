@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -107,6 +107,221 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-22'
+  by: Ajmal PS
+  model: Structure Night Test (9,179 elements), Revit 2020, session 60544
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-family with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned barHookType (null), barList Func`1,
+    barTypeFrom Func`3, barTypes 11 item(s) [13M, 10M, 16M, ...], bottomL Tuple`2, bottomW
+    Tuple`2, countAndType Func`3, coverGiven 0.246062992125984, coverText 75, extentsIn Func`3,
+    findings 1 item(s) [96 rebar set(s) placed and read back in 48 footing(s); 0 ski...],
+    footingsReinforced 48 item(s) [142647, 142808, 142929, ...], foundationCategory 1 item(s)
+    [id -2001300], hookFrom Func`4, hookTypes 5 item(s) [Standard - 90 deg., Standard - 180
+    deg., Stirrup/Tie - 90 deg., ...], hostCover Func`3, invariant CultureInfo, lengthFrom
+    Func`3, lines 48 item(s) [Structural Foundations ''800 x 1800 x 900mm'' (id 142647): 180...,
+    Structural Foundations ''800 x 1800 x 900mm'' (id 142808): 180..., Structural Foundations
+    ''800 x 1800 x 900mm'' (id 142929): 180..., ...], makeBar Func`10, mm Func`2, modelOf
+    Func`2, nominalOf Func`2, onRight Func`4, outer length, placed 96 item(s) [274069, 274070,
+    274072, ...], readBackWrong 0 item(s), refused , report Structural Foundations ''800 x
+    1800 x 900mm'' (id 142647): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274069), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274070) | Structural Foundations ''800 x 1800 x 900mm'' (id 142808): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274072), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274073) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 142929): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274075), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274076) | Structural Foundations ''800 x 1800 x 900mm'' (id 143084): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274078), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274079) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 143129): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274081), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274082) | Structural Foundations ''800 x 1800 x 900mm'' (id 143168): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274084), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274085) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 143567): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274087), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274088) | Structural Foundations ''800 x 1800 x 900mm'' (id 143632): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274090), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274091) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 143719): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274093), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274094) | Structural Foundations ''800 x 1800 x 900mm'' (id 143768): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274096), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274097) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 143819): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274099), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274100) | Structural Foundations ''800 x 1800 x 900mm'' (id 143864): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274102), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274103) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 143911): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274105), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274106) | Structural Foundations ''800 x 1800 x 900mm'' (id 144010): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274108), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274109) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 144087): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274111), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274112) | Structural Foundations ''800 x 1800 x 900mm'' (id 144124): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274114), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274115) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 144367): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274117), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274118) | Structural Foundations ''800 x 1800 x 900mm'' (id 145611): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274120), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274121) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 145668): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274123), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274124) | Structural Foundations ''800 x 1800 x 900mm'' (id 146114): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274126), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274127) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 146209): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274129), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274130) | Structural Foundations ''800 x 1800 x 900mm'' (id 146449): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274132), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274133) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 146570): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274135), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274136) | Structural Foundations ''800 x 1800 x 900mm'' (id 146653): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274138), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274139) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 146740): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274141), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274142) | Structural Foundations ''800 x 1800 x 900mm'' (id 146932): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274144), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274145) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 147648): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274147), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274148) | Structural Foundations ''800 x 1800 x 900mm'' (id 147703): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274150), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274151) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 147734): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274153), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274154) | Structural Foundations ''800 x 1800 x 900mm'' (id 147769): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274156), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274157) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 147826): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274159), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274160) | Structural Foundations ''800 x 1800 x 900mm'' (id 147861): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274162), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274163) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 147898): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274165), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274166) | Structural Foundations ''800 x 1800 x 900mm'' (id 147935): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274168), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274169) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 148040): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274171), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274172) | Structural Foundations ''800 x 1800 x 900mm'' (id 148127): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274174), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274175) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 148174): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274177), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274178) | Structural Foundations ''800 x 1800 x 900mm'' (id 148219): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274180), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274181) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 148268): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274183), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274184) | Structural Foundations ''800 x 1800 x 900mm'' (id 148343): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274186), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274187) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 148404): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274189), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274190) | Structural Foundations ''800 x 1800 x 900mm'' (id 148523): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274192), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274193) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 148556): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274195), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274196) | Structural Foundations ''800 x 1800 x 900mm'' (id 148641): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274198), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274199) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 148746): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274201), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274202) | Structural Foundations ''800 x 1800 x 900mm'' (id 148827): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274204), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274205) | Structural Foundations ''800 x 1800
+    x 900mm'' (id 148971): 1800 long x 800 wide x 1200 mm; cover sides 75, top 75, bottom
+    75 mm (as given); bars along the length outermost; bottom bars along the length 6 x ''16M''
+    at 150 mm max (id 274207), bottom bars along the width 12 x ''16M'' at 150 mm max (id
+    274208) | Structural Foundations ''800 x 1800 x 900mm'' (id 149200): 1800 long x 800 wide
+    x 1200 mm; cover sides 75, top 75, bottom 75 mm (as given); bars along the length outermost;
+    bottom bars along the length 6 x ''16M'' at 150 mm max (id 274210), bottom bars along
+    the width 12 x ''16M'' at 150 mm max (id 274211), shapeCount 38, skipped 0 item(s), styleFloat
+    NumberStyles, tangentAt Func`3, topL Tuple`2, topW Tuple`2, typeAndSpacing Func`3, useHostCover
+    false. inputs came elements from select-by-family (48); bottomLength as given; bottomWidth
+    as given; topLength as given; topWidth as given; outerLayer as given; barHook not given
+    - "none", the card''s own default (optional); cover as given. on Structure Night Test'
+  negative_case: run with bottomLength=16M @ 150, bottomWidth=16M @ 150, cover=75, outerLayer=bottom,
+    topLength=none, topWidth=none arranged with categories=Structural Foundations, exactMatch=false,
+    familyName=M_Pile Cap-2 Pile instead - chosen because it should not contain what this
+    fragment reports - the arrangement was re-made first by running select-by-family with
+    this phase's own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned barHookType (null), barList Func`1, barTypeFrom
+    Func`3, barTypes 11 item(s) [13M, 10M, 16M, ...], bottomL Tuple`2, bottomW Tuple`2, countAndType
+    Func`3, coverGiven 0.246062992125984, coverText 75, extentsIn Func`3, findings 1 item(s)
+    ['bottom' does not say which bars sit outermost. Say length -...], footingsReinforced
+    0 item(s), foundationCategory 1 item(s) [id -2001300], hookFrom Func`4, hookTypes 5 item(s)
+    [Standard - 90 deg., Standard - 180 deg., Stirrup/Tie - 90 deg., ...], hostCover Func`3,
+    invariant CultureInfo, lengthFrom Func`3, lines 0 item(s), makeBar Func`10, mm Func`2,
+    modelOf Func`2, nominalOf Func`2, onRight Func`4, outer bottom, placed 0 item(s), readBackWrong
+    0 item(s), refused 'bottom' does not say which bars sit outermost. Say length - the bars
+    running along the footing's length are lowest at the bottom and highest at the top - or
+    width. Nothing was placed, report , shapeCount 38, skipped 0 item(s), styleFloat NumberStyles,
+    tangentAt Func`3, topL Tuple`2, topW Tuple`2, typeAndSpacing Func`3, useHostCover false.
+    inputs came elements from select-by-family (48); bottomLength as given; bottomWidth as
+    given; topLength as given; topWidth as given; outerLayer as given; barHook not given -
+    "none", the card's own default (optional); cover as given. on Structure Night Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: b9e380ed3d1d9c11
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

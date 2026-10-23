@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -108,6 +108,54 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-22'
+  by: Ajmal PS
+  model: N22 M_Pipe Size Tag, Revit 2020, session 60544 - the count is NOT recorded because
+    21,317 elements was measured on Heron Capture Test, the document in front, and this ran
+    against another one (row 15)
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, contentOf Func`3,
+    copied 1, copiedIds 1 item(s) [2101], culture CultureInfo, findings 4 item(s) [1 label(s)
+    copied from a seed family; 1 read back the same a..., 1 label(s) picked in "N22 M_Piping
+    System Abbreviation Tag";..., Label type(s) named the same in both families: 2.5. If they
+    ..., ...], isLabel Func`2, kept 1, lines 3 item(s) [1 label(s) picked in "N22 M_Piping
+    System Abbreviation Tag";..., Label type(s) named the same in both families: 2.5. If they
+    ..., Compared by text and label type only - Revit 2020 cannot rea...], mm Func`2, nameOf
+    Func`2, numberStyle NumberStyles, openTitles 4 item(s) [N22 M_Downlight - Recessed Can,
+    Project1, N22 M_Piping System Abbreviation Tag, ...], picked 1 item(s) [2.5], pointOf
+    Func`2, readBack label 2101 from seed 1008 | at 0,5 mm | shows what the seed shows | text
+    "System Abbreviation" ; type 2.5, refusal (null), report 1 label(s) picked in "N22 M_Piping
+    System Abbreviation Tag"; 1 arrived in "N22 M_Pipe Size Tag", 1 showing exactly what their
+    seed shows. | Label type(s) named the same in both families: 2.5. If they differ Revit
+    asks about duplicate types; Heron declines that box, the copy stops and nothing stays.
+    | Compared by text and label type only - Revit 2020 cannot read a label''s parameters;
+    open Edit Label on a copy to see them., shift XYZ, source Document, textOf Func`2, viewHere
+    Func`2, wanted N22 M_Piping System Abbreviation Tag. inputs came sourceDocumentTitle as
+    given; labelIds not given - "all", the card''s own default (optional); labelContains as
+    given; placeAtMm as given. on N22 M_Pipe Size Tag'
+  negative_case: run with labelContains=ZZZ_Not_A_Label, placeAtMm=0,5, sourceDocumentTitle=N22
+    M_Piping System Abbreviation Tag instead - chosen because it should not contain what this
+    fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned MmPerFoot 304.8, contentOf Func`3, copied 0, copiedIds
+    0 item(s), culture CultureInfo, findings 2 item(s) [0 label(s) copied from a seed family;
+    0 read back the same a..., No label in "N22 M_Piping System Abbreviation Tag" matched
+    -...], isLabel Func`2, kept 0, lines 1 item(s) [No label in "N22 M_Piping System Abbreviation
+    Tag" matched -...], mm Func`2, nameOf Func`2, numberStyle NumberStyles, openTitles 4 item(s)
+    [N22 M_Downlight - Recessed Can, Project1, N22 M_Piping System Abbreviation Tag, ...],
+    picked 0 item(s), pointOf Func`2, readBack , refusal No label in "N22 M_Piping System
+    Abbreviation Tag" matched - it has 1 label(s); REPORT_FAMILY_LABELS on the seed lists
+    them. NOTHING WAS COPIED., report No label in "N22 M_Piping System Abbreviation Tag" matched
+    - it has 1 label(s); REPORT_FAMILY_LABELS on the seed lists them. NOTHING WAS COPIED.,
+    shift XYZ, source Document, textOf Func`2, viewHere Func`2, wanted N22 M_Piping System
+    Abbreviation Tag. inputs came sourceDocumentTitle as given; labelIds not given - "all",
+    the card's own default (optional); labelContains as given; placeAtMm as given. on N22
+    M_Pipe Size Tag
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 7b31cc2903b53d5f
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

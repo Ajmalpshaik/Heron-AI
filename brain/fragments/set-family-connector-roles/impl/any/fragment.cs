@@ -29,6 +29,23 @@
 // 2021, UnitTypeId from 2021, both reached by reflection - before anything
 // changes, and every value is read back as Revit shows it.
 //
+// VERSION 4 (2026-10-22): THE TICK BOXES AND THE OTHER TYPED VALUES a connector
+// shows in the Family Editor's Properties, which nothing set until now - above
+// all ALLOW SLOPE ADJUSTMENTS on a pipe connector, the box a drain's connectors
+// need ticked for the pipes to be laid to a fall. Widened here, as version 3
+// was, because it is the same job: a setting of a connector already in the
+// family, named the same way. "allowSlopeAdjustments=yes" and "utility=yes"
+// are the ticks (yes or no); "angle=90" is a fitting connector's Angle in
+// degrees, "flowFactor=0.5" a duct or pipe connector's Flow Factor (or 50%),
+// "presetFlow=12 L/s" its preset Flow (L/s, m3/h or cfm), each a value, a
+// [family parameter] or both as the electrical values are; and
+// "powerFactorState=Lagging" an electrical connector's Power Factor State.
+// A KEY ANOTHER DOMAIN'S CONNECTOR HAS NOT GOT IS REFUSED naming the connector
+// and its domain - Allow Slope Adjustments on a duct connector - never passed
+// over in silence. Revit keeps an angle in radians and a flow in cubic feet
+// per second; both factors are checked against Revit's own UnitUtils before
+// anything changes, as the voltage's is.
+//
 // `settings` IS ONE VALUE, "system=Global; flowDirection=In; flip=true". The
 // binder refuses an absent string need (HeronBindingNote.AbsentValue), so ten
 // separate optional settings would have to be typed empty on every call; one
@@ -69,6 +86,11 @@ var pascal = 0.3048;
 // Revit keeps a voltage in kg*ft²/(s³*A) and a power in kg*ft²/s³: one volt, or
 // one volt-ampere, in square metres, is 1 / 0.3048² of the feet-based unit.
 var perVolt = 1.0 / (0.3048 * 0.3048);
+// Revit keeps an angle in radians and a flow in cubic feet per second: one
+// degree is pi / 180 of a radian, one litre per second 0.001 / 0.3048³ of a
+// cubic foot per second.
+var perDegree = Math.PI / 180.0;
+var perLitrePerSecond = 0.001 / (0.3048 * 0.3048 * 0.3048);
 var invariant = System.Globalization.CultureInfo.InvariantCulture;
 var flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static;
 var revitAssembly = typeof(Document).Assembly;
@@ -140,6 +162,11 @@ Func<ConnectorElement, Tuple<BuiltInParameter, Type>> lossMethodOf = c =>
     : c.Domain == Domain.DomainPiping ? Tuple.Create(BuiltInParameter.RBS_PIPE_FITTING_LOSS_METHOD_PARAM, typeof(PipeLossMethodType))
     : null;
 
+// VERSION 4: an electrical connector's Power Factor State - Lagging or Leading.
+Func<ConnectorElement, Tuple<BuiltInParameter, Type>> powerFactorStateOf = c =>
+    c.Domain == Domain.DomainElectrical ? Tuple.Create(BuiltInParameter.RBS_ELEC_POWER_FACTOR_STATE, typeof(PowerFactorStateType))
+    : null;
+
 Func<ConnectorElement, Tuple<BuiltInParameter, Type>, Parameter> parameterOf = (c, which) =>
     which == null ? null : c.get_Parameter(which.Item1);
 
@@ -185,24 +212,77 @@ var flip = false;
 var wantSizes = new List<FamilyParameter>();
 var sizesAsked = false;
 
-// THE ELECTRICAL VALUES ASKED FOR, each (label, the connector's built-in
-// parameter, the value in Revit's internal units or null, the family parameter
-// that drives it or null, the value as written).
-var electrical = new List<Tuple<string, BuiltInParameter, double?, string, string>>();
+// THE TYPED VALUES ASKED FOR - an electrical connector's from version 3; a
+// fitting connector's Angle, a duct or pipe connector's Flow Factor and
+// preset Flow from version 4 - each (label, the key as typed, the value in
+// Revit's internal units or null, the family parameter that drives it or
+// null, the value as written).
+var typed = new List<Tuple<string, string, double?, string, string>>();
 ElectricalLoadClassification wantLoadClass = null;
 var loadClassAsked = false;
-var electricalKeys = new Dictionary<string, Tuple<string, BuiltInParameter>>
+string wantPowerFactorState = null;
+
+// WHICH DOMAIN'S CONNECTOR CARRIES A FIELD - null for the others, and a key
+// asked of one of those is refused naming the connector and its domain.
+Func<BuiltInParameter, Func<ConnectorElement, BuiltInParameter?>> electricalOnly = bip =>
+    c => c.Domain == Domain.DomainElectrical ? bip : (BuiltInParameter?)null;
+Func<BuiltInParameter, Func<ConnectorElement, BuiltInParameter?>> pipeOnly = bip =>
+    c => c.Domain == Domain.DomainPiping ? bip : (BuiltInParameter?)null;
+Func<BuiltInParameter, Func<ConnectorElement, BuiltInParameter?>> ductOrPipe = bip =>
+    c => c.Domain == Domain.DomainHvac || c.Domain == Domain.DomainPiping ? bip : (BuiltInParameter?)null;
+Func<BuiltInParameter, Func<ConnectorElement, BuiltInParameter?>> anyDomain = bip =>
+    c => (BuiltInParameter?)bip;
+// Angle is shown on a FITTING's connectors - duct, pipe, cable tray, conduit.
+Func<ConnectorElement, BuiltInParameter?> angleOf = c =>
+    c.Domain == Domain.DomainHvac || c.Domain == Domain.DomainPiping || c.Domain == Domain.DomainCableTrayConduit
+    ? BuiltInParameter.CONNECTOR_ANGLE : (BuiltInParameter?)null;
+// The preset Flow is one parameter on a duct connector and another on a pipe one.
+Func<ConnectorElement, BuiltInParameter?> flowOf = c =>
+    c.Domain == Domain.DomainHvac ? BuiltInParameter.RBS_DUCT_FLOW_PARAM
+    : c.Domain == Domain.DomainPiping ? BuiltInParameter.RBS_PIPE_FLOW_PARAM : (BuiltInParameter?)null;
+
+// WHERE A NEW FAMILY PARAMETER IS FILED: (the group's enum name to 2022, its
+// GroupTypeId property from 2022, the heading Revit shows).
+var underLoads = Tuple.Create("PG_ELECTRICAL_LOADS", "ElectricalLoads", "Electrical - Loads");
+var underDimensions = Tuple.Create("PG_GEOMETRY", "Geometry", "Dimensions");
+var underMechanical = Tuple.Create("PG_MECHANICAL", "Mechanical", "Mechanical");
+
+// Each key: (label, whose field it is in words, the connector's built-in
+// parameter by domain, where a new family parameter driving it is filed).
+var typedKeys = new Dictionary<string, Tuple<string, string, Func<ConnectorElement, BuiltInParameter?>, Tuple<string, string, string>>>
 {
-    { "voltage",        Tuple.Create("Voltage", BuiltInParameter.RBS_ELEC_VOLTAGE) },
-    { "volts",          Tuple.Create("Voltage", BuiltInParameter.RBS_ELEC_VOLTAGE) },
-    { "poles",          Tuple.Create("Number of Poles", BuiltInParameter.RBS_ELEC_NUMBER_OF_POLES) },
-    { "numberofpoles",  Tuple.Create("Number of Poles", BuiltInParameter.RBS_ELEC_NUMBER_OF_POLES) },
-    { "phases",         Tuple.Create("Number of Poles", BuiltInParameter.RBS_ELEC_NUMBER_OF_POLES) },
-    { "apparentload",   Tuple.Create("Apparent Load", BuiltInParameter.RBS_ELEC_APPARENT_LOAD) },
-    { "apparentpower",  Tuple.Create("Apparent Load", BuiltInParameter.RBS_ELEC_APPARENT_LOAD) },
-    { "va",             Tuple.Create("Apparent Load", BuiltInParameter.RBS_ELEC_APPARENT_LOAD) },
-    { "powerfactor",    Tuple.Create("Power Factor", BuiltInParameter.RBS_ELEC_POWER_FACTOR) },
-    { "pf",             Tuple.Create("Power Factor", BuiltInParameter.RBS_ELEC_POWER_FACTOR) },
+    { "voltage",        Tuple.Create("Voltage", "an electrical connector's", electricalOnly(BuiltInParameter.RBS_ELEC_VOLTAGE), underLoads) },
+    { "volts",          Tuple.Create("Voltage", "an electrical connector's", electricalOnly(BuiltInParameter.RBS_ELEC_VOLTAGE), underLoads) },
+    { "poles",          Tuple.Create("Number of Poles", "an electrical connector's", electricalOnly(BuiltInParameter.RBS_ELEC_NUMBER_OF_POLES), underLoads) },
+    { "numberofpoles",  Tuple.Create("Number of Poles", "an electrical connector's", electricalOnly(BuiltInParameter.RBS_ELEC_NUMBER_OF_POLES), underLoads) },
+    { "phases",         Tuple.Create("Number of Poles", "an electrical connector's", electricalOnly(BuiltInParameter.RBS_ELEC_NUMBER_OF_POLES), underLoads) },
+    { "apparentload",   Tuple.Create("Apparent Load", "an electrical connector's", electricalOnly(BuiltInParameter.RBS_ELEC_APPARENT_LOAD), underLoads) },
+    { "apparentpower",  Tuple.Create("Apparent Load", "an electrical connector's", electricalOnly(BuiltInParameter.RBS_ELEC_APPARENT_LOAD), underLoads) },
+    { "va",             Tuple.Create("Apparent Load", "an electrical connector's", electricalOnly(BuiltInParameter.RBS_ELEC_APPARENT_LOAD), underLoads) },
+    { "powerfactor",    Tuple.Create("Power Factor", "an electrical connector's", electricalOnly(BuiltInParameter.RBS_ELEC_POWER_FACTOR), underLoads) },
+    { "pf",             Tuple.Create("Power Factor", "an electrical connector's", electricalOnly(BuiltInParameter.RBS_ELEC_POWER_FACTOR), underLoads) },
+    { "angle",          Tuple.Create("Angle", "a duct, pipe, cable tray or conduit connector's - a fitting's", angleOf, underDimensions) },
+    { "connectorangle", Tuple.Create("Angle", "a duct, pipe, cable tray or conduit connector's - a fitting's", angleOf, underDimensions) },
+    { "flowfactor",     Tuple.Create("Flow Factor", "a duct or pipe connector's", ductOrPipe(BuiltInParameter.RBS_FLOW_FACTOR_PARAM), underMechanical) },
+    { "presetflow",     Tuple.Create("Flow", "a duct or pipe connector's", flowOf, underMechanical) },
+    { "flowrate",       Tuple.Create("Flow", "a duct or pipe connector's", flowOf, underMechanical) },
+};
+
+// THE TICK BOXES ASKED FOR, each (label, whose box it is, the connector's
+// parameter by domain, ticked or not). Allow Slope Adjustments is the box
+// Revit shows on a PIPE connector in the Family Editor - a project reads it
+// back as the placed connector's AllowsSlopeAdjustments; Utility is asked of
+// any connector, and a connector that has no such box says so by name.
+var ticks = new List<Tuple<string, string, Func<ConnectorElement, BuiltInParameter?>, bool>>();
+var tickKeys = new Dictionary<string, Tuple<string, string, Func<ConnectorElement, BuiltInParameter?>>>
+{
+    { "allowslopeadjustments", Tuple.Create("Allow Slope Adjustments", "a pipe connector's", pipeOnly(BuiltInParameter.RBS_ADJUSTABLE_CONNECTOR)) },
+    { "allowslopeadjustment",  Tuple.Create("Allow Slope Adjustments", "a pipe connector's", pipeOnly(BuiltInParameter.RBS_ADJUSTABLE_CONNECTOR)) },
+    { "slopeadjustments",      Tuple.Create("Allow Slope Adjustments", "a pipe connector's", pipeOnly(BuiltInParameter.RBS_ADJUSTABLE_CONNECTOR)) },
+    { "slopeadjustment",       Tuple.Create("Allow Slope Adjustments", "a pipe connector's", pipeOnly(BuiltInParameter.RBS_ADJUSTABLE_CONNECTOR)) },
+    { "allowslope",            Tuple.Create("Allow Slope Adjustments", "a pipe connector's", pipeOnly(BuiltInParameter.RBS_ADJUSTABLE_CONNECTOR)) },
+    { "utility",               Tuple.Create("Utility", "a connector's", anyDomain(BuiltInParameter.CONNECTOR_UTILITY_PARAM)) },
+    { "utilityconnector",      Tuple.Create("Utility", "a connector's", anyDomain(BuiltInParameter.CONNECTOR_UTILITY_PARAM)) },
 };
 
 // What Revit's own UnitUtils makes of one unit on THIS release - UnitTypeId
@@ -269,10 +349,11 @@ Func<object, string> kindWords = kind =>
 
 // FamilyManager.AddParameter(name, GROUP, KIND, isInstance) whose third type is
 // the connector field's kind's own type - ForgeTypeId from 2022, ParameterType
-// before - under Electrical - Loads, where Revit files a connector's load.
-Func<object, Tuple<System.Reflection.MethodInfo, object>> addParameterFor = kind =>
+// before - under the group the key names: Electrical - Loads for a load,
+// Dimensions for an angle, Mechanical for a flow.
+Func<object, Tuple<string, string, string>, Tuple<System.Reflection.MethodInfo, object>> addParameterFor = (kind, under) =>
 {
-    if (kind == null) return null;
+    if (kind == null || under == null) return null;
     var method = typeof(FamilyManager).GetMethods()
         .Where(m => m.Name == "AddParameter")
         .FirstOrDefault(m =>
@@ -286,11 +367,11 @@ Func<object, Tuple<System.Reflection.MethodInfo, object>> addParameterFor = kind
     object group = null;
     try
     {
-        if (groupType.IsEnum) group = Enum.Parse(groupType, "PG_ELECTRICAL_LOADS");
+        if (groupType.IsEnum) group = Enum.Parse(groupType, under.Item1);
         else
         {
             var owner = revitAssembly.GetType(dbNamespace + ".GroupTypeId");
-            var property = owner == null ? null : owner.GetProperty("ElectricalLoads", flags);
+            var property = owner == null ? null : owner.GetProperty(under.Item2, flags);
             group = property == null ? null : property.GetValue(null);
         }
     }
@@ -338,14 +419,20 @@ Func<ConnectorElement, string> sizeWords = c =>
     catch (Exception) { return "size unreadable"; }
 };
 
-// One electrical value as Heron reads it - "400 V", "3 poles" - with the family
-// parameter driving it, or null where the connector has no such field.
-Func<ConnectorElement, BuiltInParameter, string> electricalValue = (c, bip) =>
+// One typed value as Heron reads it - "400 V", "3 poles", "90 degrees",
+// "12 L/s", "Lagging" - with the family parameter driving it, or null where
+// the connector has no such field.
+Func<ConnectorElement, BuiltInParameter, string> typedValue = (c, bip) =>
 {
     var p = c.get_Parameter(bip);
     if (p == null) return null;
     string value;
-    if (p.StorageType == StorageType.Integer) value = p.AsInteger().ToString(invariant);
+    if (p.StorageType == StorageType.Integer)
+    {
+        var n = p.AsInteger();
+        value = bip == BuiltInParameter.RBS_ELEC_POWER_FACTOR_STATE && Enum.IsDefined(typeof(PowerFactorStateType), n)
+            ? Enum.ToObject(typeof(PowerFactorStateType), n).ToString() : n.ToString(invariant);
+    }
     else if (p.StorageType == StorageType.ElementId)
     {
         var named = p.AsElementId() == null ? null : doc.GetElement(p.AsElementId());
@@ -356,6 +443,9 @@ Func<ConnectorElement, BuiltInParameter, string> electricalValue = (c, bip) =>
         var d = p.AsDouble();
         value = bip == BuiltInParameter.RBS_ELEC_VOLTAGE ? Math.Round(d / perVolt, 2).ToString(invariant) + " V"
             : bip == BuiltInParameter.RBS_ELEC_APPARENT_LOAD ? Math.Round(d / perVolt, 2).ToString(invariant) + " VA"
+            : bip == BuiltInParameter.CONNECTOR_ANGLE ? Math.Round(d / perDegree, 2).ToString(invariant) + " degrees"
+            : bip == BuiltInParameter.RBS_DUCT_FLOW_PARAM || bip == BuiltInParameter.RBS_PIPE_FLOW_PARAM
+                ? Math.Round(d / perLitrePerSecond, 3).ToString(invariant) + " L/s"
             : Math.Round(d, 4).ToString(invariant);
     }
     else value = p.AsString() ?? "";
@@ -367,16 +457,43 @@ Func<ConnectorElement, string> electricalWords = c =>
 {
     if (c.Domain != Domain.DomainElectrical) return "";
     var parts = new List<string>();
-    var voltage = electricalValue(c, BuiltInParameter.RBS_ELEC_VOLTAGE);
+    var voltage = typedValue(c, BuiltInParameter.RBS_ELEC_VOLTAGE);
     if (voltage != null) parts.Add(voltage);
-    var poles = electricalValue(c, BuiltInParameter.RBS_ELEC_NUMBER_OF_POLES);
+    var poles = typedValue(c, BuiltInParameter.RBS_ELEC_NUMBER_OF_POLES);
     if (poles != null) parts.Add(poles + " pole(s)");
-    var load = electricalValue(c, BuiltInParameter.RBS_ELEC_APPARENT_LOAD);
+    var load = typedValue(c, BuiltInParameter.RBS_ELEC_APPARENT_LOAD);
     if (load != null) parts.Add(load);
-    var factor = electricalValue(c, BuiltInParameter.RBS_ELEC_POWER_FACTOR);
+    var factor = typedValue(c, BuiltInParameter.RBS_ELEC_POWER_FACTOR);
     if (factor != null) parts.Add("power factor " + factor);
-    var loadClass = electricalValue(c, BuiltInParameter.RBS_ELEC_LOAD_CLASSIFICATION);
+    var state = typedValue(c, BuiltInParameter.RBS_ELEC_POWER_FACTOR_STATE);
+    if (state != null) parts.Add("power factor state " + state);
+    var loadClass = typedValue(c, BuiltInParameter.RBS_ELEC_LOAD_CLASSIFICATION);
     if (loadClass != null) parts.Add("load classification " + loadClass);
+    return parts.Count == 0 ? "" : ", " + string.Join(", ", parts);
+};
+
+// VERSION 4: THE TICK BOXES AND THE OTHER TYPED VALUES as read - Allow Slope
+// Adjustments on a pipe connector either way, Utility where it is ticked, a
+// fitting connector's Angle, the preset Flow of a connector whose Flow
+// Configuration is Preset and the Flow Factor of one whose configuration is
+// System. A connector that has no such field says nothing of it.
+Func<ConnectorElement, string> moreWords = c =>
+{
+    var parts = new List<string>();
+    var slope = c.Domain == Domain.DomainPiping ? c.get_Parameter(BuiltInParameter.RBS_ADJUSTABLE_CONNECTOR) : null;
+    if (slope != null && slope.StorageType == StorageType.Integer)
+        parts.Add(slope.AsInteger() == 1 ? "slope adjustments allowed" : "no slope adjustments");
+    var utility = c.get_Parameter(BuiltInParameter.CONNECTOR_UTILITY_PARAM);
+    if (utility != null && utility.StorageType == StorageType.Integer && utility.AsInteger() == 1) parts.Add("utility");
+    var fitting = c.SystemClassification == MEPSystemClassification.Fitting || c.Domain == Domain.DomainCableTrayConduit;
+    var angle = fitting && angleOf(c).HasValue ? typedValue(c, angleOf(c).Value) : null;
+    if (angle != null) parts.Add("angle " + angle);
+    var configuration = enumRead(c, flowConfigurationOf(c));
+    var flow = configuration == "Preset" && flowOf(c).HasValue ? typedValue(c, flowOf(c).Value) : null;
+    if (flow != null) parts.Add("preset flow " + flow);
+    var factor = configuration == "System" && (c.Domain == Domain.DomainHvac || c.Domain == Domain.DomainPiping)
+        ? typedValue(c, BuiltInParameter.RBS_FLOW_FACTOR_PARAM) : null;
+    if (factor != null) parts.Add("flow factor " + factor);
     return parts.Count == 0 ? "" : ", " + string.Join(", ", parts);
 };
 
@@ -392,6 +509,7 @@ Func<ConnectorElement, string> row = c =>
     if (loss != null && loss != "NotDefined") text += ", loss method " + spaced(loss);
     var description = c.get_Parameter(BuiltInParameter.RBS_CONNECTOR_DESCRIPTION);
     if (description != null && !string.IsNullOrEmpty(description.AsString())) text += ", described \"" + description.AsString() + "\"";
+    text += moreWords(c);
     var at = c.Origin;
     text += ", pointing " + pointing(c.Direction)
         + (at == null ? "" : ", at X " + mm(at.X) + ", Y " + mm(at.Y) + ", Z " + mm(at.Z) + " mm")
@@ -549,10 +667,10 @@ else
                 }
                 if (wantSizes.Count == 0 && problems.Count == 0) problems.Add("sizeParameters named no parameter.");
             }
-            else if (electricalKeys.ContainsKey(key))
+            else if (typedKeys.ContainsKey(key))
             {
                 // A NUMBER WITH ITS UNIT, A [FAMILY PARAMETER], OR BOTH.
-                var what = electricalKeys[key];
+                var what = typedKeys[key];
                 var split = System.Text.RegularExpressions.Regex.Match(value, @"^(?<n>[^\[\]]*?)\s*(\[(?<p>[^\[\]]*)\])?\s*$");
                 var numberText = split.Success ? split.Groups["n"].Value.Trim() : value;
                 string driver = split.Success && split.Groups["p"].Success ? split.Groups["p"].Value.Trim() : null;
@@ -573,7 +691,7 @@ else
                     System.Text.RegularExpressions.Match read;
                     double n;
                     var options = System.Text.RegularExpressions.RegexOptions.IgnoreCase;
-                    if (what.Item2 == BuiltInParameter.RBS_ELEC_VOLTAGE)
+                    if (what.Item1 == "Voltage")
                     {
                         read = System.Text.RegularExpressions.Regex.Match(numberText, @"^([0-9.eE+-]+)\s*(kv|v)?$", options);
                         if (read.Success && double.TryParse(read.Groups[1].Value, System.Globalization.NumberStyles.Float, invariant, out n)
@@ -581,7 +699,7 @@ else
                             inside = n * (read.Groups[2].Value.ToLowerInvariant() == "kv" ? 1000 : 1) * perVolt;
                         else problems.Add("Voltage \"" + value + "\" is not a voltage above 0 - \"400 V\", \"230\", \"11 kV\".");
                     }
-                    else if (what.Item2 == BuiltInParameter.RBS_ELEC_APPARENT_LOAD)
+                    else if (what.Item1 == "Apparent Load")
                     {
                         read = System.Text.RegularExpressions.Regex.Match(numberText, @"^([0-9.eE+-]+)\s*(kva|va)?$", options);
                         if (read.Success && double.TryParse(read.Groups[1].Value, System.Globalization.NumberStyles.Float, invariant, out n)
@@ -590,7 +708,7 @@ else
                         else problems.Add("Apparent Load \"" + value + "\" is not volt-amperes, 0 or more - \"1500 VA\", "
                             + "\"1.5 kVA\". A load in watts is not an apparent load.");
                     }
-                    else if (what.Item2 == BuiltInParameter.RBS_ELEC_NUMBER_OF_POLES)
+                    else if (what.Item1 == "Number of Poles")
                     {
                         read = System.Text.RegularExpressions.Regex.Match(numberText, @"^([0-9]+)\s*(-?\s*(phases?|poles?|p))?$", options);
                         int poles;
@@ -598,6 +716,42 @@ else
                             && poles >= 1 && poles <= 3)
                             inside = poles;
                         else problems.Add("Number of Poles \"" + value + "\" is not 1, 2 or 3 - a three-phase connector is 3.");
+                    }
+                    else if (what.Item1 == "Angle")
+                    {
+                        // DEGREES, as the Properties panel shows an angle; Revit keeps radians.
+                        read = System.Text.RegularExpressions.Regex.Match(numberText, @"^([0-9.eE+-]+)\s*(deg|degs|degree|degrees)?$", options);
+                        if (read.Success && double.TryParse(read.Groups[1].Value, System.Globalization.NumberStyles.Float, invariant, out n)
+                            && n >= 0 && n <= 360)
+                            inside = n * perDegree;
+                        else problems.Add("Angle \"" + value + "\" is not an angle in degrees, 0 to 360 - \"90\", \"45 degrees\".");
+                    }
+                    else if (what.Item1 == "Flow Factor")
+                    {
+                        read = System.Text.RegularExpressions.Regex.Match(numberText, @"^([0-9.eE+-]+)\s*(%)?$", options);
+                        if (read.Success && double.TryParse(read.Groups[1].Value, System.Globalization.NumberStyles.Float, invariant, out n))
+                        {
+                            if (read.Groups[2].Value == "%") n = n / 100.0;
+                            if (n >= 0 && n <= 1) inside = n;
+                            else problems.Add("Flow Factor \"" + value + "\" is not 0 to 1 - \"0.5\" or \"50%\", the share of the "
+                                + "system's flow this connector takes.");
+                        }
+                        else problems.Add("Flow Factor \"" + value + "\" is not a number - \"0.5\" or \"50%\".");
+                    }
+                    else if (what.Item1 == "Flow")
+                    {
+                        // LITRES PER SECOND unless m3/h or cfm is written; Revit keeps cubic feet per second.
+                        read = System.Text.RegularExpressions.Regex.Match(numberText,
+                            @"^([0-9.eE+-]+)\s*(l/s|lps|l/sec|m3/h|m3/hr|cmh|cfm)?$", options);
+                        if (read.Success && double.TryParse(read.Groups[1].Value, System.Globalization.NumberStyles.Float, invariant, out n)
+                            && n >= 0)
+                        {
+                            var unit = read.Groups[2].Value.ToLowerInvariant();
+                            var litres = unit == "m3/h" || unit == "m3/hr" || unit == "cmh" ? n / 3.6
+                                : unit == "cfm" ? n * 0.3048 * 0.3048 * 0.3048 * 1000.0 / 60.0 : n;
+                            inside = litres * perLitrePerSecond;
+                        }
+                        else problems.Add("Flow \"" + value + "\" is not a flow, 0 or more - \"12 L/s\", \"100 m3/h\", \"250 cfm\".");
                     }
                     else
                     {
@@ -614,10 +768,29 @@ else
                 }
                 if (ok)
                 {
-                    if (electrical.Any(e => e.Item2 == what.Item2))
+                    if (typed.Any(e => e.Item1 == what.Item1))
                         problems.Add(what.Item1 + " is given twice.");
-                    else electrical.Add(Tuple.Create(what.Item1, what.Item2, inside, driver, value));
+                    else typed.Add(Tuple.Create(what.Item1, key, inside, driver, value));
                 }
+            }
+            else if (tickKeys.ContainsKey(key))
+            {
+                // A TICK BOX: yes or no, as SET_FAMILY_SETTINGS reads one.
+                var what = tickKeys[key];
+                var word = squash(value);
+                if (ticks.Any(t => t.Item1 == what.Item1))
+                    problems.Add(what.Item1 + " is given twice.");
+                else if (word == "yes" || word == "true" || word == "on" || word == "1" || word == "ticked" || word == "tick")
+                    ticks.Add(Tuple.Create(what.Item1, what.Item2, what.Item3, true));
+                else if (word == "no" || word == "false" || word == "off" || word == "0" || word == "unticked" || word == "untick")
+                    ticks.Add(Tuple.Create(what.Item1, what.Item2, what.Item3, false));
+                else
+                    problems.Add(what.Item1 + " takes yes or no, not \"" + value + "\".");
+            }
+            else if (key == "powerfactorstate" || key == "pfstate")
+            {
+                wantPowerFactorState = value;
+                if (value.Length == 0) problems.Add("powerFactorState was given no value - Lagging or Leading.");
             }
             else if (key == "loadclassification" || key == "loadclass")
             {
@@ -633,9 +806,11 @@ else
             }
             else
                 problems.Add("\"" + entry + "\" is not a connector setting. The settings are system, flowDirection, "
-                    + "flowConfiguration, lossMethod, lossCoefficient, pressureDrop (Pa), description, flip and "
-                    + "sizeParameters - and on an electrical connector voltage, poles, apparentLoad, powerFactor and "
-                    + "loadClassification - written \"name=value\" with `;` between.");
+                    + "flowConfiguration, lossMethod, lossCoefficient, pressureDrop (Pa), description, flip, "
+                    + "sizeParameters and utility (yes/no); on a pipe connector allowSlopeAdjustments (yes/no); on a duct "
+                    + "or pipe connector flowFactor and presetFlow; on a fitting's connector angle; and on an electrical "
+                    + "connector voltage, poles, apparentLoad, powerFactor, powerFactorState and loadClassification - "
+                    + "written \"name=value\" with `;` between.");
         }
 
         // EACH SETTING CHECKED AGAINST EACH CONNECTOR, before anything changes.
@@ -649,9 +824,15 @@ else
                 problems.Add("Revit does not allow " + spaced(wantSystem.Value.ToString()) + " on " + label(c)
                     + " - a " + domainWords(c) + " connector takes " + (valid.Count == 0 ? "no other" : string.Join(", ", valid)) + ".");
             }
-            Action<string, Tuple<BuiltInParameter, Type>, string> canTake = (what, which, word) =>
+            Action<string, string, Tuple<BuiltInParameter, Type>, string> canTake = (what, whose, which, word) =>
             {
                 if (word == null) return;
+                if (which == null)
+                {
+                    // ANOTHER DOMAIN'S FIELD - refused naming the connector and its domain.
+                    problems.Add(label(c) + " is a " + domainWords(c) + " connector - " + what + " is " + whose + ".");
+                    return;
+                }
                 var p = parameterOf(c, which);
                 if (p == null || p.StorageType != StorageType.Integer)
                 {
@@ -662,9 +843,10 @@ else
                     problems.Add(what + " \"" + word + "\" is not one of " + enumNames(which.Item2) + " on a "
                         + domainWords(c) + " connector.");
             };
-            canTake("Flow Direction", flowDirectionOf(c), wantFlowDirection);
-            canTake("Flow Configuration", flowConfigurationOf(c), wantFlowConfiguration);
-            canTake("Loss Method", lossMethodOf(c), wantLossMethod);
+            canTake("Flow Direction", "a duct or pipe connector's", flowDirectionOf(c), wantFlowDirection);
+            canTake("Flow Configuration", "a duct or pipe connector's", flowConfigurationOf(c), wantFlowConfiguration);
+            canTake("Loss Method", "a duct or pipe connector's", lossMethodOf(c), wantLossMethod);
+            canTake("Power Factor State", "an electrical connector's", powerFactorStateOf(c), wantPowerFactorState);
             if (wantCoefficient.HasValue && c.get_Parameter(BuiltInParameter.RBS_LOSS_COEFFICIENT) == null)
                 problems.Add(label(c) + " has no Loss Coefficient in this Revit.");
             if (wantPressure.HasValue && c.get_Parameter(BuiltInParameter.RBS_PRESSURE_DROP) == null)
@@ -682,78 +864,109 @@ else
                         + "width then height.");
             }
 
-            // THE ELECTRICAL VALUES - an electrical connector's only, each field
-            // checked on the connector, each family parameter against its kind.
-            if ((electrical.Count > 0 || loadClassAsked) && c.Domain != Domain.DomainElectrical)
-                problems.Add(label(c) + " is a " + domainWords(c) + " connector - Voltage, Number of Poles, Apparent "
-                    + "Load, Power Factor and Load Classification are an electrical connector's.");
-            else
+            // THE TICK BOXES AND THE TYPED VALUES - a field another domain's
+            // connector has not got is refused naming the connector and its
+            // domain; then each field is checked on the connector, and each
+            // family parameter against its kind.
+            if (loadClassAsked && c.Domain != Domain.DomainElectrical)
+                problems.Add(label(c) + " is a " + domainWords(c) + " connector - Load Classification is an electrical "
+                    + "connector's.");
+            else if (loadClassAsked && wantLoadClass != null
+                && c.get_Parameter(BuiltInParameter.RBS_ELEC_LOAD_CLASSIFICATION) == null)
+                problems.Add(label(c) + " has no Load Classification in this Revit.");
+            foreach (var t in ticks)
             {
-                foreach (var e in electrical)
+                var which = t.Item3(c);
+                if (!which.HasValue)
                 {
-                    var own = c.get_Parameter(e.Item2);
-                    if (own == null)
-                    {
-                        problems.Add(label(c) + " (" + spaced(c.SystemClassification.ToString()) + ") has no " + e.Item1
-                            + " in this Revit.");
-                        continue;
-                    }
-                    var by = drivenBy(c, e.Item2);
-                    if (e.Item4 == null)
-                    {
-                        if (by != null)
-                            problems.Add(label(c) + "'s " + e.Item1 + " is driven by the family parameter \"" + by + "\". "
-                                + "Give \"" + e.Item5 + " [" + by + "]\" to write the value into the current type, or "
-                                + "LINK_FAMILY_PARAMETER with \"none\" to unlink it first.");
-                        else if (own.IsReadOnly && !wantSystem.HasValue)
-                            problems.Add(label(c) + "'s " + e.Item1 + " is read-only on a "
-                                + spaced(c.SystemClassification.ToString()) + " connector - Revit works it out from the "
-                                + "connector's other values.");
-                        continue;
-                    }
-                    if (!fm.CanElementParameterBeAssociated(own))
-                    {
-                        problems.Add(label(c) + "'s " + e.Item1 + " cannot be driven by a family parameter in this Revit.");
-                        continue;
-                    }
-                    var driver = fm.get_Parameter(e.Item4);
-                    if (driver == null)
-                    {
-                        if (addParameterFor(kindOf(own.Definition)) == null)
-                            problems.Add("\"" + e.Item4 + "\" is not a parameter of this family, and this Revit gives no "
-                                + "way to make one of " + e.Item1 + "'s kind here - ADD_FAMILY_SHARED_PARAMETERS adds one "
-                                + "from the shared parameter file.");
-                    }
-                    else if (!sameKind(kindOf(driver.Definition), kindOf(own.Definition)))
-                        problems.Add("\"" + e.Item4 + "\" holds " + kindWords(kindOf(driver.Definition)) + ", and "
-                            + label(c) + "'s " + e.Item1 + " is " + kindWords(kindOf(own.Definition)) + " - Revit links "
-                            + "a field only to a parameter of its own kind.");
-                    else if (driver.IsReporting)
-                        problems.Add("\"" + e.Item4 + "\" is a reporting parameter, and cannot drive " + e.Item1 + ".");
-                    else if (e.Item3.HasValue && !string.IsNullOrEmpty(driver.Formula))
-                        problems.Add("\"" + e.Item4 + "\" is worked out by the formula \"" + driver.Formula + "\", so a "
-                            + "value cannot be written into it - give [" + e.Item4 + "] alone.");
+                    problems.Add(label(c) + " is a " + domainWords(c) + " connector - " + t.Item1 + " is " + t.Item2 + ".");
+                    continue;
                 }
-                if (loadClassAsked && wantLoadClass != null
-                    && c.get_Parameter(BuiltInParameter.RBS_ELEC_LOAD_CLASSIFICATION) == null)
-                    problems.Add(label(c) + " has no Load Classification in this Revit.");
+                var box = c.get_Parameter(which.Value);
+                if (box == null)
+                    problems.Add(label(c) + " (" + spaced(c.SystemClassification.ToString()) + ") has no " + t.Item1
+                        + " in this Revit.");
+                else if (box.StorageType != StorageType.Integer)
+                    problems.Add(label(c) + "'s " + t.Item1 + " is not a yes/no box in this Revit.");
+                else if (drivenBy(c, which.Value) != null)
+                    problems.Add(label(c) + "'s " + t.Item1 + " is driven by the family parameter \""
+                        + drivenBy(c, which.Value) + "\" - LINK_FAMILY_PARAMETER with \"none\" unlinks it first.");
+                else if (box.IsReadOnly)
+                    problems.Add(label(c) + "'s " + t.Item1 + " is read-only on a " + spaced(c.SystemClassification.ToString())
+                        + " connector - Revit decides it there.");
+            }
+            foreach (var e in typed)
+            {
+                var what = typedKeys[e.Item2];
+                var which = what.Item3(c);
+                if (!which.HasValue)
+                {
+                    problems.Add(label(c) + " is a " + domainWords(c) + " connector - " + e.Item1 + " is " + what.Item2 + ".");
+                    continue;
+                }
+                var own = c.get_Parameter(which.Value);
+                if (own == null)
+                {
+                    problems.Add(label(c) + " (" + spaced(c.SystemClassification.ToString()) + ") has no " + e.Item1
+                        + " in this Revit.");
+                    continue;
+                }
+                var by = drivenBy(c, which.Value);
+                if (e.Item4 == null)
+                {
+                    if (by != null)
+                        problems.Add(label(c) + "'s " + e.Item1 + " is driven by the family parameter \"" + by + "\". "
+                            + "Give \"" + e.Item5 + " [" + by + "]\" to write the value into the current type, or "
+                            + "LINK_FAMILY_PARAMETER with \"none\" to unlink it first.");
+                    else if (own.IsReadOnly && !wantSystem.HasValue)
+                        problems.Add(label(c) + "'s " + e.Item1 + " is read-only on a "
+                            + spaced(c.SystemClassification.ToString()) + " connector - Revit works it out from the "
+                            + "connector's other values.");
+                    continue;
+                }
+                if (!fm.CanElementParameterBeAssociated(own))
+                {
+                    problems.Add(label(c) + "'s " + e.Item1 + " cannot be driven by a family parameter in this Revit.");
+                    continue;
+                }
+                var driver = fm.get_Parameter(e.Item4);
+                if (driver == null)
+                {
+                    if (addParameterFor(kindOf(own.Definition), what.Item4) == null)
+                        problems.Add("\"" + e.Item4 + "\" is not a parameter of this family, and this Revit gives no "
+                            + "way to make one of " + e.Item1 + "'s kind here - ADD_FAMILY_SHARED_PARAMETERS adds one "
+                            + "from the shared parameter file.");
+                }
+                else if (!sameKind(kindOf(driver.Definition), kindOf(own.Definition)))
+                    problems.Add("\"" + e.Item4 + "\" holds " + kindWords(kindOf(driver.Definition)) + ", and "
+                        + label(c) + "'s " + e.Item1 + " is " + kindWords(kindOf(own.Definition)) + " - Revit links "
+                        + "a field only to a parameter of its own kind.");
+                else if (driver.IsReporting)
+                    problems.Add("\"" + e.Item4 + "\" is a reporting parameter, and cannot drive " + e.Item1 + ".");
+                else if (e.Item3.HasValue && !string.IsNullOrEmpty(driver.Formula))
+                    problems.Add("\"" + e.Item4 + "\" is worked out by the formula \"" + driver.Formula + "\", so a "
+                        + "value cannot be written into it - give [" + e.Item4 + "] alone.");
             }
         }
-        if (electrical.Any(e => e.Item4 != null && e.Item3.HasValue) && fm.CurrentType == null)
+        if (typed.Any(e => e.Item4 != null && e.Item3.HasValue) && fm.CurrentType == null)
             problems.Add("This family has no type yet, so a value cannot be written into a family parameter. "
                 + "SET_FAMILY_TYPE_VALUES makes the first type.");
 
         // THE UNIT, CHECKED AGAINST REVIT'S OWN on the release that runs: a
-        // factor that disagrees would write every voltage and load wrong.
-        foreach (var unit in new[] { Tuple.Create("Voltage", "Volts", "DUT_VOLTS"),
-            Tuple.Create("Apparent Load", "VoltAmperes", "DUT_VOLT_AMPERES") })
+        // factor that disagrees would write every voltage, load, angle and
+        // flow wrong. (label, UnitTypeId property, DisplayUnitType name,
+        // Heron's factor, the unit in words.)
+        foreach (var unit in new[] { Tuple.Create("Voltage", "Volts", "DUT_VOLTS", perVolt, "volt"),
+            Tuple.Create("Apparent Load", "VoltAmperes", "DUT_VOLT_AMPERES", perVolt, "volt-ampere"),
+            Tuple.Create("Angle", "Degrees", "DUT_DECIMAL_DEGREES", perDegree, "degree"),
+            Tuple.Create("Flow", "LitersPerSecond", "DUT_LITERS_PER_SECOND", perLitrePerSecond, "litre per second") })
         {
-            if (!electrical.Any(e => e.Item1 == unit.Item1 && e.Item3.HasValue)) continue;
+            if (!typed.Any(e => e.Item1 == unit.Item1 && e.Item3.HasValue)) continue;
             var revits = revitPerUnit(unit.Item2, unit.Item3);
-            if (revits.HasValue && Math.Abs(revits.Value - perVolt) > 1e-9 * perVolt)
-                problems.Add("Revit makes one " + (unit.Item1 == "Voltage" ? "volt " : "volt-ampere ")
-                    + revits.Value.ToString(invariant) + " internal units, and Heron would have written "
-                    + perVolt.ToString(invariant) + " - so no " + unit.Item1 + " is written until that is looked at.");
+            if (revits.HasValue && Math.Abs(revits.Value - unit.Item4) > 1e-9 * unit.Item4)
+                problems.Add("Revit makes one " + unit.Item5 + " " + revits.Value.ToString(invariant)
+                    + " internal units, and Heron would have written " + unit.Item4.ToString(invariant)
+                    + " - so no " + unit.Item1 + " is written until that is looked at.");
         }
 
         if (sizesAsked && wantSizes.Count > 0 && fm.CurrentType == null)
@@ -924,12 +1137,27 @@ else if (refused == null)
                     : own[i] == BuiltInParameter.CONNECTOR_WIDTH ? "width" : "height") + " <- " + driver.Definition.Name + ".");
             }
         }
-        foreach (var e in electrical)
+        foreach (var t in ticks)
         {
-            var own = c.get_Parameter(e.Item2);
+            var box = c.get_Parameter(t.Item3(c).Value);
+            var now = box.AsInteger() == 1;
+            if (now == t.Item4)
+            {
+                findings.Add(label(c) + "'s " + t.Item1 + " was already " + (t.Item4 ? "ticked" : "unticked") + ".");
+                continue;
+            }
+            attempt(t.Item1 + (t.Item4 ? " ticked" : " unticked") + " on " + label(c), () => box.Set(t.Item4 ? 1 : 0));
+            changed.Add(label(c) + ": " + t.Item1 + " " + (now ? "yes" : "no") + " -> " + (t.Item4 ? "yes" : "no") + ".");
+        }
+        if (wantPowerFactorState != null) setEnum(c, "Power Factor State", powerFactorStateOf(c), wantPowerFactorState);
+        foreach (var e in typed)
+        {
+            var what = typedKeys[e.Item2];
+            var field = what.Item3(c).Value;
+            var own = c.get_Parameter(field);
             if (e.Item4 == null)
             {
-                var was = electricalValue(c, e.Item2);
+                var was = typedValue(c, field);
                 if (own.IsReadOnly)
                     throw new InvalidOperationException(label(c) + "'s " + e.Item1 + " is read-only on a "
                         + spaced(c.SystemClassification.ToString()) + " connector. The call failed, and Heron rolls the "
@@ -946,7 +1174,7 @@ else if (refused == null)
             var driver = fm.get_Parameter(e.Item4);
             if (driver == null)
             {
-                var how = addParameterFor(kindOf(own.Definition));
+                var how = addParameterFor(kindOf(own.Definition), what.Item4);
                 attempt("a family parameter \"" + e.Item4 + "\" for " + e.Item1, () =>
                     how.Item1.Invoke(fm, new object[] { e.Item4, how.Item2, kindOf(own.Definition), false }));
                 driver = fm.get_Parameter(e.Item4);
@@ -954,7 +1182,7 @@ else if (refused == null)
                     throw new InvalidOperationException("Revit made no parameter \"" + e.Item4 + "\". The call failed, and "
                         + "Heron rolls the whole call back.");
                 changed.Add("Family parameter \"" + e.Item4 + "\" made - a type parameter of " + e.Item1 + "'s kind, "
-                    + kindWords(kindOf(driver.Definition)) + ", under Electrical - Loads.");
+                    + kindWords(kindOf(driver.Definition)) + ", under " + what.Item4.Item3 + ".");
             }
             if (e.Item3.HasValue && !valuesWritten.Contains(e.Item4))
             {
@@ -967,7 +1195,7 @@ else if (refused == null)
                 changed.Add("Family parameter \"" + e.Item4 + "\" in type \"" + fm.CurrentType.Name + "\": "
                     + e.Item5.Substring(0, e.Item5.IndexOf('[')).Trim() + ".");
             }
-            if (drivenBy(c, e.Item2) == e.Item4)
+            if (drivenBy(c, field) == e.Item4)
                 findings.Add(label(c) + "'s " + e.Item1 + " was already driven by \"" + e.Item4 + "\".");
             else
             {
@@ -980,7 +1208,7 @@ else if (refused == null)
         if (wantLoadClass != null)
         {
             var own = c.get_Parameter(BuiltInParameter.RBS_ELEC_LOAD_CLASSIFICATION);
-            var was = electricalValue(c, BuiltInParameter.RBS_ELEC_LOAD_CLASSIFICATION);
+            var was = typedValue(c, BuiltInParameter.RBS_ELEC_LOAD_CLASSIFICATION);
             attempt("Load Classification " + wantLoadClass.Name + " on " + label(c), () => own.Set(wantLoadClass.Id));
             changed.Add(label(c) + ": Load Classification " + was + " -> " + wantLoadClass.Name + ".");
         }
@@ -1078,26 +1306,40 @@ else if (refused == null)
                         + mm(holds.Value) + " mm.");
             }
         }
-        foreach (var e in electrical)
+        foreach (var t in ticks)
         {
-            var own = c.get_Parameter(e.Item2);
-            if (e.Item4 != null && drivenBy(c, e.Item2) != e.Item4)
+            var box = c.get_Parameter(t.Item3(c).Value);
+            if ((box.AsInteger() == 1) != t.Item4)
+                wrong(label(c) + "'s " + t.Item1 + " reads " + (box.AsInteger() == 1 ? "yes" : "no") + ", not "
+                    + (t.Item4 ? "yes" : "no") + ".");
+            // AS REVIT ITSELF SHOWS IT - the box as the Properties panel reads it.
+            findings.Add(label(c) + "'s " + t.Item1 + " reads " + (t.Item4 ? "yes" : "no") + "; Revit shows \""
+                + (box.AsValueString() ?? "") + "\".");
+        }
+        if (wantPowerFactorState != null
+            && enumRead(c, powerFactorStateOf(c)) != enumWord(powerFactorStateOf(c).Item2, wantPowerFactorState))
+            wrong(label(c) + "'s Power Factor State reads " + enumRead(c, powerFactorStateOf(c)) + ", not " + wantPowerFactorState + ".");
+        foreach (var e in typed)
+        {
+            var field = typedKeys[e.Item2].Item3(c).Value;
+            var own = c.get_Parameter(field);
+            if (e.Item4 != null && drivenBy(c, field) != e.Item4)
                 wrong(label(c) + "'s " + e.Item1 + " is not driven by \"" + e.Item4 + "\".");
             if (e.Item3.HasValue)
             {
                 var reads = own.StorageType == StorageType.Integer ? own.AsInteger() : own.AsDouble();
                 if (Math.Abs(reads - e.Item3.Value) > 1e-6 * Math.Max(1.0, Math.Abs(e.Item3.Value)))
-                    wrong(label(c) + "'s " + e.Item1 + " reads " + electricalValue(c, e.Item2) + ", not " + e.Item5 + ".");
+                    wrong(label(c) + "'s " + e.Item1 + " reads " + typedValue(c, field) + ", not " + e.Item5 + ".");
             }
             // AS REVIT ITSELF SHOWS IT - the check on the unit a person can read.
-            findings.Add(label(c) + "'s " + e.Item1 + " reads " + electricalValue(c, e.Item2) + "; Revit shows \""
+            findings.Add(label(c) + "'s " + e.Item1 + " reads " + typedValue(c, field) + "; Revit shows \""
                 + (own.AsValueString() ?? "") + "\".");
         }
         if (wantLoadClass != null)
         {
             var own = c.get_Parameter(BuiltInParameter.RBS_ELEC_LOAD_CLASSIFICATION);
             if (own.AsElementId() != wantLoadClass.Id)
-                wrong(label(c) + "'s Load Classification reads " + electricalValue(c, BuiltInParameter.RBS_ELEC_LOAD_CLASSIFICATION)
+                wrong(label(c) + "'s Load Classification reads " + typedValue(c, BuiltInParameter.RBS_ELEC_LOAD_CLASSIFICATION)
                     + ", not " + wantLoadClass.Name + ".");
         }
         if (flip)

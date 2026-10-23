@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -70,6 +70,31 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-22'
+  by: Ajmal PS
+  model: Structure Night Test (9,179 elements), Revit 2020, session 60544
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned angleDegrees 135, angleText 135,
+    created 1 item(s) [272531], degrees Func`2, extensionText 10, findings 1 item(s) [Made
+    Rebar Hook Type 'HY tie 135' 135 degrees, extension 10 ...], invariant CultureInfo, multiplier
+    10, name HY tie 135, readBack 'HY tie 135' 135 degrees, extension 10 x bar diameter, for
+    stirrup/tie bars, refused , style RebarStyle, styleText stirrup/tie. inputs came hookName
+    as given; angle as given; extension as given; hookStyle as given. on Structure Night Test
+  negative_case: run with angle=200, extension=12, hookName=HY hook 200, hookStyle=standard
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    angleDegrees 200, angleText 200, created 0 item(s), degrees Func`2, extensionText 12,
+    findings 1 item(s) ['200' is not a hook angle Revit takes - give degrees, more t...],
+    invariant CultureInfo, multiplier 0, name HY hook 200, readBack , refused '200' is not
+    a hook angle Revit takes - give degrees, more than 0 and no more than 180. Nothing was
+    made, style RebarStyle, styleText standard. inputs came hookName as given; angle as given;
+    extension as given; hookStyle as given. on Structure Night Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: c85eee542e072677
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
