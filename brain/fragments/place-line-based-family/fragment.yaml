@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -62,6 +62,29 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-22'
+  by: Ajmal PS
+  model: Structure Night Test (9,179 elements), Revit 2020, session 60544
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned asked beam, failed 0, findings
+    1 item(s) [2 placed as Beam on '02 - Floor', 0 line(s) could not take o...], placed 2
+    item(s) [272530, 272533], understood true, wanted StructuralType. inputs came symbol as
+    given; curves as given (2); level as given; structuralType as given. on Structure Night
+    Test
+  negative_case: run with curves=200000,200000,3800; 206000,200000,3800 | 206000,200000,3800;
+    206000,205000,3800, level=02 - Floor, structuralType=footing, symbol=UB305x165x40 instead
+    - chosen because it should not contain what this fragment reports - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned asked footing,
+    failed 0, findings 1 item(s) ['footing' is not a line-based structural type. Say beam,
+    bra...], placed 0 item(s), understood false, wanted StructuralType. inputs came symbol
+    as given; curves as given (2); level as given; structuralType as given. on Structure Night
+    Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 7c4d6d62a78a31bb
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
