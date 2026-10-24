@@ -1,0 +1,37 @@
+positive:
+  - given: >
+      a family from Metric Generic Model with a Length type parameter Head
+      Across Flats holding 18 mm and a horizontal plane Head Top at Z 7.5;
+      parameterName "Head Across Flats", sides 6, basePlane "Ref. Level",
+      topPlane "Head Top"
+    expect: >
+      size reading 18 mm across the flats and 20.78 mm across the corners,
+      centred at X 0, Y 0, from Z 0 to 7.5; six side planes made, two centre
+      planes made and pinned (the front-back pair uses Center (Front/Back));
+      six side faces and the top locked. Then Head Across Flats 46 and 10 in
+      FLEX_FAMILY or Family Types: the PRISM (not only the planes) reads 46
+      and 10 across the flats and 53.12 and 11.55 across the corners
+
+  - given: the same, sides 8, a second family
+    expect: >
+      an octagon 18 mm across every pair of flats, four pairs labelled, and
+      it follows the parameter the same way
+
+negative:
+  - given: >
+      the same family with parameterName naming a Length parameter that
+      holds 0
+    expect: refused before anything is made, saying the parameter holds no size yet
+
+  - given: sides 5
+    expect: refused - an even number of sides, 4 to 12 - and nothing made
+
+  - given: a project in front
+    expect: notAFamily true and nothing built anywhere
+
+second_route:
+  - >
+      In the Family Editor by hand, in a copy: Create, Extrusion, the
+      inscribed polygon on the same planes, each sketch line aligned and
+      locked to its plane; both flexed side by side with the same Across
+      Flats, and their sizes read in the Properties of each

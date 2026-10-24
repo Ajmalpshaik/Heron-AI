@@ -1,0 +1,181 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-073
+semantic-identity: "build a regular polygon prism - a hexagon - whose across-flats size follows a parameter"
+kind: action
+domain: revit.families
+capability: EXTRUDE_POLYGON_BETWEEN_PLANES
+# Version 1 (2026-10-24), written for the owner's fastener library: a bolt
+# head and a nut are hexagons, and until this card the only parametric hex
+# Heron could make was one fixed hexagon per size, switched by type. Measured
+# before it was written, in a rolled-back probe on Revit 2020 (session 83568,
+# scratch family Heron IS Radius): six side planes, three labelled pairs with
+# an EQ each, six side faces locked - Across Flats 18, 46 and 10 read back as
+# 18, 46 and 10 across the flats and 20.78, 53.12 and 11.55 across the
+# corners. DRAFT until NEEDS-CHECKING Group IZ proves it (D-30).
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Builds a REGULAR POLYGON PRISM in the family open in the Family Editor - a
+  hexagon above all: a bolt head, a nut, a hex bar - whose size across the
+  flats FOLLOWS A LENGTH PARAMETER, standing on a base (a level or a
+  horizontal plane) and reaching up to a top plane. An even number of sides,
+  4 to 12, centred on the family's origin, one pair of flats facing front and
+  back.
+
+  **WHY A TOOL OF ITS OWN.** A polygon drawn with CREATE_FAMILY_EXTRUSION is
+  fixed: nothing ties its slanted sides to anything, and EXTRUDE_BETWEEN_PLANES
+  builds boxes only, between planes that run left-right and front-back. So
+  this one makes a vertical reference plane for EVERY side, named after the
+  parameter ("Across Flats Side 1" ...), and for each pair of opposite sides
+  a dimension labelled with the parameter and an EQ about a plane through the
+  origin - the family's own Center (Front/Back) or Center (Left/Right) where
+  the pair faces that way, otherwise a plane made through the origin and
+  pinned there. Every side face of the prism is then aligned and locked to
+  its plane, and the top face to the top plane. Measured 2026-10-24 on Revit
+  2020: a hexagon labelled this way read 46 and 10 mm across the flats, and
+  53.1 and 11.5 mm across the corners, when the parameter was set to 46 and 10.
+
+  **THE PARAMETER MUST ALREADY HOLD THE SIZE** - a new length reads 0, and a
+  label on 0 collapses the planes - so it is checked before anything is made.
+  Planes of those names already in the family refuse the call: it is built
+  once. Any lock or label that cannot be made throws, and the whole call is
+  rolled back - no prism left half tied.
+
+  **IT BUILDS GEOMETRY AND NOTHING ELSE.** Material, visibility and the hole
+  of a nut are other tools' - a round void and LABEL_FAMILY_RADIUS for the
+  hole, COMBINE_FAMILY_FORMS for the cut.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The length parameter that sets the size across the flats - "Head Across
+    # Flats". It must already hold the size: SET_FAMILY_TYPE_VALUES first.
+    - name: parameterName
+      type: string
+      source: request
+    # How many sides: an even number, 4 to 12 - 6 for a hexagon.
+    - name: sides
+      type: int
+      source: request
+    # What the prism stands on: a level or a horizontal reference plane -
+    # "Ref. Level".
+    - name: basePlane
+      type: string
+      source: request
+    # The horizontal reference plane the top face is locked to - "Head Top".
+    - name: topPlane
+      type: string
+      source: request
+  provides:
+    - name: size
+      # The prism as built, read back from its own bounding box: across the
+      # flats, across the corners and the height in millimetres, and where it
+      # sits.
+      role: result
+      type: string
+    - name: acrossFlatsMm
+      # The size across the flats read back off the prism, front to back.
+      role: result
+      type: double
+    - name: planesMade
+      # Every reference plane this call made, by name and where it lies.
+      role: result
+      type: IList<string>
+    - name: locked
+      # Each face lock made: which face, to which plane.
+      role: result
+      type: IList<string>
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was built, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-10-24'
+  by: Ajmal PS
+  model: Heron IZ Hexagon (1,504 elements), Revit 2020, session 83568
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned across 0.0590551181102362, acrossFlatsMm
+    18, allPlanes 4 item(s) [Center (Front/Back), Reference Plane, Center (Left/Right), ...],
+    axisOf Func`2, bottom Tuple`4, dbNamespace Autodesk.Revit.DB, elevation ViewSection, findings
+    3 item(s) [Built a solid prism of 6 sides, 18 mm across the flats and 2..., 2 centre plane(s)
+    were made through the origin and PINNED, s..., Locked is not yet PROVED to follow the
+    planes. FLEX_FAMILY c...], flags BindingFlags, halfMillimetre 0.00164041994750656, heights
+    3 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.Level, Autodesk.Revit.DB.Reference, 0,
+    Re...], invariant CultureInfo, isLength Func`2, locked 7 item(s) [side 1 face to "Head
+    Across Flats Side 1", side 2 face to "Head Across Flats Side 2", side 3 face to "Head
+    Across Flats Side 3", ...], mm Func`2, notAFamily false, oneHeight Func`3, ownName Func`2,
+    parameter FamilyParameter, plan ViewPlan, planesMade 8 item(s) ["Head Across Flats Side
+    1", facing 90 degrees in plan, 9 mm ..., "Head Across Flats Side 2", facing 150 degrees
+    in plan, 9 mm..., "Head Across Flats Side 3", facing 210 degrees in plan, 9 mm..., ...],
+    problems 0 item(s), refused (null), revitAssembly RuntimeAssembly, sameKind Func`3, sides
+    6, size 6 sides, 18 mm across the flats and 20.78 mm across the corners, 7.5 mm high,
+    centred at X 0, Y 0, from Z 0 to 7.5, top Tuple`4, wantedParameter Head Across Flats.
+    inputs came parameterName as given; sides as given; basePlane as given; topPlane as given.
+    on Heron IZ Hexagon
+  negative_case: 'run with parameterName=Zero Flats, sides=6, basePlane=Ref. Level, topPlane=Head
+    Top instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    across 0, acrossFlatsMm 0, allPlanes 4 item(s) [Center (Front/Back), Reference Plane,
+    Center (Left/Right), ...], axisOf Func`2, bottom Tuple`4, dbNamespace Autodesk.Revit.DB,
+    elevation ViewSection, findings 1 item(s) [Nothing was built. "Zero Flats" holds 0 mm
+    in type "Test" - ...], flags BindingFlags, halfMillimetre 0.00164041994750656, heights
+    3 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.Level, Autodesk.Revit.DB.Reference, 0,
+    Re...], invariant CultureInfo, isLength Func`2, locked 0 item(s), mm Func`2, notAFamily
+    false, oneHeight Func`3, ownName Func`2, parameter FamilyParameter, plan ViewPlan, planesMade
+    0 item(s), problems 1 item(s) ["Zero Flats" holds 0 mm in type "Test" - no size yet. Labell...],
+    refused Nothing was built. "Zero Flats" holds 0 mm in type "Test" - no size yet. Labelling
+    now would pull the planes onto each other: give it the size across the flats with SET_FAMILY_TYPE_VALUES
+    first., revitAssembly RuntimeAssembly, sameKind Func`3, sides 6, size , top Tuple`4, wantedParameter
+    Zero Flats. inputs came parameterName as given; sides as given; basePlane as given; topPlane
+    as given. on Heron IZ Hexagon'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 506b8485027c7bb2
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyItemFactory.NewReferencePlane(bubbleEnd, freeEnd, cutVec, view)`,
+  `FamilyItemFactory.NewDimension(view, line, references)`,
+  `Dimension.AreSegmentsEqual`, `Dimension.FamilyLabel`,
+  `FamilyItemFactory.NewExtrusion`, `SketchPlane.Create(Document, ElementId)`,
+  `ItemFactoryBase.NewAlignment` and `Element.Pinned` - the calls the
+  2026-10-24 probe made on Revit 2020 - are checked on every release by
+  tools/check-api-surface.py. A parameter's kind is read by reflection,
+  because it moved at 2022 - `Definition.ParameterType` before,
+  `Definition.GetDataType()` from.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "make a parametric hexagon / hex head / nut body"  -> here
+#   "extrude a hexagon 20 mm thick"                    -> CREATE_FAMILY_EXTRUSION,
+#                                                         a fixed shape
+#   "make a box between these planes"                  -> EXTRUDE_BETWEEN_PLANES
+
+utterances:
+  - make a parametric hexagon whose across flats follows a parameter
+  - build the hex head of the bolt so it resizes with Across Flats
+  - extrude a hexagon between Ref. Level and Head Top driven by Head Across Flats
+  - make the nut body a hexagon that changes size with the type
+  - create a parametric octagon prism locked to its planes

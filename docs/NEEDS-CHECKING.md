@@ -1006,6 +1006,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-iy.md`](needs-checking/group-iy.md)
 
+## Group IZ - a hexagon whose size across the flats follows a parameter: `EXTRUDE_POLYGON_BETWEEN_PLANES` version 1 (2026-10-24)
+
+**Its own file:** [`needs-checking/group-iz.md`](needs-checking/group-iz.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
