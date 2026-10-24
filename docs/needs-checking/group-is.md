@@ -90,3 +90,34 @@ with *"Invalid number of references."*. So version 5's check reads nothing wrong
 it refused nothing 2024 takes), and the fault is in what Revit 2020 accepts for this pair, not in the references
 Heron hands it. The run record and draft for the 2024 pass are in the night worktree's `brain/proof-drafts/`
 (`label-family-radius`, Revit 2024) - a proof on 2024 only, which leaves row 5b-1318's 2020 revolve fault standing.
+
+### Results - 2026-10-24, the owner's laptop: Revit 2020, session 83568 - the rows above, in their own scratch family
+
+**The family.** *Heron IS Radius.rfa* in `%TEMP%\heron-work\group-is`, made from Revit 2020's *Metric Generic Model.rft*
+by `CREATE_FAMILY_DOCUMENT`, built as the section above says through `revit_change` with PROVEN tools - *Outlet Axis* at Z
+-140, the instance lengths with their values, and revolves A to E in one `CREATE_FAMILY_FORMS` call, row file
+`%TEMP%\heron-work\group-is\forms.txt` - plus two things the plan did not ask for, for the route a bolt needs: an
+EXTRUSION **F**, *"circle 2000,0 10"* on Ref. Level from 0 to 100, and the lengths *Shaft Radius* 10 and *Shaft Diameter*
+20. The ids: A `...0a83`, B `...0a8b`, C `...0a93`, D `...0a9b`, E `...0aa3`, F `...0aa9` (prefix
+`b26ea862-ec61-474f-bf8a-eb580e5b8bff-00000`). Every label below is `validate --write`, rolled back. Each form's own
+bounding box was read before and after a size change by a copy of the card in the session's scratchpad that sets the
+parameter after the label, regenerates and reads every `GenericForm` - because `FLEX_FAMILY` reads the family as one box.
+
+| # | What came back | State |
+|---|---|---|
+| IS0 | C: *"Nothing was labelled. No reference plane runs through the revolve's axis ... make a reference plane through the axis first (CREATE_REFERENCE_PLANES), then label."* | **PASS** |
+| IS1 | A: *"Nothing was labelled. Revit 2020 would not take one of the two references for the radius of the revolve, from "Outlet Axis" to its profile line 41 mm out, asked 4 times ... the plane "Outlet Axis" gave a none reference ... the profile line gave a linear reference (...:0:LINEAR). Its axis is locked to "Outlet Axis". Which of the two it refused Revit does not say; its words were "Invalid number of references."."* - the row's second outcome, Heron's own sentence | **PASS** (refused - 5b-1318 stands on 2020) |
+| IS2 | Not run: IS1 labelled nothing, so there is nothing to flex | NOT RUN |
+| IS3 | D: the same sentence from *"Center (Front/Back)"*, 41 mm out | **PASS** (refused) |
+| IS4 | B: the same sentence from *"Center (Left/Right)"*, 60 mm out. Its flex is not run - nothing labelled | **PASS** (refused); flex NOT RUN |
+| IS5 | Not run in this family. Its question - does version 5 refuse on 2024 what version 4 labelled there - was answered on 2026-10-23 above (*IS5-like*, Revit 2024.3, a library revolve: labelled). The change below does not touch that route | from 2026-10-23 |
+| IS6 | E: **labelled** - *"from "Center (Left/Right)" to a new reference plane through the circle's centre, 200 mm out ... reading 200 mm"* - and Ring Radius=400 grew E to X -420..420, **and moved C, D and F 200 mm with the made plane** (C X 940..1060 -> 1140..1260, D 170..172 -> 370..372, F 1990..2010 -> 2190..2210). `FLEX_FAMILY` alone said *"allHeld true"* | **FAIL** - row [5b-1333](../fragment-issues/section-5b-rows-401-425.md) |
+| IS6 again | *After the 5b-1333 change:* *"Nothing was labelled. A ring's distance from the revolve's axis is not labelled by this tool for now ... (row 5b-1333). Label it by hand in Edit Revolve, then change the size once and check that nothing else moved."* | **PASS** (refused) |
+| F, radius | *"The radius of the extrusion's sketched circle (radius 10 mm), labelled "Shaft Radius" inside the form's sketch, reading 10 mm."* Shaft Radius 25, 6 and 400: F's X edge at 2025, 2006, and F X 1600..2400 Y -400..400 - **only F moved** | **PASS** |
+| F, diameter | *"The diameter of the extrusion's sketched circle (radius 10 mm), labelled "Shaft Diameter" ... reading 20 mm."* Shaft Diameter 48, 12 and 400: F's X edge at 2024, 2006, and F X 1800..2200 - **only F moved** | **PASS** |
+| E, tube | With *Tube Radius* 20 made in the same rolled-back group: *"The radius of the revolve's profile circle (radius 20 mm), labelled "Tube Radius" inside the form's sketch, reading 20 mm."* Tube Radius=40: E X -240..240, Z -40..40 - **only E moved** (400 was refused by Revit itself, *"The profile must not cross the axis of revolution."* - a 400 mm tube on a 200 mm ring) | **PASS** |
+
+All of these were run again on the changed code the same day and read as above. **The proof draft's positive is F's
+radius and its negative IS0** - the route this card is proved for on Revit 2020 is a round extrusion's circle, by radius
+or diameter, and a revolve's tube; a revolve's radius to a profile line is refused there by Revit (5b-1318), and the
+ring by Heron (5b-1333). Fingerprint `aa807d3d07693727`, second route NOT ESTABLISHED.

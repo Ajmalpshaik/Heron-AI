@@ -22,6 +22,10 @@ capability: LABEL_FAMILY_RADIUS
 # form so the answer names the one it would not take. Version 4's proof below
 # no longer describes the code: DRAFT until NEEDS-CHECKING Group IS proves
 # version 5 (D-30).
+# Still version 5, never signed: on 2026-10-24 Group IS's IS6 measured on
+# Revit 2020 that the ring route (a circle centre's distance from the axis)
+# moved three other forms with the plane it made; the ring is refused until
+# that is understood (row 5b-1333).
 version: 5
 source: OFFICIAL
 risk: MODIFY
@@ -63,7 +67,10 @@ purpose: >
   centre point is refused by Revit, so it is never tried. Measured 2026-10-03
   on scratch families: a tube from 40 to 80 and 10, a ring from 200 to 400
   and 60. When one value is more than one size of the revolve, the call is
-  refused and the label is left for Edit Revolve.
+  refused and the label is left for Edit Revolve. THE RING IS HELD BACK since
+  2026-10-24 (row 5b-1333): on Revit 2020 a ring labelled this way moved
+  three OTHER forms with its plane at the first flex, so the ring is refused
+  and left for Edit Revolve; the tube is still labelled.
 
   **A SWEPT BLEND HAS THREE** (version 4, 2026-10-07, for a coil spring's
   half-turns). Its PATH's arc radius, with the arc's centre locked to the

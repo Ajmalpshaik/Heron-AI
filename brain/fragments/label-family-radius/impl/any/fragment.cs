@@ -582,6 +582,24 @@ else
                     problems.Add("No reference plane runs through the revolve's axis. Measured from the axis line "
                         + "itself, Revit moves the axis when the size changes and the revolve breaks - make a reference "
                         + "plane through the axis first (CREATE_REFERENCE_PLANES), then label.");
+                // A RING'S DISTANCE FROM THE AXIS IS HELD BACK (row 5b-1333).
+                // Measured 2026-10-24 on Revit 2020 (session 83568, the scratch
+                // family Heron IS Radius, Group IS row IS6): labelled from
+                // "Center (Left/Right)" to the plane made through the circle's
+                // centre, "Ring Radius" 200 -> 400 grew the ring as asked - and
+                // moved three OTHER forms 200 mm with the made plane, two
+                // revolves and an extrusion that nothing labelled. Revit's
+                // automatic sketch dimensions tied their sketch lines to the new
+                // plane. Until that is understood the route is refused, with an
+                // existing centre plane as well: the same plane-to-plane
+                // dimension, not measured either way.
+                else if (centreArc != null)
+                    problems.Add("A ring's distance from the revolve's axis is not labelled by this tool for now: on "
+                        + "Revit 2020 the plane it needs through the circle's centre, once dimensioned, moved OTHER forms "
+                        + "in the family with it when the size changed - two revolves and an extrusion that nothing "
+                        + "labelled moved 200 mm (row 5b-1333). Label it by hand in Edit Revolve, then change the size "
+                        + "once and check that nothing else moved. The circle's own radius or diameter, and a revolve's "
+                        + "radius to a profile line, are still labelled here.");
             }
             if (problems.Count == 0 && arc == null)
             {
