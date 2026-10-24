@@ -59,3 +59,23 @@ Revits are connected, and `< /dev/null` on every line.
 
 **Then** row 5b-1317 can close, and the family method's step 11 line about a drain's connectors loses
 its "DRAFT until Group IR passes".
+
+### Results - 2026-10-24, the owner's laptop: Revit 2020, session 94928
+
+The scratch family *Heron Connector Ticks Test* (`%TEMP%\heron-work\group-ir`, Metric Mechanical Equipment.rft):
+the IR1 box, two Sanitary pipe connectors (round 50, *Pipe Size*) on *Outlet Face* and *Inlet Face*, a Supply Air
+duct connector (600 x 300, *Box Length* x *Box Depth*) on *Duct Face*, all through PROVEN tools. Every row rolled
+back unless it says kept. Asked for by the owner to set his volume control damper's two duct connectors to Fitting.
+
+| # | What came back | State |
+|---|---|---|
+| IR1 | `REPORT_FAMILY_CONNECTORS`: both pipe rows *"... flow Bidirectional, flow configuration Calculated, no slope adjustments ..."*, the duct row nothing of slope | **PASS** |
+| IR2 | `batch-prove`: PASS. Positive `changed` 2, connectorReport *"... slope adjustments allowed ..."* on both pipe connectors; negative refused *"Nothing was changed. duct connector 2566 on "Duct Face" is a duct connector - Allow Slope Adjustments is a pipe connector's."*, `changed` empty | **PASS** |
+| IR3 | The second route. IR2's positive run once for real by `try-once` on the saved scratch family; the owner pressed **Keep**, selected the *Outlet Face* connector and read in Properties: **Allow Slope Adjustments ticked** (his words, 2026-10-24). The untick half was not run | **PASS** (tick) |
+| IR6 | *"flowConfiguration=Preset; presetFlow=12 L/s"* on *Outlet Face*: *"preset flow 12 L/s"* (and flow direction read *In* after it); *"100 m3/h"* read **27.778 L/s**; *"250 cfm"* read **117.987 L/s**. *"flowConfiguration=System; flowFactor=50%"* on the DUCT connector refused: *"duct connector 2566 on "Duct Face"'s Flow Factor is read-only on a Supply Air connector - Revit works it out from the connector's other values."* - a duct's flow factor is not settable on a Supply Air connector in Revit 2020; the card's flowFactor holds for a pipe connector only until a duct case is found that takes it | **PASS** (flow factor on a duct: recorded, refused cleanly) |
+| IR9 | *"powerFactorState=Lagging"* on a pipe connector: *"... is a pipe connector - Power Factor State is an electrical connector's."*; *"allowSlopeAdjustments=maybe"*: *"Allow Slope Adjustments takes yes or no, not "maybe"."*; *"presetFlow=-5 L/s"*: *"Flow "-5 L/s" is not a flow, 0 or more ..."* - each `changed` empty. Not run: the two-flows row, a project in front, DD1's electrical connector | **PASS** (part) |
+| IR12 | IR1's read and every row above: pipe rows carry the slope box either way, the duct row nothing of it | **PASS** on IR1's family; DD1's family not run |
+| - | *"system=Fitting; flowDirection=Bidirectional"* on the duct connector, the owner's case: `changed` *"system Supply Air -> Fitting"*, report *"duct connector 2566 ... Fitting ... flow Bidirectional ... angle 0 degrees"* | **PASS** |
+
+The proof draft is batch-prove's IR2, fingerprint `ef654c3c5f1453e8`. Not run: IR4, IR5, IR7, IR8, IR10, IR11, IR13
+(Revit 2024 and 2027), and `REPORT_FAMILY_CONNECTORS`' own signature.
