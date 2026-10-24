@@ -173,6 +173,11 @@ purpose: >
      insertion point; from Ref. Level for a height.
   7. THE FORMS, each drawn exactly where the planes are NOW, so that its faces
      lie on them: EXTRUDE_BETWEEN_PLANES for a box, which locks itself;
+     EXTRUDE_POLYGON_BETWEEN_PLANES for a HEXAGON or another even regular
+     polygon whose size across the flats a parameter drives - a bolt head,
+     a nut - which makes its own side planes, labels them and locks itself,
+     so the size needs no step 5 or 6 of its own (never one fixed hexagon
+     per size switched by type: that was the only way until 2026-10-24);
      CREATE_FAMILY_EXTRUSION for any other shape pushed straight;
      CREATE_FAMILY_REVOLUTION, CREATE_FAMILY_BLEND, CREATE_FAMILY_SWEEP and
      CREATE_FAMILY_SWEPT_BLEND for the rest. Every one gives back its form's
@@ -451,6 +456,7 @@ needs:
   - SET_FAMILY_PLANE_REFERENCE
   - LABEL_FAMILY_DIMENSION
   - EXTRUDE_BETWEEN_PLANES
+  - EXTRUDE_POLYGON_BETWEEN_PLANES
   - CREATE_FAMILY_EXTRUSION
   - CREATE_FAMILY_REVOLUTION
   - CREATE_FAMILY_BLEND
