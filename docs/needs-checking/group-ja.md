@@ -19,7 +19,7 @@ centre by that opening, and refuses a connector off the opening's centre.
 2026-10-24). Measured in Revit 2020 only - the rows below. `revit_change` refuses version 5 until JA4 is
 signed. The fragment's C# is read live - no restart.
 
-**The family.** The owner's *TRG_Duct Accessory_Volume Control Damper* (`D:_BIM_Revit_Families_HVAC_Duct_Accessories`),
+**The family.** The owner's *TRG_Duct Accessory_Volume Control Damper* (`D:\04_BIM\01_Revit_Families\01_HVAC\03_Duct_Accessories`),
 Duct Accessories, duct along X, *Width* 600, *Height* 400, *Length* 300: in it, through `revit_change` with
 PROVEN tools, a 3 mm ring on *Casing Right* (X 147 to 150) and one on *Casing Left*, outside *Ring Width* x
 *Ring Height* (= *Width* + 40, *Height* + 40), every edge face locked to the ring and duct planes; the two old
