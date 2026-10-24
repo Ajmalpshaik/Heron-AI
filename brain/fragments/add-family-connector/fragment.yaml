@@ -5,11 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-053
-semantic-identity: "put a duct, pipe or electrical connector on this face of the family, sized by its parameters"
+semantic-identity: "put a duct, pipe or electrical connector on this face of the family - or on a flange ring's face, sized by its opening - sized by its parameters"
 kind: action
 domain: revit.families
 capability: ADD_FAMILY_CONNECTOR
-version: 4
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -82,6 +82,24 @@ purpose: >
   **ALL OR NOTHING.** A connector that cannot be tied to its size is not left
   behind at one foot: the call fails and nothing is kept.
 
+  **A FLANGE RING'S FACE IS MEASURED BY ITS OPENING (version 5, 2026-10-24,
+  row 5b-1334).** A duct accessory's port belongs on its flange: a ring round
+  the duct opening, 600 x 400 inside and 640 x 440 outside. Version 4 measured
+  the whole outline and refused the ring - "a port sized by them would not fit
+  the face it sits on". Now, when one inner loop of the face holds the
+  connector's centre, that loop - the opening - is measured, and the
+  connector must sit at its centre or nothing is kept; a face of one loop is
+  measured whole, exactly as before. Two openings round the centre are
+  refused. Measured first on Revit 2020 (rolled back, in the owner's volume
+  control damper): a ring sketched on the end plane took the connector at its
+  centre and moved with that plane when Length changed. A REFERENCE PLANE
+  ALONE TAKES NO CONNECTOR through the API - "oEdgeLoopRef.ptr() is NULL", and
+  a sketch plane made from it "is not a planar face" - and a nested family's
+  face took one off-centre that stayed put when the frame moved; the ring is
+  the way round both. Version 4's proof no longer describes the code and is
+  kept below as a record; the card is DRAFT until NEEDS-CHECKING Group JA is
+  signed.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -128,50 +146,51 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-10-24'
   by: Ajmal PS
-  model: Family4 (2,157 elements), Revit 2020, session 64176
+  model: TRG_Duct Accessory_Volume Control Damper (2,004 elements), Revit 2020, session 94928
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned along Func`3, alsoJoined 0, axisOf
-    Func`2, chosen Tuple`3, connector duct connector, Supply Air, rectangular 150 x 300 mm,
-    at X 0, Y -300, Z 0, pointing back (+Y), on the face lying on "Duct Front", dbNamespace
-    Autodesk.Revit.DB, face PlanarFace, faceIn (null), faceName Duct Front, findings 2 item(s)
-    [Made a duct connector, Supply Air, rectangular 150 x 300 mm,..., Flow direction, description
-    and electrical load are Revit''s ...], flags BindingFlags, halfMillimetre 0.00164041994750656,
-    invariant CultureInfo, isLength Func`2, kindOf Func`2, mm Func`2, notAFamily false, notOffered
-    2 item(s) [UndefinedSystemType, Undefined], ownName Func`2, pointing Func`2, refused (null),
+    Func`2, chosen Tuple`3, connector duct connector, Supply Air, rectangular 600 x 400 mm,
+    at X 150, Y 0, Z 0, pointing right (+X), on the face lying on "Casing Right", centred
+    in the ring face''s opening and sized by it, dbNamespace Autodesk.Revit.DB, face PlanarFace,
+    faceIn (null), faceName Casing Right, findings 2 item(s) [Made a duct connector, Supply
+    Air, rectangular 600 x 400 mm,..., Flow direction, description and electrical load are
+    Revit''s ...], flags BindingFlags, halfMillimetre 0.00164041994750656, invariant CultureInfo,
+    isLength Func`2, kindOf Func`2, mm Func`2, notAFamily false, notOffered 2 item(s) [UndefinedSystemType,
+    Undefined], ownName Func`2, pointing Func`2, refused (null), revitAssembly RuntimeAssembly,
+    sameKind Func`3, shownAs 6 entry(ies), sideStep The way round it: a thin solid joined
+    or cut with nothing - 1 mm deep, sized to the flange or port, one face on the plane and
+    the rest inside the body - takes the connector, because a form''s own face is used before
+    a joined one. EXTRUDE_BETWEEN_PLANES makes one., sizedBy 2 item(s) [connector width <-
+    Width, connector height <- Height], sizes 2 item(s) [Autodesk.Revit.DB.FamilyParameter,
+    Autodesk.Revit.DB.FamilyParameter], spaced Func`2, squash Func`2, systems 31 item(s) [(duct,
+    SupplyAir, SupplyAir), (duct, ReturnAir, ReturnAir), (duct, ExhaustAir, ExhaustAir), ...].
+    inputs came facePlane as given; system as given; sizeParameters as given. on TRG_Duct
+    Accessory_Volume Control Damper'
+  negative_case: 'run with facePlane=Center (Front/Back), system=Supply Air, sizeParameters=Width,
+    Height instead - chosen because it should not contain what this fragment reports - run
+    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned along Func`3, alsoJoined 0, axisOf Func`2, chosen Tuple`3, connector , dbNamespace
+    Autodesk.Revit.DB, face (null), faceIn (null), faceName Center (Front/Back), findings
+    1 item(s) [Nothing was made. No solid face lies on "Center (Front/Back)...], flags BindingFlags,
+    halfMillimetre 0.00164041994750656, invariant CultureInfo, isLength Func`2, kindOf Func`2,
+    mm Func`2, notAFamily false, notOffered 2 item(s) [UndefinedSystemType, Undefined], ownName
+    Func`2, pointing Func`2, refused Nothing was made. No solid face lies on "Center (Front/Back)".
+    Build the geometry to it first - EXTRUDE_BETWEEN_PLANES locks a box to named planes.,
     revitAssembly RuntimeAssembly, sameKind Func`3, shownAs 6 entry(ies), sideStep The way
     round it: a thin solid joined or cut with nothing - 1 mm deep, sized to the flange or
     port, one face on the plane and the rest inside the body - takes the connector, because
     a form''s own face is used before a joined one. EXTRUDE_BETWEEN_PLANES makes one., sizedBy
-    2 item(s) [connector width <- Frame Length, connector height <- Duct Height], sizes 2
-    item(s) [Autodesk.Revit.DB.FamilyParameter, Autodesk.Revit.DB.FamilyParameter], spaced
-    Func`2, squash Func`2, systems 31 item(s) [(duct, SupplyAir, SupplyAir), (duct, ReturnAir,
-    ReturnAir), (duct, ExhaustAir, ExhaustAir), ...]. inputs came facePlane as given; system
-    as given; sizeParameters as given. on Family4'
-  negative_case: 'run with facePlane=Center (Front/Back), system=Supply Air, sizeParameters=Frame
-    Length, Duct Height instead - chosen because it should not contain what this fragment
-    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
-    afterwards. returned along Func`3, alsoJoined 0, axisOf Func`2, chosen Tuple`3, connector
-    , dbNamespace Autodesk.Revit.DB, face (null), faceIn (null), faceName Center (Front/Back),
-    findings 1 item(s) [Nothing was made. No solid face lies on "Center (Front/Back)...],
-    flags BindingFlags, halfMillimetre 0.00164041994750656, invariant CultureInfo, isLength
-    Func`2, kindOf Func`2, mm Func`2, notAFamily false, notOffered 2 item(s) [UndefinedSystemType,
-    Undefined], ownName Func`2, pointing Func`2, refused Nothing was made. No solid face lies
-    on "Center (Front/Back)". Build the geometry to it first - EXTRUDE_BETWEEN_PLANES locks
-    a box to named planes., revitAssembly RuntimeAssembly, sameKind Func`3, shownAs 6 entry(ies),
-    sideStep The way round it: a thin solid joined or cut with nothing - 1 mm deep, sized
-    to the flange or port, one face on the plane and the rest inside the body - takes the
-    connector, because a form''s own face is used before a joined one. EXTRUDE_BETWEEN_PLANES
-    makes one., sizedBy 0 item(s), sizes 2 item(s) [Autodesk.Revit.DB.FamilyParameter, Autodesk.Revit.DB.FamilyParameter],
+    0 item(s), sizes 2 item(s) [Autodesk.Revit.DB.FamilyParameter, Autodesk.Revit.DB.FamilyParameter],
     spaced Func`2, squash Func`2, systems 31 item(s) [(duct, SupplyAir, SupplyAir), (duct,
     ReturnAir, ReturnAir), (duct, ExhaustAir, ExhaustAir), ...]. inputs came facePlane as
-    given; system as given; sizeParameters as given. on Family4'
+    given; system as given; sizeParameters as given. on TRG_Duct Accessory_Volume Control
+    Damper'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 925405b09ad576fa
-
+  fingerprint: 43d83188366b7b85
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -191,6 +210,9 @@ compatibility-note: >
   without a change here. Version 3 also reads
   a `GeomCombination`'s geometry and `Reference.ElementId`, present in every
   reference assembly 2020 through 2027 (RevitAPI.xml, read 2026-10-11).
+  Version 5 reads `PlanarFace.EdgeLoops`, `Edge.Tessellate`,
+  `ConnectorElement.CoordinateSystem` and `.Origin`, all already used by
+  version 4, on every release.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #

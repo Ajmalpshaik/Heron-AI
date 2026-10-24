@@ -1010,6 +1010,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-iz.md`](needs-checking/group-iz.md)
 
+## Group JA - a duct port on a flange ring, sized by its opening: `ADD_FAMILY_CONNECTOR` version 5 (2026-10-24)
+
+**Its own file:** [`needs-checking/group-ja.md`](needs-checking/group-ja.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
