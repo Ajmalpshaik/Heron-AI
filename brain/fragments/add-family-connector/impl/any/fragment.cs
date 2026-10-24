@@ -29,6 +29,11 @@
 // A CONNECTOR THAT CANNOT BE TIED TO ITS SIZE IS NOT LEFT BEHIND AT ONE FOOT.
 // Any refusal after the checks THROWS, and the host rolls the call back.
 //
+// A FLANGE RING'S FACE IS MEASURED BY ITS OPENING (version 5, 2026-10-24, row
+// 5b-1334): one inner loop holding the connector's centre is the port, and the
+// connector must sit at its centre. A plane alone takes no connector through
+// the API, so a ring sketched on the end plane is the way to a port on a plane.
+//
 // CABLE TRAY AND CONDUIT (version 4, 2026-10-13, the gap fill) have no system
 // list in Revit: "Cable Tray" takes two length parameters, width then height,
 // turned to the face like a rectangular duct port; "Conduit" takes one, its
@@ -444,20 +449,57 @@ if (refused == null)
     // 400 x 300 port whichever way its width runs. Parameters that match the
     // face neither way round would size a port that does not fit the face it
     // sits on, and are refused.
+    //
+    // A RING FACE IS MEASURED BY ITS OPENING (version 5, 2026-10-24). A flange's
+    // face - a ring round the duct opening - is the face a port belongs on, and
+    // its outline is the flange, not the port: a 600 x 400 duct's flange ring
+    // reads 640 x 440 outside. So when one inner loop of the face holds the
+    // connector's centre, that loop - the opening - is what is measured, and the
+    // connector must sit at its centre (measured on Revit 2020: a ring face takes
+    // the connector at its centre and the connector follows the plane the ring
+    // is sketched on). A face of one loop is measured whole, exactly as before.
     var swapped = false;
     var faceAlongX = 0.0;
     var faceAlongY = 0.0;
+    var faceWord = "The face on \"" + faceName + "\" is ";
+    var ringOpening = false;
     if ((chosen.Item1 == "duct" || chosen.Item1 == "cable tray") && !round)
     {
         var frame = made.CoordinateSystem;
-        var points = new List<XYZ>();
+        var boxes = new List<double[]>();
         foreach (EdgeArray loop in face.EdgeLoops)
+        {
+            var points = new List<XYZ>();
             foreach (Edge edge in loop)
                 points.AddRange(edge.Tessellate());
-        var acrossX = points.Select(q => q.DotProduct(frame.BasisX)).ToList();
-        var acrossY = points.Select(q => q.DotProduct(frame.BasisY)).ToList();
-        faceAlongX = acrossX.Max() - acrossX.Min();
-        faceAlongY = acrossY.Max() - acrossY.Min();
+            var acrossX = points.Select(q => q.DotProduct(frame.BasisX)).ToList();
+            var acrossY = points.Select(q => q.DotProduct(frame.BasisY)).ToList();
+            boxes.Add(new[] { acrossX.Min(), acrossX.Max(), acrossY.Min(), acrossY.Max() });
+        }
+        var outline = boxes.OrderByDescending(b => (b[1] - b[0]) * (b[3] - b[2])).First();
+        var centreX = made.Origin.DotProduct(frame.BasisX);
+        var centreY = made.Origin.DotProduct(frame.BasisY);
+        var openings = boxes.Where(b => b != outline && b[0] < centreX && centreX < b[1]
+            && b[2] < centreY && centreY < b[3]).ToList();
+        if (openings.Count > 1)
+            throw new InvalidOperationException("The face on \"" + faceName + "\" has " + openings.Count + " openings "
+                + "round the connector's centre, so which one is the port is not clear. NOTHING from this call "
+                + "was kept." + joinedNote);
+        var measured = outline;
+        if (openings.Count == 1)
+        {
+            measured = openings[0];
+            ringOpening = true;
+            faceWord = "The opening of the ring face on \"" + faceName + "\" is ";
+            var offX = (measured[0] + measured[1]) / 2 - centreX;
+            var offY = (measured[2] + measured[3]) / 2 - centreY;
+            if (Math.Abs(offX) > halfMillimetre || Math.Abs(offY) > halfMillimetre)
+                throw new InvalidOperationException("Revit put the connector " + mm(Math.Sqrt(offX * offX + offY * offY))
+                    + " mm off the centre of the ring face's opening on \"" + faceName + "\" - a ring that is not "
+                    + "even round its opening. NOTHING from this call was kept." + joinedNote);
+        }
+        faceAlongX = measured[1] - measured[0];
+        faceAlongY = measured[3] - measured[2];
 
         var first = fm.CurrentType.AsDouble(sizes[0]);
         var second = fm.CurrentType.AsDouble(sizes[1]);
@@ -469,7 +511,7 @@ if (refused == null)
             && Math.Abs(second.Value - faceAlongX) <= halfMillimetre;
 
         if (!asGiven && !turned)
-            throw new InvalidOperationException("The face on \"" + faceName + "\" is " + mm(faceAlongX) + " x "
+            throw new InvalidOperationException(faceWord + mm(faceAlongX) + " x "
                 + mm(faceAlongY) + " mm, and \"" + sizes[0].Definition.Name + "\" and \"" + sizes[1].Definition.Name
                 + "\" hold " + (first.HasValue ? mm(first.Value) : "nothing") + " and "
                 + (second.HasValue ? mm(second.Value) : "nothing") + " mm - a port sized by them would not fit "
@@ -531,6 +573,7 @@ if (refused == null)
     connector = chosen.Item1 + " connector, " + spaced(chosen.Item2) + ", " + shape + ", at X " + mm(origin.X)
         + ", Y " + mm(origin.Y) + ", Z " + mm(origin.Z) + ", pointing " + pointing(made.Direction)
         + ", on the face lying on \"" + faceName + "\""
+        + (ringOpening ? ", centred in the ring face's opening and sized by it" : "")
         + (faceIn != null ? ". " + joinedFace : "")
         + (alsoJoined > 0 ? ". It is a form's own face, which is used before a joined one; " + alsoJoined
             + " face(s) of joined or cut forms lie on the same plane too - check it is the face meant" : "");
