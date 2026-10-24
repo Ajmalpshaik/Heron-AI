@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -169,52 +169,51 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-07'
+  date: '2026-10-24'
   by: Ajmal PS
-  model: SpringProof (1,753 elements), Revit 2024, session 9240
+  model: Heron IS Radius (1,560 elements), Revit 2020, session 83568
   positive_case: run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned along (null), already (null), arc
-    (null), axisOf Func`2, axisPlane (null), blend SweptBlend, centreArc (null), centrePlane
-    (null), centreReference (null), circles 0 item(s), dbNamespace Autodesk.Revit.DB, diameter
-    false, findings 2 item(s) [The radius of the swept blend's path arc, labelled "Mean Rad...,
-    The dimensions are in the sketches, where Edit Swept Blend s...], flags BindingFlags,
+    Arc, axisOf Func`2, axisPlane (null), blend (null), centreArc (null), centrePlane (null),
+    centreReference (null), circles 0 item(s), curveReferenceOf Func`3, dbNamespace Autodesk.Revit.DB,
+    diameter false, findings 2 item(s) [The radius of the extrusion's sketched circle (radius
+    10 mm)..., The dimension is in the sketch, where Edit Extrusion shows i...], flags BindingFlags,
     halfMillimetre 0.00164041994750656, invariant CultureInfo, isLength Func`2, isRound Func`2,
-    joins Func`4, joinsIds Func`4, labelled The radius of the swept blend's path arc, labelled
-    "Mean Radius" inside the swept blend's sketches, reading 40 mm. Its centre is locked to
-    "Center (Front/Back)". Its centre is locked to "Center (Left/Right)"., labelledWith Func`2,
-    measures Func`3, mm Func`2, notAFamily false, parameter FamilyParameter, pathAlready (null),
-    pathArc Arc, pathDatum (null), pathDatumReference (null), pathNormal XYZ, pathView ViewPlan,
-    problems 0 item(s), refused (null), revitAssembly RuntimeAssembly, riseAlready (null),
-    risePlane (null), riseView (null), risers 0 item(s), sameKind Func`3, sideLine (null),
-    target SweptBlend, valueMm 40, view (null), wanted 0.131233595800525. inputs came form
-    as given; parameterName as given; diameter as given. on SpringProof
-  negative_case: 'run against ''SpringProof'' with form=337ead81-f16a-40e6-83ae-b97c6ded58ab-00000eb6,
-    parameterName=Odd Size, diameter=false instead - chosen because it should not contain
-    what this fragment reports - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned along (null), already (null), arc (null), axisOf
-    Func`2, axisPlane (null), blend SweptBlend, centreArc (null), centrePlane (null), centreReference
-    (null), circles 0 item(s), dbNamespace Autodesk.Revit.DB, diameter false, findings 1 item(s)
-    [Nothing was labelled. Nothing in the swept blend is 22 mm in...], flags BindingFlags,
+    joins Func`4, joinsIds Func`4, kindOf Func`2, labelled The radius of the extrusion's sketched
+    circle (radius 10 mm), labelled "Shaft Radius" inside the form's sketch, reading 10 mm.,
+    labelledWith Func`2, measures Func`3, mm Func`2, notAFamily false, otherReference (null),
+    parameter FamilyParameter, pathAlready (null), pathArc (null), pathDatum (null), pathDatumReference
+    (null), pathNormal (null), pathView (null), planeReference (null), planeReferenceOf Func`2,
+    problems 0 item(s), readAgain Func`3, readBack Func`2, referenceNotes 0 item(s), refused
+    (null), release 2020, revitAssembly RuntimeAssembly, riseAlready (null), risePlane (null),
+    riseView (null), risers 0 item(s), sameKind Func`3, sideLine (null), target Extrusion,
+    valueMm 10, view ViewPlan, wanted 0.0328083989501312, writtenOf Func`2. inputs came form
+    as given; parameterName as given; diameter as given. on Heron IS Radius
+  negative_case: run with form=b26ea862-ec61-474f-bf8a-eb580e5b8bff-00000a93, parameterName=Bell
+    Radius, diameter=false instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned along (null), already (null), arc (null), axisOf Func`2, axisPlane
+    (null), blend (null), centreArc (null), centrePlane (null), centreReference (null), circles
+    0 item(s), curveReferenceOf Func`3, dbNamespace Autodesk.Revit.DB, diameter false, findings
+    1 item(s) [Nothing was labelled. No reference plane runs through the re...], flags BindingFlags,
     halfMillimetre 0.00164041994750656, invariant CultureInfo, isLength Func`2, isRound Func`2,
-    joins Func`4, joinsIds Func`4, labelled , labelledWith Func`2, measures Func`3, mm Func`2,
-    notAFamily false, parameter FamilyParameter, pathAlready (null), pathArc (null), pathDatum
-    (null), pathDatumReference (null), pathNormal XYZ, pathView (null), problems 1 item(s)
-    [Nothing in the swept blend is 22 mm in size: not its path''s ...], refused Nothing was
-    labelled. Nothing in the swept blend is 22 mm in size: not its path''s radius, no profile
-    circle''s radius, no profile circle centred that far off the path''s plane. In it, its
-    path is an arc of radius 40 mm; its profiles'' circles have radii of 5 mm; their centres
-    stand 15 mm off the path''s plane - set the parameter to one of those first., revitAssembly
-    RuntimeAssembly, riseAlready (null), risePlane (null), riseView (null), risers 0 item(s),
-    sameKind Func`3, sideLine (null), target SweptBlend, valueMm 0, view (null), wanted 0.0721784776902887.
-    inputs came form as given; parameterName as given; diameter as given. on SpringProof'
-  second_route: 'FLEX_FAMILY with this fragment as its setup, both legs rolled back, 2026-10-07
-    on SpringProof (Revit 2024, session 9240), record brain/proof-drafts/runs/label-family-radius-second-route.json:
-    with "Mean Radius" labelled on the half-turn''s path, trial Mean Radius=60 measured the
-    solid 130 x 65 x 25 mm and 25 measured 60 x 28.53 x 25 - the form followed the label (2
-    x (radius + wire 5)); the negative trial Odd Size=30 left it 90 x 45 x 25. The same evening
-    the whole spring was built with it: TRG_Spring_One Turn flexed 95, 114 and 127 mm across
-    at three sizes.'
-  fingerprint: 90c6543736410662
+    joins Func`4, joinsIds Func`4, kindOf Func`2, labelled , labelledWith Func`2, measures
+    Func`3, mm Func`2, notAFamily false, otherReference (null), parameter FamilyParameter,
+    pathAlready (null), pathArc (null), pathDatum (null), pathDatumReference (null), pathNormal
+    (null), pathView (null), planeReference (null), planeReferenceOf Func`2, problems 1 item(s)
+    [No reference plane runs through the revolve's axis. Measured...], readAgain Func`3, readBack
+    Func`2, referenceNotes 0 item(s), refused Nothing was labelled. No reference plane runs
+    through the revolve's axis. Measured from the axis line itself, Revit moves the axis when
+    the size changes and the revolve breaks - make a reference plane through the axis first
+    (CREATE_REFERENCE_PLANES), then label., release 2020, revitAssembly RuntimeAssembly, riseAlready
+    (null), risePlane (null), riseView (null), risers 0 item(s), sameKind Func`3, sideLine
+    Line, target Revolution, valueMm 0, view (null), wanted 0.196850393700787, writtenOf Func`2.
+    inputs came form as given; parameterName as given; diameter as given. on Heron IS Radius
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: aa807d3d07693727
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
