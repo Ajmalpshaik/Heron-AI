@@ -51,7 +51,8 @@ risk: MODIFY
 # 2020 to 2027 on 2026-10-20: Cast Shadows, Show Ambient Shadows, Ambient
 # Light and Photographic Exposure have NO member - they are inputs so that
 # asking for one is answered plainly, never dropped: the answer names each as
-# the modeller's to tick in the dialog. A background cannot be set back to
+# the modeller's to tick in the dialog - once, then COPY_GRAPHIC_DISPLAY_OPTIONS
+# spreads the tick to other views (row 5b-1336). A background cannot be set back to
 # None - Revit makes a sky, a gradient or an image and nothing else. Show Edges
 # and the style itself are the visual style: SET_VIEW_PROPERTIES. Ray Trace is
 # no tool's on any release (SET_VIEW_PROPERTIES' card has the measurement).
@@ -250,6 +251,11 @@ compatibility-note: >
 #   "what are this view's display options"   -> REPORT_RENDER_SETTINGS (D-86)
 #   "make this view look good"               -> APPLY_VISUAL_PRESET, a whole look
 #                                               in one call
+#   "copy the shadows from Level 1 to the other plans"
+#                                            -> COPY_GRAPHIC_DISPLAY_OPTIONS -
+#                                               the whole dialog copied, Cast
+#                                               Shadows included, through a
+#                                               view template (row 5b-1336)
 
 utterances:
   - switch on sketchy lines with a jitter of 5 in this view

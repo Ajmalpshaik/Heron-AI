@@ -1,0 +1,49 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# Arrange on a SAVED SCRATCH copy of the modeller's Project1 (Revit 2020,
+# DefaultMetric) - the 10 x 8 m house - never a working model. In it:
+# 'Level 1' with Cast Shadows TICKED BY HAND, shadow intensity 25 and its
+# sun set by hand to a Still study at 10:00 on 21 June,
+# 'Level 1 - Colour 2' with Cast Shadows off and no view template, and
+# 'Level 2' given a view template that includes Graphic Display Options
+# (NEEDS-CHECKING Group JC, JC0).
+
+positive:
+  - given: >
+      sourceView 'Level 1' (Cast Shadows ticked by hand), targetViews
+      'Level 1 - Colour 2'
+    expect: >
+      viewsCopied 1, sunCopied 1; readBack names 'Level 1 - Colour 2' with
+      shadow 25 as 'Level 1'. Open its Graphic Display Options: Cast Shadows
+      TICKED, the plan shows the shadows, and Sun Settings reads Still,
+      21 June 10:00. The View Templates dialog lists no new
+      template. One Ctrl+Z takes it all back
+  - given: sourceView a view template from the project, targetViews two plans
+    expect: >
+      both copied; sunCopied 0 with a finding that a template has no Sun
+      Setting of its own; the template's own Include ticks read the same
+      afterwards as before (View Templates dialog)
+  - given: sourceView 'Level 1', targetViews 'Level 1 - Colour 2', sunSettings keep
+    expect: >
+      the dialog copied, sunCopied 0 and the target's Sun Settings as they
+      were before
+
+negative:
+  - given: >
+      sourceView 'Level 1 - Colour 2' (Cast Shadows OFF), targetViews 'Level 1'
+      (Cast Shadows ticked)
+    expect: >
+      the copy carries OFF - 'Level 1' shows NO shadow afterwards; nothing is
+      switched on that the source did not hold. THIS IS THE FIRST CASE TO RUN
+  - given: sourceView 'Level 1', targetViews 'Level 2' (held by its template)
+    expect: >
+      viewsCopied 0, refused "every one is held by its own view template",
+      blockedByTemplate naming 'Level 2' and its template, NOTHING WAS CHANGED,
+      no template left behind
+  - given: sourceView a schedule
+    expect: refused "has no Graphic Display Options", NOTHING WAS CHANGED
+
+second_route:
+  - Right-click 'Level 1' in the Project Browser, Create View Template From
+    Current View, untick all but Graphic Display Options, Apply Template
+    Properties to the target, delete the template - then compare the dialog
+  - one Ctrl+Z takes the whole copy back (Golden Rule 16)
