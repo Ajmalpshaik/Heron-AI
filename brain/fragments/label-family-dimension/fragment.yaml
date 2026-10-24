@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -21,6 +21,10 @@ capability: LABEL_FAMILY_DIMENSION
 # on the modeller's word, read back. The zero-distance refusal names the same
 # route. Version 1's proof below no longer describes the code: DRAFT until
 # NEEDS-CHECKING Group IU proves version 2 (D-30).
+# Still version 2, never signed: on 2026-10-24 Group IU's IU10 measured on
+# Revit 2020 that a level nobody pinned is MOVED by a flex when the other end
+# is pinned (Height P 250 -> 400 moved Ref. Level down 150 mm), so "a level is
+# held fast" was wrong there; the findings now say so (row 5b-1332).
 version: 2
 source: OFFICIAL
 risk: MODIFY
@@ -66,7 +70,8 @@ purpose: >
   parameter changes, Revit moves whichever end of the labelled dimension is
   least held. Each end is read before the label is made, in three grades: a
   level, a pinned plane or one that defines the origin is held FAST - a
-  flex never moves it; a plane that a labelled dimension drives from
+  flex never moves it, except a level nobody pinned, which a flex moves when
+  the other end is pinned (5b-1332); a plane that a labelled dimension drives from
   elsewhere, or that an EQ or a lock ties to another plane or level, is
   held SOFTLY - a flex moves it only through that chain; a plane none of
   those touch is FREE, Revit's first choice to move. Seen on Revit 2020: a
@@ -77,7 +82,9 @@ purpose: >
   (SET_PIN_STATE) or dimension it to a level*. A free end beside one held
   fast is the ordinary height from Ref. Level: the free end is the only one
   a flex can move, so the findings say so and nothing is warned of. Two
-  ends held fast have nothing a flex can move, and the findings say that.
+  ends held fast have nothing a flex can move, and the findings say that -
+  unless one is a level nobody pinned: then the findings say the flex moves
+  the level, and every form on it, and to unpin the other end.
   With a centre plane the EQ moves both ends equally, so no end is free on
   its own. The label is still made in every case: a free end is a warning,
   not a refusal. Nothing is pinned unasked (Article 7); `pinFreeEnd=true`
@@ -160,39 +167,49 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-10-24'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
-    Revit 2024, session 32340'
+  model: Heron IT Planes (1,614 elements), Revit 2020, session 83568
   positive_case: run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned a Tuple`5, along Func`3, axisOf
-    Func`2, axisWords 3 item(s) [left-right, front-back, height], b Tuple`5, centre Tuple`5,
-    datums 9 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
+    Func`2, axisWords 3 item(s) [left-right, front-back, height], b Tuple`5, centre (null),
+    datums 19 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
     Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
-    ...], dbNamespace Autodesk.Revit.DB, distanceMm 600, equalised true, findings 2 item(s)
-    [Width drives "Box Left" to "Box Right", reading 600 mm, in "..., The planes now follow
-    "Width". Geometry follows only if it i...], flags BindingFlags, halfMillimetre 0.00164041994750656,
-    invariant CultureInfo, isLength Func`2, labelled Width drives "Box Left" to "Box Right",
-    reading 600 mm, mm Func`2, named Func`2, notAFamily false, ownName Func`2, parameter FamilyParameter,
-    refused (null), revitAssembly RuntimeAssembly, sameKind Func`3, view ViewPlan. inputs
-    came fromPlane as given; toPlane as given; parameterName as given; centrePlane as given.
-    on Family1
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned a (null), along Func`3, axisOf Func`2, axisWords 3 item(s)
-    [left-right, front-back, height], b (null), centre (null), datums 0 item(s), dbNamespace
-    Autodesk.Revit.DB, distanceMm 0, equalised false, findings 1 item(s) [The document in
-    front is a project, not a family open in the...], flags BindingFlags, halfMillimetre 0.00164041994750656,
-    invariant CultureInfo, isLength Func`2, labelled , mm Func`2, named Func`2, notAFamily
-    true, ownName Func`2, parameter (null), refused The document in front is a project, not
-    a family open in the Family Editor. A family dimension is labelled inside the family -
-    open it first., revitAssembly RuntimeAssembly, sameKind Func`3, view (null). inputs came
-    fromPlane as given; toPlane as given; parameterName as given; centrePlane as given. on
-    Project1
+    ...], dbNamespace Autodesk.Revit.DB, distanceMm 300, equalised false, findings 3 item(s)
+    [Trap Depth drives "Floor Top" to "Trap Top", reading 300 mm,..., The planes now follow
+    "Trap Depth". Geometry follows only if..., "Floor Top" is held by nothing - not pinned,
+    not a level, no...], flags BindingFlags, freeEnd "Floor Top" is held by nothing - not
+    pinned, not a level, not an origin plane, and no labelled dimension, EQ or lock references
+    it - while "Trap Top" is held by the dimension labelled "Rim Height". A flex of "Trap
+    Depth" may move "Floor Top" and leave "Trap Top" where it is. Pin it (SET_PIN_STATE, pinned=true)
+    or dimension it to a level; asked with pinFreeEnd=true, this call pins it first., halfMillimetre
+    0.00164041994750656, invariant CultureInfo, isLength Func`2, labelled Trap Depth drives
+    "Floor Top" to "Trap Top", reading 300 mm, mm Func`2, named Func`2, notAFamily false,
+    ownName Func`2, parameter FamilyParameter, pinFreeEnd false, pinnedEnd , refused (null),
+    revitAssembly RuntimeAssembly, sameKind Func`3, view ViewSection. inputs came fromPlane
+    as given; toPlane as given; parameterName as given; centrePlane as given; pinFreeEnd not
+    given - false (optional). on Heron IT Planes
+  negative_case: run with fromPlane=A, toPlane=C, parameterName=Gap C, centrePlane= instead
+    - chosen because it should not contain what this fragment reports - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned a Tuple`5, along
+    Func`3, axisOf Func`2, axisWords 3 item(s) [left-right, front-back, height], b Tuple`5,
+    centre (null), datums 19 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
+    (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., ...], dbNamespace Autodesk.Revit.DB, distanceMm 0, equalised
+    false, findings 1 item(s) [Nothing was made. "A" and "C" are in the same place - there
+    ...], flags BindingFlags, freeEnd , halfMillimetre 0.00164041994750656, invariant CultureInfo,
+    isLength Func`2, labelled , mm Func`2, named Func`2, notAFamily false, ownName Func`2,
+    parameter FamilyParameter, pinFreeEnd false, pinnedEnd , refused Nothing was made. "A"
+    and "C" are in the same place - there is no distance to label. Pin the one that must stay
+    (SET_PIN_STATE, pinned=true), move the other to where it belongs, set "Gap C" to that
+    distance (SET_FAMILY_TYPE_VALUES), then label - a label put on first would drive the free
+    one., revitAssembly RuntimeAssembly, sameKind Func`3, view (null). inputs came fromPlane
+    as given; toPlane as given; parameterName as given; centrePlane as given; pinFreeEnd not
+    given - false (optional). on Heron IT Planes
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 00382f323428a209
+  fingerprint: f1dfef10a5fe066a
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -57,3 +57,45 @@ fails reopens its row; nothing in a row changes to make it pass. IU4 is a statem
 a signature: it needs no row of its own if every Revit on the PC already runs the new one.
 
 **Route 2 needs `Q-PE-12` as well as `Q-PE-16`.** Route 1 needs only the door.
+
+### Results - 2026-10-24, the owner's laptop: Revit 2020, session 83568 - IU5 to IU12 (`label-family-dimension`)
+
+**The family.** *Heron IT Planes.rfa* in `%TEMP%\heron-work\group-iu`, made from Revit 2020's *Metric Generic Model.rft*
+by `CREATE_FAMILY_DOCUMENT` (so saved from the start). Kept in it, through `revit_change` with PROVEN tools: height
+planes Box Top 250, Trap Top 300, Rim 350, Floor Top 0, A 0, B 200, C 0, Box Top P 250 (pinned, `SET_PIN_STATE`),
+Box Top 2 220; left-right Box Left -300, Box Right 300, Side West -100, Side East 100; front-back Side South -100,
+Side North 100; type *Test* with Height 250, Trap Depth 300, Rim Height 50, Gap 200, Gap C 0, Width 600, Height P 250,
+Height 2 220. *Rim Height* labels Trap Top to Rim - ONE labelled dimension on Trap Top, not two - put on by
+`try-once` and kept by the owner (`brain/proof-drafts/runs/label-family-dimension.once.json`, which also names both
+of its ends free). Five boxes by `EXTRUDE_BETWEEN_PLANES`, all inside Side West/East/South/North: Floor Top to Trap
+Top, A to B, Ref. Level to Box Top P, Ref. Level to Box Top 2, and one 600 wide between Box Left and Box Right, Ref.
+Level to Box Top. They were built AFTER the first label runs, so that IU5 and IU11 ran with nothing on their planes.
+**Box Top 2 sits at 220, not 250**, so that the box locked to it is the only thing on it.
+
+**How each row was run.** Every label: `validate --in "Heron IT Planes" label-family-dimension --write`, rolled back.
+Every flex: the same, with `label-family-dimension` as `--setup` and a copy of `flex-family` in the session's
+scratchpad that adds one string joining its findings - the reply cuts a list to three items of 60 characters, and the
+trial line holds the measurement. The flex reads the five solids together, so a plane is located by the extents of
+all five: base Z below 0 means a base plane moved down, a height above 300 means a top plane moved up.
+
+| # | What came back | State |
+|---|---|---|
+| IU5 | `labelled` *Height drives "Ref. Level" to "Box Top", reading 250 mm*; `freeEnd` empty; finding *""Ref. Level" is a level and "Box Top" is held by nothing, so a flex of "Height" moves "Box Top" - the ordinary case, as a height from Ref. Level is."*; `pinnedEnd` empty. With `pinFreeEnd=true` nothing pinned and the finding saying why | **PASS** |
+| IU6 | `labelled` reading 300 mm; `freeEnd` *""Floor Top" is held by nothing - not pinned, not a level, not an origin plane, and no labelled dimension, EQ or lock references it - while "Trap Top" is held by the dimension labelled "Rim Height". A flex of "Trap Depth" may move "Floor Top" and leave "Trap Top" where it is. Pin it ..."*; `pinnedEnd` empty. Flex Trap Depth=400: *"solid 600 x 200 x 400 mm ... base Z -100"* - FLOOR TOP moved down to Z -100, Trap Top stayed. **The row's "Floor Top moves to Z 100" is an arithmetic slip:** Trap Top held at 300 and 400 between them puts Floor Top at -100, which is what Revit did | **PASS** |
+| IU7 | `pinnedEnd` *""Floor Top" pinned first, as asked (pinFreeEnd), and reads back pinned: a flex of "Trap Depth" now leaves it where it is and moves "Trap Top" instead."* Flex Trap Depth=400: *"600 x 200 x 400 mm ... base Z 0"* - Floor Top stayed at 0, Trap Top went to 400 | **PASS** |
+| IU8 | `freeEnd` *"Both ends are held by nothing ... pins "A", the first named. Pinned now - see pinnedEnd."*; `pinnedEnd` names "A". Flex Gap=500 (not 300, so it shows above Trap Top's 300): *"600 x 200 x 500 mm ... base Z 0"* - B moved to 500, A stayed | **PASS** |
+| IU9 | Refused: *"Nothing was made. "A" and "C" are in the same place - there is no distance to label. Pin the one that must stay (SET_PIN_STATE, pinned=true), move the other to where it belongs, set "Gap C" to that distance (SET_FAMILY_TYPE_VALUES), then label ..."*; `labelled` empty, `distanceMm` 0 | **PASS** |
+| IU10 | *Version 2 as merged:* *"Both ends are held fast - "Ref. Level" is a level; "Box Top P" is pinned - so a flex of "Height P" has nothing it can move."* **What Revit did** with Height P=400: *"600 x 200 x 450 mm ... base Z -150"* - **Revit moved Ref. Level down 150 mm** and Box Top P stayed at 250. Ref. Level read back NOT pinned. No refusal box: the finding's claim was false - row [5b-1332](../fragment-issues/section-5b-rows-401-425.md) | **FAIL**, fixed the same day |
+| IU10 again | *After the 5b-1332 fix:* *""Box Top P" is pinned and "Ref. Level" is a level that is not pinned, so a flex of "Height P" MOVES "Ref. Level" - and every form standing on it - and leaves "Box Top P" where it is (measured on Revit 2020). Unpin "Box Top P" (SET_PIN_STATE, pinned=false) so the flex moves it instead, or label from a plane that is free."*; *"pinFreeEnd was asked and nothing was pinned: "Ref. Level" is the end a flex would move, and pinning the level is not what pinFreeEnd does - unpin "Box Top P" instead."* The flex still *"base Z -150"*: the words now say what Revit does | **PASS** |
+| IU11 | `equalised true`; *"With the EQ across "Center (Left/Right)", "Box Left" and "Box Right" move equally about it when "Width" changes - no end is free to move on its own."*; nothing pinned, the pinFreeEnd finding naming the EQ. Flex Width=800: *"800 x 200 x 300 mm, centre X 0"* - 100 outward each side | **PASS** |
+| IU12 | *""Ref. Level" is a level and "Box Top 2" is held by nothing, so a flex of "Height 2" moves "Box Top 2" ..."* - the box's lock not counted. Flex Height 2=500: *"600 x 200 x 500 mm ... base Z 0"* - the plane and the face moved together, the level stayed | **PASS** |
+
+IU5 to IU12 were all run again on the fixed code the same day, labels and flexes, and read as above. IU0 to IU4
+(`read-element-parameters` version 5) were not run: they need the add-in rebuilt and Revit restarted.
+
+**The draft's negative is IU9, not IU5.** `heron_validate.py draft` judges every `role: result`, and in IU5 the
+label is made - `labelled` and `distanceMm` are filled - so with IU5 as the negative the draft read *"the negative
+case returned content"*. IU5 is the negative for the WARNING (`freeEnd` empty, recorded above); IU9 is the case with
+nothing to label, where every result is empty. The draft at `brain/proof-drafts/label-family-dimension.yaml` has IU6
+as its positive and IU9 as its negative, fingerprint `f1dfef10a5fe066a`, second route NOT ESTABLISHED - the flex
+measurements above are recorded here, not as a route.

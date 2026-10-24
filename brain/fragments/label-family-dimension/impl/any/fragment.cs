@@ -34,6 +34,8 @@
 // the findings as the end a flex may move, with the pin route. Nothing is
 // pinned on this fragment's own initiative (Article 7): `pinFreeEnd` asks for
 // it, and the pin is read back after the regeneration like everything else.
+// A LEVEL NOBODY PINNED is held only against a free plane: beside a pinned
+// end it is the end a flex moves (2026-10-24, IU10, 5b-1332 - see looseLevel).
 
 var findings = new List<string>();
 var labelled = "";
@@ -335,10 +337,26 @@ if (refused == null)
         }
     }
 
+    // A LEVEL IS HELD FAST AGAINST A FREE PLANE, NOT AGAINST A FIXED ONE.
+    // Measured 2026-10-24 on Revit 2020 (session 83568, NEEDS-CHECKING IU10,
+    // FRAGMENT-ISSUES 5b-1332): "Height P" labelled from Ref. Level - a level,
+    // NOT pinned - to a PINNED plane at 250 mm, then flexed to 400: Revit moved
+    // REF. LEVEL down 150 mm and the pinned plane stayed. The same level against
+    // a free plane ("Height 2", 220 -> 500) stayed where it was and the plane
+    // moved. So an unpinned level counts as held against a free end, and as the
+    // end that moves against one held fast; a pinned level is held either way.
+    Func<Tuple<Element, Reference, int, double, string>, bool> looseLevel = end =>
+    {
+        if (!(end.Item1 is Level)) return false;
+        var isPinned = false;
+        try { isPinned = end.Item1.Pinned; } catch (Exception) { }
+        return !isPinned;
+    };
+
     // What holds an end fast, in words - "" when nothing does.
     Func<Tuple<Element, Reference, int, double, string>, string> hardHold = end =>
     {
-        if (end.Item1 is Level) return "a level";
+        if (end.Item1 is Level) return looseLevel(end) ? "a level" : "a pinned level";
         var why = new List<string>();
         var isPinned = false;
         try { isPinned = end.Item1.Pinned; } catch (Exception) { }
@@ -378,6 +396,28 @@ if (refused == null)
             + "\" move equally about it when \"" + drives + "\" changes - no end is free to move on its own.");
         noPinWhy = "the EQ across \"" + centre.Item5 + "\" moves both ends equally, and a pinned end would fight it";
     }
+    else if (aHard.Length > 0 && bHard.Length > 0 && looseLevel(a) != looseLevel(b))
+    {
+        // THE LEVEL MOVES (5b-1332): one end is a level nobody pinned, the
+        // other is held fast - pinned, or the origin - so a flex moves the
+        // level, and every form standing on it with it.
+        var movingLevel = looseLevel(a) ? a : b;
+        var fixedEnd = looseLevel(a) ? b : a;
+        var fixedWhy = looseLevel(a) ? bHard : aHard;
+        findings.Add("\"" + fixedEnd.Item5 + "\" is " + fixedWhy + " and \"" + movingLevel.Item5 + "\" is a level that is not "
+            + "pinned, so a flex of \"" + drives + "\" MOVES \"" + movingLevel.Item5 + "\" - and every form standing on it - "
+            + "and leaves \"" + fixedEnd.Item5 + "\" where it is (measured on Revit 2020). Unpin \"" + fixedEnd.Item5
+            + "\" (SET_PIN_STATE, pinned=false) so the flex moves it instead, or label from a plane that is free.");
+        noPinWhy = "\"" + movingLevel.Item5 + "\" is the end a flex would move, and pinning the level is not what pinFreeEnd "
+            + "does - unpin \"" + fixedEnd.Item5 + "\" instead";
+    }
+    else if (aHard.Length > 0 && bHard.Length > 0 && looseLevel(a) && looseLevel(b))
+    {
+        findings.Add("Both ends are levels and neither is pinned - \"" + a.Item5 + "\" and \"" + b.Item5 + "\" - so "
+            + "which one a flex of \"" + drives + "\" moves is Revit's choice. Pin the one that must stay "
+            + "(SET_PIN_STATE, pinned=true).");
+        noPinWhy = "both ends are levels, and pinning a level is not what pinFreeEnd does";
+    }
     else if (aHard.Length > 0 && bHard.Length > 0)
     {
         findings.Add("Both ends are held fast - \"" + a.Item5 + "\" is " + aHard + "; \"" + b.Item5 + "\" is " + bHard
@@ -407,8 +447,11 @@ if (refused == null)
             findings.Add("\"" + other.Item5 + "\" is " + otherHard + " and \"" + loose.Item5 + "\" is held by nothing, "
                 + "so a flex of \"" + drives + "\" moves \"" + loose.Item5 + "\" - the ordinary case, as a height from "
                 + "Ref. Level is.");
-            noPinWhy = "\"" + other.Item5 + "\" is " + otherHard + ", so \"" + loose.Item5 + "\" is the only end a flex "
-                + "can move - pinned, the flex would have nothing";
+            noPinWhy = looseLevel(other)
+                ? "\"" + other.Item5 + "\" is a level, so \"" + loose.Item5 + "\" is the end a flex moves - pinned, the "
+                  + "flex would move the level instead (5b-1332)"
+                : "\"" + other.Item5 + "\" is " + otherHard + ", so \"" + loose.Item5 + "\" is the only end a flex "
+                  + "can move - pinned, the flex would have nothing";
         }
         else
         {
