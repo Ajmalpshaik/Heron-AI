@@ -1,6 +1,7 @@
-// NOT STANDALONE. Assumes `elements`, `flipHand`, `flipFacing` and
-// `fromToRoomOnly` are in scope; leaves `flipped`, `cannotFlip`,
-// `notFamilyInstance`, `roomsSwapped` and `roomsLeft` behind.
+// NOT STANDALONE. Assumes `elements`, `flipHand`, `flipFacing`,
+// `fromToRoomOnly` and `flipWorkPlane` are in scope; leaves `flipped`,
+// `cannotFlip`, `notFamilyInstance`, `roomsSwapped`, `roomsLeft`,
+// `workPlaneFlips` and `cannotFlipWorkPlane` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
@@ -39,12 +40,35 @@
 // A WINDOW IS NOT SWAPPED. Its To Room is not tied to the way it faces -
 // PLACE_HOSTED_FAMILY sets it to the room inside while the window faces out -
 // so it is named in `roomsLeft` instead.
+//
+// VERSION 3 - A WORK-PLANE-BASED PART CAN FLIP ITS WORK PLANE. Seen
+// 2026-10-24 on Revit 2020: a nested damper quadrant handle placed on a front
+// reference plane whose normal points +Y came in facing inward and upside
+// down. flipHand and flipFacing cannot turn it, and a rotation was refused
+// ("Can't rotate element into this position"); IsWorkPlaneFlipped = true put
+// it right in a rolled-back probe. So `flipWorkPlane` asks CanFlipWorkPlane
+// first, toggles IsWorkPlaneFlipped, and after one regeneration reads back
+// the flag, the facing and the bounding box against what they were - one line
+// each in `workPlaneFlips`. One that cannot is named in `cannotFlipWorkPlane`
+// and never forced. The setter is not caught: a throw ends the call, and the
+// transaction group rolls the whole of it back.
 
 var flipped = 0;
 var cannotFlip = new List<ElementId>();
 var notFamilyInstance = new List<ElementId>();
 var roomsSwapped = new List<string>();
 var roomsLeft = new List<string>();
+var workPlaneFlips = new List<string>();
+var cannotFlipWorkPlane = new List<string>();
+
+// What each work plane flip started from, read back after one regeneration.
+var planeFlipped = new List<FamilyInstance>();
+var planeWas = new List<bool>();
+var facingWas = new List<XYZ>();
+var boxWas = new List<BoundingBoxXYZ>();
+var planeOnly = new List<bool>();                        // nothing else flipped on it
+Func<FamilyInstance, string> partOf = fi => string.Format("{0} {1} ('{2}')",
+    fi.Symbol == null ? "Instance" : fi.Symbol.FamilyName, fi.Id, fi.Name);
 
 var toCheck = new List<FamilyInstance>();
 var doorCategory = new ElementId(BuiltInCategory.OST_Doors);
@@ -72,11 +96,27 @@ foreach (var element in elements)
     }
 
     var did = false;
+    var hand = false;
     var facingDone = false;
+
+    if (flipWorkPlane)
+    {
+        if (instance.CanFlipWorkPlane)
+        {
+            planeFlipped.Add(instance);
+            planeWas.Add(instance.IsWorkPlaneFlipped);
+            facingWas.Add(instance.FacingOrientation);
+            boxWas.Add(instance.get_BoundingBox(null));
+            instance.IsWorkPlaneFlipped = !instance.IsWorkPlaneFlipped;
+            did = true;
+        }
+        else cannotFlipWorkPlane.Add(partOf(instance) + " - it cannot flip its work plane (not "
+            + "work-plane-based, or Revit will not flip it here), so it was left as it was");
+    }
 
     if (flipHand)
     {
-        if (instance.CanFlipHand) { instance.flipHand(); did = true; }
+        if (instance.CanFlipHand) { instance.flipHand(); did = true; hand = true; }
     }
 
     if (flipFacing)
@@ -86,6 +126,7 @@ foreach (var element in elements)
 
     if (did) flipped++;
     else cannotFlip.Add(instance.Id);
+    if (planeFlipped.Count > planeOnly.Count) planeOnly.Add(did && !hand && !facingDone);
 
     if (facingDone && instance.Category != null)
     {
@@ -93,6 +134,35 @@ foreach (var element in elements)
         else if (instance.Category.Id == windowCategory)
             roomsLeft.Add(labelOf(instance) + " - a window's To Room is not tied to the way it "
                 + "faces, so From and To Room were left as they were");
+    }
+}
+
+if (planeFlipped.Count > 0)
+{
+    planeFlipped[0].Document.Regenerate();               // the work planes just flipped
+
+    Func<double, string> mm = feet => Math.Round(feet * 304.8).ToString("0");
+    Func<XYZ, string> way = v => v == null ? "(no facing)"
+        : string.Format(System.Globalization.CultureInfo.InvariantCulture,
+            "{0:0.##},{1:0.##},{2:0.##}", v.X, v.Y, v.Z);
+    Func<BoundingBoxXYZ, string> box = b => b == null ? "(no bounding box)"
+        : string.Format("X {0}..{1}, Y {2}..{3}, Z {4}..{5} mm", mm(b.Min.X), mm(b.Max.X),
+            mm(b.Min.Y), mm(b.Max.Y), mm(b.Min.Z), mm(b.Max.Z));
+    Func<bool, string> state = f => f ? "flipped" : "not flipped";
+
+    for (var i = 0; i < planeFlipped.Count; i++)
+    {
+        var part = planeFlipped[i];
+        var now = part.IsWorkPlaneFlipped;
+        if (now == planeWas[i] && planeOnly[i])
+        {
+            flipped--;                                   // nothing on it changed after all
+            cannotFlip.Add(part.Id);
+        }
+        workPlaneFlips.Add(partOf(part) + (now == planeWas[i] ? " - the work plane flip did NOT take: "
+                : " - work plane ") + state(planeWas[i]) + " -> " + state(now)
+            + "; faces " + way(part.FacingOrientation) + " (was " + way(facingWas[i]) + "); sits "
+            + box(part.get_BoundingBox(null)) + " (was " + box(boxWas[i]) + ")");
     }
 }
 
