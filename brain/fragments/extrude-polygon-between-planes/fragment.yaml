@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -104,6 +104,52 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-24'
+  by: Ajmal PS
+  model: Heron IZ Hexagon (1,504 elements), Revit 2020, session 83568
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned across 0.0590551181102362, acrossFlatsMm
+    18, allPlanes 4 item(s) [Center (Front/Back), Reference Plane, Center (Left/Right), ...],
+    axisOf Func`2, bottom Tuple`4, dbNamespace Autodesk.Revit.DB, elevation ViewSection, findings
+    3 item(s) [Built a solid prism of 6 sides, 18 mm across the flats and 2..., 2 centre plane(s)
+    were made through the origin and PINNED, s..., Locked is not yet PROVED to follow the
+    planes. FLEX_FAMILY c...], flags BindingFlags, halfMillimetre 0.00164041994750656, heights
+    3 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.Level, Autodesk.Revit.DB.Reference, 0,
+    Re...], invariant CultureInfo, isLength Func`2, locked 7 item(s) [side 1 face to "Head
+    Across Flats Side 1", side 2 face to "Head Across Flats Side 2", side 3 face to "Head
+    Across Flats Side 3", ...], mm Func`2, notAFamily false, oneHeight Func`3, ownName Func`2,
+    parameter FamilyParameter, plan ViewPlan, planesMade 8 item(s) ["Head Across Flats Side
+    1", facing 90 degrees in plan, 9 mm ..., "Head Across Flats Side 2", facing 150 degrees
+    in plan, 9 mm..., "Head Across Flats Side 3", facing 210 degrees in plan, 9 mm..., ...],
+    problems 0 item(s), refused (null), revitAssembly RuntimeAssembly, sameKind Func`3, sides
+    6, size 6 sides, 18 mm across the flats and 20.78 mm across the corners, 7.5 mm high,
+    centred at X 0, Y 0, from Z 0 to 7.5, top Tuple`4, wantedParameter Head Across Flats.
+    inputs came parameterName as given; sides as given; basePlane as given; topPlane as given.
+    on Heron IZ Hexagon
+  negative_case: 'run with parameterName=Zero Flats, sides=6, basePlane=Ref. Level, topPlane=Head
+    Top instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    across 0, acrossFlatsMm 0, allPlanes 4 item(s) [Center (Front/Back), Reference Plane,
+    Center (Left/Right), ...], axisOf Func`2, bottom Tuple`4, dbNamespace Autodesk.Revit.DB,
+    elevation ViewSection, findings 1 item(s) [Nothing was built. "Zero Flats" holds 0 mm
+    in type "Test" - ...], flags BindingFlags, halfMillimetre 0.00164041994750656, heights
+    3 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.Level, Autodesk.Revit.DB.Reference, 0,
+    Re...], invariant CultureInfo, isLength Func`2, locked 0 item(s), mm Func`2, notAFamily
+    false, oneHeight Func`3, ownName Func`2, parameter FamilyParameter, plan ViewPlan, planesMade
+    0 item(s), problems 1 item(s) ["Zero Flats" holds 0 mm in type "Test" - no size yet. Labell...],
+    refused Nothing was built. "Zero Flats" holds 0 mm in type "Test" - no size yet. Labelling
+    now would pull the planes onto each other: give it the size across the flats with SET_FAMILY_TYPE_VALUES
+    first., revitAssembly RuntimeAssembly, sameKind Func`3, sides 6, size , top Tuple`4, wantedParameter
+    Zero Flats. inputs came parameterName as given; sides as given; basePlane as given; topPlane
+    as given. on Heron IZ Hexagon'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 506b8485027c7bb2
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
