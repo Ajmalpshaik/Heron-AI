@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -145,61 +145,72 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-10-24'
   by: Ajmal PS
-  model: Family4 (2,157 elements), Revit 2020, session 64176
-  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    add-family-connector with this phase''s own values - run inside a transaction, and Revit
-    reported the transaction group ROLLED BACK afterwards. returned addParameterFor Func`2,
-    all 1 item(s) [ConnectorElement], asked 0 item(s), changed 2 item(s) [duct connector 3517
-    on "Duct Front": Flow Direction Bidirect..., duct connector 3517 on "Duct Front": described
-    "HERON TEST".], connectorReport 1 connector(s), read back: duct connector 3517 on "Duct
-    Front", Supply Air, rectangular 150 x 300 mm (width <- Frame Length, height <- Duct Height),
-    flow Out, flow configuration Calculated, described "HERON TEST", pointing back (+Y), at
-    X 0, Y -300, Z 0 mm - PRIMARY, not linked., dbNamespace Autodesk.Revit.DB, domainWords
-    Func`2, drivenBy Func`3, electrical 0 item(s), electricalKeys 10 entry(ies), electricalValue
-    Func`3, electricalWords Func`2, enumNames Func`2, enumRead Func`3, enumWord Func`3, findings
-    2 item(s) [Before: duct connector 3517 on "Duct Front", Supply Air, rec..., 1 connector(s),
-    read back: duct connector 3517 on "Duct Fron...], flags BindingFlags, flip false, flowConfigurationOf
-    Func`2, flowDirectionOf Func`2, fm FamilyManager, halfMillimetre 0.00164041994750656,
-    invariant CultureInfo, kindOf Func`2, kindWords Func`2, label Func`2, loadClassAsked false,
-    lossMethodOf Func`2, mm Func`2, notAFamily false, onPlanes 1 entry(ies), ownName Func`2,
-    parameterOf Func`3, pascal 0.3048, perVolt 10.7639104167097, pointing Func`2, problems
-    0 item(s), reading false, refused (null), revitAssembly RuntimeAssembly, revitPerUnit
+  model: Heron Connector Ticks Test (1,526 elements), Revit 2020, session 94928
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned addParameterFor Func`3, all 3 item(s)
+    [Sanitary, Sanitary, Supply Air], angleOf Func`2, anyDomain Func`2, asked 0 item(s), changed
+    2 item(s) [pipe connector 2564 on "Outlet Face": Allow Slope Adjustment..., pipe connector
+    2565 on "Inlet Face": Allow Slope Adjustments...], connectorReport 3 connector(s), read
+    back: pipe connector 2564 on "Outlet Face", Sanitary, round 50 mm (diameter <- Pipe Size),
+    flow Bidirectional, flow configuration Calculated, slope adjustments allowed, pointing
+    left (-X), at X -300, Y 0, Z 300 mm - PRIMARY, not linked; pipe connector 2565 on "Inlet
+    Face", Sanitary, round 50 mm (diameter <- Pipe Size), flow Bidirectional, flow configuration
+    Calculated, slope adjustments allowed, pointing right (+X), at X 300, Y 0, Z 300 mm -
+    secondary, not linked; duct connector 2566 on "Duct Face", Supply Air, rectangular 600
+    x 300 mm (width <- Box Length, height <- Box Depth), flow Bidirectional, flow configuration
+    Calculated, pointing up, at X 0, Y 0, Z 600 mm - PRIMARY, not linked., dbNamespace Autodesk.Revit.DB,
+    domainWords Func`2, drivenBy Func`3, ductOrPipe Func`2, electricalOnly Func`2, electricalWords
+    Func`2, enumNames Func`2, enumRead Func`3, enumWord Func`3, findings 4 item(s) [pipe connector
+    2564 on "Outlet Face"''s Allow Slope Adjustmen..., pipe connector 2565 on "Inlet Face"''s
+    Allow Slope Adjustment..., Before: pipe connector 2564 on "Outlet Face", Sanitary, roun...,
+    ...], flags BindingFlags, flip false, flowConfigurationOf Func`2, flowDirectionOf Func`2,
+    flowOf Func`2, fm FamilyManager, halfMillimetre 0.00164041994750656, invariant CultureInfo,
+    kindOf Func`2, kindWords Func`2, label Func`2, loadClassAsked false, lossMethodOf Func`2,
+    mm Func`2, moreWords Func`2, notAFamily false, onPlanes 3 entry(ies), ownName Func`2,
+    parameterOf Func`3, pascal 0.3048, perDegree 0.0174532925199433, perLitrePerSecond 0.0353146667214886,
+    perVolt 10.7639104167097, pipeOnly Func`2, pointing Func`2, powerFactorStateOf Func`2,
+    problems 0 item(s), reading false, refused (null), revitAssembly RuntimeAssembly, revitPerUnit
     Func`3, row Func`2, sameKind Func`3, shownAs 6 entry(ies), sizeWords Func`2, sizesAsked
-    false, spaced Func`2, squash Func`2, targets 1 item(s) [ConnectorElement], wantCoefficient
-    (null), wantDescription HERON TEST, wantFlowConfiguration (null), wantFlowDirection Out,
-    wantLoadClass (null), wantLossMethod (null), wantPressure (null), wantPrimary (null),
-    wantSizes 0 item(s), wantSystem (null). inputs came connectors as given; settings as given;
-    primary as given; links as given. on Family4'
-  negative_case: 'run with facePlane=Duct Front, system=Supply Air, sizeParameters=Frame Length,
-    Duct Height, connectors=Center (Front/Back), settings=flowDirection=Out; description=HERON
-    TEST, primary=, links= instead - chosen because it should not contain what this fragment
-    reports - the arrangement was re-made first by running add-family-connector with this
-    phase''s own values - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned addParameterFor Func`2, all 1 item(s) [ConnectorElement],
-    asked 0 item(s), changed 0 item(s), connectorReport , dbNamespace Autodesk.Revit.DB, domainWords
-    Func`2, drivenBy Func`3, electrical 0 item(s), electricalKeys 10 entry(ies), electricalValue
-    Func`3, electricalWords Func`2, enumNames Func`2, enumRead Func`3, enumWord Func`3, findings
-    1 item(s) [Nothing was changed. No connector lies on a plane called "Ce...], flags BindingFlags,
-    flip false, flowConfigurationOf Func`2, flowDirectionOf Func`2, fm FamilyManager, halfMillimetre
+    false, spaced Func`2, squash Func`2, targets 2 item(s) [Sanitary, Sanitary], tickKeys
+    7 entry(ies), ticks 1 item(s) [(Allow Slope Adjustments, a pipe connector''s, System.Func`2[...],
+    typed 0 item(s), typedKeys 15 entry(ies), typedValue Func`3, underDimensions Tuple`3,
+    underLoads Tuple`3, underMechanical Tuple`3, wantCoefficient (null), wantDescription (null),
+    wantFlowConfiguration (null), wantFlowDirection (null), wantLoadClass (null), wantLossMethod
+    (null), wantPowerFactorState (null), wantPressure (null), wantPrimary (null), wantSizes
+    0 item(s), wantSystem (null). inputs came connectors as given; settings as given; primary
+    as given; links as given. on Heron Connector Ticks Test'
+  negative_case: run with connectors=Duct Face, links=, primary=, settings=allowSlopeAdjustments=yes
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    addParameterFor Func`3, all 3 item(s) [Sanitary, Sanitary, Supply Air], angleOf Func`2,
+    anyDomain Func`2, asked 0 item(s), changed 0 item(s), connectorReport , dbNamespace Autodesk.Revit.DB,
+    domainWords Func`2, drivenBy Func`3, ductOrPipe Func`2, electricalOnly Func`2, electricalWords
+    Func`2, enumNames Func`2, enumRead Func`3, enumWord Func`3, findings 1 item(s) [Nothing
+    was changed. duct connector 2566 on "Duct Face" is a...], flags BindingFlags, flip false,
+    flowConfigurationOf Func`2, flowDirectionOf Func`2, flowOf Func`2, fm FamilyManager, halfMillimetre
     0.00164041994750656, invariant CultureInfo, kindOf Func`2, kindWords Func`2, label Func`2,
-    loadClassAsked false, lossMethodOf Func`2, mm Func`2, notAFamily false, onPlanes 1 entry(ies),
-    ownName Func`2, parameterOf Func`3, pascal 0.3048, perVolt 10.7639104167097, pointing
-    Func`2, problems 1 item(s) [No connector lies on a plane called "Center (Front/Back)"
-    or...], reading false, refused Nothing was changed. No connector lies on a plane called
-    "Center (Front/Back)" or has that id. This family''s connectors: duct connector 3518 on
-    "Duct Front"., revitAssembly RuntimeAssembly, revitPerUnit Func`3, row Func`2, sameKind
-    Func`3, shownAs 6 entry(ies), sizeWords Func`2, sizesAsked false, spaced Func`2, squash
-    Func`2, targets 0 item(s), wantCoefficient (null), wantDescription HERON TEST, wantFlowConfiguration
-    (null), wantFlowDirection Out, wantLoadClass (null), wantLossMethod (null), wantPressure
+    loadClassAsked false, lossMethodOf Func`2, mm Func`2, moreWords Func`2, notAFamily false,
+    onPlanes 3 entry(ies), ownName Func`2, parameterOf Func`3, pascal 0.3048, perDegree 0.0174532925199433,
+    perLitrePerSecond 0.0353146667214886, perVolt 10.7639104167097, pipeOnly Func`2, pointing
+    Func`2, powerFactorStateOf Func`2, problems 1 item(s) [duct connector 2566 on "Duct Face"
+    is a duct connector - All...], reading false, refused Nothing was changed. duct connector
+    2566 on "Duct Face" is a duct connector - Allow Slope Adjustments is a pipe connector's.,
+    revitAssembly RuntimeAssembly, revitPerUnit Func`3, row Func`2, sameKind Func`3, shownAs
+    6 entry(ies), sizeWords Func`2, sizesAsked false, spaced Func`2, squash Func`2, targets
+    1 item(s) [Supply Air], tickKeys 7 entry(ies), ticks 1 item(s) [(Allow Slope Adjustments,
+    a pipe connector's, System.Func`2[...], typed 0 item(s), typedKeys 15 entry(ies), typedValue
+    Func`3, underDimensions Tuple`3, underLoads Tuple`3, underMechanical Tuple`3, wantCoefficient
+    (null), wantDescription (null), wantFlowConfiguration (null), wantFlowDirection (null),
+    wantLoadClass (null), wantLossMethod (null), wantPowerFactorState (null), wantPressure
     (null), wantPrimary (null), wantSizes 0 item(s), wantSystem (null). inputs came connectors
-    as given; settings as given; primary as given; links as given. on Family4'
+    as given; settings as given; primary as given; links as given. on Heron Connector Ticks
+    Test
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 91798cf895ce1397
-
+  fingerprint: ef654c3c5f1453e8
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
