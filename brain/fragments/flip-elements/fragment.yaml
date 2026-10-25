@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "turn these family instances round using their own flip contr
 kind: action
 domain: revit.elements
 capability: FLIP_ELEMENTS
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -33,6 +33,12 @@ purpose: >
   swapped to the room it now swings into - only where the rooms either side
   say so - and each door is named. `fromToRoomOnly` fixes the From and To Room
   of doors already wrong, and flips nothing.
+
+  **VERSION 3: A WORK-PLANE-BASED PART CAN FLIP ITS WORK PLANE.** A nested
+  part placed on a plane facing the wrong way comes in facing inward and
+  upside down, and no hand or facing flip turns it. `flipWorkPlane` flips each
+  part's work plane where Revit allows it, and says which way it now faces and
+  where it now sits. One that cannot is named and left.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -66,6 +72,21 @@ purpose: >
 # door handed in and flips nothing. Absent, version 1's behaviour is
 # unchanged for everything that is not a door flipped on its facing. The
 # words above are kept short on purpose - a purpose's words move routing.
+#
+# VERSION 3 - FRAGMENT-ISSUES 5b-1335. Seen 2026-10-24 on Revit 2020: the
+# work-plane-based nested family 'TRG_Duct Accessory_Damper Quadrant Handle',
+# placed by PLACE_NESTED_FAMILY on a front reference plane made by
+# CREATE_REFERENCE_PLANES - every plane it makes has normal +Y - came in on
+# the front (-Y) side facing inward and upside down. ROTATE_ELEMENTS_ABOUT_AXIS
+# was refused by Revit ("Can't rotate element into this position"); a
+# rolled-back probe setting IsWorkPlaneFlipped = true put it right - bounding
+# box Y -345..-301 and Z -25..121, following Width. flipHand and flipFacing
+# cannot do that, so the owner flipped it by hand. `flipWorkPlane` (optional,
+# absent = false) asks CanFlipWorkPlane, toggles IsWorkPlaneFlipped, and after
+# one regeneration reads back the flag, FacingOrientation and the bounding box
+# against what they were, one line each in `workPlaneFlips`. One that cannot
+# is named in `cannotFlipWorkPlane`, never forced. A throw is not caught, so
+# the whole call rolls back. Absent, version 2's run is unchanged.
 contract:
   needs:
     - name: elements
@@ -80,6 +101,13 @@ contract:
       # VERSION 2. Set: flip nothing, and set the From and To Room of every
       # door handed in to the rooms either side of its swing. Absent binds
       # false (HeronBindingNote.AbsentValue, row 5b-227), version 1's run.
+      type: bool
+      source: request
+      optional: true
+    - name: flipWorkPlane
+      # VERSION 3. Set: flip the work plane of every work-plane-based
+      # instance handed in that Revit lets flip it. Absent binds false
+      # (HeronBindingNote.AbsentValue, row 5b-227), version 2's run.
       type: bool
       source: request
       optional: true
@@ -110,11 +138,22 @@ contract:
       # a window. Never work it did (D-52).
       role: accounting
       type: IList<string>
+    - name: workPlaneFlips
+      # VERSION 3. One line per instance whose work plane was flipped, read
+      # back after one regeneration: flipped before -> after, the way it
+      # faces now and before, and its bounding box in mm now and before.
+      role: result
+      type: IList<string>
+    - name: cannotFlipWorkPlane
+      # VERSION 3. One line per family instance, by name, that Revit will not
+      # let flip its work plane - left as it was, never forced (D-52).
+      role: accounting
+      type: IList<string>
 
-# VERSION 1's PROOF, KEPT AS A RECORD. Version 2 changed impl/, so its
+# VERSION 2's PROOF, KEPT AS A RECORD. Version 3 changed impl/, so its
 # fingerprint no longer describes the code and the card is DRAFT until
-# NEEDS-CHECKING Group HT proves version 2 (D-30). Version 1's flip is still
-# the path every hand flip and every non-door facing flip takes.
+# NEEDS-CHECKING Group JB proves version 3 (D-30). Version 2's code is still
+# the path every call that leaves flipWorkPlane out takes.
 proof:
   date: '2026-10-21'
   by: Ajmal PS
@@ -155,7 +194,12 @@ compatibility-note: >
   Version 2 adds `FlipFromToRoom()`, `get_FromRoom(Phase)`, `get_ToRoom(Phase)`,
   `FacingOrientation`, `Wall.Width` and `Document.GetRoomAtPoint(XYZ, Phase)`,
   all present and unchanged 2020 to 2027. The 300 mm reach is divided by 304.8
-  - plain arithmetic, no units API.
+  - plain arithmetic, no units API. Version 3 adds
+  `FamilyInstance.CanFlipWorkPlane` and `IsWorkPlaneFlipped` (read and set),
+  `get_BoundingBox(null)` and `Document.Regenerate()`, present on every
+  release 2020 to 2027 - in each release's shipped RevitAPI.dll, and the card
+  compiles for 2020 and 2027. Its millimetres are feet times 304.8, the same
+  plain arithmetic.
 
 # ROUTING - the same rows are in the fragments named here. Added 2026-10-04
 # (docs/45).
@@ -171,6 +215,9 @@ compatibility-note: >
 #    backwards, fix them"                 -> here with fromToRoomOnly. Version
 #                                            2. REPORT_DOOR_ROOM_LINKS only
 #                                            names which ones
+#   "the nested part came in upside
+#    down, flip its work plane"           -> here with flipWorkPlane. Version
+#                                            3. A rotation is refused there
 
 utterances:
   - the door opens the wrong way
@@ -180,3 +227,4 @@ utterances:
   - the handing is wrong
   - flip them
   - fix the from and to room on these doors
+  - flip the work plane of the nested part
