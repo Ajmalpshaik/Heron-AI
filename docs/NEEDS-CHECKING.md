@@ -1014,6 +1014,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jb.md`](needs-checking/group-jb.md)
 
+## Group JC - Cast Shadows ticked once and copied to other views through a view template: `COPY_GRAPHIC_DISPLAY_OPTIONS` version 1 (2026-10-24)
+
+**Its own file:** [`needs-checking/group-jc.md`](needs-checking/group-jc.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

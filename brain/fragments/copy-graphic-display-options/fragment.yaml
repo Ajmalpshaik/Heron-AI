@@ -1,0 +1,157 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-154
+semantic-identity: "copy a view's whole Graphic Display Options and its sun settings - cast shadows, ambient shadows, ambient light, photographic exposure and the sun's study, date and time included - onto other views"
+kind: action
+domain: revit.views
+capability: COPY_GRAPHIC_DISPLAY_OPTIONS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-24: Ajmal PS, learning plan colours on a 10 x 8 m house in an
+# unsaved Project1 (Revit 2020, DefaultMetric), asked for a small shadow in a
+# plan. SET_GRAPHIC_DISPLAY_OPTIONS set shadow intensity 25 on 'Level 1' and
+# answered Cast Shadows as having no API member - and he asked that Heron
+# reach EVERY Graphic Display Option. Row 5b-1336.
+#
+# WHERE REVIT'S API STOPS, read off RevitAPI.xml of 2020 to 2027 on
+# 2026-10-24 (Nice3point.Revit.Api.RevitAPI packages): no release has a member
+# for Cast Shadows, Show Ambient Shadows, Ambient Light or Photographic
+# Exposure. GRAPHIC_DISPLAY_OPTIONS_SHADOWS, _PHOTO_EXPOSURE and the rest are
+# the dialog's buttons, not values; 2022's ParameterTypeId.GraphicDisplay-
+# OptionsShadows names the same button. Nothing changed from 2025 to 2027.
+#
+# THE ROUTE THAT WORKS ON EVERY RELEASE: a view template carries the whole
+# Graphic Display Options dialog as ONE setting (GRAPHIC_DISPLAY_OPTIONS), and
+# View.ApplyViewTemplateParameters copies what a template includes onto a view
+# once, leaving no link. So the modeller ticks Cast Shadows once by hand and
+# this spreads it - with every other tick in the dialog - to any number of
+# views. A source VIEW is turned into a template (CreateViewTemplate), the
+# template narrowed to Graphic Display Options alone, applied, then DELETED.
+# A source TEMPLATE is used as it is, narrowed for the copy and put back.
+#
+# WHY A NEW CARD AND NOT SET_GRAPHIC_DISPLAY_OPTIONS WIDENED: that card is
+# PROVEN for nine settings it SETS on one view by value; this one COPIES the
+# whole dialog from one view onto many and sets no value. Widening it would
+# make its proof stale for a job it does not do - the same split as
+# APPLY_VIEW_FILTER (one filter, built) and COPY_VIEW_FILTERS (a view's set,
+# copied). APPLY_VIEW_TEMPLATE was read too: it LOCKS a template on a view and
+# leaves the template in the project; this leaves no template and no lock.
+#
+# THE SUN TOO - the owner, the same day: "cover all kind of settings, even
+# the sun settings, everything". Whether a template carries a view's Sun
+# Setting is not in the API reference, so the source view's own
+# SunAndShadowSettings are copied member by member (study, start, end,
+# sunrise to sunset, interval, azimuth, altitude, relative to view, ground
+# plane - the members SET_SUN_SETTINGS, PROVEN, writes) and read back.
+# sunSettings "keep" leaves each view's sun as it was.
+#
+# NOT KNOWN WITHOUT A REAL REVIT (NEEDS-CHECKING Group JC):
+#   - that ApplyViewTemplateParameters carries Cast Shadows across - the
+#     whole route rests on it (JC1);
+#   - that a plan's template copies onto a 3D view or an elevation, or is
+#     refused (JC4);
+#   - whether a view shares its sun settings with another view, and what a
+#     copy onto it then does (JC5a);
+#   - whether a template shipped in DefaultMetric already has shadows on and
+#     could be the source (JC6).
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Copies the whole Graphic Display Options dialog of one view - or of a view
+  template - onto other views: Cast Shadows, Show Ambient Shadows, Ambient
+  Light and Photographic Exposure with the visual style, lighting, edges,
+  sketchy lines and background - and the view's sun settings: the study, its
+  date and time, the sun's angles and the ground plane. Tick Cast Shadows
+  once by hand, then spread it. No view template is left behind and nothing
+  is locked.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The view whose dialog is copied, as the Project Browser names it - or a
+    # view template's name.
+    - name: sourceView
+      type: View
+      source: request
+    - name: targetViews
+      type: IList<View>
+      source: request
+    # "keep" leaves each target's sun settings as they were; left out, the
+    # source view's sun is copied too.
+    - name: sunSettings
+      type: string
+      source: request
+      optional: true
+      absent: copy
+  provides:
+    - name: viewsCopied
+      # Views whose readable display settings read back as the source's.
+      role: result
+      type: int
+    - name: sunCopied
+      # Views whose sun settings read back as the source view's.
+      role: accounting
+      type: int
+    - name: readBack
+      # Each view as it reads afterwards - evidence, never the count.
+      role: accounting
+      type: string
+    - name: blockedByTemplate
+      # Views whose own view template holds Graphic Display Options, so they
+      # will not take them. Never a view it changed (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why NOTHING WAS CHANGED, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. View.CreateViewTemplate,
+  IsViewValidForTemplateCreation, GetTemplateParameterIds,
+  Get/SetNonControlledTemplateParameterIds, ApplyViewTemplateParameters,
+  ViewTemplateId, HasDisplayStyle, DisplayStyle, SunlightIntensity,
+  ShadowIntensity, GetViewDisplayModel, GetSketchyLines, GetBackground,
+  View.SunAndShadowSettings with its SunAndShadowType, Start/EndDateAndTime,
+  SunriseToSunset, TimeInterval, IsTimeIntervalValid, Azimuth, Altitude,
+  RelativeToView, UsesGroundPlane, GroundPlaneLevelId and
+  IsGroundPlaneLevelValid, and BuiltInParameter.GRAPHIC_DISPLAY_OPTIONS - read off RevitAPI.xml of 2020
+  through 2027 on 2026-10-24, present and alike on all eight. No release has
+  a member for Cast Shadows, Ambient Shadows, Ambient Light or Photographic
+  Exposure, so no #if is needed.
+
+# ROUTING - the same rows are in SET_GRAPHIC_DISPLAY_OPTIONS.
+#
+#   "copy the shadows from Level 1 to the other plans"     -> here
+#   "turn on cast shadows in these views like Level 1"      -> here
+#   "match the graphic display options of this view"        -> here
+#   "copy the sun and shadows of Level 1 to Level 2"        -> here
+#   "set the sun to 10 am in this view"                     -> SET_SUN_SETTINGS,
+#                                                              a value on one view
+#   "shadow intensity 25 in this view"                      -> SET_GRAPHIC_DISPLAY_OPTIONS,
+#                                                              a value on one view
+#   "put the plan template on these views"                  -> APPLY_VIEW_TEMPLATE,
+#                                                              a template kept and locked
+#   "make a template from this view"                        -> CREATE_VIEW_TEMPLATE_FROM_VIEW
+#   "copy the filters to the other views"                   -> COPY_VIEW_FILTERS
+
+utterances:
+  - copy the graphic display options from Level 1 to the other floor plans
+  - turn on cast shadows in these views the same as Level 1
+  - match the shadows and lighting of this view in the other views
+  - spread the ambient shadows from this view to the rest of the plans
+  - copy the sun settings and shadows from Level 1 to the other plans

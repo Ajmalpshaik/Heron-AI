@@ -1,0 +1,44 @@
+# NEEDS-CHECKING Group JC - COPY_GRAPHIC_DISPLAY_OPTIONS, DRAFT since
+# 2026-10-24 (row 5b-1336). docs/needs-checking/group-jc.md is the whole
+# plan; this file is its JC1 to JC3.
+#
+#     python tools/batch-prove.py tools/jobs/graphic-display-copy-jc-2026-10-24.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/graphic-display-copy-jc-2026-10-24.yaml
+#
+# THE MODEL is Group JC's rig (JC0), never a working model: the modeller's
+# Project1 house (Revit 2020, DefaultMetric) SAVED as "Heron JC Shadows.rvt"
+# in %TEMP%\heron-work\group-jc, holding
+#   'Level 1'            Cast Shadows TICKED BY HAND, shadow intensity 25
+#   'Level 1 - Colour 2' Cast Shadows off, no view template
+#   'Level 2'            a view template "Heron JC Held" that INCLUDES
+#                        Graphic Display Options
+#
+# EVERY RUN HERE IS ROLLED BACK. Cast Shadows cannot be read through Revit's
+# API, so the positive's real evidence is the modeller's eye on the plan in
+# JC1's kept run (try-once), not this batch.
+#
+# THE NEGATIVE IS A TARGET HELD BY ITS OWN TEMPLATE, never a cleared value.
+# The other negative the plan names - a source with shadows OFF carrying OFF
+# - is JC2 and needs eyes on the view, so it is run by hand.
+
+model: Heron JC Shadows (scratch copy of Project1), Revit 2020
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: copy-graphic-display-options
+    set:
+      sourceView: "Level 1"
+      targetViews: "Level 1 - Colour 2"
+    negative-set:
+      sourceView: "Level 1"
+      targetViews: "Level 2"
+    expect: viewsCopied
+    note: >
+      JC1's rolled-back half and JC3. Positive: viewsCopied 1, sunCopied 1, readBack
+      'Level 1 - Colour 2' with shadow 25 as 'Level 1', and no template left
+      (REPORT the templates after if in doubt). Negative: viewsCopied 0,
+      refused "every one is held by its own view template", blockedByTemplate
+      naming 'Level 2' and "Heron JC Held".
