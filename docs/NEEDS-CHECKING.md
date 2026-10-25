@@ -1010,6 +1010,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-iz.md`](needs-checking/group-iz.md)
 
+## Group JB - a nested part that came in upside down flips its work plane: `FLIP_ELEMENTS` version 3 (2026-10-24)
+
+**Its own file:** [`needs-checking/group-jb.md`](needs-checking/group-jb.md)
+
 ## Group JC - Cast Shadows ticked once and copied to other views through a view template: `COPY_GRAPHIC_DISPLAY_OPTIONS` version 1 (2026-10-24)
 
 **Its own file:** [`needs-checking/group-jc.md`](needs-checking/group-jc.md)
