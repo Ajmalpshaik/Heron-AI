@@ -36,9 +36,9 @@ python tools/prove-agent.py check      which proofs have gone stale
 
 `fingerprint` is a hash of the agent's source, normalised to `/` separators and `\n` line endings. If
 the source changes, `check` reports **STALE** — an answer about code that has since moved on, which is
-different from a wrong answer. **Measured 2026-10-18, `check` reports every proof here STALE**: each
-agent's source has changed since it was signed, so each is a record of what was seen then, not evidence
-about the code today. Which agents have a proof at all: `ls brain/agent-proofs/*.yaml` - the file name
+different from a wrong answer. **Measured 2026-10-18, `check` reported every proof here STALE**; all
+fifteen were run again on Revit 2020 and signed on 2026-10-25, and `check` is the only answer to
+whether they still are. Which agents have a proof at all: `ls brain/agent-proofs/*.yaml` - the file name
 is the agent's id in [the registry](../../docs/28-agent-registry.md).
 
 The normalisation is not cosmetic. The fragment side learned it on 2026-09-06, when all sixteen proven
