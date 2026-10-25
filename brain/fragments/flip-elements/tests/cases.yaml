@@ -24,6 +24,16 @@ positive:
       flipped = 0 and no door moves on the plan; each door's line in
       `roomsSwapped`, and REPORT_DOOR_ROOM_LINKS finds no disagreement after
 
+  - given: >
+      version 3 - in a scratch family, a work-plane-based nested part placed on
+      a reference plane whose normal points away from the side it sits on, so
+      it came in facing inward and upside down; flipWorkPlane true, flipHand
+      and flipFacing false (Group JB1)
+    expect: >
+      flipped = 1 and one line in `workPlaneFlips`: not flipped -> flipped, the
+      facing reversed, and a bounding box that has moved to the side the part
+      should sit on. Look at it in 3D - the line is what a wrong flip returns too
+
 negative:
   - given: a family instance whose author gave it NO flip control
     expect: >
@@ -53,6 +63,16 @@ negative:
       it flips, its From and To Room are not touched, and `roomsLeft` names it as
       a window
 
+  - given: >
+      version 3 - a nested part that is not work-plane-based (CanFlipWorkPlane
+      false), flipWorkPlane true, flipHand and flipFacing false (Group JB0)
+    expect: >
+      flipped = 0, the part named in `cannotFlipWorkPlane` and its id in
+      `cannotFlip`, `workPlaneFlips` empty, and it has not moved - nothing
+      forced, no exception
+
 second_route:
   - the element's own flip arrows in Revit, clicked once by hand on one instance
+  - version 3 - the same part's work plane flipped by hand in Revit, and its
+    bounding box read the same way
   - one Ctrl+Z puts the whole batch back (Golden Rule 16)
