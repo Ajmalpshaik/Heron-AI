@@ -80,8 +80,16 @@ def check(condition, what):
         FAILURES.append(what)
 
 
+# core.autocrlf PINNED ON EVERY CALL, because the scratch repositories must not
+# inherit the machine's line endings. With `core.autocrlf=true` - a Windows
+# PC's usual git - the clones checked main's files out with CRLF, and sections
+# 3 and 4 failed four "byte for byte as main wrote it" checks that were about
+# the machine, not renumber.py (row 5b-1337). `-c`, not `git config`: a clone's
+# checkout runs before any repository config exists, and a setting from the
+# environment (GIT_CONFIG_COUNT) outranks the repository's own.
 def git(where, *args, **kw):
-    done = subprocess.run(["git"] + list(args), cwd=where, capture_output=True,
+    done = subprocess.run(["git", "-c", "core.autocrlf=false"] + list(args),
+                          cwd=where, capture_output=True,
                           text=True, encoding="utf-8", timeout=60)
     if done.returncode != 0 and not kw.get("may_fail"):
         raise RuntimeError("git %s failed: %s" % (" ".join(args), done.stderr))

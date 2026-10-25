@@ -704,6 +704,32 @@ def compare(a, b):
 
 MIN_TRACKING_ROWS = 3
 
+# Numbers in a reply that ECHO THE REQUEST rather than describe what was
+# found, per operation - read off the add-in's own source, never guessed.
+# `select_by_category` answers `categories` with how many category names the
+# request held (`wanted.Count` in RevitOperations.cs), so a category the model
+# has none of answers `categories: 1, selected: 0`. The empty test below asked
+# every number to be zero, never saw that as empty, and HERON-REVIT-SEL-008's
+# signed proof says no input came back empty when three did (row 5b-1339).
+# An echoed number stays in the tracking row as evidence; it only cannot make
+# an answer non-empty. An operation not named here is judged on every number,
+# as before.
+REQUEST_ECHO = {
+    "select_by_category": ("categories",),
+}
+
+
+def empty_answer(operation, numbers):
+    """True when nothing in a reply's numbers says something was found.
+
+    `numbers` are the reply's numeric keys outside the envelope. A reply with
+    none, or whose only numbers echo the request, is empty; otherwise every
+    number left must be zero.
+    """
+    echo = REQUEST_ECHO.get(operation, ())
+    found = [v for k, v in numbers.items() if k not in echo]
+    return all(v == 0 for v in found)
+
 
 def cmd_vary(args):
     """Run one agent on ONE model across several values of one argument.
@@ -763,7 +789,7 @@ def cmd_vary(args):
     bridge = live[str(args.session)]
     where = describe(ask(bridge, "count_elements"))
 
-    rows, refusals = [], []
+    rows, refusals, empty = [], [], []
     for value in values:
         reply = ask(bridge, args.operation, {args.arg_name: value})
         if not reply.get("ok"):
@@ -776,6 +802,8 @@ def cmd_vary(args):
         rows.append({"input": "%s=%s" % (args.arg_name, value),
                      "value": ", ".join("%s: %s" % (k, numbers[k])
                                         for k in sorted(numbers)) or "(nothing numeric)"})
+        if empty_answer(args.operation, numbers):
+            empty.append(rows[-1]["input"])
 
     for value, error, message in refusals:
         w("  %s=%s was REFUSED: %s - %s%s"
@@ -793,15 +821,12 @@ def cmd_vary(args):
             "EVERY value came back the same. An agent ignoring its input "
             "produces exactly that, which is what tracking exists to rule "
             "out - vary the input until the answer moves")
-    empty = [r for r in rows if r["value"] == "(nothing numeric)"
-             or all(part.endswith(" 0") or part.endswith(": 0")
-                    for part in r["value"].split(", "))]
     if empty:
         gaps.append(
             "D-30's NEGATIVE LEG WAS RUN AND IS RECORDED: %s returned an "
             "empty answer, so this agent does have an input that makes it "
             "correctly return nothing. That is a real negative case and not "
-            "a D-53 substitute" % empty[0]["input"])
+            "a D-53 substitute" % empty[0])
     else:
         gaps.append(
             "no input in this set came back empty, so D-30's negative leg is "
@@ -1019,5 +1044,30 @@ def main(argv=None):
     }[args.command](args)
 
 
+def hand_back():
+    """Free the models this command held, the way the bridge client's own
+    command line does (`hand_back_models`, D-141).
+
+    Each run of this tool is a conversation of its own, so a model it asked
+    about stayed held until the add-in's quiet timeout and the NEXT command
+    was refused *"in use by another chat"* - by this one (row 5b-1338). The
+    client's rule is kept whole: with HERON_CONVERSATION_ID set the
+    conversation is borrowed and nothing is handed back, and only Revits this
+    process asked about a model are told. A run that never opened a bridge
+    has nothing to give back.
+    """
+    client = sys.modules.get("heron_bridge_client")
+    if client is not None and callable(getattr(client, "hand_back_models", None)):
+        client.hand_back_models()
+
+
+def run(argv=None):
+    """main(), then hand back what it held - however it ended."""
+    try:
+        return main(argv)
+    finally:
+        hand_back()
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(run())
