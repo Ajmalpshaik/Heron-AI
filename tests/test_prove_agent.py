@@ -35,7 +35,9 @@ writing a proof, which is the one thing a test must never do.
 
 import importlib.util
 import io
+import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -43,6 +45,7 @@ import types
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOL = os.path.join(ROOT, "tools", "prove-agent.py")
+CLIENT = os.path.join(ROOT, "mcp", "client")
 
 FAILURES = []
 
@@ -120,6 +123,56 @@ def quiet(fn, *a, **k):
         return fn(*a, **k), was.write("") or sys.stdout.getvalue()
     finally:
         sys.stdout = was
+
+
+class _Pipe(object):
+    """A pipe handle that answers every line it is sent, and keeps the ops."""
+
+    def __init__(self, said, answer):
+        self.said, self.answer, self.out = said, answer, b""
+
+    def write(self, data):
+        for line in data.decode("utf-8").splitlines():
+            if line.strip():
+                self.said.append(json.loads(line).get("op"))
+                self.out += (json.dumps(self.answer) + "\n").encode("utf-8")
+
+    def read(self, size):
+        chunk, self.out = self.out[:size], self.out[size:]
+        return chunk
+
+    def close(self):
+        pass
+
+
+class _Stub(object):
+    """A Revit for cmd_vary: one reply per value of the varied argument."""
+
+    def __init__(self, replies):
+        self.pid, self.replies = "1", replies
+
+    def request(self, op, op_args=None, **_kw):
+        if op == "count_elements":
+            return {"ok": True, "document": "A", "count": 10}
+        return dict(self.replies[list(op_args.values())[0]], ok=True)
+
+
+def vary_gap(tool, operation, replies):
+    """Run cmd_vary on a stub Revit; the draft's text, or '' if none."""
+    was = tool.bridges
+    tool.bridges = lambda client_id=None: [_Stub(replies)]
+    try:
+        code, _ = quiet(tool.cmd_vary, types.SimpleNamespace(
+            agent=AGENT, operation=operation, session="1",
+            arg_name="category", arg_values=",".join(replies), client_id=None))
+    finally:
+        tool.bridges = was
+    path = tool.draft_path(AGENT)
+    if code != 0 or not os.path.exists(path):
+        return ""
+    text = io.open(path, encoding="utf-8").read()
+    os.remove(path)
+    return text
 
 
 def main():
@@ -314,6 +367,50 @@ def main():
         check(code == 1, "two values are refused before any Revit is opened")
         check(str(getattr(tool, "MIN_TRACKING_ROWS", 0)) in spoke,
               "and it says how many it wants, from its own constant")
+
+        print()
+        print("10. A COMMAND HANDS BACK THE MODEL IT HELD WHEN IT ENDS")
+        print("    Each run is a conversation of its own (D-141), so a model it")
+        print("    held stayed held, and the next command was refused \"in use")
+        print("    by another chat\" - by this one (row 5b-1338). The real")
+        print("    bridge client, a stub Revit behind a stub pipe.")
+        section_10(tool)
+
+        print()
+        print("11. vary(): A NUMBER THAT ECHOES THE REQUEST IS NOT AN ANSWER")
+        print("    select_by_category's `categories` counts the names asked")
+        print("    for, so a category the model has none of answers")
+        print("    `categories: 1, selected: 0` - and was never seen as empty")
+        print("    (row 5b-1339).")
+        mep = {"Ducts": {"categories": 1, "selected": 728},
+               "Pipes": {"categories": 1, "selected": 488},
+               "Flex Pipes": {"categories": 1, "selected": 0}}
+        text = vary_gap(tool, "select_by_category", mep)
+        check("NEGATIVE LEG WAS RUN" in text and "category=Flex Pipes" in text,
+              "select_by_category's `categories: 1, selected: 0` is recorded "
+              "as D-30's negative leg")
+        check("categories: 1, selected: 0" in text,
+              "and the echoed number is still in the tracking row as evidence")
+        found = dict((k, {"categories": 1, "selected": n})
+                     for k, n in (("Ducts", 728), ("Pipes", 488), ("Air Terminals", 309)))
+        text = vary_gap(tool, "select_by_category", found)
+        check(text and "NEGATIVE LEG WAS RUN" not in text,
+              "but `categories: 1, selected: 309` is not empty")
+        zero = dict((n, 0) for n in ("distinctParameters", "elements", "listed",
+                                     "notListed", "typesRead"))
+        params = {"Ducts": dict(zero, distinctParameters=69, elements=728,
+                                listed=69, typesRead=3),
+                  "Pipes": dict(zero, distinctParameters=72, elements=488,
+                                listed=72, typesRead=1),
+                  "Flex Pipes": dict(zero)}
+        text = vary_gap(tool, "read_parameters", params)
+        check("NEGATIVE LEG WAS RUN" in text and "category=Flex Pipes" in text,
+              "read_parameters' all-zero reply is still recorded as empty")
+        other = dict((k, {"categories": 1, "selected": 0, "x": n})
+                     for k, n in (("Ducts", 1), ("Pipes", 2), ("Flex Pipes", 3)))
+        text = vary_gap(tool, "list_somethings", other)
+        check(text and "NEGATIVE LEG WAS RUN" not in text,
+              "and an operation not named as echoing is judged on every number")
     finally:
         shutil.rmtree(home, ignore_errors=True)
 
@@ -327,6 +424,82 @@ def main():
     print("PASSED - a signature is recorded as it was given, or it is refused")
     print("with the evidence still there to sign again.")
     return 0
+
+
+def section_10(tool):
+    run = getattr(tool, "run", None)
+    check(callable(run), "the tool has run(), which ends every command")
+    if not callable(run):
+        run = tool.main
+    if CLIENT not in sys.path:
+        sys.path.insert(0, CLIENT)
+    try:
+        import heron_bridge_client as C
+    except BaseException:                          # noqa: BLE001
+        check(False, "the bridge client imports")
+        return
+    saved = dict((k, os.environ.get(k)) for k in
+                 ("HERON_CONVERSATION_ID", "HERON_CLIENT_ID"))
+    was_discover, was_sessions = C.discover, tool.cmd_sessions
+    said = []
+
+    def revit():
+        bridge = C.Bridge({"pid": 7, "pipeName": "heron-7", "token": "t"}, "x.json")
+        bridge._connect = lambda timeout: _Pipe(said, {"ok": True, "document": "A",
+                                                       "count": 10})
+        return bridge
+    try:
+        os.environ.pop("HERON_CONVERSATION_ID", None)
+        C._ASKED.clear()
+        C.discover = lambda prune=True: ([revit()], [], [], [])
+        code, _ = quiet(run, ["sessions"])
+        check(code == 0 and "count_elements" in said,
+              "`sessions` asked the stub Revit about its model")
+        check(said[-1:] == ["release_models"],
+              "and handed it back when it ended - %r" % (said,))
+        check(not C._ASKED, "and the client forgets the Revit it handed back to")
+
+        del said[:]
+
+        def broken(args):
+            tool.bridges(args.client_id)[0].request("count_elements")
+            raise RuntimeError("a command that dies half way")
+        tool.cmd_sessions = broken
+        died = False
+        try:
+            quiet(run, ["sessions"])
+        except RuntimeError:
+            died = True
+        check(died and said[-1:] == ["release_models"],
+              "a command that raises still hands back - %r" % (said,))
+        tool.cmd_sessions = was_sessions
+
+        del said[:]
+        C._ASKED.clear()
+        os.environ["HERON_CONVERSATION_ID"] = "a-series-of-commands"
+        quiet(run, ["sessions"])
+        check("count_elements" in said and "release_models" not in said,
+              "with HERON_CONVERSATION_ID set nothing is handed back - the "
+              "series' owner does that")
+        C._ASKED.clear()
+
+        del said[:]
+        os.environ.pop("HERON_CONVERSATION_ID", None)
+        quiet(run, [])
+        check(said == [], "a run that opened no Revit sends nothing")
+    finally:
+        C.discover, tool.cmd_sessions = was_discover, was_sessions
+        C._ASKED.clear()
+        for key, value in saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+    text = io.open(TOOL, encoding="utf-8").read()
+    tail = text[text.rfind('if __name__ == "__main__":'):]
+    check(re.search(r"sys\.exit\(run\(\)\)", tail) is not None,
+          "and the command line goes through run(), so it is done every time")
 
 
 if __name__ == "__main__":
