@@ -71,6 +71,20 @@ positive:
       a cable tray connector, rectangular 300 x 100 mm, tied to both
       parameters and read back (version 4)
 
+  - given: >
+      VERSION 5, row 5b-1334. A Duct Accessories family whose duct runs along
+      X: a 3 mm ring extrusion sketched on the end plane Casing Right (X 150),
+      outer 640 x 440 and opening 600 x 400 (Width x Height), its faces locked
+      to the ring and duct planes; nothing else lies on Casing Right.
+      facePlane "Casing Right", system "Supply Air", sizeParameters "Width,
+      Height" holding 600 and 400
+    expect: >
+      a rectangular Supply Air duct connector 600 x 400 mm at X 150, Y 0, Z 0,
+      pointing right (+X), `connector` saying it is centred in the ring face's
+      opening and sized by it. Then Length, Width and Height flexed and the
+      connector read again: it stays at the ring's centre on Casing Right and
+      reads the new Width and Height
+
 negative:
   - given: system "Global" in a Generic Models family
     expect: refused - Global is a duct and a pipe system both; "Global pipe" or "Global duct" asked for
@@ -121,6 +135,13 @@ negative:
     expect: >
       refused, "2 faces of joined or cut forms lie on "Box Top" (facing up,
       up)", sizedBy empty, and no connector in the family
+
+  - given: >
+      VERSION 5, the ring family of the positive, sizeParameters "Width,
+      Height" holding 640 and 440 - the ring's OUTER size, not its opening
+    expect: >
+      refused, "The opening of the ring face on "Casing Right" is 600 x 400
+      mm ...", nothing made - the port is the opening, never the flange
 
 second_route:
   - >

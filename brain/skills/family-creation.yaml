@@ -276,7 +276,16 @@ purpose: >
       row 5b-431). Make the pad a 2 mm EXTRUDED disc - kind=extrusion, a
       circle the flange's size, startMm and endMm 2 mm apart - with its outer
       face on a NEW plane 2 mm beyond the flange, and name the connector by
-      that plane; it then went on first time. A pipe or duct port is sized by a length
+      that plane; it then went on first time. A DUCT ACCESSORY whose ends are a
+      NESTED frame (a casing frame with angle flanges) has no face of its own
+      at the ends: a connector cannot go on a reference plane through the API,
+      and one on a nested family's face sits off-centre and does not follow
+      Length (measured 2026-10-24, Revit 2020, row 5b-1334). Build a 3 mm RING
+      on each end plane - opening the duct size, outside 20 mm larger, faces
+      locked to the duct and ring planes, Visible linked to a Yes/No set No -
+      and name the connector by that end plane: version 5 measures a ring face
+      by its opening and centres the port in it (DRAFT until Group JA is
+      signed). A pipe or duct port is sized by a length
       parameter even in a fixed family - add it and its value (steps 2 and 3)
       first. A DRAIN's pipe connectors need Allow Slope Adjustments ticked
       before the pipework drawn from them can be given a fall:

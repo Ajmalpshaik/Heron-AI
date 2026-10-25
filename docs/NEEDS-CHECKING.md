@@ -1010,6 +1010,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-iz.md`](needs-checking/group-iz.md)
 
+## Group JA - a duct port on a flange ring, sized by its opening: `ADD_FAMILY_CONNECTOR` version 5 (2026-10-24)
+
+**Its own file:** [`needs-checking/group-ja.md`](needs-checking/group-ja.md)
+
 ## Group JB - a nested part that came in upside down flips its work plane: `FLIP_ELEMENTS` version 3 (2026-10-24)
 
 **Its own file:** [`needs-checking/group-jb.md`](needs-checking/group-jb.md)
