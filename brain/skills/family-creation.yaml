@@ -303,7 +303,10 @@ purpose: >
       release, a level-based one only from Revit 2024 - then
       LOCK_NESTED_FAMILY_TO_PLANES by its own Left, Right, Front, Back, Top,
       Bottom or centres, then LINK_NESTED_TYPE_PARAMETER for its type's sizes
-      and LINK_FAMILY_PARAMETER for its instance's. A nested part whose TYPE
+      and LINK_FAMILY_PARAMETER for its instance's. A nested part that came in
+      facing inward or upside down - its plane's normal points the wrong way -
+      is FLIP_ELEMENTS with flipWorkPlane=true, never a rotation (row 5b-1335).
+      A nested part whose TYPE
       the family's types choose - the 5 kW or the 7 kW motor - is
       ADD_FAMILY_TYPE_PARAMETER, which also swaps a sweep's loaded profile.
       A NESTED PART THAT IS NOT A FAMILY YET - the tyre of a car, the motor of
@@ -490,6 +493,8 @@ needs:
   - LOAD_FAMILY
   - PLACE_NESTED_FAMILY
   - LOCK_NESTED_FAMILY_TO_PLANES
+  # Step 11's nested part that came in upside down (version 3, row 5b-1335).
+  - FLIP_ELEMENTS
   - LINK_NESTED_TYPE_PARAMETER
   - ADD_FAMILY_TYPE_PARAMETER
   - LINK_FAMILY_PARAMETER
