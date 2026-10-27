@@ -100,41 +100,67 @@ when the thing you hit is on no list at all.
 
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
-**State at a glance — 2026-10-18, late evening.** Read from the root README's [Status](../README.md#status),
-the [newest sitting](handover-archive/2026-10-18-the-safety-rails-met-revit-and-heron-s-data-left-the-store.md)
-and `git log --oneline -15 origin/main`. Every row names where its evidence is; where a register row says
-otherwise, the row wins, and what is unfinished is `python tools/check-gaps.py`, never this table.
+**State at a glance — 2026-10-27, morning.** Read from the root README's [Status](../README.md#status), the
+[newest sitting](handover-archive/2026-10-18-the-safety-rails-met-revit-and-heron-s-data-left-the-store.md) —
+which is also the **last one written** — and `git log --oneline -90 origin/main`. Between 2026-10-19 and
+2026-10-25 roughly 77 pull requests merged ([#674](https://github.com/Ajmalpshaik/Heron-AI/pull/674) to
+[#751](https://github.com/Ajmalpshaik/Heron-AI/pull/751)) and **not one sitting note was written for any of
+them** — `ls docs/handover-archive/` ends at 2026-10-18 — so the git log, the register groups and the cards
+are the whole account of that week. Every row below names where its evidence is; where a register row says
+otherwise, **the row wins**, and what is unfinished is `python tools/check-gaps.py`, never this table.
+**PASS, FAIL, NOT RUN and NEEDS REAL REVIT are four different things here and no row merges them.**
 
 | Area | State | Evidence |
 |---|---|---|
-| Phase 0 — the bridge, Steps 1 to 5 | **Proven** in Revit 2020 and 2024 | [§3 below](#3-what-has-been-witnessed-at-a-real-revit) · [00e](00e-field-notes-proven-bridge.md) |
-| Step 6 — the move | **Measured on Revit 2024 only:** +200.0000 mm on three ducts, a pinned one beside them unmoved, one undo. A failure forced mid-move (`G-12`) not run | [Group D](needs-checking/group-d.md) |
-| Keep or Discard, and the rails beside it — try-once, run guard, dialogs, rollback check, run clock, `stop` | **Run in Revit 2024 and 2027** on 2026-10-18, PASS, FAIL and NOT RUN kept apart row by row; the faults are rows 5b-1090 to 5b-1095. Nothing of it on 2020 | [Group ET](needs-checking/group-et.md) and groups EM, EX, EL, EO, EZ, ER, EK, ES, EV, EJ, CP · [section 5b](fragment-issues/section-5b-rows-401-425.md) |
-| The fixes since | **Built, not run in Revit:** rows 5b-1090 to 5b-1094 and 5b-1100, and 5b-1137 ([#666](https://github.com/Ajmalpshaik/Heron-AI/pull/666)) — a change kept in a model never saved now says so on its answer's first line, in the MCP server only. Row 5b-1095 — answers lost when many connect at once — recorded, not fixed | [section 5b](fragment-issues/section-5b-rows-401-425.md) |
-| The Ask to Keep switch | **Built, not run in Revit** — compiled for 2020 to 2027, off by default | [D-138](DECISIONS.md) · [Group HG](needs-checking/group-hg.md) |
-| The documentation, 2026-10-18 | **Docs only, merged:** [#663](https://github.com/Ajmalpshaik/Heron-AI/pull/663), [#664](https://github.com/Ajmalpshaik/Heron-AI/pull/664) and [#665](https://github.com/Ajmalpshaik/Heron-AI/pull/665) brought the README and the docs, with their diagrams, to the day; [#667](https://github.com/Ajmalpshaik/Heron-AI/pull/667) recorded the eight defects that pass found as rows 5b-1129 to 5b-1136, not repaired; [#668](https://github.com/Ajmalpshaik/Heron-AI/pull/668) put a dated *As built* note under every section of the specification, 00 to 00d, that no longer holds. **Open when this was written:** [#669](https://github.com/Ajmalpshaik/Heron-AI/pull/669) — [D-139](DECISIONS.md) corrects the specification's mistakes in place, the original words struck through beside them, and Q-72 to Q-78 put the policy choices no decision settles to the owner | [section 5b](fragment-issues/section-5b-rows-401-425.md) · [OPEN-QUESTIONS](OPEN-QUESTIONS.md) · `python tools/owner-queue.py` |
-| Revit releases | **Loads on 2020, 2024, 2026 and 2027** (2026-10-17). On 2026 no fragment could run; the repair has not been run in Revit | [Group EQ](needs-checking/group-eq.md) · [row 5b-575](fragment-issues/section-5b-rows-401-425.md) · [Group GW](needs-checking/group-gw.md) |
-| The fragment library | Mostly **PROVEN**, the rest **DRAFT** — `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` | [D-30](DECISIONS.md) · [FRAGMENT-ISSUES](FRAGMENT-ISSUES.md) |
+| Phase 0 — the bridge, Steps 1 to 5 | **PROVEN** in Revit 2020 and 2024 | [§3 below](#3-what-has-been-witnessed-at-a-real-revit) · [00e](00e-field-notes-proven-bridge.md) |
+| Step 6 — the move | **measured-on-one-release:** Revit 2024 only — +200.0000 mm on three ducts, a pinned one beside them unmoved, one undo. A failure forced mid-move (`G-12`) is **NOT RUN** | [Group D](needs-checking/group-d.md) |
+| Keep or Discard, and the rails beside it — try-once, run guard, dialogs, rollback check, run clock, `stop` | **measured-on-one-release:** run in Revit 2024 and 2027 on 2026-10-18, PASS, FAIL and NOT RUN kept apart row by row; the faults are rows 5b-1090 to 5b-1095. **Nothing of it on 2020**, and nothing in the week since changed that | [Group ET](needs-checking/group-et.md) and groups EM, EX, EL, EO, EZ, ER, EK, ES, EV, EJ, CP · [section 5b](fragment-issues/section-5b-rows-401-425.md) |
+| The fixes to those rails | **built-not-run:** rows 5b-1090, 5b-1091, 5b-1092 and 5b-1100 are still open and 5b-1137 is built in the MCP server only; 5b-1095 — answers lost when many connect at once — is recorded, not fixed. Which of them are open is derived, never typed: `python tools/open-defects.py` | [section 5b](fragment-issues/section-5b-rows-401-425.md) |
+| The Ask to Keep switch | **built-not-run** — compiled for 2020 to 2027, off by default | [D-138](DECISIONS.md) · [Group HG](needs-checking/group-hg.md) |
+| One model, one chat at a time | **built-not-run** — compiled for 2020 to 2027, the hold's rule run without Revit; the owner says when it is run | [D-141](DECISIONS.md) · [Group HK](needs-checking/group-hk.md) |
+| Anything a kept change deletes, asked in Revit's own box first | **built-not-run** — compiled for 2020 to 2027, and **not to be run until the owner says so** | [D-142](DECISIONS.md) · [Group HL](needs-checking/group-hl.md) · [row 5b-1200](fragment-issues/section-5b-rows-401-425.md) |
+| Revit releases | **Loads on 2020, 2024, 2026 and 2027** (2026-10-17). On 2026 no fragment could run; that repair is **built-not-run**. Which release each proof names is derived by the command at the top of Group EQ, never typed | [Group EQ](needs-checking/group-eq.md) · [row 5b-575](fragment-issues/section-5b-rows-401-425.md) · [Group GW](needs-checking/group-gw.md) |
+| The fragment library | **PROVEN** and **DRAFT**, both derived: `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c`. **Every proof taken since 2026-10-19 was taken on Revit 2020**, with a few second legs on 2024 | [D-30](DECISIONS.md) · [FRAGMENT-ISSUES](FRAGMENT-ISSUES.md) |
+| The proving nights of 2026-10-21 to 2026-10-25 | **PROVEN on Revit 2020**, signed by Ajmal PS, every run rolled back on scratch copies of sample models — the batches of [#721](https://github.com/Ajmalpshaik/Heron-AI/pull/721), [#733](https://github.com/Ajmalpshaik/Heron-AI/pull/733) and, on Revit 2024, [#736](https://github.com/Ajmalpshaik/Heron-AI/pull/736). How many each took is on the cards, not here | rows 5b-1309, 5b-1310, 5b-1327 to 5b-1331 in [section 5b](fragment-issues/section-5b-rows-401-425.md) |
+| Materials — every tab of the Material Browser | **PROVEN on Revit 2020**, 2026-10-20, signed by Ajmal PS | [Group IA](needs-checking/group-ia.md) · [D-146](DECISIONS.md) |
+| Rendering, the sun, display options, the framing camera | **PROVEN on Revit 2020**, 2026-10-20 and 21, signed by Ajmal PS | [Group IB](needs-checking/group-ib.md) · [Group IF](needs-checking/group-if.md) · [Group IN](needs-checking/group-in.md) |
+| The visualiser — a whole look in one call | **PROVEN on Revit 2020**, 2026-10-20 evening, signed after two faults were fixed (rows 5b-1282, 5b-1283) | [Group IC](needs-checking/group-ic.md) |
+| Rebar — thirteen tools | **one PROVEN on Revit 2020:** `LIST_REBAR_TYPES`, row HY17, 2026-10-23, signed by Ajmal PS. The other twelve are **NOT RUN** | [Group HY](needs-checking/group-hy.md) · [row 5b-1330](fragment-issues/section-5b-rows-401-425.md) |
+| Family tools that have met Revit — pictures of forms, connectors, a labelled radius and dimension, a hexagon on a parameter, a duct port on a flange ring | **PROVEN on Revit 2020** between 2026-10-22 and 2026-10-25, signed by Ajmal PS; `IP7` and `IS5` also on Revit 2024 | Groups [IO](needs-checking/group-io.md), [IP](needs-checking/group-ip.md), [IR](needs-checking/group-ir.md), [IS](needs-checking/group-is.md), [IU](needs-checking/group-iu.md), [IV](needs-checking/group-iv.md), [IZ](needs-checking/group-iz.md), [JA](needs-checking/group-ja.md) |
+| Family tools still waiting — model text, the selection modes, a picture past a floor, a toposolid simplify, a work-plane flip, display options copied | **built-not-run** — DRAFT, and nothing in these groups has run in Revit | Groups [IQ](needs-checking/group-iq.md), [IT](needs-checking/group-it.md), [IX](needs-checking/group-ix.md), [IY](needs-checking/group-iy.md), [JB](needs-checking/group-jb.md), [JC](needs-checking/group-jc.md) |
+| Schedules, the shared parameter file, labels, text types, a light source | **built-not-run** — nothing in these groups has run in Revit; Group IK's one run answered a question of its own, **not its rows** | Groups [IG](needs-checking/group-ig.md), [IH](needs-checking/group-ih.md), [II](needs-checking/group-ii.md), [IJ](needs-checking/group-ij.md), [IK](needs-checking/group-ik.md), [IL](needs-checking/group-il.md), [IM](needs-checking/group-im.md) |
+| Wall finishes from room boundaries, and the three parameter writers | **built-not-run** — DRAFT until re-proved | [Group HX](needs-checking/group-hx.md) · [Group HZ](needs-checking/group-hz.md) · [D-145](DECISIONS.md) |
+| A night with nobody at the keyboard — `batch-prove --unattended` | **built-not-run.** The rules hold without Revit; **nobody has watched this code close Revit's "Virtual Memory - High Usage" warning**, and no row of the group has run | [Group IW](needs-checking/group-iw.md) |
+| The add-in's own agents | **measured-on-one-release:** all fifteen proofs re-run on Revit 2020 on 2026-10-25 against named models and signed by Ajmal PS — `python tools/prove-agent.py check` reads them current, none stale. **Their `.cs` headers still say DRAFT**, because flipping one stales the proof that justified it: row 5b-1340, and it is the owner's call | [`brain/agent-proofs/README.md`](../brain/agent-proofs/README.md) · [row 5b-1340](fragment-issues/section-5b-rows-401-425.md) |
 | Skills | Every one **DRAFT** — `grep -h '^heron-status:' brain/skills/*.yaml \| sort \| uniq -c` | [`brain/README.md`](../brain/README.md) |
-| The installer | v0.1.0 **published** 2026-10-08, unsigned, for testing — [D-91](DECISIONS.md) says a release is signed, and whether a decision should say otherwise until signing is built is [Q-77](open-questions/tier-2.md), open; **run** on the owner's laptop on 2026-10-17 and 18, the installer built locally from `main` each time — EP1 fetched the add-in from v0.1.0 | [Group AC](needs-checking/group-ac.md) · [Group EP](needs-checking/group-ep.md) |
-| Heron's data home, and the Companion button | D-135's carry **PASS**; the Companion button **FAIL** — Revit runs with a temporary folder of its own. The fix is built, not run in Revit | [Group HF](needs-checking/group-hf.md) · [row 5b-1100](fragment-issues/section-5b-rows-401-425.md) · [D-136](DECISIONS.md) |
-| Companion, HVAC, fire, loads, sprinklers, families | **Built, not proven** — each page's status line says how far | [40](40-heron-companion.md) to [47](47-sprinkler-layout-from-the-model.md) |
+| The installer | v0.1.0 **published** 2026-10-08, unsigned, for testing — [D-91](DECISIONS.md) says a release is signed, and whether a decision should say otherwise until signing is built is [Q-77](open-questions/tier-2.md), open; **run** on the owner's laptop on 2026-10-17 and 18, the installer built locally from `main` each time — EP1 fetched the add-in from v0.1.0. Nothing since 2026-10-18 has touched it | [Group AC](needs-checking/group-ac.md) · [Group EP](needs-checking/group-ep.md) |
+| Heron's data home, and the Companion button | D-135's carry **PASS**; the Companion button **FAIL** — Revit runs with a temporary folder of its own. The fix is **built-not-run** | [Group HF](needs-checking/group-hf.md) · [row 5b-1100](fragment-issues/section-5b-rows-401-425.md) · [D-136](DECISIONS.md) |
+| Companion, HVAC, fire, loads, sprinklers, families | **built-not-run** — each page's status line says how far. The HVAC Load Calculation sizing added 2026-10-19 has run **neither in Revit nor in the Companion** | [40](40-heron-companion.md) to [47](47-sprinkler-layout-from-the-model.md) · [44 §13](44-building-loads-from-the-model.md) |
+| The gates | **PASS** on this checkout today, and **twelve** decide a pull request since `check-secrets` became one; `check-supersessions` runs inside `check-docs` as its section 13 | [D-143](DECISIONS.md) · [D-144](DECISIONS.md) · [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) |
+| The documentation | This file and [`work-notes/BALANCE-OF-WORK.md`](work-notes/BALANCE-OF-WORK.md) brought to 2026-10-27; the specification 00 to 00d carries dated *As built* notes and D-139's in-place corrections since 2026-10-18, and nothing in the week since re-checked them | [D-139](DECISIONS.md) · [`docs/README.md`](README.md) |
 | The owner's PCs | The office PC is **retired**; the laptop is the only one, and its Claude is the Microsoft Store build | [Group HF](needs-checking/group-hf.md) |
 | Unfinished, and waiting on the owner | Derived, never typed | `python tools/check-gaps.py` · `python tools/owner-queue.py` |
 
-**Next, on the laptop with Revit open:** HF4 again (the Companion button) and the Ask to Keep switch
-([Group HG](needs-checking/group-hg.md)); then `G-12`, and [A16b](needs-checking/group-a.md) — the
-rollback that reported success and kept a rename — which nothing since has re-run. **Next, without
-Revit:** the owner's answers to the open questions, Q-72 to Q-78 among them — the `A DECISION` bucket of
-`python tools/owner-queue.py`.
+**Next, on the laptop with Revit open:** the twelve rebar tools that have never met a model
+([Group HY](needs-checking/group-hy.md)) and the family and annotation groups still at **built-not-run**
+above — IQ, IT, IX, IY, JB, JC and IG to IM; then HF4 again (the Companion button) and the Ask to Keep
+switch ([Group HG](needs-checking/group-hg.md)), `G-12`, and [A16b](needs-checking/group-a.md) — the
+rollback that reported success and kept a rename — which nothing since has re-run.
+[`batch-prove --unattended`](needs-checking/group-iw.md) is the tool for the long ones, and **its own rows
+have never run**, so watch the first night rather than trusting it. **Next, without Revit:** the owner's
+answers to the open questions — Q-72 to Q-78 and the five that joined them since, Q-79 to Q-82 and Q-85 —
+the `A DECISION` bucket of `python tools/owner-queue.py`; and row 5b-1340, which decides how an add-in
+agent is ever promoted out of DRAFT.
 
-> **The dated notes in this block stop at 2026-09-27.** Everything since — the HVAC loads and
-> sprinkler work, the family-editing fragments, the project-location setters, and the safety rails
-> that met Revit on 2026-10-18 — is in [Latest sittings](#latest-sittings) below and in
-> `git log --oneline -30 origin/main`. Read the newest sitting first. The notes here still hold for what
-> they name, except two lines of the installer note of 2026-09-22: a release **has** been published —
-> v0.1.0, 2026-10-08 ([Group AC](needs-checking/group-ac.md)) — and the installer **has** run on Windows,
-> on the owner's laptop ([Group EP](needs-checking/group-ep.md)).
+> **The dated notes in this block stop at 2026-09-27.** What came between them and 2026-10-18 — the HVAC
+> loads and sprinkler work, the family-editing fragments, the project-location setters, and the safety
+> rails that met Revit on 2026-10-18 — is in [Latest sittings](#latest-sittings) below. **What came after
+> 2026-10-18 is in no sitting note at all:** the week of 2026-10-19 to 2026-10-25 wrote none, so for it
+> read `git log --oneline -90 origin/main`, the register groups the table above links, and the fragment
+> cards. Read the newest sitting first. The notes here still hold for what they name, except two lines of
+> the installer note of 2026-09-22: a release **has** been published — v0.1.0, 2026-10-08
+> ([Group AC](needs-checking/group-ac.md)) — and the installer **has** run on Windows, on the owner's
+> laptop ([Group EP](needs-checking/group-ep.md)).
 
 > ## TALK WAS RUN IN REVIT, LOST A MESSAGE, AND WAS REMOVED - 2026-09-27, evening
 >
@@ -254,6 +280,12 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 file per sitting, newest first in that folder's README. These are the newest 12. Write a new note there,
 not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves any that land here anyway.
 
+> **The newest is 2026-10-18, and the week after it wrote none.** Roughly 77 pull requests merged between
+> 2026-10-19 and 2026-10-25 — the family-tool groups, the rebar tools, the material and rendering tools,
+> three proving nights, the delete box and the agent-proof re-runs — and **not one of them left a sitting
+> note.** For that week the git log, the register groups the table at the top links, and the fragment
+> cards are the only account. Writing one costs a session minutes and this is what it buys.
+
 | Date | Sitting |
 |---|---|
 | 2026-10-18 | [THE SAFETY RAILS MET REVIT, AND HERON'S DATA LEFT THE STORE APP'S COPY](handover-archive/2026-10-18-the-safety-rails-met-revit-and-heron-s-data-left-the-store.md) |
@@ -306,13 +338,19 @@ ls brain/fragments/ | wc -l                                   # fragments in the
 grep -rh '^heron-status:' brain/fragments/*/fragment.yaml \
   | sort | uniq -c                                            # how many are PROVEN
 python tools/agent-count.py                                   # agents built, and what is left
+python tools/prove-agent.py check                             # add-in agent proofs: current or stale
 ls tests/test_*.py | wc -l                                    # suites
 python tools/check-gaps.py                                    # what is unfinished vs waiting
+python tools/balance-of-work.py                               # everything still open, in one page
 ```
 
 **[The top of this file](#where-this-stands-right-now--read-this-then-9a-or-9) is the live
-picture** and is kept current. This section exists only for the part that a command cannot tell
-you: what has been witnessed at a real machine, below.
+picture** — **but only as live as the date on it**, and that is the lesson of 2026-10-27: the table
+said *2026-10-18* while about 77 pull requests had merged past it. **Read its date first.** If the date
+is not today's, believe `git log --oneline origin/main`, the register groups and
+`python tools/balance-of-work.py` over it, and bring the table to the day before using it. This section
+exists only for the part that a command cannot tell you: what has been witnessed at a real machine,
+below.
 
 **What has changed since sections 1 to 3 were written**, so an old reading is not carried forward:
 the repository is **public**; the executor exists, so a fragment can be *run* rather than merely
@@ -359,7 +397,15 @@ matter how green the gates are.
 > For what has met a real Revit **since** — the fragment library, the write path, the Keep or Discard
 > box and the rails beside it — read [the table at the top of this file](#where-this-stands-right-now--read-this-then-9a-or-9)
 > and the [NEEDS-CHECKING](NEEDS-CHECKING.md) groups it links; [FRAGMENT-ISSUES.md](FRAGMENT-ISSUES.md)
-> holds what was found wrong. **The rollback is not settled:** a run clock's rollback was seen in Revit
+> holds what was found wrong. **Between 2026-10-19 and 2026-10-25 that list grew on Revit 2020 only** —
+> the material tools ([Group IA](needs-checking/group-ia.md)), the rendering and visualiser tools
+> ([IB](needs-checking/group-ib.md), [IC](needs-checking/group-ic.md), [IF](needs-checking/group-if.md),
+> [IN](needs-checking/group-in.md)), eight family-tool groups ([IO](needs-checking/group-io.md) to
+> [JA](needs-checking/group-ja.md)), one of the thirteen rebar tools
+> ([HY](needs-checking/group-hy.md) row HY17), and the fifteen add-in agent proofs re-run and
+> re-signed on 2026-10-25 (`python tools/prove-agent.py check`). **A second leg on another release was
+> taken for only a handful** — `IP7` and `IS5` on Revit 2024 — so *proved* still means *proved on 2020*
+> for nearly all of it. **The rollback is not settled:** a run clock's rollback was seen in Revit
 > 2024 and 2027 ([Group EZ](needs-checking/group-ez.md)), and [`A16b`](needs-checking/group-a.md) — a
 > rollback that reported success and kept a rename — has not been re-run. The tables that used to sit here
 > listing *built, never met a real Revit* were a Phase 0/1 inventory and are gone: most of what
@@ -797,6 +843,18 @@ anything.
 | **`R1b` — show him the trust model working** | [D-14](DECISIONS.md) stays **Proposed**. He agreed the direction and said *"show me it working at the PC first."* Use the framing that landed: a family has **a maker** and **an approval status**, and nobody would put those on one dropdown. Phase 2 may be designed against the two axes meanwhile; it may **not** be called settled. Still open — it is `R1b` in the register, and the queue prints it |
 | ~~`R1`, `R2` — read the decisions back~~ | **DONE 2026-08-29.** All twenty-one read back and confirmed. It happened in conversation rather than at the PC, and **after** Phase 2 was built rather than before — both recorded rather than smoothed over. What that cost was **nothing measurable**: the two reversed within hours did not move a fourth time |
 | ~~Copyright~~ | **CONFIRMED 2026-08-28 — Ajmal PS is correct.** Consistent in all four places: the Apache appendix in `LICENSE`, `NOTICE`, `<Company>` in `Directory.Build.props`, and `README.md`. The appendix is filled in rather than left as the `[name of copyright owner]` placeholder, which is the one usually missed |
+
+### What has joined the owner's queue since 2026-10-18
+
+Still a pointer, not a list — `python tools/owner-queue.py` is the list. But three things the week of
+2026-10-19 to 2026-10-25 put to the owner are worth naming here, because each is a **decision** rather
+than work:
+
+| | |
+|---|---|
+| **Q-79 to Q-82, and Q-85** | Joined Q-72 to Q-78 in the `A DECISION` bucket: what the DISCLAIMER should say about compliance (Q-79), what the boundary guard does when its script is missing (Q-80) or when `$CLAUDE_PROJECT_DIR` names another checkout (Q-81), whether Heron should ever drive Revit's Edit Label dialog itself (Q-82), and what to do about a void Revit's API cannot make cut a hosted family's template host (Q-85). Which are open is derived: `python tools/check-docs.py` |
+| **Row 5b-1340 — how an add-in agent is ever promoted** | An agent's status lives in its `.cs` header and `prove-agent.py`'s fingerprint hashes the whole file, so editing DRAFT to PROVEN stales the proof that justified it. All fifteen proofs are signed and current; **not one agent reads PROVEN.** Moving the status out of the header, leaving the header out of the fingerprint, or reading the signed proof as the status are three different decisions | [row 5b-1340](fragment-issues/section-5b-rows-401-425.md) |
+| **When D-141 and D-142 are run in Revit** | Both say in their groups that the owner says when, and neither has run | [Group HK](needs-checking/group-hk.md) · [Group HL](needs-checking/group-hl.md) |
 
 **And one question that came out of building, still open and owned by nobody's register:** whether a
 layout that Revit refuses part of should place the rest or roll back entirely. [Golden Rule
