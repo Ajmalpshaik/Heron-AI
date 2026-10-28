@@ -1,0 +1,186 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: facade
+name: Build a facade - pick the route by what the facade is, then follow it
+domain: revit.elements
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  A FACADE IS NOT ONE THING TO REVIT. A glazed wall, a skin on a sloped mass,
+  a diamond pattern on a twisting tower, a row of fins and a rainscreen of
+  panels are five different kinds of element, each with its own route. Step 0
+  picks the route; each route is short and names its own method where one
+  exists. Every size is the modeller's, in millimetres, and none is assumed
+  (D-33, D-71); every type and family is named by the modeller and already in
+  the model - Heron loads one only with LOAD_FAMILY on the modeller's word.
+
+  0. WHAT IS IT? Ask, or read it off what the modeller said:
+     A. glazing along a line - a shopfront, a storefront, a ribbon window, a
+        curved glass wall: a CURTAIN WALL. Route A.
+     B. a skin on the faces of a MASS or a generic model - a sloped or
+        faceted tower, a roof glazed with the walls: a CURTAIN SYSTEM.
+        Route B.
+     C. a PATTERN that bends with a free-form surface - diamonds, hexagons,
+        triangles, a twisting tower: a DIVIDED SURFACE filled with a
+        pattern-based panel, inside the conceptual mass. Route C.
+     D. pieces placed along or across the face - fins, louvres, brise-soleil,
+        shading blades, brackets: a family repeated. Route D.
+     E. panels cut out of a solid wall - rainscreen, cladding with joints,
+        bands and reveals: PARTS or WALL SWEEPS on the wall. Route E.
+     A facade is often two of these at once - glazing between fins is A then
+     D - and each is done in turn, never merged into one call.
+
+  ROUTE A - CURTAIN WALL. Follow the curtain-wall method: REPORT_CURTAIN_WALL_TYPE
+     first, DUPLICATE_TYPE + CHANGE_ELEMENT_TYPE when only this wall must
+     change, CREATE_WALL with the curtain type (a curved one is one wall on an
+     arc), SET_CURTAIN_WALL_GRID and SET_CURTAIN_WALL_MULLIONS on the type.
+     Then, on THIS wall only:
+     - a bay or a transom the type's spacing does not give, or "divide into
+       N equal panels": ADD_CURTAIN_GRID_LINES, with a mullion type when the
+       new lines need mullions. The type is not touched.
+     - spandrels, solid or louvred panels by row or column: SET_CURTAIN_PANEL_TYPE.
+       One panel picked on screen, or a door in one panel: SELECT_IN_REGION
+       on that panel, then CHANGE_ELEMENT_TYPE (the building-shell method's
+       curtain-wall door).
+     REPORT_CURTAIN_ELEMENTS at the end - lines each way, mullions and
+     panels by type, measured off the wall. The calls not failing is not the
+     proof; the wall is.
+
+  ROUTE B - CURTAIN SYSTEM ON A MASS. The mass is in the project and the
+     curtain system type is in the model.
+     1. CREATE_CURTAIN_SYSTEM on the mass's faces - its side faces by
+        default, all of them or its top only when the modeller says so. The
+        grid and mullions come from the CURTAIN SYSTEM TYPE, which is set by
+        the modeller in Type Properties; Heron has no setter for a curtain
+        system type yet.
+     2. SET_CURTAIN_PANEL_TYPE for panels that differ, as route A.
+     3. CREATE_MASS_FLOORS when the same mass also gives the floors.
+     4. REPORT_CURTAIN_ELEMENTS on the system.
+
+  ROUTE C - PATTERNED SURFACE. Inside the conceptual mass (or an in-place
+     mass), in this order:
+     1. CREATE_CONCEPTUAL_FORM for the surface itself, when it is not built.
+     2. Build the panel FIRST, with the pattern-based-family-creation method,
+        on the tile pattern the surface will use - Rectangle, Rhomboid,
+        Hexagon, Triangle and the rest. The tile pattern is picked by hand in
+        the Type Selector; Revit gives no call to set it.
+     3. LOAD_FAMILY the panel into the mass, then DIVIDE_FAMILY_SURFACE on the
+        face with the U and V divisions the modeller gives, and the panel as
+        its pattern - every cell takes one.
+     4. REPORT_DIVIDED_SURFACES for the cells, and CHECK_SURFACE_FIT when the
+        panels must be flat or within a size: a twisted cell cannot be one
+        flat sheet of glass, and that is a finding for the architect, never
+        smoothed over.
+     5. In the project: the mass is placed, and CREATE_MASS_FLOORS where it
+        gives floors.
+
+  ROUTE D - FINS, LOUVRES, SHADING. The repeated piece is a family:
+     - it spans between points it is clicked on (a fin from sill to head, a
+       blade between two mullions, a strut): the adaptive-family-creation
+       method builds it, PLACE_ADAPTIVE_COMPONENTS places each one on its
+       points.
+     - it is a fixed shape on a face (a bracket, a canopy arm): a face-based
+       family (hosted-family-creation), PLACE_FAMILY_ON_FACE.
+     - it repeats at an even spacing: place one, then ARRAY_ELEMENTS - or
+       ARRAY_ELEMENTS_RADIAL round a curved facade.
+     - its section is a profile swept along an edge (a continuous horizontal
+       louvre, a slab-edge fin): profile-family-creation, then CREATE_EDGE_SWEEPS
+       or a family sweep with SET_FAMILY_SWEEP_PROFILE.
+     A blade that must sit inside a curtain wall's grid is placed AFTER the
+     grid is final; moving the grid later does not move the blade.
+
+  ROUTE E - CLADDING CUT FROM A WALL. The wall is built first with the
+     layers the modeller names (REPORT_COMPOUND_STRUCTURE to read them).
+     - rainscreen or panel joints: CREATE_PARTS on the wall, DIVIDE_PARTS
+       with the joint lines or a grid, OFFSET_PART_FACES to push panels out,
+       SET_PARTS_EXCLUDED for a panel that is left out. MERGE_PARTS to join
+       two back.
+     - a horizontal band, a cornice, a reveal: PLACE_WALL_SWEEPS with the
+       sweep or reveal type the modeller names.
+     - a colour or a material on one face only: PAINT_FACES.
+
+  NOT YET - each is said when asked, never worked round: setting a curtain
+  SYSTEM TYPE's grid and mullions (the wall type's setter does not reach it);
+  a grid line REMOVED or a segment cut on one wall (Revit's own Add/Remove
+  Segments tool); a mullion moved or its join changed; a stacked wall built
+  from scratch; a curtain wall embedded in a basic wall told to cut it (done
+  by Revit when the curtain type has Automatically Embed ticked - read it with
+  REPORT_CURTAIN_WALL_TYPE); the tile pattern of a divided surface.
+
+# The words the modeller says when the facade is the whole job. A single step
+# - "set the curtain grid", "place adaptive fins" - reaches its own tool.
+utterances:
+  - build a facade
+  - make a parametric facade
+  - model the building facade with glazing and fins
+  - create a facade on this mass
+  - make a curtain wall facade with spandrel panels
+  - put a diamond pattern facade on the tower
+  - model a rainscreen cladding facade
+  - add louvres and shading fins to the facade
+
+# CAPABILITIES, never fragment ids - route by route, in the order the purpose
+# gives.
+needs:
+  # Route A
+  - REPORT_CURTAIN_WALL_TYPE
+  - DUPLICATE_TYPE
+  - CHANGE_ELEMENT_TYPE
+  - CREATE_WALL
+  - SET_CURTAIN_WALL_GRID
+  - SET_CURTAIN_WALL_MULLIONS
+  - ADD_CURTAIN_GRID_LINES
+  - SET_CURTAIN_PANEL_TYPE
+  - SELECT_IN_REGION
+  - REPORT_CURTAIN_ELEMENTS
+  # Route B
+  - CREATE_CURTAIN_SYSTEM
+  - CREATE_MASS_FLOORS
+  # Route C
+  - CREATE_CONCEPTUAL_FORM
+  - LOAD_FAMILY
+  - DIVIDE_FAMILY_SURFACE
+  - REPORT_DIVIDED_SURFACES
+  - CHECK_SURFACE_FIT
+  # Route D
+  - PLACE_ADAPTIVE_COMPONENTS
+  - PLACE_FAMILY_ON_FACE
+  - ARRAY_ELEMENTS
+  - ARRAY_ELEMENTS_RADIAL
+  - CREATE_EDGE_SWEEPS
+  - SET_FAMILY_SWEEP_PROFILE
+  # Route E
+  - REPORT_COMPOUND_STRUCTURE
+  - CREATE_PARTS
+  - DIVIDE_PARTS
+  - OFFSET_PART_FACES
+  - SET_PARTS_EXCLUDED
+  - MERGE_PARTS
+  - PLACE_WALL_SWEEPS
+  - PAINT_FACES
+
+preconditions:
+  - a project (or, for route C, a conceptual mass family) is open in front, and it is the model the modeller means
+  - the route is agreed - which of A to E, or which two in which order - before the first change
+  - every type and family named is already in the model, or the modeller has said to load it
+  - every size, spacing and count is the modeller's, in millimetres, and none is assumed (D-33, D-71)
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Written 2026-10-28 on the owner's request to make Heron strong on every kind
+  of facade. It is the map; the curtain-wall, pattern-based-family-creation,
+  adaptive-family-creation, hosted-family-creation and profile-family-creation
+  methods own their own steps and are not repeated here. ADD_CURTAIN_GRID_LINES,
+  SET_CURTAIN_PANEL_TYPE and CREATE_CURTAIN_SYSTEM were written the same day
+  at DRAFT and are refused for a kept change until proved (D-117). The whole
+  method is DRAFT until each route has been run on a scratch model with a
+  negative case (D-30). The coverage, route by route, is in
+  docs/work-notes/plans/facade-capability.md.
