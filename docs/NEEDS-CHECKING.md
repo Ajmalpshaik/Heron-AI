@@ -1034,6 +1034,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jf.md`](needs-checking/group-jf.md)
 
+## Group JK - an adaptive component's points turned to the host: `SET_ADAPTIVE_POINT_ORIENTATION` version 1 (2026-10-28)
+
+**Its own file:** [`needs-checking/group-jk.md`](needs-checking/group-jk.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

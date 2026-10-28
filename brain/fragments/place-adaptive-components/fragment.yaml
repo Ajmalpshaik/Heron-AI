@@ -87,6 +87,9 @@ compatibility-note: >
 #   "place the adaptive beam along the divided path"  -> here, onNodesOf
 #   "make a placement point in this adaptive family"  -> PLACE_ADAPTIVE_POINTS
 #   "where are the nodes of the divided path"         -> REPORT_DIVIDED_SURFACES
+#   "make the placement points orient to host"        -> SET_ADAPTIVE_POINT_ORIENTATION -
+#                                                        inside the adaptive family,
+#                                                        before it is placed here
 
 utterances:
   - place this adaptive panel on these four points
