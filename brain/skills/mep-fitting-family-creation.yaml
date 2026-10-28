@@ -163,7 +163,9 @@ purpose: >
        - an ELBOW's connectors: "angle=[Angle]" on both, so each connector's
          Angle follows the family's. An elbow whose connector angle is not
          linked does not flex in a run - the commonest reason a custom elbow
-         is placed at one angle only.
+         is placed at one angle only. ANGLE MUST ALREADY EXIST AS AN INSTANCE
+         PARAMETER (step 4): finding none, the tool makes a TYPE one, which
+         the run cannot drive - read from its code, 2026-10-28.
        - a DRAINAGE fitting (sanitary, storm, a sloped run):
          "allowSlopeAdjustments=yes" on its pipe connectors, so a run laid to
          a fall joins it a little off square. Whether Revit keeps the tick on
@@ -172,18 +174,25 @@ purpose: >
      A fitting's connectors are NOT linked as a pair and NOT Global: that is
      an accessory's or equipment's way of passing a system through.
 
-  9. CHECK THE FITTING, READ-ONLY, BEFORE FLEXING IT. REPORT_FAMILY_CONNECTORS
-     and REPORT_FAMILY_TEMPLATE, compared against the kind table, item by
-     item, and every miss named:
-       - the Part Type is the kind asked, and the connector count matches it;
-       - every connector is Fitting, sized by a parameter, pointing out;
-       - exactly one is primary, on the X axis;
-       - an elbow's connector Angles read the family's Angle;
-       - each connector sits on the end plane of its leg, and the planes are
-         where the table's centre-to-end puts them at the current size;
-       - REPORT_FAMILY_SIZE_TABLE: every size the modeller's pipe or duct
-         segment comes in has a row, and the ones that do not are listed -
+  9. CHECK THE FITTING, READ-ONLY, BEFORE FLEXING IT - three reads, every
+     miss named with its fix:
+       - CHECK_FAMILY_STANDARDS, in the family: PASS, FAIL or WARN for Work
+         Plane-Based (a fitting must be No), a Part Type left Normal, a
+         connector pointing into the body, a union's, transition's,
+         flange's or coupling's two ports not opposite on one line, and a
+         connector size driven by no parameter or by a TYPE one - with how
+         many formulas hang off it.
+       - CHECK_FAMILY_SIZE_TABLES: every size_lookup finds its table, its
+         column and a row; a key that is an instance parameter - a
+         fitting's Nominal Diameter - is reported ROWS NOT CHECKED, so
+         REPORT_FAMILY_SIZE_TABLE is read against the sizes the modeller's
+         pipe or duct segment comes in, and the sizes with no row are listed:
          those fall to the default.
+       - REPORT_FAMILY_CONNECTORS, compared against the kind table by hand,
+         for the four things neither check reads yet: the connector count
+         matches the Part Type; every connector's system is Fitting; exactly
+         one is primary, on the X axis; an elbow's connector Angles read
+         "(<- Angle)".
 
   10. FLEX_FAMILY, then LOAD AND RUN. FLEX_FAMILY at the SMALLEST and the
       LARGEST size in the table and one between; an elbow at 11.25, 22.5, 30,
@@ -271,6 +280,8 @@ needs:
   # before it is flexed.
   - REPORT_FAMILY_CONNECTORS
   - REPORT_FAMILY_FORMS
+  - CHECK_FAMILY_STANDARDS
+  - CHECK_FAMILY_SIZE_TABLES
   # FAMILY-CREATION's steps, which this skill says still hold.
   # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
   # GUIDs, against the family, before ADD_FAMILY_SHARED_PARAMETERS writes.

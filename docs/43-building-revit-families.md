@@ -704,11 +704,16 @@ Search extracts only - `help.autodesk.com`, the Autodesk forums, Arkance's and R
 for direct fetch from the cloud session. What it changed is
 [`mep-fitting-family-creation`](../brain/skills/mep-fitting-family-creation.yaml).
 
-- **Routing preference groups (SOURCED, the API reference 2026 through an extract).**
-  `RoutingPreferenceRuleGroupType`: Segments, Elbows, Junctions (takeoff, tee, wye, tap), Crosses,
-  Transitions, Unions, MechanicalJoints, TransitionsRectangularToRound, TransitionsRectangularToOval,
-  TransitionsOvalToRound and Caps. The extract also said some older reference pages list fewer of them -
-  **UNSURE** which release each arrived in, until the reference assemblies are read.
+- **Routing preference groups (API, read in the XML of all eight releases 2020 to 2027, 2026-10-28).**
+  `RoutingPreferenceRuleGroupType`: Segments, Elbows, Junctions ("e.g. takeoff, tee, wye, tap"), Crosses,
+  Transitions ("the multi-shape transitions may have their own groups"), Unions ("connect two segments
+  together"), MechanicalJoints ("connect fitting to fitting, segment to fitting, or segment to segment"),
+  TransitionsRectangularToRound, TransitionsRectangularToOval, TransitionsOvalToRound and Caps - the same
+  twelve members, Undefined among them, on every release. A web extract said older reference pages list
+  fewer; the assemblies do not. `AddRule`'s remark: it throws when "the rule is not valid for this group
+  (e.g. an elbow may not be added to the junction group)". `PartType` (all eight releases) holds TapAdjustable,
+  TapPerpendicular, SpudAdjustable, SpudPerpendicular, Pants, Offset, MultiPort, LateralTee, LateralCross,
+  PipeFlange and PipeMechanicalCoupling, and `PreferredJunctionType` holds Tee and Tap.
 - **Part Types by category (SOURCED, Autodesk Help through extracts).** Duct fittings (2017 help): Cap, Cross,
   Elbow, Lateral Cross, Lateral Tee, Multi Port, Offset, Pants, Tap - Adjustable, Tap - Perpendicular, Tee,
   Transition, Union, Wye. Pipe fittings (2022 help): Cap, Cross, Elbow, Flange, Lateral Cross, Lateral Tee,
