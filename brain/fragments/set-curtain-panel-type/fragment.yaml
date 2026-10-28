@@ -1,0 +1,263 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-128
+semantic-identity: "swap the panels in one row, one column or at each floor line of a curtain wall for solid, glazed or door panels, or a basic wall infill"
+kind: action
+domain: revit.elements
+capability: SET_CURTAIN_PANEL_TYPE
+# VERSION 1, 2026-10-28, written in a cloud session with no Revit. DRAFT until
+# NEEDS-CHECKING Group JI proves it on a named model with its negative case
+# (D-30); revit_change refuses to keep a change from it until then (D-117).
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# ONE JOB CHANGE_ELEMENT_TYPE DOES NOT. That fragment swaps the elements the
+# modeller selected, and on 2026-10-13 it turned three selected curtain panels
+# into doors (brain/skills/building-shell.yaml, step 9). So a SELECTION OF
+# PANELS is refused here, naming it - and that refusal is also the guard: a
+# sentence about selected panels that lands here cannot change the whole wall.
+# This one takes the WALL selected and picks the
+# panels BY WHERE THEY SIT on one wall - a row, a column, one cell, the row at
+# each floor line, or all of them - and changes them with
+# CurtainGrid.ChangePanelType, whose reference says that on a curtain wall it
+# takes a PanelType or a WallType: so a basic wall can go in as a solid
+# infill, the way report-curtain-elements says spandrels are usually modelled.
+#
+# ROWS AND COLUMNS ARE MEASURED OFF THE WALL, never read off Revit's U and V,
+# which its reference does not tie to vertical or horizontal on a wall
+# (SET_CURTAIN_WALL_GRID measures both for the same reason). Each grid line is
+# classed by the way it runs. ROW 1 IS THE BOTTOM: the horizontal lines'
+# heights, with the lowest and highest panel edge, are the row edges. COLUMN 1
+# IS AT THE WALL'S START END, the end it was drawn from - where its location
+# line begins - and the answer says whether that is its left or right end seen
+# from the wall's exterior side. A panel is in every row and column whose
+# middle its bounding box covers, so a panel merged across a grid line is in
+# both. A grid with a line at an angle has no rows or columns to count, and
+# only "all" reaches it.
+#
+# FLOOR LINES are the rows each level crosses - a level inside the wall's
+# height and inside one row. A level within 5 mm of a grid line has no row
+# straddling it, and the answer names it rather than guessing a row.
+#
+# INSTANCES, NOT THE TYPE. Only the panels picked change. The wall type and
+# its Curtain Panel - the panel a new cell gets - are left as they are; a
+# grid line added later makes cells of the type's panel, not of this one.
+#
+# THE NEW TYPE IS NAMED, never chosen and never loaded: a curtain panel type,
+# a curtain wall door or window type, or a basic or stacked wall type, by its
+# Properties name or its bare name when no other of those shares it. None
+# found is refused with the names the model has; two found is refused naming
+# both (D-54 s3). A curtain wall type is refused by name.
+#
+# SKIPPED, NOT FAILED: a panel another user holds in a shared model, checked
+# before the change and never taken; a panel Revit refuses with the two
+# exceptions ChangePanelType's reference names, with Revit's words and
+# whether it is pinned - Heron never unpins. When Revit refuses the type for
+# EVERY panel tried, the whole request is refused and nothing changes. A cell
+# whose panel id resolves to nothing - an empty cell - has nothing to change
+# and is counted, never chosen.
+#
+# A CHANGED PANEL MAY COME BACK WITH A NEW ID: ChangePanelType returns the
+# panel as it now is, and a panel that becomes a wall cannot keep its id. So
+# `changed` is read off the element Revit hands back, and the wall's grid is
+# read again afterwards for the count by type, before and after, in
+# `measured` - with how many came back with a new id.
+#
+# A CELL MAY SHOW A WALL INSTEAD OF ITS PANEL (Panel.FindHostPanel), so what a
+# cell is - for counting and for "already that type" - is what it shows.
+#
+# ASSUMPTIONS FOR THE PROOF, not settled by any reference - Group JI runs each:
+#   - that ChangePanelType changes a panel the wall's TYPE placed, which Revit
+#     shows pinned, without unpinning (ChangeTypeId did on 2026-10-13);
+#   - that a curtain wall door type is a PanelType to the API - `measured`
+#     prints the class Revit gives the named type;
+#   - that a door panel changes back to a glazed or solid one the same way;
+#   - which panels come back with a new id, and whether GetPanelIds then lists
+#     the wall or the panel it stands in for;
+#   - that a panel's change needs its wall editable too, which is why a wall
+#     another user holds refuses the whole request.
+#
+# ASSUMES AN OPEN TRANSACTION and opens none (Golden Rule 16). Every refusal
+# of the request is made before the first change; an exception other than the
+# two above stops the call, and nothing it did is kept.
+purpose: >
+  Swaps the panels at one place on a selected curtain wall - its bottom row,
+  its top row, row 3, column 2, one cell by row and column, or the row each
+  floor line crosses, where a spandrel goes - for "System Panel: Solid", a
+  curtain wall door, or a basic wall as a solid infill. Only those panels
+  change - nothing else on the wall or its type. The answer says how the rows and
+  columns were counted, what was skipped, and the wall's panels counted
+  before and after, read again off Revit.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # THE CURTAIN WALL ITSELF, SELECTED - Tab to it in Revit. One wall a call:
+    # two curtain walls are refused, because rows and columns are counted on
+    # one wall. A SELECTION OF PANELS IS REFUSED, naming CHANGE_ELEMENT_TYPE:
+    # panels the modeller picked are that card's job, and here a request meant
+    # for them could reach the whole wall. A curtain system is not done here.
+    - name: elements
+      type: IList<Element>
+    # THE NEW PANEL TYPE BY NAME, as Revit writes it: "System Panel: Solid", a
+    # curtain wall door type, or a basic wall type for a solid infill ("Basic
+    # Wall: Generic - 200mm"); the bare type name when no other panel, door,
+    # window or wall type shares it. Capitals count. A name the model does not
+    # have is refused with the names it has - Heron never loads a family.
+    - name: panelTypeName
+      type: string
+      source: request
+    # WHICH PANELS, semicolons between: "bottom row", "top row", "row 2",
+    # "first column", "last column", "column 3", "row 1 column 3" (one cell),
+    # "floor lines" (the row each level crosses), or "all". Rows count from the
+    # BOTTOM; columns from the wall's START end, the end it was drawn from -
+    # the answer says which side that is seen from outside.
+    - name: whichPanels
+      type: string
+      source: request
+  provides:
+    - name: changed
+      # Panels that now SHOW the new type, read off the element Revit hands
+      # back after the change - never counted off the call.
+      role: result
+      type: int
+    - name: differs
+      # Panels Revit took the change for that still show another type. A
+      # finding, never a success.
+      role: result
+      type: IList<string>
+    - name: alreadyThatType
+      # Panels picked that already showed the type, so nothing was written. The
+      # evidence it looked, never a change it made (D-52).
+      role: accounting
+      type: int
+    - name: chosen
+      # How many panels the positions reached - the size of the request, never
+      # a thing it changed (D-52).
+      role: accounting
+      type: int
+    - name: skipped
+      # Each panel left alone, and why: held by another user in a shared model,
+      # or refused by Revit - its words, and whether the panel is pinned.
+      role: accounting
+      type: IList<string>
+    - name: layout
+      # How the rows and columns were counted: their edges in mm, which end
+      # column 1 is, and the row each level crossed. A STRING, because a reply
+      # cuts a list to three items. Empty on most refusals.
+      role: accounting
+      type: string
+    - name: measured
+      # The wall's panels counted by type BEFORE and AFTER, the after read off
+      # its grid again; the class Revit's API gives the named type; how many of
+      # those chosen were locked or pinned; how many changed panels came back
+      # with a new id. Empty on a refusal made before the change.
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was changed, in plain words - for a type name the model
+      # does not have, WITH the names it has. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE PATH FOR EVERY RELEASE, read rather than remembered. On 2026-10-28
+  tools/api-surface read the reference assemblies of all eight releases, 2020
+  through 2027, and every member this calls carries one signature on all
+  eight: CurtainGrid's ChangePanelType(Element, ElementType) returning
+  Element, GetPanelIds, GetUnlockedPanelIds, GetUGridLineIds and
+  GetVGridLineIds; Panel.FindHostPanel; PanelType, deriving from FamilySymbol;
+  Wall.CurtainGrid, Wall.Orientation and WallType.Kind; CurtainGridLine.FullCurve;
+  Curve.Project, ComputeNormalizedParameter, Length and GetEndPoint;
+  IntersectionResult.Parameter; Level.ProjectElevation; Element.Pinned and its
+  bounding box; FamilyInstance.Host and CurtainSystem;
+  WorksharingUtils.GetCheckoutStatus with its owner; Document.Regenerate; and
+  Revit's own ArgumentException and InvalidOperationException, the two
+  ChangePanelType's reference names - caught by their type's name, because
+  only the add-in spells Revit's namespaces out. The reference text read is
+  RevitAPI.xml in the Nice3point 2024 package: on a curtain wall the new type
+  may be a PanelType or a WallType, and on a curtain system only a PanelType.
+  Categories are compared through new ElementId(BuiltInCategory), on every
+  release; no ElementId is built from a number and none is read as one.
+
+# ROUTING - the same rows are in CHANGE_ELEMENT_TYPE, SET_CURTAIN_WALL_MULLIONS,
+# SET_CURTAIN_WALL_GRID, REPORT_CURTAIN_ELEMENTS and REPLACE_MATERIAL.
+#
+#   "change the bottom row of panels on this curtain wall to solid panels" -> here
+#   "put spandrel panels on every floor line"   -> here, whichPanels floor lines
+#   "change panel type in the second column"    -> here, whichPanels column 2
+#   "make these curtain panels glazed"          -> CHANGE_ELEMENT_TYPE, with
+#                                                  those panels selected: the
+#                                                  selection already says which.
+#                                                  Where a selected cell holds a
+#                                                  basic wall, Revit's ChangeTypeId
+#                                                  is not known to take a panel
+#                                                  type - not measured; then here,
+#                                                  by its row and column
+#   "swap the curtain panel to a door panel"    -> CHANGE_ELEMENT_TYPE, with that
+#                                                  one panel selected - the way the
+#                                                  2026-10-13 house got its doors.
+#                                                  MEASURED through find on
+#                                                  2026-10-28: both sentences reach
+#                                                  HERE, and are not declared on
+#                                                  CHANGE_ELEMENT_TYPE - its card
+#                                                  says why. Here a selection of
+#                                                  panels is refused, naming that
+#                                                  card, and nothing changes
+#   "set the default curtain panel on the type" -> NOT HERE, and nothing does
+#                                                  yet. This changes panels on one
+#                                                  wall; the type's Curtain Panel
+#                                                  is an element reference, which
+#                                                  WRITE_ELEMENT_PARAMETERS refuses
+#   "change the mullions on this curtain wall"  -> SET_CURTAIN_WALL_MULLIONS. A
+#                                                  mullion is on the type's grid
+#                                                  lines; a panel fills a cell
+#   "set the curtain wall grid spacing"         -> SET_CURTAIN_WALL_GRID. The grid
+#                                                  makes the rows and columns this
+#                                                  counts
+#   "change the glass material in these panels" -> REPLACE_MATERIAL. A panel's
+#                                                  glass is its TYPE's material, so
+#                                                  every panel of that type changes
+#                                                  with it; this swaps the panel
+#   "which panel types are on this wall"        -> REPORT_CURTAIN_ELEMENTS - a
+#                                                  question must not land on a
+#                                                  write (D-86). It counts curtain
+#                                                  panels and names the basic walls
+#                                                  among them; it does not name the
+#                                                  curtain panel types yet
+#   "load a curtain wall door family"           -> LOAD_FAMILY, the modeller's
+#                                                  call. Never done here
+#   "draw a curtain wall"                       -> CREATE_WALL, with the points.
+#                                                  A first wording of this card's
+#                                                  purpose pulled the bare sentence
+#                                                  HERE; with this one it reaches a
+#                                                  reader, as it did before this
+#                                                  card (check-routing, 2026-10-28).
+#                                                  CREATE_WALL's card says why it
+#                                                  has not declared it
+#   "select all elements of type Curtain Wall"  -> NOT HERE. A first wording pulled
+#                                                  it here, a write, and
+#                                                  tests/test_routing_phrases.py
+#                                                  failed (5b-329's guard); with
+#                                                  this one it reaches
+#                                                  REPORT_CURTAIN_WALL_TYPE again
+
+utterances:
+  - change the bottom row of panels on this curtain wall to solid panels
+  - put spandrel panels on every floor line
+  - change panel type in the second column

@@ -161,3 +161,7 @@ utterances:
   - add vertical bars and ties to the selected columns
   - place column rebar in these concrete columns
   - put main bars and links in the round columns
+  # DECLARED 2026-10-28 BECAUSE THE TABLE ABOVE ALREADY CLAIMED IT. Measured by
+  # tools/check-routing.py that day, once SET_CURTAIN_PANEL_TYPE's "second
+  # column" was added: the sentence reached REPORT_HOST_REBAR, a reader.
+  - reinforce these columns

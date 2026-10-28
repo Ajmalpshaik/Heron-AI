@@ -158,6 +158,27 @@ compatibility-note: >
 #                                          curtain WALL; a curtain SYSTEM handed
 #                                          in is "not a wall"
 
+#   "change the bottom row of panels on this curtain wall to solid panels"
+#                                       -> SET_CURTAIN_PANEL_TYPE (DRAFT,
+#                                          2026-10-28). Measured through the
+#                                          retriever that day, before it existed,
+#                                          the sentence reached HERE - a write
+#                                          answered by a reader. Its answer counts
+#                                          the wall's panels by type before and
+#                                          after; asking which types are on a
+#                                          wall stays a question for here, which
+#                                          names the basic walls among the panels
+#                                          and does not yet name the curtain
+#                                          panel types
+#   "which panel types are on this wall" -> here, a question (D-86). Measured
+#                                          by the retriever on 2026-10-28, with
+#                                          SET_CURTAIN_PANEL_TYPE's first
+#                                          wording, it reached that WRITE first,
+#                                          this card second. The answer here counts the
+#                                          wall's curtain panels and names the
+#                                          basic walls among them; naming each
+#                                          curtain panel type is not done yet
+
 utterances:
   - what panels and mullions are in this curtain wall
   - what is in this curtain wall
@@ -178,3 +199,6 @@ utterances:
   # declared, and then that WRITE answered it on the trained backend - a
   # question landing on a write (D-86). Declared verbatim, as row 5b-387 did.
   - how much glass is in this facade
+  # DECLARED 2026-10-28 (D-86): the question reached SET_CURTAIN_PANEL_TYPE,
+  # a write, until it was declared here. See the row above.
+  - which panel types are on this wall

@@ -1038,6 +1038,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jh.md`](needs-checking/group-jh.md)
 
+## Group JI - curtain panels changed by where they sit on one wall - a row, a column, a floor line: `SET_CURTAIN_PANEL_TYPE` version 1 (2026-10-28)
+
+**Its own file:** [`needs-checking/group-ji.md`](needs-checking/group-ji.md)
+
 ## Group JJ - one curtain wall's own grid lines, added by position or in equal panels: `ADD_CURTAIN_GRID_LINES` version 1 (2026-10-28)
 
 **Its own file:** [`needs-checking/group-jj.md`](needs-checking/group-jj.md)

@@ -48,8 +48,9 @@ purpose: >
 
   NOT YET: a FIXED NUMBER of divisions - the count lives on each wall, not on
   the type, so the grid step refuses it and says so; one grid line added,
-  moved or removed by hand; the panel type, glazed or solid; an arched or
-  shaped head.
+  moved or removed by hand; the TYPE's own panel, glazed or solid; an arched
+  or shaped head. One wall's panels by row, column or floor line are
+  SET_CURTAIN_PANEL_TYPE, DRAFT until NEEDS-CHECKING Group JI proves it.
 
 # The words the modeller says when he wants a curtain wall.
 utterances:

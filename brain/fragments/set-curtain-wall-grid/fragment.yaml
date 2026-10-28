@@ -304,9 +304,14 @@ compatibility-note: >
 #   "draw a curtain wall"                  -> CREATE_WALL, with a curtain wall
 #                                             type as its wall type
 #   "tick adjust for mullion size",
-#   "change the curtain panel"             -> NOT HERE, and nothing does yet.
-#                                             Both are type settings this does
-#                                             not touch
+#   "set the default curtain panel on the type" -> NOT HERE, and nothing does
+#                                             yet. Both are type settings this
+#                                             does not touch
+#   "change the bottom row of panels on this curtain wall to solid panels"
+#                                          -> SET_CURTAIN_PANEL_TYPE (DRAFT,
+#                                             2026-10-28): one wall's panels, by
+#                                             the rows and columns this grid
+#                                             makes; the type is left alone
 
 utterances:
   - set the curtain wall grid spacing
