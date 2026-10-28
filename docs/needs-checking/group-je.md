@@ -78,8 +78,9 @@ not named by any call. The code run is fingerprint `7a2bb9c7f1223ace`, this bran
 | JE6 | NOT RUN | Revit 2024 was not open |
 | JE7 | NOT RUN | Revit 2027 was not open |
 
-`batch-prove` judged it PASS and wrote the draft; **nothing is signed and the card is still DRAFT.** Signing is
-the owner's.
+`batch-prove` judged it PASS and wrote the draft. **Signed by Ajmal PS on 2026-10-28** - `accept
+set-sheet-title-block --by "Ajmal PS"`, run in his own terminal on his word *"Yes, sign it"* - and the card set
+PROVEN in the same change. JE6 and JE7 are still owed, each as a `--release` entry.
 
 **What this group does not settle.** A real replace KEPT in a model goes through the add-in's delete question
 first ([D-142](../decisions/D-142.md)) - Revit counts what goes with each old title block. On the owner's
