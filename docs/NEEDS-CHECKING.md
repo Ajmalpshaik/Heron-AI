@@ -1038,6 +1038,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jh.md`](needs-checking/group-jh.md)
 
+## Group JJ - one curtain wall's own grid lines, added by position or in equal panels: `ADD_CURTAIN_GRID_LINES` version 1 (2026-10-28)
+
+**Its own file:** [`needs-checking/group-jj.md`](needs-checking/group-jj.md)
+
 ## Group JK - an adaptive component's points turned to the host: `SET_ADAPTIVE_POINT_ORIENTATION` version 1 (2026-10-28)
 
 **Its own file:** [`needs-checking/group-jk.md`](needs-checking/group-jk.md)
