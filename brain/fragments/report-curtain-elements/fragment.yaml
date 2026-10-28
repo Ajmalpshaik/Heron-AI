@@ -145,6 +145,14 @@ compatibility-note: >
 #                                          and mullion types by Revit's ids. This
 #                                          one counts what a placed wall has - its
 #                                          grid lines, panels and mullions
+#   "put a curtain system on the faces  -> CREATE_CURTAIN_SYSTEM (2026-10-28),
+#    of this mass", "make a facade on      which MAKES one. A question about a
+#    the mass faces"                       facade - "what is this facade made
+#                                          of", "how much glass is in this
+#                                          facade" - stays here and never lands
+#                                          on that write (D-86). This one reads a
+#                                          curtain WALL; a curtain SYSTEM handed
+#                                          in is "not a wall"
 
 utterances:
   - what panels and mullions are in this curtain wall
@@ -154,3 +162,9 @@ utterances:
   - how many grid lines in this curtain wall
   - break down this curtain wall
   - what is this facade made of
+  # ADDED 2026-10-28. The routing table above claims this sentence ("here for
+  # the COUNT"), and a comment is not indexed, so ranking decided: it reached
+  # here until CREATE_CURTAIN_SYSTEM's "make a facade on the mass faces" was
+  # declared, and then that WRITE answered it on the trained backend - a
+  # question landing on a write (D-86). Declared verbatim, as row 5b-387 did.
+  - how much glass is in this facade
