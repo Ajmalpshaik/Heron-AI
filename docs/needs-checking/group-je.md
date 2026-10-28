@@ -60,6 +60,27 @@ setup step in the library hands one in twice.
 then `accept set-sheet-title-block --release 2024 --by "Ajmal PS"` and the same for 2027. A row that fails
 reopens 5b-1343; nothing in a row changes to make it pass.
 
+### Results - Revit 2020, 2026-10-28
+
+Run on Revit 2020 (session 33972) in **Project2**, a new project the owner opened for this test and never
+saved, instead of the sample copy: the job file's `in:` was pointed at *Project2* in a scratchpad copy, and every
+call was pinned with `--in "Project2" --session 33972`. The owner's real project, open in the same Revit, was
+not named by any call. The code run is fingerprint `7a2bb9c7f1223ace`, this branch's version 2.
+
+| # | Result | What it read |
+|---|---|---|
+| JE0 | PASS | *Project2* open beside the real project, never saved (`REPORT_OPEN_DOCUMENTS`) |
+| JE1 | PASS | Both families loaded new, one type each, *C 17 x 22 Horizontal* and *D 22 x 34 Horizontal*; three sheets made, `refused` 0, `titleBlockNotFound` false. Kept in *Project2*. `load-family` also reported 14 analytical materials' colours changed by each load - *Project2* only |
+| JE2 | PASS | `find-sheets` 3 (JE one, JE two, JE three); `typesInUse` *C 17 x 22 Horizontal : C 17 x 22 Horizontal* only |
+| JE3 | PASS | `replaced` 3 - JE-01, JE-02 and JE-03 each named; `refused` 0, `swappedInPlace` 0, `alreadyCarried` 0; *"elements from find-sheets (3)"*; the group rolled back. No throw |
+| JE4 | PASS | `alreadyCarried` 3, `replaced` 0, `swappedInPlace` 0, `refused` 0; rolled back |
+| JE5 | PASS | `typesInUse` still *C 17 x 22 Horizontal : C 17 x 22 Horizontal* on all three |
+| JE6 | NOT RUN | Revit 2024 was not open |
+| JE7 | NOT RUN | Revit 2027 was not open |
+
+`batch-prove` judged it PASS and wrote the draft; **nothing is signed and the card is still DRAFT.** Signing is
+the owner's.
+
 **What this group does not settle.** A real replace KEPT in a model goes through the add-in's delete question
 first ([D-142](../decisions/D-142.md)) - Revit counts what goes with each old title block. On the owner's
 project five sheets made it count 40 through `CHANGE_ELEMENT_TYPE`; which 40, and whether this card's replace
