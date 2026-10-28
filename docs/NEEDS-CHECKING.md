@@ -1034,6 +1034,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jf.md`](needs-checking/group-jf.md)
 
+## Group JI - curtain panels changed by where they sit on one wall - a row, a column, a floor line: `SET_CURTAIN_PANEL_TYPE` version 1 (2026-10-28)
+
+**Its own file:** [`needs-checking/group-ji.md`](needs-checking/group-ji.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

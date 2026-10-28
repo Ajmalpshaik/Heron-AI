@@ -249,6 +249,11 @@ compatibility-note: >
 #   "set the Interior Type parameter"       -> NOT WRITE_ELEMENT_PARAMETERS. The
 #                                              name appears once per direction,
 #                                              and it holds a type reference
+#   "change the bottom row of panels on this curtain wall to solid panels"
+#                                           -> SET_CURTAIN_PANEL_TYPE (DRAFT,
+#                                              2026-10-28). A panel fills a cell
+#                                              between the mullions; it is one
+#                                              wall's instance, not the type's
 #   "load a mullion family"                 -> NOT HERE, and not by Heron. A
 #                                              family carries its own materials
 #                                              and loading one can overwrite the
