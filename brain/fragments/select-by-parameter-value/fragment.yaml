@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -140,31 +140,34 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-10'
+  date: '2026-10-28'
   by: Ajmal PS
-  model: Project2 (3,661 elements), Revit 2020, session 36948
+  model: 4355-BHVD-3D-21S10-BL001A, Revit 2020, session 33972 - the count is NOT recorded
+    because 3,174 elements was measured on Project1, the document in front, and this ran against
+    another one (row 15)
   positive_case: run as it would normally be run. returned ambiguous 0, elements 1 item(s)
-    [Seq. 2 - IFI - Issued for Information], findings 1 item(s) [1 of 2 scanned element(s)
-    match Revision Sequence equals '2'...], includeLinks false, includeTypeParameters false,
-    linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches
-    1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched 0, mode equals,
-    needle 2, nestedLinks 0, wantName Revision Sequence, withoutParameter 0. inputs came parameterName
-    as given; matchText as given; matchMode as given; includeTypeParameters as given; categories
-    as given (1); includeLinks as given. on Project2
-  negative_case: run with categories=Revisions, includeLinks=false, includeTypeParameters=false,
-    matchMode=equals, matchText=99, parameterName=Revision Sequence instead - chosen because
-    it should not contain what this fragment reports. returned ambiguous 0, elements 0 item(s),
-    findings 1 item(s) [0 of 2 scanned element(s) match Revision Sequence equals '99...],
-    includeLinks false, includeTypeParameters false, linkBlocked , linkDocs 0 item(s), linkPlacements
-    0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
-    linkedTotal 0, linksSearched 0, mode equals, needle 99, nestedLinks 0, wantName Revision
-    Sequence, withoutParameter 0. inputs came parameterName as given; matchText as given;
-    matchMode as given; includeTypeParameters as given; categories as given (1); includeLinks
-    as given. on Project2
+    [1], findings 1 item(s) [1 of 15 scanned element(s) match Name equals '1'. 0 do not c...],
+    includeLinks false, includeTypeParameters false, knownModes 6 item(s) [contains, equals,
+    begins, ...], linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0
+    item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched
+    0, mode equals, needle 1, nestedLinks 0, wantName Name, withoutParameter 0. inputs came
+    parameterName as given; matchText as given; matchMode as given; includeTypeParameters
+    as given; categories as given (1); includeLinks as given. on 4355-BHVD-3D-21S10-BL001A
+  negative_case: run against '4355-BHVD-3D-21S10-BL001A' with categories=Grids, includeLinks=False,
+    includeTypeParameters=False, matchMode=exact, matchText=ZZZNOTHINGHERE, parameterName=Name
+    instead - chosen because it should not contain what this fragment reports. returned ambiguous
+    0, elements 0 item(s), findings 1 item(s) [0 of 15 scanned element(s) match Name equals
+    'ZZZNOTHINGHERE...], includeLinks false, includeTypeParameters false, knownModes 6 item(s)
+    [contains, equals, begins, ...], linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s),
+    linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal
+    0, linksSearched 0, mode equals, needle ZZZNOTHINGHERE, nestedLinks 0, wantName Name,
+    withoutParameter 0. inputs came parameterName as given; matchText as given; matchMode
+    as given; includeTypeParameters as given; categories as given (1); includeLinks as given.
+    on 4355-BHVD-3D-21S10-BL001A
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: ac61cc0d10b8cece
+  fingerprint: 08d9b88d796171a1
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
