@@ -135,3 +135,27 @@ negative_level_name:
       no; no dialog in the reply - Revit was never asked
   - given: the same rows, renameViews=maybe
     expect: refused before the run, bad_request_value, nothing ran
+
+# Version 6 (5b-1344): a parameter named by its GUID - "<name> {<GUID>}" -
+# when two shared parameters on one element carry the same name and both can
+# be written. Arranged on a scratch project, never a working model
+# (NEEDS-CHECKING Group JF): two shared instance text parameters both called
+# "JF Tag", GUIDs A and B, bound to Walls; one wall with Mark JF-WALL.
+positive_by_guid:
+  - given: key=Mark|in=Walls;JF-WALL|JF Tag {A}=ONE
+    expect: >
+      written 1; readBack name "JF Tag {A}", value ONE; the parameter with GUID
+      B still blank (REPORT_PARAMETER_INVENTORY, by GUID)
+  - given: the same wall by id row - id|uniqueId|JF Tag {B}||TWO
+    expect: written 1; GUID B reads TWO and GUID A is untouched
+negative_by_guid:
+  - given: key=Mark|in=Walls;JF-WALL|JF Tag=ONE (no GUID)
+    expect: >
+      written 0; refused says two parameters on it are called JF Tag and more
+      than one can be written, and to name the one meant as 'JF Tag {its GUID}'
+  - given: key=Mark|in=Walls;JF-WALL|Comments {A}=ONE (GUID A under another name)
+    expect: written 0; refused says it has no parameter called that; nothing written
+  - given: key=Mark|in=Walls;JF-WALL|JF Tag {a GUID no parameter has}=ONE
+    expect: written 0; refused says it has no parameter called that; nothing written
+  - given: any row naming a parameter as it is spelt, with no braces
+    expect: version 5's answer unchanged - the name is found exactly as before
