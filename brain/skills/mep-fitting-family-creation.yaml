@@ -132,7 +132,9 @@ purpose: >
      NO LENGTH CAN REACH ZERO OR GO NEGATIVE at the smallest size or the
      smallest angle; Revit will not solve a form of zero length, and that
      size simply gets no fitting in the run. An elbow's centre-line radius
-     follows the modeller's rule ("Nominal Diameter * 1.5") or the table. A
+     follows the modeller's rule ("Nominal Diameter * 1.5") or the table, and
+     its centre-to-end - from where the two centre lines meet to each end -
+     is "Center Radius * tan(Angle / 2)", the arc's tangent length. A
      transition's length follows the change of size, with a minimum
      ("if(abs(Nominal Diameter 1 - Nominal Diameter 2) * 2 < 50 mm, 50 mm,
      abs(Nominal Diameter 1 - Nominal Diameter 2) * 2)", or the
@@ -149,6 +151,24 @@ purpose: >
      each locked with LOCK_FORM_TO_PLANES. A socket, a bead or a flange ring
      is a separate form so its end face stays flat and on its plane - the
      face the connector will sit on.
+     THE ELBOW, WORKED - the geometry, with Ce the centre-to-end and R the
+     centre-line radius, both from step 6:
+       Centre to End = Center Radius * tan(Angle / 2)
+       first end face: on a left-right plane at X = Ce, facing +X
+       arc centre:     X = Ce, Y = R - the revolve's axis runs through it,
+                       straight up (parallel to Z)
+       second end:     at 90 degrees, on a front-back plane at Y = Ce,
+                       facing +Y; at any other Angle it turns with the arc
+     The profile is the pipe's outside circle on the first end face; the
+     revolve turns it about that axis through Angle. Which way a part-turn
+     sweeps is Revit's rule, read back in the extent and never predicted -
+     REPORT_FAMILY_FORMS says where the second end landed.
+     BUILD AN ELBOW AT 90 DEGREES. Heron's reference planes run along the
+     family's own axes only, and ADD_FAMILY_CONNECTOR finds a face by the
+     named plane it lies on - so the second end face lies on a plane only
+     while Angle is 90. Set Angle to 90 (SET_FAMILY_TYPE_VALUES), place both
+     connectors (step 8), then let the arc follow Angle; FLEX_FAMILY at
+     other angles shows whether the connector rides the face (Group JH JH4).
 
   8. CONNECTORS - ADD_FAMILY_CONNECTOR on every end face, system "Fitting"
      (the classification a fitting's connectors take; it is what shows their
