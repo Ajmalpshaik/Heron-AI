@@ -139,6 +139,11 @@ compatibility-note: >
 #
 #   "how is this surface divided"            -> REPORT_DIVIDED_SURFACES
 #   "fill the divided surface cells with the adaptive panel" -> PLACE_ADAPTIVE_COMPONENTS
+#   "put a curtain system on the faces of this mass" -> CREATE_CURTAIN_SYSTEM
+#                                               (2026-10-28) - in the PROJECT, on
+#                                               a mass already placed; this one
+#                                               divides a surface INSIDE the
+#                                               mass family, in the Family Editor
 utterances:
   - divide the surface of this mass into panels
   - divide the top face into a 10 by 8 grid
