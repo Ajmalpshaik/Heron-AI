@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,20 @@ semantic-identity: "put a different title block on these sheets"
 kind: action
 domain: revit.sheets
 capability: SET_SHEET_TITLE_BLOCK
-version: 1
+# Version 2 (2026-10-28, row 5b-1343) changed impl/: the title blocks are keyed
+# by the sheet they sit on BEFORE the first delete. Version 1 walked one list
+# of every title block for each sheet, so the second sheet of a cross-family
+# replace read the first sheet's title block after deleting it, and Revit's
+# "The referenced object is not valid" threw the whole call - seen on Revit
+# 2020 (session 33972), five sheets of a real BIM 360 project moved onto
+# another title block family, everything rolled back. Its proof replaced the
+# title block on ONE sheet that had none, so the second sheet never came.
+# A sheet handed in twice is read off the sheet again rather than touched after
+# its delete. What Revit deletes with a replace is asked in Revit first, by the
+# add-in (D-142), not by this card. Version 1's proof below no longer describes
+# the code: DRAFT until NEEDS-CHECKING Group JE proves version 2 on Revit 2020,
+# 2024 and 2027 (D-30).
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
