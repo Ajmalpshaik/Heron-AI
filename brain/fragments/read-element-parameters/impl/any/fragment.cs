@@ -338,21 +338,21 @@ if (noteWording != null && noteWording.Length > 20000)
 // one value (FRAGMENT-ISSUES 5b-1325). The add-in now sends a dictionary's
 // first entries beside its count; this line is the same answer in the
 // fragment's own words, so it holds whatever add-in or formatter carries it:
-// each element's id, its value and where the value came from, the first
-// twelve, then how many more; then the blank and the absent ones by id. A
+// each element's id, its value and where the value came from - EVERY one
+// (version 6, 2026-10-28: version 5 said the first twelve and how many more,
+// and the 38 volume control dampers of a real project took some forty reads
+// to tabulate) - then the blank and the absent ones by id, all of them. A
 // value is cut at 60 characters, as a list item is - a text note's wording is
 // whole in `noteWording`.
 var findings = "";
 {
     var asked = (parameterName ?? "").Trim();
-    var shownAtMost = 12;
     Func<string, string> cut = text => text == null ? "" : text.Length > 60 ? text.Substring(0, 60) + "..." : text;
     Func<IList<ElementId>, string> ids = list =>
-        string.Join(", ", list.Take(shownAtMost).Select(id => id.ToString()))
-        + (list.Count > shownAtMost ? " ... and " + (list.Count - shownAtMost) + " more" : "");
+        string.Join(", ", list.Select(id => id.ToString()));
 
     var said = new List<string>();
-    foreach (var pair in values.Take(shownAtMost))
+    foreach (var pair in values)
     {
         string from;
         said.Add(pair.Key + ": " + cut(pair.Value)
@@ -361,11 +361,7 @@ var findings = "";
     var line = "\"" + asked + "\": " + values.Count + " of " + elements.Count + " carry a value, "
         + blank.Count + " blank, " + absent.Count + " absent.";
     if (said.Count > 0)
-        line += " " + string.Join("; ", said)
-            + (values.Count > shownAtMost
-                ? " ... and " + (values.Count - shownAtMost) + " more - read fewer at a time, or GROUP_AND_COUNT "
-                  + "with expect_from read-element-parameters."
-                : ".");
+        line += " " + string.Join("; ", said) + ".";
     if (blank.Count > 0) line += " Blank: " + ids(blank) + ".";
     if (absent.Count > 0) line += " Absent: " + ids(absent) + ".";
     findings = line;

@@ -1362,8 +1362,9 @@ def _provides_lines(provides, entries=None):
 
     THE ENTRIES THEMSELVES TRAVEL BESIDE THE COUNT, SINCE 2026-10-22. The
     add-in's `Report` sends `providesEntries` - for every dictionary that
-    holds something, its first twelve entries as "key": "value", each side
-    cut as a list item is - and `Describe` is left byte for byte as it was.
+    holds something, EVERY entry as "key": "value" (its first twelve until
+    2026-10-28, row 5b-1341), each side cut as a list item is - and
+    `Describe` is left byte for byte as it was.
     `entries` is that field. Each entry prints on its own line under the
     count, "    14194: Yes", and a dictionary larger than what arrived says
     how many more it holds. Measured 2026-10-22 on Revit 2020 (session
