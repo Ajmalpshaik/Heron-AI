@@ -51,6 +51,27 @@ The job file is [`tools/jobs/set-parameter-values-by-id-jf-2026-10-28.yaml`](../
 "Ajmal PS"` once JF3 and JF4 pass, and `heron-status` set to PROVEN in the same change. A row that fails
 reopens 5b-1344; nothing in a row changes to make it pass.
 
+### Results - Revit 2020, 2026-10-28
+
+**Not run on the scratch copy.** The owner asked for the tool to be tried on his own model instead (*"try here, I
+will save now the model"*), so the proof is D-120's: one run through try-once ([D-119](../decisions/D-119.md)) on
+the saved *4355-BHVD-3D-50S10-BL001A* (a real BIM 360 project, Revit 2020, session 27048), kept by the owner,
+and the negative rolled back beside it. Code run: fingerprint `623bf673ccc9f3f4`, version 6.
+
+| # | Result | What it read |
+|---|---|---|
+| JF0 | NOT RUN | The scratch copy was made but never opened with the parameters added |
+| JF1 | NOT RUN | The owner did not arrange the two *JF Tag* parameters; the file was unchanged |
+| JF2 | PASS, on the owner's model | `REPORT_PARAMETER_INVENTORY` on dampers 7761415 and 8395771: two *Equipment Tag*, both String, shared, writable - *e133774c-3f62-45f1-a0c6-7e6c6238380b* (holds VCD001 on 7761415) and *cb0704fc-6be3-4f8a-85cf-84525659cbbd* (blank); both blank on 8395771 |
+| JF3 | PASS, kept | `try-once`: `key=Mark\|in=Duct Accessories;530\|Equipment Tag {e133774c-...}=VCD020;531\|...=VCD021;532\|...=VCD022` - `written` 3, `refused` empty, readBack *VCD020*, *VCD021*, *VCD022* under *Equipment Tag {e133774c-...}*; the owner pressed Keep |
+| JF4 | PASS | `validate --write --kept`, negative `key=Mark\|in=Duct Accessories;530\|Equipment Tag=VCD020`: `written` 0, refused *"two parameters on it are called Equipment Tag and more than one can be written - name the one meant as 'Equipment Tag {its GUID}' - not written (id 8395771)"*; rolled back |
+| JF5 | PASS | The inventory again: *e133774c* reads VCD020-VCD022 on 8395771, 8395926, 8395994, *cb0704fc* still blank on all three |
+| JF6 | NOT RUN | The other GUID, a GUID the element lacks and *Comments {GUID}* need the scratch copy |
+
+**Signed by Ajmal PS on 2026-10-28** - `accept set-parameter-values-by-id --by "Ajmal PS"`, run in his own
+terminal on his word *"now you can make it proven and promote"* - and the card set PROVEN in the same change.
+JF0, JF1 and JF6 are still owed.
+
 **What this group does not settle.** Whether Revit lets a PROJECT hold two project parameters of one name is
 JF1's own question; the owner's project holds two *Equipment Tag* on every duct accessory, and where each
 came from - the family or the project's parameters - is not read (no Heron tool reads the project's
