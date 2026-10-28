@@ -169,6 +169,24 @@ purpose: >
      while Angle is 90. Set Angle to 90 (SET_FAMILY_TYPE_VALUES), place both
      connectors (step 8), then let the arc follow Angle; FLEX_FAMILY at
      other angles shows whether the connector rides the face (Group JH JH4).
+     A RECTANGULAR DUCT ELBOW is the same arc swept: the profile is Width by
+     Height on the first end face, Width lying IN the plane of the turn (along
+     Y) and Height across it (along Z); the path is the arc. Its inside face
+     sits at R - Width / 2, so the radius rule keeps R above Width / 2 - a
+     guard in step 6 ("if(Center Radius < Width * 0.75, Width * 0.75, Center
+     Radius)" or the modeller's minimum) - or the inside of the bend folds
+     through itself at the widest size.
+     THE TEE, WORKED: the run is one form along X from -Run Centre to End to
+     +Run Centre to End, the branch one along +Y from the origin to Branch
+     Centre to End, joined with COMBINE_FAMILY_FORMS. All three end faces lie
+     on axis planes - left, right and back - so nothing waits on an angle. A
+     reducing tee drives the run ends by the run size and the branch end by
+     the branch size, and its table is keyed on both.
+     THE TRANSITION, WORKED: its two end faces on two left-right planes,
+     Length apart, labelled; a round one a revolve of the cone's half-section
+     about the X axis, a rectangular one a blend between the two sizes. Where
+     its origin sits - an end or the middle - is read off Revit's own
+     transition at step 1, never assumed.
 
   8. CONNECTORS - ADD_FAMILY_CONNECTOR on every end face, system "Fitting"
      (the classification a fitting's connectors take; it is what shows their
