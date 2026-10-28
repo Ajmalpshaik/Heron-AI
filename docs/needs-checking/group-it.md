@@ -75,11 +75,11 @@ grid carries (`matchText=ZZZNOTHINGHERE`); add-in at 7bb93bca.
 
 | # | Ran | Came back |
 |---|---|---|
-| **IT0** | `matchMode=exactly` | **PASS.** Refused before scanning, both legs: *"matchMode 'exactly' is not a way of matching this knows, so NOTHING was scanned. Use contains, equals (or exact, is), begins, ends, notcontains or notequals"* |
-| **IT1** | `matchMode=exact`, `matchText=1`, `categories=Grids` (batch-prove) | **PASS.** `elements 1 item(s) [1]`, `mode equals`, *"1 of 15 scanned element(s) match Name equals '1'"* - grid 1 alone, never 10 or 11. Negative: `elements 0`, *"0 of 15 ... equals 'ZZZNOTHINGHERE'"* |
-| **IT2** | `matchMode=is`, then `matchMode=EXACT` | **PASS**, both: the same as IT1 - `elements 1 item(s) [1]`, `mode equals`; negatives 0 |
-| **IT3** | `matchMode=contains` | **PASS.** `elements 3 item(s) [1, 10, 11]`, `mode contains`, *"3 of 15 ... contains '1'"* - the widening exact must not do |
-| **IT-L** | *Added on the owner's word: "maybe linked grid also".* IT1 with `includeLinks=True` | **PASS.** Host `elements 1 item(s) [1]`; `linksSearched 7`; `linkedMatches` *"7 link(s) read: 6 match(es), NOT selected"*, per link e.g. *"4355-AA3D-21S10-BL001A: 0 of 42 match"*, *"4355-BB3D-21S10-BL001A: 1 of 16 match"*; `nestedLinks 36` counted, not read. Negative: host 0, *"7 link(s) read: 0 match(es)"*. Nothing from a link was selected |
+| IT0 | `matchMode=exactly` | **PASS.** Refused before scanning, both legs: *"matchMode 'exactly' is not a way of matching this knows, so NOTHING was scanned. Use contains, equals (or exact, is), begins, ends, notcontains or notequals"* |
+| IT1 | `matchMode=exact`, `matchText=1`, `categories=Grids` (batch-prove) | **PASS.** `elements 1 item(s) [1]`, `mode equals`, *"1 of 15 scanned element(s) match Name equals '1'"* - grid 1 alone, never 10 or 11. Negative: `elements 0`, *"0 of 15 ... equals 'ZZZNOTHINGHERE'"* |
+| IT2 | `matchMode=is`, then `matchMode=EXACT` | **PASS**, both: the same as IT1 - `elements 1 item(s) [1]`, `mode equals`; negatives 0 |
+| IT3 | `matchMode=contains` | **PASS.** `elements 3 item(s) [1, 10, 11]`, `mode contains`, *"3 of 15 ... contains '1'"* - the widening exact must not do |
+| IT-L | *Added on the owner's word: "maybe linked grid also".* IT1 with `includeLinks=True` | **PASS.** Host `elements 1 item(s) [1]`; `linksSearched 7`; `linkedMatches` *"7 link(s) read: 6 match(es), NOT selected"*, per link e.g. *"4355-AA3D-21S10-BL001A: 0 of 42 match"*, *"4355-BB3D-21S10-BL001A: 1 of 16 match"*; `nestedLinks 36` counted, not read. Negative: host 0, *"7 link(s) read: 0 match(es)"*. Nothing from a link was selected |
 
 IT1's record is `brain/proof-drafts/runs/select-by-parameter-value.json`; the draft waits for the owner's
 signature. IT4 to IT10 belong to the other two cards and the binder, and were not run here.
