@@ -1,6 +1,23 @@
-// NOT STANDALONE. Assumes `doc`, `app`, `sourceDocumentTitle` and
-// `nameContains` are in scope, and leaves `changed`, `created`, `skipped`,
-// `weakened` and `refused` behind.
+// NOT STANDALONE. Assumes `doc`, `app`, `sourceDocumentTitle`,
+// `nameContains` and `subcategoryContains` are in scope, and leaves
+// `changed`, `created`, `skipped`, `weakened` and `refused` behind.
+//
+// VERSION 2 (2026-10-28, row 5b-1342). `nameContains` is matched against the
+// TOP-LEVEL category's name only, and a match takes the category AND EVERY
+// subcategory under it. Asked to copy one subcategory - "Generic Annotations
+// : Signature", a pen-ink blue the owner set in one project of five - the
+// only way to reach it was nameContains=Generic Annotations, which would have
+// restyled the category and all 194 other subcategories of a real project
+// and created every one it lacked. `subcategoryContains` narrows it: given,
+// only subcategories whose name contains it are styled or made, and the
+// category itself is NOT restyled. Absent, or "all", is version 1 exactly.
+//
+// AND A PARTIAL TITLE NO LONGER PICKS ONE OF SEVERAL SOURCES IN SILENCE.
+// Version 1 kept the LAST open project whose title contained the text, so
+// with five models of one job open - 4355-...-BL001A, -BL001B ... - "BL001"
+// read whichever Revit listed last. An exact title (".rvt" or not) wins; a
+// partial one is taken only when exactly one project matches, and otherwise
+// the call refuses, naming every match.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). The undo belongs to THIS
 // document, and it matters more here than anywhere else in this library: this
@@ -36,9 +53,19 @@ string refused = "";
 
 string wantedTitle = (sourceDocumentTitle ?? "").Trim();
 string filterText = (nameContains ?? "").Trim();
+string subText = (subcategoryContains ?? "").Trim();
+if (subText.Equals("all", StringComparison.OrdinalIgnoreCase)) subText = "";
+bool subOnly = subText.Length > 0;
 
 Document source = null;
 var openTitles = new List<string>();
+var exact = new List<Document>();
+var partial = new List<Document>();
+Func<string, string> bare = text =>
+{
+    var t = (text ?? "").Trim();
+    return t.EndsWith(".rvt", StringComparison.OrdinalIgnoreCase) ? t.Substring(0, t.Length - 4) : t;
+};
 foreach (Document candidate in app.Documents)
 {
     if (candidate == null || candidate.IsFamilyDocument) continue;
@@ -46,12 +73,25 @@ foreach (Document candidate in app.Documents)
     try { title = candidate.Title ?? ""; } catch { }
     openTitles.Add(title);
     if (candidate.Equals(doc)) continue;
-    if (wantedTitle.Length > 0 &&
-        title.IndexOf(wantedTitle, StringComparison.OrdinalIgnoreCase) >= 0)
-        source = candidate;
+    if (wantedTitle.Length == 0) continue;
+    if (bare(title).Equals(bare(wantedTitle), StringComparison.OrdinalIgnoreCase))
+        exact.Add(candidate);
+    else if (title.IndexOf(wantedTitle, StringComparison.OrdinalIgnoreCase) >= 0)
+        partial.Add(candidate);
 }
+if (exact.Count == 1) source = exact[0];
+else if (exact.Count == 0 && partial.Count == 1) source = partial[0];
 
-if (source == null)
+if (source == null && exact.Count + partial.Count > 1)
+{
+    var named = new List<string>();
+    foreach (var d in exact) { try { named.Add(d.Title); } catch { } }
+    foreach (var d in partial) { try { named.Add(d.Title); } catch { } }
+    refused = "'" + sourceDocumentTitle + "' matches " + named.Count + " open projects - " +
+              string.Join(", ", named.ToArray()) + " - and nothing was copied. Give the source's " +
+              "whole title.";
+}
+else if (source == null)
 {
     refused = "No open project matching '" + sourceDocumentTitle + "'. Both projects have to be open " +
               "in the same Revit - open now: " + string.Join(", ", openTitles.ToArray()) + ".";
@@ -243,6 +283,24 @@ else
         if (name.Length == 0) continue;
         if (filterText.Length > 0 &&
             name.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) < 0) continue;
+
+        // With a subcategory asked for, a category with no subcategory of that
+        // name in the SOURCE is not part of the job at all.
+        if (subOnly)
+        {
+            bool any = false;
+            try
+            {
+                foreach (Category fromSub in from.SubCategories)
+                {
+                    string subName = "";
+                    try { subName = fromSub.Name ?? ""; } catch { }
+                    if (subName.IndexOf(subText, StringComparison.OrdinalIgnoreCase) >= 0) { any = true; break; }
+                }
+            }
+            catch { }
+            if (!any) continue;
+        }
         looked++;
 
         if (!hereByName.ContainsKey(name))
@@ -253,8 +311,13 @@ else
         }
 
         var onto = hereByName[name];
-        string what = applyTo(from, onto, name);
-        if (what.Length > 0) changed.Add(name + ": " + what);
+        // The category itself is restyled only when no subcategory was asked
+        // for (version 2): asking for one sub-style must not move its parent.
+        if (!subOnly)
+        {
+            string what = applyTo(from, onto, name);
+            if (what.Length > 0) changed.Add(name + ": " + what);
+        }
 
         // Subcategories. A firm's own sub-style is made here if it is missing.
         Dictionary<string, Category> subsHere = new Dictionary<string, Category>();
@@ -276,6 +339,7 @@ else
                 string subName = "";
                 try { subName = fromSub.Name ?? ""; } catch { }
                 if (subName.Length == 0) continue;
+                if (subOnly && subName.IndexOf(subText, StringComparison.OrdinalIgnoreCase) < 0) continue;
                 string label = name + " : " + subName;
 
                 Category ontoSub = null;
@@ -315,6 +379,7 @@ else
     if (looked == 0)
     {
         refused = "No categories in '" + source.Title + "'" +
-                  (filterText.Length > 0 ? " matching '" + filterText + "'" : "") + ".";
+                  (filterText.Length > 0 ? " matching '" + filterText + "'" : "") +
+                  (subOnly ? " with a subcategory matching '" + subText + "'" : "") + ".";
     }
 }

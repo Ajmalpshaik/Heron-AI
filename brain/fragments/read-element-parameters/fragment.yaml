@@ -20,7 +20,15 @@ capability: READ_ELEMENT_PARAMETERS
 # so it holds whatever carries it. Nothing it read changed. Version 4's proof
 # below no longer describes the code: DRAFT until NEEDS-CHECKING Group IU
 # proves version 5 (D-30).
-version: 5
+#
+# Version 6 (2026-10-28, row 5b-1341) changed impl/: `findings` names EVERY
+# element read, and every blank and absent id - no longer the first twelve and
+# how many more. Asked for the 38 volume control dampers of a real project
+# (4355-BHVD-3D-21S10-BL001A, Revit 2020) with their Equipment Tag, one table
+# took some forty reads in groups of twelve or fewer. The add-in's
+# `providesEntries` lost its cap of twelve in the same change. DRAFT until
+# NEEDS-CHECKING Group JD proves version 6 (D-30).
+version: 6
 source: OFFICIAL
 risk: READ
 
@@ -54,8 +62,8 @@ purpose: >
   one value (Revit 2020, 2026-10-22). The add-in now sends a dictionary's
   first entries beside its count; `findings` is the same answer in this
   card's own words - *"Allow Slope Adjustments": 4 of 4 carry a value, 0
-  blank, 0 absent. 14194: Yes (instance); 7492: Yes (instance); ...* - the
-  first twelve, then how many more, then the blank and the absent ids. It is
+  blank, 0 absent. 14194: Yes (instance); 7492: Yes (instance); ...* - every
+  element read (version 6), then the blank and the absent ids. It is
   one string, so no cut on the way to a chat can shorten it to a number.
 
   **LEVEL IS THE ONLY SPECIAL CASE.** Category, Family and Type are how a table
@@ -155,8 +163,8 @@ contract:
     - name: findings
       # Version 5. The answer in words, one string: "<parameter>": N of M carry
       # a value, N blank, N absent, then each element's id, value (cut at 60
-      # characters) and where it came from - "14194: Yes (instance)" - the
-      # first twelve and how many more, then the blank and the absent ids. It
+      # characters) and where it came from - "14194: Yes (instance)" - every
+      # one (version 6, 5b-1341), then the blank and the absent ids. It
       # survives the cut a dictionary takes on its way to a chat (5b-1325).
       type: string
 

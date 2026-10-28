@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CAT-009
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,19 @@ semantic-identity: "bring the object styles over from the other project"
 kind: action
 domain: revit.elements
 capability: TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS
-version: 1
+# Version 2 (2026-10-28, row 5b-1342) changed impl/. `nameContains` matches the
+# TOP-LEVEL category's name only and takes every subcategory under it, so one
+# sub-style - "Generic Annotations : Signature", set to a pen-ink blue in one
+# project of five (4355-BHVD-3D-21S10-BL001A, Revit 2020) - could be reached
+# only by restyling Generic Annotations and all 194 of its other subcategories
+# in each target. `subcategoryContains` narrows it to the subcategories whose
+# name contains it, and leaves the category itself alone. And a partial
+# `sourceDocumentTitle` no longer picks the LAST of several open projects in
+# silence: an exact title wins, one partial match is taken, several refuse by
+# name. The version 1 proof below was taken on Revit 2024 and never on 2020,
+# and no longer describes the code: DRAFT until NEEDS-CHECKING Group JD proves
+# version 2 on Revit 2020 (D-30, D-131).
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -71,6 +83,14 @@ contract:
     - name: nameContains
       type: string
       source: request
+    # Only the subcategories whose name contains this - "Signature" - are
+    # styled or made, and the category itself is left as it is. Left out, or
+    # "all", every subcategory of every matched category, as version 1 did.
+    - name: subcategoryContains
+      type: string
+      source: request
+      optional: true
+      absent: all
   provides:
     - name: changed
       role: result
@@ -159,6 +179,7 @@ compatibility-note: >
 
 utterances:
   - bring the object styles over from the template
+  - copy the signature subcategory's object style to this model
   - copy the object styles from the other project
   - set the line weights up like the other job
   - transfer the object styles from that model
