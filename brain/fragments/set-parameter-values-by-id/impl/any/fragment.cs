@@ -259,9 +259,40 @@ var unticked = new[] { "no", "false", "off", "0", "unticked" };
 // could each be written; when every one but one is read-only there is nothing
 // to guess, because a write can only land on that one. Two or more writable
 // still refuses, exactly as before (FRAGMENT-ISSUES 5b-203).
-Func<Element, string, Parameter> theOne = (element, parameterName) =>
+//
+// VERSION 6 (FRAGMENT-ISSUES 5b-1344): A PARAMETER NAMED BY ITS GUID. Two
+// SHARED parameters can carry one name - Revit tells shared parameters apart
+// by GUID, never by name - and when both can be written the rule above
+// refuses both, so neither could be written at all. Seen 2026-10-28 on Revit
+// 2020 in a real project: every duct accessory carries two writable "Equipment
+// Tag" parameters, one holding the tags and one blank everywhere. A name
+// written "Equipment Tag {e133774c-3f62-45f1-a0c6-7e6c6238380b}" now means the
+// ONE parameter with that GUID, and only while it is still called that: a GUID
+// under another name, or one the element does not carry, finds nothing and
+// says so - never a guess (D-54 s3). REPORT_PARAMETER_INVENTORY prints every
+// parameter's GUID. A name found as it is spelt is found that way first, so
+// every name that worked before reaches exactly what it reached.
+Func<Element, string, IList<Parameter>> parametersCalled = (element, parameterName) =>
 {
     var found = element.GetParameters(parameterName);
+    if (found.Count > 0) return found;
+    var text = (parameterName ?? "").Trim();
+    var open = text.LastIndexOf('{');
+    Guid guid;
+    if (open < 0 || !text.EndsWith("}")
+        || !Guid.TryParse(text.Substring(open + 1, text.Length - open - 2), out guid))
+        return found;
+    var called = text.Substring(0, open).Trim();
+    var byGuid = new List<Parameter>();
+    var one = element.get_Parameter(guid);
+    if (one != null && (called.Length == 0 || (one.Definition != null && one.Definition.Name == called)))
+        byGuid.Add(one);
+    return byGuid;
+};
+
+Func<Element, string, Parameter> theOne = (element, parameterName) =>
+{
+    var found = parametersCalled(element, parameterName);
     if (found.Count == 1) return found[0];
     Parameter writable = null;
     foreach (var candidate in found)
@@ -1034,11 +1065,12 @@ foreach (var raw in (keyed ? "" : (rows ?? "")).Split(';'))
     else if (element.Id.ToString() != id) why = "the id no longer names the same element";
     else
     {
-        var matches = element.GetParameters(name);
+        var matches = parametersCalled(element, name);
         var target = matches.Count > 0 ? theOne(element, name) : null;
         if (matches.Count == 0) why = "it no longer has a parameter called " + name;
         else if (target == null)
-            why = "two parameters on it are called " + name + " and more than one can be written";
+            why = "two parameters on it are called " + name + " and more than one can be written"
+                + " - name the one meant as '" + name + " {its GUID}'";
         else if (target.IsReadOnly) why = name + " is read-only";
         else if (target.StorageType == StorageType.None)
             why = name + " holds a reference to another element, which cannot be typed as text";
@@ -1297,7 +1329,7 @@ if (keyed)
     // "01" is not "1", and "Lift 1" is not "lift 1".
     Func<Element, string, string, bool> holds = (element, name, value) =>
     {
-        foreach (Parameter p in element.GetParameters(name))
+        foreach (Parameter p in parametersCalled(element, name))
         {
             if (same(readValue(p)) == same(value)) return true;
         }
@@ -1322,7 +1354,7 @@ if (keyed)
                 foreach (var type in new FilteredElementCollector(doc).OfCategoryId(category.Id).WhereElementIsElementType())
                 {
                     if (narrowing.Any(n => !holds(type, n.Item1, n.Item2))) continue;
-                    foreach (var p in type.GetParameters(keyName)) typeKeys.Add(same(readValue(p)));
+                    foreach (var p in parametersCalled(type, keyName)) typeKeys.Add(same(readValue(p)));
                 }
             }
             foreach (var element in collector)
@@ -1332,7 +1364,7 @@ if (keyed)
 
                 // AN ELEMENT IS LISTED ONCE PER VALUE IT SHOWS under the key's
                 // name - a sheet carries two parameters called Sheet Number.
-                var keyParameters = element.GetParameters(keyName);
+                var keyParameters = parametersCalled(element, keyName);
                 if (keyParameters.Count > 0) carryingKey++;
                 var seen = new HashSet<string>(StringComparer.Ordinal);
                 foreach (var p in keyParameters)
@@ -1377,10 +1409,12 @@ if (keyed)
     // in the same words.
     Func<Element, string, string, string> whyNot = (element, name, value) =>
     {
-        var matches = element.GetParameters(name);
+        var matches = parametersCalled(element, name);
         var target = matches.Count > 0 ? theOne(element, name) : null;
         if (matches.Count == 0) return "it has no parameter called " + name;
-        if (target == null) return "two parameters on it are called " + name + " and more than one can be written";
+        if (target == null)
+            return "two parameters on it are called " + name + " and more than one can be written"
+                 + " - name the one meant as '" + name + " {its GUID}'";
         if (target.IsReadOnly) return name + " is read-only";
         if (target.StorageType == StorageType.None)
             return name + " holds a reference to another element, which cannot be typed as text";

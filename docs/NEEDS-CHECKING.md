@@ -1030,6 +1030,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-je.md`](needs-checking/group-je.md)
 
+## Group JF - a parameter named by its GUID when two shared parameters carry one name: `SET_PARAMETER_VALUES_BY_ID` version 6 (2026-10-28)
+
+**Its own file:** [`needs-checking/group-jf.md`](needs-checking/group-jf.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

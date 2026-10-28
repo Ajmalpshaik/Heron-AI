@@ -1,0 +1,34 @@
+# NEEDS-CHECKING Group JF - SET_PARAMETER_VALUES_BY_ID version 6, which takes a
+# parameter named "<name> {<GUID>}" when two shared parameters on one element
+# carry the same name (row 5b-1344).
+#
+#     python tools/batch-prove.py tools/jobs/set-parameter-values-by-id-jf-2026-10-28.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-parameter-values-by-id-jf-2026-10-28.yaml --session <pid>
+#
+# A SCRATCH COPY, never a working model: %TEMP%\heron-work\group-jf\JF Two
+# Tags.rvt, a copy of Revit 2020's rac_basic_sample_project.rvt.
+#
+# THE ARRANGEMENT, made by hand in JF1 and kept in the copy: two shared instance
+# text parameters both called "JF Tag", GUID A 9a6f71be-7b4f-4c3f-98dc-6301efab92db
+# and GUID B 8481d09b-11b5-4293-8dbc-b79b846fb5e5, each from its own shared
+# parameter file, bound to Walls; one wall with Mark JF-WALL.
+#
+# WHAT THE POSITIVE SHOULD READ: written 1, JF Tag {A} reads ONE. Version 5
+# refused it - two parameters called JF Tag could each be written. THE
+# NEGATIVE: the same row with no GUID - written 0, refused names JF-WALL.
+#
+# Both legs are rolled back: the copy keeps both JF Tag blank.
+
+model: JF Two Tags (scratch copy of a Revit 2020 sample)
+
+jobs:
+  - fragment: set-parameter-values-by-id
+    expect: written
+    write: true                        # rolled back
+    in: JF Two Tags
+    set: {rows: "key=Mark|in=Walls;JF-WALL|JF Tag {9a6f71be-7b4f-4c3f-98dc-6301efab92db}=ONE"}
+    negative-set: {rows: "key=Mark|in=Walls;JF-WALL|JF Tag=ONE"}
+    note: >
+      Positive - the parameter named by GUID A on a wall that carries two
+      writable "JF Tag": written 1, it reads ONE. Negative - the same row
+      by name alone: written 0, refused says two parameters are called JF Tag.

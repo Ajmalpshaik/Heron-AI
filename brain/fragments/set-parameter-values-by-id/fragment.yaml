@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -135,7 +135,31 @@ capability: SET_PARAMETER_VALUES_BY_ID
 #   record; the card is DRAFT until versions 4 and 5 are proved in Revit
 #   (NEEDS-CHECKING Groups HZ and HP). Kept out of the purpose and the identity line
 #   for the reason version 3 gives: both are searched.
-version: 5
+#
+# VERSION 6 (2026-10-28, FRAGMENT-ISSUES 5b-1344): a parameter may be named by
+# its GUID, as "Equipment Tag {e133774c-3f62-45f1-a0c6-7e6c6238380b}" - by id
+# row, as a key row's parameter=value, as the key or as a narrowing. Measured
+# that day on Revit 2020, a real project (4355-BHVD-3D-50S20-BL001A): six
+# volume control dampers each carry TWO writable shared parameters called
+# "Equipment Tag" (GUIDs e133774c-... holding VCD001-VCD041 on the others, and
+# cb0704fc-... blank on all), so "key=Mark|in=Duct Accessories;MOD070|Equipment
+# Tag=VCD042" refused all six rows - rightly, since which one was meant would be
+# a guess - and no Heron tool could write either.
+#
+#   WHAT IT DOES. A name is looked for as it is spelt first, so every name that
+#   worked before reaches exactly what it reached. Only when nothing on the
+#   element is called that, and the name ends in a GUID in braces, is the one
+#   parameter with that GUID taken - and only while it is still called what
+#   comes before the braces (left empty, the GUID alone). A GUID the element
+#   does not carry, or one under another name, finds nothing: "it has no
+#   parameter called ...". The refusal for two writable parameters of one name
+#   now says to name the one meant that way. REPORT_PARAMETER_INVENTORY prints
+#   every parameter's GUID.
+#
+#   The proof below no longer describes the code and is kept as a record; the
+#   card is DRAFT until NEEDS-CHECKING Group JF proves version 6. Kept out of
+#   the purpose and the identity line, for the reason version 3 gives.
+version: 6
 source: OFFICIAL
 risk: MODIFY
 
@@ -193,7 +217,10 @@ contract:
     # VERSION 4: types=yes on the first row looks among the TYPES in those
     # categories - key=Type Name|in=Columns|types=yes;305mm Diameter|Material=
     # Teak - and a parameter holding another element takes a material or a
-    # level by name, or a family type as Family: Type.
+    # level by name, or a family type as Family: Type. VERSION 6: two shared
+    # parameters with one name are told apart by GUID - Equipment Tag
+    # {e133774c-3f62-45f1-a0c6-7e6c6238380b} - as REPORT_PARAMETER_INVENTORY
+    # prints it.
     - name: rows
       type: string
       source: request
@@ -320,6 +347,10 @@ compatibility-note: >
   `SpecTypeId.Reference.Material` from 2022 (read in the 2023 reference
   assembly), `ParameterType.Material` and `ParameterType.FamilyType` on 2020
   and 2021 (read in the 2020 one). No `ElementId` is built from a number.
+
+  Since row 5b-1344 a parameter may be named by GUID: `Element.get_Parameter(Guid)`
+  and `Definition.Name` are unchanged 2020 to 2027, and `Guid.TryParse` is the
+  .NET Framework 4 call every runtime here carries.
 
 utterances:
   - apply the values edited in the Companion table
