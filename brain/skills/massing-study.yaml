@@ -1,0 +1,154 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: massing-study
+name: Run a massing study - masses, mass floors, area by use and plot ratio, then the building on its faces
+domain: revit.elements
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Takes a scheme from a block on a site to numbers the brief can be checked
+  against, and then to a building: conceptual masses on the project's
+  levels, mass floors on them, a Usage on every mass floor, the gross floor
+  area by level and by use, the plot ratio and site coverage - and, once the
+  scheme is agreed, walls and curtain systems on the mass faces and slabs on
+  the mass floors. The order is not a preference: each step reads what the
+  one before made.
+
+  The status in brackets after each capability is what that capability's
+  own fragment.yaml said on 2026-10-28. The list after this method is read
+  from the library every time it is served: where the two differ, the list
+  is right and this text is out of date.
+
+  WHAT HERON CANNOT DO, said before anything is built: an IN-PLACE mass -
+  Revit's API makes no in-place family on any release, so a scheme Heron
+  builds is a LOADED mass family; FLOOR BY FACE and ROOF BY FACE - no API on
+  any release, read 2026-10-28; and a mass family's size driven by type
+  parameters - a form the conceptual tools make is a fixed shape, changed by
+  making it again and reloading.
+
+  0. SAVE IT FIRST (BUILDING-SHELL step 0): REPORT_OPEN_DOCUMENTS (DRAFT)
+     says whether the model has a file; ask once for Ctrl+S, in the Revit
+     window, if it has none. CHECK THE UNITS: REPORT_PROJECT_UNITS (DRAFT),
+     and SET_PROJECT_UNITS (PROVEN) offered when the model reads imperial
+     and the modeller works in millimetres and square metres.
+  1. THE BRIEF, IN ONE TABLE, before step 2: the site area in m2 (or "the
+     property lines"), the storey count and floor-to-floor height, each
+     block's footprint and height, and the use of each band of floors -
+     retail, office, residential. A size is the modeller's only once they
+     say yes; a picture gives shape, never size (D-33). The plot ratio or
+     coverage a local authority allows is the modeller's to give, never
+     Heron's to assume.
+  2. CREATE_LEVELS (PROVEN) - every level the mass floors will be cut at,
+     the ground and each storey, BEFORE any mass floor. A mass floor is a
+     level crossing a mass, so a level added later is a floor missed. Levels
+     at the roof, a parapet or a plant deck are levels too; whether each
+     counts in the gross floor area is step 5's question.
+  3. THE MASSES - one loaded mass family per block, built by the
+     MASS-FAMILY-CREATION method, then LOAD_FAMILY (PROVEN) into the project
+     and PLACE_FAMILY_INSTANCES (PROVEN) at each block's insertion point on
+     the ground level. Masses already in the model - in-place or loaded -
+     are used as they are.
+  4. REPORT_MASSES (DRAFT) - every mass with its base, top and height. Check
+     each block against the brief table before going on; a mass 200 mm off
+     a level misses a mass floor.
+  5. CREATE_MASS_FLOORS (PROVEN) with REPORT_MASSES' elements through
+     expect_from, levelNames empty for every level each mass reaches. Revit
+     makes no mass floor at a level on the TOP face of a mass (Autodesk Help,
+     mass floors at the top of a mass). A level the study should NOT count -
+     a plant deck, a parapet - is taken off with REMOVE_MASS_FLOORS (DRAFT),
+     naming it; that is a change the modeller says yes to (Article 7).
+  6. SET_MASS_FLOOR_USAGE (DRAFT) - "Level 1=Retail; Level 2..Level 6=Office;
+     Level 7..Level 20=Residential", the bands from step 1's table. The
+     words are the modeller's; Heron keeps no list of uses.
+  7. JOIN WHERE BLOCKS MEET: REPORT_MASSES names every pair of masses that
+     overlap and are NOT joined, with the volume they share - both count it
+     in volume and floor area until they are joined (Autodesk Help, joining
+     mass instances). JOIN_GEOMETRY (PROVEN) joins each pair named, then
+     REPORT_MASSES again: the finding gone and the total smaller.
+  8. THE NUMBERS: REPORT_MASSES (DRAFT) with siteArea - the m2 from step 1,
+     or "property lines" - gives gross floor area by level and by Usage, the
+     plot ratio (FAR) and site coverage. Say each against the brief: "FAR
+     3.42 against 3.5 allowed" is a comparison of the values checked, never
+     a statement that the scheme complies - that is the authority's.
+  9. A SCHEDULE THAT STAYS LIVE, when asked: CREATE_SCHEDULE (PROVEN) of
+     the Mass Floor category with Mass : Family and Type, Level, Usage,
+     Floor Area, Floor Perimeter, Exterior Surface Area and Floor Volume;
+     SET_SCHEDULE_SORT_GROUP (PROVEN) by Usage then Level, and
+     SET_SCHEDULE_FIELD_TOTALS (PROVEN) on Floor Area. That a Mass Floor
+     schedule is made this way is owed in NEEDS-CHECKING Group JJ.
+  10. REVISE AND READ AGAIN: a block changed in its family is reloaded with
+     LOAD_FAMILY reload=true; the mass floors follow the new shape. Run
+     step 8 again after every change - a number reported before a change
+     is not a number about the scheme now.
+  11. FROM MASS TO BUILDING, only once the modeller says the scheme is
+     agreed:
+     a. CREATE_ELEMENTS_BY_FACE (DRAFT) with a wall type - Wall by Face on
+        every side face, Finish Face: Exterior on the mass face unless the
+        modeller says otherwise - and with a curtain system type for a
+        glazed block, faces "sides", or faces "up" for a glazed roof. They
+        stay tied to the faces; after the mass changes, Update to Face by
+        hand.
+     b. SLABS: REPORT_MASSES with withOutlines gives each mass floor's
+        outline in the writing CREATE_FLOOR (PROVEN, version 2) takes - one
+        CREATE_FLOOR per outline, on its level. A slab made this way does
+        NOT follow the mass; say so. An outline with a hole - a courtyard,
+        an atrium - is the outside edge only: CREATE_OPENING (PROVEN) cuts
+        the hole after, from the inner edge the modeller confirms.
+     c. ROOF: CREATE_ROOF (PROVEN) on the top outline, or Roof by Face by
+        hand - no API makes one.
+     d. HIDE THE MASSES, never delete them while walls hang on their faces:
+        SET_CATEGORY_VISIBILITY (PROVEN) turns Mass off in the views that
+        are drawings.
+  12. COUNT AGAINST THE BRIEF at the end: masses, mass floors per mass,
+     gross floor area by use, walls and curtain systems made, slabs made -
+     each read back, each against the step 1 table.
+
+utterances:
+  - do a massing study for this site
+  - build the massing and give me the area per floor and the plot ratio
+  - massing study with retail on the ground floor and offices above
+  - check the GFA and FAR of this massing against the brief
+  - turn the agreed massing into walls, glazing and floors
+
+needs:
+  - REPORT_OPEN_DOCUMENTS
+  - REPORT_PROJECT_UNITS
+  - SET_PROJECT_UNITS
+  - CREATE_LEVELS
+  - LOAD_FAMILY
+  - PLACE_FAMILY_INSTANCES
+  - REPORT_MASSES
+  - CREATE_MASS_FLOORS
+  - REMOVE_MASS_FLOORS
+  - SET_MASS_FLOOR_USAGE
+  - JOIN_GEOMETRY
+  - CREATE_SCHEDULE
+  - SET_SCHEDULE_SORT_GROUP
+  - SET_SCHEDULE_FIELD_TOTALS
+  - CREATE_ELEMENTS_BY_FACE
+  - CREATE_FLOOR
+  - CREATE_OPENING
+  - CREATE_ROOF
+  - SET_CATEGORY_VISIBILITY
+
+preconditions:
+  - a project model is open in front, saved to a file
+  - the site area, the storeys and their height, each block's footprint and height, and the use of each band of floors have been given for THIS request
+  - a plot ratio or coverage to check against, if one is to be checked, is given by the modeller
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Written 2026-10-28 on the owner's request for advanced massing, with
+  REPORT_MASSES, SET_MASS_FLOOR_USAGE, REMOVE_MASS_FLOORS and
+  CREATE_ELEMENTS_BY_FACE built the same day. The Revit facts are read off
+  the API reference assemblies for 2020 to 2027 and Autodesk Help on mass
+  floors and joined masses. Every step is DRAFT until it has been run on a
+  real model with a negative case (D-30) - NEEDS-CHECKING Group JJ.

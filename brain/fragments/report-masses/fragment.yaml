@@ -1,0 +1,128 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-127
+semantic-identity: "how much floor area is in the massing - each mass, each mass floor, each use, and the plot ratio"
+kind: action
+domain: revit.elements
+capability: REPORT_MASSES
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# A massing study is read in numbers: how much floor area a scheme gives, on
+# which levels, for which use, and what that is against the site. Revit holds
+# them on the masses - Gross Volume, Gross Surface Area and Gross Floor Area,
+# and on each mass floor its area, perimeter, exterior surface, volume and
+# Usage - and shows them only one mass at a time or in a schedule somebody
+# has to build. This reads them all at once, with the totals by level and by
+# Usage.
+#
+# THE SITE IS GIVEN, NEVER GUESSED: a number of square metres, or "property
+# lines" for the Area of the project's property lines added up. Plot ratio
+# is total Gross Floor Area over the site; site coverage is each mass's
+# LOWEST mass floor over the site, and says so, because a mass with no mass
+# floors has no area for Revit and none here.
+#
+# OVERLAP IS MEASURED: two masses whose solids share volume and are not
+# joined both count it. Autodesk's help on joining mass instances: Join
+# Geometry removes the overlap and the gross volume and gross floor area
+# update. Each pair is named with the volume they share, so the study is not
+# reported larger than it is.
+#
+# withOutlines adds each mass floor's outline in millimetres, written as
+# CREATE_FLOOR's boundary takes it - corners and `arc MX,MY X,Y` - because
+# Floor by Face has NO API on any release, 2020 to 2027 (no face-floor or
+# face-roof class in the reference assemblies, read 2026-10-28). A slab drawn
+# from an outline does not follow the mass afterwards; Floor by Face does.
+#
+# The masses it read come back as `elements`, so CREATE_MASS_FLOORS,
+# SET_MASS_FLOOR_USAGE and CREATE_ELEMENTS_BY_FACE can take them through
+# expect_from.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Reads every conceptual mass in the project - Gross Volume, Gross Surface
+  Area, Gross Floor Area, height, its mass floors level by level with Usage -
+  and totals gross floor area by level and by use, with plot ratio and site
+  coverage when a site area is given.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Empty for every mass; otherwise ids, or words of a family or type name,
+    # commas between.
+    - name: masses
+      type: string
+      source: request
+      optional: true
+    # Empty for none; square metres - "4500"; or "property lines".
+    - name: siteArea
+      type: string
+      source: request
+      optional: true
+    # True adds each mass floor's outline, written as CREATE_FLOOR's boundary.
+    - name: withOutlines
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: elements
+      # The masses read, for the mass tools after this one.
+      role: result
+      type: IList<Element>
+    - name: massCount
+      role: result
+      type: int
+    - name: grossFloorAreaM2
+      role: result
+      type: double
+    - name: report
+      # ONE STRING, mass by mass and floor by floor, then the totals (D-52).
+      role: result
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. MassInstanceUtils.GetGrossVolume,
+  GetGrossSurfaceArea, GetGrossFloorArea, GetMassLevelDataIds and
+  GetJoinedElementIds; MassLevelData's NLevelFafArea, NLevelPerimeter,
+  NExteriorSurfaceArea, NVolume, StrUsage and IsEmpty;
+  BooleanOperationsUtils.CutWithHalfSpace and ExecuteBooleanOperation;
+  JoinGeometryUtils.AreElementsJoined; and BuiltInParameter.PROPERTY_AREA are
+  present 2020 through 2027 - read with tools/api-surface on 2026-10-28.
+  MassLevelData is marked obsolete on 2023 alone, and not on 2024 to 2027;
+  PropertyLine.Area exists on 2027 only, so the Area parameter is read
+  instead.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what is the gross floor area of the masses"   -> here
+#   "what is the plot ratio of this massing"       -> here, siteArea
+#   "list the mass floor outlines so I can draw slabs on them" -> here, withOutlines
+#   "add mass floors at every level"               -> CREATE_MASS_FLOORS
+#   "set the usage of the mass floors"             -> SET_MASS_FLOOR_USAGE
+#   "how much area do the rooms have"              -> REPORT_AREAS
+
+utterances:
+  - what is the gross floor area of the masses
+  - give me the area per level of this massing study
+  - what is the plot ratio of this massing on a 4500 m2 site
+  - report the masses with their mass floors and usage
+  - how much floor area does each use get in the massing
+  - what is the total GFA of the mass model
+  - show the area of every mass floor level by level
+  - list the mass floor outlines so I can draw slabs on them
+  - are any of the masses overlapping without being joined

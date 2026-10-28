@@ -1,0 +1,32 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      a loaded mass family, a 30 x 20 m box 12 m tall, selected, typeName
+      "Generic - 200mm", faces empty, locationLine empty
+    expect: >
+      created 4, one wall by face on each side face, each read back with the
+      type and an area; the answer naming Finish Face: Exterior as Heron's
+      default and the geometry route Revit took
+  - given: >
+      the same box before any wall, typeName a curtain system type, faces
+      "up"
+    expect: >
+      created 1, one curtain system over the top face with a grid on it
+
+second_route:
+  - Massing & Site > Wall by Face on the same faces by hand, and the walls' Properties
+  - one Ctrl+Z removes every wall made in a single step (Golden Rule 16)
+
+negative:
+  - given: the same box straight after the four walls, the same typeName
+    expect: >
+      created 0 and skipped 1, the mass named as already carrying 4 walls by
+      face - no second skin
+  - given: a floor type, typeName "Generic 300mm"
+    expect: >
+      NOTHING WAS MADE, the finding saying Floor by Face has no API and naming
+      REPORT_MASSES with withOutlines and CREATE_FLOOR
+  - given: a wall selected instead of a mass, typeName "Generic - 200mm"
+    expect: >
+      NOTHING WAS MADE, the wall named as not a mass

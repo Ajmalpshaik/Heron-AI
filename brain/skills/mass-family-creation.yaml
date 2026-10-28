@@ -1,0 +1,116 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: mass-family-creation
+name: Build a conceptual mass family - a block, a tapering or twisting tower, a cut-back - for a massing study
+domain: revit.families
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Builds a CONCEPTUAL MASS FAMILY - the block a massing study places in a
+  project: a box on a footprint, an L or a U, a tower that tapers or turns,
+  a podium with a tower on it, a block with a corner cut back. Made in the
+  conceptual Family Editor from the Mass template (Metric Mass.rft), where
+  shapes are built on POINTS and the LINES drawn through them, not on
+  reference planes and labelled dimensions - so the classic form tools of
+  FAMILY-CREATION do not apply here.
+
+  The status in brackets after each capability is what that capability's
+  own fragment.yaml said on 2026-10-28.
+
+  WHAT IT CANNOT DO, said first: an IN-PLACE mass (no API makes one on any
+  release - a loaded mass family is what Heron builds, and it behaves the
+  same in a study: mass floors, gross areas, Model by Face); and a size the
+  family's TYPES drive - a form the conceptual tools make is a fixed shape.
+  To change it, the form is made again and the family reloaded (step 7).
+
+  0. REPORT_FAMILY_TEMPLATE (PROVEN) FIRST - confirm the family in front is
+     a CONCEPTUAL MASS; any other kind is said and nothing is built. A new
+     one is started by the modeller with File > New > Conceptual Mass, or by
+     CREATE_FAMILY_DOCUMENT (PROVEN) with the Mass template's path the
+     modeller gives and the file it is saved to. CHECK THE UNITS
+     (FAMILY-CREATION step 0): a units line reading imperial where the
+     modeller works in millimetres is said before anything is built.
+  1. READ THE THING: every block in ONE TABLE - its plan corners in
+     millimetres from the family origin, its height, and how it changes up
+     the height (tapers to what plan, turns by how much, steps back where).
+     The origin is where the block is placed in the project. A size is the
+     modeller's only once they say yes (D-33).
+  2. THE PLAN: PLACE_ADAPTIVE_POINTS (PROVEN) - FREE reference points,
+     "X,Y,0" for each plan corner, at the mass's base; a mass takes
+     reference points, never adaptive ones. Their ids come back.
+  3. THE OUTLINE: DRAW_FAMILY_POINT_CURVES (PROVEN), as REFERENCE lines, one
+     edge per pair of point ids, closing back to the first - "a,b | b,c |
+     c,d | d,a". Reference lines stay and drive the form; model lines are
+     consumed by it. A curved edge is a spline through three or more
+     points, so a round plan is two splines meeting - close to a circle,
+     not one; the modeller sees it before step 4.
+  4. THE FORM: CREATE_CONCEPTUAL_FORM (PROVEN) on the outline's curve ids -
+     - A BLOCK: one profile and depthMm the block's height - an extrusion
+       straight up.
+     - A TAPERING OR TWISTING TOWER: steps 2 and 3 again at each height
+       where the plan changes - points at "X,Y,Z" with Z that height, the
+       plan smaller or turned - and the profiles in order, bottom first,
+       with no depth: a LOFT through them. Every profile with the same
+       number of edges, or the loft twists.
+     - A DRUM OR A DOME: an axis - one straight reference line - and a
+       profile beside it: a REVOLVE.
+     solid=false makes a VOID of the same kinds - a cut-back corner, a
+     notch, a void through the middle.
+  5. A VOID CUTS NOTHING BY BEING MADE: COMBINE_FAMILY_FORMS (PROVEN) with
+     the solid's and the void's ids makes the cut, and the volume is
+     measured before and after - a void that took nothing away fails the
+     call. Whether it is accepted in a mass family is owed in NEEDS-CHECKING
+     Group JJ. Two solids that make one block are joined by the same call.
+  6. CHECK IT: REPORT_FAMILY_FORMS (PROVEN) - every form, solid or void,
+     its extent and volume against step 1's table. SET_FAMILY_FORM_MATERIAL
+     (PROVEN) when the study shows blocks by use or by phase.
+  7. INTO THE PROJECT: SAVE_DOCUMENT (PROVEN), then LOAD_FAMILY (PROVEN)
+     into the project and PLACE_FAMILY_INSTANCES (PROVEN) on the ground
+     level at the insertion point; a family changed after it was placed is
+     loaded again with reload=true and every instance follows. The
+     MASSING-STUDY method takes it from there - mass floors, usage, areas.
+
+  A FACADE PANELISED ON THE MASS, when asked: DIVIDE_FAMILY_SURFACE (PROVEN)
+  divides a face of the form by number or distance, and a pattern-based
+  panel built by PATTERN-BASED-FAMILY-CREATION fills it.
+
+utterances:
+  - make a mass family for this block
+  - build a conceptual mass of a tower that tapers to the top
+  - model a twisting tower mass for the massing study
+  - make a podium mass with a cut-back corner
+
+needs:
+  - REPORT_FAMILY_TEMPLATE
+  - CREATE_FAMILY_DOCUMENT
+  - REPORT_PROJECT_UNITS
+  - PLACE_ADAPTIVE_POINTS
+  - DRAW_FAMILY_POINT_CURVES
+  - CREATE_CONCEPTUAL_FORM
+  - COMBINE_FAMILY_FORMS
+  - REPORT_FAMILY_FORMS
+  - SET_FAMILY_FORM_MATERIAL
+  - DIVIDE_FAMILY_SURFACE
+  - SAVE_DOCUMENT
+  - LOAD_FAMILY
+  - PLACE_FAMILY_INSTANCES
+
+preconditions:
+  - a conceptual mass family is open in front in the Family Editor, or the Mass template's path and the file to save to have been given
+  - every block's plan, height and how it changes up the height have been given for THIS request
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Written 2026-10-28 on the owner's request for advanced massing. docs/43
+  section 11 listed the conceptual mass as a kind with "no skill of its
+  own"; this is that skill, from the conceptual tools already built. Every
+  step is DRAFT until it has been run on a real family with a negative case
+  (D-30) - NEEDS-CHECKING Group JJ.

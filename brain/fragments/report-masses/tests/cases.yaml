@@ -1,0 +1,28 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: >
+      two loaded mass families, a 30 x 20 m box 12 m tall over Levels 1 to 4
+      (3 m apart) with mass floors at Levels 1 to 4 and Usage "Office" on
+      Levels 2 to 4, and a second 10 x 10 m box 6 m tall that overlaps the
+      first by 5 x 10 m in plan and is NOT joined; siteArea "4500";
+      withOutlines true
+    expect: >
+      massCount 2; the first mass's Gross Floor Area 2400 m2 and four floors
+      of 600 m2 each, three with Usage "Office"; a finding naming the two
+      masses with the volume they share; plot ratio and site coverage on a
+      4500 m2 site; an outline at each floor reading 30000 x 20000 mm in the
+      writing CREATE_FLOOR takes
+
+second_route:
+  - the masses' Properties - Gross Floor Area, Gross Volume - and a Mass Floor schedule with Floor Area and Usage
+  - Join Geometry on the two masses, then this again - the overlap finding gone and the total smaller
+
+negative:
+  - given: a project with walls and floors and no mass, masses empty
+    expect: >
+      massCount 0, grossFloorAreaM2 0, the finding saying the project has no
+      conceptual masses - a wall's or a floor's area is never counted
+  - given: the same two masses, masses "NoSuchFamily"
+    expect: >
+      massCount 0 and the finding naming the words that matched nothing

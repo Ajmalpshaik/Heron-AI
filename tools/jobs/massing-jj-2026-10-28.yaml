@@ -1,0 +1,82 @@
+# NEEDS-CHECKING Group JJ - the massing tools built 2026-10-28: REPORT_MASSES,
+# SET_MASS_FLOOR_USAGE, REMOVE_MASS_FLOORS and CREATE_ELEMENTS_BY_FACE.
+#
+#     python tools/batch-prove.py tools/jobs/massing-jj-2026-10-28.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/massing-jj-2026-10-28.yaml
+#
+# ONE SCRATCH PROJECT, OPEN IN REVIT 2020, never a working model:
+# %TEMP%\heron-work\group-jj\JJ Massing.rvt, a new project from the Metric
+# architectural template, arranged by hand as JJ1 in
+# docs/needs-checking/group-jj.md says - Levels 1 to 4 at 0, 3000, 6000 and
+# 9000 mm; mass A a 30 x 20 m box 12 m tall at the origin with mass floors at
+# Levels 1 to 4; mass B a 10 x 10 m box 6 m tall overlapping A by 5 x 10 m in
+# plan, NOT joined, with no mass floors; one Generic - 200mm wall elsewhere.
+#
+# The order matters: the usage run reads the floors JJ1 made, the walls run
+# needs mass A with no walls on it yet, and every write is rolled back, so each
+# job starts from JJ1's arrangement.
+#
+# select-by-categories takes the whole model with no inViewOnly. It is the
+# arrangement, not what is judged - the answer's binding note must read
+# "elements from select-by-categories (2)" on the positive legs and "(1)" on
+# the negatives, or the run proves nothing.
+
+model: JJ Massing (scratch project, Metric architectural template), Revit 2020
+
+jobs:
+  - fragment: report-masses
+    expect: massCount
+    in: JJ Massing
+    set: {siteArea: "4500", withOutlines: true}
+    negative-set: {masses: "NoSuchFamily"}
+    note: >
+      Positive - massCount 2; mass A Gross Floor Area 2400 m2 over four
+      mass floors of 600 m2; the overlap of A and B named with about 300 m3
+      shared; plot ratio and site coverage on 4500 m2; an outline at each of
+      A's floors 30000 x 20000 mm. Negative - massCount 0, "No mass matched
+      NoSuchFamily".
+
+  - fragment: set-mass-floor-usage
+    expect: changed
+    write: true                        # rolled back
+    keep-chain: true
+    in: JJ Massing
+    setup: [select-by-categories]
+    setup-set: {categories: Mass}
+    negative-setup-set: {categories: Walls}
+    set: {usage: "Level 1=Retail; Level 2..Level 4=Office"}
+    negative-set: {usage: "Level 1=Retail; Level 2..Level 4=Office"}
+    note: >
+      Positive - changed 4 on mass A, Level 1 "Retail", Levels 2 to 4
+      "Office", read back; mass B named as having no mass floors. Negative -
+      the wall: NOTHING WAS CHANGED, the wall named as not a mass.
+
+  - fragment: remove-mass-floors
+    expect: removed
+    write: true                        # rolled back
+    keep-chain: true
+    in: JJ Massing
+    setup: [select-by-categories]
+    setup-set: {categories: Mass}
+    negative-setup-set: {categories: Walls}
+    set: {levelNames: "Level 4"}
+    negative-set: {levelNames: "Level 4"}
+    note: >
+      Positive - removed 1, mass A's floors reading Levels 1 to 3 after;
+      notThere 1 for mass B. Negative - the wall: NOTHING WAS REMOVED.
+
+  - fragment: create-elements-by-face
+    expect: created
+    write: true                        # rolled back
+    keep-chain: true
+    in: JJ Massing
+    setup: [select-by-categories]
+    setup-set: {categories: Mass}
+    negative-setup-set: {categories: Walls}
+    set: {typeName: "Generic - 200mm"}
+    negative-set: {typeName: "Generic - 200mm"}
+    note: >
+      Positive - walls by face on the side faces of both masses (4 on A, 4 on
+      B), each read back with its type and area; the answer naming Finish
+      Face: Exterior and which geometry route Revit took - write the route in
+      JJ's results. Negative - the wall: NOTHING WAS MADE, not a mass.
