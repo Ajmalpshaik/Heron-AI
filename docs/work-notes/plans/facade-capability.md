@@ -4,7 +4,7 @@
 > |---|---|
 > | **Type** | One-time plan, being executed. Retires as described at the bottom |
 > | **Asked for** | By the owner, 2026-10-28: *"Do you have capability for facade creation in Revit? ... parametric facade, all type of facade and facade creation, everything related to the facade ... Be stronger on facade creation. All type of facade creation, facade family, family creations, everything."* |
-> | **Owner of this note** | The session building it; after that, whoever proves Groups JH, JI and JJ |
+> | **Owner of this note** | The session building it; after that, whoever proves Groups JH to JL |
 > | **Authority** | None of its own. The fragment cards, the [`facade`](../../../brain/skills/facade.yaml) method, [NEEDS-CHECKING](../../NEEDS-CHECKING.md) and [FRAGMENT-ISSUES](../../FRAGMENT-ISSUES.md) are where each fact lives |
 
 ## Where it started
@@ -23,6 +23,8 @@ What nothing did, read off the cards' own NOT YET and routing lines:
 | A panel type changed by **position** - the bottom row to spandrels, column 2 to louvres | [`curtain-wall`](../../../brain/skills/curtain-wall.yaml) NOT YET; `set-curtain-wall-grid` routing: *"change the curtain panel -> NOT HERE"* |
 | A grid line on **one** wall, or one wall divided into N equal panels, without changing the type | `set-curtain-wall-grid` routing: *"divide this curtain wall into six panels -> NOT HERE"*, *"add a grid line here -> NOT HERE"* |
 | One method that says which route a facade takes | none - each route's method existed, nothing chose between them |
+| An adaptive point's Orientation - Host and Loop System for a panel or fin on a sloped face | [`adaptive-family-creation`](../../../brain/skills/adaptive-family-creation.yaml): *"a Properties choice no Heron tool sets yet"* |
+| A divided surface changed after it is made - rotated for a diamond pattern, offset, cut at each level | `divide-family-surface` makes both grids *"centred, unrotated, with no offset"* and refuses a face already divided |
 
 Every Revit member the three new tools call was read with `tools/api-surface` on all eight releases,
 2020 to 2027, on 2026-10-28: `Creation.Document.NewCurtainSystem2(ReferenceArray, CurtainSystemType)`,
@@ -50,10 +52,22 @@ tools behind it.
 | 1 | `create-curtain-system` - a curtain system on a mass's side faces, all faces or its top, with the type the modeller names; panels and lines read back | [JH](../../needs-checking/group-jh.md) | DRAFT |
 | 2 | `set-curtain-panel-type` - panels on one wall changed by row or column; one picked panel stays CHANGE_ELEMENT_TYPE's | [JI](../../needs-checking/group-ji.md) | DRAFT |
 | 3 | `add-curtain-grid-lines` - grid lines at given offsets, or N equal bays, on one wall only, with mullions if asked | [JJ](../../needs-checking/group-jj.md) | DRAFT |
-| 4 | the [`facade`](../../../brain/skills/facade.yaml) method - routes A to E | - | DRAFT |
+| 4 | `set-adaptive-point-orientation` - an adaptive family's placement points turned to Instance, Host, Host and Loop System or Global, in the Family Editor; the setting a fin or panel on a sloped face needs | [JK](../../needs-checking/group-jk.md) | DRAFT |
+| 5 | `set-divided-surface-layout` - an existing divided surface's grids changed: rotation (a diamond pattern), offset, justification, border tiles, cut at levels | [JL](../../needs-checking/group-jl.md) | DRAFT |
+| 6 | the [`facade`](../../../brain/skills/facade.yaml) method - routes A to E | - | DRAFT |
 
 None of it is proved. A compile is not a proof (D-30): each tool is refused for a kept change until its
 group has been run on a named model with its negative case (D-117).
+
+## Waiting for the owner's word - each widens a PROVEN tool
+
+A change under a PROVEN card's `impl/` makes its proof stale, so none of these was built:
+
+| Widen | So that it | Why it matters for a facade |
+|---|---|---|
+| `report-curtain-elements` | groups panels by **size** within a tolerance, as [doc 45 §6](../../45-five-more-downloaded-skill-files.md) already records | how many different panel sizes a facade has is the fabricator's first question |
+| `set-curtain-wall-grid`, `set-curtain-wall-mullions` | also take a **curtain system type** | route B's grid and mullions are set by hand until then |
+| `report-family-template` | reads each adaptive point's **Orientation** | nothing reads back what `set-adaptive-point-orientation` writes, except Properties |
 
 ## Still NOT YET after it
 
@@ -67,5 +81,5 @@ Said by the `facade` method when asked, never worked round:
 
 ## Retiring this note
 
-When Groups JH, JI and JJ are proved, or the owner drops one, this note is deleted. Its durable parts are
+When Groups JH to JL are proved, or the owner drops one, this note is deleted. Its durable parts are
 already where they live: the cards, the `facade` method and the groups.

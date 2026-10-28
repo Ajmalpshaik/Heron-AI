@@ -73,7 +73,11 @@ purpose: >
         the Type Selector; Revit gives no call to set it.
      3. LOAD_FAMILY the panel into the mass, then DIVIDE_FAMILY_SURFACE on the
         face with the U and V divisions the modeller gives, and the panel as
-        its pattern - every cell takes one.
+        its pattern - every cell takes one. Then SET_DIVIDED_SURFACE_LAYOUT
+        to rotate the grid - 45 degrees for a diamond pattern -, offset it,
+        cut it at every level, or set the border tiles; DIVIDE_FAMILY_SURFACE
+        makes the grid centred and unrotated and refuses a face already
+        divided.
      4. REPORT_DIVIDED_SURFACES for the cells, and CHECK_SURFACE_FIT when the
         panels must be flat or within a size: a twisted cell cannot be one
         flat sheet of glass, and that is a finding for the architect, never
@@ -85,7 +89,9 @@ purpose: >
      - it spans between points it is clicked on (a fin from sill to head, a
        blade between two mullions, a strut): the adaptive-family-creation
        method builds it, PLACE_ADAPTIVE_COMPONENTS places each one on its
-       points.
+       points. A piece that must follow a sloped or curved face gets its
+       points turned to the host in the Family Editor first -
+       SET_ADAPTIVE_POINT_ORIENTATION, Host and Loop System.
      - it is a fixed shape on a face (a bracket, a canopy arm): a face-based
        family (hosted-family-creation), PLACE_FAMILY_ON_FACE.
      - it repeats at an even spacing: place one, then ARRAY_ELEMENTS - or
@@ -147,9 +153,11 @@ needs:
   - CREATE_CONCEPTUAL_FORM
   - LOAD_FAMILY
   - DIVIDE_FAMILY_SURFACE
+  - SET_DIVIDED_SURFACE_LAYOUT
   - REPORT_DIVIDED_SURFACES
   - CHECK_SURFACE_FIT
   # Route D
+  - SET_ADAPTIVE_POINT_ORIENTATION
   - PLACE_ADAPTIVE_COMPONENTS
   - PLACE_FAMILY_ON_FACE
   - ARRAY_ELEMENTS
@@ -179,8 +187,9 @@ note: >
   of facade. It is the map; the curtain-wall, pattern-based-family-creation,
   adaptive-family-creation, hosted-family-creation and profile-family-creation
   methods own their own steps and are not repeated here. ADD_CURTAIN_GRID_LINES,
-  SET_CURTAIN_PANEL_TYPE and CREATE_CURTAIN_SYSTEM were written the same day
-  at DRAFT and are refused for a kept change until proved (D-117). The whole
+  SET_CURTAIN_PANEL_TYPE, CREATE_CURTAIN_SYSTEM, SET_ADAPTIVE_POINT_ORIENTATION
+  and SET_DIVIDED_SURFACE_LAYOUT were written the same day at DRAFT and are
+  refused for a kept change until proved (D-117). The whole
   method is DRAFT until each route has been run on a scratch model with a
   negative case (D-30). The coverage, route by route, is in
   docs/work-notes/plans/facade-capability.md.
