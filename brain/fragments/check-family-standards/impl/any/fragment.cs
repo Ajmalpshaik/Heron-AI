@@ -60,6 +60,14 @@
 //    formula, which a pipe cannot change - so the family keeps its size when
 //    the pipe is resized; and an inline accessory's System Classification not
 //    Global (a WARN: some offices fix it on purpose).
+// 2b. A DUCT OR PIPE FITTING'S OWN RULES (version 4, 2026-10-28, row 5b-1346).
+//    Its run connectors against its Part Type - an elbow two, a tee three, a
+//    cross four, a cap one (a FAIL: Revit places the part its Part Type names);
+//    each one's System Classification Fitting, as Revit's own fittings' are
+//    (a WARN); one primary, lying on the X axis, where Autodesk's help puts it
+//    (a WARN); and an elbow's connector Angle driven by an INSTANCE family
+//    parameter - by none is a WARN until NEEDS-CHECKING Group JI reads Revit's
+//    own elbow, by a TYPE one a FAIL, as a size driven by a type one is.
 // 3. TIDINESS. A family parameter nothing uses - no formula, label, array,
 //    form field, nested family or connector reads it; a solid form shown at
 //    Coarse or Medium where a nested family already draws that level.
@@ -672,6 +680,123 @@ if (doc.IsFamilyDocument)
                     + "the pipe or duct it is put on.",
                     "SET_FAMILY_CONNECTOR_ROLES settings \"system=Global\".");
             }
+
+        // ---- VERSION 4: A DUCT OR PIPE FITTING'S OWN RULES (row 5b-1346)
+        //
+        // Only the two categories routing preferences offer, and only their
+        // own domain's connectors: a pipe fitting's run is pipe connectors.
+        var pipeFitting = isCategory("OST_PipeFitting");
+        var ductFitting = isCategory("OST_DuctFitting");
+        if (pipeFitting || ductFitting)
+        {
+            var portDomain = pipeFitting ? Domain.DomainPiping : Domain.DomainHvac;
+            var portWords = pipeFitting ? "pipe" : "duct";
+            var ports = connectors.Where(c => c.Domain == portDomain).ToList();
+            var strangers = connectors.Count - ports.Count;
+            if (strangers > 0)
+                warn("The " + categoryName + " family has " + strangers + " connector(s) that are not " + portWords
+                    + " connectors. A " + portWords + " run joins only " + portWords + " ones; the others join nothing it lays.",
+                    "REMOVE_FAMILY_CONNECTOR on each one that does not belong.");
+
+            // THE COUNT ITS PART TYPE CALLS FOR. Only the parts whose count is
+            // recorded (docs/43 section 10); the rest are NOT CHECKED, never
+            // passed. Matched by enum name, so a release without one never
+            // matches it.
+            var portsFor = new Dictionary<string, int>
+            {
+                { "Elbow", 2 }, { "Tee", 3 }, { "Cross", 4 }, { "Transition", 2 }, { "Union", 2 },
+                { "PipeMechanicalCoupling", 2 }, { "Cap", 1 }, { "Wye", 3 }, { "LateralTee", 3 }, { "LateralCross", 4 },
+            };
+            if (partType != null && portsFor.ContainsKey(partType))
+            {
+                var wanted = portsFor[partType];
+                if (ports.Count == wanted)
+                    pass("Part Type " + partWords + " with " + ports.Count + " " + portWords + " connector(s), as that part has.");
+                else
+                    fail("Part Type is " + partWords + " but the family has " + ports.Count + " " + portWords
+                        + " connector(s) - that part has " + wanted + ". Revit offers and places it as the part its Part "
+                        + "Type names, so a run reaching it finds " + (ports.Count > wanted ? "a port too many" : "a port missing") + ".",
+                        ports.Count > wanted
+                            ? "REMOVE_FAMILY_CONNECTOR on the extra one - or SET_FAMILY_SETTINGS \"Part Type=...\" if the Part Type is what is wrong."
+                            : "ADD_FAMILY_CONNECTOR on the end face without one - or SET_FAMILY_SETTINGS \"Part Type=...\" if the Part Type is what is wrong.");
+            }
+            else if (partType != null && partType != "Normal" && partType != "Undefined")
+                notRead("How many connectors a " + partWords + " has: Heron has no recorded rule for that Part Type "
+                    + "(docs/43 section 10) - compare with Revit's own " + partWords + " through REPORT_FAMILY_CONNECTORS.");
+
+            // EACH RUN CONNECTOR FITTING, as Revit's own fittings' are.
+            foreach (var c in ports)
+            {
+                string system = null;
+                try { system = c.SystemClassification.ToString(); }
+                catch (Exception) { }
+                if (system == null) notRead("The System Classification of " + label(c) + " could not be read.");
+                else if (system == "Fitting") pass(label(c) + " is Fitting.");
+                else warn(label(c) + " is " + spaced(system) + ", not Fitting. Revit's own fittings' connectors are Fitting "
+                    + "(docs/43 section 10), the system that shows a connector's Angle.",
+                    "SET_FAMILY_CONNECTOR_ROLES settings \"system=Fitting\".");
+            }
+
+            // ONE PRIMARY, LYING ON THE X AXIS.
+            if (ports.Count > 0)
+            {
+                var primaries = new List<ConnectorElement>();
+                foreach (var c in ports)
+                {
+                    try { if (c.IsPrimary) primaries.Add(c); }
+                    catch (Exception) { }
+                }
+                if (primaries.Count != 1)
+                    warn("The " + portWords + " connectors read " + primaries.Count + " primary - a fitting has one.",
+                        "SET_FAMILY_CONNECTOR_ROLES primary=<the plane the X-axis end face lies on>.");
+                else
+                {
+                    var primary = primaries[0];
+                    XYZ along = null;
+                    try { along = primary.Direction; }
+                    catch (Exception) { }
+                    if (along == null)
+                        notRead("Which way the primary " + label(primary) + " points: its direction could not be read.");
+                    else if (Math.Abs(along.X) > 0.9999)
+                        pass(label(primary) + " is primary and lies on the X axis.");
+                    else
+                        warn(label(primary) + " is primary but points (" + Math.Round(along.X, 3).ToString(invariant) + ", "
+                            + Math.Round(along.Y, 3).ToString(invariant) + ", " + Math.Round(along.Z, 3).ToString(invariant)
+                            + ") - Autodesk's help puts a fitting's primary connector on the "
+                            + "face lying on the X axis.",
+                            "SET_FAMILY_CONNECTOR_ROLES primary=<the plane the X-axis end face lies on>.");
+                }
+            }
+
+            // AN ELBOW'S CONNECTOR ANGLE, driven by an INSTANCE parameter.
+            if (partType == "Elbow")
+                foreach (var c in ports)
+                {
+                    Parameter own = null;
+                    FamilyParameter driver = null;
+                    try
+                    {
+                        own = c.get_Parameter(BuiltInParameter.CONNECTOR_ANGLE);
+                        driver = own == null ? null : fm.GetAssociatedFamilyParameter(own);
+                    }
+                    catch (Exception) { }
+                    if (own == null)
+                        notRead("The Angle of " + label(c) + ": it has none to read - a connector shows its Angle only when its system is Fitting.");
+                    else if (driver == null)
+                        warn(label(c) + "'s Angle is driven by no family parameter. An elbow whose connector Angle does not "
+                            + "follow the family's Angle is reported not to flex in a run (docs/43 section 10; NEEDS-CHECKING "
+                            + "Group JI reads Revit's own elbow).",
+                            "SET_FAMILY_CONNECTOR_ROLES settings \"angle=[Angle]\" - with Angle already an INSTANCE parameter, "
+                            + "or the tool makes a type one.");
+                    else if (!driver.IsInstance)
+                        fail(label(c) + "'s Angle is driven by \"" + driver.Definition.Name + "\", a TYPE parameter - every elbow of "
+                            + "a type keeps one angle, and the run it is placed in cannot turn it.",
+                            "switch it to Instance with every parameter whose formula reads it: ADD_FAMILY_PARAMETERS "
+                            + "switchExisting=true, instance=true, parameterNames=\"" + string.Join(", ",
+                                new[] { driver.Definition.Name }.Concat(dependents(driver.Definition.Name))) + "\".");
+                    else pass(label(c) + "'s Angle is driven by the instance parameter \"" + driver.Definition.Name + "\".");
+                }
+        }
 
     }
 

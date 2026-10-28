@@ -1,0 +1,59 @@
+# The proof of check-family-standards version 4 (CHECK_FAMILY_STANDARDS,
+# FRG-QA-021) - a duct or pipe fitting's own rules, in a FAMILY open in the
+# Family Editor: its run connectors against its Part Type, each one's System
+# Classification, its one primary on the X axis, and an elbow's connector
+# Angle driven by an instance parameter. Row 5b-1346, NEEDS-CHECKING Group JI.
+#
+#     python tools/batch-prove.py tools/jobs/check-family-standards-fittings-2026-10-28.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/check-family-standards-fittings-2026-10-28.yaml
+#
+# THE ARRANGEMENT, made by hand before the run (Group JI, JI1 and JI2):
+#
+#   "JI Elbow Good"  a new family from Revit's own metric pipe fitting template
+#                    (or a Generic Model changed to Pipe Fittings), Part Type
+#                    Elbow, Work Plane-Based No, an instance Nominal Diameter
+#                    and an instance Angle, two pipe end faces each with a
+#                    pipe connector sized by Nominal Diameter, system Fitting,
+#                    the +X one primary, both connectors' Angle associated with
+#                    Angle - every parameter used, so the tidiness check finds
+#                    nothing. Saved; open.
+#   "JI Elbow Bad"   a copy of it with a THIRD pipe connector on a side face
+#                    and one connector's System Classification Global. Saved;
+#                    open.
+#
+# ARRANGE FIRST: run CHECK_FAMILY_STANDARDS through revit_read on "JI Elbow
+# Good" and read offStandard. It must be 0 - any FAIL there is the arrangement,
+# not the tool, and is put right before the run, never judged.
+#
+# POSITIVE: "JI Elbow Bad" - offStandard 1 or more, familyReport carrying
+# FAIL "Part Type is Elbow but the family has 3 pipe connector(s) - that part
+# has 2" with REMOVE_FAMILY_CONNECTOR as the fix, and WARN that connector "is
+# Global, not Fitting".
+#
+# NEGATIVE: "JI Elbow Good" - offStandard 0, and familyReport carrying PASS
+# "Part Type Elbow with 2 pipe connector(s)", each connector "is Fitting", the
+# +X one "is primary and lies on the X axis", each Angle "driven by the
+# instance parameter". A correctly built elbow must NOT be flagged (D-30).
+
+model: JI Elbow Bad and JI Elbow Good (two scratch pipe elbow families open in the Family Editor), Revit 2020
+
+defaults:
+  set:
+    namePattern: ""
+    requiredParameters: ""
+    mustHaveConnectors: false
+  negative-set:
+    namePattern: ""
+    requiredParameters: ""
+    mustHaveConnectors: false
+
+jobs:
+  - fragment: check-family-standards
+    in: "JI Elbow Bad"
+    negative-in: "JI Elbow Good"
+    expect: offStandard
+    note: >
+      No name pattern and no required parameters, so the only things that can
+      put either family off standard are its placement, connector and
+      tidiness checks. Read the good elbow's offStandard BEFORE the run - it
+      must be 0.

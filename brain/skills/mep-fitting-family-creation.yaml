@@ -174,7 +174,7 @@ purpose: >
      A fitting's connectors are NOT linked as a pair and NOT Global: that is
      an accessory's or equipment's way of passing a system through.
 
-  9. CHECK THE FITTING, READ-ONLY, BEFORE FLEXING IT - three reads, every
+  9. CHECK THE FITTING, READ-ONLY, BEFORE FLEXING IT - two checks, every
      miss named with its fix:
        - CHECK_FAMILY_STANDARDS, in the family: PASS, FAIL or WARN for Work
          Plane-Based (a fitting must be No), a Part Type left Normal, a
@@ -188,11 +188,13 @@ purpose: >
          REPORT_FAMILY_SIZE_TABLE is read against the sizes the modeller's
          pipe or duct segment comes in, and the sizes with no row are listed:
          those fall to the default.
-       - REPORT_FAMILY_CONNECTORS, compared against the kind table by hand,
-         for the four things neither check reads yet: the connector count
-         matches the Part Type; every connector's system is Fitting; exactly
-         one is primary, on the X axis; an elbow's connector Angles read
-         "(<- Angle)".
+       - and, from CHECK_FAMILY_STANDARDS version 4 in a Pipe or Duct
+         Fittings family, the fitting's own four: the run connectors counted
+         against the Part Type (a FAIL when they differ, NOT CHECKED for a
+         tap, spud, pants, offset, multi port or flange - read Revit's own at
+         step 1); each connector Fitting; one primary on the X axis; an
+         elbow's connector Angle driven by an INSTANCE parameter.
+         REPORT_FAMILY_CONNECTORS is the read when a row needs the detail.
 
   10. FLEX_FAMILY, then LOAD AND RUN. FLEX_FAMILY at the SMALLEST and the
       LARGEST size in the table and one between; an elbow at 11.25, 22.5, 30,
