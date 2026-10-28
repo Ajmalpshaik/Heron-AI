@@ -139,6 +139,14 @@ compatibility-note: >
 # ROUTING (2026-10-13, the gap fill)
 #
 #   "place this adaptive panel on these four points" -> PLACE_ADAPTIVE_COMPONENTS
+
+# ROUTING (2026-10-28) - a comment only; this card's impl/ and its proof are
+# untouched.
+#
+#   "set the adaptive points orientation to host and loop system"
+#                                                 -> SET_ADAPTIVE_POINT_ORIENTATION -
+#                                                    this MAKES the points; that
+#                                                    sets each one's Orientation
 utterances:
   - add four adaptive points to this family
   - host a point on this line at its midpoint

@@ -1,0 +1,161 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-074
+semantic-identity: "set the Orientation of an adaptive component's points - Instance, Host, Host and Loop System or Global - in the adaptive family being edited"
+kind: action
+domain: revit.families
+capability: SET_ADAPTIVE_POINT_ORIENTATION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# Written 2026-10-28 in a cloud session, no Revit, for the gap
+# brain/skills/adaptive-family-creation.yaml named: "each placement point's
+# ORIENTATION ... is a Properties choice no Heron tool sets yet". Nothing in
+# the library called SetPointOrientationType.
+#
+# PLACEMENT POINTS ONLY, BECAUSE REVIT'S REFERENCE SAYS SO. RevitAPI.xml (2024,
+# read 2026-10-28): GetPointOrientationType and SetPointOrientationType are
+# "of an Adaptive Placement Point" and throw ArgumentException when the id
+# "does not correspond to an Adaptive Placement Point". So a shape handle point
+# is never written; it is listed, with what Revit read for it if Revit reads
+# one at all (NEEDS-CHECKING JK5 records which).
+#
+# THE WORDS ARE REVIT'S PROPERTIES WORDS. The enum's own remark says its items
+# were renamed in 2016 "to better align the names with the corresponding text
+# in the Revit UI", and docs/43 section on adaptive components gives the six
+# as Instance (xyz), Instance (z) then Host (xy), Host (xyz), Host and Loop
+# System (xyz), Global (xyz), Global (z) then Host (xy). That is SOURCED, not
+# seen: the exact display is JK2.
+#
+# A POINT ALREADY AS ASKED IS COUNTED, NOT REWRITTEN - so "set all to host"
+# on a family where two already read Host writes two, counts two, and says
+# which.
+#
+# READ BACK: every adaptive point is read again with GetPointOrientationType
+# after the write - never the value written. A point NOT asked for that reads
+# differently from before fails the call too: "point 1" must leave 2, 3 and 4
+# exactly as they were.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Sets the ORIENTATION of an adaptive component's points, in the family open
+  in the Family Editor - the Orientation row Properties shows for each point:
+  Instance (xyz), Revit's default; Instance (z) then Host (xy); Host (xyz);
+  Host and Loop System (xyz), what a panel on a surface usually needs; Global
+  (xyz); Global (z) then Host (xy). It decides which way each point's planes
+  turn once the family is in a project.
+
+  **WHICH POINTS**: all of them, or by number - "1,2,4" or "1-4". A shape
+  handle point is listed and left: Revit's API sets an orientation on
+  placement points only.
+
+  **ONLY IN AN ADAPTIVE COMPONENT** - a project or any other family is refused
+  by name before anything is written.
+
+  **READ BACK, ALL OR NOTHING**: a point already as asked is counted and left;
+  every adaptive point is read again after the write, and one that does not
+  read as asked - or one not asked for that moved - fails the call.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # One of the six in Revit's words or the modeller's: "Host and Loop
+    # System", "host", "global xyz", "instance", "Instance (z) then Host (xy)".
+    - name: orientation
+      type: string
+      source: request
+    # "all" - or empty - for every placement point; or placement numbers,
+    # "1,2,3,4" or "1-4".
+    - name: points
+      type: string
+      source: request
+  provides:
+    - name: changed
+      # Placement points whose Orientation was written and read back as asked.
+      role: result
+      type: int
+    - name: changedPoints
+      # Each point written, on ONE line - "point 1: Instance (xyz) -> Host and
+      # Loop System (xyz)  ||  ...". Empty when nothing was written.
+      role: result
+      type: string
+    - name: alreadySet
+      # Points asked for that already read the Orientation asked - counted,
+      # never rewritten.
+      role: accounting
+      type: int
+    - name: pointOrientations
+      # Every adaptive point after the call, on ONE line - placement number,
+      # unique id and the Orientation Revit reads; each shape handle point and
+      # that it was not written. Filled whether or not anything changed.
+      role: accounting
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release.
+  `AdaptiveComponentFamilyUtils.IsAdaptiveComponentFamily`,
+  `IsAdaptivePlacementPoint`, `IsAdaptiveShapeHandlePoint`,
+  `GetPlacementNumber`, `GetPointOrientationType` and
+  `SetPointOrientationType`, the enum `AdaptivePointOrientationType` with
+  ToHost, ToHostAndLoopSystem, ToGlobalZthenHost, ToGlobalXYZ,
+  ToInstanceZthenHost and ToInstance, `Family.IsCurtainPanelFamily`,
+  `ReferencePoint`, `Element.UniqueId`, `Document.IsFamilyDocument`,
+  `OwnerFamily`, `Title` and `Regenerate` read the same 2020 through 2027
+  (`tools/api-surface --members`, the reference assemblies of all eight,
+  2026-10-28). The remarks on the two orientation calls - placement points
+  only - were read in the 2024 RevitAPI.xml only.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table. The
+# rows naming the other two adaptive tools are in their cards as well.
+#
+#   "set the adaptive points orientation to host and loop system" -> here
+#   "make the placement points orient to host"   -> here
+#   "set point 1 orientation to instance"         -> here, points "1"
+#   "add four adaptive points to this family"     -> PLACE_ADAPTIVE_POINTS - it
+#                                                    MAKES the points; this
+#                                                    sets how they turn
+#   "place this adaptive panel on these four points"
+#                                                 -> PLACE_ADAPTIVE_COMPONENTS -
+#                                                    places the family in a
+#                                                    project; this works inside
+#                                                    the family
+#   "what orientation are the adaptive points"    -> NOT HERE, and no reader in
+#                                                    the library answers it:
+#                                                    REPORT_FAMILY_TEMPLATE's
+#                                                    pointList gives numbers,
+#                                                    ids and positions, not
+#                                                    Orientation. A question
+#                                                    must not land on this
+#                                                    write (D-86); until a
+#                                                    reader has it, the
+#                                                    modeller reads Properties
+
+utterances:
+  - set the adaptive points orientation to host and loop system
+  - make the placement points orient to host
+  - change adaptive point orientation to global xyz
+  - set point 1 orientation to instance
