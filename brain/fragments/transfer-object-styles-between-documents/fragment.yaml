@@ -18,7 +18,9 @@ capability: TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS
 # name contains it, and leaves the category itself alone. And a partial
 # `sourceDocumentTitle` no longer picks the LAST of several open projects in
 # silence: an exact title wins, one partial match is taken, several refuse by
-# name. The version 1 proof below was taken on Revit 2024 and never on 2020,
+# name. A LINKED model is never a source - the purpose always said so and the
+# code did not: with the owner's project open, its seven links were listed as
+# open projects (measured on Revit 2020, 2026-10-28). The version 1 proof below was taken on Revit 2024 and never on 2020,
 # and no longer describes the code: DRAFT until NEEDS-CHECKING Group JD proves
 # version 2 on Revit 2020 (D-30, D-131).
 version: 2

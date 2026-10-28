@@ -12,7 +12,8 @@
 // only subcategories whose name contains it are styled or made, and the
 // category itself is NOT restyled. Absent, or "all", is version 1 exactly.
 //
-// AND A PARTIAL TITLE NO LONGER PICKS ONE OF SEVERAL SOURCES IN SILENCE.
+// AND A PARTIAL TITLE NO LONGER PICKS ONE OF SEVERAL SOURCES IN SILENCE, AND
+// A LINKED MODEL IS NEVER ONE - version 1's purpose said so, its code did not.
 // Version 1 kept the LAST open project whose title contained the text, so
 // with five models of one job open - 4355-...-BL001A, -BL001B ... - "BL001"
 // read whichever Revit listed last. An exact title (".rvt" or not) wins; a
@@ -69,6 +70,13 @@ Func<string, string> bare = text =>
 foreach (Document candidate in app.Documents)
 {
     if (candidate == null || candidate.IsFamilyDocument) continue;
+    // A LINKED model is open in app.Documents too, under its own title, and is
+    // never a source here (version 2, measured 2026-10-28: with
+    // 4355-BHVD-3D-21S10-BL001A open, its seven links were listed as open
+    // projects, and an exact link title would have been taken as the source).
+    bool linked = false;
+    try { linked = candidate.IsLinked; } catch { }
+    if (linked) continue;
     string title = "";
     try { title = candidate.Title ?? ""; } catch { }
     openTitles.Add(title);
