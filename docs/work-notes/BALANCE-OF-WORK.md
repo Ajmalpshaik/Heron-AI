@@ -7,7 +7,7 @@
 
 # The balance of work
 
-> **GENERATED 2026-10-27 08:11 by `python tools/balance-of-work.py --write`.**
+> **GENERATED 2026-10-28 05:16 by `python tools/balance-of-work.py --write`.**
 > **If that stamp is not today, this page is history and not a work list.** Every figure
 > below was read back out of the tool that owns it, and each row names the command that
 > derives it. Nothing here is typed by hand, so where this page and a register disagree,
