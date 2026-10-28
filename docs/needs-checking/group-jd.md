@@ -63,7 +63,7 @@ The add-in was built from this branch (7bb93bca) and deployed to Revit 2020, 202
 | # | Came back |
 |---|---|
 | **JD0** | **PASS.** `values 0 entry(ies)`, `absent 38`; `findings` *"ZZZNOTHINGHERE": 0 of 38 carry a value, 0 blank, 38 absent. Absent: 7986880, 7987841, ...* - all 38 ids, no "... and N more" |
-| **JD1** | **PASS** (batch-prove). `values 38 entry(ies)`; `findings` names all 38, VCD001 to VCD038, and says no "more". The run record keeps `provides` only, so what the chat shows is checked separately below |
+| **JD1** | **PASS** (batch-prove). `values 38 entry(ies)`; `findings` names all 38, VCD001 to VCD038, and says no "more". The run record keeps `provides` only, so what the chat shows was checked separately: through `revit_read` in the chat, the same 38 came back as `values 38 entry(ies)` with **all 38** `<id>: VCDnnn` lines under it, VCD001 to VCD038, and no "... and N more" - the add-in's `providesEntries` at 7bb93bca |
 | **JD2** | **PASS.** `values 37 entry(ies)`, `blank 1 [7987914]`; `findings` prints all 37 Marks and *"Blank: 7987914"*. Seven dampers carry fire-damper Marks (MFD-0xx, MFD-12x) - the model's data, recorded for the owner |
 | **JD3** | **NOT RUN** - every Revit on the PC now runs the rebuilt add-in; it is a statement about the old one, as IU4 was |
 | **JD4** | **PASS.** `changed 0`, `created 0`, `refused` *"No categories in '4355-BHVD-3D-21S10-BL001A' matching 'Generic Annotations' with a subcategory matching 'ZZZNOTHINGHERE'."* |
