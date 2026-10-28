@@ -1034,6 +1034,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jf.md`](needs-checking/group-jf.md)
 
+## Group JJ - one curtain wall's own grid lines, added by position or in equal panels: `ADD_CURTAIN_GRID_LINES` version 1 (2026-10-28)
+
+**Its own file:** [`needs-checking/group-jj.md`](needs-checking/group-jj.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

@@ -1,0 +1,89 @@
+# ADD_CURTAIN_GRID_LINES (FRG-ELE-129) - the proof plan as a batch-prove job.
+# NOT RUN. Written 2026-10-28 in a cloud session with no Revit - NEEDS-CHECKING
+# Group JJ; the cases are in brain/fragments/add-curtain-grid-lines/tests/cases.yaml.
+#
+#     python tools/batch-prove.py tools/jobs/add-curtain-grid-lines.yaml --dry-run --session <pid>
+#     python tools/batch-prove.py tools/jobs/add-curtain-grid-lines.yaml --session <pid>
+#
+# ON "Heron JJ Curtain Grid", A SAVED SCRATCH PROJECT - never a working one.
+# Group JJ's row JJ0 makes it: a new project, as Project2 was when
+# SET_CURTAIN_WALL_GRID was proved on 2026-10-06 (Revit 2024, session 51820)
+# with this very wall - "Level 1" and "Curtain Wall: Curtain Wall" resolved
+# there, and that proof read the type's vertical and horizontal layouts back
+# as None, so the wall drawn here has no grid line at all. JJ0 CHECKS, in the
+# rig, that "Basic Wall: Generic - 200mm" exists (any basic wall type will do
+# for the negative; put its name below) and, with REPORT_CURTAIN_WALL_TYPE on
+# "Curtain Wall: Curtain Wall", that both layouts are None. Otherwise the
+# numbers below are not the ones to expect.
+#
+# NOTHING MAY BE SELECTED IN REVIT WHEN THE RUN STARTS - press Esc. The add-in
+# binds `elements` from the selection BEFORE it binds what create-wall just
+# made, so a stale selection would be divided instead of the new wall. A
+# rolled-back write clears the selection, so the negative leg starts clean.
+#
+# THE WALL IS DRAWN 60 m NORTH OF THE ORIGIN, WELL CLEAR OF THE BUILDING - a
+# curtain wall drawn across another wall can embed in it. Check that line is
+# empty in the copy.
+#
+#   create-wall             one wall, 9000 mm long, 3000 mm high, on Level 1
+#   add-curtain-grid-lines  "vertical", "equal 6" on the wall create-wall made
+#
+# ONE SET OF VALUES FEEDS BOTH. create-wall changes the model, so it travels
+# with the fragment and the add-in binds it from the same `set:` - a writing
+# step cannot be given `setup-set:`. The names do not overlap: create-wall
+# takes level, wallType, points, height and structural; this fragment takes
+# direction and positions, and mullionType is left out (read as "none"). The
+# client prints "IGNORED" for the values only the setup step takes; they are
+# sent all the same.
+#
+# READ THE BINDING NOTE BEFORE ANYTHING ELSE: "elements from create-wall as
+# 'created' (1)". Then readBack: ONE curtain wall whose grid measured 9000 mm
+# long and 3000 mm high.
+#
+# risk: MODIFY. `validate` never sends `apply`, so both steps run inside one
+# TransactionGroup and are rolled back (D-55). Nothing is kept.
+
+model: "Heron JJ Curtain Grid" (docs/needs-checking/group-jj.md, row JJ0), Revit 2020 or 2024 - a SAVED SCRATCH project
+
+defaults:
+  in: "Heron JJ Curtain Grid"
+  write: true
+  setup:
+    - create-wall
+  set:
+    level: "Level 1"
+    wallType: "Curtain Wall: Curtain Wall"
+    points: "0,60000,0; 9000,60000,0"
+    height: "3000"
+    structural: "false"
+    direction: "vertical"
+    positions: "equal 6"
+  negative-set:
+    # THE SAME ARRANGEMENT AND THE SAME REQUEST, ON A WALL IT MUST NOT TOUCH -
+    # a basic wall drawn on the same line. A different wall, not an empty
+    # selection: an empty one leaves `elements` unbound and proves nothing.
+    level: "Level 1"
+    wallType: "Basic Wall: Generic - 200mm"
+    points: "0,60000,0; 9000,60000,0"
+    height: "3000"
+    structural: "false"
+    direction: "vertical"
+    positions: "equal 6"
+
+jobs:
+  - fragment: add-curtain-grid-lines
+    # `added` is the work: new lines each MEASURED in place - running the way
+    # asked, within 1 mm of where asked - after Revit rebuilt the wall.
+    expect: added
+    note: >
+      Positive: added 5, mullionsAdded 0, skipped and notCurtain empty;
+      readBack "9000 mm long and 3000 mm high", vertical grid lines 0 before
+      and 5 now, "Vertical lines now at 1500, 3000, 4500, 6000, 7500 mm from
+      its start", panels 1 before and 6 now, and the flag "from the one
+      recorded measurement". RECORD which of Revit's U and V sets the five
+      lines are in. A refusal "Revit made the line asked for at 1500 mm
+      vertical in its V set ... and it runs horizontal" is the recorded
+      measurement not holding on this release - a finding about Revit, and
+      the call kept nothing. Negative: added 0, readBack empty; notCurtain
+      names the wall "is a basic wall, not a curtain wall"; refused begins
+      "Nothing given is a curtain wall".

@@ -140,6 +140,10 @@ compatibility-note: >
 #                                          TYPE by name. This one prints each
 #                                          wall under its own name, and a wall's
 #                                          name is its type's
+#   "divide this curtain wall into six panels" -> ADD_CURTAIN_GRID_LINES, which
+#                                          ADDS grid lines to one wall. This one
+#                                          counts the lines, panels and mullions
+#                                          a wall has - before and after it
 #   "what is the grid spacing on this curtain wall" -> REPORT_CURTAIN_WALL_TYPE,
 #                                          which reads the TYPE's Layout, Spacing
 #                                          and mullion types by Revit's ids. This
@@ -152,5 +156,11 @@ utterances:
   - how many curtain panels are there
   - list the mullions on this facade
   - how many grid lines in this curtain wall
+  # ADDED 2026-10-28 with ADD_CURTAIN_GRID_LINES (FRG-ELE-129). SET_CURTAIN_WALL_GRID's
+  # table sends this sentence here, and a comment is not indexed: on a scratch store
+  # built with that card in the library, find answered it with ADD_CURTAIN_GRID_LINES,
+  # a MODIFY - words #3 + nearness #1, against this card's words #1 + nearness #4.
+  # A question must not land on a write (D-86); declared, it is answered here.
+  - how many grid lines are in this curtain wall
   - break down this curtain wall
   - what is this facade made of

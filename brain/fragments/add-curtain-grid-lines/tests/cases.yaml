@@ -1,0 +1,154 @@
+# THE PROOF PLAN, written 2026-10-28 in a cloud session with no Revit, and NOT
+# RUN. Nothing here has touched a model (D-30); every case says what to
+# arrange and what must come back. The owner runs it - NEEDS-CHECKING Group JJ,
+# and tools/jobs/add-curtain-grid-lines.yaml is the positive and the first
+# negative as a batch.
+#
+# THE WALL IS DRAWN, NOT FOUND, SO NOTHING ALREADY PLACED CAN CHANGE. In the
+# one transaction group `validate` rolls back:
+#   1. CREATE_WALL draws one wall 9000 mm long and 3000 mm high on "Level 1",
+#      from 0,60000,0 to 9000,60000,0 - 60 m north of the origin, clear of the
+#      building - of "Curtain Wall: Curtain Wall"
+#   2. this fragment takes that wall as `elements`, from CREATE_WALL's
+#      `created` (the add-in's binding order: the chain, then the selection,
+#      then a creator's output - so NOTHING MAY BE SELECTED when it starts)
+# THE RIG is "Heron JJ Curtain Grid", a new project saved for this (Group JJ,
+# row JJ0) - as Project2 was when SET_CURTAIN_WALL_GRID was proved with exactly
+# that wall on 2026-10-06, and that read-back gave "Curtain Wall: Curtain Wall"
+# a vertical and a horizontal layout of None. So the new wall has NO grid
+# lines, and the U-or-V flag comes from the recorded measurement, which this
+# proof then checks on every line it makes. JJ0 reads the layouts with
+# REPORT_CURTAIN_WALL_TYPE first; if either is not None, the numbers below
+# change.
+#
+# THE NUMBERS BELOW ARE DERIVED, NOT REMEMBERED. 9000 / 6 = 1500, so "equal
+# 6" puts lines at 1500, 3000, 4500, 6000 and 7500 from the start: five lines,
+# six panels across, one panel high - six panels. 9000 is the wall's END, a
+# border and not a line. A wall with no lines is one panel.
+#
+# READ `readBack` BEFORE `added`. It must name ONE curtain wall whose grid
+# measured 9000 mm long and 3000 mm high. A different size means the wall is
+# not the one CREATE_WALL drew - read the binding note (fragment-proving
+# rule 5): "elements from create-wall as 'created' (1)".
+
+positive:
+  - given: >
+      THE JOB FILE'S CASE. The arrangement above in the rig, Revit 2020 or
+      2024: direction "vertical", positions "equal 6", no mullion type
+    expect: >
+      added 5, mullionsAdded 0, skipped empty, notCurtain empty, refused
+      empty. readBack: the grid "9000 mm long and 3000 mm high"; vertical grid
+      lines 0 before and 5 now, horizontal 0 and 0; "Vertical lines now at
+      1500, 3000, 4500, 6000, 7500 mm from its start"; panels 1 before and 6
+      now; "Mullions before: none. Now: none". The last part names the flag:
+      "from the one recorded measurement" - and RECORD which of Revit's U and
+      V sets the five lines are in, read off the vertical count. A refusal
+      saying "Revit made the line asked for at 1500 mm vertical in its V set
+      ... and it runs horizontal" is the recorded measurement not holding on
+      this release: a FINDING about Revit, recorded, and the call kept nothing.
+      findings[0] "... so it is now 6 equal panels across - on this wall only.
+      Its type is untouched, and no other wall uses it" (or the count of the
+      other walls of the type, if the copy has any)
+
+  - given: >
+      the same arrangement; direction "horizontal", positions "1100",
+      mullionType "Rectangular Mullion : 50 x 150mm" - a transom. CHECK FIRST
+      with SELECT_TYPES on Curtain Wall Mullions that the copy has that type;
+      any rectangular mullion type will do, named as Revit writes it
+    expect: >
+      added 1; readBack "Horizontal lines now at 1100 mm from its base",
+      vertical lines 0 and 0, panels 1 before and 2 now. mullionsAdded 1 -
+      one horizontal mullion of that type along the whole 9000 mm, counted on
+      the wall ("Now: 1 x horizontal 'Rectangular Mullion: 50 x 150mm'"). If
+      instead a finding says Revit had already put mullions on the new line,
+      the wall type puts its own interior mullions on a line added by hand -
+      the ASSUMPTION in the card, settled, and recorded; mullionsAdded is then 0
+
+  - given: >
+      the same arrangement; direction "vertical", positions "900, 2700"
+    expect: >
+      added 2, skipped empty; "Vertical lines now at 900, 2700 mm from its
+      start"; panels 1 before, 3 now. Each line measured within 1 mm of where
+      it was asked, or the call stops
+
+  - given: >
+      ONE wall of a curtain wall type whose vertical layout already places
+      lines - the rig's "HERON JJ 1500" wall (row JJ0: a copy of Curtain Wall
+      with Vertical Grid Layout Fixed Distance, Spacing 1500, one 9000 x 3000
+      wall of it drawn by hand and saved), so the wall has lines at 1500 to
+      7500; that wall selected, this fragment with direction "vertical",
+      positions "750, 1500"
+    expect: >
+      added 1 (750); skipped 1, "1500 mm - the wall already has a vertical
+      line there, at 1500 mm"; vertical lines 5 before, 6 now. The flag part
+      of readBack says "measured on this wall - its vertical lines are in
+      Revit's V set" (or U - whichever the wall's own lines are in). Its type,
+      HERON JJ 1500, is not written by this fragment - Type Properties still
+      Fixed Distance 1500
+
+  - given: the first case again on the other release of the two, 2020 or 2024
+    expect: >
+      the same answer. One path serves every release
+
+negative:
+  - given: >
+      THE JOB FILE'S NEGATIVE. The same arrangement and the SAME request,
+      "vertical", "equal 6", with CREATE_WALL's wallType "Basic Wall: Generic
+      - 200mm" instead - the basic wall drawn on the same line. A wall it must
+      NOT touch, not an empty selection. CHECK FIRST that the rig has that
+      type; any basic wall type will do
+    expect: >
+      added 0, mullionsAdded 0, readBack empty. notCurtain names the wall -
+      "is a basic wall, not a curtain wall - it has no grid"; refused begins
+      "Nothing given is a curtain wall" and ends "Nothing was changed"
+
+  - given: >
+      the first positive's arrangement; positions "1.2" - a position typed in
+      metres
+    expect: >
+      refused, "1.2 mm is too close to its start ... so 1.2 m is 1200.
+      Nothing was changed"; added 0, readBack empty. The wall keeps no line
+
+  - given: >
+      the first positive's arrangement; direction "diagonal"; and separately
+      positions "1200mm"; and separately mullionType "Rectangular Mullion: ZZZ
+      No Such Size"
+    expect: >
+      each refused before anything is written: the first naming vertical and
+      horizontal, the second "is not a position ... digits only", the third
+      "No mullion type called" WITH the mullion types the model has. added 0
+      every time
+
+  - given: >
+      the wall of the fourth positive case - lines at 1500 to 7500 from its
+      type - with positions "equal 4"
+    expect: >
+      refused: the wall "already has 5 vertical grid line(s), and 4 of them -
+      at 1500, 3000, 6000, 7500 mm from its start - are not where 4 equal
+      panels put a line, so adding lines would make 8 panels, not 4". 4500 is
+      on a division (9000 / 4 x 2), so it is not named. added 0. And positions
+      "equal 6" on the same wall: all five on the sixths, so skipped 5, added
+      0, "every position asked for already has a vertical line"
+
+  - given: >
+      TWO curtain walls selected (draw two with CREATE_WALL by hand in a
+      scratch copy, select both)
+    expect: refused "2 curtain walls were given ... Select just the one"; added 0
+
+  - given: >
+      after the first case is KEPT through try-once, a SECOND curtain wall of
+      the same type placed beside it before the run - REPORT_CURTAIN_ELEMENTS
+      on that second wall before and after
+    expect: >
+      the same grid lines and panels on the second wall before and after - the
+      lines went on one wall's own grid, not on the type
+
+second_route:
+  - >
+      By hand on the kept run: open an elevation of the wall
+      (CREATE_WALL_ELEVATION makes one), select the grid lines and read their
+      positions with Revit's aligned dimension from the wall's start edge -
+      1500 each for "equal 6" - and count six panels; REPORT_CURTAIN_ELEMENTS
+      on the wall counts the same grid lines each way. Then in Revit, Edit Type
+      on the wall's type: its Vertical Grid Layout still None - the type was
+      not written
