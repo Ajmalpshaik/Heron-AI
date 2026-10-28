@@ -100,7 +100,10 @@ when the thing you hit is on no list at all.
 
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
-**State at a glance — 2026-10-27, morning.** Read from the root README's [Status](../README.md#status), the
+**State at a glance — 2026-10-27, morning. Re-checked 2026-10-28: nothing has merged into `main` since,
+so every row below still holds** — `git log --oneline 903161c..origin/main` is empty, and regenerating
+[`work-notes/BALANCE-OF-WORK.md`](work-notes/BALANCE-OF-WORK.md) that day moved its stamp and not one of
+its figures. Read from the root README's [Status](../README.md#status), the
 [newest sitting](handover-archive/2026-10-18-the-safety-rails-met-revit-and-heron-s-data-left-the-store.md) —
 which is also the **last one written** — and `git log --oneline -90 origin/main`. Between 2026-10-19 and
 2026-10-25 roughly 77 pull requests merged ([#674](https://github.com/Ajmalpshaik/Heron-AI/pull/674) to
