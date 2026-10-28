@@ -9,7 +9,21 @@ semantic-identity: "put a different title block on these sheets"
 kind: action
 domain: revit.sheets
 capability: SET_SHEET_TITLE_BLOCK
-version: 1
+# Version 2 (2026-10-28, row 5b-1343) changed impl/: the title blocks are keyed
+# by the sheet they sit on BEFORE the first delete. Version 1 walked one list
+# of every title block for each sheet, so the second sheet of a cross-family
+# replace read the first sheet's title block after deleting it, and Revit's
+# "The referenced object is not valid" threw the whole call - seen on Revit
+# 2020 (session 33972), five sheets of a real BIM 360 project moved onto
+# another title block family, everything rolled back. Its proof replaced the
+# title block on ONE sheet that had none, so the second sheet never came.
+# A sheet handed in twice is read off the sheet again rather than touched after
+# its delete. What Revit deletes with a replace is asked in Revit first, by the
+# add-in (D-142), not by this card. PROVEN on Revit 2020 by NEEDS-CHECKING Group
+# JE (2026-10-28, three sheets replaced onto another family in the owner's
+# scratch Project2, signed by Ajmal PS); Revit 2024 and 2027 are owed as
+# `--release` entries (D-131), JE6 and JE7.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -88,25 +102,27 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-14'
+  date: '2026-10-28'
   by: Ajmal PS
-  model: test projject (3,570 elements), Revit 2024, session 33220
+  model: Project2 (3,321 elements), Revit 2020, session 33972
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
     find-sheets with this phase''s own values - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned alreadyCarried 0, notASheet 0,
-    refused 0 item(s), replaced 1 item(s) [sheet HERON-05 - had NO title block, and ''A1 metric
-    : A1 met...], swappedInPlace 0. inputs came elements from find-sheets (1); symbol as given.
-    on test projject'
-  negative_case: run with numberOrNameContains=HERON-01, symbol=A1 metric instead - chosen
-    because it should not contain what this fragment reports - the arrangement was re-made
-    first by running find-sheets with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyCarried
-    1, notASheet 0, refused 0 item(s), replaced 0 item(s), swappedInPlace 0. inputs came elements
-    from find-sheets (1); symbol as given. on test projject
+    refused 0 item(s), replaced 3 item(s) [sheet JE-01 - ''C 17 x 22 Horizontal : C 17 x 22
+    Horizontal'' ..., sheet JE-02 - ''C 17 x 22 Horizontal : C 17 x 22 Horizontal'' ..., sheet
+    JE-03 - ''C 17 x 22 Horizontal : C 17 x 22 Horizontal'' ...], swappedInPlace 0. inputs
+    came elements from find-sheets (3); symbol as given. on Project2'
+  negative_case: 'run with symbol=C 17 x 22 Horizontal : C 17 x 22 Horizontal arranged with
+    numberOrNameContains=JE- instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running find-sheets with this phase''s
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned alreadyCarried 3, notASheet 0, refused 0 item(s), replaced 0
+    item(s), swappedInPlace 0. inputs came elements from find-sheets (3); symbol as given.
+    on Project2'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 13fb2f950180114f
+  fingerprint: 7a2bb9c7f1223ace
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,0 +1,43 @@
+# NEEDS-CHECKING Group JE - SET_SHEET_TITLE_BLOCK version 2, which keys each
+# sheet's title block BEFORE the first delete (row 5b-1343).
+#
+#     python tools/batch-prove.py tools/jobs/set-sheet-title-block-je-2026-10-28.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-sheet-title-block-je-2026-10-28.yaml --session <pid>
+#     python tools/batch-prove.py tools/jobs/set-sheet-title-block-je-2026-10-28.yaml --release 2024 --session <pid>
+#
+# ONE SCRATCH COPY PER REVIT, ALL TITLED "JE Title Blocks", never a working
+# model: %TEMP%\heron-work\group-je\<release>\JE Title Blocks.rvt - a copy of
+# that Revit's own sample (2020: rac_basic_sample_project.rvt; 2024 and 2027:
+# Snowdon Towers Sample HVAC.rvt). The same title in every Revit is why one job
+# file serves all three; `--session` says which Revit.
+#
+# THE ARRANGEMENT, made by JE1 and kept in the copy: two title block families
+# from Revit 2020's own library, "C 17 x 22 Horizontal" and "D 22 x 34
+# Horizontal" (each one type, named as its family), and three new sheets JE-01,
+# JE-02 and JE-03, all on C 17 x 22 Horizontal.
+#
+# WHAT THE POSITIVE SHOULD READ: all three moved onto D 22 x 34 Horizontal, a
+# cross-family replace past the first sheet - `replaced` 3, each sheet named,
+# `refused` empty, `swappedInPlace` 0. Version 1 threw "The referenced object is
+# not valid" on JE-02. THE NEGATIVE: the same three sheets onto the type they
+# already carry - `alreadyCarried` 3, `replaced` 0, `swappedInPlace` 0.
+#
+# Both legs are rolled back: the copy keeps its three sheets on C 17 x 22.
+
+model: JE Title Blocks (scratch copy of a Revit sample, one per release)
+
+jobs:
+  - fragment: set-sheet-title-block
+    expect: replaced
+    write: true                        # rolled back
+    keep-chain: true
+    in: JE Title Blocks
+    setup: [find-sheets]
+    setup-set: {numberOrNameContains: JE-}
+    negative-setup-set: {numberOrNameContains: JE-}
+    set: {symbol: "D 22 x 34 Horizontal : D 22 x 34 Horizontal"}
+    negative-set: {symbol: "C 17 x 22 Horizontal : C 17 x 22 Horizontal"}
+    note: >
+      Positive - three sheets on one title block family moved onto another:
+      replaced 3, every sheet named, refused empty. Negative - the same three
+      onto the type they already carry: alreadyCarried 3, replaced 0.
