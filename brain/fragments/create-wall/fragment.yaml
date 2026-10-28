@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,11 @@ semantic-identity: "build a wall between these two points, straight or along an 
 kind: action
 domain: revit.elements
 capability: CREATE_WALL
-version: 2
+# VERSION 3 (2026-10-28, FRAGMENT-ISSUES 5b-1345): `baseOffset`, Revit's Base
+# Offset in millimetres, optional and 0 when left out. Version 2's proof below
+# no longer describes the code and is kept as a record; the card is DRAFT until
+# NEEDS-CHECKING Group JG proves version 3 on Revit 2020 and the owner signs.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -37,6 +41,13 @@ purpose: >
   is project-internal, while `Elevation` is measured from whatever the level
   type's Elevation Base says. On a model set out to a survey datum the two
   differ, and the wrong one builds the wall at the wrong height with no error.
+
+  **A WALL CAN START ABOVE ITS LEVEL (version 3, row 5b-1345)** - Revit's Base
+  Offset, in millimetres: a crown post that starts part-way up a storey, a wall
+  on a sill. Left out it is 0, and the wall is version 2's to the word. The
+  height is measured from there, as Revit measures Unconnected Height: 1500 up
+  and 3000 high stands from 1500 to 4500 above the level. Each wall's offset is
+  read back off the wall and said.
 
   **The height is unconnected.** The wall stands at the height given and is not
   attached to the level above. Attaching it is a separate parameter change and
@@ -75,6 +86,14 @@ contract:
     - name: structural
       type: bool
       source: request
+    # VERSION 3 (5b-1345). Revit's Base Offset, MILLIMETRES above the level -
+    # negative starts below it. Left out, 0: on the level, as versions 1 and 2
+    # built. The height is measured from this base, not from the level.
+    - name: baseOffset
+      type: double
+      source: request
+      optional: true
+      absent: 0
   provides:
     - name: created
       role: result
@@ -93,7 +112,9 @@ contract:
     - name: findings
       type: IList<string>
 
-# VERSION 2's PROOF (NEEDS-CHECKING Group HM, Revit 2020, 2026-10-19). The
+# VERSION 2's PROOF - STALE SINCE VERSION 3 (5b-1345), KEPT AS A RECORD. It
+# describes the code before `baseOffset`; NEEDS-CHECKING Group JG proves
+# version 3. (NEEDS-CHECKING Group HM, Revit 2020, 2026-10-19.) The
 # positive is the run kept through try-once (D-120): a half circle of Storefront,
 # radius 5000 mm, measured 15707.96 mm long by MEASURE_ELEMENT_LENGTHS - the arc,
 # not the 10000 mm chord. Version 1's proof (test projject, Revit 2024,
@@ -143,10 +164,30 @@ compatibility-note: >
   2027 too, read off the reference assemblies on 2026-10-19 with
   tools/api-surface.
 
+  Version 3 hands its `baseOffset` to the same eight-argument `Wall.Create`, in
+  the `offset` place versions 1 and 2 filled with 0 - no new call - and reads
+  it back with `BuiltInParameter.WALL_BASE_OFFSET`, which READ_ELEMENT_LEVEL
+  version 2 already reads on every release it claims. Revit's own API
+  documentation for 2020 and for 2027 (RevitAPI.xml in the reference packages,
+  read 2026-10-28) gives that argument the same words on both: it "modifies the
+  wall's Base Offset parameter to determine its vertical placement", and must
+  be "no more than 30000 feet in absolute value" - the bound this card refuses
+  past, before any wall is tried.
+
 # ROUTING - repeated in CREATE_FLOOR, JOIN_GEOMETRY and SPLIT_MEP_RUN.
 #
 #   "build a wall between these points" -> here
 #   "put a wall here"                   -> here
+#   "draw a wall starting 1500 above
+#    the level", "a wall with a base
+#    offset"                            -> here, with baseOffset (version 3,
+#                                          5b-1345). The height is measured
+#                                          from that base
+#   "what is this wall's base offset"   -> READ_ELEMENT_LEVEL, version 2 - a
+#                                          QUESTION. Measured on main
+#                                          2026-10-28 it reached
+#                                          SET_WALL_CONSTRAINTS instead, a write
+#                                          (5b-1345, recorded there)
 #   "draw a curved wall through these
 #    points"                            -> here, with "arc MX,MY X,Y" in the
 #                                          points (version 2, 5b-1216). A
@@ -209,3 +250,4 @@ utterances:
   - add a partition here
   - draw a curtain wall between these points
   - draw an arc wall through these points
+  - draw a wall starting above its level

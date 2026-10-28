@@ -32,8 +32,9 @@ purpose: >
      wall on an arc: `arc MX,MY X,Y` in the points - a point it passes through,
      then where it ends - and a round one is two arcs. Never a run of short
      straight walls, which reads as flat facets close up. CREATE_WALL is DRAFT
-     at version 2, and until NEEDS-CHECKING Group HM proves it a change kept
-     from it is refused (D-117); how the panels sit on an arc is recorded there.
+     at version 3, and until NEEDS-CHECKING Group JG proves it a change kept
+     from it is refused (D-117); how the panels sit on an arc is recorded in
+     Group HM.
   4. SET_CURTAIN_WALL_GRID on the type - the vertical grid, the horizontal
      grid or both: a layout (none, fixed distance, maximum or minimum spacing)
      and a spacing in millimetres. A direction nobody mentioned is left alone.
