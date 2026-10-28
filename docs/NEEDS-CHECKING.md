@@ -1050,6 +1050,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jk.md`](needs-checking/group-jk.md)
 
+## Group JL - a divided surface already there, changed: its grid rotated for a diamond pattern, offset, cut at the levels: `SET_DIVIDED_SURFACE_LAYOUT` version 1 (2026-10-28)
+
+**Its own file:** [`needs-checking/group-jl.md`](needs-checking/group-jl.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

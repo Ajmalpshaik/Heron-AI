@@ -312,6 +312,15 @@ compatibility-note: >
 #                                             2026-10-28): one wall's panels, by
 #                                             the rows and columns this grid
 #                                             makes; the type is left alone
+#   "change the U grid to 20 divisions",
+#   "set the V grid to 1500 spacing"       -> SET_DIVIDED_SURFACE_LAYOUT. U Grid and
+#                                             V Grid are a divided surface's, in a
+#                                             mass or pattern-based family; a
+#                                             curtain wall type's grids are vertical
+#                                             and horizontal, and stay here. Added
+#                                             2026-10-28 as a comment only - nothing
+#                                             under impl/ moved, so the proof above
+#                                             still stands
 
 utterances:
   - set the curtain wall grid spacing
