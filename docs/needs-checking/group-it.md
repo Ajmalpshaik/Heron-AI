@@ -62,3 +62,24 @@ passed; `select-by-categories` version 3 on IT4 with IT7's negative, after IT5 a
 version 3 on IT8's two runs with IT7's shape as its negative. Row 5b-1321 closes on IT9 and IT10, and row
 5b-227's View case on IT8's line - both are the binder's, with no card to sign. A row that fails reopens its
 row; nothing in a row changes to make it pass.
+
+### Results - 2026-10-28, the owner's laptop: Revit 2020, session 33972 - IT0 to IT3 (`select-by-parameter-value` version 3)
+
+**Run on a real project instead of the floor-drain family, and why.** The rows above are written against a
+scratch family with planes named *Outlet Port* and *Outlet Port Bore* - a value that is a strict PREFIX of
+another, which is what version 2 got wrong. The owner's project **4355-BHVD-3D-21S10-BL001A** (Revit 2020, 7
+links, read only) has that shape already: its grids are named 1, 3 ... 10, 11, so "1" is a strict prefix of
+"10" and "11". Arranging it there needed no new document - switching documents with the owner's real project
+open was the thing avoided. Every run `validate`, `--in 4355-BHVD-3D-21S10-BL001A`, the negative a needle no
+grid carries (`matchText=ZZZNOTHINGHERE`); add-in at 7bb93bca.
+
+| # | Ran | Came back |
+|---|---|---|
+| IT0 | `matchMode=exactly` | **PASS.** Refused before scanning, both legs: *"matchMode 'exactly' is not a way of matching this knows, so NOTHING was scanned. Use contains, equals (or exact, is), begins, ends, notcontains or notequals"* |
+| IT1 | `matchMode=exact`, `matchText=1`, `categories=Grids` (batch-prove) | **PASS.** `elements 1 item(s) [1]`, `mode equals`, *"1 of 15 scanned element(s) match Name equals '1'"* - grid 1 alone, never 10 or 11. Negative: `elements 0`, *"0 of 15 ... equals 'ZZZNOTHINGHERE'"* |
+| IT2 | `matchMode=is`, then `matchMode=EXACT` | **PASS**, both: the same as IT1 - `elements 1 item(s) [1]`, `mode equals`; negatives 0 |
+| IT3 | `matchMode=contains` | **PASS.** `elements 3 item(s) [1, 10, 11]`, `mode contains`, *"3 of 15 ... contains '1'"* - the widening exact must not do |
+| IT-L | *Added on the owner's word: "maybe linked grid also".* IT1 with `includeLinks=True` | **PASS.** Host `elements 1 item(s) [1]`; `linksSearched 7`; `linkedMatches` *"7 link(s) read: 6 match(es), NOT selected"*, per link e.g. *"4355-AA3D-21S10-BL001A: 0 of 42 match"*, *"4355-BB3D-21S10-BL001A: 1 of 16 match"*; `nestedLinks 36` counted, not read. Negative: host 0, *"7 link(s) read: 0 match(es)"*. Nothing from a link was selected |
+
+IT1's record is `brain/proof-drafts/runs/select-by-parameter-value.json`; the draft waits for the owner's
+signature. IT4 to IT10 belong to the other two cards and the binder, and were not run here.

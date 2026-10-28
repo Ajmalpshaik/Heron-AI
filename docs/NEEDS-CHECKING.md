@@ -1022,6 +1022,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jc.md`](needs-checking/group-jc.md)
 
+## Group JD - every entry reaches the chat, and one subcategory's style copied on its own: `READ_ELEMENT_PARAMETERS` version 6, the add-in's `providesEntries`, `TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS` version 2 (2026-10-28)
+
+**Its own file:** [`needs-checking/group-jd.md`](needs-checking/group-jd.md)
+
 ## Group JE - three sheets moved onto another title block family in one call: `SET_SHEET_TITLE_BLOCK` version 2 (2026-10-28)
 
 **Its own file:** [`needs-checking/group-je.md`](needs-checking/group-je.md)

@@ -17,7 +17,33 @@ positive:
       only the duct categories touched, and every other line weight in the
       project exactly as it was
 
+  - given: >
+      VERSION 2. nameContains "Generic Annotations", subcategoryContains
+      "Signature", the source's "Generic Annotations : Signature" at 30,80,170
+      weight 1 and this project's black (or missing)
+    expect: >
+      only "Generic Annotations : Signature" in `changed` (or `created`, then
+      styled) reading the colour moving to 30,80,170; the Generic Annotations
+      category itself and every other subcategory exactly as they were. Read
+      it back with LIST_CATEGORIES categories="Generic Annotations >
+      Signature". The case of 2026-10-28 (5b-1342)
+
 negative:
+  - given: >
+      VERSION 2. subcategoryContains "ZZZNOTHINGHERE" with nameContains
+      "Generic Annotations"
+    expect: >
+      nothing changed or created, and `refused` naming no category with a
+      subcategory matching it. The category itself is NOT restyled - asking
+      for one sub-style never moves its parent
+
+  - given: >
+      VERSION 2. Two open projects whose titles both contain the
+      sourceDocumentTitle given, neither equal to it
+    expect: >
+      nothing copied, and `refused` naming both and asking for the whole
+      title. Version 1 took whichever Revit listed last
+
   - given: a category whose settings ALREADY match the source
     expect: >
       it NOT in `changed` and nothing written. The report is the diff, not the

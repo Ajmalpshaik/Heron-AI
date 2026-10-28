@@ -63,11 +63,14 @@ positive:
       `values` under its count, not "4 entry(ies)" alone. This is the case of
       2026-10-22 (5b-1325)
 
-  - given: VERSION 5. Twenty walls, reading "Comments" where every one is filled in
+  - given: >
+      VERSION 6. The 38 volume control dampers of 4355-BHVD-3D-21S10-BL001A
+      (SELECT_BY_FAMILY familyName=VCD), reading "Equipment Tag"
     expect: >
-      `findings` names the first twelve by id and value and says "... and 8
-      more - read fewer at a time, or GROUP_AND_COUNT"; the chat shows twelve
-      entries and "... and 8 more"
+      `findings` names all 38 by id and value, VCD001 to VCD038, with no
+      "... and N more"; the chat shows all 38 entries of `values` under
+      "38 entry(ies)". Version 5 named the first twelve and said "... and 26
+      more" - the case of 2026-10-28 (5b-1341)
 
 negative:
   - given: the same 4 ducts, reading a parameter name that does not exist

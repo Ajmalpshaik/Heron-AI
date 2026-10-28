@@ -2053,8 +2053,8 @@ namespace Heron.Revit.Addin
             // a dictionary as "N entry(ies)" and nothing else, and it stays
             // byte for byte what it is: every proof record carries that shape
             // and heron_validate._as_count reads it as a quantity. So the
-            // entries travel in a field of their own - the first EntriesSent
-            // of each, "key": "value", each side cut as a list item is - and
+            // entries travel in a field of their own - EVERY entry of each,
+            // "key": "value", each side cut as a list item is - and
             // the server prints them under the count. Measured 2026-10-22 on
             // Revit 2020 (session 78736): READ_ELEMENT_PARAMETERS asked for
             // one parameter on four connectors answered `values 4 entry(ies)`
@@ -2062,6 +2062,12 @@ namespace Heron.Revit.Addin
             // chat (FRAGMENT-ISSUES 5b-1325). Only a dictionary that holds
             // something is listed; a value a fragment did not leave as a
             // dictionary is not here, so nothing is sent twice.
+            //
+            // NO CAP ON HOW MANY (2026-10-28). Until then only the first twelve
+            // travelled, and the owner asked for the 38 volume control dampers
+            // of a real project with their Equipment Tag: one table took some
+            // forty reads in groups of twelve or fewer. A modeller's schedule is
+            // the whole list, so the whole list is sent.
             var entries = new List<string>();
             foreach (var variable in state)
             {
@@ -2083,13 +2089,10 @@ namespace Heron.Revit.Addin
                 {
                     var rows = new List<string>();
                     var keys = new HashSet<string>();
-                    var taken = 0;
                     foreach (DictionaryEntry pair in dictionary)
                     {
-                        if (taken >= EntriesSent) break;
                         var key = ShortName(pair.Key);
                         if (!keys.Add(key)) continue;
-                        taken++;
                         var held = pair.Value;
                         var shown = held is IDictionary || (held is ICollection && !(held is string))
                             ? Describe(held)
@@ -2106,14 +2109,6 @@ namespace Heron.Revit.Addin
 
             return Json.Ok(parts.ToArray());
         }
-
-        /// <summary>
-        /// How many of a dictionary's entries travel beside its count - the
-        /// first twelve, so a parameter read on a handful of elements arrives
-        /// whole and one on a thousand still arrives as its count and a
-        /// sample, the way a list sends its first three.
-        /// </summary>
-        private const int EntriesSent = 12;
 
         /// <summary>
         /// Is this variable STILL the object the host handed in?
