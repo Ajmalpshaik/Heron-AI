@@ -139,6 +139,32 @@ compatibility-note: >
 #
 #   "how is this surface divided"            -> REPORT_DIVIDED_SURFACES
 #   "fill the divided surface cells with the adaptive panel" -> PLACE_ADAPTIVE_COMPONENTS
+
+
+# ROUTING (2026-10-28, SET_DIVIDED_SURFACE_LAYOUT - comments only; nothing
+# under impl/ moved, so the proof above still stands)
+#
+#   "divide this face", "divide the surface of this mass into panels"
+#                                            -> here. A face not divided yet
+#   "change the divisions on the divided surface",
+#   "rotate the divided surface grid 45 degrees for a diamond pattern"
+#                                            -> SET_DIVIDED_SURFACE_LAYOUT. A face
+#                                               already divided is refused here with
+#                                               its surface's id; that card changes it
+#   "divide the surface at every level"      -> SET_DIVIDED_SURFACE_LAYOUT,
+#                                               intersect=levels - the levels cut a
+#                                               surface already divided
+#   "set the divided surface spacing to 1500 mm" -> here, as declared below, for a
+#                                               face being divided. On a surface
+#                                               already divided this refuses and
+#                                               SET_DIVIDED_SURFACE_LAYOUT changes it.
+#                                               MEASURED 2026-10-28 on the cloud
+#                                               backend: the exact sentence still
+#                                               reaches here by identity; by ranking
+#                                               SET_DIVIDED_SURFACE_LAYOUT is #1 and
+#                                               this card #2. Whether the sentence
+#                                               should move is NEEDS-CHECKING JL12,
+#                                               the owner's call
 utterances:
   - divide the surface of this mass into panels
   - divide the top face into a 10 by 8 grid

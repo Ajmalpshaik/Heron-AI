@@ -28,9 +28,22 @@ risk: READ
 # adaptive families on points or nodes.
 #
 # READ ONLY - opens no transaction.
+#
+# THE PURPOSE NAMES WHAT IT ALREADY READS (2026-10-28, nothing under impl/
+# moved). SET_DIVIDED_SURFACE_LAYOUT arrived saying "U grid", "rotation",
+# "offset" and "border tiles", and on the cloud backend questions about them -
+# "what are the border tiles on the divided surface", "what is the U grid
+# layout of the divided surface" - ranked that WRITE first while this card's
+# purpose said only "grid layout, spacing". A question must not land on a
+# write (D-86). What this does NOT read - the all grid rotation, component
+# rotation, flip and mirror, the indents and the levels cutting a surface -
+# has no reader yet; SET_DIVIDED_SURFACE_LAYOUT's readBack prints them, but
+# only after a change.
 purpose: >
-  Reads every divided surface and divided path - grid layout, spacing,
-  gridline and node counts, length - and, when asked, where the nodes are.
+  Reads every divided surface and divided path - each U grid and V grid's
+  layout, spacing or number of divisions, rotation, offset and justification,
+  the border tiles, gridline and node counts, length - and, when asked, where
+  the nodes are.
 
 contract:
   needs:
@@ -73,6 +86,28 @@ compatibility-note: >
 #   "how is this surface divided"              -> here
 #   "where are the nodes of the divided path"  -> here, withNodes
 #   "divide this surface 10 by 6"              -> DIVIDE_FAMILY_SURFACE
+#   "change the U grid to 20 divisions",
+#   "rotate the divided surface grid 45 degrees for a diamond pattern"
+#                                              -> SET_DIVIDED_SURFACE_LAYOUT, on a
+#                                                 surface already divided. A question
+#                                                 about the same grid stays here (D-86):
+#                                                 that card writes
+#   "what is the U grid spacing"               -> here - its U and V rows
+#   "what is the U grid layout of the divided surface",
+#   "what are the border tiles on the divided surface"
+#                                              -> here. MEASURED 2026-10-28 on the
+#                                                 cloud backend: a coin toss with
+#                                                 SET_DIVIDED_SURFACE_LAYOUT by ranking,
+#                                                 which is why the purpose names them
+#   "is the divided surface flipped",
+#   "which levels cut the divided surface"     -> NOT HERE, and nothing reads either
+#                                                 yet: this reads no flip and no cut.
+#                                                 SET_DIVIDED_SURFACE_LAYOUT ranks first
+#                                                 for both and writes (D-86). With the
+#                                                 lookup's question mode on, both reach
+#                                                 HERE (measured 2026-10-28), and this
+#                                                 answer has no flip and no cut in it -
+#                                                 a reader gap, not a routing one
 
 utterances:
   - how is this surface divided
