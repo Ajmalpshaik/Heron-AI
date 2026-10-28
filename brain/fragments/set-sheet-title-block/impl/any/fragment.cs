@@ -19,8 +19,10 @@
 // on a sheet, and the result is a drawing with a door on it.
 //
 // ONE COLLECTOR, NOT ONE PER SHEET. The title block instances are gathered once
-// and matched by OwnerViewId - a collector inside the loop is the same query
-// run fifty times.
+// and keyed by the sheet they sit on (OwnerViewId) BEFORE anything is deleted -
+// a collector inside the loop is the same query run fifty times, and a list
+// walked again on every sheet reaches the title blocks earlier sheets already
+// deleted.
 //
 // READ FIRST, WRITE, READ BACK. Every count is what a second read found.
 
@@ -65,15 +67,20 @@ else
 
         if (refused.Count == 0)
         {
-            // Gathered ONCE. A collector inside the loop is this same query run
-            // once per sheet.
-            var existingBlocks = new List<FamilyInstance>();
+            // Gathered ONCE and KEYED BY SHEET before the first delete. Version 1
+            // kept a list and walked all of it for every sheet, so the second
+            // sheet of a cross-family replace read OwnerViewId off the first
+            // sheet's title block, already deleted - Revit's "The referenced
+            // object is not valid" - and the whole call threw (row 5b-1343).
+            var blockOnSheet = new Dictionary<ElementId, FamilyInstance>();
             foreach (var element in new FilteredElementCollector(doc)
                 .OfCategory(BuiltInCategory.OST_TitleBlocks)
                 .WhereElementIsNotElementType())
             {
                 var instance = element as FamilyInstance;
-                if (instance != null && instance.IsValidObject) existingBlocks.Add(instance);
+                if (instance == null || !instance.IsValidObject) continue;
+                var ownerId = instance.OwnerViewId;
+                if (ownerId != null && !blockOnSheet.ContainsKey(ownerId)) blockOnSheet[ownerId] = instance;
             }
 
             foreach (var element in elements)
@@ -82,9 +89,22 @@ else
                 if (sheet == null || !sheet.IsValidObject) { notASheet++; continue; }
 
                 FamilyInstance onThisSheet = null;
-                foreach (var candidate in existingBlocks)
+                blockOnSheet.TryGetValue(sheet.Id, out onThisSheet);
+
+                // THE SAME SHEET HANDED IN TWICE. Its first pass replaced the
+                // instance held above, so it is read off the sheet again rather
+                // than touched after its delete.
+                if (onThisSheet != null && !onThisSheet.IsValidObject)
                 {
-                    if (candidate.OwnerViewId == sheet.Id) { onThisSheet = candidate; break; }
+                    onThisSheet = null;
+                    foreach (var element3 in new FilteredElementCollector(doc)
+                        .OfCategory(BuiltInCategory.OST_TitleBlocks)
+                        .WhereElementIsNotElementType())
+                    {
+                        var instance = element3 as FamilyInstance;
+                        if (instance == null || !instance.IsValidObject) continue;
+                        if (instance.OwnerViewId == sheet.Id) { onThisSheet = instance; break; }
+                    }
                 }
 
                 var sameFamily = false;

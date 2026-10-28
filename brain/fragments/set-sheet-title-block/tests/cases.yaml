@@ -18,6 +18,16 @@ positive:
       the two counted separately, never added together. A single total of
       "48 updated" is what hides the four that lost data
 
+  - given: >
+      three or more sheets, every one on title block family A, and a target
+      type in family B - a cross-family replace past the first sheet
+    expect: >
+      every sheet on the new type and every one NAMED IN replaced, refused
+      empty. Version 1 threw "The referenced object is not valid" on the
+      second sheet, because it read the first sheet's title block after
+      deleting it (row 5b-1343). Revit's delete question comes first and names
+      what goes with each old title block (D-142)
+
 negative:
   - given: >
       a cross-family replace, then the sheet's Sheet Number and issue date
@@ -40,6 +50,13 @@ negative:
       that sheet named with Revit's own message, the rest of the set still done,
       and the counts reflecting what a read back found rather than what was
       attempted
+
+  - given: >
+      the same sheet handed in twice, on family A, with a target in family B
+    expect: >
+      the first pass replaces it and is named in replaced; the second reads
+      the sheet again, finds the new type and counts it in alreadyCarried.
+      Never a throw from the title block the first pass deleted
 
   - given: a sheet with no title block on it at all
     expect: >
