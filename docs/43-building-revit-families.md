@@ -699,6 +699,51 @@ Union, Wye; duct fittings add Offset, Pants and Taps; pipe accessories Attaches 
 Valve - Breaks Into, Valve - Normal; electrical equipment Panelboard, Switchboard, Transformer, Other Panel,
 Equipment Switch.
 
+**Fittings in depth (the pass of 2026-10-28, on the owner's request to be advanced in fitting families).**
+Search extracts only - `help.autodesk.com`, the Autodesk forums, Arkance's and RevitCity's pages were refused
+for direct fetch from the cloud session. What it changed is
+[`mep-fitting-family-creation`](../brain/skills/mep-fitting-family-creation.yaml).
+
+- **Routing preference groups (SOURCED, the API reference 2026 through an extract).**
+  `RoutingPreferenceRuleGroupType`: Segments, Elbows, Junctions (takeoff, tee, wye, tap), Crosses,
+  Transitions, Unions, MechanicalJoints, TransitionsRectangularToRound, TransitionsRectangularToOval,
+  TransitionsOvalToRound and Caps. The extract also said some older reference pages list fewer of them -
+  **UNSURE** which release each arrived in, until the reference assemblies are read.
+- **Part Types by category (SOURCED, Autodesk Help through extracts).** Duct fittings (2017 help): Cap, Cross,
+  Elbow, Lateral Cross, Lateral Tee, Multi Port, Offset, Pants, Tap - Adjustable, Tap - Perpendicular, Tee,
+  Transition, Union, Wye. Pipe fittings (2022 help): Cap, Cross, Elbow, Flange, Lateral Cross, Lateral Tee,
+  Mechanical Coupling, Multi Port, Spud - Adjustable, Spud - Perpendicular, Tee, Transition, Union, Wye - Spud
+  where a duct has Tap. Arkance's note: a custom fitting without its Part Type is not offered in the type's
+  fitting list.
+- **Preferred Junction Type (SOURCED).** A duct or pipe type's routing preferences choose Tee or Tap where
+  both would fit (`RoutingConditions.PreferredJunctionType` in the API).
+- **Specific angles (SOURCED, Autodesk Help, Specify Angles).** Mechanical Settings > Angles: use any angle
+  the fitting allows, an angle increment, or specific angles from a fixed list - 90, 60, 45, 30, 22.5 and
+  11.25 according to a forum answer, which also says the list cannot be added to. Revit applies them while a
+  run is laid out or changed. A formula in the family restricting the angle was reported not to hold against
+  the run's own angle (**UNSURE**, one forum answer).
+- **Connector Angle (SOURCED, forum answers).** A custom elbow that would not flex was put right by linking
+  each Fitting connector's Angle to the family's Angle - what `SET_FAMILY_CONNECTOR_ROLES` "angle=[Angle]"
+  does. The primary connector shows an X in the Family Editor.
+- **Loss method (SOURCED, Autodesk Help, Specify a Pressure Loss Method, 2016 to 2026).** A pipe fitting's
+  method - "K Coefficient from Table" and its table - is the TYPE's, set in Family Types in the Family Editor;
+  a duct fitting's ("Coefficient from ASHRAE Table") is always the placed instance's; an instance may take
+  "Use Definition on Type". Nothing in Heron sets either: the skill says them as hand steps.
+- **Allow Slope Adjustments on a fitting (UNSURE, forum answers only).** Practitioners say the box is hidden
+  while a connector's system is Fitting - they switch to Global, tick, and switch back - and that it lets a
+  sloped pipe enter a little off square rather than sloping the fitting's branches. Whether
+  `SET_FAMILY_CONNECTOR_ROLES` "allowSlopeAdjustments=yes" is kept on a Fitting connector is therefore owed a
+  run; the tool reads it back. Connector tolerance is described two different ways by two answers.
+- **Taps and spuds (UNSURE).** The API's `NewTakeoffFitting` makes a takeoff from ONE connector and the main
+  it sits on; one forum answer says a duct tap family has two connectors, another that a converted tap's
+  extra one can be removed. The skill reads Revit's own tap before building one rather than choosing.
+- **Instance sizes (practice, and Revit's own formula rule).** A fitting's connectors take their size from
+  the run, so the sizes linked to them are instance parameters, and a type parameter cannot be given a formula
+  reading an instance one. Revit's own elbows use Nominal Diameter, Nominal Radius and Angle (an RTC handout
+  on pipe fittings, through an extract).
+- **Not found in this pass:** where a pipe Flange is offered in routing preferences, and the connector rules
+  of Pants, Offset, Multi Port and Lateral Cross - the skill reads Revit's own of the kind first.
+
 **Fixtures and equipment (SOURCED).** Plumbing fixtures take cold and hot water IN and sanitary OUT; a supply
 terminal is In and its source Out. Lighting fixtures define their light source - shape and distribution,
 including a photometric web (IES) - in the Family Editor; **API** `LightFamily` sets the shape and
@@ -847,6 +892,11 @@ Read through the extract or mirror each line says. None is quoted at length; the
   detail lines and labels.
 - **Autodesk forums** (search extracts): converting hosted to face-based families; face-based voids;
   reference line planes; line-based families; Family Type parameter association; rotation limits since 2019.
+- **The fittings pass of 2026-10-28** (search extracts): the Revit API reference's
+  `RoutingPreferenceRuleGroupType`, `RoutingConditions.PreferredJunctionType` and `NewTakeoffFitting`; Autodesk
+  Help's Part Types, Specify Angles and Specify a Pressure Loss Method; Arkance's note on fitting behaviour; an
+  RTC handout on creating pipe fittings; and forum answers on elbow connector angles, specific angles, taps and
+  Allow Slope Adjustments - each marked in §10.
 - **AUGI, Arkance, Imaginit, Novedge and practitioners' notes** (search extracts) for practice, each marked
   where used.
 - **The 2026-10-02 passes** (search extracts unless said): Autodesk Help on door and window type properties,
