@@ -47,6 +47,29 @@ positive:
       SET_PROJECT_UNITS "Length=Millimeters, 0 decimal places" and a Metric
       template - and the same unit as REPORT_PROJECT_UNITS's Common: Length row
 
+  # VERSION 4 - each adaptive point's Orientation (NEEDS-CHECKING JQ). Group
+  # JK's rig after SET_ADAPTIVE_POINT_ORIENTATION "Host and Loop System" on
+  # every point was KEPT (JK2), saved, and left open in front.
+  - given: >
+      Heron JK Orientation - a family from the metric Generic Model Adaptive
+      template with four placement points, every one set to Host and Loop
+      System and kept
+    expect: >
+      pointList naming placement points 1 to 4, each with its id and position
+      as version 3 gave them, then ", Orientation Host and Loop System (xyz)"
+      - the words SET_ADAPTIVE_POINT_ORIENTATION's pointOrientations printed
+      for them; a finding "Orientation of the adaptive points, as Properties
+      shows it on each: point(s) 1, 2, 3, 4 Host and Loop System (xyz)";
+      familyKind "an adaptive component ..."
+
+  - given: >
+      the same rig with one shape handle point added and kept (JK7's
+      arrangement)
+    expect: >
+      the shape handle point's row ending ", Orientation not read (shape
+      handle point)" - no value for it - and the finding naming 1 shape
+      handle point not read; points 1 to 4 as above
+
 negative:
   - given: >
       a new family from the plain metric Generic Model template - not hosted
@@ -70,6 +93,23 @@ negative:
       templateReport naming "units: Length = Millimeters" ending "- metric",
       and NO finding about units - a metric family must not be told to change
 
+  # VERSION 4. A family whose points were never changed must read the
+  # default, never an Orientation another family was set to.
+  - given: >
+      a new family from the metric Generic Model Adaptive template with four
+      placement points placed and saved, no Orientation ever changed
+    expect: >
+      every placement point's row ending ", Orientation Instance (xyz)" and
+      the finding "point(s) 1, 2, 3, 4 Instance (xyz)" - NOT Host and Loop
+      System (xyz), and no point left without an Orientation
+
+  - given: >
+      a new family from the plain metric Generic Model template - no adaptive
+      points
+    expect: >
+      pointList empty and NO finding about Orientation - a family without
+      adaptive points must print no Orientation at all
+
 second_route:
   - >
       Family Category and Parameters in the Family Editor - the Host row and the
@@ -81,3 +121,7 @@ second_route:
   - >
       The OmniClass Number button in Family Category and Parameters: the codes
       its dialog offers for the category against classificationCodes
+  - >
+      Version 4: in the Family Editor, select each adaptive point and read
+      Properties > Orientation, against the words on that point's row in
+      pointList

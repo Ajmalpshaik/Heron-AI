@@ -143,16 +143,16 @@ compatibility-note: >
 #                                                    places the family in a
 #                                                    project; this works inside
 #                                                    the family
-#   "what orientation are the adaptive points"    -> NOT HERE, and no reader in
-#                                                    the library answers it:
-#                                                    REPORT_FAMILY_TEMPLATE's
-#                                                    pointList gives numbers,
-#                                                    ids and positions, not
-#                                                    Orientation. A question
-#                                                    must not land on this
-#                                                    write (D-86); until a
-#                                                    reader has it, the
-#                                                    modeller reads Properties
+#   "what orientation are the adaptive points"    -> REPORT_FAMILY_TEMPLATE -
+#                                                    its pointList gives each
+#                                                    point's Orientation in the
+#                                                    words this card prints,
+#                                                    from version 4 (2026-10-29,
+#                                                    DRAFT, NEEDS-CHECKING JQ).
+#                                                    A question must not land
+#                                                    on this write (D-86). It
+#                                                    was NOT HERE, with no
+#                                                    reader, until then
 
 utterances:
   - set the adaptive points orientation to host and loop system

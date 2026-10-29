@@ -1066,6 +1066,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jn.md`](needs-checking/group-jn.md)
 
+## Group JQ - an adaptive component's points read back with their Orientation: `REPORT_FAMILY_TEMPLATE` version 4 (2026-10-29)
+
+**Its own file:** [`needs-checking/group-jq.md`](needs-checking/group-jq.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

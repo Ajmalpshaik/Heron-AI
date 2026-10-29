@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,10 @@ semantic-identity: "what kind of family is open - wall, ceiling, floor, roof or 
 kind: action
 domain: revit.families
 capability: REPORT_FAMILY_TEMPLATE
-version: 3
+# Version 4, 2026-10-29: each adaptive point's Orientation in pointList - see
+# VERSION 4 below. Version 3 was PROVEN (2026-10-18); its proof is kept below
+# as a record and no longer describes the code.
+version: 4
 source: OFFICIAL
 risk: READ
 
@@ -36,8 +39,8 @@ purpose: >
   switches, Host, Part Type, Profile Usage and a structural family's Material
   for Model Behavior and Section Shape among them; the reference
   lines and the lines drawn through points, with their ids; the adaptive
-  points with their placement numbers and ids; a pattern panel's tile pattern
-  and spacing; the views; the types.
+  points with their placement numbers, ids and Orientation; a pattern panel's
+  tile pattern and spacing; the views; the types.
 
   It reads only; nothing is changed.
 
@@ -56,6 +59,24 @@ purpose: >
 # moved "which template was this family made from" from 2nd to 3rd
 # (check-routing, measured 2026-10-12). Version 2's proof is still owed;
 # both are re-proved together (NEEDS-CHECKING DB15).
+#
+# VERSION 4 (2026-10-29, the owner's yes the same day): EACH ADAPTIVE POINT'S
+# ORIENTATION joins its pointList row, after the position - "placement point
+# 1 <id> at 0, 0, 0 mm, Orientation Host and Loop System (xyz)" - with one
+# finding saying the placement points' Orientations together. So what
+# SET_ADAPTIVE_POINT_ORIENTATION writes can be read back, and "what
+# orientation are the adaptive points" is answered by a READ rather than
+# landing on that write (D-86). The words are that card's own mapping, copied
+# exactly, so the two print the same words for one value. A PLACEMENT point
+# only is asked; a shape handle point reads "Orientation not read (shape
+# handle point)" with no call made, and a placement point Revit refuses
+# says Revit's reason - never a guessed value (D-52). Whether the point is a
+# placement point or a shape handle was already in each row (version 1).
+# Everything version 3 printed is printed as before; a family with no
+# adaptive points gets nothing new. Version 3's proof (2026-10-18) no longer
+# describes the code and is kept below as a record; the card is DRAFT until
+# it is proved again (NEEDS-CHECKING Group JQ). A comment, not `purpose`,
+# because `purpose` is searched.
 
 contract:
   needs:
@@ -81,7 +102,10 @@ contract:
       type: string
     - name: pointList
       # Every adaptive point on ONE line, in placement order: its kind, number,
-      # id and position in millimetres. Empty for a family with none.
+      # id and position in millimetres - and, version 4, its Orientation in
+      # Revit's Properties words ("Orientation Instance (xyz)"); a shape handle
+      # point "Orientation not read (shape handle point)". Empty for a family
+      # with none.
       role: result
       type: string
     - name: lineList
@@ -245,6 +269,18 @@ compatibility-note: >
   never from the label, which Revit translates. Whether a family document's
   Project Units read the same through these calls as a project's is Revit's,
   and is part of the proof below.
+  VERSION 4, THE ORIENTATION (read 2026-10-29 with `tools/api-surface
+  --members` over the 2020 to 2027 reference assemblies, one signature on all
+  eight): `AdaptiveComponentFamilyUtils.GetPointOrientationType(Document,
+  ElementId)` and the enum `AdaptivePointOrientationType` - ToHost,
+  ToHostAndLoopSystem, ToGlobalZthenHost, ToGlobalXYZ, ToInstanceZthenHost,
+  ToInstance - beside the `IsAdaptivePlacementPoint`,
+  `IsAdaptiveShapeHandlePoint` and `GetPlacementNumber` calls version 1
+  already made. The RevitAPI.xml of all eight releases says the call is "of
+  an Adaptive Placement Point" and throws ArgumentException when the id "does
+  not correspond to an Adaptive Placement Point" or not to "an Adaptive
+  Family"; so it is asked of placement points only, and whether a
+  pattern-based panel's points answer it is Revit's (JQ, with JK9).
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
@@ -265,6 +301,13 @@ compatibility-note: >
 #   "which families have no omniclass number"     -> CHECK_FAMILY_STANDARDS -
 #                                                    a verdict per type, in a
 #                                                    project or a family
+#   "what orientation are the adaptive points"    -> here (version 4) - each
+#                                                    point's row in pointList;
+#                                                    it landed on the write
+#                                                    below until 2026-10-29
+#   "set the adaptive points orientation to host and loop system"
+#                                                 -> SET_ADAPTIVE_POINT_ORIENTATION -
+#                                                    the WRITE; this only reads
 
 utterances:
   - what kind of family is this
@@ -274,3 +317,4 @@ utterances:
   - is this family line based or hosted
   - what is the omniclass number of this family
   - which omniclass codes fit this family
+  - what orientation are the adaptive points

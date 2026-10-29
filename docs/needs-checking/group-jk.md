@@ -41,7 +41,9 @@ number only. **No reader in the library answers *"what orientation are the adapt
 land on this write ([D-86](../DECISIONS.md)); on the container's backend it ranked this card first, as it
 ranked `PLACE_ADAPTIVE_POINTS` (also a write) first before this card existed. **Widening
 `REPORT_FAMILY_TEMPLATE` to read it is the owner's call** - it is PROVEN, and any change under its `impl/` makes
-its proof stale. Until then the modeller reads Properties.
+its proof stale. Until then the modeller reads Properties. **2026-10-29: the owner said yes** -
+`REPORT_FAMILY_TEMPLATE` version 4 prints each point's Orientation in this card's words, DRAFT, and
+[Group JQ](group-jq.md) proves it. JK12's question should now land there.
 
 **The rig (JK0) - scratch, never a working family.** A new family from the metric *Generic Model Adaptive*
 template with four placement points made and **kept** - `PLACE_ADAPTIVE_POINTS` *"0,0,0; 1000,0,0; 1000,1000,0;

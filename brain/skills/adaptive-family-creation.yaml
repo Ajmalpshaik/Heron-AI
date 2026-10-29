@@ -62,7 +62,8 @@ purpose: >
   exist - all of them or by number. It is DRAFT, not yet run in Revit
   (NEEDS-CHECKING JK): until it is signed it runs only once, through
   try-once on the saved family, or the modeller sets it by hand in
-  Properties. Nothing reads an Orientation back but Properties.
+  Properties. REPORT_FAMILY_TEMPLATE's pointList reads each point's
+  Orientation back - also DRAFT (NEEDS-CHECKING JQ) - as Properties does.
   Built 2026-10-02, owed BV19 and BV20: points hosted on a line or on a
   point's plane, and the sweep along a path.
 
