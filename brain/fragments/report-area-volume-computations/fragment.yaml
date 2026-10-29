@@ -175,22 +175,28 @@ compatibility-note: >
 #                                           room, naming which have no volume
 
 utterances:
+  # THE FIRST EIGHT ARE WHAT THE RE-RANKER READS (D-134), SO A VOLUME QUESTION
+  # AND THE WALL-FACE QUESTIONS LEAD (FRAGMENT-ISSUES 5b-1293, 2026-10-29).
+  # "is volume computation switched on" and "are room areas taken to the wall
+  # finish" went to SET_AREA_VOLUME_COMPUTATIONS, an Admin write, on the
+  # owner's backend, with "are volumes switched on" and both of row 5b-476's
+  # sentences past the eighth. Reordered - nothing added, nothing removed.
   - is volume computation on
-  - what are the area and volume computation settings
-  - are room volumes being computed
-  - is room area measured at wall finish or wall center
-  - how is the room area computed in this project
-  - list the area schemes
-  - what area schemes are in this model
-  - why do the spaces have no volume
   - are volumes switched on in this project
-  - is area and volume computation turned on
-  - which room area computation does this project use
+  - is room area measured at wall finish or wall center
   # ADDED 2026-10-14, FRAGMENT-ISSUES row 5b-476. On the trained backend a
   # question about which wall face room areas reach went to PLACE_AREAS, a
   # write, at nearness rank 17 for this card - its text is mostly volumes.
   - which wall face are room areas measured to
   - do the room areas include the wall finish
+  - what are the area and volume computation settings
+  - list the area schemes
+  - why do the spaces have no volume
+  - are room volumes being computed
+  - how is the room area computed in this project
+  - what area schemes are in this model
+  - is area and volume computation turned on
+  - which room area computation does this project use
   # ADDED 2026-10-14 with CREATE_AREA_PLAN. `areaSchemes` names each scheme's
   # area plans, so this card answers the question - and on a scratch store,
   # lexical hybrid, 2024 wall, "what area plans are there" reached it on main

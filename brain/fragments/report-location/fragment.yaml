@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-GEO-025
-semantic-identity: "where is the project on the earth, and where exactly are these"
+semantic-identity: "where the project is on the earth - its latitude, longitude, time zone and the angle between project north and true north - and where exactly these elements are"
 kind: action
 domain: revit.geometry
 capability: REPORT_LOCATION
@@ -254,19 +254,27 @@ compatibility-note: >
 #
 #   "do the links agree with our coordinates" -> CHECK_LINK_COORDINATES
 utterances:
+  # THE FIRST EIGHT ARE WHAT THE RE-RANKER READS (D-134), SO THE SITE AND TRUE
+  # NORTH LEAD (FRAGMENT-ISSUES 5b-1293, 2026-10-29). In the old order every
+  # true-north sentence sat past the eighth, and "is project north rotated from
+  # true north" went to SET_PROJECT_LOCATION, an Admin write, on the owner's
+  # backend; the identity above now names the angle for the same reason.
+  # Reordered - nothing added, nothing removed.
+  - where is the project located
+  - which way does true north point
+  - is project north the same as true north
+  - has project north been rotated
+  - how far is true north rotated from project north
   - where exactly are these
   - what are the coordinates of this
+  - what is the site latitude and longitude
   - where does this duct run from and to
   - report the location of these elements
   - what position is this at
-  - where is the project located
-  - what is the site latitude and longitude
-  - which way does true north point
   - what time zone is the project in
   - what is the angle to true north
   - what latitude is the project at
   - which city is the project site in
-  - how far is true north rotated from project north
   - what is the project location set to
   # ADDED 2026-10-14. The routing table above has claimed both since it was
   # written; on a scratch store, lexical, through `find`, main served them with
@@ -277,11 +285,10 @@ utterances:
   - what are the shared coordinates of this
   # ADDED 2026-10-14, FRAGMENT-ISSUES rows 5b-356 and 5b-476: questions about
   # True North reached SET_PROJECT_LOCATION, an Admin write, on the trained
-  # backend. More of this card's own words are about the site now.
+  # backend. More of this card's own words are about the site now. Two of
+  # the four lead the list since 2026-10-29 (row 5b-1293).
   - which direction is true north in this model
   - is true north turned in this project
-  - is project north the same as true north
-  - has project north been rotated
   # ADDED 2026-10-14, FRAGMENT-ISSUES row 5b-477: in a sweep of 60 plain
   # questions on the trained model, the first went to CREATE_MEP_SYSTEM and
   # the second to SPLIT_MEP_RUN - both writes. This read answers both, so

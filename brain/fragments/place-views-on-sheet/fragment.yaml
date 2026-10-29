@@ -120,9 +120,13 @@ compatibility-note: >
 #                                         modeller gives, nothing laid out
 
 utterances:
-  - put these views on a sheet
-  - place the plans on sheet a-101
-  - add these to the sheet
+  # LAID OUT FIRST (FRAGMENT-ISSUES 5b-1293, 2026-10-29): the re-ranker reads
+  # these in order (D-134), and "place the views on this sheet" - no point
+  # given, so this card's job - went to PLACE_VIEW_ON_SHEET on the owner's
+  # backend. Reordered - nothing added, nothing removed. The margin is thin.
   - lay these views out on a sheet
-  - put the drawings on the sheet
   - place these on the drawing sheet
+  - place the plans on sheet a-101
+  - put these views on a sheet
+  - add these to the sheet
+  - put the drawings on the sheet
