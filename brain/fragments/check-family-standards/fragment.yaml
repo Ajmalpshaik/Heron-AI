@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "audit the family library against the office standard and its
 kind: filter
 domain: revit.qa
 capability: CHECK_FAMILY_STANDARDS
-version: 3
+version: 4
 source: OFFICIAL
 risk: READ
 
@@ -89,6 +89,17 @@ purpose: >
   a project unless `requiredParameters` names it - and each type's Assembly
   Code and Keynote against the document's tables, a missing table NOT
   CHECKED. A project's counts come back on one line, `classificationReport`.
+
+  **VERSION 4 (2026-10-28, row 5b-1346): A DUCT OR PIPE FITTING'S OWN RULES.**
+  In a Pipe Fittings or Duct Fittings family open in the Family Editor, four
+  more checks: its run connectors counted against its Part Type - an elbow
+  two, a tee three, a cross four, a cap one, a FAIL when they differ, and
+  NOT CHECKED for a part whose count Heron has not recorded; each one's
+  System Classification Fitting (a WARN); one primary, lying on the X axis
+  (a WARN); and an elbow's connector Angle driven by an INSTANCE family
+  parameter - by a TYPE one a FAIL, by none a WARN until Revit's own elbow is
+  read (NEEDS-CHECKING Group JN). Version 3's proof no longer describes the
+  code and is kept below as a record; DRAFT until it is proved again.
 
 # IN A PROJECT, A REQUIRED NAME THE TYPE CARRIES TWICE IS A WARN, NOT A PASS -
 # counted by name, never looked up, and counted in `warned` (D-54 s3,
@@ -224,6 +235,12 @@ compatibility-note: >
   The name test is a plain substring match rather than a regular expression, so
   it behaves the same on .NET Framework and .NET 10 and needs no escaping of
   whatever the office convention contains.
+  VERSION 4 adds `ConnectorElement.IsPrimary`, `Direction`,
+  `SystemClassification` and the built-in parameter `CONNECTOR_ANGLE`, read
+  through `FamilyManager.GetAssociatedFamilyParameter` - all 2020 to 2027, the
+  same members REPORT_FAMILY_CONNECTORS and SET_FAMILY_CONNECTOR_ROLES use - and
+  matches Part Type by `PartType` enum name, the names read in the RevitAPI XML
+  of all eight releases on 2026-10-28 (docs/43 section 10).
   VERSION 3, CLASSIFICATION (read 2026-10-11 with `tools/api-surface
   --members` over the 2020 to 2027 reference assemblies): the built-in
   parameters were RENAMED at 2026 with their numbers kept - `OMNICLASS_CODE`
@@ -317,6 +334,7 @@ utterances:
   - will this valve family connect to a pipe
   - why does this valve not follow the pipe size
   - check this mep family will connect and follow its size
+  - check this fitting family before I load it
   - which families have no omniclass number
   - check the omniclass numbers of the families
   - check the assembly codes
