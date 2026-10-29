@@ -1,0 +1,48 @@
+# NEEDS-CHECKING Group JG - CREATE_WALL version 3, a wall that starts above its
+# level: `baseOffset`, Revit's Base Offset in millimetres (row 5b-1345).
+# Written 2026-10-28 in a cloud session with no Revit; NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/create-wall-base-offset-2026-10-28.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-wall-base-offset-2026-10-28.yaml --session <pid>
+#
+# A SCRATCH PROJECT, never a working model: %TEMP%\heron-work\group-jg\JG Wall
+# Offset.rvt, a new project from Revit 2020's default metric template, Level 1
+# at elevation 0. Both legs run inside a TransactionGroup and are ROLLED BACK
+# (D-55): nothing is kept, which is why a DRAFT may run here at all (D-117).
+#
+# THE POSITIVE: one wall 1500 mm above Level 1, 3000 mm high - created, and
+# its findings say "Base Offset +1500 mm ... from +1500 to +4500 mm" and "Read
+# back off the walls: 1 of 1 as asked". THE NEGATIVE: the same wall with a base
+# offset of 200 km, a number typed in another unit - refused before anything is
+# built, `created` empty, "Nothing was built".
+#
+# WHAT BATCH-PROVE CANNOT JUDGE, read by hand in Group JG: the read-back line
+# above; JG1, the same wall with the offset left out and with 0 - version 2's
+# findings word for word, `offsetsReadMm` 0; and JG2 to JG3, the kept wall's
+# base measured at Level 1 + 1500 by two PROVEN readers and Properties.
+
+model: JG Wall Offset (a new project from Revit 2020's default metric template)
+
+jobs:
+  - fragment: create-wall
+    expect: created
+    write: true                        # rolled back
+    in: JG Wall Offset
+    set:
+      level:      "Level 1"
+      wallType:   "Generic - 200mm"
+      points:     "0,80000,0; 6000,80000,0"
+      height:     3000
+      structural: false
+      baseOffset: 1500
+    negative-set:
+      level:      "Level 1"
+      wallType:   "Generic - 200mm"
+      points:     "0,80000,0; 6000,80000,0"
+      height:     3000
+      structural: false
+      baseOffset: 200000000
+    note: >
+      Positive - a wall whose base is 1500 mm above Level 1: created 1, the
+      Base Offset read back off it as asked. Negative - the same wall 200 km up:
+      refused, nothing built.
