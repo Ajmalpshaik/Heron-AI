@@ -1,0 +1,67 @@
+# NEEDS-CHECKING Group JO - REPORT_CURTAIN_ELEMENTS version 2, which groups a
+# curtain wall's panels by SIZE - width x height as Revit gives them, within a
+# tolerance, 5 mm when none is given - per wall and across the walls handed in.
+# NOT RUN. Written 2026-10-29 in a cloud session with no Revit; the cases are in
+# brain/fragments/report-curtain-elements/tests/cases.yaml.
+#
+#     python tools/batch-prove.py tools/jobs/report-curtain-elements-jo-2026-10-29.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-curtain-elements-jo-2026-10-29.yaml --session <pid>
+#
+# ON "Heron JO Panel Sizes", A SAVED SCRATCH PROJECT - never a working one. Group
+# JO's row JO0 makes it BY HAND: CREATE_WALL is DRAFT (version 3, Group JG), so
+# the walls are not drawn by a setup step here. They are found by their Mark,
+# through two PROVEN readers - SELECT_BY_PARAMETER_VALUE, then SET_SELECTION -
+# so nothing in this file changes the model and no leg needs `write`.
+#
+#   JO-MIXED  HERON JO 1500 (vertical Fixed Distance 1500, Justification
+#             Beginning, no horizontal grid, no mullions), 10000 x 3000 mm:
+#             six panels 1500 wide and one 1000 wide
+#   JO-BASIC  Basic Wall: Generic - 200mm, 10000 x 3000 mm
+#
+# THE POSITIVE: JO-MIXED, the tolerance left out - the card binds it as 5.
+# differentPanelSizes 2; panelSizes "1 at 1000 x 3000 mm", "6 at 1500 x 3000
+# mm"; sizesNotRead empty; every version 1 line in findings word for word, the
+# size lines after them.
+#
+# THE NEGATIVE: JO-BASIC, the same request - a DIFFERENT wall, not an empty
+# selection. curtainWallsFound 0, differentPanelSizes 0, panelSizes and
+# sizesNotRead empty, notCurtain names it, findings the one summary line.
+#
+# PRESS Esc FIRST so nothing is selected: SET_SELECTION replaces the selection,
+# and the binding note must read "elements from the selection (1)".
+
+model: '"Heron JO Panel Sizes" (docs/needs-checking/group-jo.md, row JO0), Revit 2020 or 2024 - a SAVED SCRATCH project'
+
+defaults:
+  in: "Heron JO Panel Sizes"
+
+jobs:
+  - fragment: report-curtain-elements
+    # `differentPanelSizes` is the thing found: how many sizes the panels come
+    # in, measured. panelCount moving off zero would say only that cells were
+    # counted, which version 1 already proved.
+    expect: differentPanelSizes
+    setup:
+      - select-by-parameter-value
+      - set-selection
+    setup-set:
+      parameterName: Mark
+      matchText: JO-MIXED
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Walls
+      includeLinks: "false"
+    negative-setup-set:
+      parameterName: Mark
+      matchText: JO-BASIC
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Walls
+      includeLinks: "false"
+    note: >
+      Positive (JO1): differentPanelSizes 2, panelSizes "1 at 1000 x 3000 mm"
+      and "6 at 1500 x 3000 mm", sizesNotRead empty; findings begin "1 curtain
+      wall(s): 7 panel cell(s), 0 mullion(s), 0 empty cell(s)" and end "Across
+      the 1 curtain wall(s): 2 different panel size(s)". Negative (JO2):
+      curtainWallsFound 0, differentPanelSizes 0, notCurtain "is a wall but
+      not a CURTAIN wall". JO3 to JO9 are run by hand - the group file says how.

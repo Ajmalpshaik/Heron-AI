@@ -1066,6 +1066,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jn.md`](needs-checking/group-jn.md)
 
+## Group JO - how many different panel sizes a curtain wall has, within a tolerance: `REPORT_CURTAIN_ELEMENTS` version 2 (2026-10-29)
+
+**Its own file:** [`needs-checking/group-jo.md`](needs-checking/group-jo.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
