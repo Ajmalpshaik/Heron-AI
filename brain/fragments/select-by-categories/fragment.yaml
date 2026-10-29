@@ -27,6 +27,18 @@ proof-held: >
 source: OFFICIAL
 risk: READ
 
+# LINKED MODELS, THE DETAIL - KEPT HERE BECAUSE `purpose` IS SEARCHED
+# (FRAGMENT-ISSUES 5b-1293, 2026-10-29). Version 2's paragraph on links
+# (D-59, 2026-09-29) was most of a hundred words of mechanics in the purpose,
+# and it moved this card from 2nd to 7th for "every duct in the model" and out
+# of the shortlist for "show me every duct in the model" on the trained model
+# - the change tests/test_retrieve.py's duct agreement check has failed on
+# since. The purpose keeps what a modeller is told; the rest is here, word for
+# word in substance: with `includeLinks` absent this answers for this model
+# alone, as version 1's proof measured. `elements` stays this model's own: the
+# chain revives ids against this model, and a linked id that happens to be in
+# use here binds an unrelated element (FRAGMENT-ISSUES row 75). Links nested
+# inside a link are not read, and are counted in the answer.
 purpose: >
   Collects several categories into one set in a single pass. What somebody
   means by *"the ductwork"* is five Revit categories - ducts, fittings,
@@ -50,19 +62,11 @@ purpose: >
 
   ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
 
-  **LINKED MODELS ARE READ ONLY WHEN ASKED FOR (version 2, D-59).** With
-  `includeLinks` absent this answers for this model alone, exactly as the
-  proof measured. With it set, every loaded link is read too and
-  `linksSearched` says how many were: set and 0 means "you asked, and none
-  are loaded", which is a different answer from host-only. Linked matches are counted per link in
-  `linkedMatches` with the same per-category breakdown; with a view,
-  through that view, which only Revit 2023 and later can do.
-  **NOTHING FROM A LINK IS EVER SELECTED OR CARRIED** - `elements` stays this model's own; the chain
-  revives ids against this model, and a linked id that happens to be in
-  use here binds an unrelated element (FRAGMENT-ISSUES row 75). Links
-  nested inside a link are not read, and are counted in the answer. This
-  is version 2; version 1's proof no longer describes the code, and the
-  fragment is DRAFT until it is proved again.
+  **LINKED MODELS ONLY WHEN ASKED (D-59).** Given `includeLinks`, each loaded
+  link is read too and counted per link in `linkedMatches`, with the same
+  breakdown - through a view only on Revit 2023 and later - and
+  `linksSearched` says how many were read, 0 when none are loaded. Nothing
+  from a link is ever selected.
 
 contract:
   needs:
@@ -166,6 +170,12 @@ compatibility-note: >
 
 utterances:
   - all the ductwork
+  # ADDED 2026-10-29, FRAGMENT-ISSUES 5b-1293. Half the library declares a
+  # "show me ..." sentence and this card declared none, so on the words route
+  # "show me every duct in the model" ranked it 60th, and the selection that
+  # answers it never reached that shortlist (tests/test_retrieve.py's duct
+  # agreement check). What a modeller says for this card's own job.
+  - show me all the ductwork
   - select the whole pipe system
   - ducts and fittings and accessories together
   - everything in these categories
