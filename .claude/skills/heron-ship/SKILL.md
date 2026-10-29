@@ -440,6 +440,13 @@ git worktree remove "$WORK/main-wt"
   about 8 minutes and 5.8 GB, PyPI's CUDA torch because download.pytorch.org was refused. **Never in
   the system Python:** `heron_embed` falls back to sentence-transformers when model2vec is missing, so
   every suite would then run on a backend CI does not.
+- **The venv needs the weights too: `python brain/heron_rerank.py --fetch --yes` with its Python, once.**
+  Until then the re-ranker is `absent`. `score-routing` refuses `model+rerank` (NOT ASKED), but
+  `tests/test_routing_phrases.py` and `tests/test_retrieve.py` run on the model alone and do not say so -
+  measured 2026-10-29, when the first "re-ranker" run of a session was not one (row 5b-1293).
+- **The re-ranker reads a card's identity and its first eight utterances (D-134); the order of utterances
+  moves nothing else.** So a misroute only the re-ranker makes is tried by reordering first: an identity
+  is read by all three routes, and rewording one can fix the re-ranker and break the model (row 5b-1293).
 - **A refused run is the point, not a nuisance.** Row 481's "both backends" were both re-ranked, found
   later. The tool now refuses to write, or to compare against, a run whose answers ran on another backend.
 - **Every `bad` line is a finding to report**, and it exits 0 (D-100). Never reword a sentence to buy it

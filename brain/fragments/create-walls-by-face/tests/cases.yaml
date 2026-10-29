@@ -1,0 +1,30 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      a mass, a 30 x 20 m box 12 m tall, selected, wallType
+      "Generic - 200mm", faces empty, locationLine empty
+    expect: >
+      created 4, one wall by face on each side face, each read back with the
+      type and an area; the answer naming Finish Face: Exterior as Heron's
+      default
+
+second_route:
+  - Massing & Site > Wall by Face on the same faces by hand, and the walls' Properties
+  - one Ctrl+Z removes every wall made in a single step (Golden Rule 16)
+
+negative:
+  - given: the same box straight after the four walls, the same wallType
+    expect: >
+      created 0 and skipped 1, the mass named as already carrying 4 walls by
+      face - no second skin
+  - given: a curtain system type as wallType
+    expect: >
+      NOTHING WAS MADE, the finding naming CREATE_CURTAIN_SYSTEM
+  - given: a floor type, wallType "Generic 300mm"
+    expect: >
+      NOTHING WAS MADE, the finding saying Floor by Face has no API and naming
+      REPORT_MASSES with withOutlines and CREATE_FLOOR
+  - given: a wall selected instead of a mass, wallType "Generic - 200mm"
+    expect: >
+      NOTHING WAS MADE, the wall named as not a mass

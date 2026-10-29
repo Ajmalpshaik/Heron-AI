@@ -30,6 +30,7 @@ this folder exists to remove.
 
 | Date | Sitting |
 |---|---|
+| 2026-10-29 | [THE ROUTING GUARDS PASS ON THE OWNER'S BACKEND, BY CARD WORDS ALONE](2026-10-29-the-routing-guards-pass-on-the-owner-s-backend-by-card-words.md) |
 | 2026-10-18 | [THE SAFETY RAILS MET REVIT, AND HERON'S DATA LEFT THE STORE APP'S COPY](2026-10-18-the-safety-rails-met-revit-and-heron-s-data-left-the-store.md) |
 | 2026-10-14 | [SIXTY PLAIN QUESTIONS, AND WHAT ANSWERED THEM](2026-10-14-sixty-plain-questions-and-what-answered-them.md) |
 | 2026-10-14 | [THE GAP PASS: NEW TOOLS FOR WHAT THE LIBRARY COULD NOT DO](2026-10-14-the-gap-pass-new-tools-for-what-the-library-could-not-do.md) |
