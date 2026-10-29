@@ -1,0 +1,71 @@
+# NEEDS-CHECKING Group JP, row JP1 - SET_CURTAIN_WALL_GRID version 3 on a
+# CURTAIN WALL type: version 2's own proof, run again, because version 3
+# changed the code under it. Written 2026-10-29 in a cloud session with no
+# Revit; NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/set-curtain-wall-grid-wall-type-2026-10-29.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-curtain-wall-grid-wall-type-2026-10-29.yaml --session <pid>
+#
+# THE SAME VALUES AS THE 2026-10-06 PROOF, word for word - its positive and
+# its negative, read off the card's proof block. That proof ran in Project2, a
+# new project from Revit 2024's default metric template, where "Level 1" and
+# "Curtain Wall: Curtain Wall" resolved and that type's layouts read None both
+# ways. This file names "Heron JP Wall Grid": a new project made the same way
+# and saved in %TEMP%\heron-work\group-jp (row JP0) - or Project2 itself, if it
+# is still on the PC, with `in:` changed to it. NOTHING SELECTED.
+#
+# THE ANSWER MUST BE VERSION 2's, WORD FOR WORD, with `systemsOfType 0` beside
+# it - see the note below. Any other word is a FAIL of version 3, not a
+# finding about Revit: the wall-type path was meant not to move.
+#
+# create-wall draws the one wall, and is rolled back with everything else. It
+# is DRAFT itself since 2026-10-28 (Group JG, its base offset); a rolled-back
+# setup step still runs, and its version 3 with no base offset draws version
+# 2's wall.
+#
+# RUN THIS BEFORE set-curtain-wall-grid-curtain-system-2026-10-29.yaml: a batch
+# keeps one run record per fragment, and that file's is the one signed from.
+
+model: Heron JP Wall Grid (a new project from Revit 2024's default metric template, as Project2 was)
+
+defaults:
+  in: Heron JP Wall Grid
+  write: true
+  setup:
+    - create-wall
+  set:
+    level: "Level 1"
+    wallType: "Curtain Wall: Curtain Wall"
+    points: "0,60000,0; 9000,60000,0"
+    height: "3000"
+    structural: "false"
+    curtainWallType: "Curtain Wall: Curtain Wall"
+    grid: "vertical layout=fixed distance; vertical spacing=2500; horizontal layout=fixed distance; horizontal spacing=4000"
+  negative-set:
+    # VERSION 2's NEGATIVE: a spacing asked under a layout of None.
+    level: "Level 1"
+    wallType: "Curtain Wall: Curtain Wall"
+    points: "0,60000,0; 9000,60000,0"
+    height: "3000"
+    structural: "false"
+    curtainWallType: "Curtain Wall: Curtain Wall"
+    grid: "vertical spacing=1500"
+
+jobs:
+  - fragment: set-curtain-wall-grid
+    expect: applied
+    note: >
+      JP1. Positive, as 2026-10-06: wallsOfType 1, systemsOfType 0, applied 4,
+      alreadyAsAsked 0, differs empty; readBack "vertical: layout Fixed
+      Distance [Revit's value 1], was None [Revit's value 0] - asked; spacing
+      2500.0 mm, was 0.0 mm - asked | horizontal: layout Fixed Distance
+      [Revit's value 1], was None [Revit's value 0] - asked; spacing 4000.0
+      mm, was 0.0 mm - asked | Number, Justification, Angle and Offset, both
+      ways, measured - on the TYPE: none of them; on wall <id>: all eight";
+      measured "wall <id>, 9000 mm long: vertical grid lines 0 before, 3
+      (Revit's U set 0, V set 3) now; horizontal 0 before, 0 now; at an angle
+      0 before, 0 now. Mullions before: none. Now: none". Negative, as
+      2026-10-06: applied 0, readBack and measured empty, refused "A vertical
+      spacing does nothing while the vertical layout is None - there are no
+      evenly spaced lines to space. Say the layout as well: fixed distance,
+      maximum spacing or minimum spacing. Nothing was changed".

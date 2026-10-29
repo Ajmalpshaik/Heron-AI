@@ -16,7 +16,9 @@
 #                          no grid lines in Revit's templates
 #   duplicate-type         copies its type as "HERON CW PANEL PROOF"
 #   change-element-type    puts the wall on the copy
-#   set-curtain-wall-grid  a fixed 1500 both ways on the copy (PROVEN): six
+#   set-curtain-wall-grid  a fixed 1500 both ways on the copy (version 2
+#                          PROVEN 2026-10-06; version 3 DRAFT until Group JP,
+#                          the same wall-type path, rolled back here): six
 #                          columns of 1500 and two rows of 1500 - 12 panels,
 #                          derived in brain/fragments/set-curtain-panel-type/
 #                          tests/cases.yaml

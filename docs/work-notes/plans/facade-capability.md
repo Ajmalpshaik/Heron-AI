@@ -56,6 +56,7 @@ tools behind it.
 | 5 | `set-divided-surface-layout` - an existing divided surface's grids changed: rotation (a diamond pattern), offset, justification, border tiles, cut at levels | [JL](../../needs-checking/group-jl.md) | DRAFT |
 | 6 | `report-divided-surfaces` widened to version 2 - also reads the rotations, flip, mirror, indents and what cuts each surface, so those questions stop ranking the write in 5 first | [DR](../../needs-checking/group-dr.md) rows DR5a, DR5b | DRAFT |
 | 7 | the [`facade`](../../../brain/skills/facade.yaml) method - routes A to E | - | DRAFT |
+| 8 | `set-curtain-wall-grid` widened to version 3 and `set-curtain-wall-mullions` to version 2 - each also takes a **curtain system type**, by its Grid 1 and Grid 2, on the owner's word of 2026-10-29; a curtain wall type as before. Both proofs went stale with it, so route A's grid and mullion steps wait on the same group | [JP](../../needs-checking/group-jp.md) | DRAFT |
 
 None of it is proved. A compile is not a proof (D-30): each tool is refused for a kept change until its
 group has been run on a named model with its negative case (D-117).
@@ -67,14 +68,13 @@ A change under a PROVEN card's `impl/` makes its proof stale, so none of these w
 | Widen | So that it | Why it matters for a facade |
 |---|---|---|
 | `report-curtain-elements` | groups panels by **size** within a tolerance, as [doc 45 §6](../../45-five-more-downloaded-skill-files.md) already records | how many different panel sizes a facade has is the fabricator's first question |
-| `set-curtain-wall-grid`, `set-curtain-wall-mullions` | also take a **curtain system type** | route B's grid and mullions are set by hand until then |
 | `report-family-template` | reads each adaptive point's **Orientation** | nothing reads back what `set-adaptive-point-orientation` writes, except Properties |
 
 ## Still NOT YET after it
 
 Said by the `facade` method when asked, never worked round:
 
-- a curtain **system type's** grid and mullions - the wall-type setter does not reach it;
+- a curtain **system type's** grid and mullions **read back** - `report-curtain-wall-type` reads a wall type only (setting them is row 8);
 - a grid line **removed**, or one segment cut, on one wall;
 - a mullion moved, or its corner join changed;
 - the tile pattern of a divided surface - Revit's `CurtainPanelTilePattern` is read-only;
@@ -85,5 +85,5 @@ Said by the `facade` method when asked, never worked round:
 
 ## Retiring this note
 
-When Groups JI to JM are proved, or the owner drops one, this note is deleted. Its durable parts are
+When Groups JI to JM, and JP, are proved, or the owner drops one, this note is deleted. Its durable parts are
 already where they live: the cards, the `facade` method and the groups.

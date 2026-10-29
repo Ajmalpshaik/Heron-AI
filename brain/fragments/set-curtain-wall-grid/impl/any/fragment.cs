@@ -1,10 +1,29 @@
 // NOT STANDALONE. Assumes `doc`, `curtainWallType` and `grid` are in scope;
-// leaves `applied`, `alreadyAsAsked`, `differs`, `wallsOfType`, `readBack`,
-// `measured`, `refused` and `findings` behind.
+// leaves `applied`, `alreadyAsAsked`, `differs`, `wallsOfType`,
+// `systemsOfType`, `readBack`, `measured`, `refused` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). Revit keeps lengths in feet;
 // the modeller's spacing is MILLIMETRES (D-71), turned into feet once, at the
 // write, and back once, at the read.
+//
+// ===========================================================================
+// VERSION 3 (2026-10-29): A CURTAIN SYSTEM TYPE AS WELL AS A CURTAIN WALL TYPE.
+// ===========================================================================
+//
+// `curtainWallType` is the type's NAME, resolved here. Until version 3 the
+// add-in resolved it among wall types (D-54) and a curtain system type's name
+// was refused before this ran; the add-in has no binder for a curtain system
+// type, so - as CREATE_CURTAIN_SYSTEM does - the name is matched here, by the
+// add-in's own rule: the type name exactly, capitals included, or "Family:
+// Type" / "Family : Type". It is matched among WALL types and CURTAIN SYSTEM
+// types together, so a bare name both share is refused naming both, never
+// chosen from (D-54 s3). Every name that resolved to one wall type in version
+// 2 resolves to the same type here, unless a curtain system type now shares
+// its bare name.
+//
+// A WALL TYPE IS VERSION 2 TO THE WORD - the same ids, keys, refusals,
+// read-back, measurement and findings. Everything below that says "system" is
+// the curtain system type's path, and only it.
 //
 // ===========================================================================
 // A CURTAIN WALL TYPE CARRIES "Layout" AND "Spacing" TWICE - ONCE PER
@@ -16,8 +35,20 @@
 // two, and which one is not defined - which is why WRITE_ELEMENT_PARAMETERS
 // refuses such a name (FRAGMENT-ISSUES 5b-203). Here each setting is reached
 // by the id Revit gives it on a WALL type: SPACING_LAYOUT_VERT and _HORIZ,
-// SPACING_LENGTH_VERT and _HORIZ. The _1/_2 and _U/_V ids with the same names
-// belong to curtain systems and divided surfaces, not to a wall type.
+// SPACING_LENGTH_VERT and _HORIZ.
+//
+// A CURTAIN SYSTEM TYPE'S TWO GRIDS ARE GRID 1 AND GRID 2, AND WHICH WAY EACH
+// RUNS IS THE FACE'S, NOT THE TYPE'S. So its keys are "grid 1 layout", "grid 1
+// spacing", "grid 2 layout", "grid 2 spacing", and a "vertical" or "horizontal"
+// key on one is refused rather than guessed at. Its ids are taken to be
+// SPACING_LAYOUT_1 and _2 and SPACING_LENGTH_1 and _2. THAT IS AN ASSUMPTION:
+// the API reference of all eight releases lists those ids as "Layout" and
+// "Spacing" - exactly as it lists the _VERT/_HORIZ and _U/_V ones - and says
+// nothing of which element carries which. So a curtain system type carrying
+// none of them is refused before anything is written, the ids it does carry
+// are printed in `readBack` every run, and a setting written by those ids that
+// does not read back as asked THROWS - nothing is kept. The proof (Group JP)
+// settles it.
 //
 // THE LAYOUT IS A WHOLE NUMBER, AND WHICH NUMBER MEANS WHICH LAYOUT IS AN
 // ASSUMPTION UNTIL A PROOF READS IT BACK. The numbers written are Revit's own
@@ -33,15 +64,19 @@
 // FIXED NUMBER IS REFUSED. Under it the count is "Number", which Revit shows in
 // each placed WALL's Properties rather than the type's - so a type change
 // cannot say how many, and every wall of the type would switch to a count
-// nobody chose. Where Revit actually keeps Number, Justification, Angle and
-// Offset is MEASURED on every run and printed in `readBack`, so the first
-// proof records it rather than this comment asserting it.
+// nobody chose. For a curtain system type it is refused too: the reference
+// lists SPACING_NUM_DIVISIONS_1 and _2 as "Number" and does not say whether
+// the type or each curtain system holds it. Where Revit actually keeps Number,
+// Justification, Angle and Offset is MEASURED on every run and printed in
+// `readBack`, so the proof records it rather than this comment asserting it.
 //
 // U AND V ARE NOT READ AS VERTICAL AND HORIZONTAL. The API reference names a
 // curtain grid's two families of lines U and V and never says which is
-// vertical on a wall. So the lines on a placed wall are sorted by the way each
-// one actually runs - its curve, against Revit's own angle tolerance - and the
-// set each came from is printed beside the count. The proof records the answer.
+// vertical on a wall; for a curtain grid it calls Grid 1 "the U grid line
+// pattern" and Grid 2 the V one, and still says nothing of which way either
+// runs on a face. So the lines are sorted by the way each one actually runs -
+// its curve, against Revit's own angle tolerance - and the set each came from
+// is printed beside the count. The proof records the answer.
 //
 // NOTHING IS WRITTEN UNTIL THE WHOLE REQUEST IS SETTLED. Every refusal is made
 // before the first write, so a refused request changes nothing. A write Revit
@@ -74,43 +109,11 @@ var applied = 0;
 var alreadyAsAsked = 0;
 var differs = new List<string>();
 var wallsOfType = 0;
+var systemsOfType = 0;
 var readBack = "";
 var measured = "";
 var refused = "";
 var findings = new List<string>();
-
-// The two directions, in the order every array below uses.
-var directions = new[] { "vertical", "horizontal" };
-var layoutIds = new[] { BuiltInParameter.SPACING_LAYOUT_VERT, BuiltInParameter.SPACING_LAYOUT_HORIZ };
-var spacingIds = new[] { BuiltInParameter.SPACING_LENGTH_VERT, BuiltInParameter.SPACING_LENGTH_HORIZ };
-
-// What the modeller types, what Type Properties shows, and the number written.
-var layoutWords = new[] { "none", "fixed distance", "fixed number", "maximum spacing", "minimum spacing" };
-var layoutShown = new[] { "None", "Fixed Distance", "Fixed Number", "Maximum Spacing", "Minimum Spacing" };
-var layoutValues = new[]
-{
-    (int)SpacingRuleLayout.None,
-    (int)SpacingRuleLayout.FixedDistance,
-    (int)SpacingRuleLayout.FixedNumber,
-    (int)SpacingRuleLayout.MaximumSpacing,
-    (int)SpacingRuleLayout.MinimumSpacing,
-};
-var fixedNumber = Array.IndexOf(layoutValues, (int)SpacingRuleLayout.FixedNumber);
-
-// The grid settings Revit is believed to keep on each WALL rather than on the
-// type. Measured below, never relied on.
-var perWallIds = new[]
-{
-    BuiltInParameter.SPACING_NUM_DIVISIONS_VERT, BuiltInParameter.SPACING_NUM_DIVISIONS_HORIZ,
-    BuiltInParameter.SPACING_JUSTIFICATION_VERT, BuiltInParameter.SPACING_JUSTIFICATION_HORIZ,
-    BuiltInParameter.CURTAINGRID_ANGLE_VERT, BuiltInParameter.CURTAINGRID_ANGLE_HORIZ,
-    BuiltInParameter.CURTAINGRID_ORIGIN_VERT, BuiltInParameter.CURTAINGRID_ORIGIN_HORIZ,
-};
-var perWallNames = new[]
-{
-    "vertical Number", "horizontal Number", "vertical Justification", "horizontal Justification",
-    "vertical Angle", "horizontal Angle", "vertical Offset", "horizontal Offset",
-};
 
 // Lower case, one space between words. These are THIS file's words - the
 // setting names and the layouts - so their spelling is loosened here; no name
@@ -128,7 +131,169 @@ Func<ElementType, string> fullName = type =>
     return string.IsNullOrEmpty(family) ? type.Name : family + ": " + type.Name;
 };
 
-var label = curtainWallType == null ? "" : fullName(curtainWallType);
+// ---------------------------------------------------------------------------
+// THE TYPE, BY NAME - among wall types and curtain system types, by the
+// add-in's own rule (D-54): the name exactly, or "Family: Type" with or without
+// a space before the colon, each half exact. Two found is refused, never
+// chosen from.
+// ---------------------------------------------------------------------------
+
+var typeAsked = curtainWallType ?? "";
+WallType asWall = null;
+CurtainSystemType asSystem = null;
+var nameProblem = "";
+
+Func<ElementType, bool> nameFits = type =>
+{
+    string name, family;
+    try { name = type.Name; } catch { return false; }
+    if (string.Equals(name, typeAsked, StringComparison.Ordinal)) return true;
+    try { family = type.FamilyName; } catch { return false; }
+    if (string.IsNullOrEmpty(family) || name == null) return false;
+    var colon = typeAsked.IndexOf(':');
+    return colon >= 0
+        && string.Equals(typeAsked.Substring(0, colon).Trim(), family, StringComparison.Ordinal)
+        && string.Equals(typeAsked.Substring(colon + 1).Trim(), name, StringComparison.Ordinal);
+};
+
+if (typeAsked.Trim().Length == 0)
+{
+    nameProblem = "No wall type was named. Name the curtain wall type the way Revit writes it - "
+        + "'Curtain Wall: Storefront' - or a curtain system type, 'Curtain System: ' and its name, "
+        + "and ask again. Nothing was changed";
+}
+else
+{
+    var fits = new List<ElementType>();
+    var curtainWallNames = new List<string>();
+    var curtainSystemNames = new List<string>();
+    foreach (var element in new FilteredElementCollector(doc).WhereElementIsElementType())
+    {
+        var wallType = element as WallType;
+        var systemType = element as CurtainSystemType;
+        if (wallType == null && systemType == null) continue;
+        if (wallType != null)
+        {
+            try { if (wallType.Kind == WallKind.Curtain) curtainWallNames.Add(fullName(wallType)); }
+            catch (Exception) { }
+        }
+        if (systemType != null) curtainSystemNames.Add(fullName(systemType));
+        if (nameFits((ElementType)element)) fits.Add((ElementType)element);
+    }
+
+    if (fits.Count == 1)
+    {
+        asWall = fits[0] as WallType;
+        asSystem = fits[0] as CurtainSystemType;
+    }
+    else if (fits.Count == 0)
+    {
+        Func<List<string>, string> listed = names => names.Count == 0 ? "none"
+            : string.Join(", ", names.Distinct().OrderBy(n => n, StringComparer.Ordinal).Take(30).ToArray())
+              + (names.Distinct().Count() > 30 ? ", and more" : "");
+        nameProblem = string.Format(
+            "No wall type or curtain system type called \"{0}\" in {1}. The name has to match what Revit "
+            + "shows, capitals included - the Properties palette writes it \"Curtain Wall: Storefront\", and "
+            + "either that or just \"Storefront\" works when the short name is unique. Its curtain wall types: "
+            + "{2}. Its curtain system types: {3}. Nothing was changed",
+            typeAsked, doc.Title, listed(curtainWallNames), listed(curtainSystemNames));
+    }
+    else
+    {
+        var choices = fits.Select(t => fullName(t)).Distinct().ToList();
+        nameProblem = string.Format(
+            "{0} types in {1} are called \"{2}\" - wall types and curtain system types are both searched - "
+            + "so the name does not say which one is meant.{3} Nothing was changed",
+            fits.Count, doc.Title, typeAsked,
+            choices.Count > 1 ? " Say which: " + string.Join(", or ", choices.ToArray()) + "." : " Rename one.");
+    }
+}
+
+var isSystem = asSystem != null;
+HostObjAttributes chosen = isSystem ? (HostObjAttributes)asSystem : asWall;
+var label = chosen == null ? "" : fullName(chosen);
+
+// What one of it is called, and what reaches it - walls, or curtain systems.
+var oneUser = isSystem ? "curtain system" : "wall";
+var manyUsers = isSystem ? "curtain systems" : "walls";
+
+// The two directions, in the order every array below uses: a wall type's
+// vertical and horizontal grids, or a curtain system type's Grid 1 and Grid 2.
+var directions = isSystem ? new[] { "grid 1", "grid 2" } : new[] { "vertical", "horizontal" };
+var layoutIds = isSystem
+    ? new[] { BuiltInParameter.SPACING_LAYOUT_1, BuiltInParameter.SPACING_LAYOUT_2 }
+    : new[] { BuiltInParameter.SPACING_LAYOUT_VERT, BuiltInParameter.SPACING_LAYOUT_HORIZ };
+var spacingIds = isSystem
+    ? new[] { BuiltInParameter.SPACING_LENGTH_1, BuiltInParameter.SPACING_LENGTH_2 }
+    : new[] { BuiltInParameter.SPACING_LENGTH_VERT, BuiltInParameter.SPACING_LENGTH_HORIZ };
+
+// What the modeller types, what Type Properties shows, and the number written.
+var layoutWords = new[] { "none", "fixed distance", "fixed number", "maximum spacing", "minimum spacing" };
+var layoutShown = new[] { "None", "Fixed Distance", "Fixed Number", "Maximum Spacing", "Minimum Spacing" };
+var layoutValues = new[]
+{
+    (int)SpacingRuleLayout.None,
+    (int)SpacingRuleLayout.FixedDistance,
+    (int)SpacingRuleLayout.FixedNumber,
+    (int)SpacingRuleLayout.MaximumSpacing,
+    (int)SpacingRuleLayout.MinimumSpacing,
+};
+var fixedNumber = Array.IndexOf(layoutValues, (int)SpacingRuleLayout.FixedNumber);
+
+// The grid settings Revit is believed to keep on each WALL - or each curtain
+// system - rather than on the type. Measured below, never relied on.
+var perWallIds = isSystem
+    ? new[]
+    {
+        BuiltInParameter.SPACING_NUM_DIVISIONS_1, BuiltInParameter.SPACING_NUM_DIVISIONS_2,
+        BuiltInParameter.SPACING_JUSTIFICATION_1, BuiltInParameter.SPACING_JUSTIFICATION_2,
+        BuiltInParameter.CURTAINGRID_ANGLE_1, BuiltInParameter.CURTAINGRID_ANGLE_2,
+        BuiltInParameter.CURTAINGRID_ORIGIN_1, BuiltInParameter.CURTAINGRID_ORIGIN_2,
+    }
+    : new[]
+    {
+        BuiltInParameter.SPACING_NUM_DIVISIONS_VERT, BuiltInParameter.SPACING_NUM_DIVISIONS_HORIZ,
+        BuiltInParameter.SPACING_JUSTIFICATION_VERT, BuiltInParameter.SPACING_JUSTIFICATION_HORIZ,
+        BuiltInParameter.CURTAINGRID_ANGLE_VERT, BuiltInParameter.CURTAINGRID_ANGLE_HORIZ,
+        BuiltInParameter.CURTAINGRID_ORIGIN_VERT, BuiltInParameter.CURTAINGRID_ORIGIN_HORIZ,
+    };
+var perWallNames = isSystem
+    ? new[]
+    {
+        "grid 1 Number", "grid 2 Number", "grid 1 Justification", "grid 2 Justification",
+        "grid 1 Angle", "grid 2 Angle", "grid 1 Offset", "grid 2 Offset",
+    }
+    : new[]
+    {
+        "vertical Number", "horizontal Number", "vertical Justification", "horizontal Justification",
+        "vertical Angle", "horizontal Angle", "vertical Offset", "horizontal Offset",
+    };
+
+// WHICH GRID IDS A CURTAIN SYSTEM TYPE CARRIES - the assumption above, read
+// off the type rather than trusted. Each of Revit's three families of grid
+// ids, and the plain one, named carried or not.
+var probeIds = new[]
+{
+    BuiltInParameter.SPACING_LAYOUT_1, BuiltInParameter.SPACING_LAYOUT_2,
+    BuiltInParameter.SPACING_LENGTH_1, BuiltInParameter.SPACING_LENGTH_2,
+    BuiltInParameter.SPACING_LAYOUT_U, BuiltInParameter.SPACING_LAYOUT_V,
+    BuiltInParameter.SPACING_LAYOUT_VERT, BuiltInParameter.SPACING_LAYOUT_HORIZ,
+    BuiltInParameter.SPACING_LAYOUT,
+};
+Func<string> idsCarried = () =>
+{
+    var carried = new List<string>();
+    var notCarried = new List<string>();
+    foreach (var id in probeIds)
+    {
+        Parameter found = null;
+        try { found = chosen.get_Parameter(id); } catch (Exception) { found = null; }
+        (found != null ? carried : notCarried).Add(id.ToString());
+    }
+    return string.Format("Of Revit's grid ids, '{0}' carries: {1}; not: {2}", label,
+        carried.Count == 0 ? "none" : string.Join(", ", carried),
+        notCarried.Count == 0 ? "none" : string.Join(", ", notCarried));
+};
 
 // WHY REVIT KEEPS A SETTING READ-ONLY, as far as Revit itself says - never a
 // guess (5b-328). Whether another user holds the type is asked of Revit, and
@@ -136,12 +301,12 @@ var label = curtainWallType == null ? "" : fullName(curtainWallType);
 Func<string, string, string> readOnlyBecause = (what, when) =>
 {
     var holder = "";
-    if (doc.IsWorkshared && curtainWallType != null)
+    if (doc.IsWorkshared && chosen != null)
     {
         try
         {
             string owner;
-            if (WorksharingUtils.GetCheckoutStatus(doc, curtainWallType.Id, out owner)
+            if (WorksharingUtils.GetCheckoutStatus(doc, chosen.Id, out owner)
                 == CheckoutStatus.OwnedByOtherUser)
                 holder = string.IsNullOrEmpty(owner) ? "another user" : owner;
         }
@@ -157,10 +322,12 @@ Func<string, string, string> readOnlyBecause = (what, when) =>
                 : "this model is not shared, so no other user holds it");
 };
 
-// Why a setting on the type cannot be written, or null when it can.
+// Why a setting on the type cannot be written, or null when it can. A curtain
+// system type with no such setting says which grid ids it does carry.
 Func<Parameter, StorageType, string, string> cannotWrite = (parameter, storage, what) =>
     parameter == null
         ? string.Format("'{0}' has no {1} - Revit gives this type none to set", label, what)
+          + (isSystem ? ". " + idsCarried() : "")
     : parameter.StorageType != storage
         ? string.Format("'{0}' keeps its {1} in a form this does not write", label, what)
     : parameter.IsReadOnly
@@ -196,15 +363,14 @@ var askedSpacingMm = new[] { double.NaN, double.NaN };
 var layoutParameter = new Parameter[2];
 var spacingParameter = new Parameter[2];
 
-if (curtainWallType == null)
+if (nameProblem.Length > 0)
 {
-    refused = "No wall type was named. Name the curtain wall type the way Revit writes it - "
-        + "'Curtain Wall: Storefront' - and ask again. Nothing was changed";
+    refused = nameProblem;
 }
-else if (curtainWallType.Kind != WallKind.Curtain)
+else if (!isSystem && asWall.Kind != WallKind.Curtain)
 {
-    var kind = curtainWallType.Kind == WallKind.Basic ? "a basic wall type"
-        : curtainWallType.Kind == WallKind.Stacked ? "a stacked wall type"
+    var kind = asWall.Kind == WallKind.Basic ? "a basic wall type"
+        : asWall.Kind == WallKind.Stacked ? "a stacked wall type"
         : "a wall type Revit does not class as a curtain wall";
     refused = string.Format(
         "'{0}' is {1}, not a curtain wall type - it has no grid to lay out. Name a curtain wall "
@@ -212,8 +378,11 @@ else if (curtainWallType.Kind != WallKind.Curtain)
 }
 else if (grid == null || grid.Count == 0)
 {
-    refused = "Nothing was named to change. Name each setting and what it becomes - "
-        + "'vertical layout=fixed distance; vertical spacing=1500'. Nothing was changed";
+    refused = isSystem
+        ? "Nothing was named to change. Name each setting and what it becomes - "
+            + "'grid 1 layout=fixed distance; grid 1 spacing=1500'. Nothing was changed"
+        : "Nothing was named to change. Name each setting and what it becomes - "
+            + "'vertical layout=fixed distance; vertical spacing=1500'. Nothing was changed";
 }
 else
 {
@@ -235,16 +404,31 @@ else
 
         int direction;
         bool isLayout;
-        if (key == "vertical layout") { direction = 0; isLayout = true; }
-        else if (key == "horizontal layout") { direction = 1; isLayout = true; }
-        else if (key == "vertical spacing") { direction = 0; isLayout = false; }
-        else if (key == "horizontal spacing") { direction = 1; isLayout = false; }
-        else
+        if (key == directions[0] + " layout") { direction = 0; isLayout = true; }
+        else if (key == directions[1] + " layout") { direction = 1; isLayout = true; }
+        else if (key == directions[0] + " spacing") { direction = 0; isLayout = false; }
+        else if (key == directions[1] + " spacing") { direction = 1; isLayout = false; }
+        else if (isSystem && (key.StartsWith("vertical") || key.StartsWith("horizontal")))
         {
             refused = string.Format(
-                "'{0}' is not a grid setting this changes. Name one or more of: vertical layout, "
-                + "vertical spacing, horizontal layout, horizontal spacing. Nothing was changed",
-                pair.Key);
+                "'{0}' is a curtain WALL type's setting, and '{1}' is a curtain system type. Its two grids "
+                + "are Grid 1 and Grid 2, and which way each one runs is set by the face it lies on, not "
+                + "by the type - so this does not call either of them vertical or horizontal. Name one or "
+                + "more of: grid 1 layout, grid 1 spacing, grid 2 layout, grid 2 spacing. Nothing was "
+                + "changed", pair.Key, label);
+            break;
+        }
+        else
+        {
+            refused = isSystem
+                ? string.Format(
+                    "'{0}' is not a grid setting this changes on a curtain system type. Name one or more "
+                    + "of: grid 1 layout, grid 1 spacing, grid 2 layout, grid 2 spacing. Nothing was changed",
+                    pair.Key)
+                : string.Format(
+                    "'{0}' is not a grid setting this changes. Name one or more of: vertical layout, "
+                    + "vertical spacing, horizontal layout, horizontal spacing. Nothing was changed",
+                    pair.Key);
             break;
         }
 
@@ -260,13 +444,22 @@ else
             }
             if (at == fixedNumber)
             {
-                refused = string.Format(
-                    "Fixed Number is not set here. Under Fixed Number the COUNT of {0} grid lines is "
-                    + "not a setting of the type: Revit shows it as 'Number' in each placed wall's own "
-                    + "Properties, so changing the type cannot say how many - and every wall of '{1}' "
-                    + "would switch to a count nobody chose. Choose Fixed Number in Type Properties "
-                    + "and give each wall its Number by hand; Heron has no route for the per-wall "
-                    + "count yet. Nothing was changed", directions[direction], label);
+                refused = isSystem
+                    ? string.Format(
+                        "Fixed Number is not set here. Under Fixed Number the COUNT of {0} lines is "
+                        + "'Number', and Revit's API reference does not say whether a curtain system type "
+                        + "holds it or each curtain system does - for a curtain wall it is each placed "
+                        + "wall's own. Changing the layout alone would leave every curtain system of '{1}' "
+                        + "with a count nobody chose. Choose Fixed Number in Type Properties and give the "
+                        + "Number by hand; Heron has no route for the count yet. Nothing was changed",
+                        directions[direction], label)
+                    : string.Format(
+                        "Fixed Number is not set here. Under Fixed Number the COUNT of {0} grid lines is "
+                        + "not a setting of the type: Revit shows it as 'Number' in each placed wall's own "
+                        + "Properties, so changing the type cannot say how many - and every wall of '{1}' "
+                        + "would switch to a count nobody chose. Choose Fixed Number in Type Properties "
+                        + "and give each wall its Number by hand; Heron has no route for the per-wall "
+                        + "count yet. Nothing was changed", directions[direction], label);
                 break;
             }
             askedLayout[direction] = at;
@@ -300,8 +493,8 @@ else
     // the layout, and is judged below against the layout it will have.
     for (var d = 0; d < 2 && refused.Length == 0; d++)
     {
-        layoutParameter[d] = curtainWallType.get_Parameter(layoutIds[d]);
-        spacingParameter[d] = curtainWallType.get_Parameter(spacingIds[d]);
+        layoutParameter[d] = chosen.get_Parameter(layoutIds[d]);
+        spacingParameter[d] = chosen.get_Parameter(spacingIds[d]);
 
         if (askedLayout[d] >= 0)
         {
@@ -363,27 +556,66 @@ else
 
 if (refused.Length == 0)
 {
-    // THE REACH, COUNTED BEFORE ANYTHING IS WRITTEN. Every wall of this type
-    // takes the change - it goes first in the answer, not after it.
+    // THE REACH, COUNTED BEFORE ANYTHING IS WRITTEN. Every wall - or curtain
+    // system - of this type takes the change; it goes first in the answer, not
+    // after it.
     var walls = new List<Wall>();
-    foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(Wall)))
+    var systems = new List<CurtainSystem>();
+    if (isSystem)
     {
-        var wall = element as Wall;
-        if (wall == null) continue;
-        ElementId typeId = null;
-        try { typeId = wall.GetTypeId(); } catch { continue; }
-        if (typeId != null && typeId.Equals(curtainWallType.Id)) walls.Add(wall);
+        foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtaSystem)
+                     .WhereElementIsNotElementType())
+        {
+            var system = element as CurtainSystem;
+            if (system == null) continue;
+            ElementId typeId = null;
+            try { typeId = system.GetTypeId(); } catch { continue; }
+            if (typeId != null && typeId.Equals(chosen.Id)) systems.Add(system);
+        }
+        systemsOfType = systems.Count;
     }
-    wallsOfType = walls.Count;
-
-    // ONE WALL TO MEASURE: the first whose grid can be read. Which one does not
-    // matter - the type is the same on all of them - and it is named by id.
-    Wall sample = null;
-    foreach (var wall in walls)
+    else
     {
-        CurtainGrid cells = null;
-        try { cells = wall.CurtainGrid; } catch { cells = null; }
-        if (cells != null) { sample = wall; break; }
+        foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(Wall)))
+        {
+            var wall = element as Wall;
+            if (wall == null) continue;
+            ElementId typeId = null;
+            try { typeId = wall.GetTypeId(); } catch { continue; }
+            if (typeId != null && typeId.Equals(chosen.Id)) walls.Add(wall);
+        }
+        wallsOfType = walls.Count;
+    }
+    var usersOfType = isSystem ? systemsOfType : wallsOfType;
+
+    // A placed element's curtain grids - a wall has one, a curtain system one
+    // per face, the API reference says. Empty when none can be read.
+    Func<Element, List<CurtainGrid>> gridsOf = element =>
+    {
+        var found = new List<CurtainGrid>();
+        var wall = element as Wall;
+        if (wall != null)
+        {
+            CurtainGrid cells = null;
+            try { cells = wall.CurtainGrid; } catch { cells = null; }
+            if (cells != null) found.Add(cells);
+            return found;
+        }
+        var system = element as CurtainSystem;
+        if (system == null) return found;
+        CurtainGridSet all = null;
+        try { all = system.CurtainGrids; } catch { all = null; }
+        if (all == null) return found;
+        foreach (CurtainGrid each in all) if (each != null) found.Add(each);
+        return found;
+    };
+
+    // ONE TO MEASURE: the first whose grid can be read. Which one does not
+    // matter - the type is the same on all of them - and it is named by id.
+    Element sample = null;
+    foreach (var each in isSystem ? systems.Cast<Element>() : walls.Cast<Element>())
+    {
+        if (gridsOf(each).Count > 0) { sample = each; break; }
     }
 
     // WHICH WAY A CURVE RUNS: 0 vertical, 1 horizontal, 2 at an angle, -1 not
@@ -406,27 +638,27 @@ if (refused.Length == 0)
         catch { return -1; }
     };
 
-    // A WALL'S GRID LINES BY THE WAY EACH ONE RUNS, and by the set Revit
-    // returned it in: [way 0-2, or 3 when unreadable, set 0 = U or 1 = V].
-    Func<Wall, int[,]> countLines = wall =>
+    // GRID LINES BY THE WAY EACH ONE RUNS, and by the set Revit returned it
+    // in: [way 0-2, or 3 when unreadable, set 0 = U or 1 = V].
+    Func<List<CurtainGrid>, int[,]> countLines = cellsList =>
     {
         var counts = new int[4, 2];
-        CurtainGrid cells = null;
-        try { cells = wall.CurtainGrid; } catch { cells = null; }
-        if (cells == null) return counts;
-        for (var set = 0; set < 2; set++)
+        foreach (var cells in cellsList)
         {
-            ICollection<ElementId> ids = null;
-            try { ids = set == 0 ? cells.GetUGridLineIds() : cells.GetVGridLineIds(); }
-            catch { ids = null; }
-            if (ids == null) continue;
-            foreach (var id in ids)
+            for (var set = 0; set < 2; set++)
             {
-                var line = doc.GetElement(id) as CurtainGridLine;
-                Curve curve = null;
-                try { curve = line == null ? null : line.FullCurve; } catch { curve = null; }
-                var way = runs(curve);
-                counts[way < 0 ? 3 : way, set]++;
+                ICollection<ElementId> ids = null;
+                try { ids = set == 0 ? cells.GetUGridLineIds() : cells.GetVGridLineIds(); }
+                catch { ids = null; }
+                if (ids == null) continue;
+                foreach (var id in ids)
+                {
+                    var line = doc.GetElement(id) as CurtainGridLine;
+                    Curve curve = null;
+                    try { curve = line == null ? null : line.FullCurve; } catch { curve = null; }
+                    var way = runs(curve);
+                    counts[way < 0 ? 3 : way, set]++;
+                }
             }
         }
         return counts;
@@ -438,34 +670,53 @@ if (refused.Length == 0)
             : string.Format("{0} (Revit's U set {1}, V set {2})",
                 counts[way, 0] + counts[way, 1], counts[way, 0], counts[way, 1]);
 
-    // A WALL'S MULLIONS, by the way each runs and by type - what gets ordered.
-    Func<Wall, string> mullionsOn = wall =>
+    // MULLIONS, by the way each runs and by type - what gets ordered. One
+    // mullion counted once, even where two faces' grids both hand it back.
+    Func<List<CurtainGrid>, string> mullionsOn = cellsList =>
     {
-        CurtainGrid cells = null;
-        try { cells = wall.CurtainGrid; } catch { cells = null; }
-        if (cells == null) return "not readable";
-        ICollection<ElementId> ids = null;
-        try { ids = cells.GetMullionIds(); } catch { return "not readable"; }
+        if (cellsList.Count == 0) return "not readable";
         var tally = new SortedDictionary<string, int>(StringComparer.Ordinal);
-        foreach (var id in ids)
+        var counted = new HashSet<string>();
+        foreach (var cells in cellsList)
         {
-            var mullion = doc.GetElement(id) as Mullion;
-            if (mullion == null) continue;
-            var type = doc.GetElement(mullion.GetTypeId()) as ElementType;
-            Curve along = null;
-            try { along = mullion.LocationCurve; } catch { along = null; }
-            var way = runs(along);
-            var key = (way == 0 ? "vertical" : way == 1 ? "horizontal" : way == 2 ? "at an angle" : "unmeasured")
-                + " '" + fullName(type) + "'";
-            int had;
-            tally[key] = tally.TryGetValue(key, out had) ? had + 1 : 1;
+            ICollection<ElementId> ids = null;
+            try { ids = cells.GetMullionIds(); } catch { return "not readable"; }
+            foreach (var id in ids)
+            {
+                if (!counted.Add(id.ToString())) continue;
+                var mullion = doc.GetElement(id) as Mullion;
+                if (mullion == null) continue;
+                var type = doc.GetElement(mullion.GetTypeId()) as ElementType;
+                Curve along = null;
+                try { along = mullion.LocationCurve; } catch { along = null; }
+                var way = runs(along);
+                var key = (way == 0 ? "vertical" : way == 1 ? "horizontal" : way == 2 ? "at an angle" : "unmeasured")
+                    + " '" + fullName(type) + "'";
+                int had;
+                tally[key] = tally.TryGetValue(key, out had) ? had + 1 : 1;
+            }
         }
         return tally.Count == 0 ? "none" : string.Join(", ", tally.Select(p => p.Value + " x " + p.Key));
     };
 
-    Func<Wall, string> lengthOf = wall =>
+    // EACH FACE OF A CURTAIN SYSTEM, its U and V lines - which of the type's
+    // Grid 1 and Grid 2 is which set is what the proof reads off this.
+    Func<List<CurtainGrid>, List<int[]>> linesByFace = cellsList =>
     {
-        var at = wall.Location as LocationCurve;
+        var faces = new List<int[]>();
+        foreach (var cells in cellsList)
+        {
+            int u = 0, v = 0;
+            try { u = cells.GetUGridLineIds().Count; } catch { u = -1; }
+            try { v = cells.GetVGridLineIds().Count; } catch { v = -1; }
+            faces.Add(new[] { u, v });
+        }
+        return faces;
+    };
+
+    Func<Element, string> lengthOf = element =>
+    {
+        var at = element.Location as LocationCurve;
         return at == null || at.Curve == null
             ? "its length not read"
             : string.Format("{0:F0} mm long", at.Curve.Length * MillimetresPerFoot);
@@ -477,15 +728,16 @@ if (refused.Length == 0)
     var onWall = new List<string>();
     for (var i = 0; i < perWallIds.Length; i++)
     {
-        if (curtainWallType.get_Parameter(perWallIds[i]) != null) onType.Add(perWallNames[i]);
+        if (chosen.get_Parameter(perWallIds[i]) != null) onType.Add(perWallNames[i]);
         if (sample != null && sample.get_Parameter(perWallIds[i]) != null) onWall.Add(perWallNames[i]);
     }
     var carriers = string.Format(
-        "Number, Justification, Angle and Offset, both ways, measured - on the TYPE: {0}; {1}",
+        "Number, Justification, Angle and Offset, both {0}, measured - on the TYPE: {1}; {2}",
+        isSystem ? "grids" : "ways",
         onType.Count == 0 ? "none of them" : string.Join(", ", onType),
         sample == null
-            ? "no wall of the type is placed to measure"
-            : string.Format("on wall {0}: {1}", sample.Id,
+            ? string.Format("no {0} of the type is placed to measure", oneUser)
+            : string.Format("on {0} {1}: {2}", oneUser, sample.Id,
                 onWall.Count == 0 ? "none of them"
                 : onWall.Count == perWallIds.Length ? "all eight" : string.Join(", ", onWall)));
 
@@ -499,8 +751,9 @@ if (refused.Length == 0)
         layoutShownBefore[d] = layoutWordsShown(layoutParameter[d]);
         spacingBeforeMm[d] = spacingMm(spacingParameter[d]);
     }
-    var linesBefore = sample == null ? null : countLines(sample);
-    var mullionsBefore = sample == null ? "" : mullionsOn(sample);
+    var linesBefore = sample == null ? null : countLines(gridsOf(sample));
+    var facesBefore = sample == null ? null : linesByFace(gridsOf(sample));
+    var mullionsBefore = sample == null ? "" : mullionsOn(gridsOf(sample));
 
     // THE WRITE. Only what was asked, and only where it differs from what Revit
     // already holds.
@@ -535,7 +788,7 @@ if (refused.Length == 0)
             // A layout just written may free it only once Revit has rebuilt the
             // type, so a spacing still read-only is asked again after one
             // rebuild before it is called refused (5b-328).
-            var spacingNow = curtainWallType.get_Parameter(spacingIds[d]);
+            var spacingNow = chosen.get_Parameter(spacingIds[d]);
             if (wroteLayout[d] && spacingNow != null && spacingNow.IsReadOnly)
             {
                 try
@@ -548,7 +801,7 @@ if (refused.Length == 0)
                         "Revit could not rebuild '{0}' with the {1} layout {2} - {3}. Nothing this call "
                         + "did is kept", label, directions[d], layoutShown[askedLayout[d]], notRebuilt.Message));
                 }
-                spacingNow = curtainWallType.get_Parameter(spacingIds[d]);
+                spacingNow = chosen.get_Parameter(spacingIds[d]);
             }
             if (spacingNow == null || spacingNow.IsReadOnly)
                 throw new InvalidOperationException(string.Format(
@@ -594,8 +847,8 @@ if (refused.Length == 0)
         catch (Exception notRebuilt)
         {
             throw new InvalidOperationException(string.Format(
-                "Revit could not rebuild the walls of '{0}' with this grid - {1}. Nothing this call "
-                + "did is kept", label, notRebuilt.Message));
+                "Revit could not rebuild the {0} of '{1}' with this grid - {2}. Nothing this call "
+                + "did is kept", manyUsers, label, notRebuilt.Message));
         }
     }
 
@@ -604,8 +857,8 @@ if (refused.Length == 0)
     var held = new List<string>();
     for (var d = 0; d < 2; d++)
     {
-        var layoutNow = curtainWallType.get_Parameter(layoutIds[d]);
-        var spacingNow = curtainWallType.get_Parameter(spacingIds[d]);
+        var layoutNow = chosen.get_Parameter(layoutIds[d]);
+        var spacingNow = chosen.get_Parameter(spacingIds[d]);
 
         var nowValue = layoutNumber(layoutNow);
         var nowShown = layoutWordsShown(layoutNow);
@@ -646,6 +899,25 @@ if (refused.Length == 0)
             saySpacing(nowMm), saySpacing(spacingBeforeMm[d]),
             !double.IsNaN(askedSpacingMm[d]) ? " - asked" : " - not asked, left as it was"));
 
+        // A CURTAIN SYSTEM TYPE'S IDS ARE THE ASSUMPTION (see the top). A
+        // setting written by them that Revit does not then hold as asked means
+        // the ids are not the ones Type Properties shows under Grid 1 and Grid
+        // 2 - so nothing this call did is kept, rather than reported as a
+        // difference beside a type changed somewhere nobody asked.
+        if (isSystem && wroteLayout[d] && nowValue != layoutValues[askedLayout[d]])
+            throw new InvalidOperationException(string.Format(
+                "'{0}' was given the {1} layout {2} by {3} and holds {4} after the rebuild - that id may "
+                + "not be the setting Type Properties shows under {5}, so nothing this call did is "
+                + "kept. {6}", label, directions[d], layoutShown[askedLayout[d]], layoutIds[d],
+                sayLayout(nowValue, nowShown), d == 0 ? "Grid 1" : "Grid 2", idsCarried()));
+        if (isSystem && wroteSpacing[d]
+            && (double.IsNaN(nowMm) || !(Math.Abs(nowMm - askedSpacingMm[d]) < SameSpacingMm)))
+            throw new InvalidOperationException(string.Format(
+                "'{0}' was given a {1} spacing of {2:F1} mm by {3} and holds {4} after the rebuild - that "
+                + "id may not be the setting Type Properties shows under {5}, so nothing this call did "
+                + "is kept. {6}", label, directions[d], askedSpacingMm[d], spacingIds[d], saySpacing(nowMm),
+                d == 0 ? "Grid 1" : "Grid 2", idsCarried()));
+
         if (askedLayout[d] >= 0)
         {
             var wanted = layoutValues[askedLayout[d]];
@@ -683,28 +955,56 @@ if (refused.Length == 0)
             }
         }
     }
-    readBack = string.Join(" | ", described) + " | " + carriers;
+    readBack = string.Join(" | ", described) + " | " + carriers + (isSystem ? " | " + idsCarried() : "");
 
-    // WHAT IT MADE, MEASURED ON A WALL - read off Revit, never worked out from
-    // the spacing.
+    // WHAT IT MADE, MEASURED ON A PLACED ONE - read off Revit, never worked out
+    // from the spacing.
     if (sample == null)
     {
-        measured = "No wall of this type is placed in the model, so nothing was measured. The next "
-            + "wall drawn with it shows this grid";
+        measured = isSystem
+            ? "No curtain system of this type is placed in the model, so nothing was measured. The next "
+                + "curtain system made with it shows this grid"
+            : "No wall of this type is placed in the model, so nothing was measured. The next "
+                + "wall drawn with it shows this grid";
     }
     else
     {
-        var linesAfter = countLines(sample);
+        var linesAfter = countLines(gridsOf(sample));
         var unreadable = linesAfter[3, 0] + linesAfter[3, 1];
-        measured = string.Format(
-            "wall {0}, {1}: vertical grid lines {2} before, {3} now; horizontal {4} before, {5} now; "
-            + "at an angle {6} before, {7} now{8}. Mullions before: {9}. Now: {10}",
-            sample.Id, lengthOf(sample),
-            oneWay(linesBefore, 0), oneWay(linesAfter, 0),
-            oneWay(linesBefore, 1), oneWay(linesAfter, 1),
-            linesBefore[2, 0] + linesBefore[2, 1], linesAfter[2, 0] + linesAfter[2, 1],
-            unreadable == 0 ? "" : string.Format("; {0} line(s) whose direction could not be read", unreadable),
-            mullionsBefore, mullionsOn(sample));
+        if (isSystem)
+        {
+            var facesAfter = linesByFace(gridsOf(sample));
+            var byFace = new List<string>();
+            for (var f = 0; f < facesAfter.Count && f < 8; f++)
+            {
+                var was = f < facesBefore.Count ? facesBefore[f] : new[] { -1, -1 };
+                byFace.Add(string.Format("face {0} U {1} -> {2}, V {3} -> {4}", f + 1,
+                    was[0], facesAfter[f][0], was[1], facesAfter[f][1]));
+            }
+            if (facesAfter.Count > 8) byFace.Add(string.Format("and {0} more face(s)", facesAfter.Count - 8));
+            measured = string.Format(
+                "curtain system {0}, on {1} face(s): vertical grid lines {2} before, {3} now; horizontal "
+                + "{4} before, {5} now; at an angle {6} before, {7} now{8}. By face, Revit's U and V lines "
+                + "before -> now: {9}. Mullions before: {10}. Now: {11}",
+                sample.Id, facesAfter.Count,
+                oneWay(linesBefore, 0), oneWay(linesAfter, 0),
+                oneWay(linesBefore, 1), oneWay(linesAfter, 1),
+                linesBefore[2, 0] + linesBefore[2, 1], linesAfter[2, 0] + linesAfter[2, 1],
+                unreadable == 0 ? "" : string.Format("; {0} line(s) whose direction could not be read", unreadable),
+                string.Join("; ", byFace), mullionsBefore, mullionsOn(gridsOf(sample)));
+        }
+        else
+        {
+            measured = string.Format(
+                "wall {0}, {1}: vertical grid lines {2} before, {3} now; horizontal {4} before, {5} now; "
+                + "at an angle {6} before, {7} now{8}. Mullions before: {9}. Now: {10}",
+                sample.Id, lengthOf(sample),
+                oneWay(linesBefore, 0), oneWay(linesAfter, 0),
+                oneWay(linesBefore, 1), oneWay(linesAfter, 1),
+                linesBefore[2, 0] + linesBefore[2, 1], linesAfter[2, 0] + linesAfter[2, 1],
+                unreadable == 0 ? "" : string.Format("; {0} line(s) whose direction could not be read", unreadable),
+                mullionsBefore, mullionsOn(gridsOf(sample)));
+        }
     }
 
     // THE REACH FIRST, then what Revit holds.
@@ -712,7 +1012,18 @@ if (refused.Length == 0)
     {
         findings.Add(string.Format(
             "Nothing on '{0}' needed changing - every setting asked for was already so. It is used "
-            + "by {1} wall(s) in this model", label, wallsOfType));
+            + "by {1} {2}(s) in this model", label, usersOfType, oneUser));
+    }
+    else if (isSystem)
+    {
+        findings.Add(usersOfType == 0
+            ? string.Format("'{0}' is used by no curtain system in this model, so nothing placed changed. "
+                + "The next curtain system made with it takes this grid", label)
+            : string.Format("'{0}' is used by {1} curtain system{2} in this model - {3} with the type. "
+                + "For one curtain system alone, put it on a copy of the type first - DUPLICATE_TYPE, "
+                + "then CHANGE_ELEMENT_TYPE; neither has been run on a curtain system yet",
+                label, usersOfType, usersOfType == 1 ? "" : "s",
+                usersOfType == 1 ? "it changed" : "every one of them changed"));
     }
     else
     {
