@@ -56,6 +56,7 @@ tools behind it.
 | 5 | `set-divided-surface-layout` - an existing divided surface's grids changed: rotation (a diamond pattern), offset, justification, border tiles, cut at levels | [JL](../../needs-checking/group-jl.md) | DRAFT |
 | 6 | `report-divided-surfaces` widened to version 2 - also reads the rotations, flip, mirror, indents and what cuts each surface, so those questions stop ranking the write in 5 first | [DR](../../needs-checking/group-dr.md) rows DR5a, DR5b | DRAFT |
 | 7 | the [`facade`](../../../brain/skills/facade.yaml) method - routes A to E | - | DRAFT |
+| 8 | `report-family-template` widened to version 4, on the owner's word (2026-10-29) - each adaptive point's **Orientation** on its `pointList` row, in the words `set-adaptive-point-orientation` prints, so what 4 writes is read back and *"what orientation are the adaptive points"* stops landing on that write. It was PROVEN; the change made its proof stale | [JQ](../../needs-checking/group-jq.md) | DRAFT |
 
 None of it is proved. A compile is not a proof (D-30): each tool is refused for a kept change until its
 group has been run on a named model with its negative case (D-117).
@@ -68,7 +69,6 @@ A change under a PROVEN card's `impl/` makes its proof stale, so none of these w
 |---|---|---|
 | `report-curtain-elements` | groups panels by **size** within a tolerance, as [doc 45 §6](../../45-five-more-downloaded-skill-files.md) already records | how many different panel sizes a facade has is the fabricator's first question |
 | `set-curtain-wall-grid`, `set-curtain-wall-mullions` | also take a **curtain system type** | route B's grid and mullions are set by hand until then |
-| `report-family-template` | reads each adaptive point's **Orientation** | nothing reads back what `set-adaptive-point-orientation` writes, except Properties |
 
 ## Still NOT YET after it
 

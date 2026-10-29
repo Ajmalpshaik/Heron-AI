@@ -34,6 +34,18 @@
 // Length = Millimeters (mm), rounding 1 - metric" - with a finding when they
 // are not metric, so a family build's first step catches a template set to
 // feet and inches without a call of its own.
+//
+// VERSION 4 (2026-10-29): EACH ADAPTIVE POINT'S ORIENTATION joins its row in
+// `pointList`, after the position version 3 already gave - "placement point 1
+// <id> at 0, 0, 0 mm, Orientation Host and Loop System (xyz)" - in the words
+// SET_ADAPTIVE_POINT_ORIENTATION prints, from the same mapping, so what that
+// write sets can be read back here. Only a PLACEMENT point is asked: Revit's
+// reference (RevitAPI.xml, 2020 to 2027) says GetPointOrientationType throws
+// for any other point, so a shape handle point reads "Orientation not read
+// (shape handle point)" and no call is made for it - never a guessed value
+// (D-52). One finding says the placement points' Orientations together. A
+// family with no adaptive points prints none, as before. Nothing version 3
+// answered changed.
 
 var findings = new List<string>();
 var familyKind = "";
@@ -476,8 +488,30 @@ else
 
     // -----------------------------------------------------------------------
     // POINTS - an adaptive or pattern-based family is driven by them. Each with
-    // its id, its kind, its placement number and where it is.
+    // its id, its kind, its placement number and where it is - and, version 4,
+    // its Orientation.
     // -----------------------------------------------------------------------
+    //
+    // THE ORIENTATION IN REVIT'S PROPERTIES WORDS (version 4) - the mapping
+    // SET_ADAPTIVE_POINT_ORIENTATION prints, copied exactly, so the two cards
+    // say the same words for the same value. The words are docs/43's, SOURCED
+    // and not yet seen on a screen: NEEDS-CHECKING JK5 checks them for both
+    // cards at once. Each is named from the enum, never typed as a number.
+    var oriShown = new Dictionary<AdaptivePointOrientationType, string>
+    {
+        { AdaptivePointOrientationType.ToInstance, "Instance (xyz)" },
+        { AdaptivePointOrientationType.ToInstanceZthenHost, "Instance (z) then Host (xy)" },
+        { AdaptivePointOrientationType.ToHost, "Host (xyz)" },
+        { AdaptivePointOrientationType.ToHostAndLoopSystem, "Host and Loop System (xyz)" },
+        { AdaptivePointOrientationType.ToGlobalXYZ, "Global (xyz)" },
+        { AdaptivePointOrientationType.ToGlobalZthenHost, "Global (z) then Host (xy)" },
+    };
+    Func<AdaptivePointOrientationType, string> oriWords = o =>
+        oriShown.ContainsKey(o) ? oriShown[o] : o.ToString() + " (a value Heron has no Properties words for)";
+    // The placement points by the Orientation they read: words -> numbers.
+    var oriByWords = new Dictionary<string, List<int>>();
+    var oriUnread = new List<int>();
+    var oriHandles = 0;
     var pointRows = new List<Tuple<int, string>>();
     var plainPoints = 0;
     List<ReferencePoint> points;
@@ -501,7 +535,32 @@ else
         }
         catch (Exception) { }
         var kind = isPlacement ? "placement point " + number : isHandle ? "shape handle point" : "adaptive point";
-        pointRows.Add(Tuple.Create(isPlacement ? number : 1000, kind + " " + point.UniqueId + where));
+        // VERSION 4. Asked of a placement point only - Revit's reference says
+        // the call throws for any other - and what Revit returns is printed;
+        // when it refuses, its reason is, never a value Heron supposed.
+        string orientationWords;
+        if (isPlacement)
+        {
+            try
+            {
+                var oriNow = oriWords(AdaptiveComponentFamilyUtils.GetPointOrientationType(doc, point.Id));
+                if (!oriByWords.ContainsKey(oriNow)) oriByWords[oriNow] = new List<int>();
+                oriByWords[oriNow].Add(number);
+                orientationWords = "Orientation " + oriNow;
+            }
+            catch (Exception ex)
+            {
+                oriUnread.Add(number);
+                orientationWords = "Orientation not read - Revit gave none: " + ex.Message.TrimEnd('.');
+            }
+        }
+        else if (isHandle)
+        {
+            oriHandles++;
+            orientationWords = "Orientation not read (shape handle point)";
+        }
+        else orientationWords = "Orientation not read (not a placement point)";
+        pointRows.Add(Tuple.Create(isPlacement ? number : 1000, kind + " " + point.UniqueId + where + ", " + orientationWords));
     }
     pointList = string.Join("  ||  ", pointRows.OrderBy(r => r.Item1).Select(r => r.Item2));
 
@@ -681,4 +740,20 @@ else
         findings.Add(clsCodeLabel + " reads " + (clsCurrent.Length == 0 ? "(blank)" : clsCurrent) + ". The codes the "
             + "classification file gives " + categoryName + " are in classificationCodes; SET_FAMILY_SETTINGS \""
             + clsCodeLabel + "=<code>\" sets one of them.");
+    // VERSION 4. The placement points' Orientation together, as Properties
+    // shows it on each point - only where there are adaptive points, so a
+    // family without them is told nothing new.
+    if (oriByWords.Count > 0 || oriUnread.Count > 0 || oriHandles > 0)
+    {
+        var oriParts = oriByWords.OrderBy(w => w.Value.Min()).Select(w => "point(s) " + string.Join(", ",
+            w.Value.OrderBy(n => n).Select(n => n.ToString(invariant))) + " " + w.Key).ToList();
+        if (oriUnread.Count > 0)
+            oriParts.Add("point(s) " + string.Join(", ", oriUnread.OrderBy(n => n).Select(n => n.ToString(invariant)))
+                + " not read - Revit gave no Orientation, its reason in pointList");
+        if (oriHandles > 0)
+            oriParts.Add(oriHandles + " shape handle point(s) not read - Revit's API gives an Orientation to placement "
+                + "points only");
+        findings.Add("Orientation of the adaptive points, as Properties shows it on each: " + string.Join("; ", oriParts)
+            + (oriByWords.Count > 0 ? ". SET_ADAPTIVE_POINT_ORIENTATION changes a placement point's." : "."));
+    }
 }
