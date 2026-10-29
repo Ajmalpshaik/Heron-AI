@@ -233,11 +233,16 @@ compatibility-note: >
 #                                         section head, not a viewport
 
 utterances:
+  # ONE VIEW AND THE SWAP LEAD (FRAGMENT-ISSUES 5b-1293, 2026-10-29): the
+  # re-ranker reads these in order (D-134), and "place the views on this sheet"
+  # - several views, no point given - went here rather than to
+  # PLACE_VIEWS_ON_SHEET on the owner's backend. Reordered - nothing added,
+  # nothing removed.
   - put this view on a sheet
+  - swap the NOTES legend for AS-BUILT NOTES on all sheets
+  - replace this view on the sheets with that one
+  - put this legend where the old one is
   - place these views on the sheet
   - add the view to the drawing sheet
   - drop this plan on a sheet
   - put them on the sheet
-  - swap the NOTES legend for AS-BUILT NOTES on all sheets
-  - replace this view on the sheets with that one
-  - put this legend where the old one is
