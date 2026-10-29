@@ -189,6 +189,14 @@ compatibility-note: >
 # ROUTING (2026-10-20, the material tools of Group IA, row 5b-1263)
 #
 #   "make these columns concrete"  -> SET_ELEMENT_MATERIAL - whatever they hold now, written where it lives
+#
+# ROUTING (2026-10-28, NEEDS-CHECKING Group JI)
+#
+#   "change the bottom row of panels on this curtain wall to solid panels"
+#                                  -> SET_CURTAIN_PANEL_TYPE. A solid panel is
+#                                     another panel TYPE in those cells, not a
+#                                     new material in the glazed one - which
+#                                     would reach every panel of that type
 utterances:
   - change the material on these
   # DECLARED BECAUSE THE TABLE ABOVE ALREADY CLAIMED IT, 2026-09-06. A routing

@@ -96,6 +96,11 @@ compatibility-note: >
 #                                        are the input there, which is how a
 #                                        drawing dimensions a grid. This one
 #                                        needs the coordinates worked out
+#   "add a grid line at 1200 from the bottom of this curtain wall",
+#   "divide this curtain wall into six panels" -> ADD_CURTAIN_GRID_LINES - a
+#                                        CURTAIN grid line is the wall's own,
+#                                        not a datum. "add a grid line" with no
+#                                        curtain wall in it stays here
 utterances:
   - add a grid
   - create a grid line
