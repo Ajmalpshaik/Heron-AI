@@ -199,7 +199,13 @@ compatibility-note: >
 #   "divide the surface at every level"   -> here, intersect=levels. The levels
 #                                             cut a surface already divided; with
 #                                             no divided surface yet this refuses
-#                                             and DIVIDE_FAMILY_SURFACE goes first
+#                                             and DIVIDE_FAMILY_SURFACE goes first.
+#                                             MEASURED 2026-10-29: the keyword route
+#                                             alone in tools/check-routing.py ranks
+#                                             REPORT_DIVIDED_SURFACES first since its
+#                                             version 2 reads the cuts; the host's
+#                                             lookup still serves this card by
+#                                             identity
 #   "set the divided surface spacing to
 #    1500 mm"                              -> DIVIDE_FAMILY_SURFACE declares it
 #                                             (PROVEN), for a face being divided.
@@ -230,13 +236,20 @@ compatibility-note: >
 #                                             through heron_brain.lookup on a
 #                                             scratch store. JL12 asks again on the PC
 #   "is the divided surface flipped",
-#   "which levels cut the divided surface" -> NOT HERE, and nothing reads either
-#                                             yet - REPORT_DIVIDED_SURFACES reads
-#                                             no flip and no cut. Both ranked this
-#                                             card first on the cloud backend; this
-#                                             writes, and a question must not land on
-#                                             it (D-86). readBack prints both, but
-#                                             only after a change
+#   "which levels cut the divided surface" -> REPORT_DIVIDED_SURFACES, which reads
+#                                             the flip and the cuts since its
+#                                             version 2 (2026-10-29), in readBack's
+#                                             words, and declares both questions.
+#                                             Before it, both ranked this card first
+#                                             on the cloud backend (2026-10-28);
+#                                             this writes, and a question must not
+#                                             land on it (D-86). MEASURED 2026-10-29
+#                                             through heron_brain.lookup on a scratch
+#                                             store: both reach that card by
+#                                             identity. "what cuts the divided
+#                                             surface", declared by nobody, still
+#                                             ranks this card first with question
+#                                             mode off. JL12 asks again on the PC
 #   "set the curtain wall grid spacing",
 #   "make the vertical grid fixed distance
 #    1500"                                 -> SET_CURTAIN_WALL_GRID. A curtain wall

@@ -9,7 +9,18 @@ semantic-identity: "how are the divided surfaces and divided paths laid out - gr
 kind: action
 domain: revit.geometry
 capability: REPORT_DIVIDED_SURFACES
-version: 1
+# VERSION 2 (2026-10-29) - A SURFACE'S OWN SETTINGS AND ITS CUTS, read.
+# SET_DIVIDED_SURFACE_LAYOUT (DRAFT, NEEDS-CHECKING JL) writes a surface's all
+# grid rotation, component rotation, flip, mirror, the two pattern indents and
+# the levels or planes that cut it, and nothing read any of them except that
+# card's own readBack, after a change - so "is the divided surface flipped"
+# and "which levels cut the divided surface" ranked that WRITE first on the
+# cloud backend on 2026-10-28 (D-86); on 2026-10-29, before this change, the
+# second still did and the first was a coin toss.
+# Each surface's line now carries them, in the words that card's readBack
+# uses. Version 1 was DRAFT, so no proof went stale; DR5a and DR5b are the
+# new rows of its plan.
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -17,9 +28,13 @@ risk: READ
 # searched and long text pulls other sentences here.
 #
 # Every divided surface - host, U and V grid layout (number or distance,
-# justification, rotation, offset), gridline counts, border tiles - and every
+# justification, rotation, offset), gridline counts, border tiles, the all
+# grid rotation, component rotation, flip and mirror, the U and V indents, and
+# each level, reference plane or other element that cuts it - and every
 # divided path - node count, layout, length, closed or open, how distance is
 # measured - in the document in front, a conceptual family or a project.
+# A surface setting Revit will not read is said so with its reason, never
+# shown as "no" or "none" (D-52).
 # withNodes adds the first 50 node positions of each, in millimetres: what an
 # adaptive component is placed on. A node's place comes from the point
 # Revit's geometry gives for it; one with none is counted, not guessed.
@@ -35,15 +50,15 @@ risk: READ
 # "what are the border tiles on the divided surface", "what is the U grid
 # layout of the divided surface" - ranked that WRITE first while this card's
 # purpose said only "grid layout, spacing". A question must not land on a
-# write (D-86). What this does NOT read - the all grid rotation, component
-# rotation, flip and mirror, the indents and the levels cutting a surface -
-# has no reader yet; SET_DIVIDED_SURFACE_LAYOUT's readBack prints them, but
-# only after a change.
+# write (D-86). Version 1 did not read the all grid rotation, component
+# rotation, flip and mirror, the indents or the levels cutting a surface;
+# version 2 (above) does, and the purpose names them in as few words as it can.
 purpose: >
   Reads every divided surface and divided path - each U grid and V grid's
   layout, spacing or number of divisions, rotation, offset and justification,
-  the border tiles, gridline and node counts, length - and, when asked, where
-  the nodes are.
+  the border tiles, all grid rotation, component flip, mirror and rotation,
+  indents, the levels or planes cutting it, gridline and node counts, length -
+  and, when asked, where the nodes are.
 
 contract:
   needs:
@@ -79,7 +94,15 @@ compatibility-note: >
   DividedPath with NumberOfPoints, SpacingRuleLayout, FixedNumberOfPoints,
   Distance, TotalPathLength, IsClosedLoop and MeasurementType are present
   2020 through 2027 - read off RevitAPI.xml in the Nice3point reference
-  packages for all eight releases on 2026-10-13.
+  packages for all eight releases on 2026-10-13. Version 2's DividedSurface
+  AllGridRotation (double), ComponentRotation, IsComponentFlipped,
+  IsComponentMirrored, UPatternIndent and VPatternIndent (int) and
+  GetAllIntersectionElements (ICollection<ElementId>), and the enum
+  ComponentRotation's Angle0, Angle90, Angle180 and Angle270, read one
+  signature on every release 2020 through 2027 with tools/api-surface
+  --members on 2026-10-29, as did Document.GetElement(ElementId), Element.Name
+  and Category, and ReferencePlane.Name. Each member is cast, never typed as a
+  number; angles are reported in degrees.
 
 # ROUTING - the same rows are in the fragments named here.
 #
@@ -100,14 +123,37 @@ compatibility-note: >
 #                                                 SET_DIVIDED_SURFACE_LAYOUT by ranking,
 #                                                 which is why the purpose names them
 #   "is the divided surface flipped",
-#   "which levels cut the divided surface"     -> NOT HERE, and nothing reads either
-#                                                 yet: this reads no flip and no cut.
-#                                                 SET_DIVIDED_SURFACE_LAYOUT ranks first
-#                                                 for both and writes (D-86). With the
-#                                                 lookup's question mode on, both reach
-#                                                 HERE (measured 2026-10-28), and this
-#                                                 answer has no flip and no cut in it -
-#                                                 a reader gap, not a routing one
+#   "which levels cut the divided surface"     -> here, since version 2 (2026-10-29):
+#                                                 each surface's line reads its
+#                                                 component flip and what cuts it.
+#                                                 Version 1 read neither, and
+#                                                 SET_DIVIDED_SURFACE_LAYOUT ranked
+#                                                 first for both on the cloud backend
+#                                                 (2026-10-28) - a write (D-86). Both
+#                                                 are now declared below. MEASURED
+#                                                 2026-10-29 on the cloud backend
+#                                                 through heron_brain.lookup on a
+#                                                 scratch store: both reach here by
+#                                                 identity, question mode on or off,
+#                                                 and so does "what is the all grid
+#                                                 rotation of the divided surface" by
+#                                                 ranking - which reached that write
+#                                                 the day before. "what cuts the
+#                                                 divided surface", declared by nobody,
+#                                                 still ranks the write first with
+#                                                 question mode off and reaches here
+#                                                 with it on (D-128) - JL12 asks again
+#                                                 on the PC
+#   "flip the panels on the divided surface",
+#   "divide the surface at every level"        -> SET_DIVIDED_SURFACE_LAYOUT. Changing
+#                                                 the flip or the cuts is that card's;
+#                                                 reading them is this one's. MEASURED
+#                                                 2026-10-29: tools/check-routing.py's
+#                                                 keyword route alone ranks this card
+#                                                 first for the second, since version
+#                                                 2 says "levels"; the host's lookup
+#                                                 still serves it to that card by
+#                                                 identity, as before
 
 utterances:
   - how is this surface divided
@@ -120,3 +166,8 @@ utterances:
   # tools/check-routing.py measured the first served by that WRITE.
   - what are the border tiles on the divided surface
   - what is the U grid layout of the divided surface
+  # DECLARED 2026-10-29 with version 2, which reads both. The routing tables
+  # here and in SET_DIVIDED_SURFACE_LAYOUT claim them for this card, and a
+  # comment is not indexed (D-86).
+  - is the divided surface flipped
+  - which levels cut the divided surface
