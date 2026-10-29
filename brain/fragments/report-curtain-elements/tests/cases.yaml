@@ -15,6 +15,47 @@ positive:
       IS THE CASE A GLASS ORDER GETS WRONG - they come back from GetPanelIds like
       any other cell and counting them as glazing over-orders
 
+  - given: >
+      VERSION 2 - THE D-30 POSITIVE (Group JO, row JO1). One curtain wall, 10000
+      mm long and 3000 mm high, of a type with a vertical grid at Fixed Distance
+      1500 mm, Justification Beginning, no horizontal grid and no mullions, the
+      tolerance left out
+    expect: >
+      differentPanelSizes 2; panelSizes "1 at 1000 x 3000 mm" and "6 at 1500 x
+      3000 mm", narrowest first; sizesNotRead empty. The wall's block ends "panel sizes, width x
+      height within 5 mm: 2 - ..." and the last line of findings reads "Across
+      the 1 curtain wall(s): 2 different panel size(s)". Every version 1 line
+      still there, word for word, before them. RECORD the sizes as printed: if
+      the justification is not Beginning the end panels differ, and that is the
+      rig, not the fragment
+
+  - given: >
+      VERSION 2. Two curtain walls handed in together - the 10000 mm wall above
+      and a 9000 mm wall of the same type
+    expect: >
+      each wall's own size line - 2 sizes, then 1 - and ACROSS the walls
+      differentPanelSizes 2, panelSizes "1 at 1000 x 3000 mm" and "12 at 1500 x
+      3000 mm": a size two walls share is counted once
+
+  - given: >
+      VERSION 2. A curtain wall of a type with no grid (Curtain Wall: Curtain
+      Wall), 6003 mm long, with one vertical grid line added by hand 3000 mm
+      from its start - panels 3000 and 3003 mm wide - asked three times:
+      tolerance left out, toleranceMm=2, toleranceMm=0
+    expect: >
+      left out (5 mm): 1 size, printed as the range "2 at 3000-3003 x 3000 mm";
+      at 2 mm and at 0: 2 sizes, "1 at 3000 x 3000 mm" and "1 at 3003 x 3000
+      mm". The tolerance is the modeller's and it is applied
+
+  - given: >
+      VERSION 2. A curtain wall with one panel changed to a curtain wall door,
+      and one to a basic wall
+    expect: >
+      ASSUMPTION, measured here: each is either in a size with "(1 of them a
+      door)" or "(1 of them a basic wall)" after it, or named in sizesNotRead
+      "Revit gives it no panel Width or Height". RECORD which, for each - never
+      a size worked out from the grid
+
 negative:
   - given: a curtain wall with one panel deleted
     expect: >
@@ -40,8 +81,49 @@ negative:
       that named with Revit's own message, and the mullions and grid still
       reported for the same wall. One guard around everything loses the rest
 
+  - given: >
+      VERSION 2 - THE D-30 NEGATIVE (Group JO, row JO2). A basic wall, Generic -
+      200mm, drawn on the same line as the positive's curtain wall, and the
+      same request
+    expect: >
+      curtainWallsFound 0, differentPanelSizes 0, panelSizes and sizesNotRead
+      empty, notCurtain names it "is a wall but not a CURTAIN wall"; findings
+      is the one summary line, exactly as version 1 wrote it - no size line
+
+  - given: >
+      VERSION 2. A curtain wall whose panels are all one size - the 9000 mm wall
+      of the Fixed Distance 1500 type: six panels, 1500 x 3000
+    expect: >
+      EXACTLY ONE size: differentPanelSizes 1, panelSizes "6 at 1500 x 3000 mm".
+      Two sizes here is a panel measured wrong, or grouped wrong
+
+  - given: >
+      VERSION 2. The 10000 mm wall selected, the 9000 mm wall beside it NOT
+      selected, and a third curtain wall of another type in the model
+    expect: >
+      exactly the selected wall's sizes - 2, and "6 at 1500 x 3000 mm", not 12.
+      A wall that was not handed in is not counted
+
+  - given: VERSION 2. The same 10000 mm wall with one panel deleted
+    expect: >
+      the empty cell still in emptyCells as version 1 reports it, and in NO
+      size: "1 empty cell(s) in no size - there is no panel there to measure"
+      on the wall's line, the sizes over the six cells left
+
+  - given: VERSION 2. toleranceMm=-1
+    expect: >
+      differentPanelSizes 0, no size line for any wall, sizesNotRead "a
+      tolerance of -1 mm is not a size - give 0 mm or more; no panel was sized",
+      and every version 1 line - panels, mullions, grid - still there
+
 second_route:
   - >
     Select the curtain wall in Revit and use Tab to cycle panels and mullions, or
     a curtain panel schedule and a mullion schedule. Those are what the counts are
     checked against
+  - >
+    VERSION 2. A Curtain Panel schedule with Width and Height in it, sorted and
+    grouped by Width then Height, "Itemize every instance" off - one row per
+    size with its Count, the way the modeller reads it without Heron. Read it
+    against panelSizes at tolerance 0; the Width and Height columns are the
+    same two values this reads

@@ -107,7 +107,7 @@ it is recorded rather than built (§6, the IFC schema).
 |---|---|
 | Design methods, node libraries, NURBS and mesh processing, generative and evolutionary search, structural, energy, airflow and daylight engines, fabrication, robots, optimisation, machine learning | **Out** - other tools, heavy dependencies, and a search loop of thousands of changes breaks one request, one undo |
 | Divide a surface and put a panel on every cell | **Held** - `DIVIDE_FAMILY_SURFACE`, `PLACE_ADAPTIVE_POINTS`; on a curtain wall type, `SET_CURTAIN_WALL_GRID` |
-| How many different panel sizes a facade has | **Partly** - `REPORT_CURTAIN_ELEMENTS` counts panels by type, not by size; §6 |
+| How many different panel sizes a facade has | **Partly** - `REPORT_CURTAIN_ELEMENTS` counts panels by type, not by size; §6. *As built (2026-10-29): version 2 groups them by size within a tolerance - DRAFT, [Group JO](needs-checking/group-jo.md), not yet run in Revit* |
 | Numbering every piece by building, level, zone | **Held** - `ASSIGN_LOCATION_DATA`, `RENUMBER_SEQUENTIAL` |
 | Colour the model by a status or a number | **Held** - `COLOR_BY_PARAMETER`, `SHOW_ANALYSIS_HEATMAP` |
 | Views per level, sheets, tags, exports, crop to a room | **Held**, each by its fragment |
@@ -240,7 +240,7 @@ needs measuring first. Each waits for the owner, one at a time ([31 §5](31-stud
 | **Elements NOT on a workset** - *ducts not on M-HVAC* | Widens `SELECT_BY_WORKSET`, PROVEN |
 | **A numeric schedule filter** - width 600 mm or more | Widens `SET_SCHEDULE_FILTERS`, PROVEN, which builds every filter from text |
 | **Room proportion and minimum size**, against the modeller's values | Widens `MEASURE_ROOM_DIMENSIONS`, PROVEN |
-| **Panel sizes on a curtain wall**, grouped within the modeller's tolerance | Widens `REPORT_CURTAIN_ELEMENTS`, PROVEN |
+| **Panel sizes on a curtain wall**, grouped within the modeller's tolerance | Widens `REPORT_CURTAIN_ELEMENTS`, PROVEN. *As built (2026-10-29, on the owner's word that day): built - `REPORT_CURTAIN_ELEMENTS` version 2 reads each panel's Width and Height as Revit gives them and groups them within a tolerance, 5 mm unless the modeller gives one, per wall and across the walls handed in. DRAFT - its version 1 proof is stale - until [Group JO](needs-checking/group-jo.md) is run and signed; not yet run in Revit* |
 | **A build that can be run twice** - a wall already there is not drawn again | Widens `CREATE_WALL`, PROVEN, then the floor, ceiling and roof creators |
 | **Copy to another level** that lands *on* that level, not on the old one with a large offset | `COPY_ELEMENTS` is PROVEN; until then the route is `COPY_ELEMENTS` then `SET_ELEMENT_LEVEL`. *As built (2026-10-18): built - `COPY_ELEMENTS` version 2 copies onto a list of levels, each copy on its own level (#526, row 5b-460, Group DX), signed PROVEN on 2026-10-14; version 3 (#593, worksets) is DRAFT, not yet run in Revit* |
 | **Which face of a wall is its outside**, and a point that says so | Widens `CREATE_WALL`, PROVEN |
