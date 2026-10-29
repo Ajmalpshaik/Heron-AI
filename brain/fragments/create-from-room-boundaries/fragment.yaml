@@ -25,10 +25,23 @@ risk: MODIFY
 # ceilings are built by version 1's lines; the one change on their path is the
 # `rooms` filter, which with nothing given passes every room.
 
+# THE OPENING SAYS IT BUILDS, AND THE OPENINGS AND THE AREA COME LAST
+# (FRAGMENT-ISSUES 5b-1293, 2026-10-28). The trained model reads only the first
+# 512 word-pieces of a card, and version 2's wall-finish paragraph put every
+# door, window and opening, and the room's area, inside them - so "count the
+# doors in these walls" reached this card, a change, over SELECT_BY_HOST. The
+# purpose now opens on what it makes; the doors and openings, the room's area
+# and what is skipped follow the transaction line, past what the model reads.
+# Every fact is still here and still shown to the host. Measured on phrasings
+# written before the wording, never by declaring the sentences that failed.
 purpose: >
-  Builds a floor or a ceiling on each room, taking the shape from the room's
-  own boundary - including the holes - or, given a wall type, lines the room's
-  walls with a finish. No typed coordinates: the room already knows its shape.
+  Builds new floors, ceilings or wall finishes room by room, each one the
+  shape of its room - the room's own boundary gives the outline, holes
+  included, so no coordinates are typed. The type given decides what is
+  made: a floor type makes floors, a ceiling type makes ceilings, and a wall
+  type lines the room's walls with a thin new wall of plaster, tile or
+  cladding, to a height. There is no mode to get wrong, and a type that is none of the three
+  is refused before anything is attempted.
 
   **THE HOLES ARE THE REASON THIS EXISTS.** A room's boundary comes back as
   several loops: the first is the outside edge and every one after it is a
@@ -43,37 +56,35 @@ purpose: >
   silently skipped - a floor of thirty rooms that produced twenty-eight
   ceilings needs to say which two.
 
-  **THE TYPE DECIDES WHAT IS BUILT.** A floor type makes floors, a ceiling
-  type makes ceilings and a wall type makes wall finishes, so there is no mode
-  to get wrong - and a type that is none of the three is refused before
-  anything is attempted.
-
   **A WALL TYPE LINES THE ROOM'S WALLS (version 2).** Every edge of the room
-  that is a wall gets a thin wall of that type - plaster, tile, cladding - on
-  the wall's INSIDE face, from the room's floor plus `baseOffset` up to
-  `heightAboveLevel` above the room's floor (its level plus the room's own Base
-  Offset). Neighbouring finishes meet at the corners. Across every door,
-  window, wall opening and embedded curtain wall in the wall behind, the finish
+  that is a wall gets a thin wall of that type on the wall's INSIDE face, from
+  the room's floor plus `baseOffset` up to `heightAboveLevel` above the room's
+  floor (its level plus the room's own Base Offset), with its exterior side,
+  where the first layer of a finish type sits, facing the room. Neighbouring
+  finishes meet at the corners. `joinToHost` joins each one to the wall behind
+  it. Straight walls and arc walls alike.
+
+  **A SECOND RUN LAYS A SECOND FINISH OVER THE FIRST.** Finishes are not room
+  bounding, so the room's boundary cannot show they are already there: look
+  for walls of the finish type in the room before running it again.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+  **THE FINISH STOPS AT EVERY OPENING IN THE WALL BEHIND.** Across every door,
+  window, wall opening and embedded curtain wall in the host wall, the finish
   is built only above and below it - a gap to the floor at a door with the
   finish carried on above its head, the finish kept below a sill and above a
   head - so a finish is several walls, never one with an opening cut in it.
-  Every finish is made NOT room bounding, so the room's area and every schedule
-  reading it are unchanged, with its exterior side, where the first layer of a
-  finish type sits, facing the room. `joinToHost` joins each one to the wall
-  behind it. Straight walls and arc walls alike.
 
-  **WHAT IS NOT LINED IS COUNTED AND NAMED, NEVER PASSED OVER.** A curtain
-  wall, a room or space separation line, a wall in a linked model (its doors
-  cannot be read from here), a column or anything else that is not a wall, and
-  an edge neither straight nor an arc are each skipped, counted by reason in
+  **THE ROOM'S AREA DOES NOT MOVE.** Every finish is made NOT room bounding,
+  so the room's area and every schedule reading it are unchanged.
+
+  **WHAT IS NOT LINED IS NAMED, NEVER PASSED OVER.** A curtain wall, a room or
+  space separation line, a wall in a linked model (its doors cannot be read
+  from here), a column or anything else that is not a wall, and an edge
+  neither straight nor an arc are each skipped, totalled by reason in
   `skippedSummary` and in each room's line of `finishSummary`. A room with no
   usable boundary is in `unenclosed`, as for floors and ceilings.
-
-  **A SECOND RUN LAYS A SECOND FINISH OVER THE FIRST.** Finishes are not room
-  bounding, so the room's boundary cannot show they are already there: count
-  the walls of the finish type in the room before running it again.
-
-  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
   needs:

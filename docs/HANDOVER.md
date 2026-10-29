@@ -284,14 +284,9 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 file per sitting, newest first in that folder's README. These are the newest 12. Write a new note there,
 not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves any that land here anyway.
 
-> **The newest is 2026-10-18, and the week after it wrote none.** Every pull request merged between
-> 2026-10-19 and 2026-10-25 — the family-tool groups, the rebar tools, the material and rendering tools,
-> three proving nights, the delete box and the agent-proof re-runs — and **not one of them left a sitting
-> note.** For that week the git log, the register groups the table at the top links, and the fragment
-> cards are the only account. Writing one costs a session minutes and this is what it buys.
-
 | Date | Sitting |
 |---|---|
+| 2026-10-29 | [THE ROUTING GUARDS PASS ON THE OWNER'S BACKEND, BY CARD WORDS ALONE](handover-archive/2026-10-29-the-routing-guards-pass-on-the-owner-s-backend-by-card-words.md) |
 | 2026-10-18 | [THE SAFETY RAILS MET REVIT, AND HERON'S DATA LEFT THE STORE APP'S COPY](handover-archive/2026-10-18-the-safety-rails-met-revit-and-heron-s-data-left-the-store.md) |
 | 2026-10-14 | [SIXTY PLAIN QUESTIONS, AND WHAT ANSWERED THEM](handover-archive/2026-10-14-sixty-plain-questions-and-what-answered-them.md) |
 | 2026-10-14 | [THE GAP PASS: NEW TOOLS FOR WHAT THE LIBRARY COULD NOT DO](handover-archive/2026-10-14-the-gap-pass-new-tools-for-what-the-library-could-not-do.md) |
@@ -303,7 +298,6 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 | 2026-10-02 | [HERON CAN NOW WORK OUT WHAT A DUCT SHOULD BE, NOT ONLY DRAW IT](handover-archive/2026-10-02-heron-can-now-work-out-what-a-duct-should-be-not-only-draw-it.md) |
 | 2026-09-28 | [REVIT'S OWN DUCT SIZING TORE UP HERON'S MAIN, AND THE FIX PUTS THE TRANSITION ON THE UNIT](handover-archive/2026-09-28-revit-s-own-duct-sizing-tore-up-heron-s-main-and-the-fix.md) |
 | 2026-09-24 | [THE RE-RANKER RAN FOR THE FIRST TIME, AND IT MAKES PICKING A TOOL WORSE](handover-archive/2026-09-24-the-re-ranker-ran-for-the-first-time-and-it-makes-picking-a.md) |
-| 2026-09-23 | [THE THREE ROWS C1 LEFT OPEN ARE FIXED, AND THE SETUP SCRIPT HAS TO BE PASTED AGAIN](handover-archive/2026-09-23-the-three-rows-c1-left-open-are-fixed-and-the-setup-script.md) |
 
 ## The session archive — what happened before today
 

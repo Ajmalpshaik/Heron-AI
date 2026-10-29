@@ -245,7 +245,11 @@ compatibility-note: >
 #                                         heading when they differ
 
 utterances:
-  - rename the column heading in the schedule
+  # "RENAME THE COLUMN HEADING" IS NINTH, PAST WHAT THE RE-RANKER READS (D-134,
+  # FRAGMENT-ISSUES 5b-1293, 2026-10-29). First, it put "rename" beside
+  # "schedule" in this card's passage, and "rename the schedule" - a whole
+  # schedule, RENAME_ELEMENTS' job - came here on the owner's backend. Still
+  # declared, so it still reaches this card by identity.
   - change the schedule column heading
   - make the schedule column wider
   - change the column width in the schedule
@@ -254,6 +258,7 @@ utterances:
   - the heading text should say something else
   - hide that column
   - hide this column on the schedule
+  - rename the column heading in the schedule
   # ADDED 2026-10-09, row 5b-387. The routing table above claims this
   # sentence, and a comment is not indexed, so ranking decided: "turn the
   # heading sideways": OFFSET_ELEMENTS on the trained backend answered it.
