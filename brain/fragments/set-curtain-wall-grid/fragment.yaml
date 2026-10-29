@@ -242,7 +242,8 @@ compatibility-note: >
   No ElementId is constructed and none is read as a number.
 
 # ROUTING - repeated in SET_CURTAIN_WALL_MULLIONS, REPORT_CURTAIN_ELEMENTS,
-# WRITE_ELEMENT_PARAMETERS, DUPLICATE_TYPE and CREATE_WALL.
+# WRITE_ELEMENT_PARAMETERS, DUPLICATE_TYPE, CREATE_WALL and
+# ADD_CURTAIN_GRID_LINES.
 #
 #   "set the curtain wall grid spacing"    -> here
 #   "make the vertical grid fixed distance
@@ -264,14 +265,23 @@ compatibility-note: >
 #                                             the first line of this answer says
 #                                             how many walls changed
 #   "divide this curtain wall into six
-#    panels", Fixed Number                 -> NOT HERE, and nothing does yet. The
-#                                             count is each wall's own "Number";
-#                                             Fixed Number is refused here, and
-#                                             WRITE_ELEMENT_PARAMETERS refuses
+#    panels"                               -> ADD_CURTAIN_GRID_LINES, "equal 6"
+#                                             on that one wall: five lines on the
+#                                             wall's own grid, its type untouched
+#                                             (DRAFT since 2026-10-28). Fixed
+#                                             Number is still refused HERE - the
+#                                             count is each wall's own "Number",
+#                                             and WRITE_ELEMENT_PARAMETERS refuses
 #                                             "Number" because the vertical and
 #                                             horizontal ones share the name
-#   "add a grid line here"                 -> NOT HERE. One line on one wall is
-#                                             Revit's own Curtain Grid tool
+#   "add a grid line at 1200 from the
+#    bottom of this curtain wall", "add a
+#    transom at 1100"                      -> ADD_CURTAIN_GRID_LINES - lines on ONE
+#                                             wall's own grid, Revit's Curtain Grid
+#                                             tool typed, never the type's layout.
+#                                             "add a grid line" with no curtain
+#                                             wall in it is a building grid:
+#                                             CREATE_GRID
 #   "how many grid lines are in this
 #    curtain wall"                         -> REPORT_CURTAIN_ELEMENTS. A question
 #                                             must not land on a write (D-86)
@@ -294,9 +304,23 @@ compatibility-note: >
 #   "draw a curtain wall"                  -> CREATE_WALL, with a curtain wall
 #                                             type as its wall type
 #   "tick adjust for mullion size",
-#   "change the curtain panel"             -> NOT HERE, and nothing does yet.
-#                                             Both are type settings this does
-#                                             not touch
+#   "set the default curtain panel on the type" -> NOT HERE, and nothing does
+#                                             yet. Both are type settings this
+#                                             does not touch
+#   "change the bottom row of panels on this curtain wall to solid panels"
+#                                          -> SET_CURTAIN_PANEL_TYPE (DRAFT,
+#                                             2026-10-28): one wall's panels, by
+#                                             the rows and columns this grid
+#                                             makes; the type is left alone
+#   "change the U grid to 20 divisions",
+#   "set the V grid to 1500 spacing"       -> SET_DIVIDED_SURFACE_LAYOUT. U Grid and
+#                                             V Grid are a divided surface's, in a
+#                                             mass or pattern-based family; a
+#                                             curtain wall type's grids are vertical
+#                                             and horizontal, and stay here. Added
+#                                             2026-10-28 as a comment only - nothing
+#                                             under impl/ moved, so the proof above
+#                                             still stands
 
 utterances:
   - set the curtain wall grid spacing

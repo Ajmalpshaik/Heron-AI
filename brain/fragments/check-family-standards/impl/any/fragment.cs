@@ -66,7 +66,7 @@
 //    each one's System Classification Fitting, as Revit's own fittings' are
 //    (a WARN); one primary, lying on the X axis, where Autodesk's help puts it
 //    (a WARN); and an elbow's connector Angle driven by an INSTANCE family
-//    parameter - by none is a WARN until NEEDS-CHECKING Group JI reads Revit's
+//    parameter - by none is a WARN until NEEDS-CHECKING Group JN reads Revit's
 //    own elbow, by a TYPE one a FAIL, as a size driven by a type one is.
 // 3. TIDINESS. A family parameter nothing uses - no formula, label, array,
 //    form field, nested family or connector reads it; a solid form shown at
@@ -785,7 +785,7 @@ if (doc.IsFamilyDocument)
                     else if (driver == null)
                         warn(label(c) + "'s Angle is driven by no family parameter. An elbow whose connector Angle does not "
                             + "follow the family's Angle is reported not to flex in a run (docs/43 section 10; NEEDS-CHECKING "
-                            + "Group JI reads Revit's own elbow).",
+                            + "Group JN reads Revit's own elbow).",
                             "SET_FAMILY_CONNECTOR_ROLES settings \"angle=[Angle]\" - with Angle already an INSTANCE parameter, "
                             + "or the tool makes a type one.");
                     else if (!driver.IsInstance)

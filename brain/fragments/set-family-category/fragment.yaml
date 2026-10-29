@@ -195,6 +195,8 @@ compatibility-note: >
 #                                             -> SET_FAMILY_SWEEP_PROFILE
 #   "add four adaptive points to this family" -> PLACE_ADAPTIVE_POINTS
 #   "draw lines between the adaptive points"  -> DRAW_FAMILY_POINT_CURVES
+#   "set the adaptive points orientation to host and loop system"
+#                                             -> SET_ADAPTIVE_POINT_ORIENTATION
 #   "make a surface from these lines"         -> CREATE_CONCEPTUAL_FORM - an
 #                                                adaptive or pattern family
 #   "make a type catalog for this family"     -> REPORT_FAMILY_TYPE_CATALOG

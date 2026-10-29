@@ -200,6 +200,11 @@ compatibility-note: >
 #                                          its TYPE, never from here
 #   "what is this curtain wall type set
 #    to"                                -> REPORT_CURTAIN_WALL_TYPE
+#   "put a curtain system on the faces  -> CREATE_CURTAIN_SYSTEM (2026-10-28).
+#    of this mass", "make a facade on      A curtain WALL is drawn here along a
+#    the mass faces"                       line; a curtain SYSTEM sits on the
+#                                          faces of a placed mass or generic
+#                                          model and has no line of its own
 
 utterances:
   - build a wall between these points

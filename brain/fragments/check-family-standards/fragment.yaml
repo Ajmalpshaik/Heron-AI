@@ -98,7 +98,7 @@ purpose: >
   System Classification Fitting (a WARN); one primary, lying on the X axis
   (a WARN); and an elbow's connector Angle driven by an INSTANCE family
   parameter - by a TYPE one a FAIL, by none a WARN until Revit's own elbow is
-  read (NEEDS-CHECKING Group JI). Version 3's proof no longer describes the
+  read (NEEDS-CHECKING Group JN). Version 3's proof no longer describes the
   code and is kept below as a record; DRAFT until it is proved again.
 
 # IN A PROJECT, A REQUIRED NAME THE TYPE CARRIES TWICE IS A WARN, NOT A PASS -

@@ -1,0 +1,54 @@
+# NEEDS-CHECKING Group JL - SET_DIVIDED_SURFACE_LAYOUT, DRAFT since
+# 2026-10-28. docs/needs-checking/group-jl.md is the whole plan; this file is
+# its JL1 rolled back, and JL2.
+#
+#     python tools/batch-prove.py tools/jobs/set-divided-surface-layout.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-divided-surface-layout.yaml
+#
+# THE MODEL is Group JL's rig (JL0), never a working model: a NEW family from
+# the metric Mass template, SAVED as "Heron JL Divided Surface Test.rfa" in
+# %TEMP%\heron-work\group-jl and left OPEN in the Family Editor, holding - made
+# by hand or through Heron as usual, and KEPT, never made by this runner,
+# whose write: true rolls everything back:
+#   - Level 2 at 3000 mm and Level 3 at 6000 mm, beside the template's Level 1
+#   - a box by CREATE_CONCEPTUAL_FORM: a 6000 x 3000 closed profile of
+#     reference lines on Level 1, pushed 9000 mm up
+#   - its FRONT face divided by DIVIDE_FAMILY_SURFACE - uGrid "6", vGrid
+#     "3000 mm", pattern "" - and no other face divided
+#
+# ONE VALUE IS AN ID ONLY THE RIG CAN GIVE, and is written here as a
+# PLACEHOLDER: the box form's id, FORM-ID - CREATE_CONCEPTUAL_FORM's formId,
+# or REPORT_FAMILY_FORMS on the rig. `--dry-run` says WOULD RUN with the
+# placeholder still in; replace it before the real run.
+#
+# THE NEGATIVE NAMES THE FORM THE SURFACE IS ON - an element that must NOT be
+# touched, with the very same settings - never an empty table. The positive
+# needs no id: the rig holds one divided surface, so "only" finds it.
+#
+# NOTHING MAY BE SELECTED, and LOOK at the family after the batch anyway: the
+# rollback is Revit's, and the surface's Properties must read as JL0 left them.
+
+model: Heron JL Divided Surface Test (a new Mass family), Revit 2024
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: set-divided-surface-layout
+    in: "Heron JL Divided Surface Test"
+    expect: applied
+    set:
+      dividedSurface: "only"
+      surfaceLayout: "u layout=distance; u distance=1500; u offset=750; v layout=number; v number=8; all rotation=45; border=empty; flip=yes; intersect=Level 2, Level 3"
+    negative-set:
+      # PLACEHOLDER - the box form's id.
+      dividedSurface: "FORM-ID"
+      surfaceLayout: "u layout=distance; u distance=1500; u offset=750; v layout=number; v number=8; all rotation=45; border=empty; flip=yes; intersect=Level 2, Level 3"
+    note: >
+      JL1 rolled back, and JL2. Positive: applied 9 (8 with alreadyAsAsked 1
+      if the border tiles were already Empty), skipped empty, readBack with
+      each named setting "(asked, was ...)" and every other one as it was;
+      RECORD the gridline counts. Negative: applied 0, readBack empty,
+      refused saying the id is the form the surface is on, "not the divided
+      surface itself", naming the surface - nothing changed.
