@@ -1,0 +1,25 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      one mass with mass floors at Levels 1 to 4, all with no Usage, the mass
+      selected, usage "Level 1=Retail; Level 2..Level 4=Office"
+    expect: >
+      changed 4, Level 1 reading "Retail" and Levels 2 to 4 "Office", each read
+      back; the report giving "" before each
+
+second_route:
+  - each mass floor's Usage in Properties, and a Mass Floor schedule grouped by Usage
+  - one Ctrl+Z puts every Usage back in a single step (Golden Rule 16)
+
+negative:
+  - given: the same straight after, the same usage
+    expect: >
+      changed 0 and alreadySo 4 - nothing written twice
+  - given: the same mass, usage "Level 9=Office" on a model with no Level 9
+    expect: >
+      NOTHING WAS CHANGED, the finding naming Level 9 and listing the model's
+      levels; every mass floor's Usage as it was
+  - given: a wall selected, usage "Office"
+    expect: >
+      NOTHING WAS CHANGED, the wall named as not a mass

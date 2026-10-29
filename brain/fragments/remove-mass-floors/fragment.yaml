@@ -1,0 +1,96 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-133
+semantic-identity: "take the mass floors off these masses at the levels named"
+
+# A NEW CAPABILITY, NOT A REMOVE MODE ON CREATE_MASS_FLOORS, and why:
+# CREATE_MASS_FLOORS (FRG-ELE-083) is PROVEN and reads an EMPTY levelNames as
+# every level the mass reaches. A remove mode on that contract would let a
+# value left out clear a whole study. Here an empty levelNames refuses.
+# DELETE_ELEMENTS takes elements, and a mass floor is not reliably what a
+# category filter hands it; MassInstanceUtils has the call for exactly this.
+kind: action
+domain: revit.elements
+capability: REMOVE_MASS_FLOORS
+version: 1
+source: OFFICIAL
+# MODIFY, as every delete in this library declares. Article 7 asks for the
+# owner's yes for THIS removal - the levels named are that yes; no find
+# chooses them.
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# A mass floor at a plant level, a void level or a parapet level inflates
+# the gross floor area, and taking it off by hand means opening each mass's
+# Mass Floors dialog. This takes the named levels off every mass given.
+#
+# "A..B" is every level from A to B by height, both included. A level a mass
+# has no mass floor at is counted, not refused.
+#
+# The Usage on a mass floor goes with it, and the report names each one, so
+# it can be set again with SET_MASS_FLOOR_USAGE.
+#
+# READ BACK: each mass's floor levels are read again; only a level now gone
+# counts.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Removes the mass floors of conceptual masses at the levels named - Roof, or
+  Level 5..Level 8 - so a plant or parapet level stops counting in the gross
+  floor area. Never every level: an empty value refuses.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The masses - selected, or REPORT_MASSES' elements through expect_from.
+    - name: elements
+      type: IList<Element>
+    # Level names, commas between; "A..B" every level from A to B by height.
+    # EMPTY REFUSES.
+    - name: levelNames
+      type: string
+      source: request
+  provides:
+    - name: removed
+      role: result
+      type: int
+    - name: notThere
+      # Levels named that a mass had no mass floor at (D-52).
+      role: accounting
+      type: int
+    - name: report
+      # ONE STRING, mass by mass, with each Usage removed (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release.
+  MassInstanceUtils.RemoveMassLevelDataFromMassInstance, GetMassLevelIds and
+  GetMassLevelDataIds, and MassLevelData.StrUsage are present 2020 through
+  2027 - read with tools/api-surface on 2026-10-28. MassLevelData is marked
+  obsolete on 2023 alone.
+
+# ROUTING
+#
+#   "remove the mass floor at the roof level"   -> here
+#   "add mass floors at every level"            -> CREATE_MASS_FLOORS
+#   "delete these"                              -> DELETE_ELEMENTS
+
+utterances:
+  - remove the mass floor at the roof level
+  - take the mass floors off levels 5 to 8
+  - the plant level should not count, remove its mass floor
+  - delete the mass floors at these levels
