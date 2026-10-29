@@ -68,16 +68,16 @@ risk: MODIFY
 # A CURTAIN SYSTEM ALREADY STANDING IN A HOST'S OUTLINE is counted before the
 # write (`alreadyNear`) and named. Whether it sits on the same faces is NOT
 # read: Revit's API gives a curtain system no host face to read back. What
-# Revit does with a second one on the same faces is NEEDS-CHECKING JH8.
+# Revit does with a second one on the same faces is NEEDS-CHECKING JM8.
 #
 # NOT KNOWN WITHOUT A REAL REVIT - ASSUMPTIONS FOR THE PROOF TO SETTLE
-# (NEEDS-CHECKING Group JH):
-#   - that Revit takes the face references read this way at all (JH1, JH2);
+# (NEEDS-CHECKING Group JM):
+#   - that Revit takes the face references read this way at all (JM1, JM2);
 #   - whether a GENERIC MODEL that is not a mass takes one - the API reference
-#     says "masses or generic models", and nothing here has run it (JH5);
+#     says "masses or generic models", and nothing here has run it (JM5);
 #   - which of a face's grid directions Revit calls U and which V, and
-#     whether its counts match the ones derived in the plan (JH2);
-#   - what a second curtain system on the same faces does (JH8).
+#     whether its counts match the ones derived in the plan (JM2);
+#   - what a second curtain system on the same faces does (JM8).
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Every
 # refusal is made before the first write, one host refused refuses the call,
@@ -108,7 +108,7 @@ contract:
       source: request
       optional: true
       absent: selected
-    # The curtain system type BY NAME as Type Properties shows it - "Heron JH
+    # The curtain system type BY NAME as Type Properties shows it - "Heron JM
     # 1500" in the proof's rig - or "Family : Type". Never chosen here: a name
     # the model lacks is refused with the names it has.
     - name: curtainSystemType

@@ -4,7 +4,7 @@
 > |---|---|
 > | **Type** | One-time plan, being executed. Retires as described at the bottom |
 > | **Asked for** | By the owner, 2026-10-28: *"Do you have capability for facade creation in Revit? ... parametric facade, all type of facade and facade creation, everything related to the facade ... Be stronger on facade creation. All type of facade creation, facade family, family creations, everything."* |
-> | **Owner of this note** | The session building it; after that, whoever proves Groups JH to JL |
+> | **Owner of this note** | The session building it; after that, whoever proves Groups JI to JM |
 > | **Authority** | None of its own. The fragment cards, the [`facade`](../../../brain/skills/facade.yaml) method, [NEEDS-CHECKING](../../NEEDS-CHECKING.md) and [FRAGMENT-ISSUES](../../FRAGMENT-ISSUES.md) are where each fact lives |
 
 ## Where it started
@@ -49,7 +49,7 @@ tools behind it.
 
 | # | What | Group | State |
 |---|---|---|---|
-| 1 | `create-curtain-system` - a curtain system on a mass's side faces, all faces or its top, with the type the modeller names; panels and lines read back | [JH](../../needs-checking/group-jh.md) | DRAFT |
+| 1 | `create-curtain-system` - a curtain system on a mass's side faces, all faces or its top, with the type the modeller names; panels and lines read back | [JM](../../needs-checking/group-jm.md) | DRAFT |
 | 2 | `set-curtain-panel-type` - panels on one wall changed by row or column; one picked panel stays CHANGE_ELEMENT_TYPE's | [JI](../../needs-checking/group-ji.md) | DRAFT |
 | 3 | `add-curtain-grid-lines` - grid lines at given offsets, or N equal bays, on one wall only, with mullions if asked | [JJ](../../needs-checking/group-jj.md) | DRAFT |
 | 4 | `set-adaptive-point-orientation` - an adaptive family's placement points turned to Instance, Host, Host and Loop System or Global, in the Family Editor; the setting a fin or panel on a sloped face needs | [JK](../../needs-checking/group-jk.md) | DRAFT |
@@ -85,5 +85,5 @@ Said by the `facade` method when asked, never worked round:
 
 ## Retiring this note
 
-When Groups JH to JL are proved, or the owner drops one, this note is deleted. Its durable parts are
+When Groups JI to JM are proved, or the owner drops one, this note is deleted. Its durable parts are
 already where they live: the cards, the `facade` method and the groups.
