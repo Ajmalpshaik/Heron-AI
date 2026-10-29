@@ -1038,6 +1038,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jg.md`](needs-checking/group-jg.md)
 
+## Group JH - a duct or pipe fitting built by the method end to end, and the four fitting facts the research left UNSURE: `mep-fitting-family-creation` deepened (2026-10-28)
+
+**Its own file:** [`needs-checking/group-jh.md`](needs-checking/group-jh.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
