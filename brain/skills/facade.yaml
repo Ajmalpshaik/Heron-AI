@@ -78,10 +78,10 @@ purpose: >
         cut it at every level, or set the border tiles; DIVIDE_FAMILY_SURFACE
         makes the grid centred and unrotated and refuses a face already
         divided.
-     4. REPORT_DIVIDED_SURFACES for the cells, and CHECK_SURFACE_FIT when the
-        panels must be flat or within a size: a twisted cell cannot be one
-        flat sheet of glass, and that is a finding for the architect, never
-        smoothed over.
+     4. REPORT_DIVIDED_SURFACES for the grids and their counts, read back off
+        the surface. Whether each cell is FLAT enough for one sheet of glass
+        is not measured by any Heron tool yet: on a twisted surface say so,
+        and leave the judgement to the architect - never smooth it over.
      5. In the project: the mass is placed, and CREATE_MASS_FLOORS where it
         gives floors.
 
@@ -96,18 +96,23 @@ purpose: >
        family (hosted-family-creation), PLACE_FAMILY_ON_FACE.
      - it repeats at an even spacing: place one, then ARRAY_ELEMENTS - or
        ARRAY_ELEMENTS_RADIAL round a curved facade.
-     - its section is a profile swept along an edge (a continuous horizontal
-       louvre, a slab-edge fin): profile-family-creation, then CREATE_EDGE_SWEEPS
-       or a family sweep with SET_FAMILY_SWEEP_PROFILE.
+     - its section is a profile swept along a line (a louvre blade, a fin, a
+       mullion cap): profile-family-creation builds the profile, and the
+       family's sweep takes it with SET_FAMILY_SWEEP_PROFILE. A band round
+       the edge of a floor slab is CREATE_EDGE_SWEEPS with a slab edge type.
      A blade that must sit inside a curtain wall's grid is placed AFTER the
-     grid is final; moving the grid later does not move the blade.
+     grid is final. Whether it follows a later grid change depends on what
+     its points were placed on, and has not been measured - check it on the
+     model.
 
   ROUTE E - CLADDING CUT FROM A WALL. The wall is built first with the
      layers the modeller names (REPORT_COMPOUND_STRUCTURE to read them).
      - rainscreen or panel joints: CREATE_PARTS on the wall, DIVIDE_PARTS
-       with the joint lines or a grid, OFFSET_PART_FACES to push panels out,
-       SET_PARTS_EXCLUDED for a panel that is left out. MERGE_PARTS to join
-       two back.
+       along the grids, levels or reference planes that mark the joints -
+       reference planes drawn first where the joints are not on a grid or a
+       level -, OFFSET_PART_FACES to thicken or push a panel's face by a
+       distance, SET_PARTS_EXCLUDED for a panel that is left out. MERGE_PARTS
+       to join two back.
      - a horizontal band, a cornice, a reveal: PLACE_WALL_SWEEPS with the
        sweep or reveal type the modeller names.
      - a colour or a material on one face only: PAINT_FACES.
@@ -116,9 +121,10 @@ purpose: >
   SYSTEM TYPE's grid and mullions (the wall type's setter does not reach it);
   a grid line REMOVED or a segment cut on one wall (Revit's own Add/Remove
   Segments tool); a mullion moved or its join changed; a stacked wall built
-  from scratch; a curtain wall embedded in a basic wall told to cut it (done
-  by Revit when the curtain type has Automatically Embed ticked - read it with
-  REPORT_CURTAIN_WALL_TYPE); the tile pattern of a divided surface.
+  from scratch; a curtain wall embedded in a basic wall told to cut it (Revit
+  does it when the curtain type has Automatically Embed ticked in Type
+  Properties - no Heron tool reads or sets that box yet); the tile pattern of
+  a divided surface.
 
 # The words the modeller says when the facade is the whole job. A single step
 # - "set the curtain grid", "place adaptive fins" - reaches its own tool.
@@ -155,7 +161,6 @@ needs:
   - DIVIDE_FAMILY_SURFACE
   - SET_DIVIDED_SURFACE_LAYOUT
   - REPORT_DIVIDED_SURFACES
-  - CHECK_SURFACE_FIT
   # Route D
   - SET_ADAPTIVE_POINT_ORIENTATION
   - PLACE_ADAPTIVE_COMPONENTS

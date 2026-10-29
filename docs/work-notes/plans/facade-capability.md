@@ -40,8 +40,8 @@ tools behind it.
 |---|---|---|---|
 | Shopfront, storefront, ribbon glazing, curved glass | Curtain wall | A | the `curtain-wall` method, then `add-curtain-grid-lines`, `set-curtain-panel-type` |
 | Sloped, faceted or tapered tower skin; glazed roof with walls | Curtain system on mass faces | B | `create-curtain-system`, then `set-curtain-panel-type`; `create-mass-floors` |
-| Diamond, hex, triangle, twisting or free-form pattern | Divided surface + pattern-based panel | C | `pattern-based-family-creation`, `divide-family-surface`, `report-divided-surfaces`, `check-surface-fit` |
-| Fins, louvres, brise-soleil, blades, brackets | Adaptive or face-based family, repeated | D | `adaptive-family-creation`, `place-adaptive-components`, `place-family-on-face`, `array-elements`, profile + edge sweep |
+| Diamond, hex, triangle, twisting or free-form pattern | Divided surface + pattern-based panel | C | `pattern-based-family-creation`, `divide-family-surface`, `set-divided-surface-layout`, `report-divided-surfaces` |
+| Fins, louvres, brise-soleil, blades, brackets | Adaptive or face-based family, repeated | D | `adaptive-family-creation`, `set-adaptive-point-orientation`, `place-adaptive-components`, `place-family-on-face`, `array-elements`, a profile in a family sweep; `create-edge-sweeps` for a slab-edge band |
 | Rainscreen, cladding with joints, bands, reveals | Parts and wall sweeps on a wall | E | `create-parts`, `divide-parts`, `offset-part-faces`, `place-wall-sweeps`, `paint-faces` |
 | Mullion profile, panel family, curtain door | Families | - | `profile-family-creation`, `pattern-based-family-creation`, `door-window-family-creation`, `load-family` |
 
@@ -77,6 +77,9 @@ Said by the `facade` method when asked, never worked round:
 - a grid line **removed**, or one segment cut, on one wall;
 - a mullion moved, or its corner join changed;
 - the tile pattern of a divided surface - Revit's `CurtainPanelTilePattern` is read-only;
+- whether each cell of a twisted divided surface is flat enough for one sheet of glass - nothing measures it;
+- whether a fin or blade follows a later change to the curtain grid it was placed against - not measured;
+- the curtain type's *Automatically Embed* box - no tool reads or sets it;
 - glazing area by orientation and each facade's bearing from true north - [doc 45 §6](../../45-five-more-downloaded-skill-files.md).
 
 ## Retiring this note
