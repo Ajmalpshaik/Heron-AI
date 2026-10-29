@@ -146,18 +146,25 @@ compatibility-note: >
 # for, sent to a read - so it says "have", as the wall question above does.
 
 utterances:
-  - what is hosted on this wall
+  # THE FIRST EIGHT ARE WHAT THE RE-RANKER READS (D-134), SO THE DOORS AND
+  # WINDOWS LEAD (FRAGMENT-ISSUES 5b-1293, 2026-10-29): "count the doors in
+  # these walls" went to DIMENSION_WALL_OPENINGS, a change, on the owner's
+  # backend. Reordered - nothing added, nothing removed. The identity was
+  # left alone on purpose: naming doors and windows in it, even "each door and
+  # window already in a wall", tied 5b-319's "place doors and windows hosted in
+  # walls at points" - a change - onto this card with no re-ranker.
+  - how many doors are hosted in these walls
   - show me the doors in this wall
-  - what insulation is on this duct
-  - find everything hosted on this element
-  - what is hosted on this ceiling
   - what doors and windows does this wall have
   - list the windows in this wall
-  - how many doors are hosted in these walls
-  - list the skylights in this roof
-  - which skylights does this roof have
+  - what is hosted on this wall
   # ADDED 2026-10-09, row 5b-387. The routing table above claims this
   # sentence, and a comment is not indexed, so ranking decided: "what is cut
   # into this wall": CREATE_FAMILY_HOST_OPENING on the trained backend
   # answered it.
   - what is cut into this wall
+  - find everything hosted on this element
+  - what insulation is on this duct
+  - what is hosted on this ceiling
+  - list the skylights in this roof
+  - which skylights does this roof have
