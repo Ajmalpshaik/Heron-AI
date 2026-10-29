@@ -4,11 +4,11 @@ heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
-id: FRG-ELE-129
-semantic-identity: "turn the faces of these masses into walls by face or a curtain system by face"
+id: FRG-ELE-132
+semantic-identity: "put a wall by face on every side face of these masses"
 kind: action
 domain: revit.elements
-capability: CREATE_ELEMENTS_BY_FACE
+capability: CREATE_WALLS_BY_FACE
 version: 1
 source: OFFICIAL
 risk: MODIFY
@@ -16,15 +16,16 @@ risk: MODIFY
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.
 #
-# The step from a massing study to a building: Massing & Site > Model by
-# Face puts walls and curtain systems on a mass's faces, and they stay tied
-# to the faces, so Update to Face follows the mass when the scheme changes.
-# By hand it is face by face; this does every face of the masses given.
+# The step from a massing study to a building: Massing & Site > Wall by Face
+# puts walls on a mass's faces, and they stay tied to the faces, so Update to
+# Face follows the mass when the scheme changes. By hand it is face by face;
+# this does every side face of the masses given.
 #
-# WHAT IS MADE FOLLOWS FROM THE TYPE NAMED, so no kind is asked: a wall type
-# makes Wall by Face, one wall per face; a curtain system type makes Curtain
-# System by Face, one system per mass over every face chosen (Revit's own
-# remark on NewCurtainSystem2: one system per mass).
+# WALLS ONLY. A curtain system type is refused by name and sent to
+# CREATE_CURTAIN_SYSTEM (FRG-ELE-127), which makes Curtain System by Face -
+# one job, one card. This card was written as CREATE_ELEMENTS_BY_FACE, doing
+# both, and narrowed to walls on 2026-10-29 when CREATE_CURTAIN_SYSTEM
+# reached main first.
 #
 # FLOOR BY FACE AND ROOF BY FACE HAVE NO API - no face-floor or face-roof
 # class and no creation call in the reference assemblies of any release
@@ -35,31 +36,33 @@ risk: MODIFY
 #
 # THE FACES BY WHICH WAY THEY FACE: sides (empty) is every face not facing
 # straight up or down, as a building's walls are; vertical, upright faces
-# only; up, every face facing upward - a glazed roof's curtain system; all.
-# For a wall, Revit's own IsValidFaceReferenceForFaceWall decides which of
-# those take a wall, and the faces it refuses are counted, not guessed at.
+# only, to within one degree. Revit's own IsValidFaceReferenceForFaceWall
+# decides which of them take a wall, and the faces it refuses are counted,
+# not guessed at.
+#
+# THE FACE REFERENCES ARE READ THROUGH THE FAMILY'S OWN GEOMETRY -
+# GeometryInstance.GetSymbolGeometry() with no transform, which RevitAPI.xml's
+# remarks on GetInstanceGeometry name as the only geometry "suitable for
+# creating new Revit elements referencing the original element". The
+# instance's transform turns the normals into the model's directions only.
+# CREATE_CURTAIN_SYSTEM reads its faces the same way.
 #
 # THE LOCATION LINE DEFAULTS TO FINISH FACE: EXTERIOR - the wall's outside
 # face on the mass face, so the massing's outside is the building's - and the
 # answer says that is Heron's default, not Revit's.
 #
-# A MASS ALREADY CARRYING WALLS BY FACE (or a curtain system, for a curtain
-# system) is skipped by name, read off MassInstanceUtils.GetJoinedElementIds,
-# so a second run never doubles the skin.
+# A MASS ALREADY CARRYING WALLS BY FACE is skipped by name, read off
+# MassInstanceUtils.GetJoinedElementIds, so a second run never doubles the
+# skin. That the list holds walls by face is NEEDS-CHECKING JN11.
 #
-# The face references come from the mass's own geometry first and the
-# family's geometry it carries second; the answer names which Revit took -
-# NEEDS-CHECKING Group JJ records it.
-#
-# READ BACK, ALL OR NOTHING: every element made is read again - its type, a
-# wall's area, a curtain system's grids; one that fails takes everything
-# made in the call back out.
+# READ BACK, ALL OR NOTHING: every wall made is read again - its type and
+# its area; one that fails takes every wall made in the call back out.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 purpose: >
-  Model by Face on conceptual masses - Wall by Face with a wall type, or
-  Curtain System by Face with a curtain system type - on every side face of
-  the masses given, tied to the faces so Update to Face follows the mass.
+  Wall by Face on conceptual masses - one wall of the wall type named on
+  every side face of the masses given, tied to the faces so Update to Face
+  follows the mass.
 
 contract:
   needs:
@@ -68,17 +71,17 @@ contract:
     # The masses - selected, or REPORT_MASSES' elements through expect_from.
     - name: elements
       type: IList<Element>
-    # A wall type or a curtain system type, by "Family : Type" or its name.
-    - name: typeName
+    # A wall type, by "Family : Type" or its name.
+    - name: wallType
       type: string
       source: request
-    # sides (empty), vertical, up or all.
+    # sides (empty) or vertical.
     - name: faces
       type: string
       source: request
       optional: true
-    # Walls only: finish face exterior (empty), finish face interior, wall
-    # centerline, core centerline, core exterior, core interior.
+    # finish face exterior (empty), finish face interior, wall centerline,
+    # core centerline, core exterior, core interior.
     - name: locationLine
       type: string
       source: request
@@ -91,7 +94,8 @@ contract:
       role: result
       type: IList<ElementId>
     - name: skipped
-      # Masses that already carried them, or had no face Revit took (D-52).
+      # Masses that already carried walls by face, or had no face Revit took
+      # (D-52).
       role: accounting
       type: int
     - name: report
@@ -108,22 +112,19 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. FaceWall.Create,
   IsValidFaceReferenceForFaceWall and IsWallTypeValidForFaceWall;
-  Document.Create.NewCurtainSystem2(ReferenceArray, CurtainSystemType);
-  CurtainSystem.CurtainGrids; MassInstanceUtils.GetJoinedElementIds; and
-  GeometryInstance.GetInstanceGeometry, GetSymbolGeometry and Transform are
-  present 2020 through 2027 - read with tools/api-surface on 2026-10-28.
+  MassInstanceUtils.GetJoinedElementIds; and GeometryInstance.GetSymbolGeometry
+  and Transform are present 2020 through 2027 - read with tools/api-surface
+  on 2026-10-28.
 
 # ROUTING - the same rows are in the fragments named here.
 #
-#   "put walls on the faces of the mass"          -> here, a wall type
-#   "curtain system by face on this mass"         -> here, a curtain system type
+#   "put walls on the faces of the mass"          -> here
+#   "curtain system by face on this mass"         -> CREATE_CURTAIN_SYSTEM
 #   "make a wall along these points"              -> CREATE_WALL
 #   "add mass floors at every level"              -> CREATE_MASS_FLOORS
-#   "floor by face on the mass floors"            -> REPORT_MASSES withOutlines, then CREATE_FLOOR
 
 utterances:
   - put walls by face on the sides of this mass
   - make a wall by face on every face of the massing
-  - add a curtain system by face to this mass
-  - turn the mass into walls and glazing by face
-  - cover the mass faces with a curtain system
+  - turn the mass faces into walls
+  - wall by face on the tower mass with the exterior wall type
