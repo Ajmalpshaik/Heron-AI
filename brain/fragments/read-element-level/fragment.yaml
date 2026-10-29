@@ -173,3 +173,6 @@ utterances:
   - show me the base offset of the selected walls
   - what is the wall's offset from its level
   - which level is this wall's base on
+  # ADDED 2026-10-29, row 5b-1349: since main 8850867f added the massing
+  # cards, this reached REMOVE_MASS_FLOORS, a write, on the trained model.
+  - which level is this floor on
