@@ -1034,6 +1034,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jf.md`](needs-checking/group-jf.md)
 
+## Group JH - a duct or pipe fitting built by the method end to end, and the four fitting facts the research left UNSURE: `mep-fitting-family-creation` deepened (2026-10-28)
+
+**Its own file:** [`needs-checking/group-jh.md`](needs-checking/group-jh.md)
+
 ## Group JJ - a massing study from block to building: `REPORT_MASSES`, `SET_MASS_FLOOR_USAGE`, `REMOVE_MASS_FLOORS`, `CREATE_ELEMENTS_BY_FACE` and the `massing-study` and `mass-family-creation` methods (2026-10-28)
 
 **Its own file:** [`needs-checking/group-jj.md`](needs-checking/group-jj.md)
