@@ -176,3 +176,12 @@ utterances:
   # ADDED 2026-10-29, row 5b-1349: since main 8850867f added the massing
   # cards, this reached REMOVE_MASS_FLOORS, a write, on the trained model.
   - which level is this floor on
+  # The same day, more floor questions measured reaching a write - the
+  # massing cards on the trained model, REMOVE_MASS_FLOORS or CREATE_LEVELS
+  # on spelling. A floor's level is this read's answer. "what level is this
+  # slab on" is NOT declared: it tipped "what is the load on this circuit",
+  # a three-way tie on spelling, onto CREATE_ELECTRICAL_CIRCUIT.
+  - what level is this floor on
+  - which level are these floors on
+  - is this floor on level 3
+  - what level do these floors belong to

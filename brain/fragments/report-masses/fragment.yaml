@@ -126,3 +126,9 @@ utterances:
   - show the area of every mass floor level by level
   - list the mass floor outlines so I can draw slabs on them
   - are any of the masses overlapping without being joined
+  # ADDED 2026-10-29, FRAGMENT-ISSUES row 5b-1349: each reached a write -
+  # REMOVE_MASS_FLOORS or CREATE_MASS_FLOORS - on spelling and the trained
+  # model. This read lists every mass floor, level by level, with its area.
+  - which levels have mass floors
+  - how many mass floors does this mass have
+  - show the area of each mass floor
