@@ -1,0 +1,279 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-075
+semantic-identity: "change how a divided surface already there is laid out - its U and V grids, their rotation, offset and justification, the border tiles, the component flip, and the levels or planes that cut it"
+kind: action
+domain: revit.families
+capability: SET_DIVIDED_SURFACE_LAYOUT
+# VERSION 1 (2026-10-28), written in a cloud session from the modeller's own
+# sentences below, for a mass or pattern-based family whose surface is ALREADY
+# divided. DIVIDE_FAMILY_SURFACE makes a divided surface - both grids centred,
+# unrotated, with no offset - and refuses a face divided once; nothing changed
+# one afterwards. NEEDS-CHECKING Group JL is its proof plan. Nothing here has
+# met a Revit.
+#
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# ONE SURFACE, AND NAMED THE WAY ITS NEIGHBOURS NAME IT. DIVIDE_FAMILY_SURFACE
+# hands back the surface's UniqueId; REPORT_DIVIDED_SURFACES prints its id.
+# Either is taken, compared as TEXT against the family's divided surfaces - no
+# ElementId is built from it and none is read as a number. Left out, the need
+# binds "only" (HeronBindingNote.DeclaredAbsent): the one divided surface in
+# the family. Several and none named is refused with every id, and the FORM's
+# id is refused with the surfaces on that form - that is the negative case.
+#
+# THE TABLE, NOT A SENTENCE. Like SET_CURTAIN_WALL_GRID's `grid`: semicolons
+# between entries, an equals sign in each, keys loosened here ("U Grid Layout"
+# reads as "u layout"), a key named twice refused. `surfaceLayout` and not
+# `grid` or `settings`: a family-building skill runs SET_FAMILY_SETTINGS
+# beside this, and a proof binds every writing step from one set of values.
+#
+# ONLY WHAT IS NAMED CHANGES. Revit sets a grid's layout, number or distance,
+# justification, rotation and offset together (SpacingRule.SetLayout*, the
+# remarks DIVIDE_FAMILY_SURFACE's compatibility note quotes), so the parts not
+# named are read and handed back. A part only means something under a layout
+# that uses it - a number under Number, a distance under Distance, Maximum or
+# Minimum Spacing, nothing at all under None - and one asked for under another
+# layout is refused with the layout to name, the rule SET_CURTAIN_WALL_GRID
+# keeps for its spacing. A switch to a layout that needs a value the grid does
+# not hold yet must carry that value.
+#
+# READ BACK, ALL OR NOTHING - the parts written, asked or handed back, must
+# read as written after the rebuild, or the call throws and the host rolls it
+# back. A part NOT written that Revit moved anyway - one grid's rotation when
+# the all grid rotation changes, say - is reported, never counted and never
+# hidden: whether Revit couples any of them is not in the API reference, and
+# JL measures it.
+#
+# THE CUTS. "levels" is every level of THIS family - a conceptual mass has its
+# own, Level 1 and any added - and never a project's; "reference planes" every
+# reference plane in it. Revit's own CanBeIntersectionElement decides each
+# one, and one it refuses is skipped and named in `skipped`. "none" removes
+# every cut. Whether a cut's lines count among Revit's gridline numbers is not
+# known and the answer prints both counts for JL to settle.
+#
+# NOT HERE: the surface's pattern or panel family (its type - DIVIDE_FAMILY_SURFACE
+# sets it at creation, and nothing changes it afterwards yet), the belt
+# measurement of a curved surface, and a divided surface in an in-place mass
+# of a project, which is refused like any project.
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  CHANGES A DIVIDED SURFACE THAT IS ALREADY THERE, in a mass or pattern-based
+  family open in the Family Editor - the settings its Properties list under U
+  Grid and V Grid and for the surface itself. DIVIDE_FAMILY_SURFACE divides a
+  face; this changes the divided surface afterwards, without dividing it again.
+
+  **ONE DIVIDED SURFACE**, by the id DIVIDE_FAMILY_SURFACE or
+  REPORT_DIVIDED_SURFACES gave, or the only one in the family when none is
+  named. With several and none named, nothing changes and their ids are listed.
+
+  **THE REQUEST IS A SHORT TABLE**, semicolons between - "all rotation=45" to
+  rotate the grid 45 degrees for a diamond pattern, "u layout=number; u
+  number=20" for 20 divisions, "v layout=distance; v distance=1500", "u
+  offset=750", "u justification=center", "border=empty" for empty border tiles,
+  "flip=yes" to flip the panels, "intersect=levels" to divide the surface at
+  every level. Only what is named changes; every other setting is left as it was.
+
+  Each grid takes a layout (none, number, distance, maximum spacing, minimum
+  spacing), its number or distance, a justification (center, beginning, end),
+  a rotation and an offset. The surface takes all rotation, border (empty,
+  partial, overhanging), component rotation (0, 90, 180 or 270), flip, mirror,
+  u indent and v indent, and intersect - levels, reference planes, or levels
+  and planes by name - which cuts the surface where each crosses it; "none"
+  removes every cut.
+
+  **MILLIMETRES AND DEGREES.** A distance is 100 to 100,000 mm and an offset 0
+  or 10 to 100,000 mm either way, so 1.5 typed as metres is refused rather than
+  laid out every 1.5 mm. An angle is -360 to 360 degrees.
+
+  **ALL OR NOTHING.** After the rebuild every setting written is checked
+  against Revit; one that does not hold as written fails the call and nothing
+  is kept. A level or plane Revit says cannot cut the surface is skipped and
+  named.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The divided surface's UniqueId (DIVIDE_FAMILY_SURFACE's surfaceId) or the
+    # id REPORT_DIVIDED_SURFACES prints. Left out: "only", the one divided
+    # surface in the family - refused, with every id, when there are several.
+    - name: dividedSurface
+      type: string
+      source: request
+      optional: true
+      absent: only
+    # The settings to change, SEMICOLONS between - "all rotation=45; u
+    # layout=number; u number=20". Keys: u layout, u number, u distance (or u
+    # spacing), u justification, u rotation, u offset, u indent, the same for
+    # v, all rotation, border, component rotation, flip, mirror, intersect.
+    # Lengths in millimetres, angles in degrees. A key left out is left as it was.
+    - name: surfaceLayout
+      type: IDictionary<string, string>
+      source: request
+  provides:
+    - name: applied
+      # Settings this call CHANGED and Revit now holds as asked - counted off
+      # the read-back after the rebuild, never off the write. A cut is one
+      # setting however many levels it added.
+      role: result
+      type: int
+    - name: alreadyAsAsked
+      # Settings that already held what was asked, so nothing was written for
+      # them. The evidence it looked, never a change it made (D-52).
+      role: accounting
+      type: int
+    - name: readBack
+      # EVERY setting of the surface as Revit holds it after the call - each
+      # grid's parts and gridline counts before and now, the surface's own
+      # settings and its cuts - each marked asked, already so, or left as it
+      # was, and anything Revit moved unasked. A STRING, because a reply cuts a
+      # list to three items, and this is the evidence. Empty on a refusal.
+      role: accounting
+      type: string
+    - name: skipped
+      # Levels or planes named for a cut that Revit says cannot cut this
+      # surface, each with why. A finding, never a success.
+      role: accounting
+      type: IList<string>
+    - name: surfaceId
+      # The divided surface's UniqueId, when the call ran.
+      role: accounting
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE PATH FOR EVERY RELEASE, read rather than remembered. On 2026-10-28
+  tools/api-surface read the reference assemblies of all eight releases, 2020
+  through 2027, and found one signature on each: DividedSurface's
+  USpacingRule, VSpacingRule, AllGridRotation, BorderTile, ComponentRotation,
+  IsComponentFlipped, IsComponentMirrored, UPatternIndent, VPatternIndent,
+  NumberOfUGridlines, NumberOfVGridlines, Host, CanBeIntersectionElement,
+  AddIntersectionElement, GetAllIntersectionElements and
+  RemoveAllIntersectionElements; SpacingRule's Layout (get only), Number,
+  Distance, Justification, GridlinesRotation, Offset and SetLayoutNone,
+  SetLayoutFixedNumber, SetLayoutFixedDistance, SetLayoutMaximumSpacing and
+  SetLayoutMinimumSpacing, each (value, SpacingRuleJustification, rotation,
+  offset); Document.GetElement(string), Document.Regenerate and
+  FilteredElementCollector.WhereElementIsNotElementType. The enums read the
+  same on all eight - SpacingRuleLayout None, FixedDistance, FixedNumber,
+  MaximumSpacing, MinimumSpacing; SpacingRuleJustification Center, Beginning,
+  End; BorderTile Empty, Partial, Overhanging; ComponentRotation Angle0,
+  Angle90, Angle180, Angle270 - and every value is cast from its member, never
+  typed. No ElementId is constructed and none is read as a number: an id typed
+  in the request is compared with Element.Id.ToString() and UniqueId as text.
+
+# ROUTING - the same rows are in DIVIDE_FAMILY_SURFACE, REPORT_DIVIDED_SURFACES
+# and SET_CURTAIN_WALL_GRID.
+#
+#   "divide the surface of this mass into
+#    panels", "divide this face"           -> DIVIDE_FAMILY_SURFACE. A face not
+#                                             divided yet
+#   "change the divisions on the divided
+#    surface", "rotate the divided surface
+#    grid 45 degrees"                      -> here. A surface already divided;
+#                                             DIVIDE_FAMILY_SURFACE refuses a face
+#                                             divided once, with its surface's id
+#   "divide the surface at every level"   -> here, intersect=levels. The levels
+#                                             cut a surface already divided; with
+#                                             no divided surface yet this refuses
+#                                             and DIVIDE_FAMILY_SURFACE goes first.
+#                                             MEASURED 2026-10-29: the keyword route
+#                                             alone in tools/check-routing.py ranks
+#                                             REPORT_DIVIDED_SURFACES first since its
+#                                             version 2 reads the cuts; the host's
+#                                             lookup still serves this card by
+#                                             identity
+#   "set the divided surface spacing to
+#    1500 mm"                              -> DIVIDE_FAMILY_SURFACE declares it
+#                                             (PROVEN), for a face being divided.
+#                                             On a surface already divided that
+#                                             card refuses, and this one changes
+#                                             it: "v layout=distance; v
+#                                             distance=1500". MEASURED 2026-10-28
+#                                             on the cloud backend: the exact
+#                                             sentence still reaches that card by
+#                                             identity; by ranking this one is #1
+#                                             and that card #2. Which card the
+#                                             sentence belongs to is the owner's
+#                                             to settle - JL12
+#   "how is this surface divided", "what
+#    is the U grid spacing"                -> REPORT_DIVIDED_SURFACES. A question
+#                                             never lands on a write (D-86)
+#   "what is the U grid layout of the
+#    divided surface", "what are the border
+#    tiles on the divided surface"         -> REPORT_DIVIDED_SURFACES, which reads
+#                                             both. MEASURED 2026-10-28 on the cloud
+#                                             backend: a coin toss with this card by
+#                                             ranking (0.0325 each), so its purpose
+#                                             now names what it reads. With the
+#                                             lookup's question mode on (D-128) all
+#                                             four questions here reached
+#                                             REPORT_DIVIDED_SURFACES and this card
+#                                             was left out - measured the same day
+#                                             through heron_brain.lookup on a
+#                                             scratch store. JL12 asks again on the PC
+#   "is the divided surface flipped",
+#   "which levels cut the divided surface" -> REPORT_DIVIDED_SURFACES, which reads
+#                                             the flip and the cuts since its
+#                                             version 2 (2026-10-29), in readBack's
+#                                             words, and declares both questions.
+#                                             Before it, both ranked this card first
+#                                             on the cloud backend (2026-10-28);
+#                                             this writes, and a question must not
+#                                             land on it (D-86). MEASURED 2026-10-29
+#                                             through heron_brain.lookup on a scratch
+#                                             store: both reach that card by
+#                                             identity. "what cuts the divided
+#                                             surface", declared by nobody, still
+#                                             ranks this card first with question
+#                                             mode off. JL12 asks again on the PC
+#   "set the curtain wall grid spacing",
+#   "make the vertical grid fixed distance
+#    1500"                                 -> SET_CURTAIN_WALL_GRID. A curtain wall
+#                                             TYPE's grid, vertical and horizontal
+#   "change the U grid to 20 divisions",
+#   "set the V grid to 1500 spacing"       -> here. U Grid and V Grid are a divided
+#                                             surface's; a curtain wall's are
+#                                             vertical and horizontal
+#   "flip the panels on the divided
+#    surface"                              -> here, flip=yes - the surface's
+#                                             Component Flip. "flip this door" ->
+#                                             FLIP_ELEMENTS, a placed instance
+#   "fill the divided surface cells with
+#    the adaptive panel"                   -> PLACE_ADAPTIVE_COMPONENTS
+#   "change the panel family on the
+#    divided surface"                      -> NOT HERE, and nothing does yet. The
+#                                             surface's type; DIVIDE_FAMILY_SURFACE
+#                                             sets it only when it divides
+
+utterances:
+  - rotate the divided surface grid 45 degrees for a diamond pattern
+  - change the U grid to 20 divisions
+  - set the V grid to 1500 spacing
+  - divide the surface at every level
+  - make the border tiles empty
+  - offset the U grid 750
+  - flip the panels on the divided surface

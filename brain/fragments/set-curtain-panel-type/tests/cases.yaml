@@ -1,0 +1,175 @@
+# THE PROOF PLAN, written 2026-10-28 in a cloud session and NOT RUN. Nothing
+# here has touched a model (D-30); every case says what to arrange and what
+# must come back. The owner runs it - NEEDS-CHECKING Group JI is the whole plan,
+# and tools/jobs/set-curtain-panel-type.yaml is its positive and first negative
+# as a batch.
+#
+# THE MODEL: the owner's Project1 house, Revit 2020, DefaultMetric, SAVED as a
+# scratch copy "Heron JI Panels.rvt" in %TEMP%\heron-work\group-ji - never a
+# working model. A try-once run needs it saved.
+#
+# THE WALL IS BUILT, NOT FOUND, so nothing already placed can change. Every leg
+# makes its own, in the one transaction group `validate` rolls back - the same
+# four steps SET_CURTAIN_WALL_MULLIONS' proof uses, and one more:
+#   1. CREATE_WALL draws one 9000 mm wall, 3000 mm high, of the EXISTING type
+#      "Curtain Wall: Curtain Wall 1" - no grid lines in Revit's templates
+#   2. DUPLICATE_TYPE copies that wall's type as "HERON CW PANEL PROOF"
+#   3. CHANGE_ELEMENT_TYPE puts the wall on the copy
+#   4. SET_CURTAIN_WALL_GRID (PROVEN) gives the copy a grid: "vertical
+#      layout=fixed distance; vertical spacing=1500; horizontal layout=fixed
+#      distance; horizontal spacing=1500"
+#   5. this fragment, its `elements` the wall step 1 made
+#
+# NOTHING MAY BE SELECTED IN REVIT WHEN THE POSITIVE STARTS - press Esc. Steps
+# 2, 3 and 5 take the selection before they take what step 1 made.
+#
+# THE COUNTS ARE DERIVED, NOT REMEMBERED. 9000 mm at a fixed 1500: lines at
+# 1500, 3000, 4500, 6000 and 7500 from the start - 9000 is the wall's end, a
+# border - so 6 columns of 1500. 3000 mm high at a fixed 1500: one line at
+# 1500, so 2 rows of 1500. Both lengths and both midpoints are multiples of
+# 1500, so the lines are the same whatever justification the new wall has
+# (set-curtain-wall-grid's cases explain why that is the test). 6 x 2 = 12
+# panels.
+#
+# TWO NAMES ARE GUESSES UNTIL READ. That Curtain Wall 1's panel is "System
+# Panel: Glazed", and that "System Panel: Solid" is in Project1. `measured`'s
+# Before line reads the first; the second negative below prints every panel
+# type the model has, so run it first if unsure and correct `panelTypeName`
+# from its answer.
+#
+# READ `layout` BEFORE `changed`: it must say 2 rows and 6 columns, each 1500.
+
+positive:
+  - given: >
+      THE JOB FILE'S CASE. The arrangement above in Project1, Revit 2020, on
+      "Level 1": the wall from "0,60000,0" to "9000,60000,0" - well clear of
+      the house, look in plan first - height 3000, structural false;
+      panelTypeName "System Panel: Solid"; whichPanels "bottom row"
+    expect: >
+      chosen 6, changed 6, alreadyThatType 0, differs empty, skipped empty,
+      refused empty. layout "2 row(s), counted from the bottom - mm above its
+      lowest panel edge: 0-1500, 1500-3000" and "6 column(s)" 0-1500 to
+      7500-9000, and names which end column 1 is seen from outside. measured
+      Before "12 panel(s) - 12 x 'System Panel: Glazed'" and After "12 panel(s)
+      - 6 x 'System Panel: Glazed', 6 x 'System Panel: Solid'"; the class
+      Revit's API gives "System Panel: Solid" (PanelType expected); how many
+      of the six were pinned and how many came back with a new id - both
+      RECORDED, not predicted. No "THE COUNTS DO NOT ADD UP" finding
+
+  - given: >
+      the same arrangement; panelTypeName "Basic Wall: Generic - 200mm";
+      whichPanels "top row" - a basic wall as the solid infill, the way a
+      spandrel is usually modelled, and the one thing CHANGE_ELEMENT_TYPE is
+      not known to do
+    expect: >
+      chosen 6, changed 6; measured After "6 x 'Basic Wall: Generic - 200mm', 6
+      x 'System Panel: Glazed'"; and the number that came back with a new id -
+      RECORDED. In a 3D view the top row is a wall, not glass
+
+  - given: >
+      the same arrangement; panelTypeName "System Panel: Solid"; whichPanels
+      "column 2", then again "row 1 column 3"
+    expect: >
+      the first: chosen 2, changed 2 - one panel in each row, the second from
+      the start end. The second: chosen 1, changed 1. In an elevation from
+      outside, the changed column is the second from the end layout names
+
+  - given: >
+      FLOOR LINES. The arrangement with height 6000 instead of 3000: four rows
+      of 1500 (0-1500, 1500-3000, 3000-4500, 4500-6000). Read Level 2's
+      elevation in Project1 first; at 4000 mm, as DefaultMetric has it, it is
+      inside row 3. panelTypeName "System Panel: Solid"; whichPanels "floor
+      lines"
+    expect: >
+      layout's Floor lines name "'Level 2', 4000 mm above the wall's base: row
+      3" and every other level between 0 and 6000 the same way; chosen 6,
+      changed 6 for Level 2's row alone. A level at 3000 or 4500 would read "is
+      ON a grid line" and add nothing - that is the answer, not a fault
+
+  - given: >
+      A CURTAIN WALL DOOR. LOAD_FAMILY a curtain wall door family from Revit's
+      own library first (the modeller's call - Door-Curtain-Wall-Double-Glass
+      in the metric library, or whatever is installed); the arrangement;
+      panelTypeName that door type by its Properties name; whichPanels "row 1
+      column 3"
+    expect: >
+      changed 1; measured names the class Revit gives the door type - the
+      ASSUMPTION that a curtain wall door is a PanelType to the API is settled
+      by what it prints, either way. Then whichPanels "row 1 column 3" with
+      "System Panel: Glazed": changed 1 - the door goes back to glass
+
+  - given: the first case again on Revit 2024
+    expect: >
+      the same answer. One path serves every release, and 2024 is where an
+      ElementId became 64-bit; nothing here reads one as a number
+
+negative:
+  - given: >
+      THE JOB FILE'S NEGATIVE. The same arrangement and the SAME request, with
+      wallType "Basic Wall: Generic - 200mm" - so the wall drawn is a basic
+      wall, which SET_CURTAIN_WALL_GRID refuses as no curtain wall, and this is
+      handed a wall with no panels at all. A different element, never an empty
+      selection
+    expect: >
+      changed 0, chosen 0, differs empty, layout and measured empty. refused
+      "None of what is selected is a curtain wall", naming the wall, ending
+      "Nothing was changed"
+
+  - given: >
+      THE SAME WALL, BUT ONE OF ITS PANELS SELECTED INSTEAD OF IT - the bottom
+      left panel, picked in an elevation - with the job file's request. A
+      selection of panels is CHANGE_ELEMENT_TYPE's job, and a request meant for
+      it must not reach the whole wall here
+    expect: >
+      changed 0, chosen 0. refused "1 curtain panel(s) are selected, not a
+      curtain wall", naming the panel and its wall, and that
+      CHANGE_ELEMENT_TYPE changes just the panels picked; "Nothing was
+      changed". By hand - a selection of what a setup step made cannot be
+      arranged in a batch
+
+  - given: >
+      the arrangement; panelTypeName "HERON NO SUCH PANEL"; whichPanels "bottom
+      row"
+    expect: >
+      refused "No panel type called 'HERON NO SUCH PANEL' in this model",
+      followed by the model's curtain panel types, its door and window types
+      and its basic and stacked wall types, and that Heron does not load
+      families; changed 0, measured empty. Nothing is chosen for the modeller
+
+  - given: >
+      the arrangement; whichPanels "row 3", then "row 1 column 7", then
+      "diagonal"
+    expect: >
+      "Row 3 is not on curtain wall ... it has 2 row(s)"; "Column 7 is not on
+      ... it has 6 column(s)"; and the third refused listing the positions this
+      counts. changed 0 every time - a position the wall does not have is
+      refused, never rounded to the nearest
+
+  - given: >
+      the arrangement; panelTypeName "System Panel: Glazed" - what every panel
+      already shows; whichPanels "all"
+    expect: >
+      chosen 12, changed 0, alreadyThatType 12 - NOT a refusal: findings says
+      nothing changed and all 12 already showed it. A request already met
+      writes nothing and counts nothing as done
+
+  - given: >
+      the arrangement, run on a model where a second curtain wall is drawn
+      beside the first and BOTH are selected
+    expect: >
+      refused "The selection reaches 2 curtain walls", naming both ids;
+      changed 0. Rows and columns are counted on one wall
+
+  - given: >
+      panelTypeName "Curtain Wall: Curtain Wall 1" - a curtain wall type
+    expect: >
+      refused "is a curtain wall type. A curtain panel takes a curtain panel,
+      door or window type, or a basic or stacked wall type"; changed 0
+
+second_route:
+  - >
+      By hand on the same kept or copied wall: a Curtain Panel schedule with
+      Family and Type, filtered to that wall's Host, or Tab through its panels
+      in an elevation and read each in the Properties palette. Its count by
+      type must match `measured`'s After line, and the cells that changed must
+      be the row, column or floor line `layout` names

@@ -32,8 +32,9 @@ purpose: >
      wall on an arc: `arc MX,MY X,Y` in the points - a point it passes through,
      then where it ends - and a round one is two arcs. Never a run of short
      straight walls, which reads as flat facets close up. CREATE_WALL is DRAFT
-     at version 2, and until NEEDS-CHECKING Group HM proves it a change kept
-     from it is refused (D-117); how the panels sit on an arc is recorded there.
+     at version 3, and until NEEDS-CHECKING Group JG proves it a change kept
+     from it is refused (D-117); how the panels sit on an arc is recorded in
+     Group HM.
   4. SET_CURTAIN_WALL_GRID on the type - the vertical grid, the horizontal
      grid or both: a layout (none, fixed distance, maximum or minimum spacing)
      and a spacing in millimetres. A direction nobody mentioned is left alone.
@@ -46,10 +47,20 @@ purpose: >
      mm wall at a 1500 mm fixed distance has five vertical lines inside it. The
      calls not failing is not the proof; the lines on the wall are.
 
-  NOT YET: a FIXED NUMBER of divisions - the count lives on each wall, not on
-  the type, so the grid step refuses it and says so; one grid line added,
-  moved or removed by hand; the panel type, glazed or solid; an arched or
-  shaped head.
+  ON THIS WALL ONLY, after step 5 - the type is not touched by either:
+  - ADD_CURTAIN_GRID_LINES for a line the type's spacing does not give - a
+    transom at 1100, a mullion at 900 and 2700 - or "equal 6" to divide the
+    wall into six equal panels, with a mullion type on the new lines when
+    asked. DRAFT until NEEDS-CHECKING Group JJ proves it.
+  - SET_CURTAIN_PANEL_TYPE for panels by row, column or floor line -
+    spandrels in the bottom row, a louvre panel in column 2. One panel picked
+    on screen is CHANGE_ELEMENT_TYPE's. DRAFT until Group JI proves it.
+  REPORT_CURTAIN_ELEMENTS (step 6) is run after these too.
+
+  NOT YET: Fixed Number on the TYPE - the count lives on each wall, so the
+  grid step refuses it (ADD_CURTAIN_GRID_LINES "equal N" divides one wall
+  instead); one grid line moved or removed, or one segment cut; the TYPE's
+  own panel, glazed or solid; an arched or shaped head.
 
 # The words the modeller says when he wants a curtain wall.
 utterances:
@@ -68,6 +79,9 @@ needs:
   - CREATE_WALL
   - SET_CURTAIN_WALL_GRID
   - SET_CURTAIN_WALL_MULLIONS
+  # This wall only: extra lines or equal panels, and panels by position.
+  - ADD_CURTAIN_GRID_LINES
+  - SET_CURTAIN_PANEL_TYPE
   # The proof, on the wall itself. Never skipped.
   - REPORT_CURTAIN_ELEMENTS
 

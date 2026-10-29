@@ -159,7 +159,7 @@ asked which, one at a time.
 
 | The job | What makes it more than one call |
 |---|---|
-| ~~Curtain wall grid lines and mullions~~ | **Built 2026-09-25, DRAFT** - the grid and the mullions of a curtain wall TYPE, and a reader of both (§3 lesson 12). Still not built: a fixed NUMBER of divisions, which is a per-wall count, and one grid line placed by hand |
+| ~~Curtain wall grid lines and mullions~~ | **Built 2026-09-25, DRAFT** - the grid and the mullions of a curtain wall TYPE, and a reader of both (§3 lesson 12). Grid lines on ONE wall - by position, or in equal panels - written 2026-10-28 as `ADD_CURTAIN_GRID_LINES`, DRAFT, not yet run in Revit ([Group JJ](needs-checking/group-jj.md)). Still not built: the type's Fixed Number layout, which is a per-wall count |
 | A wall's profile - an arched head | |
 | A ground surface | Revit 2024 brought in the toposolid in place of the toposurface, so it is two routes across Heron's eight releases |
 | ~~Stairs~~ and railings | **Stairs built as `CREATE_STAIRS`, DRAFT** - recorded 2026-10-04 by [45](45-five-more-downloaded-skill-files.md), which found this line out of date. Railings are still not built. *As built (2026-10-18): railings too - `CREATE_RAILING`, `EDIT_RAILING`, `SET_RAILING_TYPE`, DRAFT (#502)* |

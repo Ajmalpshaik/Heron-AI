@@ -25,6 +25,20 @@ positive:
       exactly what version 1 built: four straight walls, endpoints as typed, and
       the same findings sentence word for word
 
+  - given: >
+      "0,80000,0; 6000,80000,0", 3000 mm high, baseOffset 1500 on a level at
+      elevation 0 (version 3, 5b-1345)
+    expect: >
+      ONE wall whose Base Offset reads 1500 in Properties and Unconnected Height
+      3000. Its bounding box runs from 1500 to 4500 mm in Z - the height measured
+      from the base, not from the level. The findings say "Base Offset +1500 mm
+      ... from +1500 to +4500 mm" and "Read back off the walls: 1 of 1 as asked"
+
+  - given: the same run with baseOffset -300
+    expect: >
+      the wall starts 300 mm below the level: Base Offset -300, Z from -300 to
+      2700 mm
+
 negative:
   - given: a model set out to a survey datum, where Elevation and ProjectElevation differ
     expect: >
@@ -57,6 +71,20 @@ negative:
       counted in `refused`, the rest of the run still built. Not an exception
       that loses the walls that worked
 
+  - given: >
+      the same two points with baseOffset LEFT OUT, and again with baseOffset 0
+      (version 3, 5b-1345)
+    expect: >
+      version 2's wall exactly: Base Offset 0, Z from 0 to 3000 mm, and the
+      findings version 2 gave word for word - no "Base Offset" line. A base
+      at 1500, or any offset not typed, is a FAIL
+
+  - given: baseOffset 200000000 - 200 km, past Revit's own limit of 30000 feet
+    expect: >
+      refused before anything is built - `created` empty, `refused` 1, and the
+      findings say a base offset is millimetres above the level, that Revit
+      takes none past 9144000, and "Nothing was built"
+
   - given: the wall's top asked to reach the level above
     expect: >
       NOT what this does. The height is unconnected, and attaching it is a
@@ -64,5 +92,6 @@ negative:
       in section is the failure this note exists for
 
 second_route:
+  - For a base offset, the wall's Base Offset and Unconnected Height in Properties, and READ_ELEMENT_LEVEL's offsetMm and REPORT_BOUNDING_BOX's lowest corner on the same wall
   - Revit's own Architecture then Wall between the same two points, and the two compared in a section
   - For an arc, Revit's own Wall with Start-End-Radius Arc through the same three points, and the two Lengths compared

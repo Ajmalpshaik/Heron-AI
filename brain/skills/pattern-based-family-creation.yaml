@@ -57,7 +57,10 @@ purpose: >
      Family Editor the modeller drags one point and the form must bend with it
      (FLEX_FAMILY changes parameters, not points); then LOAD_FAMILY puts the
      panel into a test mass and DIVIDE_FAMILY_SURFACE divides a face of it with
-     this panel as the pattern - every cell takes one.
+     this panel as the pattern - every cell takes one. SET_DIVIDED_SURFACE_LAYOUT
+     then changes that surface without dividing it again - rotates the grid 45
+     degrees for a diamond pattern, offsets it, cuts it at every level, or
+     empties the border tiles.
 
   AN INSET FRAME OR AN OPENING THAT SCALES WITH THE CELL: PLACE_ADAPTIVE_POINTS
   "on <edge line id> at 0.2" hosts reference points on the template's edges,
@@ -85,6 +88,9 @@ needs:
   - SET_FAMILY_FORM_MATERIAL
   - REPORT_FAMILY_FORMS
   - DIVIDE_FAMILY_SURFACE
+  # Step 5's surface, changed after it is divided - its grid rotated, offset,
+  # cut at the levels, its border tiles.
+  - SET_DIVIDED_SURFACE_LAYOUT
   - LOAD_FAMILY
 
 preconditions:

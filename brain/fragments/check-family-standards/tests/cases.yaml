@@ -73,7 +73,33 @@ positive:
       loaded type exposes OmniClass Number at all: a "not checked - no value
       to read" there is the answer to that question, not a pass
 
+  # VERSION 4 - a duct or pipe fitting's own rules (row 5b-1346)
+  - given: >
+      a scratch Pipe Fittings family, Part Type Elbow, two pipe end faces each
+      with a pipe connector sized by an instance Nominal Diameter, system
+      Fitting, the one pointing +X primary, and both connectors' Angle driven
+      by an instance parameter Angle
+    expect: >
+      no FAIL and no WARN from the version 4 checks: PASS "Part Type Elbow with
+      2 pipe connector(s)", each connector "is Fitting", the +X one "is primary
+      and lies on the X axis", each Angle "driven by the instance parameter
+      \"Angle\""
+
+  - given: the same family with a third pipe connector added on a side face, in the same rolled-back run
+    expect: >
+      FAIL "Part Type is Elbow but the family has 3 pipe connector(s) - that
+      part has 2", FIX naming REMOVE_FAMILY_CONNECTOR
+
 negative:
+  - given: >
+      VERSION 4. The same scratch elbow with its Angle switched to a TYPE
+      parameter, and one connector's System Classification set to Global
+    expect: >
+      FAIL on that Angle naming the type parameter and the switch; WARN that
+      connector "is Global, not Fitting". And a Pipe ACCESSORIES family with
+      two Global connectors gets none of the version 4 rows - they are a
+      fitting's, never an accessory's
+
   - given: a family type that exists in the project but is placed NOWHERE
     expect: >
       counted in notChecked, with the reason. THIS IS THE FIRST CASE TO RUN. A

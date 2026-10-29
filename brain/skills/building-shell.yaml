@@ -67,9 +67,14 @@ purpose: >
   2. CREATE_GRIDS (PROVEN) when the plan is set out on bays - the lines the
      walls are drawn to, so a wall position is read off the plan rather than
      worked out.
-  3. CREATE_WALL (PROVEN, version 2 - signed on 2026-10-19 on Revit 2020,
-     NEEDS-CHECKING Group HM), one run of points per wall line, on its level,
-     at the height from that level to the one above. A CURVED wall line goes
+  3. CREATE_WALL (DRAFT at version 3 - version 2 was signed on 2026-10-19 on
+     Revit 2020, NEEDS-CHECKING Group HM; until Group JG signs version 3, a
+     wall is kept only through its one try-once, D-117), one run of points per
+     wall line, on its level, at the height from that level to the one above.
+     A wall that starts part-way up a storey - a crown post, a parapet on a
+     terrace slab - takes baseOffset, millimetres above its level, and its
+     height is measured from there. Never drawn on the level and moved: a wall
+     does not move up off its level. A CURVED wall line goes
      in the same run: `arc MX,MY X,Y` makes the next wall an arc through MX,MY
      ending at X,Y, and a round wall is two arcs - never a polygon of short
      walls, which reads as flat facets close up. An ellipse is not an arc:
