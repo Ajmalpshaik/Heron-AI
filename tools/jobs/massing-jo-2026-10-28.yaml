@@ -1,32 +1,32 @@
-# NEEDS-CHECKING Group JN - the massing tools built 2026-10-28: REPORT_MASSES,
+# NEEDS-CHECKING Group JO - the massing tools built 2026-10-28: REPORT_MASSES,
 # SET_MASS_FLOOR_USAGE, REMOVE_MASS_FLOORS and CREATE_WALLS_BY_FACE.
 #
-#     python tools/batch-prove.py tools/jobs/massing-jn-2026-10-28.yaml --dry-run
-#     python tools/batch-prove.py tools/jobs/massing-jn-2026-10-28.yaml
+#     python tools/batch-prove.py tools/jobs/massing-jo-2026-10-28.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/massing-jo-2026-10-28.yaml
 #
 # ONE SCRATCH PROJECT, OPEN IN REVIT 2020, never a working model:
-# %TEMP%\heron-work\group-jn\JN Massing.rvt, a new project from the Metric
-# architectural template, arranged by hand as JN1 in
-# docs/needs-checking/group-jn.md says - Levels 1 to 4 at 0, 3000, 6000 and
+# %TEMP%\heron-work\group-jo\JO Massing.rvt, a new project from the Metric
+# architectural template, arranged by hand as JO1 in
+# docs/needs-checking/group-jo.md says - Levels 1 to 4 at 0, 3000, 6000 and
 # 9000 mm; mass A a 30 x 20 m box 12 m tall at the origin with mass floors at
 # Levels 1 to 4; mass B a 10 x 10 m box 6 m tall overlapping A by 5 x 10 m in
 # plan, NOT joined, with no mass floors; one Generic - 200mm wall elsewhere.
 #
-# The order matters: the usage run reads the floors JN1 made, the walls run
+# The order matters: the usage run reads the floors JO1 made, the walls run
 # needs mass A with no walls on it yet, and every write is rolled back, so each
-# job starts from JN1's arrangement.
+# job starts from JO1's arrangement.
 #
 # select-by-categories takes the whole model with no inViewOnly. It is the
 # arrangement, not what is judged - the answer's binding note must read
 # "elements from select-by-categories (2)" on the positive legs and "(1)" on
 # the negatives, or the run proves nothing.
 
-model: JN Massing (scratch project, Metric architectural template), Revit 2020
+model: JO Massing (scratch project, Metric architectural template), Revit 2020
 
 jobs:
   - fragment: report-masses
     expect: massCount
-    in: JN Massing
+    in: JO Massing
     set: {siteArea: "4500", withOutlines: true}
     negative-set: {masses: "NoSuchFamily"}
     note: >
@@ -40,7 +40,7 @@ jobs:
     expect: changed
     write: true                        # rolled back
     keep-chain: true
-    in: JN Massing
+    in: JO Massing
     setup: [select-by-categories]
     setup-set: {categories: Mass}
     negative-setup-set: {categories: Walls}
@@ -55,7 +55,7 @@ jobs:
     expect: removed
     write: true                        # rolled back
     keep-chain: true
-    in: JN Massing
+    in: JO Massing
     setup: [select-by-categories]
     setup-set: {categories: Mass}
     negative-setup-set: {categories: Walls}
@@ -69,7 +69,7 @@ jobs:
     expect: created
     write: true                        # rolled back
     keep-chain: true
-    in: JN Massing
+    in: JO Massing
     setup: [select-by-categories]
     setup-set: {categories: Mass}
     negative-setup-set: {categories: Walls}

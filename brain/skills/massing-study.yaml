@@ -82,7 +82,7 @@ purpose: >
      Floor Area, Floor Perimeter, Exterior Surface Area and Floor Volume;
      SET_SCHEDULE_SORT_GROUP (PROVEN) by Usage then Level, and
      SET_SCHEDULE_FIELD_TOTALS (PROVEN) on Floor Area. That a Mass Floor
-     schedule is made this way is owed in NEEDS-CHECKING Group JN.
+     schedule is made this way is owed in NEEDS-CHECKING Group JO.
   10. REVISE AND READ AGAIN: a block changed in its family is reloaded with
      LOAD_FAMILY reload=true; the mass floors follow the new shape. Run
      step 8 again after every change - a number reported before a change
@@ -153,4 +153,4 @@ note: >
   from Group JM. The Revit facts are read off
   the API reference assemblies for 2020 to 2027 and Autodesk Help on mass
   floors and joined masses. Every step is DRAFT until it has been run on a
-  real model with a negative case (D-30) - NEEDS-CHECKING Group JN.
+  real model with a negative case (D-30) - NEEDS-CHECKING Group JO.

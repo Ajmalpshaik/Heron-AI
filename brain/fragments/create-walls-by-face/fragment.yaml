@@ -53,7 +53,7 @@ risk: MODIFY
 #
 # A MASS ALREADY CARRYING WALLS BY FACE is skipped by name, read off
 # MassInstanceUtils.GetJoinedElementIds, so a second run never doubles the
-# skin. That the list holds walls by face is NEEDS-CHECKING JN11.
+# skin. That the list holds walls by face is NEEDS-CHECKING JO11.
 #
 # READ BACK, ALL OR NOTHING: every wall made is read again - its type and
 # its area; one that fails takes every wall made in the call back out.

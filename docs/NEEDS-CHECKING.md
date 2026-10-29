@@ -1062,9 +1062,13 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jm.md`](needs-checking/group-jm.md)
 
-## Group JN - a massing study from block to building: `REPORT_MASSES`, `SET_MASS_FLOOR_USAGE`, `REMOVE_MASS_FLOORS`, `CREATE_WALLS_BY_FACE` and the `massing-study` and `mass-family-creation` methods (2026-10-28)
+## Group JN - a duct or pipe fitting's own rules checked before it is loaded: `CHECK_FAMILY_STANDARDS` version 4 (2026-10-28)
 
 **Its own file:** [`needs-checking/group-jn.md`](needs-checking/group-jn.md)
+
+## Group JO - a massing study from block to building: `REPORT_MASSES`, `SET_MASS_FLOOR_USAGE`, `REMOVE_MASS_FLOORS`, `CREATE_WALLS_BY_FACE` and the `massing-study` and `mass-family-creation` methods (2026-10-28)
+
+**Its own file:** [`needs-checking/group-jo.md`](needs-checking/group-jo.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
