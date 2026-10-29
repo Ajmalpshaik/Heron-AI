@@ -1,0 +1,134 @@
+# THE PROOF PLAN, written 2026-10-28 and NOT RUN. Nothing here has touched a
+# model (D-30). NEEDS-CHECKING Group JL is the plan in rows; the job file
+# tools/jobs/set-divided-surface-layout.yaml is the first positive and the
+# first negative as a batch.
+#
+# THE ARRANGEMENT IS KEPT, NOT MADE BY THE RUN. A family from the metric Mass
+# template, saved as "Heron JL Divided Surface Test" and left open in the
+# Family Editor, holding - made by hand or through Heron as usual and KEPT:
+#   - Level 2 at 3000 mm and Level 3 at 6000 mm, added in an elevation, beside
+#     the template's own Level 1
+#   - a box made by CREATE_CONCEPTUAL_FORM: a 6000 x 3000 closed profile of
+#     reference lines on Level 1, pushed 9000 mm up - DIVIDE_FAMILY_SURFACE's
+#     own case
+#   - its front face divided by DIVIDE_FAMILY_SURFACE: uGrid "6", vGrid
+#     "3000 mm", pattern "" - so U is Number 6 and V Fixed Distance 3000 mm,
+#     both centred, unrotated, with no offset, and no cuts
+# Exactly ONE divided surface, so `dividedSurface` can be left out ("only").
+# SAVE IT: try-once refuses a model with unsaved changes (D-121).
+#
+# WHICH WAY U RUNS ON THE FRONT FACE IS NOT KNOWN, nor whether Revit's Number
+# counts divisions or the lines between them (BV21), so no gridline count is
+# predicted here: each is RECORDED from readBack, before and now. What is
+# judged is that every setting reads back as asked and every other one as it
+# was - and, by eye, that the grid looks the way the setting says.
+
+positive:
+  - given: >
+      THE JOB FILE'S CASE, and the try-once run. The arrangement above;
+      dividedSurface left out; surfaceLayout "u layout=distance; u
+      distance=1500; u offset=750; v layout=number; v number=8; all
+      rotation=45; border=empty; flip=yes; intersect=Level 2, Level 3"
+    expect: >
+      applied 9 - or 8 with alreadyAsAsked 1, if the template's border tiles
+      were already Empty; skipped empty, refused empty, surfaceId the
+      surface's UniqueId. readBack "U grid: layout Fixed Distance (asked, was
+      Fixed Number), distance 1500.0 mm (asked, was none), justification
+      Center, rotation 0 degrees, offset 750.0 mm (asked, was 0.0 mm)", "V
+      grid: layout Fixed Number (asked, was Fixed Distance), number 8 (asked,
+      was none)", the V justification, rotation and offset as they were, and
+      "surface: all grid rotation 45 degrees (asked, was 0 degrees), border
+      tiles Empty, component flip yes (asked, was no)", "cut by level Level 2,
+      level Level 3 (asked: 2 added)". RECORD each grid's gridline counts,
+      before and now, and whether the two level cuts are counted in either.
+      LOOKED AT in the Family Editor: the grid runs at 45 degrees - diamonds;
+      the cells along the border are empty; lines run across the face at
+      3000 and 6000 mm; the surface's Properties read the same as readBack.
+      No finding says Revit moved what was NOT asked - if one does, RECORD it
+      (JL10)
+
+  - given: the arrangement; surfaceLayout "intersect=levels"
+    expect: >
+      applied 1; readBack's cuts name Level 2 and Level 3, and Level 1 -
+      which lies on the face's bottom edge - either among them or in skipped
+      with Revit's reason. RECORD which: CanBeIntersectionElement is Revit's
+      judgement, not this card's
+
+  - given: the arrangement; surfaceLayout "v layout=maximum spacing"
+    expect: >
+      applied 1; readBack "V grid: layout Maximum Spacing (asked, was Fixed
+      Distance), distance 3000.0 mm" with NO "asked" beside the distance - the
+      one the grid held, handed back - and the U grid exactly as before
+
+  - given: the arrangement; surfaceLayout "u justification=beginning; u rotation=30"
+    expect: >
+      applied 2; U layout Fixed Number and number 6 left as they were; U
+      justification Beginning and rotation 30 degrees, asked; the V grid and
+      the surface's settings as before
+
+  - given: >
+      the arrangement with a tile pattern on the surface - Rhomboid, picked by
+      hand in the Type Selector, so the component settings show; surfaceLayout
+      "component rotation=90; mirror=yes; u indent=1"
+    expect: >
+      applied 3; readBack "component rotation 90 degrees (asked, was 0
+      degrees)", "component mirror yes (asked, was no)", "U indent 1 (asked,
+      was 0)"; both grids as before. If Revit holds an indent other than the
+      one written, the call fails and nothing is kept - RECORD what it says:
+      whether an indent is bounded by the pattern is not in the API reference
+
+  - given: the job file's case again on Revit 2020
+    expect: >
+      the same answer. One path serves every release, and this is the release
+      at the other end of the range
+
+negative:
+  - given: >
+      THE JOB FILE'S NEGATIVE. The same arrangement and the SAME surfaceLayout
+      as the first positive, with dividedSurface the BOX FORM's id - the form
+      the surface is on, which must NOT be touched, not an empty request
+    expect: >
+      applied 0, readBack empty, surfaceId empty. refused begins with the id
+      and says it is the form the surface is on, "not the divided surface
+      itself", naming the divided surface on it by its id; ending "Nothing was
+      changed". The surface's Properties read exactly as before
+
+  - given: a project in front instead of the family, the same surfaceLayout
+    expect: notAFamily true, applied 0, refused names the project - nothing changed
+
+  - given: the arrangement; surfaceLayout "u distance=1.5" with "u layout=distance"
+    expect: >
+      refused as outside 100 to 100000 mm, with "1.5 m is 1500" as the hint;
+      applied 0. A number in metres, caught before the surface is touched
+
+  - given: the arrangement; surfaceLayout "v number=20" alone - V is Fixed Distance
+    expect: >
+      refused "A V number does nothing while the V layout is Fixed Distance"
+      naming "v layout=number"; applied 0
+
+  - given: >
+      the arrangement with the box's BACK face divided too, so the family
+      holds two; dividedSurface left out
+    expect: >
+      refused "This family has 2 divided surfaces and none was named",
+      listing both ids; applied 0, neither surface changed
+
+  - given: the arrangement; surfaceLayout "intersect=Level 9"
+    expect: >
+      refused - "Level 9" is not a level, a reference plane or an element id
+      here - naming Level 1, Level 2 and Level 3; applied 0
+
+  - given: the arrangement; surfaceLayout "u layot=number", and separately an empty table
+    expect: >
+      the first refused naming the settings this changes; the second refused
+      "Nothing was named to change". applied 0 both times
+
+second_route:
+  - >
+      In the Family Editor, select the divided surface: Properties lists U
+      Grid and V Grid - Layout, Number or Distance, Justification, Grid
+      Rotation, Offset - and All Grid Rotation, Border Tile, Component
+      Rotation, Component Mirror, Component Flip and the indents, the same
+      values readBack prints; Intersects, on the ribbon, shows the levels
+      cutting it. Read by a person, so it is recorded on the JL row rather
+      than as a run

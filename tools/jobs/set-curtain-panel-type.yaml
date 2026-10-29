@@ -1,0 +1,85 @@
+# NEEDS-CHECKING Group JI - SET_CURTAIN_PANEL_TYPE, DRAFT since 2026-10-28.
+# docs/needs-checking/group-ji.md is the whole plan; this file is its JI2 and
+# JI3, the rolled-back positive and the first negative.
+#
+#     python tools/batch-prove.py tools/jobs/set-curtain-panel-type.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-curtain-panel-type.yaml --session <pid>
+#
+# THE MODEL is Group JI's rig (JI0), never a working model: the owner's
+# Project1 house (Revit 2020, DefaultMetric) SAVED as "Heron JI Panels.rvt" in
+# %TEMP%\heron-work\group-ji. NOTHING SELECTED when it starts - press Esc:
+# duplicate-type, change-element-type and this fragment take the selection
+# before they take the wall create-wall made.
+#
+# THE WALL IS BUILT INSIDE THE RUN AND ROLLED BACK WITH IT:
+#   create-wall            one 9000 mm wall, 3000 mm high, of Curtain Wall 1 -
+#                          no grid lines in Revit's templates
+#   duplicate-type         copies its type as "HERON CW PANEL PROOF"
+#   change-element-type    puts the wall on the copy
+#   set-curtain-wall-grid  a fixed 1500 both ways on the copy (PROVEN): six
+#                          columns of 1500 and two rows of 1500 - 12 panels,
+#                          derived in brain/fragments/set-curtain-panel-type/
+#                          tests/cases.yaml
+#   set-curtain-panel-type the bottom row to "System Panel: Solid"
+#
+# "System Panel: Solid" IS A GUESS UNTIL READ. JI1 (by hand, or the cases'
+# second negative) prints every panel type Project1 has; correct
+# panelTypeName from its answer before the batch.
+#
+# THE NEGATIVE IS A DIFFERENT ELEMENT, never an empty selection: the same
+# request with a BASIC wall drawn, so set-curtain-wall-grid refuses it as no
+# curtain wall and this fragment is handed a wall with no panels at all.
+#
+# risk: MODIFY. `validate` sends no `apply`, so all five steps run inside one
+# TransactionGroup and are rolled back (D-55). Nothing is kept. The kept run
+# is JI1's try-once, on the owner's word only.
+
+model: Heron JI Panels (scratch copy of Project1), Revit 2020
+
+defaults:
+  write: true
+  setup:
+    - create-wall
+    - duplicate-type
+    - change-element-type
+    - set-curtain-wall-grid
+  set:
+    level: "Level 1"
+    wallType: "Curtain Wall: Curtain Wall 1"
+    points: "0,60000,0; 9000,60000,0"
+    height: "3000"
+    structural: "false"
+    newTypeName: "HERON CW PANEL PROOF"
+    newTypeId: "HERON CW PANEL PROOF"
+    curtainWallType: "HERON CW PANEL PROOF"
+    grid: "vertical layout=fixed distance; vertical spacing=1500; horizontal layout=fixed distance; horizontal spacing=1500"
+    panelTypeName: "System Panel: Solid"
+    whichPanels: "bottom row"
+  negative-set:
+    # THE SAME ARRANGEMENT AND THE SAME REQUEST, ON A BASIC WALL - which has
+    # no panels for this to change.
+    level: "Level 1"
+    wallType: "Basic Wall: Generic - 200mm"
+    points: "0,60000,0; 9000,60000,0"
+    height: "3000"
+    structural: "false"
+    newTypeName: "HERON CW PANEL PROOF"
+    newTypeId: "HERON CW PANEL PROOF"
+    curtainWallType: "HERON CW PANEL PROOF"
+    grid: "vertical layout=fixed distance; vertical spacing=1500; horizontal layout=fixed distance; horizontal spacing=1500"
+    panelTypeName: "System Panel: Solid"
+    whichPanels: "bottom row"
+
+jobs:
+  - fragment: set-curtain-panel-type
+    # `changed` is the work: panels that SHOW the new type, read off the
+    # element Revit hands back. `differs` must stay empty.
+    expect: changed
+    note: >
+      Read layout first: 2 rows (0-1500, 1500-3000) and 6 columns, each 1500.
+      Positive: chosen 6, changed 6, differs and skipped empty; measured Before
+      12 x 'System Panel: Glazed' (the copy's own panel - read, not assumed),
+      After 6 x Glazed and 6 x 'System Panel: Solid', the class Revit gives
+      the type, and the pinned and new-id counts RECORDED. Negative: changed 0,
+      refused "None of what is selected is a curtain wall", layout and
+      measured empty.

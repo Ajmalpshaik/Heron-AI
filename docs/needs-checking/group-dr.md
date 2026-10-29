@@ -27,6 +27,13 @@ on): Revit's own unused-element list, handed on to `DELETE_ELEMENTS`. **Widened,
 **Not built, and recorded in the plan:** grading as Revit's graded region (no API; excavation is the nearest);
 parts visibility in a view waits for the owner's yes to widen PROVEN `SET_VIEW_PROPERTIES`.
 
+**Widened 2026-10-29, still DRAFT:** `REPORT_DIVIDED_SURFACES` version 2 reads each divided surface's all grid
+rotation, component rotation, flip and mirror, both pattern indents, and the levels, reference planes or other
+elements that cut it - what [`SET_DIVIDED_SURFACE_LAYOUT`](group-jl.md) writes, in the words its readBack uses.
+Rows **DR5a** and **DR5b**, on Group JL's rig. Each member was read with `tools/api-surface` on all eight
+releases and the card compiles on each; nothing of version 2 has run in Revit. By hand, like DR5: the card's one
+value, withNodes, cannot make its negative, so it has no job file.
+
 **Measured without Revit, 2026-10-13.** Every Revit API member was read off `RevitAPI.xml` for all eight
 releases; each fragment compiles on every release it declares (all eight run), the author gate passes for each,
 and the job file reads `8 WOULD RUN` under `batch-prove --dry-run`. **Nothing below has run in Revit.**
@@ -41,6 +48,8 @@ connected, and `< /dev/null` on every line.
 | **DR3** | `DIMENSION_ELEMENT_FACES` by hand: the window wall in an elevation, vertical; the curtain wall in a plan, along; a floor in a section, across | base, sill, head, top; the grid spacing; the floor's layers - **and whether a compound wall's layers come as separate faces**, which only this run can say |
 | **DR4** | `EDIT_SLAB_SHAPE` follow: a floor beside the sloping toposolid, shapeMm its id and 1000 | most points within 5 mm of the terrain, the rest named flat; then reset puts it back |
 | **DR5** | A mass family with one face divided 10 x 6 and a line divided into 8: `REPORT_DIVIDED_SURFACES` withNodes true, then `PLACE_ADAPTIVE_COMPONENTS` of a two-point family on the path's nodes | the grids and node positions read; seven beams node to node - **and whether the path's geometry gives its nodes as points**, which decides the onNodesOf route |
+| **DR5a** | *Version 2: a surface's own settings and its cuts.* [Group JL](group-jl.md)'s rig after JL1 was **kept** - its one divided surface flipped, all grid rotation 45, border tiles Empty, cut by *Level 2* and *Level 3*: `REPORT_DIVIDED_SURFACES`, withNodes false, read only. Then the surface selected, by eye | the surface's line reads *border tiles Empty, all grid rotation 45 degrees*, *component rotation 0 degrees*, *component flip yes*, *component mirror no*, a U and a V indent, and *cut by level Level 2, level Level 3* - JL1's `readBack` words; Properties and Intersects on the ribbon show the same. **Whether the component settings and indents read on a surface with no tile pattern is not known**: a *not read (...)* is recorded with Revit's reason, never taken as a no. Where the two questions are routed is [JL12](group-jl.md)'s |
+| **DR5b** | *Negative.* The same rig with the box's **back** face divided too (JL7's arrangement) after JL1 - that surface never flipped, rotated or cut; *Level 1* never added as a cut to either | two surface lines. The back one reads *all grid rotation 0 degrees*, *component flip no* and *cut by none* - nothing of the front surface's carried onto it - and the front one as in DR5a; *Level 1* named on neither line. The family unchanged afterwards |
 | **DR6** | `EDIT_RAILING` with a new path and host none; `SET_RAILING_TYPE` handrailHeightMm on a type whose handrail type another railing type shares | the new path's length; the report naming the other railing type that changed with it |
 | **DR7** | `CREATE_TOPOSOLID` with an empty boundary and `cadImport` a survey DWG holding 3D polylines, `cadLayers` its levels layer | a toposolid through the drawing's heights, the outline drawn by Revit round them |
 | **DR8** | **Revit 2025**: `ATTACH_WALLS` base on walls standing on the sloping toposolid | each base attached to the toposolid and following it - or Revit's refusal named |

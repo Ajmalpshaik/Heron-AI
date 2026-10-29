@@ -1,0 +1,122 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# THE PROOF PLAN, written 2026-10-28 in a cloud session and NOT RUN - nothing
+# here has met a Revit. NEEDS-CHECKING Group JM is the whole plan;
+# tools/jobs/create-curtain-system.yaml is its rolled-back positive and the
+# first negative as a batch.
+#
+# THE RIG (JM0), BY HAND, on a SAVED scratch copy of the modeller's Project1
+# (Revit 2020, DefaultMetric) - never a working model - on Level 1 at
+# elevation 0, nothing selected:
+#   - an in-place MASS whose family is named "Heron JM Tower", Mark "Tower A":
+#     a rectangle from (0, 30000) to (18000, 42000) mm extruded 30000 mm up.
+#     Four upright faces - two 18000 x 30000, two 12000 x 30000 - a top and
+#     an underside, each 18000 x 12000
+#   - an in-place GENERIC MODEL named "Heron JM Box": a 6000 mm cube from
+#     (30000, 30000, 0) to (36000, 36000, 6000)
+#   - a curtain system type "Heron JM 1500", duplicated in Type Properties
+#     from the one the model has, with Grid 1 and Grid 2 both Layout Fixed
+#     Distance, Spacing 1500, and every mullion None
+#   - one wall, "Basic Wall: Generic - 200mm", 5000 mm long well clear of
+#     both, Mark "Heron JM Wall" - the NEGATIVE's element
+#
+# THE NUMBERS BELOW ARE DERIVED, NOT REMEMBERED. 1500 divides every face
+# length (18000, 12000, 30000, 6000), every face's half-length (9000, 6000,
+# 15000, 3000) and every corner's distance from the project origin (0, 30000,
+# 36000, 42000), so the counts hold whether Revit lays a grid from a face's
+# edge, its centre or the origin. An 18000 mm run at 1500 is 12 panels and 11
+# lines between them; 12000 is 8 and 7; 30000 is 20 and 19; 6000 is 4 and 3.
+# WHICH of a face's two directions Revit calls U is not known, so each grid
+# is written as the pair of counts; the run records which is which.
+
+positive:
+  - given: >
+      THE JOB FILE'S CASE (JM2). host "Heron JM Tower", curtainSystemType
+      "Heron JM 1500", faces left out - so "vertical", the card's one default
+    expect: >
+      created 1, facesAsked 4, facesTaken 4, alreadyNear 0, refused null.
+      readBack names the one curtain system, of "<the family Revit gives
+      it> : Heron JM 1500", on Mass <its id> "Heron JM Tower : Heron JM
+      Tower", Mark "Tower A" - 4 faces asked, 1800 m2 (its faces: 4
+      vertical, 1 top, 1 underside) - with four grids: two reading 11 and 19
+      lines and 240 panels,
+      two reading 7 and 19 lines and 160 panels - 800 panels in all - and
+      mullions 0 on every grid. The top and the underside carry nothing.
+      RECORD which of U and V held the upright lines
+
+  - given: >
+      JM1, THE ONE KEPT RUN (D-119): the same values through try-once, on the
+      owner's yes, with a 3D view showing the tower in front
+    expect: >
+      the same readBack; in the view, glass on the four sides and none on the
+      top; the owner chooses Keep or Discard. One Ctrl+Z takes it all back
+      (Golden Rule 16)
+
+  - given: host "Heron JM Tower", curtainSystemType "Heron JM 1500", faces "top" (JM3)
+    expect: >
+      created 1, facesAsked 1, facesTaken 1; one grid reading 11 and 7 lines
+      and 96 panels; the four upright faces carry nothing
+
+  - given: the same with faces "all" (JM4)
+    expect: >
+      facesAsked 6, facesTaken 6 - the underside included, as the card says
+      "all" means - 992 panels: 800 on the sides and 96 each on the top and
+      the underside
+
+  - given: host "Heron JM Box" - the generic model - faces left out (JM5)
+    expect: >
+      EITHER created 1, facesTaken 4, four grids each reading 3 and 3 lines
+      and 16 panels - OR the call failed with Revit's own words and nothing
+      kept. Which one is the ASSUMPTION this case settles: the API reference
+      says "masses or generic models", and nothing here has run it
+
+  - given: >
+      the tower SELECTED in Revit and host left out; then host "Tower A" (its
+      Mark) with nothing selected; then host its element id (JM6)
+    expect: >
+      each the same answer as JM2 - the three ways a host reaches this card
+
+  - given: the first case on Revit 2024 (JM7)
+    expect: >
+      the same answer - one implementation for every release
+
+  - given: >
+      JM8, ONLY IF JM1 WAS KEPT: the first case again, rolled back, on the
+      tower that now carries JM1's curtain system
+    expect: >
+      alreadyNear 1, a finding naming JM1's curtain system's id. Then RECORD
+      what Revit did - a second curtain system laid over the first, a
+      warning, or a refusal in its own words. Not known, and the card says so
+
+negative:
+  - given: >
+      THE JOB FILE'S NEGATIVE (JM9). host "Heron JM Wall" - the WALL's Mark - with
+      the same type and faces. A different element that must NOT be touched,
+      not an empty request
+    expect: >
+      created empty, facesAsked 0, readBack empty; refused names the Walls
+      element by its id and type and says it is not a mass or generic model,
+      ending "NOTHING WAS MADE"; the wall is as it was
+
+  - given: the wall SELECTED and host left out (JM10)
+    expect: the same refusal by its category - nothing made
+
+  - given: >
+      host "Heron JM Tower", curtainSystemType "Heron JM Not A Type" (JM10)
+    expect: >
+      refused "No curtain system type called" with the names the model HAS -
+      "Heron JM 1500" among them - and nothing made. The type is never chosen
+      here
+
+  - given: host "Heron JM Tower", the right type, faces "sloped" (JM10)
+    expect: refused naming vertical, top and all - nothing made
+
+  - given: nothing selected, host left out (JM10)
+    expect: refused "Nothing is selected and no host was named" - nothing made
+
+second_route:
+  - >
+      By hand on the same scratch copy: Massing & Site > Model by Face >
+      Curtain System, "Heron JM 1500", pick the tower's four upright faces, Create
+      System. Select the result and Tab through, or a Curtain Panel schedule:
+      800 panels, matching readBack
+  - one Ctrl+Z takes the whole call back (Golden Rule 16)

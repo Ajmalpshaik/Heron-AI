@@ -1,4 +1,13 @@
 # D-30: the negative case is what catches "read something and called it the answer".
+#
+# VERSION 2 (2026-10-29) adds the second positive and the second negative:
+# each surface's all grid rotation, component rotation, flip, mirror, indents
+# and cuts. Both run on NEEDS-CHECKING Group JL's rig AFTER JL1 has been KEPT -
+# "Heron JL Divided Surface Test.rfa", a Mass family with Level 1, Level 2 at
+# 3000 mm and Level 3 at 6000 mm, and a box whose front face is divided and
+# then changed by SET_DIVIDED_SURFACE_LAYOUT to "all rotation=45;
+# border=empty; flip=yes; intersect=Level 2, Level 3" among others. Group DR,
+# rows DR5a and DR5b, is the plan in rows. Nothing here has met a Revit.
 
 positive:
   - given: a mass family with one face divided 10 x 6 by number, and a line divided into 8 by number, withNodes true
@@ -7,10 +16,40 @@ positive:
       gridline counts; one path with its node count, FixedNumber 8 and
       length; node positions in millimetres for both
 
+  - given: >
+      Group JL's rig after JL1 was kept - its one divided surface flipped,
+      its all grid rotation 45 degrees, its border tiles Empty and cut by
+      Level 2 and Level 3; withNodes false
+    expect: >
+      surfaceCount 1; the surface's line reads "border tiles Empty, all grid
+      rotation 45 degrees", "component rotation 0 degrees", "component flip
+      yes", "component mirror no", a U indent and a V indent, and "cut by
+      level Level 2, level Level 3" in the order Revit lists them - the same
+      words JL1's readBack printed, and the same values the surface's
+      Properties show. Nothing in the family changes: this opens no
+      transaction
+
 negative:
   - given: a new project with nothing in it
     expect: >
       divided empty; the finding says 0 surfaces and 0 paths
 
+  - given: >
+      the same rig with the box's BACK face divided too (JL7's arrangement)
+      after JL1 - the back surface never flipped, never rotated and never
+      cut; and Level 1, which was never added as a cut to either surface
+    expect: >
+      surfaceCount 2. The back surface's line reads "all grid rotation 0
+      degrees", "component flip no" and "cut by none" - the front surface's
+      flip, rotation and cuts are NOT carried onto it - while the front
+      surface's line still reads as in the second positive. Level 1 is named
+      on neither line. No line says "not read"; one that does is recorded
+      with Revit's reason, never read as a no
+
 second_route:
   - Revit's Properties of the divided surface and the divided path
+  - >
+      In the Family Editor, the divided surface selected: Properties lists All
+      Grid Rotation, Component Rotation, Component Mirror, Component Flip and
+      the indents; Intersects, on the ribbon, shows the levels cutting it -
+      read by a person and recorded on the DR row
