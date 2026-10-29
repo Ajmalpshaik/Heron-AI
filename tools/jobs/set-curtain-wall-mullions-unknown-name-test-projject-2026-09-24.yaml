@@ -1,5 +1,6 @@
 # SET_CURTAIN_WALL_MULLIONS - its SECOND negative, as a batch-prove job. NOT RUN. 2026-09-24.
 # The first, with its notes, is set-curtain-wall-mullions-test-projject-2026-09-24.yaml.
+# Still good for version 2 (2026-10-29) - see that file's note on Group JP.
 #
 #     python tools/batch-prove.py tools/jobs/set-curtain-wall-mullions-unknown-name-test-projject-2026-09-24.yaml --dry-run --session <pid>
 #     python tools/batch-prove.py tools/jobs/set-curtain-wall-mullions-unknown-name-test-projject-2026-09-24.yaml --session <pid>

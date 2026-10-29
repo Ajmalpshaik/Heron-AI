@@ -1,8 +1,25 @@
 // NOT STANDALONE. Assumes `doc`, `curtainWallType` and `mullions` are in scope;
-// leaves `applied`, `alreadyAsAsked`, `differs`, `wallsOfType`, `readBack`,
-// `measured`, `refused` and `findings` behind.
+// leaves `applied`, `alreadyAsAsked`, `differs`, `wallsOfType`,
+// `systemsOfType`, `readBack`, `measured`, `refused` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). No length is read or written.
+//
+// ===========================================================================
+// VERSION 2 (2026-10-29): A CURTAIN SYSTEM TYPE AS WELL AS A CURTAIN WALL TYPE.
+// ===========================================================================
+//
+// `curtainWallType` is the type's NAME, resolved here - among wall types and
+// curtain system types together, by the add-in's own rule (D-54): the type
+// name exactly, capitals included, or "Family: Type" / "Family : Type". Until
+// version 2 the add-in resolved it among wall types and refused a curtain
+// system type's name before this ran; it has no binder for a curtain system
+// type, so the name is matched here, as CREATE_CURTAIN_SYSTEM matches its
+// own. A bare name a wall type and a curtain system type share is refused
+// naming both, never chosen from (D-54 s3).
+//
+// A WALL TYPE IS VERSION 1 TO THE WORD - the same ids, positions, refusals,
+// read-back, measurement and findings. Everything that says "system" below is
+// the curtain system type's path, and only it.
 //
 // ===========================================================================
 // SIX MULLION POSITIONS, AND EACH NAME IS WORN BY TWO OF THEM.
@@ -15,8 +32,20 @@
 // refuses these a second time because each one holds a mullion TYPE, an
 // element reference. Here each position is reached by the id Revit gives it on
 // a WALL type: AUTO_MULLION_INTERIOR_VERT, _BORDER1_VERT, _BORDER2_VERT and
-// the three _HORIZ. The _GRID1 and _GRID2 ids with the same names belong to
-// curtain systems, not to a wall type.
+// the three _HORIZ.
+//
+// A CURTAIN SYSTEM TYPE'S ARE GRID 1 MULLIONS AND GRID 2 MULLIONS, and which
+// way each grid runs is the face's, not the type's - so its positions are
+// "grid 1 interior", "grid 1 border 1", "grid 1 border 2" and the three
+// "grid 2", and a "vertical" or "horizontal" position on one is refused. Its
+// ids are taken to be AUTO_MULLION_INTERIOR_GRID1, _BORDER1_GRID1,
+// _BORDER2_GRID1 and the three _GRID2. THAT IS AN ASSUMPTION: the API
+// reference of all eight releases lists them as "Interior Type", "Border 1
+// Type" and "Border 2 Type" - exactly as it lists the _VERT/_HORIZ ones - and
+// says nothing of which element carries which. So a curtain system type
+// carrying none of them is refused before anything is written, naming the ids
+// it does carry; and a position written by them that does not read back as
+// asked THROWS - nothing is kept. The proof (Group JP) settles it.
 //
 // A NAME RESOLVES TO EXACTLY ONE MULLION TYPE IN THIS MODEL, OR THE WHOLE
 // REQUEST IS REFUSED. Written the way the add-in resolves every type (D-54):
@@ -43,24 +72,11 @@ var applied = 0;
 var alreadyAsAsked = 0;
 var differs = new List<string>();
 var wallsOfType = 0;
+var systemsOfType = 0;
 var readBack = "";
 var measured = "";
 var refused = "";
 var findings = new List<string>();
-
-// The six positions, in the order every array below uses: the three vertical,
-// then the three horizontal.
-var positionWords = new[]
-{
-    "vertical interior", "vertical border 1", "vertical border 2",
-    "horizontal interior", "horizontal border 1", "horizontal border 2",
-};
-var positionIds = new[]
-{
-    BuiltInParameter.AUTO_MULLION_INTERIOR_VERT, BuiltInParameter.AUTO_MULLION_BORDER1_VERT,
-    BuiltInParameter.AUTO_MULLION_BORDER2_VERT, BuiltInParameter.AUTO_MULLION_INTERIOR_HORIZ,
-    BuiltInParameter.AUTO_MULLION_BORDER1_HORIZ, BuiltInParameter.AUTO_MULLION_BORDER2_HORIZ,
-};
 
 // Lower case, one space between words. For THIS file's words - the position
 // names - only; a mullion type's name is the model's and is compared exactly.
@@ -77,7 +93,138 @@ Func<ElementType, string> fullName = type =>
     return string.IsNullOrEmpty(family) ? type.Name : family + ": " + type.Name;
 };
 
-var label = curtainWallType == null ? "" : fullName(curtainWallType);
+// ---------------------------------------------------------------------------
+// THE TYPE, BY NAME - among wall types and curtain system types, by the
+// add-in's own rule (D-54). Two found is refused, never chosen from.
+// ---------------------------------------------------------------------------
+
+var typeAsked = curtainWallType ?? "";
+WallType asWall = null;
+CurtainSystemType asSystem = null;
+var nameProblem = "";
+
+Func<ElementType, bool> nameFits = type =>
+{
+    string name, family;
+    try { name = type.Name; } catch { return false; }
+    if (string.Equals(name, typeAsked, StringComparison.Ordinal)) return true;
+    try { family = type.FamilyName; } catch { return false; }
+    if (string.IsNullOrEmpty(family) || name == null) return false;
+    var colon = typeAsked.IndexOf(':');
+    return colon >= 0
+        && string.Equals(typeAsked.Substring(0, colon).Trim(), family, StringComparison.Ordinal)
+        && string.Equals(typeAsked.Substring(colon + 1).Trim(), name, StringComparison.Ordinal);
+};
+
+if (typeAsked.Trim().Length == 0)
+{
+    nameProblem = "No wall type was named. Name the curtain wall type the way Revit writes it - "
+        + "'Curtain Wall: Storefront' - or a curtain system type, 'Curtain System: ' and its name, "
+        + "and ask again. Nothing was changed";
+}
+else
+{
+    var fits = new List<ElementType>();
+    var curtainWallNames = new List<string>();
+    var curtainSystemNames = new List<string>();
+    foreach (var element in new FilteredElementCollector(doc).WhereElementIsElementType())
+    {
+        var wallType = element as WallType;
+        var systemType = element as CurtainSystemType;
+        if (wallType == null && systemType == null) continue;
+        if (wallType != null)
+        {
+            try { if (wallType.Kind == WallKind.Curtain) curtainWallNames.Add(fullName(wallType)); }
+            catch (Exception) { }
+        }
+        if (systemType != null) curtainSystemNames.Add(fullName(systemType));
+        if (nameFits((ElementType)element)) fits.Add((ElementType)element);
+    }
+
+    if (fits.Count == 1)
+    {
+        asWall = fits[0] as WallType;
+        asSystem = fits[0] as CurtainSystemType;
+    }
+    else if (fits.Count == 0)
+    {
+        Func<List<string>, string> listed = names => names.Count == 0 ? "none"
+            : string.Join(", ", names.Distinct().OrderBy(n => n, StringComparer.Ordinal).Take(30).ToArray())
+              + (names.Distinct().Count() > 30 ? ", and more" : "");
+        nameProblem = string.Format(
+            "No wall type or curtain system type called \"{0}\" in {1}. The name has to match what Revit "
+            + "shows, capitals included - the Properties palette writes it \"Curtain Wall: Storefront\", and "
+            + "either that or just \"Storefront\" works when the short name is unique. Its curtain wall types: "
+            + "{2}. Its curtain system types: {3}. Nothing was changed",
+            typeAsked, doc.Title, listed(curtainWallNames), listed(curtainSystemNames));
+    }
+    else
+    {
+        var choices = fits.Select(t => fullName(t)).Distinct().ToList();
+        nameProblem = string.Format(
+            "{0} types in {1} are called \"{2}\" - wall types and curtain system types are both searched - "
+            + "so the name does not say which one is meant.{3} Nothing was changed",
+            fits.Count, doc.Title, typeAsked,
+            choices.Count > 1 ? " Say which: " + string.Join(", or ", choices.ToArray()) + "." : " Rename one.");
+    }
+}
+
+var isSystem = asSystem != null;
+HostObjAttributes chosen = isSystem ? (HostObjAttributes)asSystem : asWall;
+var label = chosen == null ? "" : fullName(chosen);
+var oneUser = isSystem ? "curtain system" : "wall";
+
+// The six positions, in the order every array below uses: a wall type's three
+// vertical then three horizontal, or a curtain system type's three of Grid 1
+// then three of Grid 2.
+var positionWords = isSystem
+    ? new[]
+    {
+        "grid 1 interior", "grid 1 border 1", "grid 1 border 2",
+        "grid 2 interior", "grid 2 border 1", "grid 2 border 2",
+    }
+    : new[]
+    {
+        "vertical interior", "vertical border 1", "vertical border 2",
+        "horizontal interior", "horizontal border 1", "horizontal border 2",
+    };
+var positionIds = isSystem
+    ? new[]
+    {
+        BuiltInParameter.AUTO_MULLION_INTERIOR_GRID1, BuiltInParameter.AUTO_MULLION_BORDER1_GRID1,
+        BuiltInParameter.AUTO_MULLION_BORDER2_GRID1, BuiltInParameter.AUTO_MULLION_INTERIOR_GRID2,
+        BuiltInParameter.AUTO_MULLION_BORDER1_GRID2, BuiltInParameter.AUTO_MULLION_BORDER2_GRID2,
+    }
+    : new[]
+    {
+        BuiltInParameter.AUTO_MULLION_INTERIOR_VERT, BuiltInParameter.AUTO_MULLION_BORDER1_VERT,
+        BuiltInParameter.AUTO_MULLION_BORDER2_VERT, BuiltInParameter.AUTO_MULLION_INTERIOR_HORIZ,
+        BuiltInParameter.AUTO_MULLION_BORDER1_HORIZ, BuiltInParameter.AUTO_MULLION_BORDER2_HORIZ,
+    };
+
+// WHICH MULLION IDS A CURTAIN SYSTEM TYPE CARRIES - the assumption above, read
+// off the type rather than trusted.
+var probeIds = new[]
+{
+    BuiltInParameter.AUTO_MULLION_INTERIOR_GRID1, BuiltInParameter.AUTO_MULLION_BORDER1_GRID1,
+    BuiltInParameter.AUTO_MULLION_BORDER2_GRID1, BuiltInParameter.AUTO_MULLION_INTERIOR_GRID2,
+    BuiltInParameter.AUTO_MULLION_BORDER1_GRID2, BuiltInParameter.AUTO_MULLION_BORDER2_GRID2,
+    BuiltInParameter.AUTO_MULLION_INTERIOR_VERT, BuiltInParameter.AUTO_MULLION_INTERIOR_HORIZ,
+};
+Func<string> idsCarried = () =>
+{
+    var carried = new List<string>();
+    var notCarried = new List<string>();
+    foreach (var id in probeIds)
+    {
+        Parameter found = null;
+        try { found = chosen.get_Parameter(id); } catch (Exception) { found = null; }
+        (found != null ? carried : notCarried).Add(id.ToString());
+    }
+    return string.Format("Of Revit's mullion ids, '{0}' carries: {1}; not: {2}", label,
+        carried.Count == 0 ? "none" : string.Join(", ", carried),
+        notCarried.Count == 0 ? "none" : string.Join(", ", notCarried));
+};
 
 // What a position holds, in words: the mullion type, or none.
 Func<ElementId, string> nameOf = id =>
@@ -92,15 +239,14 @@ var askedId = new ElementId[6];
 var askedName = new string[6];
 var positionParameter = new Parameter[6];
 
-if (curtainWallType == null)
+if (nameProblem.Length > 0)
 {
-    refused = "No wall type was named. Name the curtain wall type the way Revit writes it - "
-        + "'Curtain Wall: Storefront' - and ask again. Nothing was changed";
+    refused = nameProblem;
 }
-else if (curtainWallType.Kind != WallKind.Curtain)
+else if (!isSystem && asWall.Kind != WallKind.Curtain)
 {
-    var kind = curtainWallType.Kind == WallKind.Basic ? "a basic wall type"
-        : curtainWallType.Kind == WallKind.Stacked ? "a stacked wall type"
+    var kind = asWall.Kind == WallKind.Basic ? "a basic wall type"
+        : asWall.Kind == WallKind.Stacked ? "a stacked wall type"
         : "a wall type Revit does not class as a curtain wall";
     refused = string.Format(
         "'{0}' is {1}, not a curtain wall type - it has no mullions to set. Name a curtain wall "
@@ -108,9 +254,13 @@ else if (curtainWallType.Kind != WallKind.Curtain)
 }
 else if (mullions == null || mullions.Count == 0)
 {
-    refused = "Nothing was named to change. Name each position and its mullion type - "
-        + "'vertical interior=Rectangular Mullion: 50 x 150mm; horizontal border 2=none'. "
-        + "Nothing was changed";
+    refused = isSystem
+        ? "Nothing was named to change. Name each position and its mullion type - "
+            + "'grid 1 interior=Rectangular Mullion: 50 x 150mm; grid 2 border 2=none'. "
+            + "Nothing was changed"
+        : "Nothing was named to change. Name each position and its mullion type - "
+            + "'vertical interior=Rectangular Mullion: 50 x 150mm; horizontal border 2=none'. "
+            + "Nothing was changed";
 }
 else
 {
@@ -142,6 +292,15 @@ else
         seen.Add(key);
 
         var at = Array.IndexOf(positionWords, key);
+        if (at < 0 && isSystem && (key.StartsWith("vertical") || key.StartsWith("horizontal")))
+        {
+            refused = string.Format(
+                "'{0}' is a curtain WALL type's position, and '{1}' is a curtain system type. Its mullions "
+                + "are Grid 1 Mullions and Grid 2 Mullions, and which way each grid runs is set by the face "
+                + "it lies on, not by the type - so this does not call either vertical or horizontal. Name "
+                + "one or more of: {2}. Nothing was changed", pair.Key, label, string.Join(", ", positionWords));
+            break;
+        }
         if (at < 0)
         {
             refused = string.Format(
@@ -209,19 +368,24 @@ else
     // written at all.
     for (var p = 0; p < 6 && refused.Length == 0; p++)
     {
-        positionParameter[p] = curtainWallType.get_Parameter(positionIds[p]);
+        positionParameter[p] = chosen.get_Parameter(positionIds[p]);
         if (askedId[p] == null) continue;
 
         var parameter = positionParameter[p];
         if (parameter == null)
             refused = string.Format("'{0}' has no {1} mullion setting - Revit gives this type none "
-                + "to set. Nothing was changed", label, positionWords[p]);
+                + "to set. {2}Nothing was changed", label, positionWords[p],
+                isSystem ? idsCarried() + ". " : "");
         else if (parameter.StorageType != StorageType.ElementId)
             refused = string.Format("'{0}' keeps its {1} mullion in a form this does not write. "
                 + "Nothing was changed", label, positionWords[p]);
         else if (parameter.IsReadOnly)
-            refused = string.Format("Revit will not let the {1} mullion of '{0}' be changed - it may "
-                + "be held by another user in a shared model. Nothing was changed", label, positionWords[p]);
+            refused = isSystem
+                ? string.Format("Revit keeps the {1} mullion of '{0}' read-only and gives no reason for "
+                    + "it - look at it in Type Properties, where Revit greys out what it will not let "
+                    + "change. Nothing was changed", label, positionWords[p])
+                : string.Format("Revit will not let the {1} mullion of '{0}' be changed - it may "
+                    + "be held by another user in a shared model. Nothing was changed", label, positionWords[p]);
     }
 }
 
@@ -229,23 +393,61 @@ if (refused.Length == 0)
 {
     // THE REACH, COUNTED BEFORE ANYTHING IS WRITTEN.
     var walls = new List<Wall>();
-    foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(Wall)))
+    var systems = new List<CurtainSystem>();
+    if (isSystem)
     {
-        var wall = element as Wall;
-        if (wall == null) continue;
-        ElementId typeId = null;
-        try { typeId = wall.GetTypeId(); } catch { continue; }
-        if (typeId != null && typeId.Equals(curtainWallType.Id)) walls.Add(wall);
+        foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_CurtaSystem)
+                     .WhereElementIsNotElementType())
+        {
+            var system = element as CurtainSystem;
+            if (system == null) continue;
+            ElementId typeId = null;
+            try { typeId = system.GetTypeId(); } catch { continue; }
+            if (typeId != null && typeId.Equals(chosen.Id)) systems.Add(system);
+        }
+        systemsOfType = systems.Count;
     }
-    wallsOfType = walls.Count;
-
-    // ONE WALL TO MEASURE: the first whose grid can be read, named by id.
-    Wall sample = null;
-    foreach (var wall in walls)
+    else
     {
-        CurtainGrid cells = null;
-        try { cells = wall.CurtainGrid; } catch { cells = null; }
-        if (cells != null) { sample = wall; break; }
+        foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(Wall)))
+        {
+            var wall = element as Wall;
+            if (wall == null) continue;
+            ElementId typeId = null;
+            try { typeId = wall.GetTypeId(); } catch { continue; }
+            if (typeId != null && typeId.Equals(chosen.Id)) walls.Add(wall);
+        }
+        wallsOfType = walls.Count;
+    }
+    var usersOfType = isSystem ? systemsOfType : wallsOfType;
+
+    // A placed element's curtain grids - a wall has one, a curtain system one
+    // per face, the API reference says. Empty when none can be read.
+    Func<Element, List<CurtainGrid>> gridsOf = element =>
+    {
+        var found = new List<CurtainGrid>();
+        var wall = element as Wall;
+        if (wall != null)
+        {
+            CurtainGrid cells = null;
+            try { cells = wall.CurtainGrid; } catch { cells = null; }
+            if (cells != null) found.Add(cells);
+            return found;
+        }
+        var system = element as CurtainSystem;
+        if (system == null) return found;
+        CurtainGridSet all = null;
+        try { all = system.CurtainGrids; } catch { all = null; }
+        if (all == null) return found;
+        foreach (CurtainGrid each in all) if (each != null) found.Add(each);
+        return found;
+    };
+
+    // ONE TO MEASURE: the first whose grid can be read, named by id.
+    Element sample = null;
+    foreach (var each in isSystem ? systems.Cast<Element>() : walls.Cast<Element>())
+    {
+        if (gridsOf(each).Count > 0) { sample = each; break; }
     }
 
     // WHICH WAY A CURVE RUNS: 0 vertical, 1 horizontal, 2 at an angle, -1 not
@@ -269,56 +471,66 @@ if (refused.Length == 0)
         catch { return -1; }
     };
 
-    // A WALL'S MULLIONS, by the way each runs and by type - what gets ordered.
-    Func<Wall, string> mullionsOn = wall =>
+    // MULLIONS, by the way each runs and by type - what gets ordered. One
+    // mullion counted once, even where two faces' grids both hand it back.
+    Func<List<CurtainGrid>, string> mullionsOn = cellsList =>
     {
-        CurtainGrid cells = null;
-        try { cells = wall.CurtainGrid; } catch { cells = null; }
-        if (cells == null) return "not readable";
-        ICollection<ElementId> ids = null;
-        try { ids = cells.GetMullionIds(); } catch { return "not readable"; }
+        if (cellsList.Count == 0) return "not readable";
         var tally = new SortedDictionary<string, int>(StringComparer.Ordinal);
-        foreach (var id in ids)
+        var counted = new HashSet<string>();
+        foreach (var cells in cellsList)
         {
-            var mullion = doc.GetElement(id) as Mullion;
-            if (mullion == null) continue;
-            var type = doc.GetElement(mullion.GetTypeId()) as ElementType;
-            Curve along = null;
-            try { along = mullion.LocationCurve; } catch { along = null; }
-            var way = runs(along);
-            var key = (way == 0 ? "vertical" : way == 1 ? "horizontal" : way == 2 ? "at an angle" : "unmeasured")
-                + " '" + fullName(type) + "'";
-            int had;
-            tally[key] = tally.TryGetValue(key, out had) ? had + 1 : 1;
+            ICollection<ElementId> ids = null;
+            try { ids = cells.GetMullionIds(); } catch { return "not readable"; }
+            foreach (var id in ids)
+            {
+                if (!counted.Add(id.ToString())) continue;
+                var mullion = doc.GetElement(id) as Mullion;
+                if (mullion == null) continue;
+                var type = doc.GetElement(mullion.GetTypeId()) as ElementType;
+                Curve along = null;
+                try { along = mullion.LocationCurve; } catch { along = null; }
+                var way = runs(along);
+                var key = (way == 0 ? "vertical" : way == 1 ? "horizontal" : way == 2 ? "at an angle" : "unmeasured")
+                    + " '" + fullName(type) + "'";
+                int had;
+                tally[key] = tally.TryGetValue(key, out had) ? had + 1 : 1;
+            }
         }
         return tally.Count == 0 ? "none" : string.Join(", ", tally.Select(p => p.Value + " x " + p.Key));
     };
 
-    // A WALL'S GRID LINES, vertical and horizontal by the way each runs - the
-    // lines interior mullions sit on. [0] vertical, [1] horizontal.
-    Func<Wall, int[]> linesOn = wall =>
+    // GRID LINES, vertical and horizontal by the way each runs - the lines
+    // interior mullions sit on - and, for a curtain system, Revit's U and V
+    // sets. [0] vertical, [1] horizontal, [2] U set, [3] V set.
+    Func<List<CurtainGrid>, int[]> linesOn = cellsList =>
     {
-        var counts = new int[2];
-        CurtainGrid cells = null;
-        try { cells = wall.CurtainGrid; } catch { cells = null; }
-        if (cells == null) return counts;
-        var all = new List<ElementId>();
-        try { all.AddRange(cells.GetUGridLineIds()); all.AddRange(cells.GetVGridLineIds()); }
-        catch { return counts; }
-        foreach (var id in all)
+        var counts = new int[4];
+        foreach (var cells in cellsList)
         {
-            var line = doc.GetElement(id) as CurtainGridLine;
-            Curve curve = null;
-            try { curve = line == null ? null : line.FullCurve; } catch { curve = null; }
-            var way = runs(curve);
-            if (way == 0 || way == 1) counts[way]++;
+            ICollection<ElementId> uIds = null, vIds = null;
+            try { uIds = cells.GetUGridLineIds(); vIds = cells.GetVGridLineIds(); }
+            catch { continue; }
+            counts[2] += uIds.Count;
+            counts[3] += vIds.Count;
+            var all = new List<ElementId>();
+            all.AddRange(uIds);
+            all.AddRange(vIds);
+            foreach (var id in all)
+            {
+                var line = doc.GetElement(id) as CurtainGridLine;
+                Curve curve = null;
+                try { curve = line == null ? null : line.FullCurve; } catch { curve = null; }
+                var way = runs(curve);
+                if (way == 0 || way == 1) counts[way]++;
+            }
         }
         return counts;
     };
 
-    Func<Wall, string> lengthOf = wall =>
+    Func<Element, string> lengthOf = element =>
     {
-        var at = wall.Location as LocationCurve;
+        var at = element.Location as LocationCurve;
         return at == null || at.Curve == null
             ? "its length not read"
             : string.Format("{0:F0} mm long", at.Curve.Length * 304.8);
@@ -332,7 +544,7 @@ if (refused.Length == 0)
         before[p] = parameter != null && parameter.StorageType == StorageType.ElementId
             ? parameter.AsElementId() : null;
     }
-    var mullionsBefore = sample == null ? "" : mullionsOn(sample);
+    var mullionsBefore = sample == null ? "" : mullionsOn(gridsOf(sample));
 
     // THE WRITE. Only what was asked, and only where it differs.
     var wrote = new bool[6];
@@ -370,8 +582,8 @@ if (refused.Length == 0)
         catch (Exception notRebuilt)
         {
             throw new InvalidOperationException(string.Format(
-                "Revit could not rebuild the walls of '{0}' with these mullions - {1}. Nothing this "
-                + "call did is kept", label, notRebuilt.Message));
+                "Revit could not rebuild the {0} of '{1}' with these mullions - {2}. Nothing this "
+                + "call did is kept", isSystem ? "curtain systems" : "walls", label, notRebuilt.Message));
         }
     }
 
@@ -380,7 +592,7 @@ if (refused.Length == 0)
     var held = new List<string>();
     for (var p = 0; p < 6; p++)
     {
-        var parameter = curtainWallType.get_Parameter(positionIds[p]);
+        var parameter = chosen.get_Parameter(positionIds[p]);
         var now = parameter != null && parameter.StorageType == StorageType.ElementId
             ? parameter.AsElementId() : null;
 
@@ -390,6 +602,17 @@ if (refused.Length == 0)
                 : string.Format(", was {0} - asked for {1}", nameOf(before[p]), askedName[p])));
 
         if (askedId[p] == null) continue;
+
+        // A CURTAIN SYSTEM TYPE'S IDS ARE THE ASSUMPTION (see the top). A
+        // position written by them that Revit does not then hold means the id
+        // is not the one Type Properties shows - nothing this call did is kept.
+        if (isSystem && wrote[p] && (now == null || !now.Equals(askedId[p])))
+            throw new InvalidOperationException(string.Format(
+                "'{0}' was given {1} for its {2} mullions by {3} and holds {4} after the rebuild - that "
+                + "id may not be the setting Type Properties shows under {5}, so nothing this call did "
+                + "is kept. {6}", label, askedName[p], positionWords[p], positionIds[p], nameOf(now),
+                p < 3 ? "Grid 1 Mullions" : "Grid 2 Mullions", idsCarried()));
+
         if (now != null && now.Equals(askedId[p]))
         {
             if (wrote[p]) applied++; else alreadyAsAsked++;
@@ -401,30 +624,59 @@ if (refused.Length == 0)
                 positionWords[p], askedName[p], nameOf(now)));
         }
     }
-    readBack = string.Join(" | ", described);
+    readBack = string.Join(" | ", described) + (isSystem ? " | " + idsCarried() : "");
 
-    // WHAT IT MADE, MEASURED ON A WALL.
+    // WHAT IT MADE, MEASURED ON A PLACED ONE.
     var bare = new List<string>();
     if (sample == null)
     {
-        measured = "No wall of this type is placed in the model, so nothing was measured. The next "
-            + "wall drawn with it shows these mullions";
+        measured = isSystem
+            ? "No curtain system of this type is placed in the model, so nothing was measured. The next "
+                + "curtain system made with it shows these mullions"
+            : "No wall of this type is placed in the model, so nothing was measured. The next "
+                + "wall drawn with it shows these mullions";
+    }
+    else if (isSystem)
+    {
+        var grids = gridsOf(sample);
+        var lines = linesOn(grids);
+        measured = string.Format(
+            "curtain system {0}, on {1} face(s), with {2} vertical and {3} horizontal grid line(s) - "
+            + "Revit's U set {4}, V set {5}. Mullions before: {6}. Now: {7}", sample.Id, grids.Count,
+            lines[0], lines[1], lines[2], lines[3], mullionsBefore, mullionsOn(grids));
+
+        // AN INTERIOR TYPE WITH NO LINES SHOWS NOWHERE. Which of Grid 1 and
+        // Grid 2 is Revit's U set and which its V set is not known here, so
+        // this is said only when the curtain system has no grid line at all.
+        if (lines[2] + lines[3] == 0
+            && ((askedId[0] != null && askedId[0] != ElementId.InvalidElementId)
+                || (askedId[3] != null && askedId[3] != ElementId.InvalidElementId)))
+            bare.Add(string.Format(
+                "Curtain system {0} has no grid line on any face, so an interior mullion type shows on "
+                + "none of it - the type holds it all the same. SET_CURTAIN_WALL_GRID lays the lines out, "
+                + "on a curtain system type too", sample.Id));
     }
     else
     {
-        var lines = linesOn(sample);
+        var lines = linesOn(gridsOf(sample));
         measured = string.Format(
             "wall {0}, {1}, with {2} vertical and {3} horizontal grid line(s). Mullions before: {4}. "
             + "Now: {5}", sample.Id, lengthOf(sample), lines[0], lines[1], mullionsBefore,
-            mullionsOn(sample));
+            mullionsOn(gridsOf(sample)));
 
         // AN INTERIOR TYPE ON A DIRECTION WITH NO LINES SHOWS NOWHERE. Not a
         // failure - the type holds it - but the modeller should not have to
         // work out why nothing appeared.
+        var ways = new List<string>();
         if (askedId[0] != null && askedId[0] != ElementId.InvalidElementId && lines[0] == 0)
-            bare.Add("vertical");
+            ways.Add("vertical");
         if (askedId[3] != null && askedId[3] != ElementId.InvalidElementId && lines[1] == 0)
-            bare.Add("horizontal");
+            ways.Add("horizontal");
+        foreach (var way in ways)
+            bare.Add(string.Format(
+                "The {0} grid puts no lines on wall {1}, so its interior mullion type shows on none of "
+                + "it - the type holds it all the same. SET_CURTAIN_WALL_GRID lays the lines out",
+                way, sample.Id));
     }
 
     // THE REACH FIRST, then what Revit holds.
@@ -432,7 +684,18 @@ if (refused.Length == 0)
     {
         findings.Add(string.Format(
             "Nothing on '{0}' needed changing - every position asked for already held it. It is "
-            + "used by {1} wall(s) in this model", label, wallsOfType));
+            + "used by {1} {2}(s) in this model", label, usersOfType, oneUser));
+    }
+    else if (isSystem)
+    {
+        findings.Add(usersOfType == 0
+            ? string.Format("'{0}' is used by no curtain system in this model, so nothing placed changed. "
+                + "The next curtain system made with it takes these mullions", label)
+            : string.Format("'{0}' is used by {1} curtain system{2} in this model - {3} with the type. "
+                + "For one curtain system alone, put it on a copy of the type first - DUPLICATE_TYPE, "
+                + "then CHANGE_ELEMENT_TYPE; neither has been run on a curtain system yet",
+                label, usersOfType, usersOfType == 1 ? "" : "s",
+                usersOfType == 1 ? "it changed" : "every one of them changed"));
     }
     else
     {
@@ -450,13 +713,7 @@ if (refused.Length == 0)
             applied, alreadyAsAsked)
         : string.Format("{0} position(s) are NOT what was asked - see differs. {1} changed as asked",
             differs.Count, applied));
-    foreach (var way in bare)
-    {
-        findings.Add(string.Format(
-            "The {0} grid puts no lines on wall {1}, so its interior mullion type shows on none of "
-            + "it - the type holds it all the same. SET_CURTAIN_WALL_GRID lays the lines out",
-            way, sample.Id));
-    }
+    foreach (var line in bare) findings.Add(line);
 }
 else
 {

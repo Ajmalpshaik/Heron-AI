@@ -4,6 +4,11 @@
 # category. Version 1's proof (2026-10-03) went stale when the implementation
 # changed; this re-proves the whole tool on its new code.
 #
+# VERSION 4 (2026-10-29) made version 3's proof (2026-10-18) stale. This file
+# is re-run unchanged as NEEDS-CHECKING Group JQ's JQ2 - BEFORE
+# report-family-template-orientation-2026-10-29.yaml, which writes the same
+# proof draft and is the run that is signed.
+#
 #     python tools/batch-prove.py tools/jobs/report-family-template-omniclass-2026-10-11.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/report-family-template-omniclass-2026-10-11.yaml
 #

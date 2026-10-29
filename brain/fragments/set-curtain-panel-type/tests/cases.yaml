@@ -15,7 +15,9 @@
 #      "Curtain Wall: Curtain Wall 1" - no grid lines in Revit's templates
 #   2. DUPLICATE_TYPE copies that wall's type as "HERON CW PANEL PROOF"
 #   3. CHANGE_ELEMENT_TYPE puts the wall on the copy
-#   4. SET_CURTAIN_WALL_GRID (PROVEN) gives the copy a grid: "vertical
+#   4. SET_CURTAIN_WALL_GRID (version 2 PROVEN 2026-10-06; version 3, DRAFT
+#      since 2026-10-29 until Group JP, has the same wall-type path and runs
+#      rolled back as a setup step) gives the copy a grid: "vertical
 #      layout=fixed distance; vertical spacing=1500; horizontal layout=fixed
 #      distance; horizontal spacing=1500"
 #   5. this fragment, its `elements` the wall step 1 made

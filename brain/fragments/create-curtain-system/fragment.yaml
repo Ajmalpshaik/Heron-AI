@@ -221,8 +221,20 @@ compatibility-note: >
 #                                               first is that card's own
 #   "add mass floors to this mass"           -> CREATE_MASS_FLOORS
 #   "set the curtain wall grid spacing"      -> SET_CURTAIN_WALL_GRID - a curtain
-#                                               WALL type. Nothing sets a
-#                                               curtain SYSTEM type's grid yet
+#                                               WALL type
+#   "set the curtain system grid spacing
+#    to 1500"                                -> SET_CURTAIN_WALL_GRID, on the
+#                                               curtain SYSTEM type this lays
+#                                               out - its Grid 1 and Grid 2
+#                                               (version 3, 2026-10-29; DRAFT
+#                                               until NEEDS-CHECKING Group JP).
+#                                               This makes the curtain system;
+#                                               that sets the type it is of
+#   "put mullions on the curtain system
+#    type"                                   -> SET_CURTAIN_WALL_MULLIONS, the
+#                                               same way - Grid 1 and Grid 2
+#                                               Mullions (version 2, DRAFT until
+#                                               Group JP)
 #   "put this family on the face of the
 #    mass"                                   -> PLACE_FAMILY_ON_FACE
 

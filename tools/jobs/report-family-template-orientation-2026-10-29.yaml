@@ -1,0 +1,55 @@
+# NEEDS-CHECKING Group JQ - the proof of report-family-template version 4
+# (REPORT_FAMILY_TEMPLATE, FRG-DOC-037): each adaptive point's Orientation on
+# its pointList row. docs/needs-checking/group-jq.md is the whole plan; this
+# file is its JQ3 (the positive) and JQ4 (the negative). Version 3's proof
+# (2026-10-18) went stale with this change; JQ2 re-runs version 3's own cases,
+# and the two older job files for this card are that route.
+#
+#     python tools/batch-prove.py tools/jobs/report-family-template-orientation-2026-10-29.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-family-template-orientation-2026-10-29.yaml
+#
+# THE ARRANGEMENT, made before the run, on Revit 2020 - scratch families,
+# never a working one:
+#
+#   "Heron JK Orientation"     Group JK's rig AFTER JK2 was KEPT: a family from
+#                              the metric Generic Model Adaptive template, four
+#                              placement points, every one at Host and Loop
+#                              System (xyz) - by that kept try-once, or set by
+#                              hand in Properties if JK2 was discarded - saved,
+#                              left OPEN. Each point's Properties > Orientation
+#                              read by eye first (JQ1)
+#   "Heron JQ Plain"           a new family from the plain metric Generic Model
+#                              template, nothing built, saved under this title,
+#                              left open - the negative: no adaptive points, so
+#                              pointList is empty. A project would leave it empty
+#                              too, but for another reason; this one says a
+#                              FAMILY with no adaptive points prints no
+#                              Orientation
+#
+# POSITIVE: pointList naming placement points 1 to 4, each with its id and
+# position as version 3 printed them, then ", Orientation Host and Loop System
+# (xyz)"; a finding "Orientation of the adaptive points, as Properties shows it
+# on each: point(s) 1, 2, 3, 4 Host and Loop System (xyz). ..."
+#
+# NEGATIVE: "Heron JQ Plain" - pointList empty, templateReport reading
+# "adaptive points: 0", and no finding about Orientation.
+#
+# BY HAND AFTERWARDS (JQ5), read only: a second adaptive family whose points
+# were never changed - every row ", Orientation Instance (xyz)", none Host and
+# Loop System. A value that must not be carried from one family to another.
+
+model: Heron JK Orientation (Group JK's rig, four placement points at Host and Loop System, kept) and Heron JQ Plain (plain Generic Model family), Revit 2020
+
+defaults:
+  in: "Heron JK Orientation"
+
+jobs:
+  - fragment: report-family-template
+    expect: pointList
+    negative-in: "Heron JQ Plain"
+    note: >
+      JQ3 and JQ4. Positive: four placement point rows, each ending
+      "Orientation Host and Loop System (xyz)" - the words JK's
+      pointOrientations printed - and the Orientation finding. Negative: a
+      family with no adaptive points, pointList empty. Check each point's
+      words against Properties > Orientation with the point selected.

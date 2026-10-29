@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -21,7 +21,38 @@ capability: SET_CURTAIN_WALL_GRID
 # SIGNED 2026-10-06 by Ajmal PS on the run in Project2 below. It read Revit's
 # layout value 1 back as Fixed Distance, both ways; values 3 and 5 - Maximum and
 # Minimum Spacing - have still not been read back by any proof.
-version: 2
+# VERSION 3 (2026-10-29, on the owner's yes in the chat that day - "build the
+# three widenings too" - to docs/work-notes/plans/facade-capability.md's
+# "Waiting for the owner's word"): a CURTAIN SYSTEM TYPE too, the type Curtain
+# System by Face uses (CREATE_CURTAIN_SYSTEM), by its Grid 1 and Grid 2.
+# `curtainWallType` is now the type's NAME, matched in the fragment among wall
+# types and curtain system types by the add-in's own rule, because the add-in
+# has no binder for a curtain system type; `systemsOfType` is new. A wall type
+# is version 2 to the word, except that a bare name a curtain system type also
+# carries is now refused naming both (D-54 s3), and a name no type has is
+# refused by the fragment, listing the curtain wall and curtain system types,
+# where the add-in used to refuse it before the run. Version 2's proof below no
+# longer describes the code and is kept as a record; the card is DRAFT until
+# NEEDS-CHECKING Group JP proves version 3 - both paths - and the owner signs.
+#
+# THE CURTAIN SYSTEM TYPE, IN FULL - comments, not `purpose`, because
+# `purpose` is searched: written there at first, this text helped send row
+# 5b-329's select guards (tests/test_routing_phrases.py) to the two setters,
+# measured 2026-10-29 on the trained backend. Named "Curtain System: " and its
+# type name, or the bare name when no wall type or curtain system type shares
+# it. Its two grids are Grid 1 and Grid 2, not vertical and horizontal - which
+# way each runs is set by the face it lies on, not by the type - so its keys
+# are grid 1 layout, grid 1 spacing, grid 2 layout and grid 2 spacing, and a
+# vertical or horizontal key on one is refused. The curtain systems of the type
+# are counted first (`systemsOfType`), as walls are. Reached by
+# SPACING_LAYOUT_1 and _2 and SPACING_LENGTH_1 and _2 - an ASSUMPTION the proof
+# settles, since Revit's reference does not say which element carries them: a
+# type without them is refused naming the grid ids it has, and a setting that
+# does not read back as asked stops the call and nothing is kept. Fixed Number
+# is refused on it too: the reference does not say whether the type or each
+# curtain system holds the count, and where Revit keeps it is measured, as for
+# a wall.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -87,6 +118,10 @@ purpose: >
   by Revit's U and V names, which its reference does not tie to vertical or
   horizontal on a wall - and its mullions counted by type.
 
+  **A CURTAIN SYSTEM'S TOO (version 3)** - its Grid 1 and Grid 2: grid 1
+  layout, grid 1 spacing, grid 2 layout, grid 2 spacing. The comments above
+  `version` say how they are reached and what is assumed.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Every
   refusal is made before the first write. If Revit refuses a write, or cannot
   rebuild the walls with it, the call stops and nothing it did is kept - a type
@@ -97,20 +132,27 @@ contract:
     - name: doc
       type: Document
     # A curtain wall TYPE BY NAME - "Curtain Wall: Storefront", or "Storefront"
-    # when no other wall type is called that. Resolved among wall types by the
-    # add-in (D-54); a basic or stacked type binds and is refused here, by name.
-    # NOT `wallType`: CREATE_WALL takes that name, and a proof that draws the
-    # wall first binds every writing step from one set of values - the two
-    # would be forced to be the same type.
+    # when no other wall type is called that - or, since version 3, a curtain
+    # SYSTEM type: "Curtain System: Heron JM 1500". A STRING, matched in the
+    # fragment among wall types and curtain system types by the add-in's own
+    # rule (D-54) - the name exactly, or "Family: Type" - because the add-in
+    # has no binder for a curtain system type; CREATE_CURTAIN_SYSTEM matches
+    # its own the same way. A bare name both kinds share is refused naming
+    # both; a basic or stacked wall type is refused here, by name. The same
+    # need name as version 2, so its proof's values still bind. NOT
+    # `wallType`: CREATE_WALL takes that name, and a proof that draws the wall
+    # first binds every writing step from one set of values - the two would be
+    # forced to be the same type.
     - name: curtainWallType
-      type: WallType
+      type: string
       source: request
     # The settings to change, SEMICOLONS between - "vertical layout=fixed
     # distance; vertical spacing=1500". Keys: vertical layout, vertical
-    # spacing, horizontal layout, horizontal spacing. A key left out is left as
-    # it was. Layouts: none, fixed distance, maximum spacing, minimum spacing
-    # (fixed number is refused - see the purpose). Spacings: millimetres,
-    # digits only.
+    # spacing, horizontal layout, horizontal spacing - and, for a curtain
+    # system type, grid 1 layout, grid 1 spacing, grid 2 layout, grid 2
+    # spacing. A key left out is left as it was. Layouts: none, fixed
+    # distance, maximum spacing, minimum spacing (fixed number is refused -
+    # see the purpose). Spacings: millimetres, digits only.
     - name: grid
       type: IDictionary<string, string>
       source: request
@@ -137,10 +179,17 @@ contract:
       # (D-52).
       role: accounting
       type: int
+    - name: systemsOfType
+      # How many curtain systems use a curtain SYSTEM type - the reach of the
+      # change, counted before the write, as wallsOfType is for a wall type;
+      # 0 for a wall type. Never a thing it found (D-52).
+      role: accounting
+      type: int
     - name: readBack
       # EVERY grid setting of the type as Revit holds it after the write, both
       # directions, beside what it was - and where Revit keeps Number,
-      # Justification, Angle and Offset, measured. A STRING, because a reply
+      # Justification, Angle and Offset, measured; for a curtain system type,
+      # which of Revit's grid ids it carries as well. A STRING, because a reply
       # cuts a list to three items, and this is the evidence. Accounting: it
       # describes what `applied` counts, and on a refusal it is empty.
       role: accounting
@@ -148,8 +197,10 @@ contract:
     - name: measured
       # One placed wall of the type, before and after: its length, its grid
       # lines by the way each runs (and which of Revit's U and V sets each came
-      # from), and its mullions by type. Read off Revit, never worked out from
-      # the spacing. Accounting, for the same reason as readBack.
+      # from), and its mullions by type. For a curtain system type, one curtain
+      # system: the same counts over all its faces, and each face's U and V
+      # lines before and after. Read off Revit, never worked out from the
+      # spacing. Accounting, for the same reason as readBack.
       role: accounting
       type: string
     - name: refused
@@ -159,6 +210,9 @@ contract:
     - name: findings
       type: IList<string>
 
+# VERSION 2'S PROOF, KEPT AS A RECORD. It no longer describes the code
+# (version 3, 2026-10-29); NEEDS-CHECKING Group JP re-proves the wall-type path
+# and proves the curtain system type's.
 proof:
   date: '2026-10-06'
   by: Ajmal PS
@@ -240,6 +294,21 @@ compatibility-note: >
   names; it says nothing about which of them sit on the type and which on the
   wall, and nothing tying U or V to vertical, which is why both are measured.
   No ElementId is constructed and none is read as a number.
+  VERSION 3, read the same way on 2026-10-29, all eight releases:
+  CurtainSystemType derives from HostObjAttributes, as WallType does, and
+  declares nothing of its own; CurtainSystem.CurtainGrids (a CurtainGridSet,
+  enumerable, null when it holds none) and GetTypeId; BuiltInCategory
+  OST_CurtaSystem; ElementType.Name and FamilyName; Document.Title. The
+  BuiltInParameter ids SPACING_LAYOUT_1 and _2 ("Layout"), SPACING_LENGTH_1
+  and _2 ("Spacing"), SPACING_NUM_DIVISIONS_1 and _2 ("Number"),
+  SPACING_JUSTIFICATION_1 and _2, CURTAINGRID_ANGLE_1 and _2,
+  CURTAINGRID_ORIGIN_1 and _2, and the SPACING_LAYOUT_U, _V and plain
+  SPACING_LAYOUT it probes, are on all eight. The reference text of all eight
+  gives each id only its display name - the same names as the _VERT/_HORIZ
+  ids - and nothing about which element carries it, so the curtain system
+  type's ids are an assumption the code checks and the proof settles. It calls
+  CurtainGrid.Grid1Angle "the U grid line pattern" and Grid2Angle the V one,
+  and says nothing of which way either runs on a face.
 
 # ROUTING - repeated in SET_CURTAIN_WALL_MULLIONS, REPORT_CURTAIN_ELEMENTS,
 # WRITE_ELEMENT_PARAMETERS, DUPLICATE_TYPE, CREATE_WALL and
@@ -248,6 +317,26 @@ compatibility-note: >
 #   "set the curtain wall grid spacing"    -> here
 #   "make the vertical grid fixed distance
 #    1500"                                 -> here
+#   "set the curtain system grid spacing
+#    to 1500"                              -> here, on the curtain SYSTEM type
+#                                             (version 3, DRAFT until Group JP):
+#                                             grid 1 or grid 2, never vertical
+#                                             or horizontal - which way each runs
+#                                             is the face's. The curtain system
+#                                             itself is CREATE_CURTAIN_SYSTEM's
+#   "what is the grid spacing on this
+#    curtain system"                       -> NOT HERE - a question never lands
+#                                             on a write (D-86). Nothing reads a
+#                                             curtain system type's settings yet:
+#                                             REPORT_CURTAIN_WALL_TYPE reads a
+#                                             wall type and refuses this name.
+#                                             MEASURED 2026-10-29 on the cloud's
+#                                             trained backend: it reaches that
+#                                             reader, by a tie with this card.
+#                                             The fix is a reader of a curtain
+#                                             system type - REPORT_CURTAIN_WALL_TYPE
+#                                             widened, the owner's word, as it is
+#                                             PROVEN (NEEDS-CHECKING JP17)
 #   "change the mullions on this curtain
 #    wall"                                 -> SET_CURTAIN_WALL_MULLIONS. The grid
 #                                             decides where interior mullions can
@@ -317,10 +406,11 @@ compatibility-note: >
 #                                             V Grid are a divided surface's, in a
 #                                             mass or pattern-based family; a
 #                                             curtain wall type's grids are vertical
-#                                             and horizontal, and stay here. Added
-#                                             2026-10-28 as a comment only - nothing
-#                                             under impl/ moved, so the proof above
-#                                             still stands
+#                                             and horizontal, and a curtain system
+#                                             type's Grid 1 and Grid 2, and both
+#                                             stay here. Added 2026-10-28 as a
+#                                             comment only - nothing under impl/
+#                                             moved that day
 
 utterances:
   - set the curtain wall grid spacing
@@ -332,3 +422,12 @@ utterances:
   # sentence, and a comment is not indexed, so ranking decided: "make the
   # vertical grid fixed distance 1500": CREATE_GRID on lexical answered it.
   - make the vertical grid fixed distance 1500
+  # NOT AN UTTERANCE, MEASURED 2026-10-29: "set the curtain system grid spacing
+  # to 1500" - the curtain system type's own case - was declared here with
+  # version 3 and taken back the same day. Declared, it moved this card from
+  # 0.6371 to 0.6443 cosine against "select all walls of type Curtain Wall" on
+  # the trained backend, past REPORT_CURTAIN_WALL_TYPE's 0.6423, and with the
+  # mullion card's twin it sent three of row 5b-329's select guards
+  # (tests/test_routing_phrases.py) to a write. Every wording of it with
+  # "curtain system" in it did the same. Undeclared, it is left to ranking - see
+  # the routing row above and NEEDS-CHECKING JP17.
