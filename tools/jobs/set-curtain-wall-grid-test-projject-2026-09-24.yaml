@@ -2,6 +2,12 @@
 # docs/39 section 3, lesson 12; the cases are in
 # brain/fragments/set-curtain-wall-grid/tests/cases.yaml.
 #
+# STILL GOOD FOR VERSION 3 (2026-10-29): the wall-type path did not move, and
+# `curtainWallType` below is the same name, now matched in the fragment. Group
+# JP's two files - set-curtain-wall-grid-wall-type-2026-10-29.yaml (version
+# 2's own proof again) and set-curtain-wall-grid-curtain-system-2026-10-29.yaml
+# (the curtain system type) - are the ones that prove version 3.
+#
 #     python tools/batch-prove.py tools/jobs/set-curtain-wall-grid-test-projject-2026-09-24.yaml --dry-run --session <pid>
 #     python tools/batch-prove.py tools/jobs/set-curtain-wall-grid-test-projject-2026-09-24.yaml --session <pid>
 #

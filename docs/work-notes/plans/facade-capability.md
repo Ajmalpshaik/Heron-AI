@@ -58,6 +58,7 @@ tools behind it.
 | 7 | the [`facade`](../../../brain/skills/facade.yaml) method - routes A to E | - | DRAFT |
 | 8 | `report-curtain-elements` widened to version 2 (2026-10-29, on the owner's word) - groups each wall's panels by **size**, width x height as Revit gives them, within a tolerance (5 mm unless the modeller gives one), per wall and across the walls handed in, as [doc 45 §6](../../45-five-more-downloaded-skill-files.md) recorded; a size Revit does not give is named, never guessed | [JO](../../needs-checking/group-jo.md) | DRAFT |
 | 9 | `report-family-template` widened to version 4, on the owner's word (2026-10-29) - each adaptive point's **Orientation** on its `pointList` row, in the words `set-adaptive-point-orientation` prints, so what 4 writes is read back and *"what orientation are the adaptive points"* stops landing on that write. It was PROVEN; the change made its proof stale | [JQ](../../needs-checking/group-jq.md) | DRAFT |
+| 10 | `set-curtain-wall-grid` widened to version 3 and `set-curtain-wall-mullions` to version 2 - each also takes a **curtain system type**, by its Grid 1 and Grid 2, on the owner's word of 2026-10-29; a curtain wall type as before. Both proofs went stale with it, so route A's grid and mullion steps wait on the same group | [JP](../../needs-checking/group-jp.md) | DRAFT |
 
 None of it is proved. A compile is not a proof (D-30): each tool is refused for a kept change until its
 group has been run on a named model with its negative case (D-117).
@@ -68,13 +69,13 @@ A change under a PROVEN card's `impl/` makes its proof stale, so none of these w
 
 | Widen | So that it | Why it matters for a facade |
 |---|---|---|
-| `set-curtain-wall-grid`, `set-curtain-wall-mullions` | also take a **curtain system type** | route B's grid and mullions are set by hand until then |
+| `report-curtain-wall-type` | also reads a **curtain system type** - its Grid 1 and Grid 2 layout, spacing and mullions | *"which mullions are on this curtain system"* reaches the mullion setter, a write, when it is not asked as a question (Group JP, row JP17) |
 
 ## Still NOT YET after it
 
 Said by the `facade` method when asked, never worked round:
 
-- a curtain **system type's** grid and mullions - the wall-type setter does not reach it;
+- a curtain **system type's** grid and mullions **read back** - `report-curtain-wall-type` reads a wall type only (setting them is row 10);
 - a grid line **removed**, or one segment cut, on one wall;
 - a mullion moved, or its corner join changed;
 - the tile pattern of a divided surface - Revit's `CurtainPanelTilePattern` is read-only;
@@ -85,5 +86,5 @@ Said by the `facade` method when asked, never worked round:
 
 ## Retiring this note
 
-When Groups JI to JM are proved, or the owner drops one, this note is deleted. Its durable parts are
+When Groups JI to JM, and JP, are proved, or the owner drops one, this note is deleted. Its durable parts are
 already where they live: the cards, the `facade` method and the groups.

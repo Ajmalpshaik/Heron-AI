@@ -1070,6 +1070,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jo.md`](needs-checking/group-jo.md)
 
+## Group JP - a curtain system type's Grid 1 and Grid 2, and its mullions, set by the curtain wall setters: `SET_CURTAIN_WALL_GRID` version 3, `SET_CURTAIN_WALL_MULLIONS` version 2 (2026-10-29)
+
+**Its own file:** [`needs-checking/group-jp.md`](needs-checking/group-jp.md)
+
 ## Group JQ - an adaptive component's points read back with their Orientation: `REPORT_FAMILY_TEMPLATE` version 4 (2026-10-29)
 
 **Its own file:** [`needs-checking/group-jq.md`](needs-checking/group-jq.md)

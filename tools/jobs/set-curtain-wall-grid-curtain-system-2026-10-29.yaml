@@ -1,0 +1,59 @@
+# NEEDS-CHECKING Group JP - SET_CURTAIN_WALL_GRID version 3 on a CURTAIN SYSTEM
+# TYPE. Written 2026-10-29 in a cloud session with no Revit; NOT RUN.
+# docs/needs-checking/group-jp.md is the whole plan; this file is its JP2 (the
+# positive) and JP5 (the negative), both rolled back.
+#
+#     python tools/batch-prove.py tools/jobs/set-curtain-wall-grid-curtain-system-2026-10-29.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-curtain-wall-grid-curtain-system-2026-10-29.yaml --session <pid>
+#
+# THE MODEL is Group JP's rig (JP0), never a working model: the owner's
+# Project1 (Revit 2020, DefaultMetric) SAVED as "Heron JP Curtain.rvt" in
+# %TEMP%\heron-work\group-jp, holding on Level 1
+#   "Heron JP Tower"  an in-place MASS, a rectangle from (0, 30000) to
+#                     (18000, 42000) mm, 30000 mm high
+#   "Heron JP 1500"   a curtain system type, Grid 1 and Grid 2 Fixed Distance
+#                     1500, every mullion None
+#   ONE curtain system of "Heron JP 1500" on the tower's four side faces, made
+#                     BY HAND with Curtain System by Face - not with
+#                     CREATE_CURTAIN_SYSTEM, which is DRAFT itself
+# and NOTHING SELECTED. No setup step: the arrangement is the rig.
+#
+# THE NEGATIVE IS A DIFFERENT TYPE, never a cleared value: the same request
+# aimed at "Curtain Wall: Storefront", a curtain WALL type, which has no Grid 1
+# - refused in version 2's own words and left as it was.
+#
+# RUN tools/jobs/set-curtain-wall-grid-wall-type-2026-10-29.yaml (JP1) FIRST
+# when both are run: a batch keeps one run record per fragment, and this one's
+# is the record the signature (JP19) is drafted from.
+
+model: Heron JP Curtain (scratch copy of Project1), Revit 2020
+
+defaults:
+  in: Heron JP Curtain
+  write: true
+  setup: []
+
+jobs:
+  - fragment: set-curtain-wall-grid
+    set:
+      curtainWallType: "Heron JP 1500"
+      grid: "grid 1 layout=maximum spacing; grid 1 spacing=3000; grid 2 layout=minimum spacing; grid 2 spacing=2000"
+    negative-set:
+      curtainWallType: "Curtain Wall: Storefront"
+      grid: "grid 1 layout=maximum spacing; grid 1 spacing=3000; grid 2 layout=minimum spacing; grid 2 spacing=2000"
+    # `applied` is the work: settings Revit HOLDS as asked after the rebuild,
+    # counted off the read-back. `differs` should stay empty.
+    expect: applied
+    note: >
+      JP2 and JP5. Positive: systemsOfType 1, wallsOfType 0, applied 4,
+      differs empty; readBack grid 1 Maximum Spacing [Revit's value 3] 3000.0
+      mm and grid 2 Minimum Spacing [Revit's value 5] 2000.0 mm, each was Fixed
+      Distance 1500.0 mm, and "Of Revit's grid ids ... carries:" - record it.
+      measured: one curtain system on 4 faces, vertical lines 36 and horizontal
+      76 before; now vertical 16 and horizontal 56 (Grid 1 upright) or vertical
+      26 and horizontal 36 (Grid 1 level) - record which, and the By face U and
+      V counts. A stop quoting Revit is the assumption failing: a finding, not
+      a retry. Negative: applied 0, readBack and measured empty, refused "'grid
+      1 layout' is not a grid setting this changes. Name one or more of:
+      vertical layout, vertical spacing, horizontal layout, horizontal
+      spacing. Nothing was changed".

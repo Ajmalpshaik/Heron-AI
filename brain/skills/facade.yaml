@@ -57,15 +57,20 @@ purpose: >
      curtain system type is in the model.
      1. CREATE_CURTAIN_SYSTEM on the mass's faces - its side faces by
         default, all of them or its top only when the modeller says so. The
-        grid and mullions come from the CURTAIN SYSTEM TYPE, which is set by
-        the modeller in Type Properties; Heron has no setter for a curtain
-        system type yet.
-     2. A panel that differs: SELECT_IN_REGION on that panel, then
+        grid and mullions come from the CURTAIN SYSTEM TYPE.
+     2. SET_CURTAIN_WALL_GRID and SET_CURTAIN_WALL_MULLIONS on the curtain
+        system type, named as Revit writes it: its Grid 1 and Grid 2 - a
+        layout and a spacing in millimetres - and its Grid 1 and Grid 2
+        mullions, never vertical and horizontal, because which way each grid
+        runs is the face's. Every curtain system of that type changes, and
+        the answer says how many. DRAFT until NEEDS-CHECKING Group JP proves
+        them.
+     3. A panel that differs: SELECT_IN_REGION on that panel, then
         CHANGE_ELEMENT_TYPE to a curtain panel type. SET_CURTAIN_PANEL_TYPE
         works on curtain WALLS only and refuses a curtain system; a panel on
         a curtain system changed this way has not been run in Revit yet.
-     3. CREATE_MASS_FLOORS when the same mass also gives the floors.
-     4. Read it back from CREATE_CURTAIN_SYSTEM's own answer - each face's
+     4. CREATE_MASS_FLOORS when the same mass also gives the floors.
+     5. Read it back from CREATE_CURTAIN_SYSTEM's own answer - each face's
         grid lines, panels and mullions. REPORT_CURTAIN_ELEMENTS reads curtain
         walls only and answers "not a wall" for a curtain system.
 
@@ -122,8 +127,10 @@ purpose: >
        sweep or reveal type the modeller names.
      - a colour or a material on one face only: PAINT_FACES.
 
-  NOT YET - each is said when asked, never worked round: setting a curtain
-  SYSTEM TYPE's grid and mullions (the wall type's setter does not reach it);
+  NOT YET - each is said when asked, never worked round: Fixed Number on a
+  curtain wall or curtain system type (the grid step refuses it - where Revit
+  keeps the count is measured, not set); reading a curtain SYSTEM type's grid
+  and mullions back (REPORT_CURTAIN_WALL_TYPE reads a wall type only);
   a grid line REMOVED or a segment cut on one wall (Revit's own Add/Remove
   Segments tool); a mullion moved or its join changed; a stacked wall built
   from scratch; a curtain wall embedded in a basic wall told to cut it (Revit
@@ -199,7 +206,11 @@ note: >
   methods own their own steps and are not repeated here. ADD_CURTAIN_GRID_LINES,
   SET_CURTAIN_PANEL_TYPE, CREATE_CURTAIN_SYSTEM, SET_ADAPTIVE_POINT_ORIENTATION
   and SET_DIVIDED_SURFACE_LAYOUT were written the same day at DRAFT and are
-  refused for a kept change until proved (D-117). The whole
+  refused for a kept change until proved (D-117). On 2026-10-29
+  SET_CURTAIN_WALL_GRID (version 3) and SET_CURTAIN_WALL_MULLIONS (version 2)
+  were widened to a curtain system type for route B, on the owner's word; their
+  proofs went stale with it, so routes A and B are both refused a kept grid or
+  mullion change until NEEDS-CHECKING Group JP proves them again. The whole
   method is DRAFT until each route has been run on a scratch model with a
   negative case (D-30). The coverage, route by route, is in
   docs/work-notes/plans/facade-capability.md.
