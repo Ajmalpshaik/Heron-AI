@@ -1,0 +1,261 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-129
+semantic-identity: "add grid lines to this one curtain wall - vertical or horizontal, at these positions or into equal panels, with mullions if asked"
+kind: action
+domain: revit.elements
+capability: ADD_CURTAIN_GRID_LINES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  ADDS curtain grid lines to ONE curtain wall - the one picked in Revit -
+  each new line running the full height of the wall (vertical) or its full
+  length (horizontal, a transom), at the positions given or dividing the
+  wall into equal panels, and puts mullions of a named type on each new
+  line when one is named. Revit's Curtain Grid tool, typed: "divide this
+  curtain wall into six panels", "add a transom at 1100".
+
+  **THIS WALL ONLY.** The lines go on the wall's own curtain grid, and
+  nothing on its family type is written, so no other wall changes with it -
+  the answer gives the number of other walls on its type and says they are
+  untouched. SET_CURTAIN_WALL_GRID is the one that changes a type's layout
+  and spacing, for all its walls at once. Works on a wall that already has
+  grid lines from its type: the new lines are additions beside them.
+  ASSUMPTION for the proof: what a later change to the type's own grid does
+  to lines added here - kept, moved or dropped - has not been measured.
+
+  **ONE CURTAIN WALL AT A TIME.** Exactly one among what is handed in.
+  Anything else handed in that is not a curtain wall is named in `notCurtain`
+  and left alone; two curtain walls are refused, so each position lands on
+  the wall it was meant for. A basic or stacked wall alone is refused by
+  name. A curved wall is refused: along a curve, a position from the start
+  is not one straight distance.
+
+  **DIRECTION AND POSITIONS.** `direction` is vertical - lines running up the
+  wall, each position a distance ALONG it from its START, the end it was
+  drawn from - or horizontal - lines running along it, transoms, each
+  position a HEIGHT above its BASE. `positions` is MILLIMETRES, digits only
+  (D-71), commas between - "900, 2700" - or "equal 6": six equal panels that
+  way, so five lines. The start and the base are the edges of the wall's
+  own grid. Each position sits at least 100 mm inside those edges, because
+  a number typed in metres - 1.2 for 1200 - would otherwise put a line
+  1.2 mm from one; at most 100 lines in one call, and equal panels no
+  narrower than 100 mm. Any refusal refuses the whole request, before
+  anything is written.
+
+  **A LINE ALREADY THERE IS NOT DOUBLED.** A position within 5 mm of a line
+  the wall already has that way - its type's, or one added before - is
+  skipped and named in `skipped`; a position asked twice is added once.
+
+  **EQUAL PANELS MEANS EQUAL PANELS.** "equal 6" on a wall that already has
+  lines that way which do not fall on the sixths is refused, naming them -
+  adding five more would not make six panels. Lines already on the sixths
+  are skipped, and a result that is not six panels stops the call.
+
+  **REVIT'S U AND V ARE NOT TAKEN ON TRUST.** Revit adds a line as a U line
+  or a V line, and its reference does not say which is vertical on a wall.
+  The choice comes from this wall's own lines; on a wall with none, from
+  SET_CURTAIN_WALL_GRID's proof - Project2, Revit 2024, where a wall's
+  vertical lines came back in Revit's V set. Each new line must then run the
+  way asked and sit within 1 mm of the position asked, or the call stops and
+  nothing is kept.
+
+  **MULLIONS ARE OPTIONAL AND NAMED.** `mullionType` names a mullion type
+  the model holds - "Rectangular Mullion : 50 x 150mm", with or without the
+  space before the colon, or the bare type name when no other mullion type
+  shares it. Compared exactly, capitals included. A name that matches none
+  is refused WITH THE MULLION TYPES THE MODEL HAS; one that matches two is
+  refused naming both (D-54). Nothing is loaded. Left out, blank or "none":
+  grid lines alone. Mullions go on all segments of each new line - unless
+  Revit has already put some there, which are named and left; changing a
+  mullion's type is CHANGE_ELEMENT_TYPE's. ASSUMPTION for the proof: whether
+  Revit puts the wall type's own interior mullions on a line added by hand
+  has not been measured; the first run records it.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Every
+  refusal is made before the first write. A line or a mullion Revit will not
+  take, a line that runs the wrong way or sits in the wrong place, or a wall
+  Revit cannot rebuild, stops the call, and nothing it did is kept. In a
+  shared model, a wall another user holds is refused naming them.
+
+# WHAT THE ANSWER CARRIES - in a comment, not in the purpose, on purpose. The
+# purpose is indexed by both search routes, and a paragraph about reading back
+# and counting pulled grid-line QUESTIONS onto this write. Measured 2026-10-28
+# through find on a scratch store built from this tree: "how many grid lines
+# are in this curtain wall" reached HERE - words #2 + nearness #1 with that
+# paragraph, words #3 + nearness #1 without it. The sentence is
+# REPORT_CURTAIN_ELEMENTS's (D-86; SET_CURTAIN_WALL_GRID's table says so), and
+# it is declared there since the same day, so it is answered by identity.
+# STILL REACHING HERE BY RANKING, and recorded rather than buried: "where are
+# the grid lines on this curtain wall" and "what are the curtain grid lines on
+# this wall" - sentences written to test this, not a modeller's, so declared
+# nowhere. No READ says where a wall's grid lines sit; REPORT_CURTAIN_ELEMENTS
+# counts them. A question asked with heron_lookup's question flag leaves every
+# write out, and revit_change refuses a DRAFT. So, here and not there:
+#
+#   readBack   the grid's length and height, measured off its curtain cells;
+#              its lines each way before and after, sorted by the way each
+#              one actually runs and by which of Revit's U and V sets it came
+#              from; where the lines that way sit after; its panels before
+#              and after; its mullions by type before and after; and how the
+#              U-or-V flag was chosen
+#   added      the new lines, each measured in place after Revit rebuilt the
+#              wall
+#   mullionsAdded  mullions of the named type on the wall after, less those
+#              before - off the wall, never off what Revit said it made
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # THE ONE CURTAIN WALL - selected in Revit, or what the step before made
+    # (CREATE_WALL's `created`). Exactly one curtain wall among them; anything
+    # else is named in `notCurtain` and left alone.
+    - name: elements
+      type: IList<Element>
+    # "vertical" - lines up the wall, positions along it from its start - or
+    # "horizontal" - lines along it, transoms, positions as heights above its
+    # base. Nothing else.
+    - name: direction
+      type: string
+      source: request
+    # MILLIMETRES, digits only, commas between - "900, 2700" - or "equal 6"
+    # for six equal panels that way (five lines). Text rather than a number
+    # list, because "equal 6" is not a number.
+    - name: positions
+      type: string
+      source: request
+    # A mullion type to put on every new line, by name - "Rectangular Mullion :
+    # 50 x 150mm". Left out, it is read as "none": grid lines alone.
+    - name: mullionType
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: added
+      # Grid lines this call added, each MEASURED in place after Revit rebuilt
+      # the wall - running the way asked, within 1 mm of where asked.
+      role: result
+      type: int
+    - name: mullionsAdded
+      # Mullions of the named type on the wall after, less those before -
+      # counted off the wall, never off what Revit said it made. 0 when no
+      # mullion type was named.
+      role: result
+      type: int
+    - name: skipped
+      # Positions not added because the wall already has a line there, or
+      # because they were asked twice - each with where the line already is.
+      # The evidence it looked, never a line it made (D-52).
+      role: accounting
+      type: IList<string>
+    - name: notCurtain
+      # Handed in but not a curtain wall, so left alone. What it was GIVEN and
+      # could not use, never a thing it found (D-52).
+      role: accounting
+      type: IList<string>
+    - name: readBack
+      # The wall as Revit holds it after, beside before: grid size, lines each
+      # way by the way each runs and by Revit's U and V sets, where the lines
+      # that way sit, panels, mullions by type, and how the U-or-V flag was
+      # chosen. A STRING, because a reply cuts a list to three items and this
+      # is the evidence. Accounting: empty on a refusal.
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE PATH FOR EVERY RELEASE, read rather than remembered. On 2026-10-28
+  tools/api-surface read the reference assemblies of all eight releases, 2020
+  through 2027, and found one signature on every one for each member this
+  calls: `CurtainGrid.AddGridLine(bool isUGridLine, XYZ position, bool
+  oneSegmentOnly)`, `GetCurtainCells`, `GetUGridLineIds`, `GetVGridLineIds`,
+  `GetMullionIds` and `GetPanelIds`; `CurtainCell.CurveLoops`
+  (a CurveArrArray); `CurtainGridLine.FullCurve`, `ExistingSegmentCurves`
+  and `AddMullions(Curve segment, MullionType mullionType, bool
+  oneSegmentOnly)` returning an ElementSet; `Mullion.LocationCurve`;
+  `MullionType` deriving from FamilySymbol; `Wall.CurtainGrid`,
+  `Wall.WallType`, `WallType.Kind`, `Line.Direction`, the XYZ operators,
+  `CurveArray.get_Item` and `Size` (its indexer is listed, but C# will not
+  read it as `[]` - the fragment compile said so on all eight), `ElementSet.Size`,
+  `WorksharingUtils.GetCheckoutStatus` with its owner, `Document.Regenerate`
+  and the application's `AngleTolerance`. Revit's reference names a grid's
+  two families of lines U and V and never says which is vertical on a wall,
+  which is why each new line is measured. No ElementId is constructed and
+  none is read as a number.
+
+# ROUTING - repeated in SET_CURTAIN_WALL_GRID, SET_CURTAIN_WALL_MULLIONS,
+# REPORT_CURTAIN_ELEMENTS and CREATE_GRID.
+#
+#   "divide this curtain wall into six panels" -> here, direction vertical,
+#                                                positions "equal 6"
+#   "split this curtain wall into 4 equal bays with mullions" -> here,
+#                                                vertical, "equal 4", with
+#                                                the mullion type named
+#   "add a grid line at 1200 from the bottom of this curtain wall" -> here,
+#                                                horizontal, 1200
+#   "add vertical grid lines at 900 and 2700 on just this wall" -> here,
+#                                                vertical, "900, 2700"
+#   "add a transom at 1100"                   -> here, horizontal, 1100 - with
+#                                                a mullion type when one is
+#                                                named; without one, the grid
+#                                                line alone
+#   "set the curtain wall grid spacing",
+#   "make the vertical grid fixed distance
+#    1500"                                    -> SET_CURTAIN_WALL_GRID. The
+#                                                TYPE's layout and spacing,
+#                                                every wall built from it. This
+#                                                adds lines to ONE wall
+#   "change the mullions on this curtain
+#    wall"                                    -> SET_CURTAIN_WALL_MULLIONS - the
+#                                                type's six mullion positions.
+#                                                This puts mullions on the
+#                                                lines it adds, and only there.
+#                                                Measured 2026-10-28 through
+#                                                find, the sentence reached
+#                                                REPORT_CURTAIN_ELEMENTS, as
+#                                                that card's own table records
+#   "change this one mullion"                 -> CHANGE_ELEMENT_TYPE, with that
+#                                                mullion selected
+#   "add a grid", "add a grid line", "put a
+#    grid line here"                          -> CREATE_GRID - a building grid,
+#                                                the setting-out datum. Without
+#                                                "curtain" in the sentence, a
+#                                                grid is a column grid. Measured
+#                                                2026-10-28 on a scratch store:
+#                                                "add a grid line" reaches it
+#   "how many grid lines are in this curtain
+#    wall", "what is in this curtain wall"    -> REPORT_CURTAIN_ELEMENTS. A
+#                                                question must not land on a
+#                                                write (D-86)
+#   "what is the grid spacing on this curtain
+#    wall"                                    -> REPORT_CURTAIN_WALL_TYPE
+#   "remove a grid line from this curtain
+#    wall", "add a grid line to one panel
+#    only"                                    -> NOT HERE, and nothing does yet.
+#                                                Every line this adds runs the
+#                                                whole wall; Revit's Add/Remove
+#                                                Segments does the rest by hand
+
+utterances:
+  - divide this curtain wall into six panels
+  - add a grid line at 1200 from the bottom of this curtain wall
+  - add vertical grid lines at 900 and 2700 on just this wall
+  - split this curtain wall into 4 equal bays with mullions
+  - add a transom at 1100

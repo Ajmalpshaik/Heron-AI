@@ -1,0 +1,70 @@
+# THE RIG is NEEDS-CHECKING Group JK's JK0: a family from the metric Generic
+# Model Adaptive template with four placement points made and KEPT -
+# PLACE_ADAPTIVE_POINTS "0,0,0; 1000,0,0; 1000,1000,0; 0,1000,0", pointKind
+# "placement", through revit_change or by hand, never by a rolled-back proof
+# run - SAVED as "Heron JK Orientation.rfa" in %TEMP%\heron-work\group-jk, and
+# each point's Orientation read in Properties by hand before anything runs.
+# Revit's reference says a new point reads Instance (xyz); JK1 records it.
+
+positive:
+  - given: >
+      the rig, every placement point reading Instance (xyz); orientation "Host
+      and Loop System", points "all"
+    expect: >
+      changed 4; changedPoints "point 1: Instance (xyz) -> Host and Loop System
+      (xyz)" and the same for points 2, 3 and 4; pointOrientations naming
+      placement points 1 to 4, each at Host and Loop System (xyz); LOOKED AT -
+      select point 1, and Properties' Orientation reads Host and Loop System
+      (xyz)
+
+  - given: the rig as it is; orientation "global xyz", points "1"
+    expect: >
+      changed 1, point 1 at Global (xyz); points 2, 3 and 4 read exactly as
+      they did before - not touched, and the call would have failed had one
+      moved
+
+  - given: >
+      the rig with a shape handle point added at 500,500,300 by
+      PLACE_ADAPTIVE_POINTS, pointKind "shape handle"; orientation "Instance
+      (z) then Host (xy)", points "1-4"
+    expect: >
+      changed 4; pointOrientations lists the shape handle point as not
+      written, with what Revit read for it if it reads one; a finding saying a
+      shape handle point takes no Orientation through Revit's API
+
+negative:
+  # THE NEGATIVE IS A VALUE THAT MUST NOT BE TOUCHED, not an empty one: every
+  # point already reads what is asked, so nothing is written.
+  - given: >
+      the rig with every placement point still at Instance (xyz); orientation
+      "Instance", points "all"
+    expect: >
+      changed 0, alreadySet 4, changedPoints empty - no point rewritten; the
+      finding "Every placement point asked for already reads Instance (xyz) -
+      nothing was changed."
+
+  - given: points "9" in the four-point rig
+    expect: refused naming the family's placement points 1, 2, 3, 4 - nothing changed
+
+  - given: orientation "sideways"
+    expect: refused naming Revit's six Orientations - nothing changed
+
+  - given: points "shape handle"
+    expect: refused - Revit's API sets an Orientation on placement points only - nothing changed
+
+  - given: a new family from the plain metric Generic Model template
+    expect: >
+      refused - not an adaptive component, naming REPORT_FAMILY_TEMPLATE -
+      notAFamily false, nothing changed
+
+  - given: a project in front
+    expect: notAFamily true and nothing changed
+
+second_route:
+  - >
+      In the Family Editor, select each placement point: Properties shows its
+      Orientation, which must read the words pointOrientations gives for it
+  - >
+      The family loaded into a test project and placed on a face by clicking
+      its four points: with Host and Loop System (xyz) the shape follows the
+      face, and clicking the points the other way round flips it - LOOKED AT

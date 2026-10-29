@@ -1038,9 +1038,29 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jh.md`](needs-checking/group-jh.md)
 
-## Group JJ - a massing study from block to building: `REPORT_MASSES`, `SET_MASS_FLOOR_USAGE`, `REMOVE_MASS_FLOORS`, `CREATE_ELEMENTS_BY_FACE` and the `massing-study` and `mass-family-creation` methods (2026-10-28)
+## Group JI - curtain panels changed by where they sit on one wall - a row, a column, a floor line: `SET_CURTAIN_PANEL_TYPE` version 1 (2026-10-28)
+
+**Its own file:** [`needs-checking/group-ji.md`](needs-checking/group-ji.md)
+
+## Group JJ - one curtain wall's own grid lines, added by position or in equal panels: `ADD_CURTAIN_GRID_LINES` version 1 (2026-10-28)
 
 **Its own file:** [`needs-checking/group-jj.md`](needs-checking/group-jj.md)
+
+## Group JK - an adaptive component's points turned to the host: `SET_ADAPTIVE_POINT_ORIENTATION` version 1 (2026-10-28)
+
+**Its own file:** [`needs-checking/group-jk.md`](needs-checking/group-jk.md)
+
+## Group JL - a divided surface already there, changed: its grid rotated for a diamond pattern, offset, cut at the levels: `SET_DIVIDED_SURFACE_LAYOUT` version 1 (2026-10-28)
+
+**Its own file:** [`needs-checking/group-jl.md`](needs-checking/group-jl.md)
+
+## Group JM - a curtain system laid on the faces of a mass: `CREATE_CURTAIN_SYSTEM` version 1 (2026-10-28)
+
+**Its own file:** [`needs-checking/group-jm.md`](needs-checking/group-jm.md)
+
+## Group JN - a massing study from block to building: `REPORT_MASSES`, `SET_MASS_FLOOR_USAGE`, `REMOVE_MASS_FLOORS`, `CREATE_WALLS_BY_FACE` and the `massing-study` and `mass-family-creation` methods (2026-10-28)
+
+**Its own file:** [`needs-checking/group-jn.md`](needs-checking/group-jn.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

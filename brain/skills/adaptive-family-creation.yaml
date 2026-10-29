@@ -56,9 +56,13 @@ purpose: >
      LOAD_FAMILY into a test project, where the modeller places it by clicking
      the points in order.
 
-  KNOWN HERE AND SET BY HAND: each placement point's ORIENTATION (Instance
-  (xyz) by default; Host and Loop System is the one panels placed on a
-  surface usually need) is a Properties choice no Heron tool sets yet.
+  KNOWN HERE: each placement point's ORIENTATION (Instance (xyz) by
+  default; Host and Loop System is the one panels placed on a surface
+  usually need) is SET_ADAPTIVE_POINT_ORIENTATION, once step 2's points
+  exist - all of them or by number. It is DRAFT, not yet run in Revit
+  (NEEDS-CHECKING JK): until it is signed it runs only once, through
+  try-once on the saved family, or the modeller sets it by hand in
+  Properties. Nothing reads an Orientation back but Properties.
   Built 2026-10-02, owed BV19 and BV20: points hosted on a line or on a
   point's plane, and the sweep along a path.
 
@@ -75,6 +79,8 @@ needs:
   - SET_PROJECT_UNITS
   - SET_FAMILY_SETTINGS
   - PLACE_ADAPTIVE_POINTS
+  # The Orientation of those points - DRAFT, NEEDS-CHECKING JK.
+  - SET_ADAPTIVE_POINT_ORIENTATION
   - DRAW_FAMILY_POINT_CURVES
   - CREATE_CONCEPTUAL_FORM
   - SET_FAMILY_FORM_MATERIAL

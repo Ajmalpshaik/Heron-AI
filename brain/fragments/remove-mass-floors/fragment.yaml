@@ -4,7 +4,7 @@ heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
-id: FRG-ELE-130
+id: FRG-ELE-133
 semantic-identity: "take the mass floors off these masses at the levels named"
 
 # A NEW CAPABILITY, NOT A REMOVE MODE ON CREATE_MASS_FLOORS, and why:

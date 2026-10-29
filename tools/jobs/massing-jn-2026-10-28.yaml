@@ -1,32 +1,32 @@
-# NEEDS-CHECKING Group JJ - the massing tools built 2026-10-28: REPORT_MASSES,
-# SET_MASS_FLOOR_USAGE, REMOVE_MASS_FLOORS and CREATE_ELEMENTS_BY_FACE.
+# NEEDS-CHECKING Group JN - the massing tools built 2026-10-28: REPORT_MASSES,
+# SET_MASS_FLOOR_USAGE, REMOVE_MASS_FLOORS and CREATE_WALLS_BY_FACE.
 #
-#     python tools/batch-prove.py tools/jobs/massing-jj-2026-10-28.yaml --dry-run
-#     python tools/batch-prove.py tools/jobs/massing-jj-2026-10-28.yaml
+#     python tools/batch-prove.py tools/jobs/massing-jn-2026-10-28.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/massing-jn-2026-10-28.yaml
 #
 # ONE SCRATCH PROJECT, OPEN IN REVIT 2020, never a working model:
-# %TEMP%\heron-work\group-jj\JJ Massing.rvt, a new project from the Metric
-# architectural template, arranged by hand as JJ1 in
-# docs/needs-checking/group-jj.md says - Levels 1 to 4 at 0, 3000, 6000 and
+# %TEMP%\heron-work\group-jn\JN Massing.rvt, a new project from the Metric
+# architectural template, arranged by hand as JN1 in
+# docs/needs-checking/group-jn.md says - Levels 1 to 4 at 0, 3000, 6000 and
 # 9000 mm; mass A a 30 x 20 m box 12 m tall at the origin with mass floors at
 # Levels 1 to 4; mass B a 10 x 10 m box 6 m tall overlapping A by 5 x 10 m in
 # plan, NOT joined, with no mass floors; one Generic - 200mm wall elsewhere.
 #
-# The order matters: the usage run reads the floors JJ1 made, the walls run
+# The order matters: the usage run reads the floors JN1 made, the walls run
 # needs mass A with no walls on it yet, and every write is rolled back, so each
-# job starts from JJ1's arrangement.
+# job starts from JN1's arrangement.
 #
 # select-by-categories takes the whole model with no inViewOnly. It is the
 # arrangement, not what is judged - the answer's binding note must read
 # "elements from select-by-categories (2)" on the positive legs and "(1)" on
 # the negatives, or the run proves nothing.
 
-model: JJ Massing (scratch project, Metric architectural template), Revit 2020
+model: JN Massing (scratch project, Metric architectural template), Revit 2020
 
 jobs:
   - fragment: report-masses
     expect: massCount
-    in: JJ Massing
+    in: JN Massing
     set: {siteArea: "4500", withOutlines: true}
     negative-set: {masses: "NoSuchFamily"}
     note: >
@@ -40,7 +40,7 @@ jobs:
     expect: changed
     write: true                        # rolled back
     keep-chain: true
-    in: JJ Massing
+    in: JN Massing
     setup: [select-by-categories]
     setup-set: {categories: Mass}
     negative-setup-set: {categories: Walls}
@@ -55,7 +55,7 @@ jobs:
     expect: removed
     write: true                        # rolled back
     keep-chain: true
-    in: JJ Massing
+    in: JN Massing
     setup: [select-by-categories]
     setup-set: {categories: Mass}
     negative-setup-set: {categories: Walls}
@@ -65,18 +65,17 @@ jobs:
       Positive - removed 1, mass A's floors reading Levels 1 to 3 after;
       notThere 1 for mass B. Negative - the wall: NOTHING WAS REMOVED.
 
-  - fragment: create-elements-by-face
+  - fragment: create-walls-by-face
     expect: created
     write: true                        # rolled back
     keep-chain: true
-    in: JJ Massing
+    in: JN Massing
     setup: [select-by-categories]
     setup-set: {categories: Mass}
     negative-setup-set: {categories: Walls}
-    set: {typeName: "Generic - 200mm"}
-    negative-set: {typeName: "Generic - 200mm"}
+    set: {wallType: "Generic - 200mm"}
+    negative-set: {wallType: "Generic - 200mm"}
     note: >
       Positive - walls by face on the side faces of both masses (4 on A, 4 on
       B), each read back with its type and area; the answer naming Finish
-      Face: Exterior and which geometry route Revit took - write the route in
-      JJ's results. Negative - the wall: NOTHING WAS MADE, not a mass.
+      Face: Exterior. Negative - the wall: NOTHING WAS MADE, not a mass.

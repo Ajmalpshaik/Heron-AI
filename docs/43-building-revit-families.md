@@ -391,12 +391,12 @@ pattern decides how many cells one panel takes (Rectangle 1 x 1, Hexagon 2 x 3, 
 the rest), the panels are adaptive and schedule as curtain panels. **Mass Floors** are cut at chosen levels in
 the PROJECT and report area, perimeter, volume and exterior surface; Gross Volume, Gross Surface Area and Gross
 Floor Area are read-only and schedulable. An in-place mass is for one-off massing, a mass family for repeats.
-**In the project (built 2026-10-28, DRAFT, [Group JJ](needs-checking/group-jj.md)):** `REPORT_MASSES` reads every
+**In the project (built 2026-10-28, DRAFT, [Group JN](needs-checking/group-jn.md)):** `REPORT_MASSES` reads every
 mass's gross values and mass floors with their Usage, totals them by level and by use, gives plot ratio and site
 coverage from a site area, and names unjoined masses that overlap - **SOURCED:** Autodesk Help, joining mass
 instances removes the overlap from gross volume and floor area; and Revit makes no mass floor at a level on the
 top face of a mass. `SET_MASS_FLOOR_USAGE` and `REMOVE_MASS_FLOORS` set and take off mass floors by level, and
-`CREATE_ELEMENTS_BY_FACE` makes Wall by Face and Curtain System by Face. **API:** `FaceWall.Create` and
+`CREATE_WALLS_BY_FACE` makes Wall by Face - Curtain System by Face is `CREATE_CURTAIN_SYSTEM` ([Group JM](needs-checking/group-jm.md)). **API:** `FaceWall.Create` and
 `NewCurtainSystem2` exist 2020 to 2027; **no class or call makes Floor by Face or Roof by Face, and none makes an
 in-place family**, on any release - read off the reference assemblies on 2026-10-28.
 **API:** `DividedSurface.Create` with each direction's `SpacingRule` - a number or a distance - and
@@ -807,8 +807,8 @@ Source category with `ElementTransformUtils` and reads the transform back (**UNS
 | Wall-, ceiling-, floor-, roof-, face-based | [`hosted-family-creation`](../brain/skills/hosted-family-creation.yaml) | `CREATE_FAMILY_HOST_OPENING`, `SET_FAMILY_SETTINGS` (Cut with Voids When Loaded, Maintain Annotation Orientation) |
 | Line-based | [`line-based-family-creation`](../brain/skills/line-based-family-creation.yaml) | `REPORT_FAMILY_TEMPLATE` with the arrays and locks already built |
 | Pattern-based panel | [`pattern-based-family-creation`](../brain/skills/pattern-based-family-creation.yaml) | `DRAW_FAMILY_POINT_CURVES`, `CREATE_CONCEPTUAL_FORM`, `PLACE_ADAPTIVE_POINTS` for points hosted on its edges, `DIVIDE_FAMILY_SURFACE` in the mass it fills |
-| Conceptual mass | [`mass-family-creation`](../brain/skills/mass-family-creation.yaml), and in the project [`massing-study`](../brain/skills/massing-study.yaml) (both DRAFT, Group JJ) | `CREATE_CONCEPTUAL_FORM` (every form, a revolve too), `DIVIDE_FAMILY_SURFACE`; in the project `REPORT_MASSES`, `SET_MASS_FLOOR_USAGE`, `REMOVE_MASS_FLOORS`, `CREATE_ELEMENTS_BY_FACE` (built 2026-10-28, DRAFT) |
-| Adaptive component | [`adaptive-family-creation`](../brain/skills/adaptive-family-creation.yaml) | `PLACE_ADAPTIVE_POINTS` (free or hosted), `DRAW_FAMILY_POINT_CURVES`, `CREATE_CONCEPTUAL_FORM` (a sweep along a path for a two-point beam) |
+| Conceptual mass | [`mass-family-creation`](../brain/skills/mass-family-creation.yaml), and in the project [`massing-study`](../brain/skills/massing-study.yaml) (both DRAFT, Group JN) | `CREATE_CONCEPTUAL_FORM` (every form, a revolve too), `DIVIDE_FAMILY_SURFACE`; in the project `REPORT_MASSES`, `SET_MASS_FLOOR_USAGE`, `REMOVE_MASS_FLOORS`, `CREATE_WALLS_BY_FACE`; a curtain system on a mass is `CREATE_CURTAIN_SYSTEM` (Group JM) (built 2026-10-28, DRAFT) |
+| Adaptive component | [`adaptive-family-creation`](../brain/skills/adaptive-family-creation.yaml) | `PLACE_ADAPTIVE_POINTS` (free or hosted), `SET_ADAPTIVE_POINT_ORIENTATION` (each placement point's Orientation - DRAFT, Group JK), `DRAW_FAMILY_POINT_CURVES`, `CREATE_CONCEPTUAL_FORM` (a sweep along a path for a two-point beam) |
 | Profile | [`profile-family-creation`](../brain/skills/profile-family-creation.yaml) | `DRAW_FAMILY_DETAIL_LINES`, `SET_FAMILY_SETTINGS` (Profile Usage), `SET_FAMILY_SWEEP_PROFILE` |
 | Detail item, annotation symbol | [`detail-family-creation`](../brain/skills/detail-family-creation.yaml) | `DRAW_FAMILY_DETAIL_LINES`, `DRAW_FAMILY_FILLED_REGION` |
 | Tag - pipe, duct, equipment, any tag category | [`tag-family-creation`](../brain/skills/tag-family-creation.yaml) | `REPORT_FAMILY_LABELS`, `COPY_LABELS_FROM_FAMILY`, `SET_FAMILY_LABEL_LAYOUT` (DRAFT, Group IJ), with the category, line, type and load tools already built |

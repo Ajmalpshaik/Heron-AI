@@ -82,19 +82,19 @@ purpose: >
      Floor Area, Floor Perimeter, Exterior Surface Area and Floor Volume;
      SET_SCHEDULE_SORT_GROUP (PROVEN) by Usage then Level, and
      SET_SCHEDULE_FIELD_TOTALS (PROVEN) on Floor Area. That a Mass Floor
-     schedule is made this way is owed in NEEDS-CHECKING Group JJ.
+     schedule is made this way is owed in NEEDS-CHECKING Group JN.
   10. REVISE AND READ AGAIN: a block changed in its family is reloaded with
      LOAD_FAMILY reload=true; the mass floors follow the new shape. Run
      step 8 again after every change - a number reported before a change
      is not a number about the scheme now.
   11. FROM MASS TO BUILDING, only once the modeller says the scheme is
      agreed:
-     a. CREATE_ELEMENTS_BY_FACE (DRAFT) with a wall type - Wall by Face on
+     a. CREATE_WALLS_BY_FACE (DRAFT) with a wall type - Wall by Face on
         every side face, Finish Face: Exterior on the mass face unless the
-        modeller says otherwise - and with a curtain system type for a
-        glazed block, faces "sides", or faces "up" for a glazed roof. They
-        stay tied to the faces; after the mass changes, Update to Face by
-        hand.
+        modeller says otherwise. A glazed block is CREATE_CURTAIN_SYSTEM
+        (DRAFT) with a curtain system type instead - its upright faces, or
+        "top" for a glazed roof. Both stay tied to the faces; after the
+        mass changes, Update to Face by hand.
      b. SLABS: REPORT_MASSES with withOutlines gives each mass floor's
         outline in the writing CREATE_FLOOR (PROVEN, version 2) takes - one
         CREATE_FLOOR per outline, on its level. A slab made this way does
@@ -132,7 +132,8 @@ needs:
   - CREATE_SCHEDULE
   - SET_SCHEDULE_SORT_GROUP
   - SET_SCHEDULE_FIELD_TOTALS
-  - CREATE_ELEMENTS_BY_FACE
+  - CREATE_WALLS_BY_FACE
+  - CREATE_CURTAIN_SYSTEM
   - CREATE_FLOOR
   - CREATE_OPENING
   - CREATE_ROOF
@@ -148,7 +149,8 @@ revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 note: >
   Written 2026-10-28 on the owner's request for advanced massing, with
   REPORT_MASSES, SET_MASS_FLOOR_USAGE, REMOVE_MASS_FLOORS and
-  CREATE_ELEMENTS_BY_FACE built the same day. The Revit facts are read off
+  CREATE_WALLS_BY_FACE built the same day; CREATE_CURTAIN_SYSTEM came in
+  from Group JM. The Revit facts are read off
   the API reference assemblies for 2020 to 2027 and Autodesk Help on mass
   floors and joined masses. Every step is DRAFT until it has been run on a
-  real model with a negative case (D-30) - NEEDS-CHECKING Group JJ.
+  real model with a negative case (D-30) - NEEDS-CHECKING Group JN.

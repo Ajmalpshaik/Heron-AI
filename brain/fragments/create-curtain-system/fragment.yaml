@@ -1,0 +1,232 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-127
+semantic-identity: "lay a curtain system of a named type on the faces of a placed mass or generic model - its upright side faces, its top, or every face - as Curtain System by Face does"
+kind: action
+domain: revit.elements
+capability: CREATE_CURTAIN_SYSTEM
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT EXISTS - comments, not `purpose`, because `purpose` is searched and
+# long text pulls other sentences here.
+# 2026-10-28: the modeller asked "put a curtain system on the faces of this
+# mass", "make a facade on the mass faces" and "curtain system by face on the
+# side faces of mass Tower A". Nothing in the library made a curtain system:
+# CREATE_WALL draws a curtain WALL along a line, DIVIDE_FAMILY_SURFACE divides
+# a surface inside the mass FAMILY in the Family Editor, and
+# REPORT_CURTAIN_WALL_TYPE refuses a curtain system's type by name. Asked of
+# brain/heron_retrieve.py the same day, the three sentences reached
+# DIMENSION_ELEMENT_FACES, CREATE_MASS_FLOORS, DIVIDE_FAMILY_SURFACE and
+# REPORT_CURTAIN_WALL_TYPE first - none of which makes one.
+#
+# THE HOST. The masses and generic models SELECTED - `host` left out, or
+# "selected" - or ONE named in `host`: its element id as Revit prints it, its
+# unique id, its family name ("Tower A" - the name an in-place mass is given
+# when it is made), "Family : Type", or its Mark. A name that fits two is
+# refused with their ids. A wall, a floor or anything else - selected or named
+# - is refused by its category and nothing is made: Revit puts a curtain
+# system on mass and generic model faces.
+#
+# THE TYPE IS NAMED, NEVER CHOSEN HERE. A name the model does not have, or no
+# name, is refused with the curtain system types the model does have.
+#
+# THE FACES, AND THE ONE DEFAULT. "vertical" when nothing is said: every face
+# whose normal is level to within 1 degree - a curved face judged at nine
+# points across it, every one level. "top": every face looking straight up to
+# within 1 degree. "all": every face, the underside included. A sloped face is
+# only reached by "all". A host with no face of the kind asked is refused,
+# with how many faces of each kind it has. Nothing beyond this default is
+# assumed: a word this does not know is refused, naming the three.
+#
+# THE FACES' REFERENCES ARE READ THROUGH THE FAMILY'S OWN GEOMETRY -
+# GeometryInstance.GetSymbolGeometry() with no transform, which the API
+# reference (RevitAPI.xml, GetInstanceGeometry's remarks) names as the only
+# geometry "suitable for creating new Revit elements referencing the original
+# element". The instance's transform turns the NORMALS into the model's
+# directions and touches nothing else. The faces of a family nested inside
+# the host are left out, and the findings say how many such families were.
+#
+# ONE CALL TO REVIT PER HOST - Document.Create.NewCurtainSystem2(ReferenceArray,
+# CurtainSystemType) - so each curtain system made is known by the host it
+# sits on. The API reference says one curtain system is made per mass or
+# generic model whose faces are handed in.
+#
+# READ BACK, MEASURED OFF REVIT, never worked out from the type: each curtain
+# system's id and type; how many faces it took - its curtain grids, "Each
+# CurtainGrid corresponds to one face" (the API reference); and on each grid
+# the U and V grid lines, the panels and the mullions Revit holds. A curtain
+# system whose type does not read back as named, or no curtain system made at
+# all, THROWS and the whole call goes back. Fewer faces taken than handed in
+# is said in the findings, not hidden.
+#
+# A CURTAIN SYSTEM ALREADY STANDING IN A HOST'S OUTLINE is counted before the
+# write (`alreadyNear`) and named. Whether it sits on the same faces is NOT
+# read: Revit's API gives a curtain system no host face to read back. What
+# Revit does with a second one on the same faces is NEEDS-CHECKING JM8.
+#
+# NOT KNOWN WITHOUT A REAL REVIT - ASSUMPTIONS FOR THE PROOF TO SETTLE
+# (NEEDS-CHECKING Group JM):
+#   - that Revit takes the face references read this way at all (JM1, JM2);
+#   - whether a GENERIC MODEL that is not a mass takes one - the API reference
+#     says "masses or generic models", and nothing here has run it (JM5);
+#   - which of a face's grid directions Revit calls U and which V, and
+#     whether its counts match the ones derived in the plan (JM2);
+#   - what a second curtain system on the same faces does (JM8).
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Every
+# refusal is made before the first write, one host refused refuses the call,
+# and one call is one undo entry.
+purpose: >
+  Creates a new curtain system on the faces of a mass - or a generic model -
+  placed in the project, as Revit's Curtain System by Face does, of the
+  curtain system type the request names. The faces: the upright side faces
+  (the default), the top, or all of them. Answers with each new curtain
+  system and, read back from Revit, the faces it took and the grid lines on
+  each.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # "This mass": the masses and generic models SELECTED in Revit, or handed
+    # on by a select step. Optional, so that a host NAMED in `host` needs no
+    # selection; with neither, the call is refused.
+    - name: elements
+      type: IList<Element>
+      optional: true
+    # Left out, or "selected": the selection above. Otherwise ONE mass or
+    # generic model - its element id as Revit prints it, its unique id, its
+    # family name ("Tower A"), "Family : Type", or its Mark.
+    - name: host
+      type: string
+      source: request
+      optional: true
+      absent: selected
+    # The curtain system type BY NAME as Type Properties shows it - "Heron JM
+    # 1500" in the proof's rig - or "Family : Type". Never chosen here: a name
+    # the model lacks is refused with the names it has.
+    - name: curtainSystemType
+      type: string
+      source: request
+    # vertical (the default - the upright side faces), top, or all.
+    - name: faces
+      type: string
+      source: request
+      optional: true
+      absent: vertical
+  provides:
+    - name: created
+      # The curtain systems Revit made, each read back as the type named.
+      role: result
+      type: IList<Element>
+    - name: facesTaken
+      # Curtain grids Revit holds on what was made - one per face, the API
+      # reference says. Counted after the write, never from what was asked.
+      role: accounting
+      type: int
+    - name: facesAsked
+      # Faces handed to Revit. The size of the request, never a thing made
+      # (D-52).
+      role: accounting
+      type: int
+    - name: readBack
+      # Each curtain system as Revit holds it - id, type, host, and on each
+      # grid its U and V grid lines, panels and mullions. ONE STRING, because
+      # a reply cuts a list to three items and this is the evidence (D-52).
+      # Empty on a refusal.
+      role: accounting
+      type: string
+    - name: alreadyNear
+      # Curtain systems already standing within a host's outline before the
+      # write. A warning, never a thing made (D-52).
+      role: accounting
+      type: int
+    - name: refused
+      # Why NOTHING WAS MADE, in plain words; null when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, no #if. Read with tools/api-surface
+  off the reference assemblies of all eight releases, 2020 to 2027, on
+  2026-10-28, one signature on every one: Creation.Document.NewCurtainSystem2
+  (ReferenceArray, CurtainSystemType) returning ICollection of ElementId;
+  CurtainSystem.CurtainGrids and .CurtainSystemType; CurtainGridSet (Size,
+  enumerable); CurtainGrid.GetUGridLineIds, GetVGridLineIds, GetPanelIds and
+  GetMullionIds; CurtainSystemType (a HostObjAttributes) and
+  ElementType.FamilyName; GeometryInstance.GetSymbolGeometry() and
+  .Transform; Transform.OfVector, Multiply and Identity; Face.Reference,
+  .Area, .GetBoundingBox and .ComputeNormal(UV); PlanarFace.FaceNormal;
+  Options.ComputeReferences; ReferenceArray and Append; ElementCategoryFilter,
+  LogicalOrFilter, FilteredElementCollector.WherePasses, OfCategory and
+  ToElementIds; Document.GetElement(string); BuiltInCategory OST_Mass,
+  OST_GenericModel and OST_CurtaSystem, BuiltInParameter ALL_MODEL_MARK and
+  the ElementId(BuiltInCategory) constructor. The remarks quoted in the
+  comments above are RevitAPI.xml's, read off the 2024 reference package. An
+  id is matched by its own ToString() and never built from a number, so
+  2024's 64-bit change does not reach this code.
+
+# ROUTING - the same rows, the other way round, are in CREATE_WALL and
+# DIVIDE_FAMILY_SURFACE.
+#
+#   "put a curtain system on the faces of
+#    this mass"                              -> here
+#   "curtain system by face on the side
+#    faces of mass Tower A"                  -> here, host "Tower A"
+#   "make a facade on the mass faces"        -> here
+#   "draw a curtain wall between these
+#    points"                                 -> CREATE_WALL, with a curtain wall
+#                                               type. A curtain WALL is drawn
+#                                               along a line; a curtain SYSTEM
+#                                               sits on a mass's faces and has
+#                                               no line of its own
+#   "divide the surface of this mass into
+#    panels"                                 -> DIVIDE_FAMILY_SURFACE - a
+#                                               divided surface on a form INSIDE
+#                                               the mass family, in the Family
+#                                               Editor. This one works on a
+#                                               mass PLACED in the project and
+#                                               makes a project curtain system
+#   "how many panels are on this curtain
+#    system"                                 -> NOT HERE - a question never lands
+#                                               on a write (D-86). Nothing reads
+#                                               a curtain system yet:
+#                                               REPORT_CURTAIN_ELEMENTS reads a
+#                                               curtain WALL and calls anything
+#                                               else "not a wall". This card's
+#                                               readBack counts them only for
+#                                               what it has just made. Measured
+#                                               2026-10-28 on the trained
+#                                               backend: it reaches
+#                                               REPORT_CURTAIN_ELEMENTS
+#   "what is this facade made of", "how
+#    much glass is in this facade"           -> REPORT_CURTAIN_ELEMENTS, never
+#                                               here (D-86). Measured 2026-10-28:
+#                                               once "make a facade on the mass
+#                                               faces" was declared here, the
+#                                               second one ranked HERE, so it is
+#                                               declared on that card now; the
+#                                               first is that card's own
+#   "add mass floors to this mass"           -> CREATE_MASS_FLOORS
+#   "set the curtain wall grid spacing"      -> SET_CURTAIN_WALL_GRID - a curtain
+#                                               WALL type. Nothing sets a
+#                                               curtain SYSTEM type's grid yet
+#   "put this family on the face of the
+#    mass"                                   -> PLACE_FAMILY_ON_FACE
+
+utterances:
+  - put a curtain system on the faces of this mass
+  - make a facade on the mass faces
+  - curtain system by face on the side faces of mass Tower A

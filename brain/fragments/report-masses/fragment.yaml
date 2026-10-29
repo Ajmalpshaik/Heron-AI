@@ -4,7 +4,7 @@ heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
-id: FRG-ELE-127
+id: FRG-ELE-130
 semantic-identity: "how much floor area is in the massing - each mass, each mass floor, each use, and the plot ratio"
 kind: action
 domain: revit.elements
@@ -43,7 +43,7 @@ risk: READ
 # from an outline does not follow the mass afterwards; Floor by Face does.
 #
 # The masses it read come back as `elements`, so CREATE_MASS_FLOORS,
-# SET_MASS_FLOOR_USAGE and CREATE_ELEMENTS_BY_FACE can take them through
+# SET_MASS_FLOOR_USAGE, CREATE_WALLS_BY_FACE and CREATE_CURTAIN_SYSTEM can take them through
 # expect_from.
 #
 # READ ONLY - opens no transaction.

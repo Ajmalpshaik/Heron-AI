@@ -197,7 +197,8 @@ compatibility-note: >
   by a class filter. No ElementId is constructed and none is read as a number.
 
 # ROUTING - repeated in SET_CURTAIN_WALL_GRID, REPORT_CURTAIN_ELEMENTS,
-# WRITE_ELEMENT_PARAMETERS, DUPLICATE_TYPE and CREATE_WALL.
+# WRITE_ELEMENT_PARAMETERS, DUPLICATE_TYPE, CREATE_WALL and
+# ADD_CURTAIN_GRID_LINES.
 #
 #   "set the mullions on this curtain wall type" -> here
 #   "put 50 x 150 mullions on the borders"  -> here
@@ -210,6 +211,11 @@ compatibility-note: >
 #                                              CHANGE_ELEMENT_TYPE to put that
 #                                              wall on the copy, then here on the
 #                                              copy
+#   "split this curtain wall into 4 equal bays with mullions" -> ADD_CURTAIN_GRID_LINES
+#                                              - new grid lines on ONE wall, with
+#                                              mullions of the type named on those
+#                                              lines only. This sets the TYPE's six
+#                                              positions, for every wall of it
 #   "change this one mullion"               -> CHANGE_ELEMENT_TYPE, with that
 #                                              mullion selected - one instance,
 #                                              where this changes the type every
@@ -249,6 +255,11 @@ compatibility-note: >
 #   "set the Interior Type parameter"       -> NOT WRITE_ELEMENT_PARAMETERS. The
 #                                              name appears once per direction,
 #                                              and it holds a type reference
+#   "change the bottom row of panels on this curtain wall to solid panels"
+#                                           -> SET_CURTAIN_PANEL_TYPE (DRAFT,
+#                                              2026-10-28). A panel fills a cell
+#                                              between the mullions; it is one
+#                                              wall's instance, not the type's
 #   "load a mullion family"                 -> NOT HERE, and not by Heron. A
 #                                              family carries its own materials
 #                                              and loading one can overwrite the

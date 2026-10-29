@@ -67,7 +67,7 @@ purpose: >
      the solid's and the void's ids makes the cut, and the volume is
      measured before and after - a void that took nothing away fails the
      call. Whether it is accepted in a mass family is owed in NEEDS-CHECKING
-     Group JJ. Two solids that make one block are joined by the same call.
+     Group JN. Two solids that make one block are joined by the same call.
   6. CHECK IT: REPORT_FAMILY_FORMS (PROVEN) - every form, solid or void,
      its extent and volume against step 1's table. SET_FAMILY_FORM_MATERIAL
      (PROVEN) when the study shows blocks by use or by phase.
@@ -113,4 +113,4 @@ note: >
   section 11 listed the conceptual mass as a kind with "no skill of its
   own"; this is that skill, from the conceptual tools already built. Every
   step is DRAFT until it has been run on a real family with a negative case
-  (D-30) - NEEDS-CHECKING Group JJ.
+  (D-30) - NEEDS-CHECKING Group JN.

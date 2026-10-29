@@ -6,65 +6,54 @@
 > reads it back into the register for every tool that reads it, so a row here is seen
 > exactly as it was seen there.
 
-## Group JJ - a massing study from block to building: `REPORT_MASSES`, `SET_MASS_FLOOR_USAGE`, `REMOVE_MASS_FLOORS`, `CREATE_ELEMENTS_BY_FACE` and the `massing-study` and `mass-family-creation` methods (2026-10-28)
+## Group JJ - one curtain wall's own grid lines, added by position or in equal panels: `ADD_CURTAIN_GRID_LINES` version 1 (2026-10-28)
 
-Asked for by the owner on 2026-10-28: Heron's massing tools brought up to what a massing study needs. Before
-this, Heron could build forms in a mass family and add mass floors in a project
-([`CREATE_MASS_FLOORS`](../../brain/fragments/create-mass-floors/fragment.yaml)), and nothing else - no tool
-read a mass's gross floor area, set a mass floor's Usage, took a mass floor off, or made anything by face, and
-[docs/43 §11](../43-building-revit-families.md) listed the conceptual mass as a kind *"with no skill of its own"*.
+A new card, [`add-curtain-grid-lines`](../../brain/fragments/add-curtain-grid-lines/fragment.yaml) (FRG-ELE-129),
+written in a cloud session for the modeller's *"divide this curtain wall into six panels"*, *"add a grid line
+at 1200 from the bottom of this curtain wall"*, *"add vertical grid lines at 900 and 2700 on just this
+wall"*, *"split this curtain wall into 4 equal bays with mullions"* and *"add a transom at 1100"*. Until it,
+[`set-curtain-wall-grid`](../../brain/fragments/set-curtain-wall-grid/fragment.yaml)'s routing table sent the
+first and *"add a grid line here"* to **NOT HERE, and nothing does yet**: that card changes a TYPE's layout and
+refuses Fixed Number, because the count is each wall's own. This one adds lines to the selected wall's own
+curtain grid (`CurtainGrid.AddGridLine`), optionally with mullions of a named type
+(`CurtainGridLine.AddMullions`), and writes nothing on the type.
 
-| What | Where | What it does |
-|---|---|---|
-| `REPORT_MASSES` (READ) | [`brain/fragments/report-masses`](../../brain/fragments/report-masses/fragment.yaml) | every mass's Gross Volume, Gross Surface Area, Gross Floor Area, base, top and height; its mass floors level by level with area, perimeter, exterior surface, volume and Usage; totals by level and by Usage; plot ratio and site coverage from a site area or the property lines; unjoined overlaps measured on the solids; each mass floor's outline in `CREATE_FLOOR`'s writing |
-| `SET_MASS_FLOOR_USAGE` (MODIFY) | [`brain/fragments/set-mass-floor-usage`](../../brain/fragments/set-mass-floor-usage/fragment.yaml) | each mass floor's Usage, level by level - `Level 1=Retail; Level 2..Level 6=Office` |
-| `REMOVE_MASS_FLOORS` (MODIFY) | [`brain/fragments/remove-mass-floors`](../../brain/fragments/remove-mass-floors/fragment.yaml) | mass floors taken off at the levels named; an empty value refuses |
-| `CREATE_ELEMENTS_BY_FACE` (MODIFY) | [`brain/fragments/create-elements-by-face`](../../brain/fragments/create-elements-by-face/fragment.yaml) | Wall by Face with a wall type, Curtain System by Face with a curtain system type; a floor or roof type refused by name |
-| `massing-study` | [`brain/skills/massing-study.yaml`](../../brain/skills/massing-study.yaml) | the method: levels, masses, mass floors, usage, joins, the numbers, a schedule, then the building on the faces |
-| `mass-family-creation` | [`brain/skills/mass-family-creation.yaml`](../../brain/skills/mass-family-creation.yaml) | the method for a mass family: points, reference lines, an extrusion, a loft or a revolve, voids cut |
+**What is done and what is not.** Every member it calls was read off all eight releases' reference
+assemblies with `tools/api-surface` on 2026-10-28, one signature each, and it compiles for 2020 to 2027
+(`tools/check-fragments-compile.py`, 2026-10-28, in the cloud). Its five sentences reach it by identity on
+this container's backend. **Nothing has met a Revit.** `revit_change` refuses it until JJ10 is signed.
 
-**What the API does not have, read off the reference assemblies of all eight releases on 2026-10-28 with
-`tools/api-surface`:** no face-floor or face-roof class and no creation call for either, so **Floor by Face and
-Roof by Face are by hand** or, for a slab, `REPORT_MASSES`' outline through `CREATE_FLOOR` - which does not
-follow the mass; and no call makes an **in-place** family, so a mass Heron builds is a loaded one.
-`MassLevelData` is marked obsolete on 2023 alone and not on 2024 to 2027; it compiles on all eight.
+**What only a Revit can settle**, each written on the card as an ASSUMPTION or a measured choice:
 
-**What is done and what is not.** All four compile for all eight releases (`tools/check-fragments-compile.py`,
-2026-10-28) and the two methods validate (`brain/heron_skill.py`). **Nothing here has run in Revit.** Every
-card is DRAFT.
+- **Which of Revit's U and V sets runs vertical on a wall.** The card takes it from the wall's own lines;
+  on a wall with none, from the one recorded measurement (SET_CURTAIN_WALL_GRID's proof, Project2, Revit
+  2024: a wall's vertical lines came back in Revit's V set). Every new line is then measured, and one that
+  runs the other way stops the call with nothing kept. JJ1 records the set on a release with no line to
+  read from.
+- **What a later change to the type's own grid does to lines added here** - kept, moved or dropped (JJ6).
+- **Whether Revit puts the wall type's own interior mullions on a line added by hand** (JJ7).
+- **That the point each line is put through is accepted** - on the grid's own plane, measured off the wall's
+  curtain cells, in the middle of the widest gap between the lines already there the other way.
 
-**The model - scratch, never a working project.** A new project from the Metric architectural template in
-Revit 2020, saved as `%TEMP%\heron-work\group-jj\JJ Massing.rvt`. The job file is
-[`tools/jobs/massing-jj-2026-10-28.yaml`](../../tools/jobs/massing-jj-2026-10-28.yaml) (`--dry-run` reads it
-back and sends nothing). Every line below with `HERON_CLIENT_ID=ajmal-pc`, `--session <process id>` when two
-Revits are connected, and `< /dev/null`.
+**The rig (JJ0).** A new project, saved as `%TEMP%\heron-work\group-jj\Heron JJ Curtain Grid.rvt` - a run
+through `try-once` needs a saved model. The batch proof draws its own wall inside the rolled-back group;
+the rig also holds two walls drawn by hand for the rows that need a wall already there.
+[`tools/jobs/add-curtain-grid-lines.yaml`](../../tools/jobs/add-curtain-grid-lines.yaml) runs JJ1 and JJ2
+(`--dry-run` reads it back and sends nothing). Every line below with `HERON_CLIENT_ID=ajmal-pc`, `--session
+<process id>` when two Revits are connected, and nothing selected unless the row says so.
 
 | # | Run | Look for |
 |---|---|---|
-| **JJ0** | *Open.* The scratch project open and in front in Revit 2020 | The title bar reads *JJ Massing* |
-| **JJ1** | *Arrange, by hand, kept in the copy.* Levels 1 to 4 at 0, 3000, 6000 and 9000 mm. Massing & Site > In-Place Mass *A*: a 30000 x 20000 mm rectangle from 0,0 on Level 1, Create Form, 12000 mm high. In-Place Mass *B*: 10000 x 10000 mm from 25000,5000, 6000 mm high - half of it inside A, **not joined**. Select A, Mass Floors, tick Levels 1 to 4. One Generic - 200mm wall away from both | A's Properties: Gross Floor Area 2400 m2; B's 0 m2 |
-| **JJ2** | *`REPORT_MASSES`, the D-30 positive.* The job file's `report-masses` leg: `siteArea=4500`, `withOutlines=true` | `massCount` 2; A 2400 m2 over four floors of 600 m2; the finding *"Masses A and B overlap by ..."* with about 300 m3 (5 x 10 x 6); plot ratio 0.53 on 4500 m2; four outlines, each four corners 30000 x 20000 mm. **FAIL:** a floor without its level's name - it means `MassLevelData.LevelId` is not the mass floor's level, and the floors' order and names are wrong |
-| **JJ3** | *Its negative.* `masses=NoSuchFamily` | `massCount` 0, the finding naming *NoSuchFamily* |
-| **JJ4** | *A second route for JJ2.* A Mass Floor schedule by hand - Mass: Type, Level, Floor Area, Usage - beside JJ2's answer | Each row's area as JJ2 gave it |
-| **JJ5** | *Join, then read again.* `JOIN_GEOMETRY` on A and B, kept; `REPORT_MASSES` again | The overlap finding gone; whether the gross floor area of B changes is **recorded, not assumed** - Autodesk Help says the joined mass floors are adjusted |
-| **JJ6** | *`SET_MASS_FLOOR_USAGE`, positive and negative.* The job file's leg - both masses selected, `usage=Level 1=Retail; Level 2..Level 4=Office`; negative the wall | `changed` 4 on A, B named as having no mass floors; negative *NOTHING WAS CHANGED*, the wall not a mass; rolled back |
-| **JJ7** | *`SET_MASS_FLOOR_USAGE`, a level the model has not got.* By hand through the bridge client, `--write` without `--apply`: `usage=Level 9=Office` | *NOTHING WAS CHANGED*, Level 9 named and the levels listed |
-| **JJ8** | *`REMOVE_MASS_FLOORS`, positive and negative.* The job file's leg: `levelNames=Level 4`; negative the wall | `removed` 1, A's floors Levels 1 to 3 after, `notThere` 1 for B; negative *NOTHING WAS REMOVED*; rolled back |
-| **JJ9** | *`REMOVE_MASS_FLOORS`, empty.* `levelNames=` (empty), A selected | *NOTHING WAS REMOVED*, a level must be named; all four floors still there |
-| **JJ10** | *`CREATE_ELEMENTS_BY_FACE`, walls.* The job file's leg: both masses, `typeName=Generic - 200mm` | Walls by face on the side faces, each with its type and area; **write down which route Revit took** - *the instance's geometry* or *the family's geometry* - it is the one fact this card could not read off the API; rolled back |
-| **JJ11** | *`CREATE_ELEMENTS_BY_FACE`, twice.* Kept through `try-once` on the saved copy, then the same call again rolled back | Second call `created` 0, `skipped` 2, each mass named as already carrying walls by face. **FAIL:** a second set of walls - `GetJoinedElementIds` does not list walls by face, and the skip needs another way to see them |
-| **JJ12** | *`CREATE_ELEMENTS_BY_FACE`, a curtain system.* Rolled back: A alone, a curtain system type, `faces=up` | One curtain system on A's top face, with a grid |
-| **JJ13** | *`CREATE_ELEMENTS_BY_FACE`, a floor type.* `typeName=Generic 300mm` | *NOTHING WAS MADE*, Floor by Face named as having no API, `REPORT_MASSES` and `CREATE_FLOOR` named |
-| **JJ14** | *A slab from an outline.* One outline from JJ2 into `CREATE_FLOOR` on Level 2, rolled back | A floor whose Area is 600 m2 |
-| **JJ15** | *A Mass Floor schedule through Heron* - `massing-study` step 9: `CREATE_SCHEDULE` of the Mass Floor category with Level, Usage and Floor Area | The schedule made, its rows A's floors. **FAIL:** the category refused - the step needs another route, and the method is corrected the same day |
-| **JJ16** | *`mass-family-creation`, end to end, watching, not a proof.* A new Conceptual Mass; *"make a mass family for a 20 x 15 m block 24 m tall"* | Points, four reference lines, one extrusion 24000 mm; a void cut through `COMBINE_FAMILY_FORMS` if asked - **record whether that call takes a mass family**; loaded and placed with `PLACE_FAMILY_INSTANCES` on Level 1 |
-| **JJ17** | *`massing-study`, end to end, watching, not a proof.* JJ1's project; *"massing study on a 4500 m2 site, retail on Level 1 and offices above"* | The brief table asked for before anything is built; mass floors, usage, the overlap joined, then plot ratio and area by use reported - and nothing called compliant |
+| **JJ0** | *The rig, by hand.* New project; *Level 1*; REPORT_CURTAIN_WALL_TYPE on *Curtain Wall: Curtain Wall*; SELECT_TYPES on Walls for *Basic Wall: Generic - 200mm* and on Curtain Wall Mullions for a rectangular mullion type. Then, kept: Duplicate *Curtain Wall* as **HERON JJ 1500**, Vertical Grid Layout Fixed Distance, Spacing 1500; draw one 9000 x 3000 mm wall of it from 0,70000 to 9000,70000 on Level 1; draw one 9000 x 3000 mm wall of *Curtain Wall: Curtain Wall* from 0,80000 to 9000,80000 (**W1**) a second beside it from 0,85000 to 9000,85000 (**W2**), and one *Basic Wall: Generic - 200mm* from 0,90000 to 9000,90000 (**B1**). Save | Both layouts of *Curtain Wall: Curtain Wall* **None**; the basic and the mullion type exist (their names go into the job file and the cases if they differ); the line 0,60000 to 9000,60000 empty; saved |
+| **JJ1** | *The positive - the D-30 positive.* `python tools/batch-prove.py tools/jobs/add-curtain-grid-lines.yaml --session <pid>`, its positive leg - CREATE_WALL draws a 9000 x 3000 wall of *Curtain Wall: Curtain Wall*, then `direction=vertical`, `positions=equal 6`, rolled back | Binding note *"elements from create-wall as 'created' (1)"*. **`added` 5**, `mullionsAdded` 0, `skipped` and `notCurtain` empty; `readBack` *"9000 mm long and 3000 mm high"*, vertical grid lines 0 before and 5 now, *"Vertical lines now at 1500, 3000, 4500, 6000, 7500 mm from its start"*, panels 1 before and 6 now, the flag *"from the one recorded measurement"*. **RECORD** which of Revit's U and V sets the five are in. **FAIL:** a line measured at another position. A refusal *"Revit made the line asked for at 1500 mm vertical in its V set ... and it runs horizontal"* is the recorded set not holding on this release - a finding about Revit, recorded, and nothing was kept |
+| **JJ2** | *The negative - the D-30 negative.* JJ1's negative leg: the same request on a *Basic Wall: Generic - 200mm* drawn on the same line | `added` 0, `readBack` empty; `notCurtain` names the wall *"is a basic wall, not a curtain wall - it has no grid"*; `refused` begins *"Nothing given is a curtain wall"* |
+| **JJ3** | *The other cases, rolled back.* `python mcp/client/heron_bridge_client.py validate add-curtain-grid-lines --in "Heron JJ Curtain Grid" --write --setup create-wall` with JJ1's wall values and, one run each: `direction=horizontal positions=1100 mullionType=<the rig's rectangular mullion type>`; `direction=vertical "positions=900, 2700"`; `positions=1.2`; `direction=diagonal`; `positions=1200mm`; `"mullionType=Rectangular Mullion: ZZZ No Such Size"` | As [`cases.yaml`](../../brain/fragments/add-curtain-grid-lines/tests/cases.yaml) says, each: 1 line at 1100 from the base and `mullionsAdded` 1 (or the JJ7 finding); 2 lines at 900 and 2700; then four refusals, each *"Nothing was changed"*, the last WITH the mullion types the rig has |
+| **JJ4** | *A wall whose type already places lines.* The **HERON JJ 1500** wall selected; `validate ... --write` with `direction=vertical "positions=750, 1500"`; then `positions=equal 4`; then `positions=equal 6` | First: `added` 1, `skipped` *"1500 mm - the wall already has a vertical line there, at 1500 mm"*, the flag *"measured on this wall"*. Second: refused, naming 1500, 3000, 6000 and 7500 as not on the quarters, *"8 panels, not 4"*. Third: `skipped` 5, `added` 0. HERON JJ 1500's Type Properties still Fixed Distance 1500 after each |
+| **JJ5** | *The kept run, on the owner's yes only.* **W1** selected, the rig saved, a view showing W1 in front: `python mcp/client/heron_bridge_client.py try-once add-curtain-grid-lines --set direction=vertical --set "positions=equal 6"`; the owner chooses Keep or Discard | Kept: W1 shows five vertical lines in six equal panels; **W2** - REPORT_CURTAIN_ELEMENTS before and after - unchanged; one Ctrl+Z takes it back. Its negative half is the proving session's: `validate add-curtain-grid-lines --write --kept ...` with **B1** selected and the same request, rolled back - `added` 0, B1 named in `notCurtain` |
+| **JJ6** | *ASSUMPTION - a type change afterwards.* After JJ5 is kept: Edit Type on W1, Vertical Grid Layout Fixed Distance 2000, OK; look at W1; then Ctrl+Z | Whether the five lines added to W1 stay, move or go when the type's own grid changes - **not known**; recorded as a finding on the card |
+| **JJ7** | *ASSUMPTION - the type's interior mullions.* Duplicate *Curtain Wall* as **HERON JJ MULLIONS**, Horizontal Mullions Interior Type the rig's rectangular mullion, layouts None; draw one wall of it; select it; `validate ... --write` with `direction=horizontal positions=1100` and no mullion type | `readBack`'s mullions before and after: whether Revit put the type's interior mullion on the new line - **not known**. Then with `mullionType` named: `mullionsAdded` 1, or the finding *"Revit had already put mullions on 1 of the new lines"* |
+| **JJ8** | *Revit 2024* (or 2020, whichever JJ1 was not). JJ0 to JJ2 on that release, JJ1 with `--release <year>` once the first release is signed | The same answers, and the same U-or-V set or a recorded difference |
+| **JJ9** | *Routing, on the PC's backend.* `heron_lookup` for each of the five sentences; *"add a grid line"*; *"how many grid lines are in this curtain wall"*; *"where are the grid lines on this curtain wall"* | The five reach ADD_CURTAIN_GRID_LINES; *"add a grid line"* reaches CREATE_GRID; the count question reaches REPORT_CURTAIN_ELEMENTS (declared there 2026-10-28). The last one **reached this card on the container's backend** - no READ says where a wall's grid lines sit; record what the trained model answers |
+| **JJ10** | The signature, on the owner's word only, after JJ0 to JJ5 | `python brain/heron_validate.py accept add-curtain-grid-lines --by "Ajmal PS"` and `heron-status` set to PROVEN in the same change; `--release` for the other release after JJ8 |
 
-**Then sign**, on the owner's word only, one card at a time: `python brain/heron_validate.py accept <fragment>
---by "Ajmal PS"` once its positive and negative pass, and `heron-status` set to PROVEN in the same change. A
-row that fails is recorded here and the card corrected; nothing in a row changes to make it pass.
-
-**What this group does not settle.** Whether the plot ratio and site coverage a study gives meet a local rule
-is never Heron's to say. Site coverage is read off each mass's lowest mass floor, which is right for a block
-standing on its ground level and wrong for one that overhangs its base - recorded in the card, and owed a
-better reading only if a real study needs it.
+A row that fails stays open; nothing in a row changes to make it pass.
