@@ -60,9 +60,14 @@ purpose: >
         grid and mullions come from the CURTAIN SYSTEM TYPE, which is set by
         the modeller in Type Properties; Heron has no setter for a curtain
         system type yet.
-     2. SET_CURTAIN_PANEL_TYPE for panels that differ, as route A.
+     2. A panel that differs: SELECT_IN_REGION on that panel, then
+        CHANGE_ELEMENT_TYPE to a curtain panel type. SET_CURTAIN_PANEL_TYPE
+        works on curtain WALLS only and refuses a curtain system; a panel on
+        a curtain system changed this way has not been run in Revit yet.
      3. CREATE_MASS_FLOORS when the same mass also gives the floors.
-     4. REPORT_CURTAIN_ELEMENTS on the system.
+     4. Read it back from CREATE_CURTAIN_SYSTEM's own answer - each face's
+        grid lines, panels and mullions. REPORT_CURTAIN_ELEMENTS reads curtain
+        walls only and answers "not a wall" for a curtain system.
 
   ROUTE C - PATTERNED SURFACE. Inside the conceptual mass (or an in-place
      mass), in this order:
