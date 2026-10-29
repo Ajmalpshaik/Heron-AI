@@ -115,3 +115,8 @@ utterances:
   - where are the nodes of this divided path
   - how many nodes does the divided path have
   - where are the nodes of the divided path
+  # DECLARED 2026-10-28 (D-86). The routing table above claims both, and a
+  # comment is not indexed: with SET_DIVIDED_SURFACE_LAYOUT in the library,
+  # tools/check-routing.py measured the first served by that WRITE.
+  - what are the border tiles on the divided surface
+  - what is the U grid layout of the divided surface
