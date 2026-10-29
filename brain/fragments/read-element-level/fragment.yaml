@@ -148,3 +148,9 @@ utterances:
   # so they are declared here and answered by identity (rows 116 and 146).
   - what level is this equipment on
   - what is the elevation of this duct
+  # ADDED 2026-10-29, FRAGMENT-ISSUES row 5b-1345's "also seen": both reached
+  # SET_WALL_CONSTRAINTS, a write, on lexical and on the trained model - a
+  # question answered by a write (D-86). Version 2 reads a wall's Base Offset
+  # (WALL_BASE_OFFSET), so this read answers both.
+  - what is the base offset of this wall
+  - which level is this wall on
