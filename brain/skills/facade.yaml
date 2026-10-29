@@ -78,8 +78,8 @@ purpose: >
         cut it at every level, or set the border tiles; DIVIDE_FAMILY_SURFACE
         makes the grid centred and unrotated and refuses a face already
         divided.
-     4. REPORT_DIVIDED_SURFACES for the grids and their counts, read back off
-        the surface. Whether each cell is FLAT enough for one sheet of glass
+     4. REPORT_DIVIDED_SURFACES for the grids and their counts, the
+        rotations, the flip and what cuts the surface, read back off it. Whether each cell is FLAT enough for one sheet of glass
         is not measured by any Heron tool yet: on a twisted surface say so,
         and leave the judgement to the architect - never smooth it over.
      5. In the project: the mass is placed, and CREATE_MASS_FLOORS where it

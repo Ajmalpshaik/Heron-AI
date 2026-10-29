@@ -54,7 +54,8 @@ tools behind it.
 | 3 | `add-curtain-grid-lines` - grid lines at given offsets, or N equal bays, on one wall only, with mullions if asked | [JJ](../../needs-checking/group-jj.md) | DRAFT |
 | 4 | `set-adaptive-point-orientation` - an adaptive family's placement points turned to Instance, Host, Host and Loop System or Global, in the Family Editor; the setting a fin or panel on a sloped face needs | [JK](../../needs-checking/group-jk.md) | DRAFT |
 | 5 | `set-divided-surface-layout` - an existing divided surface's grids changed: rotation (a diamond pattern), offset, justification, border tiles, cut at levels | [JL](../../needs-checking/group-jl.md) | DRAFT |
-| 6 | the [`facade`](../../../brain/skills/facade.yaml) method - routes A to E | - | DRAFT |
+| 6 | `report-divided-surfaces` widened to version 2 - also reads the rotations, flip, mirror, indents and what cuts each surface, so those questions stop ranking the write in 5 first | [DR](../../needs-checking/group-dr.md) rows DR5a, DR5b | DRAFT |
+| 7 | the [`facade`](../../../brain/skills/facade.yaml) method - routes A to E | - | DRAFT |
 
 None of it is proved. A compile is not a proof (D-30): each tool is refused for a kept change until its
 group has been run on a named model with its negative case (D-117).
