@@ -42,6 +42,9 @@ purpose: >
      2 mullion each way, each named by its type ("Rectangular Mullion : 50 x
      150mm"), or none. A mullion type the model does not have is refused with
      the names it does have; loading one is the modeller's.
+     Steps 4 and 5 are DRAFT since 2026-10-29, when both setters were widened
+     to curtain system types: a kept change from either is refused until
+     NEEDS-CHECKING Group JP proves them again (D-117).
   6. REPORT_CURTAIN_ELEMENTS on the wall - its grid lines each way and its
      mullions by type, measured - against what the spacing should give. A 9000
      mm wall at a 1500 mm fixed distance has five vertical lines inside it. The
