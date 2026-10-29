@@ -1,0 +1,51 @@
+# NEEDS-CHECKING Group JP, row JP10 - SET_CURTAIN_WALL_MULLIONS version 2 on a
+# CURTAIN WALL type: version 1's own proof, run again, because version 2
+# changed the code under it. Written 2026-10-29 in a cloud session with no
+# Revit; NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/set-curtain-wall-mullions-wall-type-2026-10-29.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-curtain-wall-mullions-wall-type-2026-10-29.yaml --session <pid>
+#
+# THE SAME VALUES AS THE 2026-10-18 PROOF, word for word - the job that ran it
+# is tools/jobs/revit2020-scratch-round21-2026-10-18.yaml, on Project1 in Revit
+# 2020. "Heron JP Curtain" is a saved copy of Project1 (row JP0), so
+# "Curtain Wall: Storefront" and the eight mullion types are the ones that
+# proof read; the tower and the curtain system the rig adds touch neither.
+# NOTHING SELECTED. No setup step.
+#
+# THE ANSWER MUST BE VERSION 1's, WORD FOR WORD, with `systemsOfType 0` beside
+# it. Any other word is a FAIL of version 2: the wall-type path was meant not
+# to move.
+#
+# RUN THIS BEFORE set-curtain-wall-mullions-curtain-system-2026-10-29.yaml: a
+# batch keeps one run record per fragment, and that file's is the one signed
+# from.
+
+model: Heron JP Curtain (scratch copy of Project1), Revit 2020
+
+defaults:
+  in: Heron JP Curtain
+  write: true
+  setup: []
+
+jobs:
+  - fragment: set-curtain-wall-mullions
+    set:
+      curtainWallType: "Curtain Wall: Storefront"
+      mullions: "vertical interior=Rectangular Mullion: 30mm Square"
+    negative-set:
+      curtainWallType: "Curtain Wall: Storefront"
+      mullions: "vertical interior=Rectangular Mullion: ZZZ No Such Size"
+    expect: applied
+    note: >
+      JP10. Positive, as 2026-10-18: wallsOfType 0, systemsOfType 0, applied
+      1, alreadyAsAsked 0, differs empty; readBack "vertical interior:
+      'Rectangular Mullion: 30mm Square', was 'Rectangular Mullion: 50 x
+      150mm' - asked for 'Rectangular Mullion: 30mm Square'" and the other five
+      "'Rectangular Mullion: 50 x 150mm' - not asked, left as it was"; measured
+      "No wall of this type is placed in the model, so nothing was measured.
+      The next wall drawn with it shows these mullions". Negative, as
+      2026-10-18: applied 0, readBack empty, refused "No mullion type called
+      'Rectangular Mullion: ZZZ No Such Size' in this model - capitals count.
+      The mullion types it has are: ..." - the same eight - "... Heron does not
+      load families. Nothing was changed".

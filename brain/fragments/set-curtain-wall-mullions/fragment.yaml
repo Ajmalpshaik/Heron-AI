@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,38 @@ semantic-identity: "put these mullion types on a curtain wall type's grid lines 
 kind: action
 domain: revit.elements
 capability: SET_CURTAIN_WALL_MULLIONS
-version: 1
+# VERSION 2 (2026-10-29, on the owner's yes in the chat that day - "build the
+# three widenings too" - to docs/work-notes/plans/facade-capability.md's
+# "Waiting for the owner's word"): a CURTAIN SYSTEM TYPE too, the type Curtain
+# System by Face uses (CREATE_CURTAIN_SYSTEM), by its Grid 1 and Grid 2
+# Mullions. `curtainWallType` is now the type's NAME, matched in the fragment
+# among wall types and curtain system types by the add-in's own rule, because
+# the add-in has no binder for a curtain system type; `systemsOfType` is new. A
+# wall type is version 1 to the word, except that a bare name a curtain system
+# type also carries is now refused naming both (D-54 s3), and a name no type
+# has is refused by the fragment, listing the curtain wall and curtain system
+# types, where the add-in used to refuse it before the run. Version 1's proof
+# below no longer describes the code and is kept as a record; the card is DRAFT
+# until NEEDS-CHECKING Group JP proves version 2 - both paths - and the owner
+# signs.
+#
+# THE CURTAIN SYSTEM TYPE, IN FULL - comments, not `purpose`, because
+# `purpose` is searched: written there at first, this text sent "select all
+# walls of type Curtain Wall" and two more of row 5b-329's guards
+# (tests/test_routing_phrases.py) to this write, measured 2026-10-29 on the
+# trained backend. Named "Curtain System: " and its type name, or the bare name
+# when no wall type or curtain system type shares it. Its mullions are Grid 1
+# Mullions and Grid 2 Mullions, not vertical and horizontal - which way each
+# grid runs is set by the face it lies on, not by the type - so its six
+# positions are grid 1 interior, grid 1 border 1, grid 1 border 2 and the same
+# three for grid 2, and a vertical or horizontal position on one is refused.
+# The curtain systems of the type are counted first (`systemsOfType`), as walls
+# are. Reached by AUTO_MULLION_INTERIOR_GRID1, _BORDER1_GRID1, _BORDER2_GRID1 and
+# the three _GRID2 - an ASSUMPTION the proof settles, since Revit's reference
+# does not say which element carries them: a type without them is refused
+# naming the mullion ids it has, and a position that does not read back as
+# asked stops the call and nothing is kept.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -64,6 +95,10 @@ purpose: >
   grid lines shows nowhere, and the answer says so rather than leaving the
   modeller to wonder why nothing appeared.
 
+  **A CURTAIN SYSTEM'S TOO (version 2)** - its Grid 1 and Grid 2 Mullions: grid
+  1 interior, grid 1 border 1, grid 1 border 2, and the same for grid 2. The
+  comments above `version` say how they are reached and what is assumed.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Every
   refusal is made before the first write. If Revit refuses a write, or cannot
   rebuild the walls with it, the call stops and nothing it did is kept.
@@ -73,17 +108,24 @@ contract:
     - name: doc
       type: Document
     # A curtain wall TYPE BY NAME - "Curtain Wall: Storefront", or the bare
-    # name when unique among wall types (D-54). A basic or stacked type binds
-    # and is refused here, by name. Not `wallType`, for the reason
-    # SET_CURTAIN_WALL_GRID gives: CREATE_WALL takes that name, and a proof's
-    # writing steps share one set of values.
+    # name when unique among wall types and curtain system types (D-54) - or,
+    # since version 2, a curtain SYSTEM type: "Curtain System: Heron JM 1500".
+    # A STRING, matched in the fragment by the add-in's own rule - the name
+    # exactly, or "Family: Type" - because the add-in has no binder for a
+    # curtain system type; CREATE_CURTAIN_SYSTEM matches its own the same way.
+    # A basic or stacked wall type is refused here, by name. The same need
+    # name as version 1, so its proof's values still bind. Not `wallType`, for
+    # the reason SET_CURTAIN_WALL_GRID gives: CREATE_WALL takes that name, and
+    # a proof's writing steps share one set of values.
     - name: curtainWallType
-      type: WallType
+      type: string
       source: request
     # Position=mullion type, SEMICOLONS between - "vertical interior=
     # Rectangular Mullion: 50 x 150mm; horizontal border 2=none". Positions:
     # vertical interior, vertical border 1, vertical border 2, horizontal
-    # interior, horizontal border 1, horizontal border 2. A position left out
+    # interior, horizontal border 1, horizontal border 2 - and, for a curtain
+    # system type, grid 1 interior, grid 1 border 1, grid 1 border 2 and the
+    # same three for grid 2. A position left out
     # keeps what it has; "none" takes its mullions off. A mullion type's name
     # cannot hold a semicolon - Revit forbids one in any type name - so the
     # table's separator can never cut a name in two.
@@ -111,15 +153,24 @@ contract:
       # before the write. Never a thing it found (D-52).
       role: accounting
       type: int
+    - name: systemsOfType
+      # How many curtain systems use a curtain SYSTEM type - the reach of the
+      # change, counted before the write, as wallsOfType is for a wall type;
+      # 0 for a wall type. Never a thing it found (D-52).
+      role: accounting
+      type: int
     - name: readBack
       # ALL SIX positions as Revit holds them after the write, beside what each
-      # held before. A STRING, because a reply cuts a list to three items and
-      # this is the evidence. Accounting: empty on a refusal.
+      # held before; for a curtain system type, which of Revit's mullion ids it
+      # carries as well. A STRING, because a reply cuts a list to three items
+      # and this is the evidence. Accounting: empty on a refusal.
       role: accounting
       type: string
     - name: measured
       # One placed wall of the type, before and after: its mullions by type and
-      # by the way each runs, and its grid lines each way. Read off Revit.
+      # by the way each runs, and its grid lines each way. For a curtain system
+      # type, one curtain system over all its faces, with Revit's U and V line
+      # counts. Read off Revit.
       role: accounting
       type: string
     - name: refused
@@ -130,6 +181,9 @@ contract:
     - name: findings
       type: IList<string>
 
+# VERSION 1'S PROOF, KEPT AS A RECORD. It no longer describes the code
+# (version 2, 2026-10-29); NEEDS-CHECKING Group JP re-proves the wall-type path
+# and proves the curtain system type's.
 proof:
   date: '2026-10-18'
   by: Ajmal PS
@@ -195,6 +249,22 @@ compatibility-note: >
   found by walking the model's element types and testing each as a
   MullionType - the add-in's own way of finding a type by class - rather than
   by a class filter. No ElementId is constructed and none is read as a number.
+  VERSION 2, read the same way on 2026-10-29, all eight releases:
+  CurtainSystemType derives from HostObjAttributes, as WallType does, and
+  declares nothing of its own; CurtainSystem.CurtainGrids (a CurtainGridSet,
+  enumerable, null when it holds none) and GetTypeId; BuiltInCategory
+  OST_CurtaSystem; ElementType.Name and FamilyName; Document.Title. The
+  BuiltInParameter ids AUTO_MULLION_INTERIOR_GRID1 and _GRID2 ("Interior
+  Type"), AUTO_MULLION_BORDER1_GRID1 and _GRID2 ("Border 1 Type") and
+  AUTO_MULLION_BORDER2_GRID1 and _GRID2 ("Border 2 Type") are on all eight.
+  The reference text gives each only its display name - the same names as the
+  _VERT/_HORIZ ids - and nothing about which element carries it, so the
+  curtain system type's ids are an assumption the code checks and the proof
+  settles. Revit names groups "Grid 1 Mullions" and "Grid 2 Mullions"
+  (BuiltInParameterGroup PG_CURTAIN_MULLION_1 and _2, 2020 to 2024 only), but
+  a parameter's group is not read here: Definition.ParameterGroup ends with
+  2024 and GetGroupTypeId starts with 2022, so no one member reads it on all
+  eight.
 
 # ROUTING - repeated in SET_CURTAIN_WALL_GRID, REPORT_CURTAIN_ELEMENTS,
 # WRITE_ELEMENT_PARAMETERS, DUPLICATE_TYPE, CREATE_WALL and
@@ -203,6 +273,29 @@ compatibility-note: >
 #   "set the mullions on this curtain wall type" -> here
 #   "put 50 x 150 mullions on the borders"  -> here
 #   "take the top mullion off"              -> here, horizontal border 2=none
+#   "put mullions on the curtain system type" -> here, on the curtain SYSTEM
+#                                              type (version 2, DRAFT until
+#                                              Group JP): grid 1 or grid 2,
+#                                              never vertical or horizontal -
+#                                              which way each grid runs is the
+#                                              face's. The curtain system itself
+#                                              is CREATE_CURTAIN_SYSTEM's
+#   "which mullions are on this curtain system" -> NOT HERE - a question never
+#                                              lands on a write (D-86). Nothing
+#                                              reads a curtain system type's
+#                                              positions yet; REPORT_CURTAIN_WALL_TYPE
+#                                              reads a wall type only. MEASURED
+#                                              2026-10-29 on the cloud's trained
+#                                              backend: with the host's question
+#                                              flag it reaches that reader;
+#                                              WITHOUT it, it ranks HERE since
+#                                              version 2 (it reached the reader
+#                                              before). Asked with no table, this
+#                                              refuses "Nothing was named to
+#                                              change". The fix is a reader of a
+#                                              curtain system type - the owner's
+#                                              word, REPORT_CURTAIN_WALL_TYPE being
+#                                              PROVEN (NEEDS-CHECKING JP17)
 #   "set the curtain wall grid spacing"     -> SET_CURTAIN_WALL_GRID. Interior
 #                                              mullions sit on the grid lines;
 #                                              with none there, an interior type
@@ -271,3 +364,10 @@ utterances:
   - change the mullion type on the curtain wall
   - put rectangular mullions on the curtain wall borders
   - take the border mullions off this curtain wall type
+  # NOT AN UTTERANCE, MEASURED 2026-10-29: "put mullions on the curtain system
+  # type" - the curtain system type's own case - was declared here with version
+  # 2 and taken back the same day. Declared, it moved this card from 0.6650 to
+  # 0.6683 cosine against "select all walls of type Curtain Wall" on the trained
+  # backend and, with the grid card's twin, sent three of row 5b-329's select
+  # guards (tests/test_routing_phrases.py) to a write. Undeclared, it is left to
+  # ranking - see the routing row above and NEEDS-CHECKING JP17.

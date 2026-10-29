@@ -2,6 +2,13 @@
 # docs/39 section 3, lesson 12; the cases are in
 # brain/fragments/set-curtain-wall-mullions/tests/cases.yaml.
 #
+# STILL GOOD FOR VERSION 2 (2026-10-29): the wall-type path did not move, and
+# `curtainWallType` below is the same name, now matched in the fragment. Group
+# JP's two files - set-curtain-wall-mullions-wall-type-2026-10-29.yaml
+# (version 1's own proof again) and
+# set-curtain-wall-mullions-curtain-system-2026-10-29.yaml (the curtain system
+# type) - are the ones that prove version 2.
+#
 #     python tools/batch-prove.py tools/jobs/set-curtain-wall-mullions-test-projject-2026-09-24.yaml --dry-run --session <pid>
 #     python tools/batch-prove.py tools/jobs/set-curtain-wall-mullions-test-projject-2026-09-24.yaml --session <pid>
 #

@@ -43,7 +43,7 @@
 # risk: MODIFY. `validate` never sends `apply`, so both steps run inside one
 # TransactionGroup and are rolled back (D-55). Nothing is kept.
 
-model: "Heron JJ Curtain Grid" (docs/needs-checking/group-jj.md, row JJ0), Revit 2020 or 2024 - a SAVED SCRATCH project
+model: Heron JJ Curtain Grid (docs/needs-checking/group-jj.md, row JJ0), Revit 2020 or 2024 - a SAVED SCRATCH project
 
 defaults:
   in: "Heron JJ Curtain Grid"

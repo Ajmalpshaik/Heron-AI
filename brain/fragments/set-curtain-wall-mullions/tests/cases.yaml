@@ -1,3 +1,21 @@
+# VERSION 2 (2026-10-29) - A CURTAIN SYSTEM TYPE TOO. NOT RUN; NEEDS-CHECKING
+# Group JP (docs/needs-checking/group-jp.md) is the plan, and its job file
+# tools/jobs/set-curtain-wall-mullions-curtain-system-2026-10-29.yaml the
+# batch. Every wall-type case below still holds word for word - the type's name
+# is now matched in the fragment instead of by the add-in, and `systemsOfType`
+# reads 0 for a wall type - and JP re-runs version 1's own two (Project1,
+# "Curtain Wall: Storefront") because its proof went stale. The curtain system
+# cases are marked VERSION 2 below, on Group JP's rig: the owner's Project1
+# (Revit 2020) saved as "Heron JP Curtain", the mass "Heron JP Tower" - 18000
+# x 12000 mm on plan from (0, 30000), 30000 mm high - and ONE curtain system on
+# its four side faces made BY HAND with Curtain System by Face, of "Heron JP
+# 1500": Grid 1 and Grid 2 Fixed Distance 1500, every mullion None. At 1500 the
+# four faces carry 36 upright lines and 76 level ones (derived in
+# set-curtain-wall-grid/tests/cases.yaml). WHICH OF GRID 1 AND GRID 2 RUNS
+# WHICH WAY IS THE FACE'S AND NOT KNOWN, so each expectation is written for
+# both. Version 1's proof showed Project1 holds "Rectangular Mullion: 30mm
+# Square" and "Rectangular Mullion: 50 x 150mm".
+#
 # THE PROOF PLAN, written 2026-09-24 and NOT RUN. Nothing here has touched a
 # model (D-30); every case says what to arrange and what must come back. The
 # owner runs it, on a TEST COPY - the first positive with the first negative is
@@ -78,6 +96,43 @@ positive:
       the same answer. One path serves every release, and this is the release
       at the other end of the range
 
+  # VERSION 2, added 2026-10-29 - THE CURTAIN SYSTEM TYPE, Group JP's rig (see
+  # the top of this file), nothing selected, rolled back.
+  - given: >
+      JP11, THE JOB FILE'S CASE. curtainWallType "Heron JP 1500"; mullions
+      "grid 1 interior=Rectangular Mullion: 30mm Square" - one position, an
+      interior one, because the rig's type has lines both ways and every
+      mullion None, so what appears is counted exactly
+    expect: >
+      systemsOfType 1, wallsOfType 0, applied 1, alreadyAsAsked 0, differs
+      empty, refused empty. readBack "grid 1 interior: 'Rectangular Mullion:
+      30mm Square', was none - asked for 'Rectangular Mullion: 30mm Square'",
+      the other five "none - not asked, left as it was", and "Of Revit's
+      mullion ids, ... carries: AUTO_MULLION_INTERIOR_GRID1, ..." - RECORD
+      that line: it is the assumption, read. measured: ONE curtain system, on
+      4 face(s), with 36 vertical and 76 horizontal grid lines; mullions before
+      "none", and now EITHER "720 x vertical 'Rectangular Mullion: 30mm
+      Square'" (Grid 1 runs upright: 36 lines, each cut into 20 by the 19
+      level lines) OR "760 x horizontal 'Rectangular Mullion: 30mm Square'"
+      (Grid 1 runs level: on each 18000 face 19 lines cut into 12, on each
+      12000 face into 8). RECORD which - it must agree with SET_CURTAIN_WALL_GRID's
+      JP2. A position Revit does not then hold stops the call and keeps
+      nothing, quoting Revit: the assumption failing, recorded
+
+  - given: >
+      JP12. The rig; mullions "grid 2 interior=Rectangular Mullion: 30mm
+      Square" - the other grid
+    expect: >
+      applied 1; the mullions now the OTHER of JP11's two answers - 760
+      horizontal if JP11 gave 720 vertical, and the other way round
+
+  - given: >
+      JP13. The rig; mullions "grid 1 border 1=none" - the type already holds
+      none there
+    expect: >
+      applied 0 and alreadyAsAsked 1, NOT a refusal: findings "Nothing on ...
+      needed changing ... It is used by 1 curtain system(s) in this model"
+
 negative:
   - given: >
       the same arrangement and the SAME mullions, with curtainWallType "Basic
@@ -120,6 +175,38 @@ negative:
       needed changing. A request already met writes nothing and counts nothing
       as done
 
+  # VERSION 2, added 2026-10-29 - THE CURTAIN SYSTEM TYPE'S NEGATIVES, Group
+  # JP's rig, each rolled back.
+  - given: >
+      JP14, THE JOB FILE'S NEGATIVE. The SAME mullions as JP11 aimed at a type
+      it must NOT touch - curtainWallType "Curtain Wall: Storefront", the
+      curtain WALL type version 1 was proved on in Project1. A different type,
+      not an empty request
+    expect: >
+      applied 0, wallsOfType 0, systemsOfType 0, readBack and measured empty;
+      refused "'grid 1 interior' is not a mullion position. Name one or more
+      of: vertical interior, vertical border 1, vertical border 2, horizontal
+      interior, horizontal border 1, horizontal border 2. Nothing was changed"
+      - version 1's own words. Storefront's mullions as they were
+
+  - given: >
+      JP15. The rig; curtainWallType "Heron JP 1500"; mullions "vertical
+      interior=Rectangular Mullion: 30mm Square" - a wall type's position on a
+      curtain system type
+    expect: >
+      refused "'vertical interior' is a curtain WALL type's position", saying
+      its mullions are Grid 1 Mullions and Grid 2 Mullions and which way each
+      grid runs is the face's, and naming the six grid positions; applied 0,
+      readBack empty. Never guessed to mean Grid 1
+
+  - given: >
+      JP16. The rig; curtainWallType "Heron JP 1500"; mullions "grid 1
+      interior=HERON NO SUCH MULLION"
+    expect: >
+      refused "No mullion type called 'HERON NO SUCH MULLION' in this model",
+      followed by every mullion type the model has, as version 1 does for a
+      wall type; applied 0
+
 second_route:
   - >
       By hand on a test copy: duplicate the same curtain wall type, set the four
@@ -128,3 +215,10 @@ second_route:
       9000 mm wall of it, and count the mullions - Tab through them in a 3D
       view, or a Curtain Wall Mullion schedule filtered to that wall. Four,
       matching `measured`
+  - >
+      VERSION 2, the curtain system type, by hand in Group JP's rig: in Type
+      Properties of "Heron JP 1500" set Grid 1 Mullions' Interior Type to
+      Rectangular Mullion : 30mm Square, then count the tower's mullions with a
+      Curtain Wall Mullions schedule. The same count as JP11's `measured`, and
+      the setting shown under Grid 1 Mullions - the assumption about the ids
+      read a second way. Undo afterwards

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,18 @@ semantic-identity: "the panels, mullions and grid lines a curtain wall is actual
 kind: action
 domain: revit.reporting
 capability: REPORT_CURTAIN_ELEMENTS
-version: 1
+# VERSION 2 (2026-10-29, the owner's word that day - "build the three widenings
+# too" - for the row doc 45 section 6 and the facade plan recorded as waiting):
+# the panels are also grouped by SIZE - width x height in millimetres, as Revit
+# gives each panel, within a tolerance (5 mm unless the modeller gives one), per
+# wall and across every wall handed in - so "how many different panel sizes does
+# this facade have" is answered. Only ADDED: every line version 1 wrote is still
+# written, in its words and its order, and every name it left behind is still
+# left. A size Revit does not give is named in sizesNotRead, never guessed.
+# Version 1's proof below no longer describes the code and is kept as a record;
+# the card is DRAFT until NEEDS-CHECKING Group JR proves version 2 and the owner
+# signs.
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -43,12 +54,24 @@ purpose: >
   **MULLIONS ARE GROUPED BY TYPE, WHICH IS WHAT GETS ORDERED.** Forty mullions
   is not a purchase order; twelve of one profile and twenty-eight of another is.
 
+  **PANEL SIZES (version 2).** Each panel's Width and Height, read off Revit,
+  grouped within a tolerance - per wall, and across every wall handed in. A
+  panel whose size Revit does not give is named, never guessed.
+
 contract:
   needs:
     - name: doc
       type: Document
     - name: elements
       type: IList<Element>
+    # VERSION 2. How far apart, in millimetres, two panels' widths - and their
+    # heights - may be and still be one size: "within 3 mm", "to the nearest
+    # 10 mm". Left out, 5 mm. 0 is exact. Never negative.
+    - name: toleranceMm
+      type: double
+      source: request
+      optional: true
+      absent: 5
   provides:
     - name: findings
       type: IList<string>
@@ -73,6 +96,24 @@ contract:
       # Handed in but not curtain walls, so there was nothing here to act on.
       # A count of what it was GIVEN and could not use, never a thing it found
       # (D-52).
+      role: accounting
+      type: IList<string>
+    - name: differentPanelSizes
+      # VERSION 2. How many different panel sizes - width x height within the
+      # tolerance - across EVERY curtain wall handed in. A size two walls share
+      # is one size. Each wall's own count is on its line in findings.
+      role: result
+      type: int
+    - name: panelSizes
+      # VERSION 2. One line per size across every wall, "6 at 1500 x 3000 mm",
+      # a range where the members differ, and "(1 of them a door)" for a cell
+      # that is not a curtain panel.
+      role: result
+      type: IList<string>
+    - name: sizesNotRead
+      # VERSION 2. Each panel whose Width or Height Revit did not give, with the
+      # wall, the cell and the reason - in no size, never guessed (D-52). An
+      # EMPTY cell is not here: it is counted in emptyCells.
       role: accounting
       type: IList<string>
 
@@ -111,6 +152,15 @@ compatibility-note: >
   Every id is an `ElementId` resolved with `doc.GetElement`; nothing reads an id
   as a number, so 2024's 64-bit change does not reach this code. No units call is
   made.
+
+  Version 2 reads each panel's size with `Element.get_Parameter(BuiltInParameter)`
+  for `CURTAIN_WALL_PANELS_WIDTH` and `CURTAIN_WALL_PANELS_HEIGHT`, then
+  `Parameter.HasValue`, `StorageType` and `AsDouble` - feet, times 304.8 for
+  millimetres - and tells a door from a curtain panel by comparing `Category.Id`
+  with `new ElementId(BuiltInCategory.OST_Doors)` and `OST_CurtainWallPanels`.
+  Read with `tools/api-surface --members` on all eight releases on 2026-10-29:
+  each is present with one signature 2020 to 2027. No units call is made:
+  internal units are feet on every release.
 
 # ROUTING - the same rows are in the fragments named here.
 #
@@ -178,6 +228,16 @@ compatibility-note: >
 #                                          wall's curtain panels and names the
 #                                          basic walls among them; naming each
 #                                          curtain panel type is not done yet
+#   "how many different panel sizes are     -> here, a question, since version 2
+#    on this curtain wall"                     (2026-10-29): each panel's Width
+#                                              and Height as Revit gives them,
+#                                              grouped within a tolerance. Asked
+#                                              of the retriever that day, before
+#                                              it was declared, the sentence
+#                                              reached here with
+#                                              SET_CURTAIN_PANEL_TYPE, a WRITE,
+#                                              second; declared, it is answered
+#                                              here (D-86)
 
 utterances:
   - what panels and mullions are in this curtain wall
@@ -202,3 +262,7 @@ utterances:
   # DECLARED 2026-10-28 (D-86): the question reached SET_CURTAIN_PANEL_TYPE,
   # a write, until it was declared here. See the row above.
   - which panel types are on this wall
+  # DECLARED 2026-10-29 with version 2 - the row doc 45 section 6 recorded as
+  # "how many different panel sizes a facade has". Before it, ranking alone
+  # brought it here, with SET_CURTAIN_PANEL_TYPE - a write - second.
+  - how many different panel sizes are on this curtain wall

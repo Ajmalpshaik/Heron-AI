@@ -1,0 +1,58 @@
+# NEEDS-CHECKING Group JP - SET_CURTAIN_WALL_MULLIONS version 2 on a CURTAIN
+# SYSTEM TYPE. Written 2026-10-29 in a cloud session with no Revit; NOT RUN.
+# docs/needs-checking/group-jp.md is the whole plan; this file is its JP11 (the
+# positive) and JP14 (the negative), both rolled back.
+#
+#     python tools/batch-prove.py tools/jobs/set-curtain-wall-mullions-curtain-system-2026-10-29.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-curtain-wall-mullions-curtain-system-2026-10-29.yaml --session <pid>
+#
+# THE MODEL is Group JP's rig (JP0) - read
+# set-curtain-wall-grid-curtain-system-2026-10-29.yaml's header for it: the
+# tower, "Heron JP 1500" (Grid 1 and Grid 2 Fixed Distance 1500, every mullion
+# None) and ONE curtain system of it made by hand on the four side faces.
+# NOTHING SELECTED. No setup step.
+#
+# ONE INTERIOR POSITION, ON PURPOSE. The type has lines both ways and no
+# mullion at all, so what appears is counted exactly: 720 upright mullions if
+# Grid 1 runs upright on the faces, 760 level ones if it runs level (derived in
+# brain/fragments/set-curtain-wall-mullions/tests/cases.yaml). "Rectangular
+# Mullion: 30mm Square" is in Project1 - version 1's proof listed it.
+#
+# THE NEGATIVE IS A DIFFERENT TYPE, never a cleared value: the same request
+# aimed at "Curtain Wall: Storefront", the curtain WALL type version 1 was
+# proved on - which has no Grid 1 Mullions - refused in version 1's own words.
+#
+# RUN tools/jobs/set-curtain-wall-mullions-wall-type-2026-10-29.yaml (JP10)
+# FIRST when both are run: a batch keeps one run record per fragment, and this
+# one's is the record the signature (JP19) is drafted from.
+
+model: Heron JP Curtain (scratch copy of Project1), Revit 2020
+
+defaults:
+  in: Heron JP Curtain
+  write: true
+  setup: []
+
+jobs:
+  - fragment: set-curtain-wall-mullions
+    set:
+      curtainWallType: "Heron JP 1500"
+      mullions: "grid 1 interior=Rectangular Mullion: 30mm Square"
+    negative-set:
+      curtainWallType: "Curtain Wall: Storefront"
+      mullions: "grid 1 interior=Rectangular Mullion: 30mm Square"
+    # `applied` is the work: positions Revit HOLDS as asked after the rebuild,
+    # counted off the read-back. `differs` should stay empty.
+    expect: applied
+    note: >
+      JP11 and JP14. Positive: systemsOfType 1, wallsOfType 0, applied 1,
+      differs empty; readBack grid 1 interior 'Rectangular Mullion: 30mm
+      Square', was none, and "Of Revit's mullion ids ... carries:" - record
+      it. measured: one curtain system on 4 faces, 36 vertical and 76
+      horizontal lines, mullions before none, now 720 x vertical or 760 x
+      horizontal 'Rectangular Mullion: 30mm Square' - record which; it must
+      agree with SET_CURTAIN_WALL_GRID's JP2. Negative: applied 0, readBack and
+      measured empty, refused "'grid 1 interior' is not a mullion position.
+      Name one or more of: vertical interior, vertical border 1, vertical
+      border 2, horizontal interior, horizontal border 1, horizontal border 2.
+      Nothing was changed".
