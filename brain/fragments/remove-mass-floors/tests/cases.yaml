@@ -1,0 +1,21 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a removal, "removed more than was named".
+
+positive:
+  - given: one mass with mass floors at Levels 1 to 4, the mass selected, levelNames "Level 4"
+    expect: >
+      removed 1; the mass's floor levels read back as Levels 1 to 3; Levels 1
+      to 3 untouched, each still with its Usage
+
+second_route:
+  - the mass's Mass Floors dialog, Level 4 unticked and the rest ticked
+  - one Ctrl+Z puts the mass floor back in a single step (Golden Rule 16)
+
+negative:
+  - given: the same mass, levelNames empty
+    expect: >
+      NOTHING WAS REMOVED, the finding saying a level must be named; all
+      four mass floors still there
+  - given: the same mass, levelNames "Level 9" on a model with no Level 9
+    expect: >
+      NOTHING WAS REMOVED, Level 9 named and the model's levels listed

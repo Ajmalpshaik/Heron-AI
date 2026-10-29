@@ -18,7 +18,7 @@ capability: REPORT_CURTAIN_ELEMENTS
 # written, in its words and its order, and every name it left behind is still
 # left. A size Revit does not give is named in sizesNotRead, never guessed.
 # Version 1's proof below no longer describes the code and is kept as a record;
-# the card is DRAFT until NEEDS-CHECKING Group JO proves version 2 and the owner
+# the card is DRAFT until NEEDS-CHECKING Group JR proves version 2 and the owner
 # signs.
 version: 2
 source: OFFICIAL

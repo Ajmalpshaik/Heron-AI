@@ -340,8 +340,21 @@ def main():
         # `how_to_type` writes for an element TYPE. A typed name resolves to a
         # type, the fragment runs on it and returns 0 with no error - the
         # shape that cost twelve jobs on 2026-09-10.
+        #
+        # EACH NEED IS READ IN ITS OWN JOB'S BLOCK. Two steps can share a need's
+        # name with different types - massing-study's CREATE_OPENING `host` is
+        # one element, CREATE_CURTAIN_SYSTEM's `host` is text - and a check
+        # over the whole file judged the first by the second's line (row
+        # 5b-1348).
+        blocks, current = {}, None
+        for line in text.splitlines():
+            if line.strip().startswith("- fragment:"):
+                current = line.split(":", 1)[1].strip()
+            if current is not None:
+                blocks.setdefault(current, []).append(line)
         for slug, name, _kind, _why in plan.by_hand:
-            for line in text.splitlines():
+            check(slug in blocks, "%s/%s has a job of its own" % (plan.id, slug))
+            for line in blocks.get(slug, []):
                 if line.strip().startswith(name + ":") and "#" in line:
                     check("element TYPE by name" not in line,
                           "%s/%s's `%s` is not described as a type"

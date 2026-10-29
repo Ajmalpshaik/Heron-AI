@@ -1,0 +1,94 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-131
+semantic-identity: "mark the mass floors retail, office or residential so the massing area schedules by use"
+kind: action
+domain: revit.elements
+capability: SET_MASS_FLOOR_USAGE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# A massing study is not finished at its total: the brief asks how much is
+# retail, office, residential. Revit keeps that on each mass floor's Usage,
+# and a Mass Floor schedule groups by it - but Revit sets it one mass floor
+# at a time, in Properties, and a tower has dozens. This sets it level by
+# level in one call: "Level 1=Retail; Level 2..Level 6=Office".
+#
+# "A..B" is every level from A to B by height, both included, as
+# COPY_ELEMENTS' toLevels is read. One word with no = is every mass floor of
+# the masses given. Nothing after = clears it.
+#
+# ALL OR NOTHING BEFORE ANYTHING IS WRITTEN: a level the model has not got,
+# a level given two usages, or an element that is not a mass refuses the
+# call by name. A level the masses have no mass floor at is said, not made -
+# CREATE_MASS_FLOORS makes it.
+#
+# Usage is text, written as given - Heron keeps no list of uses, and a
+# word the modeller has not used before is theirs (D-33).
+#
+# READ BACK: each mass floor's Usage is read again after a regeneration; the
+# report gives what it said before.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Sets the Usage of conceptual masses' mass floors, level by level - Retail
+  at Level 1, Office from Level 2 to Level 6 - so the massing's gross floor
+  area schedules by use.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The masses - selected, or REPORT_MASSES' elements through expect_from.
+    - name: elements
+      type: IList<Element>
+    # "Office" for every mass floor, or "Level 1=Retail; Level 2..Level 6=Office".
+    - name: usage
+      type: string
+      source: request
+  provides:
+    - name: changed
+      role: result
+      type: int
+    - name: alreadySo
+      # Mass floors that said so already. The prior state (D-52).
+      role: accounting
+      type: int
+    - name: report
+      # ONE STRING, mass by mass, each floor's Usage before and after (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. MassInstanceUtils.GetMassLevelDataIds,
+  MassLevelData.StrUsage (get and set), Element.LevelId and
+  Level.ProjectElevation are present 2020 through 2027 - read with
+  tools/api-surface on 2026-10-28. MassLevelData is marked obsolete on 2023
+  alone, and not on 2024 to 2027.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "set the usage of the mass floors"          -> here
+#   "make level 1 retail and the rest office"   -> here
+#   "add mass floors at every level"            -> CREATE_MASS_FLOORS
+#   "how much area does each use get"           -> REPORT_MASSES
+
+utterances:
+  - set the usage of the mass floors to office
+  - make the level 1 mass floor retail and the levels above office
+  - mark the mass floors from level 7 up as residential
+  - give the mass floors their usage so the area schedules by use

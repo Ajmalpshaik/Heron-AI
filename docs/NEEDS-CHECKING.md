@@ -1066,7 +1066,7 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jn.md`](needs-checking/group-jn.md)
 
-## Group JO - how many different panel sizes a curtain wall has, within a tolerance: `REPORT_CURTAIN_ELEMENTS` version 2 (2026-10-29)
+## Group JO - a massing study from block to building: `REPORT_MASSES`, `SET_MASS_FLOOR_USAGE`, `REMOVE_MASS_FLOORS`, `CREATE_WALLS_BY_FACE` and the `massing-study` and `mass-family-creation` methods (2026-10-28)
 
 **Its own file:** [`needs-checking/group-jo.md`](needs-checking/group-jo.md)
 
@@ -1077,6 +1077,10 @@ Step 6 is finished, and not before. At that point:
 ## Group JQ - an adaptive component's points read back with their Orientation: `REPORT_FAMILY_TEMPLATE` version 4 (2026-10-29)
 
 **Its own file:** [`needs-checking/group-jq.md`](needs-checking/group-jq.md)
+
+## Group JR - how many different panel sizes a curtain wall has, within a tolerance: `REPORT_CURTAIN_ELEMENTS` version 2 (2026-10-29)
+
+**Its own file:** [`needs-checking/group-jr.md`](needs-checking/group-jr.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

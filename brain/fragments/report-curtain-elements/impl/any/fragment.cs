@@ -34,14 +34,14 @@
 //   A SIZE REVIT DOES NOT GIVE IS NOT GUESSED (D-52). A cell whose element has
 //   no such value, or one that is not a length above zero, is put in NO size:
 //   it is named in `sizesNotRead` with the reason, and the wall's size line
-//   says how many. ASSUMPTION for the proof (NEEDS-CHECKING Group JO): whether
+//   says how many. ASSUMPTION for the proof (NEEDS-CHECKING Group JR): whether
 //   a BASIC WALL in a cell, and a curtain wall DOOR, carry those two values at
 //   all. Either way the answer is honest - sized if Revit gives them, named
 //   as not sized if it does not.
 //
 //   ASSUMPTION for the proof: that the two values are the CELL's size, grid
 //   line to grid line, and not the glass inside the mullions. The rig in
-//   Group JO has no mullions, so its numbers hold either way; row JO6 measures
+//   Group JR has no mullions, so its numbers hold either way; row JR6 measures
 //   it on a type that has them.
 //
 //   AN EMPTY CELL IS IN NO SIZE. There is no element there to measure. It is

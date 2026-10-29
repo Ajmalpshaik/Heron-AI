@@ -16,7 +16,7 @@ positive:
       any other cell and counting them as glazing over-orders
 
   - given: >
-      VERSION 2 - THE D-30 POSITIVE (Group JO, row JO1). One curtain wall, 10000
+      VERSION 2 - THE D-30 POSITIVE (Group JR, row JR1). One curtain wall, 10000
       mm long and 3000 mm high, of a type with a vertical grid at Fixed Distance
       1500 mm, Justification Beginning, no horizontal grid and no mullions, the
       tolerance left out
@@ -82,7 +82,7 @@ negative:
       reported for the same wall. One guard around everything loses the rest
 
   - given: >
-      VERSION 2 - THE D-30 NEGATIVE (Group JO, row JO2). A basic wall, Generic -
+      VERSION 2 - THE D-30 NEGATIVE (Group JR, row JR2). A basic wall, Generic -
       200mm, drawn on the same line as the positive's curtain wall, and the
       same request
     expect: >
