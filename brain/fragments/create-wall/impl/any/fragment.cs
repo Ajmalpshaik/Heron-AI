@@ -1,6 +1,6 @@
-// NOT STANDALONE. Assumes `doc`, `level`, `wallType`, `points`, `height` and
-// `structural` are in scope; leaves `created`, `tooShort`, `refused` and
-// `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `level`, `wallType`, `points`, `height`,
+// `structural` and `baseOffset` are in scope; leaves `created`, `tooShort`,
+// `refused` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). Lengths are internal FEET.
 //
@@ -31,6 +31,16 @@
 // 100 km bound, the same division by 304.8 - and built by the same lines, so a
 // version 1 call builds what it built before. A bad arc builds nothing at all:
 // the next wall would start where it ends.
+//
+// VERSION 3: A WALL CAN START ABOVE ITS LEVEL (5b-1345). `baseOffset` is
+// Revit's Base Offset in millimetres - below the level when negative - and
+// left out it is 0. It goes into Wall.Create's own offset argument, which
+// versions 1 and 2 always handed 0, and never into the curve: the curve stays
+// at the level's project elevation, so the offset cannot be counted twice. The
+// height is measured from that base, as Revit measures Unconnected Height - a
+// wall 1500 up and 3000 high stands from 1500 to 4500 above its level. With 0,
+// every word of the findings is version 2's. Each wall's Base Offset is READ
+// BACK off the wall, never echoed from the input, into `offsetsReadMm`.
 
 // MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
 // millimetres. The add-in converts an XYZ at the boundary and cannot convert a
@@ -38,11 +48,13 @@
 // conversion belongs here, once, before the value is used for anything.
 const double MillimetresPerFoot = 304.8;
 height = height / MillimetresPerFoot;
+baseOffset = baseOffset / MillimetresPerFoot;
 
 var created = new List<Element>();
 var tooShort = 0;
 var refused = 0;
 var findings = new List<string>();
+var offsetsReadMm = new List<double>();
 
 var shortest = doc.Application.ShortCurveTolerance;
 
@@ -174,6 +186,17 @@ else if (height <= 0)
 {
     findings.Add("A wall needs a height greater than zero");
 }
+else if (double.IsNaN(baseOffset) || double.IsInfinity(baseOffset) || Math.Abs(baseOffset) > 30000.0)
+{
+    // REVIT'S OWN LIMIT, read off its API documentation for 2020 and 2027:
+    // Wall.Create takes an offset of no more than 30000 feet either way, and
+    // past it throws for every wall. Said once, in words, before any is tried.
+    refused++;
+    findings.Add("A base offset is millimetres above the level - 1500, or -300 below it - and Revit "
+               + "takes none past 9144000 (30000 feet) either way. "
+               + (baseOffset * MillimetresPerFoot).ToString(invariant) + " is not one Heron can start "
+               + "a wall at. Nothing was built.");
+}
 else
 {
     var curved = 0;
@@ -201,11 +224,13 @@ else
             var wall = Wall.Create(doc,
                                    m == null ? (Curve)Line.CreateBound(start, end)
                                              : Arc.Create(start, end, new XYZ(m.X, m.Y, z)),
-                                   wallType.Id, level.Id, height, 0.0, false, structural);
+                                   wallType.Id, level.Id, height, baseOffset, false, structural);
             if (wall != null)
             {
                 created.Add(wall);
                 if (m != null) curved++;
+                var read = wall.get_Parameter(BuiltInParameter.WALL_BASE_OFFSET);
+                if (read != null) offsetsReadMm.Add(Math.Round(read.AsDouble() * MillimetresPerFoot, 1));
             }
             else refused++;
         }
@@ -223,4 +248,18 @@ else
     if (arcs > 0)
         findings.Add(string.Format("{0} of them follow an arc, through the point given for it. A curved "
             + "wall's Length in Properties is measured along its arc", curved));
+
+    // Said only when it is not version 2's answer - an offset asked for, or a
+    // wall whose Base Offset did not read back as the one asked.
+    var askedMm = Math.Round(baseOffset * MillimetresPerFoot, 1);
+    var unlike = offsetsReadMm.Where(v => Math.Abs(v - askedMm) > 0.5).ToList();
+    var unread = created.Count - offsetsReadMm.Count;
+    if (created.Count > 0 && (askedMm != 0 || unlike.Count > 0 || unread > 0))
+        findings.Add(string.Format(invariant,
+            "Base Offset {0:+0;-0;0} mm from '{1}', so each wall stands from {0:+0;-0;0} to {2:+0;-0;0} mm, "
+            + "its {3:0} mm height measured from its base. Read back off the walls: {4} of {5} as asked",
+            askedMm, level.Name, askedMm + height * MillimetresPerFoot, height * MillimetresPerFoot,
+            offsetsReadMm.Count - unlike.Count, created.Count)
+            + (unlike.Count > 0 ? " - NOT AS ASKED: " + string.Join(", ", unlike.Select(v => v.ToString(invariant) + " mm")) : "")
+            + (unread > 0 ? " - " + unread + " with no Base Offset to read" : ""));
 }

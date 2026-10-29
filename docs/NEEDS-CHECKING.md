@@ -1034,6 +1034,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jf.md`](needs-checking/group-jf.md)
 
+## Group JG - a wall that starts above its level: `CREATE_WALL` version 3, `baseOffset` (2026-10-28)
+
+**Its own file:** [`needs-checking/group-jg.md`](needs-checking/group-jg.md)
+
 ## Group JH - a duct or pipe fitting built by the method end to end, and the four fitting facts the research left UNSURE: `mep-fitting-family-creation` deepened (2026-10-28)
 
 **Its own file:** [`needs-checking/group-jh.md`](needs-checking/group-jh.md)
