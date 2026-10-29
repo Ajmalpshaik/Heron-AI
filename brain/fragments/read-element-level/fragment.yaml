@@ -36,6 +36,15 @@ purpose: >
   their level in a parameter instead, so both are read, in a fixed order, and
   the answer says nothing at all rather than guessing when neither is present.
 
+  **A floor, a door, a duct and a pipe each carry a level too**, and are asked
+  which level they are on in the same words.
+
+# THAT LAST PARAGRAPH (2026-10-29, FRAGMENT-ISSUES 5b-1349). The nine wall
+# sentences declared below pulled the card towards walls alone, and on the
+# trained model "which level is this floor on" left it for CREATE_PLAN_VIEW,
+# a write. Naming other elements that carry a level held it. It names a level
+# only: this card reads no floor's Height Offset From Level and no column's
+# base offset, so it does not claim their offsets.
 contract:
   needs:
     - name: elements
@@ -154,3 +163,13 @@ utterances:
   # (WALL_BASE_OFFSET), so this read answers both.
   - what is the base offset of this wall
   - which level is this wall on
+  # The same two questions in other words, measured the same day still
+  # reaching SET_WALL_CONSTRAINTS once the two above were declared - all six
+  # on both backends, "what is this wall's base offset" on the model.
+  - what level is this wall on
+  - what level are these walls on
+  - what is the base offset of these walls
+  - what is this wall's base offset
+  - show me the base offset of the selected walls
+  - what is the wall's offset from its level
+  - which level is this wall's base on
