@@ -45,6 +45,12 @@ purpose: >
   Level 5..Level 8 - so a plant or parapet level stops counting in the gross
   floor area. Never every level: an empty value refuses.
 
+  Drop, delete or take off a mass floor: the same job.
+
+# THAT LAST LINE (2026-10-31, FRAGMENT-ISSUES 5b-1349): "drop the mass floor at
+# level 4" reached REPORT_MASSES, a read, on spelling - a near-tie the other
+# massing cards' words had tipped. The modeller's verb, said here, holds it.
+# Declared as an utterance, its "level 4" pulled other level-4 sentences here.
 contract:
   needs:
     - name: doc
