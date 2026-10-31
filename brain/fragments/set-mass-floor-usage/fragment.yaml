@@ -92,3 +92,7 @@ utterances:
   - make the level 1 mass floor retail and the levels above office
   - mark the mass floors from level 7 up as residential
   - give the mass floors their usage so the area schedules by use
+  # ADDED 2026-10-31, FRAGMENT-ISSUES row 5b-1349: reached CREATE_MASS_FLOORS,
+  # another write, on the trained model. Marking a mass floor's use is
+  # this card's job.
+  - mark these mass floors as office

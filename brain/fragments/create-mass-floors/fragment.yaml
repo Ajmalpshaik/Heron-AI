@@ -103,3 +103,9 @@ utterances:
   - create mass floors on this massing model
   - the massing areas are not scheduling, add the mass floors
   - put mass floors on this mass
+  # ADDED 2026-10-31, FRAGMENT-ISSUES row 5b-1349: reached REMOVE_MASS_FLOORS,
+  # another write, on spelling and the trained model. Adding mass floors is
+  # this card's job. "give this mass floors at levels 1 to 10" follows it by
+  # ranking and is NOT declared: declared, it pulled "at level N" requests
+  # and mass-floor questions here.
+  - add mass floors at all the levels
