@@ -1,0 +1,102 @@
+heron-agent: HERON-REVIT-PHS-032
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-055
+semantic-identity: "the project's phase filters by exact name, and how each one shows each phase status"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# Built 2026-10-31 beside CREATE_PHASE_FILTER, for Ajmal PS's "As-Built"
+# filter. Nothing read the phase filters (grep of brain/fragments that day):
+# REPORT_PHASES lists PHASES, REPORT_VIEW_FILTERS lists VIEW filters, and
+# SET_VIEW_PHASE takes a phase filter's exact name with nowhere to get it.
+#
+# A NEW READ, NOT A WIDENING OF REPORT_PHASES (FRG-DOC-007, PROVEN). A phase
+# and a phase filter are different elements with different jobs, and a change
+# under that card's impl/ would make its proof stale.
+#
+# THE GRAPHIC OVERRIDES TAB HAS NO API on any release 2020 to 2027, so what
+# "Overridden" draws is not read here. The evidence is in CREATE_PHASE_FILTER's
+# card and FRAGMENT-ISSUES row 5b-1350.
+#
+# READ ONLY - opens no transaction.
+kind: action
+domain: revit.phases
+capability: REPORT_PHASE_FILTERS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists the phase filters of the project - the Phase Filters tab of Manage,
+  Phasing - by exact name, with each phase status shown By Category,
+  Overridden or Not Displayed, whether it is one of Revit's own, and how many
+  views use it. Name one to read that one alone.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+      source: ambient
+    # A filter by its name - "Show Complete". Left out, "all".
+    - name: filterName
+      type: string
+      source: request
+      optional: true
+      absent: all
+  provides:
+    - name: phaseFilterNames
+      role: result
+      type: IList<string>
+    - name: phaseFilterIds
+      role: result
+      type: IDictionary<string, ElementId>
+    - name: filterCount
+      role: result
+      type: int
+    - name: report
+      # ONE STRING, filter by filter: the four statuses and the views using it.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. PhaseFilter.GetPhaseStatusPresentation,
+  PhaseFilter.IsDefault, ElementOnPhaseStatus, PhaseStatusPresentation,
+  BuiltInParameter.VIEW_PHASE_FILTER and View.IsTemplate are present and
+  unchanged 2020 through 2027 - read with tools/api-surface on 2026-10-31. Ids
+  are compared as ElementId and never read as numbers.
+
+# ROUTING - repeated in CREATE_PHASE_FILTER.
+#
+#   "what phase filters are in this project"   -> here
+#   "what phases are in this model"            -> REPORT_PHASES - phases, not
+#                                                 phase filters
+#   "what view filters does this view have"    -> REPORT_VIEW_FILTERS
+#   "list the view filters"                    -> REPORT_VIEW_FILTERS - VIEW
+#                                                 filters, not phase filters.
+#                                                 This card ranked next to it
+#                                                 on the model backend,
+#                                                 2026-10-31
+#   "which phase filter does this view use"    -> REPORT_VIEW_SETTINGS - one
+#                                                 view's Phase and Phase
+#                                                 Filter; this lists the
+#                                                 project's filters
+#   "create a phase filter called As-Built"    -> CREATE_PHASE_FILTER
+#   "what are the phase graphic overrides"     -> NOTHING HERE CAN - the
+#                                                 Graphic Overrides tab of
+#                                                 Manage, Phasing has no API
+#                                                 to read. Row 5b-1350
+
+utterances:
+  - what phase filters are in this project
+  - list the phase filters
+  - how is the Show Complete phase filter set
+  - what does the Show Previous + New filter show

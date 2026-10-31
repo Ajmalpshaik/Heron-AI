@@ -1,0 +1,48 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a create, "changed the one that was already there".
+# Arrange on a SCRATCH project (NEEDS-CHECKING Group JS): a new project from
+# the Metric architectural template in Revit 2020, which carries Revit's own
+# phase filters - Show All, Show Complete, Show Demo + New, Show New, Show
+# Previous + Demo, Show Previous + New, Show Previous Phase. Every run rolled
+# back, so each case starts from that list.
+
+positive:
+  - given: >
+      the scratch project, filterName "As-Built", newDisplay "By Category",
+      existingDisplay "By Category", demolishedDisplay "Not Displayed",
+      temporaryDisplay "Not Displayed"
+    expect: >
+      created 1; phaseFilterId a new id; statusReport "New: By Category;
+      Existing: By Category; Demolished: Not Displayed; Temporary: Not
+      Displayed"; Manage > Phasing > Phase Filters lists As-Built with the
+      same four; Revit's own filters unchanged
+  - given: >
+      the same project, filterName "As-Built", the four statuses left out
+    expect: >
+      created 1; statusReport names each of the four as "(not asked - as
+      Revit made it)" with what it reads - RECORDED, not assumed (Group JS,
+      JS2)
+
+negative:
+  - given: >
+      the same project, filterName "Show Complete", newDisplay "Not Displayed"
+    expect: >
+      created 0, NOTHING WAS MADE, the finding naming "Show Complete" with its
+      id and its four statuses as they are; Show Complete still shows New By
+      Category - it was not edited. THIS IS THE FIRST CASE TO RUN
+  - given: >
+      the same project, filterName "As-Built", demolishedDisplay "Halftone"
+    expect: >
+      created 0, NOTHING WAS MADE, "Halftone" named as not one of the three
+      and the Graphic Overrides tab named as by hand; no As-Built filter in
+      the Phase Filters tab afterwards
+  - given: >
+      the same project, filterName "show complete" (lower case)
+    expect: >
+      created 0, Show Complete named - a name differing only in case is the
+      same name
+
+second_route:
+  - Manage > Phasing > Phase Filters, the new row read by eye - name and the four columns
+  - REPORT_PHASE_FILTERS on the same project, run inside the same rolled-back group, reading As-Built back
+  - one Ctrl+Z takes the new filter away in a single step (Golden Rule 16)

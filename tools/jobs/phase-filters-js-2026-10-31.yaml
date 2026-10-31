@@ -1,0 +1,50 @@
+# NEEDS-CHECKING Group JS - the phase filter tools built 2026-10-31:
+# CREATE_PHASE_FILTER and REPORT_PHASE_FILTERS.
+#
+#     python tools/batch-prove.py tools/jobs/phase-filters-js-2026-10-31.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/phase-filters-js-2026-10-31.yaml
+#
+# ONE SCRATCH PROJECT, OPEN IN REVIT 2020, never a working model:
+# %TEMP%\heron-work\group-js\JS Phase Filters.rvt, a new project from the
+# Metric architectural template, arranged by hand as JS1 in
+# docs/needs-checking/group-js.md says - the template's own phase filters
+# untouched, Level 1's floor plan on Show Complete, one view template on
+# Show All, and NO filter named As-Built.
+#
+# The order matters: the read runs first, while As-Built does not exist, so
+# its negative means "not there" and not "not made yet by this run". Every
+# write is rolled back, so each job starts from JS1's arrangement.
+
+model: JS Phase Filters (scratch project, Metric architectural template), Revit 2020
+
+jobs:
+  - fragment: report-phase-filters
+    expect: filterCount
+    in: JS Phase Filters
+    negative-set: {filterName: "As-Built"}
+    note: >
+      JS3 and JS4. Positive - filterCount the rows of Manage > Phasing >
+      Phase Filters, each with its four statuses as that tab shows them, Show
+      Complete used by Level 1's plan. Negative - filterCount 0, the finding
+      naming the filters there are; never another filter's settings.
+
+  - fragment: create-phase-filter
+    write: true                        # rolled back
+    expect: created
+    in: JS Phase Filters
+    set:
+      filterName: "As-Built"
+      newDisplay: "By Category"
+      existingDisplay: "By Category"
+      demolishedDisplay: "Not Displayed"
+      temporaryDisplay: "Not Displayed"
+    negative-set:
+      filterName: "Show Complete"
+      newDisplay: "Not Displayed"
+    note: >
+      JS5 and JS6. Positive - created 1, statusReport "New: By Category;
+      Existing: By Category; Demolished: Not Displayed; Temporary: Not
+      Displayed". Negative - created 0, NOTHING WAS MADE, Show Complete named
+      with its id and its four statuses, and Show Complete NOT edited: its New
+      still By Category. Both rolled back - the kept run is JS9, through
+      try-once, on the modeller's yes.

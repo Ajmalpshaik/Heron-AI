@@ -1,0 +1,27 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+# Arrange on the SCRATCH project of NEEDS-CHECKING Group JS: Metric
+# architectural template, Revit 2020, with Revit's own seven phase filters,
+# Level 1's floor plan on Show Complete and one view template on Show All.
+
+positive:
+  - given: the scratch project, filterName left out ("all")
+    expect: >
+      filterCount the number of rows in Manage > Phasing > Phase Filters, in
+      the order Revit holds them; each line with New, Existing, Demolished and
+      Temporary exactly as that tab shows them, row by row; which ones are
+      marked Revit's own RECORDED, not assumed (Group JS); Show Complete used
+      by Level 1's plan among its views, Show All by the one template
+  - given: the same project, filterName "Show All"
+    expect: >
+      filterCount 1, the four statuses of Show All and its one view template
+
+negative:
+  - given: the same project, filterName "As-Built" (not made yet)
+    expect: >
+      filterCount 0, phaseFilterNames empty, a finding naming the phase
+      filters there are - never another filter's settings. THIS IS THE FIRST
+      CASE TO RUN
+
+second_route:
+  - Manage > Phasing > Phase Filters, read by eye - names and the four columns
+  - the Phase Filter of each view in the Properties palette, counted by hand for Show Complete

@@ -1,0 +1,154 @@
+heron-agent: HERON-REVIT-PHS-032
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-054
+semantic-identity: "make a new phase filter under a given name, and set each phase status in it to By Category, Overridden or Not Displayed"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-31: Ajmal PS asked Heron for a phase filter named "As-Built" in his
+# Revit 2020 project. Nothing in Heron made one (checked that day by grep of
+# brain/fragments, DRAFT and PROVEN, for PhaseFilter.Create and
+# SetPhaseStatusPresentation, and by brain/heron_retrieve.py on "create a
+# phase filter called As-Built": SET_ELEMENT_PHASE, READ_ELEMENT_PHASE,
+# SELECT_BY_PHASE, CREATE_VIEW_FILTERS_BY_RULE and SET_VIEW_PHASE, none of
+# which makes one). A PHASE cannot be renamed or made through the API
+# (report-phases' card, FRAGMENT-ISSUES row 107); a phase FILTER is a separate
+# element, and PhaseFilter.Create makes it.
+#
+# A NEW CAPABILITY, NOT A WIDENING. SET_VIEW_PHASE (FRG-VIEW-095, PROVEN) puts
+# a phase filter that already exists on views; it changes views, not the
+# project's list of filters, and a change under its impl/ would make its proof
+# stale for a job it does not do. CREATE_VIEW_FILTERS_BY_RULE makes VIEW
+# filters - rules on parameters - which are a different element with a
+# different dialog.
+#
+# A NAME ALREADY IN USE REFUSES, naming the filter and what it shows. It is
+# never edited instead: "Show Complete" is on most views of most projects.
+# Compared without case. A near name - "As Built" beside "As-Built" - is made
+# as asked and named in a finding.
+#
+# A STATUS LEFT OUT is left as Revit makes it, and the read-back says what that
+# was. What PhaseFilter.Create leaves a status at is NOT known from the
+# assemblies (NEEDS-CHECKING Group JS, JS2).
+#
+# THE GRAPHIC OVERRIDES TAB HAS NO API - checked, not assumed. Read off the
+# shipped RevitAPI.dll of all eight releases, 2020 to 2027, on 2026-10-31
+# (tools/api-surface, and a scan of every public member's signature): the only
+# public members that take or return ElementOnPhaseStatus or
+# PhaseStatusPresentation are PhaseFilter.Get/SetPhaseStatusPresentation,
+# Element.GetPhaseStatus and ElementPhaseStatusFilter (its four constructors
+# and GetPhaseStatuses) - the same eight on every release. No type or member
+# carries a phase status's projection or cut lines, patterns, halftone or
+# material, and BuiltInCategory has OST_Phases alone - no subcategory per
+# status. So "Overridden" is settable here and WHAT it draws is the Phasing
+# dialog's alone. FRAGMENT-ISSUES row 5b-1350.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.phases
+capability: CREATE_PHASE_FILTER
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes a new phase filter - Manage, Phasing, Phase Filters, New - under the
+  name given, and sets each phase status in it to By Category, Overridden or
+  Not Displayed. A name already used refuses and names that filter; each
+  status is read back. The Graphic Overrides tab has no API and is set by
+  hand.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The new filter's name, as it will show in the view's Phase Filter list.
+    # EMPTY REFUSES - nothing is made under a name Revit picks.
+    - name: filterName
+      type: string
+      source: request
+    # Each one "By Category", "Overridden" or "Not Displayed". Left out, the
+    # status stays as Revit makes it, and the read-back names what that is.
+    - name: newDisplay
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    - name: existingDisplay
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    - name: demolishedDisplay
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    - name: temporaryDisplay
+      type: string
+      source: request
+      optional: true
+      absent: leave
+  provides:
+    - name: phaseFilterId
+      # The new filter - for SET_VIEW_PHASE's phaseFilterId. InvalidElementId
+      # when nothing was made.
+      role: result
+      type: ElementId
+    - name: created
+      # 1 when the filter was made and read back, 0 when the call refused.
+      role: result
+      type: int
+    - name: statusReport
+      # ONE STRING: each of the four statuses as it READS BACK, not as asked.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. PhaseFilter.Create(Document, string),
+  PhaseFilter.SetPhaseStatusPresentation and GetPhaseStatusPresentation,
+  ElementOnPhaseStatus (New, Existing, Demolished, Temporary) and
+  PhaseStatusPresentation (DontShow, ShowByCategory, ShowOverriden - Revit's
+  own spelling) and NamingUtils.IsValidName are present and unchanged 2020
+  through 2027 - read with tools/api-surface on 2026-10-31. Ids are carried as
+  ElementId and never read as numbers.
+
+# ROUTING - repeated in REPORT_PHASE_FILTERS and SET_VIEW_PHASE.
+#
+#   "create a phase filter called As-Built"     -> here
+#   "what phase filters are there"              -> REPORT_PHASE_FILTERS
+#   "put the As-Built filter on these views"    -> SET_VIEW_PHASE - this one
+#                                                  makes the filter, that one
+#                                                  puts it on views
+#   "create a new phase"                        -> NOTHING HERE CAN - no API
+#                                                  makes a phase (REPORT_PHASES'
+#                                                  card). Manage, Phases
+#   "set the phase graphic overrides"           -> NOTHING HERE CAN, on any
+#                                                  release - the Graphic
+#                                                  Overrides tab of Manage,
+#                                                  Phasing (lines, patterns,
+#                                                  halftone, material per
+#                                                  status) has no API. Set it
+#                                                  by hand. Row 5b-1350
+#   "make a view filter for the fire dampers"   -> CREATE_VIEW_FILTERS_BY_RULE
+#   "what is the phase called"                  -> REPORT_PHASES - a question,
+#                                                  never this write. This card
+#                                                  ranked next to it on the
+#                                                  model backend, 2026-10-31;
+#                                                  REPORT_PHASES declares it,
+#                                                  so it resolves there
+
+utterances:
+  - create a phase filter called As-Built
+  - make a new phase filter
+  - add a phase filter that hides demolished
+  - new phase filter showing existing by category and new overridden
