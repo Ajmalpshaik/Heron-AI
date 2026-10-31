@@ -122,6 +122,20 @@ compatibility-note: >
 #                                        FRAGMENT-ISSUES row 107. Rename it
 #                                        under Manage, Phases
 #
+#   "what phase filters are there"       -> REPORT_PHASE_FILTERS - a phase
+#                                        FILTER is a separate element from a
+#                                        phase, and CREATE_PHASE_FILTER makes
+#                                        one (2026-10-31)
+#   "set the phase graphic overrides"    -> NOTHING HERE CAN, on any release.
+#                                        The Graphic Overrides tab of Manage,
+#                                        Phasing - projection and cut lines
+#                                        and patterns, halftone and material
+#                                        for Existing, Demolished, New and
+#                                        Temporary - has NO API, read off the
+#                                        RevitAPI.dll of all eight releases
+#                                        2020-2027 on 2026-10-31. Set it by
+#                                        hand. FRAGMENT-ISSUES row 5b-1350
+#
 #   "change the phase name"              -> here first, then Manage, Phases. It
 #                                        must NOT reach SET_ELEMENT_PHASE,
 #                                        which MOVES ELEMENTS between phases -

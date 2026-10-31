@@ -162,6 +162,12 @@ compatibility-note: >
 #                                            deliberately not phase
 #   "it will not let me change the phase" -> REPORT_VIEW_TEMPLATE_CONTROL
 #   "what phases are in this model"       -> REPORT_PHASES
+#   "make a phase filter called As-Built" -> CREATE_PHASE_FILTER - this one
+#                                            puts a filter that exists on
+#                                            views; that one makes the filter
+#   "what phase filters are there"        -> REPORT_PHASE_FILTERS - the exact
+#                                            names this one's phaseFilterId
+#                                            is resolved from
 
 utterances:
   - set the phase on these views
@@ -174,3 +180,7 @@ utterances:
   - show existing only on this view
   - put these views on the new construction phase
   - set the view phase in bulk
+  # DECLARED 2026-10-31 WITH CREATE_PHASE_FILTER, whose own words ("a phase
+  # filter called As-Built") pulled this sentence to that write on the model
+  # backend - it MAKES a filter; this one puts a filter that exists on views.
+  - put the As-Built phase filter on these views

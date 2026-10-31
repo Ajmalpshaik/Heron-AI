@@ -1082,6 +1082,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jr.md`](needs-checking/group-jr.md)
 
+## Group JS - a phase filter made by name and the phase filters read: `CREATE_PHASE_FILTER`, `REPORT_PHASE_FILTERS` (2026-10-31)
+
+**Its own file:** [`needs-checking/group-js.md`](needs-checking/group-js.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
