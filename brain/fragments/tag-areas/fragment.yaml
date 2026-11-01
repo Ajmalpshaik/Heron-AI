@@ -1,0 +1,169 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-159
+semantic-identity: "put an area tag on each of these areas in this area plan - Revit's Area Tag"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "tag all the areas in this area
+# plan" and "put area tags on these areas" - Revit's Annotate > Area Tag.
+# Checked that day with brain/heron_retrieve.py on a scratch store, Revit 2024:
+# both sentences reached PLACE_AREAS, which makes areas and tags none. Nothing
+# in the library placed an area tag: TAG_ROOMS tags rooms, spaces and HVAC
+# zones and lists an area as not taggable; TAG_ELEMENTS and
+# TAG_ELEMENTS_IN_VIEW make the other kind of tag.
+#
+# WHY A NEW CARD AND NOT A WIDENING OF TAG_ROOMS. TAG_ROOMS is PROVEN, and any
+# change under its impl/ would make its proof stale. And an area tag needs an
+# AREA PLAN of the area's own scheme, where a room tag needs a floor plan: the
+# view rule, the scheme rule and the creation call are all different.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33):
+#   view      the area plan, as the Project Browser names it under Area Plans.
+#             Any other kind of view is refused by name, nothing placed
+#   elements  the areas - the selection, or FILTER_ELEMENTS_BY_CATEGORY with
+#             category=Areas and the plan's level for "all the areas"
+#   tagType   the area tag type, "Area Tag" or with its family "M_Area Tag:
+#             Area Tag". Left out, or a name no area tag type has: NOTHING IS
+#             PLACED and the loaded area tag types come back in `typesLoaded`
+#
+# NAMED AND LEFT, EACH WITH ITS REASON: not an area, of another area scheme,
+# on another level, already tagged in this plan, not placed, not enclosed,
+# refused by Revit. Every tag is read back - type and area - and a wrong one
+# removed inside the same undo.
+#
+# RISK MODIFY. It adds area tags and deletes nothing it did not just make.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.annotation
+capability: TAG_AREAS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places one area tag on each area handed in, in one area plan, of the area tag
+  type the modeller names - Revit's Annotate > Area Tag - and says what it
+  tagged and, for every area it left, why: another area scheme, another level,
+  already tagged in this plan, not placed or not enclosed. Only in an area plan.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The area plan the tags go in, BY NAME. Its scheme and level decide which
+    # areas are tagged; any view that is not an area plan is refused.
+    - name: view
+      type: View
+      source: request
+    # The areas, from the selection or from FILTER_ELEMENTS_BY_CATEGORY with
+    # category=Areas and the plan's level - which reads the whole model, so an
+    # area the plan hides is still handed in.
+    - name: elements
+      type: IList<Element>
+    # The area tag type, by its Project Browser name. Left out, nothing is
+    # placed and the loaded area tag types are listed.
+    - name: tagType
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: tagged
+      role: result
+      type: int
+    - name: newTags
+      # The area tags this placed, each read back carrying the type asked for
+      # and pointing at its own area.
+      role: result
+      type: IList<ElementId>
+    - name: mismatched
+      # Areas whose new tag read back pointing at a DIFFERENT area - that tag
+      # removed again inside the same undo. A fact about what it made.
+      role: result
+      type: IList<ElementId>
+    - name: alreadyTaggedHere
+      # Areas that already carry an area tag in this plan, so there was nothing
+      # to do. The evidence it looked, never a tag it placed (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notAreas
+      # Handed in and not an area - a room, a duct - and left alone (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: otherScheme
+      # Areas of another area scheme than the plan's - not drawn in it (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: otherLevel
+      # Areas on another level than the plan's (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: unplaced
+      # Areas with no location - in a schedule, in no plan (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notEnclosed
+      # Placed areas with no area - not enclosed by boundary lines, or
+      # redundant (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notPlaced
+      # Areas Revit would not tag, or whose tag would not take the type asked
+      # for (that tag removed again), and areas of another model (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: typesLoaded
+      # The area tag types the model has - what to name.
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why nothing was placed at all, in plain words. Empty when it ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Creation.Document.NewAreaTag(ViewPlan,
+  Area, UV), AreaTag.Area, ViewPlan.AreaScheme, Area.AreaScheme, Area.Area,
+  View.GenLevel, GetPrimaryViewId, GetDependentViewIds, GetCategoryHidden,
+  Element.ChangeTypeId, FamilySymbol.IsActive and Activate, and
+  BuiltInCategory.OST_AreaTags carry the same signatures 2020 through 2027 -
+  read with tools/api-surface --members on 2026-11-01. No ElementId is built
+  from a number or read as one.
+
+# ROUTING (2026-11-01). Measured that day through heron_retrieve.find on two
+# scratch stores, one built from the tree before this card and one after,
+# over every declared utterance and every routing-table sentence in the
+# library: NONE changed the card it reaches. What moved here was declared
+# nowhere before: "tag the areas" and "put area tags in this plan" (from
+# TAG_ROOMS), and this card's own two sentences (from PLACE_AREAS).
+#
+# A QUESTION RANKS HERE, AND THIS WRITES - the same finding TAG_ROOMS records
+# for rooms. "which areas are not tagged" and "are all the areas tagged",
+# declared nowhere, reached FIND_UNTAGGED_ELEMENTS (a read) before this card
+# and reach this card after. That read cannot answer them either: it counts only the
+# other kind of tag, and an area tag is not one. Recorded for the owner, not
+# repaired by declaring words nobody said.
+#
+#   "tag all the areas in this area plan" -> here, after FILTER_ELEMENTS_BY_
+#                                            CATEGORY with category=Areas and
+#                                            the plan's level
+#   "put area tags on these areas"        -> here, on the selection
+#   "place areas in the gross area plan   -> PLACE_AREAS - makes areas, tags none
+#    at these points"
+#   "tag the rooms"                       -> TAG_ROOMS - room, space and zone
+#                                            tags, in a floor or ceiling plan
+#   "put tags on these"                   -> TAG_ELEMENTS
+utterances:
+  - tag all the areas in this area plan
+  - put area tags on these areas

@@ -1,0 +1,75 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that tags, "tagged something nobody asked for": an area tag on a
+# wall, a tag in a view that is not an area plan, or a second tag on an area
+# already tagged.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE. The Project2 scratch model (never
+# saved), Revit 2020 - where CREATE_AREA_PLAN, PLACE_AREAS and REPORT_AREAS
+# were proved on 2026-10-18. Every proof there was ROLLED BACK, so the areas
+# are made first and KEPT, by hand or by those cards: a Gross Building area
+# plan of Level 1 called "Heron Area Plan", boundary lines on the outside of
+# the walls, and two areas, A1 and A2. A setup step that MAKES the areas cannot
+# feed this one in the same run (fragment-proving: reads before changes), so
+# they have to be in the model before the run. The areas are then collected by
+# FILTER_ELEMENTS_BY_CATEGORY - category=Areas, levelId=Level 1 - from the
+# whole model. The negative leg is the SAME call with category=Walls: a
+# different set, not an empty one (fragment-proving, rules 3 and 5). Where the
+# model differs, the job file changes - never the card. EVERY RUN ROLLED BACK.
+
+positive:
+  - given: >
+      the areas of Level 1, from FILTER_ELEMENTS_BY_CATEGORY (category=Areas,
+      levelId=Level 1), view "Heron Area Plan", and tagType naming an area tag
+      type the model has - the one KL1 lists - with no area tagged in that plan
+    expect: >
+      one area tag on each Gross Building area of Level 1 - A1 and A2 -
+      tagged 2, newTags 2 ids, refused empty, findings "2 area tag(s) placed
+      in "Heron Area Plan" (Gross Building) as ...". Every area handed in named
+      in exactly one list. Look at the plan - one tag per area, at its point
+
+  - given: the same call again, after the first run was KEPT
+    expect: >
+      tagged 0, newTags empty, and both areas in alreadyTaggedHere - no second
+      tag stacked on the first
+
+  - given: an area of another area scheme on Level 1 among the areas handed in
+    expect: that area in otherScheme, the Gross Building areas still tagged
+
+negative:
+  - given: >
+      the Walls of Level 1 instead - FILTER_ELEMENTS_BY_CATEGORY with
+      category=Walls, levelId=Level 1 - with the same plan and the same tag type
+    expect: >
+      tagged 0, newTags empty, and every wall in notAreas. No tag of any kind
+      placed. This is the leg D-30 exists for: a fragment that tagged whatever
+      it was handed shows here. THE FIRST CASE TO RUN
+
+  - given: the positive's areas with view "Level 1", a FLOOR plan, instead of the area plan
+    expect: >
+      tagged 0; refused "\"Level 1\" is a FloorPlan view, not an area plan ...
+      Nothing was placed." - the view named, nothing placed
+
+  - given: the positive's areas with tagType left out
+    expect: >
+      tagged 0; refused "No area tag type was named, and one is never chosen
+      for you ..."; typesLoaded lists the area tag types the model has
+
+  - given: the positive's areas with tagType a ROOM tag type, "Room Tag"
+    expect: >
+      tagged 0; refused "'Room Tag' is '<its family>: Room Tag' (Room Tags), not
+      an area tag type ..." - nothing placed
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one plan of tags is one undo entry
+
+second_route:
+  - >
+    In Revit, select one new tag: Properties names its type. Right-click it,
+    Select All Instances, Visible in View - the count Revit shows in "Heron
+    Area Plan" is the area tags of that type there, which after a first run on
+    an untagged plan is `tagged`. Revit's own count, not another Heron read
+  - >
+    Revit's own Annotate > Tag All Not Tagged, Area Tags, in the same plan
+    after a KEPT run, tags nothing more

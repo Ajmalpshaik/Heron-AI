@@ -1142,6 +1142,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-kg.md`](needs-checking/group-kg.md)
 
+## Group KH - area tags in an area plan: `TAG_AREAS` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kh.md`](needs-checking/group-kh.md)
+
+## Group KI - material tags and multi-category tags: `TAG_MATERIAL_OR_MULTI_CATEGORY` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-ki.md`](needs-checking/group-ki.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

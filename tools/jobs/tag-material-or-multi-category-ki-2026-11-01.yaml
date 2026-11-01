@@ -1,0 +1,57 @@
+# NEEDS-CHECKING Group KI - TAG_MATERIAL_OR_MULTI_CATEGORY, built 2026-11-01
+# in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/tag-material-or-multi-category-ki-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/tag-material-or-multi-category-ki-2026-11-01.yaml
+#
+# THE MODEL is the Project2 scratch model in Revit 2020, never saved, as built
+# on 2026-10-18 (tools/jobs/revit2020-scratch-round1-2026-10-18.yaml): five
+# Generic - 200mm walls on Level 1, 10000 x 6000 with a partition, two rooms
+# and one floor. A model built that way again serves as well. Never a working
+# model.
+#
+# THE ARRANGEMENT: FILTER_ELEMENTS_BY_CATEGORY collects from the whole model -
+# the walls of Level 1 for the positive, the rooms of Level 1 for the
+# negative: a different set, not an empty one. `keep-chain` because `elements`
+# comes only from the chain, as in tag-rooms-project1-2026-09-24.yaml.
+#
+# THE TAG TYPES' NAMES ARE NOT KNOWN. KI1 runs this card with tagType left
+# out, which places nothing and lists both kinds; write the material tag type
+# it lists into the job below, both legs, before the batch. THE MULTI-CATEGORY
+# LEG IS KI3, the same job with the multi-category tag type KI1 lists - one job
+# per fragment here, because both would write the same run record. If no
+# multi-category tag type is loaded, load one first (Insert > Load Family,
+# Annotations) and leave the model unsaved.
+
+model: "Project2 (scratch, never saved), Revit 2020"
+
+defaults:
+  in: "Project2"
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+  keep-chain: true
+  setup:
+    - filter-elements-by-category
+  setup-set:
+    category: Walls
+    levelId: Level 1
+  negative-setup-set:
+    category: Rooms
+    levelId: Level 1
+
+jobs:
+  - fragment: tag-material-or-multi-category
+    expect: tagged
+    set:
+      view: "FloorPlan: Level 1"
+      tagType: "Material Name"
+    negative-set:
+      view: "FloorPlan: Level 1"
+      tagType: "Material Name"
+    note: >
+      KI2, MATERIAL TAGS. "Material Name" is a guess at the template's material
+      tag type and is replaced with what KI1 lists. Positive - one material tag
+      per wall with a material, findings "<n> material tag(s) placed ..." and
+      "<m> of the <n> material tag(s) were taken by Revit on a face". RECORD m.
+      Negative - THE FIRST CASE TO RUN: the rooms of Level 1, so tagged 0 and
+      every room in notTaggable.

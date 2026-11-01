@@ -1,0 +1,183 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-160
+semantic-identity: "material tags or multi-category tags, of the material or multi-category tag type named - Revit's Material Tag and Multi-Category Tag"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "add material tags to these
+# walls", "tag the materials of this floor", "multi-category tag these
+# elements" and "tag these with the multi-category tag" - Revit's Annotate >
+# Material Tag and Multi-Category Tag. Checked that day with
+# brain/heron_retrieve.py on a scratch store, Revit 2024: they reached
+# TAG_ELEMENTS_IN_VIEW, TAG_ROOMS and COPY_TAGS_TO_REPLACEMENTS. None of them
+# places either kind on purpose.
+#
+# WHY A NEW CARD AND NOT A WIDENING OF TAG_ELEMENTS. TAG_ELEMENTS takes any tag
+# type and would hand a multi-category type to IndependentTag.Create - but it
+# is PROVEN, and a change under its impl/ would make its proof stale. And its
+# contract is not this one: it skips an element carrying ANY tag (its
+# alreadyTagged comes from FIND_UNTAGGED_ELEMENTS), never checks what kind of
+# tag type it was given, and lists nothing when none is named. A wall with a
+# wall tag still wants a material tag.
+#
+# WHY ONE CARD FOR TWO KINDS, as TAG_ROOMS carries rooms, spaces and zones:
+# the same Revit call, the same inputs and the same answer, and the tag type
+# the modeller names decides which. Two cards would carry one contract twice.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33):
+#   view       the plan, section, elevation, detail view or locked 3D view the
+#              tags go in, as the Project Browser names it. Any other view -
+#              a schedule, a sheet, a drafting view - is refused by name
+#   elements   the elements - the selection, or a filter before this one
+#   tagType    a Material Tags type or a Multi-Category Tags type, as "Material
+#              Name" or with its family. Left out, or a name neither kind has:
+#              NOTHING IS PLACED and both kinds' loaded types are listed
+#   addLeader  true for a leader on each tag; left out, none
+#
+# NAMED AND LEFT, EACH WITH ITS REASON: already carrying that kind of tag in
+# this view, a room, space or area (their own tag), not a model element, no
+# material (material tags), no location, refused by Revit. Every tag is read
+# back - kind, type, element - and a wrong one removed inside the same undo.
+#
+# RISK MODIFY. It adds tags and deletes nothing it did not just make.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.annotation
+capability: TAG_MATERIAL_OR_MULTI_CATEGORY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Revit's Annotate > Material Tag and Multi-Category Tag: one material tag, or
+  one multi-category tag, on each one handed in, of the material or
+  multi-category tag type the modeller names - the type decides which. One
+  already carrying that kind of tag there is left and named, and so is every
+  other one it does not tag, with why.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The view the tags go in, BY NAME - a plan, section, elevation, detail
+    # view or locked 3D view. Any other is refused.
+    - name: view
+      type: View
+      source: request
+    # The elements, from the selection or from a filter before this one.
+    - name: elements
+      type: IList<Element>
+    # A Material Tags type or a Multi-Category Tags type, by its Project
+    # Browser name. Left out, nothing is placed and both kinds are listed.
+    - name: tagType
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # A leader on each tag. Left out, none - the head on the element.
+    - name: addLeader
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: tagged
+      role: result
+      type: int
+    - name: newTags
+      # The tags this placed, each read back of the kind and type asked for and
+      # pointing at its own element.
+      role: result
+      type: IList<ElementId>
+    - name: mismatched
+      # Elements whose new tag read back pointing at a DIFFERENT element - that
+      # tag removed again inside the same undo. A fact about what it made.
+      role: result
+      type: IList<ElementId>
+    - name: alreadyTaggedHere
+      # Elements already carrying a tag of THIS kind in this view, so there was
+      # nothing to do. The evidence it looked, never a tag it placed (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notTaggable
+      # Handed in and not taggable this way - a room, space or area, a type or
+      # an annotation, an element with no material for a material tag, or no
+      # location. `findings` gives each reason with its count (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notPlaced
+      # Elements Revit would not tag, or whose tag came out of another kind or
+      # type (that tag removed again). `findings` quotes Revit (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: typesLoaded
+      # The material and multi-category tag types the model has - what to name.
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why nothing was placed at all, in plain words. Empty when it ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. IndependentTag.Create(Document,
+  ElementId, ElementId, Reference, bool, TagOrientation, XYZ),
+  IndependentTag.IsMaterialTag, IsMulticategoryTag and TagText,
+  Element.GetMaterialIds(bool), Options.ComputeReferences and View,
+  Face.Reference, MaterialElementId and Area, View3D.IsLocked and
+  BuiltInCategory.OST_MaterialTags and OST_MultiCategoryTags carry the same
+  signatures 2020 through 2027 - read with tools/api-surface --members on
+  2026-11-01. What a tag points at is read with GetTaggedLocalElementIds where
+  Revit has it (2022 on) and TaggedLocalElementId where it does not (2020,
+  2021, removed later), found BY NAME at run time, because the add-in compiles
+  fragments with no release symbols (row 5b-181) - TAG_ROOMS' pattern. No
+  ElementId is built from a number or read as one.
+
+# ROUTING (2026-11-01) - measured that day through heron_retrieve.find on two
+# scratch stores, one built from the tree before this card and one after, over
+# every declared utterance and every routing-table sentence in the library.
+#
+#   "add material tags to these walls"      -> here, a Material Tags type
+#   "tag the materials of this floor"       -> here, a Material Tags type
+#   "multi-category tag these elements"     -> here, a Multi-Category Tags type
+#   "tag these with the multi-category tag" -> here, a Multi-Category Tags type
+#   "put tags on these"                     -> TAG_ELEMENTS - one tag type named,
+#                                              of the element's own category
+#   "tag everything in this view"           -> TAG_ELEMENTS_IN_VIEW - each
+#                                              category its own tag family
+#   "tag the rooms"                         -> TAG_ROOMS
+#   "tag all the areas in this area plan"   -> TAG_AREAS
+#
+# WHAT MOVED. No declared utterance changed the card it reaches. ONE ROUTING-
+# TABLE SENTENCE DID, between two cards neither of which its table names:
+# "draw a curtain wall", claimed by CREATE_WALL and NOT REACHED since
+# 2026-09-24, reached REPORT_CURTAIN_ELEMENTS before this card and
+# REPORT_CURTAIN_WALL_TYPE after - a read either way, so nothing is built.
+# Declaring it on CREATE_WALL was weighed in row 5b-387 and left to the owner
+# (it pulled a nearby question onto a write); it is not declared here either.
+#
+# AND SENTENCES NOBODY DECLARES, measured the same day: "tag the walls" and
+# "tag these walls" reached TAG_ELEMENTS_IN_VIEW before and reach this card
+# after, and "tag the floors" (TAG_ROOMS before) reaches it too - pulled by
+# the modeller's own "add material tags to these walls" and "tag the
+# materials of this floor". Here, a wall tag type named is refused by name and
+# nothing placed. Recorded for the owner; no words were declared on another
+# card to win them back. The semantic identity and purpose were written
+# without "elements" and "view" for this reason: worded like TAG_ELEMENTS',
+# they pulled "tag all the walls in this view" and "tag these elements in
+# this view" here as well, and now do not.
+utterances:
+  - add material tags to these walls
+  - tag the materials of this floor
+  - multi-category tag these elements
+  - tag these with the multi-category tag
