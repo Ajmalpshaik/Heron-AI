@@ -41,7 +41,7 @@ purpose: >
 
   IT MAKES EMPTY SHEETS, ON PURPOSE. The version this came from also duplicated
   every placed view and re-placed it at the same spot. That is two jobs, and
-  Heron already has both halves - DUPLICATE_VIEWS and PLACE_VIEWS_ON_SHEET. A
+  Heron already has both halves - DUPLICATE_VIEWS and PLACE_VIEW_ON_SHEET. A
   skill composes the three; welding them together here would make the sheet job
   impossible to use on its own and would hide two read-backs inside a third.
 

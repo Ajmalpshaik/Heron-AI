@@ -1,5 +1,5 @@
 // NOT STANDALONE. Assumes `doc` and `numberOrNameContains` are in scope, and
-// leaves `elements`, `placeholders` and `matchedOnName` behind.
+// leaves `elements`, `placeholders`, `matchedOnName` and `findings` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -34,22 +34,44 @@
 // Ids rather than a count, for the same reason MOVE_ELEMENTS reports blocked
 // ids: "three of them are placeholders" is not something a person can act on,
 // and a list of ids is what they select in Revit to go and look.
+//
+// VERSION 2 (2026-11-01) - LIST_SHEETS MERGED IN, AND ITS READING WITH IT.
+//
+// A SHEET VIEW TEMPLATE IS NOT A SHEET. Revit lets a project hold view
+// templates for sheets, and they come back from the same collector looking
+// exactly like sheets - a number, a name, no drawings. Version 1 returned them,
+// so a renumber or an export was handed a row that can never be issued. They
+// are dropped on IsTemplate - a placeholder is still kept, because it IS a row
+// of the register.
+//
+// ONE `findings` ROW PER SHEET - "number  name  (n views)" - the drawing list
+// as it is printed, with EMPTY on a sheet that holds no view and PLACEHOLDER
+// on one that cannot hold any. The count is GetAllPlacedViews: a title block,
+// a legend component and a schedule are not views and are not counted, which
+// is right for "how many drawings are on this sheet". An empty sheet is
+// usually one made for a drawing nobody has produced yet - exactly what
+// somebody scans for before an issue.
 
 var wanted = (numberOrNameContains ?? "").Trim();
 
 var elements = new List<Element>();
 var placeholders = new List<ElementId>();
 int matchedOnName = 0;
+var findings = new List<string>();
 
 foreach (var sheet in new FilteredElementCollector(doc)
                           .OfClass(typeof(ViewSheet))
                           .Cast<ViewSheet>()
-                          .OrderBy(s => s.SheetNumber, StringComparer.OrdinalIgnoreCase))
+                          .Where(s => s != null && !s.IsTemplate)
+                          .OrderBy(s => s.SheetNumber ?? "", StringComparer.OrdinalIgnoreCase))
 {
+    var number = sheet.SheetNumber ?? "";
+    var title = sheet.Name ?? "";
+
     if (wanted.Length > 0)
     {
-        bool byNumber = sheet.SheetNumber.IndexOf(wanted, StringComparison.OrdinalIgnoreCase) >= 0;
-        bool byName = sheet.Name.IndexOf(wanted, StringComparison.OrdinalIgnoreCase) >= 0;
+        bool byNumber = number.IndexOf(wanted, StringComparison.OrdinalIgnoreCase) >= 0;
+        bool byName = title.IndexOf(wanted, StringComparison.OrdinalIgnoreCase) >= 0;
         if (!byNumber && !byName) continue;
         // Counted only when the number would NOT have found it, so this reads
         // as "how many the number-only route would have missed".
@@ -57,7 +79,23 @@ foreach (var sheet in new FilteredElementCollector(doc)
     }
 
     elements.Add(sheet);
-    if (sheet.IsPlaceholder) placeholders.Add(sheet.Id);
+
+    var placedViews = sheet.GetAllPlacedViews();
+    var placedCount = placedViews == null ? 0 : placedViews.Count;
+
+    var note = placedCount == 0 ? " - EMPTY" : "";
+    if (sheet.IsPlaceholder)
+    {
+        placeholders.Add(sheet.Id);
+        note = " - PLACEHOLDER, no titleblock and cannot be printed";
+    }
+
+    findings.Add(string.Format("{0}  {1}  ({2} view{3}){4}",
+                               number,
+                               title,
+                               placedCount,
+                               placedCount == 1 ? "" : "s",
+                               note));
 }
 
 // Ordered by sheet number, as a plain string sort. "A-10" therefore sorts

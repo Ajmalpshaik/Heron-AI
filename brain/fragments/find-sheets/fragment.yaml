@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "the sheets in this model, optionally narrowed by sheet numbe
 kind: filter
 domain: revit.sheets
 capability: FIND_SHEETS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -46,6 +46,13 @@ purpose: >
   renumbering job reporting success over an incomplete set, which is this
   repository's defining failure and the reason FIND_VIEWS counts what it skips.
 
+  **VERSION 2 reads each sheet back as the drawing list.** One `findings` row
+  per sheet - its number, its name and how many views are on it - with EMPTY
+  on a sheet that holds none and PLACEHOLDER on one that cannot. A sheet VIEW
+  TEMPLATE is not a sheet and is left out. Version 1's proof no longer
+  describes the code and is kept as a record; the card is DRAFT until it is
+  proved again.
+
 contract:
   needs:
     - name: doc
@@ -68,6 +75,14 @@ contract:
       # of the match ran, never a sheet it found (D-52).
       role: accounting
       type: int
+    - name: findings
+      # Version 2, from LIST_SHEETS. One row per sheet returned, in sheet
+      # number order: "M-101  Level 1 Plan  (2 views)", with " - EMPTY" on a
+      # sheet holding no view and " - PLACEHOLDER, no titleblock and cannot be
+      # printed" on a placeholder. The count is GetAllPlacedViews - a title
+      # block, a legend component and a schedule are not counted. Prose, so
+      # it carries no role (D-51).
+      type: IList<string>
 
 proof:
   date: '2026-09-08'
@@ -95,15 +110,45 @@ compatibility-note: >
   `placeholders` carries `ElementId`, whose backing width changed at 2024 - it is
   only collected and returned here, never converted to or from an integer, which
   is what keeps this clear of that break.
-#   "which sheets carry this date"       -> EXTRACT_DATES_FROM_TEXT, which
+#   "which sheets carry this date"       -> LIST_DATES_ON_SHEETS, which
 #                                           reads the dates typed on them
 
-# ROUTING (2026-10-14, FRAGMENT-ISSUES row 5b-471) - repeated in LIST_SHEETS.
-# The two cards overlap and neither named the other until then.
+# VERSION 2 (2026-11-01) - LIST_SHEETS WAS MERGED INTO THIS CARD on the
+# owner's instruction ("now merge the other duplicates also"), and is
+# DEPRECATED. The same read - the project's sheets in sheet-number order,
+# placeholders returned and flagged - and this card also narrows them by
+# number or by name and hands them to whatever acts on them next. What
+# LIST_SHEETS had and this card lacked is here now: a findings row per sheet
+# with its view count and EMPTY / PLACEHOLDER, and a sheet view template
+# dropped. WHERE LIST_SHEETS' OUTPUTS ARE NOW: elements -> elements,
+# placeholders -> placeholders, findings -> findings, the same wording. Its
+# sentences and its routing rows moved here.
 #
-#   "the m series sheets"              -> here - narrowed by number or by name
-#   "which sheets are empty"           -> LIST_SHEETS - every sheet, with how many views
-#                                         each one carries
+# ROUTING - repeated in CREATE_SHEETS and PLACE_VIEW_ON_SHEET (LIST_SHEETS'
+# rows, moved here with it).
+#
+#   "list the sheets"            -> here. A QUESTION
+#   "how many sheets are there"  -> here
+#   "which sheets are empty"     -> here - the view count is on every row
+#   "the m series sheets"        -> here - narrowed by number or by name
+#   "what views are on this sheet"
+#                                -> LIST_VIEWS_ON_SHEET. This card only
+#                                   COUNTS a sheet's views; that one NAMES
+#                                   them, with type and scale, and lists the
+#                                   schedules apart (row 146, 2026-10-09)
+#   "put this view on a sheet"   -> PLACE_VIEW_ON_SHEET. A CHANGE
+#   "make a new sheet"           -> CREATE_SHEETS
+#   "which sheets have this revision" -> LIST_REVISIONS
+#   "how many sheet sets are there"  -> LIST_SHEET_SETS - the saved View/Sheet
+#                                       Sets, which hold views as well as
+#                                       sheets. A set is not a sheet (row
+#                                       5b-465, 2026-10-14)
+#   "make a sheet list schedule" -> CREATE_SHEET_LIST - a schedule VIEW that
+#                                   prints on the cover. This is a READ that
+#                                   makes nothing
+
+# ROUTING (2026-10-14, FRAGMENT-ISSUES row 5b-471).
+#
 #   "these sheets: 179, 180, 181"      -> FIND_SHEETS_BY_REVISION_OR_NUMBER - whole
 #                                         numbers; "17" here also finds 170 and 179
 #   "sheets on revision 15"            -> FIND_SHEETS_BY_REVISION_OR_NUMBER - any
@@ -116,3 +161,10 @@ utterances:
   - find the ground floor sheets
   - show me the drawing list
   - what sheets do we have
+  # MOVED 2026-11-01 from LIST_SHEETS, merged into this card. Its "what
+  # sheets do we have" and "show me the drawing list" were already here.
+  - list the sheets
+  - how many sheets are there
+  - which sheets are empty
+  - what is on the sheets
+  - give me the sheet numbers

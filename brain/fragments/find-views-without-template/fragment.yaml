@@ -65,13 +65,13 @@ compatibility-note: >
   No ElementId is built from an int, so 2024's 64-bit ids do not reach this
   code.
 
-# ROUTING - repeated in APPLY_VIEW_TEMPLATE and LIST_SHEETS.
+# ROUTING - repeated in APPLY_VIEW_TEMPLATE and FIND_SHEETS.
 #
 #   "which views have no template"  -> here
 #   "check the views before issue"  -> here
 #   "apply the template to these"   -> APPLY_VIEW_TEMPLATE - it is the fix, and
 #                                      this finds what needs fixing
-#   "list the sheets"               -> LIST_SHEETS
+#   "list the sheets"               -> FIND_SHEETS
 
 utterances:
   - which views have no template

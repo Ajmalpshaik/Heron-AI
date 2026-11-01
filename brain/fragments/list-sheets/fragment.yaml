@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,25 @@ capability: LIST_SHEETS
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO FIND_SHEETS (find-sheets), on the owner's instruction
+# in conversation: "now merge the other duplicates also". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable
+# and it can be brought back. Nothing offers it now - retrieval leaves
+# DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to FIND_SHEETS. The proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: FIND_SHEETS
+  why: >
+    The same read: the project's sheets in sheet-number order, placeholders
+    returned and flagged. FIND_SHEETS also narrows them by number or by name and
+    hands them to whatever acts on them next. Its version 2 took what this card
+    had and it lacked: a findings row per sheet - number, name and how many
+    views are on it, with EMPTY and PLACEHOLDER - and a sheet view template
+    dropped. The findings rows read word for word as this card's did.
 
 purpose: >
   Collects the project's sheets and reports each one's number, name and how

@@ -148,9 +148,15 @@ CHANGES = [
     # Row 146, 2026-10-09: the first draft of LIST_VIEWS_ON_SHEET named the
     # write and said "placed" in its purpose and "on sheet a-101" in its
     # utterances, and the read took these from the write on the model.
-    ("place these views on sheet A-101", "PLACE_VIEWS_ON_SHEET",
+    #
+    # THE EXPECTED CARD CHANGED ON 2026-11-01, AND ONLY BECAUSE THE FACT DID:
+    # PLACE_VIEWS_ON_SHEET was merged into PLACE_VIEW_ON_SHEET on the owner's
+    # instruction and is DEPRECATED, so nothing offers it. What row 146 held -
+    # that the write which places views answers these, and the read does not -
+    # is held here unchanged, against the card that does that job now.
+    ("place these views on sheet A-101", "PLACE_VIEW_ON_SHEET",
      "146: a first draft of LIST_VIEWS_ON_SHEET answered it"),
-    ("place the views on this sheet", "PLACE_VIEWS_ON_SHEET",
+    ("place the views on this sheet", "PLACE_VIEW_ON_SHEET",
      "146: a first draft of LIST_VIEWS_ON_SHEET answered it"),
     # And a later draft declared "list the viewports on this sheet", and the
     # read took this one - claimed in ALIGN_VIEWPORTS_ACROSS_SHEETS' routing

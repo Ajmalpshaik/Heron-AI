@@ -162,14 +162,14 @@ compatibility-note: >
   No ElementId is built from an int, so 2024's 64-bit ids do not reach this
   code.
 
-# ROUTING - repeated in CREATE_REVISION, ADD_REVISION_CLOUD and LIST_SHEETS.
+# ROUTING - repeated in CREATE_REVISION, ADD_REVISION_CLOUD and FIND_SHEETS.
 #
 #   "which sheets have this revision"  -> here
 #   "list the revisions"               -> here
 #   "what goes out with this issue"    -> here
 #   "add a revision"                   -> CREATE_REVISION
 #   "put a revision cloud around this" -> ADD_REVISION_CLOUD
-#   "list the sheets"                  -> LIST_SHEETS - all of them, with no
+#   "list the sheets"                  -> FIND_SHEETS - all of them, with no
 #                                         revision involved
 #   "show me the sheet issues and revisions table"
 #                                      -> here - every column, the numbering

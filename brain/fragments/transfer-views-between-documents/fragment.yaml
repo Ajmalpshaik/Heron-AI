@@ -142,7 +142,7 @@ compatibility-note: >
 #    template project"
 #   "copy the legends from the last job"  -> here
 #   "copy these views onto new sheets"    -> DUPLICATE_VIEWS and
-#                                            PLACE_VIEWS_ON_SHEET, which stay
+#                                            PLACE_VIEW_ON_SHEET, which stay
 #                                            inside one project
 #   "make a schedule"                     -> CREATE_SCHEDULE
 #   "apply that view template"            -> APPLY_VIEW_TEMPLATE, once the

@@ -123,11 +123,12 @@ compatibility-note: >
 #   "where is this date typed"           -> here
 #   "which views still say last month"   -> here
 #   "find every typed date in the model" -> here
-#   "what dates are on these sheets"     -> EXTRACT_DATES_FROM_TEXT. That one
-#                                           attributes a date TO a sheet, which
-#                                           is what revision work needs and what
-#                                           this one deliberately does not do
-#   "which sheets carry this date"       -> EXTRACT_DATES_FROM_TEXT, same reason
+#   "what dates are on these sheets"     -> LIST_DATES_ON_SHEETS, onlySheetsGiven
+#                                           on. That one attributes a date TO a
+#                                           sheet, which is what revision work
+#                                           needs and what this one
+#                                           deliberately does not do
+#   "which sheets carry this date"       -> LIST_DATES_ON_SHEETS, same reason
 #   "take the dates in that text from    -> LIST_DATES_ON_SHEETS - text typed ON
 #    all sheets"                            the sheets only, every sheet, each
 #                                           date once and all of them in the

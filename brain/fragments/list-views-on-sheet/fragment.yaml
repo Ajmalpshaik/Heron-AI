@@ -118,7 +118,7 @@ contract:
   needs:
     - name: doc
       type: Document
-    # The sheet NUMBER, as PLACE_VIEWS_ON_SHEET takes it - matched whole and
+    # The sheet NUMBER, as PLACE_VIEW_ON_SHEET takes it - matched whole and
     # ignoring case, never as part of a number - or "all" for every sheet.
     # VERSION 2: left out, it is read as "all" (`absent:`, HeronBindingNote.
     # DeclaredAbsent, row 5b-488), so "does any view run off the sheet" runs
@@ -152,7 +152,7 @@ contract:
       type: string
     - name: viewCount
       # How many viewports came back - views and legends, not schedules. For
-      # one sheet, the number LIST_SHEETS shows beside it; for one view by
+      # one sheet, the number FIND_SHEETS shows beside it; for one view by
       # name, how many sheets show it.
       role: result
       type: int
@@ -287,7 +287,7 @@ compatibility-note: >
   for 2024, the one copy on the machine that checked; the other releases'
   wording is the proof's to confirm (NEEDS-CHECKING group FG).
 
-# ROUTING - the first row is also in LIST_SHEETS and PLACE_VIEWS_ON_SHEET.
+# ROUTING - the first row is also in FIND_SHEETS and PLACE_VIEW_ON_SHEET.
 #
 #   "what views are on this sheet"       -> here. A QUESTION, and before
 #                                           2026-10-09 it reached
@@ -301,9 +301,9 @@ compatibility-note: >
 #                                           CREATE_LEGEND_VIEW, a write, on
 #                                           the trained model (2026-10-09)
 #   "list the sheets" / "which sheets are empty"
-#                                        -> LIST_SHEETS - every sheet, with how
+#                                        -> FIND_SHEETS - every sheet, with how
 #                                           many views each holds, and no names
-#   "put these views on a sheet"         -> PLACE_VIEWS_ON_SHEET. A CHANGE
+#   "put these views on a sheet"         -> PLACE_VIEW_ON_SHEET. A CHANGE
 #   "put the schedule on the sheet"      -> PLACE_SCHEDULE_ON_SHEET. A CHANGE
 #   "which views are not on a sheet"     -> FIND_UNPLACED_VIEWS
 #   "which sheet is this view on"        -> here, SINCE VERSION 2 (row

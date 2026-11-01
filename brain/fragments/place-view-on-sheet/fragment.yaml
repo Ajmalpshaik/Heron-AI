@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "put these views onto a sheet - or swap one view for another 
 kind: action
 domain: revit.views
 capability: PLACE_VIEW_ON_SHEET
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -26,11 +26,13 @@ purpose: >
   answer and it covers the cases that are otherwise exceptions: a view already
   placed, a schedule that needs a different call, a view template.
 
-  **Position is a stated input and is not laid out.** Where a viewport sits, at
-  what scale, aligned with what on the sheet beside it, is drafting judgement
-  worth its own capability. Placing at a given point is the honest, predictable
-  starting point — a viewport that exists can be dragged; one never placed
-  cannot.
+  **Version 3: several views are laid out, never stacked.** One view goes at
+  the point given, or the middle of the sheet. Several go on a grid across the
+  sheet, sized to the views that will place, and `distinctPositions` reads back
+  how many landed in different places - placed 3 with distinctPositions 1 is a
+  pile, and the answer says so. A placeholder sheet is refused by name in
+  `sheetProblem`. Version 2's proof no longer describes the code and is kept as
+  a record; the card is DRAFT until it is proved again.
 
   **Version 2: replace one view with another on its sheets.** Name an
   `oldViewId` and the one view in `views` takes its place, and the old view
@@ -89,10 +91,15 @@ contract:
       type: IList<View>
       source: request
     - name: at
-      # Placing: the point on the sheet, in mm. Replacing: an offset in mm from
-      # where the old view sat - 0,0,0 is exactly there.
+      # Placing: the point on the sheet, in mm, for ONE view (version 3);
+      # several views go on a grid and the point is not used - `layout` says
+      # so. Left out, or 0,0,0, one view goes to the middle of the sheet.
+      # Replacing: an offset in mm from where the old view sat - left out,
+      # or 0,0,0, is exactly there.
       type: XYZ
       source: request
+      optional: true
+      absent: 0,0,0
     - name: oldViewId
       # Version 2. The view to take OFF the sheets - the new view goes where it
       # is. Left out, or none, is the placing job exactly as version 1 did.
@@ -124,11 +131,45 @@ contract:
       # Never a thing it did (D-52).
       role: accounting
       type: IList<string>
+    - name: placedCount
+      # Version 3, from PLACE_VIEWS_ON_SHEET (its `placed`, an int there). How
+      # many viewports this run made - the length of placed, read from what
+      # was made, never from what was asked.
+      role: result
+      type: int
+    - name: distinctPositions
+      # Version 3, from PLACE_VIEWS_ON_SHEET. How many of the viewports this
+      # run made sit in DIFFERENT places, read back from the model after
+      # creation and rounded to the millimetre, per sheet. WHEN PLACEDCOUNT IS
+      # 3 AND THIS IS 1 THE VIEWS ARE A PILE - a count of placements cannot
+      # tell a populated sheet from one. Reported for every run.
+      role: result
+      type: int
+    - name: sheetProblem
+      # Version 3, from PLACE_VIEWS_ON_SHEET. Placing: what was wrong with the
+      # sheet - none named, not a sheet, or a PLACEHOLDER, refused by name.
+      # Empty when the sheet could hold views. A sheet number no sheet has is
+      # refused by the binder before this runs, capitals ignored. A refusal,
+      # never a view it placed (D-52).
+      role: accounting
+      type: string
+    - name: layout
+      # Version 3. How the views were arranged: one at the point given, one at
+      # the middle of the sheet, or several on a grid of columns x rows - and,
+      # when a point was given with several views, that it was not used. Empty
+      # for the swap job. Never a thing it placed (D-52).
+      role: accounting
+      type: string
 
 # VERSION 1'S PROOF, KEPT AS A RECORD. It proves the placing job as it stood
 # at fingerprint 0b724478ecce6d08; version 2 changed impl/, so it is stale and
 # this card is DRAFT until both jobs are proved again (FRAGMENT-ISSUES row
 # 5b-540, NEEDS-CHECKING Group FC).
+#
+# VERSION 3 (2026-11-01). The proof below - signed 2026-10-18 at fingerprint
+# d38ab8529a1d1f56, with oldViewId among its inputs, so version 2's - is kept
+# as the record. Version 3 changed impl/, so it is stale and the card is DRAFT
+# until the placing job, the grid and the swap are proved again.
 proof:
   date: '2026-10-18'
   by: Ajmal PS
@@ -177,15 +218,15 @@ compatibility-note: >
 # ROUTING - repeated in DUPLICATE_VIEWS and CREATE_3D_VIEW.
 #
 #   "put this view on a sheet"      -> here
-#   "make a new sheet"              -> CREATE_SHEET. Creating the sheet and
+#   "make a new sheet"              -> CREATE_SHEETS. Creating the sheet and
 #                                      placing on it stay different jobs; both
 #                                      are built now, and the chain is
-#                                      CREATE_SHEET then here
-#   "list the sheets"               -> LIST_SHEETS. A QUESTION about what
+#                                      CREATE_SHEETS then here
+#   "list the sheets"               -> FIND_SHEETS. A QUESTION about what
 #                                      sheets exist, and it must not be
 #                                      answered by the fragment that puts
 #                                      things on them
-#   "which sheets are empty"        -> LIST_SHEETS
+#   "which sheets are empty"        -> FIND_SHEETS
 #   "duplicate this view"           -> DUPLICATE_VIEWS - and note a duplicate is
 #                                      how you get a view that CAN go on a
 #                                      second sheet, since the original cannot
@@ -202,14 +243,43 @@ compatibility-note: >
 # "A VIEW CAN ONLY BE ON ONE SHEET" IS THE RULE BEHIND HALF THE REFUSALS HERE,
 # and duplicating is the answer to it.
 
-# ROUTING (2026-10-14, FRAGMENT-ISSUES row 5b-471) - repeated in PLACE_VIEWS_ON_SHEET.
-# The two cards overlap and neither named the other until then.
+# VERSION 3 (2026-11-01) - PLACE_VIEWS_ON_SHEET WAS MERGED INTO THIS CARD on
+# the owner's instruction ("now merge the other duplicates also"), and is
+# DEPRECATED. The same job - views onto one sheet as viewports, each asked
+# first, a view already on another sheet refused by id and never moved - and
+# this card also swaps one view for another (version 2, kept whole). What
+# PLACE_VIEWS_ON_SHEET had and this card lacked is here now: a grid of only the
+# views that will place, distinctPositions read back to the millimetre, a
+# placeholder sheet refused by name in sheetProblem, and a count of what was
+# placed as an int (placedCount - `placed` here was already the viewport ids).
+# Its sheet was found by number ignoring capitals; here the binder does that
+# for sheetId before the run, and refuses a number no sheet has.
 #
-#   "put this view on a sheet"         -> here - each view at the point given, `at`
-#   "put these views on a sheet"       -> PLACE_VIEWS_ON_SHEET, which lays them out on a
-#                                         grid by itself and counts how many landed
-#                                         in DISTINCT positions - the job when no
-#                                         point is given
+# ONE RULE WAS OPPOSITE, AND THE SAFER ONE IS KEPT (the owner's answer,
+# 2026-11-01: in every conflict keep the safer rule). This card stacked every
+# view at the one point `at`; PLACE_VIEWS_ON_SHEET laid them out. Several views
+# now go on the grid; a point given is used for a single view only - NOT as
+# the grid's start corner - and layout says when it was not used.
+# distinctPositions is reported for every run. `at` is optional now.
+#
+# NOT CARRIED: PLACE_VIEWS_ON_SHEET took its views as `elements`, so
+# FIND_UNPLACED_VIEWS chained straight in. Here `views` is named by the caller,
+# and the add-in binds no absent view LIST (HeronBindingNote.AbsentValue binds
+# an optional bool and an optional View only - rows 5b-227, 5b-252, 5b-1320).
+# Taking `elements` as well would let any selection add views the caller did
+# not name. Left for the owner: chaining needs that rule widened first.
+#
+# WHERE PLACE_VIEWS_ON_SHEET'S OUTPUTS ARE NOW: placed (int) -> placedCount,
+# distinctPositions -> distinctPositions, notPlaced -> refused, sheetProblem ->
+# sheetProblem. Its sentences and its routing rows moved here.
+#
+# ROUTING - PLACE_VIEWS_ON_SHEET's rows, moved here with it.
+#
+#   "put this view on a sheet"         -> here - at the point given, or the middle
+#   "put these views on a sheet"       -> here - laid out on a grid, and the
+#                                         distinct positions counted
+#   "which views are not on a sheet"   -> FIND_UNPLACED_VIEWS, the read that
+#                                         comes before this write
 
 # ROUTING (2026-10-17, FRAGMENT-ISSUES row 5b-540) - version 2.
 #
@@ -246,3 +316,10 @@ utterances:
   - add the view to the drawing sheet
   - drop this plan on a sheet
   - put them on the sheet
+  # MOVED 2026-11-01 from PLACE_VIEWS_ON_SHEET, merged into this card.
+  - lay these views out on a sheet
+  - place these on the drawing sheet
+  - place the plans on sheet a-101
+  - put these views on a sheet
+  - add these to the sheet
+  - put the drawings on the sheet

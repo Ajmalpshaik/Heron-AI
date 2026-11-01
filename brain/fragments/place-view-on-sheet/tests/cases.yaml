@@ -1,6 +1,29 @@
 positive:
-  - given: 4 unplaced views and an empty sheet
-    expect: placed holds 4 viewport ids, refused empty, and all four appear on the sheet stacked at the given point
+  # THIS CASE'S FACT CHANGED AT VERSION 3 (2026-11-01, PLACE_VIEWS_ON_SHEET
+  # merged in). Versions 1 and 2 expected all four "stacked at the given point";
+  # the owner's safer rule lays several views out instead. It FAILS on version 2.
+  - given: 4 unplaced views and an empty sheet, a point given
+    expect: >
+      placed holds 4 viewport ids, placedCount 4, refused empty, AND
+      distinctPositions 4 - four viewports spread across the sheet on a 2 x 2
+      grid, none on top of another. layout says the point given was not used.
+      Version 2 stacked all four on the point: placed 4, one position
+
+  - given: VERSION 3. 1 unplaced view, a real sheet, at 400,300,0
+    expect: placedCount 1, distinctPositions 1, the viewport's centre at 400,300 mm on the sheet
+
+  - given: VERSION 3. 1 unplaced view, a real sheet, at left out
+    expect: >
+      placedCount 1, distinctPositions 1, the viewport at the middle of the
+      sheet, and layout saying no point was given. Version 2 refused to run
+      without `at`
+
+  - given: >
+      VERSION 3. 5 views, 2 of them ALREADY on other sheets, at left out
+    expect: >
+      the 2 in refused, and the 3 others on a 2 x 2 grid in the first three
+      cells - no hole where a refused view would have gone. placedCount 3,
+      distinctPositions 3
 
   - given: >
       VERSION 2. A legend NOTES on two or more sheets, and its copy AS-BUILT
@@ -31,6 +54,26 @@ positive:
       viewport reads 7 and is pinned in its Properties
 
 negative:
+  - given: VERSION 3. A PLACEHOLDER sheet, by its number, and two views
+    expect: >
+      placedCount 0, both views in refused, and sheetProblem saying the sheet
+      is a placeholder and cannot hold a view - refused by name. FIND_SHEETS
+      hands placeholders back on purpose, on the promise that the action
+      refuses them visibly
+
+  - given: VERSION 3. A sheet number no sheet has, e.g. ZZZ999
+    expect: >
+      refused by the binder before the run - "No sheet numbered or titled" -
+      and nothing created anywhere
+
+  - given: >
+      VERSION 3. A sheet whose title block was deleted, so it has no outline
+      to lay out on, and three views
+    expect: >
+      NOT KNOWN what Revit's Outline is then. Whatever it is, distinctPositions
+      says how many places the three landed in - 1 is a pile, and the answer
+      shows it
+
   - given: a batch of 30 views where 19 are ALREADY on other sheets
     expect: >
       those 19 are in refused, asked via CanAddViewToSheet BEFORE attempting,

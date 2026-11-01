@@ -22,7 +22,7 @@ purpose: >
   where the message can say why, rather than surfacing as an exception a
   modeller cannot read.
 
-  **The name is checked for a clash first**, for the same reason CREATE_SHEET
+  **The name is checked for a clash first**, for the same reason CREATE_SHEETS
   and CREATE_LEVEL check theirs: Revit refuses a duplicate by throwing, and a
   throw after creation leaves a grid in the model carrying whatever default name
   Revit picked, in the middle of a setting-out somebody is relying on.
