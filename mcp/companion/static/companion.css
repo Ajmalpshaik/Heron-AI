@@ -872,3 +872,5 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
 #dashboard [hidden] { display: none !important; }
 #dashboard .d-fill-table .d-bar-track { display: block; }
 #dashboard .d-fill-table th:nth-child(n+3) { text-align: right; }
+#dashboard .d-since { margin: 0 0 16px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; }
+#dashboard .d-since .d-fill-table td:nth-child(2) { width: auto; }

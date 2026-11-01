@@ -1302,6 +1302,7 @@ class DashboardPanel(object):
         with self._lock:
             self._held = {
                 "parameters": parameters or "", "fill": board.get("fill"),
+                "since": board.get("since"),
                 "document": document, "at": time.strftime("%H:%M:%S"),
                 "identity": list(identity) if identity else None,
                 "model": board.get("model") or {}, "tiles": board.get("tiles") or [],

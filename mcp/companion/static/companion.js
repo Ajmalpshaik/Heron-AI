@@ -1708,6 +1708,33 @@ function dashFill(F, colours) {
   return sec;
 }
 
+// What moved since the last read of this project - the brain compared them;
+// the page only lists the rows it sent.
+function dashSince(S) {
+  const sec = el("section", "d-since");
+  sec.append(el("h3", "d-sub", "Since the last read" + (S.when ? " (" + S.when + ")" : "")));
+  if (!(S.rows || []).length) {
+    sec.append(el("p", "muted small", "Nothing counted here has changed."));
+    return sec;
+  }
+  const table = el("table", "d-fill-table");
+  const head = el("tr");
+  ["", "Was", "Now", "Change"].forEach(h => head.append(el("th", null, h)));
+  const thead = el("thead");
+  thead.append(head);
+  const body = el("tbody");
+  S.rows.forEach(r => {
+    const tr = el("tr");
+    const change = Number(r.change) || 0;
+    tr.append(el("td", null, r.label), el("td", "d-num", num(r.was, 0)), el("td", "d-num", num(r.now, 0)),
+              el("td", "d-num", (change > 0 ? "+" : "") + num(change, 0)));
+    body.append(tr);
+  });
+  table.append(thead, body);
+  sec.append(table);
+  return sec;
+}
+
 function dashFilter(text, state) {
   const words = String(text || "").trim().toLowerCase();
   document.querySelectorAll("#dashboard .d-bar, #dashboard .d-fill-table tbody tr").forEach(n => {
@@ -1834,6 +1861,7 @@ function renderDashboard(D) {
     cut.append(el("span", null, D.capped.join(" · ")));
     box.append(cut);
   }
+  if (D.since) box.append(dashSince(D.since));
   const charts = el("div", "d-charts");
   (D.charts || []).forEach(c => charts.append(dashChart(c)));
   box.append(charts);

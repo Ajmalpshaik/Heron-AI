@@ -2135,14 +2135,15 @@ def sprinkler_layout(layout_json, inputs, project=None, project_name=None):
             "view": LAYOUT.view(data, result)}
 
 
-def model_dashboard(dashboard_json):
+def model_dashboard(dashboard_json, project=None):
     """
     The Companion's Model Dashboard from REPORT_MODEL_DASHBOARD's
     dashboardJson - docs/40 s21.10.
 
     Returns {"dashboard", "said"}: the tiles, charts and worth-a-look rows the
     page draws, and one line for the chat; "dashboard" is None, and "said"
-    says why, when what Revit sent could not be read. It reads only. One audit
+    says why, when what Revit sent could not be read. With a `project` key the
+    read is kept - numbers only - and compared with the last. One audit
     line, `qa.model_dashboard`, says how it ended and carries counts only -
     never a name from the model.
     """
@@ -2152,7 +2153,7 @@ def model_dashboard(dashboard_json):
         raise BrainUnavailable("Heron's Model Dashboard could not be imported: %s. It needs "
                                "nothing beyond Python itself, so this is a broken install."
                                % exc)
-    got = DASH.dashboard(dashboard_json)
+    got = DASH.dashboard(dashboard_json, project_key=project)
     board = got.get("dashboard")
     _audit().record("qa.model_dashboard", board is not None,
                     fields={"status": "ok" if board is not None else "unreadable"},

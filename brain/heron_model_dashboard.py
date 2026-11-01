@@ -32,12 +32,23 @@ WHAT WAS NOT READ IS SAID. A part the fragment could not read arrives as
 null, named in `notRead`, and is shown as not read - never as zero. A list
 cut at the fragment's limit is named in `capped`, and the page says so.
 
-Standard library only.
+SINCE THE LAST READ (phase 4). With a project key, each read keeps a small
+snapshot - numbers only, no ids and no element names - beside the
+project's other kept answers, and the next read says what moved: elements,
+warnings, sheets, rooms, the things worth a look, and the categories that
+grew or shrank most. A part not read in either read is not compared.
+
+Standard library only, and heron_designbasis for where a project's kept
+answers live - the folder the Loads panel keeps its runs beside.
 """
 
 from __future__ import annotations
 
+import io
 import json
+import os
+import re
+import time
 
 FORMAT = 1
 #: The fragment's own format this module reads.
@@ -498,15 +509,151 @@ def summary(data, rows=None):
     return said + " The charts and lists are on the Companion page. Nothing was changed."
 
 
-def dashboard(text):
+def dashboard(text, project_key=None):
     """
     read() then build(), as the MCP server calls it. Returns {"dashboard",
     "said"}; "dashboard" is None, and "said" says why, when the text could
-    not be read.
+    not be read. With a project key the read is kept and compared with the
+    last one: the board's "since" says what moved.
     """
     try:
         data = read(text)
     except ValueError as why:
         return {"dashboard": None, "said": "No dashboard was made: %s" % why}
     built = build(data)
+    built["since"], note = (since(project_key, data) if project_key and
+                            not data["model"]["isFamily"] else (None, None))
+    if note:
+        built["notRead"] = built["notRead"] + [note]
     return {"dashboard": built, "said": built["said"]}
+
+
+# --------------------------------------------------- since the last read
+
+#: The headline numbers a snapshot keeps, each with the part it needs read.
+HEADLINES = (
+    ("elementTotal", "Model elements", "elements"),
+    ("warnings.total", "Warnings", "warnings"),
+    ("warnings.errors", "Warnings that are errors", "warnings"),
+    ("views.total", "Views", "views"),
+    ("views.notOnSheets", "Views not on a sheet", "views"),
+    ("sheets.total", "Sheets", "sheets"),
+    ("sheets.empty", "Empty sheets", "sheets"),
+    ("families.loaded", "Families", "families"),
+    ("families.unused", "Families never placed", "families"),
+    ("rooms.total", "Rooms", "rooms"),
+    ("rooms.unplaced", "Rooms not placed", "rooms"),
+    ("rooms.notEnclosed", "Rooms not enclosed", "rooms"),
+    ("spaces.unplaced", "Spaces not placed", "spaces"),
+    ("cad.imported", "CAD imported", "cad"),
+)
+#: Categories listed under "since", the biggest moves first.
+SINCE_CATEGORIES = 10
+
+
+def _dig(data, path):
+    got = data
+    for part in path.split("."):
+        got = got.get(part) if isinstance(got, dict) else None
+    return got
+
+
+def snapshot(data, when=None):
+    """
+    What a read is kept as: numbers only - the headlines and each category's
+    count - with the parts not read named, so they are never compared.
+    """
+    return {"format": 1, "when": when or time.strftime("%Y-%m-%d %H:%M"),
+            "unread": list(data.get("unread") or []),
+            "numbers": {key: _dig(data, key) for key, _label, part in HEADLINES
+                        if part not in (data.get("unread") or [])},
+            "categories": {c["name"]: c["instances"] for c in data.get("categories") or []
+                           if c.get("name")}}
+
+
+def compare(was, now):
+    """
+    What moved between two snapshots: [{"label", "was", "now", "change"}],
+    headlines in their own order, then the categories that moved most. A
+    number missing from either side is left out - never read as zero.
+    """
+    rows = []
+    for key, label, _part in HEADLINES:
+        a, b = (was.get("numbers") or {}).get(key), (now.get("numbers") or {}).get(key)
+        if isinstance(a, int) and isinstance(b, int) and a != b:
+            rows.append({"label": label, "was": a, "now": b, "change": b - a})
+    if "categories" not in (was.get("unread") or []) + (now.get("unread") or []):
+        old, new = was.get("categories") or {}, now.get("categories") or {}
+        moved = []
+        for name in set(old) | set(new):
+            a, b = old.get(name, 0), new.get(name, 0)
+            if a != b:
+                moved.append({"label": name, "was": a, "now": b, "change": b - a})
+        moved.sort(key=lambda r: (-abs(r["change"]), r["label"]))
+        rows.extend(moved[:SINCE_CATEGORIES])
+    return rows
+
+
+def _snap_folder(project_key):
+    import heron_designbasis
+    scope = heron_designbasis._scope()
+    base = scope.knowledge_dir()
+    if base is None:
+        raise ValueError("No HERON_DATA, no Windows profile and no HERON_KNOWLEDGE, so there is "
+                         "nowhere to keep the dashboard's reads. Set HERON_KNOWLEDGE to a folder.")
+    if not project_key:
+        raise ValueError("No project key, so the dashboard's reads are not kept (D-33).")
+    return os.path.join(base, "projects", scope._safe_key(project_key) + ".dashboard")
+
+
+def keep(project_key, snap):
+    """Keep one snapshot; the path. Raises ValueError when there is nowhere to keep it."""
+    folder = _snap_folder(project_key)
+    if not os.path.isdir(folder):
+        os.makedirs(folder)
+    stamp = re.sub(r"[^0-9]", "", snap.get("when") or "") or time.strftime("%Y%m%d%H%M")
+    path, n = os.path.join(folder, stamp + ".json"), 1
+    while os.path.exists(path):
+        n += 1
+        path = os.path.join(folder, "%s-%d.json" % (stamp, n))
+    with io.open(path, "w", encoding="utf-8") as fh:
+        fh.write(json.dumps(snap))
+    return path
+
+
+def kept(project_key):
+    """This project's snapshots, newest first. [] when none, or nowhere to look."""
+    try:
+        folder = _snap_folder(project_key)
+    except ValueError:
+        return []
+    if not os.path.isdir(folder):
+        return []
+    out = []
+    for name in sorted(os.listdir(folder), reverse=True):
+        if not name.endswith(".json"):
+            continue
+        try:
+            with io.open(os.path.join(folder, name), encoding="utf-8") as fh:
+                got = json.loads(fh.read())
+        except (OSError, ValueError):
+            continue
+        if isinstance(got, dict) and got.get("format") == 1:
+            out.append(got)
+    return out
+
+
+def since(project_key, data):
+    """
+    Compare this read with the last one kept for the project, then keep this
+    one. Returns ({"when", "rows"} or None, a note or None). The note says why
+    nothing was kept - never a reason to refuse the dashboard.
+    """
+    now = snapshot(data)
+    earlier = kept(project_key)
+    moved = {"when": earlier[0].get("when"), "rows": compare(earlier[0], now)} if earlier else None
+    try:
+        keep(project_key, now)
+    except (ValueError, OSError) as why:
+        return moved, "This read was not kept: %s" % why
+    return moved, None

@@ -33,6 +33,7 @@ import copy
 import json
 import os
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
@@ -239,6 +240,47 @@ def test_fill_not_read_is_null_not_zero():
     assert "fill: the parameters could not be read" in board["notRead"]
 
 
+def test_since_the_last_read_says_what_moved():
+    old = os.environ.get("HERON_KNOWLEDGE")
+    os.environ["HERON_KNOWLEDGE"] = tempfile.mkdtemp(prefix="heron-dash-")
+    try:
+        first = D.dashboard(sample(), project_key="proj-1")["dashboard"]
+        assert first["since"] is None
+        more = copy.deepcopy(SAMPLE)
+        more["elementTotal"] = 1300
+        more["categories"][0]["instances"] = 650
+        more["warnings"]["total"] = 25
+        second = D.dashboard(json.dumps(more), project_key="proj-1")["dashboard"]
+        moved = dict((r["label"], r["change"]) for r in second["since"]["rows"])
+        assert moved["Model elements"] == 50 and moved["Warnings"] == -6 and moved["Ducts"] == 50
+        assert "Sheets" not in moved
+        assert len(D.kept("proj-1")) == 2
+        assert D.dashboard(sample(), project_key="proj-2")["dashboard"]["since"] is None
+    finally:
+        if old is None:
+            os.environ.pop("HERON_KNOWLEDGE", None)
+        else:
+            os.environ["HERON_KNOWLEDGE"] = old
+
+
+def test_a_part_unread_is_never_compared():
+    was = D.snapshot(D.read(sample()))
+    data = D.read(sample(sheets=None, notRead=["sheets: could not be read"]))
+    now = D.snapshot(data)
+    assert "sheets.total" not in now["numbers"]
+    assert not [r for r in D.compare(was, now) if r["label"] in ("Sheets", "Empty sheets")]
+
+
+def test_a_snapshot_keeps_no_ids_or_names():
+    snap = json.dumps(D.snapshot(D.read(sample())))
+    for text in ("501", "ARCH.rvt", "Old Diffuser", "site.dwg"):
+        assert text not in snap, text
+
+
+def test_nothing_kept_without_a_project():
+    assert D.dashboard(sample())["dashboard"]["since"] is None
+
+
 def test_imports_only_the_standard_library():
     allowed = set(getattr(sys, "stdlib_module_names", ())) or {"json"}
     tree = ast.parse(open(os.path.join(ROOT, "brain", "heron_model_dashboard.py")).read())
@@ -248,7 +290,9 @@ def test_imports_only_the_standard_library():
             names.update(alias.name.split(".")[0] for alias in node.names)
         elif isinstance(node, ast.ImportFrom):
             names.add((node.module or "").split(".")[0])
-    assert names <= allowed | {"__future__"}, names
+    # heron_designbasis: where a project's kept answers live - the Loads
+    # panel's runs use the same folder.
+    assert names <= allowed | {"__future__", "heron_designbasis"}, names
 
 
 if __name__ == "__main__":
