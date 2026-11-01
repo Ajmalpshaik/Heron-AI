@@ -1,0 +1,63 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this read, "answered a partition the model does not have": a name typed
+# wrong, read as if it were the nearest one, or answered with a confident empty
+# that reads as a partition with no bars.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING Group KQ, KQ1): a
+# scratch copy of Group HY's project (new from Revit's metric STRUCTURAL
+# template, %TEMP%\heron-work\rebar-hy) after HY6 and HY8 are kept - column C1
+# holding two sets of main bars and one set of ties, beam B1 bottom bars, top
+# bars and stirrups. By hand, before the run: C1's three sets given Partition
+# "P1", B1's three sets Partition "B2" (Properties > Partition); then in
+# Structure > Reinforcement > Reinforcement Numbers, partition P1, one number
+# changed to 9, so P1 has a GAP. The dialog is read before the run and written
+# down - the second route.
+#
+# The negative leg is a DIFFERENT VALUE, not an empty one: a partition name the
+# model does not have. It must come back with `partitions` 0 and NAME the
+# partitions the model has - never B2's or P1's numbers under another name.
+
+positive:
+  - given: >
+      partition B2, nothing selected
+    expect: >
+      partitions 1, numberedElements 3; report "Rebar partition \"B2\":
+      numbers ..." with the same numbers, lowest and highest the Reinforcement
+      Numbers dialog shows for B2, and no gaps; partitionNames "\"B2\"
+      (rebar)" only - P1 is not in the answer
+
+  - given: partition left out (all), nothing selected
+    expect: >
+      every partition: "P1" and "B2" for rebar; P1 with its gap named ("...
+      number(s) unused between them: ..."), as the dialog shows it
+
+  - given: partition left out, C1's tie set selected
+    expect: >
+      selected names the tie set with partition "P1" and the number its
+      Properties show as Rebar Number
+
+negative:
+  - given: >
+      partition Z9 - a name the model does not have
+    expect: >
+      partitions 0, numberedElements 0, report empty; findings "No partition
+      is named \"Z9\" in this model. Its partitions are: \"B2\" (rebar),
+      \"P1\" (rebar)." A number, or a bare empty with no partition named, is
+      the defect. THE FIRST CASE TO RUN
+
+  - given: partition b2 - the right name in the wrong capitals
+    expect: >
+      partitions 0, and the finding names "B2" as differing only in capitals -
+      never B2's numbers
+
+  - given: any run at all
+    expect: >
+      NOTHING IN THE MODEL CHANGES - no transaction opened; the Reinforcement
+      Numbers dialog the same before and after
+
+second_route:
+  - >
+    Revit's own Structure > Reinforcement > Reinforcement Numbers dialog: for
+    each partition its numbers, lowest and highest are those in `report` - and
+    a Structural Rebar schedule with Partition and Rebar Number gives the same
+    numbers and element count per partition

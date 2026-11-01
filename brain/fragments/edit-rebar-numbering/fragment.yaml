@@ -1,0 +1,179 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-143
+semantic-identity: "change Revit's rebar numbers in one partition - start them at a number, close the gaps, change one number, merge partitions, or move bars to another partition"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "renumber the rebar in
+# partition P1", "move these bars to partition Level 3 slab", "start rebar
+# numbering at 100 in this partition" and "compact the rebar numbers" - Revit's
+# Structure > Reinforcement > Reinforcement Numbers dialog. No card changed
+# Revit's rebar numbering (grep of brain/fragments for NumberingSchema that day:
+# nothing). RENUMBER_SEQUENTIAL writes a running sequence into a parameter the
+# modeller names; Revit keeps rebar numbers itself, per partition, and a
+# parameter write cannot change them - so this is a different job, not a
+# widening of that PROVEN card.
+#
+# THE WRITE HALF OF A PAIR. REPORT_REBAR_NUMBERING (FRG-ELE-142) answers every
+# question - which partitions exist and their exact names, which numbers each
+# uses, the gaps, which partition a selected bar is in, which bars another user
+# owns - so no question reaches this write (D-86). "This partition" in "start
+# rebar numbering at 100 in this partition" is read there first.
+#
+# ONE ACTION A RUN, ON NAMED PARTITIONS ONLY. The action is the modeller's
+# choice, never Heron's (D-33): "renumber" closes the gaps and starts at
+# `startAt` only when one is given. `all` is taken by compact alone, which
+# closes each partition's own gaps and never moves a bar between partitions.
+#
+# OWNED BY ANOTHER USER IS SKIPPED AND NAMED (Article 12). A partition action
+# renumbers every element in the partition, so one element another user owns
+# stops it, naming the element and the owner; a move skips only the bars
+# owned. Ownership is never taken.
+#
+# A NUMBER ALREADY USED IS REFUSED FOR change. Whether Revit swaps the two or
+# gives two different bars one number is not read here, so neither is allowed
+# to happen silently.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: EDIT_REBAR_NUMBERING
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Changes Revit's rebar numbering as Structure > Reinforcement Numbers does, one
+  partition at a time: starts its numbering at a given number, closes the gaps,
+  changes one number to another, gives a partition a new partition name or
+  merges partitions, or moves bars, couplers or fabric sheets into a partition -
+  reporting the rebar numbering before and after, and skipping bars another
+  user owns.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      # OPTIONAL: read by `move` alone - the bars, couplers or fabric sheets
+      # moved into `partition`. Nothing selected binds an EMPTY list
+      # (HeronBindingNote.EmptyWhenAbsent), and move refuses it.
+      type: IList<Element>
+      optional: true
+    - name: action
+      # start | compact | renumber | change | rename | merge | move.
+      type: string
+      source: request
+    - name: partition
+      # The partition acted on, by its exact name. For move, the partition
+      # the selection goes into (made if new). For merge, the partitions
+      # merged, separated by ;. `all` only for compact.
+      type: string
+      source: request
+    - name: toPartition
+      # rename: the new name, which must not be a partition yet. merge: the
+      # partition merged into - appended to when it exists, made when not.
+      type: string
+      source: request
+      optional: true
+      absent: (none)
+    - name: startAt
+      # start: the partition's first number. renumber: the first number after
+      # the gaps close; absent (0) keeps the partition's lowest number.
+      type: int
+      source: request
+      optional: true
+      absent: "0"
+    - name: fromNumber
+      # change: the number changed - it must be in use in the partition.
+      type: int
+      source: request
+      optional: true
+      absent: "0"
+    - name: toNumber
+      # change: the new number - it must NOT be in use in the partition.
+      type: int
+      source: request
+      optional: true
+      absent: "0"
+    - name: reinforcement
+      # rebar | coupler | fabric - which of Revit's three numberings the
+      # partition is in. Absent is rebar. move follows each element's own.
+      type: string
+      source: request
+      optional: true
+      absent: rebar
+  provides:
+    - name: changed
+      # Elements whose partition or number is different afterwards, read off
+      # the model before and after. Something the write DID.
+      role: result
+      type: int
+    - name: before
+      # Each partition acted on, its numbers before (D-52).
+      role: accounting
+      type: IList<string>
+    - name: after
+      # The same partitions - or the renamed or merged one - after (D-52).
+      role: accounting
+      type: IList<string>
+    - name: skipped
+      # Elements another user owns, each with its owner - left alone, never
+      # taken (Article 12). Turned down, never done (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in Revit words: an unknown partition with the names
+      # the model has, a number in use, a name Revit will not take, an
+      # element that is not numbered reinforcement. Never a thing done (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. NumberingSchema.GetNumberingSchema
+  (Document, NumberingSchemaType), GetNumberingSequences, GetNumbers(string),
+  NumberingParameterId, ShiftNumbers(string, int), RemoveGaps(string),
+  ChangeNumber(string, int, int), MoveSequence(string, string),
+  AppendSequence(string, string), MergeSequences(IList<string>, string),
+  AssignElementsToSequence(ISet<ElementId>, string), IsValidPartitionName(string,
+  out string) and MaximumStartingNumber, BuiltInParameter.NUMBER_PARTITION_PARAM
+  and WorksharingUtils.GetCheckoutStatus(Document, ElementId, out string) carry
+  the same signatures 2020 through 2027 - read with tools/api-surface --members
+  on 2026-11-01. Revit 2027 marks the schema-type route, MoveSequence,
+  AppendSequence, MergeSequences and AssignElementsToSequence obsolete (rebar,
+  couplers and fabric only) and still ships them; 2027 adds
+  ChangePartitioningValue, unused here so one implementation serves all eight.
+  An ElementId is compared with ==, never read as a number.
+
+# ROUTING (2026-11-01) - the same rows are in REPORT_REBAR_NUMBERING.
+#
+#   "renumber the rebar in partition P1"            -> here, action renumber
+#   "start rebar numbering at 100 in this partition" -> here, action start,
+#                                                      startAt 100 - which
+#                                                      partition "this" is is
+#                                                      read by
+#                                                      REPORT_REBAR_NUMBERING
+#   "compact the rebar numbers"                     -> here, action compact
+#   "move these bars to partition Level 3 slab"     -> here, action move
+#   "what rebar numbers are in partition B2"        -> REPORT_REBAR_NUMBERING -
+#                                                      a question, and this
+#                                                      only writes
+#   "renumber the doors"                            -> RENUMBER_SEQUENTIAL - a
+#                                                      running sequence in a
+#                                                      parameter, not Revit's
+#                                                      rebar numbering
+utterances:
+  - renumber the rebar in partition P1
+  - move these bars to partition Level 3 slab
+  - start rebar numbering at 100 in this partition
+  - compact the rebar numbers

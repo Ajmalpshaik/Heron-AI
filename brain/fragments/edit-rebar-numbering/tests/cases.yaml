@@ -1,0 +1,68 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "renumbered a partition nobody asked for": a compact that
+# closed P1's gap when B2 was named, or a renumber that ran across every
+# partition.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE - the same scratch model as
+# REPORT_REBAR_NUMBERING's Group KQ (NEEDS-CHECKING Group KR, KR1): a copy of
+# Group HY's project after HY6 and HY8 are kept, C1's three rebar sets in
+# Partition "P1" with one number changed to 9 so P1 has a GAP, B1's three sets
+# in Partition "B2" with no gap. REPORT_REBAR_NUMBERING is run before and after
+# every case, and the Reinforcement Numbers dialog read - the second route.
+#
+# Every run below is ROLLED BACK (validate --write) except the one try-once,
+# which the modeller keeps or discards.
+#
+# The negative leg is a DIFFERENT VALUE, not an empty one: the partition with
+# no gap. It must come back with `changed` 0 - and P1, never named, must still
+# have its gap.
+
+positive:
+  - given: >
+      action compact, partition P1
+    expect: >
+      changed above 0; before "rebar partition \"P1\": ..." with the gap,
+      after with none - the numbers run on with no number unused between
+      them; B2's numbers unchanged (REPORT_REBAR_NUMBERING after)
+
+  - given: action start, partition B2, startAt 100
+    expect: >
+      changed 3; after "rebar partition \"B2\": 100-..." - B2's lowest
+      number is 100 and its count of numbers unchanged; P1 unchanged
+
+  - given: action move, partition "Level 3 slab", C1's tie set selected
+    expect: >
+      changed 1; the tie set's Partition reads "Level 3 slab" and it has a
+      number there; before and after name P1 and "Level 3 slab"
+
+  - given: action change, partition P1, fromNumber 9, toNumber 4
+    expect: >
+      changed 1 or more - the bars numbered 9 read 4 - when 4 is free in P1;
+      refused, naming P1's numbers, when it is not
+
+negative:
+  - given: >
+      action compact, partition B2 - a partition with no gap
+    expect: >
+      changed 0; before and after the same numbers for B2; P1 still has its
+      gap, untouched. A change in P1 is the defect. THE FIRST CASE TO RUN
+
+  - given: action compact, partition Z9 - a name the model does not have
+    expect: >
+      changed 0; refused "No rebar partition is named \"Z9\". Its partitions
+      are: \"B2\", \"P1\"." and findings starting "NOTHING WAS RENUMBERED"
+
+  - given: action start, partition all, startAt 100
+    expect: >
+      changed 0; refused "\"all\" is taken by compact alone" - no partition
+      renumbered that was not asked for
+
+  - given: action rename, partition P1, toPartition B2 - a partition already there
+    expect: >
+      changed 0; refused, saying the two would merge and to ask for merge
+
+second_route:
+  - >
+    Revit's own Structure > Reinforcement > Reinforcement Numbers dialog,
+    before and after each kept run: each partition's numbers are those in
+    `before` and `after` - and REPORT_REBAR_NUMBERING reads the same

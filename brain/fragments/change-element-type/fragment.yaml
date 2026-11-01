@@ -219,3 +219,10 @@ utterances:
   - change these to match that wall
   - make them all like this one
   - match element type
+  # ADDED 2026-11-01 (FRAGMENT-ISSUES row 5b-1371). The routing tables of
+  # SET_CURTAIN_WALL_GRID, SET_CURTAIN_WALL_MULLIONS and ADD_CURTAIN_GRID_LINES
+  # send this sentence here, with that mullion selected - one instance. It
+  # reached SET_CURTAIN_WALL_GRID, then REPORT_CURTAIN_ELEMENTS once the
+  # rebar numbering cards moved the ranking; declared here, so the identity
+  # route answers it before any ranking runs.
+  - change this one mullion
