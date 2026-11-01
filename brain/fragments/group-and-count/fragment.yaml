@@ -70,9 +70,12 @@ tests: tests/
 # that retrieval could not act on, and these resolved elsewhere.
 
 utterances:
+  # THE FIRST EIGHT ARE WHAT THE RE-RANKER READS (D-134), so the order below is
+  # measured, not tidy. "group them and count" was third until 2026-11-01 and
+  # moved last to let a pipe-size sentence in (FRAGMENT-ISSUES 5b-1356); it is
+  # declared whole, so it still answers by its own phrase.
   - what sizes are they
   - break it down by size
-  - group them and count
   - give me a schedule of the types
   - break it down by type
   # ADDED 2026-09-19. Both sentences reached a WRITE: "what sizes are the
@@ -85,11 +88,23 @@ utterances:
   - what sizes are the ducts
   - duct schedule by size
   # ADDED 2026-11-01 (FRAGMENT-ISSUES 5b-1354): the question measured reaching
-  # REPORT_VIEWPORT_TYPES, then two door-free forms of it. KEEP THEM LAST. The
-  # re-ranker reads only the first eight utterances (D-134); put first, these
-  # pushed the two duct-size sentences out of them, and on the re-ranker "give
-  # me a breakdown of the duct sizes" went to AUTO_SIZE_MEP and SET_MEP_SIZE -
-  # writes.
+  # REPORT_VIEWPORT_TYPES. Keep it inside the eight: pushed out, four held-out
+  # door-by-type questions left this card on the re-ranker.
   - how many doors of each type
+  # ADDED 2026-11-01 (FRAGMENT-ISSUES 5b-1356), the pipe twin of the duct pair
+  # above: "what sizes are these pipes" reached AUTO_SIZE_PIPE or SET_MEP_SIZE -
+  # writes - on every backend, because "size these pipes" (a verb) and "what
+  # sizes are these pipes" (a noun) look alike to both routes. The breakdown
+  # sentence is the size-breakdown skill's, which no card carried; it is the
+  # eighth on purpose - with "what sizes are these pipes" there instead, the
+  # re-ranker moved fewer pipe questions and lost door ones.
+  - give me a breakdown of the pipe sizes
+  # The rest are past the eight, read by the words and nearness routes only.
+  # The two door-free forms of 5b-1354's question - put first, they pushed the
+  # duct-size sentences out of the eight and "give me a breakdown of the duct
+  # sizes" went to AUTO_SIZE_MEP and SET_MEP_SIZE on the re-ranker.
   - how many of each type are there
   - count them by type
+  - group them and count
+  - what sizes are these pipes
+  - how many pipes of each size
