@@ -1281,3 +1281,18 @@ for that exact job, so it is not offered as a button.
 **Proved without Revit:** `tests/test_companion.py` - the hook gets the parameter and the read's model,
 the demo and an empty name change nothing, the route is behind the pairing, the server goes through
 `revit_change` under the lock. **Not run in Revit** - group JT row JT27.
+
+### 21.15 "The model has changed - press Refresh" (2026-11-01)
+
+The plan's last phase-2 item, on the owner's word ([D-147](decisions/D-147.md), amending D-09): *"Yes, add
+it"*. The add-in **counts** every committed change to each model on Revit's `DocumentChanged` - nothing
+read, nothing written in the event - and the once-a-second `Idling` check writes the count for the model
+in front to the live file as `changes`. The dashboard keeps the count at its read (`live_changes`, right
+after a good read); on the state poll the page already makes, it shows *The model has changed in Revit
+since this read - press Refresh* once the live count is higher for the same model. **It never refreshes by
+itself**, and it asks Revit nothing. Heron's own changes count too - a colour from the page, a change from
+the chat - since the page then shows the model as it was before them.
+
+Until the add-in is redeployed the live file has no `changes` and the page shows no note - never a wrong
+one. **Compiled 2020-2027** (`tools/check-compile.py`, `tools/check-api-surface.py`); **not run in Revit** -
+[group JT](needs-checking/group-jt.md) row JT28.
