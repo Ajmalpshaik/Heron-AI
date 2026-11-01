@@ -1,8 +1,45 @@
 // NOT STANDALONE. Assumes `doc`, `category`, `categories`, `categoryName`,
-// `levelId`, `inViewOnly` and `includeLinks` are already in scope, and leaves
-// `elements`, `unresolvedLevel`, `linksSearched`, `linkedMatches`,
-// `perCategory`, `found`, `resolvedTo` and `nearMisses` in scope for whatever
-// is composed after it.
+// `levelId`, `inViewOnly`, `notShowingIn`, `withoutLevel` and `includeLinks`
+// are already in scope, and leaves `elements`, `unresolvedLevel`,
+// `linksSearched`, `linkedMatches`, `perCategory`, `found`, `resolvedTo`,
+// `nearMisses`, `examined`, `inModel`, `showing` and `findings` in scope for
+// whatever is composed after it.
+//
+// VERSION 5 (2026-11-01) - SELECT_BY_LEVEL, SELECT_VISIBLE_IN_VIEW,
+// SELECT_WITHOUT_LEVEL AND SELECT_HIDDEN_IN_VIEW MERGED IN, AND WHAT THEY HAD
+// THAT VERSION 4 LACKED:
+//
+//   NO CATEGORY AT ALL (SELECT_BY_LEVEL, SELECT_VISIBLE_IN_VIEW). A level alone
+//   is everything on that level; a view alone is everything that view draws.
+//   The collector is then every category, and `findings` says it walked the
+//   whole model. THE ONE REFUSAL LEFT for "nothing named" is no category, no
+//   categoryName, no level and no view at all - nothing to bound the read.
+//
+//   A VIEW TEMPLATE IS REFUSED (SELECT_VISIBLE_IN_VIEW, SELECT_HIDDEN_IN_VIEW).
+//   A template has no elements of its own; an empty answer from one reads as
+//   "this view shows nothing", and as "everything is hidden" the other way.
+//
+//   A LEVEL ID THAT IS NOT A LEVEL IS REFUSED (SELECT_BY_LEVEL) - never the
+//   plausible zero every comparison against it would give.
+//
+//   THE ELEMENTS WITH NO LEVEL, HANDED ON (SELECT_WITHOUT_LEVEL). `withoutLevel`
+//   returns the ones whose level cannot be found - the ones `unresolvedLevel`
+//   only counted. THE LOOKUP IS THIS CARD'S, row 5b-335's fixed one: a
+//   parameter that holds no level is passed over and the next asked.
+//   SELECT_WITHOUT_LEVEL's own four-step copy took the first parameter an
+//   element HAD and never checked it named a level, which is the drift row
+//   5b-335 fixed here. `examined` is how many were looked at.
+//
+//   THE MODEL MINUS WHAT A VIEW SHOWS (SELECT_HIDDEN_IN_VIEW). `notShowingIn`
+//   returns what is in the model, in the categories named, and NOT drawn in
+//   that view. `inModel` and `showing` are the two halves of the subtraction,
+//   so the arithmetic can be checked. Links are not read for it - that card
+//   never read them, and a link's view-scoped read is per placement.
+//
+//   `findings` - the sentences the four cards gave: how many of how many,
+//   the whole-model warning when no category bounds the read, and that why
+//   something is missing is DIAGNOSE_VISIBILITY's question, one element at a
+//   time.
 //
 // VERSION 4, REVIEW FIX OF 2026-11-01 - THE TWO THINGS OF
 // SELECT_BY_CATEGORY_NAME THE FIRST DRAFT LOST, put back in the card and not
@@ -176,11 +213,51 @@ if (byName.Length > 0 && wanted.Count > 0)
         + "categoryName for the name the model holds, an imported CAD file's included, or "
         + "category / categories for Revit's own categories.");
 
-if (byName.Length == 0 && wanted.Count == 0)
-    throw new InvalidOperationException("No category was named, so NOTHING was read. Name one "
-        + "with category - Ducts, Mechanical Equipment, OST_DuctCurves - or several with "
-        + "categories, separated by commas - Ducts, Duct Fittings, Duct Accessories - or one by "
-        + "the name the model holds with categoryName, an imported CAD file's included.");
+// VERSION 5: a level alone, or a view alone, bounds the read too - everything
+// on that level, everything that view draws. Refused only when NOTHING bounds
+// it: an unbounded read of every category hands back every view, sheet and
+// material in the model, and nobody asked for that.
+var levelGiven = levelId != ElementId.InvalidElementId;
+if (byName.Length == 0 && wanted.Count == 0 && !levelGiven && inViewOnly == null
+    && notShowingIn == null)
+    throw new InvalidOperationException("Nothing was named to look for, so NOTHING was read. "
+        + "Name a category - Ducts, Mechanical Equipment, OST_DuctCurves - or several with "
+        + "categories, separated by commas, or one by the name the model holds with "
+        + "categoryName; or a level with levelId for everything on it; or a view with "
+        + "inViewOnly for everything it draws, or notShowingIn for what it does not. "
+        + "withoutLevel needs one of those too: unbounded, the elements with no level are "
+        + "every view, sheet and material in the model.");
+
+if (inViewOnly != null && notShowingIn != null)
+    throw new InvalidOperationException("Two views were named - inViewOnly '" + inViewOnly.Name
+        + "' and notShowingIn '" + notShowingIn.Name + "' - so NOTHING was read. Ask one: "
+        + "what a view draws, or what the model holds that it does not.");
+
+if (withoutLevel && levelGiven)
+    throw new InvalidOperationException("withoutLevel asks for the elements that are on NO "
+        + "level, and a level was named as well, so NOTHING was read. Ask one or the other.");
+
+// A VIEW TEMPLATE IS NOT A VIEW (SELECT_VISIBLE_IN_VIEW, SELECT_HIDDEN_IN_VIEW).
+foreach (var asked in new[] { inViewOnly, notShowingIn })
+{
+    if (asked != null && asked.IsTemplate)
+        throw new InvalidOperationException("'" + asked.Name + "' is a view TEMPLATE, not a "
+            + "view, so NOTHING was read. A template has no elements of its own - it is "
+            + "settings applied to views - so an answer from it would read as \"this view "
+            + "shows nothing\", or as everything in the model hidden. Name the view it is "
+            + "applied to.");
+}
+
+// A LEVEL ID THAT IS NOT A LEVEL (SELECT_BY_LEVEL): refused with the reason,
+// never the plausible zero every comparison against it would give.
+Level askedLevel = null;
+if (levelGiven)
+{
+    askedLevel = doc.GetElement(levelId) as Level;
+    if (askedLevel == null)
+        throw new InvalidOperationException("levelId " + levelId + " is not a level in "
+            + doc.Title + ", so NOTHING was read. LIST_LEVELS gives the levels by name.");
+}
 
 // categoryName: matched against EVERY category the document holds, imported
 // ones included, capitals ignored - SELECT_BY_CATEGORY_NAME's rule. Nothing
@@ -244,21 +321,27 @@ if (namedCategory != null)
     perCategory[namedCategory.Name] = 0;
     resolvedNames.Add(namedCategory.Name);
 }
+// No category named at all (version 5): every category, and said so.
+var everyCategory = namedCategory == null && wanted.Count == 0 && !nameMissed;
 var resolvedTo = nameMissed
     ? "NO CATEGORY in " + doc.Title + " is called \"" + byName + "\", so nothing was read"
       + (nearMisses.Count > 0 ? " - the nearest names are in nearMisses" : " - and no name is near it")
-    : string.Join(", ", resolvedNames.ToArray());
+    : everyCategory
+        ? "every category - none was named"
+        : string.Join(", ", resolvedNames.ToArray());
 
 // One category is OfCategory, as versions 1 to 3 read it; several are one
 // multi-category filter, which cannot return an element twice. A category by
 // the name the model holds is read by its id - an imported one has no
-// BuiltInCategory.
+// BuiltInCategory. None named is no category filter at all (version 5).
 Func<FilteredElementCollector, FilteredElementCollector> ofWanted = c =>
     namedCategory != null
         ? c.OfCategoryId(namedCategory.Id)
-        : wanted.Count == 1
-            ? c.OfCategory(wanted[0])
-            : c.WherePasses(new ElementMulticategoryFilter(wanted));
+        : wanted.Count == 0
+            ? c
+            : wanted.Count == 1
+                ? c.OfCategory(wanted[0])
+                : c.WherePasses(new ElementMulticategoryFilter(wanted));
 
 Func<Element, string> categoryOf = e =>
 {
@@ -268,22 +351,68 @@ Func<Element, string> categoryOf = e =>
     return name;
 };
 
-var matching = nameMissed
-    ? new List<Element>()
-    : ofWanted(inViewOnly != null
+// THE MODEL MINUS WHAT A VIEW SHOWS (version 5, SELECT_HIDDEN_IN_VIEW's
+// subtraction). Both halves are counted - `inModel` and `showing` - so a
+// reader can check the arithmetic rather than trust it.
+var inModel = 0;
+var showing = 0;
+IList<Element> matching;
+if (nameMissed)
+{
+    matching = new List<Element>();
+}
+else if (notShowingIn != null)
+{
+    var visible = new HashSet<ElementId>();
+    foreach (var e in ofWanted(new FilteredElementCollector(doc, notShowingIn.Id))
+                 .WhereElementIsNotElementType())
+        if (e != null) visible.Add(e.Id);
+    showing = visible.Count;
+
+    var notShown = new List<Element>();
+    foreach (var e in ofWanted(new FilteredElementCollector(doc)).WhereElementIsNotElementType())
+    {
+        if (e == null) continue;
+        inModel++;
+        if (!visible.Contains(e.Id)) notShown.Add(e);
+    }
+    matching = notShown;
+}
+else
+{
+    matching = ofWanted(inViewOnly != null
             ? new FilteredElementCollector(doc, inViewOnly.Id)
             : new FilteredElementCollector(doc))
         .WhereElementIsNotElementType()
         .ToElements();
+}
+
+// How many were looked at, so a small answer can be told from a small scan.
+var examined = matching.Count;
+
+// The level lookup can meet an element that will not say - read as no level.
+Func<Element, ElementId> safeLevelOf = e =>
+{
+    try { return levelOf(e); }
+    catch (Exception) { return ElementId.InvalidElementId; }
+};
 
 var unresolvedLevel = 0;
 var elements = new List<Element>();
 
 foreach (var e in matching)
 {
-    if (levelId != ElementId.InvalidElementId)
+    if (e == null) continue;
+    if (withoutLevel)
     {
-        var at = levelOf(e);
+        // SELECT_WITHOUT_LEVEL's answer: the ones whose level cannot be found,
+        // handed on rather than only counted.
+        if (safeLevelOf(e) != ElementId.InvalidElementId) continue;
+        unresolvedLevel++;
+    }
+    else if (levelGiven)
+    {
+        var at = safeLevelOf(e);
         if (at == ElementId.InvalidElementId) { unresolvedLevel++; continue; }
         if (at != levelId) continue;
     }
@@ -294,6 +423,57 @@ foreach (var e in matching)
 }
 
 int found = elements.Count;
+
+// ---- findings: the four merged cards' sentences (version 5) ----------------
+
+var findings = new List<string>();
+var scope = everyCategory ? ", across every category" : ", within " + resolvedTo;
+const string unboundedWarning = ". NO CATEGORY BOUNDED THIS, so it includes views, sheets, "
+    + "materials and annotation - most of which correctly have no level and none of which is "
+    + "the answer to anything. Give a category list";
+
+if (nameMissed)
+{
+    findings.Add(resolvedTo);
+}
+else
+{
+    if (withoutLevel)
+        findings.Add(string.Format("{0} of {1} element(s) examined have no level{2}{3}",
+            found, examined, scope, everyCategory ? unboundedWarning : ""));
+    else if (levelGiven)
+        findings.Add(string.Format("{0} of {1} scanned element(s) are on level '{2}'{3}. {4} carry "
+            + "no level at all", found, examined, askedLevel.Name, scope, unresolvedLevel));
+    else
+        findings.Add(string.Format("{0} element(s){1}", found, scope));
+
+    if (levelGiven && everyCategory)
+        findings.Add("This walked the whole model. A category list bounds it, and is cheaper by "
+            + "the size of the model");
+
+    if (inViewOnly != null)
+    {
+        findings.Add(string.Format("Read through view '{0}'. This is what the view SHOWS, which "
+            + "is not what the model contains - the crop, the view range, the phase filter, the "
+            + "category switches, the view filters and the template all remove things that are "
+            + "certainly there", inViewOnly.Name));
+        findings.Add("Something expected and missing is a question for DIAGNOSE_VISIBILITY, which "
+            + "takes one element and one view and says which mechanism hid it. This reports the "
+            + "set and no reasons");
+    }
+
+    if (notShowingIn != null)
+    {
+        findings.Add(string.Format("{0} in the model, {1} showing on '{2}', so {3} are not{4}{5}",
+            inModel, showing, notShowingIn.Name, inModel - showing, scope,
+            everyCategory ? ". NO CATEGORY BOUNDED THIS, so every view, sheet, material and "
+                + "template in the document counts as not showing - all true, none useful. Give "
+                + "a category list" : ""));
+        if (found > 0)
+            findings.Add("WHY each one is missing is a question for DIAGNOSE_VISIBILITY, one "
+                + "element at a time - this says which, never why");
+    }
+}
 
 // ---- D-59: which links, only when asked for --------------------------------
 
@@ -360,6 +540,13 @@ if (linkDocs.Count > 0 && nameMissed)
 {
     linkBlocked = "Links NOT read: the name matched no category here, so there was nothing to "
         + "look for";
+}
+else if (linkDocs.Count > 0 && notShowingIn != null)
+{
+    // SELECT_HIDDEN_IN_VIEW never read links, and what a host view does not
+    // draw of a link is a per-placement question this does not answer.
+    linkBlocked = "Links NOT read: what a view does NOT show is answered for this model only - "
+        + "ask without notShowingIn to count the links";
 }
 else if (linkDocs.Count > 0 && levelId != ElementId.InvalidElementId && hostLevelName == null)
 {
@@ -449,9 +636,14 @@ else
 
         foreach (var e in linkedElements)
         {
-            if (hostLevelName != null)
+            if (withoutLevel)
             {
-                var at = levelOf(e);
+                // SELECT_WITHOUT_LEVEL's count, per link: the same lookup.
+                if (safeLevelOf(e) != ElementId.InvalidElementId) continue;
+            }
+            else if (hostLevelName != null)
+            {
+                var at = safeLevelOf(e);
                 if (at == ElementId.InvalidElementId) { linkUnresolved++; continue; }
 
                 var linkedLevel = linked.GetElement(at) as Level;
@@ -475,6 +667,7 @@ else
         linkedTotal += linkMatched;
         linkedMatches.Add(string.Format("{0}: {1}{2}{3}{4}{5}", linked.Title, linkMatched,
             linkLacksName ? " (no category of that name in this link)"
+            : withoutLevel ? string.Format(" of {0} have no level", linkedElements.Count)
             : hostLevelName == null ? "" : string.Format(" on a level named '{0}'", hostLevelName),
             parts.Count > 0 ? " (" + string.Join(", ", parts.ToArray()) + ")" : "",
             linkUnresolved > 0 ? string.Format(", {0} with no level found", linkUnresolved) : "",

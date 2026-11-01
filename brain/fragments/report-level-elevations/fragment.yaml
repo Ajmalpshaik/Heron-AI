@@ -73,8 +73,8 @@ purpose: >
   "Building Story" setting, and for every level NOT marked, how many model
   elements have that level as their level. An IFC export makes a storey only
   from a level marked Building Story, so elements on an unmarked level are
-  put in another storey on the way out. An element's level is found the way
-  SELECT_WITHOUT_LEVEL finds it, in its four steps and order, ending on an
+  put in another storey on the way out. An element's level is found in four
+  steps and in this order, ending on an
   MEP curve's start level, because a duct keeps its level nowhere else. Only
   model elements are counted; views, sheets and annotation carry a level
   too and go into no storey. **Numbers, never a verdict** - an unmarked

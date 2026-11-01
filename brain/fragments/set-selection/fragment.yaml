@@ -75,7 +75,7 @@ compatibility-note: >
 #   "select these forms" (by id)     -> REPORT_FAMILY_FORMS first, in a
 #                                       family; its forms then come here
 #                                       with expect_from report-family-forms
-#   "make a selection set"           -> CREATE_SELECTION_FILTER - a SAVED
+#   "make a selection set"           -> UPDATE_SAVED_SET, mode "create" - a SAVED
 #                                       set that survives the model closing.
 #                                       This highlight is gone at the next
 #                                       click

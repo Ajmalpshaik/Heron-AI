@@ -37,7 +37,23 @@ capability: FILTER_ELEMENTS_BY_CATEGORY
 # view, each link is read through that view on Revit 2023 and later, and
 # refused in words on 2020-2022; the level is matched by name in a link
 # either way.
-version: 4
+#
+# VERSION 5 (2026-11-01): SELECT_BY_LEVEL, SELECT_VISIBLE_IN_VIEW,
+# SELECT_WITHOUT_LEVEL and SELECT_HIDDEN_IN_VIEW were merged into this card on
+# the owner's instruction - "make sure there is no duplicate tools" - and are
+# DEPRECATED; see the second merge block above `utterances`. Version 3's proof
+# below is still kept as the record and still does not describe the code; the
+# card stays DRAFT until version 5 is proved on a real model (D-30).
+#
+# VERSION 5, THE DETAIL. No category with a level is everything on that level;
+# no category with a view is everything that view draws - a view TEMPLATE is
+# refused. `withoutLevel` hands on the elements whose level cannot be found,
+# by this card's own lookup (row 5b-335's fix). `notShowingIn` is the model
+# minus what that view draws, with `inModel` and `showing` beside it; links
+# are not read for it. A levelId that is no level is refused. Refused only when
+# no category, no categoryName, no level and no view is given. `findings` says
+# how many of how many, and warns when no category bounded the read.
+version: 5
 source: OFFICIAL
 risk: READ
 
@@ -75,6 +91,11 @@ purpose: >
   name that matches none comes back with its near misses, nothing read. This is version 4; version
   3's proof no longer describes the code, and the fragment is DRAFT until it
   is proved again.
+
+  **A LEVEL OR A VIEW WITHOUT A CATEGORY, AND WHAT IS NOT THERE (version 5).**
+  "What is on level 2" and "what is showing on this view" need no category.
+  `withoutLevel` gives the elements on no level; `notShowingIn` what the model
+  holds that a view does not show. Version 5 is DRAFT until proved.
 
 contract:
   needs:
@@ -128,6 +149,24 @@ contract:
       # whole model (HeronBindingNote.AbsentValue, row 5b-1320). A view NAMED
       # and not found is still refused.
       type: View
+      source: request
+      optional: true
+    - name: notShowingIn
+      # VERSION 5, from SELECT_HIDDEN_IN_VIEW: the model minus what this view
+      # draws - what is in the model, in the categories named, and NOT showing
+      # there. Left out it binds null, as `inViewOnly` does; given with
+      # `inViewOnly` it is refused - one view per call. A view TEMPLATE is
+      # refused here and in `inViewOnly` alike: it has no elements of its own.
+      # Links are not read for it.
+      type: View
+      source: request
+      optional: true
+    - name: withoutLevel
+      # VERSION 5, from SELECT_WITHOUT_LEVEL: hand on the elements whose level
+      # CANNOT be found - the ones `unresolvedLevel` only counts. This card's
+      # own lookup, row 5b-335's fix. Left out it binds false. Given with
+      # `levelId` it is refused.
+      type: bool
       source: request
       optional: true
     - name: includeLinks
@@ -197,6 +236,30 @@ contract:
       # at. Empty otherwise. About the lookup, never an element it found
       # (D-52).
       role: accounting
+      type: IList<string>
+    - name: examined
+      # VERSION 5, from SELECT_WITHOUT_LEVEL and SELECT_BY_LEVEL: how many
+      # elements were looked at before the level test, so a small answer can be
+      # told from a small scan. Evidence it looked, never a thing it found
+      # (D-52).
+      role: accounting
+      type: int
+    - name: inModel
+      # VERSION 5, from SELECT_HIDDEN_IN_VIEW: with `notShowingIn`, how many
+      # were in the model in the categories named - the first half of the
+      # subtraction. 0 otherwise. About the answer, never an element (D-52).
+      role: accounting
+      type: int
+    - name: showing
+      # VERSION 5, from SELECT_HIDDEN_IN_VIEW: with `notShowingIn`, how many of
+      # them that view does show - the other half, so the arithmetic can be
+      # checked. 0 otherwise (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      # VERSION 5, the four merged cards' sentences: how many of how many, on
+      # which level or in which view, the warning when no category bounded the
+      # read, and that why something is missing is DIAGNOSE_VISIBILITY's.
       type: IList<string>
 proof:
   date: '2026-10-06'
@@ -273,9 +336,22 @@ compatibility-note: >
 #                                           the words are the input
 #   "select all the pipes in this view"  -> here, category Pipes, inViewOnly
 #                                           that view
-#   "what is visible in this view"       -> SELECT_VISIBLE_IN_VIEW, which is
-#                                           about visibility rather than
-#                                           category
+#   "what is visible in this view"       -> here since version 5, inViewOnly
+#                                           that view and no category - it was
+#                                           SELECT_VISIBLE_IN_VIEW's, merged in
+#   "what is on level 2"                 -> here since version 5, levelId that
+#                                           level and no category - it was
+#                                           SELECT_BY_LEVEL's, merged in
+#   "what has no level"                  -> here since version 5, withoutLevel
+#                                           and a category list - it was
+#                                           SELECT_WITHOUT_LEVEL's
+#   "what is not showing here"           -> here since version 5, notShowingIn
+#                                           that view - it was
+#                                           SELECT_HIDDEN_IN_VIEW's
+#   "why can't I see this duct"          -> DIAGNOSE_VISIBILITY - one element,
+#                                           and which mechanism hid it
+#   "what level is this on"              -> READ_ELEMENT_LEVEL - one element
+#   "move these to level 2"              -> SET_ELEMENT_LEVEL - this only reads
 #   "these are in the wrong category"    -> CHECK_CATEGORY_MISMATCH
 #   "which categories are there"         -> LIST_CATEGORIES - the names a
 #                                           word that was refused here can be
@@ -323,6 +399,58 @@ compatibility-note: >
 #
 # ROUTING - repeated in SELECT_BY_MEP_SYSTEM, SELECT_OPENINGS,
 # SET_CATEGORY_GRAPHICS, DESCRIBE_ELEMENTS and LIST_CATEGORIES.
+#
+# VERSION 5 (2026-11-01) - SELECT_BY_LEVEL, SELECT_VISIBLE_IN_VIEW,
+# SELECT_WITHOUT_LEVEL AND SELECT_HIDDEN_IN_VIEW WERE MERGED INTO THIS CARD on
+# the owner's instruction in conversation: "make sure there is no duplicate
+# tools", "merge means ... all area need to be covered", "in every conflict
+# keep the safer rule". All four are DEPRECATED. The same job - which elements,
+# optionally of which categories, on which level, in which view - and this
+# card already took a category list, a level and a view. Where each retired
+# output is now:
+#
+#   SELECT_BY_LEVEL                     here
+#     levelId, categories               levelId, categories - no category is
+#                                       now a whole-model read, as that card's
+#     elements, unresolvedLevel         the same
+#     findings                          findings - "N of M scanned are on
+#                                       level X", and the whole-model warning
+#     linksSearched, linkedMatches      the same - the level matched by name
+#     its level lookup                  NOT CARRIED: it took the first level
+#                                       parameter an element HAD, empty or
+#                                       not - the drift this card fixed in row
+#                                       5b-335. This card's lookup answers
+#
+#   SELECT_VISIBLE_IN_VIEW              here
+#     view, categories                  inViewOnly, categories
+#     elements, findings                elements, findings - including that
+#                                       why is DIAGNOSE_VISIBILITY's
+#     a view template refused           refused, here too
+#
+#   SELECT_WITHOUT_LEVEL                here
+#     categories, includeLinks          the same
+#     elements                          elements, with withoutLevel
+#     examined                          examined
+#     findings, links                   findings, linksSearched, linkedMatches
+#
+#   SELECT_HIDDEN_IN_VIEW               here
+#     view                              notShowingIn
+#     elements, inModel, showing        the same
+#     findings, a template refused      the same
+#
+# THE SAFER RULE WHERE THEY DIFFERED. SELECT_WITHOUT_LEVEL and
+# SELECT_HIDDEN_IN_VIEW answered with NO category - every view, sheet and
+# material in the model, with a warning; version 4 here refused no category.
+# Here a level or a view alone is enough to read (SELECT_BY_LEVEL's and
+# SELECT_VISIBLE_IN_VIEW's whole-model questions), and the warning travels in
+# `findings` whenever no category bounded the read; refused only when no
+# category, no categoryName, no level and no view is given - so `withoutLevel`
+# with nothing else is refused rather than answered with the whole model's
+# views and sheets, which SELECT_WITHOUT_LEVEL's own test called "correct and
+# useless". SELECT_VISIBLE_IN_VIEW and SELECT_HIDDEN_IN_VIEW answered no view
+# with an empty set and a sentence; here no view means the model, and a view
+# named and not found is refused by the binder. A level id that is not a
+# level, which SELECT_BY_LEVEL refused in a sentence, is refused here too.
 
 utterances:
   - select all ducts
@@ -418,3 +546,35 @@ utterances:
   # indexed (row 5b-387's lesson). SELECT_BY_CATEGORIES answered it by ranking;
   # with that card retired, lexical sent it to CREATE_DUCT_RUNS, a write.
   - all the ducts
+  # MOVED 2026-11-01 from SELECT_BY_LEVEL, merged into this card.
+  - what is on level 2
+  - select everything on this level
+  - show me everything on the second floor
+  - find all elements on a level
+  - which elements sit on this storey
+  # MOVED 2026-11-01 from SELECT_VISIBLE_IN_VIEW, merged into this card.
+  - what is showing on this view
+  - select everything visible in this view
+  - what will this drawing actually show
+  - find the elements visible in a view
+  - count what is on this drawing
+  - what is showing here
+  # MOVED 2026-11-01 from SELECT_WITHOUT_LEVEL, merged into this card.
+  - select elements without a level
+  - what has no level
+  - find the elements with no level set
+  - detect elements without level
+  - which of these are not on a level
+  # MOVED 2026-11-01 from SELECT_HIDDEN_IN_VIEW, merged into this card.
+  - what is hidden in this view
+  - select hidden elements
+  - which ducts are not showing on this plan
+  - what is missing from this drawing
+  - find elements not visible here
+  - what is not showing here
+  # ADDED 2026-11-01 WITH THE MERGE. This card's own routing table sends it
+  # here since version 5, and a comment is not indexed (row 5b-387's lesson).
+  # SELECT_VISIBLE_IN_VIEW answered it by ranking; with that card retired,
+  # lexical sent it to SET_REBAR_VIEW_STATE, a write, and the trained model to
+  # DIAGNOSE_VISIBILITY.
+  - what is visible in this view

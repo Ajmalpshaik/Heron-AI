@@ -146,14 +146,15 @@ compatibility-note: >
   through 2027, compiled at both ends. Host ids are compared as ElementIds and
   never read as numbers.
 
-# ROUTING - repeated in SET_MEP_INSULATION and CHECK_INSULATION_CLEARANCE.
+# ROUTING - repeated in SET_MEP_INSULATION and CHECK_MINIMUM_CLEARANCE.
 #
 #   "which ducts still need insulating" -> here, wantInsulated false
 #   "show me what is insulated"      -> here, wantInsulated true
 #   "insulate these"                 -> SET_MEP_INSULATION - this one only
 #                                       reads, and is what to run first to see
 #                                       what is left
-#   "will the insulation fit"        -> CHECK_INSULATION_CLEARANCE - a
+#   "will the insulation fit"        -> CHECK_MINIMUM_CLEARANCE with
+#                                       includeInsulation - a
 #                                       clearance question, and it needs the
 #                                       insulation to exist before it can be
 #                                       asked

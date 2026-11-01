@@ -55,7 +55,7 @@ purpose: >
   **It works with either kind of filter.** A rule-based view filter and a saved
   selection filter are both looked up through the class they share, and a view
   does not care which it was handed. That is why one fragment serves both
-  CREATE_VIEW_FILTER and CREATE_SELECTION_FILTER.
+  CREATE_VIEW_FILTER and UPDATE_SAVED_SET, whose mode "create" saves a set.
 
   **Projection and cut are BOTH set, always.** Revit does not derive one from
   the other, and setting only the projection is why a filter looks right in plan
@@ -190,7 +190,7 @@ compatibility-note: >
 # filter can be made solid before the add-in carrying the pattern keys is
 # loaded.
 
-# ROUTING - repeated in CREATE_VIEW_FILTER, CREATE_SELECTION_FILTER and
+# ROUTING - repeated in CREATE_VIEW_FILTER, UPDATE_SAVED_SET and
 # APPLY_VIEW_TEMPLATE.
 #
 #   "put that filter on this view"   -> here
@@ -198,7 +198,7 @@ compatibility-note: >
 #   "hide everything that filter matches" -> here, with visible false
 #   "make a filter for supply air"   -> CREATE_VIEW_FILTER - it MAKES the rule
 #                                       and puts it on no view
-#   "save these as a set"            -> CREATE_SELECTION_FILTER
+#   "save these as a set"            -> UPDATE_SAVED_SET, mode "create"
 #   "apply the view template"        -> APPLY_VIEW_TEMPLATE - a whole template,
 #                                       which is a much bigger change than one
 #                                       filter and is easy to ask for by mistake

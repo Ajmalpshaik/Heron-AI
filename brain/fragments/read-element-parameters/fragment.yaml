@@ -125,9 +125,9 @@ contract:
     # The parameter's name. Text on a text note reads what the note says:
     # noteWording shows \r at a paragraph end, \v at a Shift+Enter line break
     # and \\ for one backslash - typed the same way into EDIT_TEXT_VALUES. The
-    # text notes of one view: run SELECT_VISIBLE_IN_VIEW with view=<the view>
-    # and categories=Text Notes first, then this with parameterName=Text and
-    # expect_from="select-visible-in-view".
+    # text notes of one view: run FILTER_ELEMENTS_BY_CATEGORY with
+    # category=Text Notes and inViewOnly=<the view> first, then this with
+    # parameterName=Text and expect_from="filter-elements-by-category".
     - name: parameterName
       type: string
       source: request
@@ -235,15 +235,15 @@ compatibility-note: >
 #   "number the paragraphs of this note" / "make the first line bold" ->
 #                                           EDIT_TEXT_VALUES, mode format
 #
-#   THE TEXT NOTES OF ONE VIEW, as a chain: SELECT_VISIBLE_IN_VIEW (PROVEN)
-#   with view=<the view> and categories=Text Notes, then this with
-#   parameterName=Text and expect_from select-visible-in-view. Measured
-#   2026-10-17 on the scratch copy "Heron note scratch", Revit 2020: 109 notes
-#   in the drafting view "Spread Footing", all 109 read. SELECT_BY_CATEGORY_NAME
-#   categoryName=Text Notes inViewOnly=<the view> handed on the same 109; it was
-#   merged into FILTER_ELEMENTS_BY_CATEGORY on 2026-11-01, whose version 4
-#   takes category=Text Notes inViewOnly=<the view> with the level left out -
-#   a note has none - and is DRAFT.
+#   THE TEXT NOTES OF ONE VIEW, as a chain: FILTER_ELEMENTS_BY_CATEGORY with
+#   category=Text Notes and inViewOnly=<the view>, the level left out - a note
+#   has none - then this with parameterName=Text and expect_from
+#   filter-elements-by-category. That card is version 5 and DRAFT. Measured
+#   2026-10-17 on the scratch copy "Heron note scratch", Revit 2020, through
+#   SELECT_VISIBLE_IN_VIEW (PROVEN then): 109 notes in the drafting view
+#   "Spread Footing", all 109 read. SELECT_BY_CATEGORY_NAME categoryName=Text
+#   Notes inViewOnly=<the view> handed on the same 109. Both were merged into
+#   FILTER_ELEMENTS_BY_CATEGORY on 2026-11-01.
 #   "which level are these walls on"      -> here, Level (5b-468)
 #   "what is the base constraint of these walls" -> here, Base Constraint
 #   "change the walls' base level"        -> SET_ELEMENT_LEVEL, which
@@ -301,7 +301,12 @@ utterances:
   - what is the flow rate in this pipe
   - what level are they on
   - which level is each duct on
-  - what parameters does this duct have
+  # REMOVED 2026-11-01 - "what parameters does this duct have". This card's
+  # own routing table sends it to REPORT_PARAMETER_INVENTORY, which declares
+  # it too, so the two declarations tied in the identity table and the
+  # sentence fell to ranking. The full list, before any name is known, is
+  # that card's answer; this one reads a parameter already named. Card text
+  # only - impl/ untouched, so the proof still describes the code.
   # ADDED 2026-10-09 - the judgement above, ONE VALUE OFF AN ELEMENT, for two
   # more questions measured reaching a write. "What is the insulation
   # thickness" reached SET_MEP_INSULATION on both backends (FRAGMENT-ISSUES

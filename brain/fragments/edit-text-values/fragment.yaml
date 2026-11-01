@@ -166,9 +166,10 @@ contract:
     - name: elements
       type: IList<Element>
     # A parameter's name, Name for the element's own name, or Text for what a
-    # text note says. The text notes of one view: run SELECT_VISIBLE_IN_VIEW
-    # with view=<the view> and categories=Text Notes first, then this with
-    # expect_from="select-visible-in-view". Read the wording first with
+    # text note says. The text notes of one view: run
+    # FILTER_ELEMENTS_BY_CATEGORY with category=Text Notes and
+    # inViewOnly=<the view> first, then this with
+    # expect_from="filter-elements-by-category". Read the wording first with
     # READ_ELEMENT_PARAMETERS parameterName=Text, and type the words to
     # replace exactly as it shows them.
     - name: field
@@ -354,14 +355,14 @@ compatibility-note: >
 #                                           here (measured 2026-10-21, row
 #                                           5b-1300)
 #
-#   THE TEXT NOTES OF ONE VIEW, as a chain: SELECT_VISIBLE_IN_VIEW (PROVEN)
-#   with view=<the view> and categories=Text Notes, then this with
-#   expect_from select-visible-in-view. Measured 2026-10-17 on the scratch copy
-#   "Heron note scratch": it handed 109 notes on in the drafting view "Spread
-#   Footing". SELECT_BY_CATEGORY_NAME categoryName=Text Notes inViewOnly=<the
-#   view> collected the same 109; it was merged into FILTER_ELEMENTS_BY_CATEGORY
-#   on 2026-11-01 - category=Text Notes inViewOnly=<the view> there, version
-#   4, DRAFT. Read the wording first with
+#   THE TEXT NOTES OF ONE VIEW, as a chain: FILTER_ELEMENTS_BY_CATEGORY with
+#   category=Text Notes and inViewOnly=<the view> - version 5, DRAFT - then
+#   this with expect_from filter-elements-by-category. Measured 2026-10-17 on
+#   the scratch copy "Heron note scratch": SELECT_VISIBLE_IN_VIEW (PROVEN then)
+#   handed 109 notes on in the drafting view "Spread Footing", and
+#   SELECT_BY_CATEGORY_NAME categoryName=Text Notes inViewOnly=<the view>
+#   collected the same 109; both were merged into FILTER_ELEMENTS_BY_CATEGORY
+#   on 2026-11-01. Read the wording first with
 #   READ_ELEMENT_PARAMETERS parameterName=Text: a curly apostrophe or a soft
 #   line break inside the words to replace is shown there, and typed here as
 #   it is shown.

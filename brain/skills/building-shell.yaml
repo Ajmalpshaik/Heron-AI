@@ -114,10 +114,11 @@ purpose: >
      step 7, which cuts it.
      A TYPICAL STOREY IS DRAWN ONCE AND COPIED. When floors repeat - a tower,
      or upper floors that match - draw one storey's walls, curtain walls and
-     slab (steps 3 to 5), collect them with SELECT_BY_LEVEL (PROVEN),
-     levelId= that level, categories=Walls, Floors, then COPY_ELEMENTS
-     (PROVEN, version 3 - proved again and signed on 2026-10-18) with
-     expect_from naming that select, offset=0,0,0 and
+     slab (steps 3 to 5), collect them with FILTER_ELEMENTS_BY_CATEGORY
+     (version 5, DRAFT - SELECT_BY_LEVEL, PROVEN, was merged into it on
+     2026-11-01), levelId= that level, categories=Walls, Floors, then
+     COPY_ELEMENTS (PROVEN, version 3 - proved again and signed on 2026-10-18)
+     with expect_from naming that filter, offset=0,0,0 and
      toLevels= the levels to repeat on - "Level 2..Roof" is every level from
      Level 2 to Roof by height. Each copy BELONGS to its level at its
      original's offset, so it is never a ground-floor wall lifted by a height;
@@ -357,8 +358,9 @@ needs:
   # until it was merged into this one, 2026-11-01).
   - SET_ELEMENT_LEVEL
   - CREATE_FLOOR
-  # A typical storey drawn once, then copied onto the levels - see step 5.
-  - SELECT_BY_LEVEL
+  # A typical storey drawn once, collected by FILTER_ELEMENTS_BY_CATEGORY with
+  # a levelId - listed below, for step 8 - then copied onto the levels - see
+  # step 5. SELECT_BY_LEVEL until it was merged into that one, 2026-11-01.
   - COPY_ELEMENTS
   - PLACE_ROOM_AT_POINT
   # The rooms' own check, before a ceiling is hung from any of them.
@@ -370,7 +372,8 @@ needs:
   # After the rooms and the slab above, with cutOpening - see step 7.
   - CREATE_STAIRS
   # Counts the railings a stair came with before any are added - step 8 -
-  # and, at the end, everything the shell made (step 16).
+  # and, at the end, everything the shell made (step 16); collects a typical
+  # storey by its level for step 5 too.
   - FILTER_ELEMENTS_BY_CATEGORY
   - CREATE_RAILING
   # After the rooms: each door is turned toward the room it opens into.

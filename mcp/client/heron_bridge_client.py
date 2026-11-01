@@ -1308,7 +1308,8 @@ def write_operation(root, name):
 # change, and the run shows how far the C# gets. Row 5b-350 is that run
 # leaving a real element in the model - place-nested-family, twice, while
 # reporting Revit's refusal. Row 73 is the same shape from the other side:
-# unload-links, run this way, unloaded six links for real with no undo. A
+# unload-links - RELOAD_LINKS with unload true since 2026-11-01, when it was
+# merged there - run this way, unloaded six links for real with no undo. A
 # run that may change the model goes with --write, inside a TransactionGroup
 # that is rolled back unless --apply says otherwise - the same refusals, and
 # a rollback behind them.

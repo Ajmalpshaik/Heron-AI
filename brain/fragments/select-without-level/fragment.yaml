@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SEL-008
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: SELECT_WITHOUT_LEVEL
 version: 2
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO FILTER_ELEMENTS_BY_CATEGORY
+# (filter-elements-by-category), on the owner's instruction in conversation: "make sure there is no
+# duplicate tools", every conflict to keep the SAFER rule. Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable and
+# it can be brought back. Nothing offers it now - retrieval leaves DEPRECATED
+# out, and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to FILTER_ELEMENTS_BY_CATEGORY. The proof below, where
+# there is one, is the record of what this card's code did, not a claim about
+# today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: FILTER_ELEMENTS_BY_CATEGORY
+  why: >
+    The same job: FILTER_ELEMENTS_BY_CATEGORY version 5 hands on the elements
+    whose level cannot be found with `withoutLevel`, by its own fixed lookup (row
+    5b-335) where this card's four-step copy took the first level parameter an
+    element had without checking it named a level. `examined`, `findings` with
+    the unbounded warning, and each link's no-level count in `linkedMatches` are
+    there too. The safer rule where they differed: with no category, level or
+    view at all it is refused, where this card answered with every view, sheet
+    and material in the model.
 
 purpose: >
   Hands back the elements whose level cannot be resolved - the ones a

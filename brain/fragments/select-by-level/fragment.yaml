@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LVL-027
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,28 @@ capability: SELECT_BY_LEVEL
 version: 2
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO FILTER_ELEMENTS_BY_CATEGORY
+# (filter-elements-by-category), on the owner's instruction in conversation: "make sure there is no
+# duplicate tools", every conflict to keep the SAFER rule. Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable and
+# it can be brought back. Nothing offers it now - retrieval leaves DEPRECATED
+# out, and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to FILTER_ELEMENTS_BY_CATEGORY. The proof below, where
+# there is one, is the record of what this card's code did, not a claim about
+# today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: FILTER_ELEMENTS_BY_CATEGORY
+  why: >
+    The same job: FILTER_ELEMENTS_BY_CATEGORY version 5 takes a level with no
+    category and reads every category on it, with this card's `categories` list,
+    `unresolvedLevel`, `findings` - "N of M scanned are on level X" and the
+    whole-model warning - and links matched by the level's name, counted and
+    never selected. Its level lookup is the fixed one (row 5b-335): a parameter
+    that holds no level is passed over, where this card answered with the first
+    one an element had. A level id that is not a level is refused there too.
 
 purpose: >
   Answers "what is on Level 2" when **no category has been named** - the

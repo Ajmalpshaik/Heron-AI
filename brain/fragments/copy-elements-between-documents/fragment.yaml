@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,23 @@ semantic-identity: "copy these elements from the other open file into this one -
 kind: action
 domain: revit.elements
 capability: COPY_ELEMENTS_BETWEEN_DOCUMENTS
-version: 1
+# VERSION 2 (2026-11-01): COPY_FROM_LINK was merged into this card on the
+# owner's instruction - "make sure there is no duplicate tools" - and is
+# DEPRECATED; see the merge block above `utterances`. Version 1's proof below
+# is kept as the record; it no longer describes the code, so the card is DRAFT
+# until version 2 is proved on a real model (D-30).
+#
+# VERSION 2, THE DETAIL. With `fromLink` true, `sourceDocumentTitle` names a
+# LINK in this model - part of its name as Manage Links shows it, or of its
+# file's title - the ids are ids INSIDE the link, and the copies land where the
+# link puts them: the placement's total transform, then the offset. One
+# placement only: words matching two are refused with both named. A link not
+# loaded is refused naming RELOAD_LINKS. The copies are ours and stop tracking
+# the link, said in the answer. Without `fromLink` a LINKED document is never
+# a source - version 1 could match one in Application.Documents and copy out of
+# it with no transform - and words matching only a link are refused pointing
+# at `fromLink`. Fewer arriving than were picked is said.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -25,8 +41,9 @@ risk: MODIFY
 # copies those view to view. Types and materials come along as Revit's own
 # paste brings them.
 #
-# COPY_ELEMENTS copies within this model; COPY_FROM_LINK copies out of a
-# linked model; the TRANSFER_*_BETWEEN_DOCUMENTS cards carry views, filters,
+# COPY_ELEMENTS copies within this model; this card copies out of a linked
+# model too since version 2, with fromLink; the TRANSFER_*_BETWEEN_DOCUMENTS
+# cards carry views, filters,
 # materials, line and object styles and project parameters.
 #
 # READ BACK: every id Revit returns is looked up in this document.
@@ -35,6 +52,10 @@ risk: MODIFY
 purpose: >
   Copies model elements from another open document - a project or a family -
   into the one in front, by category or by id, aligned or moved by an offset.
+
+  **OR OUT OF A LINKED MODEL, WITH ITS TRANSFORM (version 2).** With `fromLink`
+  the source is a link, and the copies land where the link puts them - and
+  stop tracking it. Version 2 is DRAFT until proved.
 
 contract:
   needs:
@@ -57,6 +78,14 @@ contract:
     - name: offsetMm
       type: string
       source: request
+    # VERSION 2, from COPY_FROM_LINK: true when the source is a LINK in this
+    # model - sourceDocumentTitle then names the link, the ids are ids in the
+    # link, and the link's own transform places the copies. Left out it binds
+    # false: another open document, never a link.
+    - name: fromLink
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: copied
       role: result
@@ -124,7 +153,38 @@ compatibility-note: >
 #   "copy the extrusions from the valve family into this one" -> here
 #   "copy the furniture over from the other project"          -> here
 #   "copy these walls 3 m to the east"                        -> COPY_ELEMENTS
-#   "copy the ducts out of the linked model"                  -> COPY_FROM_LINK
+#   "copy the ducts out of the linked model"                  -> here since
+#                                         version 2, fromLink=true - it was
+#                                         COPY_FROM_LINK's, merged in
+#   "bring the grids in from the architect"                   -> here, fromLink
+#   "what links are in this model"                            -> LIST_LINKED_MODELS
+#   "reload the links"                                        -> RELOAD_LINKS -
+#                                         and the copies made from a link do
+#                                         NOT update when it does
+#
+# VERSION 2 (2026-11-01) - COPY_FROM_LINK WAS MERGED INTO THIS CARD on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools", every conflict to keep the SAFER rule. It is DEPRECATED - DRAFT,
+# never proved. The same CopyElements across documents; a link is one more
+# kind of source document, with a transform. Where each retired input and
+# output is now:
+#
+#   COPY_FROM_LINK                      here, fromLink=true
+#     linkInstance                      sourceDocumentTitle, naming the link -
+#                                       one placement, refused when two match
+#     linkedElementIds                  elementIds, ids in the link - or
+#                                       categories
+#     the link's total transform        applied, then offsetMm
+#     created                           copiedIds, read back; copied
+#     findings                          findings - placed through the link's
+#                                       transform, ours and not tracking it,
+#                                       fewer arrived said, a link not loaded
+#                                       refused naming RELOAD_LINKS
+#
+# THE SAFER RULE WHERE THEY DIFFERED. COPY_FROM_LINK copied whatever ids it
+# was given; this card leaves view-specific elements and counts them - Revit
+# copies those view to view - and that is kept. Version 1 here could copy out
+# of a link's document by title with no transform; that is closed.
 
 utterances:
   - copy the forms from the other family into this family
@@ -133,3 +193,9 @@ utterances:
   - copy the furniture over from the other project
   - copy these element ids from the other file into this one
   - paste the generic models from the template project here
+  # MOVED 2026-11-01 from COPY_FROM_LINK, merged into this card.
+  - copy these out of the link
+  - bring the grids in from the architect
+  - take the elements out of the linked model
+  - copy from the link into our model
+  - i need a real copy of what is in the link

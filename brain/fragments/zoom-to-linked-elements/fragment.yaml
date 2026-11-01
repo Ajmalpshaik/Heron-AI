@@ -147,7 +147,7 @@ compatibility-note: >
 #   "how many beams are in the
 #    structural link"                    -> SELECT_FROM_LINK. That one READS
 #                                           and moves nothing on screen
-#   "copy those grids into ours"         -> COPY_FROM_LINK
+#   "copy those grids into ours"         -> COPY_ELEMENTS_BETWEEN_DOCUMENTS, fromLink=true
 
 utterances:
   - zoom to the beams in the structural link

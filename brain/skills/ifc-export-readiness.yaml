@@ -24,8 +24,10 @@ purpose: >
      and how many elements sit on a level without it. The exporter makes a
      storey only from a ticked level, so what sits on an unticked one is filed
      somewhere else.
-  2. SELECT_WITHOUT_LEVEL for the elements that belong to no level at all -
-     they arrive with no storey, and most viewers do not show them.
+  2. FILTER_ELEMENTS_BY_CATEGORY with withoutLevel and the model categories,
+     for the elements that belong to no level at all - they arrive with no
+     storey, and most viewers do not show them. SELECT_WITHOUT_LEVEL until it
+     was merged there on 2026-11-01; version 5, DRAFT.
   3. FIND_DUPLICATE_ELEMENTS - two elements in one place are two objects in
      the file, and both are counted downstream.
   4. FIND_DUPLICATE_VALUES on the IFC identity parameter (Revit's own
@@ -66,7 +68,8 @@ utterances:
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 needs:
   - REPORT_LEVEL_ELEVATIONS
-  - SELECT_WITHOUT_LEVEL
+  # SELECT_WITHOUT_LEVEL until it was merged into this one, 2026-11-01.
+  - FILTER_ELEMENTS_BY_CATEGORY
   - FIND_DUPLICATE_ELEMENTS
   # Only when the model has the IFC identity parameter - step 4.
   - FIND_DUPLICATE_VALUES

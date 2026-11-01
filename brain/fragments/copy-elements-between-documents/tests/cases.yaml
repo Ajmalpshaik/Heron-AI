@@ -10,10 +10,38 @@ positive:
     expect: >
       both forms arrived in the family in front
 
+  # VERSION 2, added 2026-11-01 with the merge of COPY_FROM_LINK. NONE OF THESE
+  # HAS BEEN RUN. Each FAILS on version 1, which had no fromLink.
+  - given: >
+      fromLink true, sourceDocumentTitle the architect's link - placed away
+      from the origin and rotated - categories "Grids"
+    expect: >
+      the copies ON TOP of the link's grids on screen - MEASURED, not assumed -
+      `copiedIds` read back, and `findings` saying they do NOT track the link.
+      Right place means the transform was applied
+
+  - given: fromLink true, elementIds two ids INSIDE the link, offsetMm "0,20000,0"
+    expect: >
+      the two copies 20 m north of where the link shows them - the link's
+      transform first, then the offset
+
 negative:
   - given: 'sourceDocumentTitle "No Such File", categories "all"'
     expect: >
       refused, naming the documents that are open; nothing copied
+
+  # VERSION 2, added 2026-11-01. NONE OF THESE HAS BEEN RUN.
+  - given: fromLink false, sourceDocumentTitle matching ONLY a loaded link's title
+    expect: >
+      refused - it "is a LINKED model here ... Ask again with fromLink=true" -
+      nothing copied. Version 1 found the link's document in
+      Application.Documents and copied out of it with NO transform
+
+  - given: fromLink true, words that match two placements of one link
+    expect: refused with both placements named; nothing copied
+
+  - given: fromLink true, a link that is not loaded
+    expect: refused naming RELOAD_LINKS; nothing copied
 
 second_route:
   - Revit's Copy to Clipboard and Paste Aligned, Same Place, between the same windows
