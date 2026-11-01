@@ -87,6 +87,16 @@ corrections:
     now: SELECT_BY_PARAMETER_VALUE
     date: "2026-11-01"
     said: "make sure there is no duplicate tools; record them (the answer-key moves) as my corrections"
+  - n: 45
+    was: DIMENSION_WALL_OPENINGS
+    now: DIMENSION_ELEMENT_FACES
+    date: "2026-11-01"
+    said: "ok go ahead merge all; record them (the answer-key moves) as my corrections"
+  - n: 52
+    was: ZOOM_TO_ELEMENTS
+    now: SET_SELECTION
+    date: "2026-11-01"
+    said: "ok go ahead merge all; record them (the answer-key moves) as my corrections"
 
 questions:
   - n: 1
@@ -316,7 +326,8 @@ questions:
     asked: "2026-08-23"
     question: "When you dimension a wall that has a door, include the door, and give one overall dimension for the wall."
     kind: capability
-    answer: DIMENSION_WALL_OPENINGS
+    # DIMENSION_WALL_OPENINGS until 2026-11-01, when it was merged into this card - see corrections.
+    answer: DIMENSION_ELEMENT_FACES
   - n: 46
     asked: "2026-08-23"
     question: "There are lots of generic models — list their family names."
@@ -351,7 +362,8 @@ questions:
     asked: "2026-08-23"
     question: "Zoom to that VCD."
     kind: capability
-    answer: ZOOM_TO_ELEMENTS
+    # ZOOM_TO_ELEMENTS until 2026-11-01, when it was merged into this card - see corrections.
+    answer: SET_SELECTION
   - n: 53
     asked: "2026-08-23"
     question: "Are there any clashes between the model's own elements, not with linked models?"
