@@ -267,7 +267,11 @@ foreach (var hostId in hosts)
         {
             try
             {
-                var dependents = doc.GetElement(id).GetDependentElements(null);
+                // An id Revit no longer resolves is skipped, not dereferenced into the
+                // catch-all below.
+                var owner = doc.GetElement(id);
+                if (owner == null) continue;
+                var dependents = owner.GetDependentElements(null);
                 if (dependents == null) continue;
                 foreach (var dependentId in dependents)
                 {
