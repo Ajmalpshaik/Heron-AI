@@ -1,26 +1,51 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-GEO-060
-semantic-identity: "build a list of extrusions and revolves in one call, solid or void, as one undo"
+semantic-identity: "build extrusions, revolves, blends, sweeps and swept blends in the family - one form or a whole list in one call, solid or void, as one undo"
 kind: action
 domain: revit.families
 capability: CREATE_FAMILY_FORMS
-version: 1
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Builds MANY FORMS IN ONE CALL in the family open in the Family Editor -
-  a list of extrusions and revolves, one row per form, solid or void - and
-  gives back every form's id in the order listed. For a family of dozens of
-  parts, where CREATE_FAMILY_EXTRUSION and CREATE_FAMILY_REVOLUTION build one
-  form a call: the whole list is one call and ONE entry in the undo list.
+  Builds FORMS in the family open in the Family Editor - one extrusion or one
+  revolve, or a list of them, one row per form, solid or void - and gives back
+  every form's id in the order listed. A family of dozens of parts is one call
+  and ONE entry in the undo list.
 
-  **EACH ROW STARTS `kind=extrusion` OR `kind=revolve`** and carries the
+  **ONE FORM IS A LIST OF ONE ROW (version 2, 2026-11-01).**
+  CREATE_FAMILY_EXTRUSION and CREATE_FAMILY_REVOLUTION, which built one form a
+  call, were merged into this card and are DEPRECATED: "extrude a circle 300
+  diameter 500 high" is the row `kind=extrusion workPlane=Ref. Level
+  profile=circle 0,0 150 startMm=0 endMm=500 solid=true`. `formId` gives back
+  the first form's id alone, beside `formIds`, so a step written for those
+  tools' `formId` binds unchanged. The read-back says what theirs said: an
+  extrusion's loops - how many are outlines and how many holes inside them,
+  by where they lie - a revolve's angles and its axis, the plane's facing,
+  and a part-turn's warning to look at which way it swept.
+
+  **BLENDS, SWEEPS AND SWEPT BLENDS TOO (version 3, 2026-11-01).**
+  CREATE_FAMILY_BLEND, CREATE_FAMILY_SWEEP and CREATE_FAMILY_SWEPT_BLEND were
+  merged into this card and are DEPRECATED. `kind=blend` takes workPlane,
+  baseProfile, topProfile (one loop each), topMm and solid - a square-to-round
+  transition, a hopper; Revit decides which way a blend runs from the way its
+  loops go round, so up to four ways are built and each READ BACK, a wrong one
+  deleted. `kind=sweep` takes workPlane, path - open corners and arcs, the
+  first corner written again for a closed ring - profile, drawn about its own
+  origin, and solid: a handrail, a tube with its bends; the profile's area and
+  the path's length are said beside its volume. `kind=swept blend` takes
+  workPlane, path - ONE straight piece or ONE arc - bottomProfile and
+  topProfile, one loop each, and solid: a reducing elbow. A sweep's id from
+  `formIds` is what SET_FAMILY_SWEEP_PROFILE takes.
+
+  **EACH ROW STARTS WITH ITS `kind=`** - extrusion, revolve, blend, sweep or
+  swept blend - and carries the
   single-form tools' own fields: `workPlane`, `profile` and `solid`, then
   `startMm` and `endMm` for an extrusion, or `axisLine`, `startDegrees` and
   `endDegrees` for a revolve - written exactly as those tools take them. A
@@ -49,11 +74,17 @@ contract:
   needs:
     - name: doc
       type: Document
-    # The forms, ONE ROW EACH, each row starting kind=extrusion or kind=revolve
-    # and running to the next kind=; fields are name=value, each running to
-    # the next field's name. An extrusion: workPlane=, profile=, startMm=,
-    # endMm=, solid=. A revolve: workPlane=, profile=, axisLine=,
-    # startDegrees=, endDegrees=, solid=. Any row may add material=,
+    # The forms, ONE ROW EACH, each row starting kind=extrusion, kind=revolve,
+    # kind=blend, kind=sweep or kind=swept blend and running to the next kind=;
+    # fields are name=value, each running to the next field's name. An
+    # extrusion: workPlane=, profile=, startMm=, endMm=, solid=. A revolve:
+    # workPlane=, profile=, axisLine=, startDegrees=, endDegrees=, solid=.
+    # VERSION 3 - a blend: workPlane=, baseProfile=, topProfile= (one loop
+    # each), topMm=, solid=; a sweep: workPlane=, path= (open corners and arcs
+    # "X,Y; X,Y; arc MX,MY X,Y"), profile= (about its own origin), solid=; a
+    # swept blend: workPlane=, path= (one piece), bottomProfile=, topProfile=,
+    # solid= - CREATE_FAMILY_BLEND's, CREATE_FAMILY_SWEEP's and
+    # CREATE_FAMILY_SWEPT_BLEND's own fields. Any row may add material=,
     # detailLevels= and views=. Written as the single-form tools take them -
     # profile loops with | between ("circle CX,CY R", "rect X1,Y1 X2,Y2",
     # "polygon CX,CY R N", corners "X,Y; X,Y; arc MX,MY X,Y"), millimetres in
@@ -79,14 +110,28 @@ contract:
       # between - what the lock, link, cut, material and visibility tools take.
       role: result
       type: string
+    - name: formId
+      # VERSION 2, from CREATE_FAMILY_EXTRUSION and CREATE_FAMILY_REVOLUTION:
+      # the FIRST form's unique id alone - the whole answer for a list of one
+      # row - so every method step and chain written for those tools'
+      # `formId` binds unchanged - and, since version 3, CREATE_FAMILY_BLEND's,
+      # CREATE_FAMILY_SWEEP's and CREATE_FAMILY_SWEPT_BLEND's. Empty when
+      # nothing was built.
+      role: result
+      type: string
     - name: formCount
       # How many forms were built - every row, or none.
       role: result
       type: int
     - name: built
       # Each form as Revit now holds it, one entry per row with || between:
-      # solid or void, kind, plane, its extent on all three axes in
-      # millimetres, a solid's volume, and any material or visibility set.
+      # solid or void, kind, plane and its facing, an extrusion's loops -
+      # outlines and holes inside them - and start and end, a revolve's angles
+      # and axis (version 2); a blend's top and which way Revit took its
+      # profiles, a sweep's path pieces and length and its profile's loops, a
+      # swept blend's path kind and length (version 3); its extent on all
+      # three axes in millimetres, a solid's volume, and any material or
+      # visibility set.
       role: result
       type: string
     - name: notAFamily
@@ -189,31 +234,108 @@ runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  The calls CREATE_FAMILY_EXTRUSION, CREATE_FAMILY_REVOLUTION,
-  SET_FAMILY_FORM_MATERIAL and SET_FAMILY_FORM_VISIBILITY already make on
+  The calls CREATE_FAMILY_EXTRUSION and CREATE_FAMILY_REVOLUTION made until
+  they were merged in, and LINK_FAMILY_PARAMETER and SET_FAMILY_FORM_VISIBILITY
+  make, on
   every release 2020 to 2027 - `FamilyItemFactory.NewExtrusion` and
   `NewRevolution`, `SketchPlane.Create(Document, ElementId)`,
   `Extrusion.StartOffset`, `Application.ShortCurveTolerance`,
   `FamilyManager.AssociateElementParameterToFamilyParameter`,
   `GenericForm.SetVisibility` and `Element.UniqueId` - with the material
-  parameter's kind read by reflection as SET_FAMILY_FORM_MATERIAL reads it,
+  parameter's kind read by reflection as LINK_FAMILY_PARAMETER reads it,
   because its type moved in 2022 and 2023. `System.IO.Path.GetTempPath`,
   `Guid.TryParse` and `File.ReadAllText` are the framework's own (.NET 4.0
   and later). Compiles on every release
   (tools/check-fragments-compile.py, 2026-10-11); how it behaves has not yet
-  been run in Revit.
+  been run in Revit. Version 3 adds the calls CREATE_FAMILY_BLEND,
+  CREATE_FAMILY_SWEEP and CREATE_FAMILY_SWEPT_BLEND made, unchanged 2020 to
+  2027 (their own cards, read 2026-10-01 and 2026-10-08):
+  `FamilyItemFactory.NewBlend(isSolid, profile1, profile2, sketchPlane)`,
+  `NewSweep(isSolid, path, pathPlane, profile, index, ProfilePlaneLocation)`,
+  `NewSweptBlend(isSolid, path, pathPlane, bottomProfile, topProfile)`,
+  `Application.NewCurveLoopsProfile`, `Document.Delete(ElementId)`,
+  `Element.IsValidObject`, `PlanarFace.FaceNormal` and `Origin`,
+  `Face.EdgeLoops` and `Edge.Tessellate`. Built on all eight releases on
+  2026-11-01 (tools/check-fragments-compile.py).
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# 2026-11-01 - CREATE_FAMILY_EXTRUSION AND CREATE_FAMILY_REVOLUTION WERE MERGED
+# INTO THIS CARD (version 2) on the owner's instruction ("make sure there is no
+# duplicate tools"), and are DEPRECATED. The same building: a closed profile
+# sketched on a named plane, extruded from a start to an end or turned about
+# an axis, solid or void, read back all or nothing. Their inputs are a row's
+# fields by the same names - workPlane, profile, startMm, endMm, solid;
+# axisLine, startDegrees, endDegrees - written exactly as they took them; their
+# `formId` is `formId` here, the first form's; their `built` is the row's entry
+# in `built`, saying what theirs said; notAFamily, refused and findings by the
+# same names. Added in version 2: `formId`, and the loops, angles, axis and
+# facing in `built`. NOTHING WAS OPPOSITE: this card was written from theirs,
+# with the same reader, the same checks and the same read-back.
+
+# VERSION 3, 2026-11-01 - CREATE_FAMILY_BLEND, CREATE_FAMILY_SWEEP AND
+# CREATE_FAMILY_SWEPT_BLEND WERE MERGED INTO THIS CARD on the owner's
+# instruction ("make sure there is no duplicate tools", "merge means ... all
+# area need to be covered", every conflict to keep the safer rule), and are
+# DEPRECATED. Where each one's inputs and outputs are now:
+#
+#   CREATE_FAMILY_BLEND        a row kind=blend
+#     workPlane, baseProfile,  the row's fields by the same names, read as it
+#     topProfile, topMm, solid read them: one loop each, no holes, a height
+#                              of at least Revit's shortest line
+#     the four ways round      built and read back the same way, a wrong one
+#                              deleted - the findings say which was taken and
+#                              which turned down (5b-369)
+#   CREATE_FAMILY_SWEEP        a row kind=sweep
+#     workPlane, path,         the row's fields by the same names - the path
+#     profile, solid           open, closed only by its own last corner; a
+#                              loop a hole by where it lies (5b-276)
+#     area x length finding    a finding per sweep row
+#   CREATE_FAMILY_SWEPT_BLEND  a row kind=swept blend
+#     workPlane, path,         the row's fields by the same names - the path
+#     bottomProfile,           ONE piece, refused otherwise naming kind=sweep
+#     topProfile, solid
+#   formId, built, notAFamily, formId (the first row's), the row's entry in
+#   refused, findings          built, and the same names
+#
+# What a row here adds to theirs: material=, detailLevels= and views=, and
+# many forms in one undo. NOTHING WAS OPPOSITE - each reader, check and read-
+# back is theirs, moved. SET_FAMILY_SWEEP_PROFILE takes a sweep's id from
+# `formIds` as it took CREATE_FAMILY_SWEEP's `formId`. FREEFORM SOLIDS
+# (CREATE_FAMILY_FREEFORM_SOLID) and CONCEPTUAL FORMS stay their own cards.
+# Version 2's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; the card is DRAFT until version 3 is proved (D-30).
+
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "build all these forms in one go"            -> here, a list of rows
 #   "make these ten extrusions and revolves"     -> here
-#   "extrude a circle 300 diameter 500 high"     -> CREATE_FAMILY_EXTRUSION,
-#                                                   one form
-#   "revolve this profile into a cone"           -> CREATE_FAMILY_REVOLUTION,
-#                                                   one form
-#   "make a blend / sweep"                       -> their own tools; a row
-#                                                   here is an extrusion or a
-#                                                   revolve
+#   "extrude a circle 300 diameter 500 high"     -> here, a list of one row
+#                                                   (CREATE_FAMILY_EXTRUSION
+#                                                   until 2026-11-01)
+#   "make a void extrusion"                      -> here, solid=false
+#   "revolve this profile into a cone"           -> here, one kind=revolve row
+#                                                   (CREATE_FAMILY_REVOLUTION
+#                                                   until 2026-11-01)
+#   "make a box between these planes"            -> EXTRUDE_BETWEEN_PLANES,
+#                                                   a box locked to four planes
+#   "make an opening in this wall"               -> CREATE_OPENING, a project
+#                                                   wall or floor, not a family
+#   "array these round a circle"                 -> ARRAY_ELEMENTS_RADIAL,
+#                                                   copies, not a turned form
+#   "blend a rectangle into a circle"            -> here, one kind=blend row
+#                                                   (CREATE_FAMILY_BLEND until
+#                                                   2026-11-01)
+#   "sweep a profile along a path"               -> here, one kind=sweep row
+#                                                   (CREATE_FAMILY_SWEEP until
+#                                                   2026-11-01)
+#   "make a reducing elbow in the family"        -> here, one kind=swept blend
+#                                                   row (CREATE_FAMILY_SWEPT_
+#                                                   BLEND until 2026-11-01)
+#   "make a spring as one smooth sweep along a helix" -> CREATE_FAMILY_FREEFORM_SOLID -
+#                                                   a path that leaves the plane
+#   "use a profile family for this sweep"        -> SET_FAMILY_SWEEP_PROFILE,
+#                                                   by the sweep's id here
+#   "draw a duct along this route"               -> CREATE_DUCT_RUNS, a project
+#                                                   duct, not a family form
 #   "cut the solid with the void"                -> COMBINE_FAMILY_FORMS, by
 #                                                   the ids given back here
 
@@ -222,3 +344,45 @@ utterances:
   - make these extrusions and revolves in one call
   - create the family's forms from this list
   - build every part of the family at once
+  # MOVED 2026-11-01 from CREATE_FAMILY_EXTRUSION, merged into this card.
+  - extrude a circle 300 diameter 500 high in the family
+  - make a cylinder on the ref level
+  - extrude this shape on the reference plane
+  - make an extrusion with this profile
+  - create a void extrusion in the family
+  - extrude a hexagon 20 mm thick
+  - make an L shaped extrusion
+  - extrude a circle 300 diameter 500 high
+  - make a void extrusion
+  # MOVED 2026-11-01 from CREATE_FAMILY_REVOLUTION, merged into this card.
+  - make a revolve in the family
+  - revolve this profile around the axis
+  - make a cone with a revolve
+  - create a revolved dome in the family
+  - make a void revolve
+  - turn this half section into a round body
+  # MOVED 2026-11-01 from CREATE_FAMILY_BLEND, merged into this card.
+  - blend a rectangle into a circle
+  - make a blend in the family
+  - make a square to round transition in the family
+  - create a tapered blend from this base to this top
+  - make a void blend
+  # MOVED 2026-11-01 from CREATE_FAMILY_SWEEP, merged into this card.
+  - sweep a profile along a path
+  - make a sweep in the family
+  - make a handrail sweep in the family
+  - sweep a circle along this path
+  - create a void sweep
+  - make a ring with a sweep
+  # MOVED 2026-11-01 from CREATE_FAMILY_SWEPT_BLEND, merged into this card.
+  - sweep one shape into another along a path
+  - make a swept blend in the family
+  - make a reducing elbow in the family
+  - make a rectangular to round bend with a swept blend
+  - create a void swept blend
+  # ...and CREATE_FAMILY_BLEND's semantic identity, which nothing else declares:
+  - blend one closed shape into another parallel to it on a family plane, solid or void
+  # ...and CREATE_FAMILY_SWEEP's semantic identity, which nothing else declares:
+  - sweep a closed shape along a path drawn on a family plane, solid or void
+  # ...and CREATE_FAMILY_SWEPT_BLEND's semantic identity, which nothing else declares:
+  - sweep one closed shape into another along one path piece on a family plane, solid or void

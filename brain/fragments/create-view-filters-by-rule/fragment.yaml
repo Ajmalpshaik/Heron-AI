@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -15,6 +15,31 @@ capability: CREATE_VIEW_FILTERS_BY_RULE
 version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_VIEW_FILTER (create-view-filter),
+# on the owner's instruction in conversation: "now merge the other duplicates
+# also". Constitution Article 1: kept, never deleted, so its record and its
+# proof stay readable and it can be brought back. Nothing offers it now -
+# retrieval leaves DEPRECATED out, and its sentences claim nothing in the
+# identity table (heron_search RETIRED_FRAGMENTS). Its sentences moved to
+# CREATE_VIEW_FILTER. The proof below is the record of what this card's code
+# did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_VIEW_FILTER
+  why: >
+    The same job: a rule-based view filter from a parameter typed by its name,
+    the operator in front of the value, through the same reflected rule
+    factories. CREATE_VIEW_FILTER also puts it on a view with a colour and
+    takes more than one rule. Its version 4 took everything this card had that
+    it lacked: many filters in one call, one value each; the view and the
+    colour optional together, so the filters can be made on no view;
+    categories by Revit's own name; every category asked on its own and named
+    in cannotFilter; the pairing, blank, repeat and IsValidName refusals; a name
+    already taken skipped and named while the rest are made, the clash scan
+    over every FilterElement; and the readBack. CREATE_VIEW_FILTERS_BY_VALUE
+    stays its own card.
 
 purpose: >
   Creates new rule-based view filters, each with its own name and one rule

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,31 @@ capability: ARRANGE_TAGS_TO_VIEW_EDGES
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO STACK_TAGS (stack-tags), on the owner's
+# instruction in conversation: "make sure there is no duplicate tools".
+# Constitution Article 1: kept, never deleted, so its record and its proof
+# stay readable and it can be brought back. Nothing offers it now - retrieval
+# leaves DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to STACK_TAGS. Its
+# marginMm is marginMm there (text, so it can be left out on the point
+# layout); its gapMm is the same. Its side of a tag was read off the tag's
+# head; STACK_TAGS reads it off the tag's own element, as this card's purpose
+# said, and falls back to the head - the same rule kept, measured the way it
+# was described. Its tags with no head went to refused here and to noHead
+# there. The proof below is the record of what this card's code did, not a
+# claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: STACK_TAGS
+  why: >
+    The same job: gather tags into tidy columns, each still leadered to its
+    own element, the gap and margin in paper millimetres scaled by the view.
+    STACK_TAGS version 2 parks them in two columns at the view's edges with
+    layout edges - each tag to the side its element is on, each column ordered
+    by the elements up the view, the crop as the edge or the tags' own extent
+    (usedTagExtent), perSide, free leader ends put back, each head read back.
 
 purpose: >
   Parks every tag in a column down the left and right edges of the view, each

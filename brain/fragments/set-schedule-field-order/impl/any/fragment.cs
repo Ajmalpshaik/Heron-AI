@@ -25,7 +25,7 @@
 // A COLUMN IS FOUND BY ITS FIELD NAME OR ITS PRINTED HEADING, and a name that
 // answers to more than one column - a heading renamed to another column's
 // field name - touches nothing on that schedule. The cluster's rule, kept
-// with SET_SCHEDULE_FIELD_TOTALS and SET_SCHEDULE_APPEARANCE.
+// with SET_SCHEDULE_APPEARANCE (SET_SCHEDULE_FIELD_TOTALS merged in).
 //
 // EVERY NAME IS RESOLVED BEFORE ANYTHING IS WRITTEN. A schedule with one
 // unknown, ambiguous or repeated name is left exactly as it was and named in

@@ -208,10 +208,11 @@ compatibility-note: >
 #
 #   "copy the tags from the old units to the new ones" -> here
 #   "re-tag the replaced units like before"            -> here
-#   "tag these" / "put tags on the ducts"              -> TAG_ELEMENTS - one
-#                                                         type, one view, at
-#                                                         each element's own
-#                                                         point
+#   "tag these" / "put tags on the ducts"              -> TAG_ELEMENTS_IN_VIEW
+#                                                         - one view, at each
+#                                                         element's own point,
+#                                                         one exact type with
+#                                                         tagTypeId
 #   "tag everything in this view"                      -> TAG_ELEMENTS_IN_VIEW
 #   "which ones are not tagged"                        -> FIND_UNTAGGED_ELEMENTS
 #   "remove the tags"                                  -> REMOVE_TAGS

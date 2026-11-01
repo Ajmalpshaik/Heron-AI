@@ -1,5 +1,5 @@
 positive:
-  - given: an empty key schedule of Rooms made by CREATE_KEY_SCHEDULE, keyNames "HERON KF Finish A, HERON KF Finish B"
+  - given: an empty key schedule of Rooms made by CREATE_SCHEDULE with listKind key, keyNames "HERON KF Finish A, HERON KF Finish B"
     expect: >
       added 2, addedKeys naming both, read back; and in Revit the key schedule
       showing two rows with those Key Names, and a room's key drop-down

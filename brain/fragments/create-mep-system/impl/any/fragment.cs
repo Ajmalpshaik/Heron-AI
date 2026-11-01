@@ -1,6 +1,30 @@
-// NOT STANDALONE. Assumes `doc`, `elements`, `systemType`, `systemName` and
-// `baseEquipment` are in scope; leaves `created`, `createdName`, `memberIds`,
-// `baseEquipmentId`, `skipped`, `refused` and `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `elements`, `systemType`, `systemName`,
+// `baseEquipment`, `circuitType` and `panel` are in scope; leaves `created`,
+// `createdName`, `memberIds`, `baseEquipmentId`, `skipped`, `refused`,
+// `findings`, `circuitNumber` and `panelName` behind.
+//
+// DUCT, PIPE OR ELECTRICAL (version 2, 2026-11-01). CREATE_ELECTRICAL_CIRCUIT,
+// which made ONE electrical circuit from devices and optionally put it on a
+// panel, is DEPRECATED and merged into this card. `circuitType` - power, data,
+// fire alarm, security, telephone, nurse call, controls, communication - asks
+// for a circuit instead of a duct or piping system, and then `systemType` is
+// left out (an electrical system has no type element in Revit, only that word).
+// Its rules, carried whole:
+//
+//   THE WORD IS CHECKED. Anything not in that list is refused by name rather
+//   than becoming a power circuit - a fire alarm device on a power circuit is a
+//   drawing that passes review and is wrong.
+//   THE PANEL IS OPTIONAL AND REPORTED EITHER WAY. With none, the circuit is
+//   made unassigned and that is said in words; with one Revit refuses, the
+//   circuit exists, UNASSIGNED, and `refused` says so - half a result is never
+//   described as a whole one. `panelName` is read back off the circuit.
+//   MEMBERS ARE READ BACK, and a shortfall - given six, four joined - is said,
+//   because Revit lists the ones it left out nowhere else.
+//
+// Asked both ways - a circuit word AND a system type - nothing is made: the two
+// disagree about what the system is. A panel named for a duct or pipe system,
+// or a system name or base equipment named for a circuit, is refused rather
+// than ignored, so what was asked is what was made.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One call is one undo entry.
 //
@@ -34,6 +58,20 @@ string refused = null;
 MEPSystem created = null;
 var createdName = "";
 ElementId baseEquipmentId = ElementId.InvalidElementId;
+// VERSION 2 - CREATE_ELECTRICAL_CIRCUIT's two answers.
+var circuitNumber = "";
+var panelName = "";
+
+// `auto` is what a left-out systemName or baseEquipment reads as (version 2):
+// the same as empty - Revit numbers the system, the one Mechanical Equipment
+// instance is the base.
+var nameGiven = (systemName ?? "").Trim();
+if (string.Equals(nameGiven, "auto", StringComparison.OrdinalIgnoreCase)) nameGiven = "";
+var baseGiven = (baseEquipment ?? "").Trim();
+if (string.Equals(baseGiven, "auto", StringComparison.OrdinalIgnoreCase)) baseGiven = "";
+
+var circuitSaid = (circuitType ?? "").Trim().ToLowerInvariant();
+var wantCircuit = circuitSaid.Length > 0 && circuitSaid != "none";
 
 // Read once: which domain and classification this system type wants.
 var isDuct = systemType is MechanicalSystemType;
@@ -81,10 +119,132 @@ foreach (var element in elements)
     if (element != null && element.IsValidObject) given.Add(element);
 }
 
-if (systemType == null || (!isDuct && !isPipe))
+if (wantCircuit)
+{
+    // =====================================================================
+    // VERSION 2: AN ELECTRICAL CIRCUIT - CREATE_ELECTRICAL_CIRCUIT's job.
+    // =====================================================================
+    var kind = ElectricalSystemType.UndefinedSystemType;
+    var known = true;
+
+    if (circuitSaid == "power" || circuitSaid == "power circuit") kind = ElectricalSystemType.PowerCircuit;
+    else if (circuitSaid == "data") kind = ElectricalSystemType.Data;
+    else if (circuitSaid == "fire alarm" || circuitSaid == "firealarm") kind = ElectricalSystemType.FireAlarm;
+    else if (circuitSaid == "security") kind = ElectricalSystemType.Security;
+    else if (circuitSaid == "telephone") kind = ElectricalSystemType.Telephone;
+    else if (circuitSaid == "nurse call" || circuitSaid == "nursecall") kind = ElectricalSystemType.NurseCall;
+    else if (circuitSaid == "controls") kind = ElectricalSystemType.Controls;
+    else if (circuitSaid == "communication") kind = ElectricalSystemType.Communication;
+    else known = false;
+
+    var ids = new List<ElementId>();
+    foreach (var element in given) ids.Add(element.Id);
+
+    if (!known)
+    {
+        refused = "\"" + circuitType + "\" is not a circuit type this understands, so NOTHING WAS "
+            + "CREATED. Use power, data, fire alarm, security, telephone, nurse call, controls or "
+            + "communication. It is refused rather than treated as power, because a fire alarm device "
+            + "on a power circuit is a drawing that passes review and is wrong.";
+    }
+    else if (systemType != null)
+    {
+        refused = "Both a circuit (\"" + circuitType + "\") and a duct or pipe system type (\""
+            + systemType.Name + "\") were given, so NOTHING WAS CREATED. They disagree about what the "
+            + "system is - say one.";
+    }
+    else if (nameGiven != "" || baseGiven != "")
+    {
+        refused = "A system name or a base equipment was given for a circuit, so NOTHING WAS CREATED. "
+            + "Revit numbers a circuit itself, and its panel is named in `panel` - leave systemName and "
+            + "baseEquipment out.";
+    }
+    else if (ids.Count == 0)
+    {
+        refused = "No devices were handed in, so NOTHING WAS CREATED. Run the selection first.";
+    }
+    else
+    {
+        try
+        {
+            // Create takes IList<ElementId> and not ICollection<ElementId>.
+            var circuit = ElectricalSystem.Create(doc, ids, kind);
+
+            if (circuit == null)
+            {
+                refused = "Revit returned no circuit and raised no error.";
+            }
+            else
+            {
+                created = circuit;
+                try { circuitNumber = circuit.CircuitNumber ?? ""; } catch { }
+                try { createdName = circuit.Name ?? ""; } catch { }
+
+                // ElementSet is not generic, so the loop variable carries its type.
+                try
+                {
+                    foreach (Element member in circuit.Elements)
+                    {
+                        if (member != null && member.IsValidObject) memberIds.Add(member.Id);
+                    }
+                }
+                catch { }
+
+                findings.Add("Created a " + circuitSaid + " circuit"
+                    + (string.IsNullOrEmpty(circuitNumber) ? "" : " numbered " + circuitNumber)
+                    + " with " + memberIds.Count + " device(s) on it, from " + ids.Count + " handed in.");
+
+                if (memberIds.Count != ids.Count)
+                {
+                    foreach (var id in ids) if (!memberIds.Contains(id)) skipped.Add(id);
+                    findings.Add("NOT EVERY DEVICE JOINED IT: " + ids.Count + " were given and "
+                        + memberIds.Count + " are on the circuit. Revit accepts only devices whose "
+                        + "connectors suit the system type, and the ones it left out are not listed "
+                        + "as an error anywhere else.");
+                }
+
+                if (panel != null && panel.IsValidObject)
+                {
+                    try
+                    {
+                        circuit.SelectPanel(panel);
+                        panelName = circuit.PanelName ?? "";
+                        try { if (circuit.BaseEquipment != null) baseEquipmentId = circuit.BaseEquipment.Id; } catch { }
+                        findings.Add("Assigned to panel \"" + panelName + "\".");
+                    }
+                    catch (Exception ex)
+                    {
+                        refused = "The circuit exists but Revit refused the panel: " + ex.Message
+                            + ". IT IS UNASSIGNED - it will not appear on any panel schedule.";
+                    }
+                }
+                else
+                {
+                    findings.Add("NO PANEL WAS GIVEN, so the circuit is unassigned. That is a real and "
+                        + "valid state which Revit allows, and it is said out loud rather than left "
+                        + "for somebody to notice on an empty panel schedule.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            refused = "Revit refused to create the circuit: " + ex.Message + ". NOTHING WAS CREATED. "
+                + "Devices already on a circuit, and devices whose connectors do not suit the system "
+                + "type, are the usual reasons.";
+        }
+    }
+}
+else if (panel != null)
+{
+    refused = "A panel was named for a duct or pipe system, so NOTHING WAS MADE. A panel is for an "
+        + "electrical circuit - say circuitType (power, data, fire alarm...) - and a duct or pipe "
+        + "system's base equipment is named in baseEquipment.";
+}
+else if (systemType == null || (!isDuct && !isPipe))
 {
     refused = "No duct or pipe system type was given, so NOTHING WAS MADE. Name one as it reads in "
-        + "the Project Browser under Duct Systems or Piping Systems - Supply Air, Domestic Cold Water.";
+        + "the Project Browser under Duct Systems or Piping Systems - Supply Air, Domestic Cold Water - "
+        + "or, for an electrical circuit, say circuitType: power, data, fire alarm.";
 }
 else if (given.Count == 0)
 {
@@ -95,7 +255,7 @@ else
 {
     // THE BASE EQUIPMENT, chosen before anything is made.
     Element equipment = null;
-    var wanted = (baseEquipment ?? "").Trim();
+    var wanted = baseGiven;
     var candidates = new List<Element>();
     var equipmentCategory = new ElementId(BuiltInCategory.OST_MechanicalEquipment);
     foreach (var element in given)
@@ -206,7 +366,7 @@ else
     {
         try
         {
-            var name = (systemName ?? "").Trim();
+            var name = nameGiven;
             if (isDuct)
                 created = name == "" ? MechanicalSystem.Create(doc, systemType.Id)
                                      : MechanicalSystem.Create(doc, systemType.Id, name);

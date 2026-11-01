@@ -127,7 +127,7 @@ compatibility-note: >
   PowerFactorStateType - every one present 2020 to 2027 (tools/api-surface
   --members, read 2026-10-22 off all eight releases); not yet run in Revit.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "list this family's connectors"              -> here
 #   "which way does the connector point"         -> here

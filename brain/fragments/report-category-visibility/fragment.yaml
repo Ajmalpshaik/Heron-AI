@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,31 @@ capability: REPORT_CATEGORY_VISIBILITY
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO REPORT_CATEGORY_OVERRIDES (report-
+# category-overrides), on the owner's instruction in conversation: "make sure
+# there is no duplicate tools". Constitution Article 1: kept, never deleted,
+# so its record and its proof stay readable and it can be brought back.
+# Nothing offers it now - retrieval leaves DEPRECATED out, and its sentences
+# claim nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to REPORT_CATEGORY_OVERRIDES. ITS ONE RULE NOT CARRIED IS
+# THE ONE THE OWNER'S CONFLICT RULE DECIDED: it left out a category with
+# nothing in the model; REPORT_CATEGORY_OVERRIDES lists every hidden category,
+# empty ones included and marked so - the safer rule kept. The hidden-category
+# part there runs on every call, not only with allCategories. The proof below
+# is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: REPORT_CATEGORY_OVERRIDES
+  why: >
+    The same view, the same dialog: which categories the view's
+    Visibility/Graphics changes. REPORT_CATEGORY_OVERRIDES version 3 answers
+    this card's question on every call - hiddenCategories as ids, the whole
+    model asked and never only what the view draws, CanCategoryBeHidden
+    recorded and never used to skip, the template-owned count and the
+    template's name, and DIAGNOSE_VISIBILITY named when nothing is switched
+    off.
 
 purpose: >
   Lists which CATEGORIES are switched off in one view - the read half of

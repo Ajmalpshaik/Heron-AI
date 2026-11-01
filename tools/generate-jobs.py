@@ -275,7 +275,8 @@ RECEIVABLE = frozenset([
     # argument as `SpatialElement`, one layer along: an instance normally has
     # only its TYPE's name, and a panel is the exception because its Panel Name
     # is its own - "LP-1", unique on the schedule, and the name
-    # `create-electrical-circuit` already reads back as `PanelName`. The
+    # `create-mep-system` reads back as `PanelName` (create-electrical-circuit
+    # did, until it was merged in on 2026-11-01). The
     # need's NAME is what reaches it; every other FamilyInstance is refused.
     "FamilyInstance",
 ])
@@ -518,16 +519,30 @@ def write_threshold():
 # cover it, for a person to choose from.
 #
 # ONLY THE FIRST STEP RESETS THE CHAIN, and step two consumes what step one left
-# (`select-by-category-name` leaves `elements`, `set-selection` needs them).
-# `batch-prove` and the client both already know that; it is repeated here
-# because the order of these two names is not interchangeable.
-SETUP_CHAIN = ["select-by-category-name", "set-selection"]
+# (`filter-elements-by-category` leaves `elements`, `set-selection` needs
+# them). `batch-prove` and the client both already know that; it is repeated
+# here because the order of these two names is not interchangeable.
+#
+# THE SELECTOR WAS `select-by-category-name` UNTIL 2026-11-01, when that card
+# was merged into FILTER_ELEMENTS_BY_CATEGORY and deprecated. Its job files
+# under tools/jobs/ name it and its `categoryName`, and are the record of what
+# was run then.
+SETUP_CHAIN = ["filter-elements-by-category", "set-selection"]
 
 # The caller values that chain wants. Both are left BLANK - see the module
 # docstring - and both live in `defaults:` so the arrangement is typed ONCE.
 # Retyping it per job is how one copy comes to name a different view than the
 # rest, which is `_merge`'s reason for existing in `batch-prove.py`.
-SHARED_INPUTS = ["categoryName", "inViewOnly"]
+#
+# `categories`, NOT `category`, ON PURPOSE. The selector takes either, and one
+# category is a list of one. A shared name is handed to the fragment under
+# test as well, and two DRAFT cards take a `category` of their OWN -
+# CONVERT_CAD_TO_DIRECTSHAPE (the category the shapes are made in) and
+# ADD_FAMILY_TYPE_PARAMETER - so sharing `category` would set theirs to
+# whatever the arrangement selects. No DRAFT card - the only kind this writes
+# jobs for - takes a `categories` of its own and this chain's elements as well
+# (FIND_CLASHES does, and is PROVEN).
+SHARED_INPUTS = ["categories", "inViewOnly"]
 
 
 def chain_provides(library):

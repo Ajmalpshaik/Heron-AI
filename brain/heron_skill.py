@@ -330,7 +330,10 @@ def main():
         return 0
 
     fragments, _ = FRAG.load_all()
-    provided = set(f.data.get("capability") for f in fragments.values())
+    # A retired card provides nothing a method may rely on - heron_capability.gaps.
+    retired = FRAG.STATUSES[FRAG.STATUSES.index("DEPRECATED"):]
+    provided = set(f.data.get("capability") for f in fragments.values()
+                   if f.status not in retired)
 
     wanted = {}
     for skill in sorted(found.values(), key=lambda s: s.id):

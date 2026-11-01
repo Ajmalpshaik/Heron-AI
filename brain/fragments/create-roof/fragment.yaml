@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: CREATE_ROOF
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_FLOOR (create-floor), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools", then "ok go ahead merge all". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to CREATE_FLOOR. A proof below is
+# the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_FLOOR
+  why: >
+    The same job: one closed boundary on one level, at the level's PROJECT
+    elevation. CREATE_FLOOR since its version 3 makes what the type is, and
+    a roof type makes a footprint roof by this card's rules: NewFootPrintRoof
+    on every release, its out array instantiated first; the roof left FLAT,
+    no pitch invented; `edges`, the model curves it hands back, and
+    `measuredMm`, its size on plan and base height read back off Revit -
+    the same names on the keeper. SLOPE_ROOF_EDGES still slopes the edges
+    afterwards. The signature held for want of a second route stays here as
+    the record. Nothing of this card is left out.
 
 purpose: >
   Creates a footprint roof from a closed boundary on one level.

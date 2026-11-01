@@ -42,7 +42,7 @@ purpose: >
      four reads, nothing changed: REPORT_FAMILY_TEMPLATE (category, Part
      Type), REPORT_FAMILY_CONNECTORS (how many connectors, where each sits,
      which way it points, its system, which is primary, each one's Angle and
-     the parameters sizing it), REPORT_FAMILY_SIZE_TABLE (the table's columns
+     the parameters sizing it), REPORT_FAMILY_TABLES_IN_PROJECT (the table's columns
      and units) and REPORT_FAMILY_FORMS. Where this method and that family
      disagree on a point marked UNSURE in docs/43 §10 - how many connectors a
      tap has, a lateral's branch Angle - THE FAMILY REVIT SHIPS WINS, and the
@@ -56,10 +56,11 @@ purpose: >
      manufacturer's table. Every size and every parameter name comes from
      the modeller for THIS request.
 
-  3. CATEGORY AND PART TYPE. SET_FAMILY_CATEGORY to Pipe Fittings or Duct
-     Fittings when starting from a Generic Model, then SET_FAMILY_SETTINGS
-     "Part Type=<kind>". PART TYPE DECIDES WHICH ROUTING PREFERENCE GROUP
-     OFFERS THE FITTING; a wrong one and the family is missing from that
+  3. CATEGORY AND PART TYPE. SET_FAMILY_SETTINGS "Category=Pipe Fittings"
+     or Duct Fittings when starting from a Generic Model, and "Part
+     Type=<kind>" - one call does both, the category written first because
+     the Part Type is checked against it. PART TYPE DECIDES WHICH ROUTING
+     PREFERENCE GROUP OFFERS THE FITTING; a wrong one and the family is missing from that
      group's list with no error. Pipe fittings take Spud where duct fittings
      take Tap. CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
      classificationCodes line - run it again after the category changed - and
@@ -68,19 +69,19 @@ purpose: >
 
      THE KIND TABLE - Part Type, connectors, the routing group that offers
      it, and its geometry:
-       Elbow          2  Elbows       pipe: CREATE_FAMILY_REVOLUTION about the
+       Elbow          2  Elbows       pipe: a CREATE_FAMILY_FORMS revolve about the
                                       centre-line radius; rectangular or oval
-                                      duct: CREATE_FAMILY_SWEEP of the duct
-                                      profile along the arc
+                                      duct: a CREATE_FAMILY_FORMS sweep of
+                                      the duct profile along the arc
        Tee            3  Junctions    run: one form along X through the origin;
                                       branch: one along Y to the branch end;
                                       COMBINE_FAMILY_FORMS joins them
        Cross          4  Crosses      as a tee, with a second branch along -Y
-       Transition     2  Transitions  round to round: CREATE_FAMILY_REVOLUTION
-                                      of the cone's outline or
-                                      CREATE_FAMILY_BLEND; rectangular:
-                                      CREATE_FAMILY_BLEND, base one size, top
-                                      the other; a rectangular-to-round or
+       Transition     2  Transitions  round to round: a CREATE_FAMILY_FORMS revolve
+                                      of the cone's outline or a
+                                      CREATE_FAMILY_FORMS blend; rectangular:
+                                      a CREATE_FAMILY_FORMS blend, base one
+                                      size, top the other; a rectangular-to-round or
                                       -oval duct transition is a multi-shape
                                       one, offered by its own group
                                       (Rectangular to Round, Rectangular to
@@ -118,7 +119,7 @@ purpose: >
   5. THE SIZE TABLE: WRITE_FAMILY_SIZE_TABLE imports the CSV - headers
      "Name##LENGTH##MILLIMETERS", the unit word Revit's own; a reducing
      fitting is keyed on BOTH sizes, one row per pair it is made in - and
-     REPORT_FAMILY_SIZE_TABLE reads it back. Then SET_FAMILY_FORMULA,
+     REPORT_FAMILY_TABLES_IN_PROJECT reads it back. Then SET_FAMILY_FORMULA,
      size_lookup(Lookup Table Name, "Column", default, Nominal Diameter) for
      each size the table drives - the outside diameter, the socket length,
      the centre-to-end. Which column a lookup searches is recorded two ways -
@@ -145,9 +146,9 @@ purpose: >
      a tee's run and branch. Each end gets a reference plane, labelled by its
      centre-to-end length with LABEL_FAMILY_DIMENSION; a pipe's diameter is
      labelled with LABEL_FAMILY_RADIUS. A pipe elbow is a revolve whose end
-     angle LINK_FAMILY_FORM_PARAMETER ties to Angle, so the arc opens and
+     angle LINK_FAMILY_PARAMETER (forms= its id) ties to Angle, so the arc opens and
      closes with the run; a duct elbow a sweep along an arc the same way.
-     Straight parts are EXTRUDE_BETWEEN_PLANES or CREATE_FAMILY_EXTRUSION,
+     Straight parts are EXTRUDE_BETWEEN_PLANES or a CREATE_FAMILY_FORMS extrusion,
      each locked with LOCK_FORM_TO_PLANES. A socket, a bead or a flange ring
      is a separate form so its end face stays flat and on its plane - the
      face the connector will sit on.
@@ -223,7 +224,7 @@ purpose: >
        - CHECK_FAMILY_SIZE_TABLES: every size_lookup finds its table, its
          column and a row; a key that is an instance parameter - a
          fitting's Nominal Diameter - is reported ROWS NOT CHECKED, so
-         REPORT_FAMILY_SIZE_TABLE is read against the sizes the modeller's
+         REPORT_FAMILY_TABLES_IN_PROJECT is read against the sizes the modeller's
          pipe or duct segment comes in, and the sizes with no row are listed:
          those fall to the default.
        - and, from CHECK_FAMILY_STANDARDS version 4 in a Pipe or Duct
@@ -256,7 +257,7 @@ purpose: >
       (REPORT_FAMILY_TEMPLATE); the family not loaded (LOAD_FAMILY).
     - offered, yet the run gets no fitting at some sizes: the size has no
       table row, or no routing rule's size window covers it
-      (REPORT_FAMILY_SIZE_TABLE, REPORT_ROUTING_PREFERENCES); or a length
+      (REPORT_FAMILY_TABLES_IN_PROJECT, REPORT_ROUTING_PREFERENCES); or a length
       reaches zero at that size (step 6, FLEX_FAMILY at that size).
     - an elbow placed at 90 only, or "no fitting" at other angles: the
       connector Angle not linked (REPORT_FAMILY_CONNECTORS), or the arc's end
@@ -298,21 +299,23 @@ needs:
   # Step 0's units check, as FAMILY-CREATION's.
   - REPORT_PROJECT_UNITS
   - SET_PROJECT_UNITS
-  - SET_FAMILY_CATEGORY
+  # SET_FAMILY_CATEGORY was listed here until 2026-11-01, when it was merged into SET_FAMILY_SETTINGS.
   - SET_FAMILY_SETTINGS
   - ADD_FAMILY_PARAMETERS
   - SET_FAMILY_TYPE_VALUES
   - WRITE_FAMILY_SIZE_TABLE
-  - REPORT_FAMILY_SIZE_TABLE
+  # REPORT_FAMILY_SIZE_TABLE was listed here until 2026-11-01, when it was
+  # merged into REPORT_FAMILY_TABLES_IN_PROJECT, below - which reads the family
+  # in front too.
   - SET_FAMILY_FORMULA
   - CREATE_REFERENCE_PLANES
   - LABEL_FAMILY_DIMENSION
-  - CREATE_FAMILY_REVOLUTION
-  - CREATE_FAMILY_SWEEP
-  - CREATE_FAMILY_SWEPT_BLEND
-  - CREATE_FAMILY_EXTRUSION
+  - CREATE_FAMILY_FORMS
+  # CREATE_FAMILY_SWEEP was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # CREATE_FAMILY_SWEPT_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # CREATE_FAMILY_EXTRUSION was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
   - LOCK_FORM_TO_PLANES
-  - LINK_FAMILY_FORM_PARAMETER
+  # LINK_FAMILY_FORM_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - ADD_FAMILY_CONNECTOR
   - LINK_FAMILY_PARAMETER
   - SET_FAMILY_CONNECTOR_ROLES
@@ -324,20 +327,21 @@ needs:
   - CHECK_FAMILY_SIZE_TABLES
   # FAMILY-CREATION's steps, which this skill says still hold.
   # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
-  # GUIDs, against the family, before ADD_FAMILY_SHARED_PARAMETERS writes.
+  # GUIDs, against the family, before ADD_FAMILY_PARAMETERS' shared kind writes.
   - REPORT_SHARED_PARAMETER_FILE
-  - ADD_FAMILY_SHARED_PARAMETERS
+  # ADD_FAMILY_SHARED_PARAMETERS was listed here until 2026-11-01, when it was merged into ADD_FAMILY_PARAMETERS.
   - SET_FAMILY_PLANE_REFERENCE
   - EXTRUDE_BETWEEN_PLANES
-  - CREATE_FAMILY_BLEND
+  # CREATE_FAMILY_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
   - LABEL_FAMILY_RADIUS
   - COMBINE_FAMILY_FORMS
   - ARRAY_FAMILY_FORMS
-  - PLACE_NESTED_FAMILY
+  # PLACE_NESTED_FAMILY was listed here until 2026-11-01, when it was merged into PLACE_FAMILY_INSTANCES.
+  - PLACE_FAMILY_INSTANCES
   - LOCK_NESTED_FAMILY_TO_PLANES
-  - LINK_NESTED_TYPE_PARAMETER
+  # LINK_NESTED_TYPE_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - ADD_FAMILY_TYPE_PARAMETER
-  - SET_FAMILY_FORM_MATERIAL
+  # SET_FAMILY_FORM_MATERIAL was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - SET_FAMILY_FORM_SUBCATEGORY
   - SET_FAMILY_FORM_VISIBILITY
   - DRAW_FAMILY_SYMBOLIC_LINES

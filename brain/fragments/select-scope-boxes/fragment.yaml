@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,18 +9,19 @@ semantic-identity: "give me the scope boxes themselves as a set I can act on"
 kind: filter
 domain: revit.selection
 capability: SELECT_SCOPE_BOXES
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
 purpose: >
-  Returns the Scope Boxes in the model as elements, narrowed by name.
+  Returns the Scope Boxes in the model as elements, narrowed by name - and,
+  for one box, its corners.
 
   **EVERYTHING ELSE HERE TAKES A SCOPE BOX BY NAME, AND THAT IS THE GAP.**
-  READ_SCOPE_BOX_EXTENT finds one by name and hands back its corners;
-  ASSIGN_SCOPE_BOX_TO_VIEW puts a named one onto views. Neither can answer
-  *"what scope boxes are there"*, and neither can hand a set to a rename, a
-  report or a delete. A scope box is an ordinary element and nothing here could
+  ASSIGN_SCOPE_BOX_TO_VIEW puts a named one onto views, and until version 2
+  READ_SCOPE_BOX_EXTENT found one by name and handed back its corners. Neither
+  could answer *"what scope boxes are there"*, and neither could hand a set to
+  a rename, a report or a delete. A scope box is an ordinary element and nothing here could
   reach it as one. This is the same shape as the gap SELECT_VIEW_TEMPLATES
   filled, found the same way.
 
@@ -37,9 +38,12 @@ purpose: >
   by category as well. A search for a Scope Box type is the most likely wrong
   turn here.
 
-  **IT REPORTS NO EXTENTS.** READ_SCOPE_BOX_EXTENT already does that, and doing
-  it twice in two fragments is how two answers to one question drift apart. This
-  one answers *which*, that one answers *how big*.
+  **VERSION 2 ALSO SAYS HOW BIG ONE BOX IS, AND WHERE** (READ_SCOPE_BOX_EXTENT
+  merged in): with one box matching, its two corners in millimetres - minMm
+  and maxMm, the names SELECT_IN_REGION takes, so *"what is inside the podium
+  scope box"* composes with nothing in between - and its id. Asked for an
+  extent with two boxes matching, it refuses rather than picking one: they
+  are usually different halves of a building.
 
   ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
 
@@ -50,6 +54,14 @@ contract:
     - name: nameContains
       type: string
       source: request
+    # VERSION 2, from READ_SCOPE_BOX_EXTENT. true is "how big is it, where is
+    # it": two or more boxes matching are REFUSED - no corners, no id, no
+    # elements - and named in findings. Absent binds false (row 5b-227): every
+    # match is listed, and corners come only when one box matches.
+    - name: extent
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: elements
       role: result
@@ -66,7 +78,29 @@ contract:
     - name: found
       role: result
       type: int
+    # VERSION 2, from READ_SCOPE_BOX_EXTENT. One box's corners, in
+    # MILLIMETRES - the unit and the names SELECT_IN_REGION takes at its own
+    # edge. Null unless exactly one box matches and its extent reads.
+    - name: minMm
+      role: result
+      type: XYZ
+    - name: maxMm
+      role: result
+      type: XYZ
+    - name: scopeBoxId
+      # VERSION 2. The one box matched; InvalidElementId otherwise. The same
+      # box as `elements` holds, never another (D-52).
+      role: accounting
+      type: ElementId
+    - name: findings
+      # VERSION 2. The one box's size, or why there is none: no box, no
+      # match, two matching, no readable extent.
+      role: accounting
+      type: IList<string>
 
+# VERSION 1's PROOF, KEPT AS THE RECORD. Version 2 changed impl/, so its
+# fingerprint no longer describes the code and the card is DRAFT until
+# version 2 is proved on a real model (D-30).
 proof:
   date: '2026-09-08'
   by: Ajmal PS
@@ -89,20 +123,26 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. `BuiltInCategory.OST_VolumeOfInterest`
   and `FilteredElementCollector.OfCategory` are unchanged 2020 to 2027, and no
-  id is read as a number.
+  id is read as a number. Version 2 reads the box's extent from
+  `Element.get_BoundingBox(null)`, as READ_SCOPE_BOX_EXTENT did (PROVEN on
+  Revit 2024), unchanged 2020 to 2027.
 
-# ROUTING - repeated in READ_SCOPE_BOX_EXTENT and ASSIGN_SCOPE_BOX_TO_VIEW.
+# ROUTING - repeated in ASSIGN_SCOPE_BOX_TO_VIEW and SELECT_IN_REGION.
 #
 #   "what scope boxes are there"          -> here
 #   "list the scope boxes"                -> here
-#   "rename the scope boxes"              -> here, then RENAME_ELEMENTS
+#   "rename the scope boxes"              -> here, then EDIT_TEXT_VALUES field Name
 #   "delete that scope box"               -> here, then DELETE_ELEMENTS - a
 #                                            scope box is an ordinary element,
 #                                            so no dedicated delete is needed
-#   "how big is the podium scope box"     -> READ_SCOPE_BOX_EXTENT, which takes
-#                                            the NAME and returns corners. That
-#                                            is the one that feeds
+#   "how big is the podium scope box"     -> here, extent true, since
+#                                            READ_SCOPE_BOX_EXTENT was merged in
+#                                            (version 2) - one box's corners in
+#                                            millimetres, which feed
 #                                            SELECT_IN_REGION
+#   "what is inside the podium scope box" -> here, extent true, then
+#                                            SELECT_IN_REGION with the corners
+#   "how big is this element"             -> REPORT_BOUNDING_BOX
 #   "put the podium scope box on these
 #    views"                               -> ASSIGN_SCOPE_BOX_TO_VIEW
 #   "make a scope box"                    -> NOT POSSIBLE. Revit exposes no
@@ -112,6 +152,28 @@ compatibility-note: >
 #                                            same reason - delete and recreate
 #                                            needs the create call
 
+# VERSION 2 (2026-11-01) - READ_SCOPE_BOX_EXTENT WAS MERGED INTO THIS CARD on
+# the owner's instruction ("make sure there is no duplicate tools"; "merge
+# means ... all area need to be covered"), and is DEPRECATED. Both found scope
+# boxes by name, by the Volume of Interest category. What that card had and
+# this one lacked is here now: one box's corners as minMm and maxMm in
+# millimetres, the names SELECT_IN_REGION takes; scopeBoxId; the size, or why
+# there is none, in findings; no box, no match and no readable extent each
+# said apart.
+#
+# THE SAFER RULE IN EACH CONFLICT IS KEPT. Corners are published only when
+# exactly one box matches, so a list of several never hands on one box's
+# extent as if it were all of them; asked for an extent, two matches are
+# refused and the elements withheld too, as that card refused them.
+#
+# NOT CARRIED, AS OPPOSITE: refusing two matches when no extent is asked -
+# listing every match is this card's answer, and nothing about one box is
+# claimed for them.
+#
+# WHERE ITS OUTPUTS ARE NOW: minMm, maxMm, scopeBoxId, findings -> the same
+# names; its `scopeBoxName` is this card's `nameContains`, with `extent`
+# true. Its sentences moved here.
+
 utterances:
   - give me the scope boxes
   - list the scope boxes in this model
@@ -119,3 +181,8 @@ utterances:
   - find the scope box by name
   - select the scope boxes
   - the scope boxes themselves not the views
+  # MOVED 2026-11-01 from READ_SCOPE_BOX_EXTENT, merged into this card.
+  - how big is that scope box
+  - what is inside the scope box
+  - the extent of the podium scope box
+  - select everything in this scope box

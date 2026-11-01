@@ -136,7 +136,7 @@ compatibility-note: >
 # and check the two halves are still two after the next edit to either.
 # NEEDS-CHECKING AJ3.
 
-# ROUTING - repeated in CREATE_DUCT and OFFSET_ELEMENTS.
+# ROUTING - repeated in CREATE_DUCT_RUNS and OFFSET_ELEMENTS.
 #
 #   "split this duct"            -> here
 #   "cut the pipe here"          -> here
@@ -147,8 +147,9 @@ compatibility-note: >
 #   "move it 200 across"         -> OFFSET_ELEMENTS. That is what "split this
 #                                   duct at the wall" resolved to before this
 #                                   fragment existed
-#   "draw a new duct"            -> CREATE_DUCT
-#   "draw the duct run"          -> CREATE_DUCT. Measured 2026-09-01 - this
+#   "draw a new duct"            -> CREATE_DUCT_RUNS
+#   "draw the duct run"          -> CREATE_DUCT_RUNS (CREATE_DUCT until it was
+#                                   merged in, 2026-11-01). Measured 2026-09-01 - this
 #                                   fragment took that sentence off
 #                                   CREATE_DUCT until its prose stopped
 #                                   using three forms of the word "draw" to

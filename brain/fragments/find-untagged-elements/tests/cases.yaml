@@ -2,10 +2,10 @@ positive:
   - given: 12 ducts in a plan view, 5 of them tagged
     expect: alreadyTagged holds those 5 ids, elements is narrowed to the other 7, and the counts add to 12
 
-  - given: the result handed straight into TAG_ELEMENTS
+  - given: the result handed straight into TAG_ELEMENTS_IN_VIEW (TAG_ELEMENTS until 2026-11-01)
     expect: >
-      the 7 are tagged and the 5 are skipped - the composition the dependency
-      graph said could not be assembled before this fragment existed
+      the 7 are tagged and the 5 are never handed on - the composition the
+      dependency graph said could not be assembled before this fragment existed
 
 negative:
   - given: a duct tagged on the coordination plan, asked about the SECTION view

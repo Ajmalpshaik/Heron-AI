@@ -1,5 +1,45 @@
 // NOT STANDALONE. Assumes `doc` and `viewName` are in scope; leaves
-// `findings`, `unusedFilters`, `filterCount` and `filterSettings` behind.
+// `findings`, `unusedFilters`, `filterCount`, `filterSettings`, `disabled`,
+// `hidden`, `blankOverride`, `nothingToActOn` and `templateOwned` behind.
+//
+// VERSION 3 (2026-11-01) - AUDIT_VIEW_FILTERS MERGED IN, on the owner's
+// instruction ("make sure there is no duplicate tools"). For each view named,
+// what that card had that this lacked:
+//
+//   THE PRIORITY ORDER. Each filter is numbered in the order Visibility/
+//   Graphics lists them - `GetOrderedFilters`, reached BY NAME because it
+//   arrived at Revit 2021 - and where two filters set the same thing on the
+//   same element, the one HIGHER wins. On 2020 the order is Revit's and the
+//   heading says the dialog's order cannot be given.
+//
+//   EACH FILTER'S RULE, CATEGORIES AND CATCH. Its categories by name; its rule
+//   as the Filters dialog reads it, logical filters walked and an inverse rule
+//   written NOT; and how many HOST elements this view draws that it catches -
+//   a filter also acts on linked models drawn By Host View, which are not
+//   counted, and the heading says so.
+//
+//   THE FOUR WAYS A FILTER CAN BE PRESENT AND DO NOTHING, none of which Revit
+//   reports as an error, each by id and in a finding naming the view:
+//     `disabled`        applied but its Enable Filter tick OFF (2021 on; on
+//                       2020 there is no such tick and that is SAID, never
+//                       counted as passed)
+//     `hidden`          its Visibility off - it HIDES what it matches
+//     `blankOverride`   an EMPTY override - every slot asked, blank only when
+//                       none is set, so a filter carrying only halftone is not
+//                       called blank
+//     `nothingToActOn`  every one of its categories switched off in the view
+//
+//   THE TEMPLATE-OWNED VERDICT - `templateOwned`, and a finding naming the
+//   template: where the view's template controls the filters slot, anything
+//   set on the view is discarded when the template reasserts. The answer to
+//   "my filter change did not save".
+//
+//   A VIEW THAT TAKES NO GRAPHIC OVERRIDE AT ALL - a schedule, a sheet - is
+//   said to be one, which is not the same as a view with no filters.
+//
+//   IT DOES NOT REPAIR ANYTHING. Switching a disabled filter back on is a
+//   write - APPLY_VIEW_FILTER's - and a write hidden inside a read is how a
+//   diagnosis becomes a change nobody asked for.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -33,6 +73,11 @@
 var findings = new List<string>();
 var unusedFilters = new List<ElementId>();
 var filterSettings = "";
+var disabled = new List<ElementId>();
+var hidden = new List<ElementId>();
+var blankOverride = new List<ElementId>();
+var nothingToActOn = new List<ElementId>();
+var templateOwned = false;
 
 var filters = new FilteredElementCollector(doc).OfClass(typeof(FilterElement))
     .Cast<FilterElement>().OrderBy(f => f.Name).ToList();
@@ -123,6 +168,186 @@ if (asked.Count > 0)
         return bits.Count == 0 ? "no override" : string.Join(", ", bits);
     };
 
+    // ---- VERSION 3, FROM AUDIT_VIEW_FILTERS ----
+
+    // WHAT COUNTS AS A BLANK OVERRIDE. There is no "is this override empty"
+    // call, so every slot is asked and the answer is blank only when NONE is
+    // set. A slot that cannot be read is not evidence of blankness.
+    Func<OverrideGraphicSettings, bool> isBlank = settings =>
+    {
+        try
+        {
+            if (settings.Halftone) return false;
+            if (settings.Transparency > 0) return false;
+            if (settings.DetailLevel != ViewDetailLevel.Undefined) return false;
+            if (settings.ProjectionLineColor != null && settings.ProjectionLineColor.IsValid) return false;
+            if (settings.CutLineColor != null && settings.CutLineColor.IsValid) return false;
+            if (settings.SurfaceForegroundPatternColor != null && settings.SurfaceForegroundPatternColor.IsValid) return false;
+            if (settings.SurfaceBackgroundPatternColor != null && settings.SurfaceBackgroundPatternColor.IsValid) return false;
+            if (settings.CutForegroundPatternColor != null && settings.CutForegroundPatternColor.IsValid) return false;
+            if (settings.CutBackgroundPatternColor != null && settings.CutBackgroundPatternColor.IsValid) return false;
+            if (settings.ProjectionLineWeight > 0) return false;
+            if (settings.CutLineWeight > 0) return false;
+            if (settings.ProjectionLinePatternId != ElementId.InvalidElementId) return false;
+            if (settings.CutLinePatternId != ElementId.InvalidElementId) return false;
+            if (settings.SurfaceForegroundPatternId != ElementId.InvalidElementId) return false;
+            if (settings.SurfaceBackgroundPatternId != ElementId.InvalidElementId) return false;
+            if (settings.CutForegroundPatternId != ElementId.InvalidElementId) return false;
+            if (settings.CutBackgroundPatternId != ElementId.InvalidElementId) return false;
+        }
+        catch
+        {
+            return false;
+        }
+        return true;
+    };
+
+    // A rule's parameter by the name the Filters dialog shows. A project or
+    // shared parameter is an element; a built-in one is matched against
+    // `new ElementId(BuiltInParameter)`, built once and only if needed - the
+    // number inside an ElementId changes type at 2024, so it is never read.
+    var parameterNames = new Dictionary<ElementId, string>();
+    Dictionary<ElementId, BuiltInParameter> builtIns = null;
+    Func<ElementId, string> parameterOf = parameterId =>
+    {
+        if (parameterId == null || parameterId == ElementId.InvalidElementId) return "?";
+        string known;
+        if (parameterNames.TryGetValue(parameterId, out known)) return known;
+        known = null;
+        try
+        {
+            var definition = doc.GetElement(parameterId) as ParameterElement;
+            if (definition != null && definition.GetDefinition() != null) known = definition.GetDefinition().Name;
+        }
+        catch (Exception) { known = null; }
+        if (known == null)
+        {
+            if (builtIns == null)
+            {
+                builtIns = new Dictionary<ElementId, BuiltInParameter>();
+                foreach (BuiltInParameter candidate in Enum.GetValues(typeof(BuiltInParameter)))
+                {
+                    ElementId candidateId;
+                    try { candidateId = new ElementId(candidate); }
+                    catch (Exception) { continue; }
+                    if (!builtIns.ContainsKey(candidateId)) builtIns[candidateId] = candidate;
+                }
+            }
+            BuiltInParameter matched;
+            if (builtIns.TryGetValue(parameterId, out matched))
+            {
+                try { known = LabelUtils.GetLabelFor(matched); }
+                catch (Exception) { known = matched.ToString(); }
+            }
+        }
+        if (known == null) known = "parameter " + parameterId;
+        parameterNames[parameterId] = known;
+        return known;
+    };
+
+    // "FilterStringBeginsWith" -> "begins with", as the Filters dialog says it.
+    Func<object, string> verbOf = evaluator =>
+    {
+        if (evaluator == null) return "?";
+        var raw = evaluator.GetType().Name.Replace("FilterString", "").Replace("FilterNumeric", "");
+        switch (raw)
+        {
+            case "Equals": return "equals";
+            case "BeginsWith": return "begins with";
+            case "EndsWith": return "ends with";
+            case "Contains": return "contains";
+            case "Greater": return "is greater than";
+            case "GreaterOrEqual": return "is greater than or equal to";
+            case "Less": return "is less than";
+            case "LessOrEqual": return "is less than or equal to";
+            default: return raw;
+        }
+    };
+
+    Func<ICollection<ElementId>, string> categoryNamesOf = ids =>
+    {
+        var categoryNames = new List<string>();
+        foreach (var categoryId in ids)
+        {
+            var shown = categoryId.ToString();
+            try
+            {
+                var category = Category.GetCategory(doc, categoryId);
+                if (category != null) shown = category.Name;
+            }
+            catch (Exception) { }
+            categoryNames.Add(shown);
+        }
+        categoryNames.Sort(StringComparer.OrdinalIgnoreCase);
+        return string.Join(", ", categoryNames);
+    };
+
+    // ONE RULE, as the dialog reads it. An inverse rule is NOT here.
+    Func<FilterRule, string> ruleOf = null;
+    ruleOf = rule =>
+    {
+        if (rule == null) return "?";
+        var inverse = rule as FilterInverseRule;
+        if (inverse != null) return "NOT " + ruleOf(inverse.GetInnerRule());
+        var byCategory = rule as FilterCategoryRule;
+        if (byCategory != null) return "category is one of " + categoryNamesOf(byCategory.GetCategories());
+        var parameterText = "?";
+        try { parameterText = parameterOf(rule.GetRuleParameter()); }
+        catch (Exception) { parameterText = "?"; }
+        if (rule is HasValueFilterRule) return parameterText + " has a value";
+        if (rule is HasNoValueFilterRule) return parameterText + " has no value";
+        var byText = rule as FilterStringRule;
+        if (byText != null)
+            return string.Format("{0} {1} '{2}'", parameterText, verbOf(byText.GetEvaluator()), byText.RuleString);
+        var byNumber = rule as FilterNumericValueRule;
+        if (byNumber != null)
+        {
+            var value = "?";
+            var asInteger = rule as FilterIntegerRule;
+            var asDouble = rule as FilterDoubleRule;
+            var asId = rule as FilterElementIdRule;
+            if (asInteger != null) value = asInteger.RuleValue.ToString();
+            else if (asDouble != null)
+                value = asDouble.RuleValue.ToString("0.######", System.Globalization.CultureInfo.InvariantCulture)
+                    + " (Revit's internal units - feet for a length)";
+            else if (asId != null)
+            {
+                var target = asId.RuleValue == ElementId.InvalidElementId ? null : doc.GetElement(asId.RuleValue);
+                value = target == null ? "element " + asId.RuleValue : "'" + target.Name + "'";
+            }
+            return string.Format("{0} {1} {2}", parameterText, verbOf(byNumber.GetEvaluator()), value);
+        }
+        return parameterText + " (" + rule.GetType().Name + ")";
+    };
+
+    // THE WHOLE RULE SET, logical filters walked and bracketed.
+    Func<ElementFilter, string> ruleSetOf = null;
+    ruleSetOf = held =>
+    {
+        if (held == null) return "?";
+        string body;
+        var logical = held as ElementLogicalFilter;
+        var byParameter = held as ElementParameterFilter;
+        if (logical != null)
+        {
+            var inner = logical.GetFilters().Where(piece => piece != null).Select(piece => ruleSetOf(piece)).ToList();
+            body = inner.Count == 1 ? inner[0]
+                : "(" + string.Join(held is LogicalOrFilter ? " OR " : " AND ", inner) + ")";
+        }
+        else if (byParameter != null)
+        {
+            var rules = byParameter.GetRules().Select(each => ruleOf(each)).ToList();
+            body = rules.Count == 1 ? rules[0] : "(" + string.Join(" AND ", rules) + ")";
+        }
+        else body = held.GetType().Name;
+        var inverted = false;
+        try { inverted = held.Inverted; }
+        catch (Exception) { inverted = false; }
+        return inverted ? "NOT " + body : body;
+    };
+
+    var getOrdered = typeof(View).GetMethod("GetOrderedFilters", Type.EmptyTypes);
+
     // A name as Heron prints it - "FloorPlan: Level 1" - or as the browser
     // does - "Level 1". Every view that answers is read; reading is harmless,
     // and choosing one of two lookalikes silently is not.
@@ -162,6 +387,17 @@ if (asked.Count > 0)
 
         foreach (var view in matched)
         {
+            // A VIEW THAT TAKES NO OVERRIDE AT ALL (version 3) is said to be
+            // one - "0 filters" on a schedule is true and useless.
+            var overridesAllowed = true;
+            try { overridesAllowed = view.AreGraphicsOverridesAllowed(); } catch { }
+            if (!overridesAllowed)
+            {
+                readNotes.Add(string.Format("View '{0}' ({1}) does not accept graphic overrides at all, so no filter "
+                    + "can apply there - not the same as a view with no filters.", view.Name, view.ViewType));
+                continue;
+            }
+
             ICollection<ElementId> onView = null;
             try { onView = view.GetFilters(); }
             catch (Exception ex)
@@ -177,8 +413,23 @@ if (asked.Count > 0)
                 continue;
             }
 
-            var head = string.Format("View '{0}' ({1}): {2} filter(s).", view.Name, view.ViewType,
-                onView.Count);
+            // THE PRIORITY ORDER (version 3), where the release can give it.
+            var ordered = new List<ElementId>();
+            var orderKnown = false;
+            try
+            {
+                var inOrder = getOrdered == null ? null : getOrdered.Invoke(view, null) as IEnumerable<ElementId>;
+                if (inOrder != null) { ordered.AddRange(inOrder); orderKnown = true; }
+            }
+            catch (Exception) { ordered.Clear(); orderKnown = false; }
+            if (!orderKnown) ordered.AddRange(onView);
+
+            var head = string.Format("View '{0}' ({1}): {2} filter(s), {3}. Where two filters set the same thing "
+                + "on the same element, the one HIGHER in this list wins. 'catches' counts host elements this view "
+                + "draws - a filter also acts on linked models drawn By Host View, which are not counted.",
+                view.Name, view.ViewType, onView.Count,
+                orderKnown ? "in the order Visibility/Graphics lists them"
+                    : "in the order Revit returns them - this release cannot give the dialog's order");
 
             // A TEMPLATE THAT OWNS THE FILTERS is what makes a filter change
             // "not stick", so it is said once, at the top of the view.
@@ -192,6 +443,11 @@ if (asked.Count > 0)
                         var template = doc.GetElement(view.ViewTemplateId);
                         head += string.Format(" Its view template '{0}' controls these - a change made "
                             + "on the view itself does not stick.", template == null ? "?" : template.Name);
+                        // THE TEMPLATE-OWNED VERDICT (version 3).
+                        templateOwned = true;
+                        findings.Add(string.Format("The view template '{0}' owns the filters on '{1}'. Anything "
+                            + "changed there is discarded when the template reasserts - change it ON THE TEMPLATE.",
+                            template == null ? "?" : template.Name, view.Name));
                     }
                 }
             }
@@ -200,8 +456,11 @@ if (asked.Count > 0)
             if (getEnabled == null) head += " Revit 2020 has no Enable Filter tick; every filter here is in effect.";
             blocks.Add(head);
 
-            foreach (var id in onView)
+            HashSet<ElementId> drawnHere = null;
+            var position = 0;
+            foreach (var id in ordered)
             {
+                position++;
                 var filter = doc.GetElement(id) as FilterElement;
                 var label = filter == null ? "filter " + id : filter.Name;
                 try
@@ -211,10 +470,37 @@ if (asked.Count > 0)
 
                     if (getEnabled != null)
                     {
-                        try { parts.Add("Enable Filter " + ((bool)getEnabled.Invoke(view, new object[] { id }) ? "ON" : "OFF")); }
+                        try
+                        {
+                            var enabled = (bool)getEnabled.Invoke(view, new object[] { id });
+                            parts.Add("Enable Filter " + (enabled ? "ON" : "OFF"));
+                            // DO-NOTHING 1 (version 3): listed, greyed, doing nothing.
+                            if (!enabled)
+                            {
+                                if (!disabled.Contains(id)) disabled.Add(id);
+                                findings.Add(string.Format("'{0}' is APPLIED BUT SWITCHED OFF on '{1}'. It is in the "
+                                    + "list and it does nothing.", label, view.Name));
+                            }
+                        }
                         catch { parts.Add("Enable Filter could not be read"); }
                     }
-                    parts.Add("Visibility " + (view.GetFilterVisibility(id) ? "ON" : "OFF (what it matches is HIDDEN)"));
+                    var visible = view.GetFilterVisibility(id);
+                    parts.Add("Visibility " + (visible ? "ON" : "OFF (what it matches is HIDDEN)"));
+                    // DO-NOTHING 2 (version 3): it HIDES rather than colours.
+                    if (!visible)
+                    {
+                        if (!hidden.Contains(id)) hidden.Add(id);
+                        findings.Add(string.Format("'{0}' has its VISIBILITY off on '{1}', so everything it matches "
+                            + "is hidden there rather than coloured.", label, view.Name));
+                    }
+                    // DO-NOTHING 3 (version 3): an EMPTY override.
+                    if (s != null && isBlank(s))
+                    {
+                        if (!blankOverride.Contains(id)) blankOverride.Add(id);
+                        findings.Add(string.Format("'{0}' has an EMPTY override on '{1}' - nothing is set on it. Adding "
+                            + "a filter without setting one leaves exactly this, and it looks identical to having no "
+                            + "filter.", label, view.Name));
+                    }
                     parts.Add("Projection/Surface Lines: " + lines(patternName(s.ProjectionLinePatternId),
                         rgb(s.ProjectionLineColor), s.ProjectionLineWeight));
                     parts.Add("Surface Patterns: foreground " + fill(patternName(s.SurfaceForegroundPatternId),
@@ -237,6 +523,61 @@ if (asked.Count > 0)
                     var asRule = filter as ParameterFilterElement;
                     var asSet = filter as SelectionFilterElement;
                     if (asRule != null) categoryIds.AddRange(asRule.GetCategories());
+
+                    // ITS CATEGORIES, ITS RULE AND WHAT IT CATCHES HERE (version 3).
+                    if (asRule != null)
+                    {
+                        parts.Insert(0, string.Format("categories ({0}): {1}", categoryIds.Count,
+                            categoryIds.Count == 0 ? "none" : categoryNamesOf(categoryIds)));
+                        ElementFilter held = null;
+                        try { held = asRule.GetElementFilter(); }
+                        catch (Exception) { held = null; }
+                        parts.Insert(1, "rule: " + (held == null ? "none - every element of its categories" : ruleSetOf(held)));
+                        try
+                        {
+                            if (categoryIds.Count == 0) parts.Insert(2, "catches 0 - it has no categories");
+                            else
+                            {
+                                var caught = new FilteredElementCollector(doc, view.Id)
+                                    .WherePasses(new ElementMulticategoryFilter(categoryIds))
+                                    .WhereElementIsNotElementType();
+                                if (held != null) caught = caught.WherePasses(held);
+                                parts.Insert(2, "catches " + caught.GetElementCount() + " host element(s) drawn here");
+                            }
+                        }
+                        catch (Exception ex) { parts.Insert(2, "catches could not be counted: " + ex.Message); }
+
+                        // DO-NOTHING 4 (version 3): every category switched off here.
+                        if (categoryIds.Count > 0)
+                        {
+                            var anyDrawn = false;
+                            foreach (var categoryId in categoryIds)
+                            {
+                                var categoryHidden = false;
+                                try { categoryHidden = view.GetCategoryHidden(categoryId); } catch { }
+                                if (!categoryHidden) { anyDrawn = true; break; }
+                            }
+                            if (!anyDrawn)
+                            {
+                                if (!nothingToActOn.Contains(id)) nothingToActOn.Add(id);
+                                findings.Add(string.Format("'{0}' has every one of its categories switched off in '{1}', "
+                                    + "so it has nothing to act on. The rule is fine; the category visibility is what is "
+                                    + "hiding the result.", label, view.Name));
+                            }
+                        }
+                    }
+                    else if (asSet != null)
+                    {
+                        var members = asSet.GetElementIds();
+                        if (drawnHere == null)
+                        {
+                            drawnHere = new HashSet<ElementId>();
+                            try { foreach (var drawnId in new FilteredElementCollector(doc, view.Id).ToElementIds()) drawnHere.Add(drawnId); }
+                            catch (Exception) { }
+                        }
+                        parts.Insert(0, string.Format("a saved set of {0} element(s); catches {1} host element(s) drawn here",
+                            members.Count, members.Count(member => drawnHere.Contains(member))));
+                    }
                     else if (asSet != null)
                         foreach (var memberId in asSet.GetElementIds())
                         {
@@ -259,11 +600,11 @@ if (asked.Count > 0)
                         : "cut applies to " + string.Join(", ", cuttable)
                             + (notCuttable.Count == 0 ? "" : "; not to " + string.Join(", ", notCuttable)));
 
-                    blocks.Add("  '" + label + "' - " + string.Join("; ", parts) + ".");
+                    blocks.Add("  " + position + ". '" + label + "' - " + string.Join("; ", parts) + ".");
                 }
                 catch (Exception ex)
                 {
-                    blocks.Add(string.Format("  '{0}' - could not be read: {1}", label, ex.Message));
+                    blocks.Add(string.Format("  {0}. '{1}' - could not be read: {2}", position, label, ex.Message));
                 }
             }
         }

@@ -1,11 +1,11 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-GEO-046
-semantic-identity: "what forms this open family is modelled from, with their ids, sizes and settings"
+semantic-identity: "what forms this open family is modelled from, with their ids, sizes and settings - and those forms picked by id or kind, ready to select or delete"
 kind: action
 domain: revit.families
 capability: REPORT_FAMILY_FORMS
@@ -26,7 +26,14 @@ capability: REPORT_FAMILY_FORMS
 # alone, "all" or nothing answer exactly as version 2. Version 2's proof below
 # no longer describes the code: DRAFT until NEEDS-CHECKING Group IO proves
 # version 3 (D-30).
-version: 3
+#
+# Version 4 (2026-11-01) changed impl/: SELECT_FAMILY_FORMS was merged into
+# this card and is DEPRECATED. The forms read are handed on as `elements`, for
+# SET_SELECTION and DELETE_ELEMENTS; `refused` says why nothing was read;
+# "freeform" is a kind. `which` left out now binds "not named" - every form
+# read, none handed on. DRAFT until proved on a real model (D-30); version 3's
+# proof below is the record.
+version: 4
 source: OFFICIAL
 risk: READ
 
@@ -44,10 +51,19 @@ purpose: >
   entries before anyone reads it.
 
   **`which` NARROWS IT** - "all", or kinds and sides with commas between:
-  "void", "solid, revolve" - or the ids the form tools gave back, commas
-  between, to read just those forms, one form's extents after a flex. Ids and
-  words are not mixed; an id that is not a form of this family is refused by
-  name and nothing is read.
+  "void", "solid, revolve", "swept blend", "freeform" - or the ids the form
+  tools gave back, commas between, to read just those forms, one form's
+  extents after a flex. Ids and words are not mixed; an id that is not a form
+  of this family is refused by name and nothing is read.
+
+  **AND IT HANDS THEM ON (version 4, 2026-11-01).** SELECT_FAMILY_FORMS, which
+  picked forms by the same ids and kinds, was merged into this card and is
+  DEPRECATED. The forms read are left as `elements`, in the order their ids
+  were named: SET_SELECTION highlights them, DELETE_ELEMENTS deletes them, and
+  any tool that takes elements works on them. One id that is not a form here
+  refuses the whole call and hands NOTHING on, so a delete after it can never
+  reach part of a list. Left out, `which` reads every form and hands none on -
+  a delete needs the forms named, or "all" said.
 
   It reads only; nothing is changed.
 
@@ -64,11 +80,18 @@ contract:
     # default exactly as a typed "all", and the binding note says "which not
     # given - "all", the card's own default (optional)". Every call of a
     # fixed-family build had typed which=all.
+    #
+    # VERSION 4 (2026-11-01): left out it binds "not named" - every form READ,
+    # as "all" reads, and NONE handed on as `elements`. SELECT_FAMILY_FORMS
+    # refused a call naming no form, so that a delete could never reach forms
+    # nobody named; this card read them all (row 5b-488). The safer rule is
+    # kept for what is handed on, and the read stays as the owner had it.
+    # "all" typed names every form and hands every one on.
     - name: which
       type: string
       source: request
       optional: true
-      absent: all
+      absent: not named
   provides:
     - name: formCount
       # How many forms matched `which`.
@@ -93,6 +116,24 @@ contract:
       # That the document in front is a project, not a family being edited.
       role: accounting
       type: bool
+    - name: elements
+      # VERSION 4, from SELECT_FAMILY_FORMS: the forms read, handed on - in the
+      # order their ids were named, each once - for SET_SELECTION,
+      # DELETE_ELEMENTS or any tool that takes elements. EMPTY when the call
+      # refused, all or nothing, and when `which` was left out. To DELETE
+      # them, they go on to DELETE_ELEMENTS through revit_change with
+      # expect_from="report-family-forms where which=<the same ids>", once the
+      # modeller has said yes to that delete (Article 7) - the method
+      # delete-by-id has the steps.
+      role: result
+      type: IList<Element>
+    - name: refused
+      # VERSION 4, from SELECT_FAMILY_FORMS: why nothing was read, every bad id
+      # named - a project in front, ids and words mixed, an id that is not a
+      # form here. Empty when the call ran; a kind that matched nothing is an
+      # answer, not a refusal.
+      role: accounting
+      type: string
     - name: findings
       type: IList<string>
 
@@ -144,20 +185,42 @@ compatibility-note: >
   `Sketch.SketchPlane` and `GeomCombination.AllMembers` read the same 2020
   through 2027 (the RevitAPI reference assemblies, read 2026-10-01).
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "what forms are in this family"              -> here
 #   "list the voids in this family with their ids" -> here
 #   "what parameters does this family have"      -> REPORT_FAMILY_PARAMETERS
 #   "what is inside this family"                 -> REPORT_NESTED_FAMILIES,
 #                                                   the families nested in it
-#   "select the void forms"                      -> SELECT_FAMILY_FORMS, which
-#                                                   PICKS them for SET_SELECTION
-#                                                   or DELETE_ELEMENTS; this
-#                                                   only reads
+#   "select the void forms"                      -> here, which=void, then
+#                                                   SET_SELECTION with its
+#                                                   `elements`
+#   "select the forms with these ids"            -> here, then SET_SELECTION
+#   "delete these forms"                         -> here when their ids are
+#                                                   given, then DELETE_ELEMENTS
+#                                                   - the method delete-by-id
+#   "delete the ones I selected"                 -> DELETE_ELEMENTS - the
+#                                                   selection is already there
+#   "which forms are made of steel"              -> SELECT_BY_MATERIAL
+#
+# 2026-11-01 - SELECT_FAMILY_FORMS WAS MERGED INTO THIS CARD (version 4) on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same job: the forms of the family in the Family Editor, by
+# the ids the form tools gave back or by kind and side, read the same way. Its
+# outputs now: `elements` and `refused` by the same names, `formList` and
+# `scanned` by the same names; its `forms` input is `which`. An action card's
+# `elements` feeds SET_SELECTION and DELETE_ELEMENTS as a filter card's does:
+# the add-in keeps every element a run leaves on the chain whatever the kind,
+# and composition is read from the contracts.
 
 utterances:
   - what forms are in this family
   - list the voids in this family with their ids
   - show me the extrusions in this family
   - which solids and voids is this family made of
+  # MOVED 2026-11-01 from SELECT_FAMILY_FORMS, merged into this card.
+  - select these forms
+  - select the forms with these ids
+  - select the void forms
+  - get the forms with these ids
+  - delete one form from the family by its id

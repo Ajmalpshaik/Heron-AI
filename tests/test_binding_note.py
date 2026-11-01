@@ -383,6 +383,18 @@ def main():
         ({"name": "element", "type": "Element", "optional": "true"}, False),
         ({"name": "elements", "type": "IList<Element>", "source": "request",
           "optional": "true"}, False),
+        # 2026-11-01, GROUP_AND_COUNT v2: the host binds it null.
+        ({"name": "quantities", "type": "IDictionary<ElementId, double>",
+          "optional": "true"}, True),
+        ({"name": "quantities", "type": "IDictionary<ElementId, double>"}, False),
+        ({"name": "values", "type": "IDictionary<ElementId, string>",
+          "optional": "true"}, False),
+        # 2026-11-01: a curve list marked optional binds empty, as the host's
+        # EmptyWhenAbsent does (SET_VIEW_CROP's `boundary`).
+        ({"name": "boundary", "type": "IList<Curve>", "optional": "true"}, True),
+        ({"name": "boundary", "type": " IList< Curve > ", "optional": " True "}, True),
+        ({"name": "boundary", "type": "IList<Curve>"}, False),
+        ({"name": "curve", "type": "Curve", "optional": "true"}, False),
     ]
     agrees = all(HF.need_may_be_empty(need) == want for need, want in mirror)
     print("  %s  heron_fragment.need_may_be_empty answers the %d cases the host "
@@ -417,6 +429,39 @@ def main():
         ({"name": "inViewOnly", "type": "View", "source": "request",
           "optional": "false"}, None, False),
         ({"name": "view", "type": "View", "source": "model",
+          "optional": "true"}, None, False),
+        # 2026-11-01: a view list marked optional binds empty, as the host's
+        # AbsentValue does - and only that spelling, only when marked.
+        ({"name": "views", "type": "IList<View>", "source": "request",
+          "optional": "true"}, None, True),
+        ({"name": "views", "type": " IList<View> ", "source": "request",
+          "optional": " True "}, None, True),
+        ({"name": "views", "type": "IList<View>", "source": "request"},
+         None, False),
+        ({"name": "names", "type": "IList<string>", "source": "request",
+          "optional": "true"}, None, False),
+        # 2026-11-01: one Element or one MEPSystemType marked optional binds
+        # null, as the host's AbsentValue does - only when marked.
+        ({"name": "start", "type": "Element", "source": "request",
+          "optional": "true"}, None, True),
+        ({"name": "start", "type": " Element ", "source": "request",
+          "optional": " True "}, None, True),
+        ({"name": "start", "type": "Element", "source": "request"}, None, False),
+        ({"name": "systemType", "type": "MEPSystemType", "source": "request",
+          "optional": "true"}, None, True),
+        ({"name": "systemType", "type": "MEPSystemType", "source": "request"},
+         None, False),
+        ({"name": "systemType", "type": "PipingSystemType", "source": "request",
+          "optional": "true"}, None, False),
+        # 2026-11-01: an Element marked optional binds null and a point list
+        # empty, as the host's AbsentValue does (CREATE_OPENING's family half).
+        ({"name": "host", "type": "Element", "source": "request",
+          "optional": "true"}, None, True),
+        ({"name": "host", "type": "Element", "source": "request"},
+         None, False),
+        ({"name": "boundary", "type": "IList<XYZ>", "source": "request",
+          "optional": "true"}, None, True),
+        ({"name": "point", "type": "XYZ", "source": "request",
           "optional": "true"}, None, False),
     ]
     mirrored = absent_text is not None and all(

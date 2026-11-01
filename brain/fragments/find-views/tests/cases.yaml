@@ -41,7 +41,75 @@ negative:
       elements empty, skippedNonDrawing equal to their number. A zero here must
       never read as "this model has no views"
 
+  # VERSION 2 (2026-11-01, FIND_SCHEDULES, FIND_UNPLACED_VIEWS and
+  # FIND_VIEWS_WITHOUT_TEMPLATE merged in). Each FAILS on version 1, which
+  # never returns a schedule and has no placement, withoutTemplate, byType,
+  # placedCount, skippedInternal, onSheets or findings.
+  - given: VERSION 2. viewType "Schedule", nameContains ""
+    expect: >
+      every real schedule and NOT one template or internal one; compare with
+      the Schedules/Quantities branch of the Project Browser. skippedInternal
+      at least 1 on a model with a revision schedule
+
+  - given: VERSION 2. viewType "Schedule", nameContains "door"
+    expect: only schedules whose name contains it, in any casing
+
+  - given: VERSION 2. viewType "" on a model with schedules
+    expect: >
+      NOT ONE schedule in elements - they are counted in skippedNonDrawing, as
+      version 1. Schedules come back only when asked for
+
+  - given: >
+      VERSION 2. A real user schedule somebody named starting with an angle
+      bracket, viewType "Schedule"
+    expect: >
+      excluded and counted in skippedInternal - the known cost of recognising
+      internal schedules by name, made visible
+
+  - given: >
+      VERSION 2. placement "unplaced" on a project with forty views, twelve of
+      them on sheets
+    expect: >
+      twenty-eight returned, placedCount 12, byType breaking them down by view
+      type. Check one against the project browser - a placed view shows its
+      sheet number
+
+  - given: >
+      VERSION 2. placement "unplaced", viewType "Schedule", on a project whose
+      schedules are placed on sheets
+    expect: >
+      the placed schedules NOT returned - a schedule is placed through a
+      schedule placement, not a viewport, and reading viewports alone offers
+      the drawing set's schedules for deletion
+
+  - given: VERSION 2. placement "unplaced" on a model with no sheets
+    expect: >
+      placedCount 0 and a finding saying nothing is on a sheet - not a list
+      of views to delete
+
+  - given: VERSION 2. placement "unplacd" (misspelt)
+    expect: elements empty and a finding refusing it - never every view
+
+  - given: >
+      VERSION 2. withoutTemplate true on a project with 300 views, 40 on
+      sheets, 3 of those with no template
+    expect: >
+      the 3 first in elements and named in findings with their sheet numbers,
+      the working ones after them and counted in one finding; onSheets the 3
+
+  - given: VERSION 2. withoutTemplate true with schedules and legends on the sheets
+    expect: >
+      neither reported - neither takes a view template - and no sheet either
+
+  - given: VERSION 2. withoutTemplate true with viewType "Schedule"
+    expect: elements empty and a finding saying a schedule takes no view template here
+
+  - given: VERSION 2. withoutTemplate true, the result handed to APPLY_VIEW_TEMPLATE
+    expect: the fix applied to exactly the views that needed it
+
 second_route:
   - count the drawing views in the Project Browser by eye and compare
   - make a view template, name it after a real view, and confirm which one comes back
   - open one returned view - it must open as a drawing, never as a schedule or a sheet
+  - for placement, the sheet column beside each view in the project browser
+  - for withoutTemplate, a view list schedule with a View Template column, sorted by whether the view is on a sheet

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,25 @@ capability: SUM_BY_GROUP
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO GROUP_AND_COUNT (group-and-count), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable and
+# it can be brought back. Nothing offers it now - retrieval leaves DEPRECATED
+# out, and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to GROUP_AND_COUNT. The proof below, where there
+# is one, is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: GROUP_AND_COUNT
+  why: >
+    The same job: group a set of elements by a parameter value.
+    GROUP_AND_COUNT counted; this card counted and totalled. GROUP_AND_COUNT
+    version 2 takes this card's optional quantities and gives its totals,
+    counts, missing and incomplete under the same names, an element with no
+    quantity counted and never treated as zero, beside its own largest-first
+    groups. Nothing not carried.
 
 purpose: >
   Adds a measured quantity up per group: total per distinct value, how many

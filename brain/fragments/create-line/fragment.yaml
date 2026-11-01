@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 15
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,32 @@ capability: CREATE_LINE
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO DRAW_FAMILY_DETAIL_LINES (draw-family-detail-lines), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to DRAW_FAMILY_DETAIL_LINES. The proof below is the record of what this
+# card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: DRAW_FAMILY_DETAIL_LINES
+  why: >
+    The same drawing: straight lines between points, as detail lines in one
+    view or as model lines on a plane. DRAW_FAMILY_DETAIL_LINES draws them
+    since its version 2 in a project too, from the millimetre shape language
+    ("path X,Y; X,Y", arcs, closed shapes), with lineKind detail or model
+    asked for in a project - this card's rule, there is no safe default - a
+    detail line refused with no view or in a 3D view in this card's words,
+    model lines on the plane planeMm gives (with no view a horizontal plane at
+    that height), its `created` elements for the next step, and every line
+    read back. NOT CARRIED, the one opposite rule: this card skipped a pair
+    shorter than Revit's shortest line, counted it in tooShort and drew the
+    rest; the keeper refuses the whole call naming the piece - all or nothing,
+    the safer rule, kept on the owner's instruction.
 
 purpose: >
   Draws plain straight lines between pairs of points - either DETAIL lines,
@@ -109,18 +135,18 @@ compatibility-note: >
   short-curve limit is taken from the application itself rather than typed as a
   number, because it is a property of the installation and not a constant.
 
-# ROUTING - repeated in FIND_OVERLAPPING_LINES, CREATE_GRID and
-# CREATE_FILLED_REGION.
+# ROUTING - repeated in FIND_OVERLAPPING_LINES, CREATE_GRIDS and
+# DRAW_FAMILY_FILLED_REGION.
 #
 #   "draw a detail line here"            -> here
 #   "draw a line between these points"   -> here
 #   "put a setting out line on this plan" -> here, asDetail true
 #   "the lines are drawn twice on top of each other" -> FIND_OVERLAPPING_LINES -
 #                                          a READ over lines that already exist
-#   "draw a grid line"                   -> CREATE_GRID - a grid is a DATUM with
+#   "draw a grid line"                   -> CREATE_GRIDS - a grid is a DATUM with
 #                                           a bubble and a name, on every view;
 #                                           a line is not
-#   "hatch this area"                    -> CREATE_FILLED_REGION - a filled
+#   "hatch this area"                    -> DRAW_FAMILY_FILLED_REGION - a filled
 #                                           region has a boundary AND a fill
 #   "draw a room separation line across an opening"
 #                                        -> CREATE_ROOM_SEPARATION_LINES - a

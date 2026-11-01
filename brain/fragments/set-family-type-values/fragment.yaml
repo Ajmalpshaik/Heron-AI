@@ -187,14 +187,14 @@ compatibility-note: >
   millimetres divided by 304.8, degrees times pi over 180 - never a units API,
   which is what breaks across 2021.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "make a 600 x 600 type"               -> here
 #   "put 600 into Width"                  -> here
 #   "set the nut material to galvanised"  -> here (a family type's material)
 #   "rename the family type"              -> here ("Type Name=..." in values)
 #   "delete this family type"             -> here (deleteType)
-#   "rename these duct types"             -> RENAME_ELEMENTS - types in a
+#   "rename these duct types"             -> EDIT_TEXT_VALUES field Name - types in a
 #                                            project, not a family's own types
 #   "add a Width parameter"               -> ADD_FAMILY_PARAMETERS
 #   "neck width is width minus 100"       -> SET_FAMILY_FORMULA

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "turns a set of parameter values into a schedule-style table"
 kind: action
 domain: revit.reporting
 capability: GROUP_AND_COUNT
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -17,14 +17,51 @@ purpose: >
   Turns a set of parameter values into a schedule-style table: each distinct
   value, and how many carried it, largest group first.
 
+  **WITH A MEASURED QUANTITY IT TOTALS EACH GROUP TOO** (version 2, when
+  SUM_BY_GROUP was merged in) - the way a bill of quantities reads: "forty
+  lengths of 300x150 totalling 212 metres". `MEASURE_RUN_QUANTITIES` hands on
+  the numbers for MEP runs. An element with no quantity is counted, never
+  skipped and never treated as zero: `missing` carries them per group and
+  `incomplete` says a total rests on partial data. Version 1's proof no longer
+  describes the code and is kept as a record; DRAFT until it is proved again.
+
 contract:
   needs:
     - name: values
       type: IDictionary<ElementId, string>
+    - name: quantities
+      # Version 2, from SUM_BY_GROUP: the number to add up per element, handed
+      # on by a measuring fragment (MEASURE_RUN_QUANTITIES' `quantities`).
+      # Optional: nothing handing it on binds NULL, and this counts as version
+      # 1 did. Handed on EMPTY, every element is missing a quantity.
+      type: IDictionary<ElementId, double>
+      optional: true
   provides:
     - name: groups
       role: result
       type: IList<KeyValuePair<string, int>>
+    - name: counts
+      # Version 2, from SUM_BY_GROUP: `groups` as a dictionary, value -> how
+      # many.
+      role: result
+      type: IDictionary<string, int>
+    - name: totals
+      # Version 2, from SUM_BY_GROUP: the quantity added up per group, in the
+      # unit it was handed on in. Empty when no `quantities` came.
+      role: result
+      type: IDictionary<string, double>
+    - name: missing
+      # Version 2, from SUM_BY_GROUP: elements per group with no quantity to
+      # add - not skipped, and not treated as zero. What the total rests on,
+      # never part of it (D-52).
+      role: accounting
+      type: IDictionary<string, int>
+    - name: incomplete
+      # Version 2, from SUM_BY_GROUP: at least one group had an element with no
+      # quantity, so A TOTAL THAT RESTS ON PARTIAL DATA SAYS SO ON THE SAME
+      # LINE AS THE NUMBER.
+      role: result
+      type: bool
 
 proof:
   date: '2026-09-13'
@@ -57,6 +94,16 @@ tests: tests/
 #                                  a drawing. Both are right answers to
 #                                  different sentences
 #   "how many ducts are there"  -> COUNT_ELEMENTS
+#   "total the lengths by size" -> here, fed by MEASURE_RUN_QUANTITIES, which
+#                                  hands on `values` and `quantities` both
+#                                  (version 2, SUM_BY_GROUP merged in)
+#
+# SUM_BY_GROUP WAS MERGED INTO THIS CARD on 2026-11-01, on the owner's
+# instruction ("make sure there is no duplicate tools"), and is DEPRECATED.
+# Its needs and outputs are here under the same names - values, quantities,
+# totals, counts, missing, incomplete - and this card's largest-first `groups`
+# is kept. Nothing not carried. One rule, the same in both: a key that is the
+# empty string is its own group; a null key now joins it.
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search
@@ -79,3 +126,10 @@ utterances:
   # size" and "give me a schedule of the types"; only the noun differed.
   - what sizes are the ducts
   - duct schedule by size
+  # MOVED 2026-11-01 from SUM_BY_GROUP, merged into this card.
+  - total the lengths by size
+  - how many metres of each size
+  - give me a takeoff
+  - add up the areas per system
+  - what is the total per type
+  - a bill of quantities for these

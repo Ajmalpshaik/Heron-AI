@@ -12,7 +12,7 @@ capability: SET_SCHEDULE_SORT_GROUP
 # VERSION 2 (2026-11-01, on the owner's word in the brief of that day's
 # session: Ajmal PS asked, after a duct length schedule on his Revit 2020 job
 # model could not have its Length column set to metres, for every schedule
-# setting Heron is missing - FRAGMENT-ISSUES row 5b-1363). The rest of the
+# setting Heron is missing - FRAGMENT-ISSUES row 5b-1367). The rest of the
 # Sorting/Grouping tab: a footer's title and count (`showFooterTitle`,
 # `showFooterCount`), the blank line between groups (`showBlankLine`), order,
 # header, footer, footer title, footer count and blank line PER SORT LEVEL
@@ -241,7 +241,9 @@ compatibility-note: >
 #                                          sorting with a header in Revit
 #   "put a total at the bottom"         -> here, showGrandTotal
 #   "calculate totals for the flow column"
-#                                       -> SET_SCHEDULE_FIELD_TOTALS. A footer
+#                                       -> SET_SCHEDULE_APPEARANCE, calculateTotals
+#                                          (SET_SCHEDULE_FIELD_TOTALS until it
+#                                          was merged there, 2026-11-01). A footer
 #                                          and the grand total are switched on
 #                                          HERE; what they add up is chosen per
 #                                          column THERE. Until a column has
@@ -253,7 +255,7 @@ compatibility-note: >
 #                                          exactly: a table claiming a sentence
 #                                          the index never saw records a
 #                                          decision nothing acts on
-#   "list the levels in the project"    -> LIST_LEVELS. A question about the
+#   "list the levels in the project"    -> REPORT_LEVEL_ELEVATIONS. A question about the
 #                                          MODEL, and it is what "sort the
 #                                          schedule by level" used to return
 #   "filter the schedule to level 2"    -> SET_SCHEDULE_FILTERS. Sorting decides
@@ -270,10 +272,12 @@ compatibility-note: >
 #   "change the grand total title to Total Length"
 #                                       -> here, version 2, grandTotalTitle
 #   "calculate the maximum flow for each group"
-#                                       -> SET_SCHEDULE_FIELD_TOTALS v2. What
-#                                          a COLUMN calculates is chosen
-#                                          there; a footer's title and count
-#                                          are a sort level's switches, here
+#                                       -> SET_SCHEDULE_APPEARANCE, its
+#                                          calculation (SET_SCHEDULE_FIELD_TOTALS
+#                                          until it was merged there). What a
+#                                          COLUMN calculates is chosen there;
+#                                          a footer's title and count are a
+#                                          sort level's switches, here
 
 utterances:
   - sort the schedule by level

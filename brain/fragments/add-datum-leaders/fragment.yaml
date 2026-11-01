@@ -30,7 +30,7 @@ risk: MODIFY
 # remove a leader; that stays a hand job, and the answer never claims it.
 #
 # SET_DATUM_BUBBLES shows and hides the bubble itself; MAXIMIZE_DATUM_EXTENTS
-# and RESET_DATUM_EXTENTS move the ends. Neither adds an elbow.
+# and SET_DATUM_EXTENT_TYPE move the ends. Neither adds an elbow.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 purpose: >

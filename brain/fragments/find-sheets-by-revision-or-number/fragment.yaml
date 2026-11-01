@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,31 @@ capability: FIND_SHEETS_BY_REVISION_OR_NUMBER
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO FIND_SHEETS (find-sheets), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable
+# and it can be brought back. Nothing offers it now - retrieval leaves
+# DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to FIND_SHEETS. The proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: FIND_SHEETS
+  why: >
+    The same job: the sheets, narrowed, handed to the next step - a sheet
+    set, a PDF export, a title block. FIND_SHEETS version 3 took every rule
+    of this card's: the sheets of one revision by its sequence, description
+    or date, matched against every revision on the sheet (GetAllRevisionIds)
+    and not only the latest; a description fitting two revisions refused and
+    both named; a typed list of sheet numbers matched whole, as an input
+    apart from its part-match; and revisionsMatched, notFound,
+    listedWithoutRevision, notRead and refused under the same names. One
+    rule was opposite and the safer was kept: a sheet view template is left
+    out there, where this card returned it. Not carried: this card refused
+    when nothing at all was given; FIND_SHEETS returns every sheet then, its
+    proved job, and still refuses a revision or a list that fits nothing.
 
 # WHY THIS IS A NEW CARD AND NOT A WIDENING (2026-10-17, FRAGMENT-ISSUES row
 #   5b-550). The owner's rule is to widen what already touches the job first.

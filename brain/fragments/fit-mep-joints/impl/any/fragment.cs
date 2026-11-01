@@ -1,5 +1,17 @@
 // NOT STANDALONE. Assumes `doc`, `elements` and `toleranceMm` are in scope;
-// leaves `fitted`, `created`, `summary`, `freeEnds` and `notMepCurve` behind.
+// leaves `fitted`, `created`, `summary`, `freeEnds`, `ontoOutlets`,
+// `notMepCurve`, `noOpenEnd`, `gaps` and `refused` behind.
+//
+// VERSION 3 (2026-11-01) took in PLACE_MEP_FITTING, which joined ONE joint a
+// call and is DEPRECATED, merged into this card. What it did that this did
+// not is carried here: two open ends that are APART are named with the gap
+// ("40 mm apart") rather than only counted as free ends; a run handed in with
+// no open end is named (`noOpenEnd`); and when nothing at all is fitted the
+// reason is said in `refused` in that card's words - no duct or pipe, no open
+// end, the gap, or a single run whose ends meet nothing. Its two-to-four rule
+// is a rule about ONE JOINT here: a point where five or more ends meet fails
+// the job, as it did. Its transition, built in whichever order the ends came,
+// is NOT carried: the larger end goes first, the rule measured below.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -67,6 +79,12 @@ var created = new List<ElementId>();
 string summary = null;
 var freeEnds = 0;
 var notMepCurve = new List<ElementId>();
+// VERSION 3, from PLACE_MEP_FITTING: the runs with no open end, the gaps
+// between free ends that are apart, and why nothing was fitted.
+var noOpenEnd = new List<ElementId>();
+var gaps = new List<string>();
+string refused = null;
+var invariantCulture = System.Globalization.CultureInfo.InvariantCulture;
 
 // Every open end of every run handed in, with the run it belongs to.
 var ends = new List<Connector>();
@@ -84,17 +102,27 @@ foreach (var element in elements)
     runs.Add(run);
 
     var manager = run.ConnectorManager;
-    if (manager == null) continue;
+    var openHere = 0;
 
-    foreach (Connector connector in manager.Connectors)
+    if (manager != null)
     {
-        if (connector == null) continue;
-        if (connector.ConnectorType != ConnectorType.End) continue;
-        if (connector.IsConnected) continue;
+        foreach (Connector connector in manager.Connectors)
+        {
+            if (connector == null) continue;
+            if (connector.ConnectorType != ConnectorType.End) continue;
+            if (connector.IsConnected) continue;
 
-        ends.Add(connector);
-        owners.Add(run.Id);
+            ends.Add(connector);
+            owners.Add(run.Id);
+            openHere++;
+        }
     }
+
+    // A RUN WITH NO OPEN END - every connector already carrying something - has
+    // nothing to join. PLACE_MEP_FITTING refused it; here it is named, because
+    // in a whole layout it is a run already fitted, and another run's branch
+    // may still be tapped onto its side.
+    if (openHere == 0) noOpenEnd.Add(run.Id);
 }
 
 // The joints: every end within the tolerance of a group's first end, one end
@@ -218,6 +246,7 @@ Func<Connector, Connector, bool> sameSizeAs = (a, b) =>
 };
 
 var failures = new List<string>();
+var dangling = new List<Connector>();
 var ontoOutlets = 0;
 var jointCount = 0;
 int elbows = 0, unions = 0, transitions = 0, tees = 0, crosses = 0, taps = 0;
@@ -243,7 +272,14 @@ foreach (var joint in joints)
             }
 
             var outlet = outlets.Count == 1 ? outlets[0] : null;
-            if (outlet == null || sameSizeAs(joint[0], outlet)) { freeEnds++; continue; }
+            if (outlet == null || sameSizeAs(joint[0], outlet))
+            {
+                freeEnds++;
+                // An end on NOTHING - no outlet under it, no run to tap - is
+                // where a gap may be; see `gaps` below.
+                if (outlet == null) dangling.Add(joint[0]);
+                continue;
+            }
             jointCount++;
 
             var ontoAt = placeOf(joint[0].Origin);
@@ -449,6 +485,65 @@ if (failures.Count > 0)
         failures.Count, jointCount, string.Join(" | ", failures)));
 }
 
+// THE GAPS, NAMED - PLACE_MEP_FITTING's "the nearest open ends are 40 mm
+// apart". Two free ends of DIFFERENT runs, each the other's nearest, with
+// nothing under either - not an outlet, not another run's side - are two ends
+// that were meant to meet and do not. Nothing is moved to close the gap:
+// where the services run is a decision, not a detail. Only mutual nearest
+// pairs, so a long layout names each gap once and not every end's distance
+// to every other.
+Func<Connector, Connector> nearestOf = end =>
+{
+    Connector best = null;
+    var bestDistance = double.MaxValue;
+    foreach (var other in dangling)
+    {
+        if (other == end || other.Owner.Id == end.Owner.Id) continue;
+        var distance = end.Origin.DistanceTo(other.Origin);
+        if (distance < bestDistance) { bestDistance = distance; best = other; }
+    }
+    return best;
+};
+
+var nearestGapMm = double.MaxValue;
+for (var i = 0; i < dangling.Count; i++)
+{
+    var partner = nearestOf(dangling[i]);
+    if (partner == null || nearestOf(partner) != dangling[i]) continue;
+    if (dangling.IndexOf(partner) < i) continue;
+
+    var apartMm = dangling[i].Origin.DistanceTo(partner.Origin) * mmPerFoot;
+    nearestGapMm = Math.Min(nearestGapMm, apartMm);
+    gaps.Add(string.Format(invariantCulture, "{0} and {1}: two open ends {2:0.#} mm apart - nothing was moved to close it",
+        placeOf(dangling[i].Origin), placeOf(partner.Origin), apartMm));
+}
+
+// WHY NOTHING WAS FITTED, in PLACE_MEP_FITTING's words, when nothing was. A
+// layout that fitted some joints needs none of this: `summary` says what was
+// done and `gaps` what was not.
+if (fitted == 0)
+{
+    if (runCount == 0)
+        refused = string.Format(
+            "no duct or pipe was handed in - {0} element(s), none of them a run. A fitting joins two, three or "
+            + "four runs: two make an elbow, a union or a transition, three a tee, four a cross",
+            notMepCurve.Count);
+    else if (noOpenEnd.Count == runCount)
+        refused = "every connector on " + (runCount == 1 ? "this run" : "these runs") + " is already carrying "
+                + "something, so there is no open end here to join";
+    else if (gaps.Count > 0)
+        refused = string.Format(invariantCulture,
+            "the nearest open ends are {0:0.#} mm apart and a fitting is built where they MEET. Nothing is "
+            + "moved to close that - where the services run is a decision, not a detail", nearestGapMm);
+    else if (noOpenEnd.Count > 0)
+        refused = string.Format(
+            "{0} of the {1} run(s) have no open end - every connector on them is already carrying something - "
+            + "and no other end meets anything, so there is nothing here to join", noOpenEnd.Count, runCount);
+    else if (runCount == 1)
+        refused = "one run was given and neither of its ends meets anything - a fitting joins two, three or four "
+                + "runs, or one run onto an outlet of another size or onto the side of another run";
+}
+
 summary = string.Format(
     "{0} joint(s) among {1} run(s), and all {2} fitted: {3} elbow(s), {4} tee(s), "
     + "{5} tap(s), {6} transition(s) - {10} of them straight onto a unit's or terminal's "
@@ -456,4 +551,7 @@ summary = string.Format(
     + "meeting it, or on an outlet of its own size, is not a joint; CONNECT_OPEN_ENDS joins "
     + "those to equipment and terminals",
     jointCount, runCount, fitted, elbows, tees, taps, transitions, unions, crosses, freeEnds,
-    ontoOutlets);
+    ontoOutlets)
+    + (gaps.Count > 0 ? ". " + gaps.Count + " gap(s) between free ends, named: " + string.Join(" | ", gaps) : "")
+    + (noOpenEnd.Count > 0 ? ". " + noOpenEnd.Count + " run(s) handed in had no open end at all" : "")
+    + (refused != null ? ". Nothing fitted: " + refused : "");

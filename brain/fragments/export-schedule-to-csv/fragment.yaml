@@ -132,7 +132,9 @@ compatibility-note: >
 #                                        filters included, and that is correct
 #   "export the sheets"               -> EXPORT_SHEETS_TO_PDF
 #   "export the views"                -> EXPORT_VIEWS_TO_DWG
-#   "which schedules are there"       -> FIND_SCHEDULES, which is what hands the
+#   "which schedules are there"       -> FIND_VIEWS, viewType Schedule (FIND_
+#                                        SCHEDULES until it was merged there,
+#                                        2026-11-01), which is what hands the
 #                                        schedules to here
 
 utterances:

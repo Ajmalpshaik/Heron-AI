@@ -37,8 +37,8 @@
 // text type. IsValidTextTypeId is Revit's own answer, asked first.
 //
 // FOUR MEMBERS ARE NOT ON EVERY RELEASE, AND ARE REACHED BY NAME AT RUN TIME,
-// never `#if` - the add-in compiles fragments with no release symbols
-// (FRAGMENT-ISSUES 5b-181). Read off the shipped reference assemblies of all
+// one implementation for every release (the add-in has handed fragments the
+// release symbols since FRAGMENT-ISSUES 5b-181's fix; this is a choice). Read off the shipped reference assemblies of all
 // eight releases (tools/api-surface --members), 2026-11-01:
 //   ViewSchedule.UseStripedRowsOnSheets, Get/SetStripedRowsColor   2021 on
 //   ScheduleDefinition.IsFilteredBySheet, IsValidCategoryForFilterBySheet

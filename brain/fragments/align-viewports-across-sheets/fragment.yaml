@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: ALIGN_VIEWPORTS_ACROSS_SHEETS
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CENTER_VIEWPORTS_ON_SHEETS (center-viewports-on-sheets), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable
+# and it can be brought back. Nothing offers it now - retrieval leaves
+# DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to CENTER_VIEWPORTS_ON_SHEETS. The proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CENTER_VIEWPORTS_ON_SHEETS
+  why: >
+    The same job: move the one viewport on each sheet to a target and read
+    it back. CENTER_VIEWPORTS_ON_SHEETS version 2 lines the sheets up to a
+    master as this card did - masterSheetNumber found in the whole model,
+    the master's viewport centre copied in sheet space, a sheet at another
+    scale skipped in scaleMismatch, a sheet with several viewports left
+    alone, aligned counted only on a read-back. Where the rules differed the
+    safer was kept: a sheet whose title block sits at another origin is
+    skipped and named in titleBlockElsewhere and its title block is never
+    moved (this card moved it), a move whose read-back missed is put back
+    rather than left moved under refused, and a sheet or a master without
+    exactly one title block is not touched.
 
 purpose: >
   Lines the viewports up across sheets - puts the plan in the same place on
@@ -133,13 +157,13 @@ compatibility-note: >
 #                                           until 2026-09-27
 #   "put this view on a sheet"           -> PLACE_VIEW_ON_SHEET, which places
 #                                           one. This moves ones already placed
-#   "put these views on sheets"          -> PLACE_VIEWS_ON_SHEET
+#   "put these views on sheets"          -> PLACE_VIEW_ON_SHEET
 #   "make the sheets"                    -> CREATE_SHEETS
 #   "change the title block"             -> SET_SHEET_TITLE_BLOCK. This
 #                                           fragment only MOVES a title block,
 #                                           and only when asked to
-#   "the views are at different scales"  -> SET_VIEW_SCALE, which is what makes
-#                                           an alignment possible at all
+#   "the views are at different scales"  -> SET_VIEW_PROPERTIES, which is what
+#                                           makes an alignment possible at all
 
 utterances:
   - the plan jumps when i flick through the sheets

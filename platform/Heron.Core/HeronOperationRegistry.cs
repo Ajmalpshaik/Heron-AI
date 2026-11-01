@@ -214,7 +214,9 @@ namespace Heron.Core
                 //
                 // THAT REFUSAL IS NOT THE WHOLE GUARANTEE, and this comment
                 // said it was until 2026-10-17. Row 5b-350 is a read run of
-                // place-nested-family that reported Revit's refusal and still
+                // place-nested-family (PLACE_FAMILY_INSTANCES in a family
+                // since 2026-11-01, when it was merged there) that reported
+                // Revit's refusal and still
                 // left a real instance in the family, twice - cause not
                 // established, NEEDS-CHECKING CP1. So the executor also counts
                 // the model before and after every read and answers one that

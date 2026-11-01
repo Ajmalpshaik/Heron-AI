@@ -11,9 +11,12 @@
 #
 # FORMAT: TAG <TAB> sentence. '#' lines are comments. No line is a phrase any
 # card declares (checked against main 17040842), so every answer is ranked.
-#   Q  a question about what an element is made of  -> READ_ELEMENT_MATERIAL
-#      (a question about UNUSED materials           -> FIND_UNUSED_MATERIALS)
-#   C  asking to make a material                    -> CREATE_MATERIAL
+#   Q  a question about what an element is made of  -> REPORT_MATERIAL_TAKEOFF
+#      (READ_ELEMENT_MATERIAL until 2026-11-01, when it was merged into that card)
+#      (a question about UNUSED materials           -> FIND_PURGEABLE_ELEMENTS,
+#       FIND_UNUSED_MATERIALS until 2026-11-01)
+#   C  asking to make a material                    -> CREATE_STARTER_MATERIALS
+#      (CREATE_MATERIAL until 2026-11-01, when it was merged into that card)
 #   S  selecting by a material                      -> SELECT_BY_MATERIAL
 #   W  swapping a material                          -> REPLACE_MATERIAL
 #   L  listing a document's materials               -> LIST_MATERIALS, once it exists

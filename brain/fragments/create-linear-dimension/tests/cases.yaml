@@ -133,6 +133,52 @@ negative:
       refused - a link inside a link is not reached, and a link with no word
       after it is asked for one; nothing created
 
+  # VERSION 5 (2026-11-01) - grids and levels are this card's alone, with
+  # CREATE_DIMENSION's datum rules carried. Each FAILS on version 4. NOT RUN.
+  - given: >
+      VERSION 5. A floor plan showing grids 1 to 6, between "grid 1 | grid 2 |
+      grid 3 | grid 4 | grid 5 | grid 6", one point given twice 2000 mm past
+      the grid ends
+    expect: >
+      one string, `measured` six-reference chain read back segment by
+      segment against the grid spacing - CREATE_DIMENSION's version 4 case,
+      here
+  - given: VERSION 5. The same, with grid 6 hidden in the view (Hide in View, Elements)
+    expect: >
+      NOTHING drawn, `refused` saying grid 6 is not shown in the view - named
+      before Revit is asked. Version 4 handed it to Revit, whose refusal
+      named no grid
+  - given: >
+      VERSION 5. A section showing Level 00, 01 and 02, "level Level 00 |
+      level Level 01 | level Level 02", one point twice beside them
+    expect: >
+      one string up the elevation reading floor to floor. THE FIRST VERSION 5
+      CASE TO RUN: if this view's collector does not list levels, the new
+      not-shown check refuses every level, and that must be seen before the
+      check is trusted
+  - given: >
+      VERSION 5. The same section on a model whose level type's Elevation
+      Base is the SURVEY POINT, well away from the project origin vertically
+    expect: >
+      the string beside the levels it measures, the same values - version 4
+      worked the one-point string out from Elevation (row 5b-179)
+  - given: VERSION 5. "grid A | level Level 2" in a section
+    expect: refused naming 1 grid and 1 level - nothing drawn
+  - given: VERSION 5. "level Level 1 | level Level 2" in a FLOOR PLAN
+    expect: refused - a plan looks along the vertical - nothing drawn
+  - given: VERSION 5. "grid A | grid C" where grid C is an arc
+    expect: refused naming grid C as an arc - nothing drawn
+  - given: VERSION 5. "grid A | grid 1" - grids at right angles
+    expect: refused naming grid 1 as out of parallel - nothing drawn
+  - given: VERSION 5. Two grids drawn on top of each other, named
+    expect: refused - the string would measure zero - nothing drawn
+  - given: >
+      VERSION 5. "grid D | face 345678 left" and "level Level 1 | face 345678
+      bottom" for a builders-work opening in a section
+    expect: >
+      each drawn - a datum WITH a face is still one string (5b-482); only a
+      grid with a level is refused
+
 second_route:
   - >
       Revit's own Annotate then Aligned dimension picked on the same two faces,

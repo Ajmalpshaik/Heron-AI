@@ -51,7 +51,8 @@ purpose: >
      sill.
   4. THE FRAME that follows Width and Height: three EXTRUDE_BETWEEN_PLANES
      boxes - two jambs and a head - each between its own planes. A moulded
-     frame section is CREATE_FAMILY_SWEEP along the sides and head on the
+     frame section is a CREATE_FAMILY_FORMS kind=sweep row along the sides
+     and head on the
      wall's centre plane, but a swept path keeps the size it was drawn at
      unless LOCK_FORM_TO_PLANES holds its faces - flex it before trusting it.
      THE LEAF OR SASH: EXTRUDE_BETWEEN_PLANES between the frame's inner
@@ -63,8 +64,9 @@ purpose: >
      (SET_FAMILY_FORM_VISIBILITY) and drawn as symbolic lines instead:
      DRAW_FAMILY_SYMBOLIC_LINES for the leaf and the SWING ARC on a "Plan
      Swing" subcategory, and in elevation the opening lines on "Elevation
-     Swing". SET_FAMILY_FORM_MATERIAL links each to a material parameter.
-  6. A LEAF THAT SWAPS: PLACE_NESTED_FAMILY for the leaf, LOCK_NESTED_FAMILY_
+     Swing". LINK_FAMILY_PARAMETER links each Material to a material parameter.
+  6. A LEAF THAT SWAPS: PLACE_FAMILY_INSTANCES for the leaf, nested in the
+     door family, LOCK_NESTED_FAMILY_
      TO_PLANES, then ADD_FAMILY_TYPE_PARAMETER so each type chooses its leaf
      (glazed, solid, louvred). Hardware is usually nested too.
   7. ADD_FAMILY_FLIP_CONTROL in the floor plan - Autodesk's remark: a single
@@ -102,41 +104,43 @@ needs:
   - SET_FAMILY_FORMULA
   - CREATE_REFERENCE_PLANES
   - LABEL_FAMILY_DIMENSION
-  - CREATE_FAMILY_SWEEP
+  # CREATE_FAMILY_SWEEP was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
   - EXTRUDE_BETWEEN_PLANES
   - LOCK_FORM_TO_PLANES
   - SET_FAMILY_FORM_SUBCATEGORY
   - SET_FAMILY_FORM_VISIBILITY
   - DRAW_FAMILY_SYMBOLIC_LINES
-  - SET_FAMILY_FORM_MATERIAL
-  - PLACE_NESTED_FAMILY
+  # SET_FAMILY_FORM_MATERIAL was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
+  # PLACE_NESTED_FAMILY was listed here until 2026-11-01, when it was merged into PLACE_FAMILY_INSTANCES.
+  - PLACE_FAMILY_INSTANCES
   - LOCK_NESTED_FAMILY_TO_PLANES
   - ADD_FAMILY_TYPE_PARAMETER
   - ADD_FAMILY_FLIP_CONTROL
   - REPORT_FAMILY_FORMS
   # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
-  # GUIDs, against the family, before ADD_FAMILY_SHARED_PARAMETERS writes.
+  # GUIDs, against the family, before ADD_FAMILY_PARAMETERS' shared kind writes.
   - REPORT_SHARED_PARAMETER_FILE
-  - ADD_FAMILY_SHARED_PARAMETERS
+  # ADD_FAMILY_SHARED_PARAMETERS was listed here until 2026-11-01, when it was merged into ADD_FAMILY_PARAMETERS.
   - SET_FAMILY_PLANE_REFERENCE
   # FAMILY-CREATION's and HOSTED-FAMILY-CREATION's steps, which this skill says
   # still hold.
-  - SET_FAMILY_CATEGORY
+  # SET_FAMILY_CATEGORY was listed here until 2026-11-01, when it was merged into SET_FAMILY_SETTINGS.
   - SET_FAMILY_SETTINGS
-  - CREATE_FAMILY_EXTRUSION
-  - CREATE_FAMILY_REVOLUTION
-  - CREATE_FAMILY_BLEND
-  - CREATE_FAMILY_SWEPT_BLEND
-  - LINK_FAMILY_FORM_PARAMETER
+  - CREATE_FAMILY_FORMS
+  # CREATE_FAMILY_REVOLUTION was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # CREATE_FAMILY_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # CREATE_FAMILY_SWEPT_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # LINK_FAMILY_FORM_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - LABEL_FAMILY_RADIUS
   - COMBINE_FAMILY_FORMS
   - ARRAY_FAMILY_FORMS
   - ADD_FAMILY_CONNECTOR
-  - LINK_NESTED_TYPE_PARAMETER
+  # LINK_NESTED_TYPE_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - LINK_FAMILY_PARAMETER
   - DRAW_FAMILY_FILLED_REGION
   - REPORT_FAMILY_TYPE_CATALOG
-  - CREATE_FAMILY_HOST_OPENING
+  # CREATE_FAMILY_HOST_OPENING was listed here until 2026-11-01, when it was merged into CREATE_OPENING.
+  - CREATE_OPENING
   # The proof, and never skipped.
   - FLEX_FAMILY
   - LOAD_FAMILY

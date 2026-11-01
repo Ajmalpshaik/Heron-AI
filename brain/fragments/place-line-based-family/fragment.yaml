@@ -96,16 +96,17 @@ compatibility-note: >
   on 2026-09-18. No ElementId is built from an int, so 2024's 64-bit ids do not
   reach this code. Curves arrive in internal FEET, converted at the edge (D-20).
 
-# ROUTING - repeated in PLACE_FAMILY_INSTANCES and PLACE_STRUCTURAL_FAMILY.
+# ROUTING - repeated in PLACE_FAMILY_INSTANCES.
 #
 #   "put a beam along here"        -> here
-#   "place a beam between two points" -> here. PLACE_STRUCTURAL_FAMILY refuses
+#   "place a beam between two points" -> here. PLACE_FAMILY_INSTANCES refuses
 #                                     a beam or a brace since its version 4 and
 #                                     names this one: at a point it left
 #                                     zero-length beams (FRAGMENT-ISSUES 5b-1201)
 #   "add the bracing"              -> here, structuralType Brace
 #   "place these diffusers"        -> PLACE_FAMILY_INSTANCES - POINT based
-#   "put a column at each of these"-> PLACE_STRUCTURAL_FAMILY - point, but
+#   "put a column at each of these"-> PLACE_FAMILY_INSTANCES, structuralType
+#                                     column - point, but
 #                                     structural, which the diffuser one is not
 #   "put a door in this wall"      -> PLACE_HOSTED_FAMILY - it needs a host
 

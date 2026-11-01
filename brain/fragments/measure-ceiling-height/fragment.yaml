@@ -58,7 +58,7 @@ purpose: >
   | What you meant | Use |
   |---|---|
   | "the soffit height in here", "how high is the ceiling" - to know | `MEASURE_CEILING_HEIGHT`, read-only |
-  | "line up the soffits", "align the undersides" - to change | `ALIGN_MEP_ELEVATION`, which MOVES services |
+  | "line up the soffits", "align the undersides" - to change | `ALIGN_ELEMENTS` with an edge, which MOVES services |
 
   Asking a height must never move a duct. Both fragments carry this table: a
   cross-reference written one way only routes whoever lands on the newer file,
@@ -190,7 +190,8 @@ compatibility-note: >
 
 # ROUTING - the same rows are in the fragments named here.
 #
-#   "make a ceiling over this area" -> CREATE_CEILING - this one only
+#   "make a ceiling over this area" -> CREATE_FLOOR with a ceiling type
+#                                      (CREATE_CEILING until 2026-11-01) - this one only
 #                                      MEASURES a ceiling that exists
 
 #   "how much room is there between the duct and the pipe above it" ->

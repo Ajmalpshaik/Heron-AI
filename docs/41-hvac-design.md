@@ -111,7 +111,7 @@ diffuser's flow. It could not say what any of those numbers **should be**. Now i
 | *"How much sun is on this west wall at 3 pm?"* | clear-sky irradiance on the surface, hour by hour, from the site's own sky (`solar`) | the figure goes into `cooling_load` |
 | *"How much air does this office need?"* | the room's cooling load and its supply airflow (`cooling_load`, `supply_airflow`) | `SET_AIR_TERMINAL_FLOW` per diffuser, after `terminal_flows` splits it |
 | *"Which month is worst, and at what hour?"* | the room's load on every month's design day, hour by hour, with the peak month and hour and the lowest month (`monthly_load`) | `READ_SPACE_LOADS` reads Revit's own figure to compare |
-| *"Fresh air for this floor?"* | ASHRAE 62.1 outdoor air, zone by zone (`ventilation`) | the figure goes on the Space; `REPORT_SPACE_AIRFLOW` reads it back |
+| *"Fresh air for this floor?"* | ASHRAE 62.1 outdoor air, zone by zone (`ventilation`) | the figure goes on the Space; `READ_SPACE_LOADS` reads it back |
 | *"How many diffusers, and where?"* | a grid, each one's flow, and the throw to look for (`diffuser_layout`) | `PLACE_FAMILY_INSTANCES` at the points it lists |
 | *"Which neck size?"* | the smallest neck under a velocity, or the catalogue row under an NC (`diffuser_select`) | `CHANGE_ELEMENT_TYPE` to that size's type, then `SET_AIR_TERMINAL_FLOW` |
 | *"Size this duct for 800 L/s at 1 Pa/m"* | equal friction, velocity, or both, snapped UP to your sizes (`duct_size`) | `SET_MEP_SIZE`, one call per size |

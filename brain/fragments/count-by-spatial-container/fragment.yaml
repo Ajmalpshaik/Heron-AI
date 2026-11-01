@@ -218,7 +218,7 @@ compatibility-note: >
 #                                           for one room. This gives the counts
 #                                           for all of them
 #   "how many are there"                 -> COUNT_ELEMENTS
-#   "total the length per group"         -> SUM_BY_GROUP - a measured quantity
+#   "total the length per group"         -> GROUP_AND_COUNT - a measured quantity
 #                                           rather than a count
 #   "which rooms are missing services"   -> CHECK_ROOM_MEP_COMPLETENESS
 #   "how many diffusers in here"         -> FILTER_ELEMENTS_IN_ROOM. "IN HERE"

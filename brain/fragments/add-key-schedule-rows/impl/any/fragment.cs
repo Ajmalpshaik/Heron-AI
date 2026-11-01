@@ -4,7 +4,7 @@
 // ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). One undo
 // takes every key added here back out.
 //
-// A KEY SCHEDULE'S ROWS ARE ITS KEYS. CREATE_KEY_SCHEDULE makes the table and
+// A KEY SCHEDULE'S ROWS ARE ITS KEYS. CREATE_SCHEDULE (listKind key) makes the table and
 // no rows, so an element's key drop-down is empty until somebody presses
 // Insert Data Row once per key and types each Key Name. This is that, for a
 // list of names, in one call.

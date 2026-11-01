@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-EXP-018
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,20 +9,30 @@ semantic-identity: "add storeys to the project"
 kind: action
 domain: revit.document
 capability: CREATE_LEVELS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Creates levels at the elevations given, and reports what each one ended up at
-  and what it ended up called.
+  Creates levels at the elevations given - one level or many - and reports what
+  each one ended up at and what it ended up called.
 
-  **A LEVEL NAME THAT ALREADY EXISTS IS REFUSED BY REVIT, AND THE REFUSAL IS THE
-  INTERESTING PART.** The level is created first and named second, so a name
-  clash leaves a real level in the model carrying whatever Revit called it -
-  `Level 7` when `Level 3` was asked for. Reporting only a count hides that
-  completely: the number is right and the browser is wrong. `namedAs` returns
-  the name each level actually has.
+  **A NAME ALREADY TAKEN IS REFUSED BEFORE ANY LEVEL IS CREATED** (version 2,
+  when CREATE_LEVEL was merged in). Every name asked for is checked against
+  the project's levels and against the other names in the call, ignoring
+  capitals as Revit does, and one clash creates nothing: `refused` says which
+  name clashed with which level. Version 1 created the level first and named it
+  second, so a clash left a real level in the model under whatever Revit called
+  it - `Level 7` when `Level 3` was asked for. `namedAs` still returns the name
+  each level actually has, and `nameRefused` the ones whose name did not take.
+
+  **A LEVEL REVIT WILL NOT CREATE IS NAMED, NEVER DROPPED** (version 2). Each
+  refusal is recorded against its height and the whole job is then undone -
+  nothing kept, one request one change (Article 8). Version 1 let it vanish
+  and returned one level fewer with nothing said. It makes the levels and
+  nothing else - `noViewsMade`, and the note below the contract. This is
+  version 2; version 1's proof no longer describes the code and is kept as a
+  record, and the fragment is DRAFT until it is proved again.
 
   **THE ELEVATION IS READ BACK AS `ProjectElevation`.** That is the one in the
   same space as everything else in the model. `Elevation` is measured from
@@ -73,6 +83,19 @@ contract:
       # (D-52).
       role: accounting
       type: IList<double>
+    - name: refused
+      # Version 2, from CREATE_LEVEL. The sentence saying which name asked for
+      # is already taken, and by which level - and that NO level was created.
+      # Null when nothing was refused. Why it declined, never a thing it made
+      # (D-52).
+      role: accounting
+      type: string
+    - name: noViewsMade
+      # Version 2, from CREATE_LEVEL. Always true: no floor plan and no ceiling
+      # plan were made, which is this fragment stating what it deliberately
+      # does NOT do. Never a thing it created (D-52).
+      role: accounting
+      type: bool
 
 proof:
   date: '2026-09-13'
@@ -110,9 +133,52 @@ compatibility-note: >
   while the code and its own proof - 4000 in, 13.12 feet used - said
   millimetres. The returning half was true all along.)
 
-# ROUTING - repeated in CREATE_GRIDS and CREATE_LEVEL.
+# VERSION 2 (2026-11-01) - CREATE_LEVEL WAS MERGED INTO THIS CARD on the
+# owner's instruction ("now merge the other duplicates also"), and is
+# DEPRECATED. The same job - a level at a height, named - and this card already
+# made one or many, skipped a height that has a level, and read back the name
+# and the height each one ended with. What CREATE_LEVEL had and this one lacked
+# is here now: a name already taken refused BEFORE anything is created,
+# ignoring capitals, with a sentence (`refused`); `noViewsMade`; and "Revit
+# declined" when Level.Create returns null - which, with a level Revit throws
+# on, is now named and undoes the job rather than vanishing in a catch. Its
+# `created` (one id) is one entry of this card's `created`; its `elevationMm`
+# and `levelName` are one entry of `elevations` and `names`. Row 5b-1347's
+# contest between the two level cards for "add four more floor levels" ends
+# here: there is one level card.
 #
+# NOT CARRIED, ON PURPOSE: CREATE_LEVEL took a base-point shift off the height
+# (`existing.ProjectElevation - existing.Elevation`, measured on any level)
+# before Level.Create. This card passes the height straight in and reads it
+# back as ProjectElevation. Which of Elevation and ProjectElevation is measured
+# from where is FRAGMENT-ISSUES row 5b-180, OPEN until a real Revit answers it
+# on a model whose base point has moved - so this card's reading stays as it
+# was, and the shift is not carried until that row is settled.
+#
+# WHAT IT MAKES, AND WHAT IT DOES NOT (carried from CREATE_LEVEL, and kept out
+# of `purpose` for the reason it gave). Revit's Level TOOL creates a floor plan
+# and a ceiling plan alongside the level, because the tool does that - not
+# because the level does. Created here the level exists, appears in every
+# elevation, and is offered on every Level parameter, with NO PLAN VIEW AT ALL.
+# The modeller looks in the Project Browser, finds nothing, and reports that it
+# failed. It did not. `noViewsMade` is always true and exists to be said out
+# loud, and CREATE_PLAN_VIEW is the other half of the job. That paragraph sat in
+# CREATE_LEVEL's `purpose` until 2026-09-01, where it is INDEXED, and it took
+# "the new level has no plan" off CREATE_PLAN_VIEW.
+
+# ROUTING - repeated in CREATE_GRIDS, REPORT_LEVEL_ELEVATIONS and SET_ELEMENT_LEVEL.
+#
+#   "add a level"                        -> here, one level
 #   "add four more floor levels"         -> here - many at once
+#   "list the levels"                    -> REPORT_LEVEL_ELEVATIONS
+#   "move these to level 3"              -> SET_ELEMENT_LEVEL - reassigns
+#                                           EXISTING elements; it creates
+#                                           nothing
+#   "make the plan for it"               -> CREATE_PLAN_VIEW. A level created
+#                                           through the API has no views; that
+#                                           fragment makes them, and the two
+#                                           together are what "add 4 more
+#                                           floors" actually means
 #   "make a grid series across the building" -> CREATE_GRIDS - the same
 #                                        one-versus-many pair, for grids
 utterances:
@@ -121,3 +187,11 @@ utterances:
   - add four more floors
   - make a level at 12 metres
   - set up the storeys
+  # MOVED 2026-11-01 from CREATE_LEVEL, merged into this card.
+  - add a new level at this height
+  - add a level
+  - create a new level
+  - add another floor level
+  - I need a level at this height
+  - make a new level
+  - add 4 more floors

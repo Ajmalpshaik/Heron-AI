@@ -1,6 +1,7 @@
 positive:
   - given: >
-      the nested box from place-nested-family's first case, its own centre
+      the nested box from place-family-instances' first version 5 case
+      (place-nested-family's until 2026-11-01), its own centre
       planes set to Center (Left/Right) and Center (Front/Back); instance =
       its id, locks "Center (Left/Right)=Center (Left/Right); Center
       (Front/Back)=Center (Front/Back)"

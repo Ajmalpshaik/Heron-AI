@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,36 @@ semantic-identity: "how much volume and surface area do these have"
 kind: action
 domain: revit.reporting
 capability: MEASURE_ELEMENT_VOLUME
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
+
+# VERSION 2 (2026-11-01) - REPORT_ELEMENT_GEOMETRY WAS MERGED INTO THIS CARD
+# on the owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. Both read an element's solids - nested ones as placed - and
+# named the ones with none; this one totalled the volume and area and guarded
+# against an element counted twice, that one listed the shape. What it had and
+# this card lacked is here now: `geometry`, one line per element - solids,
+# faces and their area, edges and their length, volume and box in
+# millimetres - and, with `detail` "edges" or "faces", each edge (a line's
+# ends, an arc's centre and radius) or each face (a flat one's normal and
+# area), stopping at 200 lines and saying so; `solidCount`; `findings`.
+#
+# THE TWO READ GEOMETRY AT DIFFERENT DETAIL LEVELS, AND THE MERGED CARD READS
+# FINE: REPORT_ELEMENT_GEOMETRY set ViewDetailLevel.Fine; version 1 here left
+# Options' detail level unset, which Revit reads at its own default. A family
+# can draw different solids at Coarse, Medium and Fine, and only Fine is its
+# whole shape - a volume measured below it can be short, and a face list can
+# describe a simplified stand-in. So Fine, for the totals and the shape alike.
+# WHETHER VERSION 1's NUMBERS MOVE ON A REAL MODEL is NEEDS REAL REVIT: run
+# both versions on the same set - a nested mechanical family above all - and
+# compare. A solid counts when it has volume (this card's rule; that one
+# counted any solid with a face), so `solidCount` and the totals come from the
+# same solids. Where its outputs are now: `geometry`, `solidCount`, `findings`
+# -> the same names; `noGeometry` -> `noSolid`.
+#
+# Version 1's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
 
 purpose: >
   The solid volume and surface area of each element, in cubic and square
@@ -26,6 +53,9 @@ purpose: >
   parameter on some categories and not others, and where it exists it can be
   stale or excluded by a setting. The solids are what the element actually is.
 
+  **Version 2 lists the shape as well** - solids, faces, edges and the box in
+  millimetres, and each edge or face when asked - all read at Fine detail.
+
   **Insulation is NOT included, and that matters for exactly the job this is
   for.** Insulation is a separate element wrapped around the duct, so a duct's
   own surface area is the bare duct. To price the lagging, measure the
@@ -35,6 +65,13 @@ contract:
   needs:
     - name: elements
       type: IList<Element>
+    # VERSION 2, from REPORT_ELEMENT_GEOMETRY. "summary", "edges" or "faces" -
+    # how much of the shape `geometry` lists. Left out: summary.
+    - name: detail
+      type: string
+      source: request
+      optional: true
+      absent: summary
   provides:
     - name: volumeM3
       role: result
@@ -53,6 +90,19 @@ contract:
       # evidence it looked, never a thing it found (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: geometry
+      # VERSION 2. ONE STRING, a line per element - solids, faces and their
+      # area, edges and their length, volume and box in millimetres - and,
+      # when asked, a line per edge or face. A string because a list reaches
+      # the chat cut to three items.
+      role: result
+      type: string
+    - name: solidCount
+      # VERSION 2. The solids read, nested ones included.
+      role: result
+      type: int
+    - name: findings
+      type: IList<string>
 
 proof:
   date: '2026-09-07'
@@ -86,9 +136,17 @@ compatibility-note: >
   `UnitUtils` (D-20) - the cube and square of an exact definition, so nothing
   here can drift and 2021's unit rewrite does not reach it.
 
-# ROUTING - repeated in MEASURE_ELEMENT_LENGTHS.
+# ROUTING - repeated in MEASURE_RUN_QUANTITIES and REPORT_BOUNDING_BOX.
 #
-#   "how many metres of duct"        -> MEASURE_ELEMENT_LENGTHS - a length
+#   "what shape is this element"     -> here, `geometry` - the job of
+#                                       REPORT_ELEMENT_GEOMETRY since
+#                                       version 2
+#   "list the edges of this beam"    -> here, detail edges
+#   "how many faces does this have"  -> here, detail faces
+#   "how complex is this family"     -> REPORT_GEOMETRY_COMPLEXITY - counts
+#                                       for model health
+#
+#   "how many metres of duct"        -> MEASURE_RUN_QUANTITIES - a length
 #   "how many square metres"         -> here - for insulation, paint, lagging
 #   "what is the volume"             -> here
 #   "how much SPACE does it take up" -> REPORT_BOUNDING_BOX - the EXTENT, the
@@ -96,7 +154,7 @@ compatibility-note: >
 #                                       question from how much material is in
 #                                       it. "what are the coordinates of this
 #                                       element" resolved HERE until 2026-09-05
-#   "how much concrete"      -> READ_ELEMENT_MATERIAL. The question names a
+#   "how much concrete"      -> REPORT_MATERIAL_TAKEOFF. The question names a
 #                              MATERIAL and this fragment measures a shape
 #                              regardless of what it is made of. BOTH tables
 #                              claimed it until 2026-09-01, which is a
@@ -142,3 +200,11 @@ utterances:
   # volume": REPORT_AREA_VOLUME_COMPUTATIONS on the trained backend answered
   # it.
   - what is the volume
+  # MOVED 2026-11-01 from REPORT_ELEMENT_GEOMETRY, merged into this card.
+  - what are the faces and edges of this element
+  - list the edges of this beam with their coordinates
+  - read the geometry of these elements
+  - give me the face areas of this family instance
+  - list the edges of this beam
+  # ...and its semantic identity, which nothing else declares:
+  - what is the shape of this element - its faces, edges and volume in numbers

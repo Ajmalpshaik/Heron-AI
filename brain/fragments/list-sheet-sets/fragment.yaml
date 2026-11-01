@@ -148,7 +148,7 @@ compatibility-note: >
   collector and member walk answered on Revit 2020 on 2026-10-14 as a
   scratch read - that is not this fragment's proof.
 
-# ROUTING - the first two rows are also in MANAGE_SHEET_SETS and LIST_SHEETS.
+# ROUTING - the first two rows are also in MANAGE_SHEET_SETS and FIND_SHEETS.
 #
 #   "how many sheet sets are there"      -> here. A QUESTION
 #   "list the view/sheet sets"           -> here
@@ -161,7 +161,7 @@ compatibility-note: >
 #                                           (2026-10-17, row 5b-466). This
 #                                           read is its read-back
 #   "take these sheets out of the set"   -> MANAGE_SHEET_SETS, mode remove
-#   "list the sheets"                    -> LIST_SHEETS - every sheet, which
+#   "list the sheets"                    -> FIND_SHEETS - every sheet, which
 #                                           is not the same as every set
 #   "what views are on this sheet"       -> LIST_VIEWS_ON_SHEET
 #   "print these to PDF"                 -> EXPORT_SHEETS_TO_PDF. A PUBLISH

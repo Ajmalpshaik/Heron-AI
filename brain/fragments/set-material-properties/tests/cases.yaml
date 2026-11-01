@@ -21,8 +21,32 @@ positive:
       asset named after it reading 50 in its project units, and IA Probe
       Copper's conductivity is what it was
 
+  # VERSION 2 (2026-11-01) - SET_MATERIAL_COLOUR merged in. Each case below
+  # FAILS on version 1, which had no `wasColour` or `nowColour`. NOT RUN.
+  - given: >
+      a material at the default grey; materialsNamed its name, fieldValues
+      "Shading Colour=200,120,60"
+    expect: >
+      fieldsChanged 1, wasColour the grey ("128,128,128" or what it held) and
+      nowColour "200,120,60". LOOK AT THE MODEL in a shaded view - a count of
+      1 is what a broken version returns too
+  - given: >
+      materialsNamed "IA Probe*" (two or more materials), fieldValues
+      "Shading Colour=#C8783C"
+    expect: >
+      wasColour and nowColour one "Name: r,g,b" entry per material, nowColour
+      reading 200,120,60 for every one
+
 negative:
-  - given: the same call again, straight after
+  - given: >
+      VERSION 2: the Shading Colour call above run a second time
+    expect: >
+      fieldsChanged 0, alreadyAsAsked 1, and wasColour equal to nowColour -
+      both filled, which is why the count, not the colour text, says whether
+      anything moved (D-51)
+  - given: VERSION 2, fieldValues "Shading Colour=red"
+    expect: refused, the colour not three numbers; wasColour and nowColour empty; nothing changed
+  - given: the first positive's call again, straight after
     expect: fieldsChanged 0, alreadyAsAsked 8 - nothing written twice
   - given: materialsNamed "IA Probe Stel", fieldValues "Mark=IA-2"
     expect: >

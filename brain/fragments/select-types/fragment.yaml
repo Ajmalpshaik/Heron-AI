@@ -46,7 +46,7 @@ purpose: >
   for a duct type whose family is sitting there in the browser.
 
   **IT COUNTS NOTHING AND JUDGES NOTHING.** *"Which types are unused"* is
-  FIND_UNUSED_FAMILIES, which walks the instances to prove it. This one hands
+  FIND_PURGEABLE_ELEMENTS, which asks Revit's unused list to prove it. This one hands
   back the types that match a description and leaves the judgement alone.
 
 contract:
@@ -121,7 +121,7 @@ compatibility-note: >
   read as a number, so nothing here meets the 2024 widening to 64-bit or the
   removal of `IntegerValue` by 2026.
 
-# ROUTING - repeated in FILTER_ELEMENTS_BY_TYPE, FIND_UNUSED_FAMILIES and
+# ROUTING - repeated in FILTER_ELEMENTS_BY_TYPE, FIND_PURGEABLE_ELEMENTS and
 # DUPLICATE_TYPE.
 #
 #   "give me the types themselves"      -> here
@@ -130,10 +130,12 @@ compatibility-note: >
 #                                       -> here, category Curtain Wall Mullions.
 #                                          A LISTING question. Without this row
 #                                          it reached SET_CURTAIN_WALL_MULLIONS,
-#                                          a write, measured 2026-09-25; the one
+#                                          a write, measured 2026-09-25 (merged
+#                                          into SET_CURTAIN_WALL_GRID on
+#                                          2026-11-01); the one
 #                                          type's mullions are
 #                                          REPORT_CURTAIN_WALL_TYPE's
-#   "rename that type"                  -> RENAME_ELEMENTS does the renaming.
+#   "rename that type"                  -> EDIT_TEXT_VALUES does the renaming.
 #                                          This one is how the type is REACHED
 #                                          when nothing of it is placed, which
 #                                          is the case no instance-based route
@@ -143,9 +145,9 @@ compatibility-note: >
 #   "select everything like this one"   -> FILTER_ELEMENTS_BY_TYPE - takes an
 #                                          example ELEMENT and returns its
 #                                          INSTANCES. The mirror image of this
-#   "which types is nobody using"       -> FIND_UNUSED_FAMILIES - that one
-#                                          walks the instances to prove the
-#                                          absence; this one only describes
+#   "which types is nobody using"       -> FIND_PURGEABLE_ELEMENTS - that one
+#                                          asks Revit's unused list to prove
+#                                          the absence; this one only describes
 #   "make a copy of this type"          -> DUPLICATE_TYPE
 #
 # THE TRAP IS THAT "ALL THE 600x600 DIFFUSERS" MEANS EITHER. Asked by somebody

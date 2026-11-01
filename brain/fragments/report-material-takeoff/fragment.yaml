@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-EXP-018
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,32 @@ semantic-identity: "how much of each material is in these elements"
 kind: action
 domain: revit.document
 capability: REPORT_MATERIAL_TAKEOFF
-version: 1
+version: 3
 source: OFFICIAL
 risk: READ
+
+# VERSION 3 (2026-11-01) - REPORT_EMBODIED_CARBON WAS MERGED INTO THIS CARD on
+# the owner's instruction ("make sure there is no duplicate tools", then "ok go
+# ahead merge all"), and is DEPRECATED. The same reading - each element's
+# material volumes, from Revit's own takeoff - with one sum more. What it had
+# and this card lacked: a carbon factor read off each MATERIAL from the Number
+# parameter the modeller names (`factorParameter`, kgCO2e per cubic metre);
+# kg = m3 x factor; grouped by material, category or type (`groupBy`), largest
+# first, the top N listed (`top`, 0 meaning 20) with each group's share; the
+# materials with no factor named in `noFactor` and adding nothing, never a
+# factor guessed; the elements with no volume counted in `noVolume`. Its
+# outputs - `carbon`, `totalKg`, `noFactor`, `noVolume`, `findings` - are here
+# under the same names and types. Left out, `factorParameter` reads "none" and
+# no carbon is worked out: the takeoff is version 2's to the number.
+#
+# ONE RULE WAS NOT CARRIED, AS THE LESS SAFE OF TWO: REPORT_EMBODIED_CARBON
+# took an element handed in twice twice, doubling its carbon; this card takes
+# it off ONCE, as it takes its volumes. And a material id Revit hands back that
+# is no Material is skipped here, as this card's takeoff always skipped it -
+# that card keyed one by its id. Nothing else of that card is left out.
+#
+# DRAFT, as version 2 was: version 1's proof no longer describes the code and
+# is kept as the record; proved again on a real model (D-30).
 
 purpose: >
   Area and volume of each material across a set of elements, taken from Revit's
@@ -39,6 +62,19 @@ purpose: >
   defensible figure that disagrees with the model's own schedule, and two
   numbers that both look right is worse than one that is plainly wrong.
 
+  **IT ALSO SAYS WHAT EACH ELEMENT IS MADE OF** (version 2, when
+  READ_ELEMENT_MATERIAL was merged in): `materials` names every material of
+  each element, painted ones included, `noMaterial` the elements carrying
+  none, and the totals come in cubic and square metres beside Revit's own
+  units. An element handed in twice is taken off once. Version 1's proof no
+  longer describes the code and is kept as a record; DRAFT until it is proved
+  again.
+
+  **AND THE EMBODIED CARBON, WHEN A FACTOR IS NAMED** (version 3): each
+  material's volume times the carbon factor stored on the material, grouped
+  by material, category or type, largest first - the hotspots lead - with the
+  materials that have no factor named rather than counted as zero.
+
 contract:
   needs:
     - name: elements
@@ -46,6 +82,26 @@ contract:
     - name: doc
       type: Document
       source: ambient
+    # VERSION 3, from REPORT_EMBODIED_CARBON. The MATERIAL parameter holding
+    # kgCO2e per cubic metre, e.g. "Carbon Factor" - a Number. Left out it
+    # reads "none": no carbon is worked out.
+    - name: factorParameter
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 3. "material", "category" or "type"; left out, material.
+    - name: groupBy
+      type: string
+      source: request
+      optional: true
+      absent: material
+    # VERSION 3. How many groups to list; 0, or left out, means 20.
+    - name: top
+      type: int
+      source: request
+      optional: true
+      absent: '0'
   provides:
     - name: areas
       role: result
@@ -61,9 +117,57 @@ contract:
       type: IList<string>
     - name: elementsWithNoMaterial
       # Elements carrying no material at all, so it could not be taken off.
-      # The evidence it looked, never a thing it found (D-52).
+      # The evidence it looked, never a thing it found (D-52). Also holds an
+      # element whose materials gave no area and no volume; `noMaterial` is
+      # the narrower list.
       role: accounting
       type: IList<ElementId>
+    - name: materials
+      # Version 2, from READ_ELEMENT_MATERIAL. Per element, the name of every
+      # material it carries - geometry and paint - a material with no volume
+      # still named.
+      role: result
+      type: IDictionary<ElementId, ICollection<string>>
+    - name: noMaterial
+      # Version 2, from READ_ELEMENT_MATERIAL. Elements carrying NO material
+      # at all. The evidence it looked, never a thing found (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: volumeM3
+      # Version 2, from READ_ELEMENT_MATERIAL. `volumes` in cubic metres,
+      # beside them - `volumes` keeps Revit's cubic feet.
+      role: result
+      type: IDictionary<string, double>
+    - name: areaM2
+      # Version 2. `areas` in square metres, beside them - `areas` keeps
+      # Revit's square feet.
+      role: result
+      type: IDictionary<string, double>
+    - name: carbon
+      # VERSION 3, from REPORT_EMBODIED_CARBON. ONE STRING, a line per group,
+      # largest first: kgCO2e, m3 and share of the total. Empty when no
+      # factorParameter was named.
+      role: result
+      type: string
+    - name: totalKg
+      # VERSION 3. The embodied carbon in kgCO2e - m3 x factor over every
+      # material with a factor. 0 when none was named.
+      role: result
+      type: double
+    - name: noFactor
+      # VERSION 3. Materials with no value in factorParameter - they add
+      # nothing to the total, said aloud (D-52).
+      role: accounting
+      type: IList<string>
+    - name: noVolume
+      # VERSION 3. Elements whose materials have no volume, so no carbon
+      # (D-52). Counted only when a factor was named.
+      role: accounting
+      type: int
+    - name: findings
+      # VERSION 3. The totals in words - the carbon, the materials with no
+      # factor, and what was taken off.
+      type: IList<string>
 
 proof:
   date: '2026-09-07'
@@ -97,24 +201,46 @@ compatibility-note: >
   user is, and avoiding the units API is what keeps this clear of the 2021 move.
   Materials are keyed by NAME rather than by id, because a takeoff is read and
   priced by name and an id would have to be resolved again by every caller.
+  Version 3's carbon reads Element.LookupParameter on each material, present
+  2020 through 2027 - read off RevitAPI.xml in the Nice3point reference
+  packages for all eight releases on 2026-10-12, for REPORT_EMBODIED_CARBON.
+  The factor is a Number, so no units conversion is applied to it; the volume
+  is converted once, 1 ft3 = 0.028316846592 m3.
 
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "change the material on these"   -> REPLACE_MATERIAL
 #   "make a floor slab over this area" -> CREATE_FLOOR
-#   "make a new material"            -> CREATE_MATERIAL
+#   "make a new material"            -> CREATE_STARTER_MATERIALS
 
 
 # ROUTING (2026-10-12, the gap fill)
 #
-#   "what is the embodied carbon"           -> REPORT_EMBODIED_CARBON
+#   "what is the embodied carbon"           -> here, factorParameter (version 3,
+#                                              REPORT_EMBODIED_CARBON merged in)
+#   "which materials have the most carbon"  -> here, groupBy material
+#   "set the carbon factor on these materials" -> WRITE_ELEMENT_PARAMETERS on the
+#                                              materials
 # ROUTING (2026-10-14, FRAGMENT-ISSUES row 5b-471) - repeated in READ_ELEMENT_MATERIAL.
 # The two cards overlap and neither named the other until then.
 #
 #   "give me a material takeoff"       -> here - the numbers a Material Takeoff schedule
 #                                         shows, paint included
-#   "what material is this"            -> READ_ELEMENT_MATERIAL - what each element is
-#                                         made of, with the volume of each
+#   "what material is this"            -> here since version 2 - `materials`, what
+#                                         each element is made of; `volumeM3`
+#   "what is this wall made of"        -> REPORT_COMPOUND_STRUCTURE - the LAYERS of
+#                                         the type, with their thicknesses
+#   "what is this element"             -> DESCRIBE_ELEMENTS - category and type
+#   "what is the volume"               -> MEASURE_ELEMENT_VOLUME - the whole solid,
+#                                         whatever it is made of
+#
+# READ_ELEMENT_MATERIAL WAS MERGED INTO THIS CARD on 2026-11-01, on the owner's
+# instruction ("make sure there is no duplicate tools"), and is DEPRECATED.
+# Its outputs, here now: `materials` and `noMaterial` (the same names and
+# types), `volumeM3` (the same, m3). Nothing not carried. One of its defects is
+# NOT carried: it read GetMaterialIds(false) alone - the geometry set - while
+# its purpose said painted finishes were kept, so every painted material was
+# missing from its answer. This card reads both sets.
 
 utterances:
   - how much of each material is there
@@ -123,3 +249,16 @@ utterances:
   - what is the painted area
   - quantities by material
   - a finishes schedule for these
+  # MOVED 2026-11-01 from READ_ELEMENT_MATERIAL, merged into this card.
+  - what material is this
+  - what is it made of
+  - how much concrete is there
+  - what are these made of
+  - material takeoff for these
+  - how much concrete
+  - what material is that
+  # MOVED 2026-11-01 from REPORT_EMBODIED_CARBON, merged into this card.
+  - what is the embodied carbon of these walls and floors
+  - which materials carry the most carbon
+  - calculate the carbon of the structure by type
+  - where are the carbon hotspots in this model

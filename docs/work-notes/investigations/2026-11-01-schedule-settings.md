@@ -1,6 +1,6 @@
 # The schedule settings Heron could not set - what the Revit API reaches, and what was built
 
-**2026-11-01.** Written for [FRAGMENT-ISSUES](../../FRAGMENT-ISSUES.md) row **5b-1363**. Ajmal PS made a
+**2026-11-01.** Written for [FRAGMENT-ISSUES](../../FRAGMENT-ISSUES.md) row **5b-1367**. Ajmal PS made a
 duct length schedule through Heron on his Revit 2020 job model 4355-BHVD-3D-60B10-ST001I: create, group
 by size, Length totals and the grand total all worked. **Changing the Length column to metres failed** -
 no Heron tool set a schedule column's units. He then asked for a careful check of every other schedule
@@ -16,8 +16,10 @@ with him, on a scratch model.
 ## 1. Where each setting lives in the Revit API, and since when
 
 Releases are the reference packages' (NuGet, one per release). "Reached by name" means the member is
-not on every release, so the fragment finds it by reflection at run time - never `#if REVIT20xx`,
-because the add-in compiles fragments with no release symbols ([row 5b-181](../../fragment-issues/section-5b-rows-176-200.md)).
+not on every release, so the fragment finds it by reflection at run time: one implementation, the same
+code on every release, as `SET_PROJECT_UNITS` does. (`#if REVIT20xx` would also work - the add-in has
+handed fragments the release symbols since [row 5b-181](../../fragment-issues/section-5b-rows-176-200.md)'s
+fix, and `PLACE_VIEW_ON_SHEET` uses it.)
 
 | # | Setting, as the Schedule Properties dialog shows it | API | Releases |
 |---|---|---|---|

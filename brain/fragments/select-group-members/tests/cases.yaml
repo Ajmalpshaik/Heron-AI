@@ -24,7 +24,45 @@ positive:
       category in the report. Count them in Revit with Edit Assembly - the two
       numbers must agree
 
+  # VERSION 3 - SELECT_SUBCOMPONENTS merged in. Each fails on version 2, which
+  # refused a family instance as neither a group nor an assembly.
+  - given: >
+      VERSION 3. An air handling unit built from a shared fan, a coil and two
+      dampers, selected - SELECT_SUBCOMPONENTS' own case
+    expect: >
+      the four nested elements, each with its own category, containerKind
+      "family". Select the AHU in Revit and Tab into it to see the same four
+
+  - given: VERSION 3. A fixture nested three levels deep, recursive left out
+    expect: >
+      every level returned and "followed 3 level(s) deep". With recursive
+      false, only the first level
+
+  - given: VERSION 3. Twenty ordinary instances with no nesting, handed on by a chain
+    expect: >
+      0 elements and withoutSubComponents 20 - the ordinary case, reading as
+      ordinary
+
+  - given: >
+      VERSION 3. A group holding a nested group AND a family instance with
+      nested parts, both selected
+    expect: >
+      containerKind "group, family"; the nested group ONE element in
+      nestedGroups, never flattened, while the family's nested parts are all
+      there - each kind's own depth rule
+
 negative:
+  - given: VERSION 3. A wall and a duct among the containers
+    expect: >
+      counted and named as neither a group, an assembly nor a family
+      instance. Silently skipping them makes a wrong set indistinguishable
+      from a model with no nesting
+
+  - given: VERSION 3. A family nested in a way that refers back to itself
+    expect: each element returned once and the run finishing
+
+  - given: VERSION 3. Nothing selected and nothing handed on
+    expect: refused, with the reason
   - given: >
       a whole-model COUNT_ELEMENTS run over a model containing this group
     expect: >
@@ -38,13 +76,17 @@ negative:
       Revit refusing it, or applying it to EVERY instance of the group type.
       The report has to have said so before that happens
 
+  # VERSION 2'S CASE, KEPT AS THE RECORD AND NO LONGER WHAT IS EXPECTED: since
+  # version 3 a pump is a family instance and is OPENED - its nested parts come
+  # back (the positive cases above). The refusal it tested is now the wall's,
+  # in version 3's negatives.
   - given: >
-      an element handed in that is neither a group nor an assembly - a pump
-      with nested families inside it
+      VERSION 2 ONLY. An element handed in that is neither a group nor an
+      assembly - a pump with nested families inside it
     expect: >
-      refused by name, containerKind empty, and nested families pointed at
-      GROUP_BY_ASSEMBLY. Not an empty member list, and not the pump's nested
-      parts
+      version 2: refused by name, containerKind empty, and nested families
+      pointed at REPORT_NESTED_FAMILIES. Version 3: its nested parts,
+      containerKind "family"
 
   - given: a group whose member list names a deleted element
     expect: >

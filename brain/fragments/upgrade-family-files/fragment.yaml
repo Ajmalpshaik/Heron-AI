@@ -178,3 +178,11 @@ utterances:
   - upgrade these rfa files
   - convert the family library to the current release
   - we installed a new Revit and the content is on the old one
+  # DECLARED 2026-11-01, after the merges. This card's own routing table sends
+  # it here, and a comment is not indexed (row 5b-387's precedent: a sentence
+  # the card's OWN table claims is declared on that card). Measured that day
+  # on private stores: CREATE_PROJECT_DOCUMENT shared the ranks with this card
+  # until it was merged into CREATE_FAMILY_DOCUMENT, and then the trained model
+  # sent it to CREATE_FAMILY_DOCUMENT - a new family, not a folder saved under
+  # this release - and lexical to READ_RENDERED_IMAGES.
+  - batch save as for this folder

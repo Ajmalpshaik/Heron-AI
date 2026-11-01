@@ -1,8 +1,33 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `ducts` and `maxDistanceMm` are in
 // scope; leaves `connected`, `findings`, `alreadyConnected`, `noDuctNear`,
-// `refused`, `moved` and `notMeasured` behind.
+// `refused`, `moved`, `notMeasured`, `branched`, `runs` and `noMainNear` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
+//
+// VERSION 2 (2026-11-01) - CREATE_FIXTURE_BRANCHES MERGED IN. AIR TERMINALS AND
+// SPRINKLERS OR FIXTURES, ONE TOOL. An element handed in with a DUCT connector
+// is an air terminal and is tapped into the nearest DUCT exactly as version 1
+// did. An element with a PIPE connector and no duct one - a sprinkler, a floor
+// drain - is BRANCHED to the nearest PIPE among `ducts` (they may be named
+// "Ducts, Pipes" together): Revit has no pipe twin of the tap call, so a
+// straight RISER is drawn from the head's connector to the main's centreline
+// height and a level ARM across to the main's centreline, at the connector's
+// own size, on the main's pipe type and system, and joined at the head.
+// FIT_MEP_JOINTS then makes the elbow and the tap or tee, from `runs`.
+//
+// THE BRANCH'S RULES, CARRIED WHOLE: the connector must face UP or DOWN and
+// the main must be that way; the arm lands at least 100 mm or two main
+// diameters in from a main's end; riser and arm together within maxDistanceMm,
+// or the head goes to `noMainNear`; a head already connected is skipped; no
+// head, fixture or main is moved by this file - and a head's point is read
+// before and after with the terminals', so if Revit moves one it is in `moved`.
+//
+// THE CONFLICT, AND THE SAFER RULE KEPT. CREATE_FIXTURE_BRANCHES kept the pipes
+// it had drawn when Revit refused the rest of a branch, and kept a branch that
+// would not join the head. A terminal Revit declines is left UNCHANGED here, so
+// a head is too: each head's branch is drawn inside its own SubTransaction and
+// rolled back whole when Revit refuses any part of it or the head still reads
+// open - nothing is left behind for that head, and it is named in `refused`.
 //
 // ONE CALL DOES THE WHOLE JOB. ConnectAirTerminalOnDuct creates the tap fitting
 // on the duct, positions it under the terminal's connector and connects both
@@ -56,8 +81,53 @@ var noDuctNear = new List<ElementId>();
 var refused = new List<string>();
 var moved = new List<string>();
 var notMeasured = new List<ElementId>();
+// VERSION 2 - CREATE_FIXTURE_BRANCHES' answers.
+var branched = 0;
+var runs = new List<Element>();
+var noMainNear = new List<ElementId>();
 
 var maxDistance = maxDistanceMm / 304.8;
+
+// VERSION 2: which kind of element this is. A duct connector makes it an air
+// terminal - version 1's path, untouched. Only an element with a pipe end and
+// no duct end is branched.
+Func<Element, bool> isPipeHead = e =>
+{
+    var instance = e as FamilyInstance;
+    if (instance == null || instance.MEPModel == null || instance.MEPModel.ConnectorManager == null) return false;
+    var piping = false;
+    try
+    {
+        foreach (Connector c in instance.MEPModel.ConnectorManager.Connectors)
+        {
+            if (c.ConnectorType != ConnectorType.End) continue;
+            if (c.Domain == Domain.DomainHvac) return false;
+            if (c.Domain == Domain.DomainPiping) piping = true;
+        }
+    }
+    catch { return false; }
+    return piping;
+};
+
+// THE MAINS for a branch: the straight pipes among `ducts`.
+var mmPerFoot = 304.8;
+var minRiser = 50.0 / mmPerFoot;       // shorter than this leaves no room for an elbow
+var minArm = 1.0 / mmPerFoot;          // shorter than this, the riser lands on the main itself
+var endClearMin = 100.0 / mmPerFoot;   // the arm lands at least this far in from a main's end
+var mains = new List<Pipe>();
+if (ducts != null)
+{
+    foreach (var candidate in ducts)
+    {
+        var pipe = candidate as Pipe;
+        if (pipe == null) continue;
+        var place = pipe.Location as LocationCurve;
+        if (place == null || !(place.Curve is Line)) continue;
+        mains.Add(pipe);
+    }
+}
+var mainsUsed = new HashSet<ElementId>();
+var headsSeen = new HashSet<ElementId>();
 
 // The terminal's own connector - not its insertion point. See the header.
 Func<Element, Connector> connectorOf = e =>
@@ -121,6 +191,204 @@ foreach (var terminal in elements)
 {
     if (terminal == null) continue;
 
+    // =====================================================================
+    // VERSION 2: A SPRINKLER OR A FIXTURE - CREATE_FIXTURE_BRANCHES' path.
+    // =====================================================================
+    if (isPipeHead(terminal))
+    {
+        var head = terminal;
+        if (!headsSeen.Add(head.Id)) continue;
+        var instance = (FamilyInstance)head;
+
+        // The head's open pipe end. All piping ends connected already: skipped.
+        Connector open = null;
+        try
+        {
+            foreach (Connector c in instance.MEPModel.ConnectorManager.Connectors)
+            {
+                if (c.ConnectorType != ConnectorType.End || c.Domain != Domain.DomainPiping) continue;
+                if (!c.IsConnected && open == null) open = c;
+            }
+        }
+        catch (Exception ex)
+        {
+            refused.Add(string.Format("{0}: its connectors could not be read - {1}", head.Id, ex.Message));
+            continue;
+        }
+        if (open == null) { alreadyConnected.Add(head.Id); continue; }
+
+        if (mains.Count == 0)
+        {
+            refused.Add(string.Format("{0} ('{1}'): no straight pipe was handed in as a main, so no branch was "
+                + "drawn. Name the mains by category - \"Pipes\", or \"Ducts, Pipes\" with terminals too.",
+                head.Id, head.Name));
+            continue;
+        }
+        if (maxDistanceMm <= 0)
+        {
+            refused.Add(string.Format("{0}: a maximum branch length greater than zero is required, so no "
+                + "branch was drawn.", head.Id));
+            continue;
+        }
+
+        var facing = open.CoordinateSystem.BasisZ;
+        if (Math.Abs(facing.Z) < 0.99)
+        {
+            refused.Add(string.Format("{0}: its pipe connector faces sideways, not up or down. This draws a "
+                + "riser and an arm only - a sideways connector needs a branch shape this does not guess.",
+                head.Id));
+            continue;
+        }
+
+        var start = open.Origin;
+        Pipe best = null;
+        XYZ bestLanding = null;
+        var bestLength = double.MaxValue;
+
+        foreach (var main in mains)
+        {
+            var line = (Line)((LocationCurve)main.Location).Curve;
+            var a = line.GetEndPoint(0);
+            var b = line.GetEndPoint(1);
+            var dx = b.X - a.X;
+            var dy = b.Y - a.Y;
+            var planLengthSq = dx * dx + dy * dy;
+            if (planLengthSq < 1e-9) continue; // a vertical pipe is not a main to branch from here
+
+            // Nearest point on the main, in plan, to the connector.
+            var t = ((start.X - a.X) * dx + (start.Y - a.Y) * dy) / planLengthSq;
+            var length = line.Length;
+
+            var mainDiameter = 0.0;
+            var dp = main.get_Parameter(BuiltInParameter.RBS_PIPE_DIAMETER_PARAM);
+            if (dp != null && dp.HasValue) mainDiameter = dp.AsDouble();
+            var clear = Math.Max(endClearMin, 2.0 * mainDiameter);
+            var tClear = length > 0 ? clear / length : 1.0;
+            if (t < tClear || t > 1.0 - tClear) continue; // lands at or past an end
+
+            var landing = a + (b - a) * t;
+            var rise = landing.Z - start.Z;
+            if (Math.Abs(rise) < minRiser) continue;            // no room for an elbow
+            if (Math.Sign(rise) != Math.Sign(facing.Z)) continue; // the main is behind the head
+
+            var bend = new XYZ(start.X, start.Y, landing.Z);
+            var total = Math.Abs(rise) + bend.DistanceTo(landing);
+            if (total < bestLength) { bestLength = total; best = main; bestLanding = landing; }
+        }
+
+        if (best == null || bestLength > maxDistance)
+        {
+            noMainNear.Add(head.Id);
+            continue;
+        }
+
+        var bendPoint = new XYZ(start.X, start.Y, bestLanding.Z);
+
+        var systemTypeId = ElementId.InvalidElementId;
+        var sp = best.get_Parameter(BuiltInParameter.RBS_PIPING_SYSTEM_TYPE_PARAM);
+        if (sp != null && sp.HasValue) systemTypeId = sp.AsElementId();
+        var level = best.ReferenceLevel;
+        if (systemTypeId == ElementId.InvalidElementId || level == null)
+        {
+            refused.Add(string.Format("{0}: main {1} has no piping system type or no reference level "
+                + "to give the branch, so nothing was drawn for this head.", head.Id, best.Id));
+            continue;
+        }
+
+        // ONE HEAD, ONE SUBTRANSACTION - kept whole or rolled back whole.
+        SubTransaction branch = null;
+        var made = new List<Element>();
+        try
+        {
+            branch = new SubTransaction(doc);
+            branch.Start();
+            called++;
+
+            var riser = Pipe.Create(doc, systemTypeId, best.GetTypeId(), level.Id, start, bendPoint);
+            made.Add(riser);
+
+            if (open.Shape == ConnectorProfileType.Round)
+            {
+                var rp = riser.get_Parameter(BuiltInParameter.RBS_PIPE_DIAMETER_PARAM);
+                if (rp != null && !rp.IsReadOnly) rp.Set(open.Radius * 2.0);
+            }
+
+            Pipe arm = null;
+            if (bendPoint.DistanceTo(bestLanding) >= minArm)
+            {
+                arm = Pipe.Create(doc, systemTypeId, best.GetTypeId(), level.Id, bendPoint, bestLanding);
+                made.Add(arm);
+                var rp = riser.get_Parameter(BuiltInParameter.RBS_PIPE_DIAMETER_PARAM);
+                var ap = arm.get_Parameter(BuiltInParameter.RBS_PIPE_DIAMETER_PARAM);
+                if (rp != null && ap != null && !ap.IsReadOnly) ap.Set(rp.AsDouble());
+            }
+
+            var diameterText = "";
+            var rd = riser.get_Parameter(BuiltInParameter.RBS_PIPE_DIAMETER_PARAM);
+            if (rd != null) diameterText = rd.AsValueString();
+
+            // Join the riser to the head: the riser's end nearest the connector.
+            Connector riserEnd = null;
+            var nearestGap = double.MaxValue;
+            foreach (Connector c in riser.ConnectorManager.Connectors)
+            {
+                if (c.ConnectorType != ConnectorType.End) continue;
+                var gap = c.Origin.DistanceTo(start);
+                if (gap < nearestGap) { nearestGap = gap; riserEnd = c; }
+            }
+
+            var joined = false;
+            var joinProblem = "";
+            if (riserEnd != null)
+            {
+                // READ IT BACK. ConnectTo returning is not a connection.
+                try { open.ConnectTo(riserEnd); joined = open.IsConnected; }
+                catch (Exception ex) { joinProblem = ex.Message; }
+            }
+
+            if (!joined)
+            {
+                branch.RollBack();
+                refused.Add(string.Format("{0}: the branch to main {1} would NOT join the head - {2} - so it "
+                    + "was taken back and NOTHING is left for this head. The head's size against the main's "
+                    + "pipe type is the usual reason.", head.Id, best.Id,
+                    riserEnd == null ? "its end at the head could not be found"
+                        : joinProblem.Length > 0 ? "Revit said: " + joinProblem
+                        : "Revit accepted the join and the head still reads open"));
+                continue;
+            }
+
+            branch.Commit();
+
+            foreach (var e in made) runs.Add(e);
+            if (mainsUsed.Add(best.Id)) runs.Add(best);
+            branched++;
+            findings.Add(string.Format("{0}: riser {1} mm{2}, {3}, to main {4}; joined at the head",
+                head.Id, Math.Round(Math.Abs(bestLanding.Z - start.Z) * mmPerFoot),
+                arm == null ? " landing on the main's axis"
+                    : string.Format(" and arm {0} mm", Math.Round(bendPoint.DistanceTo(bestLanding) * mmPerFoot)),
+                string.IsNullOrEmpty(diameterText) ? "at the connector's size" : diameterText,
+                best.Id));
+        }
+        catch (Exception ex)
+        {
+            var undoFailed = "";
+            try
+            {
+                if (branch != null && branch.HasStarted() && !branch.HasEnded()) branch.RollBack();
+            }
+            catch (Exception undo) { undoFailed = undo.Message ?? "no message"; }
+
+            refused.Add(string.Format("{0}: Revit refused the branch to main {1} - {2}. {3}", head.Id, best.Id,
+                ex.Message, undoFailed.Length > 0
+                    ? "Taking the " + made.Count + " pipe(s) back failed too: \"" + undoFailed
+                      + "\" - check the model and use Undo if they are there."
+                    : "The " + made.Count + " pipe(s) made before the refusal were taken back; nothing is "
+                      + "left for this head."));
+        }
+        continue;
+    }
+
     var connector = connectorOf(terminal);
     if (connector == null)
     {
@@ -139,6 +407,9 @@ foreach (var terminal in elements)
     foreach (var duct in ducts)
     {
         if (duct == null) continue;
+        // VERSION 2: `ducts` may hold the pipes a sprinkler branches to. An
+        // air terminal taps a duct, never one of those.
+        if (duct is Pipe) continue;
         var location = duct.Location as LocationCurve;
         if (location == null || location.Curve == null) continue;
 
@@ -238,6 +509,15 @@ if (called > 0)
 findings.Add(string.Format("{0} terminal(s) tapped in. {1} were already connected, {2} had no duct "
     + "within {3:0} mm, {4} were refused. CHECK THE RESULT with TRACE_CONNECTIVITY rather than trusting "
     + "this count", connected, alreadyConnected.Count, noDuctNear.Count, maxDistanceMm, refused.Count));
+
+if (headsSeen.Count > 0)
+{
+    // VERSION 2 - CREATE_FIXTURE_BRANCHES' sentence, said only when a head was handed in.
+    findings.Add(string.Format("{0} sprinkler or fixture head(s) branched and joined at the head; {1} had no "
+        + "main within {2:0} mm in the direction they face. NO FITTING IS MADE HERE: run FIT_MEP_JOINTS on "
+        + "`runs` for the elbows and the taps, then TRACE_CONNECTIVITY to prove it",
+        branched, noMainNear.Count, maxDistanceMm));
+}
 
 if (moved.Count > 0)
 {

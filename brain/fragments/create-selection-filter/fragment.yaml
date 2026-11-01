@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SEL-008
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,27 @@ capability: CREATE_SELECTION_FILTER
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO UPDATE_SAVED_SET
+# (update-saved-set), on the owner's instruction in conversation: "make sure there is no
+# duplicate tools", every conflict to keep the SAFER rule. Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable and
+# it can be brought back. Nothing offers it now - retrieval leaves DEPRECATED
+# out, and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to UPDATE_SAVED_SET. The proof below, where
+# there is one, is the record of what this card's code did, not a claim about
+# today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: UPDATE_SAVED_SET
+  why: >
+    The same saved set: UPDATE_SAVED_SET version 2 makes one with mode "create" -
+    `setName` is this card's `filterName` - its contents read back into `setSize`,
+    `filterId` and `findings` saying it is applied to no view. The safer rule
+    where they differed: a name already in use is refused, nothing written,
+    pointing at mode "replace", where this card replaced the existing set's
+    contents.
 
 purpose: >
   Saves a set of elements under a name, as a Revit selection filter - the

@@ -30,7 +30,7 @@ risk: MODIFY
 #
 # READ BACK: each new link looked up by id; a Revit link's load status read.
 #
-# RELOAD_LINKS and UNLOAD_LINKS act on links already there.
+# RELOAD_LINKS acts on links already there - it reloads them, or unloads them.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 purpose: >
@@ -90,7 +90,7 @@ compatibility-note: >
 #   "link the architect's model"              -> here
 #   "link every dwg in this folder"           -> here
 #   "reload the links"                        -> RELOAD_LINKS
-#   "unload the architecture link"            -> UNLOAD_LINKS
+#   "unload the architecture link"            -> RELOAD_LINKS, unload true
 #   "which models are linked"                 -> LIST_LINKED_MODELS
 
 utterances:

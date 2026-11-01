@@ -108,9 +108,46 @@ compatibility-note: >
   2027, confirmed by reflection on the 2020 assemblies on 2026-09-16. No unit
   is read, so the 2021 units move cannot reach it.
 
-# ROUTING - repeated in OPEN_FAMILY_FOR_EDITING.
+# SWITCH_ACTIVE_PROJECT WAS MERGED INTO THIS CARD on 2026-11-01, on the
+# owner's instruction in conversation: "now merge the other duplicates also",
+# every conflict to keep the SAFER rule. It is DEPRECATED. CARD ONLY - no line
+# of impl/ changed, so the proof above still describes the code and the card
+# stays PROVEN. The same job, bring another document to the front, and only
+# this one does it: SWITCH_ACTIVE_PROJECT's RequestViewChange was refused by
+# Revit every way it was tried ("Changing the active view is not applicable to
+# inactive documents", FRAGMENT-ISSUES rows 90 and 94), and this card's
+# OpenAndActivateDocument was proved. Where each retired output is now:
+#
+#   switched        activated - and read back from Revit, where that card
+#                   could only say a switch was REQUESTED
+#   requestedTitle  activeAfter, Revit's own title of what is in front after
+#   activeBefore    findings, "(was '<title>')" once it moved
+#   candidates      REPORT_OPEN_DOCUMENTS - every open project and family with
+#                   its full path, which is what this card takes
+#   viewUsed        NOT CARRIED, with `viewName`: landing on a named view never
+#                   worked (row 5b-1310), and OPEN_VIEW opens one once the
+#                   project is in front
+#
+# THE SAFER RULE WHERE THEY DIFFERED. SWITCH_ACTIVE_PROJECT matched a TITLE
+# among open projects and never opened a file; this card takes a FULL PATH and
+# opens the file if it is not open - which the family-creation,
+# building-shell and tag-family-creation methods rely on to get back to a
+# saved project. Kept as it is: a title is not taken here at all, so two open
+# models called Project1 can never be guessed between, and a path names one
+# file. "Switch to the MEP project" is REPORT_OPEN_DOCUMENTS for its path,
+# then here. A project never saved has no path and cannot be brought forward
+# this way - nor could it by the retired card, which never switched anything.
+#
+# ROUTING - repeated in OPEN_FAMILY_FOR_EDITING, REPORT_OPEN_DOCUMENTS,
+# OPEN_VIEW and CREATE_FAMILY_DOCUMENT.
 #
 #   "go back to the project"      -> here, with the project's path
+#   "switch to the other project" -> REPORT_OPEN_DOCUMENTS for its full path,
+#                                    then here
+#   "switch to the MEP project"   -> the same (SWITCH_ACTIVE_PROJECT's row, moved)
+#   "work in the other model now" -> the same (moved)
+#   "go to the architecture file" -> the same (moved)
+#   "open the Level 2 plan"       -> OPEN_VIEW, within the document in front
 #   "open that family for editing" -> OPEN_FAMILY_FOR_EDITING, which needs the
 #                                     PROJECT in front to find the family
 #   "which document is in front"   -> REPORT_OPEN_DOCUMENTS
@@ -120,3 +157,18 @@ utterances:
   - go back to the project
   - bring this file to the front
   - activate the project window
+  # MOVED 2026-11-01 from SWITCH_ACTIVE_PROJECT, merged into this card.
+  - switch to the other project
+  - make the MEP model active
+  - work in the architecture project now
+  - change to my other open model
+  - go back to the first project
+  # ADDED 2026-11-01 WITH THE MERGE. SWITCH_ACTIVE_PROJECT's routing table
+  # claimed these three "-> here", and a comment is not indexed (row
+  # 5b-387's lesson), so with that card retired, ranking decided: on lexical
+  # "work in the other model now" reached SELECT_BY_WORKSET, and
+  # check-routing's own run sent "switch to the MEP project" to
+  # CREATE_PANEL_SCHEDULES, a write. The claim moved here with the card.
+  - switch to the MEP project
+  - work in the other model now
+  - go to the architecture file

@@ -254,8 +254,20 @@ def main():
                   "deriver saw it, so its clean answers mean something")
 
             broken = G.orphans(store, loaded())
-            check(any(i == "FRG-ELE-001" for i, _w in broken),
-                  "and the filter is reported as an orphan nothing can consume")
+            # THE FACT THAT CHANGED, 2026-11-01. Until then the filter left
+            # `elements` and counts nothing consumes, so with `elements` broken
+            # it was an orphan. Version 5 took in SELECT_BY_LEVEL and three
+            # other selectors and provides their `findings` too, which
+            # REPORT_FINDINGS consumes - so it is no longer an orphan, and
+            # rightly. What the break must still show: nothing that NEEDED
+            # `elements` can consume it - all it feeds takes only findings.
+            takes_findings = sorted(
+                i for i, f in loaded().items()
+                if any((n.get("name") if isinstance(n, dict) else None) == "findings"
+                       for n in f.needs()))
+            check(after and all(i in takes_findings for i in after),
+                  "and what the filter still feeds takes only its findings - "
+                  "nothing that needed `elements`: %s" % ", ".join(after))
             check(any(i == "FRG-SEL-001" for i, _w in broken),
                   "and the action as one nothing can feed")
 

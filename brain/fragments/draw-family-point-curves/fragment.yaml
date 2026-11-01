@@ -107,7 +107,7 @@ compatibility-note: >
   `CurveByPoints.IsReferenceLine` and `GetPoints` read the same 2020 through
   2027 (the RevitAPI reference assemblies and XML remarks, read 2026-10-01).
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "draw lines between the adaptive points"      -> here
 #   "draw a spline through these points"          -> here

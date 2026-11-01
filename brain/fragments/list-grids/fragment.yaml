@@ -139,12 +139,12 @@ compatibility-note: >
   `XYZ.DotProduct`, `Normalize` and `GetLength`, the same members version 3's
   crossings and every other geometry read here use; no new API.
 
-# ROUTING - repeated in CREATE_GRID and SNAP_TO_GRID.
+# ROUTING - repeated in CREATE_GRIDS and SNAP_TO_GRID.
 #
 #   "list the grids"            -> here
 #   "how many grids"            -> here
 #   "which grids do we have"    -> here
-#   "add a grid"                -> CREATE_GRID
+#   "add a grid"                -> CREATE_GRIDS
 #   "space these out on a grid" -> SNAP_TO_GRID. THE WORD "GRID" MEANS TWO
 #                                  DIFFERENT THINGS and this is the collision
 #                                  worth knowing: a COLUMN grid is the
@@ -152,7 +152,7 @@ compatibility-note: >
 #                                  is an imaginary spacing for placing
 #                                  diffusers. SNAP_TO_GRID means the second and
 #                                  every fragment here means the first
-#   "list the levels"           -> LIST_LEVELS
+#   "list the levels"           -> REPORT_LEVEL_ELEVATIONS
 #   "the grid bubbles are on the wrong side" -> SET_DATUM_BUBBLES
 
 #   "make a grid series across the building" -> CREATE_GRIDS - a WRITE

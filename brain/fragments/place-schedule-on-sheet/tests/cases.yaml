@@ -18,45 +18,7 @@ positive:
       PLACED AGAIN, with no refusal. A schedule is not a view - it can be on many
       sheets, and refusing here would be carrying the viewport rule across
 
-  - given: >
-      VERSION 2, Revit 2022 or later - "Heron KF Duct Schedule" with about 40
-      rows, sheet "KK01", 50 mm / 250 mm, splitInto "2", segment "all"
-    expect: >
-      two instances placed, placedAt reading "(split into 2 segments)" and
-      "showing segment 1 (Revit's index 0)" for the first at 50 / 250 and
-      segment 2 to its right - on the sheet, two halves side by side, not
-      overlapping, and the schedule's Properties reading it split. THE
-      MEANING OF Split(int) AND THE SPACING ARE WHAT THIS SETTLES
-
-  - given: VERSION 2, Revit 2022 or later - the same schedule, already split, segment "2"
-    expect: >
-      one instance, showing segment 2, on a second sheet - nothing split again
-
-  - given: VERSION 2, Revit 2022 or later - splitInto "100, 60" (mm), segment "1"
-    expect: >
-      placedAt "(split into 2 segments)", the top segment about 100 mm tall on
-      the sheet - THE HEIGHTS' UNIT AND MEANING ARE WHAT THIS SETTLES
-
-  - given: VERSION 2 - both new inputs left out
-    expect: exactly version 1 - the whole schedule placed, no split
-
 negative:
-  - given: VERSION 2, Revit 2020 - splitInto "2", segment "all"
-    expect: >
-      refused naming the schedule and that Revit 2020 and 2021 cannot split a
-      schedule, Split arriving at Revit 2022; placed EMPTY and the sheet as it
-      was - not the whole schedule placed instead. THE FIRST VERSION 2 CASE TO
-      RUN on 2020
-
-  - given: VERSION 2, Revit 2022 or later - segment "5" of a schedule split into 2
-    expect: refused, has 2 segments, nothing placed
-
-  - given: VERSION 2 - splitInto "3", segment "4"
-    expect: refused before any split, nothing split or placed
-
-  - given: VERSION 2, Revit 2022 or later - splitInto "2" on a schedule already split
-    expect: refused - already split - and nothing split again or placed
-
   - given: a sheetId that is a floor plan rather than a sheet
     expect: >
       refused with that reason, and NOTHING PLACED anywhere. THIS IS THE FIRST

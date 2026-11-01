@@ -13,18 +13,21 @@ version: 1
 source: OFFICIAL
 risk: MODIFY
 
-# WRITTEN 2026-11-01 FOR FRAGMENT-ISSUES ROW 5b-1363 (NEEDS-CHECKING Group KK),
+# WRITTEN 2026-11-01 FOR FRAGMENT-ISSUES ROW 5b-1367 (NEEDS-CHECKING Group KK;
+# the row was 5b-1363 until main took that number),
 # on the owner's word in the brief of that day's session. Ajmal PS made a duct
 # length schedule through Heron on his Revit 2020 job model and asked for a
 # careful check of every schedule setting Heron could not reach. Item 16 of
-# that check: CREATE_KEY_SCHEDULE (FRG-VIEW-044, PROVEN) makes the table and
+# that check: a key schedule made by Heron - CREATE_KEY_SCHEDULE then, and
+# CREATE_SCHEDULE with listKind key since that card was merged into it on
+# 2026-11-01 - is made as the table and
 # NO ROWS, and nothing in the library added one - so a key schedule made by
 # Heron offered an empty drop-down until somebody pressed Insert Data Row by
 # hand once per key.
 #
 # A NEW CARD, NOT A WIDENING. Making the key schedule and filling it are two
 # jobs: a key schedule is made once and its keys are added for months after.
-# CREATE_KEY_SCHEDULE is PROVEN and stays as it is.
+# CREATE_SCHEDULE makes the table, with listKind key; this fills it.
 #
 # THE ONE THING THE REFERENCE DOES NOT SETTLE, AND THE PROOF MUST: whether
 # `TableSectionData.InsertRow` on a key schedule's BODY makes a key element on
@@ -97,12 +100,12 @@ compatibility-note: >
   all eight with tools/api-surface --members on 2026-11-01. What they DO to a
   key schedule is the proof's to say, not the reference's.
 
-# ROUTING - the same rows are in CREATE_KEY_SCHEDULE.
+# ROUTING - the same rows are in CREATE_SCHEDULE.
 #
 #   "add keys to the finish key schedule"  -> here
 #   "add a row to the key schedule"        -> here
-#   "make a key schedule"                  -> CREATE_KEY_SCHEDULE - the table,
-#                                             with no rows
+#   "make a key schedule"                  -> CREATE_SCHEDULE, listKind key -
+#                                             the table, with no rows
 #   "fill in the finish for key A"         -> WRITE_ELEMENT_PARAMETERS - a
 #                                             key's other values are values of
 #                                             an element like any other

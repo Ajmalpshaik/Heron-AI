@@ -141,7 +141,11 @@ utterances:
   - check this view for clashing annotation
   - the annotation is all on top of itself
   - tags overlapping on this sheet
-  - check the tags before i issue this
+  # REMOVED 2026-11-01 - "check the tags before i issue this". This card's own
+  # routing table gives it to REPORT_TAGS_AND_TARGETS, which declares it too,
+  # so the two declarations tied in the identity table and the sentence fell
+  # to ranking. Card text only - impl/ untouched, so the proof still describes
+  # the code.
   # ADDED 2026-09-20. Measured: this sentence reached ARRANGE_TAGS, a MODIFY -
   # it MOVES THE TAGS when asked whether any overlap. This fragment's whole
   # identity is 'the tags are printing on top of each other in this view', so

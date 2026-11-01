@@ -24,7 +24,7 @@ risk: MODIFY
 # READ BACK: Revit is asked face by face whether it is painted. A face Revit
 # will not paint - most family geometry - is counted apart.
 #
-# REPLACE_MATERIAL swaps a material where it is assigned; SET_FAMILY_FORM_MATERIAL
+# REPLACE_MATERIAL swaps a material where it is assigned; LINK_FAMILY_PARAMETER
 # sets a form's material in a family. Paint changes neither type nor family.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).

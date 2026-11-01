@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LNK-015
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,14 +9,36 @@ semantic-identity: "make the linked model room bounding, so rooms and spaces see
 kind: action
 domain: revit.document
 capability: SET_LINK_ROOM_BOUNDING
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-01) - SET_LINK_PATH_TYPE WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools", then "ok go
+# ahead merge all"), and is DEPRECATED. One tool for a Revit link TYPE's own
+# settings: the same links found the same way (`linkName`, the start of a
+# name, empty for every link), each setting read before it is written and a
+# link already as asked never written again, every change read back. What that
+# card had and this one lacked is `pathType` - relative or absolute, a Revit
+# Server or cloud link named and left alone because Revit forbids switching to
+# or from Server, the model regenerated before the read-back - and its
+# `report`, one string with every link left alone and why. BOTH INPUTS ARE NOW
+# OPTIONAL AND AT LEAST ONE IS REQUIRED: `roomBounding` is TEXT since version 2
+# ("true" or "false", "on" or "off"), because a yes/no left out reads false and
+# could not be told from "off"; left out it reads "unchanged". `changed` counts
+# link types changed in either setting, `alreadyThat` those already as asked in
+# every setting asked. Nothing of that card is left out, and no rule of the two
+# was opposite. Version 1's proof below no longer describes the code and is
+# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
 
 purpose: >
   Switches Room Bounding on or off for one Revit link or every link - the
   link type's own setting that lets this model's rooms and MEP spaces stop at
   the linked model's walls, floors and ceilings.
+
+  **AND HOW EACH LINK STORES ITS PATH** (version 2) - Relative or Absolute, as
+  Manage Links' Path Type column does; a Revit Server or cloud link is named
+  and left alone. Either setting, or both, in one call.
 
   **IT IS THE REASON SPACES WILL NOT PLACE IN AN MEP MODEL.** An MEP model
   draws no walls of its own; its spaces are bounded by the architect's link,
@@ -37,21 +59,40 @@ contract:
     - name: linkName
       type: string
       source: request
-    # true - Room Bounding on; false - off.
+    # true - Room Bounding on; false - off. TEXT since version 2 ("true",
+    # "false", "on", "off"), so it can be left out: left out it reads
+    # "unchanged" and Room Bounding is not touched.
     - name: roomBounding
-      type: bool
+      type: string
       source: request
+      optional: true
+      absent: unchanged
+    # VERSION 2, from SET_LINK_PATH_TYPE. "relative" or "absolute". Left out
+    # it reads "unchanged" and no path is touched. roomBounding and pathType
+    # both left out is refused.
+    - name: pathType
+      type: string
+      source: request
+      optional: true
+      absent: unchanged
   provides:
     - name: changed
       role: result
       type: int
     - name: alreadyThat
-      # Link types already set that way. The evidence it looked (D-52).
+      # Link types already set that way - in every setting asked, since
+      # version 2. The evidence it looked (D-52).
       role: accounting
       type: int
     - name: refused
       role: accounting
       type: IList<string>
+    - name: report
+      # VERSION 2, from SET_LINK_PATH_TYPE. ONE STRING with every link left
+      # alone and why - a Server or cloud link, a path that did not read back,
+      # and every reason in `refused` (D-52).
+      role: accounting
+      type: string
     - name: findings
       type: IList<string>
 
@@ -90,6 +131,11 @@ compatibility-note: >
   ON THAT PARAMETER IS NOT YET SEEN ON A MODEL: the type parameter named
   "Room Bounding" is asked for by name when the built-in one is absent, and a
   type carrying neither is refused by name. The read-back is the check.
+  Version 2's RevitLinkType.PathType (get and set) and PathType.Absolute,
+  Relative and Server are present 2020 through 2027 - read off RevitAPI.xml in
+  the Nice3point reference packages for all eight releases on 2026-10-12, for
+  SET_LINK_PATH_TYPE, whose remarks say a path cannot be switched to or from
+  Server.
 
 # ROUTING - the same rows are in SYNC_SPACES_WITH_LINKED_ROOMS and PLACE_ROOMS.
 #
@@ -98,7 +144,11 @@ compatibility-note: >
 #                                                 will not bound - and this card
 #                                                 first when the link is not
 #                                                 Room Bounding
-#   "make the links relative"                  -> SET_LINK_PATH_TYPE
+#   "make the links relative", "set the
+#    architect's link to absolute"             -> here, pathType (version 2,
+#                                                 SET_LINK_PATH_TYPE merged in)
+#   "reload the links"                         -> RELOAD_LINKS
+#   "link the structural model"                -> LINK_FILES
 #   "make spaces from the linked rooms"        -> SYNC_SPACES_WITH_LINKED_ROOMS
 
 utterances:
@@ -106,3 +156,8 @@ utterances:
   - turn on room bounding for the linked model
   - the spaces will not place because the link is not room bounding
   - switch room bounding off for this link
+  # MOVED 2026-11-01 from SET_LINK_PATH_TYPE, merged into this card.
+  - make all the links relative
+  - set the architect's link path to absolute
+  - change the link path type to relative
+  - switch every Revit link to relative paths

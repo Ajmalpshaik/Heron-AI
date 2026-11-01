@@ -130,7 +130,7 @@ compatibility-note: >
 #                                        Same word, entirely different
 #                                        job: this fragment makes nothing
 #   "make a section here"             -> CREATE_SECTION_VIEW
-#   "zoom to these"                   -> ZOOM_TO_ELEMENTS, which moves the
+#   "zoom to these"                   -> SET_SELECTION with show, which moves the
 #                                        camera and changes no view setting.
 #                                        A section box is not a zoom - below
 #
@@ -157,8 +157,9 @@ compatibility-note: >
 #   "set the scope box on these views" -> ASSIGN_SCOPE_BOX_TO_VIEW - a scope box
 #                                        is shared and named; a section box
 #                                        belongs to this 3D view alone
-#   "crop the view to follow the room shape" -> SET_VIEW_CROP_TO_SHAPE
-# "zoom to these" WAS CLAIMED HERE AND BELONGS TO ZOOM_TO_ELEMENTS - "take me
+#   "crop the view to follow the room shape" -> SET_VIEW_CROP
+# "zoom to these" WAS CLAIMED HERE AND BELONGS TO ZOOM_TO_ELEMENTS - SET_SELECTION
+# with show since it was merged there, 2026-11-01 - "take me
 # to these on screen". A SECTION BOX IS NOT A ZOOM: one navigates, the other
 # changes what the view shows everybody. Both claiming it made the phrase
 # `__ambiguous__`, a deliberate miss, so a navigation request fell through to
@@ -169,6 +170,12 @@ compatibility-note: >
 utterances:
   - put a section box around this
   - box these up so I can see them
+  # ADDED 2026-11-01, row 5b-387. The routing table above claims it ("box
+  # these up" / "section box" -> here) and a comment is not indexed, so
+  # ranking decided: measured that day on a private store of this checkout it
+  # answered EXTRUDE_BETWEEN_PLANES, a family solid, on the trained backend
+  # (model2vec potion-base-8M) and REPORT_BOUNDING_BOX on lexical.
+  - box these up
   - section box around the clash
   - crop the 3d view to these
   - zoom the 3d view to these

@@ -25,7 +25,7 @@ positive:
       pieces" - one schedule, not two
 
   - given: sheetNumber typed in a different case, e.g. m-101 for M-101
-    expect: the same answer as M-101 - the number is matched ignoring case, as PLACE_VIEWS_ON_SHEET matches it
+    expect: the same answer as M-101 - the number is matched ignoring case, as PLACE_VIEW_ON_SHEET's sheet is matched
 
   - given: >
       the same model, sheetNumber M-105 - a schedule sheet with no viewport,
@@ -123,7 +123,7 @@ negative:
 
 second_route:
   - >
-    LIST_SHEETS on the same model: the "(n views)" beside each sheet should
+    FIND_SHEETS on the same model: the "(n views)" beside each sheet should
     equal viewCount here, sheet for sheet - two calls, two Revit methods
     (placed views there, viewports here), one number. A difference is a
     finding to record, not a rounding

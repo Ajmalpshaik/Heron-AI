@@ -1,15 +1,15 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-GEO-012
-semantic-identity: "line these elements up with one reference element, axis by axis"
+semantic-identity: "line these elements up with one reference element, axis by axis - or line MEP runs up by their top, bottom or centre at one height"
 kind: action
 domain: revit.geometry
 capability: ALIGN_ELEMENTS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -25,8 +25,27 @@ purpose: >
   equipment and the wrong one for somebody who meant "make the ends meet" - and
   the difference is invisible until it is looked at.
 
-  For MEP runs levelled by their top or bottom rather than their centre, that
-  is ALIGN_MEP_ELEVATION, which reads each run's own size.
+  **MEP runs by their top, bottom or centre (version 2, 2026-11-01).**
+  ALIGN_MEP_ELEVATION was merged in. Give `edge` - top, bottom or centre - and
+  `targetZ`, a height in millimetres, instead of a reference: each duct, pipe,
+  tray or conduit is moved up or down so that edge lands on the height, its
+  half-height read from its OWN size, so a 600 mm duct and a 100 mm pipe
+  genuinely share a soffit. The insertion point of an MEP run is its
+  centreline, so making centrelines equal leaves the tops and bottoms apart -
+  which is exactly what a coordinated corridor needs to be equal. A run whose
+  size cannot be read is in `noSize` and not moved; something not curve-based
+  is in `notCurveBased`. Insulation is NOT included - the bare service size. A
+  sloped run's midpoint lands on the height and its slope is kept. Every move
+  is read back. Version 2's proof is owed; the card is DRAFT.
+
+  **"SOFFIT" MEANS TWO DIFFERENT JOBS AND ONE OF THEM CHANGES THE MODEL:**
+
+  | What you meant | Use |
+  |---|---|
+  | "the soffit height in here", "how high is the ceiling" - to know | `MEASURE_CEILING_HEIGHT`, read-only |
+  | "line up the soffits", "align the undersides" - to change | `ALIGN_ELEMENTS` with an edge, which MOVES services |
+
+  Asking a height must never move a duct.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -36,18 +55,43 @@ contract:
       type: Document
     - name: elements
       type: IList<Element>
+    # Version 2: OPTIONAL. Left out when lining up by an edge and a height.
+    # Absent binds null (HeronBindingNote.AbsentValue); with no edge either,
+    # nothing is moved and `refused` says why.
     - name: reference
       type: Element
       source: request
+      optional: true
+    # Version 2: optional, a switch not said is off - so a call by edge need
+    # not name them. Every version 1 call names them and runs unchanged.
     - name: alignX
       type: bool
       source: request
+      optional: true
     - name: alignY
       type: bool
       source: request
+      optional: true
     - name: alignZ
       type: bool
       source: request
+      optional: true
+    # Version 2, ALIGN_MEP_ELEVATION's `edge`: top, bottom or centre. Left out
+    # it is `none` - align to the reference, as version 1. Any other word is
+    # refused, naming the three (ALIGN_MEP_ELEVATION read it as the centre).
+    - name: edge
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # Version 2, ALIGN_MEP_ELEVATION's `targetZ`: the height in MILLIMETRES
+    # the edge is put at, divided by 304.8 in the code (D-71). Required with
+    # an edge; left out it is NaN, and an edge with no height is refused.
+    - name: targetZ
+      type: double
+      source: request
+      optional: true
+      absent: NaN
   provides:
     - name: aligned
       role: result
@@ -62,6 +106,23 @@ contract:
       # could not check, never a confirmed alignment (D-52).
       role: accounting
       type: IList<ElementId>
+    # VERSION 2 - ALIGN_MEP_ELEVATION's two lists, under their own names.
+    - name: noSize
+      # Runs whose size parameter could not be read, so they could not be
+      # aligned by an edge and were NOT moved. Never treated as flat (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notCurveBased
+      # Handed in for an edge but not curve-based - a damper, a valve - so
+      # there was nothing to level (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: refused
+      # Version 2: why NOTHING WAS MOVED, as one sentence - no reference and no
+      # edge, an edge word it does not know, an edge with no height, or both
+      # ways asked at once. Null when it ran (D-52).
+      role: accounting
+      type: string
 
 proof:
   date: '2026-09-17'
@@ -98,9 +159,48 @@ compatibility-note: >
   neither has changed 2020 to 2027. All coordinates are internal feet with no
   units call.
 
+  Version 2: the four size parameters ALIGN_MEP_ELEVATION read -
+  RBS_CURVE_HEIGHT_PARAM, RBS_CURVE_DIAMETER_PARAM, RBS_PIPE_DIAMETER_PARAM and
+  RBS_CABLETRAY_HEIGHT_PARAM - are BuiltInParameter values unchanged 2020 to
+  2027, asked for by enum rather than by display name so it works on a Revit in
+  any language. `targetZ` arrives in millimetres and is divided by 304.8 (D-71).
+
+# VERSION 2 (2026-11-01) - ALIGN_MEP_ELEVATION WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools", "in every
+# conflict keep the safer rule"), and is DEPRECATED. Its `elements` are this
+# card's; its `edge` and `targetZ` are here under the same names, the reference
+# left out; its `aligned`, `noSize` and `notCurveBased` are here too.
+#
+# THE CONFLICTS, AND THE SAFER RULES KEPT: ALIGN_MEP_ELEVATION read any edge
+# word but "top" and "bottom" as the centre - "soffit" would have levelled
+# centrelines. KEPT: a word it does not know is refused, naming the three. It
+# counted every move as aligned without looking; this card reads every move
+# back, and a run Revit would not move is in `blocked`. Asked both ways at
+# once, nothing is moved rather than one way picked.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "line these up"                  -> here, with a reference
+#   "get the services level"         -> here, with an edge and a height
+#                                       (ALIGN_MEP_ELEVATION until 2026-11-01)
+#   "line up the soffits"            -> here, edge bottom
+#   "how high is the soffit"         -> MEASURE_CEILING_HEIGHT - a READ
+#   "give it a fall of 1 in 100"     -> SET_MEP_SLOPE - a graded run, not a level one
+#   "raise the ducts 200"            -> MOVE_ELEMENTS - both ends together
+#   "jump this pipe over the beam"   -> OFFSET_MEP_SECTION - ONE STRETCH of a run
+#   "which services are stacked too close together" -> CHECK_VERTICAL_CLEARANCE
+
 utterances:
   - line these up
   - get them on the same line
   - align with that one
   - they should all be at the same X
   - straighten this row
+  # MOVED 2026-11-01 from ALIGN_MEP_ELEVATION, merged into this card.
+  - get the services level
+  - align the bottoms so the ceiling fits
+  - line up the soffits
+  - level the ducts with each other
+  - align the tops
+  - set them all to the same underside
+  - level these up

@@ -10,12 +10,47 @@ positive:
   - given: a floor slab and a boundary in its plane
     expect: the slab penetrated, checked in section
 
+  # VERSION 3 (2026-11-01), from CREATE_FAMILY_HOST_OPENING. Each FAILS on
+  # version 2, which had no shape and refused a family with no host.
+  - given: >
+      a new family from the metric Generic Model wall based template, its
+      sample wall running along X; host and boundary left out, shape "rect
+      -300,600 300,1200", perpendicularFace false
+    expect: >
+      an opening hosted by the template's wall, read back X -300 to 300 and Z
+      600 to 1200 mm, openingId its id and a finding that its size is fixed as
+      drawn; LOOKED AT in the elevation - then the family placed on a wall in a
+      test project cuts the same hole there
+
+  - given: >
+      a new family from the metric Generic Model ceiling based template; shape
+      "circle 0,0 100"
+    expect: an opening in the template's ceiling, X and Y -100 to 100 mm by its ends
+
 negative:
   - given: no host
     expect: refused by name, nothing cut
 
   - given: a boundary of two points
     expect: refused by name, nothing cut
+
+  - given: a project, host and boundary both LEFT OUT (version 3 - they bind null and empty now)
+    expect: refused "No host was given", in `refused` and findings, nothing cut - as version 2 refused it
+
+  # VERSION 3, CREATE_FAMILY_HOST_OPENING's negatives.
+  - given: a new family from the metric Generic Model floor based template, shape "rect 0,0 100,100"
+    expect: >
+      refused - Revit's opening call takes only a wall or a ceiling; cut a floor
+      with a void form - nothing cut
+
+  - given: shape "rect 0,0 100,100 | rect 200,0 300,100" in the wall based family
+    expect: refused - an opening takes one closed loop - nothing cut
+
+  - given: a project, a wall as host, three boundary points AND shape "rect 0,0 100,100"
+    expect: refused - shape is a family's - nothing cut
+
+  - given: the wall based family, shape given AND boundary points given
+    expect: refused - a family's opening is the shape - nothing cut
 
   - given: a boundary that does not lie on the host at all
     expect: >
@@ -27,3 +62,6 @@ second_route:
   - >
       Revit's own Architecture then Wall Opening on the same wall, and the two
       compared in a section
+  - >
+      In the Family Editor (version 3), select the opening: Edit Sketch shows
+      its boundary in the template's wall or ceiling

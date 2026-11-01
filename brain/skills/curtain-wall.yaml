@@ -37,13 +37,17 @@ purpose: >
   4. SET_CURTAIN_WALL_GRID on the type - the vertical grid, the horizontal
      grid or both: a layout (none, fixed distance, maximum or minimum spacing)
      and a spacing in millimetres. A direction nobody mentioned is left alone.
-  5. SET_CURTAIN_WALL_MULLIONS on the type - the interior, border 1 and border
-     2 mullion each way, each named by its type ("Rectangular Mullion : 50 x
-     150mm"), or none. A mullion type the model does not have is refused with
-     the names it does have; loading one is the modeller's.
+  5. SET_CURTAIN_WALL_GRID's `mullions` on the type - the interior, border 1
+     and border 2 mullion each way, each named by its type ("Rectangular
+     Mullion : 50 x 150mm"), or none. A mullion type the model does not have is
+     refused with the names it does have; loading one is the modeller's. Steps
+     4 and 5 may be one call - both tables together - since 2026-11-01, when
+     SET_CURTAIN_WALL_MULLIONS was merged into SET_CURTAIN_WALL_GRID.
      Steps 4 and 5 were widened to curtain system types on 2026-10-29 and
-     proved again on Revit 2020 on 2026-11-01 (NEEDS-CHECKING Group JP); a
-     curtain wall type's keys and words are version 2's and version 1's.
+     proved again on Revit 2020 on 2026-11-01 (NEEDS-CHECKING Group JP), as
+     the two setters' version 3 and version 2; a curtain wall type's keys and
+     words are unchanged. The merged setter, SET_CURTAIN_WALL_GRID version 4,
+     is DRAFT until it is proved: a kept change is refused until then (D-117).
   6. REPORT_CURTAIN_ELEMENTS on the wall - its grid lines each way and its
      mullions by type, measured - against what the spacing should give. A 9000
      mm wall at a 1500 mm fixed distance has five vertical lines inside it. The
@@ -79,8 +83,8 @@ needs:
   - DUPLICATE_TYPE
   - CHANGE_ELEMENT_TYPE
   - CREATE_WALL
+  # The grid and the mullions, one tool since 2026-11-01.
   - SET_CURTAIN_WALL_GRID
-  - SET_CURTAIN_WALL_MULLIONS
   # This wall only: extra lines or equal panels, and panels by position.
   - ADD_CURTAIN_GRID_LINES
   - SET_CURTAIN_PANEL_TYPE

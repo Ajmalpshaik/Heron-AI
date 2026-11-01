@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "put the fitting every joint in these runs calls for, all in 
 kind: action
 domain: revit.mep
 capability: FIT_MEP_JOINTS
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -25,7 +25,19 @@ purpose: >
   drawn. The owner's words: make the ducts, and then the path is known, so the
   fittings can be made at one time.
 
-  **The fitting is chosen exactly as PLACE_MEP_FITTING chooses it**, and that is
+  **One joint or every joint - the same tool (version 3, 2026-11-01).** Hand
+  in two runs and it fits the one joint between them; hand in a whole layout
+  and it fits every joint among ALL the runs handed in. PLACE_MEP_FITTING,
+  which fitted one joint a call, was merged into this card and is DEPRECATED.
+  What it did that this did not is here now: two free ends of different runs
+  that are APART are named with the gap - "two open ends 40 mm apart" - in
+  `gaps`, and nothing is moved to close it; a run handed in with no open end
+  is named in `noOpenEnd`; and when nothing at all is fitted, `refused` says
+  why in that card's words - no duct or pipe given, no open end, the gap, or a
+  single run whose ends meet nothing. Its two-to-four rule is a rule about one
+  joint: a point where five or more ends meet fails the whole job.
+
+  **The fitting is chosen as Revit chooses it**, and that is
   the rule Revit follows when one duct is dragged onto another: two ends at an
   angle make an elbow, two in line a union or - if the size changes - a
   transition, three a tee whose main is the most nearly head-on pair, four a
@@ -103,6 +115,27 @@ contract:
       # A count of what it was GIVEN and could not use (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: noOpenEnd
+      # VERSION 3, from PLACE_MEP_FITTING: runs handed in whose every connector
+      # already carries something, so they had no end to join. Given and
+      # unusable as an end - another run may still be tapped onto their side.
+      # Never a thing fitted (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: gaps
+      # VERSION 3, from PLACE_MEP_FITTING: each pair of free ends of different
+      # runs, each the other's nearest, with nothing under either, named with
+      # where they are and how far apart - "two open ends 40 mm apart".
+      # Nothing is moved to close a gap. The evidence it looked (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # VERSION 3, from PLACE_MEP_FITTING: why NOTHING was fitted, in that
+      # card's words - no duct or pipe, no open end, the nearest gap, or one
+      # run whose ends meet nothing. Empty when anything was fitted. Never a
+      # thing it found (D-52).
+      role: accounting
+      type: string
 
 proof:
   date: '2026-10-18'
@@ -160,19 +193,46 @@ compatibility-note: >
 
   Millimetres to feet is arithmetic - divide by 304.8, per D-20.
 
-# ROUTING - the neighbours this must not be confused with.
+# 2026-11-01 - PLACE_MEP_FITTING WAS MERGED INTO THIS CARD (version 3) on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same job: the fitting two, three or four open duct or pipe
+# ends call for, chosen from the geometry, nothing moved to close a gap. Where
+# its outputs are now: its `created` (one fitting) is this card's `created`
+# list, one entry for one joint; its `refused` is this card's `refused`, set
+# when nothing was fitted, with the gap named as it named it; its
+# `notMepCurve` is this card's `notMepCurve`. Added in version 3: `gaps`,
+# `noOpenEnd` and `refused`. Its proof is the record of what its code did.
+#
+# THE CONFLICT, AND THE SAFER RULE KEPT: PLACE_MEP_FITTING built a transition
+# with the ends in whatever order they were found; this card puts the LARGER
+# end first, measured 2026-09-23 (a short run was turned inside out the other
+# way). Its rule that two to four RUNS are handed in is not carried as a
+# refusal of five runs - five runs is a layout here - but as the rule it
+# protected: no fitting joins more than four ends, and a point where five meet
+# fails the whole job. Its "Revit declined to build the fitting" is this
+# card's throw with Revit's words, which rolls the whole job back (Article 8).
+
+# ROUTING - the neighbours this must not be confused with. Repeated in
+# CREATE_DUCT_RUNS, TRACE_CONNECTIVITY and SPLIT_MEP_RUN.
 #
 #   "fit all the joints"            -> here
 #   "put the elbows and tees in"    -> here
-#   "join these two"                -> PLACE_MEP_FITTING - one joint
+#   "join these two"                -> here - one joint, two runs handed in
+#                                      (PLACE_MEP_FITTING until 2026-11-01)
+#   "connect these two ducts"       -> here
+#   "put an elbow here"             -> here - the elbow is CHOSEN, not named
+#   "is this duct connected"        -> TRACE_CONNECTIVITY - a READ, and it must
+#                                      not answer a request to change the model
+#   "split this duct"               -> SPLIT_MEP_RUN - the opposite job
+#   "join these walls together"     -> JOIN_GEOMETRY
 #   "connect the open ends"         -> CONNECT_OPEN_ENDS - ends already at one
 #                                      point, no fitting added; it is what joins
 #                                      the free ends this leaves
-#   "draw a duct from here"         -> CREATE_DUCT, which this follows
+#   "draw a duct from here"         -> CREATE_DUCT_RUNS, which this follows
 #   "connect the diffusers to the
 #    duct"                          -> CONNECT_AIR_TERMINALS - but NEEDS-CHECKING
 #                                      AJ1 saw it lift terminals; see its card
-#   "pipe these sprinklers to the main" -> CREATE_FIXTURE_BRANCHES first - it
+#   "pipe these sprinklers to the main" -> CONNECT_AIR_TERMINALS first - it
 #                                      draws the risers and arms; this then
 #                                      fits its `runs` (2026-10-14)
 #   "jump this pipe over the beam"  -> OFFSET_MEP_SECTION first; this then fits
@@ -190,3 +250,12 @@ utterances:
   # sentence, and a comment is not indexed, so ranking decided: "put the
   # elbows and tees in": MEASURE_FITTING_AREA answered it on both backends.
   - put the elbows and tees in
+  # MOVED 2026-11-01 from PLACE_MEP_FITTING, merged into this card.
+  - join these two
+  - connect these two ducts
+  - put an elbow here
+  - add a duct fitting
+  - join the pipes up
+  - connect them together
+  - add a tee here
+  - join these two ducts

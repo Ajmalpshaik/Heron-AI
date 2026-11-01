@@ -2,6 +2,34 @@
 // scope; leaves `regionId`, `drawn`, `notAFamily`, `refused` and `findings`
 // behind.
 //
+// VERSION 2 (2026-11-01) - CREATE_FILLED_REGION MERGED IN, on the owner's
+// instruction ("make sure there is no duplicate tools"). One tool for a filled
+// or masking region, in a PROJECT'S VIEW as well as inside the family being
+// edited. What that card had that this lacked:
+//
+//   A PROJECT VIEW. In a project, `workPlane` names the view to draw in, as
+//   the Project Browser shows it or written "FloorPlan: Level 1" - a plan, a
+//   section, an elevation, a detail, a drafting view, a legend or a sheet. A
+//   view that takes no annotation - a 3D view, a schedule - is refused with
+//   the reason rather than letting Revit throw something obscure, and a
+//   template is refused too.
+//
+//   IT EXISTS IN ONE VIEW AND NOWHERE ELSE, and the answer says so every
+//   time: a filled region is ANNOTATION - in no other view, not in the model,
+//   in no schedule. Right for a markup, wrong for anybody who thinks they have
+//   modelled something.
+//
+//   A VIEW AT AN ANGLE - a section cut off the grid - is taken too, in a
+//   project: its shapes are read in millimetres along the view's RIGHT and UP,
+//   from the point of its plane over the project origin, and the answer says
+//   so. CREATE_FILLED_REGION took points in any view's plane; a view square to
+//   the grid still reads model coordinates, as a family's view does.
+//
+//   Its boundary - XYZ points in internal feet, closed back to the first - is
+//   this card's shape language in millimetres here; the masking region,
+//   arriving at 2024, works in a project the same way. `notAFamily` now says
+//   which kind of document was drawn in, and is no longer a refusal.
+//
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
 // A FILLED OR MASKING REGION INSIDE A FAMILY - the solid patch of a detail
@@ -275,26 +303,40 @@ FilledRegionType fillType = null;
 var loops = new List<List<double[]>>();
 System.Reflection.MethodInfo call = null;
 
-if (!doc.IsFamilyDocument)
-{
-    notAFamily = true;
-    refused = "The document in front, \"" + doc.Title + "\", is a project, not a family open in the Family Editor. "
-        + "A region in a project's view is CREATE_FILLED_REGION; this one draws inside a family - open it first.";
-}
-else
+// VERSION 2: A PROJECT'S VIEW TOO (from CREATE_FILLED_REGION). A project draws
+// in a view, as a 2D family does.
+notAFamily = !doc.IsFamilyDocument;
+var inProject = notAFamily;
+if (inProject) twoD = true;
 {
     var said = (workPlane ?? "").Trim();
     if (twoD)
     {
-        // A 2D FAMILY DRAWS IN ITS VIEW, named as the Project Browser shows it.
+        // A 2D FAMILY - OR A PROJECT - DRAWS IN A VIEW, named as the Project
+        // Browser shows it, or "FloorPlan: Level 1" where two views share it.
         var views = new FilteredElementCollector(doc).OfClass(typeof(View)).Cast<View>().Where(v => !v.IsTemplate).ToList();
-        var found = views.Where(v => string.Equals(v.Name, said, StringComparison.OrdinalIgnoreCase)).ToList();
-        if (said.Length == 0) problems.Add("No view was named. This is a 2D family - name the view to draw in: "
-            + string.Join(", ", views.Select(v => v.Name).Take(10)) + ".");
+        var found = views.Where(v => string.Equals(v.Name, said, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(v.ViewType + ": " + v.Name, said, StringComparison.OrdinalIgnoreCase)).ToList();
+        var whose = inProject ? "This project's views include" : "This family's views";
+        // THE VIEWS THAT TAKE ANNOTATION (version 2, from CREATE_FILLED_REGION).
+        Func<View, bool> takesAnnotation = candidate =>
+        {
+            var kind = candidate.ViewType;
+            return kind == ViewType.FloorPlan || kind == ViewType.CeilingPlan || kind == ViewType.EngineeringPlan
+                || kind == ViewType.AreaPlan || kind == ViewType.Section || kind == ViewType.Elevation
+                || kind == ViewType.Detail || kind == ViewType.DraftingView || kind == ViewType.Legend
+                || kind == ViewType.DrawingSheet;
+        };
+        if (said.Length == 0) problems.Add("No view was named. " + (inProject ? "Name the project view" : "This is a 2D "
+            + "family - name the view") + " to draw in: " + string.Join(", ", views.Select(v => v.Name).Take(10)) + ".");
         else if (found.Count != 1)
-            problems.Add("No single view is called \"" + said + "\". This family's views: "
+            problems.Add((found.Count == 0 ? "No view is called \"" : "More than one view is called \"") + said + "\""
+                + (found.Count == 0 ? "" : " - write it \"FloorPlan: " + said + "\" with its kind") + ". " + whose + ": "
                 + (views.Count == 0 ? "none" : string.Join(", ", views.Select(v => v.Name).Take(10))) + ".");
-        else if (axisOf(found[0].ViewDirection) < 0)
+        else if (inProject && !takesAnnotation(found[0]))
+            problems.Add("'" + found[0].Name + "' (" + found[0].ViewType + ") takes no annotation - a filled region lives in "
+                + "a plan, a section, an elevation, a detail, a drafting view, a legend or a sheet.");
+        else if (!inProject && axisOf(found[0].ViewDirection) < 0)
             problems.Add("The view \"" + said + "\" looks at an angle; a shape here is written in model coordinates.");
         else view = found[0];
     }
@@ -349,7 +391,7 @@ else
         fillType = kinds.FirstOrDefault(k => string.Equals(k.Name, name, StringComparison.OrdinalIgnoreCase));
         if (name.Length == 0 || fillType == null)
             problems.Add((name.Length == 0 ? "No region type was named." : "No filled region type is called \"" + name
-                + "\" in this family.") + " It holds: " + (kinds.Count == 0 ? "none"
+                + "\" in this " + (inProject ? "project." : "family.")) + " It holds: " + (kinds.Count == 0 ? "none"
                 : string.Join(", ", kinds.Select(k => k.Name).OrderBy(n => n).Take(20))) + " - or name \"masking\".");
         call = typeof(FilledRegion).GetMethod("Create",
             new[] { typeof(Document), typeof(ElementId), twoD ? typeof(ElementId) : typeof(SketchPlane), curveLoops });
@@ -376,12 +418,18 @@ else
 
 if (refused == null)
 {
-    var axis = twoD ? axisOf(view.ViewDirection) : plane.Item2;
-    var at = twoD ? along(view.Origin, axis) : plane.Item3;
+    // A PROJECT VIEW AT AN ANGLE (version 2): read along its right and up, from
+    // the point of its plane over the project origin.
+    var angled = twoD && axisOf(view.ViewDirection) < 0;
+    var axis = angled ? 2 : twoD ? axisOf(view.ViewDirection) : plane.Item2;
+    var at = angled ? 0.0 : twoD ? along(view.Origin, axis) : plane.Item3;
     var u = inPlane[axis][0];
     var v = inPlane[axis][1];
+    var overOrigin = angled ? view.ViewDirection * view.Origin.DotProduct(view.ViewDirection) : XYZ.Zero;
     Func<double, double, XYZ> onPlane = (first, second) =>
     {
+        if (angled)
+            return overOrigin + view.RightDirection * (first / 304.8) + view.UpDirection * (second / 304.8);
         var xyz = new double[3];
         xyz[axis] = at;
         xyz[u] = first / 304.8;
@@ -456,8 +504,18 @@ if (refused == null)
     if (!twoD)
         findings.Add("In a 3D family the region shows in views parallel to \"" + plane.Item4 + "\" - a plan, for one "
             + "on a level - and never in 3D, like a symbolic line.");
-    findings.Add("Its boundary lines take Revit's thin lines. A region only some types show is linked to a Yes/No "
-        + "parameter by the button beside Visible in its Properties.");
+    if (inProject)
+    {
+        // VERSION 2, from CREATE_FILLED_REGION - said every time.
+        findings.Add("It is ANNOTATION: it is in no other view, not in the model, and in no schedule - a markup, not a "
+            + "thing. A floor or a slab is CREATE_FLOOR.");
+        if (angled)
+            findings.Add("The view looks at an angle, so the shapes were read in millimetres along its right and up, from "
+                + "the point of its plane over the project origin.");
+    }
+    else
+        findings.Add("Its boundary lines take Revit's thin lines. A region only some types show is linked to a Yes/No "
+            + "parameter by the button beside Visible in its Properties.");
 }
 
 if (refused != null) findings.Add(refused);

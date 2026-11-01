@@ -13,7 +13,7 @@ version: 1
 source: OFFICIAL
 risk: MODIFY
 
-# WRITTEN 2026-11-01 FOR FRAGMENT-ISSUES ROW 5b-1363. Ajmal PS made a duct
+# WRITTEN 2026-11-01 FOR FRAGMENT-ISSUES ROW 5b-1367. Ajmal PS made a duct
 # length schedule through Heron on his Revit 2020 job model and could not set
 # the Length column to metres; he then asked for a careful check of every
 # schedule setting Heron could not reach. A grep of every fragment's C# found
@@ -31,7 +31,8 @@ risk: MODIFY
 #
 # FOUR SETTINGS ARE NOT ON EVERY RELEASE - striped rows on sheets and the
 # striped row colour arrived at 2021, filter by sheet at 2023, the row height
-# at 2024 - and are reached by name at run time (FRAGMENT-ISSUES 5b-181). The
+# at 2024 - and are reached by name at run time, one implementation for all
+# eight releases. The
 # striped row colour's row and the row height's override are ASSUMPTIONS the
 # proof settles; the C# header says what each is.
 purpose: >
@@ -179,8 +180,8 @@ compatibility-note: >
   the `StripedRowPattern` enum (FirstRow, SecondRow) arrive at 2021;
   `IsFilteredBySheet` and `IsValidCategoryForFilterBySheet` at 2023;
   `RowHeight`, `RowHeightOverride` and `RowHeightOverrideOptions` (None, All,
-  ImageRows) at 2024. Those are reached by name at run time, never `#if`
-  (FRAGMENT-ISSUES 5b-181), and a release without one names that setting in
+  ImageRows) at 2024. Those are reached by name at run time, one
+  implementation for every release, and a release without one names that setting in
   `notApplicable`. Every member looked up with tools/api-surface --members on
   all eight releases, 2026-11-01. Row height is mm / 304.8, plain arithmetic.
 

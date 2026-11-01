@@ -70,6 +70,59 @@ positive:
       placed 1, 2, 3 and 5, each read back at 3000 mm on Level 1's plane - the
       D-53 tracking the version 2 draft records
 
+  # VERSION 4 (2026-11-01) - PLACE_STRUCTURAL_FAMILY merged in. Each FAILS on
+  # version 3, which had no structuralType and placed everything
+  # NonStructural. NOT RUN.
+  - given: >
+      four points at grid intersections on Level 1 (at 0 mm, z 0), a loaded
+      Structural Columns type, structuralType "column"
+    expect: >
+      four columns, EVERY ONE READING AS STRUCTURAL in the structural column
+      schedule (Structural Usage), standing on Level 1
+  - given: the same points with a Structural Foundations type and structuralType "footing"
+    expect: footings, reading as footings in the schedule
+  - given: >
+      Level 2 above Level 1, two points z 0 on Level 1, a column type,
+      structuralType "column", topLevelName "Level 2", topOffset "-150"
+    expect: >
+      two columns reading Top Level "Level 2" and Top Offset -150 in
+      Properties, `tops` reading the same elevation asked and read
+  - given: the same with topLevelName and topOffset left out
+    expect: two columns, and a finding that every top was left as Revit placed it
+  - given: a Structural Columns type with structuralType LEFT OUT
+    expect: >
+      REFUSED, asking column or non-structural - nothing placed. Version 3
+      placed it non-structurally without a word
+  - given: a column type at z 3000 on Level 1 (at 0)
+    expect: >
+      the column's base 3000 mm above Level 1 - Base Offset 3000 - or the
+      layout refused naming Base Offset, nothing kept. NEEDS REAL REVIT: which
+      of the two Revit's call gives
+  - given: >
+      a point-based family with NO SOLID of its own at two points,
+      structuralType "non-structural"
+    expect: >
+      the whole layout undone, naming both points, the Generic Models count
+      the same as before. PLACE_STRUCTURAL_FAMILY removed both and said
+      failed 2; the merge kept the safer rule
+
+  # VERSION 5 (2026-11-01), from PLACE_NESTED_FAMILY. NONE OF THESE HAS BEEN
+  # RUN. Each FAILS on version 4, whose project-only call Revit refuses in a
+  # family document.
+  - given: >
+      a new family from the metric Generic Model template with a Work
+      Plane-Based generic model "Heron Nested Box" (one type "300") loaded into
+      it; symbol "Heron Nested Box : 300", points "0,0,0", level "Ref. Level",
+      workPlane left out
+    expect: >
+      placed one id, instanceId its unique id, readBack reading it on "Ref.
+      Level" at 0, 0, 0 mm; the nested box seen in the Ref. Level plan at the
+      origin; LOCK_NESTED_FAMILY_TO_PLANES then takes the instanceId
+  - given: the same with workPlane "Center (Front/Back)" and points "0,0,300 | 200,0,300"
+    expect: two placed on that reference plane, each read back at its point, ONE undo entry
+  - given: the same on Revit 2024 with a LEVEL-BASED nested family, level "Ref. Level"
+    expect: placed on the level "Ref. Level", read back at the point
+
 negative:
   - given: an empty point list
     expect: >
@@ -117,7 +170,47 @@ negative:
       where the family's own level stands does not let a family that cannot
       be lifted through. RAN: the same, twice (Revit 2020, rolled back)
 
+  # VERSION 4 - each refused BEFORE anything is placed.
+  - given: a Structural Columns type with structuralType "beam" (row 128)
+    expect: nothing placed, a finding naming it a Structural Columns family and saying to ask for it as a column
+  - given: a Structural Framing type, structuralType "beam", three points (5b-1201)
+    expect: >
+      nothing placed, the Structural Framing count unchanged, the finding
+      naming PLACE_LINE_BASED_FAMILY and its `curves` form
+  - given: the same Structural Framing type with structuralType "column"
+    expect: refused the same way - a framing family never goes in at a point
+  - given: a family of no structural category asked as "brace"
+    expect: refused, "A brace is placed along a line between its two ends"
+  - given: structuralType "sprinkler"
+    expect: refused by name with the list of what Revit knows - never a fall back to NonStructural
+  - given: topLevelName "Level 1" - the base level itself
+    expect: refused, "is not above the base level"
+  - given: topLevelName "Level 9", a name no level carries
+    expect: refused, "No level is named 'Level 9' exactly" - never the nearest
+  - given: structuralType "footing" with topLevelName "Level 2"
+    expect: refused - a top level is set only on columns
+  - given: topOffset "300" with topLevelName left out
+    expect: refused - which level the offset is measured from is not guessed
+  - given: >
+      a column type whose family has no settable Top Level, with a top asked
+    expect: >
+      the whole layout undone, naming the column. PLACE_STRUCTURAL_FAMILY
+      removed that one and kept the rest
+
+  # VERSION 5, PLACE_NESTED_FAMILY's negatives and the rules a family adds.
+  - given: a Work Plane-Based nested family, points "0,0,300", workPlane left out (Ref. Level at 0)
+    expect: refused - the point is 300 mm off the plane - and nothing placed
+  - given: a level-based nested family and workPlane a reference plane
+    expect: refused - a level-based family sits on a LEVEL - and nothing placed
+  - given: structuralType column in the family being edited
+    expect: refused - a nested component is non-structural - and nothing placed
+  - given: a project in front, workPlane "Ref. Level"
+    expect: refused - workPlane is a nested family's - and nothing placed
+
 second_route:
   - a schedule of that family, counted against the number asked for
   - one Ctrl+Z removes the whole layout in a single step (Golden Rule 16)
   - in a section through a placed cut-out, its centre on the height asked, and Elevation from Level in Properties the same number (version 3)
+  - >
+      version 5: select the nested family in the Family Editor - Properties
+      names its type and Work Plane; the plan shows it where the point says

@@ -1,6 +1,6 @@
-# The proof of SET_SCHEDULE_APPEARANCE version 4 (set-schedule-appearance,
+# The proof of SET_SCHEDULE_APPEARANCE version 5 (set-schedule-appearance,
 # FRG-VIEW-061): a column's own units, its multiple-values text and its cell
-# style. Written 2026-11-01 for FRAGMENT-ISSUES row 5b-1363 - NEEDS-CHECKING
+# style. Written 2026-11-01 for FRAGMENT-ISSUES row 5b-1367 - NEEDS-CHECKING
 # Group KK. NOT RUN - written and read back with --dry-run only.
 #
 #     python tools/batch-prove.py tools/jobs/schedule-settings-appearance-scratch-2026-11-01.yaml --dry-run

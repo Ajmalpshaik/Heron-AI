@@ -68,7 +68,7 @@ through only while the owner's **Publish** or **Admin** switch is on in the ribb
 
 **Since 2026-10-17** `fragment` and `validate` without `--write`, and every `prove`, refuse a fragment
 or setup step declared `MODIFY` or above before Revit is asked. A read run of `place-nested-family`
-reported Revit's refusal and still left a real instance in the family, twice
+(`place-family-instances` in a family since 2026-11-01, when it was merged there) reported Revit's refusal and still left a real instance in the family, twice
 ([row 5b-350](../../../docs/fragment-issues/section-5b-rows-326-350.md)). To see a MODIFY fragment's
 refusals, run it with `--write` and no `--apply`: the same refusals, and a rollback behind them. A
 NEEDS-CHECKING row that says "without `--write`" for a MODIFY fragment was written before this.
@@ -88,8 +88,8 @@ nothing at all about the fragment.** `set-mep-size` timed out on 307 ducts and s
 immediately when retried on a smaller view.
 
 Find the small one before starting, and put it in the job file's `defaults:`. In the sample HVAC
-model, `select-by-category-name --set "inViewOnly=FloorPlan: M1"` gives 22 ducts where
-`FloorPlan: L3` gives 307. Every model has such a pair; look for it rather than assuming this one.
+model, `filter-elements-by-category --set "inViewOnly=FloorPlan: M1"` gives 22 ducts where
+`FloorPlan: L3` gives 307 (measured with `select-by-category-name`, merged into it on 2026-11-01). Every model has such a pair; look for it rather than assuming this one.
 
 ### 2. Ask for what the model has
 
@@ -175,7 +175,7 @@ Three things the shape of the file is doing:
   Revit for a count first and the dry run said `WOULD RUN`. Measured 2026-10-15 making a filter for `set-view-filter-categories` to edit
   (row 5b-481): what worked was ONE value list both steps read - the names they share (`filterNames`,
   `categories`, `parameterName`) must then mean the same for both - or arranging on something the model
-  already holds. A read-only setup chain (`select-by-category-name`) takes `setup-set:` as before.
+  already holds. A read-only setup chain (`filter-elements-by-category`) takes `setup-set:` as before.
 - **A job with no `negative-set:` or `negative-in:` is refused.** Without one, `validate` stops and
   waits for somebody at the keyboard, which in a batch is a hang. It is also the leg D-30 exists for.
 
@@ -256,7 +256,7 @@ something, nothing when it is empty or `(null)`, and read the same way in the ne
 in both legs are `NEG NOT EMPTY`, never a pass. Until 2026-10-11 a sentence was `POSITIVE UNREADABLE`
 however well both legs held - `edit-revision`'s `changed`, [row 5b-411](../../../docs/fragment-issues/section-5b-rows-401-425.md).
 **Beside a count or a flag, the count decides** (D-51): a sentence that reads back the state -
-`set-material-colour`'s `wasColour` - is filled whether or not anything changed, so with `changed 0`
+`set-material-properties`' `wasColour` (version 2, from the retired `set-material-colour`) - is filled whether or not anything changed, so with `fieldsChanged 0`
 the positive is `POSITIVE EMPTY` however full the sentence. Naming the sentence alone in `expect:`
 satisfies batch-prove and NOT `accept` - see the `expect:` paragraph below. A sentence the fragment always writes - a report that says *"nothing was
 checked"* - is never empty in the negative; give it `role: accounting`, or prove the fragment by

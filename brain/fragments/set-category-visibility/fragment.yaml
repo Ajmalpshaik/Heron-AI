@@ -114,7 +114,7 @@ compatibility-note: >
 #   "hide these three ducts"              -> HIDE_ELEMENTS - the ones handed
 #                                           in, and nothing modelled tomorrow
 #   "which categories are turned off in this view" ->
-#                                        REPORT_CATEGORY_VISIBILITY - a READ.
+#                                        REPORT_CATEGORY_OVERRIDES - a READ.
 #                                        A question about a drawing must not
 #                                        be answered by the fragment that
 #                                        switches things off

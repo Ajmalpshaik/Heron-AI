@@ -133,7 +133,7 @@ compatibility-note: >
 #                                           the element. NOT here. That reaches
 #                                           every view in the project using it,
 #                                           and this reaches only the views named
-#   "which views have no template"       -> FIND_VIEWS_WITHOUT_TEMPLATE
+#   "which views have no template"       -> FIND_VIEWS, withoutTemplate true
 
 utterances:
   - remove the view template from this view

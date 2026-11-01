@@ -1,6 +1,29 @@
 positive:
-  - given: 4 unplaced views and an empty sheet
-    expect: placed holds 4 viewport ids, refused empty, and all four appear on the sheet stacked at the given point
+  # THIS CASE'S FACT CHANGED AT VERSION 3 (2026-11-01, PLACE_VIEWS_ON_SHEET
+  # merged in). Versions 1 and 2 expected all four "stacked at the given point";
+  # the owner's safer rule lays several views out instead. It FAILS on version 2.
+  - given: 4 unplaced views and an empty sheet, a point given
+    expect: >
+      placed holds 4 viewport ids, placedCount 4, refused empty, AND
+      distinctPositions 4 - four viewports spread across the sheet on a 2 x 2
+      grid, none on top of another. layout says the point given was not used.
+      Version 2 stacked all four on the point: placed 4, one position
+
+  - given: VERSION 3. 1 unplaced view, a real sheet, at 400,300,0
+    expect: placedCount 1, distinctPositions 1, the viewport's centre at 400,300 mm on the sheet
+
+  - given: VERSION 3. 1 unplaced view, a real sheet, at left out
+    expect: >
+      placedCount 1, distinctPositions 1, the viewport at the middle of the
+      sheet, and layout saying no point was given. Version 2 refused to run
+      without `at`
+
+  - given: >
+      VERSION 3. 5 views, 2 of them ALREADY on other sheets, at left out
+    expect: >
+      the 2 in refused, and the 3 others on a 2 x 2 grid in the first three
+      cells - no hole where a refused view would have gone. placedCount 3,
+      distinctPositions 3
 
   - given: >
       VERSION 2. A legend NOTES on two or more sheets, and its copy AS-BUILT
@@ -30,7 +53,102 @@ positive:
       the line says "detail number 7 kept" and "pinned as before", and the new
       viewport reads 7 and is pinned in its Properties
 
+  - given: >
+      VERSION 3 REVIEW FIX. FIND_UNPLACED_VIEWS run first, its three views
+      handed on, then this with sheetId A101 and NO views named
+    expect: >
+      the three placed on a grid, placedCount 3, distinctPositions 3, and the
+      binding note saying views "not given - new List<View>() (optional)" and
+      elements from find-unplaced-views (3). FAILS on the version 3 first
+      draft: `views` was required, and the call was refused before it ran
+      (PLACE_VIEWS_ON_SHEET's chain)
+
+  - given: >
+      VERSION 3 REVIEW FIX. two plan views SELECTED in the Project Browser,
+      sheetId A101, no views named
+    expect: the two selected views placed; nothing else
+
+  - given: >
+      VERSION 5, Revit 2022 or later - "Heron KF Duct Schedule" with about 40
+      rows in views, sheetId KF02, at 50 mm / 250 mm, splitInto "2", segment "all"
+    expect: >
+      two instances placed, placedAt reading "(split into 2 segments)" and
+      "showing segment 1 (Revit's index 0)" for the first at 50 / 250 and
+      segment 2 to its right - on the sheet, two halves side by side, not
+      overlapping, and the schedule's Properties reading it split. THE
+      MEANING OF Split(int) AND THE SPACING ARE WHAT THIS SETTLES
+
+  - given: VERSION 5, Revit 2022 or later - the same schedule, already split, segment "2"
+    expect: >
+      one instance, showing segment 2, on a second sheet - nothing split again
+
+  - given: VERSION 5, Revit 2022 or later - splitInto "100, 60" (mm), segment "1"
+    expect: >
+      placedAt "(split into 2 segments)", the top segment about 100 mm tall on
+      the sheet - THE HEIGHTS' UNIT AND MEANING ARE WHAT THIS SETTLES
+
+  - given: VERSION 5 - splitInto and segment left out
+    expect: exactly version 4 - the whole schedule placed, no split
+
 negative:
+  - given: VERSION 5, Revit 2020 - a schedule in views, splitInto "2", segment "all"
+    expect: >
+      refused naming the schedule and that Revit 2020 and 2021 cannot split a
+      schedule, Split arriving at Revit 2022; nothing placed for it and the
+      sheet as it was - not the whole schedule placed instead. THE FIRST
+      VERSION 5 CASE TO RUN on 2020
+
+  - given: VERSION 5, Revit 2022 or later - segment "5" of a schedule split into 2
+    expect: refused, has 2 segments, nothing placed for it
+
+  - given: VERSION 5 - splitInto "3", segment "4"
+    expect: refused before any split, nothing split or placed
+
+  - given: VERSION 5, Revit 2022 or later - splitInto "2" on a schedule already split
+    expect: refused - already split - and nothing split again or placed
+
+  - given: VERSION 5 - splitInto "2" with oldViewId (the swap)
+    expect: refused whole - the swap places a schedule whole - nothing changed
+
+  - given: >
+      VERSION 3 REVIEW FIX. views "Level 2" named AND three walls selected
+    expect: >
+      only Level 2 placed, and the walls not mentioned in refused or notDone -
+      a named list always wins and the selection is not read at all
+
+  - given: >
+      VERSION 3 REVIEW FIX. no views named, and two walls and one plan view
+      handed on
+    expect: >
+      the plan view placed; the two walls' ids in `refused` and notDone "2 of
+      the elements handed on are not views and were not placed". FAILS on the
+      first draft, which took no elements
+
+  - given: VERSION 3 REVIEW FIX. no views named and nothing selected or handed on
+    expect: >
+      nothing placed, placedCount 0, and notDone "No view was named and none
+      was handed on" - never a quiet zero
+
+  - given: VERSION 3. A PLACEHOLDER sheet, by its number, and two views
+    expect: >
+      placedCount 0, both views in refused, and sheetProblem saying the sheet
+      is a placeholder and cannot hold a view - refused by name. FIND_SHEETS
+      hands placeholders back on purpose, on the promise that the action
+      refuses them visibly
+
+  - given: VERSION 3. A sheet number no sheet has, e.g. ZZZ999
+    expect: >
+      refused by the binder before the run - "No sheet numbered or titled" -
+      and nothing created anywhere
+
+  - given: >
+      VERSION 3. A sheet whose title block was deleted, so it has no outline
+      to lay out on, and three views
+    expect: >
+      NOT KNOWN what Revit's Outline is then. Whatever it is, distinctPositions
+      says how many places the three landed in - 1 is a pile, and the answer
+      shows it
+
   - given: a batch of 30 views where 19 are ALREADY on other sheets
     expect: >
       those 19 are in refused, asked via CanAddViewToSheet BEFORE attempting,
@@ -40,9 +158,10 @@ negative:
 
   - given: a schedule handed in with the views
     expect: >
-      it is in refused rather than throwing. A schedule goes on a sheet through
-      a different call, and an exception here would abandon whatever came after
-      it in the list
+      versions 1 to 3: it is in refused rather than throwing. VERSION 4: it is
+      PLACED, through the schedule's own call, beside the views on the grid -
+      see the version 4 cases below. Either way no exception abandons what
+      came after it in the list
 
   - given: Viewport.Create returning null without throwing
     expect: it is in refused, NOT counted as placed - a returned null is not a placement
@@ -71,9 +190,51 @@ negative:
   - given: VERSION 1 with sheetId left out and no oldViewId
     expect: every view in refused and notDone asking for the sheet number - nothing placed
 
+  # VERSION 4 (2026-11-01, PLACE_SCHEDULE_ON_SHEET merged in). Each FAILS on
+  # version 3, which refuses every schedule (CanAddViewToSheet says no).
+  - given: VERSION 4. A duct schedule and sheet A101, at 50,250,0
+    expect: >
+      the schedule on that sheet with its TOP-LEFT corner at that point -
+      measured on the sheet, not taken from the return value - and placedAt
+      reading roughly "at 50 mm, 250 mm from the sheet origin - its top-left
+      corner". THE UNIT CASE: a version handing 50 straight to Revit places
+      it 15 metres across the sheet. layout says a schedule hangs from its
+      top-left corner
+
+  - given: VERSION 4. One floor plan, the same sheet, at 50,250,0
+    expect: >
+      its viewport's CENTRE at that point, and placedAt saying "its
+      viewport's centre". The same point, the other meaning - which is why
+      placedAt names it
+
+  - given: VERSION 4. A schedule already placed on another sheet
+    expect: >
+      PLACED AGAIN, with no refusal - a schedule can be on many sheets,
+      Revit's rule. A floor plan already on another sheet is still refused
+
+  - given: VERSION 4. Three schedules and one sheet, no point
+    expect: >
+      three schedule instances on a 2 x 2 grid, distinctPositions 3 - NOT a
+      pile at one corner, which is what PLACE_SCHEDULE_ON_SHEET did with one
+      point for all
+
+  - given: VERSION 4. A schedule TEMPLATE handed in
+    expect: >
+      in refused, and notDone saying it is a template with nothing to print -
+      not Revit's own error, which reads as a general failure
+
+  - given: VERSION 4. A schedule onto a PLACEHOLDER sheet
+    expect: >
+      nothing placed, sheetProblem naming the placeholder. PLACE_SCHEDULE_ON_
+      SHEET did not check
+
 second_route:
   - Open the sheet. The viewports are there and can be dragged apart
   - >
     Version 2: open each sheet the old view was on, select the new viewport,
     and read its Properties - the view name, the viewport type - and, with the
     old position noted before the run, check the box sits where the old one sat
+  - >
+    Version 4: drag the schedule from the Project Browser onto an open sheet
+    - Revit's own way - and compare where its top-left corner lands against
+    placedAt

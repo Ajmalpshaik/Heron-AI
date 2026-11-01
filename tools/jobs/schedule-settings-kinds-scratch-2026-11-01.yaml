@@ -1,6 +1,6 @@
-# The proof of CREATE_SCHEDULE version 2 (create-schedule, FRG-VIEW-023) and
+# The proof of CREATE_SCHEDULE version 3 (create-schedule, FRG-VIEW-023) and
 # ADD_KEY_SCHEDULE_ROWS (add-key-schedule-rows, FRG-VIEW-158), written
-# 2026-11-01 for FRAGMENT-ISSUES row 5b-1363 - NEEDS-CHECKING Group KK. NOT
+# 2026-11-01 for FRAGMENT-ISSUES row 5b-1367 - NEEDS-CHECKING Group KK. NOT
 # RUN - written and read back with --dry-run only.
 #
 #     python tools/batch-prove.py tools/jobs/schedule-settings-kinds-scratch-2026-11-01.yaml --dry-run
@@ -47,7 +47,7 @@
 #   add-key-schedule-rows, positive: added 2, addedKeys naming both keys with
 #     their rows. THIS SETTLES WHETHER InsertRow ON A KEY SCHEDULE MAKES A
 #     KEY: a refusal "Revit added no key ... rolled back" is a FINDING about
-#     Revit, recorded in row 5b-1363, not a failed arrangement
+#     Revit, recorded in row 5b-1367, not a failed arrangement
 #   add-key-schedule-rows, negative: refused "'HERON KF Duct Schedule' is a
 #     schedule of elements, not a key schedule"; added 0
 #
@@ -66,14 +66,14 @@ jobs:
     expect: created
     set:
       categoryId: "Walls"
-      kind: "material takeoff"
+      listKind: "material takeoff"
       fieldNames: "Material: Name, Material: Area"
       scheduleName: "HERON KF Takeoff"
       areaScheme: "none"
       noteBlockFamily: "none"
     negative-set:
       categoryId: "Ducts"
-      kind: "revision schedule"
+      listKind: "revision schedule"
       fieldNames: "Family and Type"
       scheduleName: "HERON KF Not Made"
       areaScheme: "none"

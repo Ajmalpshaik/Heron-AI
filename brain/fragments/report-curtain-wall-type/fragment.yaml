@@ -63,7 +63,8 @@ contract:
     - name: doc
       type: Document
     # A curtain wall TYPE BY NAME - the same need, and the same name, as
-    # SET_CURTAIN_WALL_GRID and SET_CURTAIN_WALL_MULLIONS, so a proof can build
+    # SET_CURTAIN_WALL_GRID (its grid and, since 2026-11-01, its mullions -
+    # SET_CURTAIN_WALL_MULLIONS was merged into it), so a proof can build
     # a type with one and read it with this. Resolved among wall types by the
     # add-in (D-54); a basic or stacked type binds and is refused here.
     - name: curtainWallType
@@ -164,8 +165,7 @@ compatibility-note: >
   HostObjAttributes and not from WallType, on all eight. No ElementId is
   constructed and none is read as a number.
 
-# ROUTING - repeated in SET_CURTAIN_WALL_GRID, SET_CURTAIN_WALL_MULLIONS and
-# REPORT_CURTAIN_ELEMENTS.
+# ROUTING - repeated in SET_CURTAIN_WALL_GRID and REPORT_CURTAIN_ELEMENTS.
 #
 #   "what is the grid spacing on this curtain wall"    -> here
 #   "which mullion type is on the curtain wall borders" -> here
@@ -174,7 +174,9 @@ compatibility-note: >
 #                                            reads the same settings and
 #                                            changes none
 #   "change the mullion type on the
-#    curtain wall"                        -> SET_CURTAIN_WALL_MULLIONS
+#    curtain wall"                        -> SET_CURTAIN_WALL_GRID, `mullions`
+#                                            (SET_CURTAIN_WALL_MULLIONS was
+#                                            merged into it on 2026-11-01)
 #   "what is in this curtain wall", "how many grid lines in this curtain wall"
 #                                         -> REPORT_CURTAIN_ELEMENTS. A placed
 #                                            WALL, counted: its panels, its
@@ -187,9 +189,12 @@ compatibility-note: >
 #                                            every mullion type there is.
 #                                            This reads the six positions ONE
 #                                            curtain wall type uses, so it is not
-#                                            this one's question. Today it reaches
+#                                            this one's question. Measured
+#                                            2026-09-24 it reached
 #                                            SET_CURTAIN_WALL_MULLIONS - see that
-#                                            card's row, measured 2026-09-24
+#                                            card's row, kept as the record; that
+#                                            card was merged into
+#                                            SET_CURTAIN_WALL_GRID on 2026-11-01
 #   "what is the Number on this wall"     -> NOT HERE, and nothing reads it
 #                                            reliably yet. Under Fixed Number the
 #                                            count is each wall's own, and the

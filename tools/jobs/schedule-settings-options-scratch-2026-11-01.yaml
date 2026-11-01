@@ -1,6 +1,6 @@
 # The proof of SET_SCHEDULE_OPTIONS (set-schedule-options, FRG-VIEW-155) and
 # GROUP_SCHEDULE_HEADERS (group-schedule-headers, FRG-VIEW-156), written
-# 2026-11-01 for FRAGMENT-ISSUES row 5b-1363 - NEEDS-CHECKING Group KK.
+# 2026-11-01 for FRAGMENT-ISSUES row 5b-1367 - NEEDS-CHECKING Group KK.
 # NOT RUN - written and read back with --dry-run only.
 #
 #     python tools/batch-prove.py tools/jobs/schedule-settings-options-scratch-2026-11-01.yaml --dry-run

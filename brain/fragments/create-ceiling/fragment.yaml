@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: CREATE_CEILING
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_FLOOR (create-floor), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools", then "ok go ahead merge all". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to CREATE_FLOOR. A proof below is
+# the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_FLOOR
+  why: >
+    The same job: one closed boundary on one level, at the level's PROJECT
+    elevation, closed by itself, a repeated point named, a self-crossing
+    refusal reported. CREATE_FLOOR since its version 3 makes what the type
+    is, and a ceiling type makes a ceiling by this card's rules: Ceiling.Create
+    found by name, so Revit 2020 and 2021 are refused with the sentence to
+    draw one by hand; the type's category checked, a wall type refused; the
+    height above the level (`heightAboveLevel`, millimetres) set and READ
+    BACK, a difference said. Its `created` and `findings` are the keeper's,
+    the same sentences. Nothing of this card is left out.
 
 purpose: >
   Creates a ceiling from a closed boundary on one level, at a height above it.

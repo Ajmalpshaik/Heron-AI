@@ -15,6 +15,22 @@
 //   mode "simplify"    value: the share of inner points to keep, 1 to 99 (%)
 //   mode "smooth"      value: "on" or "off" - Smooth Surface, which Revit
 //                      takes with the document (Revit 2025 on)
+//   mode "subdivide"   value: "x,y; x,y; ..." in millimetres, one outline,
+//                      closed automatically - a subdivision on each toposolid
+//                      (a car park, a path, a planted bed) that follows the
+//                      terrain and takes its own material. VERSION 3.
+//
+// VERSION 3 (2026-11-01) - ADD_TOPOSOLID_SUBDIVISION MERGED IN, as mode
+// "subdivide": Toposolid.CreateSubDivision, each toposolid's subdivisions
+// listed before and after and only a new one counted, its id in `resultIds`.
+// Its outline is read as that card read it - two numbers or more per point
+// (a third ignored), at least three points, a bad point named. ONE RULE WAS
+// NOT CARRIED, THE SAFER KEPT: it drew the outline at the toposolid's
+// Level.Elevation, a height measured from the level type's Elevation Base,
+// which on a model set out to a survey datum is not where the terrain is; the
+// outline now lies on the toposolid's OWN SKETCH PLANE, split's rule, so the
+// two loop-taking modes agree. Whether Revit wants the loop there or at any
+// height at all is NOT MEASURED - NEEDS REAL REVIT.
 //
 // Excavation and smoothing arrived in 2025 and are found by name, so the card
 // runs on 2024 and says so when a 2025 call is asked of it there. Point
@@ -37,8 +53,9 @@ var how = (mode ?? "").Trim().ToLowerInvariant();
 var text = (value ?? "").Trim();
 var culture = System.Globalization.CultureInfo.InvariantCulture;
 var numberStyle = System.Globalization.NumberStyles.Float;
-if (how != "excavate" && how != "unexcavate" && how != "split" && how != "simplify" && how != "smooth")
-    refusal = "\"" + mode + "\" is not excavate, unexcavate, split, simplify or smooth. NOTHING WAS CHANGED.";
+if (how != "excavate" && how != "unexcavate" && how != "split" && how != "simplify" && how != "smooth"
+    && how != "subdivide")
+    refusal = "\"" + mode + "\" is not excavate, unexcavate, split, simplify, smooth or subdivide. NOTHING WAS CHANGED.";
 
 // Cutters by id.
 var cutters = new List<Element>();
@@ -72,6 +89,32 @@ if (refusal == null && how == "split")
     if (loops == null || loops.Count == 0 || loops.Any(l => l.Count < 3))
         refusal = "Each split loop is three x,y points or more in millimetres, loops separated by |. NOTHING WAS CHANGED.";
 }
+
+// Version 3, mode subdivide: ONE outline, as ADD_TOPOSOLID_SUBDIVISION read
+// it - two numbers or more per point, the first two taken, three points or more.
+var outline = new List<XYZ>();
+if (refusal == null && how == "subdivide")
+{
+    foreach (var chunk in text.Split(';'))
+    {
+        if (chunk.Trim() == "") continue;
+        var parts = chunk.Split(',');
+        double x, y;
+        if (parts.Length < 2 || !double.TryParse(parts[0].Trim(), numberStyle, culture, out x)
+            || !double.TryParse(parts[1].Trim(), numberStyle, culture, out y))
+        { refusal = "\"" + chunk.Trim() + "\" is not a point - two numbers in millimetres. NOTHING WAS MADE."; break; }
+        outline.Add(new XYZ(x / MmPerFoot, y / MmPerFoot, 0));
+    }
+    if (refusal == null && outline.Count < 3) refusal = "A subdivision outline needs three points or more. NOTHING WAS MADE.";
+}
+
+// THE TOPOSOLID'S OWN SKETCH PLANE - the height a split's loops, and since
+// version 3 a subdivision's outline, are drawn at. 0 when it has none.
+Func<Toposolid, double> sketchHeight = solid =>
+{
+    var sketch = doc.GetElement(solid.SketchId) as Sketch;
+    return sketch != null && sketch.SketchPlane != null ? sketch.SketchPlane.GetPlane().Origin.Z : 0.0;
+};
 
 double share = 0;
 if (refusal == null && how == "simplify"
@@ -108,9 +151,7 @@ if (refusal == null)
             }
             else if (how == "split")
             {
-                var z = 0.0;
-                var sketch = doc.GetElement(topo.SketchId) as Sketch;
-                if (sketch != null && sketch.SketchPlane != null) z = sketch.SketchPlane.GetPlane().Origin.Z;
+                var z = sketchHeight(topo);
                 var curveLoops = new List<CurveLoop>();
                 foreach (var loop in loops)
                 {
@@ -129,6 +170,31 @@ if (refusal == null)
                 resultIds.AddRange(found);
                 edited++;
                 lines.Add("toposolid " + topo.Id + ": split into " + found.Count + " new toposolid(s), read back: " + string.Join(", ", found.Select(i => i.ToString())) + ".");
+            }
+            else if (how == "subdivide")
+            {
+                // VERSION 3, from ADD_TOPOSOLID_SUBDIVISION. Each toposolid's
+                // subdivisions listed before, so only a NEW one counts.
+                var before = new HashSet<ElementId>(topo.GetSubDivisionIds());
+                var z = sketchHeight(topo);
+                var loop = new CurveLoop();
+                for (var i = 0; i < outline.Count; i++)
+                {
+                    var a = outline[i];
+                    var b = outline[(i + 1) % outline.Count];
+                    loop.Append(Line.CreateBound(new XYZ(a.X, a.Y, z), new XYZ(b.X, b.Y, z)));
+                }
+                topo.CreateSubDivision(doc, new List<CurveLoop> { loop });
+                doc.Regenerate();
+                var added = topo.GetSubDivisionIds().Where(id => !before.Contains(id)).ToList();
+                if (added.Count > 0)
+                {
+                    edited++;
+                    resultIds.AddRange(added);
+                    lines.Add("toposolid " + topo.Id + ": subdivision " + string.Join(", ", added.Select(i => i.ToString()))
+                        + ", read back.");
+                }
+                else lines.Add("toposolid " + topo.Id + ": asked, and no new subdivision reads back.");
             }
             else if (how == "simplify")
             {
@@ -176,6 +242,8 @@ if (refusal == null)
         }
         catch (Exception ex) { lines.Add("toposolid " + topo.Id + ": Revit refused - " + ex.Message); }
     }
+    if (how == "subdivide")
+        findings.Add(resultIds.Count + " subdivision(s) made on " + edited + " toposolid(s) and read back.");
     findings.Add(edited + " toposolid(s) edited (" + how + ") and read back."
         + (unchanged > 0 ? " " + unchanged + " toposolid(s) unchanged - the shape point count did not change." : ""));
 }

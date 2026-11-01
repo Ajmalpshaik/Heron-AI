@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: REPORT_MATERIAL_TEXTURES
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO LIST_MATERIALS (list-materials), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools", then "ok go ahead merge all". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to LIST_MATERIALS. A proof below is
+# the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: LIST_MATERIALS
+  why: >
+    The same walk: the document's materials, read only. LIST_MATERIALS
+    since its version 5 takes this card's job as `withTextures` and
+    `onlyMissing`: every slot of each appearance with a bitmap, each stored
+    path and whether a file is there, a relative path reported as relative
+    and never called missing, the full paths with no file in `missing`, the
+    missing ones alone when asked - `textures` and `missing` the same names.
+    This card's `materialCount`, the materials using a texture, is said in
+    the keeper's findings. No rule of the two was opposite. Nothing of this
+    card is left out.
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.

@@ -19,7 +19,44 @@ positive:
       a piping system, not a duct system - the system type decided it - with
       the fixtures' cold water connectors on it
 
+  # VERSION 2 (2026-11-01), from CREATE_ELECTRICAL_CIRCUIT. Each FAILS on
+  # version 1, which made duct and pipe systems only.
+  - given: six sockets selected, circuitType "power", no systemType, panel DB-1
+    expect: >
+      one circuit created, circuitNumber reported, six devices in memberIds,
+      and panelName "DB-1" read back off the circuit. The circuit appears on
+      that panel's schedule
+
+  - given: the same six with NO panel
+    expect: the circuit created and reported UNASSIGNED in words; panelName empty, refused null
+
+  - given: fire alarm devices and circuitType "fire alarm"
+    expect: a fire alarm circuit, not a power one
+
+  - given: a selection where two devices do not suit the circuit type
+    expect: the circuit made from the rest AND the shortfall stated - given six, four joined - the two in `skipped`
+
 negative:
+  # VERSION 2, from CREATE_ELECTRICAL_CIRCUIT.
+  - given: circuitType "lighting"
+    expect: >
+      REFUSED by name, the eight words it understands listed, NOTHING CREATED -
+      never read as power. `refused` reaches the reply whole
+
+  - given: circuitType "power" AND systemType Supply Air
+    expect: refused - asked both ways - nothing created
+
+  - given: systemType Supply Air with a panel named
+    expect: refused - a panel is for a circuit - nothing made
+
+  - given: devices that are ALREADY on a circuit
+    expect: >
+      whatever Revit does, in Revit's own words - refusal, duplicate or move.
+      THIS NEEDS A REAL MODEL; run it twice and record what actually happens
+
+  - given: a circuit created but a panel Revit refuses
+    expect: the circuit reported as existing AND UNASSIGNED in `refused`, with Revit's reason
+
   - given: the same FCU and diffusers, with systemType Return Air while the diffusers' connectors are Supply Air
     expect: >
       the diffusers in `skipped`, each named in findings as having no free
@@ -40,3 +77,4 @@ negative:
 second_route:
   - Revit's System Browser, read after - the system, its base equipment and its members
   - one Ctrl+Z takes the system away in a single step (Golden Rule 16)
+  - the panel schedule - a circuit made here appears on it with the reported number and device count

@@ -184,17 +184,17 @@ compatibility-note: >
   it - there is no millimetre input to convert here, which is why this fragment
   has no D-20 arithmetic in it.
 
-# ROUTING - repeated in TAG_ELEMENTS and CREATE_DIMENSION.
+# ROUTING - repeated in TAG_ELEMENTS_IN_VIEW and CREATE_DIMENSION.
 #
 #   "add a text note"            -> here
 #   "put a note here"            -> here
 #   "write on the drawing"       -> here
-#   "tag these"                  -> TAG_ELEMENTS - a tag READS a parameter off
+#   "tag these"                  -> TAG_ELEMENTS_IN_VIEW - a tag READS a parameter off
 #                                   the element and follows it when it changes;
 #                                   a note is typed once and never updates
 #   "dimension these"            -> CREATE_DIMENSION
 #   "cloud this change"          -> ADD_REVISION_CLOUD
-#   "hatch this area on the drawing" -> CREATE_FILLED_REGION - the other
+#   "hatch this area on the drawing" -> DRAW_FAMILY_FILLED_REGION - the other
 #                                       markup that lives in one view only
 
 # TWO PHRASINGS WERE DROPPED HERE ON 2026-09-01, AND THE REASON IS NOT A RANK.

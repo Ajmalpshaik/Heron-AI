@@ -114,7 +114,7 @@ compatibility-note: >
 #   "group these"                             -> GROUP_ELEMENTS
 #   "select by assembly"                      -> SELECT_GROUP_MEMBERS, which opens an
 #                                                assembly and hands its members out
-#                                                (row 5b-470). GROUP_BY_ASSEMBLY reads
+#                                                (row 5b-470). REPORT_NESTED_FAMILIES reads
 #                                                nested families, not assemblies
 
 utterances:

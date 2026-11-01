@@ -92,6 +92,42 @@ negative:
   - given: version 4 - an existing view re-aimed
     expect: no "The new view:" finding - a view that already existed keeps its phase and phase filter
 
+  # VERSION 5 - from SET_VIEW_CAMERA. Each FAILS on version 4, which took no
+  # typed eye.
+  - given: >
+      version 5 - viewName "Heron Camera", eyeMm "0,-10000,1600", targetMm
+      "0,0,1600", createIfMissing true, nothing selected
+    expect: >
+      madeNew true, a perspective view named Heron Camera, readBack "eye
+      0,-10000,1600 mm, looking 0,1,0, perspective", framed 0. Open it - the
+      eye height is 1600 and the horizon level
+
+  - given: >
+      version 5 - the same with levelName "Level 1" and farClipMm 20000
+    expect: >
+      readBack with the eye 1600 above Level 1, Eye Elevation and Target
+      Elevation as Revit gives them, and "far clip on at 20000 mm" - the
+      camera's Properties show Far Clip Active ticked, Far Clip Offset 20000
+
+  - given: version 5 - viewName "No Such View", typed eye and target, createIfMissing not said
+    expect: refused naming it, and no view made - SET_VIEW_CAMERA's rule, kept on the typed road
+  - given: >
+      version 5 - an existing ISOMETRIC 3D view named, typed eye and target
+    expect: >
+      refused - it is isometric - and the view NOT turned perspective and its
+      camera NOT moved. SET_VIEW_CAMERA's perspective switch was not carried,
+      on purpose: the safer rule
+  - given: version 5 - eyeMm and targetMm the same point
+    expect: refused - nothing to look along - nothing changed
+  - given: version 5 - eyeMm given, targetMm left out
+    expect: refused - a typed camera needs both - nothing changed
+  - given: version 5 - typed eye and target with shot "aerial"
+    expect: refused - a typed eye frames nothing - nothing changed
+  - given: version 5 - levelName "No Such Level" with a typed eye
+    expect: refused naming it, the camera unchanged
+  - given: version 5 - farClipMm "far" with a typed eye
+    expect: refused - off or millimetres - nothing changed
+
 second_route:
   - open the view and look: the heater fills it; in a plan view the camera's triangle points at it from the direction asked
   - version 3 - export each shot's view as a picture (EXPORT_VIEW_IMAGE inside a rolled-back run) and look at it against the shot's row

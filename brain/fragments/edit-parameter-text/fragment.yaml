@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,26 @@ capability: EDIT_PARAMETER_TEXT
 version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO EDIT_TEXT_VALUES (edit-text-values), on the owner's instruction
+# in conversation: "merge the 5 real duplicates". Constitution Article 1: kept,
+# never deleted, so its record and its proof stay readable and it can be
+# brought back. Nothing offers it now - retrieval leaves DEPRECATED out, and
+# its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to EDIT_TEXT_VALUES. The proof below is the
+# record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: EDIT_TEXT_VALUES
+  why: >
+    The same job: read the text already in a field, add a prefix or suffix or
+    replace part of it, write it back and read it back. EDIT_TEXT_VALUES also
+    edits an element's name and a text note's wording, and its version 6 took
+    this card's three rules it lacked - no stacking on a re-run, one write per
+    type with typesEdited, a non-text instance parameter giving way to a text
+    one on the type. Not taken on purpose: a prefix on a BLANK value (it leaves
+    a blank blank), and three edits in one call (three calls of one mode).
 
 purpose: >
   Edits the text ALREADY IN a named parameter across a set of elements - adds a

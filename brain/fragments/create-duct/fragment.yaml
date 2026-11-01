@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,27 @@ capability: CREATE_DUCT
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_DUCT_RUNS (create-duct-runs), on the owner's instruction
+# in conversation: "now merge the other duplicates also". Constitution Article 1:
+# kept, never deleted, so its record and its proof stay readable and it can be
+# brought back. Nothing offers it now - retrieval leaves DEPRECATED out, and
+# its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to CREATE_DUCT_RUNS. The proof below is the
+# record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_DUCT_RUNS
+  why: >
+    The same drawing: straight duct between consecutive points on a system type,
+    a duct type and a level, nothing connected. CREATE_DUCT_RUNS draws one run
+    or many in one call, each at its own size, and hands the ducts on as
+    elements for FIT_MEP_JOINTS; one run is its points alone with no size. Not
+    taken on purpose: this card kept the segments that worked and counted the
+    refused ones - CREATE_DUCT_RUNS is all or nothing (Article 8), the safer
+    rule. This card was the only PROVEN straight-duct tool; CREATE_DUCT_RUNS is
+    DRAFT until NEEDS-CHECKING Group AL proves it.
 
 purpose: >
   Draws straight duct between consecutive points - one segment per pair, so two
@@ -116,8 +137,8 @@ compatibility-note: >
 #   "put a drain line in"            -> CREATE_PIPE
 #   "give it a fall of 1 in 100"     -> SET_MEP_SLOPE - drawn flat, then sloped
 #   "they are touching but not connected" -> CONNECT_OPEN_ENDS
-#   "draw a cable tray"              -> CREATE_ELECTRICAL_RUN
-#   "draw a conduit"                 -> CREATE_ELECTRICAL_RUN - one fragment
+#   "draw a cable tray"              -> CREATE_DUCT_RUNS, with a tray type
+#   "draw a conduit"                 -> CREATE_DUCT_RUNS - one fragment
 #                                       serves both, and which is wanted is
 #                                       asked for rather than guessed
 

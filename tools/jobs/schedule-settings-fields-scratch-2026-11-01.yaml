@@ -1,9 +1,10 @@
 # The schedule FIELDS legs of the schedule-settings work - ADD_SCHEDULE_FIELDS
-# version 2 (add-schedule-fields, FRG-VIEW-034, a column at a place),
+# version 3 (add-schedule-fields, FRG-VIEW-034, a column at a place),
 # SET_SCHEDULE_FIELD_ORDER (set-schedule-field-order, FRG-VIEW-157, new) and
-# PLACE_SCHEDULE_ON_SHEET version 2 (place-schedule-on-sheet, FRG-VIEW-063,
-# split and segments). Written 2026-11-01 for FRAGMENT-ISSUES row 5b-1363 -
-# NEEDS-CHECKING Group KK. NOT RUN - written and read back with --dry-run only.
+# PLACE_VIEW_ON_SHEET version 5 (place-view-on-sheet, FRG-VIEW-015, a schedule
+# split and its segments - PLACE_SCHEDULE_ON_SHEET was merged into it,
+# 2026-11-01). Written 2026-11-01 for FRAGMENT-ISSUES row 5b-1367 (numbered
+# 5b-1363 until main took that number) - NEEDS-CHECKING Group KK. NOT RUN - written and read back with --dry-run only.
 #
 #     python tools/batch-prove.py tools/jobs/schedule-settings-fields-scratch-2026-11-01.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/schedule-settings-fields-scratch-2026-11-01.yaml
@@ -28,7 +29,7 @@
 #
 # EACH LEG HAS ITS OWN RECORD: batch-prove names a run record by fragment, so
 # one job per fragment here - three records, none overwriting another. The
-# other KF rows are commands of their own in docs/needs-checking/group-kk.md.
+# other KK rows are commands of their own in docs/needs-checking/group-kk.md.
 #
 # `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
 # Open the schedule's Fields tab and sheet KK02 afterwards: they must be as
@@ -50,12 +51,12 @@
 #     2 Family and Type, 3 Size"
 #   set-schedule-field-order, negative: notPresent naming 'ZZZ NO SUCH COLUMN'
 #     on each schedule, reordered 0, appliedOrder empty
-#   place-schedule-on-sheet, ON REVIT 2020, positive: version 1's path with
-#     both new inputs "none" - placed 1 on KK02, placedAt about 100 mm, 200 mm,
-#     no "(split" in it
-#   place-schedule-on-sheet, ON REVIT 2020, negative: splitInto 2 - refused
+#   place-view-on-sheet, ON REVIT 2020, positive: version 4's path with
+#     both new inputs "none" - placed 1 on KK02, placedAt about 100 mm, 200 mm
+#     "its top-left corner", no "(split" in it
+#   place-view-on-sheet, ON REVIT 2020, negative: splitInto 2 - notDone
 #     saying Revit 2020 and 2021 cannot split a schedule, placed EMPTY, KK02
-#     still empty. On Revit 2022 or later the split itself is row KF of its
+#     still empty. On Revit 2022 or later the split itself is row KK20 of its
 #     own in group-kk.md, run by hand on a 2022+ copy of this project
 #
 # NOT `--session` HERE: with two Revits connected to Heron, add
@@ -105,27 +106,21 @@ jobs:
       The new card's D-30 pair. The negative names a column that is not
       there; the Fields tab must read exactly as step 2 left it.
 
-  - fragment: place-schedule-on-sheet
+  - fragment: place-view-on-sheet
     expect: placed
-    keep-chain: true
-    setup:
-      - find-schedules
-    setup-set:
-      nameContains: Heron KF Duct Schedule
-    negative-setup-set:
-      nameContains: Heron KF Duct Schedule
     set:
       sheetId: KK02
-      atXMm: "100"
-      atYMm: "200"
+      views: "Heron KF Duct Schedule"
+      at: "100,200,0"
       splitInto: "none"
       segment: "none"
     negative-set:
       sheetId: KK02
-      atXMm: "100"
-      atYMm: "200"
+      views: "Heron KF Duct Schedule"
+      at: "100,200,0"
       splitInto: "2"
       segment: "all"
     note: >
-      On Revit 2020: version 1's path kept, and a split refused in words with
-      nothing placed. The same schedule both legs; only the split differs.
+      On Revit 2020: version 4's path kept for a schedule, and a split refused
+      in words with nothing placed. The same schedule both legs, named in
+      views; only the split differs.

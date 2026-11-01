@@ -135,7 +135,7 @@ compatibility-note: >
 #    the template"
 #   "move these lines onto another style"  -> REMAP_LINE_STYLES, which stays
 #                                             inside ONE project
-#   "draw a line"                          -> CREATE_LINE
+#   "draw a line"                          -> DRAW_FAMILY_DETAIL_LINES
 #   "these lines sit on top of each other" -> FIND_OVERLAPPING_LINES
 #   "bring the view filters over"          -> TRANSFER_VIEW_FILTERS_BETWEEN_DOCUMENTS
 #   "bring the schedules over"             -> TRANSFER_VIEWS_BETWEEN_DOCUMENTS

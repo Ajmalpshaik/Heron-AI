@@ -24,7 +24,7 @@ No Revit API, no MCP yet. Just: can something outside Revit reach inside it?
     python mcp/client/heron_bridge_client.py stop --session 63712
                                                        # ...in that Revit; with two
                                                        # connected it must be named
-    python mcp/client/heron_bridge_client.py validate list-levels
+    python mcp/client/heron_bridge_client.py validate report-level-elevations
                                                        # run one fragment through the
                                                        # phases a proof needs, and
                                                        # record what came back
@@ -1152,7 +1152,22 @@ def fragment_needs(path):
             key, sep, value = stripped.partition(":")
             if not sep:
                 return None
-            needs[-1][key.strip()] = value.strip()
+            value = value.strip()
+            # A QUOTED SCALAR IS ITS TEXT, NOT ITS QUOTES - `absent: '0'` is the
+            # text 0, as PyYAML reads it. Kept quotes reached the binder as the
+            # four characters '0' (found 2026-11-01, when merged cards first
+            # quoted their `absent:` defaults). Single quotes double a quote
+            # inside; a double-quoted value with an escape is a shape this does
+            # not read, so it is refused rather than guessed.
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+                inner = value[1:-1]
+                if value[0] == "'":
+                    value = inner.replace("''", "'")
+                elif "\\" in inner:
+                    return None
+                else:
+                    value = inner
+            needs[-1][key.strip()] = value
             continue
 
         # Anything else inside the needs block is a shape this does not
@@ -1307,8 +1322,10 @@ def write_operation(root, name):
 # was left off, on purpose: no transaction is open there, Revit refuses the
 # change, and the run shows how far the C# gets. Row 5b-350 is that run
 # leaving a real element in the model - place-nested-family, twice, while
-# reporting Revit's refusal. Row 73 is the same shape from the other side:
-# unload-links, run this way, unloaded six links for real with no undo. A
+# reporting Revit's refusal (PLACE_FAMILY_INSTANCES places a nested family
+# since 2026-11-01, when place-nested-family was merged there). Row 73 is the same shape from the other side:
+# unload-links - RELOAD_LINKS with unload true since 2026-11-01, when it was
+# merged there - run this way, unloaded six links for real with no undo. A
 # run that may change the model goes with --write, inside a TransactionGroup
 # that is rolled back unless --apply says otherwise - the same refusals, and
 # a rollback behind them.
@@ -2367,7 +2384,7 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     ------------------------------------------------------------------
     By default the fragment under test RESETS the chain, so a setup chain hands
     over only what lives in Revit's own state - the SELECTION - and never a
-    value. `select-by-category-name` then `set-selection` survives because
+    value. `filter-elements-by-category` then `set-selection` survives because
     `set-selection` writes the real selection; `read-element-parameters` then
     `group-and-count` does not, and both `group-and-count` and `sum-by-group`
     came back `needs_unbound: 'values' was never supplied` on 2026-09-10 while
@@ -2702,7 +2719,7 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
                 return False
             # ONLY THE FIRST STEP RESETS THE CHAIN. The whole point of a
             # setup chain is that step two consumes what step one left -
-            # select-by-category-name leaves `elements`, set-selection needs
+            # filter-elements-by-category leaves `elements`, set-selection needs
             # them - and resetting between them throws that away. Sent as
             # "reset" for every step for one commit, and set-selection
             # refused with "elements was never supplied", which reads as a
@@ -2889,7 +2906,8 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
         # carry commas of their own: a point is "304000,303000,0", and a list of
         # points split on commas became six numbers rather than two points.
         # Without a pipe nothing changes. 5b-298, where PLACE_ROOM_AT_POINT
-        # could not be tracked across point lists for exactly this reason.
+        # (merged into PLACE_ROOMS's `points` on 2026-11-01) could not be
+        # tracked across point lists for exactly this reason.
         separator = "|" if "|" in listed else ","
         vary_values = [v.strip() for v in listed.split(separator) if v.strip()]
 
@@ -3323,7 +3341,7 @@ def main(argv):
         rest, pairs, _, _, _ = pull_values(argv[2:])
         if rest is None:
             return 2
-        # prove --in "Project1" list-levels ...  reads a model that is open
+        # prove --in "Project1" report-level-elevations ...  reads a model that is open
         # but not necessarily the one in front.
         rest, session = pull_session(rest)
         in_document = None
@@ -3331,8 +3349,8 @@ def main(argv):
             in_document = rest[1]
             rest = rest[2:]
         if not rest:
-            print("Which fragments? e.g. prove list-levels list-grids")
-            print("               or  prove --in \"Project1\" list-levels")
+            print("Which fragments? e.g. prove report-level-elevations list-grids")
+            print("               or  prove --in \"Project1\" report-level-elevations")
             return 2
         values = caller_values(pairs)
         if values is None:
@@ -3356,7 +3374,7 @@ def main(argv):
                 rest = rest[:at] + rest[at + 2:]
             rest = [r for r in rest if r not in ("--write", "--apply")]
         if rest is None or not rest:
-            print("Which fragment? e.g. list-levels")
+            print("Which fragment? e.g. report-level-elevations")
             print("  --in \"Doc\"              run against a model that is open but not")
             print("                          in front - before the fragment name, as")
             print("                          with validate. Writes too, --apply included")
@@ -3373,8 +3391,8 @@ def main(argv):
             print("                          of resetting. Refused if something else")
             print("                          left it. Add \"where k=v\" to check its")
             print("                          inputs too:")
-            print("                            --expect-from \"select-by-categories")
-            print("                             where categories=Pipes\"")
+            print("                            --expect-from \"filter-elements-by-category")
+            print("                             where category=Pipes\"")
             return 2
         if apply_it and not writing:
             print("--apply only means something with --write. A read leaves nothing to keep.")
@@ -3397,8 +3415,8 @@ def main(argv):
             print("Nothing was sent to Revit.")
             return 2
         if not rest:
-            print("Which fragment? e.g. list-levels")
-            print("               or  fragment --in \"Project1\" list-levels")
+            print("Which fragment? e.g. report-level-elevations")
+            print("               or  fragment --in \"Project1\" report-level-elevations")
             return 2
         values = caller_values(pairs)
         if values is None:
@@ -3456,7 +3474,7 @@ def main(argv):
         kept = "--kept" in rest
         rest = [r for r in rest if r != "--kept"]
         # --setup names a fragment to run BEFORE each phase, repeatable and in
-        # order. It re-makes the arrangement - typically select-by-category-name
+        # order. It re-makes the arrangement - typically filter-elements-by-category
         # then set-selection - because a rolled-back write clears the selection.
         rest, session = pull_session(rest)
         setup = []
@@ -3528,7 +3546,7 @@ def main(argv):
             options[flags[rest[0]]] = rest[1]
             rest = rest[2:]
         if len(rest) != 1:
-            print("Which fragment? e.g. validate list-levels")
+            print("Which fragment? e.g. validate report-level-elevations")
             print("  --in \"Doc\"           run against a model that is open but not in front")
             print("  --negative-in \"Doc\"  take the negative case from a second model")
             print("  --cross count_elements | duct")
@@ -3546,7 +3564,7 @@ def main(argv):
             print("  --setup <fragment>    run this BEFORE each phase to re-make the")
             print("                        arrangement. Repeatable, in order. A rolled-back")
             print("                        write clears the selection, so a selection-based")
-            print("                        write needs it: --setup select-by-category-name")
+            print("                        write needs it: --setup filter-elements-by-category")
             print("                        --setup set-selection")
             print("                        With --write a step that changes the model runs")
             print("                        last, so one that reads typed after it is refused")

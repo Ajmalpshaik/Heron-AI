@@ -7,22 +7,22 @@ positive:
   - given: the new schedule handed to PLACE_VIEW_ON_SHEET
     expect: it lands on the sheet - a schedule is a view, and that is the point of making one
 
-  # VERSION 2 - the other kinds.
+  # VERSION 3 - the other kinds, as more words of listKind.
   - given: >
-      kind "material takeoff", category Walls, fields "Material- Name" and
-      "Material- Area" as Revit's field list names them (Material, colon, the name)
+      listKind "material takeoff", category Walls, fields "Material: Name" and
+      "Material: Area" as Revit's field list names them
     expect: >
       a Material Takeoff in the Project Browser, madeAs reading it back as a
       material takeoff of Walls with 2 columns
 
-  - given: kind "revision schedule", category Revisions, no fields
+  - given: listKind "revision schedule", category Revisions or none, no fields
     expect: >
       a Revision Schedule view made, madeAs naming the category Revisions
 
-  - given: kind "keynote legend", category Keynote Tags
+  - given: listKind "keynote legend", category Keynote Tags or none
     expect: a Keynote Legend view under Legends, madeAs naming Keynote Tags
 
-  - given: kind "note block", category Generic Annotations, noteBlockFamily the name of a loaded Generic Annotation family
+  - given: listKind "note block", noteBlockFamily the name of a loaded Generic Annotation family
     expect: >
       a Note Block schedule of that family; madeAs prints the family the
       definition reads back (the proof settles that FamilyId is it)
@@ -49,13 +49,69 @@ negative:
   - given: a category Revit cannot schedule
     expect: refused, saying so, rather than an empty view left in the browser
 
-  # VERSION 2.
-  - given: kind "revision schedule" with the category Ducts
+  # VERSION 2 (2026-11-01, CREATE_SHEET_LIST and CREATE_KEY_SCHEDULE merged
+  # in). Each FAILS on version 1, which has no listKind and needs a category.
+  - given: >
+      VERSION 2. listKind "sheets", fields Sheet Number and Sheet Name, sorted
+      by Sheet Number, no category
+    expect: >
+      a SHEET LIST in the browser listing every sheet, placeholders as rows,
+      in number order - CHECKED by opening it - fieldsAdded both names
+
+  - given: >
+      VERSION 2. listKind "views", fields View Name, Sheet Number, Sheet Name
+      and Title on Sheet, sorted by Sheet Number
+    expect: >
+      a VIEW LIST - every view a row, the views on no sheet with Sheet Number
+      blank; SET_SCHEDULE_FILTERS with Sheet Number "has value" after it
+      keeps only the placed ones
+
+  - given: VERSION 2. listKind "sheets" and the field "Level"
+    expect: >
+      "Level" in missingFields AND a findings line naming the fields a sheet
+      list CAN carry. A silently short index looks finished on the cover
+
+  - given: VERSION 2. listKind "drawings" - a kind this does not make
+    expect: >
+      refused naming every kind this makes, and NOTHING created -
+      created null. Guessing a kind makes the wrong one and reports it made
+
+  - given: VERSION 2. sortByField naming a field that was not added
+    expect: a findings line saying it cannot sort by it - not silently unsorted
+
+  - given: >
+      VERSION 2. scheduleName already used by another view, any kind - and
+      version 1's own case, a category schedule
+    expect: >
+      the schedule STILL created under Revit's generated name, and findings
+      saying so. Version 1 let Revit's refusal out of a category schedule,
+      which rolls back the caller's whole transaction
+
+  - given: >
+      VERSION 2. listKind "key", category Rooms, scheduleName "Room Finish
+      Key", keyParameterName "Finish Key", no fields
+    expect: >
+      a key schedule under Schedules, findings saying it has NO ROWS yet, and
+      a "Finish Key" dropdown on a room's properties - LOOKED AT there
+
+  - given: VERSION 2. listKind "key" on a category Revit will not allow one on (Sheets)
+    expect: >
+      refused naming the category, asked before trying - not an exception,
+      and nothing created
+
+  - given: VERSION 2. listKind "key" with no category
+    expect: refused - a key schedule belongs to a category - nothing created
+
+  - given: VERSION 2. listKind "sheets" with fieldNames left out
+    expect: the sheet list created, and findings saying it has NO columns and prints as an empty box
+
+  # VERSION 3.
+  - given: listKind "revision schedule" with the category Ducts
     expect: >
       refused, naming Revisions as the category a revision schedule needs, and
       NOTHING made - no new view in the Project Browser
 
-  - given: kind "material takeoff" with a category Revit takes no takeoff of (Rooms)
+  - given: listKind "material takeoff" with a category Revit takes no takeoff of (Rooms)
     expect: >
       refused before the create call, saying Revit does not make a material
       takeoff of Rooms; nothing made
@@ -66,15 +122,17 @@ negative:
   - given: areaScheme "Gross Building" with the category Ducts
     expect: refused - an area scheme belongs to an area schedule only; nothing made
 
-  - given: kind "note block" with noteBlockFamily left out
+  - given: listKind "note block" with noteBlockFamily left out
     expect: refused, listing the families a note block can list; nothing made
 
-  - given: kind "pie chart"
-    expect: refused, naming the five kinds; nothing made
+  - given: listKind "pie chart"
+    expect: refused, naming every kind this makes; nothing made
 
 second_route:
   - Revit's own View > Schedules > Schedule/Quantities with the same category and fields, compared column for column
+  - for a sheet list, View > Schedules > Sheet List - compare its row count against the Sheets branch of the Project Browser
+  - for a key schedule, View > Schedules > Schedule/Quantities with Schedule keys chosen
   - >
-    VERSION 2: View > Schedules > Material Takeoff, Note Block, Keynote Legend,
+    VERSION 3: View > Schedules > Material Takeoff, Note Block, Keynote Legend,
     and Schedule/Quantities with Areas and its area scheme picked - the view
     each makes compared with the one made here, kind, category and columns

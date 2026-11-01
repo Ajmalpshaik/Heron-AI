@@ -1,7 +1,10 @@
-# The proof of SET_SCHEDULE_FIELD_TOTALS version 2 (set-schedule-field-totals,
-# FRG-VIEW-109) and SET_SCHEDULE_SORT_GROUP version 2 (set-schedule-sort-group,
-# FRG-VIEW-059), written 2026-11-01 for FRAGMENT-ISSUES row 5b-1363 -
-# NEEDS-CHECKING Group KK. NOT RUN - written and read back with --dry-run only.
+# The proof of SET_SCHEDULE_APPEARANCE version 5's `calculation`
+# (set-schedule-appearance, FRG-VIEW-061 - the calculation drop-down that was
+# SET_SCHEDULE_FIELD_TOTALS version 2 on this branch until main merged that card
+# into this one, PR #777) and SET_SCHEDULE_SORT_GROUP version 2
+# (set-schedule-sort-group, FRG-VIEW-059), written 2026-11-01 for
+# FRAGMENT-ISSUES row 5b-1367 - NEEDS-CHECKING Group KK. NOT RUN - written and
+# read back with --dry-run only.
 #
 #     python tools/batch-prove.py tools/jobs/schedule-settings-sorting-scratch-2026-11-01.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/schedule-settings-sorting-scratch-2026-11-01.yaml
@@ -14,7 +17,9 @@
 #
 # ONE LEG PER FRAGMENT, ON PURPOSE. batch-prove writes each fragment's run
 # record to one path (brain/proof-drafts/runs/<slug>.json), so a second leg of
-# the same fragment would overwrite the first. The other version 2 cases are
+# the same fragment would overwrite the first. The calculation leg below runs
+# set-schedule-appearance, which the appearance job file also runs: read this
+# file's record before running that one, or the other way round. The other version 2 cases are
 # the hand runs in Group KK.
 #
 # THE MODEL: A NEW PROJECT, NEVER 4355-* nor any project of Ajmal PS's. In
@@ -63,7 +68,7 @@ defaults:
   write: true
 
 jobs:
-  - fragment: set-schedule-field-totals
+  - fragment: set-schedule-appearance
     expect: totalled
     keep-chain: true
     setup:
@@ -71,18 +76,19 @@ jobs:
     setup-set:
       nameContains: HERON KF Ducts
     set:
-      fieldNames: Length
+      fieldName: Length
       calculation: minimum and maximum
     negative-set:
-      fieldNames: Family and Type
+      fieldName: Family and Type
       calculation: maximum
     # The negative is the SAME schedule, so its chain gets the same name
     # (FRAGMENT-ISSUES row 5b-242).
     negative-setup-set:
       nameContains: HERON KF Ducts
     note: >
-      KF field totals. Length switched from totals to minimum and maximum; the
-      negative asks a maximum of a text column and must change nothing.
+      KK calculation. Length switched from totals to minimum and maximum; the
+      negative asks a maximum of a text column and must change nothing. Every
+      other input of the card is left out and binds "leave".
 
   - fragment: set-schedule-sort-group
     expect: sorted

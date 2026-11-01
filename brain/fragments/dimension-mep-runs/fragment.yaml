@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: DIMENSION_MEP_RUNS
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_DIMENSION (create-dimension), on the owner's instruction
+# in conversation: "merge the 5 real duplicates". Constitution Article 1: kept,
+# never deleted, so its record and its proof stay readable and it can be
+# brought back. Nothing offers it now - retrieval leaves DEPRECATED out, and
+# its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to CREATE_DIMENSION. The proof below is the
+# record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_DIMENSION
+  why: >
+    The same job: one dimension string between the centrelines of ducts, pipes,
+    conduit or cable tray, reached through non-visible geometry with references
+    computed. CREATE_DIMENSION measures across the runs at any angle and refuses
+    runs out of parallel; its version 2 took what this card had that it lacked -
+    a named axis x or y (which reaches risers end-on in a plan), the read-back of
+    the references the dimension holds, a refusal by Revit caught, and a problem
+    sentence. dimensionId is its created, noReference is its refused. Not
+    carried, on purpose: this card took an arc or a flex run, and with an axis
+    named, runs out of parallel - there a run must be straight and parallel,
+    because the gap between runs that are not is not one number.
 
 purpose: >
   Draws one dimension string between MEP runs - ducts, pipes, conduit, cable

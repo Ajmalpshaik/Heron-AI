@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,25 @@ capability: GROUP_BY_ASSEMBLY
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO REPORT_NESTED_FAMILIES (report-nested-families), on the owner's instruction
+# in conversation: "merge the 5 real duplicates". Constitution Article 1: kept,
+# never deleted, so its record and its proof stay readable and it can be
+# brought back. Nothing offers it now - retrieval leaves DEPRECATED out, and
+# its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to REPORT_NESTED_FAMILIES. The proof below is the
+# record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: REPORT_NESTED_FAMILIES
+  why: >
+    The same job: count whole pieces of kit rather than family instances,
+    following nested families and insulation up to their host, guarded against a
+    cycle. REPORT_NESTED_FAMILIES walks up as this did and also down to every
+    part, and names a host outside the set. Everything this provided is there:
+    rootOf is its roots, the root list is the keys of assemblyParts, partsOf is
+    assemblyParts, cyclic is cycles. No code moved in the merge.
 
 purpose: >
   Rolls elements up to the whole piece of kit they belong to, and says how far a

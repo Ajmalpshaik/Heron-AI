@@ -50,6 +50,21 @@ positive:
       libraryAppearances lists the asset browser's library assets by the
       names it shows - compare five of them by eye (IA1)
 
+  # VERSION 5 - REPORT_MATERIAL_TEXTURES merged in. NOT RUN. Each fails on
+  # version 4, which had no withTextures, onlyMissing, textures or missing.
+  - given: >
+      VERSION 5. A material given an image texture from C:/Heron/brick.jpg,
+      then that file renamed, onlyMissing true - REPORT_MATERIAL_TEXTURES' own case
+    expect: >
+      `missing` naming that material, its diffuse slot and C:/Heron/brick.jpg;
+      `textures` holding that one line, "... | MISSING"
+
+  - given: VERSION 5. The same model, withTextures true
+    expect: >
+      every texture file of every material listed, each "found", "MISSING" or
+      "relative - looked up in Revit's texture folders, not checked here"; a
+      relative path is never in `missing`
+
 negative:
   - given: >
       "Heron Materials Annotation", a family new from Metric Generic
@@ -75,13 +90,20 @@ negative:
     expect: >
       a material nothing uses is listed exactly like one that is used, and the
       second finding says "Listed used or not - unused ones:
-      FIND_UNUSED_MATERIALS". Which are unused is that tool's walk over every
-      element, type and painted face, which this does not make
+      FIND_PURGEABLE_ELEMENTS with includeMaterials" (version 5 - until then
+      it named FIND_UNUSED_MATERIALS, merged into that tool on 2026-11-01).
+      Which are unused is that tool's walk over every element, type and
+      painted face, which this does not make
 
   - given: version 3, namePattern "ZZZ*"
     expect: >
       materialCount 0, materialList empty, and the first finding "No material
       matches 'ZZZ*'" - never "No materials at all", which would be untrue
+
+  - given: VERSION 5. The file named back, onlyMissing true
+    expect: >
+      `missing` empty and `textures` empty - a found file is never listed as
+      missing
 
 second_route:
   - >

@@ -57,7 +57,7 @@ negative:
     expect: >
       it covers materials and nothing else. The other three kinds are
       FIND_UNUSED_DEFINITIONS, FIND_UNUSED_GROUP_TYPES and
-      FIND_UNUSED_FAMILIES, split apart because the cost of proving each is
+      FIND_PURGEABLE_ELEMENTS for family types, split apart because the cost of proving each is
       wildly different and a cheap check that quietly became expensive stops
       being run
 

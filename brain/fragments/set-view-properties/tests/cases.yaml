@@ -35,7 +35,91 @@ positive:
       the API's own name, and without this no word takes edges off a realistic
       view
 
+  - given: VERSION 3. 12 plans at 1:100, scale 50
+    expect: >
+      changed 12, wasScale reading 100 for each of the twelve, and the tags on
+      each view doubling in apparent size on the sheet - annotation is sized in
+      paper units. Version 2 had no wasScale, so this FAILS on it
+
+  - given: >
+      VERSION 3 REVIEW FIX. 12 plans, 9 already at Fine and 3 at Medium,
+      detailLevel Fine, nothing else asked
+    expect: >
+      changed 3, alreadyThatDetailLevel 9, and a finding "9 view(s) were
+      already at detail level Fine". FAILS on the version 3 first draft, which
+      wrote Fine onto all twelve and said changed 12
+
+  - given: >
+      VERSION 3 REVIEW FIX. 4 3D views, 3 already Hidden Line and 1 Shaded,
+      visualStyle Hidden Line
+    expect: >
+      changed 1, alreadyThatVisualStyle 3, and visualStyleNote "read back on 4
+      of 4 view(s) (3 already so, not written): Hidden Line on 1, Hidden Line
+      (already) on 3". FAILS on the first draft: changed 4
+
+  - given: VERSION 3 REVIEW FIX. "Shaded" on a view already Shaded with Edges
+    expect: >
+      not written - the style that keeps its edges is Shaded with Edges, which
+      it already is - alreadyThatVisualStyle 1, changed 0, edges still on
+
+  # VERSION 4 - from SET_VIEW_PHASE and SET_VIEW_RANGE. Each FAILS on version
+  # 3, which had no phase, no phase filter and no view range.
+  - given: >
+      VERSION 4. 12 floor plans, phaseId "New Construction", phaseFilterId a
+      filter showing previous plus new, nothing else asked
+    expect: >
+      phaseSet 12 and phaseFilterSet 12, each counted from reading the
+      parameter BACK, the scale, detail level and visual style untouched -
+      and in Revit not one wall has moved: the drawing changed, not the
+      building
+
+  - given: VERSION 4. the same 12 views run a second time with the same two ids
+    expect: alreadySet holds them, phaseSet empty, changed 0
+
+  - given: >
+      VERSION 4. 8 plans, 2 schedules and 1 drafting view, both ids valid
+    expect: >
+      the plans take both; the schedules take the phase and are NOT counted
+      as refusing a phase filter they never carried; the drafting view is in
+      unsupported
+
+  - given: VERSION 4. a plan at top 2300, cut 1200, bottom 0, with topMm 4000 and cutMm 3500
+    expect: >
+      viewRangeSet 1, the View Range dialog reading 4000 and 3500 with the
+      bottom still 0 - untouched, it was not asked - and wasTopMm 2300,
+      wasCutMm 1200, wasBottomMm 0 and wasViewRange saying so, so it can be
+      put back. The high-level ducts appear
+
 negative:
+  - given: VERSION 4. a phaseId that is actually the id of a level, with scale 50
+    expect: >
+      NOTHING is written - not the phase, and not the scale either - and a
+      finding says the id is not a Phase. Some views accept an id of the wrong
+      kind, and a view pointing at nonsense is worse than one left alone
+
+  - given: VERSION 4. views whose view template controls the Phase Filter, phaseFilterId given
+    expect: >
+      each in templateControlled and in refused, with REPORT_VIEW_TEMPLATE_CONTROL
+      named - and a view whose phase took while its filter was refused is still
+      named. SET_VIEW_PHASE's 2026-09-13 fix
+
+  - given: VERSION 4. an incoherent range - cutMm above the top
+    expect: >
+      viewRangeSet 0 and the plan named as not reading back as asked. Revit
+      rejects it without always throwing, so only the read-back catches it
+
+  - given: VERSION 4. a SECTION view, cutMm 1500
+    expect: refused by name - a section has no view range - and nothing else on it touched
+
+  - given: VERSION 4. topMm "high"
+    expect: refused before anything is written, the word named
+  - given: >
+      VERSION 3 REVIEW FIX. a view already at Fine under a template that
+      controls detail level, detailLevel Fine
+    expect: >
+      counted in alreadyThatDetailLevel and NOT refused - nothing was written,
+      so the template was never asked. A view already right is not a refusal
+
   - given: >
       a view controlled by a view template that locks the scale, set to a new
       scale
@@ -67,6 +151,23 @@ negative:
     expect: >
       refused with Revit's reason and nothing changed. Revit 2020 throws on
       setting it and 2021 on has no value for it, so it is never offered
+
+  - given: VERSION 3. 12 views already at 1:50, scale 50, nothing else asked
+    expect: >
+      alreadyThatScale 12, changed 0, scale set on 0, and a finding saying the
+      twelve were already at 1:50 - not changed 12. Version 2 wrote 50 back and
+      counted all twelve as changed, so this FAILS on it (SET_VIEW_SCALE's case)
+
+  - given: VERSION 3. 12 views of which 9 follow a TEMPLATE that locks scale, scale 50
+    expect: >
+      the 9 ids in `refused`, each once, their sentences in findings pointing
+      at REPORT_VIEW_TEMPLATE_CONTROL, and the other 3 changed. Version 2 named
+      them only in sentences, so a caller could not act on WHICH by id
+
+  - given: VERSION 3. the same plan named twice in views, scale 50
+    expect: >
+      set once, changed 1, one wasScale entry, and "1 of 1 view(s)" in the
+      findings. Version 2 set it twice and said "2 of 2 view(s) changed"
 
 second_route: >
   Revit's own Properties palette on one of the views, read before and after -
