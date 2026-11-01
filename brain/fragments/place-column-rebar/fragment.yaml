@@ -155,6 +155,9 @@ compatibility-note: >
 #   "bottom mesh in these pad footings"         -> PLACE_FOOTING_REBAR
 #   "T12 at 200 both ways in this slab"         -> PLACE_AREA_REINFORCEMENT
 #   "what rebar is in these columns"            -> REPORT_HOST_REBAR
+#   "add couplers to the top end of the column
+#    bars"                                      -> PLACE_REBAR_COUPLERS (2026-11-01:
+#                                                  ranked here before that card)
 utterances:
   - put 4 T16 main bars and T8 links at 150 in these columns, 40 cover
   - reinforce these columns with 8 bars and ties

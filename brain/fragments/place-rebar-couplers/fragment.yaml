@@ -1,0 +1,156 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-138
+semantic-identity: "put rebar couplers on the ends of these bars, or join two bars end to end with a coupler - Structure > Reinforcement > Rebar Coupler"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "put a coupler at the ends of
+# these bars", "join these two bars with a coupler" and "add couplers to the
+# top end of the column bars" - Revit's Structure > Reinforcement > Rebar
+# Coupler. Nothing in Heron placed a coupler. Checked that day with
+# brain/heron_retrieve.py on each sentence, Revit 2024: PLACE_BEAM_REBAR,
+# PLACE_COLUMN_REBAR, REPORT_HOST_REBAR, PLACE_FOOTING_REBAR,
+# PLACE_PATH_REINFORCEMENT and CREATE_REBAR_BAR_TYPE came back. Each places,
+# reports or types BARS; none makes a coupler, and widening one would hang a
+# second job - on bars already placed - off a card that places bars in a host.
+#
+# BOTH OF REVIT'S PLACEMENTS ARE ONE JOB, as in Revit's own Rebar Coupler tool:
+# "Coupler at bar end" (left out) and "Coupler between bars" - the `between`
+# switch. One API call does both: RebarCoupler.Create with one bar end, or two.
+#
+# THE COUPLER TYPE IS NEVER GUESSED (D-33). A type of the Structural Rebar
+# Couplers category, named exactly - its type name, or "Family: Type" when two
+# families share one. Left out, or not loaded: nothing is made and the loaded
+# coupler types come back in `couplerTypes` so the modeller can say which.
+#
+# WHICH END: "both" when left out ("the ends of these bars"), "start" or "end"
+# - Revit's own Start and End of the bar - or "top" / "bottom", read from the
+# bar's centre line. A level bar has no top; it is named and left. On
+# "between" the ends joined are where two selected bars meet, and an end three
+# bars meet at is named and left, never paired by a rule Heron chose.
+#
+# SKIPPED, NEVER DOUBLED: an end that already has a coupler is left as it was
+# and named in `alreadyCoupled`. EVERY REFUSAL IS REVIT'S, IN REVIT'S WORDS,
+# per bar end: the eight RebarCouplerError values - a hook on that end, an end
+# treatment that does not suit the coupler, bars not touching, not in line, not
+# parallel, sets laid out differently. "Include end treatments in Rebar Shape
+# definition" (Structural Settings) being on is read and named beside every
+# refusal; Heron never changes that project setting.
+#
+# RISK MODIFY. It adds couplers and deletes nothing, so Article 7's
+# confirmation does not arise.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: PLACE_REBAR_COUPLERS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places rebar couplers of the coupler type the modeller names - capping the
+  start, end, top or bottom of each selected bar or rebar set, or joining two
+  selected bars that meet end to end - as Revit's Rebar Coupler tool does. An
+  end that already has a coupler is left alone; each end Revit refuses is
+  named with Revit's reason.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The bars - single bars or rebar sets - selected. Anything else selected
+    # is named in `skipped` and left.
+    - name: elements
+      type: IList<Element>
+    # A Structural Rebar Couplers type by its exact name, or "Family: Type".
+    # Left out, nothing is made and the loaded types are listed.
+    - name: couplerType
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # "both", "start", "end", "top" or "bottom". Left out, both. Not read on
+    # a coupler between bars.
+    - name: barEnd
+      type: string
+      source: request
+      optional: true
+      absent: both
+    # true is Revit's "Coupler between bars": two selected bars that meet end
+    # to end are joined by one coupler. Left out, each end is capped.
+    - name: between
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: placed
+      # Couplers made and read back on every bar end they were asked for.
+      role: result
+      type: IList<ElementId>
+    - name: alreadyCoupled
+      # Bar ends that already had a coupler and were left as they were -
+      # evidence it looked, never work it did (D-52).
+      role: accounting
+      type: IList<string>
+    - name: skipped
+      # Bar ends, bars and other elements given that took no coupler, each
+      # with its reason - Revit's own where Revit refused (D-52).
+      role: accounting
+      type: IList<string>
+    - name: couplerTypes
+      # The coupler types loaded, "Family: Type" - what to name when none was.
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING, bar end by bar end (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was made at all, in plain words. Empty when it ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. RebarCoupler.Create(Document,
+  ElementId, ReinforcementData, ReinforcementData, out RebarCouplerError),
+  GetCouplerQuantity; RebarReinforcementData.Create(ElementId, int); the
+  RebarCouplerError values ValidationSuccessfuly, IncorrectInputData,
+  DifferentLayout, BarsNotTouching, IncorrectEndTreatmentHook,
+  IncorrectEndTreatmentCoupler, BarSegementsAreNotParallel and
+  BarSegmentsAreNotOnSameLine; Rebar.GetCouplerId(int), NumberOfBarPositions,
+  DoesBarExistAtPosition; ReinforcementSettings.RebarShapeDefinesEndTreatments;
+  BuiltInCategory.OST_Coupler; FamilySymbol.FamilyName, IsActive and Activate;
+  SubTransaction's Start, Commit, RollBack, HasStarted and HasEnded are present
+  and unchanged 2020 through 2027. Rebar.GetCenterlineCurves and
+  ReinforcementSettings.GetReinforcementSettings renamed a parameter (2026 and
+  2022) with the same types, so one positional call serves all eight. Read with
+  tools/api-surface --members on 2026-11-01. Ids are compared as ElementId,
+  never read as numbers.
+
+# ROUTING (2026-11-01) - the rebar rows are those in every rebar card.
+#
+#   "put a coupler at the ends of these bars" -> here, both ends capped
+#   "join these two bars with a coupler"      -> here, between
+#   "add couplers to the top end of the
+#    column bars"                             -> here, top - the bars
+#                                                selected, not the columns
+#   "put 4 T16 and T8 links at 150 in these
+#    columns"                                 -> PLACE_COLUMN_REBAR
+#   "put bars and stirrups in these beams"    -> PLACE_BEAM_REBAR
+#   "what rebar is in these columns"          -> REPORT_HOST_REBAR
+#   "make a 16 mm rebar bar type"             -> CREATE_REBAR_BAR_TYPE
+utterances:
+  - put a coupler at the ends of these bars
+  - join these two bars with a coupler
+  - add couplers to the top end of the column bars
