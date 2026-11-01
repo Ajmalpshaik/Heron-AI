@@ -1791,7 +1791,11 @@ function dashBoard(B) {
         label.type = "button";
         label.classList.add("d-bar-pick");
         label.title = "Select these " + b.count + " element(s) in Revit - nothing in the model changes";
-        label.addEventListener("click", () => dashShow("select", null, label, [c.key, b.label]));
+        label.addEventListener("click", () => {
+          // With the 3D view loaded, the bar's elements light up there too.
+          if (window.HeronModel3D && !$("d-3d").hidden) window.HeronModel3D.highlight(b.ids);
+          dashShow("select", null, label, [c.key, b.label]);
+        });
       } else label.title = b.label;
       const track = el("span", "d-bar-track");
       const fill = el("i", "d-bar-fill");
