@@ -1,0 +1,166 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-059
+semantic-identity: "make a named user workset the active workset, the one new elements are placed on"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "make Mechanical the active
+# workset", "set the active workset to Shared Levels and Grids" and "switch to
+# the Architecture workset" - Revit's Collaborate > Active Workset, and the
+# Active Workset box on the status bar. Checked that day with
+# brain/heron_retrieve.py on a scratch store, Revit 2024: the three reached
+# SET_VIEW_WORKSET_VISIBILITY, SET_ELEMENT_WORKSET and SET_VIEW_WORKSET_VISIBILITY
+# - one changes a drawing, one moves elements, and neither sets the active
+# workset. COPY_ELEMENTS sets it for the length of one copy and puts it back;
+# nothing left it set.
+#
+# RISK MODIFY, AND THE CONFIRMATION IS THE NAME - exactly as SET_ELEMENT_WORKSET
+# and RENAME_WORKSET, the nearest workset writes, both MODIFY. Constitution
+# Article 7 lists workset changes among the operations that need explicit
+# confirmation for that specific operation; here, as there, the confirmation is
+# the workset's name, typed by the modeller and matched EXACTLY - no find
+# chooses the target, so there is nothing for a separate `confirm` to re-name
+# (DELETE_FAMILY_PARAMETERS' reasoning) - and revit_change's Keep or Discard
+# (D-126) is the preview. NOT ADMIN like CREATE_WORKSET: that adds project
+# structure every person on the job sees, and this changes only which workset
+# THIS modeller's next new elements go on. It moves no element and changes no
+# workset. Article 10: nothing here synchronises. Article 12: a workset owned
+# by somebody else is still made active, as Revit's own box allows, and the
+# owner is named in the answer - never taken.
+#
+# A MODEL THAT IS NOT WORKSHARED IS REFUSED, IN REVIT WORDS. It has no worksets
+# and no active workset, and turning worksharing on is a decision with a
+# central file behind it, never made as a side effect.
+#
+# THE NAME IS NEVER GUESSED. It must equal a user workset's name exactly - case
+# and spaces included. Anything else is refused with every user workset listed;
+# one that differs only in case or spacing is named as "did you mean", and
+# still refused. A CLOSED workset is refused too: nothing placed on it would be
+# loaded or drawn in this session. Open it first (Collaborate > Worksets).
+#
+# BEFORE AND AFTER: the active workset is read before, and read again from the
+# workset table after the change - `activeBefore`, `activeAfter`.
+#
+# THE TRANSACTION. Revit's API documentation for
+# WorksetTable.SetActiveWorksetId, the same in all eight releases 2020 to 2027
+# (RevitAPI.xml in the Nice3point reference packages, read 2026-11-01), lists
+# ArgumentException ("There is no workset in the document with this id") and
+# ArgumentNullException, and NOT ModificationOutsideTransactionException - which
+# WorksetTable.RenameWorkset and Workset.Create both list. So it needs no
+# transaction, and nothing there says it refuses one either. The snippet runs
+# where every snippet runs - inside Heron's open transaction - as COPY_ELEMENTS'
+# own call to it already does, and declares no `noTransactionOpen` (D-125 is for
+# a call Revit refuses inside a transaction; this is not one).
+#
+# NOT KNOWN, AND THE REASON IT MATTERS (Article 8): because the call is not a
+# transactional change, a Discard, an Undo or a rolled-back run may NOT put the
+# active workset back. That needs a real Revit to know (NEEDS-CHECKING Group
+# KN, KN4). Until it is known, the answer names the workset that was active
+# before, so the modeller can choose it again in the Active Workset box.
+kind: action
+domain: revit.document
+capability: SET_ACTIVE_WORKSET
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes one user workset, named exactly, the active workset - the one new
+  elements are placed on - and reads the active workset before and after. A
+  model that is not workshared is refused, and a name that matches no open
+  user workset changes nothing and lists the worksets the model has.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The workset's name, exactly as Revit shows it: "Mechanical", "Shared
+    # Levels and Grids". Never guessed - a near name is refused and named.
+    - name: worksetName
+      type: string
+      source: request
+  provides:
+    - name: changed
+      # True only when the active workset read back afterwards is the one
+      # asked for and was not already.
+      role: result
+      type: bool
+    - name: alreadyActive
+      # The workset asked for was the active one already - nothing to do. The
+      # evidence it looked, never a change it made (D-52).
+      role: accounting
+      type: bool
+    - name: activeBefore
+      # The active workset before the call, by name - what to choose again in
+      # the Active Workset box to put it back (D-52).
+      role: accounting
+      type: string
+    - name: activeAfter
+      # The active workset read back from the workset table after the call,
+      # by name, and its owner when somebody has it (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was changed, in plain words, with every user workset
+      # listed when the name matched none. Empty when it ran (D-52).
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Document.IsWorkshared,
+  Document.GetWorksetTable, WorksetTable.GetActiveWorksetId,
+  WorksetTable.SetActiveWorksetId, WorksetTable.GetWorkset(WorksetId),
+  FilteredWorksetCollector.OfKind and ToWorksets, WorksetKind.UserWorkset,
+  Workset.Name, Id, IsOpen and Owner, WorksetId.InvalidWorksetId and WorksetId's
+  == carry the same signatures 2020 through 2027 - read with tools/api-surface
+  --members on 2026-11-01. A WorksetId is compared with ==, never read as a
+  number.
+
+# ROUTING (2026-11-01).
+#
+# MEASURED 2026-11-01 through heron_retrieve.find on two scratch stores, one
+# built from the tree without this card and one with it, `model` backend,
+# re-ranker absent, no Revit filter: every declared utterance and every
+# routing-table sentence in the library (4,203 before, 4,206 with this card's
+# three) reaches the card it reached before; one claimed sentence, "what shape
+# is this element", now reaches the card that claims it (FRG-GEO-068) where it
+# missed before.
+#
+# A QUESTION RANKS HERE, AND THIS WRITES. Declared nowhere: "which workset is
+# active" and "what is the active workset" reached SELECT_BY_WORKSET (a read)
+# before this card; "what is my active workset" reached
+# SET_WORKSHARING_OWNERSHIP and "is Mechanical the active workset"
+# SET_VIEW_WORKSET_VISIBILITY (both writes). All four reach this card after.
+# With the host's question:true (D-128) every one reaches SELECT_BY_WORKSET -
+# a read, never this card - but no card in the library reports the active
+# workset, so that read does not answer it. Rewording this card's identity and
+# purpose did not move them: its own utterances say "active workset". Recorded
+# for the owner (FRAGMENT-ISSUES 5b-1366), not repaired by declaring words
+# nobody said on a card that does not answer them.
+#
+#   "make Mechanical the active workset"    -> here, worksetName Mechanical
+#   "set the active workset to Shared       -> here
+#    Levels and Grids"
+#   "switch to the Architecture workset"    -> here
+#   "which workset is active"               -> NOT HERE - a question, and this
+#                                              writes. No card reports it yet;
+#                                              5b-1366
+#   "put these on the MEP workset"          -> SET_ELEMENT_WORKSET - moves
+#                                              elements that already exist
+#   "turn off this workset in this view"    -> SET_VIEW_WORKSET_VISIBILITY - a
+#                                              drawing setting
+#   "list the worksets"                     -> LIST_WORKSETS - a READ
+#   "add a new workset"                     -> CREATE_WORKSET
+#   "rename this workset"                   -> RENAME_WORKSET
+utterances:
+  - make Mechanical the active workset
+  - set the active workset to Shared Levels and Grids
+  - switch to the Architecture workset
