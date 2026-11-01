@@ -53,7 +53,73 @@ positive:
       word "leave" hands headingSideways the decision. A version 2 caller sees
       no difference
 
+  # VERSION 4 (row 5b-1363, Group KF).
+  - given: >
+      a duct schedule whose Length column uses project settings (millimetres),
+      fieldName "Length", units "metres, 2 decimal places, m"
+    expect: >
+      appliedAppearance reading "units project settings (Millimeters (mm), 0
+      decimal places) -> Meters (m), 2 decimal places", and in Revit the
+      Formatting tab's Field Format for Length with Use project settings
+      UNTICKED, Meters, 2 decimal places, symbol m - and the lengths printing
+      as 12.35 m. Ajmal PS's own request, 2026-11-01
+
+  - given: the same column afterwards, units "project"
+    expect: >
+      Use project settings ticked again and the lengths back in millimetres;
+      read back "units Meters (m), 2 decimal places -> project settings (...)"
+
+  - given: units "mm, no symbol" on a Length column
+    expect: millimetres with no unit symbol, the rounding kept from the project's format
+
+  - given: >
+      Revit 2022 or later, fieldName "System Type", multipleValues "custom: -"
+    expect: >
+      a row gathering two system types printing "-" rather than <varies>, and
+      the read back saying custom '-'
+
+  - given: fieldName "Length", cellStyle "bold, colour red"
+    expect: >
+      the Length column's values bold and red on THIS schedule only - another
+      schedule using the same body text type unchanged. Read back "style bold,
+      colour 255 0 0"
+
+  - given: cellStyle "size 3 mm" on one column
+    expect: >
+      THE TEXT SIZE ASSUMPTION SETTLED: the Edit Font dialog for the column
+      reading 3 mm means TextSize is a Revit internal length; anything else is
+      recorded with Revit's own number from the read back and the card corrected
+
+  - given: cellStyle "reset" on that column
+    expect: every override off, the column back to the body text type's look
+
 negative:
+  # VERSION 4.
+  - given: fieldName "Type", units "metres"
+    expect: >
+      refused for that column - "not a number with units" - and NOTHING about
+      its format changed; another column named in the same call still set
+
+  - given: fieldName "Length", units "kilograms"
+    expect: >
+      refused naming every unit Revit offers for a length, the column's format
+      unchanged, and the rest of the call still made
+
+  - given: units "metres", cellStyle "glowing" on fieldName "Length"
+    expect: >
+      the style refused once naming the style words accepted, and the units
+      still set and read back - one bad input does not discard a good one
+
+  - given: Revit 2020 or 2021, multipleValues "varies" with an alignment
+    expect: >
+      multiple values refused as arriving at Revit 2022, the alignment still
+      applied and read back
+
+  - given: cellStyle "bold" on one schedule's Length column
+    expect: >
+      a SECOND schedule sharing the same body text type NOT bold - the text
+      type is never edited
+
   - given: an empty newHeading and columnWidthMm of 0
     expect: >
       NOTHING CHANGED and nothing claimed - not a blanked heading and not a
@@ -73,11 +139,11 @@ negative:
       that refusal named with Revit's own message, and the count reflecting what
       a READ BACK found rather than what was attempted
 
-  - given: a request to make the schedule text bold
+  - given: a request to make the schedule's whole body text type bold
     expect: >
-      NOT DONE BY THIS FRAGMENT AT ALL, and the Revit route named. Bold lives on
-      the schedule's text type, which other schedules share - a fragment that
-      edits it to satisfy one sentence restyles drawings nobody asked about
+      the TEXT TYPE NOT EDITED by this fragment. Version 4 makes a column bold
+      on this schedule only; which text type the schedule uses is
+      SET_SCHEDULE_OPTIONS', and editing a shared type is in no Heron tool
 
   # VERSION 3.
   - given: fieldName "all" and a newHeading
@@ -103,5 +169,7 @@ second_route:
     what the result is checked against
 
   - >
-    For bold, font or text size: select the schedule, Properties, Appearance, and
-    edit the Header or Body text - a shared type, changed deliberately
+    Version 4: the Formatting tab's Field Format button for the column (Use
+    project settings, units, rounding, symbol) and its multiple values text;
+    and for a column's style, select its cells and read Modify Schedule,
+    Font - read by a person after the run
