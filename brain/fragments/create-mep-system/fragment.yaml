@@ -142,7 +142,7 @@ compatibility-note: >
 #                                              CREATE_VIEW_FILTERS_BY_RULE, and
 #                                              then EDIT_MEP_SYSTEM once that
 #                                              card was written (FRAGMENT-ISSUES
-#                                              row 5b-1357)
+#                                              row 5b-1359)
 #   "create a system for this pump"         -> here
 #   "put these diffusers on the FCU's system" -> here
 #   "add these diffusers to Supply Air 2"   -> EDIT_MEP_SYSTEM - a system that
@@ -164,7 +164,7 @@ utterances:
   - create a piping system for this pump and the fixtures
   - put these terminals on one system with the FCU as base equipment
   - put these diffusers on the FCU's system
-  # ADDED 2026-11-01, row 5b-1357. The routing table above claims it and a
+  # ADDED 2026-11-01, row 5b-1359. The routing table above claims it and a
   # comment is not indexed, so ranking decided: CREATE_VIEW_FILTERS_BY_RULE
   # took it, and EDIT_MEP_SYSTEM after that card was written.
   - make a supply air system from these
