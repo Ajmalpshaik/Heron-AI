@@ -153,7 +153,10 @@ var sectionsNotRead = 0;
         var categoryTypes = new Dictionary<ElementId, HashSet<ElementId>>();
         var levelOf = new Dictionary<ElementId, Level>();
         var onLevel = new Dictionary<ElementId, int>();
-        var onWorkset = new Dictionary<int, int>();
+        // KEYED BY THE WorksetId ITSELF, as COPY_ELEMENTS keys its worksets -
+        // no number is read off an id (tests/test_api_changes.py
+        // reads IntegerValue as the member 2026 removed from ElementId).
+        var onWorkset = new Dictionary<WorksetId, int>();
         var noLevel = 0;
         var unreadable = 0;
         string firstUnreadable = null;
@@ -206,12 +209,8 @@ var sectionsNotRead = 0;
                         if (parameter != null && parameter.HasValue) at = parameter.AsElementId();
                     }
 
-                    int? worksetKey = null;
-                    if (isWorkshared)
-                    {
-                        var worksetId = element.WorksetId;
-                        if (worksetId != null) worksetKey = worksetId.IntegerValue;
-                    }
+                    WorksetId worksetKey = null;
+                    if (isWorkshared) worksetKey = element.WorksetId;
 
                     elementTotal++;
                     if (!categoryCount.ContainsKey(categoryId))
@@ -229,11 +228,8 @@ var sectionsNotRead = 0;
                     else
                         noLevel++;
 
-                    if (worksetKey.HasValue)
-                    {
-                        var key = worksetKey.Value;
-                        onWorkset[key] = (onWorkset.ContainsKey(key) ? onWorkset[key] : 0) + 1;
-                    }
+                    if (worksetKey != null)
+                        onWorkset[worksetKey] = (onWorkset.ContainsKey(worksetKey) ? onWorkset[worksetKey] : 0) + 1;
                 }
                 catch (Exception ex)
                 {
@@ -336,7 +332,7 @@ var sectionsNotRead = 0;
                 {
                     var open = workset.IsOpen;
                     if (!open) closed++;
-                    var key = workset.Id.IntegerValue;
+                    var key = workset.Id;
                     // ON A CLOSED WORKSET NOTHING IS LOADED, so its count is 0
                     // because nothing on it could be counted - `open` says so.
                     rows.Add("{" + esc("name") + ":" + esc(workset.Name)
