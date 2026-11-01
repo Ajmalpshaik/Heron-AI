@@ -1,0 +1,128 @@
+heron-agent: HERON-REVIT-SCH-026
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-156
+semantic-identity: "group neighbouring schedule column headings under one caption, or ungroup them"
+kind: action
+domain: revit.schedules
+capability: GROUP_SCHEDULE_HEADERS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WRITTEN 2026-11-01 FOR FRAGMENT-ISSUES ROW 5b-1363, Ajmal PS's check of
+# every schedule setting Heron could not reach (NEEDS-CHECKING Group KF). A
+# grep of every fragment's C# found no ViewSchedule.GroupHeaders,
+# UngroupHeaders, CanGroupHeaders or CanUngroupHeaders.
+#
+# A NEW CARD. SET_SCHEDULE_APPEARANCE renames ONE column's heading; a group
+# caption is a cell above several headings, made and removed by its own
+# Revit command (Modify Schedule/Quantities, Group / Ungroup).
+#
+# THE CELL NUMBERS ARE AN ASSUMPTION THE PROOF SETTLES: GroupHeaders takes
+# table row and column numbers, and the reference does not say which section
+# numbers them. The body section is taken, the heading row is READ rather
+# than guessed, and Revit's own CanGroupHeaders decides before anything is
+# written - the C# header says it in full.
+purpose: >
+  Groups the headings of neighbouring schedule columns under one caption -
+  "Size" over Width and Height - or ungroups a caption that is there. The
+  first and last column are named by field name or printed heading, and
+  every column between them in the schedule's order is in the group. Revit is
+  asked whether the headings can be grouped before anything is written, and
+  the table is read again afterwards to find the caption above the columns.
+
+  A name answering to two columns touches neither; a hidden column is refused,
+  because it has no heading on the sheet. The columns themselves - their
+  data, headings and widths - are not changed.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # The first and last column of the group, by field name or by the heading
+    # as it prints. Their order does not matter.
+    - name: fromColumn
+      type: string
+      source: request
+    - name: toColumn
+      type: string
+      source: request
+    # The caption printed above the group. Left out it is "none" - a blank
+    # caption when grouping; when ungrouping, the caption over those columns,
+    # whatever it reads.
+    - name: caption
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # "group" or "ungroup". Left out it is "group".
+    - name: mode
+      type: string
+      source: request
+      optional: true
+      absent: group
+  provides:
+    - name: grouped
+      # Schedules where the group was made or removed and read back.
+      role: result
+      type: int
+    - name: applied
+      # Per schedule, the columns grouped or ungrouped, the cell numbers used,
+      # and what a second read of the table found above them. ONE STRING.
+      role: result
+      type: string
+    - name: notPresent
+      # Column names the schedule does not carry. The evidence it looked,
+      # never a thing it found (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in the user's words - a name answering to two
+      # columns, a hidden column, headers switched off, Revit's own
+      # CanGroupHeaders saying no with the cells it was asked about (D-52).
+      role: accounting
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewSchedule.GroupHeaders`,
+  `UngroupHeaders`, `CanGroupHeaders`, `CanUngroupHeaders` and `GetTableData`,
+  `TableData.GetSectionData(SectionType)`, `TableSectionData.FirstRowNumber`,
+  `LastRowNumber`, `FirstColumnNumber`, `GetCellText` and `GetMergedCell`,
+  and `TableMergedCell.Top`, `Left`, `Bottom` and `Right` are present with the
+  same signatures 2020 through 2027 - looked up with tools/api-surface
+  --members on all eight releases, 2026-11-01. A column is found by its
+  ScheduleField, never by reading an id as a number. No units call is made.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "group the Width and Height headers under Size"
+#                                        -> here
+#   "ungroup the Size heading"           -> here, mode ungroup
+#   "rename the column heading"          -> SET_SCHEDULE_APPEARANCE. One
+#                                           column's own heading, not a
+#                                           caption over several
+#   "move the Length column next to Size"
+#                                        -> SET_SCHEDULE_FIELD_ORDER. A group
+#                                           takes neighbouring columns as they
+#                                           stand; reorder first
+#   "hide the schedule headers"          -> SET_SCHEDULE_OPTIONS, showHeaders
+#   "group the schedule by system type"  -> SET_SCHEDULE_SORT_GROUP. Grouping
+#                                           ROWS, not headings
+
+utterances:
+  - group these column headers under one heading
+  - put a heading over the width and height columns
+  - group the schedule headers
+  - ungroup the schedule headers

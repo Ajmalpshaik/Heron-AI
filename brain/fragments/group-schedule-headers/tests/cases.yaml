@@ -1,0 +1,55 @@
+# D-30: the negative case is what catches "grouped, and the wrong columns".
+# The proof plan is tools/jobs/schedule-settings-options-scratch-2026-11-01.yaml,
+# NEEDS-CHECKING Group KF. NEVER on a 4355-* job model: the scratch project
+# "Heron Schedules KF", made from Revit's default metric template.
+
+positive:
+  - given: >
+      "HERON KF Duct Schedule" - columns Family and Type, Width, Height, Length,
+      no headings grouped - clicked on sheet "HERON KF Sheet", fromColumn
+      Width, toColumn Height, caption "Size"
+    expect: >
+      grouped 1, applied naming 'Width', 'Height' grouped under 'Size' with
+      the body row and columns used, and a read back finding 'Size' above
+      them; the schedule view showing Size over Width and Height and nothing
+      over Family and Type or Length. WHICH ROW NUMBERS GroupHeaders TAKES is
+      the assumption this case settles
+
+  - given: the same schedule afterwards, mode ungroup, caption "Size"
+    expect: >
+      grouped 1, applied saying the group heading 'Size' over 'Width', 'Height'
+      removed and no longer read above the columns; the view back to plain
+      headings
+
+  - given: fromColumn Height, toColumn Width (named backwards)
+    expect: the same group as the first case - the order of the two names does not matter
+
+negative:
+  - given: fromColumn "ZZZ No Such Column", toColumn Height, caption "Size"
+    expect: >
+      notPresent naming 'ZZZ No Such Column', grouped 0, and the headings as
+      they were - nothing grouped
+
+  - given: >
+      a second schedule, "HERON KF Other Schedule", with the same columns, not
+      handed in, while the first is grouped
+    expect: >
+      the second schedule's headings exactly as before - only the schedule
+      handed in is grouped
+
+  - given: fromColumn Width, toColumn Width
+    expect: refused - a group needs two or more columns; nothing changed
+
+  - given: mode ungroup on a schedule with no group heading
+    expect: >
+      refused saying no group heading was found above the columns, nothing
+      changed
+
+  - given: Width hidden on the schedule, fromColumn Width, toColumn Height
+    expect: refused saying 'Width' is a hidden column; nothing changed
+
+second_route:
+  - >
+    The schedule view itself, read by a person: the caption above the
+    columns after grouping, gone after ungrouping - and Modify Schedule/
+    Quantities, Ungroup taking it away by hand on a copy

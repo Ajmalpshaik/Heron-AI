@@ -1,0 +1,95 @@
+# D-30: the negative case is what catches "changed, and the wrong schedule".
+# The proof plan is tools/jobs/schedule-settings-options-scratch-2026-11-01.yaml,
+# NEEDS-CHECKING Group KF. NEVER on a 4355-* job model: the scratch project
+# "Heron Schedules KF", made from Revit's default metric template, named in the
+# run record.
+
+positive:
+  - given: >
+      "HERON KF Duct Schedule" on the scratch project, placed on sheet "HERON KF
+      Sheet" and clicked there, with showTitle no, showHeaders no and
+      gridLinesOnSheets no
+    expect: >
+      changed 3, applied reading "Show Title yes -> no, Show Headers yes -> no,
+      Grid lines on sheets yes -> no" for 'HERON KF Duct Schedule', and on the
+      sheet no title, no headings and no grid lines
+
+  - given: the same schedule, headerTextType and bodyTextType named after two text types the project has
+    expect: >
+      applied reading each "'<old>' -> '<new>'", the schedule on the sheet in
+      the new type, and the text types themselves unchanged - another schedule
+      using the old type still prints as before
+
+  - given: stripedRows yes, and on Revit 2021 or later stripedRowsOnSheets yes and stripedRowColour "#DCEBFA"
+    expect: >
+      applied reading striped rows "no -> yes", on sheets "no -> yes", the
+      SecondRow colour "-> 220,235,250" and the other stripe's colour as it
+      was; the schedule view showing the stripe. WHICH ROW THE SWATCH IN THE
+      APPEARANCE TAB IS - the assumption this case settles
+
+  - given: Revit 2024 or later, rowHeightMm 8
+    expect: >
+      applied reading "Row height ... -> 8 mm" and the override read back, and
+      the rows on the sheet visibly taller. Whether the override had to be set
+      to All is the assumption this case settles
+
+  - given: includeLinks yes on a schedule of a category a loaded link also carries
+    expect: >
+      applied "Include elements in links no -> yes" and the linked file's
+      elements listed in the schedule
+
+  - given: Revit 2023 or later, filterBySheet yes on a door schedule placed on a sheet with a plan view
+    expect: >
+      applied "Filter by sheet no -> yes" and the schedule on that sheet
+      listing only the doors visible in the views on that sheet
+
+  - given: a space schedule and embeddedSchedule "Mechanical Equipment"
+    expect: >
+      applied "Embedded schedule none -> 'Mechanical Equipment'", and the
+      schedule's Fields tab showing the Embedded Schedule ticked with that
+      category; then embeddedSchedule none reading it removed
+
+negative:
+  - given: >
+      the same schedule and showTitle "maybe", showHeaders no
+    expect: >
+      refused naming "Show Title takes yes or no, not 'maybe'", the title STILL
+      SHOWN on the sheet, and Show Headers still set - one bad word does not
+      lose the rest
+
+  - given: headerTextType "ZZZ No Such Text"
+    expect: >
+      refused saying no text type is called 'ZZZ No Such Text', listing the
+      text types there are, and the header text type unchanged
+
+  - given: >
+      a second schedule, "HERON KF Other Schedule", left SELECTED NOWHERE,
+      while the first is changed
+    expect: >
+      the second schedule's title, headers and grid lines exactly as before -
+      only the schedule handed in is changed
+
+  - given: every input left out
+    expect: refused "nothing was asked", changed 0 and no schedule touched
+
+  - given: Revit 2020, rowHeightMm 8 and filterBySheet yes and showTitle no
+    expect: >
+      notApplicable naming row height (arrived at 2024) and filter by sheet
+      (arrived at 2023), and Show Title still set - never a failure
+
+  - given: embeddedSchedule "Mechanical Equipment" on a duct schedule
+    expect: >
+      refused saying Revit says this schedule cannot have an embedded
+      schedule, and nothing changed on it
+
+  - given: Title Blocks selected on a sheet, showTitle no
+    expect: refused saying not one element handed in is a schedule; changed 0
+
+second_route:
+  - >
+    The schedule's Properties - Appearance tab (Show Title, Show Headers, Grid
+    lines, Title/Header/Body text, Striped rows and their colour, row height on
+    2024), Fields tab (Include elements in links, Embedded Schedule) and Filter
+    tab (Filter by sheet) - read by a person after each positive case
+  - >
+    REPORT_SCHEDULE_DEFINITION on the same schedule before and after
