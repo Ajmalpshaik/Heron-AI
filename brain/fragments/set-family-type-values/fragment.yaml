@@ -187,7 +187,7 @@ compatibility-note: >
   millimetres divided by 304.8, degrees times pi over 180 - never a units API,
   which is what breaks across 2021.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "make a 600 x 600 type"               -> here
 #   "put 600 into Width"                  -> here

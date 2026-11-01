@@ -304,7 +304,7 @@ compatibility-note: >
 # Version 2's proof below no longer describes the code (impl/ changed) and is
 # kept as the record; the card is DRAFT until version 3 is proved (D-30).
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "build all these forms in one go"            -> here, a list of rows
 #   "make these ten extrusions and revolves"     -> here

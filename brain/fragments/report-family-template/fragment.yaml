@@ -282,7 +282,7 @@ compatibility-note: >
   Family"; so it is asked of placement points only, and whether a
   pattern-based panel's points answer it is Revit's (JQ, with JK9).
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "what kind of family is this"                 -> here
 #   "is this a wall based or a face based family" -> here

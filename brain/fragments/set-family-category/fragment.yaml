@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,36 @@ capability: SET_FAMILY_CATEGORY
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO SET_FAMILY_SETTINGS (set-family-settings), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to SET_FAMILY_SETTINGS, and so did the live rows of the
+# family-building routing table below - the copy here is the record. The
+# proof below, where there is one, is the record of what this card's code
+# did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: SET_FAMILY_SETTINGS
+  why: >
+    The same dialog, Family Category and Parameters, and the same family
+    being edited. SET_FAMILY_SETTINGS since its version 4 takes
+    "Category=<name>" as one more setting, with this card's code whole: the
+    name matched to the names Revit shows, in its language, and never
+    guessed - close names offered, two matches refused, a project refused as
+    notAFamily naming OPEN_FAMILY_FOR_EDITING and File, New, Family, a Revit
+    refusal thrown with its words and nothing kept - read back as `category`,
+    with `wasCategory` and `parametersGained`. In a combined call the
+    category is written FIRST, because Part Type, the OmniClass Number and
+    which switches the family has are checked against it. Where the two
+    differed the stricter rule was kept: a category Revit did not keep, which
+    this card reported as refused, fails the call and is rolled back; a
+    category already as asked is counted in `alreadySet` rather than refused,
+    nothing written either way. Nothing of this card was left out.
 
 purpose: >
   Changes the CATEGORY of the family open in the Family Editor - the Family

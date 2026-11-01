@@ -140,7 +140,7 @@ compatibility-note: >
   hosted on nothing, and cannot be re-hosted afterwards - reported from an
   earlier family build.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "make a box between these planes"          -> here
 #   "extrude the neck on top of the body"      -> here, the body's top as base

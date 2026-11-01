@@ -168,7 +168,7 @@ compatibility-note: >
   `PlanarFace.FaceNormal` and `FamilyInstance.GetReferenceName` - every one
   in the reference assemblies 2020 through 2027, read 2026-10-08.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "array the blade along X with Blade Count"    -> here
 #   "repeat this fin along the width"             -> here

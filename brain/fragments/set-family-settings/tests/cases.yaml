@@ -65,7 +65,8 @@ positive:
   # VERSION 3 - Light Source.
   - given: >
       a Generic Model family switched to Lighting Fixtures with
-      SET_FAMILY_CATEGORY, Light Source not ticked; settings "Light Source=yes"
+      "Category=Lighting Fixtures" (SET_FAMILY_CATEGORY when this case was
+      written), Light Source not ticked; settings "Light Source=yes"
     expect: >
       changed 1; settingReport "Light Source No -> Yes"; the finding that
       Revit's lighting API finds the light source; Family Category and
@@ -76,6 +77,38 @@ positive:
 
   - given: the same call again
     expect: changed 0, alreadySet 1, the light-source finding
+
+  # VERSION 4 (2026-11-01) - the category, from SET_FAMILY_CATEGORY. Each of
+  # these FAILS on version 3, which refuses "Category" as not one of the
+  # settings it sets.
+  - given: >
+      a new family started from the metric Generic Model template and open in
+      front; settings "Category=Air Terminals"
+    expect: >
+      changed 1, wasCategory "Generic Models", category "Air Terminals" -
+      LOOKED AT in Revit's own Family Category and Parameters dialog, not read
+      off the report - and parametersGained above zero, matching the new flow
+      fields that appear in Family Types; settingReport opening "Category
+      Generic Models -> Air Terminals"
+
+  - given: the same family, run again with "Category=Air Terminals"
+    expect: >
+      changed 0, alreadySet 1, category "Air Terminals", and the finding that
+      it was already there. Nothing in the undo list but the one entry the
+      call makes
+
+  - given: >
+      a Generic Model family; settings "Work Plane-Based=yes; Category=Lighting
+      Fixtures; Light Source=yes" - the category named LAST
+    expect: >
+      changed 3 and the category written FIRST: settingReport opens with
+      Category, and Light Source is accepted - on version 3, and with the
+      category checked last, Light Source is refused because a Generic Model
+      has no such setting
+
+  - given: a Pipe Fittings template's family in Generic Models; settings "Category=Pipe Fittings; Part Type=Elbow"
+    expect: >
+      changed 2, Part Type checked against Pipe Fittings and read back Elbow
 
 negative:
   - given: settings "Work Plane-Based=maybe"
@@ -134,9 +167,39 @@ negative:
   - given: a Generic Model family (not Lighting Fixtures); settings "Light Source=yes"
     expect: >
       refused - the category has no Light Source setting Revit hands the API,
-      naming SET_FAMILY_CATEGORY - nothing changed
+      naming "Category=Lighting Fixtures" (SET_FAMILY_CATEGORY before version
+      4) - nothing changed
+
+  # VERSION 4 (2026-11-01) - SET_FAMILY_CATEGORY's negatives, carried.
+  - given: the Generic Model family; settings "Category=Air Terminal" (singular)
+    expect: >
+      refused, nothing changed, and "Air Terminals" offered as a close name.
+      NOT the nearest category quietly taken - that is the guess this refuses
+
+  - given: a PROJECT in front; settings "Category=Air Terminals"
+    expect: >
+      notAFamily true, refused naming OPEN_FAMILY_FOR_EDITING and File, New,
+      Family, and the project's categories untouched
+
+  - given: settings "Category=Walls" on a loadable family
+    expect: >
+      the call FAILS with Revit's own words and NOTHING kept - the family's
+      category still reads what it was before, checked in the dialog
+
+  - given: a Generic Model family; settings "Category=Pipe Fittings; Part Type=Sprocket"
+    expect: >
+      the call FAILS - the category was written first and then Part Type
+      refused - and NOTHING is kept: the family still reads Generic Models in
+      the dialog. A refusal there would have kept the category alone
+
+  - given: settings "Category=" (no name)
+    expect: refused - no category named, never guessed - nothing changed
 
 second_route:
+  - >
+      version 4: Create, Family Category and Parameters in the Family Editor,
+      the category read there and compared with `category` -
+      SET_FAMILY_CATEGORY's second route, carried here
   - >
       Family Category and Parameters in the Family Editor: the Work Plane-Based,
       Shared and Always Vertical boxes read as the answer says

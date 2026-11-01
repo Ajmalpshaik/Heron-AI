@@ -124,7 +124,7 @@ needs:
   - SET_FAMILY_PLANE_REFERENCE
   # FAMILY-CREATION's and HOSTED-FAMILY-CREATION's steps, which this skill says
   # still hold.
-  - SET_FAMILY_CATEGORY
+  # SET_FAMILY_CATEGORY was listed here until 2026-11-01, when it was merged into SET_FAMILY_SETTINGS.
   - SET_FAMILY_SETTINGS
   - CREATE_FAMILY_FORMS
   # CREATE_FAMILY_REVOLUTION was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.

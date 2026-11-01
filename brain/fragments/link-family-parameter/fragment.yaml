@@ -260,7 +260,7 @@ compatibility-note: >
 # carried: LINK_FAMILY_FORM_PARAMETER's refusal of a form's Material, which
 # existed only because another tool owned it; this is that tool now.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "link the connector flow to a family parameter"  -> here
 #   "unlink the solid's material"                    -> here, Material=none

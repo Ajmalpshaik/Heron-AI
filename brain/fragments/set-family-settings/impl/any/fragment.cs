@@ -1,8 +1,30 @@
 // NOT STANDALONE. Assumes `doc` and `settings` are in scope; leaves
-// `settingReport`, `changed`, `alreadySet`, `notAFamily`, `refused` and
-// `findings` behind.
+// `settingReport`, `changed`, `alreadySet`, `notAFamily`, `refused`,
+// `category`, `wasCategory`, `parametersGained` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
+//
+// VERSION 4 (2026-11-01): THE CATEGORY IS ONE MORE SETTING - "Category=Air
+// Terminals". SET_FAMILY_CATEGORY (set-family-category) was merged into this
+// card on the owner's instruction and is DEPRECATED; its code is carried here
+// whole. The name is matched to the names Revit shows in Family Category and
+// Parameters, in the language this Revit runs in, and never guessed: a name
+// that matches nothing is refused with the close ones listed, one that names
+// two categories is refused, and a Revit refusal - a system category such as
+// Walls, a model family made an annotation one - THROWS with Revit's words, so
+// the host rolls the whole call back. A Revit exception caught inside a
+// transaction can leave it marked failed while every write after it appears
+// to succeed; five writes once "succeeded" that way and none was kept.
+//
+// IT IS WRITTEN FIRST, BEFORE ANY OTHER SETTING IS EVEN CHECKED, because the
+// rest are the category's: which switches the family has, which Part Types it
+// takes and which OmniClass codes are filed under it all follow it. So once
+// the category has been written, a problem found with any other setting
+// THROWS rather than refusing - a refusal would keep the category change -
+// and nothing is kept. Before the write, a problem refuses as always. The
+// category is read back from the family afterwards, with how many parameters
+// the switch brought or took away (`parametersGained`), because that is the
+// part people do not expect.
 //
 // THE FAMILY'S OWN SETTINGS - the switches in Family Category and Parameters:
 // Work Plane-Based (placed on any plane or face, and moving with it - the way a
@@ -63,6 +85,23 @@ string refused = null;
 
 Func<string, string> squash = text =>
     new string((text ?? "").ToLowerInvariant().Where(c => char.IsLetterOrDigit(c)).ToArray());
+
+// VERSION 4: THE CATEGORY - what the family is, read on every path that has a
+// family, a refusal included, so `category` never reads empty beside a family
+// that has one.
+var category = "";
+var wasCategory = "";
+var parametersGained = 0;
+var catKeys = new[] { "category", "familycategory" };
+var catAsked = false;
+var catAlready = false;
+var catWritten = false;
+Category catTarget = null;
+if (doc.IsFamilyDocument && doc.OwnerFamily != null && doc.OwnerFamily.FamilyCategory != null)
+{
+    wasCategory = doc.OwnerFamily.FamilyCategory.Name;
+    category = wasCategory;
+}
 
 // THE SWITCHES: the key they are named by, the words Family Category and
 // Parameters shows, and Revit's id for each. In the order they are written.
@@ -314,8 +353,13 @@ if (!doc.IsFamilyDocument)
 {
     notAFamily = true;
     var namesClassification = settings != null && settings.Keys.Any(k => clsKeys.Contains(squash(k)));
+    var namesCategory = settings != null && settings.Keys.Any(k => catKeys.Contains(squash(k)));
     refused = "The document in front, \"" + doc.Title + "\", is a project, not a family open in the Family Editor. "
         + "A family's own settings are set inside it - open it for editing first (OPEN_FAMILY_FOR_EDITING). "
+        + (namesCategory
+            ? "A project has no family category to change: open the family first - OPEN_FAMILY_FOR_EDITING for one "
+              + "loaded in the project, or File, New, Family for a new one. "
+            : "")
         + (namesClassification
             ? "The " + clsCodeLabel + " belongs to the family too: set it there, then load the family back into this "
               + "project with LOAD_FAMILY - a family reload, which needs the modeller's word for that operation "
@@ -328,7 +372,101 @@ else
     family = doc.OwnerFamily;
     if (family == null) problems.Add("This family document has no Family element to hold its settings.");
 
-    var offered = string.Join(", ", switches.Select(s => s.Item2)) + ", " + clsCodeLabel;
+    // -----------------------------------------------------------------------
+    // VERSION 4: THE CATEGORY, MATCHED AND WRITTEN FIRST - from
+    // SET_FAMILY_CATEGORY. The header says why it is first, and why a problem
+    // found after it is written throws.
+    // -----------------------------------------------------------------------
+    if (family != null && settings != null)
+    {
+        var catSaid = "";
+        foreach (var pair in settings)
+        {
+            if (!catKeys.Contains(squash(pair.Key))) continue;
+            if (catAsked)
+            {
+                problems.Add("\"Category\" is named twice - say it once.");
+                continue;
+            }
+            catAsked = true;
+            catSaid = (pair.Value ?? "").Trim();
+        }
+        if (catAsked && catSaid.Length == 0)
+            problems.Add("No category was named. It is matched to the names in Revit's Family Category and "
+                + "Parameters dialog - \"Air Terminals\", \"Mechanical Equipment\" - and is never guessed.");
+        else if (catAsked)
+        {
+            // The document's own category list, in the language Revit runs in.
+            var catMatches = new List<Category>();
+            var catNames = new List<string>();
+            foreach (Category catCandidate in doc.Settings.Categories)
+            {
+                if (catCandidate == null) continue;
+                catNames.Add(catCandidate.Name);
+                if (string.Equals(catCandidate.Name, catSaid, StringComparison.OrdinalIgnoreCase))
+                    catMatches.Add(catCandidate);
+            }
+            if (catMatches.Count == 0)
+            {
+                // CLOSE NAMES, OFFERED AND NOT TAKEN. "Air Terminal" beside
+                // "Air Terminals" is the usual miss; choosing it would be a guess.
+                var catLowered = catSaid.ToLowerInvariant();
+                var catNear = catNames
+                    .Where(n => n.ToLowerInvariant().Contains(catLowered) || catLowered.Contains(n.ToLowerInvariant()))
+                    .Distinct()
+                    .OrderBy(n => n)
+                    .Take(8)
+                    .ToList();
+                problems.Add("No category called \"" + catSaid + "\" exists in this Revit."
+                    + (catNear.Count > 0
+                        ? " Close names: " + string.Join(", ", catNear) + "."
+                        : " The name has to be one from the Family Category and Parameters dialog."));
+            }
+            else if (catMatches.Count > 1)
+                problems.Add("\"" + catSaid + "\" names " + catMatches.Count + " categories in this Revit, so none "
+                    + "of them is picked.");
+            else
+                catTarget = catMatches[0];
+        }
+
+        if (catTarget != null && problems.Count == 0)
+        {
+            if (family.FamilyCategory != null && family.FamilyCategory.Id == catTarget.Id)
+                catAlready = true;
+            else
+            {
+                var catBefore = doc.FamilyManager.Parameters.Size;
+                try
+                {
+                    family.FamilyCategory = catTarget;
+                }
+                catch (Exception ex)
+                {
+                    // THROWN, NOT REPORTED - see the header. Revit's words are
+                    // the useful part: which categories a family may take is its rule.
+                    throw new InvalidOperationException("Revit would not put this family in \""
+                        + catTarget.Name + "\": " + ex.Message + " A loadable family cannot take a "
+                        + "system category such as Walls, and a model family cannot become an "
+                        + "annotation one. Nothing was kept.");
+                }
+                doc.Regenerate();
+
+                // READ BACK. The family's category afterwards is the answer,
+                // not the assignment having returned.
+                family = doc.OwnerFamily;
+                var catNow = family.FamilyCategory;
+                category = catNow == null ? "" : catNow.Name;
+                if (catNow == null || catNow.Id != catTarget.Id)
+                    throw new InvalidOperationException("The category was set to \"" + catTarget.Name + "\" and the "
+                        + "family reads \"" + category + "\" afterwards. Revit did not keep the change. The call failed, "
+                        + "and Heron rolls the whole call back.");
+                parametersGained = doc.FamilyManager.Parameters.Size - catBefore;
+                catWritten = true;
+            }
+        }
+    }
+
+    var offered = "Category, " + string.Join(", ", switches.Select(s => s.Item2)) + ", " + clsCodeLabel;
     if (settings == null || settings.Count == 0)
         problems.Add("No settings were given - \"Work Plane-Based=yes; Shared=yes\", semicolons between, from "
             + offered + ".");
@@ -336,6 +474,8 @@ else
         foreach (var pair in settings)
         {
             var key = squash(pair.Key);
+            // VERSION 4: the category was taken aside, and written, above.
+            if (catKeys.Contains(key)) continue;
             // THE ONE TEXT SETTING, taken aside before the yes-or-no switches -
             // none of whose rules (an Integer, yes or no, a name from an enum)
             // applies to it.
@@ -393,7 +533,8 @@ else
                     : family.FamilyCategory.Name) + ", has no " + match.Item2 + " setting"
                     + (match.Item1 == "lightsource"
                         ? " that Revit hands the API (LIGHTING_FIXTURE_LIGHT_EMITTER) - a light source belongs to a "
-                          + "Lighting Fixtures family (SET_FAMILY_CATEGORY first); if it already is one, tick Light Source "
+                          + "Lighting Fixtures family (\"Category=Lighting Fixtures\" first, in this call or before it); "
+                          + "if it already is one, tick Light Source "
                           + "by hand in Family Category and Parameters"
                         : "") + ".");
                 continue;
@@ -445,6 +586,12 @@ else
         }
     }
 
+    // VERSION 4: AFTER THE CATEGORY IS WRITTEN, A PROBLEM THROWS - a refusal
+    // here would keep the category change and none of the rest.
+    if (problems.Count > 0 && catWritten)
+        throw new InvalidOperationException("The category was changed to \"" + category + "\" first, because the "
+            + "other settings are checked against it - and then: " + string.Join(" ", problems) + " The call failed, "
+            + "and Heron rolls the whole call back, the category included. Nothing was kept.");
     if (problems.Count > 0) refused = "Nothing was changed. " + string.Join(" ", problems);
 }
 
@@ -456,6 +603,30 @@ if (refused == null)
 {
     var before = switches.Select(s => Tuple.Create(s, stored(family.get_Parameter(s.Item3)))).ToList();
     var rows = new List<string>();
+
+    // VERSION 4: THE CATEGORY, already written and read back above - reported
+    // first, as it was done first, in SET_FAMILY_CATEGORY's words.
+    if (catWritten)
+    {
+        changed++;
+        rows.Add("Category " + (wasCategory.Length == 0 ? "(no category)" : wasCategory) + " -> " + category
+            + " (" + (parametersGained >= 0 ? "+" : "") + parametersGained + " parameter(s))");
+        findings.Add("The family was \"" + (wasCategory.Length == 0 ? "(no category)" : wasCategory)
+            + "\" and is now \"" + category + "\", read back from the family.");
+        if (parametersGained > 0)
+            findings.Add("The switch added " + parametersGained + " parameter(s) of the new "
+                + "category's own - its built-in fields, such as flow on an air terminal.");
+        else if (parametersGained < 0)
+            findings.Add("The family has " + (-parametersGained) + " FEWER parameter(s) "
+                + "than before: the old category's own built-in fields went with it.");
+        else
+            findings.Add("The parameter count did not change.");
+    }
+    else if (catAlready)
+    {
+        alreadySet++;
+        findings.Add("The family is already in \"" + catTarget.Name + "\", so the category was not written.");
+    }
 
     foreach (var plan in plans.OrderBy(p => switches.IndexOf(p.Item1)))
     {
@@ -607,5 +778,10 @@ if (refused == null)
         findings.Add("Part Type decides how an MEP fitting or accessory behaves and which routing preference "
             + "group offers it; a fitting's connectors must match it - an elbow two, a tee three.");
 }
+
+// VERSION 4: the category the family has AFTER, read back on every path that
+// has a family - never the name that was asked for.
+if (doc.IsFamilyDocument && doc.OwnerFamily != null)
+    category = doc.OwnerFamily.FamilyCategory == null ? "" : doc.OwnerFamily.FamilyCategory.Name;
 
 if (refused != null) findings.Add(refused);

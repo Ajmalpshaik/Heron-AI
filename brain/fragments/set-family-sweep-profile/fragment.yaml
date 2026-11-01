@@ -110,7 +110,7 @@ compatibility-note: >
   Profile of a sweep made with a SKETCHED profile be set this way is
   NEEDS-CHECKING BV13; a read-only Profile is refused by name.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "use the handrail profile family for this sweep" -> here
 #   "sweep a profile along a path"                -> CREATE_FAMILY_FORMS, a

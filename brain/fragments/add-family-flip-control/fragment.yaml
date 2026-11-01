@@ -111,7 +111,7 @@ compatibility-note: >
   `ControlShape` values and `Control.Shape`, `Origin` and `View` read the same
   2020 through 2027 (the RevitAPI reference assemblies, read 2026-10-01).
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "add flip arrows to this family"              -> here
 #   "the door opens the wrong way"                -> FLIP_ELEMENTS - placed

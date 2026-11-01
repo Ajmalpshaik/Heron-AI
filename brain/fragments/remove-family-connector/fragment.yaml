@@ -135,7 +135,7 @@ compatibility-note: >
   SET_FAMILY_CONNECTOR_ROLES and REPORT_FAMILY_CONNECTORS already read across
   the range; CONNECTOR_RADIUS is the one CHECK_FAMILY_STANDARDS reads.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "delete the pipe connector from this family" -> here
 #   "remove the connector on Air Outlet"         -> here

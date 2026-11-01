@@ -56,10 +56,11 @@ purpose: >
      manufacturer's table. Every size and every parameter name comes from
      the modeller for THIS request.
 
-  3. CATEGORY AND PART TYPE. SET_FAMILY_CATEGORY to Pipe Fittings or Duct
-     Fittings when starting from a Generic Model, then SET_FAMILY_SETTINGS
-     "Part Type=<kind>". PART TYPE DECIDES WHICH ROUTING PREFERENCE GROUP
-     OFFERS THE FITTING; a wrong one and the family is missing from that
+  3. CATEGORY AND PART TYPE. SET_FAMILY_SETTINGS "Category=Pipe Fittings"
+     or Duct Fittings when starting from a Generic Model, and "Part
+     Type=<kind>" - one call does both, the category written first because
+     the Part Type is checked against it. PART TYPE DECIDES WHICH ROUTING
+     PREFERENCE GROUP OFFERS THE FITTING; a wrong one and the family is missing from that
      group's list with no error. Pipe fittings take Spud where duct fittings
      take Tap. CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
      classificationCodes line - run it again after the category changed - and
@@ -298,7 +299,7 @@ needs:
   # Step 0's units check, as FAMILY-CREATION's.
   - REPORT_PROJECT_UNITS
   - SET_PROJECT_UNITS
-  - SET_FAMILY_CATEGORY
+  # SET_FAMILY_CATEGORY was listed here until 2026-11-01, when it was merged into SET_FAMILY_SETTINGS.
   - SET_FAMILY_SETTINGS
   - ADD_FAMILY_PARAMETERS
   - SET_FAMILY_TYPE_VALUES

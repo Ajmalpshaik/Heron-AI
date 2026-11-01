@@ -134,7 +134,7 @@ compatibility-note: >
   symbolic line takes is not in the remarks; both are tried and the setting
   read back (NEEDS-CHECKING BQ2).
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "draw the valve symbol in plan"               -> here
 #   "draw a circle and a cross as the plan symbol" -> here

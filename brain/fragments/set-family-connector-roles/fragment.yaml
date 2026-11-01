@@ -262,7 +262,7 @@ compatibility-note: >
   Utility, and whether a pipe connector's Allow Slope Adjustments box is the
   element's own parameter, is what Group IR measures; not yet run in Revit.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "set the primary connector of this family"   -> here
 #   "set the valve connectors to Global"         -> here

@@ -152,7 +152,7 @@ compatibility-note: >
   `NewRevolveForms(bool, ReferenceArray, Reference, double, double)`, whose
   remark says some arguments make several forms from one profile - BV22.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "make a surface from these lines"             -> here
 #   "extrude the adaptive panel outline 50 mm"    -> here, in an adaptive or

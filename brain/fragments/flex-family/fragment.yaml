@@ -130,7 +130,7 @@ compatibility-note: >
   `Group.GetMemberIds`, present in every reference assembly 2020 through
   2027 (read 2026-10-08).
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "flex the family"                         -> here
 #   "try it at 900 wide and put it back"      -> here
