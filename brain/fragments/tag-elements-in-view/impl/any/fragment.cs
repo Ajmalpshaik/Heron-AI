@@ -1,6 +1,35 @@
-// NOT STANDALONE. Assumes `doc`, `elements`, `view` and `tagTypeHintId` are in
-// scope, and leaves `tagged`, `alreadyTagged`, `typeCorrections`,
+// NOT STANDALONE. Assumes `doc`, `elements`, `view`, `tagTypeHintId`,
+// `tagTypeId`, `leader`, `minLengthMm` and `leaderOffsetMm` are in scope, and
+// leaves `tagged`, `alreadyTagged`, `skipped`, `typeCorrections`,
 // `notTagged`, `notTaggedWhy` and `tagTypesUsed` behind.
+//
+// VERSION 6 (2026-11-01) - TAG_ELEMENTS MERGED IN, on the owner's
+// instruction. What it had that this lacked:
+//
+//   AN EXACT TAG TYPE - `tagTypeId`. Given, that one type is used on EVERY
+//   element whatever its category - a Multi-Category tag on a mixed set, or
+//   one family chosen by hand - with no category map, no project default and
+//   no hint. Revit says nothing when a tag of the wrong category is placed:
+//   it places and prints blank, so the caller who names an exact type owns
+//   that choice, as they did on TAG_ELEMENTS. Left out (none), version 5's
+//   three routes choose per category exactly as before.
+//
+//   ALREADY TAGGED, TYPE-AWARE, with an exact type: an element is skipped
+//   only when it already carries a tag OF THAT TYPE in this view. So "tag the
+//   ducts again using this tag family" puts the new family on ducts that carry
+//   another, and a re-run of the same type stacks nothing. Without an exact
+//   type, ANY tag in the view still counts, as in version 5 - the safer rule,
+//   because the type is this fragment's choice there, not the caller's.
+//   TAG_ELEMENTS took the list of tagged ids as an input; this reads the
+//   view's tags itself, so the list cannot be stale.
+//
+//   `skipped`, the ids of the elements left alone as already tagged, beside
+//   the `alreadyTagged` count.
+//
+// KEPT FROM VERSION 5, THE SAFER RULE IN EACH CASE: a room, area or space is
+// refused to TAG_ROOMS in both modes; a riser is skipped in both; a HINT of
+// the wrong category is set aside for the category's default, and
+// `tagTypesUsed` says so.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16), so a whole view is one undo.
 //
@@ -30,6 +59,7 @@
 
 int tagged = 0;
 int alreadyTagged = 0;
+var skipped = new List<ElementId>();
 int typeCorrections = 0;
 int leadersDrawn = 0;
 var verticalSkipped = new List<ElementId>();
@@ -196,17 +226,51 @@ Func<Element, XYZ> ownPoint = element =>
 // deprecated after. Either one alone is wrong across half this range, so the
 // split is written out - the only place in this fragment where the release
 // matters.
+//
+// AND WHICH TYPE EACH TAG IS (version 6), so an exact type can be judged
+// against tags of that type alone.
 var alreadyHasTag = new HashSet<ElementId>();
+var tagTypesOn = new Dictionary<ElementId, HashSet<ElementId>>();
+Action<ElementId, ElementId> heldTag = (hostId, typeId) =>
+{
+    if (hostId == null) return;
+    alreadyHasTag.Add(hostId);
+    HashSet<ElementId> types;
+    if (!tagTypesOn.TryGetValue(hostId, out types))
+    {
+        types = new HashSet<ElementId>();
+        tagTypesOn[hostId] = types;
+    }
+    if (typeId != null) types.Add(typeId);
+};
 foreach (var existing in new FilteredElementCollector(doc, view.Id)
                              .OfClass(typeof(IndependentTag))
                              .Cast<IndependentTag>())
 {
+    var existingType = existing.GetTypeId();
 #if REVIT2020 || REVIT2021
-    alreadyHasTag.Add(existing.TaggedLocalElementId);
+    heldTag(existing.TaggedLocalElementId, existingType);
 #else
     foreach (var hostId in existing.GetTaggedLocalElementIds())
-        alreadyHasTag.Add(hostId);
+        heldTag(hostId, existingType);
 #endif
+}
+
+// THE EXACT TYPE (version 6, from TAG_ELEMENTS). `none` binds
+// InvalidElementId, which is version 5's behaviour. A type given that is not
+// an annotation family type - a door type typed by mistake - is refused for
+// every element, never placed as if it were a tag.
+FamilySymbol exactType = null;
+string exactProblem = null;
+if (tagTypeId != null && tagTypeId != ElementId.InvalidElementId)
+{
+    exactType = doc.GetElement(tagTypeId) as FamilySymbol;
+    if (exactType == null || exactType.Category == null
+        || exactType.Category.CategoryType != CategoryType.Annotation)
+    {
+        exactType = null;
+        exactProblem = "the tag type given is not a tag family type - nothing was tagged with it";
+    }
 }
 
 // Resolved once per tag category, not once per element - and WHICH of the
@@ -223,9 +287,23 @@ foreach (var element in elements)
         continue;
     }
 
-    if (alreadyHasTag.Contains(element.Id))
+    if (exactProblem != null)
+    {
+        notTagged.Add(element.Id);
+        because(exactProblem);
+        continue;
+    }
+
+    // ALREADY TAGGED. With an exact type, only a tag OF THAT TYPE counts
+    // (version 6); without one, any tag in this view does, as in version 5.
+    HashSet<ElementId> typesHere;
+    var hasOne = exactType != null
+        ? tagTypesOn.TryGetValue(element.Id, out typesHere) && typesHere.Contains(exactType.Id)
+        : alreadyHasTag.Contains(element.Id);
+    if (hasOne)
     {
         alreadyTagged++;
+        skipped.Add(element.Id);
         continue;
     }
 
@@ -304,7 +382,24 @@ foreach (var element in elements)
             break;
         }
     }
-    if (!known)
+
+    // A ROOM, AREA OR SPACE IS TAG_ROOMS' IN BOTH MODES. With an exact type
+    // too: an independent tag is not a room tag, whatever family is named.
+    if (exactType != null && element is SpatialElement)
+    {
+        notTagged.Add(element.Id);
+        because(element.Category.Name + ": a room, area or space takes its own kind of "
+              + "tag - TAG_ROOMS places room tags");
+        continue;
+    }
+
+    if (exactType != null)
+    {
+        // THE CALLER'S EXACT TYPE, on whatever category this is.
+        known = true;
+        tagCategory = BuiltInCategory.INVALID;
+    }
+    else if (!known)
     {
         // NOT ON THE MEP MAP: a room, area or space is TAG_ROOMS' job, and
         // anything else takes the tag category Revit's names give it.
@@ -327,32 +422,47 @@ foreach (var element in elements)
         }
     }
 
-    ElementId tagTypeId;
-    if (!typeForCategory.TryGetValue(tagCategory, out tagTypeId))
+    ElementId chosenTypeId;
+    if (exactType != null)
     {
-        tagTypeId = ElementId.InvalidElementId;
+        chosenTypeId = exactType.Id;
+        if (!typeForCategory.ContainsKey(BuiltInCategory.INVALID))
+        {
+            typeForCategory[BuiltInCategory.INVALID] = exactType.Id;
+            routeFor[BuiltInCategory.INVALID] = "the caller's exact type, on every category";
+        }
+    }
+    else if (!typeForCategory.TryGetValue(tagCategory, out chosenTypeId))
+    {
+        chosenTypeId = ElementId.InvalidElementId;
 
         // 1. the caller's hint, if it really is a tag type for this category
+        var hintSetAside = false;
         if (tagTypeHintId != null && tagTypeHintId != ElementId.InvalidElementId)
         {
             var hinted = doc.GetElement(tagTypeHintId) as FamilySymbol;
             if (hinted != null && hinted.Category != null
                 && hinted.Category.Id == new ElementId(tagCategory))
-                tagTypeId = hinted.Id;
+                chosenTypeId = hinted.Id;
+            else hintSetAside = true;
         }
         string route = "the caller's hint";
 
-        // 2. the PROJECT'S OWN DEFAULT - what "Tag by Category" would use
-        if (tagTypeId == ElementId.InvalidElementId)
+        // 2. the PROJECT'S OWN DEFAULT - what "Tag by Category" would use.
+        // A hint of another category is SET ASIDE AND SAID (version 6): a
+        // duct tag named for doors would print blank on every door.
+        if (chosenTypeId == ElementId.InvalidElementId)
         {
-            route = "the project's default";
+            route = hintSetAside
+                ? "the project's default - the hint given is not a tag for this category"
+                : "the project's default";
             var category = Category.GetCategory(doc, tagCategory);
             if (category != null)
-                tagTypeId = doc.GetDefaultFamilyTypeId(category.Id);
+                chosenTypeId = doc.GetDefaultFamilyTypeId(category.Id);
         }
 
         // 3. last resort, the first one loaded - a guess, and the weakest route
-        if (tagTypeId == ElementId.InvalidElementId)
+        if (chosenTypeId == ElementId.InvalidElementId)
         {
             route = "the first one loaded - a guess";
             foreach (var symbol in new FilteredElementCollector(doc)
@@ -360,16 +470,16 @@ foreach (var element in elements)
                                        .OfCategory(tagCategory)
                                        .Cast<FamilySymbol>())
             {
-                tagTypeId = symbol.Id;
+                chosenTypeId = symbol.Id;
                 break;
             }
         }
 
-        typeForCategory[tagCategory] = tagTypeId;
-        routeFor[tagCategory] = tagTypeId == ElementId.InvalidElementId ? "none loaded" : route;
+        typeForCategory[tagCategory] = chosenTypeId;
+        routeFor[tagCategory] = chosenTypeId == ElementId.InvalidElementId ? "none loaded" : route;
     }
 
-    if (tagTypeId == ElementId.InvalidElementId)
+    if (chosenTypeId == ElementId.InvalidElementId)
     {
         // No tag family of this category is loaded at all. Nothing this
         // fragment can do, and saying so is the useful answer.
@@ -382,7 +492,7 @@ foreach (var element in elements)
 
     // A tag type must be activated before it can be placed, and an inactive
     // symbol fails in a way that reads like the element's fault.
-    var tagSymbol = doc.GetElement(tagTypeId) as FamilySymbol;
+    var tagSymbol = doc.GetElement(chosenTypeId) as FamilySymbol;
     if (tagSymbol != null && !tagSymbol.IsActive) tagSymbol.Activate();
 
     // WHERE THE HEAD GOES: AT THE ELEMENT, leader or not, on the MEP map or
@@ -436,7 +546,7 @@ foreach (var element in elements)
     try
     {
         made = IndependentTag.Create(
-            doc, tagTypeId, view.Id, new Reference(element),
+            doc, chosenTypeId, view.Id, new Reference(element),
             leaderHere, TagOrientation.Horizontal, headPoint);
     }
     catch (Exception refusal)
@@ -460,11 +570,11 @@ foreach (var element in elements)
     // THE READ-BACK THAT THIS FRAGMENT EXISTS FOR. Create was given a type id
     // and does not reliably use it. Check, correct, and COUNT the correction -
     // a silent fix would hide an API not doing what it was told.
-    if (made.GetTypeId() != tagTypeId)
+    if (made.GetTypeId() != chosenTypeId)
     {
         try
         {
-            made.ChangeTypeId(tagTypeId);
+            made.ChangeTypeId(chosenTypeId);
             typeCorrections++;
         }
         catch (Exception)
@@ -480,7 +590,7 @@ foreach (var element in elements)
     }
 
     tagged++;
-    alreadyHasTag.Add(element.Id);
+    heldTag(element.Id, chosenTypeId);
 }
 
 // THE TWO ANSWERS A PERSON CAN ACT ON. Why each untagged element is untagged,
@@ -493,8 +603,14 @@ foreach (var reason in whyCount.OrderByDescending(r => r.Value))
 var tagTypesUsed = new List<string>();
 foreach (var entry in typeForCategory)
 {
-    string tagCategoryShown = entry.Key.ToString();
-    try { tagCategoryShown = Category.GetCategory(doc, entry.Key).Name; } catch { }
+    // BuiltInCategory.INVALID is the exact type's own line (version 6): one
+    // type on every category, so no tag category names it.
+    string tagCategoryShown = entry.Key == BuiltInCategory.INVALID
+        ? "every category" : entry.Key.ToString();
+    if (entry.Key != BuiltInCategory.INVALID)
+    {
+        try { tagCategoryShown = Category.GetCategory(doc, entry.Key).Name; } catch { }
+    }
     var symbolUsed = entry.Value == ElementId.InvalidElementId
         ? null : doc.GetElement(entry.Value) as FamilySymbol;
     string routeTaken;

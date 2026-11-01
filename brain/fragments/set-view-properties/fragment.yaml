@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -26,7 +26,16 @@ capability: SET_VIEW_PROPERTIES
 # edges, a template's refusal in the note). Version 1's (2026-09-08, Snowdon,
 # fingerprint a49cc089d5151844) recorded a scale set and no visual style word
 # tried.
-version: 2
+#
+# Version 3 (2026-11-01): SET_VIEW_SCALE was merged into this card on the
+# owner's instruction, and is DEPRECATED. Its outputs came with it - each
+# view's old scale (`wasScale`), a view already at the scale asked neither
+# written nor counted as changed (`alreadyThatScale`; version 2 counted it),
+# the ids of the views that refused (`refused`) - and a view named twice is
+# handled once. Its read mode did not: reading a scale is READ_VIEW_SCALE's.
+# Version 2's proof below no longer describes the code and is kept as the
+# record; the card is DRAFT until it is proved again.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -53,6 +62,17 @@ purpose: >
   **Every value is read back after writing.** A view property that refuses can
   return without raising, and a count that assumed success would report twelve
   views set where nine were.
+
+  **Changing the view scale changes every tag and dimension on the drawing**
+  (version 3, from SET_VIEW_SCALE, merged into this card). Annotation is sized
+  in paper units, so a view taken from 1:100 to 1:50 keeps its geometry and
+  halves the apparent size of everything annotated on it. On a view already on
+  a sheet that is a visible change to an issued drawing, not a display setting.
+
+  **A view already at the scale asked is left alone and not counted as
+  changed** (version 3), and each view's old scale comes back, so a batch of
+  view scales can be put back by a caller that kept it. The ids of the views
+  that refused anything come back too, and a view named twice is handled once.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -92,6 +112,28 @@ contract:
       # Empty when no visual style was asked for. Evidence, never the count.
       role: accounting
       type: string
+    - name: wasScale
+      # Version 3, from SET_VIEW_SCALE. What each view's scale WAS before this
+      # ran, read before any write - so a caller that keeps it can put a batch
+      # back. Filled only when a scale was asked for. The evidence it looked,
+      # never a change it made (D-52).
+      role: accounting
+      type: IDictionary<ElementId, int>
+    - name: alreadyThatScale
+      # Version 3, from SET_VIEW_SCALE. Views ALREADY at the scale asked, so
+      # there was nothing to do: not written and not counted in `changed`.
+      # Version 2 wrote the same number back and counted the view. The
+      # evidence it looked, never a change it made (D-52).
+      role: accounting
+      type: int
+    - name: refused
+      # Version 3, from SET_VIEW_SCALE. The views that refused anything asked
+      # - a template, a property Revit would not take - each once; the
+      # sentences saying why are in `findings`. The evidence it looked and
+      # was told no, never a thing it FOUND, so it must not count toward "did
+      # this come back empty" (D-52).
+      role: accounting
+      type: IList<ElementId>
 
 proof:
   date: '2026-10-14'
@@ -138,8 +180,7 @@ compatibility-note: >
   permitted to directly assign the display style to this value" - measured
   2026-10-13.
 
-# ROUTING - repeated in APPLY_VIEW_TEMPLATE, SET_VIEW_SCALE and
-# REPORT_VIEW_TEMPLATE_CONTROL.
+# ROUTING - repeated in APPLY_VIEW_TEMPLATE and REPORT_VIEW_TEMPLATE_CONTROL.
 #
 #   "set these views to 1 to 100"    -> here
 #   "make these views fine detail"   -> here
@@ -147,8 +188,9 @@ compatibility-note: >
 #   "apply the template to these"    -> APPLY_VIEW_TEMPLATE, which sets
 #                                       everything the template holds at once
 #                                       and is the right answer when one exists
-#   "change the scale of this view"  -> SET_VIEW_SCALE for one property on one
-#                                       view; this is the batch across several
+#   "change the scale of this view"  -> here since version 3. SET_VIEW_SCALE,
+#                                       which answered it for one property, was
+#                                       merged into this card on 2026-11-01
 #   "why will it not change"         -> REPORT_VIEW_TEMPLATE_CONTROL. A view
 #                                       under a template refuses the properties
 #                                       that template controls, and that is the
@@ -156,9 +198,36 @@ compatibility-note: >
 #   "make this view look good"       -> APPLY_VISUAL_PRESET, a whole look in
 #                                       one call; this card is the style alone
 
+# VERSION 3 (2026-11-01) - SET_VIEW_SCALE WAS MERGED INTO THIS CARD on the
+# owner's instruction, and is DEPRECATED. Both set a view's scale across a
+# batch, refused a template and read the value back; this card also sets the
+# detail level and the visual style. What SET_VIEW_SCALE had that this lacked
+# is here now: `wasScale`, `alreadyThatScale`, `refused` by id, a view named
+# twice handled once. Its `apply` false READ mode did not come: "what scale is
+# this view" is a question, and READ_VIEW_SCALE answers it - by ranking, on
+# both backends; declaring it there took 8 of 10 scale change requests from
+# this card on the trained model, so it is declared nowhere (READ_VIEW_SCALE's
+# ROUTING says so). SET_VIEW_SCALE's routing rows now
+# read here: "set the scale" -> here, "the text is too small" -> here,
+# "why can I not change the scale on this view" -> REPORT_VIEW_TEMPLATE_CONTROL,
+# "let this view set its own scale" -> SET_VIEW_TEMPLATE_CONTROL, "what is the
+# scale of this view" -> READ_VIEW_SCALE.
+#
+# SCALE IS OFTEN OWNED BY THE TEMPLATE, as SET_VIEW_SCALE said: a refusal on a
+# batch is almost always why, and the fix is in the template, not the view.
+# CHANGING SCALE CHANGES EVERY TAG AND DIMENSION'S SIZE on the paper -
+# annotation is sized in paper units - so on a view already on an issued sheet
+# it is a visible change to the drawing, not a display setting.
+
 utterances:
   - set these views to 1 to 100
   - make these views fine detail
   - put these views on shaded
   - set the scale and detail on these
   - change the visual style of these views
+  # MOVED 2026-11-01 from SET_VIEW_SCALE, merged into this card.
+  - set the scale of this view
+  - change these to 1 to 50
+  - the text is too small on this drawing
+  - make all these views the same scale
+  - the text is too small

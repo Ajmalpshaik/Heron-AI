@@ -20,7 +20,65 @@ positive:
       on the view with red lines - the operator read off the front of the
       value (version 3)
 
+  - given: >
+      VERSION 4. filterName "Supply Air, Return Air, Exhaust Air", categoryIds
+      "Air Terminals, Ducts, Flex Ducts, Duct Fittings, Duct Accessories",
+      parameterName "System Classification", matchValue "Supply Air, Return
+      Air, Exhaust Air", NO view and NO colour, in a project with none of
+      those filters
+    expect: >
+      three filters created, on no view - createdIds three, `created` the
+      first. readBack names each with the five categories as Revit holds them,
+      the rule "System Classification equals '<value>'", and "on no view". The
+      count each catches today is the model's own - an exhaust filter in a
+      model with no exhaust ductwork catches 0 and is still created. Version 3
+      takes one name and refuses a missing view, so this FAILS on it
+      (CREATE_VIEW_FILTERS_BY_RULE's case)
+
+  - given: VERSION 4. the same call again, straight after
+    expect: >
+      nothing created, alreadyExists naming all three, and refused saying they
+      were left as they were. Never an overwrite and never a second copy
+
+  - given: >
+      VERSION 4. two names, one of them already a SELECTION filter in the
+      project
+    expect: >
+      the other made, the taken one in alreadyExists. Version 3 scanned rule
+      filters only, so Revit threw on the duplicate - this FAILS on it
+
+  - given: VERSION 4. categoryIds "OST_DuctCurves" instead of "Ducts"
+    expect: the same filter as "Ducts" gives - Revit's own name is taken too. Version 3 refused it
+
+  - given: 'VERSION 4. categories Levels, matchValue "does not contain Level 1", no view'
+    expect: >
+      readBack says "rule Name does not contain 'Level 1'" - the
+      FilterInverseRule Revit holds is unwrapped - and catches the levels not
+      called Level 1
+
 negative:
+  - given: >
+      VERSION 4. "Air Terminals, Ducts, Walls" with System Classification
+    expect: >
+      NOTHING created, and cannotFilter names Walls - it cannot be filtered by
+      System Classification - while the two good categories are not named.
+      Version 3 said only that no shared parameter has the name, so this FAILS
+      on it
+
+  - given: VERSION 4. three names and two values
+    expect: refused before Revit is asked anything - each filter needs exactly one value, in order
+
+  - given: VERSION 4. a filter name holding a colon, or the same name twice
+    expect: refused by name before anything is created
+
+  - given: VERSION 4. a view given and no colour, or a colour and no view
+    expect: >
+      refused before anything is made - a filter put on a view here is
+      coloured in the same call, and a colour with no view has nowhere to go
+
+  - given: VERSION 4. two names and a moreRules value
+    expect: refused - moreRules makes ONE filter with several rules, and is not shared out
+
   - given: a filter name already in the project
     expect: >
       refused before anything is touched. Filters are project-wide, so another

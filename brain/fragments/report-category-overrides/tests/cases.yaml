@@ -9,8 +9,9 @@ positive:
     expect: the pattern named, not just "overridden"
 
   - given: >
-      a cuttable category after SET_CATEGORY_SOLID_FILL - a solid fill stamped
-      on its surface AND its cut, and a colour on each
+      a cuttable category after SET_CATEGORY_GRAPHICS with solidFill true
+      (SET_CATEGORY_SOLID_FILL until 2026-11-01) - a solid fill stamped on its
+      surface AND its cut, and a colour on each
     expect: >
       both patterns named and both colours given, in `overrideList`. Read the
       string, not `findings`: a list entry is cut at sixty characters, and the

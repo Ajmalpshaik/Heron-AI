@@ -140,12 +140,14 @@ compatibility-note: >
 #                                           overrides, right for looking at
 #                                           something NOW. An element drawn
 #                                           tomorrow gets nothing
-#   "make a filter for supply air"       -> CREATE_VIEW_FILTER - ONE rule, one
-#                                           filter, when the value is known
-#   "make filters for supply return and  -> CREATE_VIEW_FILTERS_BY_RULE - the
-#    exhaust air"                           values and categories are TYPED,
-#                                           not read off the model, and the
-#                                           filters go on no view
+#   "make a filter for supply air"       -> CREATE_VIEW_FILTER - the value is
+#                                           known
+#   "make filters for supply return and  -> CREATE_VIEW_FILTER (version 4,
+#    exhaust air"                           which CREATE_VIEW_FILTERS_BY_RULE
+#                                           was merged into) - the values and
+#                                           categories are TYPED, not read off
+#                                           the model, and with no view given
+#                                           the filters go on no view
 #   "put that filter on this view"       -> APPLY_VIEW_FILTER
 
 utterances:

@@ -138,8 +138,8 @@ compatibility-note: >
 #   "change the title block"             -> SET_SHEET_TITLE_BLOCK. This
 #                                           fragment only MOVES a title block,
 #                                           and only when asked to
-#   "the views are at different scales"  -> SET_VIEW_SCALE, which is what makes
-#                                           an alignment possible at all
+#   "the views are at different scales"  -> SET_VIEW_PROPERTIES, which is what
+#                                           makes an alignment possible at all
 
 utterances:
   - the plan jumps when i flick through the sheets

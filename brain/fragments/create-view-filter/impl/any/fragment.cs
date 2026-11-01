@@ -1,6 +1,51 @@
 // NOT STANDALONE. Assumes `doc`, `view`, `filterName`, `categoryIds`,
 // `parameterName`, `matchValue`, `moreRules`, `combine` and `colour` are in
-// scope; leaves `created` and `refused` behind.
+// scope; leaves `created`, `createdIds`, `readBack`, `alreadyExists`,
+// `cannotFilter` and `refused` behind.
+//
+// VERSION 4 (2026-11-01) - CREATE_VIEW_FILTERS_BY_RULE MERGED IN, on the
+// owner's instruction. What it had that this lacked:
+//
+//   MANY FILTERS IN ONE CALL, ONE VALUE EACH. `filterName` and `matchValue`
+//   are lists now, comma separated, paired in order - "Supply Air, Return Air,
+//   Exhaust Air" with three values. One name and one value bind as a list of
+//   one, so a version 3 call means what it meant. moreRules belongs to ONE
+//   filter, and is refused beside several names.
+//
+//   THE VIEW AND THE COLOUR ARE OPTIONAL, TOGETHER. Both left out, the filters
+//   are made on NO view - the standards job, done the way a modeller does it
+//   in Manage > Filters - and APPLY_VIEW_FILTER puts one on a view later. A
+//   view with no colour, or a colour with no view, is refused before anything
+//   is made: neither half alone is something this can finish.
+//
+//   CATEGORIES BY REVIT'S OWN NAME TOO - OST_DuctCurves beside "Ducts".
+//   `categoryIds` is read as a list of BuiltInCategory, which the binder fills
+//   from either spelling.
+//
+//   EVERY CATEGORY ASKED ON ITS OWN, and each that cannot take the rule NAMED
+//   in `cannotFilter` - Revit cannot filter it at all
+//   (GetAllFilterableCategories), or it has no parameter by that name. Revit
+//   rejects a filter whose categories hold one the parameter does not apply
+//   to, and rejects it whole, so one entry there means nothing was made.
+//
+//   PAIRING, BLANK, REPEAT AND NAME REFUSALS before Revit is asked anything:
+//   as many values as names, none blank, no name twice, every name one
+//   NamingUtils.IsValidName takes.
+//
+//   A NAME ALREADY TAKEN IS SKIPPED AND NAMED, NEVER OVERWRITTEN, and the
+//   others are still made (`alreadyExists`). The clash scan reads every
+//   FilterElement, so a SELECTION filter of the same name is seen too - both
+//   live in one list and Revit throws on the duplicate. Version 3 scanned rule
+//   filters only. Anything else that stops one filter stops all of them, before
+//   any exists.
+//
+//   `readBack`: each new filter as Revit holds it - its categories, its rules
+//   (a "does not" rule is held as a FilterInverseRule round the positive one,
+//   and is unwrapped and said as "does not"), how many elements it catches in
+//   the model today, and whether it is on the view with its colour.
+//
+// `created` is still ONE id - the filter made, or the first of several - so a
+// caller of version 3 reads what it read; `createdIds` is every one.
 //
 // VERSION 3 (2026-10-15): THE PARAMETER IS TYPED BY ITS NAME. Version 2 took
 // `parameterId`, an ElementId the add-in binds by no name at all
@@ -63,9 +108,21 @@
 // Revit's own acceptability check, before anything is created.
 
 ElementId created = null;
+var createdIds = new List<ElementId>();
 string refused = null;
+var readBack = "";
+var alreadyExists = new List<string>();
+var cannotFilter = new List<string>();
 
-var name = (filterName ?? "").Trim();
+// One name per filter and one value per name, in the same order (version 4).
+// A single name and a single value bind as a list of one, so every call
+// version 3 took is still taken.
+var names = new List<string>();
+if (filterName != null)
+    foreach (var givenName in filterName) names.Add((givenName ?? "").Trim());
+var values = new List<string>();
+if (matchValue != null)
+    foreach (var givenValue in matchValue) values.Add((givenValue ?? "").Trim());
 var wanted = (parameterName ?? "").Trim();
 
 // The eight text rules the Filters dialog offers, longest first so "does not
@@ -90,35 +147,150 @@ var operatorMethods = new Dictionary<string, string>(StringComparer.OrdinalIgnor
     { "=", "CreateEqualsRule" },
 };
 
-// The first rule's operator, read off the front of matchValue.
-var firstOperator = "equals";
-var firstText = (matchValue ?? "").Trim();
+// Each value's operator, read off its front. No operator is equals.
+var operators = new List<string>();
+var texts = new List<string>();
 var bareOperator = "";
-foreach (var word in operatorWords)
+foreach (var value in values)
 {
-    if (string.Equals(firstText, word, StringComparison.OrdinalIgnoreCase))
+    var valueOperator = "equals";
+    var valueText = value;
+    foreach (var word in operatorWords)
     {
-        bareOperator = firstText;
-        break;
+        if (string.Equals(value, word, StringComparison.OrdinalIgnoreCase))
+        {
+            if (bareOperator.Length == 0) bareOperator = value;
+            break;
+        }
+        if (value.StartsWith(word + " ", StringComparison.OrdinalIgnoreCase))
+        {
+            valueOperator = word;
+            valueText = value.Substring(word.Length).Trim();
+            break;
+        }
     }
-    if (firstText.StartsWith(word + " ", StringComparison.OrdinalIgnoreCase))
+    operators.Add(valueOperator);
+    texts.Add(valueText);
+}
+
+// The categories, once each, with the name Revit shows for them (version 4:
+// typed as Visibility/Graphics shows them OR by Revit's own name,
+// OST_DuctCurves - the binder reads both into a BuiltInCategory).
+var categoryList = new List<ElementId>();
+var categoryName = new Dictionary<ElementId, string>();
+if (categoryIds != null)
+{
+    foreach (var builtIn in categoryIds)
     {
-        firstOperator = word;
-        firstText = firstText.Substring(word.Length).Trim();
-        break;
+        var categoryId = new ElementId(builtIn);
+        if (categoryList.Contains(categoryId)) continue;
+        categoryList.Add(categoryId);
+
+        var shown = builtIn.ToString();
+        try
+        {
+            var category = Category.GetCategory(doc, builtIn);
+            if (category != null) shown = category.Name;
+        }
+        catch { }
+        categoryName[categoryId] = shown;
     }
 }
 
-if (view == null || view.IsTemplate)
+// THE COLOUR, OR NONE (version 4). Three numbers 0 to 255, "255,0,0", or left
+// out - which is "none", and goes with leaving the view out.
+var colourWord = (colour ?? "").Trim();
+var wantColour = colourWord.Length > 0
+    && !string.Equals(colourWord, "none", StringComparison.OrdinalIgnoreCase);
+Color paint = null;
+var colourProblem = "";
+if (wantColour)
 {
-    refused = "a filter is applied to a real view - a template is not one";
+    var channels = colourWord.Split(',').Select(c => c.Trim()).ToList();
+    var bytes = new List<byte>();
+    foreach (var channel in channels)
+    {
+        int number;
+        if (int.TryParse(channel, System.Globalization.NumberStyles.Integer,
+                         System.Globalization.CultureInfo.InvariantCulture, out number)
+            && number >= 0 && number <= 255)
+            bytes.Add((byte)number);
+    }
+    if (channels.Count == 3 && bytes.Count == 3) paint = new Color(bytes[0], bytes[1], bytes[2]);
+    else colourProblem = "\"" + colourWord + "\" is not a colour - type three numbers from 0 to 255, "
+        + "comma separated, \"255,0,0\" for red, or leave the colour out with the view";
 }
-else if (name.Length == 0)
+
+// ---- what was asked for, checked before Revit is asked anything -----------
+
+var repeated = "";
+var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+foreach (var oneName in names)
+{
+    if (oneName.Length > 0 && !seen.Add(oneName)) { repeated = oneName; break; }
+}
+
+var badName = "";
+foreach (var oneName in names)
+{
+    if (oneName.Length > 0 && !NamingUtils.IsValidName(oneName)) { badName = oneName; break; }
+}
+
+if (view != null && view.IsTemplate)
+{
+    refused = "a filter is put on a real view - a template is not one. Leave the view out to make "
+            + "the filter on no view";
+}
+else if (view != null && !wantColour)
+{
+    refused = "a view was given and no colour - a filter put on a view here is coloured in the same "
+            + "call, so give one (\"255,0,0\"), or leave the view out too and the filter is made on "
+            + "no view. APPLY_VIEW_FILTER puts a filter that exists on a view with any settings";
+}
+else if (view == null && wantColour)
+{
+    refused = "a colour was given and no view to colour it in - give the view, or leave the colour "
+            + "out too and the filter is made on no view";
+}
+else if (colourProblem.Length > 0)
+{
+    refused = colourProblem;
+}
+else if (names.Count == 0)
 {
     refused = "a filter needs a name - it goes in the project's filter list, where "
             + "other views will see it";
 }
-else if (categoryIds == null || categoryIds.Count == 0)
+else if (names.Count != values.Count)
+{
+    refused = string.Format("{0} filter name(s) and {1} value(s) were given - each filter needs "
+        + "exactly one value, in the same order as the names", names.Count, values.Count);
+}
+else if (names.Contains("") || values.Contains(""))
+{
+    refused = "a filter name or a value was blank - every filter needs both";
+}
+else if (bareOperator.Length > 0)
+{
+    refused = string.Format("'{0}' is an operator with nothing after it - write what it should "
+            + "match, \"{0} Level 1\", or \"equals {0}\" to match the word itself - nothing was made",
+            bareOperator);
+}
+else if (texts.Contains(""))
+{
+    refused = "a value was an operator with nothing after it - every filter needs text to match";
+}
+else if (repeated.Length > 0)
+{
+    refused = string.Format("'{0}' was asked for twice - a filter name can be used once in a "
+        + "project", repeated);
+}
+else if (badName.Length > 0)
+{
+    refused = string.Format("'{0}' cannot be a filter name - Revit does not allow characters "
+        + "such as : ; [ ] {{ }} | < > ? ` ~ in a name", badName);
+}
+else if (categoryList.Count == 0)
 {
     refused = "a filter needs at least one category to look at";
 }
@@ -127,167 +299,228 @@ else if (wanted.Length == 0)
     refused = "a filter needs a parameter to test, by the name Revit shows - without one it "
             + "matches everything in the category, which is what SET_CATEGORY_GRAPHICS is for";
 }
-else if (bareOperator.Length > 0)
+else if (names.Count > 1 && !string.IsNullOrWhiteSpace(moreRules))
 {
-    refused = string.Format("'{0}' is an operator with nothing after it - write what it should "
-            + "match, \"{0} Level 1\", or \"equals {0}\" to match the word itself - nothing was made",
-            bareOperator);
+    refused = "moreRules makes ONE filter that needs several rules to match, and " + names.Count
+            + " filter names were given - make that filter in a call of its own; nothing was made";
 }
-else
+
+// A project or shared parameter is an element and names itself; a built-in
+// one's id is its enum value, whose label is the same on every release, where
+// the property that holds the number changed.
+Func<ElementId, string> labelOf = id =>
 {
-    ParameterFilterElement clash = null;
+    var element = doc.GetElement(id);
+    if (element != null) return element.Name;
+    try { return LabelUtils.GetLabelFor((BuiltInParameter)(int)long.Parse(id.ToString())); } catch { return ""; }
+};
+Func<ElementId, string> builtInNameOf = id =>
+{
+    if (doc.GetElement(id) != null) return "";
+    try { return ((BuiltInParameter)(int)long.Parse(id.ToString())).ToString(); } catch { return ""; }
+};
+Func<ElementId, string, bool> answersTo = (id, paramName) => id != null
+    && (string.Equals(labelOf(id), paramName, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(builtInNameOf(id), paramName, StringComparison.OrdinalIgnoreCase));
 
-    foreach (var existing in new FilteredElementCollector(doc)
-                                 .OfClass(typeof(ParameterFilterElement))
-                                 .Cast<ParameterFilterElement>())
+// ---- each category, asked on its own (version 4) --------------------------
+// Revit rejects a filter whose categories include ONE the parameter does not
+// apply to, and rejects it whole - so every category is asked first, each that
+// cannot be filtered by the parameter is NAMED, and nothing is made.
+
+if (refused == null)
+{
+    ICollection<ElementId> filterable = null;
+    try { filterable = ParameterFilterUtilities.GetAllFilterableCategories(); } catch { }
+
+    foreach (var categoryId in categoryList)
     {
-        if (existing == null) continue;
-        if (string.Equals(existing.Name ?? "", name, StringComparison.OrdinalIgnoreCase))
+        if (filterable != null && !filterable.Contains(categoryId))
         {
-            clash = existing;
-            break;
+            cannotFilter.Add(string.Format("{0} - Revit cannot filter this category at all",
+                categoryName[categoryId]));
+            continue;
         }
-    }
 
-    string ruleProblem = null;
-
-    // What every category may be filtered by, and a name for each. A project
-    // or shared parameter is an element and names itself; a built-in one's id
-    // is its enum value, whose label is the same on every release, where the
-    // property that holds the number changed.
-    ICollection<ElementId> shared = null;
-    try { shared = ParameterFilterUtilities.GetFilterableParametersInCommon(doc, categoryIds); }
-    catch (Exception ex) { ruleProblem = "Revit would not list the parameters these categories share: " + ex.Message; }
-    if (shared == null) shared = new List<ElementId>();
-
-    Func<ElementId, string> labelOf = id =>
-    {
-        var element = doc.GetElement(id);
-        if (element != null) return element.Name;
-        try { return LabelUtils.GetLabelFor((BuiltInParameter)(int)long.Parse(id.ToString())); } catch { return ""; }
-    };
-    Func<ElementId, string> builtInNameOf = id =>
-    {
-        if (doc.GetElement(id) != null) return "";
-        try { return ((BuiltInParameter)(int)long.Parse(id.ToString())).ToString(); } catch { return ""; }
-    };
-
-    // The ONE parameter a name means, or the reason it means none or two.
-    string parameterProblem = null;
-    Func<string, ElementId> parameterCalled = paramName =>
-    {
-        parameterProblem = null;
-        var found = shared.Where(id => id != null
-            && (string.Equals(labelOf(id), paramName, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(builtInNameOf(id), paramName, StringComparison.OrdinalIgnoreCase))).ToList();
-        if (found.Count == 1) return found[0];
-        if (found.Count == 0)
-        {
-            parameterProblem = "no parameter the filter's categories share is called \"" + paramName + "\"";
-        }
-        else
-        {
-            var described = found.Select(id => builtInNameOf(id).Length > 0
-                ? "'" + labelOf(id) + "' (built in, " + builtInNameOf(id) + ")"
-                : "'" + labelOf(id) + "' (a project or shared parameter)").ToList();
-            parameterProblem = found.Count + " parameters the filter's categories share are called \""
-                + paramName + "\": " + string.Join(", ", described)
-                + " - type the built-in one by its Revit name to choose it";
-        }
-        return null;
-    };
-
-    // A text rule, from the factory for its operator in whichever spelling
-    // this release has.
-    string factoryProblem = null;
-    Func<ElementId, string, string, FilterRule> textRule = (pid, op, value) =>
-    {
-        factoryProblem = null;
-        var method = operatorMethods[op];
-        System.Reflection.MethodInfo withoutFlag = null;
-        System.Reflection.MethodInfo withFlag = null;
-        foreach (var candidate in typeof(ParameterFilterRuleFactory).GetMethods())
-        {
-            if (candidate.Name != method) continue;
-            var arguments = candidate.GetParameters();
-            if (arguments.Length < 2 || arguments[0].ParameterType != typeof(ElementId)
-                || arguments[1].ParameterType != typeof(string)) continue;
-            if (arguments.Length == 2) withoutFlag = candidate;
-            else if (arguments.Length == 3 && arguments[2].ParameterType == typeof(bool)) withFlag = candidate;
-        }
-        if (withoutFlag == null && withFlag == null)
-        {
-            factoryProblem = "this Revit version has no text rule '" + op + "' this recognises";
-            return null;
-        }
+        ICollection<ElementId> allowed = null;
         try
         {
-            var made = withoutFlag != null
-                ? withoutFlag.Invoke(null, new object[] { pid, value }) as FilterRule
-                : withFlag.Invoke(null, new object[] { pid, value, false }) as FilterRule;
-            if (made == null) factoryProblem = "Revit built no rule '" + op + " " + value + "'";
-            return made;
+            allowed = ParameterFilterUtilities.GetFilterableParametersInCommon(
+                doc, new List<ElementId> { categoryId });
         }
         catch (Exception ex)
         {
-            factoryProblem = "Revit would not build the rule '" + op + " " + value + "': "
-                + (ex.InnerException != null ? ex.InnerException.Message : ex.Message);
-            return null;
+            cannotFilter.Add(string.Format("{0} - Revit would not list what it can be filtered by: "
+                + "{1}", categoryName[categoryId], ex.Message));
+            continue;
         }
-    };
 
-    // The first rule.
-    FilterRule rule = null;
-    if (ruleProblem == null)
-    {
-        var firstParameter = parameterCalled(wanted);
-        if (firstParameter == null) ruleProblem = parameterProblem;
-        else
-        {
-            rule = textRule(firstParameter, firstOperator, firstText);
-            if (rule == null) ruleProblem = factoryProblem;
-        }
+        if (allowed == null || !allowed.Any(id => answersTo(id, wanted)))
+            cannotFilter.Add(string.Format("{0} - it cannot be filtered by '{1}'",
+                categoryName[categoryId], wanted));
     }
 
-    // The extra rules, read before anything is made. The operator is the one
-    // that starts EARLIEST in the text - the parameter's name comes first -
-    // and the longest of those that start there.
-    var extra = new List<FilterRule>();
-    var how = (combine ?? "").Trim().ToLowerInvariant();
-    if (ruleProblem == null && how != "" && how != "and" && how != "or")
-        ruleProblem = "\"" + combine + "\" is not and or or";
-    if (ruleProblem == null && !string.IsNullOrWhiteSpace(moreRules))
+    if (cannotFilter.Count > 0)
     {
-        var moreOperators = operatorWords.Concat(new[] { "!=", "=" }).ToArray();
-        foreach (var text in moreRules.Split(';'))
+        refused = string.Format("NOTHING WAS CREATED. {0} of the {1} categories cannot take a rule on "
+            + "'{2}': {3}. Revit rejects a filter whose categories include one the parameter does not "
+            + "apply to, so take {4} out of the list and ask again",
+            cannotFilter.Count, categoryList.Count, wanted, string.Join("; ", cannotFilter),
+            cannotFilter.Count == 1 ? "it" : "them");
+    }
+}
+
+// ---- one parameter the categories share, and the rules --------------------
+
+ICollection<ElementId> shared = null;
+if (refused == null)
+{
+    try { shared = ParameterFilterUtilities.GetFilterableParametersInCommon(doc, categoryList); }
+    catch (Exception ex) { refused = "Revit would not list the parameters these categories share: " + ex.Message; }
+}
+if (shared == null) shared = new List<ElementId>();
+
+// The ONE parameter a name means, or the reason it means none or two.
+string parameterProblem = null;
+Func<string, ElementId> parameterCalled = paramName =>
+{
+    parameterProblem = null;
+    var found = shared.Where(id => answersTo(id, paramName)).ToList();
+    if (found.Count == 1) return found[0];
+    if (found.Count == 0)
+    {
+        parameterProblem = "no parameter the filter's categories share is called \"" + paramName
+            + "\" - every category can be filtered by one of that name, but not by the SAME one";
+    }
+    else
+    {
+        var described = found.Select(id => builtInNameOf(id).Length > 0
+            ? "'" + labelOf(id) + "' (built in, " + builtInNameOf(id) + ")"
+            : "'" + labelOf(id) + "' (a project or shared parameter)").ToList();
+        parameterProblem = found.Count + " parameters the filter's categories share are called \""
+            + paramName + "\": " + string.Join(", ", described)
+            + " - type the built-in one by its Revit name to choose it";
+    }
+    return null;
+};
+
+// A text rule, from the factory for its operator in whichever spelling this
+// release has.
+string factoryProblem = null;
+Func<ElementId, string, string, FilterRule> textRule = (pid, op, ruleValue) =>
+{
+    factoryProblem = null;
+    var method = operatorMethods[op];
+    System.Reflection.MethodInfo withoutFlag = null;
+    System.Reflection.MethodInfo withFlag = null;
+    foreach (var candidate in typeof(ParameterFilterRuleFactory).GetMethods())
+    {
+        if (candidate.Name != method) continue;
+        var arguments = candidate.GetParameters();
+        if (arguments.Length < 2 || arguments[0].ParameterType != typeof(ElementId)
+            || arguments[1].ParameterType != typeof(string)) continue;
+        if (arguments.Length == 2) withoutFlag = candidate;
+        else if (arguments.Length == 3 && arguments[2].ParameterType == typeof(bool)) withFlag = candidate;
+    }
+    if (withoutFlag == null && withFlag == null)
+    {
+        factoryProblem = "this Revit version has no text rule '" + op + "' this recognises";
+        return null;
+    }
+    try
+    {
+        var made = withoutFlag != null
+            ? withoutFlag.Invoke(null, new object[] { pid, ruleValue }) as FilterRule
+            : withFlag.Invoke(null, new object[] { pid, ruleValue, false }) as FilterRule;
+        if (made == null) factoryProblem = "Revit built no rule '" + op + " " + ruleValue + "'";
+        return made;
+    }
+    catch (Exception ex)
+    {
+        factoryProblem = "Revit would not build the rule '" + op + " " + ruleValue + "': "
+            + (ex.InnerException != null ? ex.InnerException.Message : ex.Message);
+        return null;
+    }
+};
+
+ElementId firstParameter = null;
+string ruleProblem = null;
+if (refused == null)
+{
+    firstParameter = parameterCalled(wanted);
+    if (firstParameter == null) ruleProblem = parameterProblem;
+}
+
+// The extra rules of ONE filter, read before anything is made. The operator
+// is the one that starts EARLIEST in the text - the parameter's name comes
+// first - and the longest of those that start there.
+var extra = new List<FilterRule>();
+var how = (combine ?? "").Trim().ToLowerInvariant();
+if (refused == null && ruleProblem == null && how != "" && how != "and" && how != "or")
+    ruleProblem = "\"" + combine + "\" is not and or or";
+if (refused == null && ruleProblem == null && !string.IsNullOrWhiteSpace(moreRules))
+{
+    var moreOperators = operatorWords.Concat(new[] { "!=", "=" }).ToArray();
+    foreach (var ruleText in moreRules.Split(';'))
+    {
+        if (ruleText.Trim() == "") continue;
+        string op = null;
+        var at = -1;
+        foreach (var candidate in moreOperators)
         {
-            if (text.Trim() == "") continue;
-            string op = null;
-            var at = -1;
-            foreach (var candidate in moreOperators)
+            var position = ruleText.IndexOf(candidate, StringComparison.OrdinalIgnoreCase);
+            if (position <= 0) continue;
+            if (op == null || position < at || (position == at && candidate.Length > op.Length))
             {
-                var position = text.IndexOf(candidate, StringComparison.OrdinalIgnoreCase);
-                if (position <= 0) continue;
-                if (op == null || position < at || (position == at && candidate.Length > op.Length))
-                {
-                    op = candidate;
-                    at = position;
-                }
+                op = candidate;
+                at = position;
             }
-            if (op == null) { ruleProblem = "\"" + text.Trim() + "\" has no operator (=, !=, " + string.Join(", ", operatorWords) + ")"; break; }
-            var paramName = text.Substring(0, at).Trim();
-            var value = text.Substring(at + op.Length).Trim();
-            var pid = parameterCalled(paramName);
-            if (pid == null) { ruleProblem = parameterProblem; break; }
-            var made = textRule(pid, op, value);
-            if (made == null) { ruleProblem = factoryProblem; break; }
-            extra.Add(made);
         }
+        if (op == null) { ruleProblem = "\"" + ruleText.Trim() + "\" has no operator (=, !=, " + string.Join(", ", operatorWords) + ")"; break; }
+        var extraName = ruleText.Substring(0, at).Trim();
+        var extraValue = ruleText.Substring(at + op.Length).Trim();
+        var pid = parameterCalled(extraName);
+        if (pid == null) { ruleProblem = parameterProblem; break; }
+        var extraRule = textRule(pid, op, extraValue);
+        if (extraRule == null) { ruleProblem = factoryProblem; break; }
+        extra.Add(extraRule);
+    }
+}
+
+// ---- every filter's test, built and checked before any filter exists ------
+// Filter names already in the project - FilterElement, so a SELECTION filter
+// of the same name is seen too; both live in one list, and Revit throws on the
+// duplicate. A name taken is SKIPPED AND NAMED, never overwritten, and the
+// others are still made (version 4).
+
+var toCreate = new List<int>();
+var tests = new Dictionary<int, ElementFilter>();
+
+if (refused == null && ruleProblem == null)
+{
+    var existing = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(FilterElement)))
+    {
+        var held = element.Name ?? "";
+        if (!existing.ContainsKey(held)) existing[held] = held;
     }
 
-    ElementFilter test = null;
-    if (ruleProblem == null)
+    var categorySet = new HashSet<ElementId>(categoryList);
+
+    for (var index = 0; index < names.Count && ruleProblem == null; index++)
     {
+        if (existing.ContainsKey(names[index]))
+        {
+            alreadyExists.Add(existing[names[index]] == names[index]
+                ? names[index]
+                : string.Format("{0} (held as '{1}')", names[index], existing[names[index]]));
+            continue;
+        }
+
+        var rule = textRule(firstParameter, operators[index], texts[index]);
+        if (rule == null) { ruleProblem = factoryProblem; break; }
+
+        ElementFilter test;
         if (extra.Count == 0) test = new ElementParameterFilter(rule);
         else
         {
@@ -305,49 +538,190 @@ else
         try
         {
             acceptable = ParameterFilterElement.ElementFilterIsAcceptableForParameterFilterElement(
-                doc, new HashSet<ElementId>(categoryIds), test);
+                doc, categorySet, test);
         }
         catch (Exception ex) { why = " - " + ex.Message; }
         if (!acceptable)
-            ruleProblem = "Revit says this rule cannot be used on these categories" + why
-                + ". A text rule on a parameter that holds a number is the usual reason";
-    }
-
-    if (ruleProblem != null)
-    {
-        refused = ruleProblem + " - nothing was made";
-    }
-    else if (clash != null)
-    {
-        refused = string.Format(
-            "a filter called \"{0}\" already exists in this project. Filters are "
-            + "project-wide, so another view may be relying on it - and Revit throws on "
-            + "the duplicate after the view has already been touched", name);
-    }
-    else
-    {
-        var filter = ParameterFilterElement.Create(doc, name, categoryIds, test);
-
-        if (filter == null)
         {
-            refused = "Revit declined to create the filter";
+            ruleProblem = string.Format("Revit says the rule '{0}' {1} '{2}' cannot be used on these "
+                + "categories{3}. A text rule on a parameter that holds a number is the usual reason",
+                wanted, operators[index], texts[index], why);
+            break;
         }
-        else
-        {
-            created = filter.Id;
 
+        toCreate.Add(index);
+        tests[index] = test;
+    }
+}
+
+if (refused == null && ruleProblem != null)
+{
+    refused = ruleProblem + " - nothing was made";
+}
+
+// ---- create, put on the view when one was given, then read each back -------
+
+if (refused == null)
+{
+    var lines = new List<string>();
+
+    foreach (var index in toCreate)
+    {
+        // Everything that could be checked has been. A failure here ends the
+        // run and Heron rolls the whole call back, so a half-made set of
+        // filters is never left behind.
+        var filter = ParameterFilterElement.Create(doc, names[index], categoryList, tests[index]);
+        if (filter == null)
+            throw new InvalidOperationException("Revit declined to create the filter '" + names[index]
+                + "' - the whole call is rolled back, so nothing was kept");
+
+        createdIds.Add(filter.Id);
+        if (created == null) created = filter.Id;
+
+        if (view != null)
+        {
             view.AddFilter(filter.Id);
 
             // Projection AND cut, because a duct in a plan is cut by the view
             // range and a duct in a 3D view is not. Setting only one leaves
             // half the drawing uncoloured, and which half depends on the view.
             var look = new OverrideGraphicSettings();
-            look.SetProjectionLineColor(colour);
-            look.SetCutLineColor(colour);
-            look.SetSurfaceForegroundPatternColor(colour);
-            look.SetCutForegroundPatternColor(colour);
+            look.SetProjectionLineColor(paint);
+            look.SetCutLineColor(paint);
+            look.SetSurfaceForegroundPatternColor(paint);
+            look.SetCutForegroundPatternColor(paint);
 
             view.SetFilterOverrides(filter.Id, look);
         }
+
+        // THE READ-BACK IS WHAT REVIT HOLDS, NOT AN ECHO OF THE REQUEST
+        // (version 4, from CREATE_VIEW_FILTERS_BY_RULE): the categories and
+        // rules read out of the filter after it exists.
+        var heldCategories = new List<string>();
+        foreach (var heldId in filter.GetCategories())
+        {
+            var label = heldId.ToString();
+            try
+            {
+                var category = Category.GetCategory(doc, heldId);
+                if (category != null) label = category.Name;
+            }
+            catch { }
+            heldCategories.Add(label);
+        }
+        heldCategories.Sort(StringComparer.OrdinalIgnoreCase);
+
+        // The rules, walked without recursion - a logical filter holds others.
+        var heldRules = new List<string>();
+        var heldFilter = filter.GetElementFilter();
+        var pending = new List<ElementFilter>();
+        if (heldFilter != null) pending.Add(heldFilter);
+        while (pending.Count > 0)
+        {
+            var next = pending[pending.Count - 1];
+            pending.RemoveAt(pending.Count - 1);
+
+            var logical = next as ElementLogicalFilter;
+            if (logical != null)
+            {
+                foreach (var inner in logical.GetFilters()) if (inner != null) pending.Add(inner);
+                continue;
+            }
+
+            var byParameter = next as ElementParameterFilter;
+            if (byParameter == null)
+            {
+                heldRules.Add(next.GetType().Name);
+                continue;
+            }
+
+            foreach (var outerRule in byParameter.GetRules())
+            {
+                // A "does not" rule is held as the positive one, inverted.
+                var heldRule = outerRule;
+                var inverted = false;
+                var inverse = outerRule as FilterInverseRule;
+                if (inverse != null && inverse.GetInnerRule() != null)
+                {
+                    heldRule = inverse.GetInnerRule();
+                    inverted = true;
+                }
+
+                var parameterText = "?";
+                try { parameterText = labelOf(heldRule.GetRuleParameter()); } catch { }
+
+                var heldText = heldRule as FilterStringRule;
+                if (heldText != null)
+                {
+                    var evaluator = heldText.GetEvaluator();
+                    var verb = evaluator == null ? "?" : evaluator.GetType().Name;
+                    if (verb == "FilterStringEquals") verb = inverted ? "does not equal" : "equals";
+                    else if (verb == "FilterStringContains") verb = inverted ? "does not contain" : "contains";
+                    else if (verb == "FilterStringBeginsWith") verb = inverted ? "does not begin with" : "begins with";
+                    else if (verb == "FilterStringEndsWith") verb = inverted ? "does not end with" : "ends with";
+                    else if (inverted) verb = "NOT " + verb;
+                    heldRules.Add(string.Format("{0} {1} '{2}'", parameterText, verb, heldText.RuleString));
+                }
+                else
+                {
+                    heldRules.Add(string.Format("{0} ({1}{2})", parameterText, inverted ? "NOT " : "",
+                        heldRule.GetType().Name));
+                }
+            }
+        }
+
+        // What the rule, as Revit holds it, catches in the model today.
+        var perCategory = new List<string>();
+        var total = 0;
+        if (heldFilter != null)
+        {
+            foreach (var categoryId in categoryList)
+            {
+                var count = new FilteredElementCollector(doc)
+                    .WherePasses(new ElementMulticategoryFilter(new List<ElementId> { categoryId }))
+                    .WhereElementIsNotElementType()
+                    .WherePasses(heldFilter)
+                    .GetElementCount();
+                total += count;
+                if (count > 0) perCategory.Add(string.Format("{0} {1}", categoryName[categoryId], count));
+            }
+        }
+
+        // Where it is, read back from the view rather than assumed.
+        var placed = "on no view";
+        if (view != null)
+        {
+            var onView = false;
+            try { onView = view.GetFilters().Contains(filter.Id); } catch { }
+            var lineColour = "none";
+            try
+            {
+                var c = view.GetFilterOverrides(filter.Id).ProjectionLineColor;
+                if (c != null && c.IsValid) lineColour = string.Format("{0},{1},{2}", c.Red, c.Green, c.Blue);
+            }
+            catch { }
+            placed = onView
+                ? string.Format("on '{0}', line colour read back {1}", view.Name, lineColour)
+                : string.Format("NOT on '{0}' - Revit did not keep it there", view.Name);
+        }
+
+        lines.Add(string.Format("'{0}': categories {1}; rule {2}; catches {3} element(s) in the model "
+            + "today{4}; {5}", filter.Name, string.Join(", ", heldCategories),
+            heldRules.Count == 0 ? "NONE"
+                : string.Join(heldFilter is LogicalOrFilter ? " OR " : " AND ", heldRules), total,
+            perCategory.Count == 0 ? "" : " (" + string.Join(", ", perCategory) + ")", placed));
+    }
+
+    if (lines.Count > 0)
+    {
+        readBack = string.Join(" | ", lines)
+            + (view == null ? " | none of them is on a view yet - APPLY_VIEW_FILTER puts one on a view" : "");
+    }
+
+    if (alreadyExists.Count > 0)
+    {
+        refused = string.Format("{0} name(s) already a filter in this project and left exactly as "
+            + "they were, not overwritten - filters are project-wide, so another view may be relying "
+            + "on one: {1}", alreadyExists.Count, string.Join(", ", alreadyExists));
     }
 }

@@ -1,6 +1,24 @@
 // NOT STANDALONE. Assumes `doc`, `views`, `scale`, `detailLevel` and
-// `visualStyle` are in scope; leaves `changed`, `findings` and
-// `visualStyleNote` behind.
+// `visualStyle` are in scope; leaves `changed`, `findings`,
+// `visualStyleNote`, `wasScale`, `alreadyThatScale` and `refused` behind.
+//
+// VERSION 3 (2026-11-01) - SET_VIEW_SCALE MERGED IN, on the owner's
+// instruction, and what it had that this lacked came with it:
+//
+//   wasScale          each view's scale BEFORE this ran, read before any write,
+//                     so a batch can be put back by a caller that kept it
+//   alreadyThatScale  a view already at the scale asked is NOT written and NOT
+//                     counted as changed. Version 2 wrote the same number back
+//                     and counted the view, so "changed 12" could mean twelve
+//                     views already right
+//   refused           the ids of the views that refused anything asked - a
+//                     template, a property Revit would not take - each once, so
+//                     a caller can act on WHICH, beside the sentences in findings
+//   a view named twice is handled once, and counted once
+//
+// SET_VIEW_SCALE's read mode (`apply` false) did NOT come here: reading a
+// view's scale is READ_VIEW_SCALE's job, a read, and a write card must not be
+// the answer to "what scale is this view".
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
@@ -42,6 +60,9 @@
 var changed = 0;
 var findings = new List<string>();
 var visualStyleNote = "";
+var wasScale = new Dictionary<ElementId, int>();
+var alreadyThatScale = 0;
+var refused = new List<ElementId>();
 
 if (views == null || views.Count == 0)
 {
@@ -63,7 +84,7 @@ else
         var scaleSet = 0;
         var detailSet = 0;
         var styleSet = 0;
-        var refused = new List<string>();
+        var refusals = new List<string>();
 
         // Revit's own names for a visual style ON THIS RELEASE that a view can
         // be SET to. Undefined is the absence of a style. Raytrace is refused by
@@ -149,32 +170,64 @@ else
             }
         }
 
+        // A VIEW NAMED TWICE IS HANDLED ONCE (version 3, from SET_VIEW_SCALE),
+        // so it is set once, counted once and named once.
+        var handled = new HashSet<ElementId>();
+        var refusedOnce = new HashSet<ElementId>();
+
         foreach (var view in views)
         {
             if (view == null) continue;
+            if (!handled.Add(view.Id)) continue;
             if (view.IsTemplate)
             {
                 // Into the style's own list when a style was asked, so the whole
                 // note says why this view did not take it.
                 var notAView = string.Format("'{0}' is a template, not a view", view.Name);
                 if (styleWanted != null) styleRefused.Add(notAView);
-                else refused.Add(notAView);
+                else refusals.Add(notAView);
+                if (refusedOnce.Add(view.Id)) refused.Add(view.Id);
                 continue;
             }
 
             var touched = false;
+            var refusalsBefore = refusals.Count + styleRefused.Count;
 
             if (wantScale)
             {
-                try
-                {
-                    view.Scale = scale;
-                    if (view.Scale == scale) { scaleSet++; touched = true; }
-                    else refused.Add(string.Format("'{0}': the scale did not take {1}", view.Name, scale));
-                }
+                // READ FIRST (version 3, from SET_VIEW_SCALE): the old scale is
+                // kept for the caller, and a view already at the scale asked is
+                // neither written nor counted as changed.
+                var was = 0;
+                var readable = true;
+                try { was = view.Scale; }
                 catch (Exception ex)
                 {
-                    refused.Add(string.Format("'{0}' scale: {1}", view.Name, ex.Message));
+                    readable = false;
+                    refusals.Add(string.Format("'{0}' scale: Revit would not give its scale - {1}",
+                        view.Name, ex.Message));
+                }
+
+                if (readable)
+                {
+                    wasScale[view.Id] = was;
+                    if (was == scale)
+                    {
+                        alreadyThatScale++;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            view.Scale = scale;
+                            if (view.Scale == scale) { scaleSet++; touched = true; }
+                            else refusals.Add(string.Format("'{0}': the scale did not take {1}", view.Name, scale));
+                        }
+                        catch (Exception ex)
+                        {
+                            refusals.Add(string.Format("'{0}' scale: {1}", view.Name, ex.Message));
+                        }
+                    }
                 }
             }
 
@@ -193,18 +246,18 @@ else
                     else known = false;
 
                     if (!known)
-                        refused.Add(string.Format("'{0}': detail level must be Coarse, Medium or Fine - "
+                        refusals.Add(string.Format("'{0}': detail level must be Coarse, Medium or Fine - "
                             + "'{1}' is none of them", view.Name, wantDetail));
                     else
                     {
                         view.DetailLevel = wanted;
                         if (view.DetailLevel == wanted) { detailSet++; touched = true; }
-                        else refused.Add(string.Format("'{0}': the detail level did not take", view.Name));
+                        else refusals.Add(string.Format("'{0}': the detail level did not take", view.Name));
                     }
                 }
                 catch (Exception ex)
                 {
-                    refused.Add(string.Format("'{0}' detail level: {1}", view.Name, ex.Message));
+                    refusals.Add(string.Format("'{0}' detail level: {1}", view.Name, ex.Message));
                 }
             }
 
@@ -240,18 +293,27 @@ else
             }
 
             if (touched) changed++;
+            if (refusals.Count + styleRefused.Count > refusalsBefore && refusedOnce.Add(view.Id))
+                refused.Add(view.Id);
         }
 
         findings.Add(string.Format("{0} of {1} view(s) changed in some way: scale set on {2}, detail "
             + "level on {3}, visual style on {4}. Each property was set on its own, so a view that "
             + "took one and refused another is counted here and named below",
-            changed, views.Count, scaleSet, detailSet, styleSet));
+            changed, handled.Count, scaleSet, detailSet, styleSet));
+
+        // A VIEW ALREADY AT THE SCALE ASKED is said, never counted as set
+        // (version 3) - "scale set on 0" beside twelve views already at 1:50
+        // would otherwise read as twelve refusals.
+        if (alreadyThatScale > 0)
+            findings.Add(string.Format("{0} view(s) were already at 1:{1}, so their scale was left as "
+                + "it was and not counted as changed", alreadyThatScale, scale));
 
         // WHICH STYLE EACH VIEW READS BACK, whole, because "Shaded" can come
         // back with or without edges and the finding above is cut short.
         if (styleWanted != null)
         {
-            visualStyleNote = "\"" + wantStyle + "\" read back on " + styleSet + " of " + views.Count
+            visualStyleNote = "\"" + wantStyle + "\" read back on " + styleSet + " of " + handled.Count
                 + " view(s)"
                 + (styleReadBack.Count == 0 ? "" : ": " + string.Join(", ",
                     styleReadBack.Select(e => e.Key + " on " + e.Value)))
@@ -261,10 +323,10 @@ else
                 + ".";
         }
 
-        refused.AddRange(styleRefused);
-        foreach (var failure in refused) findings.Add("Refused: " + failure);
+        refusals.AddRange(styleRefused);
+        foreach (var failure in refusals) findings.Add("Refused: " + failure);
 
-        if (refused.Count > 0)
+        if (refusals.Count > 0)
             findings.Add("A view controlled by a VIEW TEMPLATE refuses the properties that template "
                 + "holds, and that is the commonest reason for a refusal here. "
                 + "REPORT_VIEW_TEMPLATE_CONTROL says which properties those are");

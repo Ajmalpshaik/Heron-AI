@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -16,7 +16,16 @@ capability: TAG_ELEMENTS_IN_VIEW
 # Version 5 (2026-10-13, FRAGMENT-ISSUES 5b-452, the owner's word - Group DV
 # DV5): an MEP tag with no leader goes on its own element. Versions 3 and 4
 # passed the project origin as its head, and Revit put every head there.
-version: 5
+#
+# Version 6 (2026-11-01): TAG_ELEMENTS was merged into this card on the
+# owner's instruction, and is DEPRECATED. What it had that this lacked is here:
+# an EXACT tag type (`tagTypeId`) used on every element whatever its category,
+# a Multi-Category tag included; with it, an element is skipped only when it
+# already carries a tag OF THAT TYPE in the view; and `skipped`, the ids left
+# alone as already tagged. Without `tagTypeId` the card is version 5 exactly.
+# Version 5's proof below no longer describes the code and is kept as the
+# record; the card is DRAFT until it is proved again.
+version: 6
 source: OFFICIAL
 risk: MODIFY
 
@@ -71,6 +80,14 @@ purpose: >
   contract and is fixed here by naming the source correctly, not by working
   around the graph.
 
+  ONE TAG TYPE ON EVERYTHING, WHEN IT IS NAMED (version 6). Given an exact tag
+  type, that type is placed on every element whatever its category - a
+  Multi-Category tag on a mixed set, or one family chosen by hand - and an
+  element is left alone only when it already carries a tag of THAT type in the
+  view. So "tag the ducts again using this tag family" adds the new family to
+  ducts tagged with another, and running it twice stacks nothing. Rooms still
+  go to TAG_ROOMS, and risers are still skipped.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so
   tagging a whole view is one undo entry.
 
@@ -86,6 +103,19 @@ contract:
     - name: tagTypeHintId
       type: ElementId
       source: request
+    # Version 6, from TAG_ELEMENTS. ONE EXACT tag type, by its type name, used
+    # on EVERY element whatever its category - a Multi-Category tag, or one
+    # family chosen by hand - with no map, no default and no hint. With it, an
+    # element is skipped only when it already has a tag OF THIS TYPE in the
+    # view. Not given (none) is version 5: the hint, then the project's
+    # default, per category. Revit places a tag of the wrong category without
+    # a word and it prints blank, so naming one is the caller's choice; a type
+    # that is not a tag at all is refused for every element.
+    - name: tagTypeId
+      type: ElementId
+      source: request
+      optional: true
+      absent: none
     - name: leader
       # none | straight, and `none` is the default ON PURPOSE - addLeader
       # false, the head on the element's own point. Until version 5 an MEP
@@ -129,6 +159,14 @@ contract:
       # (D-52).
       role: accounting
       type: int
+    - name: skipped
+      # Version 6, from TAG_ELEMENTS. The ids of the elements `alreadyTagged`
+      # counts - left alone because they already carry a tag in this view (of
+      # the exact type, when one was given). What it passed over, never a tag
+      # it placed, so it must not count toward "did this come back empty"
+      # (D-52).
+      role: accounting
+      type: IList<ElementId>
     - name: typeCorrections
       # Tags moved onto the project's own default tag family. THE TAG FAMILY
       # MUST COME FROM THE PROJECT'S DEFAULT, NEVER FROM THE FIRST ONE LOADED,
@@ -181,8 +219,10 @@ contract:
     - name: tagTypesUsed
       # One line per tag category: the tag type used, as "Family: Type", and
       # which of the three routes found it - the caller's hint, the project's
-      # default, or the first one loaded (a guess). How it CHOSE, never a thing
-      # it made (D-52); the tags are `tagged`.
+      # default, or the first one loaded (a guess). A hint of another
+      # category, set aside, is said on its line (version 6); with an exact
+      # type, one line, "every category". How it CHOSE, never a thing it made
+      # (D-52); the tags are `tagged`.
       role: accounting
       type: IList<string>
 
@@ -275,11 +315,33 @@ compatibility-note: >
 #   "tag the doors in this view"     -> here, since version 4. Before it the
 #                                       route that worked was
 #                                       FIND_UNTAGGED_ELEMENTS then TAG_ELEMENTS
-#                                       with the door tag named - still right
-#                                       when the caller wants one tag type on
-#                                       everything, chosen by hand
+#                                       with the door tag named. ONE TAG TYPE ON
+#                                       EVERYTHING, chosen by hand, is here too
+#                                       since version 6: `tagTypeId`
+#   "tag the ducts again using this tag family"
+#                                    -> here, with `tagTypeId` (version 6). An
+#                                       element is skipped only when it already
+#                                       carries a tag of THAT type
 #   "tag the rooms"                  -> TAG_ROOMS - a room tag is not an
 #                                       independent tag, and here refuses rooms
+
+# VERSION 6 (2026-11-01) - TAG_ELEMENTS WAS MERGED INTO THIS CARD on the
+# owner's instruction, and is DEPRECATED. Both put a tag on each element in one
+# view and never stacked a second; this card also chooses the tag family per
+# category, reads the type back and corrects it, skips risers and refuses
+# rooms. What TAG_ELEMENTS had that this lacked is here: the exact type, the
+# type-aware skip that comes with it, and `skipped`. Its `alreadyTagged` input
+# - FIND_UNTAGGED_ELEMENTS' list - is not taken: this reads the view's own
+# tags, so the list cannot be stale. Its `addLeader` is `leader` here, none or
+# straight. NOT CARRIED, the safer rule kept: TAG_ELEMENTS tagged a room as an
+# IndependentTag ("tagged 5" in Project1's "1 - Mech", 2026-09-23); here a room
+# goes to TAG_ROOMS in both modes. Its routing rows now read here: "tag these"
+# and "put tags on these" -> here; "show me the ducts" -> SET_SELECTION; "cloud
+# this change" -> ADD_REVISION_CLOUD; "dimension these" -> CREATE_DIMENSION;
+# "centre the room tags" -> CENTER_ROOM_TAGS; "stack the tags at the side" ->
+# STACK_TAGS; "copy the tags from the old units to the new units" ->
+# COPY_TAGS_TO_REPLACEMENTS. "SHOW" IS THE AMBIGUOUS WORD: "show me the sizes"
+# wants an answer in the chat, "show the sizes on the drawing" wants tags.
 
 utterances:
   - tag these elements
@@ -291,3 +353,10 @@ utterances:
   - tag these ducts
   - tag the doors in this view
   - tag all the doors in a plan view
+  # MOVED 2026-11-01 from TAG_ELEMENTS, merged into this card.
+  - tag these
+  - put tags on these
+  - put tags on the ducts
+  - tag all the ducts in this view
+  - add the size tags
+  - annotate these on the drawing

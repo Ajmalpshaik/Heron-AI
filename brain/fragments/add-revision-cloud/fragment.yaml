@@ -111,12 +111,12 @@ compatibility-note: >
   Padding arrives in millimetres and is divided by 304.8 - arithmetic, per
   D-20.
 
-# ROUTING - repeated in TAG_ELEMENTS and OVERRIDE_GRAPHICS_IN_VIEW.
+# ROUTING - repeated in TAG_ELEMENTS_IN_VIEW and OVERRIDE_GRAPHICS_IN_VIEW.
 #
 #   "put a revision cloud around this" -> here
 #   "cloud this change"                -> here
 #   "mark this as revised"             -> here
-#   "tag these"                        -> TAG_ELEMENTS - a tag reads a
+#   "tag these"                        -> TAG_ELEMENTS_IN_VIEW - a tag reads a
 #                                        parameter; a cloud marks a CHANGE
 #   "add a revision"                   -> CREATE_REVISION. This fragment needs
 #                                        a revision to EXIST and refuses to
