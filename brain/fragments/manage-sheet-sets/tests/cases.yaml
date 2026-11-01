@@ -72,6 +72,38 @@ positive:
       "HERON KA KEEP" still A101 alone. VERSION 3 FAILS THIS: it wrote A102
       and A103 onto whichever set was current and left the dialog on "HERON
       KA NEW"
+  # Added 2026-11-01 from the review of version 4: the saved-set-current path,
+  # and the restore on the modes existing callers already use.
+  - given: >
+      A SAVED SET CURRENT. "HERON KA KEEP" holding A101, the In-Session
+      selection A104 alone, and File - Print - Settings closed with "HERON KA
+      KEEP" as the current set (not "<in-session>"). Mode "create", setName
+      "HERON KA NEW", elements A102 and A103
+    expect: >
+      "HERON KA NEW" holding A102 and A103, "HERON KA KEEP" STILL A101 ALONE,
+      the In-Session selection still A104 alone, and the dialog reopening on
+      "HERON KA KEEP". Version 3 wrote A102 and A103 onto "HERON KA KEEP"
+      itself before saving
+  - given: >
+      "HERON KA KEEP" current in the dialog, then mode "add" of A105 to a
+      different set "HERON KA OTHER", and again with mode "remove"
+    expect: >
+      A105 added, then removed, in "HERON KA OTHER" only; the dialog reopening
+      on "HERON KA KEEP" each time and the In-Session selection untouched.
+      Version 3 left the dialog on "HERON KA OTHER"
+  - given: >
+      "HERON KA KEEP" current in the dialog, then mode "delete" of "HERON KA
+      KEEP" itself, after a yes
+    expect: >
+      the set gone, the dialog reopening on "<in-session>", and `printRange`
+      with NO "could NOT be put back" note - a current set that was the one
+      deleted is not a failure to put it back
+  - given: >
+      mode "rename" of "HERON KA OTHER" with no newName, "HERON KA KEEP" current
+    expect: >
+      refused "No new name was given for the rename." BEFORE the dialog's
+      current set is changed, and the In-Session selection not rewritten -
+      no In-Session write happens in rename, delete, add, remove or duplicate
   - given: >
       the same, but mode "duplicate" of "HERON KA KEEP" as "HERON KA KEEP 2"
     expect: >

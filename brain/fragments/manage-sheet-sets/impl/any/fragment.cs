@@ -213,6 +213,11 @@ if (refused.Length == 0)
     IViewSheetSet currentBefore = null;
     ViewSet inSessionBefore = null;
     bool sessionRead = false;
+    // Whether this run wrote the In-Session set's members - only create and
+    // by-parameter do. The In-Session selection is put back only then, so a
+    // rename, delete, add, remove, duplicate or early refusal never rewrites it
+    // (review of version 4, 2026-11-01).
+    bool sessionWritten = false;
     // The set delete removed, so putting back a current set that no longer
     // exists is not reported as a failure.
     ElementId deletedId = ElementId.InvalidElementId;
@@ -282,6 +287,7 @@ if (refused.Length == 0)
                         bool saved = false;
                         try
                         {
+                            sessionWritten = true;
                             setting.CurrentViewSheetSet = setting.InSession;
                             setting.CurrentViewSheetSet.Views = members;
                             saved = setting.SaveAs(valueSetName);
@@ -396,6 +402,7 @@ if (refused.Length == 0)
                     {
                         // Version 4: through the In-Session set, never onto
                         // whichever saved set the Print dialog had current.
+                        sessionWritten = true;
                         setting.CurrentViewSheetSet = setting.InSession;
                         setting.CurrentViewSheetSet.Views = views;
                         if (setting.SaveAs(wanted)) done = true;
@@ -426,8 +433,18 @@ if (refused.Length == 0)
                     refused = "No sheet set called '" + wanted + "'.";
                 else
                 {
-                    try { setting.CurrentViewSheetSet = existing; }
-                    catch { refused = "Could not make '" + wanted + "' the current set."; }
+                    // A missing new name is refused before the Print dialog's
+                    // current set is touched.
+                    if (operation == "rename" && givenName(newName).Length == 0)
+                        refused = "No new name was given for the rename.";
+                    else if (operation == "duplicate" && givenName(newName).Length == 0)
+                        refused = "No name was given for the copy of '" + wanted + "'.";
+
+                    if (refused.Length == 0)
+                    {
+                        try { setting.CurrentViewSheetSet = existing; }
+                        catch { refused = "Could not make '" + wanted + "' the current set."; }
+                    }
 
                     if (refused.Length == 0 && operation == "delete")
                     {
@@ -654,6 +671,16 @@ if (refused.Length == 0)
                         foreach (View member in written.Views) if (member != null) actual++;
                         memberCount = actual;
                     }
+                    else
+                    {
+                        // Revit said it was saved, but no set holds that name -
+                        // never reported as done on Revit's word alone.
+                        done = false;
+                        changed = 0;
+                        memberCount = 0;
+                        refused = "Revit reported '" + finalName + "' saved, but no sheet set by that name can be found "
+                            + "afterwards - it is not reported as done. Check File - Print - Settings.";
+                    }
                 }
                 catch { }
             }
@@ -667,14 +694,18 @@ if (refused.Length == 0)
         string sessionNote = "";
         if (setting != null && sessionRead)
         {
-            bool sessionBack = false;
-            try
+            // Only when this run wrote it - otherwise it was never touched.
+            bool sessionBack = !sessionWritten;
+            if (sessionWritten)
             {
-                setting.CurrentViewSheetSet = setting.InSession;
-                setting.CurrentViewSheetSet.Views = inSessionBefore;
-                sessionBack = true;
+                try
+                {
+                    setting.CurrentViewSheetSet = setting.InSession;
+                    setting.CurrentViewSheetSet.Views = inSessionBefore;
+                    sessionBack = true;
+                }
+                catch { }
             }
-            catch { }
 
             bool currentBack = false;
             bool currentGone = false;
@@ -684,7 +715,8 @@ if (refused.Length == 0)
                 currentGone = wasElement != null && !deletedId.Equals(ElementId.InvalidElementId)
                     && wasElement.Id.Equals(deletedId);
             }
-            catch { currentGone = true; }
+            // Unreadable is not gone: try to put it back, and say so if that fails.
+            catch { currentGone = false; }
             if (!currentGone)
             {
                 try { if (currentBefore != null) setting.CurrentViewSheetSet = currentBefore; currentBack = true; } catch { }
