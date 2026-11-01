@@ -1152,7 +1152,22 @@ def fragment_needs(path):
             key, sep, value = stripped.partition(":")
             if not sep:
                 return None
-            needs[-1][key.strip()] = value.strip()
+            value = value.strip()
+            # A QUOTED SCALAR IS ITS TEXT, NOT ITS QUOTES - `absent: '0'` is the
+            # text 0, as PyYAML reads it. Kept quotes reached the binder as the
+            # four characters '0' (found 2026-11-01, when merged cards first
+            # quoted their `absent:` defaults). Single quotes double a quote
+            # inside; a double-quoted value with an escape is a shape this does
+            # not read, so it is refused rather than guessed.
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+                inner = value[1:-1]
+                if value[0] == "'":
+                    value = inner.replace("''", "'")
+                elif "\\" in inner:
+                    return None
+                else:
+                    value = inner
+            needs[-1][key.strip()] = value
             continue
 
         # Anything else inside the needs block is a shape this does not
