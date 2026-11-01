@@ -1157,8 +1157,9 @@ negative case, is owed before the panel is relied on.
 
 **§18 question 7 asked again, and answered.** §21's table recorded *no Select-in-Revit button in V1*. The
 Model Dashboard's plan put the button in its phase 2 and asked the owner first; the owner answered
-*"DO IT UNITLE FINISH CONTINEWSLY"*. Built on that word - **the owner confirms it on the pull request**,
-and taking the three buttons out is one revert.
+*"DO IT UNITLE FINISH CONTINEWSLY"*, and then, asked plainly, **confirmed it in his own words on
+2026-11-01: *"yes allow select button"*.** §18 question 7 now reads *yes, from the Model Dashboard* - the
+three buttons below, on screen only; taking them out would be one revert.
 
 Each *Worth a look* row with element ids gets **Select in Revit** and **Isolate in view**, and the panel
 gets **Reset isolate**. **On screen only - nothing in the model changes:**
