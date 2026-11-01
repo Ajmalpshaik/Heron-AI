@@ -5,11 +5,79 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-061
-semantic-identity: "how this schedule's columns read on the sheet - heading text, width, alignment"
+semantic-identity: "how this schedule's columns read on the sheet - heading text, width, alignment, units, cell style"
 kind: action
 domain: revit.schedules
 capability: SET_SCHEDULE_APPEARANCE
-version: 4
+# VERSION 5 (2026-11-01, FRAGMENT-ISSUES row 5b-1367, NEEDS-CHECKING Group
+# KK), on the owner's word in the brief of that day's session: Ajmal PS made a
+# duct length schedule on his Revit 2020 job model through Heron - create,
+# group by size, Length totals and grand total all worked - and could not set
+# the Length column to metres, because no tool set a column's units. A grep of
+# every fragment against the Revit API reference then found three more
+# Formatting-tab settings of ONE column that nothing set; this card takes all
+# three, because each is one more thing about how a column prints:
+#
+#   ON TOP OF VERSION 4. The same day, on the owner's instruction ("make sure
+#   there is no duplicate tools", PR #777), SET_SCHEDULE_FIELD_TOTALS was merged
+#   into this card as version 4 (`calculateTotals`, below). This version keeps
+#   every word of that and adds what this branch had built as its own version 4
+#   - row number 5b-1363 at first, renumbered 5b-1367 because main took 1363.
+#
+#   `calculation` - the Formatting tab's whole drop-down for each column named:
+#   totals, minimum, maximum, minimum and maximum, or none. A minimum or
+#   maximum is asked of Revit with CanDisplayMinMax first, a total with
+#   CanTotal. It is `optional: true` with `absent: leave`, so a version 4
+#   caller is bound "leave" and `calculateTotals` decides exactly as before;
+#   `calculateTotals` on with any calculation but totals is refused once, the
+#   rest still made. It was SET_SCHEDULE_FIELD_TOTALS version 2's `calculation`
+#   on this branch, moved here with the card it widened.
+#
+#   `units` - the column's Field Format. "project" ticks Use project settings;
+#   otherwise the unit's name or symbol, a rounding and "no symbol", commas
+#   between, in SET_PROJECT_UNITS' words ("metres, 2 decimal places, m"). It
+#   unticks Use project settings and starts from the project's own format for
+#   the column's unit type, so every tick box the project has is kept, as
+#   SET_PROJECT_UNITS keeps them. Two shapes of the units API, ONE
+#   implementation: the ForgeTypeId route wherever ScheduleField.GetSpecTypeId
+#   exists (2021 on), Revit 2020's UnitType route where it does not, every
+#   call that names either reached by name at run time, as SET_PROJECT_UNITS
+#   does - one implementation, the same code on every release.
+#
+#   `multipleValues` - "project", "varies" or "custom: <text>", what a row
+#   prints when the elements it gathers disagree. Revit 2022 on: 2020 and 2021
+#   have neither property nor its enum, so there it is refused by name and the
+#   rest of the call still made.
+#
+#   `cellStyle` - bold, italic, underline, colour, font and size of THIS
+#   schedule's column, as a cell-style override (ScheduleField.GetStyle and
+#   SetStyle), only the asked overrides switched on and the others kept;
+#   "reset" switches every override off. It never edits a text type, which
+#   other schedules share - so version 3's "nothing here makes text bold"
+#   still holds of the text TYPE, and which text type the schedule's title,
+#   headers and body use is SET_SCHEDULE_OPTIONS'.
+#
+#   All three are `optional: true` with `absent: leave`, so a caller of version
+#   3 that never sends them is bound "leave" and gets version 3 exactly; they
+#   follow `fieldName` - one column, "all" or a list - like every other input.
+#   A word that is not understood refuses that setting once, for every column,
+#   and the rest is still made. A setting Revit refuses writes nothing and the
+#   rest is still made. A setting Revit TAKES but that reads back different
+#   throws, and the add-in rolls the whole call back, as SET_PROJECT_UNITS
+#   does: a column printing the wrong units under an answer saying "metres" is
+#   the worse of the two.
+#
+#   ASSUMPTIONS THE PROOF SETTLES. TableCellStyle.TextSize is written as a
+#   Revit internal length (mm / 304.8) - the reference does not say its unit -
+#   and read back both in mm on that assumption and as Revit's own number.
+#   "reset" is written as every override option switched off; whether the
+#   ribbon's Reset does more is read off the dialog. A Count column is assumed
+#   to have no unit type and is refused for units.
+#
+#   Version 3's proof below no longer describes the code and is kept as a
+#   record; the card is DRAFT until NEEDS-CHECKING Group KK proves version 5
+#   and the owner signs.
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -36,12 +104,17 @@ purpose: >
   the call that breaks at 2021. A column width is one of the few numbers on a
   drawing that a modeller genuinely thinks about in millimetres.
 
-  **NOTHING HERE MAKES TEXT BOLD, AND THAT IS DELIBERATE.** Bold, font and size
-  on a schedule belong to its **text type**, not to the field - changing them
-  means editing a type that other schedules share, which would silently restyle
-  drawings nobody asked about. The Revit route is named in the routing table
-  instead. A fragment that quietly edits a shared type to satisfy one sentence
-  is the more dangerous of the two options.
+  **A COLUMN'S BOLD IS THIS SCHEDULE'S OWN; A TEXT TYPE IS EVERYBODY'S.**
+  Version 5 makes one column bold, italic, underlined, coloured, in another
+  font or size - as an override on this schedule's column, the way Revit's
+  Modify Schedule ribbon does it. It never edits the schedule's **text type**,
+  which other schedules share - editing it would silently restyle drawings
+  nobody asked about.
+
+  **VERSION 5 SETS A COLUMN'S UNITS** - the Field Format of the Formatting tab,
+  *"show the Length column in metres, 2 decimal places"*, or back to the
+  project's units - and what a row prints when its elements disagree
+  (Revit 2022 on).
 
   **VERSION 2 ADDS HIDING A COLUMN, WHICH IS NOT THE SAME AS REMOVING IT.** A
   field is often added to sort or filter by and is not meant to print. Hidden,
@@ -59,6 +132,10 @@ purpose: >
   column answers to, by field name or heading, now touches none of them, for
   every change here. Version 3's proof no longer describes the code and is
   kept as a record; the card is DRAFT until it is proved again.
+
+  **VERSION 5 GIVES THE REST OF THAT DROP-DOWN** - minimum, maximum, minimum
+  and maximum, or no calculation - asked of Revit first in the same way
+  (`CanDisplayMinMax` for a minimum or maximum).
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -151,6 +228,41 @@ contract:
       type: bool
       source: request
       optional: true
+    # VERSION 5. The Formatting tab's calculation for each column named:
+    # totals, minimum, maximum, minimum and maximum (min, max, min/max), or
+    # none. Left out it is "leave", and calculateTotals decides exactly as
+    # in version 4. With calculateTotals on, anything but totals is refused.
+    - name: calculation
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    # VERSION 5. A column's own units, as the Field Format dialog sets them:
+    # "project" ticks Use project settings; otherwise the unit's name or
+    # symbol, a rounding and "no symbol", commas between - "metres, 2 decimal
+    # places, m". Left out it is "leave": the column's units as they are.
+    - name: units
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    # VERSION 5, Revit 2022 on. What a row prints when the elements it gathers
+    # disagree: "project", "varies" or "custom: <text>". Left out it is
+    # "leave". On 2020 and 2021 it is refused by name, the rest still made.
+    - name: multipleValues
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    # VERSION 5. This column's own text style, an override on THIS schedule
+    # only: bold, not bold, italic, not italic, underline, not underline,
+    # colour <name|#RRGGBB|R G B>, font <name>, size <N> mm, or reset. Left
+    # out it is "leave".
+    - name: cellStyle
+      type: string
+      source: request
+      optional: true
+      absent: leave
   provides:
     - name: changed
       role: result
@@ -257,9 +369,29 @@ compatibility-note: >
   **`ScheduleField.VerticalAlignment` is NOT used**: it arrives at 2027 and
   Revit 2020 has never had it, so naming it would split this fragment in two.
 
-  **No units API is called.** The width converts mm to feet by dividing by
-  304.8, plain arithmetic at the edge, which is what D-20 requires and what
-  keeps this working across the 2021 units break.
+  **The width calls no units API.** It converts mm to feet by dividing by
+  304.8, plain arithmetic at the edge, which is what D-20 requires.
+
+  **VERSION 5's column units cross the 2021 units break by name.** A column's
+  unit type is `ScheduleField.UnitType` on 2020 and 2021 (gone from 2022) and
+  `GetSpecTypeId()` from 2021 (never on 2020); FormatOptions' units are
+  `DisplayUnits`/`UnitSymbol` on 2020 and 2021 and `GetUnitTypeId`/
+  `SetUnitTypeId`/`GetSymbolTypeId`/`SetSymbolTypeId` from 2021 - read off the
+  reference assemblies of all eight releases. Every one of them is reached by
+  name at run time - one implementation for every release, as
+  SET_PROJECT_UNITS does (the add-in has handed fragments the release symbols
+  since row 5b-181's fix; reaching by name is chosen, not forced) - the ForgeTypeId route wherever `GetSpecTypeId` exists -
+  SET_PROJECT_UNITS' two routes. `UnitUtils.IsMeasurableSpec` is asked where
+  it exists (2022 on). `ScheduleField.GetFormatOptions`, `SetFormatOptions`,
+  `FormatOptions.UseDefault`, `Accuracy` and `IsValidAccuracy` are on every
+  release.
+
+  **`MultipleValuesDisplayType` and `MultipleValuesCustomText` arrived at
+  2022**, with their enum (`Project`, `Varies`, `Custom`), and are reached by
+  name; on 2020 and 2021 that one setting is refused. `ScheduleField.GetStyle`
+  and `SetStyle`, `TableCellStyle` and `TableCellStyleOverrideOptions` (`Bold`,
+  `Italics`, `Underline`, `FontColor`, `Font`, `FontSize`) are on every release
+  unchanged.
 
   Version 4 adds `ScheduleField.DisplayType` (get and set),
   `ScheduleField.CanTotal()`, `IsHidden`, the `ScheduleFieldDisplayType`
@@ -267,7 +399,8 @@ compatibility-note: >
   `ScheduleDefinition.GetSortGroupFields`, `ShowGrandTotal` and
   `ScheduleSortGroupField.ShowFooter` - unchanged 2020 through 2027, read out
   of each release's reference assembly with `tools/api-surface --members` for
-  SET_SCHEDULE_FIELD_TOTALS, PROVEN on Revit 2020.
+  SET_SCHEDULE_FIELD_TOTALS, PROVEN on Revit 2020. Version 5 adds
+  `ScheduleField.CanDisplayMinMax()`, on every release 2020-2027 unchanged.
 
 # ROUTING - the same rows are in the fragments named here.
 #
@@ -298,27 +431,37 @@ compatibility-note: >
 #   "what is the total per type"       -> GROUP_AND_COUNT (SUM_BY_GROUP until
 #                                         it was merged there, 2026-11-01). A question about the
 #                                         model, answered in the chat
-#   "make the schedule text bold"      -> NOT here and NOT anywhere in this
-#                                         library. Bold, font and size live on
-#                                         the schedule's TEXT TYPE, which other
-#                                         schedules share - changing it would
-#                                         restyle drawings nobody asked about.
-#                                         Revit's route: select the schedule,
-#                                         Properties, Appearance, edit the
-#                                         Header/Body text type
-#   "show units as mm in that column"  -> NOT HERE AND NOWHERE IN THIS LIBRARY.
-#                                         A column's UNIT is read and written
-#                                         through `ScheduleField.UnitType` on
-#                                         Revit 2020 and through `GetSpecTypeId`
-#                                         from 2022 - the first is GONE by 2027
-#                                         and the second has never existed on
-#                                         2020, checked against the reference
-#                                         assemblies. There is no single
-#                                         expression, and every fragment here is
-#                                         one implementation for all eight
-#                                         releases. Revit's route: the
-#                                         schedule's Formatting tab, Field
-#                                         Format
+#   "make the Length column bold"      -> here, version 5, cellStyle bold -
+#                                         an override on THIS schedule's column
+#   "make the schedule text bold"      -> SET_SCHEDULE_OPTIONS when the whole
+#                                         schedule's title, header or body
+#                                         should use another TEXT TYPE (a bold
+#                                         one); here when one column is meant.
+#                                         Editing a text type itself is in no
+#                                         Heron tool - other schedules share it
+#   "change the Length column to metres"
+#                                      -> here, version 5, units - Ajmal PS's
+#                                         own words, 2026-11-01. Both shapes of
+#                                         the units API are reached by name, so
+#                                         one implementation serves 2020-2027
+#   "change the project's length units" -> SET_PROJECT_UNITS. The PROJECT's
+#                                         units, every view and schedule that
+#                                         uses project settings - not one column
+#   "show varies as a dash in that column"
+#                                      -> here, version 5, multipleValues
+#                                         (Revit 2022 on)
+#   "show the minimum and maximum of this column in the schedule"
+#                                      -> here, version 5, calculation
+#                                         minimum and maximum - what a column
+#                                         CALCULATES, on the same Formatting tab.
+#                                         Said with no schedule named - "show
+#                                         the minimum and maximum of the
+#                                         length" - it reaches MEASURE_RUN_QUANTITIES
+#                                         on the n-gram backend (measured
+#                                         2026-11-01), a read of the model,
+#                                         which is a fair answer to that
+#   "calculate the maximum flow for each group"
+#                                      -> here, version 5, calculation maximum
 #   "hide a column but keep the field" -> here, hideOrShow hide. Until
 #                                         2026-11-01 this table ALSO sent "hide
 #                                         that column" to REMOVE_SCHEDULE_FIELDS
@@ -390,6 +533,13 @@ utterances:
   # and turns a heading back to horizontal.
   - make all the schedule columns horizontal and centred
   - set every heading horizontal
+  # ADDED 2026-11-01, version 5 (row 5b-1367). The first is Ajmal PS's own
+  # words on his Revit 2020 duct length schedule.
+  - change the Length column to metres
+  - show this schedule column in millimetres with no decimals
+  - set the column units back to project settings
+  - make the Length column bold
+  - show varies as a dash in that column
   # NOT declared, measured 2026-10-17 on four backends: the owner's own words
   # "make all the fields formatting horizontal and centre" reach here on the
   # trained model alone, MEASURE_DISTANCE on spelling, and CREATE_RADIAL_GRIDS
@@ -402,6 +552,11 @@ utterances:
   - total the flow per room
   - add up the airflow in the schedule
   - sum this column in the schedule
+  # VERSION 5 - the rest of the calculation drop-down, moved here from
+  # SET_SCHEDULE_FIELD_TOTALS version 2 on this branch with its `calculation`.
+  - show the minimum and maximum of this column in the schedule
+  - calculate the maximum flow for each group
+  - turn off the total on the length column
   # MOVED 2026-11-01 from REMOVE_SCHEDULE_FIELDS, which stays a card: the
   # "hide" sentences have ONE owner now, this one - see the routing row for
   # "hide a column but keep the field".

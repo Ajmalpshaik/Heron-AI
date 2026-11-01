@@ -9,7 +9,26 @@ semantic-identity: "add columns to these schedules, and say which ones could not
 kind: action
 domain: revit.views
 capability: ADD_SCHEDULE_FIELDS
-version: 2
+# VERSION 3 (2026-11-01, on the owner's word in the brief of that day's
+# session - Ajmal PS asked, after a duct length schedule on his Revit 2020 job
+# model could not have its Length column set to metres, for every schedule
+# setting Heron was missing to be built; FRAGMENT-ISSUES row 5b-1367, numbered
+# 5b-1363 until main took that number). `position` with NO columnName now
+# places the PLAIN columns fieldNames adds - version 2 refused that call
+# whole. first, last, after <column>, before <column>, or a place in the
+# Fields tab's list from 1 (hidden fields count, as on that tab and in
+# GetFieldOrder, which InsertField's index counts in); several fields go in in
+# the order given from that place. A place that cannot be found on a schedule
+# adds NOTHING to it (notPlaced) - never the end instead. A field already
+# there is not moved. With a columnName, position is version 2 to the letter;
+# left out it is "keep", version 1's AddField at the end. `notPlaced` and
+# `appliedOrder` (the order read back, new columns marked) are new outputs;
+# every version 2 output is unchanged. The one rule version 2 kept as the
+# safer one - a position with no columnName refused - now holds only when
+# fieldNames is empty too. Version 1's proof below no longer describes the
+# code and is kept as a record; the card is DRAFT until NEEDS-CHECKING Group
+# KK proves version 3 and the owner signs.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -99,7 +118,8 @@ contract:
     # number from 1, for the column columnName names. Left out ("keep"): a new
     # combined column last, an edited one where it is. With editExisting and
     # neither parts nor separators, the column is MOVED and nothing else
-    # changes. Given with no columnName, refused.
+    # changes. VERSION 3: given with no columnName, it places the plain
+    # columns fieldNames adds, in order from that place; with neither, refused.
     - name: position
       type: string
       source: request
@@ -169,6 +189,19 @@ contract:
       # One string, joined by "  ||  ". Never a thing it found (D-52).
       role: accounting
       type: string
+    - name: notPlaced
+      # VERSION 3. Schedules a position for plain columns could not be found
+      # on - nothing was added to them - and any column a read back finds
+      # somewhere other than where it was asked. Given and unusable, never a
+      # column it added (D-52).
+      role: accounting
+      type: IList<string>
+    - name: appliedOrder
+      # VERSION 3. With a position for plain columns, each schedule's field
+      # order read back after the change, new columns marked "(new)" and
+      # hidden ones "(hidden)".
+      role: result
+      type: string
 
 # VERSION 1's PROOF, KEPT AS THE RECORD. Version 2 changed impl/, so its
 # fingerprint no longer describes the code and the card is DRAFT until
@@ -219,6 +252,10 @@ compatibility-note: >
   calculated values are NOT used: they have no public API on the older
   releases in this range.
 
+  Version 3 adds `ScheduleDefinition.InsertField(SchedulableField, int)` and
+  `ScheduleField.IsHidden`, unchanged 2020 to 2027, read off the shipped
+  assemblies of all eight on 2026-11-01.
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "make a key schedule"            -> CREATE_SCHEDULE, listKind key (CREATE_
@@ -255,8 +292,19 @@ compatibility-note: >
 #   "edit the size column to use width   -> here, VERSION 2, editExisting
 #    x height"
 #   "move this column after Equipment    -> here, VERSION 2, editExisting
-#    Tag"                                   with position and no parts. No
-#                                           other tool reorders columns
+#    Tag"                                   with position and no parts - one
+#                                           column moved
+#   "add Length as the second column of the schedule"
+#                                        -> here, VERSION 3: position 2 with no
+#                                           columnName. SET_SCHEDULE_APPEARANCE
+#                                           ranked first for it by nearness on
+#                                           the n-gram backend (2026-11-01);
+#                                           declared here, identity keeps it
+#   "add the comments column after size" -> here, VERSION 3: position after Size
+#   "put the schedule columns in this order Mark Size Length"
+#                                        -> SET_SCHEDULE_FIELD_ORDER - a whole
+#                                           or partial ORDER in one call. One
+#                                           column moved stays here
 #   "what is the size column made of"    -> REPORT_SCHEDULE_DEFINITION - a
 #                                           question, never this write
 
@@ -300,3 +348,6 @@ utterances:
   - edit the size column to use width x height
   - change what the combined column is made of
   - move this column after Equipment Tag
+  # VERSION 3, row 5b-1367.
+  - add Length as the second column of the schedule
+  - add the comments column after size

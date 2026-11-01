@@ -1,0 +1,33 @@
+positive:
+  - given: an empty key schedule of Rooms made by CREATE_SCHEDULE with listKind key, keyNames "HERON KF Finish A, HERON KF Finish B"
+    expect: >
+      added 2, addedKeys naming both, read back; and in Revit the key schedule
+      showing two rows with those Key Names, and a room's key drop-down
+      offering them. THIS IS THE CASE THAT SETTLES WHETHER InsertRow MAKES A KEY
+
+  - given: the same schedule, keyNames "HERON KF Finish A, HERON KF Finish C"
+    expect: >
+      added 1 (Finish C), Finish A named in alreadyThere and left as it was
+
+negative:
+  - given: a schedule of DUCTS (not a key schedule), keyNames "HERON KF Finish A"
+    expect: >
+      added 0, refused saying it is a schedule of elements, not a key
+      schedule, and the duct schedule untouched - no row, no element
+
+  - given: keyNames empty
+    expect: refused, NO KEY WAS ADDED, and the key schedule unchanged
+
+  - given: an element that is not a schedule (a wall)
+    expect: refused - not one of the elements is a schedule; nothing added
+
+  - given: a release where InsertRow adds a row but no key element
+    expect: >
+      the call throws "Revit added no key" and the add-in rolls back - no empty
+      row is left in the table
+
+second_route:
+  - >
+    Revit's own Modify Schedule/Quantities > Rows > Insert Data Row, once per
+    key, typing each Key Name - the rows compared with the ones added here, and
+    a room's key drop-down read by a person
