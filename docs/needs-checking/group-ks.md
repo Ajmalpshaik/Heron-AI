@@ -49,7 +49,7 @@ without the card, and with it - `model` backend, re-ranker absent, no Revit filt
 every declared utterance and routing-table sentence of every live card (4,321): the three sentences reach
 this card; no declared utterance and no `TAG_ELEMENTS_IN_VIEW` sentence moved. One routing-table sentence
 moved between two writes neither its table names - *"put it back"*, `SHOW_ELEMENTS`' and unreached before -
-recorded with five undeclared rebar sentences as [row 5b-1373](../fragment-issues/section-5b-rows-401-425.md),
+recorded with five undeclared rebar sentences as [row 5b-1375](../fragment-issues/section-5b-rows-401-425.md),
 OPEN. `tools/check-routing.py`: no new crossing; on the keyword route alone *"add a linear dimension"* now
 ranks this card first where `CREATE_DIMENSION` did, and the lookup answers it on `CREATE_LINEAR_DIMENSION`
 by identity, before and after.

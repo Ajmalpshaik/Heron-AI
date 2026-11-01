@@ -232,7 +232,7 @@ compatibility-note: >
 # INSTANCES to RESET_GRAPHIC_OVERRIDES - a write either way. Not declared on
 # SHOW_ELEMENTS here: RESET_GRAPHIC_OVERRIDES claims "put it back how it was",
 # and which card the bare sentence means is the owner's choice - recorded as
-# FRAGMENT-ISSUES row 5b-1373, OPEN.
+# FRAGMENT-ISSUES row 5b-1375, OPEN.
 #
 # ON THE KEYWORD ROUTE ALONE (tools/check-routing.py, not the lookup) "add a
 # linear dimension" now ranks this card first, where CREATE_DIMENSION did -
@@ -246,7 +246,7 @@ compatibility-note: >
 # PLACE_BEAM_REBAR, LIST_REBAR_TYPES and CREATE_REBAR_COVER_TYPE before this
 # card, and reach it after. Here, with no multi-rebar annotation type named,
 # nothing is placed and the types are listed. Recorded for the owner in row
-# 5b-1373; no words were declared on another card to win them back.
+# 5b-1375; no words were declared on another card to win them back.
 utterances:
   - add a multi-rebar annotation to these bars
   - put a multi-rebar tag with a dimension line on this rebar set
