@@ -110,7 +110,7 @@ compatibility-note: >
   number, because it is a property of the installation and not a constant.
 
 # ROUTING - repeated in FIND_OVERLAPPING_LINES, CREATE_GRIDS and
-# CREATE_FILLED_REGION.
+# DRAW_FAMILY_FILLED_REGION.
 #
 #   "draw a detail line here"            -> here
 #   "draw a line between these points"   -> here
@@ -120,7 +120,7 @@ compatibility-note: >
 #   "draw a grid line"                   -> CREATE_GRIDS - a grid is a DATUM with
 #                                           a bubble and a name, on every view;
 #                                           a line is not
-#   "hatch this area"                    -> CREATE_FILLED_REGION - a filled
+#   "hatch this area"                    -> DRAW_FAMILY_FILLED_REGION - a filled
 #                                           region has a boundary AND a fill
 #   "draw a room separation line across an opening"
 #                                        -> CREATE_ROOM_SEPARATION_LINES - a

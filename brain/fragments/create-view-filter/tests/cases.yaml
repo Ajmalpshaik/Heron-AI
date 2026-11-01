@@ -175,5 +175,57 @@ negative:
       by reflection, so there is no branch to take. Version 2 took its
       2023-onward branch and failed on 2020 to 2022
 
+  # VERSION 5 - from CREATE_VIEW_FILTERS_BY_VALUE. Each FAILS on version 4,
+  # which had no perValue.
+  - given: >
+      VERSION 5. ducts carrying five distinct System Type values selected,
+      perValue true, parameterName "System Type", namePrefix "MECH - ", a view,
+      no colour, no categories typed
+    expect: >
+      five filters "MECH - <value>" in the project's filter list, each on the
+      view in its own colour, stepped round the hue wheel - CHECKED in
+      Visibility/Graphics, Filters tab - valuesFound the five values, and a
+      duct drawn AFTER the run matching one value picking up its colour with
+      nobody touching anything
+
+  - given: VERSION 5. the same, some ducts with the parameter blank
+    expect: >
+      a sixth filter "MECH - (no value)" whose rule reads "has no value" -
+      this card's rule, not an equals rule on empty text
+
+  - given: VERSION 5. twelve distinct values
+    expect: twelve visibly different colours - a palette of six repeats on the seventh
+
+  - given: >
+      VERSION 5. a mixed selection where one DERIVED category does not carry
+      the parameter
+    expect: >
+      that category left OUT, named in droppedCategories, and the filters made
+      on the rest. Revit rejects a WHOLE filter naming a category that lacks
+      the parameter
+
+  - given: >
+      VERSION 5. the same selection with that category TYPED in categoryIds
+    expect: >
+      NOTHING made, cannotFilter naming it - a category the caller chose stops
+      the call, as version 4 did. The opposite rule from the derived case, on
+      purpose
+
+  - given: >
+      VERSION 5. elements carrying the parameter's name twice - a shared
+      parameter of the same name as a built-in one (NEEDS-CHECKING P8)
+    expect: >
+      those elements counted in leftOut as carrying the name twice, giving no
+      value, and no rule built on a parameter taken from one of them
+
+  - given: VERSION 5. perValue true and colour "255,0,0"
+    expect: refused - each filter gets its own colour - and nothing made
+
+  - given: VERSION 5. perValue true and nothing handed in
+    expect: refused - the values are read off the elements - nothing made
+
+  - given: VERSION 5. a value name already a filter
+    expect: skipped and named in alreadyExists, never overwritten, the rest made
+
 second_route:
   - Revit's own View > Filters dialog with the same categories and rule, compared for which elements change colour

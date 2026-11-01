@@ -1,15 +1,29 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-014
-semantic-identity: "crop this view around these elements"
+semantic-identity: "crop this view around these elements, or to a shaped loop"
 kind: action
 domain: revit.views
 capability: SET_VIEW_CROP
-version: 1
+# VERSION 2 (2026-11-01): SET_VIEW_CROP_TO_SHAPE was merged into this card on
+# the owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. A crop is a crop: the rectangle round elements, or - with
+# `boundary`, a closed loop of curves - a SHAPED one, an L round a wing, a
+# stepped match line, a room's outline. Its rules came with it: the curves
+# chained head to tail and a gap within `joinToleranceMm` bridged and REPORTED
+# (`worstGap`), a sheet refused before the crop is switched on, the crop
+# switched on before Revit is asked whether it can be shaped, and its
+# visibility on afterwards. `refused` says why, in words, on either road.
+# `elements` and `marginMm` are optional now, for a shaped crop. The binder
+# binds an optional curve list empty (HeronBindingNote.EmptyWhenAbsent,
+# mirrored in heron_fragment.EMPTY_WHEN_ABSENT) - the case added for this card.
+# The proof below is version 1's and no longer describes the code; DRAFT until
+# version 2 is proved.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -31,6 +45,15 @@ purpose: >
   **Setting the crop without switching it on leaves the view looking identical**,
   which reads as the call having done nothing — so both happen here.
 
+  **Or a shaped crop, from a closed loop** (version 2, from
+  SET_VIEW_CROP_TO_SHAPE) - an L round a wing, a stepped boundary along a
+  match line, the outline of a room. The crop box can only ever be a
+  rectangle; a shape goes through the view's crop-region shape manager. Revit
+  requires the loop to be closed, flat in the view's own plane and not
+  crossing itself, and gives the same unhelpful error for all three: the
+  curves are chained here, a small gap bridged and the worst gap REPORTED,
+  and a gap past the tolerance refused in millimetres. One view only.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -38,11 +61,33 @@ contract:
     - name: view
       type: View
       source: request
+    # The elements to crop round. Optional since version 2, for a shaped
+    # crop; left out it binds an empty list (HeronBindingNote.EmptyWhenAbsent).
     - name: elements
       type: IList<Element>
+      optional: true
+    # Millimetres round the elements. Optional since version 2: left out it
+    # is 0, the elements' own box. A shaped crop does not read it.
     - name: marginMm
       type: double
       source: request
+      optional: true
+      absent: 0
+    # VERSION 2, from SET_VIEW_CROP_TO_SHAPE. A closed loop of curves in the
+    # view's own plane - handed on from READ_ROOM_GEOMETRY, or typed as point
+    # pairs - for a SHAPED crop. Optional: left out it binds an empty list
+    # (HeronBindingNote.EmptyWhenAbsent), and the rectangle road runs.
+    - name: boundary
+      type: IList<Curve>
+      optional: true
+    # VERSION 2, from SET_VIEW_CROP_TO_SHAPE. The largest gap between curve
+    # ends, in MILLIMETRES, that is bridged to close the loop. Left out it is
+    # 1, the tolerance SET_VIEW_CROP_TO_SHAPE was proved with.
+    - name: joinToleranceMm
+      type: string
+      source: request
+      optional: true
+      absent: 1
   provides:
     - name: applied
       role: result
@@ -61,6 +106,18 @@ contract:
       # change it made (D-52).
       role: accounting
       type: bool
+    - name: worstGap
+      # VERSION 2, from SET_VIEW_CROP_TO_SHAPE. The largest gap bridged to
+      # close the loop, in internal FEET - REPORTED SO A SHAPE THAT WAS NEVER
+      # REALLY CLOSED DOES NOT PASS AS ONE THAT WAS; `refused` says it in mm.
+      role: result
+      type: double
+    - name: refused
+      # VERSION 2. Why it declined, in the user's words, on either road - and
+      # a repaired shape's bridged gap. The evidence it looked and said no,
+      # never a thing it FOUND (D-52).
+      role: accounting
+      type: IList<string>
 
 proof:
   date: '2026-09-19'
@@ -90,7 +147,12 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. `View.CropBox`, `View.CropBoxActive`,
   `View.CropBoxVisible` and `Element.get_BoundingBox(View)` are unchanged 2020
-  to 2027. Millimetres to feet is arithmetic (D-20).
+  to 2027. Millimetres to feet is arithmetic (D-20). Version 2 adds what
+  SET_VIEW_CROP_TO_SHAPE was proved with: `View.GetCropRegionShapeManager`,
+  `ViewCropRegionShapeManager.SetCropShape`, `CanHaveShape` and
+  `IsCropRegionShapeValid`, `CurveLoop.Create`, `Curve.CreateReversed` and
+  BuiltInParameter VIEWER_CROP_REGION and VIEWER_CROP_REGION_VISIBLE, present
+  2020 through 2027.
 
 # ROUTING - repeated in SET_VIEW_SECTION_BOX and ISOLATE_ELEMENTS.
 #
@@ -104,11 +166,13 @@ compatibility-note: >
 # section box is a 3D cut; a crop on a view that is on a sheet silently
 # removes work from an issued drawing.
 
-#   "crop the view to follow the room shape" -> SET_VIEW_CROP_TO_SHAPE - the
-#                                        crop BOX here can only be a rectangle,
-#                                        correctly rotated but still a
-#                                        rectangle. A stepped or L-shaped crop
-#                                        is a different mechanism
+#   "crop the view to follow the room shape" -> here since version 2, with
+#                                        boundary (was SET_VIEW_CROP_TO_SHAPE).
+#                                        The crop BOX can only be a rectangle;
+#                                        a stepped or L-shaped crop goes
+#                                        through the shape manager
+#   "make an L-shaped crop on this plan"     -> here, boundary
+#   "cut the 3D down to this area"           -> SET_VIEW_SECTION_BOX
 #   "set the scope box on these views" -> ASSIGN_SCOPE_BOX_TO_VIEW - a NAMED,
 #                                        shared extent many views obey at once
 #   "the tags are printing outside the crop" -> SET_CROP_BOX_SETTINGS - the
@@ -121,3 +185,9 @@ utterances:
   - set the crop region
   - trim the view to this area
   - tighten the crop
+  # MOVED 2026-11-01 from SET_VIEW_CROP_TO_SHAPE, merged into this card.
+  - crop the view to follow the room shape
+  - make an L-shaped crop on this plan
+  - crop along the match line
+  - give this view a shaped crop region
+  - crop this view to the lines I drew

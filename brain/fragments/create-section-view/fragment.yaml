@@ -130,7 +130,7 @@ compatibility-note: >
 
 # ROUTING (2026-10-12, the gap fill)
 #
-#   "where does section 3 cut"              -> REPORT_VIEW_CUT_PLANES
+#   "where does section 3 cut"              -> REPORT_VIEW_SETTINGS
 #   "move section 3 forward 500 mm"         -> MOVE_VIEW_CUT_PLANE
 #   "make an elevation of this wall"        -> CREATE_WALL_ELEVATION - an elevation
 #                                              marker turned to the wall (2026-10-14)

@@ -289,9 +289,12 @@ ABSENT_BINDS = ("bool", "View", "IList<View>")
 
 
 # The element lists HeronBindingNote.EmptyWhenAbsent binds empty - its switch,
-# word for word, so the two halves cannot disagree about a spelling.
+# word for word, so the two halves cannot disagree about a spelling - and,
+# since 2026-11-01, the curve lists it binds empty the same way.
 EMPTY_WHEN_ABSENT = ("IList<Element>", "List<Element>", "ICollection<Element>",
-                     "IEnumerable<Element>")
+                     "IEnumerable<Element>",
+                     "IList<Curve>", "List<Curve>", "ICollection<Curve>",
+                     "IEnumerable<Curve>")
 
 # And the one shape it binds NULL - "nobody handed one on" - since 2026-11-01:
 # GROUP_AND_COUNT version 2's optional `quantities`, word for word.
@@ -305,7 +308,9 @@ def need_may_be_empty(entry):
     element list nothing filled - no chain, no selection, no creator's output -
     to an EMPTY list only when the card marks it `optional: true`. REPORT_LOCATION
     version 4 is the case: "where is this project" with nothing selected answers
-    with the site alone. Every other unfilled need is still refused as
+    with the site alone. Since 2026-11-01 a list of CURVES marked so binds
+    empty too - SET_VIEW_CROP's `boundary`, handed on for a shaped crop and
+    absent for the rectangle. Every other unfilled need is still refused as
     needs_unbound, so this answers False for them, and for a request need, which
     need_may_be_absent decides. One rule on both sides, or the Python half
     calls runnable what Revit refuses - row 96's lesson.

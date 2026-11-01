@@ -197,6 +197,16 @@ namespace Heron.BindingNote.TestHost
                   "one element has no empty value, so it is still refused");
             Check(HeronBindingNote.EmptyWhenAbsent("bool", "true") == null,
                   "a bool is AbsentValue's case, not this one");
+            // 2026-11-01: A CURVE LIST MARKED OPTIONAL BINDS EMPTY, so
+            // SET_VIEW_CROP crops to a rectangle when no loop is handed on.
+            Check(HeronBindingNote.EmptyWhenAbsent("IList<Curve>", "true") == "new List<Curve>()",
+                  "a curve list marked optional binds an empty list");
+            Check(HeronBindingNote.EmptyWhenAbsent(" IList< Curve > ", " True ") == "new List<Curve>()",
+                  "however the card spaces it");
+            Check(HeronBindingNote.EmptyWhenAbsent("IList<Curve>", null) == null,
+                  "a curve list NOT marked optional is still refused - nothing was handed on");
+            Check(HeronBindingNote.EmptyWhenAbsent("Curve", "true") == null,
+                  "one curve has no empty value, so it is still refused");
 
             // FRAGMENT-ISSUES row 5b-292: the name SELECT_TYPES prints must be
             // a name the binder takes.

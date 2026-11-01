@@ -50,7 +50,7 @@ purpose: >
   `GetDatumExtentTypeInView` and reports which ends are view-specific, but only as
   accounting while it stretches things. Nothing answered *"is this grid 2D or 3D
   in this view"* without modifying the model to find out. So this reads first and
-  reports what it found BEFORE changing it, the way `SET_VIEW_RANGE` and
+  reports what it found BEFORE changing it, the way `SET_VIEW_PROPERTIES` and
   `SET_VIEW_PROPERTIES` both read and set.
 
   **EXTENTS ARE SHARED AND BUBBLES ARE NOT, AND CONFUSING THEM CHANGES TWENTY

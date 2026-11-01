@@ -1,11 +1,11 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-140
-semantic-identity: "how a view is shown - its detail level, visual style, discipline, phase, phase filter and view range"
+semantic-identity: "how a view is shown - its ratio, detail level, visual style, discipline, phase, phase filter and view range, and where a section or elevation cuts"
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
 # FRAGMENT-ISSUES row 5b-477: nothing read a view's detail level, visual
@@ -16,7 +16,8 @@ semantic-identity: "how a view is shown - its detail level, visual style, discip
 # reached SET_VIEW_CAMERA, and "which phase filter does this view use" and
 # "what phase is this view showing" reached reads about filters and
 # visibility that do not say. This is the read half of SET_VIEW_PROPERTIES
-# and SET_VIEW_PHASE. The scale is READ_VIEW_SCALE's and is not repeated.
+# and SET_VIEW_PHASE. The scale was READ_VIEW_SCALE's and was not repeated -
+# until version 2 merged that card in (2026-11-01).
 # The second sweep the same night (row 5b-478) found "what is the view range
 # of this plan" reaching SET_VIEW_RANGE and "what is the cut plane height"
 # LABEL_FAMILY_DIMENSION, both writes - nothing read a plan's view range - so
@@ -25,7 +26,18 @@ semantic-identity: "how a view is shown - its detail level, visual style, discip
 kind: action
 domain: revit.views
 capability: REPORT_VIEW_SETTINGS
-version: 1
+# VERSION 2 (2026-11-01): READ_VIEW_SCALE and REPORT_VIEW_CUT_PLANES were
+# merged into this card on the owner's instruction ("make sure there is no
+# duplicate tools"), and are DEPRECATED. From READ_VIEW_SCALE: `viewScales`,
+# `scaled` and `noScale` - each view's scale written 1 : N, no number for a
+# kind not drawn to a ratio with the reason, and whether the view's template
+# holds it, named, read off the template's include list. From
+# REPORT_VIEW_CUT_PLANES: `cutPlanes` and `cutViewCount` - where each section,
+# elevation and detail view cuts, the way it looks and its far clip, and with
+# no view named every one in the model, which is why `views` is optional now.
+# Version 1's proof below no longer describes the code and is kept as the
+# record; the card is DRAFT until it is proved again.
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -50,6 +62,32 @@ risk: READ
 # `purpose` HOLDS NO CHANGE VERB - none of set, change, update, adjust,
 # switch, make or apply - for the reason READ_VIEW_SCALE's card gives: a READ
 # whose searched text names a change takes change requests from the write.
+# tests/test_read_view_scale.py holds the verbs out of this card since
+# READ_VIEW_SCALE was merged into it, and asks the scale change requests back.
+#
+# VERSION 2 - THE SCALE, AS READ_VIEW_SCALE ANSWERED IT. **THE SCALE IS
+# WRITTEN 1 : N.** `View.Scale` is the denominator, so the number 100 is
+# printed "1 : 100". **A KIND WITH NO SCALE HAS NO VIEW SCALE ROW IN THE
+# PROPERTIES PALETTE** - a sheet, a schedule, a perspective, a walkthrough, a
+# rendering, a report - so each is named with the reason and given no number;
+# Revit's own API documentation calls the number a perspective holds
+# meaningless. Plans, ceiling plans, structural and area plans, elevations,
+# sections, details, drafting views, legends, and 3D views that are not
+# perspective are the kinds that have one. **A RATIO HELD BY A TEMPLATE IS
+# NAMED WITH THAT TEMPLATE**, read off the template's own include list; a
+# template that leaves it free is said so, a template named directly is
+# answered with the ratio it holds, and a list that cannot be read is reported
+# as unknown, never guessed. The purpose says "ratio" and "drawn at" and keeps
+# "scale" scarce, for the reason READ_VIEW_SCALE's card gave: its first draft
+# took change requests from the write on ranking.
+#
+# VERSION 2 - WHERE A SECTION CUTS, AS REPORT_VIEW_CUT_PLANES ANSWERED IT.
+# "LOOKING" IS THE OPPOSITE OF ViewDirection: Revit's ViewDirection points
+# from the model OUT towards the viewer, so a section looking north has a
+# ViewDirection of south, and the answer prints the looking direction. The
+# far clip is Revit's own text, on or off and how deep. A plan named has no
+# cut plane and is not listed there; with NO view named every section,
+# elevation and detail view in the model is.
 purpose: >
   Answers how each view named is shown: its detail level, its visual style,
   its discipline, the phase it shows and its phase filter, in the words the
@@ -57,16 +95,29 @@ purpose: >
   bottom and view depth, each a level and an offset in millimetres - and
   whether each is held by the view template the view follows. It only reads.
 
+  Version 2: the ratio each one is drawn at, written 1 : N as the title under
+  it on a sheet shows it, or why it has none - a sheet, a schedule, a
+  perspective - and whether that ratio is held by its template, named. And
+  for each section, elevation and detail - every one in the model when none
+  is named - a point it cuts through in millimetres, the direction it looks
+  and its far clip, on or off and how deep.
+
 contract:
   needs:
     - name: doc
       type: Document
     # The views, as the Project Browser names them, several separated by
     # commas - "1 - Mech, {3D}". Two views sharing a name are written
-    # "FloorPlan: Level 1". The same binding as READ_VIEW_SCALE.
+    # "FloorPlan: Level 1" - "Section: Section 1" too - the binding
+    # READ_VIEW_SCALE had. Optional since version 2: left out it binds an
+    # empty list (HeronBindingNote.AbsentValue), nothing is read for the
+    # settings or the ratio, and every section, elevation and detail view in
+    # the model is listed for where it cuts - REPORT_VIEW_CUT_PLANES' empty
+    # viewName.
     - name: views
       type: IList<View>
       source: request
+      optional: true
   provides:
     - name: viewSettings
       # One row per view that has any of the five: "'1 - Mech' (FloorPlan)
@@ -88,9 +139,39 @@ contract:
       role: accounting
       type: int
     - name: findings
-      # A summary line, then a line per view with none of the five, and any
-      # template whose include list could not be read.
+      # A summary line for the settings and one for the ratio, then a line per
+      # view with none of the five, one per view with no ratio and why, and
+      # any template whose include list could not be read.
       type: IList<string>
+    - name: viewScales
+      # VERSION 2, from READ_VIEW_SCALE. One row per view that HAS a scale:
+      # "'1 - Mech' (FloorPlan) 1 : 100 - held by its view template
+      # 'Mechanical Plan' - change it there". Empty when none of the views
+      # named is drawn at a scale.
+      role: result
+      type: string
+    - name: scaled
+      # VERSION 2, from READ_VIEW_SCALE. How many of the views named were read
+      # with a scale - a count of what it FOUND.
+      role: result
+      type: int
+    - name: noScale
+      # VERSION 2, from READ_VIEW_SCALE. Views named that have no scale - a
+      # sheet, a schedule, a perspective - each named with its reason in
+      # `findings`. The evidence it looked, never a scale it found (D-52).
+      role: accounting
+      type: int
+    - name: cutPlanes
+      # VERSION 2, from REPORT_VIEW_CUT_PLANES. ONE STRING, a line per
+      # section, elevation or detail view: "Section: Section 1 | cuts through
+      # -600,600,-500 mm | looking 1,0,0 | far clip Clip with line, 11200".
+      role: result
+      type: string
+    - name: cutViewCount
+      # VERSION 2, from REPORT_VIEW_CUT_PLANES (its `viewCount`). How many
+      # section, elevation and detail views `cutPlanes` lists.
+      role: result
+      type: int
 
 proof:
   date: '2026-10-21'
@@ -148,17 +229,49 @@ compatibility-note: >
   PLAN_VIEW_RANGE - all present unchanged 2020 to 2027, read the same way on
   2026-10-14.
 
+  Version 2 adds what READ_VIEW_SCALE and REPORT_VIEW_CUT_PLANES were proved
+  with: `View.Scale`, `View3D.IsPerspective` and the BuiltInParameter values
+  VIEW_SCALE, VIEW_SCALE_PULLDOWN_METRIC and VIEW_SCALE_PULLDOWN_IMPERIAL
+  (READ_VIEW_SCALE's card, 2026-10-09: the kinds of view are an ALLOW list,
+  because ViewType 121 is spelt PresureLossReport to 2026 and
+  PressureLossReport on 2027; and 2027's VIEW_SCALE_METRIC and
+  VIEW_SCALE_IMPERIAL are not compared - a template listing only one of those
+  is reported as unknown, NEEDS REAL REVIT); `View.Origin`,
+  `View.ViewDirection` and VIEWER_BOUND_FAR_CLIPPING and
+  VIEWER_BOUND_OFFSET_FAR (REPORT_VIEW_CUT_PLANES' card, 2026-10-12) - all
+  present 2020 through 2027.
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "what is the detail level of this view"  -> here
 #   "what visual style is this view"         -> here
 #   "which phase filter does this view use"  -> here
 #   "what is the view range of this plan"    -> here
-#   "what is the scale of this view"         -> READ_VIEW_SCALE
-#   "set the cut plane to 1500"              -> SET_VIEW_RANGE
+#   "what is the scale of this view"         -> here since version 2.
+#                                               READ_VIEW_SCALE answered it
+#                                               until it was merged into this
+#                                               card on 2026-11-01
+#   "what scale is this view"                -> here, BY RANKING, and on
+#                                               purpose NOT declared - see
+#                                               READ_VIEW_SCALE's ROUTING:
+#                                               declared, it took change
+#                                               requests from the write
+#   "where does section 3 cut"               -> here since version 2 (was
+#                                               REPORT_VIEW_CUT_PLANES)
+#   "which way does this elevation look"     -> here since version 2
+#   "move the section 500 mm north"          -> MOVE_VIEW_CUT_PLANE
+#   "make a section through these"           -> CREATE_SECTION_VIEW
+#   "set this view to 1:50"                  -> SET_VIEW_PROPERTIES. A change,
+#                                               and this reads (D-86)
+#   "why is the scale greyed out"            -> REPORT_VIEW_TEMPLATE_CONTROL
+#   "set the cut plane to 1500"              -> SET_VIEW_PROPERTIES (its
+#                                               version 4 took SET_VIEW_RANGE's
+#                                               job on 2026-11-01)
 #   "set these views to fine"                -> SET_VIEW_PROPERTIES. A change,
 #                                               and this reads (D-86)
-#   "set the phase of this view to existing" -> SET_VIEW_PHASE
+#   "set the phase of this view to existing" -> SET_VIEW_PROPERTIES (its
+#                                               version 4 took SET_VIEW_PHASE's
+#                                               job on 2026-11-01)
 #   "what does the view template control"    -> REPORT_VIEW_TEMPLATE_CONTROL,
 #                                               which names everything the
 #                                               template holds
@@ -173,3 +286,32 @@ utterances:
   # Declared, not ranked: in the second sweep (row 5b-478) this reached
   # LABEL_FAMILY_DIMENSION, a write, with the view range already built here.
   - what is the cut plane height
+  # MOVED 2026-11-01 from READ_VIEW_SCALE, merged into this card.
+  - what is the scale of this view
+  - what scale is this plan at
+  - what scale are these views at
+  - what scale is this drawing
+  - what scale is this section
+  # MOVED 2026-11-01 from REPORT_VIEW_CUT_PLANES, merged into this card.
+  - where does section 3 cut the model
+  - which way does this elevation look
+  - list the sections with their far clip depth
+  - where are the cut lines of the sections
+  # MOVED 2026-11-01 from SET_VIEW_RANGE, which was merged into
+  # SET_VIEW_PROPERTIES. A question, so it came to the read and not to the
+  # write that took that card's change sentences (D-86).
+  - what is the view range
+  # DECLARED 2026-11-01, after the merge. Claimed by a routing row in this
+  # card's table and in MOVE_VIEW_CUT_PLANE's and CREATE_SECTION_VIEW's, and
+  # answered by RANKING by REPORT_VIEW_CUT_PLANES until it was merged in.
+  # Measured that day on a private store, model backend: with that card
+  # retired and nothing declared, it reached MOVE_VIEW_CUT_PLANE - a write
+  # answering a question (D-86).
+  - where does section 3 cut
+  #
+  # "what scale is this view" IS NOT DECLARED, ON PURPOSE, as READ_VIEW_SCALE
+  # did not declare it. Declared here the same day, it took seven of the ten
+  # scale change requests in tests/test_read_view_scale.py on the model
+  # backend; left out, it ranks to SET_VIEW_PROPERTIES there, a write - a
+  # regression from READ_VIEW_SCALE answering it by ranking, recorded for the
+  # owner, and held off by D-128 when the host marks the call a question.

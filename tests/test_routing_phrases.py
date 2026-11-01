@@ -321,10 +321,12 @@ DECLARED = [
     ("what is the sill height of these windows", "READ_ELEMENT_PARAMETERS",
      "5b-321: answered PLACE_HOSTED_FAMILY on the model"),
     # 146's last READ gap: nothing read a view's scale until READ_VIEW_SCALE
-    # (2026-10-09), so the question could only land on the write.
-    ("what is the scale of this view", "READ_VIEW_SCALE",
+    # (2026-10-09), so the question could only land on the write. Since
+    # 2026-11-01 READ_VIEW_SCALE is merged into REPORT_VIEW_SETTINGS, which
+    # declares both sentences now - the read that answers them moved.
+    ("what is the scale of this view", "REPORT_VIEW_SETTINGS",
      "146: answered SET_VIEW_SCALE on both"),
-    ("what scale is this plan at", "READ_VIEW_SCALE",
+    ("what scale is this plan at", "REPORT_VIEW_SETTINGS",
      "146: answered CREATE_CALLOUT on the model"),
     # Row 146's gap, not a mis-route: LIST_SHEETS only COUNTS a sheet's views,
     # so no READ named them until LIST_VIEWS_ON_SHEET was written (2026-10-09).

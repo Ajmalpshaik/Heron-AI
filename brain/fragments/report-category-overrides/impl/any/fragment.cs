@@ -1,9 +1,19 @@
 // NOT STANDALONE. Assumes `doc`, `view` and `allCategories` are in scope;
 // leaves `findings`, `overriddenCategories`, `overrideList`,
-// `modelCategoryList`, `subCategoryList`, `annotationCategoryList` and
-// `elementOverrideList` behind.
+// `modelCategoryList`, `subCategoryList`, `annotationCategoryList`,
+// `elementOverrideList`, `hiddenCategories`, `hiddenCategoryList`,
+// `templateOwnedCategories` and `visibilityTemplate` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
+//
+// VERSION 3 (2026-11-01) - REPORT_CATEGORY_VISIBILITY MERGED IN, on the
+// owner's instruction ("make sure there is no duplicate tools"). Which
+// categories are SWITCHED OFF in the view, always - see the block at the end:
+// `hiddenCategories` as ids, `hiddenCategoryList` one string, how many of the
+// view's Visibility/Graphics rows its template owns and the template's name,
+// and DIAGNOSE_VISIBILITY named when nothing is switched off. It does NOT
+// depend on `allCategories`, and it is NOT scoped to the view - a hidden
+// category's elements are in no view-scoped collector at all.
 //
 // VERSION 2 (2026-10-15) ADDS THE WHOLE VISIBILITY/GRAPHICS OF THE VIEW, AND
 // ONLY WHEN ASKED - see the block at the end. `allCategories` left out is
@@ -167,13 +177,13 @@ else
 //                           category and identical override, with a count and
 //                           the first ids of each group
 //
-// THE VIEW FILTERS ARE NOT HERE. AUDIT_VIEW_FILTERS' `everyFilter` lists them
+// THE VIEW FILTERS ARE NOT HERE. REPORT_VIEW_FILTERS (AUDIT_VIEW_FILTERS' job since 2026-11-01) lists them
 // in priority order with their rules and what each catches - one card per tab.
 //
 // A VISIBLE TICK IS NAMED ONLY WHEN UNTICKED. It reads TRUE with nothing set -
 // version 1's trap, above - so FALSE is the only value that was set.
 //
-// THE WORDS MATCH AUDIT_VIEW_FILTERS' `filterList` cell for cell, so a
+// THE WORDS MATCH what AUDIT_VIEW_FILTERS' `filterList` printed, cell for cell, so a
 // category's row and a filter's row can be compared without translating one.
 
 var modelCategoryList = "";
@@ -425,4 +435,129 @@ if (allCategories && view.AreGraphicsOverridesAllowed())
         : string.Format("{0} element(s) in '{1}' carry their own override (Override Graphics in View > By "
             + "Element), in {2} group(s) of one category and one identical override:", withOwn, view.Name,
             groupRows.Count) + "\n  " + string.Join("\n  ", groupRows);
+}
+
+// ---- VERSION 3: WHICH CATEGORIES ARE SWITCHED OFF, ALWAYS -------------------
+//
+// FROM REPORT_CATEGORY_VISIBILITY, and the safer of its rules where the two
+// cards disagreed:
+//
+// IT DELIBERATELY DOES NOT SCOPE TO THE VIEW - the OPPOSITE decision from the
+// override scan above, and not a style choice. A hidden category's elements
+// do not appear in a view-scoped collector AT ALL, so scoping this to what the
+// view shows would hide exactly the categories it exists to find.
+//
+// EVERY HIDDEN CATEGORY IS LISTED, EMPTY ONES INCLUDED - the owner's rule for
+// this merge, "in every conflict keep the safer rule". REPORT_CATEGORY_
+// VISIBILITY left out a category with nothing in the model; listed here, it is
+// marked "nothing in the model", so the few that matter still read first and a
+// category switched off before its first element is drawn is not missed.
+//
+// IT DOES NOT DEPEND ON `allCategories`. Asking what is switched off is the
+// commonest question about a view, and it is answered on every call.
+//
+// VISIBILITY IS NOT AN OVERRIDE. Switched off shows nothing; overridden shows
+// differently. Something MISSING from a drawing is this block's question;
+// something the WRONG COLOUR is the one above.
+//
+// CanCategoryBeHidden IS NOT A GATE ON THE QUESTION - a real defect found
+// 2026-09-08 against Snowdon Towers Sample HVAC. It answers "may this view
+// CHANGE it", not "is it hidden": a view driven by a template answers false
+// to every category, so the old loop reported "nothing is switched off" for
+// 'L2' while GetCategoryHidden said 18 were. GetCategoryHidden reports the
+// EFFECTIVE value, so the question is always asked, and what the template owns
+// is REPORTED - counted over the rows of this view's Visibility/Graphics, so a
+// category no view can switch is not mistaken for one the template holds.
+
+var hiddenCategories = new List<ElementId>();
+var hiddenCategoryList = "";
+var templateOwnedCategories = 0;
+var visibilityTemplate = "";
+{
+    // What exists anywhere in the model, so an empty category can be said.
+    var populated = new HashSet<ElementId>();
+    var populatedName = new Dictionary<ElementId, string>();
+    foreach (var element in new FilteredElementCollector(doc).WhereElementIsNotElementType())
+    {
+        var category = element.Category;
+        if (category == null) continue;
+        if (populated.Add(category.Id)) populatedName[category.Id] = category.Name;
+    }
+
+    // Every category the document has, and any category an element carries
+    // that the settings list does not.
+    var everyCategory = new List<KeyValuePair<ElementId, string>>();
+    var listed = new HashSet<ElementId>();
+    foreach (Category asked in doc.Settings.Categories)
+    {
+        if (asked == null || !listed.Add(asked.Id)) continue;
+        everyCategory.Add(new KeyValuePair<ElementId, string>(asked.Id, asked.Name));
+    }
+    foreach (var pair in populatedName)
+        if (listed.Add(pair.Key)) everyCategory.Add(pair);
+
+    var hiddenRows = new List<string>();
+    var dialogRowsAsked = 0;
+    var askedCount = 0;
+    foreach (var pair in everyCategory)
+    {
+        var hidden = false;
+        try { hidden = view.GetCategoryHidden(pair.Key); }
+        catch { continue; }
+        askedCount++;
+
+        var isDialogRow = false;
+        try
+        {
+            var category = Category.GetCategory(doc, pair.Key);
+            isDialogRow = category != null && category.get_AllowsVisibilityControl(view);
+        }
+        catch { isDialogRow = false; }
+
+        // Recorded, never used to skip: "this is off and you cannot turn it
+        // back on here" is the next thing the person asks.
+        if (isDialogRow)
+        {
+            dialogRowsAsked++;
+            try { if (!view.CanCategoryBeHidden(pair.Key)) templateOwnedCategories++; }
+            catch { }
+        }
+
+        if (hidden)
+        {
+            hiddenCategories.Add(pair.Key);
+            hiddenRows.Add(pair.Value + " - SWITCHED OFF" + (populated.Contains(pair.Key) ? "" : " (nothing in the model)"));
+        }
+    }
+
+    hiddenRows.Sort(StringComparer.OrdinalIgnoreCase);
+    hiddenCategoryList = string.Format("{0} of {1} category(ies) asked are switched off in '{2}', every one listed - "
+        + "a category with nothing in the model is marked so.", hiddenCategories.Count, askedCount, view.Name)
+        + (hiddenRows.Count == 0 ? "" : "\n  " + string.Join("\n  ", hiddenRows));
+    findings.Add(string.Format("{0} category(ies) are SWITCHED OFF in '{1}' - every one, empty ones included, in "
+        + "hiddenCategoryList. Switched off is not overridden: it shows nothing", hiddenCategories.Count, view.Name));
+
+    // WHERE THE SETTING LIVES, because "switch it back on" is the next
+    // sentence and in a templated view it cannot be done here at all.
+    if (!view.IsTemplate && view.ViewTemplateId != ElementId.InvalidElementId)
+    {
+        try
+        {
+            var owner = doc.GetElement(view.ViewTemplateId) as View;
+            if (owner != null) visibilityTemplate = owner.Name;
+        }
+        catch { }
+    }
+    var templateWords = visibilityTemplate.Length > 0 ? "the view template '" + visibilityTemplate + "'" : "a view template";
+    if (templateOwnedCategories > 0 && templateOwnedCategories == dialogRowsAsked)
+        findings.Add("these are set by " + templateWords + ", not in this view. Changing them here is not possible - "
+            + "the template decides, and every other view using it follows");
+    else if (templateOwnedCategories > 0)
+        findings.Add(string.Format("{0} of the {1} Visibility/Graphics rows of this view cannot be switched here - "
+            + "set by {2} rather than in this view", templateOwnedCategories, dialogRowsAsked, templateWords));
+
+    if (hiddenCategories.Count == 0)
+        findings.Add("nothing is switched off at CATEGORY level here. If something is still missing from the drawing, "
+            + "it is a per-element hide, a view filter set to invisible, a workset, the view range, or the phase - "
+            + "DIAGNOSE_VISIBILITY asks all of those for one element");
 }

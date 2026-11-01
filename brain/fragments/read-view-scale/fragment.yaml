@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -19,6 +19,33 @@ capability: READ_VIEW_SCALE
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO REPORT_VIEW_SETTINGS (report-view-
+# settings), on the owner's instruction in conversation: "make sure there is
+# no duplicate tools". Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to REPORT_VIEW_SETTINGS. Its question 'what scale is this
+# view' is answered there by ranking and still declared nowhere, for the
+# reason this card's ROUTING gives. Its block of C# - the allow list of kinds
+# drawn at a scale, the template's include list deciding 'held', the ratio 1 :
+# N - was carried line for line, so tests/test_read_view_scale.py now pins it
+# in report-view-settings. The proof below is the record of what this card's
+# code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: REPORT_VIEW_SETTINGS
+  why: >
+    The same kind of job: read how a view is set up, and never change it.
+    REPORT_VIEW_SETTINGS version 2 took everything this card answered -
+    viewScales, scaled and noScale, each scale written 1 : N, no number for a
+    sheet, a schedule, a perspective, a walkthrough, a rendering or a report,
+    each named with the reason, and whether the view's template holds the
+    scale, named, read off the template's include list - beside the detail
+    level, visual style, discipline, phase, phase filter and view range it
+    already read.
 
 # HOW IT ANSWERS - kept here rather than in `purpose`, which is searched:
 #

@@ -18,7 +18,7 @@ purpose: >
   whether anything uses them. Not the views that follow them.
 
   **EVERY OTHER TEMPLATE FRAGMENT HERE TAKES A TEMPLATE BY NAME, AND THAT IS
-  THE GAP.** APPLY_VIEW_TEMPLATE, REMOVE_VIEW_TEMPLATE, DUPLICATE_VIEW_TEMPLATE
+  THE GAP.** APPLY_VIEW_TEMPLATE, REMOVE_VIEW_TEMPLATE, DUPLICATE_VIEWS
   and SET_VIEW_TEMPLATE_CONTROL all start from a template somebody has already
   named. None of them can answer *"do it to all of them"*, or hand a set of
   templates to a rename, a report or a delete. A template is an element like
@@ -132,7 +132,7 @@ compatibility-note: >
 #                                            because that needs elements
 #   "put this template on these views"    -> APPLY_VIEW_TEMPLATE
 #   "why is this greyed out"              -> REPORT_VIEW_TEMPLATE_CONTROL
-#   "copy this template"                  -> DUPLICATE_VIEW_TEMPLATE
+#   "copy this template"                  -> DUPLICATE_VIEWS
 #
 # NEITHER OF THE TWO THAT ANSWER "UNUSED" DELETES ANYTHING, and that is the
 # same decision in both files rather than a coincidence.

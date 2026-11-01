@@ -63,6 +63,43 @@ negative:
       caller has to know about - the fix is to read the current overrides,
       modify them, and pass those. Prove it once so the behaviour is known
 
+  # VERSION 2 - from SET_LINK_GRAPHICS. Each FAILS on version 1.
+  - given: >
+      VERSION 2. an architectural link instance (from LIST_LINKED_MODELS), an
+      override carrying halftone and 80 percent transparency, linksOnly true,
+      in a coordination plan
+    expect: >
+      THE WHOLE LINK FADED IN THAT VIEW - every wall, floor and door inside it,
+      LOOKED AT on screen - and appliedTo "'<file>.rvt' in '<view>': halftone
+      True, transparency 80%" read back off the view. Version 1 named nothing
+      it overrode
+
+  - given: VERSION 2. the same link file placed twice
+    expect: both placements in appliedTo under the same file name, each with its own override
+
+  - given: VERSION 2. two ducts and one link, linksOnly true
+    expect: >
+      notALink 2, the ducts in skipped and NOT overridden, the link overridden.
+      Version 1 had no way to say "links only" and would have greyed the ducts
+
+  - given: VERSION 2. a view TEMPLATE as the view
+    expect: >
+      refused by name in `refused`, nothing overridden, every element skipped.
+      Version 1 wrote element overrides onto a template
+
+  - given: VERSION 2. a view following a template that controls V/G overrides, a link overridden
+    expect: >
+      the override reported AND a sentence in `refused` naming the view and
+      REPORT_VIEW_TEMPLATE_CONTROL - the write succeeds and the picture may not
+      move
+
+  - given: VERSION 2. an element Revit refuses to override, among others
+    expect: >
+      that element in skipped with Revit's words in `refused`, the others
+      overridden, and NO exception out of the fragment - version 1 let it
+      abort the caller's transaction
+
 second_route:
   - open Visibility/Graphics on the view and read the overrides back by hand
+  - for a link, the Revit Links tab of Visibility/Graphics, that link's row
   - one Ctrl+Z restores the whole view in a single step (Golden Rule 16)

@@ -98,7 +98,7 @@ compatibility-note: >
 
 # ROUTING (2026-10-12, the gap fill)
 #
-#   "make a perspective from the entrance"  -> SET_VIEW_CAMERA
+#   "make a perspective from the entrance"  -> FRAME_ELEMENTS_IN_CAMERA
 utterances:
   - make a new 3d view
   - create a 3d view
