@@ -22,7 +22,8 @@ positive:
       and len(elements) + noGeometry + leftOut = elementsRead; every id is an
       element of this model (none of a link's); notRead has a "links:" line
       for the links the view shows, and no "active view:" line; capped []
-      unless leftOut is above 0
+      and stopped null unless leftOut is above 0; findings has a "Read in N s
+      of the 40 s limit" line
 
   - given: the same run, its offset and v beside the model
     expect: >
@@ -39,9 +40,10 @@ positive:
 
   - given: maxTriangles 2000, the same {3D} view
     expect: >
-      triangles at most 2000 and above 0; leftOut above 0; capped has one
-      line, "triangles: the budget of 2000 was reached; N element(s) left out
-      - the largest were drawn first", N being leftOut; the elements drawn are
+      triangles at most 2000 and above 0; leftOut above 0; stopped
+      "triangles"; capped has one line, "triangles: the budget of 2000 was
+      reached; N element(s) left out - the largest were drawn first", N being
+      leftOut; the elements drawn are
       among the longest in the view (equipment and main ducts, not grilles)
 
   - given: >
@@ -73,7 +75,32 @@ positive:
     expect: >
       it answers inside revit.operationTimeoutSeconds (60 s by default), and
       the time and triangles are recorded on the NEEDS-CHECKING row - the
-      measure of what a large model costs
+      measure of what a large model costs; findings' "Read in" line agrees
+      with the time on the reply, less the JSON's writing
+
+  # VERSION 2 - THE CLOCK. The case that matters for it.
+  - given: >
+      version 2, the whole Snowdon model - wholeModel true, maxTriangles
+      500000 so the budget cannot stop it first - and timeLimitSeconds 5
+    expect: >
+      stopped "time"; leftOut above 0; capped has one line, "time: stopped at
+      5 s; N element(s) left out - the largest were drawn first", N being
+      leftOut, and no "triangles:" line; len(elements) + noGeometry + leftOut
+      = elementsRead still; the elements drawn are the longest in the model;
+      the reply arrives well inside the 60-second stop, with geometryJson -
+      never "stopped, rolled back". If the extent pass alone took 5 s,
+      elements is [] and leftOut = elementsRead: still stopped "time", and
+      the run says so rather than drawing nothing silently
+
+  - given: version 2, timeLimitSeconds 4, then timeLimitSeconds 56
+    expect: >
+      both REFUSED before anything is read, each naming the limits 5 and 55;
+      no geometryJson either time
+
+  - given: version 2, timeLimitSeconds left out, on a read that finishes
+    expect: >
+      the answer is version 1's plus "stopped": null and findings' "Read in N
+      s of the 40 s limit" line; format still 1
 
 negative:
   # THE CASE THAT MATTERS - the batch-prove leg (tools/jobs).
@@ -84,7 +111,7 @@ negative:
     expect: >
       triangles 0; geometryJson scope "active 3D view 'Heron empty box'",
       elements [] and categories [] - never null - offset [0, 0, 0],
-      elementsRead 0, noGeometry 0, leftOut 0, capped []. Not one of the
+      elementsRead 0, noGeometry 0, leftOut 0, capped [], stopped null. Not one of the
       positive's ids appears: nothing fell back to the whole model
 
   - given: >

@@ -23,21 +23,25 @@
 #
 # POSITIVE - wholeModel "true": the whole model at Coarse, whatever the view
 # shows. triangles above 0 and at most 20000; scope "whole model"; capped has
-# the "triangles:" line, leftOut above 0 - the budget is kept small so the
-# whole model answers well inside the 60-second stop, and it exercises the cap.
+# the "triangles:" line, leftOut above 0, stopped "triangles" - the budget is
+# kept small so the whole model answers well inside the 60-second stop, and it
+# exercises the cap. (Version 2: should the 40-second clock come first on a
+# slow PC, stopped reads "time" with its own capped line - record which; the
+# leg still holds while triangles is above 0.)
 #
 # NEGATIVE - wholeModel "false": the active 3D view, whose section box holds
 # nothing. triangles 0; geometryJson elements [] and categories [] - never
-# null - offset [0, 0, 0], elementsRead 0, scope "active 3D view 'Heron empty
-# box'". Not one of the positive's ids. That is what shows the view's scope is
+# null - offset [0, 0, 0], elementsRead 0, stopped null, scope "active 3D view
+# 'Heron empty box'". Not one of the positive's ids. That is what shows the view's scope is
 # honoured and nothing fell back to the whole model.
 #
 # Read the geometryJson the run quotes - the runner judges `triangles` alone
 # (geometryJson and findings are accounting, always written).
 #
-# BY HAND AFTERWARDS (Group JU rows JU3 to JU14): the {3D} view itself, the
+# BY HAND AFTERWARDS (Group JU rows JU3 to JU17): the {3D} view itself, the
 # time it takes, the budget, pipes at Coarse, a floor plan active, categories,
-# the refusals, a hidden category, the section box, the second route.
+# the refusals, a hidden category, the section box, the second route, and
+# version 2's clock - stopped at 5 s, and its refusals at 4 and 56.
 
 model: Snowdon Towers Sample HVAC (fresh copy, "Heron empty box" 3D view active), Revit 2024
 
@@ -52,7 +56,8 @@ jobs:
       maxTriangles: 20000
     note: >
       Positive - triangles above 0 and at most 20000, scope "whole model",
-      leftOut above 0 with the capped "triangles:" line, len(elements) +
-      noGeometry + leftOut = elementsRead. Negative - the active 3D view
-      "Heron empty box", its section box clear of the building: triangles 0,
-      elements [] and categories [], offset [0, 0, 0], elementsRead 0.
+      leftOut above 0 with the capped "triangles:" line and stopped
+      "triangles", len(elements) + noGeometry + leftOut = elementsRead.
+      Negative - the active 3D view "Heron empty box", its section box clear
+      of the building: triangles 0, elements [] and categories [], offset
+      [0, 0, 0], elementsRead 0, stopped null.

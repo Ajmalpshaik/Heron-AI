@@ -9,7 +9,13 @@ semantic-identity: "the model's 3D geometry as triangles in metres, for drawing 
 kind: action
 domain: revit.geometry
 capability: REPORT_MODEL_GEOMETRY
-version: 1
+# Version 2 (2026-11-01, the owner's answer "Yes, stop at ~40 s"): it watches
+# its own time. An optional `timeLimitSeconds` - 40 left out, 5 to 55 - stops
+# the reading as the triangle budget does, and geometryJson gains `stopped`:
+# "triangles", "time" or null. Still DRAFT and never proved, so no proof went
+# stale. Left out, the answer is version 1's plus that key and a "Read in"
+# line in findings, so "format" stays 1.
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -69,17 +75,43 @@ risk: READ
 # counts them. An element with no lines and no surfaces at the first level is
 # not read again - it is simply not shown at that level.
 #
-# THE TRIANGLE BUDGET IS ALSO THE TIME BUDGET. Elements are read largest
-# first, by the diagonal of their extent, so a capped answer still shows the
-# building's big pieces. The first element that would carry the total past
+# TWO LIMITS STOP THE READING, AND BOTH THE SAME WAY. Elements are read
+# largest first, by the diagonal of their extent, so a cut answer still shows
+# the building's big pieces. The first element that would carry the total past
 # maxTriangles is left out, and every element after it is left out WITHOUT
-# being read - leftOut counts them, and capped says so. Reading stops there,
-# which is what keeps a large model inside the run's time.
+# being read - leftOut counts them, capped says so, and `stopped` is
+# "triangles".
+#
+# THE CLOCK (version 2). The add-in stops a fragment at
+# revit.operationTimeoutSeconds and a stopped read hands back NOTHING, so this
+# stops itself first: once timeLimitSeconds has passed since it began, the
+# element being read and every one after it are left out as the budget leaves
+# them, the JSON is written with what was drawn, `stopped` is "time" and
+# capped says "time: stopped at N s; ...". The clock is looked at before each
+# element and after it - an element whose read carried the time past the
+# limit is left out, never counted as drawn or empty.
+#
+# ENVIRONMENT.TICKCOUNT, NOT STOPWATCH. A fragment is compiled against
+# mscorlib, System.Core, the add-in and the Revit API only
+# (HeronFragmentReferences - the script options REPLACE Roslyn's defaults).
+# On the .NET Framework Revits, 2020 to 2024, Stopwatch is in System.dll and
+# not mscorlib (read off the 4.8 reference assemblies, 2026-11-01). TickCount
+# is in mscorlib there and in System.Private.CoreLib on 2025 to 2027 - steady
+# milliseconds since the PC started, read as an unchecked difference so its
+# wrap cannot matter. No fragment timed itself before this one; three take
+# DateTime.Now for a timestamp, which a clock change would move.
+#
+# WHAT THE CLOCK CANNOT CUT SHORT: the pass that reads every element's extent
+# to sort them, and writing the JSON. Both count in the time. With the default
+# 60-second timeout the add-in's own stop comes at 50 s (a sixth kept for the
+# rollback - HeronRunClock.BudgetFor), so the default 40 leaves about ten
+# seconds to write the answer. A limit above about 45 is for a raised timeout:
+# the fragment cannot read the setting, and 55 is the most it accepts.
 #
 # REFUSED BEFORE ANYTHING IS READ, as SELECT_BY_PARAMETER_VALUE refuses a mode
 # it does not know: a category name that is not a BuiltInCategory this
-# release has (named, with how to spell one), and maxTriangles above 500000
-# or below 1 (the limit named). A model category asked for that the scope
+# release has (named, with how to spell one), maxTriangles above 500000 or
+# below 1, and timeLimitSeconds below 5 or above 55 (the limits named). A model category asked for that the scope
 # holds none of is not refused: findings says so.
 #
 # ONE STRING, BECAUSE A LIST CROSSES AS ITS FIRST THREE ITEMS (FRAGMENT-ISSUES
@@ -89,8 +121,9 @@ purpose: >
   the Heron Companion to draw: what the active 3D view shows - its section
   box, hidden categories and hidden elements honoured - or the whole model.
   Each element is its own entry with its category, so the drawing can be
-  coloured and picked by category. A triangle budget keeps the answer small;
-  the largest elements are drawn first and what was left out is counted.
+  coloured and picked by category. A triangle budget keeps the answer small
+  and a time limit keeps it inside Revit's wait; the largest elements are
+  drawn first and what either limit left out is counted.
 
   **It changes nothing.** Linked models, CAD files, rooms and spaces are not
   drawn, and the answer says how many were left out and why.
@@ -122,13 +155,20 @@ purpose: >
 #   noGeometry    looked at, nothing to draw - no surface at either detail
 #                 level, or its geometry would not read (then also a
 #                 "geometry:" line in notRead)
-#   leftOut       not drawn because the triangle budget was reached - the
-#                 first that would not fit and every one after it, not read
+#   leftOut       not drawn because a limit stopped the read - the triangle
+#                 budget (the first that would not fit and every one after
+#                 it, not read) or the time limit (the element being read
+#                 when it passed and every one after it)
+#   stopped       VERSION 2. "triangles" or "time" - which limit stopped the
+#                 read - or null when everything in scope was read. leftOut
+#                 is above 0 exactly when this is not null
 #   notRead       ["<part>: <why>"] - what was not read and why: "active
 #                 view:", "links:", "CAD:", "rooms and spaces:", "section
 #                 box:", "categories:", "geometry:", "faces:". [] when nothing
 #   capped        ["triangles: the budget of N was reached; M element(s) left
-#                 out - the largest were drawn first"], or []
+#                 out - the largest were drawn first"], or, from version 2,
+#                 ["time: stopped at N s; M element(s) left out - the largest
+#                 were drawn first"] (N the limit), or []
 contract:
   needs:
     - name: doc
@@ -157,6 +197,15 @@ contract:
       type: bool
       source: request
       optional: true
+    # VERSION 2. How long the read may take, in seconds, before it stops and
+    # hands back what it has drawn. Left out it is 40 (`absent: 40`); below 5
+    # or above 55 REFUSES the call naming the limits - the add-in's own stop
+    # (60 s by default) must come after it.
+    - name: timeLimitSeconds
+      type: int
+      source: request
+      optional: true
+      absent: 40
   provides:
     # The scene, format 1. ACCOUNTING, not a result, for the reason
     # REPORT_MODEL_DASHBOARD's dashboardJson is: it is written whatever was
@@ -172,8 +221,9 @@ contract:
     - name: triangles
       role: result
       type: int
-    # A line for the scope and its counts, then what was read again at Fine,
-    # left outside the section box, not read and cut. A string, not a list: a
+    # A line for the scope and its counts, how long the read took against its
+    # limit, then what was read again at Fine, left outside the section box,
+    # not read and cut. A string, not a list: a
     # list crosses as its first three.
     - name: findings
       role: accounting
@@ -201,13 +251,17 @@ compatibility-note: >
   SpatialElement, Group and AssemblyInstance. No ElementId is read as a
   number - each is written with ToString() - and no units API is touched:
   feet become metres by * 0.3048, exact by definition, at the edge (D-20),
-  so the answer is the same on every release.
+  so the answer is the same on every release. Version 2 adds no Revit
+  member: its clock is Environment.TickCount, in mscorlib on the .NET
+  Framework releases and System.Private.CoreLib on the .NET ones, which every
+  fragment script references.
 
 # WHAT IT COSTS, AND WHAT BOUNDS IT - read 2026-11-01, NOT YET MEASURED.
 #
 # TIME IS THE LIMIT. The add-in stops a fragment at
 # revit.operationTimeoutSeconds (60 s by default, less a sixth for the
-# rollback - HeronRunClock), and a stopped read hands back nothing. The work
+# rollback - HeronRunClock), and a stopped read hands back nothing - which is
+# why version 2 stops itself at timeLimitSeconds (40) first. The work
 # is one geometry read per element in scope (two for a pipe or duct at
 # Coarse), one triangulation per face, and one pass to write the JSON. The
 # budget stops the reading once it is reached, so it bounds the triangulation;
@@ -219,7 +273,9 @@ compatibility-note: >
 # part of the building wanted, or categories hidden, reads only that. The
 # whole model reads every element - several hundred thousand on a large
 # project - and is the case to time first (the NEEDS-CHECKING group has the
-# row); raise the timeout, or narrow by categories, if it stops.
+# row); findings says how long the read took. If it stops at the time limit,
+# narrow by categories or by a section box; if it is the add-in that stops
+# it, the extent pass or the JSON took the rest - raise the timeout.
 #
 # THE ANSWER'S SIZE. Every vertex is three numbers of up to a dozen
 # characters and every triangle three indexes: about 30 to 40 bytes a

@@ -1,5 +1,6 @@
-// NOT STANDALONE. Assumes `doc`, `categories`, `maxTriangles` and `wholeModel`
-// are in scope, and leaves `geometryJson`, `triangles` and `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `categories`, `maxTriangles`, `wholeModel`
+// and `timeLimitSeconds` are in scope, and leaves `geometryJson`, `triangles`
+// and `findings` behind.
 //
 // READS ONLY. No transaction is opened and nothing is set.
 //
@@ -40,7 +41,31 @@
 // of the diagonal of their extent, longest first, so a capped answer still
 // shows the building's big pieces. The first element that would carry the
 // total past maxTriangles is left out, and every one after it is left out
-// without being read - which is what bounds the time on a large model.
+// without being read.
+//
+// VERSION 2 (2026-11-01) - AND SO DOES THE CLOCK. The add-in stops a fragment
+// at revit.operationTimeoutSeconds, and a stopped read hands back NOTHING. So
+// this watches its own time: once timeLimitSeconds (40 left out, 5 to 55) has
+// passed since it began, the element being read and every one after it are
+// left out exactly as the budget leaves them, and the JSON is written with
+// what was drawn. `stopped` in the JSON says which limit stopped the read -
+// "triangles", "time" - or null when everything in scope was read. The clock
+// is looked at before each element and again after it: an element whose read
+// carried the time past the limit is left out too, never half-counted.
+//
+// THE CLOCK IS Environment.TickCount - milliseconds since the PC started,
+// steady whatever the wall clock does - and not Stopwatch. A fragment is
+// compiled against mscorlib, System.Core, the add-in and the Revit API only
+// (HeronFragmentReferences; the script options REPLACE the defaults). On the
+// .NET Framework Revits, 2020 to 2024, Stopwatch is in System.dll, not
+// mscorlib (read off the 4.8 reference assemblies, 2026-11-01); TickCount is
+// in mscorlib there and in System.Private.CoreLib on 2025 to 2027, the one
+// assembly every fragment certainly has. Elapsed time is the unchecked
+// difference of two readings, which stays right across TickCount's wrap.
+//
+// WHAT THE CLOCK DOES NOT STOP: the pass that reads every element's extent to
+// sort them, and writing the JSON at the end. Both are counted in the time but
+// cannot be cut short - an element never sorted cannot be counted anywhere.
 //
 // METRES BY * 0.3048, EXACT BY DEFINITION, and no unit API (D-20) - the same
 // on every release. Each vertex is rounded to the millimetre and kept as whole
@@ -55,7 +80,8 @@
 // rest and is sticky - the add-in still reports the run stopped (HeronRunClock).
 //
 // REFUSED BEFORE ANYTHING IS READ: a category that is not a BuiltInCategory
-// name this release has, and maxTriangles above 500000 or below 1.
+// name this release has, maxTriangles above 500000 or below 1, and
+// timeLimitSeconds below 5 or above 55.
 //
 // ONE STRING, BECAUSE A LIST CROSSES AS ITS FIRST THREE ITEMS (FRAGMENT-ISSUES
 // 5b-195). Element ids are digit strings: ToString(), never read as a number.
@@ -72,8 +98,12 @@ var triangles = 0;
 var findings = "";
 
 {
+    // The clock starts first, so the limit counts everything this read does.
+    var started = Environment.TickCount;
     const double MetresPerFoot = 0.3048;
     const int MostTriangles = 500000;
+    const int FewestSeconds = 5;
+    const int MostSeconds = 55;
     var invariant = System.Globalization.CultureInfo.InvariantCulture;
     var backslash = ((char)92).ToString();
     var quote = ((char)34).ToString();
@@ -108,6 +138,15 @@ var findings = "";
     if (maxTriangles < 1)
         throw new InvalidOperationException("maxTriangles " + whole(maxTriangles) + " leaves nothing to draw, "
             + "so NOTHING was read. Ask for 1 to " + whole(MostTriangles) + "; left out it is 150000");
+    if (timeLimitSeconds < FewestSeconds || timeLimitSeconds > MostSeconds)
+        throw new InvalidOperationException("timeLimitSeconds " + whole(timeLimitSeconds) + " is outside "
+            + whole(FewestSeconds) + " to " + whole(MostSeconds) + " seconds, so NOTHING was read. Below "
+            + whole(FewestSeconds) + " there is no time to read anything; above " + whole(MostSeconds)
+            + " Heron's own stop (revit.operationTimeoutSeconds, 60 s by default) comes first and the read "
+            + "hands back nothing. Left out it is 40");
+    var limitMs = (long)timeLimitSeconds * 1000L;
+    // Milliseconds since `started`, unchecked so TickCount's wrap cannot turn it negative.
+    Func<long> elapsedMs = () => (long)unchecked((uint)(Environment.TickCount - started));
 
     // "all", or nothing typed, is every model category - the card's `absent:`.
     var askedText = (categories ?? "").Trim();
@@ -413,16 +452,22 @@ var findings = "";
     var readAtFine = 0;
     var failed = 0;
     string firstFailed = null;
-    var stopped = false;
+    // Which limit stopped the read - "triangles" or "time" - or null while
+    // everything is being read. Once set, every element after is left out
+    // without being read.
+    string stoppedBy = null;
 
     foreach (var at in order)
     {
-        if (stopped) { leftOut++; continue; }
+        if (stoppedBy != null) { leftOut++; continue; }
+        if (elapsedMs() >= limitMs) { stoppedBy = "time"; leftOut++; continue; }
         var element = candidates[at];
         points = new List<long>();
         corners = new List<int>();
         pointAt = new Dictionary<string, int>();
         sawLine = false;
+        var readAgain = false;
+        string failure = null;
         try
         {
             walk(element.get_Geometry(firstOptions));
@@ -432,13 +477,23 @@ var findings = "";
                 corners = new List<int>();
                 pointAt = new Dictionary<string, int>();
                 walk(element.get_Geometry(fineOptions));
-                if (corners.Count > 0) readAtFine++;
+                readAgain = corners.Count > 0;
             }
         }
         catch (Exception ex)
         {
+            failure = element.Id.ToString() + " - " + why(ex);
+        }
+
+        // THE ELEMENT WHOSE READ CARRIED THE TIME PAST THE LIMIT IS LEFT OUT,
+        // as the budget leaves out the element that would not fit - drawn,
+        // empty or failed, it is not counted as anything else.
+        if (elapsedMs() >= limitMs) { stoppedBy = "time"; leftOut++; continue; }
+
+        if (failure != null)
+        {
             failed++;
-            if (firstFailed == null) firstFailed = element.Id.ToString() + " - " + why(ex);
+            if (firstFailed == null) firstFailed = failure;
             noGeometry++;
             continue;
         }
@@ -447,11 +502,12 @@ var findings = "";
         var count = corners.Count / 3;
         if ((long)triangles + count > maxTriangles)
         {
-            stopped = true;
+            stoppedBy = "triangles";
             leftOut++;
             continue;
         }
         triangles += count;
+        if (readAgain) readAtFine++;
 
         var category = element.Category;
         var key = category.Id.ToString();
@@ -467,8 +523,12 @@ var findings = "";
     if (facesSkipped > 0)
         notRead.Add("faces: " + whole(facesSkipped) + " face(s) would not triangulate and are missing from their "
             + "element - the first, " + firstFace);
-    if (leftOut > 0)
+    var readFor = elapsedMs();
+    if (stoppedBy == "triangles")
         capped.Add("triangles: the budget of " + whole(maxTriangles) + " was reached; " + whole(leftOut)
+            + " element(s) left out - the largest were drawn first");
+    else if (stoppedBy == "time")
+        capped.Add("time: stopped at " + whole(timeLimitSeconds) + " s; " + whole(leftOut)
             + " element(s) left out - the largest were drawn first");
 
     // ---- the offset: the centre of the box round everything drawn ------------
@@ -531,6 +591,8 @@ var findings = "";
     json.Append(",").Append(esc("elementsRead")).Append(":").Append(whole(candidates.Count));
     json.Append(",").Append(esc("noGeometry")).Append(":").Append(whole(noGeometry));
     json.Append(",").Append(esc("leftOut")).Append(":").Append(whole(leftOut));
+    // Version 2: which limit stopped the read, or null when it read everything.
+    json.Append(",").Append(esc("stopped")).Append(":").Append(esc(stoppedBy));
     json.Append(",").Append(esc("notRead")).Append(":").Append(textList(notRead));
     json.Append(",").Append(esc("capped")).Append(":").Append(textList(capped));
     json.Append("}");
@@ -542,8 +604,12 @@ var findings = "";
         + " triangle(s), in metres, centred on " + metres(offset[0]) + ", " + metres(offset[1]) + ", "
         + metres(offset[2]) + " m.");
     lines.Insert(1, whole(candidates.Count) + " model element(s) in scope: " + whole(drawnIds.Count) + " drawn, "
-        + whole(noGeometry) + " with nothing to draw, " + whole(leftOut) + " left out by the budget of "
-        + whole(maxTriangles) + ".");
+        + whole(noGeometry) + " with nothing to draw, " + whole(leftOut) + " left out"
+        + (stoppedBy == "time" ? " by the time limit of " + whole(timeLimitSeconds) + " s"
+           : stoppedBy == "triangles" ? " by the budget of " + whole(maxTriangles) + " triangles"
+           : "") + ".");
+    lines.Insert(2, "Read in " + (readFor / 1000.0).ToString("0.0", invariant) + " s of the "
+        + whole(timeLimitSeconds) + " s limit; the JSON was written after that.");
     if (readAtFine > 0)
         lines.Add(whole(readAtFine) + " element(s) were only lines at " + (useView ? "the view's detail level" : "Coarse")
             + " - pipes, ducts and their fittings draw that way - and were read again at Fine and drawn as solids.");
