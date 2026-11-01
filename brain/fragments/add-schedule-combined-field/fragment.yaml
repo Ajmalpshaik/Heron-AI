@@ -90,8 +90,10 @@ purpose: >
 #   Revit's Fields tab list, hidden columns included. A column named twice, or
 #   not there, is refused. With editExisting and neither parts nor separators
 #   given, the column is MOVED and nothing else changes - any column, plain or
-#   combined. No other tool in the library reorders schedule columns (none
-#   calls SetFieldOrder), so this is the one place that does.
+#   combined. Until 2026-11-01 no other tool reordered schedule columns.
+#   SET_SCHEDULE_FIELD_ORDER (DRAFT, row 5b-1363) now puts a whole or
+#   partial order in one call ("Mark, Size, Length"); a one-column move asked
+#   in this card's words ("move this column after Equipment Tag") stays here.
 #
 #   partFields and partSeparators are optional since version 2 (absent
 #   "keep"), so a move or a new separator does not need the parts typed again.

@@ -1,0 +1,161 @@
+heron-agent: HERON-REVIT-SCH-026
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-157
+semantic-identity: "put a schedule's columns in a new order - move a column up, down, before or after another"
+kind: action
+domain: revit.schedules
+capability: SET_SCHEDULE_FIELD_ORDER
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WRITTEN 2026-11-01 FOR FRAGMENT-ISSUES ROW 5b-1363. Ajmal PS made a duct
+# length schedule through Heron on his Revit 2020 job model and could not set
+# the Length column to metres; he asked for every missing schedule setting to
+# be found and built. A grep of every fragment's C# found
+# ScheduleDefinition.SetFieldOrder used only inside ADD_SCHEDULE_COMBINED_FIELD,
+# to put a combined column back where it was - nothing moved a column the
+# modeller named by that name.
+#
+# THE OVERLAP, SAID PLAINLY. ADD_SCHEDULE_COMBINED_FIELD version 2 (PROVEN)
+# already MOVES one column - any column, plain or combined - with editExisting
+# and its `position`, and its card says no other tool reorders columns. What
+# this card adds is the job that one does not do: a whole or partial ORDER
+# in one call ("Mark, Size, Length"), and a move asked in the words "move X to
+# N" with no combined-column vocabulary in the way. Whether the library keeps
+# both, or widens that card instead, is the owner's call (row 5b-1363); until
+# then the sentence that card declares - "move this column after Equipment
+# Tag" - stays its own, by identity. Proof plan: NEEDS-CHECKING Group KF, job file
+# tools/jobs/schedule-settings-fields-scratch-2026-11-01.yaml, on a scratch
+# project, never a 4355-* job model.
+
+purpose: >
+  Puts a schedule's columns in a new order - the Fields tab's Move Up and Move
+  Down, in one call. Name the columns in the order wanted ("Mark, Size,
+  Length") and they go first, in that order, with every other column keeping
+  its own order after them; or move one column - to a place, to the front or
+  the end, or before or after another column.
+
+  **A PLACE IS A PLACE IN THE FIELDS TAB'S LIST, AND HIDDEN FIELDS COUNT.**
+  That list shows hidden fields and so does the order Revit keeps, so "move
+  Length to 2" makes Length the second field there. On the printed schedule
+  the column can sit further left when a hidden field comes before it, and
+  the order read back marks the hidden ones.
+
+  **A COLUMN IS FOUND BY ITS FIELD NAME OR ITS PRINTED HEADING, AND A NAME
+  THAT ANSWERS TO TWO COLUMNS MOVES NOTHING.** Every name is resolved before
+  anything is written; a schedule with one unknown, ambiguous or repeated name
+  is left exactly as it was and named, and the other schedules still go on.
+
+  **THE ORDER REPORTED IS READ BACK, NOT ECHOED.** Revit is always handed the
+  whole order, every field once, and the order it then holds is what comes
+  back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # "Mark, Size, Length" - those first, the rest after in their own order -
+    # or "move Length to 2" / "to the front" / "to the end" / "before Size" /
+    # "after Size". A place is the Fields tab's, 1 the first, hidden fields
+    # counted.
+    - name: order
+      type: string
+      source: request
+  provides:
+    - name: reordered
+      role: result
+      type: int
+    - name: alreadyInOrder
+      # Schedules already in the order asked for, so nothing was written. The
+      # prior state, never a change it made (D-52).
+      role: accounting
+      type: int
+    - name: appliedOrder
+      # Each schedule's field order read back after the write - "1 Mark,
+      # 2 Size, 3 Length (hidden)" - never the list that was sent.
+      role: result
+      type: string
+    - name: notPresent
+      # Schedules left untouched because a name in the order is not a column
+      # in them, answers to more than one column, or is repeated. The evidence
+      # it looked, never a thing it moved (D-52).
+      role: accounting
+      type: IList<string>
+    - name: notKept
+      # Schedules where Revit refused the order, or a read back found a
+      # different one. Given and unusable (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined the whole call, in the user's words. Never a thing it
+      # FOUND (D-52).
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ScheduleDefinition.GetFieldOrder`,
+  `SetFieldOrder(IList<ScheduleFieldId>)`, `GetField(ScheduleFieldId)`,
+  `ScheduleField.GetName`, `ColumnHeading` and `IsHidden`, and
+  `ScheduleFieldId`'s value equality (`Equals`, `==`), are present and
+  unchanged 2020 through 2027 - read off the shipped assemblies of all eight.
+  Nothing is version-gated and no units call is made.
+
+  **Whether SetFieldOrder accepts a list that leaves fields out is not said by
+  the reference**, so it is never asked to: every call hands over the whole
+  order, each field once.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "move the Length column to the front of the schedule"
+#                                           -> here
+#   "move this column after Equipment Tag"  -> ADD_SCHEDULE_COMBINED_FIELD,
+#                                              version 2, editExisting with
+#                                              position - declared there and
+#                                              PROVEN; it moves one column
+#   "order the schedule by mark"            -> SET_SCHEDULE_SORT_GROUP, which
+#                                              declares it. ORDER OF ROWS, not
+#                                              of columns: measured 2026-11-01
+#                                              on the n-gram backend, this
+#                                              card ranked first for it by
+#                                              nearness; identity keeps it
+#                                              there
+#   "put the schedule columns in this order Mark Size Length"
+#                                           -> here
+#   "add Length as the second column of the schedule"
+#                                           -> ADD_SCHEDULE_FIELDS, version 2,
+#                                              position 2. ADDING a column at
+#                                              a place is that card's job;
+#                                              this one moves columns already
+#                                              there
+#   "remove the Length column"              -> REMOVE_SCHEDULE_FIELDS
+#   "hide that column"                      -> SET_SCHEDULE_APPEARANCE
+#   "sort the schedule by size"             -> SET_SCHEDULE_SORT_GROUP. The
+#                                              order of ROWS, not of columns
+#   "what fields are in this schedule"      -> REPORT_SCHEDULE_DEFINITION, a
+#                                              QUESTION, declared there.
+#                                              Measured 2026-11-01 on the
+#                                              n-gram backend: this card - a
+#                                              write - ranked first for it by
+#                                              nearness; identity keeps it on
+#                                              the read
+
+utterances:
+  - move the Length column to the front of the schedule
+  - reorder the schedule columns
+  - put the schedule columns in this order Mark Size Length
+  - move size before length in the schedule
+  - move this column to the end of the schedule
+  - change the column order in the schedule

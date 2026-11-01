@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,25 @@ semantic-identity: "add columns to these schedules, and say which ones could not
 kind: action
 domain: revit.views
 capability: ADD_SCHEDULE_FIELDS
-version: 1
+# VERSION 2 (2026-11-01, on the owner's word in the brief of that day's
+# session - Ajmal PS asked, after a duct length schedule on his Revit 2020 job
+# model could not have its Length column set to metres, for every schedule
+# setting Heron was missing to be built; FRAGMENT-ISSUES row 5b-1363). The new
+# `position` says WHERE the columns go: a place in the Fields tab's list ("3",
+# 1 the first - hidden fields count, as they do on that tab and in
+# GetFieldOrder, which InsertField's index counts in), "before <column>" or
+# "after <column>" by field name or printed heading, exactly one column or
+# refused. Several fields go in in the order given from that place. A
+# position that cannot be found on a schedule adds NOTHING to it (notPlaced)
+# - never the end instead. A field already there is not moved; that is
+# SET_SCHEDULE_FIELD_ORDER. `position` is `optional: true` with `absent: end`,
+# so every caller of version 1 is bound "end" and gets AddField at the end,
+# version 1 to the letter. `notPlaced` and `appliedOrder` (the order read back,
+# new columns marked) are new outputs; every version 1 output is unchanged.
+# Version 1's proof below no longer describes the code and is kept as a
+# record; the card is DRAFT until NEEDS-CHECKING Group KF proves version 2 and
+# the owner signs.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -51,6 +69,14 @@ contract:
     - name: fieldNames
       type: IList<string>
       source: request
+    # VERSION 2. Where the new columns go: "3" (the Fields tab's place, 1 the
+    # first, hidden fields counted), "before Size", "after Size", or "end".
+    # Left out it is "end" - version 1's AddField at the end.
+    - name: position
+      type: string
+      source: request
+      optional: true
+      absent: end
   provides:
     - name: added
       role: result
@@ -78,6 +104,17 @@ contract:
       # said no. Never a thing it FOUND, so it must not count toward
       # "did this come back empty" (D-52).
       role: accounting
+      type: string
+    - name: notPlaced
+      # VERSION 2. Schedules a position could not be found on - nothing was
+      # added to them - and any column a read back finds somewhere other than
+      # where it was asked. Given and unusable, never a column it added (D-52).
+      role: accounting
+      type: IList<string>
+    - name: appliedOrder
+      # VERSION 2. Each schedule's field order read back after the change,
+      # the new columns marked "(new)" and hidden ones "(hidden)".
+      role: result
       type: string
 
 proof:
@@ -114,8 +151,10 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. `ViewSchedule.Definition`,
   `GetSchedulableFields`, `SchedulableField.GetName(Document)`,
-  `ScheduleDefinition.AddField`, `GetFieldOrder` and `GetField` are unchanged
-  2020 to 2027 and no units call is made.
+  `ScheduleDefinition.AddField`, `InsertField(SchedulableField, int)` (version
+  2), `GetFieldOrder`, `GetField`, `ScheduleField.ColumnHeading` and
+  `IsHidden` are unchanged 2020 to 2027, read off the shipped assemblies of all
+  eight, and no units call is made.
 
 # ROUTING - the same rows are in the fragments named here.
 #
@@ -144,6 +183,21 @@ compatibility-note: >
 #                                       the schedule's Fields tab, the fx
 #                                       "Calculated Value" button
 #   "add a column for the mark"          -> here, for a plain parameter
+#   "add Length as the second column of the schedule"
+#                                        -> here, version 2: position 2.
+#                                           Measured 2026-11-01 on the n-gram
+#                                           backend: SET_SCHEDULE_APPEARANCE
+#                                           ranks first for it by nearness;
+#                                           declared here, identity keeps it
+#   "add the comments column after size" -> here, version 2: position after
+#                                           Size
+#   "move the Length column to the front of the schedule"
+#                                        -> SET_SCHEDULE_FIELD_ORDER. Moving a
+#                                           column already there is not adding
+#                                           one; this leaves an existing column
+#                                           where it is (and
+#                                           ADD_SCHEDULE_COMBINED_FIELD moves
+#                                           one column too)
 #   "one column with two parameters in   -> ADD_SCHEDULE_COMBINED_FIELD
 #    it"
 
@@ -154,3 +208,6 @@ utterances:
   - i need another column
   - add a column for the mark
   - show that parameter in the schedule
+  # VERSION 2, row 5b-1363.
+  - add Length as the second column of the schedule
+  - add the comments column after size

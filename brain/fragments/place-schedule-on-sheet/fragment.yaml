@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,28 @@ semantic-identity: "put this schedule on a sheet - a different call from placing
 kind: action
 domain: revit.schedules
 capability: PLACE_SCHEDULE_ON_SHEET
-version: 1
+# VERSION 2 (2026-11-01, on the owner's word in the brief of that day's
+# session - Ajmal PS asked, after a duct length schedule on his Revit 2020 job
+# model could not have its Length column set to metres, for every schedule
+# setting Heron was missing to be built; FRAGMENT-ISSUES row 5b-1363). SPLIT A
+# SCHEDULE AND PLACE ITS SEGMENTS: `splitInto` - a number of segments
+# (ViewSchedule.Split(int)) or heights in mm, one per segment (Split(IList of
+# double)) - and `segment` - which one to place, 1 the top, or "all" side by
+# side, each to the right of the last by its bounding-box width plus 10 mm.
+# Split, IsSplit, GetSegmentCount, SegmentIndex and the five-argument
+# ScheduleSheetInstance.Create are in the 2022 reference assemblies and later,
+# not 2020 or 2021 (Autodesk's notes give 2022.1); they are reached by name, and
+# on 2020 and 2021 a split or a segment asked for refuses that schedule, placing
+# nothing for it. A split that comes out with a different number of segments
+# than planned throws, so the whole call is rolled back. Both inputs are
+# `optional: true` with `absent: none`, so every caller of version 1 is bound
+# "none" twice and gets version 1 to the letter. ASSUMPTIONS the proof settles
+# are named in impl/any/fragment.cs: the meaning of Split's number and heights,
+# what version 1's call places for a schedule already split, and that a placed
+# segment's bounding box is its printed width. Version 1's proof below no
+# longer describes the code and is kept as a record; the card is DRAFT until
+# NEEDS-CHECKING Group KF proves version 2 and the owner signs.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -64,6 +85,22 @@ contract:
     - name: atYMm
       type: double
       source: request
+    # VERSION 2. "3" segments of equal height, or heights in mm "200, 150",
+    # one per segment, top first. Left out it is "none" - no split, version 1.
+    # Revit 2022 and later only.
+    - name: splitInto
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 2. Which segment to place - "2", 1 the top one - or "all", side
+    # by side. Left out it is "none" - version 1's call, the whole schedule.
+    # Revit 2022 and later only, for a split schedule.
+    - name: segment
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: placed
       role: result
@@ -109,6 +146,17 @@ compatibility-note: >
   ElementId, ElementId, XYZ)` and its `ScheduleId` and `Point` properties are
   present and unchanged 2020 through 2027, with the same argument counts.
 
+  **VERSION 2's split is 2022 and later.** `ViewSchedule.Split(int)`,
+  `Split(IList<double>)`, `IsSplit`, `GetSegmentCount`,
+  `ScheduleSheetInstance.SegmentIndex` and the five-argument
+  `ScheduleSheetInstance.Create(..., int segmentIndex)` are in the 2022 to 2027
+  reference assemblies and NOT in 2020 or 2021 - read off all eight shipped
+  assemblies with tools/api-surface. Autodesk's own notes give Revit 2022.1 as
+  the update that brought them, so a 2022.0 install without it would lack them
+  too. They are reached by name at run time, never under `#if` (row 5b-181);
+  on a release without them a split or a segment asked for is refused for that
+  schedule in plain words, and nothing is placed for it.
+
   The sheet arrives as an `ElementId` and is resolved with `doc.GetElement`, so
   nothing here builds an id from a number or reads one as a number, and 2024's
   64-bit change does not reach this code.
@@ -130,6 +178,19 @@ compatibility-note: >
 #                                         placing on it stay different jobs
 #   "which schedules are there"        -> FIND_SCHEDULES
 #   "export it instead"                -> EXPORT_SCHEDULE_TO_CSV
+#   "split the schedule into two parts on the sheet"
+#                                      -> here, version 2: splitInto 2,
+#                                         segment all. Revit 2022 and later.
+#                                         Measured 2026-11-01 on the n-gram
+#                                         backend: CREATE_PARTS ranks first
+#                                         for it by nearness - a part is a
+#                                         piece of a WALL or floor, not of a
+#                                         schedule; declared here, identity
+#                                         keeps it
+#   "split these walls into parts by layer"
+#                                      -> CREATE_PARTS, which declares it
+#   "place the second segment of the split schedule on the sheet"
+#                                      -> here, version 2: segment 2
 
 utterances:
   - put the schedule on the sheet
@@ -138,3 +199,6 @@ utterances:
   - drop the quantity schedule onto the sheet
   - i need the schedule on this drawing
   - put the door schedule on sheet A101
+  # VERSION 2, row 5b-1363.
+  - split the schedule into two parts on the sheet
+  - place the second segment of the split schedule on the sheet
