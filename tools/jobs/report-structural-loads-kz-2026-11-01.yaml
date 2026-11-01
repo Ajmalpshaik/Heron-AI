@@ -1,0 +1,49 @@
+# NEEDS-CHECKING Group KZ - REPORT_STRUCTURAL_LOADS, built 2026-11-01 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/report-structural-loads-kz-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-structural-loads-kz-2026-11-01.yaml
+#
+# THE MODEL is a scratch project new from Revit's metric STRUCTURAL template,
+# saved as "loads-kz" under %TEMP%\heron-work - never a working model. By hand
+# before the run (KZ1): on Level 1, steel beam B1 between concrete columns C1
+# and C2, structural floor S1, structural wall W1, and an architectural wall
+# A1 with Structural cleared (no analytical element). Load cases DL1 and LL1
+# in Analyze > Load Cases. A 5 kN/m line load down on B1 in DL1, a 10 kN
+# point load down at C1's top in LL1, a 2.5 kPa area load down on S1 in DL1,
+# and a Pinned point boundary condition at C1's base. Write down every load
+# case, nature and load value from Analyze > Load Cases and each load's
+# Properties - the second route.
+#
+# THE ARRANGEMENT: the structural framing of "FloorPlan: Level 1" (B1) for the
+# positive, the walls of the same plan (W1 and A1) for the negative - a
+# different selection, not an empty one (fragment-proving, rules 3 and 5).
+#
+# READ ONLY: nothing to roll back, and the model must be the same afterwards.
+
+model: "loads-kz scratch project (metric structural template) with B1, C1, C2, S1, W1, A1, load cases DL1 and LL1, three loads and one boundary condition drawn by hand, Revit 2020"
+
+defaults:
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: report-structural-loads
+    expect: loadCount
+    setup-set:
+      categoryName: Structural Framing
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categoryName: Walls
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      show: "loads"
+    negative-set:
+      show: "loads"
+    note: >
+      KZ2. Negative - THE FIRST CASE TO RUN: the walls instead of the beam,
+      so loadCount 0, noAnalytical names A1 only, and findings "No load is
+      hosted on the analytical element(s) of what was handed in". Positive -
+      loadCount 1: B1's line load, uniform (0, 0, -5) kN/m, load case DL1,
+      on Structural Framing ... (B1) through analytical ...

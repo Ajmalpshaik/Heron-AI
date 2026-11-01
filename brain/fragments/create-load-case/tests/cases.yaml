@@ -1,0 +1,53 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "overwrote a load case that was there" or "made one in a
+# category nobody named".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for CREATE_LOAD_CASE): the scratch project REPORT_
+# STRUCTURAL_LOADS is proved on - new from Revit's metric STRUCTURAL template,
+# saved under %TEMP%\heron-work, never a working model - with its load cases
+# DL1 and LL1. Before every run, open Analyze > Load Cases and write down
+# every load case (number, nature, category) and every nature - the second
+# route.
+#
+# The negative legs are DIFFERENT VALUES, not empty ones: a name already
+# present in other capitals, a category the project does not have.
+
+positive:
+  - given: name "Wind X", category "wind", nature and number left out
+    expect: >
+      added 1; after holds every case of before and one more, "Wind X" -
+      nature Wind, category as Analyze > Load Cases shows Wind Loads, Revit's
+      next number; findings say the nature Wind was used because none was
+      named; Analyze > Load Cases now lists Wind X
+
+  - given: name "Crane 1", category "live", nature "Live", number a number no case uses
+    expect: >
+      added 1; "Crane 1" with that number, nature Live, category Live
+
+negative:
+  - given: >
+      name "dl1" - DL1 in other capitals - category "dead"
+    expect: >
+      added 0; skipped names "dl1" and the case DL1 it matched; before and
+      after the same; DL1's number, nature and category unchanged. A second
+      Dead case here is the defect. THE FIRST CASE TO RUN
+
+  - given: name "Wind X2", category left out
+    expect: >
+      added 0; refused says no category was given and lists the categories -
+      Wind is never read out of the name; nothing added
+
+  - given: name "Wind X3", category "gravity" - not a category the project has
+    expect: >
+      added 0; refused names "gravity" and lists the categories
+
+  - given: name "Wind X4", category "wind", number DL1's number
+    expect: >
+      added 0; refused says the number is used by DL1; DL1 not renumbered
+
+second_route:
+  - >
+    Revit's own Analyze > Load Cases: the case added is listed with the name,
+    number, nature and category `after` gives, and every case of `before` is
+    still there unchanged

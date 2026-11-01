@@ -1,0 +1,49 @@
+# NEEDS-CHECKING Group LC - PLACE_BOUNDARY_CONDITIONS, built 2026-11-01 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/place-boundary-conditions-lc-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/place-boundary-conditions-lc-2026-11-01.yaml
+#
+# THE MODEL is Group KZ's scratch project, "loads-kz"
+# (docs/needs-checking/group-kz.md, KZ1), on Revit 2020, 2021, 2022 or 2027 -
+# the releases the card claims. Never a working model. Before the run, read
+# the boundary conditions with REPORT_STRUCTURAL_LOADS show "boundary" - the
+# second route.
+#
+# THE ARRANGEMENT: the structural columns of "FloorPlan: Level 1" (C1 and C2)
+# for the positive, the walls of the same plan (W1 and A1) for the negative -
+# a different selection, not an empty one (fragment-proving, rules 3 and 5).
+# C1 already has KZ1's Pinned support at its base, so the positive places one
+# (C2) and skips one (C1). Every write here is ROLLED BACK.
+
+model: "loads-kz scratch project (metric structural template) with B1, C1, C2, S1, W1, A1 and a Pinned boundary condition at C1's base, Revit 2020"
+
+defaults:
+  write: true
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: place-boundary-conditions
+    expect: placed
+    setup-set:
+      categoryName: Structural Columns
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categoryName: Walls
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      kind: "point"
+      at: "base"
+      fixity: "pinned"
+    negative-set:
+      kind: "point"
+      at: "base"
+      fixity: "pinned"
+    note: >
+      LC2. Negative - THE FIRST CASE TO RUN: the walls, so placed 0;
+      noAnalytical names A1; skipped names W1 as not a beam, brace or
+      column; no boundary condition added. Positive - placed 1, a Point at
+      C2's base, "Revit shows it as ..." (Pinned expected), and skipped names
+      C1 with the Pinned support already at its base - not doubled.

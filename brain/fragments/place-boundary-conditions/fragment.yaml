@@ -1,0 +1,147 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-147
+semantic-identity: "put a fixed, pinned or roller support on these columns, beams, walls or floors - a point at a member's end, a line along it, or over an area"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "add a pinned boundary
+# condition at these column bases" - Revit's Analyze > Boundary Conditions
+# (point, line, area). No card placed one (grep of every fragment's C# that
+# day for BoundaryConditions: nothing). CHECK_STRUCTURAL_SUPPORTS finds column
+# bases bearing on nothing, geometrically; ATTACH_COLUMNS attaches a column's
+# base to a footing - neither is an analytical support. Look-alikes in words.
+#
+# ONE OF A SET. REPORT_STRUCTURAL_LOADS (FRG-ELE-144) answers every question -
+# which boundary conditions there are, where, and their fixity - so no
+# question reaches this write (D-86). PLACE_STRUCTURAL_LOADS places loads.
+#
+# NEVER CHANGES OR DELETES ONE. A boundary condition already on that host, of
+# that kind (and for a point, at that end), is skipped and named.
+#
+# NEVER GUESSED (D-33). The fixity is named - Fixed, Pinned or Roller; left
+# out, refused. A point on a member names its end - "column bases" is base;
+# left out, refused with both ends' coordinates.
+#
+# HOSTED ONLY ON THE ANALYTICAL ELEMENT OF THE ELEMENT NAMED. An element with
+# none is named in noAnalytical and gets nothing.
+#
+# ONLY 2020-2022 AND 2027, ON PURPOSE - see compatibility-note. On 2023 to 2026
+# the C# refuses with the reason rather than try a reference nobody documents.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: PLACE_BOUNDARY_CONDITIONS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places structural boundary conditions as Analyze > Boundary Conditions does
+  - a point at a column's base or top or a beam's end, a line along a beam, or
+  an area over a floor, wall or foundation, each Fixed, Pinned or Roller - on
+  each element selected, reading each one back.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      # The columns, beams, braces, walls or floors to support - a selection
+      # or the step before.
+      type: IList<Element>
+    - name: kind
+      # point | line | area. A point goes at a member's end, a line along a
+      # beam or brace, an area over a floor, wall or foundation panel.
+      type: string
+      source: request
+    - name: fixity
+      # fixed | pinned | roller. Left out, refused - never guessed.
+      #   Fixed  every translation and rotation fixed
+      #   Pinned translations fixed, rotations released
+      #   Roller Z translation fixed, the rest released
+      # An area support has no rotations, so Pinned there is Fixed.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: at
+      # A point: start (or base) | end (or top) of each member. Left out,
+      # refused with both ends' coordinates.
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: placed
+      # Boundary conditions placed. Something the write DID.
+      role: result
+      type: int
+    - name: placedIds
+      # The boundary conditions placed.
+      role: accounting
+      type: IList<ElementId>
+    - name: report
+      # ONE LINE PER BOUNDARY CONDITION PLACED, read back from the model: its
+      # kind, point or ends in mm, the preset Revit shows, the fixity asked,
+      # and its host.
+      role: accounting
+      type: string
+    - name: noAnalytical
+      # Elements handed in with no analytical element - given nothing (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: skipped
+      # Elements not supported, each with why: one already there, a host of
+      # the wrong kind, Revit's refusal (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined the whole run, in Revit words: no fixity, no end, no
+      # element, a release it cannot do. Never a thing done (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2027"]
+runtime: [net472, net48, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Read with tools/api-surface --members and RevitAPI.xml on 2026-11-01. 2020
+  to 2022 (#if REVIT2020 || REVIT2021 || REVIT2022):
+  Document.Create.NewPointBoundaryConditions and NewLineBoundaryConditions
+  taking a Reference from AnalyticalModel.GetReference(AnalyticalModelSelector)
+  - documented as a beam's, brace's or column's analytical line end - and
+  NewAreaBoundaryConditions taking the wall, slab or foundation. 2027 (#if
+  REVIT2027_OR_GREATER): BoundaryConditions.CreatePointBoundaryConditions,
+  CreateLineBoundaryConditions and CreateAreaBoundaryConditions taking the
+  AnalyticalElement's ElementId with a point, its curve or its outer contour;
+  the Document.Create methods are obsolete there. NOT 2023 TO 2026: those
+  releases have only the Document.Create methods, whose documentation still
+  asks for an analytical line end's Reference, and AnalyticalModel - which
+  gave it - is gone at 2023; no documented member gives an AnalyticalMember's
+  end as a Reference. The card claims those releases when a run in Revit
+  shows a route. Fixity is passed as TranslationRotationValue Fixed or
+  Release, present 2020-2027; whether Revit's preset then reads Fixed, Pinned
+  or Roller is read back, not seen in Revit.
+
+# ROUTING (2026-11-01) - the same rows are in REPORT_STRUCTURAL_LOADS,
+# CREATE_LOAD_CASE and PLACE_STRUCTURAL_LOADS.
+#
+#   "add a pinned boundary condition at these column bases"
+#                                                -> here, kind point, at base,
+#                                                   fixity pinned
+#   "what load cases are in this model"          -> REPORT_STRUCTURAL_LOADS
+#   "put a 10 kN point load on this beam end"    -> PLACE_STRUCTURAL_LOADS
+#   "check every column sits on a foundation or slab"
+#                                                -> CHECK_STRUCTURAL_SUPPORTS -
+#                                                   a geometric check, not an
+#                                                   analytical support
+utterances:
+  - add a pinned boundary condition at these column bases

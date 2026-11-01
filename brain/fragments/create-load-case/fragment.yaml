@@ -1,0 +1,128 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-145
+semantic-identity: "add a load case - by name, with its category and load nature"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "add a load case called Wind
+# X" - Revit's Analyze > Load Cases > Add. No card made one (grep of every
+# fragment's C# that day for LoadCase.Create: nothing). ADD_LOAD_CLASSIFICATION
+# adds an ELECTRICAL load classification - a different job that shares a word.
+#
+# ONE OF A SET. REPORT_STRUCTURAL_LOADS (FRG-ELE-144) answers every question -
+# which load cases and natures exist, their exact names and numbers - so no
+# question reaches this write (D-86). PLACE_STRUCTURAL_LOADS puts loads into a
+# load case this makes; PLACE_BOUNDARY_CONDITIONS places supports.
+#
+# NEVER OVERWRITES, RENAMES, RENUMBERS OR DELETES. A name already present, in
+# any capitals, is skipped and named; a case number already used is refused.
+#
+# NEVER GUESSED (D-33). The name is the modeller's. The category is never read
+# out of the name - "Wind X" is asked for a category, not given Wind. A nature
+# left out is the one called the same as the category, and the answer says
+# which; none of that name, refused with the natures listed. A nature named
+# differing only in capitals is named, never taken.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: CREATE_LOAD_CASE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Adds one structural load case, as Analyze > Load Cases does - the modeller's
+  name, a category such as Dead, Live or Wind, and a load nature the project
+  has - reporting the load cases before and after. A name already present is
+  skipped, never overwritten.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: name
+      # The new load case's name. Never made up - the modeller's.
+      type: string
+      source: request
+    - name: category
+      # dead | live | wind | snow | roof live | accidental | temperature |
+      # seismic, or a category the project added under Structural Load Cases,
+      # by name ("Wind Loads" reads as wind). Left out, refused with the list -
+      # never read out of the name.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: nature
+      # A load nature the project has, by its exact name (REPORT_STRUCTURAL_LOADS
+      # lists them). Left out, the nature called the same as the category.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: number
+      # The case number. Left out (0), Revit's own next number; one already
+      # used is refused.
+      type: int
+      source: request
+      optional: true
+      absent: "0"
+  provides:
+    - name: added
+      # 1 when the load case was made, else 0. Something the write DID.
+      role: result
+      type: int
+    - name: before
+      # The load cases with number, nature and category, before (D-52).
+      role: accounting
+      type: IList<string>
+    - name: after
+      # The same list after, read back from the model (D-52).
+      role: accounting
+      type: IList<string>
+    - name: skipped
+      # A name already present, named - left as it is (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in Revit words: no name, no category, a category or
+      # nature the project does not have, a number already used, a name Revit
+      # will not take. Never a thing done (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. LoadCase.Create(Document, string,
+  ElementId, LoadCaseCategory) and (Document, string, ElementId, ElementId),
+  LoadCase.Number, NatureId, SubcategoryId and IsNumberUnique, LoadNature,
+  LoadCaseCategory Dead, Live, Wind, Snow, RoofLive, Accidental, Temperature
+  and Seismic, BuiltInCategory.OST_LoadCases and Category.SubCategories carry
+  the same signatures 2020 through 2027 - read with tools/api-surface
+  --members on 2026-11-01. Whether Revit's templates name one nature per
+  category, as the default assumes, has not been seen in Revit - with none of
+  that name it refuses rather than picks.
+
+# ROUTING (2026-11-01) - the same rows are in REPORT_STRUCTURAL_LOADS,
+# PLACE_STRUCTURAL_LOADS and PLACE_BOUNDARY_CONDITIONS.
+#
+#   "add a load case called Wind X"              -> here, name Wind X, its
+#                                                   category asked
+#   "what load cases are in this model"          -> REPORT_STRUCTURAL_LOADS
+#   "put a 10 kN point load on this beam end"    -> PLACE_STRUCTURAL_LOADS
+#   "add a load classification called Kitchen Equipment"
+#                                                -> ADD_LOAD_CLASSIFICATION -
+#                                                   electrical load, not
+#                                                   structural
+utterances:
+  - add a load case called Wind X

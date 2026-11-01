@@ -1,0 +1,72 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this read, "answered with loads it was not asked for": a narrowed read
+# that still lists every load in the model, or a beam's loads under a wall.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for REPORT_STRUCTURAL_LOADS): a scratch project new
+# from Revit's metric STRUCTURAL template, saved under %TEMP%\heron-work, never
+# a working model. On Level 1, by hand: one steel beam B1 between two concrete
+# columns C1 and C2, one structural floor S1 and one structural wall W1 - each
+# with its analytical element (Revit makes one). With Analyze > Loads, by hand:
+# one line load of 5 kN/m down on B1 in load case DL1, one point load of 10 kN
+# down at C1's top in LL1, one area load of 2.5 kPa down on S1 in DL1; with
+# Analyze > Boundary Conditions, one point boundary condition, Pinned, at C1's
+# base. One architectural wall A1, Structural cleared, drawn too - it has no
+# analytical element. Open Analyze > Load Cases and write down every load case
+# and nature, and each load's values from its Properties - the second route.
+#
+# The negative leg is a DIFFERENT SELECTION OR VALUE, not an empty one: W1,
+# which carries no load, and a load case name no case has.
+
+positive:
+  - given: nothing selected, show and loadCase left out
+    expect: >
+      report lists every load nature and load case Analyze > Load Cases shows,
+      each case with its number, nature, category and load count (DL1 2 loads,
+      LL1 1); loadCount 3 - B1's line load "uniform (0, 0, -5) kN/m", C1's
+      point load "(0, 0, -10) kN", S1's area load "(0, 0, -2.5) kPa" - each
+      with its load case and "on Structural Framing ... through analytical
+      ..."; boundaryCount 1, at C1's base, its fixity as Revit shows it
+
+  - given: B1 selected, show "loads"
+    expect: >
+      loadCount 1 - B1's line load only, with its ends in mm, -5 kN/m and load
+      case DL1; no natures, cases or boundary section; caseCount still the
+      number of cases in the model
+
+  - given: nothing selected, show "loads", loadCase "DL1"
+    expect: >
+      loadCount 2 - B1's line load and S1's area load, and not C1's point load
+
+negative:
+  - given: >
+      W1 selected - a structural wall that carries no load and no boundary
+      condition
+    expect: >
+      loadCount 0 and boundaryCount 0, findings "No load is hosted on the
+      analytical element(s) of what was handed in"; noAnalytical empty - W1
+      HAS an analytical element. B1's, C1's or S1's load here is the defect.
+      THE FIRST CASE TO RUN
+
+  - given: nothing selected, loadCase "ZZNOTACASE" - a name no load case has
+    expect: >
+      no Loads section, loadCount 0; findings "No load case is called
+      \"ZZNOTACASE\". The load cases in this model: ..." naming every case -
+      nothing guessed
+
+  - given: A1 selected - the architectural wall with no analytical element
+    expect: >
+      noAnalytical names A1; findings say it can carry no load, not that it
+      carries none
+
+  - given: any run at all
+    expect: >
+      NOTHING IN THE MODEL CHANGES - no transaction opened; Analyze > Load
+      Cases and every load's Properties the same before and after
+
+second_route:
+  - >
+    Revit's own Analyze > Load Cases (Load Cases and Load Natures tabs) and
+    each load's and boundary condition's Properties palette: every case,
+    nature, load value, load case and host in `report` is one the dialog or the
+    palette shows, and no load drawn is missing

@@ -1,0 +1,69 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "loaded something nobody selected", "put a load in a case
+# nobody named" or "dropped a free load where an element had no analytical
+# element".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for PLACE_STRUCTURAL_LOADS): the scratch project
+# REPORT_STRUCTURAL_LOADS is proved on - new from Revit's metric STRUCTURAL
+# template, saved under %TEMP%\heron-work, never a working model - with B1,
+# C1, C2, S1, W1, A1 and the load cases DL1 and LL1. Every run is ROLLED BACK
+# unless the modeller keeps it. Before each run, list each element's loads
+# with Analyze > Loads' Properties (or REPORT_STRUCTURAL_LOADS) - the second
+# route.
+#
+# The negative legs are DIFFERENT SELECTIONS OR VALUES, not empty ones: the
+# architectural wall A1, which has no analytical element; a load case no case
+# has; a point load with no end.
+
+positive:
+  - given: B1 selected, kind line, loadCase "DL1", value 5, direction left out
+    expect: >
+      placed 1; report "Line load ... uniform (0, 0, -5) kN/m; load case
+      \"DL1\"; on Structural Framing ... (B1) through analytical ..." read
+      back; findings say the load points down because no direction was given;
+      B1's Properties show the new load in DL1 at -5 kN/m
+
+  - given: B1 selected, kind point, loadCase "LL1", value 10, at "end"
+    expect: >
+      placed 1; a point load at B1's end point in mm, (0, 0, -10) kN, load case
+      LL1
+
+  - given: S1 selected, kind area, loadCase "DL1", value 2.5
+    expect: >
+      placed 1; an area load over S1, (0, 0, -2.5) kPa, load case DL1
+
+  - given: >
+      nothing selected, kind point, loadCase "DL1", value 10, points
+      "0,0,3000" - Revit 2020 to 2023 only
+    expect: >
+      placed 1; a free point load at (0, 0, 3000) mm, "free - on no element";
+      on 2024 or later, placed 0 and refused names the release
+
+negative:
+  - given: >
+      A1 selected - the architectural wall with no analytical element - kind
+      area, loadCase "DL1", value 2.5
+    expect: >
+      placed 0; noAnalytical names A1; no load anywhere, and no free load in
+      its place. A load in the model afterwards is the defect. THE FIRST CASE
+      TO RUN
+
+  - given: B1 selected, kind line, loadCase "ZZNOTACASE", value 5
+    expect: >
+      placed 0; refused names "ZZNOTACASE" and every load case; nothing placed
+
+  - given: B1 selected, kind point, loadCase "LL1", value 10, at left out
+    expect: >
+      placed 0; refused asks for start or end and gives B1's two end points
+
+  - given: B1 selected, kind line, loadCase "DL1", value 5 - run twice, the first kept
+    expect: >
+      the second run placed 0; skipped names B1 and the load already there;
+      B1 carries one 5 kN/m load in DL1, not two
+
+second_route:
+  - >
+    Revit's own Properties palette on each load placed, and Analyze > Load
+    Cases: its load case, force values and host as `report` gives them; and
+    the loads that were there before unchanged

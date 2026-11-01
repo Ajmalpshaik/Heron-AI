@@ -1214,6 +1214,22 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ky.md`](needs-checking/group-ky.md)
 
+## Group KZ - which load cases, loads and boundary conditions a model has: `REPORT_STRUCTURAL_LOADS` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kz.md`](needs-checking/group-kz.md)
+
+## Group LA - add a structural load case: `CREATE_LOAD_CASE` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-la.md`](needs-checking/group-la.md)
+
+## Group LB - point, line and area loads in a load case: `PLACE_STRUCTURAL_LOADS` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-lb.md`](needs-checking/group-lb.md)
+
+## Group LC - fixed, pinned or roller boundary conditions: `PLACE_BOUNDARY_CONDITIONS` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-lc.md`](needs-checking/group-lc.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
