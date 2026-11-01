@@ -1,0 +1,172 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-137
+semantic-identity: "attach the tops or bases of these columns to the roof, floor, beam or footing selected with them, or detach them - Modify Column > Attach Top/Base, Detach Top/Base"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "attach these columns to the
+# roof", "attach the column tops to the beams above", "attach column base to
+# the footing" and "detach these columns" - Revit's Modify Column > Attach
+# Top/Base and Detach Top/Base. Nothing in Heron did it for a column. Checked
+# that day with brain/heron_retrieve.py on each sentence, Revit 2024:
+# PLACE_COLUMN_REBAR, COPE_FRAMING and PLACE_STRUCTURAL_FAMILY came back
+# first, with CREATE_ROOF, CHECK_STRUCTURAL_SUPPORTS and PLACE_FOOTING_REBAR
+# behind them. None attaches a column.
+#
+# A NEW CAPABILITY, NOT A WIDENING OF ATTACH_WALLS. That card is DRAFT, so it
+# could have been widened - but its call, Wall.AddAttachment, exists only from
+# Revit 2025, and ColumnAttachment exists 2020 to 2027; one card cannot declare
+# both ranges with one implementation. ATTACH_WALLS also finds each wall's
+# target itself, by nearness, where a column's target is selected; and a
+# column attachment carries a cut style, a justification and an offset a wall
+# attachment has not. Widening it would muddy two clean contracts into one.
+# Nothing there is touched beyond its routing comment.
+#
+# ATTACH AND DETACH ARE ONE JOB, as in ATTACH_WALLS and in Revit's own
+# Modify Column tab: the `detach` switch.
+#
+# THE TARGET IS NEVER GUESSED. It is selected WITH the columns, in
+# `elements`: what Revit accepts as a column (ColumnAttachment.IsValidColumn)
+# is a column, everything else is a target. A separate `target` need was the
+# first shape tried and does not work here - the add-in fills an `Element`
+# need from "selected" only when exactly ONE element is selected, and the
+# columns are the selection. With no target selected nothing is attached. A
+# target Revit accepts for none of the columns is refused by name and nothing
+# changes. Each column takes the one selected target its plan extent meets; a
+# column two selected targets meet is named and left.
+#
+# RISK MODIFY. It changes columns' attachments and deletes nothing, so
+# Article 7's confirmation does not arise.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: ATTACH_COLUMNS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Attaches the tops or bases of structural and architectural columns to the
+  roof, floor, ceiling, beam or footing selected with them - Revit's Attach
+  Top/Base - or detaches them. Each column takes the one selected target over
+  or under it; a target Revit does not accept is refused by name, and a column
+  already attached to that target is left alone. Says per column what happened
+  and why.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The columns AND what they attach to, selected together. Revit decides
+    # which is which: a column it can attach is a column, the rest are
+    # targets. On a detach a target is optional - selected, only attachments
+    # to it are removed.
+    - name: elements
+      type: IList<Element>
+    # "top", "base" or - on a detach only - "both". Left out, top, as Revit's
+    # own Attach Top/Base starts.
+    - name: where
+      type: string
+      source: request
+      optional: true
+      absent: top
+    # true removes the attachment at that end instead; left out, attaches.
+    - name: detach
+      type: bool
+      source: request
+      optional: true
+    # Revit's Offset from Attachment, MILLIMETRES. Left out, 0.
+    - name: offset
+      type: double
+      source: request
+      optional: true
+      absent: 0
+    # Revit's Attachment Style: "cut column", "cut target" or "do not cut".
+    # Left out, cut column.
+    - name: cutStyle
+      type: string
+      source: request
+      optional: true
+      absent: cut column
+    # Revit's Attachment Justification: "minimum", "midpoint", "maximum" or
+    # "tangent". Left out, minimum.
+    - name: justification
+      type: string
+      source: request
+      optional: true
+      absent: minimum
+  provides:
+    - name: changed
+      # Columns attached or detached as asked, each read back after a
+      # regenerate.
+      role: result
+      type: int
+    - name: changedIds
+      role: result
+      type: IList<ElementId>
+    - name: alreadyDone
+      # Columns already attached to that target at that end, or with nothing
+      # to detach - evidence it looked, never work it did (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: left
+      # Columns left as they were, each with its reason in the report: no
+      # selected target over it, two of them, a target Revit refused, a call
+      # Revit refused, or a change that did not read back (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, column by column (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. ColumnAttachment.AddColumnAttachment
+  (Document, FamilyInstance, Element, int baseOrTop, ColumnAttachmentCutStyle,
+  ColumnAttachmentJustification, double attachOffset), RemoveColumnAttachment
+  (FamilyInstance, int), GetColumnAttachment(FamilyInstance, int), IsValidColumn
+  (FamilyInstance), IsValidTarget(FamilyInstance, Element) and TargetId; the
+  enums ColumnAttachmentCutStyle (CutColumn, CutTarget, None) and
+  ColumnAttachmentJustification (Minimum, Midpoint, Maximum, Tangent);
+  Element.get_BoundingBox, Category.Name, Element.Name, ElementId == and
+  InvalidElementId, Document.GetElement and Regenerate, and SubTransaction's
+  Start, Commit, RollBack, HasStarted and HasEnded are present and unchanged
+  2020 through 2027 - read with tools/api-surface --members on 2026-11-01.
+  Ids are compared as ElementId, never read as numbers. The offset arrives in
+  millimetres and becomes feet by / 304.8 (D-20).
+
+# ROUTING (2026-11-01) - the wall rows are repeated in ATTACH_WALLS.
+#
+#   "attach these columns to the roof"        -> here, the roof selected with them
+#   "attach the column tops to the beams
+#    above"                                   -> here, each column to the
+#                                                selected beam over it
+#   "attach column base to the footing"       -> here, base
+#   "detach these columns"                    -> here, detach
+#   "attach these walls to the roof above"    -> ATTACH_WALLS - walls, which
+#                                                find their own target
+#   "detach the tops of these walls"          -> ATTACH_WALLS
+#
+# ATTACH_WALLS IS 2025 ON. On 2020 to 2024 its wall sentences rank this card
+# first (they ranked cards that do not attach walls before it existed);
+# handed walls, this changes nothing and says none of them is a column.
+#   "put a column at each grid intersection"  -> PLACE_STRUCTURAL_FAMILY
+#   "place column rebar in these concrete
+#    columns"                                 -> PLACE_COLUMN_REBAR
+
+utterances:
+  - attach these columns to the roof
+  - attach the column tops to the beams above
+  - attach column base to the footing
+  - detach these columns

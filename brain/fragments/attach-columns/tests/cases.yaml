@@ -1,0 +1,63 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that attaches, "attached to something nobody chose": a column
+# fixed to a door, to the wrong one of two beams, or attached twice.
+# Arrange on a scratch copy of Revit 2020's rst_advanced_sample_project.rvt
+# (NEEDS-CHECKING Group KD). KD1 reads, before anything runs, a view in which
+# a handful of structural columns and the ONE roof or floor over them both
+# show, and that the columns are not attached at the top already (Modify
+# Column shows Detach Top/Base greyed). The selection is made with
+# select-by-categories then set-selection in that view. Where the model
+# differs from that, the job file changes - never the card. EVERY RUN ROLLED
+# BACK, so each case starts from the model as saved.
+
+positive:
+  - given: >
+      the columns and the one floor or roof over them, selected together
+      (categories "Structural Columns, Floors" or "Structural Columns, Roofs"
+      in the view KD1 names), where top, everything else left out
+    expect: >
+      changed equal to the number of columns; report "column Structural
+      Columns <id> "<type>": top attached to Floors <id> "<type>"." for each;
+      the tops, read in the same rolled-back group, following the floor's
+      underside in a section. THIS IS THE FIRST POSITIVE TO RUN
+  - given: the same selection run a second time, without rolling back between
+    expect: >
+      changed 0 and every column in alreadyDone - "already attached ... left
+      as it was". A second run reporting the attachments again would be
+      counting work it did not do
+  - given: the same columns, already attached, detach true, nothing else selected
+    expect: changed equal to the number of columns; each "top detached from Floors <id>"
+
+negative:
+  - given: >
+      the same columns with the doors in the same view selected with them
+      instead of the floor (categories "Structural Columns, Doors") - a
+      target Revit does not accept
+    expect: >
+      changed 0; the report "Revit does not accept Doors <id> ... as something
+      a column attaches to. ... NOTHING WAS CHANGED."; no column attached to
+      anything. THIS IS THE FIRST CASE TO RUN
+  - given: the same columns alone, nothing else selected, detach left out
+    expect: >
+      changed 0; "No target was selected with the <n> column(s) ... Nothing is
+      guessed. NOTHING WAS CHANGED."
+  - given: >
+      one column with two beams that both frame into its top, all three
+      selected
+    expect: >
+      changed 0; the column in left, the report naming both beams - "select
+      only the one it attaches to"
+  - given: the positive's selection, where "both" with detach left out
+    expect: changed 0; "Attach takes one end at a time" - nothing attached
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one operation is one undo entry. The SubTransactions live inside the
+      caller's transaction
+
+second_route:
+  - >
+    Revit's own Modify Column > Attach Top/Base on one of the same columns and
+    the same floor, compared with this in a section: the same top, and the
+    Options bar's Detach Top/Base now available on both
+  - one Ctrl+Z detaches them all in a single step (Golden Rule 16)
