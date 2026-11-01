@@ -52,6 +52,16 @@ corrections:
     now: REPORT_ELEMENT_OWNERSHIP
     date: "2026-11-01"
     said: "merge the 5 real duplicates ... make anothere tools with this a+b+c+d; record them (the answer-key moves) as my corrections"
+  - n: 77
+    was: TAG_ELEMENTS
+    now: TAG_ELEMENTS_IN_VIEW
+    date: "2026-11-01"
+    said: "now merge the other duplicates also; record them (the answer-key moves) as my corrections"
+  - n: 78
+    was: TAG_ELEMENTS
+    now: TAG_ELEMENTS_IN_VIEW
+    date: "2026-11-01"
+    said: "now merge the other duplicates also; record them (the answer-key moves) as my corrections"
 
 questions:
   - n: 1
@@ -444,12 +454,14 @@ questions:
     asked: "2026-08-26"
     question: "Tag all the ducts in the active view."
     kind: capability
-    answer: TAG_ELEMENTS
+    # TAG_ELEMENTS until 2026-11-01, when it was merged into this card - see corrections.
+    answer: TAG_ELEMENTS_IN_VIEW
   - n: 78
     asked: "2026-08-26"
     question: "Tag the ducts again using this tag family."
     kind: capability
-    answer: TAG_ELEMENTS
+    # TAG_ELEMENTS until 2026-11-01, when it was merged into this card - see corrections.
+    answer: TAG_ELEMENTS_IN_VIEW
   - n: 79
     asked: "2026-08-27"
     question: "This element cannot be deleted or moved in a BIM 360 model that is already synchronised — find out why."

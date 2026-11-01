@@ -321,7 +321,9 @@ questions:
   - n: 62
     row: 478
     question: "what is the sheet number of this sheet"
-    answer: [LIST_SHEETS, READ_ELEMENT_PARAMETERS]
+    # The read row 478 named was LIST_SHEETS; it was merged into FIND_SHEETS on
+    # 2026-11-01 (the same read, with every sheet when nothing narrows it).
+    answer: [FIND_SHEETS, READ_ELEMENT_PARAMETERS]
     named: owners-call
   - n: 63
     row: 478
