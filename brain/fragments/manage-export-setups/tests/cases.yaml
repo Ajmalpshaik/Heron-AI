@@ -1,0 +1,71 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# The proof plan is tools/jobs/export-setups-scratch-2026-11-01.yaml,
+# NEEDS-CHECKING Group KA. NEVER on a 4355-* job model: a scratch copy of a
+# Revit sample, named in the run record.
+
+positive:
+  - given: mode create, kind dwg, setupName "HERON DWG A" on a scratch project that has no such setup
+    expect: >
+      done true, nowCalled "HERON DWG A", kindUsed "DWG/DXF", and the setup in
+      File - Export - CAD Formats - DWG - "Select Export Setup"; setupsNow
+      holding it beside the setups that were there
+
+  - given: mode rename, setupName "HERON DWG A", newName "HERON Tags Export", kind left out
+    expect: >
+      done true, kindUsed "DWG/DXF" found without being told, the dialog
+      listing "HERON Tags Export" and no longer "HERON DWG A", and the options
+      unchanged (LIST_EXPORT_SETUPS before and after reads the same options).
+      This is the job Ajmal PS asked for on 2026-11-01 - "rename the DWG/DXF
+      export setup Setup 1 to Tags Export" - run on a scratch project
+
+  - given: mode duplicate, setupName "HERON Tags Export", newName "HERON MEP Export"
+    expect: >
+      both setups listed, the copy reading the same options as its source in
+      LIST_EXPORT_SETUPS, and the same number of layer rows - `note` empty.
+      A `note` naming different layer rows is the finding NEEDS-CHECKING KA2
+      asks about
+
+  - given: mode delete, setupName "HERON MEP Export", after the modeller's yes
+    expect: >
+      done true, the setup gone from the dialog, nowCalled empty
+
+  - given: mode duplicate, kind print, a saved print setting, and the Print dialog on a different setting
+    expect: >
+      the copy listed in File - Print - Setup, and `note` saying the current
+      print setting is the one it was before - and File - Print - Setup
+      opening on that one
+
+negative:
+  - given: mode rename, setupName "ZZZ NO SUCH SETUP", newName "HERON X"
+    expect: >
+      `refused` saying no export setup called 'ZZZ NO SUCH SETUP' and naming
+      the setups that ARE there, done false, setupsNow empty, and the
+      dialog's list exactly as before - no "HERON X" anywhere
+
+  - given: mode duplicate, newName the name of a setup already there
+    expect: >
+      `refused` saying there is already a setup called that, nothing changed
+
+  - given: mode rename with no newName
+    expect: >
+      `refused` saying no new name was given, nothing changed
+
+  - given: mode create with kind left out
+    expect: >
+      `refused` asking which kind - DWG/DXF, DGN or PDF - nothing made
+
+  - given: kind pdf on Revit 2020 or 2021
+    expect: >
+      `refused` saying PDF setups need Revit 2022 or later
+
+  - given: one name saved as both a DWG setup and a PDF setup, kind left out
+    expect: >
+      `refused` naming both kinds and asking which, nothing changed
+
+second_route:
+  - >
+    File - Export - CAD Formats - DWG, the "Select Export Setup" list, read by
+    a person before and after each mode
+  - >
+    LIST_EXPORT_SETUPS on the same model before and after: the setup's name
+    and options read by a different card through the same element

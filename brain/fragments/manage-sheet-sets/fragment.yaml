@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -19,7 +19,16 @@ capability: MANAGE_SHEET_SETS
 # in Revit: NEEDS-CHECKING Group FA. Ajmal PS's yes to change the PROVEN card
 # was his starting the task, 2026-10-17. Version 1's proof is kept below as
 # the record it is; its fingerprint no longer matches this code.
-version: 2
+#
+# VERSION 3 (2026-11-01, FRAGMENT-ISSUES 5b-1361): mode "duplicate" ("copy"
+# taken as the same) - a copy of an existing set under `newName`, the original
+# left as it was. No new input: duplicate takes `setName` and `newName`, as
+# rename does. Ajmal PS's "Yes, add it" was relayed 2026-11-01 by the session
+# that asked him, after being told it puts this card back to unproven. BACK TO
+# DRAFT for that reason: the proof below is version 2's (signed 2026-10-18)
+# and its fingerprint no longer matches this code. NEEDS-CHECKING Group KA,
+# rows KA15 and KA16.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -73,17 +82,29 @@ contract:
   needs:
     - name: doc
       type: Document
+    # OPTIONAL SINCE 2026-11-01 (FRAGMENT-ISSUES row 5b-1361). Rename and
+    # delete never read it, and Ajmal PS had to run a sheet selection first,
+    # on 4355-BHVD-3D-50S20-BL001A, only so the binder would let them run.
+    # Marked optional, an element list nothing filled binds EMPTY
+    # (HeronBindingNote.EmptyWhenAbsent) - and every mode that reads it already
+    # refuses an empty list: create "No views or sheets to put in the set." (the
+    # proven negative), add and remove "No views or sheets were given". The
+    # contract only: impl/ is untouched, so the proof's fingerprint holds.
+    # Whether rename and delete now bind with nothing selected is NEEDS-CHECKING
+    # Group KA, row KA11.
     - name: elements
       type: IList<Element>
+      optional: true
     - name: setName
       type: string
       source: request
-    # "create" | "rename" | "delete" | "add" | "remove". Add and remove use
-    # `elements` and `setName`, as create does.
+    # "create" | "rename" | "delete" | "add" | "remove" | "duplicate". Add and
+    # remove use `elements` and `setName`, as create does. Duplicate (version
+    # 3; "copy" is taken as duplicate) copies `setName` as `newName`.
     - name: mode
       type: string
       source: request
-    # Used by rename only.
+    # Used by rename, and by duplicate as the copy's name.
     - name: newName
       type: string
       source: request
@@ -159,7 +180,9 @@ compatibility-note: >
   `ViewSheetSetting.Save()` and `Revert()`, `IViewSheetSet.Views` read and set,
   `ViewSet.IsEmpty` - were looked up on every release with
   tools/api-surface --members on 2026-10-17: the same signature 2020 through
-  2027. 2023's `OrderedViewList` and `IsAutomatic` order a set and are not
+  2027. Version 3's duplicate uses only `ViewSheetSetting.SaveAs`, which
+  create already uses, and `ViewSheetSet.Views` read - the same 2020 through
+  2027 (tools/api-surface --members, 2026-11-01). 2023's `OrderedViewList` and `IsAutomatic` order a set and are not
   read or written, so where an added sheet lands in a manually ordered set
   is Revit's choice (NEEDS-CHECKING Group FA). Members are compared by
   ElementId's own equality, never as a number, so 2024's 64-bit ids do not
@@ -190,6 +213,10 @@ compatibility-note: >
 #                                           (2026-10-17, row 5b-466); before
 #                                           it, CREATE_SHEETS on both backends
 #   "take these sheets out of the set"   -> here, mode remove (row 5b-466)
+#   "duplicate the sheet set"            -> here, mode duplicate (version 3,
+#                                           row 5b-1361)
+#   "copy Setup 1 as MEP Export"         -> MANAGE_EXPORT_SETUPS. An export
+#                                           setup, not a sheet set
 #   "create a view/sheet set with these sheets for DWG export" -> here - the
 #                                           set is made first, and
 #                                           EXPORT_VIEWS_TO_DWG exports from
@@ -214,3 +241,10 @@ utterances:
   - rename the sheet set
   - add these sheets to the set
   - take these sheets out of the set
+  # ADDED 2026-11-01, version 3 (row 5b-1361). The second and third were added
+  # after measuring: "duplicate the sheet set HERON A as HERON B" reached
+  # CREATE_LINE_STYLE, and "make a copy of the view/sheet set"
+  # SYNC_SHEET_SETS_BY_PARAMETER, on the trained model with the 2020 filter.
+  - duplicate the sheet set
+  - make a copy of the view/sheet set
+  - duplicate the sheet set as a new set

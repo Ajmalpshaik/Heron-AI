@@ -1,0 +1,128 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-034
+semantic-identity: "make one View/Sheet Set for each value of a sheet parameter, and bring existing ones back in step"
+kind: action
+domain: revit.sheets
+capability: SYNC_SHEET_SETS_BY_PARAMETER
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WRITTEN 2026-11-01 FOR FRAGMENT-ISSUES ROW 5b-1361. Ajmal PS keeps one
+# View/Sheet Set per value of his sheet parameter "TCM_Project Browser 1"
+# ("01_IAB-ISSUED AS-BUILT", "02_IFI-ISSUED FOR INFORMATION" ...), and making
+# them took one MANAGE_SHEET_SETS call, and one sheet selection, per value.
+# Research: docs/work-notes/investigations/2026-11-01-export-setups.md,
+# section 6.
+#
+# A NEW CARD, NOT A WIDENING. MANAGE_SHEET_SETS is PROVEN; a by-parameter mode
+# under its impl/ would make that proof stale, and its job is one named set
+# from the elements handed in, where this one finds its own sheets by value.
+# The print manager route is MANAGE_SHEET_SETS' - re-written here, not shared.
+purpose: >
+  Makes one View/Sheet Set for each value of a sheet parameter, in one call -
+  every sheet and view carrying that value goes into the set named for it, the
+  value itself or with a prefix put in front. A set that already exists is
+  left as it is and reported, unless bringing existing sets back in step was
+  asked for: then each is made to hold exactly its value's sheets and views.
+
+  **A PARAMETER NO SHEET HAS IS REFUSED, NAMING IT.** So is a value asked for
+  that no sheet carries.
+
+  **EVERY ROUTE GOES THROUGH THE PRINT MANAGER**, which is application state an
+  Undo does not put back. The print range and the current set are read first
+  and put back afterwards, and the reply says what happened to the range.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The parameter's name exactly as the sheet's Properties show it.
+    - name: parameterName
+      type: string
+      source: request
+    # Put in front of each value to make the set's name, or left out.
+    - name: setPrefix
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # Only these values, ";" between them - or left out for every value.
+    - name: values
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # True: an existing set is made to hold exactly its value's sheets and
+    # views. Left out: an existing set is not touched.
+    - name: updateExisting
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: done
+      role: result
+      type: bool
+    - name: created
+      # The sets made, "; " between them, each with how many it holds.
+      role: result
+      type: string
+    - name: updated
+      # Existing sets brought back in step, with how many went in and came out.
+      role: result
+      type: string
+    - name: unchanged
+      # Existing sets already in step, or left alone because updateExisting
+      # was not asked for - each says which. Not a change (D-52).
+      role: accounting
+      type: string
+    - name: skipped
+      # A value Revit would not make a set for, with Revit's reason.
+      role: accounting
+      type: string
+    - name: refused
+      # Why it declined - a parameter no sheet has, a value no sheet carries.
+      # Never a thing it FOUND (D-52).
+      role: accounting
+      type: string
+    - name: printRange
+      # What happened to the Print dialog's range: put back, already
+      # "Selected views/sheets", or NOT put back with what it was.
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `PrintManager.PrintRange`, `PrintManager.ViewSheetSetting`,
+  `ViewSheetSetting.CurrentViewSheetSet`, `InSession`, `SaveAs`, `Save` and
+  `Revert`, `ViewSheetSet.Name` and `Views`, `ViewSet.Insert`,
+  `Element.LookupParameter`, `Parameter.AsString` and `AsValueString` are the
+  same 2020 through 2027 (tools/api-surface --members, 2026-11-01). 2023's
+  `IsAutomatic` and `OrderedViewList` order a set and are not written, so where
+  a sheet lands in a manually ordered set is Revit's choice. Members are
+  compared by ElementId's own equality, never as numbers.
+
+# ROUTING - the same rows are in CHECK_SHEET_SETS_BY_PARAMETER, MANAGE_SHEET_SETS
+# and LIST_SHEET_SETS.
+#
+#   "make a sheet set for each value of TCM_Project Browser 1" -> here
+#   "update the sheet sets from the sheet parameter" -> here, updateExisting
+#   "which sheet sets are out of date"   -> CHECK_SHEET_SETS_BY_PARAMETER. A
+#                                           QUESTION
+#   "save these sheets as a named set"   -> MANAGE_SHEET_SETS - one set, from
+#                                           the sheets handed in
+#   "list the view/sheet sets"           -> LIST_SHEET_SETS
+
+utterances:
+  - make a sheet set for each value of the sheet parameter
+  - update the sheet sets from the sheet parameter

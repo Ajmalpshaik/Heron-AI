@@ -1114,6 +1114,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jz.md`](needs-checking/group-jz.md)
 
+## Group KA - the saved export setups and View/Sheet Sets: `LIST_EXPORT_SETUPS`, `MANAGE_EXPORT_SETUPS`, `SET_EXPORT_SETUP_OPTIONS`, `SYNC_SHEET_SETS_BY_PARAMETER`, `CHECK_SHEET_SETS_BY_PARAMETER`, and `MANAGE_SHEET_SETS` with nothing selected and its copy mode (2026-11-01)
+
+**Its own file:** [`needs-checking/group-ka.md`](needs-checking/group-ka.md)
+
 ## Group KB - a foundation slab from typed corners: `CREATE_FOUNDATION_SLAB` (2026-11-01)
 
 **Its own file:** [`needs-checking/group-kb.md`](needs-checking/group-kb.md)
