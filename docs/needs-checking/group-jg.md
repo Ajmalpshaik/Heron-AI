@@ -58,6 +58,22 @@ runs JG2's wall and JG4's negative, both rolled back (`--dry-run` reads it back 
 only `created` against empty: the read-back line, JG1 and JG3 are read by hand. **Run it only after JG5**: it
 writes `brain/proof-drafts/runs/create-wall.json`, the record JG5 signs from, and would replace the kept run.
 
+### Results - Revit 2020, 2026-11-01
+
+Run in the owner's scratch *TEST MASS* (his empty *Project1*, Revit 2020's default metric template, saved to
+`Desktop\Heron Test\TEST MASS.rvt` - the rig's name differs from JG0's, nothing else), session 6588, with
+`HERON_CLIENT_ID=ajmal-pc`. Code run: fingerprint `cb379fa16bc2aee6`, version 3.
+
+| # | Result | What it read |
+|---|---|---|
+| JG0 | PASS | *TEST MASS* in front, saved, 2 levels with nothing on them |
+| JG1 | PASS | The offset left out, then `baseOffset=0`: both `created 1`, `baseOffset 0`, `offsetsReadMm` [0], ONE finding (*"1 wall(s) built on 'Level 1' at 3000 mm high, unconnected to..."*), no Base Offset line; rolled back |
+| JG2 | PASS, kept | `try-once`, `baseOffset=1500`: `KEPT`, `created 1`, `offsetsReadMm` [1500], findings *"1 wall(s) built..."* and *"Base Offset +1500 mm from 'Level 1', so each wall stands fro..."*; the owner pressed Keep. Properties was not read by hand |
+| JG3 | PASS, one of two | `SELECT_IN_REGION` (Walls, X -500..6500, Y 79000..81000) found the one wall; `REPORT_BOUNDING_BOX`: *Generic - 200mm (id 345445): 6000 x 200 x 3000 mm*, `minZ` 4.92126 ft (1500 mm), `maxZ` 14.76378 ft (4500 mm). `READ_ELEMENT_LEVEL` ran but the command line printed its two answers only as *"1 entry(ies)"*, so its `offsetMm` was not read |
+| JG4 | PASS | `validate --write --kept`, `baseOffset=200000000`: `created` empty, `refused 1`, finding *"A base offset is millimetres above the level - 1500, or -300..."*; rolled back |
+| JG5 | PASS | `draft` then `accept create-wall --by "Ajmal PS"`, run in his own terminal on his word *"Yes, I sign it"*; card set PROVEN in the same change |
+| JG6 | NOT YET | The kept wall (id 345445) is still in *TEST MASS*, to be undone before the model is used for anything else |
+
 **What this group does not settle.** Whether the crown posts of the 2026-10-28 tower are best drawn as walls
 at all is the modeller's. A wall whose top is tied to the level above (SET_WALL_CONSTRAINTS) after it was
 drawn with a base offset is not run here. Revit 2024 and 2027 are owed as `proof.releases` entries

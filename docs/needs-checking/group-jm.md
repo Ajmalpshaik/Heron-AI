@@ -78,3 +78,25 @@ without `--apply`, so it is rolled back.
 | **JM12** | *The signature, on the owner's word only*, after JM1 (kept) or JM2, and JM9 | `python brain/heron_validate.py accept create-curtain-system --by "Ajmal PS"`, and `heron-status` set to PROVEN in the same change |
 
 A row that fails stays open; nothing in a row changes to make it pass.
+
+### Results - Revit 2020, 2026-11-01
+
+**Not run on JM0's rig.** Run in the owner's scratch *TEST MASS* (Revit 2020, session 6588), on the mass of the
+7-floor building built there that day: *TRG_Mass_Acrobatic_7F*, a LOADED conceptual mass family (not an in-place
+mass) of three extrusions - 32000 x 20000 x 7600, 40000 x 16000 x 7200 turned 12 degrees, 30000 x 14000 x 10800
+turned -10 degrees - placed at 0,0,0 on Level 1 (instance 351071). The type was the template's own
+*Curtain System : 1500 x 3000mm*, so none of JM2's derived counts apply. Code run: fingerprint `2b413376a70ffcfa`.
+
+| # | Result | What it read |
+|---|---|---|
+| JM0 | NOT RUN | The rig above was used instead |
+| JM1 | NOT RUN | Nothing kept - the building's faces already carry glass walls |
+| JM2 | PASS, rolled back | `validate --write`, `host=351071`, faces left out: `created` 1, `facesAsked` 12, `facesTaken` 12, `alreadyNear` 0, `refused` null; readBack *"12 face(s) asked, 2547.2 m2 (its faces: 12 vertical, 3 top, 3 underside)"* - the three blocks' perimeters times their heights, 790.4 + 806.4 + 950.4 m2 - and twelve grids, mullions 0 on each (the type has none). The model counted 6,816 elements before and after |
+| JM3 to JM8 | NOT RUN | |
+| JM9 | PASS, rolled back | `host=347005` (a *Basic Wall : Generic - 200mm*): `created` empty, `facesAsked` 0, refused *"Walls 347005 "Basic Wall : Generic - 200mm" is not a mass or a generic model - Revit puts a curtain system on their faces only. A curtain WALL drawn along a line is CREATE_WALL's. NOTHING WAS MADE."* |
+| JM10, JM11 | NOT RUN | |
+| JM12 | PASS | `accept create-curtain-system --by "Ajmal PS"` in his own terminal on his word *"Yes, I sign it"*; PROVEN in the same change |
+
+Still owed: JM1, JM3 to JM8 (top, all faces, a generic model host, the three ways to a host, Revit 2024, a
+second system on the same faces), JM10 and JM11. Which of U and V holds the upright lines is not recorded:
+the read back above was cut short by the command line after grid 7.
