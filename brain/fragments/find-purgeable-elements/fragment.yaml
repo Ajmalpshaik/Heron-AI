@@ -246,7 +246,7 @@ compatibility-note: >
 #                                                 used or not
 #   "what is this material used on"            -> SELECT_BY_MATERIAL - the forward
 #                                                 question, to ask before deleting
-#   "which views are not on a sheet"           -> FIND_UNPLACED_VIEWS
+#   "which views are not on a sheet"           -> FIND_VIEWS, placement unplaced
 #   "what filters exist and where"             -> REPORT_VIEW_FILTERS
 
 # VERSION 2 (2026-11-01) - FIND_UNUSED_FAMILIES WAS MERGED INTO THIS CARD on

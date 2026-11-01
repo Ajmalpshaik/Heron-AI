@@ -130,7 +130,7 @@ compatibility-note: >
 #                                        Same word, entirely different
 #                                        job: this fragment makes nothing
 #   "make a section here"             -> CREATE_SECTION_VIEW
-#   "zoom to these"                   -> ZOOM_TO_ELEMENTS, which moves the
+#   "zoom to these"                   -> SET_SELECTION with show, which moves the
 #                                        camera and changes no view setting.
 #                                        A section box is not a zoom - below
 #
@@ -158,7 +158,8 @@ compatibility-note: >
 #                                        is shared and named; a section box
 #                                        belongs to this 3D view alone
 #   "crop the view to follow the room shape" -> SET_VIEW_CROP
-# "zoom to these" WAS CLAIMED HERE AND BELONGS TO ZOOM_TO_ELEMENTS - "take me
+# "zoom to these" WAS CLAIMED HERE AND BELONGS TO ZOOM_TO_ELEMENTS - SET_SELECTION
+# with show since it was merged there, 2026-11-01 - "take me
 # to these on screen". A SECTION BOX IS NOT A ZOOM: one navigates, the other
 # changes what the view shows everybody. Both claiming it made the phrase
 # `__ambiguous__`, a deliberate miss, so a navigation request fell through to

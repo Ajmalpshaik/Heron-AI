@@ -177,8 +177,10 @@ compatibility-note: >
 #   "is there room for this valve"   -> CHECK_MINIMUM_CLEARANCE, which knows
 #                                       what a clearance means. This only says
 #                                       what is inside a box
-#   "select everything in this scope     -> READ_SCOPE_BOX_EXTENT first: it
-#    box"                                   hands back the two corners this
+#   "select everything in this scope     -> SELECT_SCOPE_BOXES, extent true,
+#    box"                                   first (READ_SCOPE_BOX_EXTENT until it
+#                                           was merged there, 2026-11-01): it
+#                                           hands back the two corners this
 #                                           one takes
 
 utterances:

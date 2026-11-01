@@ -159,8 +159,9 @@ def _md5(path):
 # "which parameters are empty" as a danger, when that fragment IS the right
 # answer to that question.
 #
-# EXECUTE IS THE HONEST MIDDLE and is counted separately. `zoom-to-elements`
-# and `set-selection` change what the SCREEN shows - real, visible, and
+# EXECUTE IS THE HONEST MIDDLE and is counted separately. `set-selection` -
+# with `show`, since `zoom-to-elements` was merged into it on 2026-11-01 -
+# changes what the SCREEN shows - real, visible, and
 # nothing to undo. That is not the failure this tool exists to catch, which is
 # a question answered by a change to the MODEL. (`isolate-elements` was the
 # first example here until D-125, 2026-10-17: its code needs Heron's

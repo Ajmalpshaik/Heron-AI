@@ -8,5 +8,52 @@ negative:
       the selection is CLEARED and selectedCount is 0 - not left holding
       whatever was selected before, which would read on screen as a success
 
+  # VERSION 2 (2026-11-01, ZOOM_TO_ELEMENTS merged in). Each FAILS on version
+  # 1, which has no show, keepSelection, shown, missing, viewAfter or findings.
+  - given: >
+      VERSION 2. Three duct fittings on Level 6, with a Level 2 plan open, show
+      true, keepSelection true
+    expect: >
+      the screen moves to them and the selection is untouched; shown 3,
+      selectedCount 0, viewAfter naming the view Revit chose - NOT the Level 2
+      plan
+
+  - given: VERSION 2. The same three, show true, keepSelection left out
+    expect: >
+      they are selected AND the screen moves - the highlight already on when
+      the view arrives; selectedCount 3, shown 3
+
+  - given: VERSION 2. Elements already visible in the active view, show true
+    expect: the view zooms to fit them and does not change
+
+  - given: VERSION 2. Elements deleted between the filter and this call, show true
+    expect: >
+      they go to missing, and nothing is attempted with them - not in the
+      selection, not in the Show
+
+  - given: VERSION 2. Every element given has been deleted, show true
+    expect: >
+      Show is not attempted at all and a finding says why; the selection is
+      cleared (keepSelection left out)
+
+  - given: VERSION 2. keepSelection true, show left out
+    expect: nothing touched, and a finding saying to ask for show too
+
+  - given: >
+      VERSION 2. Elements that exist but are visible in no open view, show
+      true, inside a batch
+    expect: >
+      Revit raises its own modal dialog and the batch STOPS until somebody
+      clicks it. This cannot suppress that - which is why Show is the END of a
+      job, never inside a loop
+
+  - given: >
+      VERSION 2. Somebody who meant "these are hidden in this view, bring them
+      back", show true
+    expect: >
+      the camera moves and the elements are STILL not visible - a view setting
+      hides them. SHOW_ELEMENTS is the unhide
+
 second_route:
   - Revit's own status bar count for the active selection
+  - for show, Revit's own Show on a warning or a schedule row - the same call, the same view jump, the same dialog when no view can show the element

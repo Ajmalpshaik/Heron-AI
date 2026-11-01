@@ -234,7 +234,7 @@ compatibility-note: >
 #   "keep it centred as it resizes"               -> here, with a centre plane
 #   "dimension these ducts"                       -> CREATE_DIMENSION - a
 #                                                    project annotation
-#   "dimension the grids and levels"              -> DIMENSION_GRIDS_AND_LEVELS
+#   "dimension the grids and levels"              -> CREATE_DIMENSION, version 4
 #   "delete this parameter even though it labels a dimension"
 #                                                 -> DELETE_FAMILY_PARAMETERS
 #                                                    with unlabelFirst; this

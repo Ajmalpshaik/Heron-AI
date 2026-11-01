@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: FIND_SCHEDULES
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO FIND_VIEWS (find-views), on the owner's
+# instruction in conversation: "make sure there is no duplicate tools", then
+# "ok go ahead merge all". Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to FIND_VIEWS. The proof below is the record of what this
+# card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: FIND_VIEWS
+  why: >
+    The same job - which views are in the model, with the ones nobody means
+    counted and set aside; a schedule is a view. FIND_VIEWS version 2 returns
+    the real schedules when viewType Schedule is asked, schedule templates
+    counted in skippedTemplates and Revit's angle-bracketed internal ones in
+    skippedInternal, by name, the count reported so a wrong exclusion is
+    visible; matchedButExcluded as here. Where the rules differed the safer
+    was kept: schedules come back ONLY when asked for, never among the
+    drawings, which was this card's own reason for existing. Nothing was not
+    carried.
 
 purpose: >
   Answers "which schedules" for everything that acts on one - adding columns,

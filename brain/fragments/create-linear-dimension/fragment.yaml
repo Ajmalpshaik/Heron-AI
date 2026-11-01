@@ -221,7 +221,7 @@ compatibility-note: >
   linked element is found by the same Id.ToString() match, inside the link's
   own document.
 
-# ROUTING - repeated in CREATE_DIMENSION and DIMENSION_GRIDS_AND_LEVELS.
+# ROUTING - repeated in CREATE_DIMENSION.
 #
 #   "dimension from this to that"    -> here
 #   "dimension this opening from the level and the grid" -> here, version 3:
@@ -232,10 +232,16 @@ compatibility-note: >
 #   "dimension the linked cut-outs to the grid" -> here, version 4: a
 #                                       reference inside a loaded link
 #   "dimension the duct spacing"     -> CREATE_DIMENSION - centrelines of
-#                                       parallel MEP runs, and only that
-#   "dimension the grids"            -> DIMENSION_GRIDS_AND_LEVELS
+#                                       parallel MEP runs
+#   "dimension the grids"            -> CREATE_DIMENSION, version 4 - grid to
+#                                       grid, or level to level, each the
+#                                       whole element (DIMENSION_GRIDS_AND_
+#                                       LEVELS until it was merged there,
+#                                       2026-11-01)
 #   "dimension the rooms"            -> DIMENSION_ROOMS
-#   "dimension the doors in this wall"-> DIMENSION_WALL_OPENINGS
+#   "dimension the doors in this wall"-> DIMENSION_ELEMENT_FACES, along
+#                                       (DIMENSION_WALL_OPENINGS until it was
+#                                       merged there, 2026-11-01)
 #   "dimension to a radius"          -> CREATE_RADIAL_DIMENSION
 
 utterances:
