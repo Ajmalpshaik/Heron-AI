@@ -192,7 +192,7 @@ EXPORT_VIEWS_TO_DWG takes views, and EXPORT_SHEETS_TO_PDF takes elements - **nei
 | List sets, flag empty ones and identical pairs | LIST_SHEET_SETS (PROVEN) | Unchanged |
 | **One set per parameter value, in one call; bring existing ones back in step** | Nothing - one MANAGE_SHEET_SETS call and one selection per value | **SYNC_SHEET_SETS_BY_PARAMETER** (FRG-SHT-034, MODIFY, DRAFT): every non-template sheet and view carrying the parameter, grouped by value; a missing set is saved; an existing one is left alone unless `updateExisting`, then made to hold exactly its value's members; the print range, current set and In-Session members put back |
 | **Find sets out of step with their value** | Nothing | **CHECK_SHEET_SETS_BY_PARAMETER** (FRG-SHT-035, READ, DRAFT): per value, the set named for it - in step, missing members, extra members - and values with no set. Read as elements, never through the print manager |
-| Duplicate a set | Nothing | **Not built.** It is one more `mode` of MANAGE_SHEET_SETS (make current, `SaveAs`) - a change under a PROVEN card's `impl/`, which makes its proof stale, so it waits for Ajmal PS's yes |
+| Duplicate a set | Nothing | **Built later the same day, DRAFT:** `MANAGE_SHEET_SETS` version 3, mode `duplicate` (make current, `SaveAs`). It made the PROVEN card's proof stale, so the card is DRAFT again - on Ajmal PS's yes. Row 5b-1361, NEEDS-CHECKING KA15 and KA16 |
 | Export a set's sheets to DWG or PDF by the set's name | Nothing | **Not built** - see above |
 
 What only a Revit run settles is NEEDS-CHECKING Group KA, rows KA11 to KA14.

@@ -1,0 +1,65 @@
+# The proof of MANAGE_SHEET_SETS version 3 (manage-sheet-sets, FRG-SHT-015) -
+# mode "duplicate" - written 2026-11-01 for FRAGMENT-ISSUES row 5b-1361,
+# NEEDS-CHECKING Group KA, rows KA15 and KA16. NOT RUN - written and read back
+# with --dry-run only.
+#
+#     python tools/batch-prove.py tools/jobs/manage-sheet-sets-v3-duplicate-scratch-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/manage-sheet-sets-v3-duplicate-scratch-2026-11-01.yaml
+#
+# WHY. Ajmal PS asked for a copy of a View/Sheet Set under a new name, and the
+# card could only create, rename, delete, add and remove. Version 3 adds
+# "duplicate", which puts this PROVEN card back to DRAFT - his "Yes, add it",
+# 2026-11-01, was given knowing that.
+#
+# THE MODEL: "Heron Sheet Sets KA" - the NEW scratch project
+# tools/jobs/sheet-sets-by-parameter-scratch-2026-11-01.yaml makes, NEVER
+# 4355-* nor any project of Ajmal PS's. Made by hand first, on top of that
+# file's steps:
+#
+#   1. File, Print. Print Range: Selected views/sheets, Select... and tick
+#      A101 and A102. Save As "HERON KA DUP". OK
+#   2. Print Range back to "Current window", Close
+#   3. Save the project
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# The print manager is not transactional: open File, Print afterwards - the
+# range must read Current window and the set list must be HERON KA DUP alone,
+# rather than assuming the rollback held.
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: memberCount above 0 on the positive, 0 on the negative
+#   - NEG NOT EMPTY: the negative copied something. A FAIL - it names a set
+#     that is not there
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   KA15 positive: done true, memberCount 2, printRange "Print range put back
+#     to Current window, as it was before."; while the run is held, File -
+#     Print - Settings lists HERON KA DUP and HERON KA DUP COPY, each with
+#     A101 and A102 ticked
+#   KA15 negative: refused "No sheet set called 'ZZZ NO SUCH SET'.", done
+#     false, and no "HERON KA ZZZ COPY" in the set list afterwards
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Heron Sheet Sets KA (a NEW project from Revit 2020's default metric template, made by hand as above and as sheet-sets-by-parameter-scratch-2026-11-01.yaml says), Revit 2020
+
+defaults:
+  in: "Heron Sheet Sets KA"
+  setup: []
+
+jobs:
+  - fragment: manage-sheet-sets
+    write: true
+    expect: memberCount
+    set:
+      setName: "HERON KA DUP"
+      mode: "duplicate"
+      newName: "HERON KA DUP COPY"
+    negative-set:
+      setName: "ZZZ NO SUCH SET"
+      mode: "duplicate"
+      newName: "HERON KA ZZZ COPY"
+    note: >
+      KA15. A copy of a saved set under a new name, with nothing selected. The
+      negative names a set that is not there, and must copy nothing.

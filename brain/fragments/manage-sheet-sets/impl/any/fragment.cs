@@ -39,6 +39,17 @@
 // the route RevitAPI.xml names for a change to a saved set. Save() throws when
 // nothing changed, so a call that would change nothing is refused before it is
 // asked, and so is one that would leave the set holding nothing.
+//
+// DUPLICATE (version 3, FRAGMENT-ISSUES 5b-1361).
+//
+// A copy of an existing set under `newName`, the original left as it is. The
+// set is made current and SaveAs(newName) called - the same call create ends
+// with, on a current set that already holds the original's views. "copy" is
+// taken as duplicate. A new name already used by a set is refused before
+// anything is asked. The original's members are read from the set itself
+// before the copy; afterwards the copy AND the original are found again by
+// name, read again and compared by id - so a SaveAs that renamed rather than
+// copied would be refused, not reported done.
 
 int memberCount = 0;
 bool done = false;
@@ -53,12 +64,13 @@ string printRange = "";
 
 string wanted = (setName ?? "").Trim();
 string operation = (mode ?? "").Trim().ToLowerInvariant();
+if (operation == "copy") operation = "duplicate";
 
 if (wanted.Length == 0)
     refused = "No set name was given.";
 else if (operation != "create" && operation != "rename" && operation != "delete"
-         && operation != "add" && operation != "remove")
-    refused = "Mode '" + mode + "' is not one of create, rename, delete, add, remove.";
+         && operation != "add" && operation != "remove" && operation != "duplicate")
+    refused = "Mode '" + mode + "' is not one of create, rename, delete, add, remove, duplicate.";
 
 if (refused.Length == 0)
 {
@@ -156,6 +168,111 @@ if (refused.Length == 0)
                         {
                             try { setting.Rename(renameTo); done = true; }
                             catch { refused = "Revit refused to rename '" + wanted + "'."; }
+                        }
+                    }
+                    else if (refused.Length == 0 && operation == "duplicate")
+                    {
+                        string copyName = (newName ?? "").Trim();
+                        bool nameTaken = false;
+                        foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(ViewSheetSet)))
+                        {
+                            string name = "";
+                            try { name = element.Name ?? ""; } catch { }
+                            if (string.Equals(name.Trim(), copyName, StringComparison.OrdinalIgnoreCase)) { nameTaken = true; break; }
+                        }
+
+                        // The original's members, read from the set itself before the
+                        // copy is made - not from whichever set the print manager has
+                        // current - so the copy is compared with what the original held.
+                        var originalIds = new HashSet<ElementId>();
+                        bool originalRead = true;
+                        try
+                        {
+                            foreach (View member in existing.Views)
+                                if (member != null) originalIds.Add(member.Id);
+                        }
+                        catch { originalRead = false; }
+
+                        if (copyName.Length == 0)
+                            refused = "No name was given for the copy of '" + wanted + "'.";
+                        else if (nameTaken)
+                            refused = "A sheet set called '" + copyName + "' already exists - nothing was copied.";
+                        else if (!originalRead)
+                            refused = "Revit would not hand back what '" + wanted + "' holds, so nothing was copied.";
+                        else if (originalIds.Count == 0)
+                            refused = "'" + wanted + "' holds nothing, so there is nothing to copy.";
+                        else
+                        {
+                            try
+                            {
+                                if (!setting.SaveAs(copyName))
+                                    refused = "Revit did not save a copy of '" + wanted + "' as '" + copyName + "'.";
+                            }
+                            catch { refused = "Revit refused to save a copy of '" + wanted + "' as '" + copyName + "'."; }
+
+                            if (refused.Length == 0)
+                            {
+                                // The copy, found by its name and read from the element -
+                                // never assumed to be the set SaveAs left current.
+                                ViewSheetSet copy = null;
+                                foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(ViewSheetSet)))
+                                {
+                                    var candidate = element as ViewSheetSet;
+                                    string name = "";
+                                    try { name = candidate == null ? "" : candidate.Name ?? ""; } catch { }
+                                    if (candidate != null && string.Equals(name, copyName, StringComparison.Ordinal)) { copy = candidate; break; }
+                                }
+
+                                var copyIds = new HashSet<ElementId>();
+                                bool copyRead = true;
+                                try
+                                {
+                                    if (copy != null)
+                                        foreach (View member in copy.Views)
+                                            if (member != null) copyIds.Add(member.Id);
+                                }
+                                catch { copyRead = false; }
+
+                                // And the original found again by its name and read again:
+                                // a copy is only a copy while the set it came from is still
+                                // there, holding what it held.
+                                var originalAfter = new HashSet<ElementId>();
+                                bool originalStill = false;
+                                foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(ViewSheetSet)))
+                                {
+                                    var candidate = element as ViewSheetSet;
+                                    string name = "";
+                                    try { name = candidate == null ? "" : candidate.Name ?? ""; } catch { }
+                                    if (candidate == null || !string.Equals(name, wanted, StringComparison.OrdinalIgnoreCase)) continue;
+                                    try
+                                    {
+                                        foreach (View member in candidate.Views)
+                                            if (member != null) originalAfter.Add(member.Id);
+                                        originalStill = true;
+                                    }
+                                    catch { }
+                                    break;
+                                }
+
+                                if (copy == null)
+                                    refused = "Revit reported the copy saved, but no set called '" + copyName + "' was found "
+                                        + "afterwards - check File - Print - Settings.";
+                                else if (!copyRead)
+                                    refused = "'" + copyName + "' was saved, but Revit would not hand back what it holds - check it "
+                                        + "in File - Print - Settings.";
+                                else if (!copyIds.SetEquals(originalIds))
+                                    refused = "'" + copyName + "' was saved but holds " + copyIds.Count + " sheets and views where '"
+                                        + wanted + "' holds " + originalIds.Count + " - check both in File - Print - Settings.";
+                                else if (!originalStill || !originalAfter.SetEquals(originalIds))
+                                    refused = "'" + copyName + "' was saved, but '" + wanted + "' could not be read back as it was "
+                                        + "- check both in File - Print - Settings.";
+                                else
+                                {
+                                    done = true;
+                                    memberCount = copyIds.Count;
+                                    try { setting.CurrentViewSheetSet = copy; } catch { }
+                                }
+                            }
                         }
                     }
                     else if (refused.Length == 0)
