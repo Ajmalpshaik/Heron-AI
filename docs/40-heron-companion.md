@@ -1157,7 +1157,7 @@ negative case, is owed before the panel is relied on.
 
 **§18 question 7 asked again, and answered.** §21's table recorded *no Select-in-Revit button in V1*. The
 Model Dashboard's plan put the button in its phase 2 and asked the owner first; the owner answered
-*"DO IT UNITLE FINISH CONTINEWSLY"*, and then, asked plainly, **confirmed it in his own words on
+*"DO IT UNITLE FINISH CONTINEWSLY"*, and then, asked plainly, **confirmed it in the owner's own words on
 2026-11-01: *"yes allow select button"*.** §18 question 7 now reads *yes, from the Model Dashboard* - the
 three buttons below, on screen only; taking them out would be one revert.
 
