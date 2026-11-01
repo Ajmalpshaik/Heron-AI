@@ -173,6 +173,11 @@ def main():
     # document from a template the same way, and SET_PROJECT_LOCATION and
     # SET_PROJECT_UNITS share the settings-table contract by design - one table
     # of named settings in, changed / alreadyThat / findings / refused out.
+    # On 2026-11-01 CREATE_PROJECT_DOCUMENT was merged into
+    # CREATE_FAMILY_DOCUMENT and DEPRECATED - the owner's call, made against
+    # this agent's keep-separate. The library still holds both cards with one
+    # signature, so this count is unchanged; the pair is now a retired card
+    # beside its successor, not two live jobs.
     check(len(real["decided"]) == 4,
           "exactly four groups share a contract signature")
     check(real["for_the_host"] == [],

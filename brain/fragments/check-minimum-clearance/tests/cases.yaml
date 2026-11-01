@@ -22,6 +22,30 @@ positive:
       `linkedMatches` reads about 30 mm, needs 100 mm (Walls), naming the
       linked wall - checked with a dimension in section
 
+  # VERSION 3, added 2026-11-01 with the merge of CHECK_INSULATION_CLEARANCE.
+  # NONE OF THESE HAS BEEN RUN.
+  - given: >
+      two bare pipes 120 mm apart with NO insulation modelled, defaultClearance
+      100, assumeThicknessMm 50, includeInsulation false
+    expect: >
+      reported TOO CLOSE at 20 mm, the row saying "[ASSUMED lagging - not
+      modelled]", bareCount 2, insulatedCount 0, and the finding that the
+      assumed thickness turned insulation on. Version 2 took no assumed
+      thickness and passed the pair at 120 mm
+
+  - given: >
+      one set of 10 ducts handed in as both elements and targets,
+      defaultClearance 100
+    expect: >
+      each pair too close ONCE - `violations` and `tooClose` count A to B, never
+      B to A as well - and `pairsChecked` 45, not 90. Version 2 measured and
+      reported every pair twice
+
+  - given: a run with 120 pairs too close, maxRows 20
+    expect: >
+      20 rows in `findings` and "... 100 further pair(s) not listed - the count
+      above is complete", `violations` 120
+
 negative:
   - given: >
       TWO SERVICES 120 mm APART, EACH WITH A 50 mm JACKET, includeInsulation
@@ -90,6 +114,31 @@ negative:
       the duct's line in `linkedMatches` names the wall with "Fire Rating NOT
       READ - 2 parameters share that name", never either rating, and
       `tooClose` is unchanged from the host-only run (row 5b-203)
+
+  # VERSION 3, added 2026-11-01. NONE OF THESE HAS BEEN RUN.
+  - given: >
+      includeInsulation true over pipes NONE of which carries insulation in
+      the model, assumeThicknessMm left out
+    expect: >
+      the FIRST findings line a WARNING that those give exactly the
+      bare-geometry answer, and bareCount equal to the measurable count.
+      THE CASE THAT MUST NOT PASS SILENTLY - version 2 read exactly like a
+      clean lagged run
+
+  - given: a duct and the fitting on its end, ignoreConnected true
+    expect: >
+      no pair between them. With ignoreConnected false the pair is reported
+      at 0 mm - version 2 always reported it
+
+  - given: an element with no bounding box among those handed in
+    expect: >
+      "had NO readable extent and were skipped ... not the same as passing"
+      in `findings` - version 2 skipped it without a word
+
+  - given: one element handed in as both sets
+    expect: >
+      "Fewer than two measurable elements, so no pair could be compared" -
+      never read as every pair passing
 
 second_route:
   - >

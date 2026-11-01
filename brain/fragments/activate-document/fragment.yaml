@@ -139,7 +139,7 @@ compatibility-note: >
 # this way - nor could it by the retired card, which never switched anything.
 #
 # ROUTING - repeated in OPEN_FAMILY_FOR_EDITING, REPORT_OPEN_DOCUMENTS,
-# OPEN_VIEW and CREATE_PROJECT_DOCUMENT.
+# OPEN_VIEW and CREATE_FAMILY_DOCUMENT.
 #
 #   "go back to the project"      -> here, with the project's path
 #   "switch to the other project" -> REPORT_OPEN_DOCUMENTS for its full path,

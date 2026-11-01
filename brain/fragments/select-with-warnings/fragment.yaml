@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-WRN-016
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,27 @@ capability: SELECT_WITH_WARNINGS
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO READ_MODEL_WARNINGS
+# (read-model-warnings), on the owner's instruction in conversation: "make sure there is no
+# duplicate tools", every conflict to keep the SAFER rule. Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable and
+# it can be brought back. Nothing offers it now - retrieval leaves DEPRECATED
+# out, and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to READ_MODEL_WARNINGS. The proof below, where
+# there is one, is the record of what this card's code did, not a claim about
+# today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: READ_MODEL_WARNINGS
+  why: >
+    The same job: READ_MODEL_WARNINGS version 2 hands on the elements Revit's
+    warnings name, each once, with this card's `errorsOnly` and
+    `descriptionContains`, `unresolved` beside the ids in `notInThisModel`, and
+    its findings - how many elements of how many warnings, "no warning matched
+    that filter", and that a clash or a standard is never a Revit warning - above
+    that card's rows grouped by message, worst first.
 
 purpose: >
   Turns the model's current warning list into a SET OF ELEMENTS that can be

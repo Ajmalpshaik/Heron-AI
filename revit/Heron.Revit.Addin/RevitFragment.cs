@@ -3563,7 +3563,7 @@ namespace Heron.Revit.Addin
         ///
         /// EVERY REFUSAL NAMES BOTH SIDES. "the chain does not match" sends a
         /// reader to look at the wrong fragment; "you expected X and
-        /// select-by-level left Y" is the answer itself.
+        /// filter-elements-by-category left Y" is the answer itself.
         /// </summary>
         private static string ChainDisagrees(Chain chain,
                                              Dictionary<string, object> carried,

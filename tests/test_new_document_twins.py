@@ -6,9 +6,20 @@
 # See docs/29-metadata-standard.md
 
 """
-CREATE_FAMILY_DOCUMENT and CREATE_PROJECT_DOCUMENT stay one body.
+CREATE_FAMILY_DOCUMENT makes a family or a project from one body.
 
     python tests/test_new_document_twins.py
+
+WHAT CHANGED ON 2026-11-01, AND WHY THIS TEST CHANGED WITH IT. Until then
+there were two live cards, and this test held their bodies level - the
+history below. CREATE_PROJECT_DOCUMENT was merged into CREATE_FAMILY_DOCUMENT
+on the owner's instruction ("make sure there is no duplicate tools") and is
+DEPRECATED: the template's extension now chooses the kind inside one file, so
+there is no second live copy to drift. The fact the comparison held is gone;
+what it protected is not. So this now holds that the one card carries BOTH
+kinds' lines - the extensions, the two creating calls, the two template
+folders - that the retired card is DEPRECATED and points at it, and the
+same safety rules as before, in the one body.
 
 WHY. The two fragments do one job - make a document from a template, save it
 to the caller's path without overwriting, close the windowless copy, open the
@@ -54,31 +65,29 @@ def main():
     failures = []
 
     family_head, family_body = split(FAMILY)
-    project_head, project_body = split(PROJECT)
-    if family_body is None or project_body is None:
-        print("FAIL: each fragment needs exactly one line ending '%s'" % MARKER)
+    if family_body is None:
+        print("FAIL: create-family-document needs exactly one line ending '%s'" % MARKER)
         return 1
 
-    if family_body != project_body:
-        a, b = family_body.split("\n"), project_body.split("\n")
-        for number, (left, right) in enumerate(zip(a, b), 1):
-            if left != right:
-                failures.append("bodies differ at shared line %d:\n  family : %s\n  project: %s"
-                                % (number, left.strip(), right.strip()))
-                break
-        else:
-            failures.append("bodies differ in length: %d against %d lines" % (len(a), len(b)))
+    # BOTH KINDS IN THE ONE CARD (2026-11-01). Every word the two cards' heads
+    # each carried is in the keeper's head now.
+    for word in ('"family"', '".rft"', '".rfa"', "NewFamilyDocument", "FamilyTemplatePath",
+                 '"project"', '".rte"', '".rvt"', "NewProjectDocument", "DefaultProjectTemplate"):
+        if word not in family_head:
+            failures.append("create-family-document: the kind-specific lines lack %s" % word)
 
-    expected = {
-        FAMILY: ('"family"', '".rft"', '".rfa"', "NewFamilyDocument", "FamilyTemplatePath"),
-        PROJECT: ('"project"', '".rte"', '".rvt"', "NewProjectDocument", "DefaultProjectTemplate"),
-    }
-    for path, head in ((FAMILY, family_head), (PROJECT, project_head)):
-        for word in expected[path]:
-            if word not in head:
-                failures.append("%s: the kind-specific lines lack %s"
-                                % (os.path.basename(os.path.dirname(os.path.dirname(
-                                    os.path.dirname(path)))), word))
+    # THE RETIRED CARD IS DEPRECATED AND POINTS HERE - so it is offered by
+    # nothing, and its impl/ is the record, no longer compared.
+    card = read(os.path.join(FRAGMENTS, "create-project-document", "fragment.yaml"))
+    if "heron-status: DEPRECATED" not in card:
+        failures.append("create-project-document is not DEPRECATED - two live cards would "
+                        "make one body two drifting copies again")
+    if "superseded-by: CREATE_FAMILY_DOCUMENT" not in card:
+        failures.append("create-project-document does not name CREATE_FAMILY_DOCUMENT "
+                        "as its successor")
+    if not os.path.isfile(PROJECT):
+        failures.append("create-project-document's impl/ is gone - a retired card is "
+                        "kept, never deleted (Article 1)")
 
     rules = {
         "OverwriteExistingFile = false": "the save must never overwrite",
@@ -97,7 +106,7 @@ def main():
         for failure in failures:
             print("FAIL: " + failure)
         return 1
-    print("PASS: the two new-document fragments share one body and keep its rules")
+    print("PASS: one new-document fragment makes both kinds and keeps the body's rules")
     return 0
 
 

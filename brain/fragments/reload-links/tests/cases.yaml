@@ -9,6 +9,13 @@ positive:
       ONE reload and a report saying one. Three would mean the same file came
       off disk three times and the count was of instances rather than of work
 
+  # VERSION 2, added 2026-11-01 with the merge of UNLOAD_LINKS. NONE OF THESE
+  # HAS BEEN RUN.
+  - given: unload true, THREE instances of one loaded link
+    expect: >
+      ONE type id in `unloaded`, `done` 1, and Manage Links reading Unloaded
+      for it. `unloaded` did not exist in version 1
+
 negative:
   - given: this fragment run inside the host's open transaction
     expect: >
@@ -34,6 +41,24 @@ negative:
     expect: >
       named in `notLinks`, the links still reloaded. Not an exception that loses
       the reload because the selection was untidy
+
+  # VERSION 2, added 2026-11-01. NONE OF THESE HAS BEEN RUN. Each FAILS on
+  # version 1, which called Unload on whatever it was handed and counted the
+  # call returning as done.
+  - given: unload true, a link that is ALREADY unloaded
+    expect: >
+      its type id in `alreadyUnloaded`, `done` 0, and "was ALREADY unloaded -
+      nothing was done to it". Version 1 called Unload again and counted it
+
+  - given: unload true, an unload call that returns but leaves the link loaded
+    expect: >
+      the link in `refused` - "it is still loaded after the unload call" -
+      established by asking RevitLinkType.IsLoaded afterwards, and NOT in
+      `unloaded` or `done`
+
+  - given: unload true, Revit throwing on the unload
+    expect: >
+      the link in `refused` with Revit's words, as well as its FAILED line
 
 second_route:
   - Revit's own Manage then Manage Links dialog, its Status column read before and after

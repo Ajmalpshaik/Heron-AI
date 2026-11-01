@@ -779,8 +779,11 @@ def main():
         return ""
 
     marks = ("\\r", "\\v", "\\\\")
-    chain = ("SELECT_VISIBLE_IN_VIEW", "categories=Text Notes",
-             'expect_from="select-visible-in-view"')
+    # FILTER_ELEMENTS_BY_CATEGORY since 2026-11-01: SELECT_VISIBLE_IN_VIEW, the
+    # chain's first step, was merged into it, and both notes name it now.
+    chain = ("FILTER_ELEMENTS_BY_CATEGORY", "category=Text Notes",
+             "inViewOnly=<the view>",
+             'expect_from="filter-elements-by-category"')
     for capability, folder, wants in (
             ("EDIT_TEXT_VALUES", "edit-text-values",
              (("field", chain), ("text", marks), ("replacement", marks))),

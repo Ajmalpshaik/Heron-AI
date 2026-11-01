@@ -32,7 +32,7 @@ purpose: >
 
   **REDUNDANCY IS DELIBERATELY NOT HERE.** Two rooms in one enclosed region is
   a third fault and Revit already reports it as a warning, which
-  `SELECT_WITH_WARNINGS` reads. Re-deriving it from geometry here would be a
+  `READ_MODEL_WARNINGS` reads. Re-deriving it from geometry here would be a
   second, weaker answer to a question already answered properly.
 
   The faulty elements are handed on as `elements`, which is the pipeline's
@@ -163,7 +163,7 @@ compatibility-note: >
 #   "list the rooms and their areas"    -> REPORT_ROOM_SPACE_DATA, which
 #                                          reports a set you already have and
 #                                          names the same two faults inside it
-#   "the room warnings"                 -> SELECT_WITH_WARNINGS, which is also
+#   "the room warnings"                 -> READ_MODEL_WARNINGS, which is also
 #                                          where REDUNDANT rooms come from -
 #                                          Revit reports those itself
 #   "place the rooms"                   -> PLACE_ROOMS

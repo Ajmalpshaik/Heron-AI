@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,12 @@ semantic-identity: "every pair of things closer together than they are allowed t
 kind: action
 domain: revit.qa
 capability: CHECK_MINIMUM_CLEARANCE
-version: 2
+# VERSION 3 (2026-11-01): CHECK_INSULATION_CLEARANCE was merged into this card
+# on the owner's instruction - "make sure there is no duplicate tools" - and is
+# DEPRECATED; see the merge block above `utterances`. Version 2's proof below
+# is kept as the record; it no longer describes the code, so the card is DRAFT
+# until version 3 is proved on a real model (D-30).
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -72,6 +77,11 @@ purpose: >
   version 2; version 1's proof no longer describes the code, and the
   fragment is DRAFT until it is proved again.
 
+  **NO INSULATION MODELLED IS SAID FIRST (version 3).** With insulation
+  counted, the insulated and bare elements are counted and a warning leads
+  when some carry none; `assumeThicknessMm` lags them on paper, said on every
+  row. Each pair is measured once. Version 3 is DRAFT until proved.
+
 # A NAME TWO PARAMETERS SHARE IS NEVER READ: a linked element whose Fire Rating
 # two parameters carry - a shared or project "Fire Rating" bound beside the
 # built-in one, on the element or on the type the lookup falls through to -
@@ -98,6 +108,31 @@ contract:
     - name: includeInsulation
       type: bool
       source: request
+    - name: assumeThicknessMm
+      # VERSION 3, from CHECK_INSULATION_CLEARANCE: millimetres of lagging
+      # assumed on every element that carries NO insulation in the model - how
+      # a run is checked against what it is GOING to be lagged with. Every row
+      # it touches says ASSUMED. Above 0 it counts insulation even with
+      # includeInsulation false, and says so. Left out it binds 0: none.
+      type: double
+      source: request
+      optional: true
+      absent: 0
+    - name: ignoreConnected
+      # VERSION 3, from CHECK_INSULATION_CLEARANCE: pass over a pair joined by
+      # a connector - a duct and the fitting on its end are at zero clearance
+      # by construction. Left out it binds false.
+      type: bool
+      source: request
+      optional: true
+    - name: maxRows
+      # VERSION 3, from CHECK_INSULATION_CLEARANCE: how many pair rows
+      # `findings` lists; the counts are complete whatever this is. Left out
+      # it binds 50.
+      type: int
+      source: request
+      optional: true
+      absent: 50
     - name: doc
       type: Document
       source: ambient
@@ -144,6 +179,34 @@ contract:
       # Rating two parameters share reads NOT READ there, never either
       # value (D-54 s3, FRAGMENT-ISSUES 5b-203).
       role: accounting
+      type: IList<string>
+    - name: tooCloseIds
+      # VERSION 3, from CHECK_INSULATION_CLEARANCE's `tooClose`: every element
+      # in a pair too close, once, so the next step can select or isolate them.
+      # This model's own - nothing from a link.
+      role: result
+      type: IList<ElementId>
+    - name: violations
+      # VERSION 3, from CHECK_INSULATION_CLEARANCE: how many pairs are too
+      # close - each pair once.
+      role: result
+      type: int
+    - name: insulatedCount
+      # VERSION 3, from CHECK_INSULATION_CLEARANCE: how many measurable
+      # elements carry insulation in the model. The size of what it measured,
+      # never a clearance it failed (D-52).
+      role: accounting
+      type: int
+    - name: bareCount
+      # VERSION 3, from CHECK_INSULATION_CLEARANCE: how many carry NONE - the
+      # silent problem, said first when insulation is counted. About the
+      # model, never a pair it failed (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      # VERSION 3: the warning when some carry no insulation, the insulated /
+      # bare split, the pair rows up to maxRows with bare gap, jackets and real
+      # gap, and what was skipped for want of an extent.
       type: IList<string>
 
 proof:
@@ -216,6 +279,41 @@ compatibility-note: >
 #                                        CHECK_SLEEVE_SIZE - a sleeve and its
 #                                        pipe MUST touch; this measures things
 #                                        that must not
+#   "clearance with the lagging on"    -> here since version 3, includeInsulation
+#                                        or assumeThicknessMm - it was
+#                                        CHECK_INSULATION_CLEARANCE's, merged in
+#   "these read clear but both pipes are insulated" -> here, the same
+#   "do these overlap"                 -> FIND_CLASHES - yes or no, no distance
+#   "insulate these"                   -> SET_MEP_INSULATION, which PUTS THE
+#                                        LAGGING ON. This only measures
+#
+# VERSION 3 (2026-11-01) - CHECK_INSULATION_CLEARANCE WAS MERGED INTO THIS
+# CARD on the owner's instruction in conversation: "make sure there is no
+# duplicate tools", every conflict to keep the SAFER rule. It is DEPRECATED.
+# Its own purpose called itself "the same clearance sweep as
+# CHECK_MINIMUM_CLEARANCE" with the jackets taken off, and this card has had
+# that as `includeInsulation` since version 1. Where each retired input and
+# output is now:
+#
+#   CHECK_INSULATION_CLEARANCE          here
+#     elements (one set)                elements, with targets the same set -
+#                                       each pair now measured once
+#     requiredClearanceMm               defaultClearance, the same mm
+#     assumeThicknessMm                 assumeThicknessMm, ASSUMED on each row
+#     ignoreConnected, maxRows          the same
+#     tooClose (element ids)            tooCloseIds
+#     violations                        violations
+#     insulatedCount, bareCount         the same, and the warning first
+#     findings                          findings - rows with bare gap, both
+#                                       jackets and real gap; elements with no
+#                                       extent said; lining not counted
+#
+# THE SAFER RULE WHERE THEY DIFFERED. That card counted insulation always;
+# here it is still `includeInsulation`, and an assumed thickness turns it on
+# rather than being ignored. That card skipped any pair whose bare gap was
+# beyond the clearance plus twice the thickest jacket - a shortcut that cannot
+# change an answer; every pair is measured here. That card's per-category
+# rules did not exist; `rules` is kept. Nothing of it was an opposite rule.
 utterances:
   - is anything too close to the ducts
   - check the clearance between services
@@ -224,3 +322,11 @@ utterances:
   - are the services too close together
   - check the gap to the structure
   - what is too close to what
+  # MOVED 2026-11-01 from CHECK_INSULATION_CLEARANCE, merged into this card.
+  - check the clearance with the insulation on
+  - is there enough room once these are lagged
+  - clearance to the outside of the insulation
+  - these read clear but both pipes are insulated
+  - will these fit with 50mm lagging
+  - insulation aware clearance check
+  - the gap is not big enough once it is insulated

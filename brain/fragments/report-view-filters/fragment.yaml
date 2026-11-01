@@ -295,7 +295,7 @@ compatibility-note: >
   `LinePatternElement.GetSolidPatternId` are present 2020 to 2027.
 
 # ROUTING - repeated in APPLY_VIEW_FILTER, CREATE_VIEW_FILTER and
-# CREATE_SELECTION_FILTER.
+# UPDATE_SAVED_SET.
 #
 #   "what filters are on this view"  -> here - a READ
 #   "what are the filter settings on this view" -> here, with viewName
@@ -305,7 +305,7 @@ compatibility-note: >
 #   "put that filter on this view"   -> APPLY_VIEW_FILTER - a WRITE, and it must
 #                                       not answer a question about a drawing
 #   "make a filter for supply air"   -> CREATE_VIEW_FILTER
-#   "save these as a set"            -> CREATE_SELECTION_FILTER
+#   "save these as a set"            -> UPDATE_SAVED_SET, mode "create"
 #   "list the saved selection sets in the model" -> here - a saved selection
 #                                       set is a filter too, reported as "a
 #                                       SAVED LIST". Row 5b-1005

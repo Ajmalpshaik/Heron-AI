@@ -47,7 +47,7 @@ contract:
   needs:
     - name: doc
       type: Document
-    # From a selection, or from SELECT_WITH_WARNINGS for the off-axis warning.
+    # From a selection, or from READ_MODEL_WARNINGS for the off-axis warning.
     - name: elements
       type: IList<Element>
     # Optional. The axes are multiples of this from the project's X axis;
@@ -135,9 +135,9 @@ compatibility-note: >
 
 # ROUTING - the same rows are in the fragments named here.
 #
-#   "fix the slightly off axis warnings"      -> here, after SELECT_WITH_WARNINGS selects them
+#   "fix the slightly off axis warnings"      -> here, after READ_MODEL_WARNINGS selects them
 #   "straighten these walls"                  -> here
-#   "which elements have warnings"            -> SELECT_WITH_WARNINGS
+#   "which elements have warnings"            -> READ_MODEL_WARNINGS
 #   "rotate the equipment 90 degrees"         -> ROTATE_ELEMENTS - a turn by a
 #                                                given angle, not onto an axis
 #   "what warnings are in the model"          -> READ_MODEL_WARNINGS

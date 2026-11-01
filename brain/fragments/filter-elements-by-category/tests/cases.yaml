@@ -96,6 +96,51 @@ positive:
       the same elements as category "Duct Accessories" with levelId Level 1 -
       the same level rule, unresolvedLevel counted the same way
 
+  # VERSION 5, added 2026-11-01 with the merge of SELECT_BY_LEVEL,
+  # SELECT_VISIBLE_IN_VIEW, SELECT_WITHOUT_LEVEL and SELECT_HIDDEN_IN_VIEW.
+  # NONE OF THESE HAS BEEN RUN. Each FAILS on version 4, which refused every
+  # call with no category and had no withoutLevel or notShowingIn.
+  - given: >
+      levelId Level 2 and NO category, on a model with walls, doors, ducts and
+      pipes on Level 2
+    expect: >
+      all four kinds in `elements` - check the DUCTS by name, the ones that
+      depend on RBS_START_LEVEL_PARAM - a LARGE unresolvedLevel beside them,
+      and `findings` reading "N of M scanned element(s) are on level 'Level 2',
+      across every category" and "This walked the whole model". Version 4
+      refused this call (SELECT_BY_LEVEL's case)
+
+  - given: inViewOnly a cropped floor plan and NO category
+    expect: >
+      everything the view draws and only that - open the view, select all and
+      read Revit's own count - and `findings` saying it is what the view SHOWS,
+      not what the model holds. Version 4 refused this call
+      (SELECT_VISIBLE_IN_VIEW's case)
+
+  - given: >
+      categories Ducts, withoutLevel true, on a model with some ducts whose
+      level was cleared
+    expect: >
+      exactly those ducts in `elements`, `examined` the duct count, and
+      `findings` "N of M element(s) examined have no level, within Ducts".
+      Version 4 had no withoutLevel and returned every duct
+      (SELECT_WITHOUT_LEVEL's case)
+
+  - given: >
+      categories Ducts, notShowingIn a floor plan with a view filter hiding the
+      insulated ducts
+    expect: >
+      exactly the insulated ducts, `inModel` minus `showing` equal to `found`,
+      and `findings` naming both counts. Version 4 had no notShowingIn
+      (SELECT_HIDDEN_IN_VIEW's case)
+
+  - given: >
+      categories Ducts, withoutLevel true, includeLinks true, a loaded link
+      with ducts
+    expect: >
+      `elements` unchanged from the host-only run, and the link's line in
+      `linkedMatches` reading "N of M have no level"
+
 negative:
   - given: >
       VERSION 4 REVIEW FIX. categoryName "Duct Accessory" - singular, which no
@@ -176,6 +221,42 @@ negative:
   - given: categories "Ducts, Duct Fittings", inViewOnly a view that draws neither
     expect: >
       an empty set, found 0, and `perCategory` still listing both at 0
+
+  # VERSION 5, added 2026-11-01. NONE OF THESE HAS BEEN RUN.
+  - given: no category, no categoryName, no levelId and no view - withoutLevel true or not
+    expect: >
+      REFUSED before anything is read - "Nothing was named to look for" -
+      never every view, sheet and material in the model. The SAFER rule:
+      SELECT_WITHOUT_LEVEL answered this with the whole model's unlevelled
+      elements and a warning. Version 4 refused it with "No category was
+      named", which is why the v4 case above now reads in these words
+
+  - given: inViewOnly, or notShowingIn, a view TEMPLATE
+    expect: >
+      refused by name, nothing read. Version 4 handed the template's id to
+      Revit's view-scoped collector
+
+  - given: a levelId that names a wall, not a level
+    expect: >
+      refused naming LIST_LEVELS - not 0 found. Version 4 compared every
+      element against it and answered a plausible zero
+
+  - given: withoutLevel true with levelId Level 2, or inViewOnly with notShowingIn
+    expect: refused, nothing read - one question per call
+
+  - given: >
+      categories "Ducts, Air Terminals", withoutLevel true, on an MEP model
+      where EVERY duct has a level and some work plane-based diffusers carry
+      FAMILY_LEVEL_PARAM empty with SCHEDULE_LEVEL_PARAM on Level 1
+    expect: >
+      empty, and those instances NOT returned - row 5b-335's lookup passes an
+      empty parameter over. SELECT_WITHOUT_LEVEL's own copy, carried, would
+      have been the drift that row fixed
+
+  - given: notShowingIn a view, includeLinks true, a model with a loaded link
+    expect: >
+      "Links NOT read: what a view does NOT show is answered for this model
+      only" and linksSearched 0
 
 second_route:
   - compare against Revit's own schedule count for the category

@@ -194,7 +194,7 @@ compatibility-note: >
 #                                           set is made first, and
 #                                           EXPORT_VIEWS_TO_DWG exports from
 #                                           it after. Row 5b-1005
-#   "save these elements as a set"       -> CREATE_SELECTION_FILTER. A
+#   "save these elements as a set"       -> UPDATE_SAVED_SET, mode "create". A
 #                                           selection set and a sheet set are
 #                                           different things with one word
 #   "make a revision for this issue"     -> CREATE_REVISION. A sheet set is
