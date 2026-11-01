@@ -7,6 +7,21 @@ positive:
   - given: a run with no size
     expect: drawn at the duct type's own size, and not counted in sized
 
+  - given: >
+      2026-11-01, CREATE_DUCT's case: ONE run written as its points alone -
+      `0,40000,2500; 3000,40000,2500` - no size, no bar
+    expect: >
+      one duct, 3000 mm long measured in Revit's Properties palette, at the
+      duct type's own size; runsDrawn 1, segments 1, sized 0. Five points give
+      four segments, in order. This is the plain "draw a duct from here to
+      there" that CREATE_DUCT answered before it was merged in
+
+  - given: the same one-run call, then TRACE_CONNECTIVITY over the four segments of a five-point run
+    expect: >
+      whatever it reports is recorded - CREATE_DUCT's open question, carried:
+      segments sharing a point are expected to arrive NOT connected, and
+      FIT_MEP_JOINTS is what joins them
+
 negative:
   - given: one run of twenty with a point written 3075;-2100 instead of x,y,z
     expect: >
@@ -22,4 +37,5 @@ negative:
     expect: refused by name with the rest rolled back - no duct can exist there
 
 second_route:
-  - CREATE_DUCT once per run followed by SET_MEP_SIZE per size, over the same points - the ducts are the same, segment for segment
+  - CREATE_DUCT once per run followed by SET_MEP_SIZE per size, over the same points - the ducts are the same, segment for segment. CREATE_DUCT is DEPRECATED since 2026-11-01 and offered by nothing, so this route is Revit's own Duct tool over the same points
+  - select the new duct in Revit and read Length in the properties palette - it must match the distance between the points asked for

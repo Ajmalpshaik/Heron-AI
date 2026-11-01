@@ -86,9 +86,9 @@ compatibility-note: >
   `UnitUtils` (D-20) - the cube and square of an exact definition, so nothing
   here can drift and 2021's unit rewrite does not reach it.
 
-# ROUTING - repeated in MEASURE_ELEMENT_LENGTHS.
+# ROUTING - repeated in MEASURE_RUN_QUANTITIES.
 #
-#   "how many metres of duct"        -> MEASURE_ELEMENT_LENGTHS - a length
+#   "how many metres of duct"        -> MEASURE_RUN_QUANTITIES - a length
 #   "how many square metres"         -> here - for insulation, paint, lagging
 #   "what is the volume"             -> here
 #   "how much SPACE does it take up" -> REPORT_BOUNDING_BOX - the EXTENT, the

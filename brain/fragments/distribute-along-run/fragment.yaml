@@ -113,7 +113,7 @@ compatibility-note: >
   dividing by 304.8 as plain arithmetic - no units API.
 
 # ROUTING - repeated in ARRAY_ELEMENTS, PLACE_FAMILY_INSTANCES and
-# MEASURE_ELEMENT_LENGTHS.
+# MEASURE_RUN_QUANTITIES.
 #
 #   "add hangers along this duct run at 2 metre centres" -> here
 #   "set these out evenly along the run" -> here
@@ -125,7 +125,7 @@ compatibility-note: >
 #                                       direction from the run
 #   "place twelve of these"          -> PLACE_FAMILY_INSTANCES - at points
 #                                       somebody chooses, with no run involved
-#   "how long is this run"           -> MEASURE_ELEMENT_LENGTHS, which is what
+#   "how long is this run"           -> MEASURE_RUN_QUANTITIES, which is what
 #                                       tells you how many will fit
 
 utterances:

@@ -244,7 +244,7 @@ compatibility-note: >
 #   DRAFT. FILTER_ELEMENTS_BY_CATEGORY takes a LEVEL and a note has none.
 #   "which level are these walls on"      -> here, Level (5b-468)
 #   "what is the base constraint of these walls" -> here, Base Constraint
-#   "change the walls' base level"        -> SET_WALL_CONSTRAINTS, which
+#   "change the walls' base level"        -> SET_ELEMENT_LEVEL, which
 #                                           re-hosts them without moving them
 #   "show me the global parameters in this model" -> REPORT_GLOBAL_PARAMETERS -
 #                                           a global belongs to the MODEL, not

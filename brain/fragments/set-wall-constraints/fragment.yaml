@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,28 @@ capability: SET_WALL_CONSTRAINTS
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO SET_ELEMENT_LEVEL (set-element-level), on the owner's instruction
+# in conversation: "now merge the other duplicates also". Constitution Article 1:
+# kept, never deleted, so its record and its proof stay readable and it can be
+# brought back. Nothing offers it now - retrieval leaves DEPRECATED out, and
+# its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to SET_ELEMENT_LEVEL. The proof below is the
+# record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: SET_ELEMENT_LEVEL
+  why: >
+    The same job: put elements on another level without them moving, the offset
+    re-solved and every one measured again afterwards. SET_ELEMENT_LEVEL did it
+    for MEP and family instances, and its version 2 took this card's wall rules
+    - the base to newLevel and the top to topLevelId, each re-solved;
+    unconnected tops named and skipped unless allowUnconnectedToBecomeBound; the
+    top constraint put back when its offset will not take; a level id that is
+    not a level refusing all; notAWall. This card's baseLevelId is its newLevel,
+    with keepWallBase to leave the base alone; rehosted is in moved and
+    elevationChanged is heightChanged.
 
 purpose: >
   Moves walls onto a different base and top level WITHOUT the walls themselves

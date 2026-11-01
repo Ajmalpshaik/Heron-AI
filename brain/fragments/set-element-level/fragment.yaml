@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "reassign these to a different level without moving them"
 kind: action
 domain: revit.elements
 capability: SET_ELEMENT_LEVEL
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -28,6 +28,19 @@ purpose: >
   **The absolute height is read before and verified after**, because a
   recomputation that is merely written is not one that took.
 
+  **WALLS TOO, BOTH ENDS** (version 2, when SET_WALL_CONSTRAINTS was merged
+  in). A wall's base goes to the level given, its base offset re-solved so the
+  wall does not move; its top goes to `topLevelId` when one is named, its top
+  offset re-solved the same way. `keepWallBase` leaves every wall's base alone,
+  so the tops can be tied on their own. A wall whose top is UNCONNECTED has no
+  top level - giving it one is a design change, so it is named in
+  `unconnectedTop` and skipped unless `allowUnconnectedToBecomeBound` says so.
+  A top level id that is not a level refuses the whole call, and what is not a
+  wall is named in `notAWall`. A write that fails part-way is put back, never
+  left half-set. This is version 2; version 1's proof no longer describes the
+  code and is kept as a record, and the fragment is DRAFT until it is proved
+  again.
+
   **Reassigning and moving are opposite intentions said the same way.** *"Put
   these on Level 2"* can mean re-label them or physically raise them.
   `MOVE_ELEMENTS` and `ALIGN_MEP_ELEVATION` are the ones that move; this one
@@ -37,11 +50,44 @@ purpose: >
 
 contract:
   needs:
+    - name: doc
+      type: Document
     - name: elements
       type: IList<Element>
+    # The level every element is moved to - and, for a WALL, its BASE level
+    # unless keepWallBase is set.
     - name: newLevel
       type: Level
       source: request
+    # Version 2, from SET_WALL_CONSTRAINTS. A WALL'S TOP level, its top offset
+    # re-solved so the wall does not move. Left out, or none, leaves every
+    # wall's top alone. Applies to walls only. A level name is looked up as a
+    # level; an id that is not a level refuses the whole call.
+    - name: topLevelId
+      type: ElementId
+      source: request
+      optional: true
+      absent: none
+    # Version 2. True leaves every wall's BASE as it is, so a call can tie the
+    # tops alone - on walls whose bases differ, which one `newLevel` cannot
+    # say. Then whatever is not a wall is left alone too, and named in
+    # `notAWall`. Left out, false.
+    #
+    # WHY A SWITCH AND NOT A SEPARATE BASE LEVEL: an optional id left out and
+    # one given as none bind to the same value, so a `baseLevelId` could not
+    # tell "leave the base alone" from "nothing said" - and `newLevel` is the
+    # base already, for every caller of version 1.
+    - name: keepWallBase
+      type: bool
+      source: request
+      optional: true
+    # Version 2, from SET_WALL_CONSTRAINTS. A wall whose top is UNCONNECTED is
+    # skipped and named in `unconnectedTop` unless this is true - giving it a
+    # top level is a design change, not a re-host. Left out, false.
+    - name: allowUnconnectedToBecomeBound
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: moved
       role: result
@@ -62,9 +108,34 @@ contract:
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
-      # "did this come back empty" (D-52).
+      # "did this come back empty" (D-52). Since version 2 an element here
+      # was left as it was: a write that failed part-way is put back.
       role: accounting
       type: IList<ElementId>
+    - name: unconnectedTop
+      # Version 2, from SET_WALL_CONSTRAINTS. Walls whose top is unconnected,
+      # so giving them a top level would be a design change rather than a
+      # re-host. NAMED AND SKIPPED unless the caller says otherwise (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notAWall
+      # Version 2. Handed in but not walls, while a top level was asked for or
+      # the walls' base kept - the wall part did not apply to them. A count of
+      # what it was GIVEN, never a thing it found (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notApplicable
+      # Version 2. The sentence saying what `notAWall` meant for those
+      # elements - moved to the level like anything else, or left alone.
+      # Null when there were none (D-52).
+      role: accounting
+      type: string
+    - name: problem
+      # Version 2. The sentence saying what stopped the whole call - a top
+      # level id that is not a level - or that walls were left alone because
+      # nothing was asked of them. Null when nothing did (D-52).
+      role: accounting
+      type: string
 
 proof:
   date: '2026-09-09'
@@ -98,7 +169,11 @@ compatibility-note: >
   One implementation for every release. The `RBS_START_LEVEL_PARAM`,
   `FAMILY_LEVEL_PARAM`, `SCHEDULE_LEVEL_PARAM`, `RBS_OFFSET_PARAM` and
   `INSTANCE_FREE_HOST_OFFSET_PARAM` built-in parameters and `Level.Elevation`
-  are unchanged 2020 to 2027. Everything here is a ratio or a difference of two
+  are unchanged 2020 to 2027, and so are the wall's `WALL_BASE_CONSTRAINT`,
+  `WALL_BASE_OFFSET`, `WALL_HEIGHT_TYPE`, `WALL_TOP_OFFSET` and
+  `WALL_USER_HEIGHT_PARAM` (version 2), reached by BuiltInParameter rather
+  than by name so nothing depends on Revit's language. Levels are compared as
+  ElementId against ElementId, never as numbers. Everything here is a ratio or a difference of two
   internal lengths, so no unit conversion is involved at all.
 
 # ROUTING - repeated in READ_ELEMENT_LEVEL and MOVE_ELEMENTS.
@@ -121,13 +196,59 @@ compatibility-note: >
 # THE SENTENCE DOES NOT SAY WHICH, and the two produce models that differ by a
 # whole storey.
 
-# ROUTING - repeated in LIST_LEVELS, READ_ELEMENT_LEVEL and CREATE_LEVEL.
+# ROUTING - repeated in LIST_LEVELS, READ_ELEMENT_LEVEL and CREATE_LEVELS.
 #
 #   "move these to level 3"     -> here - reassigns EXISTING elements
 #   "it is on the wrong level"  -> here
-#   "add a level"               -> CREATE_LEVEL - this fragment creates none
+#   "add a level"               -> CREATE_LEVELS - this fragment creates none
 #   "list the levels"           -> LIST_LEVELS
 #   "what level is this on"     -> READ_ELEMENT_LEVEL
+
+# VERSION 2 (2026-11-01) - SET_WALL_CONSTRAINTS WAS MERGED INTO THIS CARD on
+# the owner's instruction ("now merge the other duplicates also"), and is
+# DEPRECATED. The same job - put things on another level without them moving,
+# the offset re-solved and the height measured again afterwards - and this card
+# already did it for MEP and family instances. What SET_WALL_CONSTRAINTS had is
+# here now: a wall's base and its top, each re-solved; unconnected tops named in
+# `unconnectedTop` and skipped unless `allowUnconnectedToBecomeBound`; the top
+# constraint put back when its offset will not take; a level id that is not a
+# level refusing all; and what is not a wall named, in `notAWall`. Its
+# `baseLevelId` is this card's `newLevel` (with `keepWallBase` for "leave the
+# base"), its `topLevelId` is `topLevelId`, its `rehosted` count is in `moved`,
+# and its `elevationChanged` is `heightChanged`.
+#
+# A DEFECT BOTH CARDS HAD, FIXED HERE because it sat inside the code this
+# version changes: a level written and then an offset Revit threw on was left
+# as it was, the element moved by the difference between the levels and only
+# reported as refused. Now every value is read before it is written and put
+# back on a failure; an element that still ends up elsewhere is in
+# `heightChanged` as well as `refused`.
+
+# ROUTING (from SET_WALL_CONSTRAINTS, 2026-11-01) - the wall rows.
+#
+#   "put these walls on level 3"         -> here, without the walls moving
+#   "the walls are attached to the       -> here
+#    wrong level"
+#   "change the walls' base level"       -> here
+#   "tie the wall tops to the level above" -> here, topLevelId, and
+#                                           allowUnconnectedToBecomeBound for
+#                                           walls drawn at a typed height
+#   "make the walls taller"              -> a height change, not a re-host:
+#                                           WRITE_ELEMENT_PARAMETERS on the
+#                                           height parameter
+#   "build a wall here"                  -> CREATE_WALL
+#   "the corners are cleaning up wrong"  -> DISALLOW_JOIN
+#   "attach these walls to the roof"     -> ATTACH_WALLS (2025 on)
+#   "what is attached to this element"   -> REPORT_ELEMENT_DEPENDENCIES
+#   "which level are these walls on"     -> READ_ELEMENT_PARAMETERS, Level. A
+#                                           question, and this one changes it
+#   "what is the base constraint of these walls" -> READ_ELEMENT_PARAMETERS
+#   "list the walls on level 2"          -> FILTER_ELEMENTS_BY_CATEGORY, Walls
+#   "how many walls are on each level"   -> FILTER_ELEMENTS_BY_CATEGORY, then
+#                                           a level read and a count (5b-468)
+#   "copy these walls onto the selected levels" -> COPY_ELEMENTS, which makes a
+#                                           new copy on each level. This one
+#                                           copies nothing (5b-467)
 
 utterances:
   - change the level to the one above
@@ -136,3 +257,18 @@ utterances:
   - reassign these to level 2
   - fix the level without moving them
   - move these to level 3
+  # MOVED 2026-11-01 from SET_WALL_CONSTRAINTS, merged into this card.
+  - put these walls on a different level without them moving
+  - put these walls on a different level
+  - the walls are on the wrong level
+  - re-host these walls to level 3
+  - change the wall base constraint without moving them
+  - we renamed the levels and the walls followed
+  # CLAIMED "-> here" IN SET_WALL_CONSTRAINTS' ROUTING TABLE AND NEVER DECLARED
+  # there: that card reached them by ranking. Measured 2026-11-01 on lexical
+  # after the merge, the first two went to other wall cards (CREATE_WALL among
+  # them) - so they are declared here, as the rule of 2026-09-01 says a claimed
+  # row must be, not reworded. The third is building-shell step 4's own job.
+  - put these walls on level 3
+  - the walls are attached to the wrong level
+  - tie the wall tops to the level above

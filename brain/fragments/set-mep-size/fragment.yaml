@@ -29,7 +29,7 @@ purpose: >
   rather than treated as a failure - it is usually the caller having one list of
   mixed shapes, which is a normal thing to have.
 
-  It is separate from CREATE_DUCT on purpose: resizing duct that already exists
+  It is separate from CREATE_DUCT_RUNS on purpose: resizing duct that already exists
   is at least as common as sizing it at creation, and the snap check should have
   one home.
 
@@ -138,7 +138,7 @@ compatibility-note: >
 #                                       a size to the nearest one the type
 #                                       allows while reporting success
 #   "run a pipe from here to there"  -> CREATE_PIPE - it sets no size at all
-#   "draw a duct from here to there" -> CREATE_DUCT
+#   "draw a duct from here to there" -> CREATE_DUCT_RUNS
 #   "draw a cable tray"              -> CREATE_ELECTRICAL_RUN - it sets no
 #                                       size either; this is where every
 #                                       kind of run gets one

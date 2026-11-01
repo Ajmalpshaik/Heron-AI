@@ -168,7 +168,7 @@ compatibility-note: >
 #   "connect the open ends"         -> CONNECT_OPEN_ENDS - ends already at one
 #                                      point, no fitting added; it is what joins
 #                                      the free ends this leaves
-#   "draw a duct from here"         -> CREATE_DUCT, which this follows
+#   "draw a duct from here"         -> CREATE_DUCT_RUNS, which this follows
 #   "connect the diffusers to the
 #    duct"                          -> CONNECT_AIR_TERMINALS - but NEEDS-CHECKING
 #                                      AJ1 saw it lift terminals; see its card

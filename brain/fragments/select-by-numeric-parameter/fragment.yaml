@@ -181,7 +181,7 @@ compatibility-note: >
   expression that spans the range, which is exactly why the conversion is the
   caller's and the arithmetic here is plain.
 
-# ROUTING - repeated in SELECT_BY_PARAMETER_VALUE, MEASURE_ELEMENT_LENGTHS and
+# ROUTING - repeated in SELECT_BY_PARAMETER_VALUE, MEASURE_RUN_QUANTITIES and
 # SET_MEP_SIZE.
 #
 #   "ducts 500 mm high"              -> here, with 500/304.8 handed in
@@ -196,7 +196,7 @@ compatibility-note: >
 #                                       not pretend to. Where the size is in
 #                                       the type NAME instead, it is one call
 #                                       to SELECT_BY_PARAMETER_VALUE
-#   "how long are these ducts"       -> MEASURE_ELEMENT_LENGTHS - the value
+#   "how long are these ducts"       -> MEASURE_RUN_QUANTITIES - the value
 #                                       reported, not used to filter
 #   "make these ducts 500 high"      -> SET_MEP_SIZE - this one only reads
 

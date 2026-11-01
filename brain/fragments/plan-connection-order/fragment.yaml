@@ -168,7 +168,7 @@ compatibility-note: >
   the 2021 move to ForgeTypeId.
 
 # ROUTING - repeated in CREATE_ELECTRICAL_RUN, RENUMBER_SEQUENTIAL and
-# MEASURE_ELEMENT_LENGTHS.
+# MEASURE_RUN_QUANTITIES.
 #
 #   "what order do I connect these in"    -> here
 #   "which order should these be wired"   -> here
@@ -190,7 +190,7 @@ compatibility-note: >
 # OVERCLAIM. A sentence naming the WRITE is answered by the writer; what this
 # fragment supplies is the input it was always missing. Written the other way,
 # the table claimed two sentences the index correctly refused it.
-#   "how long is this duct"               -> MEASURE_ELEMENT_LENGTHS - the
+#   "how long is this duct"               -> MEASURE_RUN_QUANTITIES - the
 #                                            length of things that EXIST. This
 #                                            one estimates the length of a run
 #                                            that does not exist yet

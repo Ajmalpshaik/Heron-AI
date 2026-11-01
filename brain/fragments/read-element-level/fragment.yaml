@@ -95,7 +95,7 @@ compatibility-note: >
   One implementation for every release. `Element.LevelId`, the
   `RBS_START_LEVEL_PARAM` / `FAMILY_LEVEL_PARAM` / `SCHEDULE_LEVEL_PARAM`
   built-in parameters, the four offset parameters - `WALL_BASE_OFFSET` among
-  them, which SET_WALL_CONSTRAINTS also reads and compiles for every release -
+  them, which SET_ELEMENT_LEVEL also reads and compiles for every release -
   and `Level.Name` are unchanged 2020 to 2027. Feet to
   millimetres is arithmetic, not `UnitUtils` (D-20), so 2021's unit API rewrite
   does not reach this code.
@@ -112,7 +112,7 @@ compatibility-note: >
 # hazards - the offset has to be recomputed or the element jumps a storey - and
 # writing it as a by-product of a read would hide that.
 
-# ROUTING - repeated in LIST_LEVELS, SET_ELEMENT_LEVEL and CREATE_LEVEL.
+# ROUTING - repeated in LIST_LEVELS, SET_ELEMENT_LEVEL and CREATE_LEVELS.
 #
 #   "what level is this on"     -> here - the level of an ELEMENT
 #   "how high is this"          -> here - level plus offset IS the elevation
@@ -120,7 +120,8 @@ compatibility-note: >
 #                                  is a different question with the same
 #                                  words in it
 #   "move these to level 3"     -> SET_ELEMENT_LEVEL
-#   "add a level"               -> CREATE_LEVEL
+#   "add a level"               -> CREATE_LEVELS - one level or many; CREATE_LEVEL
+#                                  was merged into it on 2026-11-01
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search

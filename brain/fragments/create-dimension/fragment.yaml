@@ -143,7 +143,7 @@ compatibility-note: >
 # dimension attached to the wrong thing - but it is a failure, and the first
 # run against a real model is what settles it.
 
-# ROUTING - repeated in MEASURE_ELEMENT_LENGTHS and TAG_ELEMENTS.
+# ROUTING - repeated in MEASURE_RUN_QUANTITIES and TAG_ELEMENTS.
 #
 #   "add a dimension between these"  -> here
 #   "dimension the duct spacing"     -> here, since DIMENSION_MEP_RUNS was
@@ -151,11 +151,11 @@ compatibility-note: >
 #   "dimension between these risers" -> here, axis x or y
 #   "dimension these air terminals"  -> DIMENSION_FAMILY_INSTANCES - built-in
 #                                       centre references, which a run has not
-#   "how far apart are they"         -> MEASURE_ELEMENT_LENGTHS reports it as a
+#   "how far apart are they"         -> MEASURE_RUN_QUANTITIES reports it as a
 #                                       NUMBER and draws nothing. This fragment
 #                                       puts it on the drawing. Asking a
 #                                       question must not annotate the model
-#   "how long is this duct"          -> MEASURE_ELEMENT_LENGTHS
+#   "how long is this duct"          -> MEASURE_RUN_QUANTITIES
 #   "tag these"                      -> TAG_ELEMENTS - a tag reads a parameter,
 #                                       a dimension measures a distance
 
