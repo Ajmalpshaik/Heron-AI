@@ -1218,8 +1218,9 @@ Asked by the owner: *"3D VIEWS ALOS ADD IN THE COMPANION APP ??"* - the plan's p
 BIMLens shows as its 3D viewer, re-made Heron's way.
 
 - **The read.** `REPORT_MODEL_GEOMETRY` (READ, DRAFT) reads the shapes at coarse detail, within a triangle
-  limit: by default **what Revit's active 3D view shows** - its section box, hidden categories and
-  temporary hide respected, so the modeller decides how much is read - or the whole model. Metres, by the
+  limit: by default **what Revit's active 3D view shows** - its section box and hidden categories
+  respected, and temporary hide expected to be (row JU12 measures it), so the modeller decides how much is
+  read - or the whole model. Metres, by the
   fixed factor, so every release reads the same. Nothing in the model changes.
 - **The brain.** `brain/heron_model_view.py` checks every triangle names a point its element has - a
   damaged read is refused whole, never drawn half right - and decides every colour: fixed ones for the
@@ -1245,9 +1246,11 @@ turned, an element picked and highlighted. **Not run in Revit**: the fragment's 
 - **How big a read is.** About 5 MB at the default limit of 150,000 triangles, estimated near 17 MB at the
   500,000 ceiling. Through the dashboard it stays on the page; asked through `revit_read` directly, all of
   it is printed into the chat - the card says so.
-- **Revit's 60-second stop.** The read takes the largest elements first and stops at the triangle limit,
-  but it does not watch the clock: a whole-model read that meets `revit.operationTimeoutSeconds` is rolled
-  back and returns nothing. Stopping itself near 40 s and handing back what it has drawn is a widening
-  for after the first proof.
+- **Revit's 60-second stop - answered: *"Yes, stop at ~40 s"*.** Version 2 watches the clock
+  (`Environment.TickCount`, in every release's core library) and **stops itself at `timeLimitSeconds`, 40 by
+  default**, handing back what it has drawn, largest elements first; `stopped` says which limit ended the
+  read - `triangles` or `time` - and the page says so. Refused below 5 or above 55. With the default 60 s
+  `revit.operationTimeoutSeconds` the add-in stops a fragment at 50 s, so a limit above about 45 s will
+  usually lose to that stop and return nothing - row JU17 records which comes first.
 - **The active-view scope uses the view's own detail level**, because Revit refuses `Options.View` and
   `Options.DetailLevel` together; pipes and ducts that come back as lines are read again at Fine (JU6).

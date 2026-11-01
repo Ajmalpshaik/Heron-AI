@@ -58,7 +58,7 @@ breaks a rule.
 | 4 | Submission readiness against a client's named standard | R | planned - needs the standard quoted (`heron_standards`); never "compliant" |
 | 5 | Fix from a row: fill a parameter, rename to the standard, move to the right workset | W | planned - only from PROVEN fragments, Keep or Discard while *Ask to Keep* is on ([D-126](../../DECISIONS.md)) |
 | 5 | Purge unused families from the list | W, destructive | planned - Article 7: the modeller's explicit yes for that exact job |
-| 6 | A 3D view of the model - the active 3D view or the whole model - drawn by Heron's own WebGL, pick to select, Show in 3D | R | **built** on the owner's ask - [docs/40 §21.13](../../40-heron-companion.md). Not run in Revit |
+| 6 | A 3D view of the model - the active 3D view or the whole model - drawn by Heron's own WebGL, pick to select, Show in 3D | R | **built** on the owner's ask - [docs/40 §21.13](../../40-heron-companion.md). Stops itself at 40 s by default (owner: *"Yes, stop at ~40 s"*). Not run in Revit |
 | - | Bulk parameter edit in the table | W | **already designed** (docs/40 §8); refused today until `SET_PARAMETER_VALUES_BY_ID` is PROVEN ([group FE](../../needs-checking/group-fe.md)) |
 | - | A page served from the internet calling the PC | refused | Companion README rule 1 |
 | - | Refresh on a timer | refused | Companion README rule 3 - it would raise the READING banner and queue work on Revit's thread |
