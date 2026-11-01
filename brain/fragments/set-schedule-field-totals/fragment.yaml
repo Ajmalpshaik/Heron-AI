@@ -1,15 +1,31 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-109
-semantic-identity: "switch on calculate totals for these columns of a schedule"
+semantic-identity: "set the calculation of these schedule columns - totals, minimum, maximum or none"
 kind: action
 domain: revit.schedules
 capability: SET_SCHEDULE_FIELD_TOTALS
-version: 1
+# VERSION 2 (2026-11-01, on the owner's word in the brief of that day's
+# session: Ajmal PS asked, after a duct length schedule on his Revit 2020 job
+# model could not have its Length column set to metres, for every schedule
+# setting Heron is missing - FRAGMENT-ISSUES row 5b-1363). The Formatting tab's
+# whole calculation drop-down, not only Calculate totals: `calculation` is
+# "totals", "minimum", "maximum", "minimum and maximum" ("min", "max",
+# "min and max", "min/max") or "none" (No calculation). It is `optional: true`
+# with `absent: totals`, so every version 1 caller is bound exactly as before
+# and gets exactly version 1's change. A minimum or maximum is asked of
+# CanDisplayMinMax before it is set, as totals are of CanTotal; "none" needs
+# neither. Any other word refuses the whole call before a column is touched.
+# `totalled` now counts the columns set to the asked calculation, and
+# `alreadyTotalled` the ones already showing it - the names are version 1's,
+# kept so no caller's reading changes. Version 1's proof below no longer
+# describes the code and is kept as a record; the card is DRAFT until
+# NEEDS-CHECKING Group KF proves version 2 and the owner signs.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -32,13 +48,16 @@ purpose: >
   set up and still show no total flow, and every column switched on here says
   where its total will print - or that it prints nowhere yet.
 
-  **ON ONLY.** Nothing here turns totals off or asks for a minimum or maximum. A
-  column already totalling is reported and left alone, which is also how the
-  change is read back: a second run finds it already totalled.
+  **ONE CALCULATION, NAMED - TOTALS UNLESS SAID OTHERWISE.** Version 2 sets
+  any of the drop-down's choices: totals, the minimum, the maximum, both, or
+  no calculation, which is how a calculation is turned off. A column already
+  showing the asked calculation is reported and left alone, which is also how
+  the change is read back: a second run finds it already that way.
 
   **A COLUMN THAT CANNOT BE ADDED UP IS ASKED ABOUT BEFORE IT IS TRIED.**
-  `CanTotal` is Revit's own answer - a type name or a room name is text - and a
-  refusal changes nothing.
+  `CanTotal` is Revit's own answer - a type name or a room name is text - and
+  `CanDisplayMinMax` its answer for a minimum or maximum; a refusal changes
+  nothing.
 
   **A NAME THAT COULD MEAN TWO COLUMNS TOUCHES NEITHER.** A column is found by
   its field name or its printed heading, and a heading can be renamed to
@@ -47,9 +66,9 @@ purpose: >
   exactly one match is refused. A hidden column is switched on too, and the
   answer says its total prints nowhere until the column is shown.
 
-  **REVIT ALLOWS ONE CALCULATION PER COLUMN.** A column showing its minimum or
-  maximum is switched to totals, because totals is what was asked for, and what
-  it showed before is reported rather than lost - the rule
+  **REVIT ALLOWS ONE CALCULATION PER COLUMN.** A column showing another
+  calculation is switched to the asked one, and what it showed before is
+  reported rather than lost - the rule
   `SET_SCHEDULE_SORT_GROUP` keeps for a sort it replaces.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
@@ -63,6 +82,14 @@ contract:
     - name: fieldNames
       type: IList<string>
       source: request
+    # VERSION 2. "totals" | "minimum" | "maximum" | "minimum and maximum" |
+    # "none" (also "min", "max", "min and max", "min/max", "no calculation").
+    # Left out it is "totals" (`absent: totals`), version 1's only behaviour.
+    - name: calculation
+      type: string
+      source: request
+      optional: true
+      absent: totals
   provides:
     - name: totalled
       role: result
@@ -75,13 +102,14 @@ contract:
       role: result
       type: string
     - name: alreadyTotalled
-      # Columns that were totalling before this ran and were left alone. The
-      # prior state, never a change it made (D-52).
+      # Columns already showing the asked calculation before this ran, left
+      # alone. The prior state, never a change it made (D-52).
       role: accounting
       type: IList<string>
     - name: cannotTotal
-      # Columns Revit will not add up - CanTotal is its own answer, asked
-      # before anything is set. Given and unusable (D-52).
+      # Columns Revit will not calculate that way - CanTotal, or for a
+      # minimum or maximum CanDisplayMinMax, is its own answer, asked before
+      # anything is set. Given and unusable (D-52).
       role: accounting
       type: IList<string>
     - name: notPresent
@@ -95,8 +123,8 @@ contract:
       role: accounting
       type: IList<string>
     - name: replacedCalculation
-      # A minimum or maximum the column showed BEFORE it was switched to
-      # totals. The prior state, reported before it goes (D-52).
+      # The calculation the column showed BEFORE it was switched to the asked
+      # one. The prior state, reported before it goes (D-52).
       role: accounting
       type: IList<string>
     - name: refused
@@ -152,9 +180,10 @@ compatibility-note: >
   and `ShowGrandTotal`, read to say where a total prints, are the members
   `SET_SCHEDULE_SORT_GROUP` already uses on all eight.
 
-  `CanDisplayMinMax` and `CanTotalByAssemblyType` exist on every release and are
-  deliberately NOT used: minimum and maximum are out of this fragment's scope,
-  and totalling by assembly type is a different Revit setting.
+  VERSION 2: `CanDisplayMinMax()` is present and unchanged 2020 through 2027
+  and is asked before a minimum or maximum is set. `CanTotalByAssemblyType`
+  exists on every release and is deliberately NOT used: totalling by assembly
+  type is a different Revit setting.
 
   Field identity is `ScheduleFieldId`, not an `ElementId`. No units call is
   made - a total is summed by Revit in the column's own units.
@@ -162,6 +191,14 @@ compatibility-note: >
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "calculate totals for the flow column" -> here
+#   "calculate the maximum flow for each   -> here, version 2, calculation
+#    group"                                   maximum
+#   "turn off the total on the length      -> here, version 2, calculation
+#    column"                                  none
+#   "show the count in each group footer"  -> SET_SCHEDULE_SORT_GROUP v2,
+#                                             showFooterCount. A footer's COUNT
+#                                             is a sort level's switch; what a
+#                                             COLUMN adds up is here
 #   "total the flow per room"              -> here, on a schedule grouped by
 #                                             room with footers on. It is the
 #                                             COLUMN that is totalled; the
@@ -196,3 +233,7 @@ utterances:
   - total the flow per room
   - add up the airflow in the schedule
   - sum this column in the schedule
+  # VERSION 2 - the rest of the calculation drop-down.
+  - show the minimum and maximum of this column in the schedule
+  - calculate the maximum flow for each group
+  - turn off the total on the length column

@@ -27,7 +27,32 @@ positive:
       totalled 1, and appliedTotals saying THE COLUMN IS HIDDEN and its total
       prints nowhere until it is shown - not that it prints in the footer
 
+  - given: VERSION 2 - calculation "minimum and maximum" on a numeric Length column that totals
+    expect: >
+      totalled 1, replacedCalculation saying it was calculating totals, and the
+      Formatting tab's drop-down reading "Calculate minimum and maximum"; each
+      footer and the grand total showing the shortest and longest length
+
+  - given: VERSION 2 - calculation "none" on a column that totals
+    expect: >
+      totalled 1, appliedTotals saying it has no calculation, and the footers
+      showing no sum for it
+
+  - given: VERSION 2 - calculation left out
+    expect: >
+      exactly version 1 - totals, the same answer words as before
+
 negative:
+  - given: VERSION 2 - calculation "maximum" on the Family and Type column
+    expect: >
+      totalled 0, cannotTotal naming 'Family and Type' from CanDisplayMinMax,
+      and the column's calculation unchanged
+
+  - given: VERSION 2 - calculation "average"
+    expect: >
+      refused naming 'average' and the five calculations accepted, and NO column
+      touched on any schedule
+
   - given: fieldNames Family and Type on the same schedule
     expect: >
       totalled 0, cannotTotal naming 'Family and Type', and the column's
