@@ -170,7 +170,7 @@ compatibility-note: >
 #   "change these pipes to another type" -> CHANGE_ELEMENT_TYPE. That swaps the
 #                                           TYPE on an element; this changes
 #                                           what the type is made of
-#   "rename this type"                   -> RENAME_ELEMENTS
+#   "rename this type"                   -> EDIT_TEXT_VALUES
 
 utterances:
   - make this pipe type copper

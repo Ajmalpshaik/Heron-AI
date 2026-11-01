@@ -9,7 +9,7 @@ semantic-identity: "change the text that is already there, rather than replacing
 kind: action
 domain: revit.parameters
 capability: EDIT_TEXT_VALUES
-version: 6
+version: 7
 source: OFFICIAL
 risk: MODIFY
 
@@ -65,6 +65,15 @@ purpose: >
   the types changed are named in `typesEdited`, because every other instance
   of them changed too. Version 5's proof no longer describes the code and is
   kept as a record; the fragment is DRAFT until it is proved again.
+
+  **A RENAME IS CHECKED WHOLE BEFORE ONE NAME IS WRITTEN** (version 7, when
+  RENAME_ELEMENTS was merged in). With field Name - a view, a sheet, a
+  schedule, a template or a type renamed by replacing part of its name - every
+  new name is worked out first and checked against the others in the batch and
+  against the names already in the model. Two the same, or one already taken,
+  and NOTHING is renamed: `collisions` says which, because a batch half renamed
+  carries two conventions. Renaming a TYPE renames it everywhere it is used.
+  `notMatched` names the elements a replace found nothing to replace in.
 
 # VERSION 4 (2026-10-17, FRAGMENT-ISSUES 5b-520) - A TEXT NOTE IS EDITED THROUGH
 # ITS FORMATTED TEXT. Kept out of the purpose on purpose: the purpose is
@@ -249,6 +258,22 @@ contract:
       # is named rather than found later.
       role: result
       type: IList<ElementId>
+    - name: collisions
+      # Version 7, from RENAME_ELEMENTS. For field Name, every new name that
+      # clashes - with another new name in the batch, with a name another
+      # element of the same kind already holds, or a name a replace would
+      # leave empty - each with the ids. CHECKED BEFORE ANY WRITE: one clash
+      # and nothing is renamed, said in `refused`. Turned down, never an edit
+      # made (D-52).
+      role: accounting
+      type: IList<string>
+    - name: notMatched
+      # Version 7, from RENAME_ELEMENTS. For mode replace, the elements whose
+      # text did not contain the words to replace - the same ids as
+      # `untouched`, in the word RENAME_ELEMENTS used. Usually the clue that
+      # the search text was wrong. Never an edit made (D-52).
+      role: accounting
+      type: IList<ElementId>
     - name: noteFormatting
       # Version 4. One line per text note it edited: paragraphs before and
       # after, each paragraph's list as READ BACK, and anything NOT KEPT. The
@@ -365,10 +390,36 @@ compatibility-note: >
 #   READ_ELEMENT_PARAMETERS parameterName=Text: a curly apostrophe or a soft
 #   line break inside the words to replace is shown there, and typed here as
 #   it is shown.
-#   "change part of the name"            -> here for a parameter or the
-#                                           element's own name;
-#                                           RENAME_ELEMENTS for views, sheets
-#                                           and types by name
+#   "change part of the name"            -> here, field Name - for a
+#                                           parameter or the element's own
+#                                           name, views, sheets and types
+#                                           included (RENAME_ELEMENTS merged
+#                                           in, version 7)
+#   "rename these" / "rename these views" / "change SUP to SUPPLY on these"
+#                                        -> here, field Name, mode replace.
+#                                           A view, sheet, schedule or view
+#                                           template is an element, and its
+#                                           name is the Name this edits. A plan
+#                                           or section comes from FIND_VIEWS by
+#                                           its name, a sheet from FIND_SHEETS,
+#                                           a template from
+#                                           SELECT_VIEW_TEMPLATES, any of them
+#                                           from the selection
+#   "duplicate this type"                -> DUPLICATE_TYPE - a COPY under a
+#                                           new name. Renaming a type here
+#                                           changes it EVERYWHERE it is used
+#   "rename the family"                  -> RENAME_FAMILY - the loaded
+#                                           component, one level above the type
+#                                           name edited here
+#   "rename this workset"                -> RENAME_WORKSET - a workset is not
+#                                           an element
+#   "rename the family parameter CC 1    -> ADD_FAMILY_PARAMETERS with
+#    to 2" (in the Family Editor)           renameExisting true
+#   "number them in order"               -> RENUMBER_SEQUENTIAL
+#
+# THE NAME IS NOT THE MARK AND NOT THE TYPE NAME, and a modeller says "name"
+# for all three (RENAME_ELEMENTS' warning, kept). Ask which before renaming a
+# type: it reaches every instance in the model, including ones nobody selected.
 #
 # EDIT_PARAMETER_TEXT WAS MERGED INTO THIS CARD on 2026-11-01, on the owner's
 # instruction, and is DEPRECATED. The same job - read the text already there,
@@ -379,6 +430,25 @@ compatibility-note: >
 # NOT taken, on purpose: it put a prefix on a BLANK value - this card leaves a
 # blank blank, because a prefix there invents data - and it took replace,
 # prefix and suffix in one call, which here are three calls of one mode each.
+#
+# RENAME_ELEMENTS WAS MERGED INTO THIS CARD on 2026-11-01, on the owner's
+# instruction ("make sure there is no duplicate tools"), and is DEPRECATED. The
+# same job as field Name, mode replace: find and replace part of an element's
+# name, read back. Where each of its outputs is now:
+#   renamed      the count of `changed` (a list of ids here)
+#   notMatched   `notMatched` - and `untouched`, the same ids for a replace
+#   refused      `refused` (one sentence here, not a list of ids) and
+#                `readOnly` for a name Revit would not take or that cannot be
+#                read
+#   collisions   `collisions`, checked before any write as it was - and WIDER:
+#                RENAME_ELEMENTS checked the new names against each other only
+#                (its purpose said "and with a name already in use", its code
+#                did not); version 7 checks them against the model too, and a
+#                swap or an emptied name is a clash. All or nothing, the safer
+#                rule
+# Not carried, as opposite rules: an empty name was `notMatched` there and is
+# `blank` here (left alone either way). Its `find`/`replaceWith` are this
+# card's `text`/`replacement`.
 
 utterances:
   - put a prefix on the mark
@@ -408,3 +478,12 @@ utterances:
   - add a suffix to the type mark
   - find and replace inside the comments
   - edit the text in this parameter without retyping it
+  # MOVED 2026-11-01 from RENAME_ELEMENTS, merged into this card.
+  - rename these
+  - change the name of these
+  - find and replace in the names
+  - change SUP to SUPPLY on these
+  - fix the naming on these
+  - rename this view
+  - rename the view
+  - rename these views

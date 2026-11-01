@@ -1,7 +1,31 @@
 // NOT STANDALONE. Assumes `doc`, `parameterName`, `matchText`, `matchMode`,
-// `includeTypeParameters`, `categories` and `includeLinks` are in scope; leaves
-// `elements`, `withoutParameter`, `ambiguous`, `findings`, `linksSearched` and
-// `linkedMatches` behind.
+// `includeTypeParameters`, `categories`, `includeLinks`, `exactMatch`,
+// `compareValue`, `compareValueMax` and `tolerance` are in scope; leaves
+// `elements`, `withoutParameter`, `ambiguous`, `findings`, `linksSearched`,
+// `linkedMatches`, `notNumeric`, `matchedFamilies`, `scannedWholeModel` and
+// `found` behind.
+//
+// VERSION 4 (2026-11-01) - SELECT_BY_FAMILY AND SELECT_BY_NUMERIC_PARAMETER
+// MERGED IN.
+//
+//   From SELECT_BY_FAMILY: `exactMatch` true is matchMode equals; every match
+//   is counted by its family in `matchedFamilies`, so a contains match that
+//   caught more than was meant says so; `scannedWholeModel` says the sweep was
+//   unbounded (no categories); `found` is the count. A BLANK family or type
+//   name to look for matches NOTHING and is said in words, as it was there -
+//   "contains ''" would otherwise select every element that has a family.
+//
+//   From SELECT_BY_NUMERIC_PARAMETER: the numeric modes gt, gte, lt, lte,
+//   between, eq and ne compare the STORED number - a double or an integer -
+//   with `compareValue` (and `compareValueMax` for between) IN REVIT'S
+//   INTERNAL UNIT: a length in decimal feet, so 500 mm is handed in as
+//   500 / 304.8. Converting here would be a promise no units call can keep for
+//   an airflow or an angle (D-20), so the finding states the comparison in
+//   internal units AND in millimetres IF the parameter is a length. eq and ne
+//   are a TOLERANCE (`tolerance`, or 1/304.8 when 0 or left out), never ==.
+//   A parameter held as text is `notNumeric`, never compared; one missing or
+//   empty is `withoutParameter`. With no compareValue, a number typed as
+//   matchText is used; neither is refused before anything is scanned.
 //
 // A MISSING PARAMETER IS NOT AN EMPTY STRING, AND THE DIFFERENCE ONLY SHOWS UP
 // ON A NEGATIVE QUERY. Read a missing parameter as "" and "Mark does not
@@ -51,6 +75,11 @@ var elements = new List<Element>();
 var withoutParameter = 0;
 var ambiguous = 0;
 var findings = new List<string>();
+// Version 4.
+var notNumeric = 0;
+var matchedFamilies = new Dictionary<string, int>();
+bool scannedWholeModel = categories == null || categories.Count == 0;
+const double MillimetresPerFoot = 304.8;
 
 var wantName = string.IsNullOrEmpty(parameterName) ? "" : parameterName.Trim();
 var needle = matchText == null ? "" : matchText;
@@ -63,11 +92,51 @@ var mode = string.IsNullOrEmpty(matchMode) ? "contains" : matchMode.Trim().ToLow
 // "exact" and "is" are what a modeller says for equals, so they are read as
 // it; any other word is refused here, naming the modes, and no element is read.
 if (mode == "exact" || mode == "is") mode = "equals";
+// VERSION 4 - SELECT_BY_NUMERIC_PARAMETER's comparisons, by its own words and
+// their signs.
+if (mode == ">") mode = "gt";
+if (mode == ">=") mode = "gte";
+if (mode == "<") mode = "lt";
+if (mode == "<=") mode = "lte";
+if (mode == "=" || mode == "==") mode = "eq";
+if (mode == "!=" || mode == "<>") mode = "ne";
 var knownModes = new List<string> { "contains", "equals", "begins", "ends", "notcontains", "notequals" };
-if (!knownModes.Contains(mode))
+var numericModes = new List<string> { "gt", "gte", "lt", "lte", "between", "eq", "ne" };
+if (!knownModes.Contains(mode) && !numericModes.Contains(mode))
     throw new InvalidOperationException("matchMode '" + matchMode.Trim() + "' is not a way of matching "
         + "this knows, so NOTHING was scanned. Use contains, equals (or exact, is), begins, ends, "
-        + "notcontains or notequals");
+        + "notcontains or notequals for text, or gt, gte, lt, lte, between, eq or ne for a number");
+bool numeric = numericModes.Contains(mode);
+
+// SELECT_BY_FAMILY's exactMatch is equals. Beside a mode that is neither
+// equals nor contains it is two answers to one question, and refused.
+if (exactMatch)
+{
+    if (mode == "contains" || mode == "equals") mode = "equals";
+    else
+        throw new InvalidOperationException("exactMatch was asked with matchMode '" + matchMode.Trim()
+            + "' - two different ways of matching, so NOTHING was scanned. exactMatch is equals; "
+            + "leave one of them out");
+}
+
+// THE NUMBER, IN REVIT'S INTERNAL UNIT. Checked before anything is scanned.
+double lowValue = compareValue;
+double typedNumber;
+bool typedIsNumber = double.TryParse((matchText ?? "").Trim(), System.Globalization.NumberStyles.Float,
+    System.Globalization.CultureInfo.InvariantCulture, out typedNumber);
+if (numeric && double.IsNaN(lowValue) && typedIsNumber) lowValue = typedNumber;
+else if (numeric && typedIsNumber && Math.Abs(typedNumber - compareValue) > 1e-12)
+    throw new InvalidOperationException(string.Format("compareValue {0} and matchText '{1}' are two "
+        + "different numbers, so NOTHING was scanned. Give one", compareValue, matchText.Trim()));
+if (numeric && double.IsNaN(lowValue))
+    throw new InvalidOperationException("matchMode '" + mode + "' compares a number and none was given, "
+        + "so NOTHING was scanned. Give compareValue in Revit's internal unit - a length in feet, so "
+        + "500 mm is 500/304.8 = 1.6404");
+if (numeric && mode == "between" && (double.IsNaN(compareValueMax) || compareValueMax <= lowValue))
+    throw new InvalidOperationException(string.Format("A 'between' needs compareValueMax above the lower "
+        + "bound - {0} to {1} is not a range, so NOTHING was scanned", lowValue,
+        double.IsNaN(compareValueMax) ? "(none given)" : compareValueMax.ToString()));
+var slack = tolerance <= 0 || double.IsNaN(tolerance) ? 1.0 / MillimetresPerFoot : tolerance;
 
 // ---- D-59: which links, only when asked for --------------------------------
 
@@ -116,10 +185,26 @@ if (includeLinks)
     }
 }
 
+bool namingFamily = string.Equals(wantName, "Family and Type", StringComparison.OrdinalIgnoreCase)
+    || string.Equals(wantName, "Family", StringComparison.OrdinalIgnoreCase)
+    || string.Equals(wantName, "Type", StringComparison.OrdinalIgnoreCase);
+
 if (wantName.Length == 0)
 {
     findings.Add("No parameter was named - say which parameter to match, or Family, Type or "
         + "'Family and Type'");
+}
+else if (namingFamily && numeric)
+{
+    findings.Add(string.Format("'{0}' is a name, and '{1}' compares a number - NOTHING was scanned. Use "
+        + "contains or equals for a name", wantName, mode));
+}
+else if (namingFamily && needle.Trim().Length == 0)
+{
+    // SELECT_BY_FAMILY's rule: no name to look for matches nothing. "contains
+    // ''" would select every element that has a family.
+    findings.Add(string.Format("No {0} name was given to look for, so NOTHING was scanned - a blank would "
+        + "match every element that has one", wantName.ToLowerInvariant()));
 }
 else
 {
@@ -207,6 +292,44 @@ else
         return type != null && type.GetParameters(wantName).Count > 1;
     };
 
+    // VERSION 4 - SELECT_BY_NUMERIC_PARAMETER's parameter: the same lookup as
+    // valueOf, kept as the Parameter so its stored number can be read.
+    Func<Element, Parameter> parameterOf = element =>
+    {
+        var p = element.LookupParameter(wantName);
+        if (p == null && includeTypeParameters)
+        {
+            var type = typeOf(element);
+            if (type != null) p = type.LookupParameter(wantName);
+        }
+        return p;
+    };
+
+    // eq IS A TOLERANCE, NEVER AN EQUALITY - two doubles that both display as
+    // 500 mm are not the same double.
+    Func<double, bool> passes = value =>
+    {
+        if (mode == "gt") return value > lowValue;
+        if (mode == "gte") return value >= lowValue;
+        if (mode == "lt") return value < lowValue;
+        if (mode == "lte") return value <= lowValue;
+        if (mode == "between") return value >= lowValue && value <= compareValueMax;
+        if (mode == "ne") return Math.Abs(value - lowValue) > slack;
+        return Math.Abs(value - lowValue) <= slack;
+    };
+
+    // 1 matched, 0 not, -1 missing or empty, -2 held as text.
+    Func<Element, int> numberTest = element =>
+    {
+        var p = parameterOf(element);
+        if (p == null || !p.HasValue) return -1;
+        double value;
+        if (p.StorageType == StorageType.Double) value = p.AsDouble();
+        else if (p.StorageType == StorageType.Integer) value = p.AsInteger();
+        else return -2;
+        return passes(value) ? 1 : 0;
+    };
+
     Func<string, bool> matchesNeedle = value =>
     {
         if (mode == "equals") return string.Equals(value, needle, StringComparison.OrdinalIgnoreCase);
@@ -235,6 +358,17 @@ else
             continue;
         }
 
+        if (numeric)
+        {
+            int test;
+            try { test = numberTest(element); }
+            catch { test = -1; }
+            if (test == -1) { withoutParameter++; continue; }
+            if (test == -2) { notNumeric++; continue; }
+            if (test == 1) elements.Add(element);
+            continue;
+        }
+
         string value = null;
         try { value = valueOf(element); }
         catch { value = null; }
@@ -248,9 +382,45 @@ else
         if (matchesNeedle(value)) elements.Add(element);
     }
 
-    findings.Add(string.Format("{0} of {1} scanned element(s) match {2} {3} '{4}'. {5} do not carry "
-        + "'{2}' at all and were never tested",
-        elements.Count, scanned, wantName, mode, needle, withoutParameter));
+    // SELECT_BY_FAMILY's `matchedFamilies`: every match by its family, so a
+    // contains that caught more than was meant shows which.
+    foreach (var element in elements)
+    {
+        string family = null;
+        try { family = familyNameOf(typeOf(element)); } catch { family = null; }
+        var key = string.IsNullOrEmpty(family) ? "(no family)" : family;
+        matchedFamilies[key] = matchedFamilies.ContainsKey(key) ? matchedFamilies[key] + 1 : 1;
+    }
+
+    if (numeric)
+    {
+        var asMm = mode == "between"
+            ? string.Format("{0:0.###} to {1:0.###}", lowValue * MillimetresPerFoot,
+                compareValueMax * MillimetresPerFoot)
+            : string.Format("{0:0.###}", lowValue * MillimetresPerFoot);
+        findings.Add(string.Format("{0} of {1} scanned element(s) have {2} {3} {4} in internal units - "
+            + "which is {5} mm IF this parameter is a length, and something else if it is not. {6} do "
+            + "not carry '{2}' or carry it empty and {7} hold it as text - never compared",
+            elements.Count, scanned, wantName, mode,
+            mode == "between" ? string.Format("{0} to {1}", lowValue, compareValueMax) : lowValue.ToString(),
+            asMm, withoutParameter, notNumeric));
+        if (notNumeric > 0)
+            findings.Add(string.Format("{0} element(s) carry '{1}' as text rather than a number - a text "
+                + "mode (contains, equals, ...) is the one that matches those", notNumeric, wantName));
+        if (mode == "eq" || mode == "ne")
+            findings.Add(string.Format("'{0}' was tested to a tolerance of {1:0.####} internal units "
+                + "({2:0.###} mm if a length), because two doubles that display the same are not the "
+                + "same double", mode, slack, slack * MillimetresPerFoot));
+    }
+    else
+    {
+        findings.Add(string.Format("{0} of {1} scanned element(s) match {2} {3} '{4}'. {5} do not carry "
+            + "'{2}' at all and were never tested",
+            elements.Count, scanned, wantName, mode, needle, withoutParameter));
+    }
+    if (scannedWholeModel)
+        findings.Add("No category was given, so the WHOLE model was scanned - fine once, expensive in a "
+            + "loop; name the categories when they are known");
 
     if (ambiguous > 0)
         findings.Add(string.Format("{0} element(s) carry TWO OR MORE parameters named '{1}' and were "
@@ -288,6 +458,16 @@ else
             try { shared = nameIsShared(element); }
             catch (Exception) { shared = false; }
             if (shared) { linkShared++; continue; }
+
+            if (numeric)
+            {
+                int test;
+                try { test = numberTest(element); }
+                catch (Exception) { test = -1; }
+                if (test < 0) { linkWithout++; continue; }
+                if (test == 1) linkMatched++;
+                continue;
+            }
 
             string value = null;
             try { value = valueOf(element); }
@@ -329,3 +509,6 @@ if (includeLinks && nestedLinks > 0)
 if (linksSearched > 0)
     linkedMatches.Add("Linked elements are counted here, never selected - the next step would "
         + "look them up in this model and could bind the wrong element");
+
+// SELECT_BY_FAMILY's count, version 4.
+int found = elements.Count;

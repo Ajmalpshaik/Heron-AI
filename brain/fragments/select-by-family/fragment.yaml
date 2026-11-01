@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,25 @@ capability: SELECT_BY_FAMILY
 version: 2
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO SELECT_BY_PARAMETER_VALUE (select-by-parameter-value), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable and
+# it can be brought back. Nothing offers it now - retrieval leaves DEPRECATED
+# out, and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to SELECT_BY_PARAMETER_VALUE. The proof below, where there
+# is one, is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: SELECT_BY_PARAMETER_VALUE
+  why: >
+    The same job: select the elements whose family name matches a name typed,
+    the category optional, links counted never selected.
+    SELECT_BY_PARAMETER_VALUE version 4 does it as parameterName Family (the
+    instance's symbol and a system family's type both read), and took this
+    card's exactMatch, matchedFamilies, scannedWholeModel and found, and its
+    rule that no name to look for matches nothing. Nothing not carried.
 
 purpose: >
   Finds every element belonging to a named family, by the FAMILY name rather

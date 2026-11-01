@@ -166,11 +166,11 @@ compatibility-note: >
 # CREATE_LEVEL's `purpose` until 2026-09-01, where it is INDEXED, and it took
 # "the new level has no plan" off CREATE_PLAN_VIEW.
 
-# ROUTING - repeated in CREATE_GRIDS, LIST_LEVELS and SET_ELEMENT_LEVEL.
+# ROUTING - repeated in CREATE_GRIDS, REPORT_LEVEL_ELEVATIONS and SET_ELEMENT_LEVEL.
 #
 #   "add a level"                        -> here, one level
 #   "add four more floor levels"         -> here - many at once
-#   "list the levels"                    -> LIST_LEVELS
+#   "list the levels"                    -> REPORT_LEVEL_ELEVATIONS
 #   "move these to level 3"              -> SET_ELEMENT_LEVEL - reassigns
 #                                           EXISTING elements; it creates
 #                                           nothing

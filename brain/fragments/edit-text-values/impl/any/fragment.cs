@@ -1,7 +1,13 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `field`, `mode`, `text` and
 // `replacement` are in scope, and leaves `changed`, `untouched`, `blank`,
 // `readOnly`, `absent`, `ambiguous`, `unverified`, `refused`,
-// `noteFormatting` and `typesEdited` behind.
+// `noteFormatting`, `typesEdited`, `collisions` and `notMatched` behind.
+//
+// VERSION 7 (2026-11-01) - RENAME_ELEMENTS MERGED IN: for field Name every new
+// name is worked out first and checked against the others and against the
+// names already in the model; one clash and NOTHING is renamed, `collisions`
+// says which. `notMatched` names what a replace found nothing to replace in.
+// An unreadable name is refused in `readOnly`, never edited as blank.
 //
 // VERSION 6 (2026-11-01) - EDIT_PARAMETER_TEXT MERGED IN, AND ITS THREE RULES
 // WITH IT: a prefix or suffix already there is not added again, so a re-run
@@ -446,6 +452,175 @@ Func<string, string> transform = current =>
     }
     return current;
 };
+
+// ===========================================================================
+// VERSION 7 (2026-11-01) - RENAME_ELEMENTS MERGED IN: A NAME EDIT IS PLANNED
+// FOR THE WHOLE BATCH, AND ONE CLASH STOPS ALL OF IT
+// ===========================================================================
+//
+// RENAME_ELEMENTS worked every intended name out before writing one, and
+// stopped the whole batch on two names landing as one: Revit throws on a
+// duplicate type or view name and quietly accepts a duplicate instance name,
+// and neither is wanted half way through forty renames. Version 6 wrote names
+// one at a time, so a clash at element 31 left 30 renamed and the rest not -
+// two conventions in one model and no record of where it stopped.
+//
+// So for field Name, BEFORE ANY ELEMENT IS WRITTEN:
+//
+//   1. every element's new name is worked out with the same `transform` the
+//      write uses, so the plan and the write cannot disagree
+//   2. the new names are checked AGAINST EACH OTHER - two the same, whatever
+//      kind of element, is a clash (RENAME_ELEMENTS' rule)
+//   3. each is checked AGAINST THE MODEL - a name already held by another
+//      element of the same kind: any view or view template for a view, the
+//      same family for a loadable family's type, the same class and category
+//      for anything else. Capitals are ignored. An element ALSO in the batch
+//      still holds its old name when the first write lands, so a swap (A to
+//      B and B to A) is a clash too - do it in two runs, through a name
+//      nobody holds
+//   4. a new name left EMPTY by a replace is a clash - Revit refuses it
+//
+// Any one of them and NOTHING IS WRITTEN: `collisions` names each clash and
+// `refused` says why. All or nothing is the safer of the two cards' rules.
+//
+// `notMatched` (RENAME_ELEMENTS' output) is filled after the loop: for mode
+// replace, the elements whose text did not contain the words to replace - on
+// any field, not only Name. It is `untouched` for a replace, said in
+// RENAME_ELEMENTS' word, and the honest clue that the search text was wrong.
+var collisions = new List<string>();
+var notMatched = new List<ElementId>();
+
+if (refused == null && editingName)
+{
+    var plannedName = new Dictionary<string, ElementId>(StringComparer.OrdinalIgnoreCase);
+    // The kind of element a name must be unique within, and the elements
+    // whose names are checked - kind -> (an example element, the batch's ids).
+    var kinds = new Dictionary<string, Element>();
+    var plannedByKind = new Dictionary<string, List<KeyValuePair<ElementId, string>>>();
+
+    Func<Element, string> kindOf = e =>
+    {
+        if (e is View) return "view";
+        var symbol = e as FamilySymbol;
+        if (symbol != null && symbol.Family != null) return "family " + symbol.Family.Id;
+        return e.GetType().FullName + " " + (e.Category == null ? "-" : e.Category.Id.ToString());
+    };
+
+    foreach (var element in elements)
+    {
+        if (element == null) continue;
+        string was = null;
+        try { was = element.Name; } catch { was = null; }
+        if (string.IsNullOrEmpty(was)) continue;
+        var wanted = transform(was);
+        if (wanted == was) continue;
+
+        if (wanted.Trim().Length == 0)
+        {
+            collisions.Add(string.Format("'{0}' (id {1}) would be left with NO name", was, element.Id));
+            continue;
+        }
+
+        ElementId already;
+        if (plannedName.TryGetValue(wanted, out already))
+        {
+            collisions.Add(string.Format("'{0}' - planned for both id {1} and id {2}",
+                wanted, already, element.Id));
+            continue;
+        }
+        plannedName[wanted] = element.Id;
+
+        string kind;
+        try { kind = kindOf(element); } catch { kind = element.GetType().FullName + " -"; }
+        if (!kinds.ContainsKey(kind))
+        {
+            kinds[kind] = element;
+            plannedByKind[kind] = new List<KeyValuePair<ElementId, string>>();
+        }
+        plannedByKind[kind].Add(new KeyValuePair<ElementId, string>(element.Id, wanted));
+    }
+
+    // AGAINST THE MODEL, one collector per kind of element in the batch.
+    foreach (var entry in kinds)
+    {
+        var example = entry.Value;
+        // Every holder of each name - two others may share one, and the
+        // element being renamed must not hide the other.
+        var inUse = new Dictionary<string, List<ElementId>>(StringComparer.OrdinalIgnoreCase);
+        IEnumerable<Element> others = null;
+        try
+        {
+            if (example is View)
+                others = new FilteredElementCollector(doc).OfClass(typeof(View)).ToElements();
+            else if (example is FamilySymbol && ((FamilySymbol)example).Family != null)
+            {
+                var familyId = ((FamilySymbol)example).Family.Id;
+                others = new FilteredElementCollector(doc).OfClass(typeof(FamilySymbol)).ToElements()
+                    .Where(o => { var s = o as FamilySymbol; return s != null && s.Family != null
+                        && s.Family.Id == familyId; });
+            }
+            else
+            {
+                var cls = example.GetType();
+                var catId = example.Category == null ? null : example.Category.Id;
+                others = new FilteredElementCollector(doc).OfClass(cls).ToElements()
+                    .Where(o => o.GetType() == cls
+                        && (catId == null ? o.Category == null : (o.Category != null && o.Category.Id == catId)));
+            }
+        }
+        catch
+        {
+            // OfClass refuses some classes (a room is one). The category is
+            // asked instead; with neither, the names cannot be checked against
+            // the model, and a rename that cannot be checked is not made.
+            try
+            {
+                var cls = example.GetType();
+                if (example.Category != null)
+                    others = new FilteredElementCollector(doc).OfCategoryId(example.Category.Id)
+                        .ToElements().Where(o => o.GetType() == cls);
+            }
+            catch { others = null; }
+        }
+
+        if (others == null)
+        {
+            collisions.Add(string.Format("the names already used by {0} elements could not be read, so "
+                + "a new name for id {1} cannot be checked against them", example.GetType().Name,
+                example.Id));
+            continue;
+        }
+
+        foreach (var other in others)
+        {
+            string held = null;
+            try { held = other.Name; } catch { held = null; }
+            if (string.IsNullOrEmpty(held)) continue;
+            if (!inUse.ContainsKey(held)) inUse[held] = new List<ElementId>();
+            inUse[held].Add(other.Id);
+        }
+
+        foreach (var plan in plannedByKind[entry.Key])
+        {
+            List<ElementId> holders;
+            if (!inUse.TryGetValue(plan.Value, out holders)) continue;
+            var holder = holders.FirstOrDefault(h => h != plan.Key);
+            if (holder != null)
+                collisions.Add(string.Format("'{0}' - planned for id {1}, and already the name of id {2}",
+                    plan.Value, plan.Key, holder));
+        }
+    }
+
+    if (collisions.Count > 0)
+    {
+        refused = string.Format("{0} of the new names clash - with each other, with a name already in "
+            + "the model, or by leaving a name empty - so NOTHING WAS RENAMED: {1}. Every name is "
+            + "checked before the first is written, because Revit refuses a duplicate type or view "
+            + "name and accepts a duplicate instance name, and a batch half renamed carries two "
+            + "conventions", collisions.Count, string.Join("; ", collisions.Take(5).ToArray())
+            + (collisions.Count > 5 ? string.Format("; and {0} more", collisions.Count - 5) : ""));
+    }
+}
 
 foreach (var element in elements)
 {
@@ -993,7 +1168,10 @@ foreach (var element in elements)
 
     if (editingName)
     {
-        try { current = element.Name; } catch { }
+        // A name that cannot be read cannot be renamed (RENAME_ELEMENTS'
+        // rule, version 7): refused in `readOnly`, never edited as if blank.
+        try { current = element.Name; }
+        catch { land(readOnly); continue; }
     }
     else
     {
@@ -1167,3 +1345,7 @@ else if (refused == null && !editingName && handed > 0 && notText == handed)
         + "figure as the truth", field, handed);
     readOnly.Clear();
 }
+
+// VERSION 7 - RENAME_ELEMENTS' `notMatched`: for a replace, what did not hold
+// the words to replace. Never an edit made (D-52).
+if (how == "replace") notMatched.AddRange(untouched);

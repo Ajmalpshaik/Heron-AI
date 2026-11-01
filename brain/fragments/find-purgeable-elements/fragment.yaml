@@ -15,7 +15,12 @@ capability: FIND_PURGEABLE_ELEMENTS
 # describes the code, so the card is DRAFT until version 2 is proved on a real
 # model (D-30) - on 2024 or later for Revit's list, and on 2020-2023 for the
 # fallback.
-version: 2
+#
+# VERSION 3 (2026-11-01): FIND_UNUSED_MATERIALS, FIND_UNUSED_GROUP_TYPES,
+# FIND_UNUSED_IMAGES and FIND_UNUSED_DEFINITIONS were merged in - see the
+# second comment block above `utterances`. Still DRAFT, version 1's proof
+# still the record.
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -40,9 +45,10 @@ risk: READ
 # this and DELETE_ELEMENTS there, and loading it back (LOAD_FAMILY) - a
 # family cannot be opened inside a change in the project.
 #
-# FIND_UNUSED_MATERIALS, FIND_UNUSED_GROUP_TYPES and FIND_UNUSED_IMAGES each
-# answer for one kind, on every release. Families are answered here, on every
-# release, since version 2.
+# Families are answered here, on every release, since version 2; group
+# definitions, images, view templates, view filters and - asked for, because
+# the walk is slow - materials since version 3, each by its own rule and each
+# as a REPORT by name.
 #
 # READ ONLY - opens no transaction.
 purpose: >
@@ -53,6 +59,11 @@ purpose: >
   Revit 2020 to 2023 counts placed instances instead - a report that hands
   nothing on for deleting, because a family nested in another reads as unused.
 
+  Version 3 also reports, by name, the group definitions with nothing placed,
+  the images nothing uses, the view templates and view filters nothing uses -
+  and, asked for, the materials nothing uses. Only Revit's own list is handed
+  on, and never anything one of those checks finds in use.
+
 contract:
   needs:
     - name: doc
@@ -61,6 +72,14 @@ contract:
     - name: categories
       type: string
       source: request
+    # Version 3, from FIND_UNUSED_MATERIALS: true walks every element and
+    # every type for the materials they use - geometry AND paint - and reports
+    # the ones nothing uses. Slow on a large model, so left out it is false
+    # and materials are not walked.
+    - name: includeMaterials
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: elements
       role: result
@@ -93,6 +112,75 @@ contract:
       # method, never an element (D-52).
       role: accounting
       type: string
+    - name: heldBack
+      # VERSION 3. Elements on Revit's own list that a check here finds IN
+      # USE - an attached detail group, a template named as a view type's
+      # default, an image named by a parameter, a material used as paint - and
+      # so NOT handed on. Turned down, never found (D-52).
+      role: accounting
+      type: IList<string>
+    - name: unusedGroupTypeNames
+      # VERSION 3, from FIND_UNUSED_GROUP_TYPES: group definitions with
+      # nothing placed, by NAME - a report, never handed on (D-52).
+      role: accounting
+      type: IList<string>
+    - name: attachedDetailGroupsInUse
+      # VERSION 3, from FIND_UNUSED_GROUP_TYPES (its usedOnlyAsAttached):
+      # detail groups with no instance of their own that a placed model
+      # group offers - in use, by name. The row that stops a delete (D-52).
+      role: accounting
+      type: IList<string>
+    - name: unusedImageNames
+      # VERSION 3, from FIND_UNUSED_IMAGES: images placed nowhere and named by
+      # no image parameter, by NAME - a report (D-52).
+      role: accounting
+      type: IList<string>
+    - name: usedImageCount
+      # VERSION 3, from FIND_UNUSED_IMAGES (its usedCount): images found in
+      # use. The evidence it looked (D-52).
+      role: accounting
+      type: int
+    - name: unusedTemplateNames
+      # VERSION 3, from FIND_UNUSED_DEFINITIONS: view templates no view
+      # follows and no view family type names as a default, by NAME (D-52).
+      role: accounting
+      type: IList<string>
+    - name: unusedFilterNames
+      # VERSION 3, from FIND_UNUSED_DEFINITIONS: view filters no view or
+      # template uses, by NAME (D-52).
+      role: accounting
+      type: IList<string>
+    - name: filtersOnlyInUnusedTemplates
+      # VERSION 3, from FIND_UNUSED_DEFINITIONS: filters whose only users are
+      # templates that are themselves unused - by NAME (D-52).
+      role: accounting
+      type: IList<string>
+    - name: templatesKeptAsDefault
+      # VERSION 3, from FIND_UNUSED_DEFINITIONS: templates no view follows that
+      # a view family type names as the default for new views - in use. The
+      # evidence it looked (D-52).
+      role: accounting
+      type: int
+    - name: unusedMaterialNames
+      # VERSION 3, from FIND_UNUSED_MATERIALS, with includeMaterials true:
+      # materials neither geometry nor paint of any element or type uses, by
+      # NAME (D-52).
+      role: accounting
+      type: IList<string>
+    - name: scannedInstances
+      # VERSION 3, from FIND_UNUSED_MATERIALS: placed elements walked for
+      # materials. Work done, never a thing found (D-52).
+      role: accounting
+      type: int
+    - name: scannedTypes
+      # VERSION 3, from FIND_UNUSED_MATERIALS: types walked for materials.
+      role: accounting
+      type: int
+    - name: unreadable
+      # VERSION 3, from FIND_UNUSED_MATERIALS: elements that would not report
+      # their materials at all. The evidence it tried (D-52).
+      role: accounting
+      type: int
 
 proof:
   date: '2026-10-23'
@@ -144,7 +232,22 @@ compatibility-note: >
 #   "purge the unused stuff"                   -> here, AS A LIST (FIND_UNUSED_FAMILIES'
 #                                                 row, moved)
 #   "purge this loaded family"                 -> OPEN_FAMILY_FOR_EDITING, here, DELETE_ELEMENTS, LOAD_FAMILY
-#   "which materials are unused"               -> FIND_UNUSED_MATERIALS
+#   "which materials are unused"               -> here (version 3), with
+#                                                 includeMaterials=true - the walk
+#                                                 of every element is slow
+#   "which groups is nobody using"             -> here (version 3), by name
+#   "which images are not used"                -> here (version 3), by name
+#   "which view templates are unused" / "unused view filters" -> here (version 3),
+#                                                 by name
+#   "delete the unused templates"              -> SELECT_VIEW_TEMPLATES with usage
+#                                                 unused - the templates as ELEMENTS;
+#                                                 the names here are a report
+#   "list the materials in this family"        -> LIST_MATERIALS - every material,
+#                                                 used or not
+#   "what is this material used on"            -> SELECT_BY_MATERIAL - the forward
+#                                                 question, to ask before deleting
+#   "which views are not on a sheet"           -> FIND_UNPLACED_VIEWS
+#   "what filters exist and where"             -> REPORT_VIEW_FILTERS
 
 # VERSION 2 (2026-11-01) - FIND_UNUSED_FAMILIES WAS MERGED INTO THIS CARD on
 # the owner's instruction in conversation: "now merge the other duplicates
@@ -163,9 +266,46 @@ compatibility-note: >
 # on, and the placed-instance count - which calls a nested-only family unused
 # - is a report that hands nothing on.
 #
-# ROUTING - repeated in CHECK_FAMILY_STANDARDS, FIND_UNUSED_MATERIALS,
-# FIND_UNUSED_GROUP_TYPES, FIND_UNUSED_IMAGES, SELECT_TYPES, LOAD_FAMILY and
+# ROUTING - repeated in CHECK_FAMILY_STANDARDS, SELECT_TYPES, LOAD_FAMILY and
 # FIND_LIBRARY_FAMILIES.
+#
+# VERSION 3 (2026-11-01) - FIND_UNUSED_MATERIALS, FIND_UNUSED_GROUP_TYPES,
+# FIND_UNUSED_IMAGES AND FIND_UNUSED_DEFINITIONS WERE MERGED INTO THIS CARD on
+# the owner's instruction ("make sure there is no duplicate tools"; "in every
+# conflict keep the safer rule"). All four are DEPRECATED. Each one's rule for
+# what counts as USED came with it, on every release 2020-2027:
+#   FIND_UNUSED_GROUP_TYPES   a detail group attached to a placed model group
+#                             is in use - and a placed group that will not say
+#                             what it offers makes every unplaced detail group
+#                             type count as in use (safer than its skip)
+#   FIND_UNUSED_IMAGES        an image named by ANY image parameter of any
+#                             element or type is in use; a schedule header
+#                             image is not seen, and the finding says so
+#   FIND_UNUSED_DEFINITIONS   a template a view family type names as the
+#                             default for new views is in use; filters used
+#                             ONLY by unused templates are their own list
+#   FIND_UNUSED_MATERIALS     both material sets, geometry AND paint, of every
+#                             element and type - opt-in, includeMaterials
+# Where each output is now: unusedGroupTypes -> unusedGroupTypeNames,
+# usedOnlyAsAttached -> attachedDetailGroupsInUse, scanned -> a finding;
+# FIND_UNUSED_IMAGES' elements -> unusedImageNames, usedCount ->
+# usedImageCount; unusedTemplates -> unusedTemplateNames, unusedFilters ->
+# unusedFilterNames, filtersUsedOnlyByUnusedTemplates ->
+# filtersOnlyInUnusedTemplates (the templates kept as a default ->
+# templatesKeptAsDefault); unusedMaterials -> unusedMaterialNames,
+# scannedInstances, scannedTypes and unreadable the same; unusedNames and
+# findings -> the lists above and `findings`.
+#
+# THE SAFER RULE WHERE THEY DIFFERED - version 2's, kept: ONLY REVIT'S OWN LIST
+# IS HANDED ON FOR DELETING. FIND_UNUSED_IMAGES handed its images on as
+# `elements` for DELETE_ELEMENTS, and FIND_UNUSED_MATERIALS,
+# FIND_UNUSED_GROUP_TYPES and FIND_UNUSED_DEFINITIONS returned ids. Here every
+# home-made list is a REPORT BY NAME, so NOT CARRIED, on purpose: an id list a
+# delete could take, from any of the four. And where a home-made check finds
+# something IN USE that Revit's list offers, it is held back (`heldBack`) -
+# the cards' own reasons for existing, applied to the list that is handed on.
+# Not carried either: FIND_UNUSED_MATERIALS' walk on every call - it is
+# opt-in here because it reads every element and every type.
 
 utterances:
   - list everything purgeable in this family
@@ -178,3 +318,30 @@ utterances:
   - find the families nobody is using
   - which types are not placed
   - clean up the unused families
+  # MOVED 2026-11-01 from FIND_UNUSED_MATERIALS, merged into this card.
+  - which materials is nobody using
+  - find the unused materials
+  - clean up the material list
+  - what materials can I purge
+  - unused materials in this model
+  - the material browser is full of rubbish
+  # MOVED 2026-11-01 from FIND_UNUSED_GROUP_TYPES, merged into this card.
+  - which group definitions have nothing placed
+  - which groups is nobody using
+  - find the unused groups
+  - clean up the group list
+  - what groups can I purge
+  - unused model groups in this project
+  - the group browser is full of old groups
+  # MOVED 2026-11-01 from FIND_UNUSED_IMAGES, merged into this card.
+  - which images in the project are not used
+  - find the unused images in manage images
+  - clean out the images nothing uses
+  - list the raster images that are not placed anywhere
+  # MOVED 2026-11-01 from FIND_UNUSED_DEFINITIONS, merged into this card.
+  - which view templates are not used
+  - which view templates are unused
+  - the filter list is full of old filters
+  - the filter list is full of rubbish
+  - what can i purge from the templates
+  - unused view filters

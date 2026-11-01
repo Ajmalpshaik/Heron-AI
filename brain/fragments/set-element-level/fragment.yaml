@@ -196,12 +196,12 @@ compatibility-note: >
 # THE SENTENCE DOES NOT SAY WHICH, and the two produce models that differ by a
 # whole storey.
 
-# ROUTING - repeated in LIST_LEVELS, READ_ELEMENT_LEVEL and CREATE_LEVELS.
+# ROUTING - repeated in REPORT_LEVEL_ELEVATIONS, READ_ELEMENT_LEVEL and CREATE_LEVELS.
 #
 #   "move these to level 3"     -> here - reassigns EXISTING elements
 #   "it is on the wrong level"  -> here
 #   "add a level"               -> CREATE_LEVELS - this fragment creates none
-#   "list the levels"           -> LIST_LEVELS
+#   "list the levels"           -> REPORT_LEVEL_ELEVATIONS
 #   "what level is this on"     -> READ_ELEMENT_LEVEL
 
 # VERSION 2 (2026-11-01) - SET_WALL_CONSTRAINTS WAS MERGED INTO THIS CARD on

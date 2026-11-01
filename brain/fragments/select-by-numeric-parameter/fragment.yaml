@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,27 @@ capability: SELECT_BY_NUMERIC_PARAMETER
 version: 2
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO SELECT_BY_PARAMETER_VALUE (select-by-parameter-value), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable and
+# it can be brought back. Nothing offers it now - retrieval leaves DEPRECATED
+# out, and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to SELECT_BY_PARAMETER_VALUE. The proof below, where there
+# is one, is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: SELECT_BY_PARAMETER_VALUE
+  why: >
+    The same job: select the elements whose named parameter passes a test,
+    optionally bounded to categories, links counted never selected.
+    SELECT_BY_PARAMETER_VALUE version 4 took this card's comparisons as
+    numeric matchModes - gt, gte, lt, lte, between, eq and ne on the stored
+    double or integer, compareValue and compareValueMax in internal units, eq
+    to a tolerance - and notNumeric. Not carried, as an opposite rule: an
+    empty comparison here meant eq; there an empty matchMode is contains, as
+    it always was, and a numeric compare must be named.
 
 purpose: >
   Narrows the model to the elements whose named NUMERIC parameter passes a

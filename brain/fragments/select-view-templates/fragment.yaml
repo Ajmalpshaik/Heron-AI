@@ -38,8 +38,9 @@ purpose: >
   a finding.
 
   **IT DELETES NOTHING AND JUDGES NOTHING.** *"Which definitions is nobody
-  using"* as a report is FIND_UNUSED_DEFINITIONS, which also covers view
-  filters and states its own reasoning about them. This one hands back
+  using"* as a report is FIND_PURGEABLE_ELEMENTS (FIND_UNUSED_DEFINITIONS
+  until it was merged in, 2026-11-01), which also covers view filters and
+  states its own reasoning about them. This one hands back
   templates as elements so something else can act, which is the half that was
   missing.
 
@@ -115,14 +116,14 @@ compatibility-note: >
   as a number, so nothing here meets the 2024 widening to 64-bit or the removal
   of `IntegerValue` by 2026.
 
-# ROUTING - repeated in FIND_UNUSED_DEFINITIONS, APPLY_VIEW_TEMPLATE and
+# ROUTING - repeated in FIND_PURGEABLE_ELEMENTS, APPLY_VIEW_TEMPLATE and
 # REPORT_VIEW_TEMPLATE_CONTROL.
 #
 #   "give me the view templates"          -> here
-#   "rename all the templates"            -> here, then RENAME_ELEMENTS
+#   "rename all the templates"            -> here, then EDIT_TEXT_VALUES field Name
 #   "which templates is nobody using"     -> BOTH, and the difference is what
 #                                            comes next. Wanting to READ the
-#                                            answer is FIND_UNUSED_DEFINITIONS,
+#                                            answer is FIND_PURGEABLE_ELEMENTS,
 #                                            which covers view filters too and
 #                                            says what a filter used only by an
 #                                            unused template means. Wanting to
@@ -142,7 +143,7 @@ utterances:
   - select the view templates
   # "which view templates are unused" IS DELIBERATELY NOT DECLARED HERE. It is
   # a QUESTION and the answer is a report, so it belongs to
-  # FIND_UNUSED_DEFINITIONS - which also covers view filters. Declaring it here
+  # FIND_UNUSED_DEFINITIONS (FIND_PURGEABLE_ELEMENTS since 2026-11-01) - which also covers view filters. Declaring it here
   # took it from that fragment, measured 2026-09-06. What this one answers is
   # the sentence that names an ACTION, because acting needs elements.
   - delete the unused view templates

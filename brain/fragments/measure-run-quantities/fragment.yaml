@@ -41,7 +41,7 @@ purpose: >
 
   **IT MEASURES AND DOES NOT GROUP.** The question always arrives as "how many
   metres of each size", which sounds like one job and is two: read the numbers,
-  then total them per group. `SUM_BY_GROUP` does the second half for any
+  then total them per group. `GROUP_AND_COUNT` does the second half for any
   quantity and any key, so the same totalling serves insulation, tray weight and
   concrete without being rewritten per material. Composed with
   `READ_ELEMENT_PARAMETERS` for the size, those three answer the takeoff
@@ -51,7 +51,7 @@ purpose: >
   ductwork is there" means metres to one person and square metres to another,
   and picking a default would answer a question nobody asked. `measure` says
   which, and the chosen one is also handed back as `quantities` so
-  `SUM_BY_GROUP` can total it without knowing what it is - which is what lets
+  `GROUP_AND_COUNT` can total it without knowing what it is - which is what lets
   the same totalling serve insulation, tray weight and concrete. Both
   measurements are still returned separately for a caller that wants both.
 
@@ -101,7 +101,7 @@ contract:
       role: accounting
       type: string
     # Version 2, from MEASURE_ELEMENT_LENGTHS. Each length in MILLIMETRES -
-    # beside `lengths`, which stays in internal feet for SUM_BY_GROUP's chain.
+    # beside `lengths`, which stays in internal feet for GROUP_AND_COUNT's chain.
     - name: lengthsMm
       role: result
       type: IDictionary<ElementId, double>
@@ -154,7 +154,7 @@ compatibility-note: >
 # VERSION 2 (2026-11-01) - MEASURE_ELEMENT_LENGTHS WAS MERGED INTO THIS CARD
 # on the owner's instruction ("now merge the other duplicates also"), and is
 # DEPRECATED. The same reading - how long each element is - and this card
-# already gave the surface area beside it, `quantities` for SUM_BY_GROUP, and a
+# already gave the surface area beside it, `quantities` for GROUP_AND_COUNT, and a
 # measure refused rather than guessed. What MEASURE_ELEMENT_LENGTHS had is here
 # now: `totalMm` with an element handed in twice measured once; millimetre
 # lengths, `lengthsMm`; the location curve for an element with no length
@@ -165,7 +165,7 @@ compatibility-note: >
 # location curve FIRST and the parameter after; this card asks the parameter
 # first, because it is the number Revit schedules and a quantity surveyor bills.
 # The curve is the fallback only. NOT CHANGED: `quantities`, `lengths` and
-# `areas` stay in internal feet and square feet - SUM_BY_GROUP's chain reads
+# `areas` stay in internal feet and square feet - GROUP_AND_COUNT's chain reads
 # them so - and the millimetres are new outputs beside them.
 #
 # NOT ANSWERED BY EITHER CARD, recorded rather than reworded: "how far apart are
@@ -184,7 +184,7 @@ compatibility-note: >
 #   "how much 300x300 duct is there"     -> a COMPOSITION:
 #                                           READ_ELEMENT_PARAMETERS for the
 #                                           size, this card for the lengths,
-#                                           SUM_BY_GROUP keyed on size.
+#                                           GROUP_AND_COUNT keyed on size.
 #                                           GROUP_AND_COUNT only counts, and
 #                                           "how much" is a length
 #   "dimension these ducts"              -> CREATE_DIMENSION - a distance put
@@ -199,7 +199,9 @@ compatibility-note: >
 #   "how many kilos of ductwork is this" -> REPORT_DUCT_WEIGHT, which turns
 #                                           the area into metal through a
 #                                           gauge table
-#   "total it by size"                   -> SUM_BY_GROUP, fed from here
+#   "total it by size"                   -> GROUP_AND_COUNT, fed from here
+#                                           (SUM_BY_GROUP until it was merged
+#                                           into that card, 2026-11-01)
 
 utterances:
   - how long are the ducts

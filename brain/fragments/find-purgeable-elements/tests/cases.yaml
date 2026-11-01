@@ -50,5 +50,40 @@ negative:
     expect: >
       refused as no such category, as on 2024 and later; nothing listed
 
+  # VERSION 3 - the four FIND_UNUSED_* cards merged in. Each fails on
+  # version 2, which has none of these outputs.
+  - given: a model group placed twice that offers an attached detail group with no instance of its own, and a model group type placed nowhere
+    expect: >
+      the unplaced model group type in `unusedGroupTypeNames`, the attached
+      detail group in `attachedDetailGroupsInUse` and NOT in either list; on
+      2024+ if Revit's list offers the detail group it is in `heldBack`, not
+      in `elements`
+
+  - given: an image placed nowhere but named by a door type's Type Image, and one image used by nothing
+    expect: >
+      only the second in `unusedImageNames`, usedImageCount 1 - and neither
+      image in `elements` on 2020-2023 (nothing is handed on there)
+
+  - given: a view template no view follows that the Floor Plan view type names as its default, and another no one names
+    expect: >
+      the second in `unusedTemplateNames`, templatesKeptAsDefault 1 and the
+      finding that deleting it changes every new plan
+
+  - given: a filter used only in that unused template
+    expect: it in `filtersOnlyInUnusedTemplates`, not in `unusedFilterNames`
+
+  - given: includeMaterials true, a material used ONLY as paint on one wall face
+    expect: >
+      it NOT in `unusedMaterialNames` - the paint read counted it - and
+      scannedInstances and scannedTypes above zero. With includeMaterials left
+      out, `unusedMaterialNames` is empty and the finding says materials were
+      not walked
+
+  - given: categories "filters" alone
+    expect: >
+      only the templates-and-filters report run, `route` saying Revit's list
+      was not asked, `elements` EMPTY - an empty scope must never ask Revit's
+      list for every category
+
 second_route:
   - Revit's Manage > Purge Unused on the same project, its list read

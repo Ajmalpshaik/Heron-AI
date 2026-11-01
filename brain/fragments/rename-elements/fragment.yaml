@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -31,6 +31,28 @@ capability: RENAME_ELEMENTS
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO EDIT_TEXT_VALUES (edit-text-values), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable and
+# it can be brought back. Nothing offers it now - retrieval leaves DEPRECATED
+# out, and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to EDIT_TEXT_VALUES. The proof below, where there
+# is one, is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: EDIT_TEXT_VALUES
+  why: >
+    The same job: find and replace part of an element's name, every new name
+    worked out and checked before one is written, and read back.
+    EDIT_TEXT_VALUES does it as field Name, mode replace, and its version 7
+    took this card's batch collision check - the new names checked against
+    each other and against the names already in the model, one clash and
+    nothing renamed (all or nothing) - and its notMatched. Not taken, as
+    opposite rules: an empty name is blank there, not notMatched (left alone
+    either way); refused is one sentence there, not a list of ids, with
+    readOnly for a name Revit would not take.
 
 purpose: >
   Renames elements by replacing a piece of text inside the existing name, rather

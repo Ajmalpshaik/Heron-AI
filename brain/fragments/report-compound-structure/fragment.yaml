@@ -115,7 +115,7 @@ compatibility-note: >
 #   "how thick is this wall"           -> here - the total is reported per type
 #   "build me a wall"                  -> CREATE_WALL. One reads a type, one puts
 #                                         an element in the model
-#   "what material is this"            -> READ_ELEMENT_MATERIAL - the materials
+#   "what material is this"            -> REPORT_MATERIAL_TAKEOFF - the materials
 #                                         ON an element. This reports the LAYERS
 #                                         of its type, which is where a wall's
 #                                         materials actually live

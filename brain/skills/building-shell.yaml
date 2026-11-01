@@ -88,8 +88,10 @@ purpose: >
      elements handed in, so it needs one placed, and a new project has
      none. Until it is widened, SELECT_TYPES (PROVEN) - categories= the
      type's category, typeNameContains= the template type's name - then
-     RENAME_ELEMENTS (PROVEN) with expect_from naming that select, find= the
-     whole old name and replaceWith= the new one, renames the unused
+     EDIT_TEXT_VALUES (DRAFT, version 7 - RENAME_ELEMENTS, PROVEN, was merged
+     into it on 2026-11-01) with expect_from naming that select, field=Name,
+     mode=replace, text= the whole old name and replacement= the new one,
+     renames the unused
      template type itself. A type renamed is renamed wherever it is used,
      and an unused one is used nowhere. It is still the template's type
      underneath: what makes it different - its material, its layers - is
@@ -290,8 +292,9 @@ purpose: >
       A COLOUR ON A TYPE WITH NO LAYERS - a mullion, a fin, a panel:
       REPLACE_MATERIAL (PROVEN), handed those elements, with findMaterial=
       the material they use now and replaceMaterial= the one made above.
-      Read the name they use first - READ_ELEMENT_MATERIAL (PROVEN) on one
-      of them - and give it exactly: on 2026-10-19 the material in use was
+      Read the name they use first - REPORT_MATERIAL_TAKEOFF (DRAFT, version
+      2 - READ_ELEMENT_MATERIAL, PROVEN, was merged into it on 2026-11-01),
+      its `materials`, on one of them - and give it exactly: on 2026-10-19 the material in use was
       "Aluminium", not "Metal - Aluminum", and this swap gave the tower its
       white fins. It changes the TYPE, so every element of that type
       changes; DUPLICATE_TYPE first, as above, when only some should.
@@ -350,7 +353,7 @@ needs:
   - CREATE_WALL
   # A new project's own type name, by renaming an unused one - see step 3.
   - SELECT_TYPES
-  - RENAME_ELEMENTS
+  - EDIT_TEXT_VALUES
   # Ties each wall's top to the level above - step 4 (SET_WALL_CONSTRAINTS
   # until it was merged into this one, 2026-11-01).
   - SET_ELEMENT_LEVEL
@@ -395,7 +398,7 @@ needs:
   - CREATE_MATERIAL
   - DUPLICATE_TYPE
   - SET_COMPOUND_LAYER_WIDTH
-  - READ_ELEMENT_MATERIAL
+  - REPORT_MATERIAL_TAKEOFF
   - REPLACE_MATERIAL
   - PAINT_FACES
   - SET_VIEW_PROPERTIES

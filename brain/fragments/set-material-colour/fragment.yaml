@@ -113,7 +113,7 @@ compatibility-note: >
 #
 #   "this pipe has no colour"        -> here, on the material the segment uses
 #   "make a new material"            -> CREATE_MATERIAL
-#   "what material is this element"  -> READ_ELEMENT_MATERIAL
+#   "what material is this element"  -> REPORT_MATERIAL_TAKEOFF
 #   "swap one material for another"  -> REPLACE_MATERIAL
 
 # ROUTING (2026-10-20, the material tools of Group IA, row 5b-1263)

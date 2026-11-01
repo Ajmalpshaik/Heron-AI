@@ -133,8 +133,8 @@ compatibility-note: >
 #                                             than moved
 #   "swap this material for that one"      -> REPLACE_MATERIAL, inside ONE
 #                                             project
-#   "what material is this"                -> READ_ELEMENT_MATERIAL
-#   "which materials are unused"           -> FIND_UNUSED_MATERIALS
+#   "what material is this"                -> REPORT_MATERIAL_TAKEOFF
+#   "which materials are unused"           -> FIND_PURGEABLE_ELEMENTS
 #   "list the materials in this family"    -> LIST_MATERIALS, a read. It
 #                                             reached HERE, a write, on the
 #                                             lexical backend until 2026-10-09

@@ -92,7 +92,7 @@ compatibility-note: >
 #   "swap them for the other diffuser" -> here
 #   "make the duct 300 wide"           -> SET_MEP_SIZE - a dimension on the
 #                                         element, not a different type
-#   "rename the type"                  -> RENAME_ELEMENTS, and note it reaches
+#   "rename the type"                  -> EDIT_TEXT_VALUES field Name, and note it reaches
 #                                         every instance of that type
 #
 # SIZE AND TYPE ARE THE SAME SENTENCE IN A MODELLER'S MOUTH. "Change it to 600

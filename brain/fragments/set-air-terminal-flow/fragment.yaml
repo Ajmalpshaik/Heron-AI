@@ -156,7 +156,7 @@ compatibility-note: >
 #   "set the flow on these diffusers"              -> here
 #   "update the air terminal flow from this file"  -> here
 #   "how much air does each space get"             -> REPORT_SPACE_AIRFLOW, a read
-#   "set the space's supply airflow"               -> IMPORT_PARAMETER_VALUES - a
+#   "set the space's supply airflow"               -> SET_PARAMETER_VALUES_BY_ID - a
 #                                                     space has one parameter by
 #                                                     that name
 #   "size the ducts from the flows"                -> AUTO_SIZE_MEP

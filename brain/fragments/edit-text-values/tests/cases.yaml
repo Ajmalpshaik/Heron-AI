@@ -182,6 +182,42 @@ negative:
     expect: >
       the type's value reads SUPPLY - written once, not twice
 
+  # VERSION 7 - RENAME_ELEMENTS merged in. Each of these fails on version 6.
+  - given: >
+      field Name, mode replace, elements named "AHU-1-SUP" and "AHU-1-RET",
+      run with text "-SUP" so the first would become "AHU-1" - and a third
+      element of the same kind already named "AHU-1"
+    expect: >
+      REFUSED - `collisions` names "AHU-1" and the id already holding it,
+      NOTHING WAS RENAMED, `changed` empty, every name as it was. Version 6
+      renamed one at a time with no check: Revit threw on a type or view, or
+      quietly took a duplicate instance name
+
+  - given: >
+      field Name, mode replace, text "-SUP", replacement "", twelve views of
+      which two, "L1-SUP" and "L1", would land on "L1" - L1 listed SECOND in the
+      batch
+    expect: >
+      REFUSED before the first write, `collisions` names "L1", all twelve
+      views keep their names. Version 6 wrote the first eleven and refused the
+      clash at Revit's throw - a batch half renamed
+
+  - given: >
+      field Name, mode replace, two views named "A" and "B", text and
+      replacement swapping them in one run (each would take the other's name)
+    expect: >
+      REFUSED - a swap clashes, because the second still holds its old name
+      when the first write lands. Two runs through a name nobody holds do it
+
+  - given: field Name, mode replace, text "SUP", replacement "", an element named exactly "SUP"
+    expect: >
+      REFUSED, `collisions` says it would be left with NO name, nothing renamed
+
+  - given: field Name, mode replace, 40 elements of which only 4 contain the text
+    expect: >
+      `changed` holds 4 and `notMatched` the other 36 - the same ids as
+      `untouched`. Version 6 had no `notMatched`
+
 second_route:
   - >
     open a schedule of that parameter in Revit before and after - the column is

@@ -383,6 +383,12 @@ def main():
         ({"name": "element", "type": "Element", "optional": "true"}, False),
         ({"name": "elements", "type": "IList<Element>", "source": "request",
           "optional": "true"}, False),
+        # 2026-11-01, GROUP_AND_COUNT v2: the host binds it null.
+        ({"name": "quantities", "type": "IDictionary<ElementId, double>",
+          "optional": "true"}, True),
+        ({"name": "quantities", "type": "IDictionary<ElementId, double>"}, False),
+        ({"name": "values", "type": "IDictionary<ElementId, string>",
+          "optional": "true"}, False),
     ]
     agrees = all(HF.need_may_be_empty(need) == want for need, want in mirror)
     print("  %s  heron_fragment.need_may_be_empty answers the %d cases the host "

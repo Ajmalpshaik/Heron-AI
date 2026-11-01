@@ -203,6 +203,13 @@ namespace Heron.Revit.Addin
                 return null;
 
             var shape = (type ?? "").Replace(" ", "");
+            // ONE MORE CASE, 2026-11-01: A QUANTITY PER ELEMENT THE CARD MARKS
+            // OPTIONAL BINDS NULL. GROUP_AND_COUNT version 2 (SUM_BY_GROUP merged
+            // in) counts when no measuring fragment handed `quantities` on and
+            // totals when one did - and tells "nobody handed any on" (null) from
+            // "handed on empty" (every element missing a quantity). An empty
+            // dictionary here would erase exactly that difference, so it is null.
+            if (shape == "IDictionary<ElementId,double>") return "null";
             if (shape.IndexOf("ElementId", System.StringComparison.Ordinal) >= 0) return null;
             switch (shape)
             {

@@ -125,7 +125,7 @@ compatibility-note: >
 #   "make this extrusion steel"                   -> here
 #   "link the connector flow to a parameter"      -> LINK_FAMILY_PARAMETER,
 #                                                    every element of a kind
-#   "what material is this wall"                  -> READ_ELEMENT_MATERIAL, a
+#   "what material is this wall"                  -> REPORT_MATERIAL_TAKEOFF, a
 #                                                    project read
 
 utterances:

@@ -107,7 +107,7 @@ compatibility-note: >
 #   "which dimensions are less than 500"       -> here
 #   "list the dimensions in this view with their values and references" -> REPORT_SPOT_DIMENSIONS
 #   "dimension these rooms"                    -> DIMENSION_ROOMS
-#   "ducts 500 mm high"                        -> SELECT_BY_NUMERIC_PARAMETER
+#   "ducts 500 mm high"                        -> SELECT_BY_PARAMETER_VALUE, a numeric mode
 
 utterances:
   - find every dimension under 1000 mm

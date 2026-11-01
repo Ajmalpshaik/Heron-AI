@@ -248,7 +248,7 @@ utterances:
   # "RENAME THE COLUMN HEADING" IS NINTH, PAST WHAT THE RE-RANKER READS (D-134,
   # FRAGMENT-ISSUES 5b-1293, 2026-10-29). First, it put "rename" beside
   # "schedule" in this card's passage, and "rename the schedule" - a whole
-  # schedule, RENAME_ELEMENTS' job - came here on the owner's backend. Still
+  # schedule, then RENAME_ELEMENTS' job and EDIT_TEXT_VALUES' since - came here on the owner's backend. Still
   # declared, so it still reaches this card by identity.
   - change the schedule column heading
   - make the schedule column wider

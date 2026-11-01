@@ -96,7 +96,7 @@ compatibility-note: >
 #                                       question from how much material is in
 #                                       it. "what are the coordinates of this
 #                                       element" resolved HERE until 2026-09-05
-#   "how much concrete"      -> READ_ELEMENT_MATERIAL. The question names a
+#   "how much concrete"      -> REPORT_MATERIAL_TAKEOFF. The question names a
 #                              MATERIAL and this fragment measures a shape
 #                              regardless of what it is made of. BOTH tables
 #                              claimed it until 2026-09-01, which is a

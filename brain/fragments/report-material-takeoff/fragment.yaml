@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-EXP-018
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "how much of each material is in these elements"
 kind: action
 domain: revit.document
 capability: REPORT_MATERIAL_TAKEOFF
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -39,6 +39,14 @@ purpose: >
   defensible figure that disagrees with the model's own schedule, and two
   numbers that both look right is worse than one that is plainly wrong.
 
+  **IT ALSO SAYS WHAT EACH ELEMENT IS MADE OF** (version 2, when
+  READ_ELEMENT_MATERIAL was merged in): `materials` names every material of
+  each element, painted ones included, `noMaterial` the elements carrying
+  none, and the totals come in cubic and square metres beside Revit's own
+  units. An element handed in twice is taken off once. Version 1's proof no
+  longer describes the code and is kept as a record; DRAFT until it is proved
+  again.
+
 contract:
   needs:
     - name: elements
@@ -61,9 +69,32 @@ contract:
       type: IList<string>
     - name: elementsWithNoMaterial
       # Elements carrying no material at all, so it could not be taken off.
-      # The evidence it looked, never a thing it found (D-52).
+      # The evidence it looked, never a thing it found (D-52). Also holds an
+      # element whose materials gave no area and no volume; `noMaterial` is
+      # the narrower list.
       role: accounting
       type: IList<ElementId>
+    - name: materials
+      # Version 2, from READ_ELEMENT_MATERIAL. Per element, the name of every
+      # material it carries - geometry and paint - a material with no volume
+      # still named.
+      role: result
+      type: IDictionary<ElementId, ICollection<string>>
+    - name: noMaterial
+      # Version 2, from READ_ELEMENT_MATERIAL. Elements carrying NO material
+      # at all. The evidence it looked, never a thing found (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: volumeM3
+      # Version 2, from READ_ELEMENT_MATERIAL. `volumes` in cubic metres,
+      # beside them - `volumes` keeps Revit's cubic feet.
+      role: result
+      type: IDictionary<string, double>
+    - name: areaM2
+      # Version 2. `areas` in square metres, beside them - `areas` keeps
+      # Revit's square feet.
+      role: result
+      type: IDictionary<string, double>
 
 proof:
   date: '2026-09-07'
@@ -113,8 +144,21 @@ compatibility-note: >
 #
 #   "give me a material takeoff"       -> here - the numbers a Material Takeoff schedule
 #                                         shows, paint included
-#   "what material is this"            -> READ_ELEMENT_MATERIAL - what each element is
-#                                         made of, with the volume of each
+#   "what material is this"            -> here since version 2 - `materials`, what
+#                                         each element is made of; `volumeM3`
+#   "what is this wall made of"        -> REPORT_COMPOUND_STRUCTURE - the LAYERS of
+#                                         the type, with their thicknesses
+#   "what is this element"             -> DESCRIBE_ELEMENTS - category and type
+#   "what is the volume"               -> MEASURE_ELEMENT_VOLUME - the whole solid,
+#                                         whatever it is made of
+#
+# READ_ELEMENT_MATERIAL WAS MERGED INTO THIS CARD on 2026-11-01, on the owner's
+# instruction ("make sure there is no duplicate tools"), and is DEPRECATED.
+# Its outputs, here now: `materials` and `noMaterial` (the same names and
+# types), `volumeM3` (the same, m3). Nothing not carried. One of its defects is
+# NOT carried: it read GetMaterialIds(false) alone - the geometry set - while
+# its purpose said painted finishes were kept, so every painted material was
+# missing from its answer. This card reads both sets.
 
 utterances:
   - how much of each material is there
@@ -123,3 +167,11 @@ utterances:
   - what is the painted area
   - quantities by material
   - a finishes schedule for these
+  # MOVED 2026-11-01 from READ_ELEMENT_MATERIAL, merged into this card.
+  - what material is this
+  - what is it made of
+  - how much concrete is there
+  - what are these made of
+  - material takeoff for these
+  - how much concrete
+  - what material is that

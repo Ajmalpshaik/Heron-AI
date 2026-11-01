@@ -188,7 +188,7 @@ compatibility-note: >
 #   "delete this parameter even though it labels a dimension" -> here, unlabelFirst
 #   "label the width with the Width parameter" -> LABEL_FAMILY_DIMENSION
 #   "add a Width parameter to this family"   -> ADD_FAMILY_PARAMETERS
-#   "clear the value out of this parameter"  -> REMOVE_PARAMETER_VALUE - a
+#   "clear the value out of this parameter"  -> WRITE_ELEMENT_PARAMETERS clear=true - a
 #                                               value on placed elements; the
 #                                               parameter stays
 #   "delete these elements"                  -> DELETE_ELEMENTS

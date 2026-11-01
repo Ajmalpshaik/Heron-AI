@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "write one parameter value onto these elements"
 kind: action
 domain: revit.parameters
 capability: WRITE_ELEMENT_PARAMETERS
-version: 5
+version: 6
 source: OFFICIAL
 risk: MODIFY
 
@@ -54,6 +54,15 @@ purpose: >
 
   **Version 5 takes a material, a level or a family type by name.**
 
+  **Version 6 clears a parameter back to EMPTY** - `clear` true, the value left
+  empty - when REMOVE_PARAMETER_VALUE was merged in. An empty parameter and a
+  zero are not the same thing, so a clear is Revit's own, on every storage
+  kind, and never a 0 written. A text built-in Revit will not clear takes the
+  empty string instead; a type parameter reached from instances is refused,
+  because clearing it empties every other instance too; one already empty is
+  `alreadyEmpty`, and every clear is read back. Version 5's proof no longer
+  describes the code and is kept as a record; DRAFT until it is proved again.
+
   ASSUMES AN OPEN TRANSACTION and does not open one. Golden Rule 16 puts the
   TransactionGroup at the OPERATION, so that one user action is one undo; a
   fragment that opened its own would add a second entry to the undo stack and
@@ -83,9 +92,19 @@ contract:
     - name: parameterName
       type: string
       source: request
+    # The value to write. To CLEAR the parameter instead, leave it empty and
+    # give clear=true (version 6).
     - name: value
       type: string
       source: request
+    - name: clear
+      # Version 6, from REMOVE_PARAMETER_VALUE. True empties the parameter -
+      # Revit's own clear, for a length, a number, a reference or text alike,
+      # never a 0. Left out it is false, a write, as in version 5. Given with a
+      # value as well it is refused, nothing touched.
+      type: bool
+      source: request
+      optional: true
   provides:
     # Written AND read back as the value asked for. Nothing else counts here.
     - name: written
@@ -143,6 +162,16 @@ contract:
       # A sentence about a refusal, never a thing found (D-52).
       role: accounting
       type: IList<string>
+    - name: cleared
+      # Version 6. With clear true: how many were emptied AND read back empty.
+      # Nothing else counts here.
+      role: result
+      type: int
+    - name: alreadyEmpty
+      # Version 6. With clear true: elements whose parameter was ALREADY empty,
+      # so there was nothing to clear. The evidence it looked (D-52).
+      role: accounting
+      type: IList<ElementId>
 
 # VERSION 4's PROOF, KEPT AS A RECORD. Version 5 changed impl/ (row 5b-1259), so
 # its fingerprint no longer describes the code and the card is DRAFT until
@@ -232,10 +261,28 @@ compatibility-note: >
 #                                       parameter and writes no values
 #   "make the new type 300 wide"     -> here, on the type DUPLICATE_TYPE made
 
-#   "clear the value out of this parameter" -> REMOVE_PARAMETER_VALUE - this
-#                                        one takes TEXT, and an empty string
+#   "clear the value out of this parameter" -> here, clear=true and value
+#                                        empty (version 6, REMOVE_PARAMETER_VALUE
+#                                        merged in). An empty value WRITTEN
 #                                        clears a text field but NOT a length,
-#                                        a number or an element reference
+#                                        a number or an element reference;
+#                                        clear=true is Revit's own clear
+#   "empty this field on all of them" / "take the mark off these" -> here, clear=true
+#   "which ones have no value"           -> DESCRIBE_BLANK_PARAMETERS - a READ,
+#                                           and the one to run before clearing
+#                                           anything
+#   "take the section mark off this drawing" -> REPORT_VIEW_REFERENCES - a
+#                                           section mark on a drawing is not
+#                                           the Mark parameter
+#
+# REMOVE_PARAMETER_VALUE WAS MERGED INTO THIS CARD on 2026-11-01, on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. Its outputs, here now: `cleared` (the same int), `alreadyEmpty`
+# (a list of ids here, an int there), and its `refused` sentences split into
+# `absent`, `readOnly`, `ambiguous`, `refused` with a sentence in `findings`
+# each - the summary "N cleared, N already empty" among them. One rule
+# widened, the safer way: a TEXT value that is an empty string is already
+# empty here, where it was cleared again there, and every clear is read back.
 #   "put the room name on all the equipment" -> ASSIGN_LOCATION_DATA - it WORKS
 #                                        OUT a different value per element
 #   "list the rooms and their numbers"   -> REPORT_ROOM_SPACE_DATA
@@ -272,3 +319,9 @@ utterances:
   - untick show clearance
   - untick the parameter on these
   - set the parameter to yes
+  # MOVED 2026-11-01 from REMOVE_PARAMETER_VALUE, merged into this card.
+  - clear the value out of this parameter
+  - empty this field on all of them
+  - take the mark off these
+  - blank this parameter
+  - remove the value from these
