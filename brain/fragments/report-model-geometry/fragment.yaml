@@ -1,0 +1,292 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-076
+semantic-identity: "the model's 3D geometry as triangles in metres, for drawing it in the Companion - the active 3D view or the whole model"
+kind: action
+domain: revit.geometry
+capability: REPORT_MODEL_GEOMETRY
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# Asked for by the owner, Ajmal PS, on 2026-11-01: a 3D view of the model in
+# the Heron Companion's Model Dashboard (docs/40 s21.10-21.12; the plan,
+# docs/work-notes/plans/companion-model-dashboard-2026-11-01.md, phase 6),
+# drawn by Heron's own WebGL renderer from what brain/heron_model_view.py
+# makes of this fragment's geometryJson. Nothing in the library handed back
+# geometry a renderer can draw (heron_retrieve for "model geometry for the
+# dashboard", "show the model in 3D" and "3D view of the model in the
+# companion", and the Matcher, that day):
+#
+#   REPORT_ELEMENT_GEOMETRY      the shape of SELECTED elements in numbers -
+#                                faces, edges, areas, volume, in millimetres.
+#                                The walk through GeometryInstance and the
+#                                skipping of empty solids are its, re-used
+#   REPORT_GEOMETRY_COMPLEXITY   triangles COUNTED per family type, at three
+#                                detail levels, to rank what is heavy.
+#                                Face.Triangulate() is its, re-used, so a
+#                                triangle here is the triangle it counts
+#   REPORT_BOUNDING_BOX          the box only
+#
+# A NEW READ, NOT A WIDENING OF ANY OF THEM. Each answers about a selection
+# with a list a next step can use, and two are PROVEN; this answers about a
+# scope - a view or the model - with a scene for a panel. Widening one to
+# carry triangles would change a proven contract for a job it was not proved
+# on, and make its proof stale.
+#
+# THE ELEMENTS ARE REPORT_MODEL_DASHBOARD's PLACED MODEL ELEMENTS - not a
+# type, a MODEL category, not view-specific, with an extent, not a Level -
+# less five kinds this leaves out on purpose, each counted:
+#   * a Revit link placement - another model; named in notRead with how many
+#   * a CAD import or link - named in notRead with how many
+#   * rooms, spaces and areas - volumes Revit does not draw in 3D; named in
+#     notRead with how many
+#   * a model group and an assembly - their members are elements of their
+#     own and are drawn as themselves, so the group is not drawn twice
+#
+# THE SCOPE. Left out, wholeModel is false (HeronBindingNote.AbsentValue):
+# with a 3D view active, only what that view can show is read -
+# FilteredElementCollector(doc, view) and Options.View, so its hidden
+# categories, hidden elements, filters, phase and design options are the
+# view's - and anything wholly outside its section box is left out by this
+# fragment as well, because Revit's own collector may pass it (its API notes
+# say so of a crop). The view's OWN detail level is used: Revit refuses an
+# Options with both View and DetailLevel set (RevitAPI.xml, both members).
+# With no 3D view active, or wholeModel true, the whole model is read at
+# Coarse; the first case says so in notRead.
+#
+# A PIPE OR DUCT AT COARSE IS A LINE, SO IT IS READ AGAIN AT FINE. Revit draws
+# a pipe as one line at Coarse and Medium, and a duct at Coarse, and the
+# geometry handed back at that level is expected to be that line - nothing to
+# triangulate (not measured here; the NEEDS-CHECKING group's positive row
+# shows it either way). An element whose geometry at the first detail level
+# is only lines is read once more at Fine and drawn as its solid; findings
+# counts them. An element with no lines and no surfaces at the first level is
+# not read again - it is simply not shown at that level.
+#
+# THE TRIANGLE BUDGET IS ALSO THE TIME BUDGET. Elements are read largest
+# first, by the diagonal of their extent, so a capped answer still shows the
+# building's big pieces. The first element that would carry the total past
+# maxTriangles is left out, and every element after it is left out WITHOUT
+# being read - leftOut counts them, and capped says so. Reading stops there,
+# which is what keeps a large model inside the run's time.
+#
+# REFUSED BEFORE ANYTHING IS READ, as SELECT_BY_PARAMETER_VALUE refuses a mode
+# it does not know: a category name that is not a BuiltInCategory this
+# release has (named, with how to spell one), and maxTriangles above 500000
+# or below 1 (the limit named). A model category asked for that the scope
+# holds none of is not refused: findings says so.
+#
+# ONE STRING, BECAUSE A LIST CROSSES AS ITS FIRST THREE ITEMS (FRAGMENT-ISSUES
+# 5b-195), as REPORT_MODEL_DASHBOARD's dashboardJson.
+purpose: >
+  Reads the model's 3D geometry and hands it back as triangles in metres, for
+  the Heron Companion to draw: what the active 3D view shows - its section
+  box, hidden categories and hidden elements honoured - or the whole model.
+  Each element is its own entry with its category, so the drawing can be
+  coloured and picked by category. A triangle budget keeps the answer small;
+  the largest elements are drawn first and what was left out is counted.
+
+  **It changes nothing.** Linked models, CAD files, rooms and spaces are not
+  drawn, and the answer says how many were left out and why.
+
+# THE SHAPE OF geometryJson, FORMAT 1 - read by brain/heron_model_view.py,
+# which is the other half of this contract. Element ids are digit strings.
+#
+#   format        1
+#   scope         "active 3D view '<name>'" or "whole model" - as the modeller
+#                 reads it
+#   units         "m"
+#   offset        [x, y, z] in metres, to the millimetre: the centre of the
+#                 box round every vertex drawn, already SUBTRACTED from every
+#                 vertex so the numbers stay small. [0, 0, 0] when nothing is
+#                 drawn. Add it back for project coordinates (internal origin)
+#   categories    [name] - each category with an element drawn, as Revit
+#                 shows its name (localised), sorted by name
+#   elements      [{id, c, v, t}] - one per element drawn. id: the element id,
+#                 digits. c: its index in categories. v: x,y,z, x,y,z, ... in
+#                 metres after offset, to 0.001 - each point once per element
+#                 (shared at the millimetre). t: i,j,k, ... indexes into v's
+#                 POINTS (point n is v[3n..3n+2]); a triangle collapsed to a
+#                 line at the millimetre is dropped. [] when nothing is drawn
+#                 - never null
+#   triangles     the sum of t's lengths / 3 - the `triangles` result too
+#   elementsRead  the model elements in scope. Each is drawn, or counted in
+#                 noGeometry, or counted in leftOut:
+#                 len(elements) + noGeometry + leftOut = elementsRead
+#   noGeometry    looked at, nothing to draw - no surface at either detail
+#                 level, or its geometry would not read (then also a
+#                 "geometry:" line in notRead)
+#   leftOut       not drawn because the triangle budget was reached - the
+#                 first that would not fit and every one after it, not read
+#   notRead       ["<part>: <why>"] - what was not read and why: "active
+#                 view:", "links:", "CAD:", "rooms and spaces:", "section
+#                 box:", "categories:", "geometry:", "faces:". [] when nothing
+#   capped        ["triangles: the budget of N was reached; M element(s) left
+#                 out - the largest were drawn first"], or []
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # BuiltInCategory names, comma separated - "OST_Walls, OST_DuctCurves".
+    # Capitals are forgiven. A name this release does not have REFUSES the
+    # whole call, naming it - nothing is read. Left out it is "all" (`absent:
+    # all`, HeronBindingNote.DeclaredAbsent): every model category. An empty
+    # value is the same (EmptyMeansAbsent).
+    - name: categories
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # The most triangles to hand back. Left out it is 150000 (`absent:
+    # 150000`); above 500000, or below 1, REFUSES the call naming the limit.
+    - name: maxTriangles
+      type: int
+      source: request
+      optional: true
+      absent: 150000
+    # true reads the whole model at Coarse whatever view is active. Left out
+    # it is false (HeronBindingNote.AbsentValue): the active view when it is a
+    # 3D view, else the whole model with a notRead line saying so.
+    - name: wholeModel
+      type: bool
+      source: request
+      optional: true
+  provides:
+    # The scene, format 1. ACCOUNTING, not a result, for the reason
+    # REPORT_MODEL_DASHBOARD's dashboardJson is: it is written whatever was
+    # found - an empty section box still gets the format, the scope and
+    # elements [] - so as a result it could never come back empty and the
+    # negative case could never be judged (heron_validate.looks_empty).
+    # `triangles` is the evidence.
+    - name: geometryJson
+      role: accounting
+      type: string
+    # How many triangles were handed back - the JSON's triangles. 0 when the
+    # scope holds nothing to draw: that is the negative case.
+    - name: triangles
+      role: result
+      type: int
+    # A line for the scope and its counts, then what was read again at Fine,
+    # left outside the section box, not read and cut. A string, not a list: a
+    # list crosses as its first three.
+    - name: findings
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read off the shipped assemblies of
+  all eight releases on 2026-11-01 (tools/api-surface --members), each with
+  one signature 2020 to 2027: Document.ActiveView; View3D.IsSectionBoxActive,
+  GetSectionBox and IsPerspective; View.IsTemplate; BoundingBoxXYZ.Min, Max
+  and Transform; Transform.OfPoint; FilteredElementCollector(Document) and
+  (Document, ElementId view), WhereElementIsNotElementType, WherePasses and
+  OfClass; ElementMulticategoryFilter(ICollection<BuiltInCategory>);
+  Category.GetCategory(Document, BuiltInCategory), Id, Name and
+  CategoryType; Element.get_Geometry, get_BoundingBox, ViewSpecific and
+  Category; Options.View, DetailLevel and ComputeReferences (and Revit's
+  note that View and DetailLevel are never both set); GeometryInstance.
+  GetInstanceGeometry(); Solid.Faces; FaceArray.Size; Face.Triangulate();
+  Mesh.Vertices, NumTriangles and get_Triangle; MeshTriangle.get_Index (a
+  uint); PolyLine; and the classes RevitLinkInstance, ImportInstance,
+  SpatialElement, Group and AssemblyInstance. No ElementId is read as a
+  number - each is written with ToString() - and no units API is touched:
+  feet become metres by * 0.3048, exact by definition, at the edge (D-20),
+  so the answer is the same on every release.
+
+# WHAT IT COSTS, AND WHAT BOUNDS IT - read 2026-11-01, NOT YET MEASURED.
+#
+# TIME IS THE LIMIT. The add-in stops a fragment at
+# revit.operationTimeoutSeconds (60 s by default, less a sixth for the
+# rollback - HeronRunClock), and a stopped read hands back nothing. The work
+# is one geometry read per element in scope (two for a pipe or duct at
+# Coarse), one triangulation per face, and one pass to write the JSON. The
+# budget stops the reading once it is reached, so it bounds the triangulation;
+# the scope bounds how many elements are looked at, and every element in
+# scope has its extent read to sort them. The first collector on a view may
+# also make Revit rebuild that view's graphics (its API notes), once.
+#
+# SO THE ACTIVE 3D VIEW IS THE WAY TO KEEP IT SMALL: a section box round the
+# part of the building wanted, or categories hidden, reads only that. The
+# whole model reads every element - several hundred thousand on a large
+# project - and is the case to time first (the NEEDS-CHECKING group has the
+# row); raise the timeout, or narrow by categories, if it stops.
+#
+# THE ANSWER'S SIZE. Every vertex is three numbers of up to a dozen
+# characters and every triangle three indexes: about 30 to 40 bytes a
+# triangle, so the default budget is a string of roughly 5 MB and 500000
+# roughly 17 MB - estimated, not measured. A provided string has no size
+# limit on the way back (RevitFragment.Describe, BridgeServer, the bridge
+# client - REPORT_MODEL_DASHBOARD's notes). ASKED THROUGH revit_read, ALL OF
+# IT IS PRINTED INTO THE CHAT: this is for the Companion's model view, which
+# keeps it for the page, and a chat should ask for a small budget if at all.
+
+# WHAT IT CANNOT SEE.
+#   * Linked models - a link is another model, and its walls, floors and
+#     rooms are its own. On a services model whose building is linked, only
+#     the services are drawn; notRead says how many links were in scope.
+#   * The whole model draws every phase and every design option's elements -
+#     demolished and proposed alike. The active 3D view draws what it shows.
+#   * An element crossing the section box is drawn WHOLE: its geometry is
+#     read, not cut. Whether Revit cuts geometry read through Options.View at
+#     the box is not known here (the NEEDS-CHECKING group asks).
+#   * Temporary hide and isolate: whether the view collector honours them is
+#     not known here either (the same group asks).
+#   * Colour, material and transparency - categories only.
+#   * A pipe or duct drawn as a line at the view's detail is drawn as its
+#     solid, so the Companion shows tubes where a Coarse view shows lines.
+
+# ROUTING - the Companion's own words, and the readers of one element's shape.
+# A sentence about ONE element's shape goes to that element's reader, which
+# answers in numbers; this card hands back a scene to draw.
+#
+#   "show the model in 3D"                 -> here. CREATE_3D_VIEW answered it
+#                                             until 2026-11-01 and makes a NEW
+#                                             Revit view, a MODIFY; the owner
+#                                             asked for these words for the
+#                                             Companion's model view. That
+#                                             fragment carries this row
+#   "make a new 3d view"                   -> CREATE_3D_VIEW - a Revit view
+#   "3D view of the model in the companion" -> here
+#   "model geometry for the dashboard"     -> here, by identity and on the
+#                                             hybrid route; on the keyword
+#                                             route alone REPORT_MODEL_DASHBOARD
+#                                             ranks first (check-routing,
+#                                             2026-11-01). That fragment
+#                                             carries this row
+#   "model dashboard"                      -> REPORT_MODEL_DASHBOARD - counts,
+#                                             not geometry
+#
+# PARAPHRASES THIS CARD TOOK, measured with heron_retrieve.find against a
+# store built without it and one with it, 2026-11-01. Each moved from a
+# fragment that answered it worse, and none onto a write:
+#   "view the model in 3d"      was CREATE_3D_VIEW (MODIFY) -> here
+#   "show the building in 3d"   was REPORT_SPACE_ENVELOPE    -> here
+#   "show the 3d view"          was OPEN_RENDER_DIALOG       -> here. In
+#                               Revit words it may mean "open the {3D}
+#                               view" - OPEN_VIEW's job, which reached it
+#                               neither before nor after; a question for
+#                               the owner, not settled here
+#   "open the 3d view"          stays CREATE_3D_VIEW, as before
+#   "what is this element's geometry"      -> REPORT_ELEMENT_GEOMETRY
+#   "list the edges of this beam"          -> REPORT_ELEMENT_GEOMETRY
+#   "how complex is this family"           -> REPORT_GEOMETRY_COMPLEXITY
+#   "how much geometry does this family carry" -> REPORT_GEOMETRY_COMPLEXITY -
+#                                             triangles counted per type, not
+#                                             handed back
+#   "what is the bounding box of this duct" -> REPORT_BOUNDING_BOX
+#   "export the model to fbx"              -> EXPORT_VIEWS_TO_FBX - a file,
+#                                             PUBLISH
+utterances:
+  - show the model in 3D
+  - 3D view of the model in the companion
+  - model geometry for the dashboard

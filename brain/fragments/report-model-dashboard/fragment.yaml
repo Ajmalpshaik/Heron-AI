@@ -250,6 +250,15 @@ compatibility-note: >
 #   "which rooms are not enclosed"        -> SELECT_UNENCLOSED_ROOMS
 #   "check the model naming conventions"  -> CHECK_MODEL_STANDARDS - rules the
 #                                            project supplies; this has none
+#   "model geometry for the dashboard"    -> REPORT_MODEL_GEOMETRY - the
+#                                            Companion's 3D model view, the
+#                                            dashboard's other read. It wins
+#                                            by identity and on the hybrid
+#                                            route; on the keyword route alone
+#                                            this card ranks above it
+#                                            (check-routing, 2026-11-01) - the
+#                                            word "dashboard" is this card's.
+#                                            That fragment carries this row
 utterances:
   - model dashboard
   - model overview
