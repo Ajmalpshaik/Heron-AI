@@ -1,0 +1,105 @@
+# The proof of LIST_EXPORT_SETUPS (list-export-setups, FRG-DOC-056),
+# MANAGE_EXPORT_SETUPS (manage-export-setups, FRG-DOC-057) and
+# SET_EXPORT_SETUP_OPTIONS (set-export-setup-options, FRG-DOC-058), written
+# 2026-11-01 for FRAGMENT-ISSUES row 5b-1360 - NEEDS-CHECKING Group KA, rows
+# KA1 to KA3. NOT RUN - written and read back with --dry-run only.
+#
+#     python tools/batch-prove.py tools/jobs/export-setups-scratch-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/export-setups-scratch-2026-11-01.yaml
+#
+# WHY. Ajmal PS asked Heron to rename the DWG/DXF export setup "Setup 1" to
+# "Tags Export" on a job model and Heron had nothing that could see an export
+# setup. Research: docs/work-notes/investigations/2026-11-01-export-setups.md.
+#
+# THE MODEL: A NEW PROJECT, NEVER 4355-* nor any project of Ajmal PS's. In
+# Revit 2020: File, New, Project, the default metric template, saved as
+# "Heron Export Setups KA". MAKE THE SETUPS BY HAND FIRST - a setup step that
+# changes the model cannot be given values of its own - in Revit's own dialog,
+# File, Export, Options, Export Setups DWG/DXF:
+#
+#   1. New export setup "HERON KA A": General tab - units Millimeter, Shared
+#      coordinates, file format AutoCAD 2013, "Export views on sheets and
+#      links as external references" ticked. OK
+#   2. New export setup "HERON KA B", left as Revit makes it. OK
+#   3. Save the project, so every run below starts from the same setups
+#
+# `write: true` runs each write leg inside a transaction group and ROLLS IT
+# BACK. Open the DWG/DXF export setups dialog afterwards: HERON KA A and B
+# must be as steps 1 and 2 made them, rather than assuming the rollback held.
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: the expected result filled on the positive, empty on the negative
+#   - NEG NOT EMPTY: the negative found or changed something. A FAIL - every
+#     negative below names a setup that is not there
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   KA1 list, positive (kind dwg): HERON KA A reading "AutoCAD 2013 format,
+#     units Millimeter, Shared coordinates, views on sheets as external
+#     references"; HERON KA B as Revit made it; setupCount the number of
+#     DWG/DXF setups the dialog lists
+#   KA1 list, negative: refused "No DWG export setup called 'ZZZ NO SUCH
+#     SETUP'. The setups there are: ..." naming HERON KA A and B
+#   KA2 manage, positive: done true, kindUsed DWG/DXF found with kind left
+#     out, nowCalled "HERON KA Tags Export", setupsNow without HERON KA A
+#   KA2 manage, negative: refused naming 'ZZZ NO SUCH SETUP' and the setups
+#     there; setupsNow empty; and no "HERON KA X" in the dialog afterwards
+#   KA3 options, positive: changed naming units, fileVersion, coordinates
+#     and externalReferences, each "before -> after"; notKept empty
+#   KA3 options, negative: refused naming 'ZZZ NO SUCH SETUP'; HERON KA B
+#     NOT in millimetres afterwards
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Heron Export Setups KA (a NEW project from Revit 2020's default metric template, setups made by hand as above), Revit 2020
+
+defaults:
+  in: "Heron Export Setups KA"
+  setup: []
+
+jobs:
+  - fragment: list-export-setups
+    write: false
+    expect: setups
+    set:
+      kind: "dwg"
+      setupName: "all"
+    negative-set:
+      kind: "dwg"
+      setupName: "ZZZ NO SUCH SETUP"
+    note: >
+      KA1. Every DWG/DXF setup and its options. The negative names a setup
+      that is not there, and must list nothing.
+
+  - fragment: manage-export-setups
+    write: true
+    expect: done
+    set:
+      setupName: "HERON KA A"
+      mode: "rename"
+      newName: "HERON KA Tags Export"
+      kind: "any"
+    negative-set:
+      setupName: "ZZZ NO SUCH SETUP"
+      mode: "rename"
+      newName: "HERON KA X"
+      kind: "any"
+    note: >
+      KA2. The job Ajmal PS asked for on 2026-11-01, on a scratch project:
+      rename a DWG/DXF export setup, its kind found by name. The negative
+      names a setup that is not there and must rename nothing.
+
+  - fragment: set-export-setup-options
+    write: true
+    expect: changed
+    set:
+      setupName: "HERON KA B"
+      options: "units=mm; fileVersion=2013; coordinates=shared; externalReferences=yes"
+      kind: "dwg"
+    negative-set:
+      setupName: "ZZZ NO SUCH SETUP"
+      options: "units=mm; fileVersion=2013; coordinates=shared; externalReferences=yes"
+      kind: "dwg"
+    note: >
+      KA3. Four options changed together on a setup as Revit made it. The
+      negative names a setup that is not there and must change nothing.

@@ -73,8 +73,19 @@ contract:
   needs:
     - name: doc
       type: Document
+    # OPTIONAL SINCE 2026-11-01 (FRAGMENT-ISSUES row 5b-1361). Rename and
+    # delete never read it, and Ajmal PS had to run a sheet selection first,
+    # on 4355-BHVD-3D-50S20-BL001A, only so the binder would let them run.
+    # Marked optional, an element list nothing filled binds EMPTY
+    # (HeronBindingNote.EmptyWhenAbsent) - and every mode that reads it already
+    # refuses an empty list: create "No views or sheets to put in the set." (the
+    # proven negative), add and remove "No views or sheets were given". The
+    # contract only: impl/ is untouched, so the proof's fingerprint holds.
+    # Whether rename and delete now bind with nothing selected is NEEDS-CHECKING
+    # Group KA, row KA11.
     - name: elements
       type: IList<Element>
+      optional: true
     - name: setName
       type: string
       source: request

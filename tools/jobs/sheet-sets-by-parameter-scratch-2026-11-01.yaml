@@ -1,0 +1,77 @@
+# The proof of SYNC_SHEET_SETS_BY_PARAMETER (sync-sheet-sets-by-parameter,
+# FRG-SHT-034) and CHECK_SHEET_SETS_BY_PARAMETER (check-sheet-sets-by-parameter,
+# FRG-SHT-035), written 2026-11-01 for FRAGMENT-ISSUES row 5b-1361 -
+# NEEDS-CHECKING Group KA, rows KA12 and KA13. NOT RUN - written and read back
+# with --dry-run only.
+#
+#     python tools/batch-prove.py tools/jobs/sheet-sets-by-parameter-scratch-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/sheet-sets-by-parameter-scratch-2026-11-01.yaml
+#
+# WHY. Ajmal PS keeps one View/Sheet Set per value of his sheet parameter
+# "TCM_Project Browser 1", and made them one MANAGE_SHEET_SETS call and one
+# sheet selection at a time. Research:
+# docs/work-notes/investigations/2026-11-01-export-setups.md, section 6.
+#
+# THE MODEL: A NEW PROJECT, NEVER 4355-* nor any project of Ajmal PS's. In
+# Revit 2020: File, New, Project, the default metric template, saved as
+# "Heron Sheet Sets KA". Made by hand first:
+#
+#   1. Manage, Project Parameters: a Text parameter "HERON Browser 1", instance,
+#      category Sheets
+#   2. Six sheets A101 to A106. HERON Browser 1: A101, A102, A103
+#      "01_IAB-ISSUED AS-BUILT"; A104, A105 "02_IFI-ISSUED FOR INFORMATION";
+#      A106 left empty
+#   3. No View/Sheet Set saved. File, Print: Print Range "Current window", Close
+#   4. Save the project
+#
+# `write: true` runs the sync inside a transaction group and ROLLS IT BACK.
+# The print manager is not transactional: open File, Print afterwards - the
+# range must read Current window and no set may be listed, rather than
+# assuming the rollback held.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   KA12 sync, positive: created "'01_IAB-ISSUED AS-BUILT' (3);
+#     '02_IFI-ISSUED FOR INFORMATION' (2)", printRange put back to Current
+#     window, A106 in neither
+#   KA12 sync, negative: refused naming 'ZZZ NO SUCH PARAMETER', nothing made
+#   KA13 check, positive (the project as saved, no set): both values in
+#     missingSets, every row NO SET
+#   KA13 check, negative: refused naming 'ZZZ NO SUCH PARAMETER'
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Heron Sheet Sets KA (a NEW project from Revit 2020's default metric template, made by hand as above), Revit 2020
+
+defaults:
+  in: "Heron Sheet Sets KA"
+  setup: []
+
+jobs:
+  - fragment: sync-sheet-sets-by-parameter
+    write: true
+    expect: created
+    set:
+      parameterName: "HERON Browser 1"
+      setPrefix: "none"
+      values: "all"
+    negative-set:
+      parameterName: "ZZZ NO SUCH PARAMETER"
+      setPrefix: "none"
+      values: "all"
+    note: >
+      KA12. One set per value, in one call. The negative names a parameter no
+      sheet has, and must make nothing.
+
+  - fragment: check-sheet-sets-by-parameter
+    write: false
+    expect: missingSets
+    set:
+      parameterName: "HERON Browser 1"
+      setPrefix: "none"
+    negative-set:
+      parameterName: "ZZZ NO SUCH PARAMETER"
+      setPrefix: "none"
+    note: >
+      KA13. The project as saved has no set, so both values are missing. The
+      negative names a parameter no sheet has.
