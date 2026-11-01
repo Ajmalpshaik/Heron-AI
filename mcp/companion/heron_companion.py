@@ -1266,6 +1266,70 @@ class LayoutPanel(object):
 LAYOUT_PANEL = LayoutPanel()
 
 
+class DashboardPanel(object):
+    """
+    The Model Dashboard a chat opens with revit_model_dashboard (docs/40
+    section 21.10) - one read of the model, the newest replacing the last.
+
+    IT HOLDS DATA AND CALLS ONE HOOK - NOTHING ELSE (README rule 4). Every
+    tile, bar, colour and line on it was made in brain/
+    (heron_model_dashboard). Refresh is the modeller's own press: it calls
+    refresh_hook, which READS the model again under the chat's lock and pin
+    and puts the new read here - never a timer, so the page never asks Revit
+    by itself (README rule 3). One refresh at a time; a second press while
+    one runs is told so and sends nothing. It writes nothing to Revit, so it
+    has no COMPANION_ACTIONS row. With no hook set, Refresh answers that the
+    chat is gone and does nothing.
+    """
+
+    GONE = LoadsPanel.GONE
+    BUSY = "the model is already being read for the dashboard - wait for that read to finish"
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._held = None
+        self._busy = False
+        #: Set by the MCP server. refresh_hook() -> {"ok", "said"}; it calls
+        #: open() itself when the read is good.
+        self.refresh_hook = None
+
+    def open(self, document, answer, identity=None):
+        board = answer.get("dashboard") or {}
+        with self._lock:
+            self._held = {
+                "document": document, "at": time.strftime("%H:%M:%S"),
+                "identity": list(identity) if identity else None,
+                "model": board.get("model") or {}, "tiles": board.get("tiles") or [],
+                "charts": board.get("charts") or [], "look": board.get("look") or [],
+                "notRead": board.get("notRead") or [], "states": board.get("states") or [],
+                "said": answer.get("said")}
+
+    def current(self):
+        with self._lock:
+            if not self._held:
+                return None
+            held = dict(self._held, busy=self._busy)
+        return json.loads(json.dumps(held))
+
+    def refresh(self):
+        hook = self.refresh_hook
+        if hook is None:
+            return {"ok": False, "said": "Not read: %s." % self.GONE}
+        with self._lock:
+            if self._busy:
+                return {"ok": False, "said": "Not read: %s." % self.BUSY}
+            self._busy = True
+        try:
+            got = hook() or {}
+        finally:
+            with self._lock:
+                self._busy = False
+        return {"ok": bool(got.get("ok")), "said": got.get("said") or ""}
+
+
+DASHBOARD_PANEL = DashboardPanel()
+
+
 def companion_dir():
     """Where each chat leaves the note the Companion button in Revit reads -
     HeronPaths.Companion, mirrored (D-109). Under the temporary folder since
@@ -1770,6 +1834,11 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             if why:
                 return self._refuse(403, why)
             return self._json(200, {"ok": True, "layout": LAYOUT_PANEL.current()})
+        if path == "/api/dashboard":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, {"ok": True, "dashboard": DASHBOARD_PANEL.current()})
         if path.startswith("/report/"):
             return self._report_file(path)
         return self._refuse(404, "not found")
@@ -1861,6 +1930,11 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             if path.endswith("/preview"):
                 return self._json(200, LAYOUT_PANEL.preview(body))
             return self._json(200, LAYOUT_PANEL.place(body))
+        if path == "/api/dashboard/refresh":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, DASHBOARD_PANEL.refresh())
         if path == "/api/changes/clear":
             why = self._api_ok()
             if why:

@@ -3904,6 +3904,78 @@ def revit_sprinkler_layout(spaces: str = "", inputs: str = "", ctx: _Context = N
     return answer["said"]
 
 
+def _read_dashboard(companion_page, origin="chat", ctx=None):
+    """
+    One read of the model for the Model Dashboard (docs/40 s21.10): READ
+    REPORT_MODEL_DASHBOARD through revit_read - no transaction, the chat's
+    lock and pin - make the panel in the brain, and put it on the page.
+    Returns (ended, said): how it ended, as revit_read's endings are labelled
+    (row 5b-389), and the sentence to give.
+    """
+    out = {}
+    said = _through(revit_read, reply_out=out, origin=origin)(
+        "REPORT_MODEL_DASHBOARD", "", "", ctx=ctx)
+    reply = out.get("reply")
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return out.get("ended"), said
+    # THE PIN'S REFUSAL STANDS, as in revit_building_loads: a good read of
+    # ANOTHER model must never be shown as this chat's model.
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return "refused", wrong_model
+    provides = reply.get("provides") or {}
+    try:
+        answer = brain.model_dashboard(provides.get("dashboardJson") or "")
+    except brain.BrainUnavailable as why:
+        return "failed", str(why)
+    if answer.get("dashboard") is None:
+        return "failed", answer["said"]
+    companion_page.DASHBOARD_PANEL.open(reply.get("document"), answer, _pin_identity())
+    return "ok", answer["said"]
+
+
+@server.tool()
+def revit_model_dashboard(ctx: _Context = None) -> str:
+    """
+    Open the Model Dashboard in the Heron Companion: element counts by
+    category, level and workset, warnings by kind, views, sheets, families,
+    links, CAD and rooms - and the things worth a look, each with its element
+    ids. Heron reads the model once (REPORT_MODEL_DASHBOARD, which changes
+    nothing). Use when the user asks for a "model dashboard", "model
+    overview" or "how is this model doing". You are told one line; the
+    charts and lists are on the page, and its Refresh reads the model again.
+    It counts what the model holds and never calls a model compliant.
+    """
+    companion_page = _companion_module()
+    if not companion_page.enabled():
+        _ended("refused")
+        return ("The Heron Companion is switched off in Revit, so the model was not read. "
+                "To turn it on, click the arrow under the Companion button on the "
+                "Heron tab.")
+    ended, said = _read_dashboard(companion_page, ctx=ctx)
+    if ended != "ok":
+        return _ended(ended, said)
+    _ended("ok")
+    _open_companion(companion_page)
+    return said
+
+
+def _dashboard_refresh():
+    """
+    The Model Dashboard's Refresh, pressed on the page: the same read as
+    revit_model_dashboard, from the page's thread, under the lock every tool
+    call holds. Returns {"ok", "said"}. Never on a timer (Companion README
+    rule 3) - only when the modeller presses it.
+    """
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    companion_page = _companion_module()
+    with _revit_lock:
+        ended, said = _read_dashboard(companion_page, origin="companion")
+    _note("companion_dashboard", started, time.time() - clock, reply=said,
+          outcome=None if ended == "ok" else "refused")
+    return {"ok": ended == "ok", "said": said}
+
+
 @server.tool()
 def revit_use_this_model() -> str:
     """
@@ -7243,6 +7315,7 @@ if __name__ == "__main__":
             companion_page.SPRINKLER_PANEL.report_hook = _sprinkler_report
             companion_page.LAYOUT_PANEL.preview_hook = _sprinkler_layout_preview
             companion_page.LAYOUT_PANEL.place_hook = _sprinkler_layout_place
+            companion_page.DASHBOARD_PANEL.refresh_hook = _dashboard_refresh
             companion_page.keep(bound_pid=_companion_revit)
         except Exception as why:                         # noqa: BLE001 - never cost the chat
             sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)

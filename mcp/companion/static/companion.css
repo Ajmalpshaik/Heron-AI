@@ -596,11 +596,11 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
 :is(#loads, #sprinkler, #layout) .small { font-size: 12.5px; }
 
 /* Model, read, calculated - one quiet line. */
-:is(#loads, #sprinkler, #layout) .l-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 20px; margin: 0 0 14px; font-size: 12.5px; }
-:is(#loads, #sprinkler, #layout) .l-meta-item { display: inline-flex; gap: 6px; align-items: baseline; min-width: 0; }
-:is(#loads, #sprinkler, #layout) .l-meta-label { color: var(--faint); }
-:is(#loads, #sprinkler, #layout) .l-meta-value { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-:is(#loads, #sprinkler, #layout) .l-meta-note { flex-basis: 100%; color: var(--faint); font-size: 12px; }
+:is(#loads, #sprinkler, #layout, #dashboard) .l-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 20px; margin: 0 0 14px; font-size: 12.5px; }
+:is(#loads, #sprinkler, #layout, #dashboard) .l-meta-item { display: inline-flex; gap: 6px; align-items: baseline; min-width: 0; }
+:is(#loads, #sprinkler, #layout, #dashboard) .l-meta-label { color: var(--faint); }
+:is(#loads, #sprinkler, #layout, #dashboard) .l-meta-value { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+:is(#loads, #sprinkler, #layout, #dashboard) .l-meta-note { flex-basis: 100%; color: var(--faint); font-size: 12px; }
 
 /* The four steps, each with its own button. */
 :is(#loads, #sprinkler, #layout) .l-steps {
@@ -635,7 +635,7 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
 @media (max-width: 560px) { :is(#loads, #sprinkler, #layout) .l-steps { grid-template-columns: minmax(0, 1fr); } }
 
 /* The panel's buttons: one look for the lite ones, the page's own for Finalize. */
-:is(#loads, #sprinkler, #layout) .btn, :is(#loads, #sprinkler, #layout) .btn-lite {
+:is(#loads, #sprinkler, #layout, #dashboard) .btn, :is(#loads, #sprinkler, #layout, #dashboard) .btn-lite {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   min-height: 32px; padding: 5px 12px; border-radius: 7px;
   font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer;
@@ -645,7 +645,7 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
 :is(#loads, #sprinkler, #layout) .btn-lite:hover:not(:disabled) { background: var(--head); border-color: var(--faint); }
 :is(#loads, #sprinkler, #layout) .btn-lite:disabled { background: var(--head); color: var(--faint); border-color: var(--line); cursor: default; }
 :is(#loads, #sprinkler, #layout) .btn .ico, :is(#loads, #sprinkler, #layout) .btn-lite .ico { width: 15px; height: 15px; }
-@media (pointer: coarse) { :is(#loads, #sprinkler, #layout) .btn, :is(#loads, #sprinkler, #layout) .btn-lite { min-height: 44px; } }
+@media (pointer: coarse) { :is(#loads, #sprinkler, #layout, #dashboard) .btn, :is(#loads, #sprinkler, #layout, #dashboard) .btn-lite { min-height: 44px; } }
 :is(#loads, #sprinkler, #layout) #l-said { display: block; margin: 10px 0 0; }
 
 /* The building's figures. */
@@ -818,3 +818,45 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
 #layout .y-fail { fill: #c0392b; }
 #layout .l-table td input.y-wide, #layout .l-table td select.y-wide { width: 260px; max-width: 100%; }
 #layout .l-table td select.y-mid { width: 180px; max-width: 100%; }
+
+/* ------------------------------------------------------------ Model Dashboard (docs/40 s21.10)
+   Bar and state colours come from the brain; these rules only lay them out. */
+#dashboard .d-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 14px; }
+#dashboard .d-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin: 0 0 14px; }
+#dashboard .d-tile {
+  display: flex; flex-direction: column; gap: 2px; padding: 10px 12px;
+  background: var(--surface-2); border: 1px solid var(--line); border-left: 4px solid var(--faint); border-radius: 8px;
+}
+#dashboard .d-tile-label { font-size: 12px; color: var(--muted); }
+#dashboard .d-tile-value { font-size: 22px; font-weight: 650; color: var(--ink); font-variant-numeric: tabular-nums; }
+#dashboard .d-tile-note { font-size: 12px; color: var(--faint); overflow-wrap: anywhere; }
+#dashboard .d-notread {
+  margin: 0 0 14px; padding: 8px 12px; font-size: 12.5px; border-radius: 8px;
+  background: var(--warn-bg); border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent);
+}
+#dashboard .d-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin: 0 0 16px; }
+#dashboard .d-chart { margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+#dashboard .d-chart-title { font-size: 12.5px; font-weight: 650; color: var(--muted); margin: 0 0 8px; }
+#dashboard .d-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+#dashboard .d-bar { display: grid; grid-template-columns: minmax(90px, 38%) minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 12.5px; }
+#dashboard .d-bar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+#dashboard .d-bar-track { height: 10px; background: var(--head); border-radius: 5px; overflow: hidden; }
+#dashboard .d-bar-fill { display: block; height: 100%; border-radius: 5px; }
+#dashboard .d-bar-value { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 3ch; text-align: right; }
+#dashboard .d-sub { font-size: 13px; font-weight: 650; margin: 0 0 8px; color: var(--ink); }
+#dashboard .d-look-list { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 8px; }
+#dashboard .d-look-row {
+  padding: 9px 12px; border: 1px solid var(--line); border-left: 4px solid var(--faint); border-radius: 8px; background: var(--surface-2);
+}
+#dashboard .d-look-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+#dashboard .d-look-title { font-weight: 600; color: var(--ink); }
+#dashboard .d-look-count { font-weight: 650; font-variant-numeric: tabular-nums; color: var(--ink); }
+#dashboard .d-look-why, #dashboard .d-look-where { margin: 3px 0 0; font-size: 12.5px; color: var(--muted); }
+#dashboard .d-look-where { color: var(--faint); }
+#dashboard .d-look-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; margin-top: 6px; }
+#dashboard .d-look-names { font-size: 12.5px; color: var(--muted); }
+#dashboard .d-look-names summary { cursor: pointer; }
+#dashboard .d-look-names ul { margin: 4px 0 0; padding-left: 18px; max-height: 180px; overflow: auto; }
+#dashboard .d-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--faint); }
+#dashboard .d-legend li { display: inline-flex; gap: 6px; align-items: center; }
+#dashboard .d-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }

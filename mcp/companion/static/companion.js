@@ -1529,6 +1529,205 @@ async function loads_() {
   } catch (e) { /* the state poll reports a closed page */ }
 }
 
+// ---------------------------------------------------------------- dashboard
+// The Model Dashboard (docs/40 s21.10). Every tile, bar, colour and line was
+// made by Heron's brain (heron_model_dashboard); the page only draws them.
+// Refresh is the modeller's own press - the page never reads Revit by itself.
+// Model text goes on the page with textContent only. Nothing here writes to
+// Revit: Copy IDs puts the ids on the clipboard for Revit's Select by ID.
+
+let dashShown = null;
+let dashBusy = false;
+const HEX = /^#[0-9a-fA-F]{6}$/;
+
+function dashColour(c, fallback) { return HEX.test(String(c || "")) ? c : fallback; }
+
+async function dashRefresh(button, said) {
+  if (dashBusy) return;
+  dashBusy = true;
+  button.disabled = true;
+  said.className = "result";
+  said.textContent = "Reading the model in Revit…";
+  try {
+    const res = await fetch("/api/dashboard/refresh", {
+      method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
+      credentials: "same-origin",
+      body: "{}",
+    });
+    const answer = await res.json();
+    said.className = answer.ok ? "result ok" : "result failed";
+    said.textContent = answer.said || answer.error || (answer.ok ? "Read." : "Not read.");
+  } catch (e) {
+    said.className = "result failed";
+    said.textContent = "The page could not reach Heron. Nothing was read or changed.";
+  }
+  const kept = { cls: said.className, text: said.textContent };
+  dashBusy = false;
+  dashShown = null;
+  await dashboard_();
+  const after = $("d-said");
+  if (after) { after.className = kept.cls; after.textContent = kept.text; }
+}
+
+async function copyIds(ids, button) {
+  // Semicolons: what Revit's Manage > Inquiry > Select by ID takes.
+  const text = ids.join(";");
+  let done = false;
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      done = true;
+    }
+  } catch (e) { done = false; }
+  if (!done) {
+    const area = el("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.append(area);
+    area.select();
+    try { done = document.execCommand("copy"); } catch (e) { done = false; }
+    area.remove();
+  }
+  const was = button.textContent;
+  button.textContent = done ? "Copied - paste in Select by ID" : "Could not copy";
+  setTimeout(() => { button.textContent = was; }, 2200);
+}
+
+function dashTiles(D, colours) {
+  const grid = el("div", "d-tiles");
+  (D.tiles || []).forEach(t => {
+    const tile = el("div", "d-tile");
+    tile.style.borderLeftColor = dashColour(colours[t.state], "#7a8796");
+    tile.title = t.state === "not read" ? "Not read from the model" : "";
+    tile.append(el("span", "d-tile-label", t.label),
+                el("span", "d-tile-value", t.value == null ? "—" : num(t.value, 0)),
+                el("span", "d-tile-note", t.note || ""));
+    grid.append(tile);
+  });
+  return grid;
+}
+
+function dashChart(c) {
+  const box = el("figure", "d-chart");
+  box.append(el("figcaption", "d-chart-title", c.title));
+  const most = Math.max(1, ...(c.bars || []).map(b => Number(b.value) || 0));
+  const list = el("ol", "d-bars");
+  (c.bars || []).forEach(b => {
+    const li = el("li", "d-bar");
+    const label = el("span", "d-bar-label", b.label);
+    label.title = b.label;
+    const track = el("span", "d-bar-track");
+    const fill = el("i", "d-bar-fill");
+    fill.style.width = Math.max(1, Math.round(100 * (Number(b.value) || 0) / most)) + "%";
+    fill.style.background = dashColour(b.colour, "#4f7fd1");
+    track.append(fill);
+    li.append(label, track, el("span", "d-bar-value", num(b.value, 0)));
+    list.append(li);
+  });
+  box.append(list);
+  return box;
+}
+
+function dashLook(D, colours) {
+  const sec = el("section", "d-look");
+  sec.append(el("h3", "d-sub", "Worth a look"));
+  const list = el("ol", "d-look-list");
+  (D.look || []).forEach(r => {
+    const li = el("li", "d-look-row");
+    li.style.borderLeftColor = dashColour(colours[r.state], "#7a8796");
+    const head = el("div", "d-look-head");
+    head.append(el("span", "d-look-title", r.title),
+                el("span", "d-look-count", r.count == null ? "not read" : num(r.count, 0)));
+    li.append(head, el("p", "d-look-why", r.why));
+    if (r.where) li.append(el("p", "d-look-where", "In Revit: " + r.where));
+    const tools = el("div", "d-look-tools");
+    if ((r.ids || []).length) {
+      const copy = el("button", "btn-lite", "Copy " + r.ids.length + " ID(s)");
+      copy.type = "button";
+      copy.title = "Copy the element ids for Manage > Inquiry > Select by ID in Revit";
+      copy.addEventListener("click", () => copyIds(r.ids, copy));
+      tools.append(copy);
+    }
+    if ((r.names || []).length) {
+      const more = el("details", "d-look-names");
+      more.append(el("summary", null, r.names.length + " name(s)"));
+      const ul = el("ul");
+      r.names.slice(0, 50).forEach(n => ul.append(el("li", null, n)));
+      if (r.names.length > 50) ul.append(el("li", "muted", "… and " + (r.names.length - 50) + " more"));
+      more.append(ul);
+      tools.append(more);
+    }
+    if (tools.childNodes.length) li.append(tools);
+    list.append(li);
+  });
+  sec.append(list);
+  return sec;
+}
+
+function renderDashboard(D) {
+  const box = $("d-box");
+  box.replaceChildren();
+  $("d-empty").hidden = !!D;
+  if (!D) return;
+  const colours = {};
+  (D.states || []).forEach(s => { colours[s.key] = s.colour; });
+  const meta = el("div", "l-meta");
+  [["Model", D.document || (D.model && D.model.title) || "—"], ["Read from Revit", D.at || "—"]]
+    .forEach(([k, v]) => {
+      const item = el("span", "l-meta-item");
+      item.append(el("span", "l-meta-label", k), el("span", "l-meta-value", v));
+      meta.append(item);
+    });
+  meta.append(el("span", "l-meta-note", "Counts of what the model holds - never a verdict. Nothing here changes the model."));
+  const tools = el("div", "d-tools");
+  const refresh = el("button", "btn", D.busy ? "Reading…" : "Refresh");
+  refresh.type = "button";
+  refresh.disabled = !!D.busy;
+  refresh.title = "Read the model in Revit again - nothing in it changes";
+  const said = el("p", "result");
+  said.id = "d-said";
+  said.setAttribute("role", "status");
+  said.setAttribute("aria-live", "polite");
+  refresh.addEventListener("click", () => dashRefresh(refresh, said));
+  tools.append(refresh, said);
+  box.append(meta, tools, dashTiles(D, colours));
+  if ((D.notRead || []).length) {
+    const nr = el("div", "d-notread");
+    nr.append(el("strong", null, "Not read from the model: "));
+    nr.append(el("span", null, D.notRead.join(" · ")));
+    box.append(nr);
+  }
+  const charts = el("div", "d-charts");
+  (D.charts || []).forEach(c => charts.append(dashChart(c)));
+  box.append(charts, dashLook(D, colours));
+  const legend = el("ul", "d-legend");
+  (D.states || []).forEach(s => {
+    const li = el("li");
+    const sw = el("i", "d-swatch");
+    sw.style.background = dashColour(s.colour, "#7a8796");
+    li.append(sw, el("span", null, s.means));
+    legend.append(li);
+  });
+  box.append(legend);
+}
+
+async function dashboard_() {
+  if (dashBusy) return;
+  try {
+    const res = await fetch("/api/dashboard", { headers: HEADER, credentials: "same-origin" });
+    if (!res.ok) return;
+    const D = (await res.json()).dashboard;
+    const key = D ? D.at + "/" + (D.document || "") + "/" + (D.busy ? "b" : "") : "none";
+    if (key === dashShown) return;
+    dashShown = key;
+    $("dashboard").hidden = !D;
+    renderDashboard(D);
+  } catch (e) { /* the state poll reports a closed page */ }
+}
+
 // ---------------------------------------------------------------- sprinkler
 // The Sprinkler panel (docs/46 section 7). Every number, question, offer and
 // colour on it was worked out by Heron's brain; the page only shows them,
@@ -2300,6 +2499,7 @@ async function poll() {
     show(body.state);
     activity();
     if (SHOW_CHANGES) changes();
+    dashboard_();
     table_();
     loads_();
     sprinkler_();
