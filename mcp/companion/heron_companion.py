@@ -83,6 +83,8 @@ PAGES = {
     "/loads3d.js": ("loads3d.js", "text/javascript; charset=utf-8"),
     # The Sprinkler panel's 3D view - pipes as lines, heads as dots (docs/46).
     "/sprinkler3d.js": ("sprinkler3d.js", "text/javascript; charset=utf-8"),
+    # The Model Dashboard's 3D view - Heron's own WebGL, no library (docs/40 s21.13).
+    "/model3d.js": ("model3d.js", "text/javascript; charset=utf-8"),
     "/companion.css": ("companion.css", "text/css; charset=utf-8"),
 }
 
@@ -1301,6 +1303,13 @@ class DashboardPanel(object):
         #: colour_hook(parameter, clear, identity) -> {"ok", "said"} - a change
         #: to the active view's graphics through revit_change (docs/40 s21.14).
         self.colour_hook = None
+        #: load3d_hook(whole) -> {"ok", "said"}; it calls set_view() itself
+        #: when the read is good (docs/40 s21.13). The geometry is held apart
+        #: from the rest: it can be megabytes, and the page fetches it only
+        #: when it changes.
+        self.load3d_hook = None
+        self._view = None
+        self._view_ids = frozenset()
 
     def open(self, document, answer, identity=None, parameters="", board=""):
         built = answer.get("dashboard") or {}
@@ -1323,7 +1332,49 @@ class DashboardPanel(object):
             if not self._held:
                 return None
             held = dict(self._held, busy=self._busy)
+            view = self._view
+            if view:
+                held["view3d"] = {k: view.get(k) for k in (
+                    "key", "scope", "legend", "drawn", "triangles", "leftOut", "noGeometry", "stopped",
+                    "notRead", "capped", "said")}
         return json.loads(json.dumps(held))
+
+    def set_view(self, answer, identity=None):
+        """Hold a 3D read (brain/heron_model_view's answer) for the page."""
+        built = answer.get("view") or None
+        with self._lock:
+            if built is None:
+                self._view, self._view_ids = None, frozenset()
+                return
+            self._view = dict(built, key=time.strftime("%H:%M:%S") + "/%d" % built.get("drawn", 0),
+                              identity=list(identity) if identity else None)
+            self._view_ids = frozenset(str(e.get("id")) for e in built.get("elements") or [])
+
+    def view(self):
+        """The 3D view's data, drawn by the page (static/model3d.js), made in brain/."""
+        with self._lock:
+            return self._view
+
+    def load3d(self, body=None):
+        """Read the model's shapes for the 3D view - the active 3D view, or the
+        whole model with {"whole": true}. The modeller's own press, one read at a time."""
+        hook = self.load3d_hook
+        if hook is None:
+            return {"ok": False, "said": "Not read: %s." % self.GONE}
+        whole = bool(isinstance(body, dict) and body.get("whole") is True)
+        with self._lock:
+            if self._busy:
+                return {"ok": False, "said": "Not read: %s." % self.BUSY}
+            if self._held and self._held.get("demo"):
+                return {"ok": False, "said": "Not read: the dashboard shows the DEMO. Ask the chat "
+                                             "for a model dashboard first."}
+            self._busy = True
+        try:
+            got = hook(whole) or {}
+        finally:
+            with self._lock:
+                self._busy = False
+        return {"ok": bool(got.get("ok")), "said": got.get("said") or ""}
 
     def refresh(self, body=None):
         """Read the model again. `body` may carry "parameters", the names to
@@ -1386,11 +1437,12 @@ class DashboardPanel(object):
                 self._busy = False
         return {"ok": bool(got.get("ok")), "said": got.get("said") or ""}
 
-    @staticmethod
-    def _ids_for(held, body):
+    def _ids_for(self, held, body):
         """The ids THIS panel holds for a worth-a-look row ("row": its key) or a
         board bar ("bar": [chart key, label]) - never ids the page sent."""
         held = held or {}
+        if body.get("element") is not None:
+            return [str(body["element"])] if str(body["element"]) in self._view_ids else []
         if body.get("row") is not None:
             rows = [r for r in held.get("look") or [] if r.get("key") == body.get("row")]
             return list(rows[0].get("ids") or []) if rows else []
@@ -1971,6 +2023,11 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             if why:
                 return self._refuse(403, why)
             return self._json(200, {"ok": True, "dashboard": DASHBOARD_PANEL.current()})
+        if path == "/api/dashboard/view":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, {"ok": True, "view": DASHBOARD_PANEL.view()})
         if path.startswith("/report/"):
             return self._report_file(path)
         return self._refuse(404, "not found")
@@ -2077,6 +2134,16 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             if why:
                 return self._refuse(403, why)
             return self._json(200, DASHBOARD_PANEL.demo())
+        if path == "/api/dashboard/load3d":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 4096)
+                body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except (ValueError, UnicodeDecodeError):
+                return self._refuse(400, "unreadable")
+            return self._json(200, DASHBOARD_PANEL.load3d(body))
         if path == "/api/dashboard/colour":
             why = self._api_ok()
             if why:

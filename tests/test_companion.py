@@ -943,10 +943,11 @@ def test_loads():
     said = view_panel.confirm()
     check(said["ok"] and view_panel.current()["confirmed"] is True,
           "'The take-off is right' records the check through the brain")
+    # The Model Dashboard's 3D view joined the list on 2026-11-01 (docs/40 s21.13).
     check(hc.PAGES.get("/loads3d.js", (None,))[0] == "loads3d.js"
           and set(hc.PAGES) == {"/", "/companion.js", "/companion.css", "/loads3d.js",
-                                "/sprinkler3d.js"},
-          "the page files are a fixed list - the two 3D views' scripts are on it, nothing "
+                                "/sprinkler3d.js", "/model3d.js"},
+          "the page files are a fixed list - the three 3D views' scripts are on it, nothing "
           "else (the Sprinkler panel's added 2026-10-04, docs/46)")
     for route in ("/api/loads/view", "/api/loads/confirm"):
         check(route in source, "the page can ask for %s" % route)
@@ -1452,6 +1453,11 @@ def test_dashboard_panel():
     q = source.index('if path == "/api/dashboard/colour":')
     check(source.index("why = self._api_ok()", q) < source.index("DASHBOARD_PANEL.colour(", q),
           "the colour route is behind _api_ok like every other route")
+    n = source.index('if path == "/api/dashboard/load3d":')
+    o = source.index('if path == "/api/dashboard/view":')
+    check(source.index("why = self._api_ok()", n) < source.index("DASHBOARD_PANEL.load3d(", n)
+          and source.index("why = self._api_ok()", o) < source.index("DASHBOARD_PANEL.view()", o),
+          "the 3D routes are behind _api_ok like every other route")
     check(source.index("why = self._api_ok()", i) < source.index("DASHBOARD_PANEL.current()", i)
           and source.index("why = self._api_ok()", j) < source.index("DASHBOARD_PANEL.refresh(", j)
           and source.index("why = self._api_ok()", k) < source.index("DASHBOARD_PANEL.show(", k)
@@ -1482,6 +1488,9 @@ def test_dashboard_panel():
           and '"RESET_GRAPHIC_OVERRIDES"' in colour_src and '"SELECT_VISIBLE_IN_VIEW"' in colour_src,
           "Colour runs under the lock, on the read's model only, through revit_change's own "
           "body - the gate, the switch, one undo entry")
+    check("DASHBOARD_PANEL.load3d_hook = _dashboard_load3d" in server
+          and '"REPORT_MODEL_GEOMETRY"' in server,
+          "the server sets the 3D view's load3d_hook, reading REPORT_MODEL_GEOMETRY")
     check("with _revit_lock:" in refresh_src and "revit_change" not in read_src
           and '"REPORT_MODEL_DASHBOARD"' in read_src and "pinned.check(reply)" in read_src,
           "Refresh reads under the lock, through revit_read only, and the pin's refusal stands")
@@ -1566,6 +1575,32 @@ def test_dashboard_panel():
           and tools.COMPANION_ACTIONS.get("companion_dashboard_clear_colours")
           == (tools.MODIFY, "run_fragment_write"),
           "Colour and Clear are declared at revit_change's own level")
+    # THE 3D VIEW (docs/40 s21.13): held apart, fetched on its own, and a
+    # click selects only an element the panel's own 3D read found.
+    import heron_brain as brain3d
+    import test_model_view as VIEW
+    check(demo.load3d({})["ok"] is False, "no 3D read with no chat connected")
+    demo.load3d_hook = lambda whole: {"ok": True, "said": "read"}
+    check(demo.load3d({})["ok"] is False and "DEMO" in demo.load3d({})["said"],
+          "no 3D read while the dashboard shows the demo")
+    whole_asked = []
+    shown.load3d_hook = lambda whole: (whole_asked.append(whole) or {"ok": True, "said": "read"})
+    check(shown.load3d({"whole": True})["ok"] and shown.load3d({"whole": "yes"})["ok"]
+          and whole_asked == [True, False],
+          "Load 3D asks for the whole model only when the page says exactly true")
+    got3d = brain3d.model_view(VIEW.sample())
+    shown.set_view(got3d, ("Tower MEP", "", "11"))
+    small = shown.current()["view3d"]
+    check(small["drawn"] == 4 and "elements" not in small and shown.view()["elements"],
+          "the panel's state carries the 3D summary, never the shapes - those come from "
+          "/api/dashboard/view")
+    check(shown.show({"action": "select", "element": "102"})["ok"] and sent[-1][1] == ["102"],
+          "a click in the 3D view selects that element by the panel's own 3D read")
+    check(shown.show({"action": "select", "element": "999"})["ok"] is False,
+          "an element the 3D read did not find sends nothing")
+    shown.set_view({"view": None})
+    check(shown.view() is None and "view3d" not in shown.current(),
+          "a failed 3D read leaves no stale view behind")
     page = io.open(PAGE_JS, encoding="utf-8").read()
     dash = page[page.index("// ---------------------------------------------------------------- dashboard"):
                 page.index("// ---------------------------------------------------------------- sprinkler")]

@@ -99,6 +99,20 @@ compatibility-note: >
 # ROUTING (2026-10-12, the gap fill)
 #
 #   "make a perspective from the entrance"  -> SET_VIEW_CAMERA
+
+
+# ROUTING (2026-11-01, the Companion's model view) - the same row is in
+# REPORT_MODEL_GEOMETRY.
+#
+#   "show the model in 3D"                  -> REPORT_MODEL_GEOMETRY. It
+#                                              reached here by ranking until
+#                                              2026-11-01; the owner asked for
+#                                              these words for the Companion's
+#                                              3D model view, which READS the
+#                                              model's geometry and makes no
+#                                              Revit view. A NEW Revit view is
+#                                              still asked for here, in this
+#                                              card's own words
 utterances:
   - make a new 3d view
   - create a 3d view
