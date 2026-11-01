@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,32 @@ capability: DIMENSION_FAMILY_INSTANCES
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_DIMENSION (create-dimension), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable
+# and it can be brought back. Nothing offers it now - retrieval leaves
+# DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to CREATE_DIMENSION. The proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_DIMENSION
+  why: >
+    The same job: one dimension string through a set, read back without
+    Dimension.Curve. CREATE_DIMENSION version 3 took this card's route
+    beside its centreline walk: family instances along a named axis by their
+    built-in centre references (x asks CenterLeftRight first, y
+    CenterFrontBack, then the strong reference), sorted along the axis,
+    offset square to it; noReference for an instance publishing none; and
+    "cannot dimension a room" said in its problem, naming DIMENSION_ROOMS.
+    Where the rules differed the safer was kept: a dimension holding fewer
+    than two references is deleted again rather than left in the
+    transaction, an axis pointing out of the view is refused, and a set
+    mixing runs and family instances is refused whole rather than half-done.
+    Not carried, as opposite: dimensionId as InvalidElementId when nothing
+    is drawn - created is null there.
 
 purpose: >
   Draws ONE aligned dimension string through a set of family instances - air

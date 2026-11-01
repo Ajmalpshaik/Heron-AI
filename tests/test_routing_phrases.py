@@ -163,7 +163,14 @@ CHANGES = [
     # And a later draft declared "list the viewports on this sheet", and the
     # read took this one - claimed in ALIGN_VIEWPORTS_ACROSS_SHEETS' routing
     # table, never declared - on the model.
-    ("line the viewports up", "ALIGN_VIEWPORTS_ACROSS_SHEETS",
+    #
+    # THE EXPECTED CARD CHANGED ON 2026-11-01, AND ONLY BECAUSE THE FACT DID:
+    # ALIGN_VIEWPORTS_ACROSS_SHEETS was merged into CENTER_VIEWPORTS_ON_SHEETS
+    # (its masterSheetNumber) on the owner's instruction and is DEPRECATED, so
+    # nothing offers it. What row 146 held - that the write which lines the
+    # viewports up answers this, and the read does not - is held here
+    # unchanged, against the card that does that job now.
+    ("line the viewports up", "CENTER_VIEWPORTS_ON_SHEETS",
      "146: a later draft of LIST_VIEWS_ON_SHEET answered it"),
     # 5b-467, 2026-10-14: words and nearness both had COPY_ELEMENTS first, and
     # the re-ranker, reading an identity that said only "at an offset", put the

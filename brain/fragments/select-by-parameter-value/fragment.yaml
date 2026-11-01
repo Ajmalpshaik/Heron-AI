@@ -209,7 +209,9 @@ compatibility-note: >
 #                                       change (FRAGMENT-ISSUES 5b-329)
 #   "what is blank"                  -> DESCRIBE_BLANK_PARAMETERS - presence
 #                                       and emptiness, not a value to match
-#   "the sheets with the as-built revision" -> FIND_SHEETS_BY_REVISION_OR_NUMBER.
+#   "the sheets with the as-built revision" -> FIND_SHEETS, revisionDescription
+#                                       (FIND_SHEETS_BY_REVISION_OR_NUMBER
+#                                       until it was merged there, 2026-11-01).
 #                                       A sheet's "Current Revision ..."
 #                                       parameters hold its LATEST revision
 #                                       only, so a match here loses a sheet

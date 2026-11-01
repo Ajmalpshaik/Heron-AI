@@ -57,8 +57,12 @@ purpose: >
      crop then frames the building, not the site round it.
   5. ROOM TAGS, one level at a time. FILTER_ELEMENTS_BY_CATEGORY (PROVEN to
      version 3; version 4 DRAFT) with
-     category=Rooms and that levelId, then TAG_ROOMS (PROVEN) in that level's
-     plan with the room tag type named ("Room Tag With Area"). Name the plan
+     category=Rooms and that levelId, then TAG_ELEMENTS_IN_VIEW in that
+     level's plan with tagTypeId the room tag type named ("Room Tag With
+     Area"), expect_from naming the filter. It tags rooms with Revit's own
+     room tag, never an ordinary element tag. Its status: TAG_ROOMS (PROVEN),
+     which this step used until then, was merged into it on 2026-11-01, and
+     version 7 is DRAFT until it is proved. Name the plan
      with its view type - "FloorPlan: Level 1" - whenever a ceiling plan has
      the same name: "Level 1" alone could be either.
   6. LOAD_FAMILY (PROVEN) the door tag family, only when no door tag is loaded
@@ -93,8 +97,11 @@ purpose: >
      area ((390, 300) on "A1 metric"). A view goes on one sheet only.
   10. SCHEDULES. CREATE_SCHEDULE (PROVEN) for each - a category and its fields
       ("Rooms", "Doors"); FIND_SCHEDULES (PROVEN) by name; then
-      PLACE_SCHEDULE_ON_SHEET (PROVEN) at atXMm and atYMm on the schedules'
-      sheet, expect_from naming the find.
+      PLACE_VIEW_ON_SHEET on the schedules' sheet with `at` in millimetres,
+      expect_from naming the find. A schedule's point is its TOP-LEFT corner,
+      where a view's is its centre, and a schedule may go on several sheets.
+      PLACE_SCHEDULE_ON_SHEET (PROVEN), which this step used until then, was
+      merged into it on 2026-11-01; version 4 is DRAFT until it is proved.
   11. PRESENTATION GRAPHICS, when the modeller asks for a look. On ONE plan
       only: SET_CATEGORY_GRAPHICS with solidFill=true for the categories
       cut or seen as solid colour - walls, floors, mullions - and
@@ -150,9 +157,10 @@ utterances:
 # version 2, two sets holding the same sheets (row 5b-545) - and both go in
 # this list.
 #
-# NOT NAMED EITHER (2026-10-17, row 5b-550): FIND_SHEETS_BY_REVISION_OR_NUMBER,
-# which picks the sheets of one revision, or a typed list of sheet numbers,
-# for an issue. Every sheet here is made by step 1, so its number is already
+# NOT NAMED EITHER (2026-10-17, row 5b-550): FIND_SHEETS with a revision or
+# sheetNumbers - since 2026-11-01, when FIND_SHEETS_BY_REVISION_OR_NUMBER was
+# merged into it - which picks the sheets of one revision, or a typed list of
+# sheet numbers, for an issue. Every sheet here is made by step 1, so its number is already
 # known, and no step issues a revision or saves a set. It goes in beside
 # MANAGE_SHEET_SETS when that print-set step is added - the find first, the
 # set from its elements.
@@ -170,10 +178,11 @@ needs:
   - SELECT_IN_REGION
   - SET_VIEW_CROP
   - FILTER_ELEMENTS_BY_CATEGORY
-  - TAG_ROOMS
+  # Steps 5 and 7 - the room tags and the door tags. TAG_ROOMS was merged into
+  # it on 2026-11-01.
+  - TAG_ELEMENTS_IN_VIEW
   # Only when no door tag is loaded - see step 6.
   - LOAD_FAMILY
-  - TAG_ELEMENTS_IN_VIEW
   - DIMENSION_ROOMS
   - DIMENSION_WALL_OPENINGS
   # Only for one element in a section or elevation - see step 8.
@@ -181,7 +190,8 @@ needs:
   - PLACE_VIEW_ON_SHEET
   - CREATE_SCHEDULE
   - FIND_SCHEDULES
-  - PLACE_SCHEDULE_ON_SHEET
+  # PLACE_VIEW_ON_SHEET, above, places the schedules too since 2026-11-01,
+  # when PLACE_SCHEDULE_ON_SHEET was merged into it.
   # Only when a look is asked for - see step 11. DRAFT, version 3 of
   # 2026-11-01: SET_CATEGORY_SOLID_FILL was merged into it as its solidFill
   # switch.

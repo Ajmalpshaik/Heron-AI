@@ -185,7 +185,9 @@ compatibility-note: >
 #   "set the cloud arc length"         -> SET_REVISION_SETTINGS
 #   "make an alphabetic sequence"      -> CREATE_REVISION_NUMBERING_SEQUENCE
 #   "rename the numbering"             -> EDIT_REVISION_NUMBERING_SEQUENCE
-#   "sheets on revision 15"            -> FIND_SHEETS_BY_REVISION_OR_NUMBER -
+#   "sheets on revision 15"            -> FIND_SHEETS, revisionSequence (version
+#                                         3, which FIND_SHEETS_BY_REVISION_OR_
+#                                         NUMBER was merged into on 2026-11-01) -
 #                                         the sheets of ONE revision, picked
 #                                         for the next step (a sheet set, a
 #                                         PDF); this answers the question for

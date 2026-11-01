@@ -164,7 +164,9 @@ compatibility-note: >
 #                                          sorting with a header in Revit
 #   "put a total at the bottom"         -> here, showGrandTotal
 #   "calculate totals for the flow column"
-#                                       -> SET_SCHEDULE_FIELD_TOTALS. A footer
+#                                       -> SET_SCHEDULE_APPEARANCE, calculateTotals
+#                                          (SET_SCHEDULE_FIELD_TOTALS until it
+#                                          was merged there, 2026-11-01). A footer
 #                                          and the grand total are switched on
 #                                          HERE; what they add up is chosen per
 #                                          column THERE. Until a column has

@@ -119,7 +119,9 @@ compatibility-note: >
 
 # ROUTING - the same rows are in the fragments named here.
 #
-#   "make a key schedule"            -> CREATE_KEY_SCHEDULE - and this is how
+#   "make a key schedule"            -> CREATE_SCHEDULE, listKind key (CREATE_
+#                                       KEY_SCHEDULE until it was merged there,
+#                                       2026-11-01) - and this is how
 #                                       its columns get added afterwards
 #   "remove a column"                -> REMOVE_SCHEDULE_FIELDS. THE OPPOSITE
 #                                       OPERATION, and until it was built every

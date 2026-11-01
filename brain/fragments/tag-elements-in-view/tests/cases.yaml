@@ -99,17 +99,21 @@ negative:
 
   - given: rooms handed in with the doors
     expect: >
-      the rooms in notTagged and `notTaggedWhy` sending them to TAG_ROOMS; the
-      doors still tagged. A room tag is not an independent tag
+      versions 4 to 6: the rooms in notTagged, sent to TAG_ROOMS. VERSION 7:
+      each room gets a ROOM tag - the project's default room tag, read back -
+      and the doors their door tag, in one call; `newTags` holds both kinds.
+      Select a room tag and check its Properties: Room Tags, not a door or
+      multi-category tag. A room tag is not an independent tag
 
   - given: an empty element list
     expect: all counts zero, notTagged empty, reported as nothing to do
 
-  - given: VERSION 6. rooms and doors with tagTypeId a door tag type
+  - given: VERSION 6 AND 7. rooms and doors with tagTypeId a door tag type
     expect: >
-      the rooms in notTagged sent to TAG_ROOMS, the doors tagged. An exact type
-      does not make an independent tag a room tag - the safer rule kept over
-      TAG_ELEMENTS, which tagged rooms as independent tags
+      the rooms in notTagged - version 7's notTaggedWhy saying the door tag is
+      not a Room Tags type - and the doors tagged. An exact type never makes an
+      independent tag on a room - the safer rule kept over TAG_ELEMENTS, which
+      tagged rooms as independent tags
 
   - given: VERSION 6. tagTypeId naming a door TYPE, not a tag type
     expect: >
@@ -137,6 +141,64 @@ negative:
       they tag again, and that is correct. Tags are view-specific; an element
       tagged in the ceiling plan is untagged in the section and this is not a
       double-tag
+
+  # VERSION 7 (2026-11-01, TAG_ROOMS merged in). Each FAILS on version 6,
+  # which refuses every room, space and zone. TAG_ROOMS' arrangement: "c
+  # bulding test" (Revit 2024), Level 1 with 37 enclosed rooms and 37 spaces
+  # in 3 HVAC zones, plans "Level 1 - HVAC Zones" and "Level 1 - Spaces".
+  - given: >
+      VERSION 7. The 37 Level 1 rooms, from FILTER_ELEMENTS_BY_CATEGORY
+      category=Rooms with Level 1, in "Level 1 - HVAC Zones", tagTypeId
+      "Room Tag With Area"
+    expect: >
+      tagged 37, newTags 37 room tags, each READ BACK carrying Room Tag With
+      Area and pointing at its own room; mismatched empty. Revit's own Select
+      All Instances on that tag type counts 37 more than before
+
+  - given: VERSION 7. The same 37 rooms run a second time
+    expect: tagged 0, all 37 in skipped - one tag per room per view, never a second
+
+  - given: VERSION 7. The 37 Level 1 spaces with a Space Tags type, in "Level 1 - Spaces"
+    expect: tagged 37, space tags, each pointing at its own space
+
+  - given: VERSION 7. Level 1's 3 zones with a Zone Tags type, in "Level 1 - Spaces"
+    expect: >
+      tagged 3, zone tags pointing at their zones, each at its largest space's
+      point; the Default zone, handed in, in unplaced
+
+  - given: VERSION 7. The 37 spaces handed in with a ROOM tag type as tagTypeId
+    expect: >
+      NOTHING placed on them, all 37 in notTagged with notTaggedWhy saying the
+      type is not a Space Tags type. A mismatch is refused, never placed
+
+  - given: >
+      VERSION 7. The rooms with tagTypeId left out, in a project whose Room
+      Tags default is "Room Tag"
+    expect: >
+      every room tagged with "Room Tag" - the project's default - and
+      tagTypesUsed saying "the project's default". Never the first loaded
+
+  - given: VERSION 7. Level 2's rooms handed to the Level 1 plan
+    expect: all in otherLevel, nothing placed
+
+  - given: VERSION 7. A room in the schedule and in no plan, and a room with no area
+    expect: the first in unplaced, the second in notEnclosed, nothing placed on either
+
+  - given: VERSION 7. The rooms, in a 3D view
+    expect: >
+      nothing placed on them; each in notTagged saying the view is not a plan
+      of one level
+
+  - given: >
+      VERSION 7. The rooms, in a plan whose view template turns Room Tags off
+    expect: >
+      the tags placed, and findings saying Room Tags are turned off in that
+      view, so they are in the model and NOT SHOWN
+
+  - given: VERSION 7. An AREA handed in, in an area plan
+    expect: >
+      in notTagged, notTaggedWhy saying an area takes an area tag, which
+      nothing in Heron places yet - never an independent tag
 
 second_route:
   - look at the view and read the tag families, not the count

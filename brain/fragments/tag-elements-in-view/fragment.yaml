@@ -29,7 +29,12 @@ capability: TAG_ELEMENTS_IN_VIEW
 # TAG_ELEMENTS' did. A card change; impl/ reads the same values as before.
 # Version 5's proof below no longer describes the code and is kept as the
 # record; the card is DRAFT until it is proved again.
-version: 6
+#
+# Version 7 (2026-11-01): TAG_ROOMS was merged into this card on the owner's
+# instruction ("make sure there is no duplicate tools"), and is DEPRECATED.
+# Rooms, spaces and HVAC zones are tagged here, each with Revit's own tag of
+# its kind - see the VERSION 7 block below the routing table.
+version: 7
 source: OFFICIAL
 risk: MODIFY
 
@@ -44,7 +49,7 @@ purpose: >
   **1. Which tag category tags what.** For MEP it is a fixed map carried here -
   nothing in the API derives "a duct is tagged by a duct tag". Every other
   category takes the tag category Revit's own names give it (OST_Doors to
-  OST_DoorTags). Rooms are TAG_ROOMS'.
+  OST_DoorTags). Rooms, spaces and zones take their own kind (version 7).
 
   **2. The tag family must come from the project's own default, never from the
   first one loaded.** `GetDefaultFamilyTypeId` on the tag category returns what
@@ -89,8 +94,16 @@ purpose: >
   Multi-Category tag on a mixed set, or one family chosen by hand - and an
   element is left alone only when it already carries a tag of THAT type in the
   view. So "tag the ducts again using this tag family" adds the new family to
-  ducts tagged with another, and running it twice stacks nothing. Rooms still
-  go to TAG_ROOMS, and risers are still skipped.
+  ducts tagged with another, and running it twice stacks nothing. Risers are
+  still skipped.
+
+  **ROOMS, SPACES AND HVAC ZONES ARE TAGGED WITH THEIR OWN TAGS** (version 7,
+  TAG_ROOMS merged in) - a room tag on a room, a space tag on a space, a zone
+  tag on a zone, through Revit's own calls, never an ordinary element tag.
+  The tag type is the one named, which must be of that kind or the element is
+  refused, or the project's default room, space or zone tag; it is never
+  guessed. Only in a plan of their own level: one not placed, not enclosed or
+  on another level is named, and every tag is read back.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so
   tagging a whole view is one undo entry.
@@ -122,6 +135,12 @@ contract:
     # default, per category. Revit places a tag of the wrong category without
     # a word and it prints blank, so naming one is the caller's choice; a type
     # that is not a tag at all is refused for every element.
+    #
+    # Version 7: for a ROOM, a SPACE or a ZONE the type named must be a Room
+    # Tags, Space Tags or Zone Tags type respectively - one of another kind
+    # is REFUSED for that element, never placed on it. Not named, a room
+    # takes the hint when it is a room tag type, else the PROJECT'S DEFAULT
+    # room tag - and with neither, no tag: never the first one loaded.
     - name: tagTypeId
       type: ElementId
       source: request
@@ -232,8 +251,10 @@ contract:
       type: IList<ElementId>
     - name: notTaggedWhy
       # WHY each one in `notTagged` is there, one line per reason with a count
-      # - "2 x Rooms: a room ... takes its own kind of tag - TAG_ROOMS", "1 x
-      # Curtain Panels: no Curtain Panel Tags family is loaded". Version 3 gave
+      # - "2 x Areas: an area takes an area tag in an area plan ...", "1 x
+      # Curtain Panels: no Curtain Panel Tags family is loaded" - and, version
+      # 7, "1 x Rooms: \"Duct Tag\" is a Duct Tags type, not a Room Tags type
+      # ...", the mismatch a room is refused for. Version 3 gave
       # bare ids, and six untagged doors said nothing about why. Never a tag
       # it placed (D-52).
       role: accounting
@@ -244,8 +265,44 @@ contract:
       # default, or the first one loaded (a guess). A hint of another
       # category, set aside, is said on its line (version 6); with an exact
       # type, one line, "every category". How it CHOSE, never a thing it made
-      # (D-52); the tags are `tagged`.
+      # (D-52); the tags are `tagged`. Version 7: a line for each room,
+      # space or zone tag category used, saying which type and why.
       role: accounting
+      type: IList<string>
+    # VERSION 7, from TAG_ROOMS.
+    - name: newTags
+      # Every tag this placed, of either kind - room, space and zone tags
+      # read back carrying the type asked for and pointing at their own
+      # element, and the independent tags counted in `tagged`.
+      role: result
+      type: IList<ElementId>
+    - name: mismatched
+      # Rooms, spaces or zones whose new tag read back pointing at a DIFFERENT
+      # one. That tag is removed again inside the same undo. A fact about what
+      # it made, not an input it could not use.
+      role: result
+      type: IList<ElementId>
+    - name: unplaced
+      # Rooms or spaces with no location, and zones holding no spaces - the
+      # Default zone among them: in the schedule, in no plan, so nowhere to put
+      # a tag (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notEnclosed
+      # Placed rooms or spaces with no area - not enclosed by walls or
+      # separation lines, or redundant with another. Given and unusable (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: otherLevel
+      # Rooms, spaces or zones on a different level from the plan's. Left for
+      # that level's plan rather than tagged where they are not drawn (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      # Version 7. When rooms, spaces or zones were handed in: one line with
+      # every count in words, a line when Room, Space or Zone Tags are turned
+      # off in the view (placed and NOT SHOWN), and Revit's first refusal in
+      # its own words. Prose, so it carries no role (D-51).
       type: IList<string>
 
 # THE VERSION 5 RECORD (Group DV DV5), signed 2026-10-13. It replaces the
@@ -327,6 +384,16 @@ compatibility-note: >
   `tools/check-fragments-compile.py`, which now mirrors
   `Directory.Build.props`.
 
+  Version 7 adds TAG_ROOMS' calls, PROVEN on Revit 2024: NewRoomTag(LinkElementId,
+  UV, ElementId), RoomTag.TaggedLocalRoomId, NewSpaceTag(Space, UV, View),
+  SpaceTag.Space, the Zone Tags category OST_ZoneTags, Zone.Spaces,
+  View.GenLevel, GetPrimaryViewId, GetDependentViewIds and GetCategoryHidden -
+  the same signatures 2020 to 2027, read off every release's reference
+  assemblies for that card. A zone tag's target is read with
+  GetTaggedLocalElementIds or TaggedLocalElementId FOUND BY NAME at run time,
+  and Zone.IsDefaultZone the same way - Revit 2027 removed it - exactly as
+  TAG_ROOMS read them (its reason: row 5b-181).
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "tag these ducts"                -> here - it PLACES tags
@@ -344,8 +411,60 @@ compatibility-note: >
 #                                    -> here, with `tagTypeId` (version 6). An
 #                                       element is skipped only when it already
 #                                       carries a tag of THAT type
-#   "tag the rooms"                  -> TAG_ROOMS - a room tag is not an
-#                                       independent tag, and here refuses rooms
+#   "tag the rooms"                  -> here, since version 7 (TAG_ROOMS was
+#                                       merged in, 2026-11-01) - with Revit's
+#                                       own ROOM tag, never an independent tag,
+#                                       after FILTER_ELEMENTS_BY_CATEGORY with
+#                                       category=Rooms and the plan's level
+#   "tag all the rooms in the active view" -> here, the same. Never a view-
+#                                       scoped collect: it can return no rooms
+#                                       at all (0 of 7 on 2026-09-19)
+#   "tag the spaces"                 -> here, a Space Tags type, after
+#                                       FILTER_ELEMENTS_BY_CATEGORY with
+#                                       category=Spaces and the plan's level
+#   "tag the hvac zones"             -> here, a Zone Tags type, after
+#                                       FILTER_ELEMENTS_BY_CATEGORY with
+#                                       category=HVAC Zones and the plan's level
+#   "centre the room tags"           -> CENTER_ROOM_TAGS, which only MOVES room
+#                                       tags that already exist
+#   "which rooms are not tagged"     -> FIND_UNTAGGED_ELEMENTS - a READ; it
+#                                       reads the independent tag class only,
+#                                       so to it every room is untagged (row
+#                                       recorded on TAG_ROOMS, 2026-09-24)
+
+# VERSION 7 (2026-11-01) - TAG_ROOMS WAS MERGED INTO THIS CARD on the owner's
+# instruction ("make sure there is no duplicate tools"), and is DEPRECATED.
+# The same job - a tag on each element handed in, in one view, never a second
+# - for the three kinds this card had refused. What it had and this card
+# lacked is here now: ROOMS through the document's NewRoomTag, SPACES through
+# NewSpaceTag, HVAC ZONES through IndependentTag.Create on a reference to the
+# zone with a Zone Tags type, at the largest space's point on the plan's level;
+# the tags already in the plan read by category over the whole model and by
+# the view that owns them, a dependent view's shared; only a plan of one
+# level, and `unplaced`, `notEnclosed` and `otherLevel` for the rest; every tag
+# read back for its type and its target, a wrong one removed (`mismatched`);
+# `newTags`; the hidden-category and Revit's-own-words lines in `findings`;
+# and one from another model refused.
+#
+# THE SAFER RULE IN EACH CONFLICT IS KEPT (the owner: "in every conflict keep
+# the safer rule"). A ROOM IS NEVER GIVEN AN ORDINARY ELEMENT TAG: TAG_ELEMENTS
+# did that on 2026-09-23 and the tags were not room tags. THE TAG TYPE FOR A
+# ROOM: TAG_ROOMS demanded one and refused the call without it; this card
+# chose per category, falling to the first one loaded. Kept: a type NAMED -
+# and of the room's own kind, a mismatch refused for that element - or the
+# project's DEFAULT room, space or zone tag; never the first one loaded, so it
+# is never guessed (D-33). TAG_ROOMS stopped the whole call for a view that is
+# not a plan of one level, a template, or a type not of the three kinds; here
+# each such room is refused by id with the reason, and the ducts and doors
+# handed in beside them are still tagged - nothing is placed on a room either
+# way.
+#
+# WHERE ITS OUTPUTS ARE NOW: tagged -> tagged, newTags -> newTags, mismatched
+# -> mismatched, alreadyTaggedHere -> skipped (alreadyTagged counts them),
+# notTaggable -> notTagged with notTaggedWhy, unplaced -> unplaced,
+# notEnclosed -> notEnclosed, otherLevel -> otherLevel, refused -> notTagged
+# with Revit's first words in findings, findings -> findings. Its sentences
+# moved here.
 
 # VERSION 6 (2026-11-01) - TAG_ELEMENTS WAS MERGED INTO THIS CARD on the
 # owner's instruction, and is DEPRECATED. Both put a tag on each element in one
@@ -357,7 +476,8 @@ compatibility-note: >
 # tags, so the list cannot be stale. Its `addLeader` is `leader` here, none or
 # straight. NOT CARRIED, the safer rule kept: TAG_ELEMENTS tagged a room as an
 # IndependentTag ("tagged 5" in Project1's "1 - Mech", 2026-09-23); here a room
-# goes to TAG_ROOMS in both modes. Its routing rows now read here: "tag these"
+# went to TAG_ROOMS in both modes (version 6; version 7 tags it with a room
+# tag - see above). Its routing rows now read here: "tag these"
 # and "put tags on these" -> here; "show me the ducts" -> SET_SELECTION; "cloud
 # this change" -> ADD_REVISION_CLOUD; "dimension these" -> CREATE_DIMENSION;
 # "centre the room tags" -> CENTER_ROOM_TAGS; "stack the tags at the side" ->
@@ -382,3 +502,10 @@ utterances:
   - tag all the ducts in this view
   - add the size tags
   - annotate these on the drawing
+  # MOVED 2026-11-01 from TAG_ROOMS, merged into this card.
+  - tag all the rooms in the active view
+  - tag the rooms
+  - put room tags on every room in this view
+  - tag the spaces
+  - put space tags on every space in this view
+  - tag the hvac zones

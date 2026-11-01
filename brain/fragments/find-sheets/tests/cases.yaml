@@ -55,7 +55,66 @@ negative:
       name and looks exactly like a sheet; version 1 returned it, and a row in
       the register that can never be issued went to whatever acted next
 
+  # VERSION 3 (2026-11-01, FIND_SHEETS_BY_REVISION_OR_NUMBER merged in). Each
+  # of these FAILS on version 2, which has none of the four inputs. The
+  # arrangement is that card's (NEEDS-CHECKING Group FB), made by hand on a
+  # saved scratch copy: Seq A "FB ISSUED AS-BUILT" and Seq B "FB DRAFT
+  # AS-BUILT" both dated FB-DATE-1, Seq C "FB LATER" dated FB-DATE-2; Seq A
+  # ticked on four sheets, Seq C ALSO on two of those four; Seq B on one other
+  # sheet; one sheet with a Seq A cloud in a view placed on it, nothing ticked.
+  - given: VERSION 3. revisionSequence = Seq A's, every other input left out
+    expect: >
+      the four sheets ticked with Seq A AND the sheet whose view carries the
+      Seq A cloud - five - including the two whose LATEST revision is Seq C.
+      revisionsMatched names Seq A alone, "on 5 sheet(s)". A filter on Current
+      Revision returns three of the five
+
+  - given: VERSION 3. revisionDescription = "FB ISSUED AS-BUILT", typed whole
+    expect: >
+      the same five. Whole beats part: "FB DRAFT AS-BUILT" is not chosen
+      although it contains "AS-BUILT"
+
+  - given: VERSION 3. revisionDescription = "as-built" with nothing else
+    expect: >
+      REFUSED, elements empty - "2 revisions fit description 'as-built'",
+      naming Seq A and Seq B with their sequences
+
+  - given: VERSION 3. revisionDate = FB-DATE-1 typed as the dialog shows it
+    expect: >
+      the sheets carrying Seq A or Seq B, both revisions named in
+      revisionsMatched with a count each. A date may choose several
+
+  - given: >
+      VERSION 3. sheetNumbers = the leading digits of a longer sheet number
+      (for "179", "17"), where no sheet is numbered "17"
+    expect: >
+      elements empty and "17" in notFound - the longer sheet NOT returned.
+      numberOrNameContains "17" returns it; the list is matched whole
+
+  - given: >
+      VERSION 3. revisionSequence = Seq A's, sheetNumbers = two Seq A sheets,
+      the Seq B sheet and one number no sheet has
+    expect: >
+      the two Seq A sheets in elements; the Seq B sheet's number in
+      listedWithoutRevision; the made-up number in notFound
+
+  - given: VERSION 3. revisionSequence = one past the last sequence
+    expect: >
+      refused names that sequence and lists every revision in the project;
+      elements empty; no exception - NOT every sheet
+
+  - given: VERSION 3. revisionSequence "15 16"
+    expect: refused - not one sequence number - and elements empty
+
+  - given: VERSION 3. every input left out
+    expect: >
+      every sheet, exactly as numberOrNameContains "" in version 2 - left out
+      binds "all", which narrows nothing
+
 second_route:
   - count the sheets in the Project Browser by eye and compare
+  - >
+    version 3: open each picked sheet's Revisions on Sheet dialog and confirm
+    Seq A is ticked or clouded there, and is not on any sheet left out
   - open one returned id that is listed as a placeholder - Revit shows no titleblock
   - search by a word that appears only in a sheet TITLE and confirm it is found

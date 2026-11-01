@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,27 @@ capability: CREATE_KEY_SCHEDULE
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_SCHEDULE (create-schedule), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable
+# and it can be brought back. Nothing offers it now - retrieval leaves
+# DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to CREATE_SCHEDULE. The proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_SCHEDULE
+  why: >
+    The same job: make a schedule view in the project. CREATE_SCHEDULE
+    version 2 makes a key schedule by its listKind key, with every rule of
+    this card's: the category checked with IsValidCategoryForKeySchedule
+    before the create call, which throws rather than explaining; the key
+    parameter named by keyParameterName; the schedule name set, and a
+    refused name said; and a findings line, read back by name, saying it has
+    NO ROWS yet. Nothing was opposite. Its category is categoryId there, by
+    id.
 
 purpose: >
   Creates a key schedule - the lookup table where picking one value on an

@@ -55,7 +55,7 @@ purpose: >
 
   Asking a question must never place dimensions in the model, so if the request
   was to annotate a drawing, this is the wrong fragment and the right one does
-  not exist. `DIMENSION_FAMILY_INSTANCES` draws a dimension string through
+  not exist. `CREATE_DIMENSION` draws a dimension string through runs and
   family instances - air terminals, fixtures - and cannot dimension a room; it
   carries the same note so that a search landing there says so rather than
   dimensioning the nearest thing it can reach.

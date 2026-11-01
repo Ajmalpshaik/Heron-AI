@@ -9,7 +9,7 @@ semantic-identity: "add new sheets to the drawing register"
 kind: action
 domain: revit.sheets
 capability: CREATE_SHEETS
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -50,23 +50,66 @@ purpose: >
   longer describes the code and is kept as a record; the card is DRAFT until it
   is proved again.
 
+  **VERSION 3 also makes copies of sheets handed in** (DUPLICATE_SHEETS merged
+  in): each copy on its source's own title block, numbered as the source plus
+  `numberSuffix`, named `namePrefix` plus the source's name, every number
+  checked before anything is made. A placeholder or a sheet with no title
+  block is not copied. **Neither job copies the views on a sheet** - the new
+  sheets are empty; DUPLICATE_VIEWS and PLACE_VIEW_ON_SHEET do that.
+
 contract:
   needs:
     - name: doc
       type: Document
     - name: numbers
+      # The new sheets' numbers. Version 3: optional, and left out it is
+      # "none" - then the sheets handed in are copied instead, when a
+      # numberSuffix is given. Given, the copy job does not run.
       type: IList<string>
       source: request
+      optional: true
+      absent: none
     - name: names
+      # The new sheets' names, in the order of `numbers`. Version 3: optional,
+      # left out "none" - Revit names them, reported in namedAs.
       type: IList<string>
       source: request
+      optional: true
+      absent: none
     - name: titleBlockName
       # Version 2: the type name, or "Family: Type" when two title block
       # families share a type name - a shared name is refused, never guessed.
       # The word none, said outright, makes sheets with NO title block and sets
       # noTitleblock; a name not found still refuses and creates nothing.
+      # Version 3: optional, and left out it is "from the source sheets" - the
+      # copy job's own rule. With numbers given and no title block named,
+      # NOTHING is created: the title block still has no default.
       type: string
       source: request
+      optional: true
+      absent: from the source sheets
+    - name: elements
+      # Version 3, from DUPLICATE_SHEETS. The SOURCE sheets to copy - a
+      # selection or FIND_SHEETS' answer. Read ONLY when no numbers are given;
+      # binds empty when nothing fills it (HeronBindingNote.EmptyWhenAbsent).
+      type: IList<Element>
+      optional: true
+    - name: numberSuffix
+      # Version 3. Added to each source's number - "-COPY" makes M-101-COPY.
+      # Left out it is "none", and copying is REFUSED: a copy numbered like
+      # its source clashes with it, and sheets selected while "make a new
+      # sheet" is said must never be copied.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: namePrefix
+      # Version 3. Put before each source's name - "DRAFT " - kept with its
+      # space. Left out it is "none": the copy takes the source's name.
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: created
       role: result
@@ -80,9 +123,20 @@ contract:
     - name: numberTaken
       # Numbers already in the register, checked BEFORE anything is created so
       # no sheet is made for them. Given and unusable, never a sheet it made
-      # (D-52).
+      # (D-52). Version 3: in the copy job too - a source's number plus the
+      # suffix already used, including by a copy made earlier in the same
+      # batch (DUPLICATE_SHEETS' collidedNumbers).
       role: accounting
       type: IList<string>
+    - name: notDuplicated
+      # Version 3, from DUPLICATE_SHEETS. Sources no copy came back for - not
+      # a sheet, a placeholder or a sheet with no title block to copy, a
+      # number already used, Revit declining, or a copy whose number did not
+      # take (that copy is in `created` and `refused`, with its real number in
+      # numberedAs). Each reason is a line in notCreated. Never a sheet it
+      # made (D-52).
+      role: accounting
+      type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
@@ -177,8 +231,32 @@ compatibility-note: >
 #                                  exist first and does not make one
 #   "renumber the sheets"       -> RENAME_ELEMENTS on the number parameter;
 #                                  nothing here changes an existing sheet
-#   "make a sheet list schedule" -> CREATE_SHEET_LIST - the index OF the
-#                                  sheets, including placeholders
+#   "make a sheet list schedule" -> CREATE_SCHEDULE, listKind sheets - the
+#                                  index OF the sheets, including placeholders
+#                                  (CREATE_SHEET_LIST until it was merged
+#                                  there, 2026-11-01)
+
+# VERSION 3 (2026-11-01) - DUPLICATE_SHEETS WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same job - new sheets in the register, every number checked
+# BEFORE a sheet exists so no orphan is left under a number Revit picked -
+# from source sheets instead of typed numbers. What it had and this card
+# lacked is here now: copies of the sheets handed in (`elements`), each on the
+# source's OWN title block, numbered source + `numberSuffix`, named
+# `namePrefix` + the source's name; a placeholder or a sheet with no title
+# block not copied; in-batch clashes caught; `notDuplicated`. NEITHER copies
+# the views on a sheet - it never did, on purpose.
+#
+# THE SAFER RULE IN EACH CONFLICT IS KEPT. That card took an empty suffix and
+# reported every copy as a clash; here no suffix refuses the copy job outright
+# - and copying runs only when no numbers are given, so a selection can never
+# turn "make a new sheet" into copies. That card reported a copy whose number
+# did not take as not duplicated and said nothing of the sheet; here that
+# sheet is in `created`, `refused` and numberedAs, because it exists. A name
+# prefix keeps its trailing space here, where that card trimmed it.
+#
+# WHERE ITS OUTPUTS ARE NOW: newSheetIds -> created, notDuplicated ->
+# notDuplicated, collidedNumbers -> numberTaken. Its sentences moved here.
 
 utterances:
   - create some sheets
@@ -193,3 +271,10 @@ utterances:
   - I need a new sheet
   - set up a sheet for this
   - open up a new sheet
+  # MOVED 2026-11-01 from DUPLICATE_SHEETS, merged into this card.
+  - duplicate these sheets
+  - make a copy of this sheet
+  - i need another sheet like this one
+  - copy the sheet with a new number
+  - duplicate the drawing sheet
+  - create sheets based on these

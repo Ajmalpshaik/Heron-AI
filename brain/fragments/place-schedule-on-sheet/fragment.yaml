@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: PLACE_SCHEDULE_ON_SHEET
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO PLACE_VIEW_ON_SHEET (place-view-on-sheet), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable
+# and it can be brought back. Nothing offers it now - retrieval leaves
+# DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to PLACE_VIEW_ON_SHEET. The proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: PLACE_VIEW_ON_SHEET
+  why: >
+    The same job: put this on a sheet at a point and read back where it
+    landed. PLACE_VIEW_ON_SHEET version 4 places schedules as this card did
+    - ScheduleSheetInstance.Create, the point taken as the schedule's top-
+    left corner where a view's is its viewport's centre and layout saying
+    which, a schedule already on another sheet placed again since a schedule
+    may be on many sheets (Revit's rule), a schedule template refused by
+    name, Revit's refusal and a placement that made nothing said and never
+    counted, and placedAt read back in millimetres. Where the rules differed
+    the safer was kept: a placeholder sheet is refused by name, and several
+    schedules go on a grid rather than all at one point.
 
 purpose: >
   Puts a schedule onto a sheet, at a given point, and reports where each one

@@ -9,7 +9,7 @@ semantic-identity: "dimension the spacing between these parallel runs, on this v
 kind: action
 domain: revit.annotation
 capability: CREATE_DIMENSION
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -41,10 +41,19 @@ purpose: >
   longer describes the code and is kept as a record, and the fragment is DRAFT
   until it is proved again.
 
+  **VERSION 3 DIMENSIONS FAMILY INSTANCES TOO** (DIMENSION_FAMILY_INSTANCES
+  merged in). An air terminal, fixture or piece of equipment has no
+  centreline; its built-in centre references are used instead, along the axis
+  named - x or y, which it needs. One that publishes none is named in
+  `noReference`. Runs and instances handed in together are refused, nothing
+  drawn: one string is one kind. **IT CANNOT DIMENSION A ROOM** - a room's
+  boundary offers none of these references - and says so.
+
   | What you are dimensioning | Use |
   |---|---|
-  | Ducts, pipes, conduit, cable tray | **this fragment** |
-  | Air terminals, fixtures, equipment - any family instance | `DIMENSION_FAMILY_INSTANCES` - built-in centre references, which a run does not have |
+  | Ducts, pipes, conduit, cable tray | **this fragment** - their centrelines |
+  | Air terminals, fixtures, equipment - any family instance | **this fragment**, axis x or y - built-in centre references, which a run does not have |
+  | Rooms - "dimension the rooms", "put the room sizes on the plan" | `DIMENSION_ROOMS`; to know them, `MEASURE_ROOM_DIMENSIONS` |
 
 contract:
   needs:
@@ -57,6 +66,8 @@ contract:
       type: IList<Element>
     # Leave out to measure across the runs, at any angle. x or y measures
     # along that axis of the model - for risers seen end-on in a plan.
+    # Version 3: family instances NEED x or y - "across" is worked out from
+    # runs, and an instance has none; left out with instances, it is refused.
     - name: axis
       type: string
       source: request
@@ -76,8 +87,17 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: notLinear
-      # Handed in but not linear, so there was nothing here to act on. A count
-      # of what it was GIVEN and could not use, never a thing it found (D-52).
+      # Handed in but neither a straight run nor a family instance - and,
+      # version 3, every room, space or area handed in, which cannot be
+      # dimensioned here. A count of what it was GIVEN and could not use,
+      # never a thing it found (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: noReference
+      # Version 3, from DIMENSION_FAMILY_INSTANCES. Family instances that
+      # publish no centre reference and no strong reference - duct fittings
+      # and accessories among them - so there was nothing to dimension TO.
+      # Given and unusable, never a dimension it made (D-52).
       role: accounting
       type: IList<ElementId>
     - name: dimensionedCount
@@ -135,6 +155,12 @@ compatibility-note: >
   The offset arrives in millimetres and is divided by 304.8 - arithmetic, per
   D-20.
 
+  Version 3 adds `FamilyInstance.GetReferences` and the
+  `FamilyInstanceReferenceType` members CenterLeftRight, CenterFrontBack and
+  StrongReference, unchanged 2020 to 2027 - the calls DIMENSION_FAMILY_INSTANCES
+  made, PROVEN on Revit 2024. `SpatialElement` is the room, space and area
+  base class on every release.
+
 # WHAT WOULD DISPROVE THIS FRAGMENT, since nothing here has met a real model.
 # The centreline-reference technique is the part to distrust: if
 # `IncludeNonVisibleObjects` does not surface a referenceable centreline for a
@@ -149,8 +175,12 @@ compatibility-note: >
 #   "dimension the duct spacing"     -> here, since DIMENSION_MEP_RUNS was
 #                                       merged in (version 2, 2026-11-01)
 #   "dimension between these risers" -> here, axis x or y
-#   "dimension these air terminals"  -> DIMENSION_FAMILY_INSTANCES - built-in
-#                                       centre references, which a run has not
+#   "dimension these air terminals"  -> here, axis x or y, since
+#                                       DIMENSION_FAMILY_INSTANCES was merged in
+#                                       (version 3) - built-in centre
+#                                       references, which a run has not
+#   "dimension the rooms"            -> DIMENSION_ROOMS. Not here: a room's
+#                                       boundary offers no reference this holds
 #   "how far apart are they"         -> MEASURE_DISTANCE reports it as a
 #                                       NUMBER and draws nothing. This fragment
 #                                       puts it on the drawing. Asking a
@@ -176,6 +206,34 @@ compatibility-note: >
 # otherwise), axis or not: the gap between two runs that are not parallel
 # depends on where along them you look, and is not one number to draw.
 
+# VERSION 3 (2026-11-01) - DIMENSION_FAMILY_INSTANCES WAS MERGED INTO THIS
+# CARD on the owner's instruction ("make sure there is no duplicate tools"),
+# and is DEPRECATED. The same job - one dimension string through a set, read
+# back, never via Dimension.Curve - by the other route: the built-in centre
+# references of family instances, which a run does not have. What it had and
+# this card lacked is here now: the family-instance route along an axis (x
+# asks CenterLeftRight first, y CenterFrontBack, then the strong reference;
+# sorted along the axis; offset square to it), `noReference`, and "cannot
+# dimension a room" said in `problem` - a room, space or area handed in is
+# never dimensioned, and DIMENSION_ROOMS is named, which did not exist when
+# that card wrote "nothing here does that yet".
+#
+# THE SAFER RULE IN EACH CONFLICT IS KEPT (the owner: "in every conflict keep
+# the safer rule"). That card left a dimension holding fewer than two
+# references in the caller's transaction and said so; here it is deleted
+# again on both routes. That card had no check for an axis pointing out of
+# the view; here it is refused on both. A set holding both runs and family
+# instances - which each card would have half-done, dimensioning its own kind
+# and naming the rest unusable - is refused whole, nothing drawn, with the
+# count of each: one string, one kind. NOT CARRIED, as opposite: its
+# `dimensionId` was InvalidElementId when nothing was drawn; `created` here is
+# null then, as versions 1 and 2.
+#
+# WHERE ITS OUTPUTS ARE NOW: dimensionId -> created, dimensionedCount ->
+# dimensionedCount, noReference -> noReference, problem -> problem. An element
+# that is not a family instance went to its noReference; here it is in
+# notLinear. Its sentences moved here.
+
 utterances:
   - add a dimension between these
   - dimension these ducts
@@ -190,3 +248,12 @@ utterances:
   - dimension the duct spacing
   - show the gap between the services
   - dimension between the pipes
+  # MOVED 2026-11-01 from DIMENSION_FAMILY_INSTANCES, merged into this card.
+  # Its "dimension the spacing of these" is beside this card's "dimension the
+  # spacing", and both are kept.
+  - dimension between the terminals
+  - put a dimension through these diffusers
+  - how far apart are these on the drawing
+  - add a dimension string to the equipment
+  - dimension the spacing of these
+  - show the spacing on the drawing
