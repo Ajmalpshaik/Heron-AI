@@ -9,7 +9,25 @@ semantic-identity: "put these views onto a sheet - or swap one view for another 
 kind: action
 domain: revit.views
 capability: PLACE_VIEW_ON_SHEET
-version: 4
+# VERSION 5 (2026-11-01, on the owner's word in the brief of that day's
+# session - Ajmal PS asked, after a duct length schedule on his Revit 2020 job
+# model could not have its Length column set to metres, for every schedule
+# setting Heron was missing to be built; FRAGMENT-ISSUES row 5b-1367,
+# numbered 5b-1363 until main took that number). SPLIT A SCHEDULE AND PLACE
+# ITS SEGMENTS, on the placing job: `splitInto` ("3" equal segments, or
+# heights in mm "200, 150") and `segment` ("2", 1 the top one, or "all", side
+# by side). Built the same day as PLACE_SCHEDULE_ON_SHEET's version 2 on a
+# branch, and carried here because that card was merged into this one. Both
+# are `optional: true` with `absent: none`, so every caller of version 4 is
+# bound "none" twice and gets version 4 to the letter. Schedules only - a view
+# in the same call is placed as version 4 places it; asked with oldViewId, the
+# swap, refused whole. Split, IsSplit, GetSegmentCount, SegmentIndex and the
+# five-argument ScheduleSheetInstance.Create are 2022 and later, reached by
+# name: on 2020 and 2021 a split or a segment refuses that schedule in plain
+# words and places nothing for it. Version 3's proof below no longer describes
+# the code and is kept as a record; the card is DRAFT until NEEDS-CHECKING
+# Group KK proves version 5 and the owner signs.
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -134,6 +152,20 @@ contract:
       source: request
       optional: true
       absent: none
+    # VERSION 5. Split each schedule placed: "3" equal segments, or heights in
+    # mm "200, 150", top first. Left out ("none"): no split, version 4.
+    - name: splitInto
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 5. Which segment of a split schedule to place: "2" (1 the top
+    # one) or "all" side by side. Left out ("none"): version 4's call.
+    - name: segment
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: placed
       role: result
@@ -252,6 +284,14 @@ compatibility-note: >
   so 2023 and later could change a viewport's view in place. It is not used:
   2020 to 2022 cannot, and one path - a new viewport at the old box centre, the
   old one deleted - keeps every release the same run, read back the same way.
+
+  Version 5: `ViewSchedule.Split(int)`, `Split(IList<double>)`, `IsSplit`,
+  `GetSegmentCount`, `ScheduleSheetInstance.SegmentIndex` and the five-argument
+  `ScheduleSheetInstance.Create` are in the 2022 to 2027 reference packages
+  and not 2020 or 2021 (Autodesk's notes give 2022.1), read off the shipped
+  assemblies on 2026-11-01. They are reached by name at run time, so the
+  placing job's body is one for every release; `get_BoundingBox(View)` and
+  `Document.Regenerate` are unchanged 2020 to 2027.
 
 # ROUTING - repeated in DUPLICATE_VIEWS and CREATE_3D_VIEW.
 #
@@ -378,6 +418,15 @@ compatibility-note: >
 #   "point the reference at another view"
 #                                      -> REPOINT_VIEW_REFERENCE - a callout or
 #                                         section head, not a viewport
+#   "split the schedule into two parts on the sheet"
+#                                      -> here, VERSION 5: splitInto 2, segment
+#                                         all. CREATE_PARTS ranked first for it
+#                                         by nearness on the n-gram backend
+#                                         (2026-11-01, measured on
+#                                         PLACE_SCHEDULE_ON_SHEET's card);
+#                                         declared here, identity keeps it
+#   "place the second segment of the split schedule on the sheet"
+#                                      -> here, VERSION 5: segment 2
 
 utterances:
   # ONE VIEW AND THE SWAP LEAD (FRAGMENT-ISSUES 5b-1293, 2026-10-29): the
@@ -398,6 +447,9 @@ utterances:
   - place these on the drawing sheet
   - place the plans on sheet a-101
   - put these views on a sheet
+  # VERSION 5, row 5b-1367 - carried with the split from PLACE_SCHEDULE_ON_SHEET.
+  - split the schedule into two parts on the sheet
+  - place the second segment of the split schedule on the sheet
   - add these to the sheet
   - put the drawings on the sheet
   # MOVED 2026-11-01 from PLACE_SCHEDULE_ON_SHEET, merged into this card.

@@ -68,7 +68,48 @@ positive:
       sheetId A101, no views named
     expect: the two selected views placed; nothing else
 
+  - given: >
+      VERSION 5, Revit 2022 or later - "Heron KF Duct Schedule" with about 40
+      rows in views, sheetId KF02, at 50 mm / 250 mm, splitInto "2", segment "all"
+    expect: >
+      two instances placed, placedAt reading "(split into 2 segments)" and
+      "showing segment 1 (Revit's index 0)" for the first at 50 / 250 and
+      segment 2 to its right - on the sheet, two halves side by side, not
+      overlapping, and the schedule's Properties reading it split. THE
+      MEANING OF Split(int) AND THE SPACING ARE WHAT THIS SETTLES
+
+  - given: VERSION 5, Revit 2022 or later - the same schedule, already split, segment "2"
+    expect: >
+      one instance, showing segment 2, on a second sheet - nothing split again
+
+  - given: VERSION 5, Revit 2022 or later - splitInto "100, 60" (mm), segment "1"
+    expect: >
+      placedAt "(split into 2 segments)", the top segment about 100 mm tall on
+      the sheet - THE HEIGHTS' UNIT AND MEANING ARE WHAT THIS SETTLES
+
+  - given: VERSION 5 - splitInto and segment left out
+    expect: exactly version 4 - the whole schedule placed, no split
+
 negative:
+  - given: VERSION 5, Revit 2020 - a schedule in views, splitInto "2", segment "all"
+    expect: >
+      refused naming the schedule and that Revit 2020 and 2021 cannot split a
+      schedule, Split arriving at Revit 2022; nothing placed for it and the
+      sheet as it was - not the whole schedule placed instead. THE FIRST
+      VERSION 5 CASE TO RUN on 2020
+
+  - given: VERSION 5, Revit 2022 or later - segment "5" of a schedule split into 2
+    expect: refused, has 2 segments, nothing placed for it
+
+  - given: VERSION 5 - splitInto "3", segment "4"
+    expect: refused before any split, nothing split or placed
+
+  - given: VERSION 5, Revit 2022 or later - splitInto "2" on a schedule already split
+    expect: refused - already split - and nothing split again or placed
+
+  - given: VERSION 5 - splitInto "2" with oldViewId (the swap)
+    expect: refused whole - the swap places a schedule whole - nothing changed
+
   - given: >
       VERSION 3 REVIEW FIX. views "Level 2" named AND three walls selected
     expect: >

@@ -1098,6 +1098,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ka.md`](needs-checking/group-ka.md)
 
+## Group KK - the schedule settings Heron could not set: a column's units, min/max, multiple-values text and font; footers, blank lines, per-level sorting and the grand total title; column order and insert; the schedule's own switches; header groups; more kinds of schedule; key rows; split schedules (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kk.md`](needs-checking/group-kk.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

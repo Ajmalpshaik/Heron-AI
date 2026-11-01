@@ -1,7 +1,50 @@
 // NOT STANDALONE. Assumes `doc`, `sheetId`, `views`, `elements`, `at` and
-// `oldViewId` are in scope; leaves `placed`, `refused`, `swapped`, `notDone`,
-// `placedCount`, `distinctPositions`, `sheetProblem`, `layout` and `placedAt`
-// behind.
+// `oldViewId`, `splitInto` and `segment` are in scope; leaves `placed`,
+// `refused`, `swapped`, `notDone`, `placedCount`, `distinctPositions`,
+// `sheetProblem`, `layout` and `placedAt` behind.
+//
+// VERSION 5 (2026-11-01, FRAGMENT-ISSUES row 5b-1367, NEEDS-CHECKING Group
+// KK) - SPLIT A SCHEDULE AND PLACE ITS SEGMENTS, on the placing job only.
+// Both new inputs are declared with the absent word "none", so every caller
+// of version 4 is bound "none" twice and gets version 4 to the letter.
+// Carried from PLACE_SCHEDULE_ON_SHEET's version 2, written the same day on a
+// branch while that card was being merged here.
+//
+//   splitInto  "3"          split each schedule placed into that many
+//                           segments - ViewSchedule.Split(int). ASSUMPTION
+//                           the proof settles: the count of SEGMENTS, of
+//                           equal height.
+//              "200, 150"   split by heights in mm on paper, divided by 304.8
+//                           - Split(IList<double>). ASSUMPTION: one height per
+//                           segment, top first, in paper feet.
+//              "none"       no split (version 4).
+//              A schedule that is ALREADY split is refused a second split by
+//              name, and nothing is placed for it.
+//   segment    "2"          place that segment, 1 the TOP one - Revit counts
+//                           from 0, and the read back says Revit's index too.
+//              "all"        every segment, side by side: the first at the
+//                           schedule's point (or grid cell), each next one to
+//                           the right of the one before, by that one's width
+//                           on the sheet (bounding box after a regenerate)
+//                           plus 10 mm. ASSUMPTION: that box is its printed
+//                           extent.
+//              "none"       version 4's ScheduleSheetInstance.Create with no
+//                           segment. ASSUMPTION: what that places for a
+//                           schedule already split is not said by the
+//                           reference - the read back names the segment.
+//
+// A VIEW IS NOT SPLIT: the two inputs touch schedules only; views in the same
+// call are placed as version 4 places them. A split or a segment asked for
+// with `oldViewId` - the swap - is refused whole: the swap places a schedule
+// whole, as version 2 said.
+//
+// SPLIT, IsSplit, GetSegmentCount AND THE FIVE-ARGUMENT Create ARE IN THE
+// REVIT 2022 REFERENCE AND LATER, NOT 2020 OR 2021 (Autodesk's notes give
+// 2022.1). They are reached BY NAME at run time, so one body serves every
+// release; on 2020 and 2021 a split or segment asked for refuses THAT
+// SCHEDULE in plain words and places nothing for it - the whole schedule
+// would not be what was asked. A SPLIT THAT DOES NOT COME OUT AS PLANNED
+// THROWS, and the add-in rolls the whole call back.
 //
 // VERSION 4 (2026-11-01) - PLACE_SCHEDULE_ON_SHEET MERGED IN. THE PLACING JOB
 // PLACES SCHEDULES TOO. A view goes on a sheet as a Viewport; a schedule goes
@@ -135,9 +178,80 @@ if (noViews)
 
 bool replacing = oldViewId != null && oldViewId != ElementId.InvalidElementId;
 
+// ---- VERSION 5: the split and the segment, read once ---------------------
+var invariant = System.Globalization.CultureInfo.InvariantCulture;
+var splitText = (splitInto ?? "").Trim();
+var segmentText = (segment ?? "").Trim().ToLowerInvariant();
+var wantSplitCount = 0;
+var wantSplitHeights = new List<double>();   // feet
+var wantSegment = 0;                        // 1-based; 0 none; -1 all
+string askProblem = null;
+
+if (splitText.Length > 0 && !string.Equals(splitText, "none", StringComparison.OrdinalIgnoreCase))
+{
+    var splitParts = splitText.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                              .Select(p => p.Trim().Replace("mm", "").Trim()).ToList();
+    int count;
+    if (splitParts.Count == 1 && int.TryParse(splitParts[0], System.Globalization.NumberStyles.None, invariant, out count))
+    {
+        if (count < 2) askProblem = "splitInto " + splitText + " - a split makes at least 2 segments";
+        else wantSplitCount = count;
+    }
+    else
+    {
+        foreach (var part in splitParts)
+        {
+            double mm;
+            if (!double.TryParse(part, System.Globalization.NumberStyles.Float, invariant, out mm) || mm <= 0)
+            {
+                askProblem = "splitInto '" + splitText + "' is not a number of segments ('3') or heights in mm "
+                    + "with commas between ('200, 150')";
+                break;
+            }
+            wantSplitHeights.Add(mm / 304.8);
+        }
+        if (askProblem == null && wantSplitHeights.Count < 2)
+            askProblem = "splitInto '" + splitText + "' - give at least two heights, one per segment";
+    }
+}
+if (segmentText.Length > 0 && segmentText != "none")
+{
+    int number;
+    if (segmentText == "all" || segmentText == "every segment" || segmentText == "all segments") wantSegment = -1;
+    else if (int.TryParse(segmentText, System.Globalization.NumberStyles.None, invariant, out number) && number >= 1)
+        wantSegment = number;
+    else askProblem = (askProblem == null ? "" : askProblem + "; ") + "segment '" + segment
+        + "' is not a segment - give its number, 1 the top one, or 'all'";
+}
+var plannedSegments = wantSplitCount > 0 ? wantSplitCount : wantSplitHeights.Count;
+if (askProblem == null && plannedSegments > 0 && wantSegment > plannedSegments)
+    askProblem = "segment " + wantSegment + " was asked of a split into " + plannedSegments + " segments";
+bool splitAsked = plannedSegments > 0 || wantSegment != 0 || askProblem != null;
+
+// Reached by name: 2022 and later only.
+var splitByCount = typeof(ViewSchedule).GetMethod("Split", new[] { typeof(int) });
+var splitByHeights = typeof(ViewSchedule).GetMethod("Split", new[] { typeof(IList<double>) });
+var isSplitCall = typeof(ViewSchedule).GetMethod("IsSplit", Type.EmptyTypes);
+var segmentCountCall = typeof(ViewSchedule).GetMethod("GetSegmentCount", Type.EmptyTypes);
+var createSegment = typeof(ScheduleSheetInstance).GetMethod("Create",
+    new[] { typeof(Document), typeof(ElementId), typeof(ElementId), typeof(XYZ), typeof(int) });
+var segmentIndexOf = typeof(ScheduleSheetInstance).GetProperty("SegmentIndex");
+var canSplit = splitByCount != null && splitByHeights != null && isSplitCall != null
+    && segmentCountCall != null && createSegment != null;
+Func<Exception, string> revitSaid = failure =>
+    ((failure is System.Reflection.TargetInvocationException && failure.InnerException != null)
+        ? failure.InnerException : failure).Message.TrimEnd('.');
+
 if (noViews)
 {
     // Nothing to place or swap in; said above.
+}
+else if (replacing && splitAsked)
+{
+    // VERSION 5: the swap places a schedule whole.
+    foreach (var view in chosen) refused.Add(view.Id);
+    notDone.Add("splitInto and segment are for placing a schedule, not for putting one in another "
+        + "view's place - the swap places a schedule whole. Nothing was changed.");
 }
 else if (!replacing)
 {
@@ -188,6 +302,49 @@ else if (!replacing)
                     notDone.Add("'" + view.Name + "' is a schedule TEMPLATE, not a schedule - there "
                         + "is nothing to print, so it was not placed.");
                     continue;
+                }
+                // VERSION 5: a split or segment that cannot be done refuses
+                // this schedule here, before the grid is sized, so it leaves
+                // no hole.
+                if (askProblem != null)
+                {
+                    refused.Add(view.Id);
+                    notDone.Add("'" + view.Name + "' - " + askProblem + ". Nothing was split or placed for it.");
+                    continue;
+                }
+                if (splitAsked && !canSplit)
+                {
+                    refused.Add(view.Id);
+                    notDone.Add("'" + view.Name + "' - Revit 2020 and 2021 cannot split a schedule or place "
+                        + "one segment of it: Split arrived at Revit 2022 (the reference packages carry it "
+                        + "from 2022; Autodesk's notes give 2022.1). Nothing was placed for it - placing the "
+                        + "whole schedule would not be what was asked.");
+                    continue;
+                }
+                if (plannedSegments > 0)
+                {
+                    var alreadySplit = false;
+                    var already = 1;
+                    try
+                    {
+                        alreadySplit = (bool)isSplitCall.Invoke(asSchedule, null);
+                        if (alreadySplit) already = (int)segmentCountCall.Invoke(asSchedule, null);
+                    }
+                    catch (Exception failure)
+                    {
+                        refused.Add(view.Id);
+                        notDone.Add("'" + view.Name + "' - its segments could not be read: "
+                            + revitSaid(failure) + ". Nothing was placed for it.");
+                        continue;
+                    }
+                    if (alreadySplit)
+                    {
+                        refused.Add(view.Id);
+                        notDone.Add("'" + view.Name + "' is already split into " + already + " segments, so "
+                            + "it was not split again and nothing was placed. Merge its segments in Revit "
+                            + "first, or leave splitInto out and name the segment to place.");
+                        continue;
+                    }
                 }
                 placeable.Add(view);
                 continue;
@@ -256,34 +413,135 @@ else if (!replacing)
             // its centre sits half off the sheet.
             if (view is ViewSchedule)
             {
-                try
+                var schedule = (ViewSchedule)view;
+
+                // ---- VERSION 5: split first, when asked -----------------
+                var segmentCount = 1;
+                var isSplitNow = false;
+                var splitNote = "";
+                if (canSplit && splitAsked)
                 {
-                    var instance = ScheduleSheetInstance.Create(doc, sheetId, view.Id, slots[i]);
-                    if (instance == null)
+                    try
+                    {
+                        isSplitNow = (bool)isSplitCall.Invoke(schedule, null);
+                        if (isSplitNow) segmentCount = (int)segmentCountCall.Invoke(schedule, null);
+                    }
+                    catch (Exception failure)
                     {
                         refused.Add(view.Id);
-                        notDone.Add("'" + view.Name + "' on sheet " + target.SheetNumber + " - Revit "
-                            + "reported no error and placed nothing.");
+                        notDone.Add("'" + view.Name + "' - its segments could not be read: "
+                            + revitSaid(failure) + ". Nothing was placed for it.");
                         continue;
                     }
-                    placed.Add(instance.Id);
-                    XYZ corner = null;
-                    try { corner = instance.Point; } catch (Exception) { }
-                    noteLanding(sheetId, corner);
-                    placedAt.Add(corner == null
-                        ? "'" + view.Name + "' on sheet " + target.SheetNumber + " - placed, and its "
-                          + "position could not be read back"
-                        : string.Format("'{0}' on sheet {1} at {2:0.#} mm, {3:0.#} mm from the sheet "
-                          + "origin - its top-left corner", view.Name, target.SheetNumber,
-                          corner.X * 304.8, corner.Y * 304.8));
                 }
-                catch (Exception ex)
+                if (plannedSegments > 0)
                 {
-                    // One schedule's problem, said in Revit's own words; let out,
-                    // it would roll back the caller's work.
+                    try
+                    {
+                        if (wantSplitCount > 0) splitByCount.Invoke(schedule, new object[] { wantSplitCount });
+                        else splitByHeights.Invoke(schedule, new object[] { wantSplitHeights });
+                        segmentCount = (int)segmentCountCall.Invoke(schedule, null);
+                    }
+                    catch (Exception failure)
+                    {
+                        refused.Add(view.Id);
+                        notDone.Add("'" + view.Name + "' - Revit refused to split it: " + revitSaid(failure)
+                            + ". Nothing was placed for it.");
+                        continue;
+                    }
+                    if (segmentCount != plannedSegments)
+                        throw new InvalidOperationException(string.Format("'{0}' was split for {1} segments and "
+                            + "Revit reports {2}. Nothing is kept - the whole change is rolled back", view.Name,
+                            plannedSegments, segmentCount));
+                    isSplitNow = true;
+                    splitNote = string.Format(" (split into {0} segments)", segmentCount);
+                }
+                if (wantSegment > 0 && wantSegment > segmentCount)
+                {
                     refused.Add(view.Id);
-                    notDone.Add("'" + view.Name + "' on sheet " + target.SheetNumber
-                        + " - Revit refused: " + ex.Message);
+                    notDone.Add("'" + view.Name + "' has " + segmentCount + " segment(s), so segment "
+                        + wantSegment + " does not exist. Nothing was placed for it.");
+                    continue;
+                }
+
+                // Which segments go on the sheet: none named is version 4's call.
+                var toPlace = new List<int>();            // Revit's 0-based index; -1 version 4
+                if (wantSegment == 0 || !isSplitNow) toPlace.Add(-1);
+                else if (wantSegment == -1) for (var k = 0; k < segmentCount; k++) toPlace.Add(k);
+                else toPlace.Add(wantSegment - 1);
+                if (wantSegment != 0 && !isSplitNow)
+                    splitNote = string.Format(" (it is not split, so {0} is the whole schedule)",
+                        wantSegment == -1 ? "every segment" : "segment " + wantSegment);
+
+                var next = slots[i];
+                foreach (var index in toPlace)
+                {
+                    var segmentWords = index < 0 ? "" : " segment " + (index + 1);
+                    try
+                    {
+                        var instance = index < 0
+                            ? ScheduleSheetInstance.Create(doc, sheetId, view.Id, next)
+                            : createSegment.Invoke(null, new object[] { doc, sheetId, view.Id, next, index })
+                                as ScheduleSheetInstance;
+                        if (instance == null)
+                        {
+                            refused.Add(view.Id);
+                            notDone.Add("'" + view.Name + "'" + segmentWords + " on sheet " + target.SheetNumber
+                                + " - Revit reported no error and placed nothing.");
+                            continue;
+                        }
+                        placed.Add(instance.Id);
+                        XYZ corner = null;
+                        try { corner = instance.Point; } catch (Exception) { }
+                        noteLanding(sheetId, corner);
+
+                        // VERSION 5: the segment it shows, read back.
+                        var shows = "";
+                        if (segmentIndexOf != null && isSplitNow)
+                        {
+                            try
+                            {
+                                var revitIndex = (int)segmentIndexOf.GetValue(instance, null);
+                                shows = string.Format(", showing segment {0} (Revit's index {1})",
+                                    revitIndex + 1, revitIndex);
+                            }
+                            catch (Exception) { shows = ", its segment could not be read back"; }
+                        }
+                        placedAt.Add(corner == null
+                            ? "'" + view.Name + "'" + splitNote + " on sheet " + target.SheetNumber
+                              + " - placed, and its position could not be read back" + shows
+                            : string.Format("'{0}'{1} on sheet {2} at {3:0.#} mm, {4:0.#} mm from the sheet "
+                              + "origin - its top-left corner{5}", view.Name, splitNote, target.SheetNumber,
+                              corner.X * 304.8, corner.Y * 304.8, shows));
+
+                        // The next segment to the right of this one, by its
+                        // width on the sheet - read after a regenerate, since a
+                        // new instance has no extent until then.
+                        if (toPlace.Count > 1 && corner != null)
+                        {
+                            var width = 0.0;
+                            try
+                            {
+                                doc.Regenerate();
+                                var box = instance.get_BoundingBox(target);
+                                if (box != null) width = box.Max.X - box.Min.X;
+                            }
+                            catch (Exception) { width = 0.0; }
+                            if (width <= 0)
+                                notDone.Add("'" + view.Name + "' - the width of the segment just placed could "
+                                    + "not be read, so the next one is placed 10 mm to the right of its corner "
+                                    + "and the two OVERLAP - move them apart on the sheet.");
+                            next = new XYZ(corner.X + width + 10.0 / 304.8, corner.Y, 0.0);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // One schedule's problem, said in Revit's own words; let out,
+                        // it would roll back the caller's work.
+                        refused.Add(view.Id);
+                        notDone.Add("'" + view.Name + "'" + segmentWords + " on sheet " + target.SheetNumber
+                            + " - Revit refused: " + revitSaid(ex));
+                    }
                 }
                 continue;
             }

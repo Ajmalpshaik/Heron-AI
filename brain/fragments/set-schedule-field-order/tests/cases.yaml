@@ -1,0 +1,56 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# The proof plan is tools/jobs/schedule-settings-fields-scratch-2026-11-01.yaml,
+# NEEDS-CHECKING Group KK. NEVER on a 4355-* job model: a scratch project from
+# Revit 2020's default metric template, named in the run record.
+
+positive:
+  - given: >
+      "Heron KF Duct Schedule" on the scratch project, its Fields tab reading
+      Family and Type, Size, Length, Comments; order "move Length to the front"
+    expect: >
+      reordered 1, appliedOrder "1 Length, 2 Family and Type, 3 Size,
+      4 Comments", and the Fields tab and the printed schedule showing Length
+      first - read on screen, not taken from the count
+
+  - given: the same schedule, order "Comments, Size"
+    expect: >
+      Comments then Size first, then the others in their own order after them
+      - "1 Comments, 2 Size, 3 Length, 4 Family and Type" after the case above
+
+  - given: the same call run a second time
+    expect: >
+      reordered 0, alreadyInOrder 1, and nothing written - the second run finds
+      the order already there
+
+  - given: a hidden Mark field second in the Fields tab, and "move Length to 2"
+    expect: >
+      Length second in the Fields tab, Mark third and marked "(hidden)" in
+      appliedOrder; on the printed schedule Length is still the second
+      printed column, because the hidden one is not printed
+
+negative:
+  - given: order "move ZZZ NO SUCH COLUMN to the front"
+    expect: >
+      notPresent naming the schedule and that 'ZZZ NO SUCH COLUMN' is not a
+      column in it, reordered 0, and the Fields tab EXACTLY as before. THIS IS
+      THE FIRST CASE TO RUN
+
+  - given: >
+      a heading renamed so two columns answer to "Size" (field Size, and
+      Comments' heading renamed Size), order "move Size to the end"
+    expect: notPresent saying two columns answer to 'Size', nothing moved
+
+  - given: order "Mark, Mark"
+    expect: notPresent saying 'Mark' is named twice, nothing moved
+
+  - given: order "move Length to 9" on a schedule with 4 fields
+    expect: notPresent saying it has 4 fields and to give 1 to 4, nothing moved
+
+  - given: a title block selected instead of a schedule
+    expect: refused - not a schedule - and nothing moved
+
+second_route:
+  - >
+    The schedule's Properties, Fields tab - the list on the right is the order
+    this sets and reads back, hidden fields included, and Move Up / Move Down
+    is what a person would have done by hand
