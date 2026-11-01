@@ -194,7 +194,7 @@ compatibility-note: >
 #   "set the nut material to galvanised"  -> here (a family type's material)
 #   "rename the family type"              -> here ("Type Name=..." in values)
 #   "delete this family type"             -> here (deleteType)
-#   "rename these duct types"             -> RENAME_ELEMENTS - types in a
+#   "rename these duct types"             -> EDIT_TEXT_VALUES field Name - types in a
 #                                            project, not a family's own types
 #   "add a Width parameter"               -> ADD_FAMILY_PARAMETERS
 #   "neck width is width minus 100"       -> SET_FAMILY_FORMULA

@@ -116,7 +116,8 @@ purpose: >
 
   **IT LISTS WHAT THE DOCUMENT HOLDS, NOT WHAT IS USED.** One read, and nothing
   else. Whether anything uses an entry means walking every element, every type
-  and every painted face - FIND_UNUSED_MATERIALS' walk, not repeated here.
+  and every painted face - FIND_PURGEABLE_ELEMENTS' walk with includeMaterials
+  (FIND_UNUSED_MATERIALS' until 2026-11-01), not repeated here.
 
   **A FAMILY'S LIST IS THE FAMILY'S OWN.** In the Family Editor the answer is
   what that family carries, never what a project it is loaded into holds, nor
@@ -193,7 +194,8 @@ contract:
       # The same materials as element ids, in the same order, for a next step
       # in a chain. Named for what it holds - ids, not names - and no
       # fragment's need is called `materialIds`. NOT `materials`, which
-      # READ_ELEMENT_MATERIAL provides as a dictionary of a different type.
+      # REPORT_MATERIAL_TAKEOFF provides (READ_ELEMENT_MATERIAL until 2026-11-01)
+      # as a dictionary of a different type.
       role: result
       type: IList<ElementId>
     - name: libraryAppearances
@@ -1115,7 +1117,7 @@ compatibility-note: >
   read off the shipped assemblies with tools/api-surface on 2026-10-20 - and
   names the appearance-asset namespace, supplied since D-146.
 
-# ROUTING - repeated in FIND_UNUSED_MATERIALS and
+# ROUTING - repeated in FIND_PURGEABLE_ELEMENTS and
 # TRANSFER_MATERIALS_BETWEEN_DOCUMENTS, the two that were handed row 5b-376's
 # question before this existed.
 #
@@ -1123,9 +1125,9 @@ compatibility-note: >
 #   "what materials are in this project"  -> here
 #   "show me all the materials"           -> here - the list, used or not
 #   "how many materials are there"        -> here - materialCount
-#   "which materials is nobody using"     -> FIND_UNUSED_MATERIALS - the
+#   "which materials is nobody using"     -> FIND_PURGEABLE_ELEMENTS, includeMaterials - the
 #                                            expensive walk this one does not do
-#   "what material is that"               -> READ_ELEMENT_MATERIAL - the
+#   "what material is that"               -> REPORT_MATERIAL_TAKEOFF - the
 #                                            material of an ELEMENT, a different
 #                                            question with the same word in it
 #   "everything in galvanised steel"      -> SELECT_BY_MATERIAL, which needs a

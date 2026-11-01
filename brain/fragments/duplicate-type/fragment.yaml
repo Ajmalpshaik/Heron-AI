@@ -99,7 +99,7 @@ compatibility-note: >
   both loadable family types and system types like duct, pipe and wall types.
   ElementIds are compared as ElementIds and never read as numbers.
 
-# ROUTING - repeated in CHANGE_ELEMENT_TYPE and RENAME_ELEMENTS.
+# ROUTING - repeated in CHANGE_ELEMENT_TYPE and EDIT_TEXT_VALUES.
 #
 #   "make a new duct type"           -> here
 #   "duplicate this type"            -> here
@@ -107,7 +107,7 @@ compatibility-note: >
 #                                      WRITE_ELEMENT_PARAMETERS for the 300
 #   "change these to the 300 type"   -> CHANGE_ELEMENT_TYPE - the type already
 #                                      exists and the instances move onto it
-#   "rename this type"               -> RENAME_ELEMENTS - and note it renames
+#   "rename this type"               -> EDIT_TEXT_VALUES field Name - and note it renames
 #                                      the type EVERYWHERE it is used, which
 #                                      is the opposite of duplicating it
 #   "make the new type 300 wide"     -> WRITE_ELEMENT_PARAMETERS on the type

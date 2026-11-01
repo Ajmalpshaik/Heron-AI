@@ -325,7 +325,7 @@ compatibility-note: >
 #                                           read and a count (5b-468)
 #   "which level are these walls on"     -> READ_ELEMENT_PARAMETERS, Level -
 #                                           walls already chosen (5b-468)
-#   "find all the VCDs"                 -> SELECT_BY_FAMILY, when the FAMILY
+#   "find all the VCDs"                 -> SELECT_BY_PARAMETER_VALUE, Family, when the FAMILY
 #                                           name is what is known and the
 #                                           category is not
 #   "all the ductwork"                   -> here, with `categories` (version

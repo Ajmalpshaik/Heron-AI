@@ -210,7 +210,7 @@ compatibility-note: >
 #                                             words - it was ranked on
 #                                             SET_SCHEDULE_SORT_GROUP, a write,
 #                                             before this card existed
-#   "what is the total per type"           -> SUM_BY_GROUP. A question about
+#   "what is the total per type"           -> GROUP_AND_COUNT. A question about
 #                                             the model, answered in the chat;
 #                                             this changes a schedule
 #   "which columns are totalled"           -> nothing reads it yet.

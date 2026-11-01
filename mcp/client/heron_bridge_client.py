@@ -24,7 +24,7 @@ No Revit API, no MCP yet. Just: can something outside Revit reach inside it?
     python mcp/client/heron_bridge_client.py stop --session 63712
                                                        # ...in that Revit; with two
                                                        # connected it must be named
-    python mcp/client/heron_bridge_client.py validate list-levels
+    python mcp/client/heron_bridge_client.py validate report-level-elevations
                                                        # run one fragment through the
                                                        # phases a proof needs, and
                                                        # record what came back
@@ -3324,7 +3324,7 @@ def main(argv):
         rest, pairs, _, _, _ = pull_values(argv[2:])
         if rest is None:
             return 2
-        # prove --in "Project1" list-levels ...  reads a model that is open
+        # prove --in "Project1" report-level-elevations ...  reads a model that is open
         # but not necessarily the one in front.
         rest, session = pull_session(rest)
         in_document = None
@@ -3332,8 +3332,8 @@ def main(argv):
             in_document = rest[1]
             rest = rest[2:]
         if not rest:
-            print("Which fragments? e.g. prove list-levels list-grids")
-            print("               or  prove --in \"Project1\" list-levels")
+            print("Which fragments? e.g. prove report-level-elevations list-grids")
+            print("               or  prove --in \"Project1\" report-level-elevations")
             return 2
         values = caller_values(pairs)
         if values is None:
@@ -3357,7 +3357,7 @@ def main(argv):
                 rest = rest[:at] + rest[at + 2:]
             rest = [r for r in rest if r not in ("--write", "--apply")]
         if rest is None or not rest:
-            print("Which fragment? e.g. list-levels")
+            print("Which fragment? e.g. report-level-elevations")
             print("  --in \"Doc\"              run against a model that is open but not")
             print("                          in front - before the fragment name, as")
             print("                          with validate. Writes too, --apply included")
@@ -3398,8 +3398,8 @@ def main(argv):
             print("Nothing was sent to Revit.")
             return 2
         if not rest:
-            print("Which fragment? e.g. list-levels")
-            print("               or  fragment --in \"Project1\" list-levels")
+            print("Which fragment? e.g. report-level-elevations")
+            print("               or  fragment --in \"Project1\" report-level-elevations")
             return 2
         values = caller_values(pairs)
         if values is None:
@@ -3529,7 +3529,7 @@ def main(argv):
             options[flags[rest[0]]] = rest[1]
             rest = rest[2:]
         if len(rest) != 1:
-            print("Which fragment? e.g. validate list-levels")
+            print("Which fragment? e.g. validate report-level-elevations")
             print("  --in \"Doc\"           run against a model that is open but not in front")
             print("  --negative-in \"Doc\"  take the negative case from a second model")
             print("  --cross count_elements | duct")

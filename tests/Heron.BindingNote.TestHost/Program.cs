@@ -185,6 +185,14 @@ namespace Heron.BindingNote.TestHost
                   "and so is one marked optional: false");
             Check(HeronBindingNote.EmptyWhenAbsent("IList<ElementId>", "true") == null,
                   "a list of ids is not an element list here, as in IsElementList");
+            // 2026-11-01, GROUP_AND_COUNT v2: an optional quantity per element
+            // binds null - "nobody handed one on" - never an empty dictionary.
+            Check(HeronBindingNote.EmptyWhenAbsent("IDictionary<ElementId, double>", "true") == "null",
+                  "a quantity per element marked optional binds null");
+            Check(HeronBindingNote.EmptyWhenAbsent("IDictionary<ElementId, double>", null) == null,
+                  "and NOT marked optional it is still refused");
+            Check(HeronBindingNote.EmptyWhenAbsent("IDictionary<ElementId, string>", "true") == null,
+                  "a dictionary of text is not that case");
             Check(HeronBindingNote.EmptyWhenAbsent("Element", "true") == null,
                   "one element has no empty value, so it is still refused");
             Check(HeronBindingNote.EmptyWhenAbsent("bool", "true") == null,

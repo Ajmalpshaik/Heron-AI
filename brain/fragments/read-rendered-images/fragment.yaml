@@ -113,7 +113,7 @@ compatibility-note: >
 #   "which renderings are saved"           -> here
 #   "open the render dialog"               -> OPEN_RENDER_DIALOG
 #   "save this view as a jpg"              -> EXPORT_VIEW_IMAGE, a write
-#   "which images are loaded in the model" -> FIND_UNUSED_IMAGES
+#   "which images are loaded in the model" -> FIND_PURGEABLE_ELEMENTS
 
 utterances:
   - is there a saved rendering in this project

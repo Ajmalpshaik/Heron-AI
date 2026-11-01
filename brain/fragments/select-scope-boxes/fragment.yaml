@@ -95,7 +95,7 @@ compatibility-note: >
 #
 #   "what scope boxes are there"          -> here
 #   "list the scope boxes"                -> here
-#   "rename the scope boxes"              -> here, then RENAME_ELEMENTS
+#   "rename the scope boxes"              -> here, then EDIT_TEXT_VALUES field Name
 #   "delete that scope box"               -> here, then DELETE_ELEMENTS - a
 #                                            scope box is an ordinary element,
 #                                            so no dedicated delete is needed

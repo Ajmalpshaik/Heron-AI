@@ -122,7 +122,7 @@ compatibility-note: >
 #   "list the sheets"           -> LIST_SHEETS - a QUESTION
 #   "put this view on a sheet"  -> PLACE_VIEW_ON_SHEET, which needs a sheet to
 #                                  exist first and does not make one
-#   "renumber the sheets"       -> RENAME_ELEMENTS on the number parameter;
+#   "renumber the sheets"       -> EDIT_TEXT_VALUES on the number parameter;
 #                                  nothing here changes an existing sheet
 
 #   "make a sheet list schedule"       -> CREATE_SHEET_LIST - the index OF the

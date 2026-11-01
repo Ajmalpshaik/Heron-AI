@@ -244,7 +244,7 @@ compatibility-note: >
 #   "add a Width parameter to this family"   -> here
 #   "make these family parameters instance"  -> here, switchExisting true
 #   "rename the family parameter CC 1 to 2"  -> here, renameExisting true
-#   "rename these walls / views / sheets"    -> RENAME_ELEMENTS (elements, not
+#   "rename these walls / views / sheets"    -> EDIT_TEXT_VALUES field Name (elements, not
 #                                               a family's parameters)
 #   "rename this family"                     -> RENAME_FAMILY
 #   "delete these family parameters"         -> DELETE_FAMILY_PARAMETERS

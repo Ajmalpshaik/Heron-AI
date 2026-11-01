@@ -145,7 +145,7 @@ compatibility-note: >
 #   "change the material on these"                -> REPLACE_MATERIAL - swap one for another
 #   "everything in galvanised steel"              -> SELECT_BY_MATERIAL
 #   "set the finish layer of this wall to plaster" -> SET_COMPOUND_LAYER_WIDTH
-#   "what material is this"                       -> READ_ELEMENT_MATERIAL
+#   "what material is this"                       -> REPORT_MATERIAL_TAKEOFF
 utterances:
   - make these columns concrete
   - give these ducts the galvanised material

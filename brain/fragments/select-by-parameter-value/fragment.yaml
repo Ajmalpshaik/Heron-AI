@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -17,7 +17,12 @@ capability: SELECT_BY_PARAMETER_VALUE
 # deleted the plane carrying a connector. Version 2's proof below no longer
 # describes the code: DRAFT until NEEDS-CHECKING Group IT proves version 3
 # (D-30).
-version: 3
+#
+# Version 4 (2026-11-01) changed impl/ again: SELECT_BY_FAMILY and
+# SELECT_BY_NUMERIC_PARAMETER were merged in - see the purpose's last paragraph
+# and the comment at the end of the routing table. The proof below is
+# version 2's, kept as the record; DRAFT until version 4 is proved.
+version: 4
 source: OFFICIAL
 risk: READ
 
@@ -41,13 +46,13 @@ purpose: >
   `withoutParameter` instead, which also means a MISTYPED parameter name comes
   back as "0 matched, 4,812 do not carry it" rather than as a plausible zero.
 
-  **This matches text, and a number is not text.** A length, an airflow or a
-  pressure is stored as a double and only becomes "500" after Revit formats it
-  - in the project's display units, with the project's rounding and separators.
-  Searching for "500" finds it in a millimetre project, misses it in a metre
-  one, and misses 500.4 rounded to "500" in neither predictably.
-  SELECT_BY_NUMERIC_PARAMETER compares the stored number and is the right
-  answer for anything with a unit.
+  **A text mode matches text, and a number is not text.** A length, an airflow
+  or a pressure is stored as a double and only becomes "500" after Revit
+  formats it - in the project's display units, with the project's rounding and
+  separators. Searching for "500" as text finds it in a millimetre project,
+  misses it in a metre one, and misses 500.4 rounded to "500" in neither
+  predictably. The NUMERIC modes compare the stored number instead, and are
+  the right answer for anything with a unit.
 
   **Type parameters are searched after instance parameters, and only if asked.**
   A name that exists on both wins at the instance, which is the same order
@@ -65,6 +70,16 @@ purpose: >
   nested inside a link are not read, and are counted in the answer. This
   is version 2; version 1's proof no longer describes the code, and the
   fragment is DRAFT until it is proved again.
+
+  **VERSION 4 ALSO FINDS BY FAMILY AND COMPARES NUMBERS** - SELECT_BY_FAMILY
+  and SELECT_BY_NUMERIC_PARAMETER were merged in. Family as the parameter
+  finds every element of a named family wherever it is, the category
+  optional, `exactMatch` for one family whose name another contains; the
+  families that matched are counted in `matchedFamilies` and an unbounded
+  sweep is said in `scannedWholeModel`. Modes gt, gte, lt, lte, between, eq and
+  ne compare a stored number - "ducts 500 mm high", "pipes larger than 100" -
+  with `compareValue` in Revit's internal unit (500 mm is 500/304.8), eq to a
+  tolerance, and a parameter held as text is counted in `notNumeric`.
 
 # A NAME TWO PARAMETERS SHARE IS NEVER READ, AND THE ELEMENT IS NEVER MATCHED -
 # it is counted in `ambiguous` (D-54 s3, FRAGMENT-ISSUES 5b-203; added
@@ -104,6 +119,35 @@ contract:
       type: bool
       source: request
       optional: true
+    # Version 4, from SELECT_BY_FAMILY: true is matchMode equals - one family
+    # whose name another contains. Left out, false. Beside a mode that is not
+    # equals or contains it is refused.
+    - name: exactMatch
+      type: bool
+      source: request
+      optional: true
+    # Version 4, from SELECT_BY_NUMERIC_PARAMETER: the number a numeric mode
+    # (gt, gte, lt, lte, between, eq, ne) compares with, IN REVIT'S INTERNAL
+    # UNIT - a length in feet, so 500 mm is 1.6404. Left out, a number typed as
+    # matchText is used; neither is refused.
+    - name: compareValue
+      type: double
+      source: request
+      optional: true
+      absent: NaN
+    # Version 4: the upper bound of between, in the same internal unit.
+    - name: compareValueMax
+      type: double
+      source: request
+      optional: true
+      absent: NaN
+    # Version 4: how close eq and ne mean, internal units. Left out or 0 it is
+    # 1/304.8 - one millimetre if a length.
+    - name: tolerance
+      type: double
+      source: request
+      optional: true
+      absent: 0
   provides:
     - name: elements
       role: result
@@ -138,6 +182,27 @@ contract:
       # up in THIS model (FRAGMENT-ISSUES row 75).
       role: accounting
       type: IList<string>
+    - name: notNumeric
+      # Version 4, from SELECT_BY_NUMERIC_PARAMETER. For a numeric mode, the
+      # elements carrying the parameter as TEXT, so no comparison was
+      # possible. Given and unusable, never a match (D-52).
+      role: accounting
+      type: int
+    - name: matchedFamilies
+      # Version 4, from SELECT_BY_FAMILY. Every match counted by its family -
+      # a contains that caught more families than meant shows which.
+      role: result
+      type: IDictionary<string, int>
+    - name: scannedWholeModel
+      # Version 4, from SELECT_BY_FAMILY. True when no category bounded the
+      # sweep - how it ran, never what it found.
+      role: accounting
+      type: bool
+    - name: found
+      # Version 4, from SELECT_BY_FAMILY: how many matched, the count of
+      # `elements`.
+      role: result
+      type: int
 
 proof:
   date: '2026-10-28'
@@ -181,19 +246,26 @@ compatibility-note: >
   element and read by NAME - never as a number, which is what would have made
   2024's 64-bit ids matter here.
 
-# ROUTING - repeated in SELECT_BY_NUMERIC_PARAMETER, FILTER_ELEMENTS_BY_TYPE
-# and DESCRIBE_BLANK_PARAMETERS.
+# ROUTING - repeated in FILTER_ELEMENTS_BY_TYPE, DESCRIBE_BLANK_PARAMETERS,
+# MEASURE_RUN_QUANTITIES and SET_MEP_SIZE.
 #
 #   "find every vcd"                 -> here, matching Family and Type
 #   "mark begins with ahu"           -> here
 #   "comments contain revise"        -> here
-#   "ducts 500 mm high"              -> SELECT_BY_NUMERIC_PARAMETER. A number
+#   "ducts 500 mm high"              -> here, a NUMERIC mode - eq on Height
+#                                       with 500/304.8 (version 4). A number
 #                                       only becomes text after Revit formats
 #                                       it in the project's units - searching
-#                                       for "500" here is a coin toss
+#                                       for "500" as text is a coin toss
+#   "pipes larger than 100 mm"       -> here, gt (version 4)
+#   "walls between 200 and 300"      -> here, between (version 4)
+#   "find all the VCDs" / "where are all the fire dampers" -> here,
+#                                       parameterName Family, when VCD is the
+#                                       FAMILY name - no category needed
+#                                       (version 4, SELECT_BY_FAMILY)
 #   "all the 300x300 ducts"          -> A SKILL. On a duct, 300x300 is Width
 #                                       and Height - two numbers, not text -
-#                                       so it is SELECT_BY_NUMERIC_PARAMETER
+#                                       so it is this card's numeric mode
 #                                       twice with the results intersected,
 #                                       and a composition is a skill's job.
 #                                       Route here only when the size really
@@ -217,6 +289,35 @@ compatibility-note: >
 #                                       only, so a match here loses a sheet
 #                                       once a later revision is added to it
 #                                       (row 5b-550)
+#   "how long are these ducts"       -> MEASURE_RUN_QUANTITIES - the value
+#                                       reported, not used to filter
+#   "make these ducts 500 high"      -> SET_MEP_SIZE - this one only reads
+#   "everything of the same type as this one" -> FILTER_ELEMENTS_BY_TYPE, which
+#                                       takes an example element
+#   "which families are not used"    -> FIND_PURGEABLE_ELEMENTS
+#
+# SELECT_BY_FAMILY AND SELECT_BY_NUMERIC_PARAMETER WERE MERGED INTO THIS CARD
+# on 2026-11-01, on the owner's instruction ("make sure there is no duplicate
+# tools"), and are DEPRECATED. Where their inputs and outputs are now:
+#   SELECT_BY_FAMILY    familyName -> parameterName=Family, matchText=<the
+#                       name>, matchMode=contains (or equals); exactMatch,
+#                       categories (empty = whole model), includeLinks,
+#                       elements, matchedFamilies, scannedWholeModel, found,
+#                       linksSearched, linkedMatches - the same names. One rule
+#                       is kept from it: no name to look for matches nothing.
+#                       Its families were read through the instance's symbol
+#                       and the type's family name; this card's familyNameOf
+#                       reads the same two
+#   SELECT_BY_NUMERIC_PARAMETER  comparison -> matchMode (gt, gte, lt, lte,
+#                       between, eq, ne); compareValue, compareValueMax,
+#                       tolerance, includeTypeParameters, categories,
+#                       includeLinks, elements, withoutParameter, notNumeric,
+#                       ambiguous, findings, linksSearched, linkedMatches - the
+#                       same names. NOT carried, as an opposite rule: an empty
+#                       comparison there meant eq; here an empty matchMode
+#                       means contains, as it always has, and a numeric
+#                       compare must be named - a silent default between text
+#                       and number is the one this card refuses
 
 utterances:
   - find every vcd
@@ -242,3 +343,19 @@ utterances:
   # both backends.
   - comments contain revise
   - mark begins with ahu
+  # MOVED 2026-11-01 from SELECT_BY_FAMILY, merged into this card.
+  - find all the VCDs
+  - select everything from this family
+  - where are all the fire dampers
+  - find the family by name
+  - which elements use this family
+  - find the fire dampers
+  # MOVED 2026-11-01 from SELECT_BY_NUMERIC_PARAMETER, merged into this card.
+  - find ducts 500 mm high
+  - select pipes larger than 100 mm
+  - which walls are thicker than 200
+  - filter by a numeric parameter
+  - show me everything with a diameter over 150
+  - ducts 500 mm high
+  - pipes larger than 100 mm
+  - walls between 200 and 300

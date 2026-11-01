@@ -171,7 +171,7 @@ compatibility-note: >
 #   "what level is this on"          -> READ_ELEMENT_LEVEL - one element, not
 #                                       a sweep
 #   "move these to level 2"          -> SET_ELEMENT_LEVEL - this one only reads
-#   "what levels are there"          -> LIST_LEVELS - the names and elevations,
+#   "what levels are there"          -> REPORT_LEVEL_ELEVATIONS - the names and elevations,
 #                                       which is what you need before you can
 #                                       name one here
 

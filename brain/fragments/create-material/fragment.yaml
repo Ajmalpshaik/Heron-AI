@@ -90,13 +90,13 @@ compatibility-note: >
   the `Color` and `Transparency` setters are present 2020 through 2027 - read off
   the reference assemblies at both ends rather than remembered.
 
-# ROUTING - repeated in REPLACE_MATERIAL and READ_ELEMENT_MATERIAL.
+# ROUTING - repeated in REPLACE_MATERIAL and REPORT_MATERIAL_TAKEOFF.
 #
 #   "make a new material"            -> here
 #   "add a material for the ductwork" -> here
 #   "change the material on these"   -> REPLACE_MATERIAL - the swap, and it
 #                                       needs both materials to exist first
-#   "what material is this"          -> READ_ELEMENT_MATERIAL
+#   "what material is this"          -> REPORT_MATERIAL_TAKEOFF
 #   "how much concrete is in this"   -> REPORT_MATERIAL_TAKEOFF
 
 # ROUTING (2026-10-20, the material tools of Group IA, row 5b-1263)

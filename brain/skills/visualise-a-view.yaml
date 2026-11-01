@@ -116,8 +116,8 @@ purpose: >
      - REPORT_VISUAL_PRESET names the materials on what the view shows that
        have none; LIST_MATERIALS withAllTabs gives every tab of
        them, and withLibraryAppearances the appearance names this PC's
-       library holds; READ_ELEMENT_MATERIAL reads the material of a
-       selection.
+       library holds; REPORT_MATERIAL_TAKEOFF's `materials` reads the material
+       of a selection.
      - Give each an appearance with SET_MATERIAL_APPEARANCE: a library asset
        by its exact name, "from <material>" to copy a good look onto many, or
        generic with matchShading so the render keeps the colour the modeller
@@ -239,7 +239,7 @@ needs:
   - SET_VIEW_SECTION_BOX
   # Step 2 - the materials.
   - LIST_MATERIALS
-  - READ_ELEMENT_MATERIAL
+  - REPORT_MATERIAL_TAKEOFF
   - SET_MATERIAL_APPEARANCE
   - CREATE_STARTER_MATERIALS
   - SET_ELEMENT_MATERIAL

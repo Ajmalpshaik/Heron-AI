@@ -208,17 +208,22 @@ CHANGES = [
     # this suite refuses. The fifth is the card's own find-and-replace job; the
     # last went to SET_VIEW_FILTER_CATEGORIES once #539 merged (main be29fde4).
     # NOT HERE: "rename the selected views", which that card still takes.
-    ("rename the plan", "RENAME_ELEMENTS",
+    # THE EXPECTED CARD CHANGED ON 2026-11-01, AND ONLY BECAUSE THE FACT DID:
+    # RENAME_ELEMENTS was merged into EDIT_TEXT_VALUES (field Name) on the
+    # owner's instruction and is DEPRECATED, so nothing offers it. What 5b-510
+    # held - that a view, sheet or schedule rename reaches the tool that renames
+    # it, by ranking - is held here against the card that does that job now.
+    ("rename the plan", "EDIT_TEXT_VALUES",
      "5b-510: answered RENAME_FAMILY with the re-ranker"),
-    ("rename this floor plan", "RENAME_ELEMENTS",
+    ("rename this floor plan", "EDIT_TEXT_VALUES",
      "5b-510: answered SYNC_SPACES_WITH_LINKED_ROOMS with the re-ranker"),
-    ("rename these sheets", "RENAME_ELEMENTS",
+    ("rename these sheets", "EDIT_TEXT_VALUES",
      "5b-510: answered EDIT_REVISION_NUMBERING_SEQUENCE with the re-ranker"),
-    ("rename the schedule", "RENAME_ELEMENTS",
+    ("rename the schedule", "EDIT_TEXT_VALUES",
      "5b-510: answered EDIT_REVISION_NUMBERING_SEQUENCE with the re-ranker"),
-    ("rename the selected elements", "RENAME_ELEMENTS",
+    ("rename the selected elements", "EDIT_TEXT_VALUES",
      "5b-510: answered RENAME_FAMILY with the re-ranker"),
-    ("rename the views to match the new naming", "RENAME_ELEMENTS",
+    ("rename the views to match the new naming", "EDIT_TEXT_VALUES",
      "5b-510: answered SET_VIEW_FILTER_CATEGORIES with the re-ranker after #539"),
 ]
 
@@ -305,9 +310,11 @@ NO_TOOL = []
 DECLARED = [
     ("how high is this off the floor", "READ_ELEMENT_LEVEL",
      "146: answered SET_ROOM_LIMITS on the model, MOVE_TO_RAY_HIT on spelling"),
-    ("find the fire dampers", "SELECT_BY_FAMILY",
+    # SELECT_BY_FAMILY was merged into SELECT_BY_PARAMETER_VALUE on 2026-11-01.
+    ("find the fire dampers", "SELECT_BY_PARAMETER_VALUE",
      "146: answered PLACE_ACCESSORY_ON_RUN on spelling"),
-    ("what levels are in this model", "LIST_LEVELS",
+    # LIST_LEVELS was merged into REPORT_LEVEL_ELEVATIONS on 2026-11-01.
+    ("what levels are in this model", "REPORT_LEVEL_ELEVATIONS",
      "146: answered CREATE_LEVELS on spelling"),
     ("what is the insulation thickness", "READ_ELEMENT_PARAMETERS",
      "146: answered SET_MEP_INSULATION on both"),
@@ -475,6 +482,13 @@ def main():
         print("\n8. A QUESTION THAT REACHED A WRITE IS DECLARED ON THE READ THAT ANSWERS IT")
         owners = {}
         for frag in on_disk.values():
+            # A RETIRED CARD DECLARES NOTHING, as the identity table it mirrors
+            # holds (heron_search.RETIRED_FRAGMENTS, test_search 4b): its
+            # sentences stay on it as the record and moved to its successor.
+            # Without this, every sentence moved by a merge read as declared
+            # twice (2026-11-01, SELECT_BY_FAMILY and LIST_LEVELS merged).
+            if frag.status in SEARCH.RETIRED_FRAGMENTS:
+                continue
             for said in [frag.data.get("semantic-identity") or ""] + frag.utterances():
                 owners.setdefault(SEARCH.normalise(said), set()).add(frag.data.get("capability"))
         risk_of = dict((frag.data.get("capability"), (frag.data.get("risk") or "").upper())

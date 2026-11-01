@@ -140,7 +140,7 @@ compatibility-note: >
 #   "where does this family get its material" -> here
 #   "what parameters does this family have"   -> here
 #   "what sizes does the lookup table hold"   -> REPORT_FAMILY_TABLES_IN_PROJECT
-#   "what material is this element"           -> READ_ELEMENT_MATERIAL, in a project
+#   "what material is this element"           -> REPORT_MATERIAL_TAKEOFF, in a project
 
 utterances:
   - what parameters does this family have

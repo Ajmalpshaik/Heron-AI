@@ -293,6 +293,10 @@ ABSENT_BINDS = ("bool", "View", "IList<View>")
 EMPTY_WHEN_ABSENT = ("IList<Element>", "List<Element>", "ICollection<Element>",
                      "IEnumerable<Element>")
 
+# And the one shape it binds NULL - "nobody handed one on" - since 2026-11-01:
+# GROUP_AND_COUNT version 2's optional `quantities`, word for word.
+NULL_WHEN_ABSENT = ("IDictionary<ElementId,double>",)
+
 
 def need_may_be_empty(entry):
     """Can this element list run with nothing to fill it, and bind empty?
@@ -308,8 +312,8 @@ def need_may_be_empty(entry):
     """
     shape = str(entry.get("type") or "").replace(" ", "")
     return (need_source(entry) == "fragment"
-            and "ElementId" not in shape
-            and shape in EMPTY_WHEN_ABSENT
+            and (shape in NULL_WHEN_ABSENT
+                 or ("ElementId" not in shape and shape in EMPTY_WHEN_ABSENT))
             and str(entry.get("optional")).strip().lower() == "true")
 
 

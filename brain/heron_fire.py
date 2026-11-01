@@ -2595,7 +2595,7 @@ def calc_temperature_rating(a):
     a.uses("the ceiling temperature compared with the most ceiling temperature each "
            "classification allows, converted exactly from F" if family == "nfpa" else
            "the least rating = the highest ambient + 30 C")
-    a.into_revit("SELECT_BY_FAMILY finds the sprinklers; CHANGE_ELEMENT_TYPE swaps them to the "
+    a.into_revit("SELECT_BY_PARAMETER_VALUE (parameterName Family) finds the sprinklers; CHANGE_ELEMENT_TYPE swaps them to the "
                  "type with the rating chosen")
 
 

@@ -92,7 +92,7 @@ compatibility-note: >
 #   "which families are unused"          -> FIND_PURGEABLE_ELEMENTS, worth running
 #                                           first when the point is a clean
 #                                           library
-#   "find all the VCDs"                  -> SELECT_BY_FAMILY
+#   "find all the VCDs"                  -> SELECT_BY_PARAMETER_VALUE
 #   "export the model to IFC"            -> EXPORT_MODEL_TO_IFC
 #   "rename this family"                 -> RENAME_FAMILY
 

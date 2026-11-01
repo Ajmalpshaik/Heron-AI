@@ -112,11 +112,11 @@ compatibility-note: >
 # hazards - the offset has to be recomputed or the element jumps a storey - and
 # writing it as a by-product of a read would hide that.
 
-# ROUTING - repeated in LIST_LEVELS, SET_ELEMENT_LEVEL and CREATE_LEVELS.
+# ROUTING - repeated in REPORT_LEVEL_ELEVATIONS, SET_ELEMENT_LEVEL and CREATE_LEVELS.
 #
 #   "what level is this on"     -> here - the level of an ELEMENT
 #   "how high is this"          -> here - level plus offset IS the elevation
-#   "list the levels"           -> LIST_LEVELS - the levels THEMSELVES, which
+#   "list the levels"           -> REPORT_LEVEL_ELEVATIONS - the levels THEMSELVES, which
 #                                  is a different question with the same
 #                                  words in it
 #   "move these to level 3"     -> SET_ELEMENT_LEVEL

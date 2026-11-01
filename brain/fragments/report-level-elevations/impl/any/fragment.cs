@@ -1,7 +1,22 @@
 // NOT STANDALONE. Assumes `doc` and `includeLinks` are in scope, and leaves
 // `levels`, `elevations`, `projectElevations`, `worstDifference`, `affected`,
-// `atRisk`, `typesDisagree`, `linksSearched`, `linkedMatches` and `storeys`
-// behind.
+// `atRisk`, `typesDisagree`, `linksSearched`, `linkedMatches`, `storeys`,
+// `elements`, `elevationsMm`, `projectElevationsMm` and `findings` behind.
+//
+// VERSION 4 (2026-11-01) - LIST_LEVELS MERGED IN. Its answers are here beside
+// this card's: the levels handed on as `elements` too (the name the next step
+// reads), bottom to top; `elevationsMm`, each level's height in millimetres as
+// its level head shows it; `projectElevationsMm`, from the project origin;
+// and `findings`, one line per level, the two said apart wherever they
+// differ. Each linked level's line also gives the number its own level head
+// reads.
+//
+// THE READING OF THE TWO HEIGHTS IS THIS CARD'S, AND IT IS RevitAPI.xml's:
+// ProjectElevation is relative to the project origin whatever the Elevation
+// Base says, and Elevation is relative to the base the level type names. The
+// retired LIST_LEVELS read them the other way round (row 5b-180) - its
+// `elevationsMm` held ProjectElevation and called it the level head. Here the
+// level head is Elevation, as the header below has always said.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -114,8 +129,31 @@ catch { }
 // with rounding on it, and calling that a difference would make every model
 // report as affected.
 const double Tolerance = 0.0005 / 0.3048;
-
 bool affected = worstDifference > Tolerance;
+
+// ---- Version 4: LIST_LEVELS' answers ----------------------------------------
+// Feet to millimetres by arithmetic (D-20): 1 ft = 304.8 mm exactly.
+var elements = new List<Element>(levels);
+var elevationsMm = new Dictionary<ElementId, double>();
+var projectElevationsMm = new Dictionary<ElementId, double>();
+var findings = new List<string>();
+foreach (var element in levels)
+{
+    var level = element as Level;
+    if (level == null) continue;
+    var headMm = level.Elevation * 304.8;
+    var fromOriginMm = level.ProjectElevation * 304.8;
+    elevationsMm[level.Id] = headMm;
+    projectElevationsMm[level.Id] = fromOriginMm;
+    // A tenth of a millimetre: below that the two are the same number with
+    // rounding on it, and a caveat on every row would mean nothing.
+    findings.Add(string.Format("{0}  {1:0.#} mm{2}", level.Name, headMm,
+        Math.Abs(headMm - fromOriginMm) > 0.1
+            ? string.Format(" (the level head reads this; from the project origin it is {0:0.#} mm - "
+                + "the one to use against a coordinate)", fromOriginMm)
+            : ""));
+}
+findings.Insert(0, string.Format("{0} level(s), bottom to top", levels.Count));
 bool atRisk = !affected && surveyOffsetKnown && Math.Abs(surveyOffset) > Tolerance;
 bool typesDisagree = basesSeen.Count > 1;
 
@@ -316,17 +354,20 @@ for (var i = 0; i < linkDocs.Count; i++)
         if (!hostByName.TryGetValue(level.Name, out mine))
         {
             unmatched++;
-            rows.Add(string.Format("  {0} - '{1}' at {2:0.0} mm here: NO level of that name in this model",
-                linked.Title, level.Name, here * 304.8));
+            rows.Add(string.Format("  {0} - '{1}' at {2:0.0} mm here (its own level head reads {3:0.0} mm): "
+                + "NO level of that name in this model",
+                linked.Title, level.Name, here * 304.8, level.Elevation * 304.8));
             continue;
         }
         named++;
         var difference = here - mine.ProjectElevation;
         var off = Math.Abs(difference) > Tolerance;
         if (off) disagree++;
-        rows.Add(string.Format("  {0} - '{1}' at {2:0.0} mm here; this model's at {3:0.0} mm - {4}",
+        rows.Add(string.Format("  {0} - '{1}' at {2:0.0} mm here (its own level head reads {5:0.0} mm); "
+            + "this model's at {3:0.0} mm - {4}",
             linked.Title, level.Name, here * 304.8, mine.ProjectElevation * 304.8,
-            off ? string.Format("DIFFERS by {0:0.0} mm", difference * 304.8) : "same height"));
+            off ? string.Format("DIFFERS by {0:0.0} mm", difference * 304.8) : "same height",
+            level.Elevation * 304.8));
     }
 
     linksSearched++;

@@ -30,7 +30,7 @@ purpose: >
   becomes 'Mechanical Plan1' - and that name is only readable once the copying
   transaction has COMMITTED. A fragment that never opens a transaction therefore
   cannot rename it in the same breath. So this reports the name Revit gave, and
-  RENAME_ELEMENTS does the rest in the next one. Splitting it is not a
+  EDIT_TEXT_VALUES, field Name, does the rest in the next one. Splitting it is not a
   limitation being worked around; it is the rule being obeyed rather than
   quietly broken.
 
@@ -92,7 +92,7 @@ compatibility-note: >
   loudly.
 
 # ROUTING - repeated in APPLY_VIEW_TEMPLATE, CREATE_VIEW_TEMPLATE_FROM_VIEW and
-# RENAME_ELEMENTS.
+# EDIT_TEXT_VALUES.
 #
 #   "copy this view template"        -> here
 #   "make a variant of this template" -> here
@@ -100,7 +100,7 @@ compatibility-note: >
 #   "make a template from this view" -> CREATE_VIEW_TEMPLATE_FROM_VIEW - a new
 #                                       template out of a view's settings,
 #                                       rather than a copy of one that exists
-#   "rename the copy"                -> RENAME_ELEMENTS, and it has to be a
+#   "rename the copy"                -> EDIT_TEXT_VALUES field Name, and it has to be a
 #                                       SEPARATE call: the copy's name is only
 #                                       readable once this transaction has
 #                                       committed

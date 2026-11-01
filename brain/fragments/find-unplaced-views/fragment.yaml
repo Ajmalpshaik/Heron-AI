@@ -85,7 +85,7 @@ compatibility-note: >
 #                                           named - since 2026-11-01 it does
 #                                           not take this card's elements
 #   "which families are unused"          -> FIND_PURGEABLE_ELEMENTS
-#   "what else is unused"                -> FIND_UNUSED_DEFINITIONS, for view
+#   "what else is unused"                -> FIND_PURGEABLE_ELEMENTS, for view
 #                                           templates and filters
 #   "delete these"                       -> DELETE_ELEMENTS, deliberately and
 #                                           with the list in front of you

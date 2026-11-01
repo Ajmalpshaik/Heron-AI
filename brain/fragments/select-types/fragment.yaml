@@ -133,7 +133,7 @@ compatibility-note: >
 #                                          a write, measured 2026-09-25; the one
 #                                          type's mullions are
 #                                          REPORT_CURTAIN_WALL_TYPE's
-#   "rename that type"                  -> RENAME_ELEMENTS does the renaming.
+#   "rename that type"                  -> EDIT_TEXT_VALUES does the renaming.
 #                                          This one is how the type is REACHED
 #                                          when nothing of it is placed, which
 #                                          is the case no instance-based route

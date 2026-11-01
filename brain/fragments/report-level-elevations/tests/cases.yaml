@@ -97,6 +97,25 @@ negative:
       that level listed as NOT a Building Story with 0 model elements on it -
       its floor plan and tags are not counted as things on the level
 
+  # VERSION 4 - LIST_LEVELS merged in. Each fails on version 3, which has no
+  # elements, elevationsMm, projectElevationsMm or findings.
+  - given: levels named Level 1, Level 2 ... Level 10, created out of name order
+    expect: >
+      `elements` and `levels` bottom to top - Level 10 last, never after Level 1
+      by its name - and `findings` opening "10 level(s), bottom to top"
+
+  - given: a model whose project base point was moved up 780.5 mm, the level type's Elevation Base Project
+    expect: >
+      for each level `elevationsMm` is the number on its level head and
+      `projectElevationsMm` that number plus the base point's lift, and the
+      finding names both; on a model whose base never moved the two
+      dictionaries agree to 0.1 mm and the line names one
+
+  - given: includeLinks true, one link placed 3000 mm up
+    expect: >
+      each linked level's line gives its height here AND its own level head -
+      3000 mm apart - and nothing of the link in `elements`
+
 second_route:
   - >
     place a spot elevation on a floor in Revit and compare it against the level

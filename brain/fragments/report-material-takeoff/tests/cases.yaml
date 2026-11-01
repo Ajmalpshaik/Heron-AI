@@ -42,6 +42,27 @@ negative:
       a real material that is present in no quantity, which is a different claim
       from not being there
 
+  # VERSION 2 - READ_ELEMENT_MATERIAL merged in. Each fails on version 1.
+  - given: the same wall handed in twice (two finders' lists merged)
+    expect: >
+      its materials taken off ONCE - the volume equal to one wall's. Version 1
+      counted it twice
+
+  - given: a compound wall of concrete, insulation and board, one face painted
+    expect: >
+      `materials` names ALL FOUR for that wall - the three layers and the
+      paint; READ_ELEMENT_MATERIAL named three, reading the geometry set alone
+
+  - given: 28 duct taps that carry no material
+    expect: >
+      all 28 in `noMaterial` and in `elementsWithNoMaterial`, `materials` empty
+
+  - given: 4 walls, 'Exterior - Brick on Mtl. Stud'
+    expect: >
+      `volumeM3` equal to `volumes` times 0.028316846592 for every material,
+      `areaM2` to `areas` times 0.09290304 - and `volumes` still in cubic feet,
+      unchanged from version 1
+
 second_route:
   - >
     build a Material Takeoff schedule in Revit for the same category and compare
