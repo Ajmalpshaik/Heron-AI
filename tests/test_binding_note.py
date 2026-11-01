@@ -418,6 +418,16 @@ def main():
           "optional": "false"}, None, False),
         ({"name": "view", "type": "View", "source": "model",
           "optional": "true"}, None, False),
+        # 2026-11-01: a view list marked optional binds empty, as the host's
+        # AbsentValue does - and only that spelling, only when marked.
+        ({"name": "views", "type": "IList<View>", "source": "request",
+          "optional": "true"}, None, True),
+        ({"name": "views", "type": " IList<View> ", "source": "request",
+          "optional": " True "}, None, True),
+        ({"name": "views", "type": "IList<View>", "source": "request"},
+         None, False),
+        ({"name": "names", "type": "IList<string>", "source": "request",
+          "optional": "true"}, None, False),
     ]
     mirrored = absent_text is not None and all(
         absent_text(need) == text and HF.need_may_be_absent(need) == may

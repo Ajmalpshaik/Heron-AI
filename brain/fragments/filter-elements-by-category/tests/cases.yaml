@@ -81,7 +81,38 @@ positive:
       `linkedMatches` counting its doors as that plan draws them on a level
       named as the host's - never added to `elements`
 
+  - given: >
+      VERSION 4 REVIEW FIX. a model with a DWG imported (Insert > Import CAD,
+      "Site Plan.dwg"), categoryName "site plan.dwg" - capitals as typed
+    expect: >
+      the import instance(s) in `elements`, resolvedTo "Site Plan.dwg",
+      perCategory one entry for it, nearMisses empty. FAILS on the version 4
+      first draft: it had no categoryName, and `category` cannot name an
+      imported category - the binder refuses the word (SELECT_BY_CATEGORY_NAME's
+      case)
+
+  - given: VERSION 4 REVIEW FIX. categoryName "Duct Accessories", levelId Level 1
+    expect: >
+      the same elements as category "Duct Accessories" with levelId Level 1 -
+      the same level rule, unresolvedLevel counted the same way
+
 negative:
+  - given: >
+      VERSION 4 REVIEW FIX. categoryName "Duct Accessory" - singular, which no
+      category is called
+    expect: >
+      NOTHING READ - elements empty, found 0 - nearMisses ["Duct
+      Accessories"] (and any other name holding the words), and resolvedTo
+      saying no category is called "Duct Accessory" and nothing was read.
+      With includeLinks, linkedMatches says the links were not read. FAILS on
+      the first draft, which had no categoryName and no nearMisses
+
+  - given: VERSION 4 REVIEW FIX. categoryName "Ducts" AND category "Pipes"
+    expect: refused before anything is read - one way of naming per call
+
+  - given: VERSION 4 REVIEW FIX. none of category, categories or categoryName
+    expect: refused before anything is read, the message naming all three
+
   - given: the same model, which has no air terminals
     category: OST_DuctTerminal
     expect: EMPTY, and reported as empty rather than as a success with no count

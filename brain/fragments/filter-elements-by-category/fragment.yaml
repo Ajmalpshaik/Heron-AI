@@ -30,6 +30,9 @@ capability: FILTER_ELEMENTS_BY_CATEGORY
 # a card out of the duct shortlists). `resolvedTo` says which categories the
 # words were read as, by Revit's own names. Neither `category` nor
 # `categories` given is refused before anything is read - never an empty set.
+# Review fix of the same day: `categoryName`, a category by the name the model
+# holds - imported CAD categories included - with `nearMisses` when it matches
+# none, both from SELECT_BY_CATEGORY_NAME; exactly one way of naming per call.
 # `levelId` may be left out for the whole model. With `includeLinks` and a
 # view, each link is read through that view on Revit 2023 and later, and
 # refused in words on 2020-2022; the level is matched by name in a link
@@ -67,7 +70,9 @@ purpose: >
 
   **SEVERAL CATEGORIES, OR ONE VIEW (version 4).** `categories` names several
   in one pass, `perCategory` shows each - one asked for and empty at 0 - and
-  `inViewOnly` narrows it to what one view draws. This is version 4; version
+  `inViewOnly` narrows it to what one view draws. `categoryName` takes a
+  category by the name the model holds - an imported CAD file's too - and a
+  name that matches none comes back with its near misses, nothing read. This is version 4; version
   3's proof no longer describes the code, and the fragment is DRAFT until it
   is proved again.
 
@@ -97,6 +102,18 @@ contract:
       source: request
       optional: true
       absent: INVALID
+    - name: categoryName
+      # VERSION 4 REVIEW FIX, from SELECT_BY_CATEGORY_NAME: ONE category by the
+      # name the MODEL holds, matched here against every category the document
+      # has, capitals ignored - an IMPORTED CAD file's category ("Site
+      # Plan.dwg") included, which no BuiltInCategory names and `category`
+      # cannot take. A name that matches none reads NOTHING and answers with
+      # `nearMisses`. Optional; left out it binds `none`, no name. Given with
+      # `category` or `categories` it is refused - one way of naming per call.
+      type: string
+      source: request
+      optional: true
+      absent: none
     - name: levelId
       # Optional since version 4: left out reads as `none`, the whole model -
       # what the binder already made of `levelId=none`
@@ -168,9 +185,19 @@ contract:
       # were read as, by Revit's own names, comma separated - the guard
       # against a word binding to a different category than the one meant.
       # A statement about the LOOKUP, filled in whether anything was found
-      # or not (D-52).
+      # or not (D-52). For a `categoryName` that matches nothing it says so,
+      # and that nothing was read.
       role: accounting
       type: string
+    - name: nearMisses
+      # VERSION 4 REVIEW FIX, from SELECT_BY_CATEGORY_NAME. When `categoryName`
+      # matches no category: the category names that nearly did - one holding
+      # the words, or held in them - so "Duct Accessory" comes back with "Duct
+      # Accessories" to ask about rather than a dead end, and is never guessed
+      # at. Empty otherwise. About the lookup, never an element it found
+      # (D-52).
+      role: accounting
+      type: IList<string>
 proof:
   date: '2026-10-06'
   by: Ajmal PS
@@ -263,17 +290,19 @@ compatibility-note: >
 # Finalize and the companion already call. Where each retired output is now:
 #
 #   SELECT_BY_CATEGORY_NAME             here
-#     categoryName                      category (or categories) - the binder
-#                                       reads the name Revit shows first,
-#                                       localised, as that card did
+#     categoryName                      categoryName (review fix, same day),
+#                                       matched against doc.Settings.Categories
+#                                       as that card did - imported CAD
+#                                       categories included. `category` and
+#                                       `categories` still take Revit's own
+#                                       categories through the binder
 #     inViewOnly                        inViewOnly
 #     elements, found                   elements, found
 #     resolvedTo                        resolvedTo
-#     nearMisses                        NOT CARRIED - a word that is no
-#                                       category is refused by the binder
-#                                       before this runs, in the binder's own
-#                                       words, which carry no near misses.
-#                                       LIST_CATEGORIES lists the names
+#     nearMisses                        nearMisses (review fix, same day) - the
+#                                       first draft recorded it NOT CARRIED,
+#                                       and with it imported categories, which
+#                                       review found; both are back
 #     linksSearched, linkedMatches      the same, through a view on 2023+
 #
 #   SELECT_BY_CATEGORIES                here
@@ -284,9 +313,13 @@ compatibility-note: >
 #
 # THE SAFER RULE WHERE THEY DIFFERED. SELECT_BY_CATEGORY_NAME answered an
 # unknown name with an empty set and near misses; SELECT_BY_CATEGORIES
-# answered an empty list with an empty set. Here nothing runs for either: the
-# binder refuses a word that is no category, and this refuses no category
-# named - no zero that reads as "there are none".
+# answered an empty list with an empty set. Here no category named is refused,
+# and a word given as `category` that is no category is refused by the binder
+# - no zero that reads as "there are none". A `categoryName` that matches
+# nothing reads nothing too, and says so in `resolvedTo` beside its
+# `nearMisses`, as SELECT_BY_CATEGORY_NAME did: an answer naming the miss is
+# not the silent zero. categoryName and category/categories together are
+# refused - one way of naming per call.
 #
 # ROUTING - repeated in SELECT_BY_MEP_SYSTEM, SELECT_OPENINGS,
 # SET_CATEGORY_GRAPHICS, DESCRIBE_ELEMENTS and LIST_CATEGORIES.

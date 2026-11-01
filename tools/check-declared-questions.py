@@ -91,6 +91,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_fragment as FRAG                                 # noqa: E402
+import heron_search as SEARCH                                 # noqa: E402
 import heron_skill as SKILL                                   # noqa: E402
 
 
@@ -145,6 +146,26 @@ def _shown(folder):
     return folder.replace(os.sep, "/")
 
 
+def is_retired(frag):
+    """Has this card left the library - DEPRECATED or ARCHIVED?
+
+    A RETIRED CARD ANSWERS NOTHING, so a question it declares is no finding
+    (2026-11-01). Retrieval offers no such card (heron_retrieve.OFFERABLE),
+    and since the first merges it claims no phrase in the identity table
+    either (heron_search.RETIRED_FRAGMENTS - the list is imported, never
+    copied), so its sentences reach its successor, which declares them
+    itself. Until then this reported SET_VIEW_SCALE's *"what scale is this
+    view"* as resolving by identity to a write, long after that card had
+    retired: the sentence is the record, and the claim had stopped being true.
+    The status is read off the card - the file is the authority - and a card
+    that does not say is live.
+    """
+    status = getattr(frag, "status", None)
+    if status is None:
+        status = (getattr(frag, "data", None) or {}).get("heron-status")
+    return str(status or "").strip().upper() in SEARCH.RETIRED_FRAGMENTS
+
+
 def questions_on_writes(fragments, threshold, ladder):
     """(asked, told, unranked) over the fragments handed in.
 
@@ -153,9 +174,14 @@ def questions_on_writes(fragments, threshold, ladder):
     instruction in it, reported and not counted. `unranked` is a fragment whose
     declared risk is not a level HeronRisk names - REPORTED rather than assumed
     safe, because a risk nobody can place is not a low one (D-52).
+
+    A RETIRED card is passed over before any of that (is_retired): it answers
+    nothing, so nothing it declares can be answered by it.
     """
     asked, told, unranked = [], [], []
     for frag in fragments:
+        if is_retired(frag):
+            continue
         risk = str(frag.data.get("risk") or "").upper()
         capability = str(frag.data.get("capability") or "")
         where = ladder.get(risk)
@@ -220,9 +246,13 @@ def main():
     out = sys.stdout.write
     out("A FRAGMENT THAT CHANGES THE MODEL, CLAIMING A QUESTION\n")
     out("=" * 62 + "\n\n")
+    retired = sum(1 for one in found.values() if is_retired(one))
     out("%d fragment(s) and %d skill(s) read from disk. The write line is "
         "at or\nabove ordinal %d, read from the registry by name (Golden "
-        "Rule 19).\n\n" % (len(found), len(skills), threshold))
+        "Rule 19).\n" % (len(found), len(skills), threshold))
+    out("%d retired (%s) passed over - they answer nothing, and claim\n"
+        "no phrase by identity.\n\n"
+        % (retired, " or ".join(SEARCH.RETIRED_FRAGMENTS)))
 
     out("A FRAGMENT THAT WRITES, AND THE SENTENCE ASKS AND STOPS (%d):\n"
         % len(asked))

@@ -249,8 +249,29 @@ def stale_rows(store):
     return sorted(fid for fid in wanted if fid in held and held[fid] != wanted[fid])
 
 
+def retired(doc):
+    """Has this card left the library - DEPRECATED or ARCHIVED?
+
+    A RETIRED CARD ANSWERS NOTHING, SO ITS OWN WORDS ARE NOT ASKED BACK TO
+    IT (2026-11-01). Retrieval offers no such card (heron_retrieve.OFFERABLE)
+    and none claims a phrase by identity (heron_search.RETIRED_FRAGMENTS,
+    imported here, never copied): a merged card's sentences reach the card it
+    was merged into, which declares them itself. Asked back to the retired
+    card, every one read as a sentence the card had lost - and every row of
+    its routing table as CLAIMED AND NOT REACHED, and as claimed by two
+    tables beside its successor's - when the successor answers them. Its
+    utterances and its table stay on the card as the record; this report
+    skips them. The status is read off the card, the authority; a card that
+    does not say is live.
+    """
+    import heron_search as SEARCH
+    status = str((doc or {}).get("heron-status") or "").strip().upper()
+    return status in SEARCH.RETIRED_FRAGMENTS
+
+
 def utterances():
-    """(fragment id, sentence) for every declared utterance."""
+    """(fragment id, sentence) for every declared utterance of a LIVE card -
+    a retired one's are skipped (retired()) - and every card's risk."""
     try:
         import yaml
     except ImportError:
@@ -268,6 +289,8 @@ def utterances():
         with open(path, encoding="utf-8") as fh:
             doc = yaml.safe_load(fh)
         risk[doc["id"]] = doc.get("risk") or "?"
+        if retired(doc):
+            continue
         for said in doc.get("utterances") or []:
             out.append((doc["id"], said))
     return out, risk
@@ -748,6 +771,10 @@ def report(revit):
             import yaml
             doc = yaml.safe_load(text)
             fid = doc.get("id")
+            # A retired card's table is its record, not a claim: it answers
+            # nothing, and its successor holds the rows it still wants.
+            if retired(doc):
+                continue
             spoken = set((u or "").strip().lower() for u in (doc.get("utterances") or []))
 
             for sentence in routing_claims(text):

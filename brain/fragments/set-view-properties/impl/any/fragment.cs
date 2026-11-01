@@ -1,6 +1,17 @@
 // NOT STANDALONE. Assumes `doc`, `views`, `scale`, `detailLevel` and
 // `visualStyle` are in scope; leaves `changed`, `findings`,
-// `visualStyleNote`, `wasScale`, `alreadyThatScale` and `refused` behind.
+// `visualStyleNote`, `wasScale`, `alreadyThatScale`, `alreadyThatDetailLevel`,
+// `alreadyThatVisualStyle` and `refused` behind.
+//
+// VERSION 3, REVIEW FIX OF 2026-11-01 - THE SAME MISCOUNT, FIXED FOR THE OTHER
+// TWO. A view already at the detail level asked, or already in the visual
+// style asked, was written again and counted as changed - "changed 12" over
+// twelve views that were right already, the fault SET_VIEW_SCALE's rule fixed
+// for scale. Each is now read first: already so, it is not written and not
+// counted, and is counted instead in `alreadyThatDetailLevel` or
+// `alreadyThatVisualStyle` - two new counts beside `alreadyThatScale`, not
+// that one widened, so a caller of the scale count reads what it read. For
+// "Shaded", already so means the style that keeps the view's own edges.
 //
 // VERSION 3 (2026-11-01) - SET_VIEW_SCALE MERGED IN, on the owner's
 // instruction, and what it had that this lacked came with it:
@@ -62,6 +73,8 @@ var findings = new List<string>();
 var visualStyleNote = "";
 var wasScale = new Dictionary<ElementId, int>();
 var alreadyThatScale = 0;
+var alreadyThatDetailLevel = 0;
+var alreadyThatVisualStyle = 0;
 var refused = new List<ElementId>();
 
 if (views == null || views.Count == 0)
@@ -248,6 +261,11 @@ else
                     if (!known)
                         refusals.Add(string.Format("'{0}': detail level must be Coarse, Medium or Fine - "
                             + "'{1}' is none of them", view.Name, wantDetail));
+                    else if (view.DetailLevel == wanted)
+                    {
+                        // ALREADY SO (review fix): not written, not counted as changed.
+                        alreadyThatDetailLevel++;
+                    }
                     else
                     {
                         view.DetailLevel = wanted;
@@ -274,17 +292,28 @@ else
                         if (edgesShown) target = DisplayStyle.ShadingWithEdges;
                     }
 
-                    view.DisplayStyle = target;
-                    var now = view.DisplayStyle;
-                    if (now == target)
+                    if (view.DisplayStyle == target)
                     {
-                        styleSet++;
-                        touched = true;
-                        var shown = barWord(now);
-                        styleReadBack[shown] = (styleReadBack.ContainsKey(shown) ? styleReadBack[shown] : 0) + 1;
+                        // ALREADY SO (review fix): not written, not counted as
+                        // changed - and said in the note with the others.
+                        alreadyThatVisualStyle++;
+                        var held = barWord(target) + " (already)";
+                        styleReadBack[held] = (styleReadBack.ContainsKey(held) ? styleReadBack[held] : 0) + 1;
                     }
-                    else styleRefused.Add(string.Format("'{0}': the visual style did not take - asked {1}, "
-                        + "reads {2}", view.Name, barWord(target), barWord(now)));
+                    else
+                    {
+                        view.DisplayStyle = target;
+                        var now = view.DisplayStyle;
+                        if (now == target)
+                        {
+                            styleSet++;
+                            touched = true;
+                            var shown = barWord(now);
+                            styleReadBack[shown] = (styleReadBack.ContainsKey(shown) ? styleReadBack[shown] : 0) + 1;
+                        }
+                        else styleRefused.Add(string.Format("'{0}': the visual style did not take - asked {1}, "
+                            + "reads {2}", view.Name, barWord(target), barWord(now)));
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -308,13 +337,21 @@ else
         if (alreadyThatScale > 0)
             findings.Add(string.Format("{0} view(s) were already at 1:{1}, so their scale was left as "
                 + "it was and not counted as changed", alreadyThatScale, scale));
+        // And the same for the other two (review fix, 2026-11-01).
+        if (alreadyThatDetailLevel > 0)
+            findings.Add(string.Format("{0} view(s) were already at detail level {1}, so it was left as "
+                + "it was and not counted as changed", alreadyThatDetailLevel, wantDetail));
+        if (alreadyThatVisualStyle > 0)
+            findings.Add(string.Format("{0} view(s) were already in the visual style asked, so it was "
+                + "left as it was and not counted as changed", alreadyThatVisualStyle));
 
         // WHICH STYLE EACH VIEW READS BACK, whole, because "Shaded" can come
         // back with or without edges and the finding above is cut short.
         if (styleWanted != null)
         {
-            visualStyleNote = "\"" + wantStyle + "\" read back on " + styleSet + " of " + handled.Count
-                + " view(s)"
+            visualStyleNote = "\"" + wantStyle + "\" read back on " + (styleSet + alreadyThatVisualStyle)
+                + " of " + handled.Count + " view(s)"
+                + (alreadyThatVisualStyle > 0 ? " (" + alreadyThatVisualStyle + " already so, not written)" : "")
                 + (styleReadBack.Count == 0 ? "" : ": " + string.Join(", ",
                     styleReadBack.Select(e => e.Key + " on " + e.Value)))
                 + (keepEdges ? ". Show Edges was left as each view had it - say \"" + barWord(styleWanted.Value)

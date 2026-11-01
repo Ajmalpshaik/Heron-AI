@@ -41,7 +41,35 @@ positive:
       each view doubling in apparent size on the sheet - annotation is sized in
       paper units. Version 2 had no wasScale, so this FAILS on it
 
+  - given: >
+      VERSION 3 REVIEW FIX. 12 plans, 9 already at Fine and 3 at Medium,
+      detailLevel Fine, nothing else asked
+    expect: >
+      changed 3, alreadyThatDetailLevel 9, and a finding "9 view(s) were
+      already at detail level Fine". FAILS on the version 3 first draft, which
+      wrote Fine onto all twelve and said changed 12
+
+  - given: >
+      VERSION 3 REVIEW FIX. 4 3D views, 3 already Hidden Line and 1 Shaded,
+      visualStyle Hidden Line
+    expect: >
+      changed 1, alreadyThatVisualStyle 3, and visualStyleNote "read back on 4
+      of 4 view(s) (3 already so, not written): Hidden Line on 1, Hidden Line
+      (already) on 3". FAILS on the first draft: changed 4
+
+  - given: VERSION 3 REVIEW FIX. "Shaded" on a view already Shaded with Edges
+    expect: >
+      not written - the style that keeps its edges is Shaded with Edges, which
+      it already is - alreadyThatVisualStyle 1, changed 0, edges still on
+
 negative:
+  - given: >
+      VERSION 3 REVIEW FIX. a view already at Fine under a template that
+      controls detail level, detailLevel Fine
+    expect: >
+      counted in alreadyThatDetailLevel and NOT refused - nothing was written,
+      so the template was never asked. A view already right is not a refusal
+
   - given: >
       a view controlled by a view template that locks the scale, set to a new
       scale

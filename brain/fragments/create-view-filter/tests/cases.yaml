@@ -56,7 +56,57 @@ positive:
       FilterInverseRule Revit holds is unwrapped - and catches the levels not
       called Level 1
 
+  - given: >
+      VERSION 4 REVIEW FIX. categories Air Terminals, parameterName Comments,
+      matchValue "has no value", filterName "HERON No Comment", no view
+    expect: >
+      one filter created; readBack says "rule Comments has no value" and the
+      count it catches is the air terminals whose Comments is empty. "is
+      blank" makes the same filter. FAILS on the version 4 first draft, which
+      read "has no value" as text and built Comments equals 'has no value'
+      catching 0. NEEDS REAL REVIT for one thing no reference assembly says:
+      whether a Comments typed and then cleared to nothing is caught as well
+      as one never typed - write down which
+
+  - given: >
+      VERSION 4 REVIEW FIX. moreRules "Comments has no value" beside
+      System Classification "Supply Air", combine and
+    expect: >
+      one filter: supply ducts with no Comments - readBack "System
+      Classification equals 'Supply Air' AND Comments has no value"
+
+  - given: >
+      VERSION 4 REVIEW FIX. ONE filterName "HERON Owner", parameterName
+      Comments, matchValue "Smith, John"
+    expect: >
+      one filter, rule Comments equals 'Smith, John' - the comma inside the
+      value kept, as version 3 read it. FAILS on the version 4 first draft:
+      the binder split the list into two values for one name and it was
+      refused "1 filter name(s) and 2 value(s)"
+
+  - given: >
+      VERSION 4 REVIEW FIX. filterName "HERON A, HERON B", matchValue
+      'Supply Air, "Return, Mixed"'
+    expect: >
+      two filters - HERON A equals 'Supply Air', HERON B equals 'Return,
+      Mixed', the quotes taken off. FAILS on the first draft, which split the
+      quoted value at its comma and refused three values for two names
+
+  - given: VERSION 4 REVIEW FIX. matchValue '"does not contain"' in double quotes
+    expect: one filter, rule equals 'does not contain' - quoted text is taken as written
+
 negative:
+  - given: VERSION 4 REVIEW FIX. matchValue left EMPTY, one filter name
+    expect: >
+      refused, nothing made, and the refusal names "has no value" as the way
+      to ask for an empty parameter. An accidental blank never becomes a rule
+
+  - given: VERSION 4 REVIEW FIX. matchValue "has no value Level 1"
+    expect: refused - "has no value" takes nothing after it; "equals has no value Level 1" matches the words
+
+  - given: VERSION 4 REVIEW FIX. two names, matchValue 'Supply Air, "Return'
+    expect: refused - a double quote opened and never closed - before Revit is asked anything
+
   - given: >
       VERSION 4. "Air Terminals, Ducts, Walls" with System Classification
     expect: >

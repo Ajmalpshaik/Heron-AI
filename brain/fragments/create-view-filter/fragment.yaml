@@ -24,6 +24,17 @@ capability: CREATE_VIEW_FILTER
 # read-back of what Revit holds. Version 3's proof below no longer describes
 # the code and is kept as the record; the card is DRAFT until it is proved
 # again.
+#
+# Version 4, review fixes of the same day (the owner's rule that a merged card
+# covers everything both old cards did): a blank value asked for in words -
+# "has no value" or "is blank" - while an empty value is still refused; and
+# `matchValue` is text again, as in version 3, divided by the card, so a comma
+# inside one value no longer splits it. Not a version of its own: version 4
+# was never proved. SAID HERE AND NOT IN `purpose`, which is indexed: a
+# paragraph there saying this moved the owner's question 67 ("Create an air
+# terminals filter, give it colours, and apply it to the active 3D view") from
+# 1st to 2nd behind APPLY_VIEW_FILTER on the model backend, measured
+# 2026-11-01, and was taken out again.
 version: 4
 source: OFFICIAL
 risk: MODIFY
@@ -87,16 +98,25 @@ contract:
     # not "equals": equals, does not equal, contains, does not contain, begins
     # with, does not begin with, ends with, does not end with ("does not
     # contain Level 1"). "equals contains" matches the word itself (version 3).
-    # ONE PER FILTER NAME, in the same order, comma separated (version 4). A
-    # blank value is refused. Type it as Revit shows it: whether capitals
-    # matter on 2023 and later is not known here (the cases say why).
+    # "has no value" - or "is blank" - ALONE catches the elements whose
+    # parameter is empty; a value left blank is refused, so an empty
+    # parameter is only ever asked for in words (version 4).
+    #
+    # ONE PER FILTER NAME, in the same order (version 4). TEXT, divided by the
+    # card and not the binder, whose lists split at every comma: with ONE
+    # filter name the whole text is the value, commas and all ("Smith, John"),
+    # as version 3 read it; with several it is divided at the commas, and a
+    # value holding a comma goes in double quotes - Supply Air, "Return,
+    # Mixed". A value wholly in double quotes is taken as written inside them
+    # either way. Type it as Revit shows it: whether capitals matter on 2023
+    # and later is not known here (the cases say why).
     - name: matchValue
-      type: IList<string>
+      type: string
       source: request
     # More rules beside the first, "Name = value; Name contains text", with =,
-    # != or any of the eight operators above; an EMPTY value is the one rule
-    # alone (version 2). For ONE filter only: beside several names it is
-    # refused (version 4).
+    # != or any of the operators above - "Comments has no value" too; an
+    # EMPTY value is the one rule alone (version 2). For ONE filter only:
+    # beside several names it is refused (version 4).
     - name: moreRules
       type: string
       source: request
@@ -313,14 +333,20 @@ compatibility-note: >
 # here, listed in the C# header. The safer of each rule was kept: a filter name
 # already taken is skipped and named, never overwritten, with the clash scan
 # over every FilterElement; a blank value is refused, where version 3 would have
-# built a rule matching blank. KEPT IN STEP BY HAND WITH
+# built a rule matching blank - and the job version 3 could do by accident is
+# asked for in words now, "has no value" (review fix, 2026-11-01). The other
+# review fix: `matchValue` is text the card divides, because the binder's list
+# rule splits at every comma and has no quote or escape (RevitFragment.Parts);
+# CREATE_VIEW_FILTERS_BY_RULE's `matchValues` list had the same fault. KEPT IN STEP BY HAND WITH
 # SET_VIEW_FILTER_CATEGORIES VERSION 2 (FRAGMENT-ISSUES 5b-481), which builds a
 # filter's NEW rule from the same operator-led value: the operator words, their
 # factory methods reached by reflection, the parameter matched by label or
 # built-in name, and the read-back's rule words are a copy there. A fragment
 # cannot call another's code, so a change to any of them here is made there
-# too. CREATE_VIEW_FILTERS_BY_VALUE stays its own card: its values come from
-# the model.
+# too - EXCEPT "has no value" and "is blank", added here on 2026-11-01 and not
+# there: SET_VIEW_FILTER_CATEGORIES is PROVEN and its impl/ changes only with
+# its own next version. CREATE_VIEW_FILTERS_BY_VALUE stays its own card: its
+# values come from the model.
 utterances:
   - colour by system
   - add a filter to the view

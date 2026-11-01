@@ -58,7 +58,28 @@ positive:
       tagged 0, alreadyTagged equal to the count and every id in `skipped` - a
       tag of that type is already there, so nothing is stacked
 
+  - given: >
+      VERSION 6 REVIEW FIX. "tag these ducts in this view" - the view and the
+      selected ducts, and NOTHING else typed: no tagTypeHintId, leader,
+      minLengthMm or leaderOffsetMm
+    expect: >
+      it runs, and the binding note says each of the four came "not given -
+      ... the card's own default (optional)": none, none, 0, 0. The result is
+      the same as typing tagTypeHintId=none leader=none minLengthMm=0
+      leaderOffsetMm=0 - each duct tagged with the project's default duct
+      tag, no leader, nothing too short. FAILS on the version 6 first draft:
+      the binder refused the call before it ran, four needs never supplied
+
+  - given: VERSION 6 REVIEW FIX. the same call with each of the four given EMPTY ("leader=")
+    expect: the same as left out - an empty value on an optional need is a value left out (row 5b-1320)
+
 negative:
+  - given: VERSION 6 REVIEW FIX. minLengthMm "500mm" typed with the unit
+    expect: >
+      refused by the binder before anything runs, "Type digits only" - being
+      optional changes what leaving it OUT means, never what a value typed
+      wrong means
+
   - given: >
       any successful run - check typeCorrections whatever the result
     expect: >

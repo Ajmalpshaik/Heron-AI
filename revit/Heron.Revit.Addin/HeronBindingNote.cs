@@ -83,10 +83,21 @@ namespace Heron.Revit.Addin
         /// 5b-227 had left this case open; CREATE_LINE's optional view, the
         /// case it named, binds null through this too.
         ///
+        /// A THIRD CASE SINCE 2026-11-01: AN `IList<View>` DECLARED
+        /// `optional: true` BINDS AN EMPTY LIST. PLACE_VIEW_ON_SHEET took in
+        /// PLACE_VIEWS_ON_SHEET, whose views were HANDED ON as `elements` -
+        /// FIND_UNPLACED_VIEWS' answer - and the keeper names them in `views`.
+        /// It reads `elements` only when `views` names none, and could not be
+        /// asked that way: an absent view list was refused as the caller's to
+        /// supply. An empty list is the one value a list has for "none named",
+        /// and the card that marks it optional is the one that says what it
+        /// does then - so it is not invented here either. Only that spelling,
+        /// and only when the card marks it; no card marked one before.
+        ///
         /// NOTHING ELSE. A name or a number has no value that means "not
         /// asked", and inventing one is how a job runs against the wrong
         /// thing and reports success - so those still refuse, and so does a
-        /// bool or a View nobody marked optional. Row 5b-227's two string
+        /// bool, a View or a view list nobody marked optional. Row 5b-227's two string
         /// cards are refused exactly as they were. A card that NAMES what
         /// leaving a value out means is DeclaredAbsent's, asked first (row
         /// 5b-488).
@@ -103,6 +114,7 @@ namespace Heron.Revit.Addin
             var wanted = (type ?? "").Trim();
             if (wanted == "bool") return "false";
             if (wanted == "View") return "null";
+            if (wanted == "IList<View>") return "new List<View>()";
             return null;
         }
 

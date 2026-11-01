@@ -6,11 +6,12 @@
 // VERSION 4 (2026-11-01) - CREATE_VIEW_FILTERS_BY_RULE MERGED IN, on the
 // owner's instruction. What it had that this lacked:
 //
-//   MANY FILTERS IN ONE CALL, ONE VALUE EACH. `filterName` and `matchValue`
-//   are lists now, comma separated, paired in order - "Supply Air, Return Air,
-//   Exhaust Air" with three values. One name and one value bind as a list of
-//   one, so a version 3 call means what it meant. moreRules belongs to ONE
-//   filter, and is refused beside several names.
+//   MANY FILTERS IN ONE CALL, ONE VALUE EACH. `filterName` is a list now,
+//   comma separated, and `matchValue` holds one value per name in the same
+//   order - "Supply Air, Return Air, Exhaust Air" with three values, divided
+//   by this code (see the review fixes below). One name and one value mean
+//   what they meant in version 3. moreRules belongs to ONE filter, and is
+//   refused beside several names.
 //
 //   THE VIEW AND THE COLOUR ARE OPTIONAL, TOGETHER. Both left out, the filters
 //   are made on NO view - the standards job, done the way a modeller does it
@@ -46,6 +47,34 @@
 //
 // `created` is still ONE id - the filter made, or the first of several - so a
 // caller of version 3 reads what it read; `createdIds` is every one.
+//
+// VERSION 4, REVIEW FIXES OF 2026-11-01 (the owner's rule: a merged card
+// covers everything both old cards did):
+//
+//   A BLANK VALUE IS ASKED FOR IN WORDS - "has no value", or "is blank" -
+//   the Filters dialog's own operator, built by Revit's
+//   CreateHasNoValueParameterRule (in RevitAPI 2020 to 2027, read off the
+//   reference assemblies). It catches elements whose parameter holds no
+//   value. An EMPTY value is still refused, as both old cards refused it: a
+//   value left out by accident must not make a filter that catches every
+//   element with the parameter unset. "has no value Level 1" - the operator
+//   with text after it - is refused, and "equals has no value" matches the
+//   words. It works in moreRules too ("Comments has no value"). NOT COPIED
+//   INTO SET_VIEW_FILTER_CATEGORIES, whose rule code is otherwise kept in
+//   step with this by hand: that card is PROVEN, and its impl/ is changed
+//   only with its own next version.
+//
+//   A COMMA INSIDE ONE VALUE NO LONGER SPLITS IT. `matchValue` is TEXT again,
+//   as in version 3, and divided here rather than by the binder - the
+//   binder's list rule (Parts() in RevitFragment.cs) splits on every comma
+//   and has no quote or escape, so "Smith, John" arrived as two values and
+//   one name, and was refused. Now: with ONE filter name the whole text is
+//   the one value, commas and all, exactly as version 3 read it. With
+//   several names it is divided at the commas, and a value holding a comma
+//   is written in double quotes - Supply Air, "Return, Mixed" - which are
+//   taken off. A value that is wholly in double quotes is taken as written
+//   inside them in either case, so "does not contain" in quotes matches
+//   those words rather than being read as an operator.
 //
 // VERSION 3 (2026-10-15): THE PARAMETER IS TYPED BY ITS NAME. Version 2 took
 // `parameterId`, an ElementId the add-in binds by no name at all
@@ -120,9 +149,47 @@ var cannotFilter = new List<string>();
 var names = new List<string>();
 if (filterName != null)
     foreach (var givenName in filterName) names.Add((givenName ?? "").Trim());
+
+// THE VALUES, DIVIDED HERE AND NOT BY THE BINDER (review fix, 2026-11-01).
+// One name: the whole text is its one value, commas and all - version 3's
+// reading. Several: divided at each comma outside double quotes, an empty
+// piece dropped as the binder drops one ("a,,b" is a typing slip).
 var values = new List<string>();
-if (matchValue != null)
-    foreach (var givenValue in matchValue) values.Add((givenValue ?? "").Trim());
+var quoteProblem = "";
+var valueText = (matchValue ?? "").Trim();
+if (names.Count <= 1)
+{
+    values.Add(valueText);
+}
+else
+{
+    var piece = new System.Text.StringBuilder();
+    var inQuotes = false;
+    foreach (var character in valueText)
+    {
+        if (character == '"') inQuotes = !inQuotes;
+        if (character == ',' && !inQuotes)
+        {
+            if (piece.ToString().Trim().Length > 0) values.Add(piece.ToString().Trim());
+            piece.Length = 0;
+            continue;
+        }
+        piece.Append(character);
+    }
+    if (piece.ToString().Trim().Length > 0) values.Add(piece.ToString().Trim());
+    if (inQuotes)
+        quoteProblem = "matchValue opens a double quote and never closes it - put a value that holds "
+            + "a comma in double quotes, \"Return, Mixed\", and close it; nothing was made";
+}
+
+// A value wholly in double quotes - one pair, nothing outside it - is the text
+// inside them, taken as written.
+Func<string, string> unquoted = text =>
+    text.Length >= 2 && text[0] == '"' && text[text.Length - 1] == '"'
+        && text.IndexOf('"', 1) == text.Length - 1
+        ? text.Substring(1, text.Length - 2)
+        : text;
+
 var wanted = (parameterName ?? "").Trim();
 
 // The eight text rules the Filters dialog offers, longest first so "does not
@@ -131,10 +198,16 @@ var wanted = (parameterName ?? "").Trim();
 var operatorWords = new[]
 {
     "does not begin with", "does not end with", "does not contain", "does not equal",
-    "begins with", "ends with", "contains", "equals",
+    "has no value", "begins with", "ends with", "is blank", "contains", "equals",
 };
+// THE OPERATORS THAT TAKE NO TEXT (review fix, 2026-11-01): the value IS the
+// operator, and text after one is refused. "is blank" is the same rule in
+// plainer words.
+var noTextOperators = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "has no value", "is blank" };
 var operatorMethods = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 {
+    { "has no value", "CreateHasNoValueParameterRule" },
+    { "is blank", "CreateHasNoValueParameterRule" },
     { "does not begin with", "CreateNotBeginsWithRule" },
     { "does not end with", "CreateNotEndsWithRule" },
     { "does not contain", "CreateNotContainsRule" },
@@ -151,26 +224,35 @@ var operatorMethods = new Dictionary<string, string>(StringComparer.OrdinalIgnor
 var operators = new List<string>();
 var texts = new List<string>();
 var bareOperator = "";
+var noTextWithText = "";
 foreach (var value in values)
 {
     var valueOperator = "equals";
-    var valueText = value;
+    var ruleText = unquoted(value);
     foreach (var word in operatorWords)
     {
         if (string.Equals(value, word, StringComparison.OrdinalIgnoreCase))
         {
-            if (bareOperator.Length == 0) bareOperator = value;
+            // "has no value" alone IS the rule; any other word alone has
+            // nothing to match.
+            if (noTextOperators.Contains(word)) { valueOperator = word; ruleText = ""; }
+            else if (bareOperator.Length == 0) bareOperator = value;
             break;
         }
         if (value.StartsWith(word + " ", StringComparison.OrdinalIgnoreCase))
         {
+            if (noTextOperators.Contains(word))
+            {
+                if (noTextWithText.Length == 0) noTextWithText = value;
+                break;
+            }
             valueOperator = word;
-            valueText = value.Substring(word.Length).Trim();
+            ruleText = unquoted(value.Substring(word.Length).Trim());
             break;
         }
     }
     operators.Add(valueOperator);
-    texts.Add(valueText);
+    texts.Add(ruleText);
 }
 
 // The categories, once each, with the name Revit shows for them (version 4:
@@ -266,9 +348,14 @@ else if (names.Count != values.Count)
     refused = string.Format("{0} filter name(s) and {1} value(s) were given - each filter needs "
         + "exactly one value, in the same order as the names", names.Count, values.Count);
 }
+else if (quoteProblem.Length > 0)
+{
+    refused = quoteProblem;
+}
 else if (names.Contains("") || values.Contains(""))
 {
-    refused = "a filter name or a value was blank - every filter needs both";
+    refused = "a filter name or a value was blank - every filter needs both. To catch the elements "
+            + "whose parameter is empty, say so: type the value as \"has no value\"";
 }
 else if (bareOperator.Length > 0)
 {
@@ -276,9 +363,16 @@ else if (bareOperator.Length > 0)
             + "match, \"{0} Level 1\", or \"equals {0}\" to match the word itself - nothing was made",
             bareOperator);
 }
-else if (texts.Contains(""))
+else if (noTextWithText.Length > 0)
 {
-    refused = "a value was an operator with nothing after it - every filter needs text to match";
+    refused = string.Format("\"{0}\" - \"has no value\" and \"is blank\" take nothing after them; "
+            + "they catch the elements whose parameter is empty. Type the operator alone, or \"equals "
+            + "{0}\" to match those words - nothing was made", noTextWithText);
+}
+else if (Enumerable.Range(0, texts.Count).Any(i => texts[i] == "" && !noTextOperators.Contains(operators[i])))
+{
+    refused = "a value was an operator with nothing after it, or an empty pair of quotes - every "
+            + "filter needs text to match, or \"has no value\" to catch an empty parameter";
 }
 else if (repeated.Length > 0)
 {
@@ -411,6 +505,24 @@ Func<ElementId, string, string, FilterRule> textRule = (pid, op, ruleValue) =>
 {
     factoryProblem = null;
     var method = operatorMethods[op];
+
+    // "has no value" takes the parameter alone; the factory is in every
+    // release this card claims, so it is called by name, not reflected.
+    if (noTextOperators.Contains(op))
+    {
+        try
+        {
+            var empty = ParameterFilterRuleFactory.CreateHasNoValueParameterRule(pid);
+            if (empty == null) factoryProblem = "Revit built no rule 'has no value'";
+            return empty;
+        }
+        catch (Exception ex)
+        {
+            factoryProblem = "Revit would not build the rule 'has no value': " + ex.Message;
+            return null;
+        }
+    }
+
     System.Reflection.MethodInfo withoutFlag = null;
     System.Reflection.MethodInfo withFlag = null;
     foreach (var candidate in typeof(ParameterFilterRuleFactory).GetMethods())
@@ -478,7 +590,12 @@ if (refused == null && ruleProblem == null && !string.IsNullOrWhiteSpace(moreRul
         }
         if (op == null) { ruleProblem = "\"" + ruleText.Trim() + "\" has no operator (=, !=, " + string.Join(", ", operatorWords) + ")"; break; }
         var extraName = ruleText.Substring(0, at).Trim();
-        var extraValue = ruleText.Substring(at + op.Length).Trim();
+        var extraValue = unquoted(ruleText.Substring(at + op.Length).Trim());
+        if (noTextOperators.Contains(op) && extraValue.Length > 0)
+        {
+            ruleProblem = "\"" + ruleText.Trim() + "\" - \"" + op + "\" takes nothing after it";
+            break;
+        }
         var pid = parameterCalled(extraName);
         if (pid == null) { ruleProblem = parameterProblem; break; }
         var extraRule = textRule(pid, op, extraValue);
@@ -661,6 +778,16 @@ if (refused == null)
                     else if (verb == "FilterStringEndsWith") verb = inverted ? "does not end with" : "ends with";
                     else if (inverted) verb = "NOT " + verb;
                     heldRules.Add(string.Format("{0} {1} '{2}'", parameterText, verb, heldText.RuleString));
+                }
+                else if (heldRule is HasNoValueFilterRule)
+                {
+                    heldRules.Add(string.Format("{0} {1}", parameterText,
+                        inverted ? "has a value" : "has no value"));
+                }
+                else if (heldRule is HasValueFilterRule)
+                {
+                    heldRules.Add(string.Format("{0} {1}", parameterText,
+                        inverted ? "has no value" : "has a value"));
                 }
                 else
                 {

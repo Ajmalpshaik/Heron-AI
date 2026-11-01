@@ -1,7 +1,30 @@
-// NOT STANDALONE. Assumes `doc`, `category`, `categories`, `levelId`,
-// `inViewOnly` and `includeLinks` are already in scope, and leaves `elements`,
-// `unresolvedLevel`, `linksSearched`, `linkedMatches`, `perCategory`, `found`
-// and `resolvedTo` in scope for whatever is composed after it.
+// NOT STANDALONE. Assumes `doc`, `category`, `categories`, `categoryName`,
+// `levelId`, `inViewOnly` and `includeLinks` are already in scope, and leaves
+// `elements`, `unresolvedLevel`, `linksSearched`, `linkedMatches`,
+// `perCategory`, `found`, `resolvedTo` and `nearMisses` in scope for whatever
+// is composed after it.
+//
+// VERSION 4, REVIEW FIX OF 2026-11-01 - THE TWO THINGS OF
+// SELECT_BY_CATEGORY_NAME THE FIRST DRAFT LOST, put back in the card and not
+// in the binder:
+//
+//   A CATEGORY BY THE NAME THE MODEL HOLDS - `categoryName`, matched against
+//   doc.Settings.Categories, capitals ignored, exactly as that card matched
+//   it. That list holds what no BuiltInCategory names: an IMPORTED CAD
+//   file's category ("Site Plan.dwg") is matched by its name too, and read
+//   by its id with OfCategoryId. In a link the category is found by the same
+//   name in the link's own list.
+//
+//   THE NEAR MISSES. A name that matches nothing reads NOTHING and returns
+//   the category names that nearly matched in `nearMisses` - one containing
+//   the words, or contained in them - with `resolvedTo` saying no category
+//   has that name. An empty set beside "no category called" is not the
+//   zero that reads as "there are none", which is why the first draft
+//   refused instead; this says which it is.
+//
+//   EXACTLY ONE WAY OF NAMING: `categoryName`, or `category` and/or
+//   `categories` as before. `categoryName` beside either of the others is
+//   refused, nothing read, and so is none of the three.
 //
 // VERSION 4 (2026-11-01) - SELECT_BY_CATEGORY_NAME AND SELECT_BY_CATEGORIES
 // MERGED IN, AND WHAT THEY HAD THAT THIS LACKED:
@@ -142,10 +165,59 @@ if (categories != null)
         if (one != BuiltInCategory.INVALID && !wanted.Contains(one)) wanted.Add(one);
 }
 
-if (wanted.Count == 0)
+// THE NAME THE MODEL HOLDS (review fix). Left out it binds "none", the card's
+// `absent:`, which names no category.
+var byName = (categoryName ?? "").Trim();
+if (string.Equals(byName, "none", StringComparison.OrdinalIgnoreCase)) byName = "";
+
+if (byName.Length > 0 && wanted.Count > 0)
+    throw new InvalidOperationException("A category was named twice over - categoryName \""
+        + byName + "\" and category or categories as well - so NOTHING was read. Name it ONE way: "
+        + "categoryName for the name the model holds, an imported CAD file's included, or "
+        + "category / categories for Revit's own categories.");
+
+if (byName.Length == 0 && wanted.Count == 0)
     throw new InvalidOperationException("No category was named, so NOTHING was read. Name one "
         + "with category - Ducts, Mechanical Equipment, OST_DuctCurves - or several with "
-        + "categories, separated by commas - Ducts, Duct Fittings, Duct Accessories.");
+        + "categories, separated by commas - Ducts, Duct Fittings, Duct Accessories - or one by "
+        + "the name the model holds with categoryName, an imported CAD file's included.");
+
+// categoryName: matched against EVERY category the document holds, imported
+// ones included, capitals ignored - SELECT_BY_CATEGORY_NAME's rule. Nothing
+// matching reads nothing and gathers the near misses.
+var nearMisses = new List<string>();
+Category namedCategory = null;
+if (byName.Length > 0)
+{
+    var everyName = new List<string>();
+    try
+    {
+        foreach (Category held in doc.Settings.Categories)
+        {
+            if (held == null) continue;
+            string heldName = "";
+            try { heldName = held.Name ?? ""; } catch (Exception) { }
+            if (heldName.Length == 0) continue;
+            everyName.Add(heldName);
+            if (namedCategory == null
+                && string.Equals(heldName, byName, StringComparison.OrdinalIgnoreCase))
+                namedCategory = held;
+        }
+    }
+    catch (Exception) { }
+
+    if (namedCategory == null)
+    {
+        foreach (var heldName in everyName)
+        {
+            if (heldName.IndexOf(byName, StringComparison.OrdinalIgnoreCase) >= 0
+                || byName.IndexOf(heldName, StringComparison.OrdinalIgnoreCase) >= 0)
+                nearMisses.Add(heldName);
+        }
+        nearMisses.Sort(StringComparer.OrdinalIgnoreCase);
+    }
+}
+bool nameMissed = byName.Length > 0 && namedCategory == null;
 
 // Every category asked for starts at zero, so one with nothing in it is still
 // in the report - by the name Revit shows, which is what the reader uses.
@@ -167,14 +239,26 @@ foreach (var one in wanted)
         resolvedNames.Add(name);
     }
 }
-var resolvedTo = string.Join(", ", resolvedNames.ToArray());
+if (namedCategory != null)
+{
+    perCategory[namedCategory.Name] = 0;
+    resolvedNames.Add(namedCategory.Name);
+}
+var resolvedTo = nameMissed
+    ? "NO CATEGORY in " + doc.Title + " is called \"" + byName + "\", so nothing was read"
+      + (nearMisses.Count > 0 ? " - the nearest names are in nearMisses" : " - and no name is near it")
+    : string.Join(", ", resolvedNames.ToArray());
 
 // One category is OfCategory, as versions 1 to 3 read it; several are one
-// multi-category filter, which cannot return an element twice.
+// multi-category filter, which cannot return an element twice. A category by
+// the name the model holds is read by its id - an imported one has no
+// BuiltInCategory.
 Func<FilteredElementCollector, FilteredElementCollector> ofWanted = c =>
-    wanted.Count == 1
-        ? c.OfCategory(wanted[0])
-        : c.WherePasses(new ElementMulticategoryFilter(wanted));
+    namedCategory != null
+        ? c.OfCategoryId(namedCategory.Id)
+        : wanted.Count == 1
+            ? c.OfCategory(wanted[0])
+            : c.WherePasses(new ElementMulticategoryFilter(wanted));
 
 Func<Element, string> categoryOf = e =>
 {
@@ -184,11 +268,13 @@ Func<Element, string> categoryOf = e =>
     return name;
 };
 
-var matching = ofWanted(inViewOnly != null
-        ? new FilteredElementCollector(doc, inViewOnly.Id)
-        : new FilteredElementCollector(doc))
-    .WhereElementIsNotElementType()
-    .ToElements();
+var matching = nameMissed
+    ? new List<Element>()
+    : ofWanted(inViewOnly != null
+            ? new FilteredElementCollector(doc, inViewOnly.Id)
+            : new FilteredElementCollector(doc))
+        .WhereElementIsNotElementType()
+        .ToElements();
 
 var unresolvedLevel = 0;
 var elements = new List<Element>();
@@ -270,7 +356,12 @@ var linkThroughView = inViewOnly == null ? null
     : typeof(FilteredElementCollector).GetConstructor(
         new[] { typeof(Document), typeof(ElementId), typeof(ElementId) });
 
-if (linkDocs.Count > 0 && levelId != ElementId.InvalidElementId && hostLevelName == null)
+if (linkDocs.Count > 0 && nameMissed)
+{
+    linkBlocked = "Links NOT read: the name matched no category here, so there was nothing to "
+        + "look for";
+}
+else if (linkDocs.Count > 0 && levelId != ElementId.InvalidElementId && hostLevelName == null)
 {
     linkBlocked = "Links NOT read: the level asked for has no name here to look for";
 }
@@ -287,11 +378,46 @@ else
         var linkedElements = new List<Element>();
         var unreadPlacements = 0;
 
-        if (inViewOnly == null)
+        // BY NAME IN THE LINK'S OWN LIST, for categoryName (review fix): the
+        // link has its own categories, and an imported one's id here means
+        // nothing there. The name is what both documents share.
+        Func<FilteredElementCollector, FilteredElementCollector> ofWantedHere = ofWanted;
+        var linkLacksName = false;
+        if (namedCategory != null)
+        {
+            Category linkedCategory = null;
+            try
+            {
+                foreach (Category held in linked.Settings.Categories)
+                {
+                    if (held == null) continue;
+                    string heldName = "";
+                    try { heldName = held.Name ?? ""; } catch (Exception) { }
+                    if (string.Equals(heldName, namedCategory.Name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        linkedCategory = held;
+                        break;
+                    }
+                }
+            }
+            catch (Exception) { }
+            if (linkedCategory == null) linkLacksName = true;
+            else
+            {
+                var linkedCategoryId = linkedCategory.Id;
+                ofWantedHere = c => c.OfCategoryId(linkedCategoryId);
+            }
+        }
+
+        if (linkLacksName)
+        {
+            // Nothing of that name in this link: counted 0 and said below.
+        }
+        else if (inViewOnly == null)
         {
             try
             {
-                foreach (var e in ofWanted(new FilteredElementCollector(linked))
+                foreach (var e in ofWantedHere(new FilteredElementCollector(linked))
                              .WhereElementIsNotElementType())
                     if (e != null) linkedElements.Add(e);
             }
@@ -310,7 +436,7 @@ else
                         new object[] { doc, inViewOnly.Id, placement.Id })
                         as FilteredElementCollector;
                     if (through == null) { unreadPlacements++; continue; }
-                    foreach (var e in ofWanted(through).WhereElementIsNotElementType())
+                    foreach (var e in ofWantedHere(through).WhereElementIsNotElementType())
                         if (e != null && seen.Add(e.Id)) linkedElements.Add(e);
                 }
                 catch (Exception) { unreadPlacements++; }
@@ -319,7 +445,7 @@ else
 
         var linkMatched = 0;
         var linkUnresolved = 0;
-        var byName = new Dictionary<string, int>();
+        var linkByCategory = new Dictionary<string, int>();
 
         foreach (var e in linkedElements)
         {
@@ -336,19 +462,20 @@ else
 
             linkMatched++;
             var name = categoryOf(e);
-            byName[name] = byName.ContainsKey(name) ? byName[name] + 1 : 1;
+            linkByCategory[name] = linkByCategory.ContainsKey(name) ? linkByCategory[name] + 1 : 1;
         }
 
         // The link's own breakdown, in the same words as the host's - only
         // when more than one category was asked, where it says something.
         var parts = new List<string>();
         if (wanted.Count > 1)
-            foreach (var entry in byName) parts.Add(entry.Key + " " + entry.Value);
+            foreach (var entry in linkByCategory) parts.Add(entry.Key + " " + entry.Value);
 
         linksSearched++;
         linkedTotal += linkMatched;
         linkedMatches.Add(string.Format("{0}: {1}{2}{3}{4}{5}", linked.Title, linkMatched,
-            hostLevelName == null ? "" : string.Format(" on a level named '{0}'", hostLevelName),
+            linkLacksName ? " (no category of that name in this link)"
+            : hostLevelName == null ? "" : string.Format(" on a level named '{0}'", hostLevelName),
             parts.Count > 0 ? " (" + string.Join(", ", parts.ToArray()) + ")" : "",
             linkUnresolved > 0 ? string.Format(", {0} with no level found", linkUnresolved) : "",
             unreadPlacements > 0

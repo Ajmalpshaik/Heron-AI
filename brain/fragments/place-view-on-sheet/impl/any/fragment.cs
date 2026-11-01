@@ -1,6 +1,17 @@
-// NOT STANDALONE. Assumes `doc`, `sheetId`, `views`, `at` and `oldViewId` are
-// in scope; leaves `placed`, `refused`, `swapped`, `notDone`, `placedCount`,
-// `distinctPositions`, `sheetProblem` and `layout` behind.
+// NOT STANDALONE. Assumes `doc`, `sheetId`, `views`, `elements`, `at` and
+// `oldViewId` are in scope; leaves `placed`, `refused`, `swapped`, `notDone`,
+// `placedCount`, `distinctPositions`, `sheetProblem` and `layout` behind.
+//
+// VERSION 3, REVIEW FIX OF 2026-11-01 - THE VIEWS MAY BE HANDED ON, as
+// PLACE_VIEWS_ON_SHEET took them: `elements`, from FIND_UNPLACED_VIEWS or a
+// selection, is used ONLY WHEN `views` NAMES NONE. An explicit `views` list
+// always wins and `elements` is then not read at all, so a selection can
+// never add a view the caller did not name. Of what is handed on, each
+// element that is not a view is refused BY ID in `refused` and counted in
+// `notDone`, and never placed. Both left empty is refused in `notDone`.
+// `views` binds an empty list when left out - HeronBindingNote.AbsentValue's
+// IList<View> case, added for this - and `elements` binds empty when nothing
+// fills it (EmptyWhenAbsent).
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
@@ -65,9 +76,46 @@ Action<ElementId, XYZ> noteLanding = (onSheet, point) =>
                  + Math.Round(point.Y * 304.8).ToString());
 };
 
+// THE VIEWS TO WORK ON. Named ones win; only when none is named are the
+// elements handed on read, and only their views are kept.
+var chosen = new List<View>();
+var namedAny = false;
+if (views != null)
+    foreach (var view in views)
+        if (view != null) { chosen.Add(view); namedAny = true; }
+
+if (!namedAny && elements != null)
+{
+    var notViews = new List<ElementId>();
+    var seenIds = new HashSet<ElementId>();
+    foreach (var element in elements)
+    {
+        if (element == null || !seenIds.Add(element.Id)) continue;
+        var asView = element as View;
+        if (asView != null) chosen.Add(asView);
+        else notViews.Add(element.Id);
+    }
+    if (notViews.Count > 0)
+    {
+        refused.AddRange(notViews);
+        notDone.Add(notViews.Count + " of the elements handed on are not views and were not placed - "
+            + "ids " + string.Join(", ", notViews.Select(id => id.ToString()).ToArray())
+            + ". Only views go on a sheet; name them in views, or hand on what FIND_UNPLACED_VIEWS found.");
+    }
+}
+
+bool noViews = chosen.Count == 0;
+if (noViews)
+    notDone.Add("No view was named and none was handed on, so nothing was done. Name the views, "
+        + "or select them, or run FIND_UNPLACED_VIEWS first.");
+
 bool replacing = oldViewId != null && oldViewId != ElementId.InvalidElementId;
 
-if (!replacing)
+if (noViews)
+{
+    // Nothing to place or swap in; said above.
+}
+else if (!replacing)
 {
     // THE PLACING JOB. `sheetId` may be left out since version 2, because
     // "every sheet the old view is on" needs no sheet named - but placing
@@ -89,8 +137,8 @@ if (!replacing)
 
     if (sheetProblem.Length > 0)
     {
-        foreach (var view in views)
-            if (view != null) refused.Add(view.Id);
+        foreach (var view in chosen)
+            refused.Add(view.Id);
         notDone.Add(sheetProblem);
     }
     else
@@ -99,9 +147,8 @@ if (!replacing)
         // so the grid is sized to the views that will place and a refused one
         // leaves no hole (VERSION 3).
         var placeable = new List<View>();
-        foreach (var view in views)
+        foreach (var view in chosen)
         {
-            if (view == null) continue;
 
             if (!Viewport.CanAddViewToSheet(doc, sheetId, view.Id))
             {
@@ -200,9 +247,7 @@ else
     // `at` IS AN OFFSET HERE, in millimetres, from where the old view sat.
     // 0,0,0 - the job - is exactly there.
     var oldView = doc.GetElement(oldViewId) as View;
-    var named = new List<View>();
-    foreach (var view in views)
-        if (view != null) named.Add(view);
+    var named = new List<View>(chosen);
     var newView = named.Count == 1 ? named[0] : null;
 
     string stop = null;

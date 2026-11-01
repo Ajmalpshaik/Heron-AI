@@ -23,6 +23,10 @@ capability: TAG_ELEMENTS_IN_VIEW
 # a Multi-Category tag included; with it, an element is skipped only when it
 # already carries a tag OF THAT TYPE in the view; and `skipped`, the ids left
 # alone as already tagged. Without `tagTypeId` the card is version 5 exactly.
+# Review fix of the same day: `tagTypeHintId`, `leader`, `minLengthMm` and
+# `leaderOffsetMm` are optional, each left out as the value a caller typed for
+# "nothing" - none, none, 0, 0 - so "tag these" needs only the view, as
+# TAG_ELEMENTS' did. A card change; impl/ reads the same values as before.
 # Version 5's proof below no longer describes the code and is kept as the
 # record; the card is DRAFT until it is proved again.
 version: 6
@@ -101,8 +105,15 @@ contract:
       type: View
       source: request
     - name: tagTypeHintId
+      # The tag type to TRY FIRST for its own category, by type name; the
+      # project's default, then the first loaded, for the rest. Version 6
+      # review fix: OPTIONAL, and left out it is `none` - no hint - so a plain
+      # "tag these" names nothing it does not mean. TAG_ELEMENTS' call took no
+      # hint at all; until this, every call here had to type `none`.
       type: ElementId
       source: request
+      optional: true
+      absent: none
     # Version 6, from TAG_ELEMENTS. ONE EXACT tag type, by its type name, used
     # on EVERY element whatever its category - a Multi-Category tag, or one
     # family chosen by hand - with no map, no default and no hint. With it, an
@@ -127,8 +138,13 @@ contract:
       # bend needs LeaderEndCondition.Free set first and an elbow read back
       # afterwards, and neither belongs in a tagging fragment. Ask for a
       # leader here, then bend it there.
+      #
+      # Version 6 review fix: OPTIONAL, left out it is `none` - the default
+      # this comment already gave it, now one the caller need not type.
       type: string
       source: request
+      optional: true
+      absent: none
     - name: minLengthMm
       # MODEL MILLIMETRES - the run's own length, NOT a length on the paper.
       # The exception among the millimetre values here, and deliberately so:
@@ -137,9 +153,12 @@ contract:
       # one value NOT multiplied by the scale.
       #
       # 0, the default, tags everything. A run shorter than this is reported
-      # in `tooShort` rather than dropped in silence.
+      # in `tooShort` rather than dropped in silence. Version 6 review fix:
+      # OPTIONAL, left out it is 0.
       type: double
       source: request
+      optional: true
+      absent: 0
     - name: leaderOffsetMm
       # PAPER MILLIMETRES, multiplied by the view scale - the house idiom, and
       # the thing version 2 of this fragment got wrong. An unscaled 3000 mm is
@@ -147,8 +166,11 @@ contract:
       # Converted here with no units API call, deliberately, because UnitUtils
       # splits at 2021 and this range starts at 2020. Unset arrives as 0 and a
       # zero offset puts the head on what it points at, so 0 falls back to 8.
+      # Version 6 review fix: OPTIONAL, left out it is 0 - that same 8.
       type: double
       source: request
+      optional: true
+      absent: 0
   provides:
     - name: tagged
       role: result

@@ -34,7 +34,10 @@ capability: SET_VIEW_PROPERTIES
 # the ids of the views that refused (`refused`) - and a view named twice is
 # handled once. Its read mode did not: reading a scale is READ_VIEW_SCALE's.
 # Version 2's proof below no longer describes the code and is kept as the
-# record; the card is DRAFT until it is proved again.
+# record; the card is DRAFT until it is proved again. Review fix of the same
+# day: the detail level and the visual style are read first too - a view
+# already so is neither written nor counted as changed, and is counted in
+# `alreadyThatDetailLevel` or `alreadyThatVisualStyle`.
 version: 3
 source: OFFICIAL
 risk: MODIFY
@@ -124,6 +127,21 @@ contract:
       # there was nothing to do: not written and not counted in `changed`.
       # Version 2 wrote the same number back and counted the view. The
       # evidence it looked, never a change it made (D-52).
+      role: accounting
+      type: int
+    - name: alreadyThatDetailLevel
+      # Version 3 review fix (2026-11-01). Views ALREADY at the detail level
+      # asked: not written and not counted in `changed` - the miscount
+      # alreadyThatScale fixed for scale, fixed here for detail level. A count
+      # of its own rather than alreadyThatScale widened, so that one still
+      # means scale. The evidence it looked, never a change it made (D-52).
+      role: accounting
+      type: int
+    - name: alreadyThatVisualStyle
+      # Version 3 review fix (2026-11-01). Views ALREADY in the visual style
+      # asked - for "Shaded", in the style that keeps the view's own edges:
+      # not written and not counted in `changed`, and said in visualStyleNote.
+      # The evidence it looked, never a change it made (D-52).
       role: accounting
       type: int
     - name: refused

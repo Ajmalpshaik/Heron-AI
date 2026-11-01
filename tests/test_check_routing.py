@@ -1053,6 +1053,48 @@ def main():
           % (len(unread), "; ".join(unread)))
     print()
 
+    print("15. A RETIRED CARD'S OWN WORDS ARE NOT ASKED BACK TO IT (2026-11-01)")
+    # A DEPRECATED or ARCHIVED card answers nothing - retrieval offers none and
+    # none claims a phrase by identity - so its utterances and its routing
+    # rows, asked back to it, read as NOT REACHED and as claimed by two
+    # tables beside its successor's, when the successor answers them.
+    retired_of = getattr(CR, "retired", None)
+    check(retired_of is not None, "check-routing has retired() at all")
+    if retired_of is not None:
+        check(retired_of({"heron-status": "DEPRECATED"})
+              and retired_of({"heron-status": "ARCHIVED"})
+              and not retired_of({"heron-status": "PROVEN"})
+              and not retired_of({"heron-status": "DRAFT"})
+              and not retired_of({}),
+              "DEPRECATED and ARCHIVED are retired; PROVEN, DRAFT and a card "
+              "that does not say are live")
+        import heron_search as SEARCH
+        check(SEARCH.RETIRED_FRAGMENTS == ("DEPRECATED", "ARCHIVED")
+              and "SEARCH.RETIRED_FRAGMENTS" in source,
+              "the statuses are heron_search's, imported, never a copy")
+        import yaml
+        rows, risk = CR.utterances()
+        asked_ids = set(fid for fid, _ in rows)
+        gone = []
+        for folder in sorted(os.listdir(os.path.join(ROOT, "brain", "fragments"))):
+            path = os.path.join(ROOT, "brain", "fragments", folder, "fragment.yaml")
+            if not os.path.exists(path):
+                continue
+            card = yaml.safe_load(io.open(path, encoding="utf-8").read()) or {}
+            if retired_of(card):
+                gone.append(card.get("id"))
+        check(gone and not (set(gone) & asked_ids),
+              "none of the library's %d retired cards has an utterance asked "
+              "back to it" % len(gone))
+        check(all(one in risk for one in gone),
+              "and each still has its risk read - a winner may be any card")
+        report_body = source.split("\ndef report(", 1)[1]
+        loop = report_body.split("for sentence in routing_claims(text):", 1)[0]
+        check("if retired(doc):" in loop[-600:],
+              "and report() skips a retired card's routing table before "
+              "reading a claim off it")
+    print()
+
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:

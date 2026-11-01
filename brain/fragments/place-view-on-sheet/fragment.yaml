@@ -34,6 +34,10 @@ purpose: >
   `sheetProblem`. Version 2's proof no longer describes the code and is kept as
   a record; the card is DRAFT until it is proved again.
 
+  **The views may be handed on** (version 3): with none named, the views
+  FIND_UNPLACED_VIEWS found, or the ones selected, are placed; anything handed
+  on that is not a view is refused by id. Views named always win.
+
   **Version 2: replace one view with another on its sheets.** Name an
   `oldViewId` and the one view in `views` takes its place, and the old view
   comes off - read back in `swapped`, and anything not done said in `notDone`.
@@ -88,8 +92,20 @@ contract:
       absent: none
     - name: views
       # Placing: the views to put on the sheet. Replacing: the ONE new view.
+      # Version 3 review fix: OPTIONAL - left out it is an empty list
+      # (HeronBindingNote.AbsentValue's IList<View> case), and the views are
+      # then taken from `elements`. Named, they ALWAYS win.
       type: IList<View>
       source: request
+      optional: true
+    - name: elements
+      # Version 3 review fix, from PLACE_VIEWS_ON_SHEET: views HANDED ON -
+      # FIND_UNPLACED_VIEWS' answer, or the views selected - read ONLY when
+      # `views` names none, so a selection never adds a view nobody named. An
+      # element that is not a view is refused by id, never placed. Nothing
+      # filling it binds empty (HeronBindingNote.EmptyWhenAbsent).
+      type: IList<Element>
+      optional: true
     - name: at
       # Placing: the point on the sheet, in mm, for ONE view (version 3);
       # several views go on a grid and the point is not used - `layout` says
@@ -262,12 +278,19 @@ compatibility-note: >
 # the grid's start corner - and layout says when it was not used.
 # distinctPositions is reported for every run. `at` is optional now.
 #
-# NOT CARRIED: PLACE_VIEWS_ON_SHEET took its views as `elements`, so
-# FIND_UNPLACED_VIEWS chained straight in. Here `views` is named by the caller,
-# and the add-in binds no absent view LIST (HeronBindingNote.AbsentValue binds
-# an optional bool and an optional View only - rows 5b-227, 5b-252, 5b-1320).
-# Taking `elements` as well would let any selection add views the caller did
-# not name. Left for the owner: chaining needs that rule widened first.
+# CARRIED BY THE REVIEW FIX OF 2026-11-01 (first recorded here as NOT
+# CARRIED): PLACE_VIEWS_ON_SHEET took its views as `elements`, so
+# FIND_UNPLACED_VIEWS chained straight in. Now this card takes `elements` too,
+# read ONLY when `views` names none - an explicit list always wins, so a
+# selection cannot add a view the caller did not name - and each element that
+# is not a view is refused by id. It needed the add-in to bind an absent view
+# LIST, which it did not (HeronBindingNote.AbsentValue bound an optional bool
+# and an optional View only - rows 5b-227, 5b-252, 5b-1320): AbsentValue binds
+# an optional `IList<View>` to an empty list now, mirrored in
+# heron_fragment.ABSENT_BINDS, with a check on each side. Only a card that
+# marks such a list optional is affected, and this is the only one. An add-in
+# built before the change still refuses `views` left out, as needs_unbound,
+# before anything runs.
 #
 # WHERE PLACE_VIEWS_ON_SHEET'S OUTPUTS ARE NOW: placed (int) -> placedCount,
 # distinctPositions -> distinctPositions, notPlaced -> refused, sheetProblem ->

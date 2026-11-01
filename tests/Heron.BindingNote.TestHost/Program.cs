@@ -108,6 +108,20 @@ namespace Heron.BindingNote.TestHost
                   "a View NOT marked optional is still refused - the view is the caller's to name");
             Check(HeronBindingNote.AbsentValue("View", "false") == null,
                   "and so is one marked optional: false");
+            // 2026-11-01: AN OPTIONAL VIEW LIST BINDS EMPTY, so PLACE_VIEW_ON_SHEET
+            // can take its views handed on as `elements` when none is named.
+            Check(HeronBindingNote.AbsentValue("IList<View>", "true") == "new List<View>()",
+                  "an absent IList<View> marked optional binds an empty list");
+            Check(HeronBindingNote.AbsentValue(" IList<View> ", " True ") == "new List<View>()",
+                  "however the card spells it");
+            Check(HeronBindingNote.AbsentValue("IList<View>", null) == null,
+                  "a view list NOT marked optional is still refused - the views are the caller's to name");
+            Check(HeronBindingNote.AbsentValue("IList<View>", "false") == null,
+                  "and so is one marked optional: false");
+            Check(HeronBindingNote.AbsentValue("IList<Element>", "true") == null,
+                  "an element list is EmptyWhenAbsent's case, never this one");
+            Check(HeronBindingNote.AbsentValue("IList<string>", "true") == null,
+                  "and an optional list of names is still refused");
             Check(HeronBindingNote.AbsentValue("string", "true") == null,
                   "an optional string is still refused - row 5b-227's other two");
             Check(HeronBindingNote.AbsentValue("double", "true") == null,
