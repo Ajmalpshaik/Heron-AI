@@ -163,7 +163,8 @@ questions:
   - n: 20
     row: 477
     question: "what scale is this section"
-    answer: [READ_VIEW_SCALE]
+    # The read row 477 named was READ_VIEW_SCALE; merged into REPORT_VIEW_SETTINGS on 2026-11-01.
+    answer: [REPORT_VIEW_SETTINGS]
     named: declared
   - n: 21
     row: 477
