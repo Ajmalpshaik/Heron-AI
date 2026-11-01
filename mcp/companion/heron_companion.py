@@ -1299,18 +1299,20 @@ class DashboardPanel(object):
         #: demo_hook() -> brain answer for the invented DEMO model.
         self.demo_hook = None
 
-    def open(self, document, answer, identity=None, parameters=""):
-        board = answer.get("dashboard") or {}
+    def open(self, document, answer, identity=None, parameters="", board=""):
+        built = answer.get("dashboard") or {}
         with self._lock:
             self._held = {
-                "parameters": parameters or "", "fill": board.get("fill"),
-                "since": board.get("since"), "demo": bool(board.get("demo")),
+                "parameters": parameters or "", "board_key": board or "",
+                "board": built.get("board"), "boards": built.get("boards") or [],
+                "fill": built.get("fill"),
+                "since": built.get("since"), "demo": bool(built.get("demo")),
                 "document": document, "at": time.strftime("%H:%M:%S"),
                 "identity": list(identity) if identity else None,
-                "model": board.get("model") or {}, "tiles": board.get("tiles") or [],
-                "charts": board.get("charts") or [], "look": board.get("look") or [],
-                "notRead": board.get("notRead") or [], "capped": board.get("capped") or [],
-                "states": board.get("states") or [],
+                "model": built.get("model") or {}, "tiles": built.get("tiles") or [],
+                "charts": built.get("charts") or [], "look": built.get("look") or [],
+                "notRead": built.get("notRead") or [], "capped": built.get("capped") or [],
+                "states": built.get("states") or [],
                 "said": answer.get("said")}
 
     def current(self):
@@ -1332,9 +1334,12 @@ class DashboardPanel(object):
             wanted = (body or {}).get("parameters") if isinstance(body, dict) else None
             if not isinstance(wanted, str):
                 wanted = (self._held or {}).get("parameters") or ""
+            board = (body or {}).get("board") if isinstance(body, dict) else None
+            if not isinstance(board, str):
+                board = (self._held or {}).get("board_key") or ""
             self._busy = True
         try:
-            got = hook(wanted[:600]) or {}
+            got = hook(wanted[:600], board[:40]) or {}
         finally:
             with self._lock:
                 self._busy = False
@@ -1342,6 +1347,23 @@ class DashboardPanel(object):
 
 
     SHOWS = ("select", "isolate", "reset")
+
+    @staticmethod
+    def _ids_for(held, body):
+        """The ids THIS panel holds for a worth-a-look row ("row": its key) or a
+        board bar ("bar": [chart key, label]) - never ids the page sent."""
+        held = held or {}
+        if body.get("row") is not None:
+            rows = [r for r in held.get("look") or [] if r.get("key") == body.get("row")]
+            return list(rows[0].get("ids") or []) if rows else []
+        bar = body.get("bar")
+        if isinstance(bar, list) and len(bar) == 2:
+            for chart in (held.get("board") or {}).get("charts") or []:
+                if chart.get("key") == bar[0]:
+                    for b in chart.get("bars") or []:
+                        if b.get("label") == bar[1]:
+                            return list(b.get("ids") or [])
+        return []
 
     def demo(self):
         """Open the DEMO - an invented model, made in brain/ - when no read is held.
@@ -1383,11 +1405,10 @@ class DashboardPanel(object):
                                              "invented model. Ask the chat for a model dashboard "
                                              "to read your own."}
             if action != "reset":
-                rows = [r for r in (held or {}).get("look") or [] if r.get("key") == body.get("row")]
-                if not rows or not rows[0].get("ids"):
+                ids = self._ids_for(held, body)
+                if not ids:
                     return {"ok": False, "said": "Nothing was sent to Revit: that row has no "
                                                  "element ids on this dashboard."}
-                ids = list(rows[0]["ids"])
             else:
                 ids = []
             identity = list(held["identity"]) if held and held.get("identity") else None

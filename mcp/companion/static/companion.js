@@ -1543,7 +1543,7 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 
 function dashColour(c, fallback) { return HEX.test(String(c || "")) ? c : fallback; }
 
-async function dashRefresh(button, said, parameters) {
+async function dashRefresh(button, said, parameters, board) {
   if (dashBusy) return;
   dashBusy = true;
   button.disabled = true;
@@ -1554,7 +1554,8 @@ async function dashRefresh(button, said, parameters) {
       method: "POST",
       headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
       credentials: "same-origin",
-      body: JSON.stringify(parameters == null ? {} : { parameters: parameters }),
+      body: JSON.stringify(Object.assign({}, parameters == null ? {} : { parameters: parameters },
+                                         board == null ? {} : { board: board })),
     });
     const answer = await res.json();
     said.className = answer.ok ? "result ok" : "result failed";
@@ -1574,7 +1575,7 @@ async function dashRefresh(button, said, parameters) {
 // A row's Select in Revit / Isolate in view, or Reset isolate. On screen only:
 // the selection and the active view's Temporary Hide/Isolate - never the model.
 // The page sends the row's key, never ids: Heron uses the ids its own read found.
-async function dashShow(action, row, button) {
+async function dashShow(action, row, button, bar) {
   if (dashBusy) return;
   dashBusy = true;
   const said = $("d-said");
@@ -1585,7 +1586,7 @@ async function dashShow(action, row, button) {
       method: "POST",
       headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
       credentials: "same-origin",
-      body: JSON.stringify({ action: action, row: row }),
+      body: JSON.stringify(bar ? { action: action, bar: bar } : { action: action, row: row }),
     });
     const answer = await res.json();
     if (said) {
@@ -1764,6 +1765,47 @@ function dashCsv(D) {
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
 
+// A board's charts. A bar with ids is a button: it selects those elements in
+// Revit - the page names the chart and the bar, Heron uses its own ids.
+function dashBoard(B) {
+  const sec = el("section", "d-board");
+  sec.append(el("h3", "d-sub", B.title));
+  const grid = el("div", "d-charts");
+  (B.charts || []).forEach(c => {
+    const box = el("figure", "d-chart");
+    box.append(el("figcaption", "d-chart-title", c.title + (c.unit ? " (" + c.unit + ")" : "")));
+    if (!c.bars) {
+      box.append(el("p", "muted small", "Not read from the model - see the notes above."));
+      grid.append(box);
+      return;
+    }
+    if (!c.bars.length) box.append(el("p", "muted small", "None in this model."));
+    const most = Math.max(1, ...c.bars.map(b => Number(b.value) || 0));
+    const list = el("ol", "d-bars");
+    c.bars.forEach(b => {
+      const li = el("li", "d-bar");
+      const label = el((b.ids || []).length ? "button" : "span", "d-bar-label", b.label);
+      if ((b.ids || []).length) {
+        label.type = "button";
+        label.classList.add("d-bar-pick");
+        label.title = "Select these " + b.count + " element(s) in Revit - nothing in the model changes";
+        label.addEventListener("click", () => dashShow("select", null, label, [c.key, b.label]));
+      } else label.title = b.label;
+      const track = el("span", "d-bar-track");
+      const fill = el("i", "d-bar-fill");
+      fill.style.width = Math.max(1, Math.round(100 * (Number(b.value) || 0) / most)) + "%";
+      fill.style.background = dashColour(b.colour, "#4f7fd1");
+      track.append(fill);
+      li.append(label, track, el("span", "d-bar-value", num(b.value, c.unit ? 1 : 0)));
+      list.append(li);
+    });
+    box.append(list);
+    grid.append(box);
+  });
+  sec.append(grid);
+  return sec;
+}
+
 function dashFilter(text, state) {
   const words = String(text || "").trim().toLowerCase();
   document.querySelectorAll("#dashboard .d-bar, #dashboard .d-fill-table tbody tr").forEach(n => {
@@ -1853,8 +1895,20 @@ function renderDashboard(D) {
   params.value = D.parameters || "";
   params.placeholder = "Parameters to check filled, e.g. Mark, Fire Rating";
   params.setAttribute("aria-label", "Parameters to check filled, comma separated");
-  params.addEventListener("keydown", e => { if (e.key === "Enter") dashRefresh(refresh, said, params.value); });
-  refresh.addEventListener("click", () => dashRefresh(refresh, said, params.value));
+  const pick = el("select", "d-states");
+  pick.setAttribute("aria-label", "Board");
+  const none = el("option", null, "No board");
+  none.value = "";
+  pick.append(none);
+  (D.boards || []).forEach(b => {
+    const o = el("option", null, "Board: " + b.title);
+    o.value = b.key;
+    if (b.key === D.board_key) o.selected = true;
+    pick.append(o);
+  });
+  pick.title = "A board adds its charts at the next Refresh";
+  params.addEventListener("keydown", e => { if (e.key === "Enter") dashRefresh(refresh, said, params.value, pick.value); });
+  refresh.addEventListener("click", () => dashRefresh(refresh, said, params.value, pick.value));
   const reset = el("button", "btn-lite", "Reset isolate");
   reset.type = "button";
   reset.title = "End the Temporary Hide/Isolate in Revit's active view";
@@ -1871,7 +1925,7 @@ function renderDashboard(D) {
   csv.type = "button";
   csv.title = "The rows worth a look and the parameters filled, as a spreadsheet file - made on this PC";
   csv.addEventListener("click", () => dashCsv(D));
-  tools.append(params, refresh, reset, print, csv, said);
+  tools.append(params, pick, refresh, reset, print, csv, said);
   // THE FILTER is the page's own: it hides rows and bars whose words do not
   // match, on what the brain already sent - nothing is read from Revit.
   const filterBox = el("div", "d-filter");
@@ -1908,6 +1962,7 @@ function renderDashboard(D) {
   const charts = el("div", "d-charts");
   (D.charts || []).forEach(c => charts.append(dashChart(c)));
   box.append(charts);
+  if (D.board) box.append(dashBoard(D.board));
   if (D.fill) box.append(dashFill(D.fill, colours));
   box.append(dashLook(D, colours));
   const legend = el("ul", "d-legend");

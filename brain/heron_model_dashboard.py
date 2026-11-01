@@ -218,6 +218,7 @@ def read(text):
                      for r in _rows(fill, "rows")]}
     else:
         out["fill"] = None
+    out["breakdowns"] = data.get("breakdowns") if isinstance(data.get("breakdowns"), list) else None
     return out
 
 
@@ -474,7 +475,7 @@ def _fill_rows(board_fill):
     return rows
 
 
-def build(data):
+def build(data, board_key=None):
     """The panel's whole content from read()'s result."""
     board_fill = fill(data)
     rows = look_at(data)
@@ -484,6 +485,7 @@ def build(data):
     return {"format": FORMAT, "model": dict(data["model"]), "tiles": tiles(data),
             "charts": charts(data), "look": rows, "notRead": list(data["notRead"]),
             "capped": list(data.get("capped") or []), "fill": board_fill,
+            "board": board(board_key, data), "boards": boards(),
             "states": [{"key": k, "colour": c, "means": m} for k, c, m in STATES],
             "said": summary(data, rows)}
 
@@ -509,7 +511,7 @@ def summary(data, rows=None):
     return said + " The charts and lists are on the Companion page. Nothing was changed."
 
 
-def dashboard(text, project_key=None):
+def dashboard(text, project_key=None, board_key=None):
     """
     read() then build(), as the MCP server calls it. Returns {"dashboard",
     "said"}; "dashboard" is None, and "said" says why, when the text could
@@ -520,7 +522,7 @@ def dashboard(text, project_key=None):
         data = read(text)
     except ValueError as why:
         return {"dashboard": None, "said": "No dashboard was made: %s" % why}
-    built = build(data)
+    built = build(data, board_key)
     built["since"], note = (since(project_key, data) if project_key and
                             not data["model"]["isFamily"] else (None, None))
     if note:
@@ -711,3 +713,131 @@ def demo():
     built["said"] = ("DEMO - an invented model, for trying the Model Dashboard with no Revit. "
                      "Ask the chat for a model dashboard to read your own model.")
     return {"dashboard": built, "said": built["said"]}
+
+
+# ----------------------------------------------------------------- boards
+
+#: THE BOARDS (phase 3) - each a named set of breakdowns the read is asked
+#: for: which categories, grouped by what, and what is summed. Categories are
+#: Revit's own built-in names and the special keys start with @, so a board
+#: means the same in every Revit language. Decided here; the page only offers
+#: the list and draws what comes back.
+#:   (key, title, [(breakdown key, chart title, categories, group by, sum)])
+BOARDS = (
+    ("rooms", "Rooms and areas", (
+        ("rooms-level", "Room area by level", "OST_Rooms", "@level", "@area"),
+        ("rooms-department", "Room area by department", "OST_Rooms", "ROOM_DEPARTMENT", "@area"),
+        ("rooms-name", "Room area by name", "OST_Rooms", "ROOM_NAME", "@area"))),
+    ("doors", "Doors", (
+        ("doors-fire", "Doors by fire rating", "OST_Doors", "FIRE_RATING", ""),
+        ("doors-type", "Doors by type", "OST_Doors", "@type", ""),
+        ("doors-level", "Doors by level", "OST_Doors", "@level", ""))),
+    ("walls", "Walls", (
+        ("walls-type", "Wall area by type", "OST_Walls", "@type", "@area"),
+        ("walls-level", "Wall area by level", "OST_Walls", "@level", "@area"),
+        ("walls-fire", "Walls by fire rating", "OST_Walls", "FIRE_RATING", ""))),
+    ("structure", "Structure", (
+        ("framing-material", "Framing volume by material", "OST_StructuralFraming",
+         "STRUCTURAL_MATERIAL_PARAM", "@volume"),
+        ("columns-type", "Columns by type", "OST_StructuralColumns", "@type", ""),
+        ("foundations-type", "Foundation volume by type", "OST_StructuralFoundation", "@type",
+         "@volume"))),
+    ("mep", "MEP systems", (
+        ("ducts-system", "Duct length by system", "OST_DuctCurves", "@system", "@length"),
+        ("pipes-system", "Pipe length by system", "OST_PipeCurves", "@system", "@length"),
+        ("ducts-size", "Duct length by size", "OST_DuctCurves", "@size", "@length"),
+        ("pipes-size", "Pipe length by size", "OST_PipeCurves", "@size", "@length"),
+        ("terminals-type", "Air terminals by type", "OST_DuctTerminal", "@type", ""),
+        ("equipment-type", "Mechanical equipment by type", "OST_MechanicalEquipment", "@type",
+         ""))),
+    ("fire", "Fire protection", (
+        ("sprinklers-type", "Sprinklers by type", "OST_Sprinklers", "@type", ""),
+        ("sprinklers-level", "Sprinklers by level", "OST_Sprinklers", "@level", ""),
+        ("fire-pipes-size", "Pipe length by size", "OST_PipeCurves", "@size", "@length"))),
+    ("phases", "Phases and design options", (
+        ("all-phase", "Elements by phase created", "*", "@phase", ""),
+        ("all-option", "Elements by design option", "*", "@designoption", ""))),
+)
+#: How many breakdowns one read may carry - the fragment's own limit.
+BREAKDOWNS_MAX = 8
+
+
+def boards():
+    """The boards the page offers: [{"key", "title"}]."""
+    return [{"key": key, "title": title} for key, title, _parts in BOARDS]
+
+
+def board_request(key):
+    """
+    The `breakdowns` value the read takes for one board - "key|categories|group
+    by|sum" joined with ";" - or "" for no board. Raises ValueError for a board
+    Heron does not have.
+    """
+    if not key:
+        return ""
+    for board_key, _title, parts in BOARDS:
+        if board_key == key:
+            return ";".join("|".join(part[:1] + part[2:]) for part in parts[:BREAKDOWNS_MAX])
+    raise ValueError("Heron has no board '%s'. The boards: %s."
+                     % (key, ", ".join(b for b, _t, _p in BOARDS)))
+
+
+def _read_breakdowns(data):
+    """The fragment's breakdowns, made safe. None when none were asked."""
+    got = data.get("breakdowns")
+    if not isinstance(got, list):
+        return None
+    out = []
+    for b in got:
+        if not isinstance(b, dict):
+            continue
+        rows = b.get("rows")
+        out.append({"key": _text(b.get("key")), "unit": _text(b.get("unit")) or None,
+                    "rows": None if rows is None else [
+                        {"value": _text(r.get("value")) or "(none)", "count": _int(r.get("count")),
+                         "sum": _num(r.get("sum")), "ids": _ids(r.get("ids"))}
+                        for r in rows if isinstance(r, dict)]})
+    return out
+
+
+def board(key, data):
+    """
+    One board's charts from the read: [{"key", "title", "unit", "bars"}]; a
+    breakdown the read could not make is a chart with "bars": None and its
+    reason in notRead. None when no board was asked.
+    """
+    got = _read_breakdowns(data)
+    if not key or got is None:
+        return None
+    titles = {}
+    for board_key, board_title, parts in BOARDS:
+        if board_key == key:
+            titles = dict((p[0], p[1]) for p in parts)
+            title = board_title
+            break
+    else:
+        return None
+    charts = []
+    for b in got:
+        if b["key"] not in titles:
+            continue
+        if b["rows"] is None:
+            charts.append({"key": b["key"], "title": titles[b["key"]], "unit": b["unit"],
+                           "bars": None})
+            continue
+        summed = b["unit"] is not None
+        rows = sorted(b["rows"], key=lambda r: -(r["sum"] or 0) if summed else -r["count"])
+        bars = []
+        for r in rows[:CHART_BARS]:
+            value = round(r["sum"], 1) if summed and r["sum"] is not None else r["count"]
+            bars.append({"label": r["value"], "value": value, "count": r["count"],
+                         "colour": BAR, "ids": r["ids"]})
+        rest = rows[CHART_BARS:]
+        if rest:
+            bars.append({"label": "Others (%d more)" % len(rest),
+                         "value": round(sum(r["sum"] or 0 for r in rest), 1) if summed
+                         else sum(r["count"] for r in rest),
+                         "count": sum(r["count"] for r in rest), "colour": BAR_OTHERS, "ids": []})
+        charts.append({"key": b["key"], "title": titles[b["key"]], "unit": b["unit"],
+                       "bars": bars})
+    return {"key": key, "title": title, "charts": charts}

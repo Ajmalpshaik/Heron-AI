@@ -289,6 +289,39 @@ def test_the_demo_is_invented_and_names_no_element():
     assert board["since"] is None if "since" in board else True
 
 
+BREAKDOWNS = [
+    {"key": "rooms-level", "unit": "m²", "rows": [
+        {"value": "Level 01", "count": 20, "sum": 812.456, "ids": ["11", "12"]},
+        {"value": "Level 02", "count": 17, "sum": 990.0, "ids": ["13"]}]},
+    {"key": "rooms-department", "unit": "m²", "rows": None},
+    {"key": "rooms-name", "unit": "m²", "rows": [{"value": "", "count": 3, "sum": 0, "ids": []}]}]
+
+
+def test_board_request_is_language_proof_and_bounded():
+    req = D.board_request("rooms")
+    assert req.split(";")[0] == "rooms-level|OST_Rooms|@level|@area"
+    assert all(len(part.split("|")) == 4 for part in req.split(";"))
+    assert all(len(D.board_request(k).split(";")) <= D.BREAKDOWNS_MAX for k, _t, _p in D.BOARDS)
+    assert D.board_request("") == ""
+    try:
+        D.board_request("cost")
+        assert False, "an unknown board must be refused"
+    except ValueError as why:
+        assert "no board 'cost'" in str(why)
+
+
+def test_board_charts_from_breakdowns():
+    board = built(breakdowns=BREAKDOWNS)
+    assert board["board"] is None and [b["key"] for b in board["boards"]][0] == "rooms"
+    got = D.dashboard(sample(breakdowns=BREAKDOWNS), board_key="rooms")["dashboard"]["board"]
+    assert got["title"] == "Rooms and areas"
+    level = got["charts"][0]
+    assert level["unit"] == "m²" and [b["label"] for b in level["bars"]] == ["Level 02", "Level 01"]
+    assert level["bars"][1]["value"] == 812.5 and level["bars"][1]["ids"] == ["11", "12"]
+    assert got["charts"][1]["bars"] is None
+    assert got["charts"][2]["bars"][0]["label"] == "(none)"
+
+
 def test_imports_only_the_standard_library():
     allowed = set(getattr(sys, "stdlib_module_names", ())) or {"json"}
     tree = ast.parse(open(os.path.join(ROOT, "brain", "heron_model_dashboard.py")).read())

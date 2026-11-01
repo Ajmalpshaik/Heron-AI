@@ -1413,11 +1413,12 @@ def test_dashboard_panel():
     check(shown["document"] == "Tower MEP" and shown["tiles"] and shown["charts"]
           and shown["look"] and shown["states"] and shown["busy"] is False,
           "the panel shows the brain's tiles, charts, rows and colours as they came")
-    calls, asked = [], []
+    calls, asked, boards_asked = [], [], []
 
-    def hook(parameters):
+    def hook(parameters, board):
         calls.append(panel.current()["busy"])
         asked.append(parameters)
+        boards_asked.append(board)
         check(panel.refresh()["said"] == "Not read: %s." % hc.DashboardPanel.BUSY,
               "a second Refresh while one reads is told so and reads nothing")
         return {"ok": True, "said": "read again"}
@@ -1431,8 +1432,10 @@ def test_dashboard_panel():
     check(asked == ["", "Mark, Fire Rating", "Mark, Fire Rating"],
           "Refresh carries the parameters typed on the page, and keeps the last read's "
           "when none are sent - found %r" % (asked,))
+    panel.refresh({"board": "rooms"})
+    check(boards_asked[-1] == "rooms", "Refresh carries the board picked on the page")
 
-    def broken(_parameters):
+    def broken(_parameters, _board):
         raise RuntimeError("Revit closed")
     panel.refresh_hook = broken
     try:
@@ -1502,6 +1505,13 @@ def test_dashboard_panel():
           "an action that is not select, isolate or reset is refused")
     check(shown.show({"action": "reset"})["ok"] and sent[-1] == ("reset", [], ["Tower MEP", "", "11"]),
           "Reset needs no row")
+    boarded = brain_seam.model_dashboard(DASH.sample(breakdowns=DASH.BREAKDOWNS), board="rooms")
+    shown.open("Tower MEP", boarded, ("Tower MEP", "", "11"), board="rooms")
+    check(shown.show({"action": "select", "bar": ["rooms-level", "Level 01"]})["ok"]
+          and sent[-1][1] == ["11", "12"],
+          "a board bar selects the ids the panel's own read found for it")
+    check(shown.show({"action": "select", "bar": ["rooms-level", "Level 09"]})["ok"] is False,
+          "a bar the panel does not hold sends nothing")
 
     # THE DEMO (docs/40 s21.12): invented, made in brain/ through a hook, and
     # nothing on it ever reaches Revit.
