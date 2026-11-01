@@ -1094,7 +1094,7 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ju.md`](needs-checking/group-ju.md)
 
-## Group KA - the saved export setups and View/Sheet Sets: `LIST_EXPORT_SETUPS`, `MANAGE_EXPORT_SETUPS`, `SET_EXPORT_SETUP_OPTIONS`, `SYNC_SHEET_SETS_BY_PARAMETER`, `CHECK_SHEET_SETS_BY_PARAMETER`, and `MANAGE_SHEET_SETS` with nothing selected (2026-11-01)
+## Group KA - the saved export setups and View/Sheet Sets: `LIST_EXPORT_SETUPS`, `MANAGE_EXPORT_SETUPS`, `SET_EXPORT_SETUP_OPTIONS`, `SYNC_SHEET_SETS_BY_PARAMETER`, `CHECK_SHEET_SETS_BY_PARAMETER`, and `MANAGE_SHEET_SETS` with nothing selected and its copy mode (2026-11-01)
 
 **Its own file:** [`needs-checking/group-ka.md`](needs-checking/group-ka.md)
 
