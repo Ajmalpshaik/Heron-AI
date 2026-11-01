@@ -327,7 +327,7 @@ namespace Heron.Revit.Addin
             foreach (var id in typed) if (!wanted[id]) missing.Add(id);
 
             // A UNIQUEID IS REVIT'S OWN LOOKUP, Document.GetElement(string), as
-            // SELECT_FAMILY_FORMS reads the same ids. One that names nothing
+            // REPORT_FAMILY_FORMS reads the same ids. One that names nothing
             // here - another family's form, a project in front, a typing slip -
             // or names an element type, which the collector above never
             // matches either, is named with the numbers that name nothing. An
@@ -461,8 +461,8 @@ namespace Heron.Revit.Addin
         /// The typed ids sorted by shape into Revit's numbers and UniqueIds,
         /// or the refusal to give back (5b-1314).
         ///
-        /// A FORM HAS NO NUMBER IN ANY HERON ANSWER. CREATE_FAMILY_FORMS,
-        /// REPORT_FAMILY_FORMS and SELECT_FAMILY_FORMS name a form by its
+        /// A FORM HAS NO NUMBER IN ANY HERON ANSWER. CREATE_FAMILY_FORMS and
+        /// REPORT_FAMILY_FORMS name a form by its
         /// UniqueId and nothing else, so a list of digits only could never
         /// picture one form out of a family the chat had just built.
         ///

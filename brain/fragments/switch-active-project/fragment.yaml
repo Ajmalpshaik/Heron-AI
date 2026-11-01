@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DOC-004
 heron-step: 17
-heron-status: DRAFT
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,27 @@ capability: SWITCH_ACTIVE_PROJECT
 version: 1
 source: OFFICIAL
 risk: EXECUTE
+
+# DEPRECATED 2026-11-01 - MERGED INTO ACTIVATE_DOCUMENT (activate-document), on
+# the owner's instruction in conversation: "now merge the other duplicates
+# also". Constitution Article 1: kept, never deleted, so its record stays
+# readable and it can be brought back. Nothing offers it now - retrieval leaves
+# DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to ACTIVATE_DOCUMENT.
+# It was never proved: Revit refused its one operation every way it was tried.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: ACTIVATE_DOCUMENT
+  why: >
+    The same job: bring another document to the front. ACTIVATE_DOCUMENT does
+    it - proved - with OpenAndActivateDocument, by the document's full path,
+    and reads back from Revit which window is in front afterwards; this card's
+    RequestViewChange was refused by Revit for an inactive document every way
+    it was tried (FRAGMENT-ISSUES rows 90 and 94). A title is not taken there,
+    so two open models of one name can never be guessed between - the safer of
+    the two rules; REPORT_OPEN_DOCUMENTS gives each open document's path.
+    `viewName` was not carried: landing on a named view never worked.
 
 purpose: >
   Makes one of the projects ALREADY OPEN in this Revit the active one, so the

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SEL-008
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,32 @@ capability: ZOOM_TO_ELEMENTS
 version: 1
 source: OFFICIAL
 risk: EXECUTE
+
+# DEPRECATED 2026-11-01 - MERGED INTO SET_SELECTION (set-selection), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools", then "ok go ahead merge all". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to SET_SELECTION. The proof below is
+# the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: SET_SELECTION
+  why: >
+    The same job - put what was found in front of the modeller, changing
+    nothing in the model, at risk EXECUTE. SET_SELECTION version 2 takes show,
+    Revit's own Show, which may change the active view and reports the view it
+    landed on in viewAfter; keepSelection with show for the camera only, the
+    selection left alone; missing, dead ids left out before Show is asked;
+    Show never attempted with nothing left; shown and findings. Where the
+    rules differed the safer was kept: dead ids are left out of the selection
+    as well, and keepSelection without show is refused with nothing touched.
+    Not carried, as opposite: alsoSelect, whose false meant do not select -
+    leaving a switch out there never stops the selection SET_SELECTION always
+    made; this card's alsoSelect=true is show=true, its alsoSelect=false is
+    show=true with keepSelection=true.
 
 purpose: >
   Moves the screen to the elements - Revit's own *Show* - so the person can

@@ -59,7 +59,7 @@ records the proof, and the split is temporary by construction.
 
 ```
 python brain/heron_validate.py review              every draft
-python brain/heron_validate.py review list-levels  one of them
+python brain/heron_validate.py review report-level-elevations  one of them
 ```
 
 Read `gaps:` first. It is the list of things the run could **not** establish, and a draft with gaps is a
@@ -70,7 +70,7 @@ instead of quietly counting as proven.
 ## Accepting one
 
 ```
-python brain/heron_validate.py accept list-levels --by "Ajmal PS"
+python brain/heron_validate.py accept report-level-elevations --by "Ajmal PS"
 ```
 
 Your name **is** the signature — D-30: *"whoever ran it records it, under their name and the date, not a

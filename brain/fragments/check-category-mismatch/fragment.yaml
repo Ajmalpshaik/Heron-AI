@@ -171,7 +171,7 @@ compatibility-note: >
 #    schedule"                              usual reason a real element is
 #                                           absent from a schedule and present
 #                                           on screen
-#   "find all the X families"            -> SELECT_BY_FAMILY, which searches by
+#   "find all the X families"            -> SELECT_BY_PARAMETER_VALUE, Family, which searches by
 #                                           name and does not judge the
 #                                           category
 #   "check the model against our         -> CHECK_MODEL_STANDARDS

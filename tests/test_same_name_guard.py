@@ -47,6 +47,13 @@ WHAT IT CHECKS, AS TEXT
      are removed first, string literals kept. A second review the same day
      weakened the count, reassigned it, read the first match inside the
      refusal and filled in a value there, and each passed until these rules.
+  6. THE PER-VALUE ROAD. CREATE_VIEW_FILTERS_BY_VALUE was merged into
+     CREATE_VIEW_FILTER on 2026-11-01 and is DEPRECATED, so the guard this
+     suite held on it is held on the card that does the job now. Its
+     per-value road reads the parameter by its id, never LookupParameter, so
+     check 1 has nothing to hold there: this one asks that each element is
+     counted with `GetParameters(label).Count > 1`, counted into `twice` and
+     passed over, BEFORE the parameter is read off it with `parameterOn`.
 
 WHAT IT CANNOT DO
 Run a fragment. Whether Revit really hands back two parameters for a name, and
@@ -72,9 +79,14 @@ FRAGMENTS = os.path.join(ROOT, "brain", "fragments")
 WRITERS = (
     "write-element-parameters", "copy-parameter-value", "edit-parameter-text",
     "edit-text-values", "import-parameter-values", "remove-parameter-value",
-    "renumber-sequential", "assign-location-data", "create-view-filters-by-value",
+    "renumber-sequential", "assign-location-data", "create-view-filter",
     "color-by-parameter",
 )
+# THE GUARD MOVED WITH THE JOB. create-view-filters-by-value was listed above
+# until 2026-11-01, when it was merged into create-view-filter (its per-value
+# road, `perValue`) and DEPRECATED - a retired card's code runs nowhere, so
+# guarding it guarded nothing. Check 6 reads the per-value road itself.
+PER_VALUE = "create-view-filter"
 
 # The ones that only read, repaired since. Each answers a question, so a name
 # read from the first match is a confidently wrong answer rather than a write.
@@ -398,12 +410,45 @@ def the_refusal():
                 check(True, "%s (%s): the refusal is in place" % (name, release))
 
 
+def the_per_value_road():
+    print("6. CREATE_VIEW_FILTER's per-value road counts a doubled name and passes it over "
+          "before reading the parameter")
+    paths = impl_files(PER_VALUE)
+    check(len(paths) > 0, "%s: no impl/*/fragment.cs to read" % PER_VALUE)
+    for path in paths:
+        code = without_comments(read(path))
+        release = os.path.basename(os.path.dirname(path))
+        road = code.find("if (perValue")
+        check(road >= 0, "%s (%s): no `if (perValue` block - the per-value road is gone or "
+              "renamed, and nothing here holds its guard" % (PER_VALUE, release))
+        if road < 0:
+            continue
+        guard = re.compile(r"\bif\s*\([^;{}]*\.\s*GetParameters\(\s*label\s*\)\s*\.\s*Count\s*"
+                           r"(?:>\s*1|>=\s*2)\s*\)\s*\{\s*twice\s*\+\+\s*;\s*continue\s*;\s*\}"
+                           ).search(code, road)
+        check(guard is not None,
+              "%s (%s): the per-value loop does not say `if (... .GetParameters(label).Count > 1) "
+              "{ twice++; continue; }` - an element carrying the name twice would give the "
+              "filters a value read from whichever parameter Revit returned (D-54 s3, 5b-203)"
+              % (PER_VALUE, release))
+        if guard is None:
+            continue
+        read_at = code.find("parameterOn(element)", road)
+        check(read_at > guard.end(),
+              "%s (%s): the parameter is read off the element before the doubled name is "
+              "passed over" % (PER_VALUE, release))
+        check(re.search(r"\bif\s*\(\s*twice\s*>\s*0\s*\)", code[guard.end():]) is not None,
+              "%s (%s): `twice` is counted and never said - the elements left out would "
+              "not be named" % (PER_VALUE, release))
+
+
 def main():
     the_guard()
     the_card()
     the_negative_case()
     the_count()
     the_refusal()
+    the_per_value_road()
     if failures:
         print("\n%d check(s) failed, %d passed" % (len(failures), passes[0]))
         return 1

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: ARRAY_ELEMENTS
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO COPY_ELEMENTS (copy-elements), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools". Constitution Article 1: kept, never deleted, so its record and its
+# proof stay readable and it can be brought back. Nothing offers it now -
+# retrieval leaves DEPRECATED out, and its sentences claim nothing in the
+# identity table (heron_search RETIRED_FRAGMENTS). Its sentences moved to
+# COPY_ELEMENTS. A proof below is the record of what this card's code did, not
+# a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: COPY_ELEMENTS
+  why: >
+    The same job: the set duplicated by an offset, repeated - this card's
+    own routing said one offset repeated N times is this and one offset once
+    is COPY_ELEMENTS. COPY_ELEMENTS since its version 4 takes this card's
+    run: `count`, the original included, a count of 1 refused; `spacingMm`
+    along the offset read as a direction and normalised; `copiesEach`; an
+    empty return counted, never a copy. The safer rule is kept where the two
+    differed: the set is copied together at every step, where this card
+    copied element by element and broke the joins between them. Nothing of
+    this card is left out.
+
 
 purpose: >
   Copies elements at an even spacing along a direction — diffusers down a

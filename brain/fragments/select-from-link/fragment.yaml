@@ -101,7 +101,8 @@ compatibility-note: >
   - the elements are returned as objects, which is the only form that means
   anything outside their own file.
 
-# ROUTING - repeated in LIST_LINKED_MODELS, COPY_FROM_LINK and RELOAD_LINKS.
+# ROUTING - repeated in LIST_LINKED_MODELS, COPY_ELEMENTS_BETWEEN_DOCUMENTS
+# and RELOAD_LINKS.
 #
 #   "how many beams are in the structural link" -> here
 #   "what is in the architects model" -> here
@@ -109,7 +110,8 @@ compatibility-note: >
 #    have"                           -> LIST_LINKED_MODELS - the files and
 #                                       their state, which is what tells you
 #                                       whether one is loaded enough to read
-#   "copy those grids into ours"     -> COPY_FROM_LINK. Nothing here writes,
+#   "copy those grids into ours"     -> COPY_ELEMENTS_BETWEEN_DOCUMENTS,
+#                                       fromLink=true. Nothing here writes,
 #                                       and nothing here CAN write into a link
 #   "get the latest architecture"    -> RELOAD_LINKS
 #   "zoom to the beams in the

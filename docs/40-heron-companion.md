@@ -1263,7 +1263,8 @@ by a chart*, re-made the Heron way. **It is a change** - to the active view's gr
 element's data:
 
 - **Colour the view** - type a parameter as Revit shows it (*System Type*, *Fire Rating*, *Level*).
-  `SELECT_VISIBLE_IN_VIEW` reads what the active view shows (READ, PROVEN); `COLOR_BY_PARAMETER` gives
+  `FILTER_ELEMENTS_BY_CATEGORY` with `inViewOnly` reads what the active view shows (READ, DRAFT - it took
+  over `SELECT_VISIBLE_IN_VIEW`, PROVEN, merged into it on 2026-11-01); `COLOR_BY_PARAMETER` gives
   every distinct value its own colour, the same colours every run, a blank its own group (MODIFY, PROVEN).
 - **Clear colours** - `RESET_GRAPHIC_OVERRIDES` on the same elements (MODIFY, PROVEN). A category's own
   colour is not touched; only the per-element ones come off.

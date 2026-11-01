@@ -27,5 +27,24 @@ negative:
   - given: the same element passed in twice
     expect: it is measured once - totals and the dictionaries must agree, and a double count shows only in the total
 
+  # VERSION 2 (2026-11-01) - REPORT_ELEMENT_GEOMETRY merged in. Each FAILS on
+  # version 1, which had no `geometry`. NOT RUN.
+  - given: one generic box wall 5000 x 200 x 3000 mm, detail left out
+    expect: >
+      geometry one line - 1 solid, 6 faces about 31.2 m2 in all, 12 edges,
+      volume 3 m3, and its box - and volumeM3 3 for the same wall
+  - given: the same wall, detail edges
+    expect: the summary, then 12 line edges with their end points in millimetres
+  - given: the same wall, detail faces
+    expect: the summary, then 6 flat faces with their normals and areas
+  - given: two text notes
+    expect: solidCount 0, both in noSolid, geometry empty
+  - given: >
+      a mechanical family whose solids differ between Coarse and Fine,
+      measured by version 1 and version 2
+    expect: >
+      version 2 reads the Fine solids; the difference, if any, recorded.
+      NEEDS REAL REVIT - the merged card's detail level is the open question
+
 second_route:
   - A Revit schedule with a Volume or Area column for the same category, Grand Total on

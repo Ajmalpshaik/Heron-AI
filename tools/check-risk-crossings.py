@@ -159,8 +159,9 @@ def _md5(path):
 # "which parameters are empty" as a danger, when that fragment IS the right
 # answer to that question.
 #
-# EXECUTE IS THE HONEST MIDDLE and is counted separately. `zoom-to-elements`
-# and `set-selection` change what the SCREEN shows - real, visible, and
+# EXECUTE IS THE HONEST MIDDLE and is counted separately. `set-selection` -
+# with `show`, since `zoom-to-elements` was merged into it on 2026-11-01 -
+# changes what the SCREEN shows - real, visible, and
 # nothing to undo. That is not the failure this tool exists to catch, which is
 # a question answered by a change to the MODEL. (`isolate-elements` was the
 # first example here until D-125, 2026-10-17: its code needs Heron's
@@ -353,9 +354,13 @@ QUESTIONS = [
     # The session building loads in Project2 asked it and was answered
     # CREATE_ROOF, a MODIFY, with REPORT_SPACE_ENVELOPE - which reads every
     # type's U-value - a hair behind. The card fix sends it to the take-off on
-    # the trained model; on spelling alone it is still CREATE_ROOF, and this
+    # the trained model; on spelling alone it was still CREATE_ROOF, and this
     # sweep is where that stays visible. tests/test_routing_phrases.py asks it
-    # on the model.
+    # on the model. MEASURED 2026-11-01 (score-routing --sentences, private
+    # stores): REPORT_SPACE_ENVELOPE on both the lexical and the trained
+    # backend, before and after CREATE_ROOF was merged into CREATE_FLOOR that
+    # day - the roof-making card it once reached is now CREATE_FLOOR with a
+    # roof type.
     "read the thermal U value of every floor type and roof type",
 ]
 

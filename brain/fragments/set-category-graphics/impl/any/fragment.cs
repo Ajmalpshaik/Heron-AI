@@ -1,5 +1,44 @@
-// NOT STANDALONE. Assumes `view`, `categories` and `overrides` are in scope;
-// leaves `overridden`, `notKept`, `notControllable` and `refused` behind.
+// NOT STANDALONE. Assumes `view`, `categories`, `overrides` and `solidFill`
+// are in scope; leaves `overridden`, `notKept`, `notControllable`, `refused`,
+// `solidPattern` and `notCuttable` behind.
+//
+// VERSION 3 (2026-11-01) - SET_CATEGORY_SOLID_FILL MERGED IN, on the owner's
+// instruction, as ONE SWITCH, `solidFill`, OFF unless asked.
+//
+// WHY A SWITCH AND NOT ALWAYS. A surface colour tints the pattern the
+// material already carries, and where it carries none the colour is stored,
+// reads back, and paints nothing - which is why SET_CATEGORY_SOLID_FILL
+// existed. But a surface colour ALONE never stamps a solid fill here: a
+// grayout's background, and BUILDERS_WORK_LAYOUT's first step, tint what is
+// drawn and must not paint every wall a solid block. So the fill is stamped
+// only when the caller turns the switch on.
+//
+// WITH THE SWITCH ON, what SET_CATEGORY_SOLID_FILL did, unchanged:
+//
+//   the model's solid fill is found by what it IS (FillPattern.IsSolidFill),
+//   never by a name. A model with none has been purged, and then NOTHING IS
+//   WRITTEN on any category - a colour stored against no pattern is the exact
+//   failure the switch exists to prevent - and `refused` says so.
+//
+//   the surface foreground pattern is stamped solid and shown; the CUT half
+//   only where `Category.IsCuttable` says the category is ever cut. Revit
+//   accepts a cut pattern on a category it never cuts, stores it, reads it
+//   back, and draws nothing with it - so those categories are NAMED in
+//   `notCuttable`. They are still overridden and still counted when the
+//   surface half reads back.
+//
+//   `solidPattern` names the pattern found, and the read-back below compares
+//   the stamped pattern ids as well as every other setting, so a fill Revit
+//   did not keep is in `notKept` or `refused`, never counted.
+//
+//   AN EMPTY SETTINGS OBJECT WITH THE SWITCH ON STAMPS THE FILL - the switch
+//   is an explicit ask, so it is honoured with nothing else beside it. With
+//   the switch off an empty object is still the clear, as before.
+//
+// The caller's settings object is COPIED per category before stamping, so
+// every colour and weight asked for survives, and the cut decision belongs to
+// each category rather than to one shared object. The document is the view's
+// own, so the card needs no `doc`.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
@@ -51,6 +90,8 @@ var overridden = 0;
 var notKept = new List<string>();
 var notControllable = new List<string>();
 var refused = new List<string>();
+var solidPattern = "";
+var notCuttable = new List<string>();
 
 // THE WORKING VALUES ARE INSIDE A BLOCK. The add-in reports every top-level
 // variable a fragment leaves (RevitFragment.Report), so the helpers and the
@@ -88,9 +129,37 @@ var refused = new List<string>();
         };
 
     var nothingSet = settingsText(new OverrideGraphicSettings());
-    var asked = settingsText(overrides);
 
-    foreach (var category in categories)
+    // THE SOLID FILL, only when the switch is on (version 3, from
+    // SET_CATEGORY_SOLID_FILL). Found by what it is, in the view's own model.
+    FillPatternElement solid = null;
+    var stopped = false;
+    if (solidFill)
+    {
+        try
+        {
+            solid = new FilteredElementCollector(view.Document)
+                .OfClass(typeof(FillPatternElement))
+                .Cast<FillPatternElement>()
+                .FirstOrDefault(f => f.GetFillPattern() != null && f.GetFillPattern().IsSolidFill);
+        }
+        catch { solid = null; }
+
+        if (solid == null)
+        {
+            // NAMED, NOT SWALLOWED, AND NOTHING IS WRITTEN on any category.
+            refused.Add("this model has no solid fill pattern, so a colour would be "
+                      + "stored and paint nothing. Nothing was overridden.");
+            solidPattern = "none found";
+            stopped = true;
+        }
+        else
+        {
+            solidPattern = solid.Name;
+        }
+    }
+
+    foreach (var category in (stopped ? new List<Category>() : categories))
     {
         if (category == null) continue;
 
@@ -100,9 +169,35 @@ var refused = new List<string>();
             continue;
         }
 
+        // ONE SETTINGS OBJECT PER CATEGORY when the fill is stamped: the cut
+        // half belongs to the category. Without the switch, the caller's own.
+        var forThis = overrides;
+        if (solid != null)
+        {
+            forThis = new OverrideGraphicSettings(overrides);
+            forThis.SetSurfaceForegroundPatternId(solid.Id);
+            forThis.SetSurfaceForegroundPatternVisible(true);
+
+            var cuttable = false;
+            try { cuttable = category.IsCuttable; }
+            catch { cuttable = false; }
+
+            if (cuttable)
+            {
+                forThis.SetCutForegroundPatternId(solid.Id);
+                forThis.SetCutForegroundPatternVisible(true);
+            }
+            else
+            {
+                // A NOTE ON WHAT LANDED, not a refusal: the surface half still
+                // applies and is counted when it reads back.
+                notCuttable.Add(category.Name);
+            }
+        }
+
         try
         {
-            view.SetCategoryOverrides(category.Id, overrides);
+            view.SetCategoryOverrides(category.Id, forThis);
         }
         catch
         {
@@ -112,6 +207,7 @@ var refused = new List<string>();
             continue;
         }
 
+        var asked = settingsText(forThis);
         Dictionary<string, string> got;
         try
         {

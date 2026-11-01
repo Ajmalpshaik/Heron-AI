@@ -677,11 +677,14 @@ def main():
             # Each step is FOUND before its order is compared: str.find
             # answers -1 for a step that is not there, which would pass.
             at = [steps.find(step) for step in (
-                "1. SELECT_VISIBLE_IN_VIEW", "2. READ_ELEMENT_PARAMETERS",
+                # FILTER_ELEMENTS_BY_CATEGORY since 2026-11-01, when
+                # SELECT_VISIBLE_IN_VIEW was merged into it and the method's
+                # first step moved with it - the fact this checks changed.
+                "1. FILTER_ELEMENTS_BY_CATEGORY", "2. READ_ELEMENT_PARAMETERS",
                 "4. EDIT_TEXT_VALUES, field=Text")]
             check(notes is not None
                   and [u["capability"] for u in notes["uses"]]
-                  == ["SELECT_VISIBLE_IN_VIEW", "EDIT_TEXT_VALUES"]
+                  == ["FILTER_ELEMENTS_BY_CATEGORY", "EDIT_TEXT_VALUES"]
                   and min(at) >= 0 and at == sorted(at),
                   "the general notes method collects the notes, reads them, "
                   "then edits - in that order %s" % at)

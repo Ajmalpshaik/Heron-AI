@@ -137,7 +137,7 @@ compatibility-note: >
 #   "the grid is short in THIS view      -> that end is on a view-specific
 #    only"                                  extent, which this reports and does
 #                                           not change
-#   "the grids look different in every   -> RESET_DATUM_EXTENTS, when a view
+#   "the grids look different in every   -> SET_DATUM_EXTENT_TYPE, when a view
 #    view"                                  is overriding the shared extent.
 #                                           Run it first or this shows
 #                                           nothing there

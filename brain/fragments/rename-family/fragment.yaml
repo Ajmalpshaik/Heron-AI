@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -13,6 +13,32 @@ version: 1
 source: OFFICIAL
 risk: MODIFY
 
+# DEPRECATED 2026-11-01 - MERGED INTO EDIT_TEXT_VALUES (edit-text-values), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools", then "ok go ahead merge all". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to EDIT_TEXT_VALUES. A proof below is
+# the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: EDIT_TEXT_VALUES
+  why: >
+    The same job one level up: a name read, changed and read back.
+    EDIT_TEXT_VALUES since its version 8 has field "Family": it goes up from
+    an instance or a type to the loaded family, refuses more than one
+    family naming them, refuses an in-place family, counts the types that
+    follow (named in `typesEdited`) and says the .rfa on disk keeps its
+    own name (`familyRename`); mode set gives the whole new name, for that
+    field and Text only, and prefix, suffix and replace work too. Its
+    `renamed` is the keeper's `changed`, `notFamilies` its `absent`. The
+    keeper is SAFER on one rule: a name another family holds is refused
+    before the rename, with its batch collision check, where this card
+    tried and reported Revit's refusal after. Nothing of this card is left
+    out.
+
 purpose: >
   Renames the FAMILY behind the elements handed in - the loaded component
   itself, not one of its types and not an instance. The naming-standard job:
@@ -24,7 +50,7 @@ purpose: >
   not they were in the selection. Nobody should be surprised by that, so the
   report says how many types and instances went with it.
 
-  **It is not RENAME_ELEMENTS.** That one edits the name of the elements handed
+  **It is not EDIT_TEXT_VALUES' field Name.** That one edits the name of the elements handed
   in - which on a type means the TYPE name. This changes the family, one level
   up. The two read almost identically in a sentence and do different things,
   which is why both carry this table.
@@ -101,23 +127,23 @@ compatibility-note: >
 # name over three families succeeds on the first and quietly does not on the
 # rest - a batch that reports success and half happened.
 
-# ROUTING - repeated in RENAME_ELEMENTS and DUPLICATE_TYPE.
+# ROUTING - repeated in EDIT_TEXT_VALUES and DUPLICATE_TYPE.
 #
 #   "rename the family"              -> here - the loaded component itself
 #   "rename this component"          -> here
-#   "rename these"                   -> RENAME_ELEMENTS - it edits the name of
+#   "rename these"                   -> EDIT_TEXT_VALUES field Name - it edits the name of
 #                                       what is handed in, which on a type means
 #                                       the TYPE name, one level below this
 #   "duplicate this type"            -> DUPLICATE_TYPE
 #   "rename the family type"         -> SET_FAMILY_TYPE_VALUES - a TYPE inside
 #                                       the family open in the Family Editor
-#   "change SUP to SUPPLY on these"  -> RENAME_ELEMENTS
+#   "change SUP to SUPPLY on these"  -> EDIT_TEXT_VALUES
 
 #   "check the families are named to our standard" -> CHECK_FAMILY_STANDARDS
 #                                        - a READ. A question about whether
 #                                          the names are right must not be
 #                                          answered by something that renames
-#   "which elements use this family"     -> SELECT_BY_FAMILY. This one
+#   "which elements use this family"     -> SELECT_BY_PARAMETER_VALUE, Family. This one
 #                                           renames it
 
 utterances:

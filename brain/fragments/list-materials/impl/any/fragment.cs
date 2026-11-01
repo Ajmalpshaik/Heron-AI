@@ -1,13 +1,25 @@
 // NOT STANDALONE. Assumes `doc`, `withAssets`, `withAllTabs`,
-// `withLibraryAppearances` and `namePattern` are in scope; leaves
-// `materialCount`, `materialList`, `materialClasses`, `materialIds`,
-// `libraryAppearances` and `findings` behind.
+// `withLibraryAppearances`, `namePattern`, `withTextures` and `onlyMissing`
+// are in scope; leaves `materialCount`, `materialList`, `materialClasses`,
+// `materialIds`, `libraryAppearances`, `textures`, `missing` and `findings`
+// behind.
+//
+// VERSION 5 (2026-11-01) - REPORT_MATERIAL_TEXTURES MERGED IN. `withTextures`
+// lists the image files behind each listed material's appearance, SLOT BY
+// SLOT - diffuse, bump, cutout and the rest, every slot with a bitmap - with
+// the stored path and whether a file is there. A path with no drive or share
+// is relative to Revit's texture folders and the render appearance paths in
+// Options, which are not readable here, so it is reported as relative, NEVER
+// as missing. Every full path with no file is in `missing`, "material / slot:
+// path". `onlyMissing` lists only those - and asks for the textures by
+// itself. Nothing is changed: repathing a texture is SET_MATERIAL_APPEARANCE's.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
 // ONE COLLECTOR OVER Material AND NOTHING ELSE. That is the whole cost: no
 // element, type or face is read. Whether anything USES a material is
-// FIND_UNUSED_MATERIALS' question, and answering it means reading every
+// FIND_PURGEABLE_ELEMENTS' question with includeMaterials (FIND_UNUSED_MATERIALS'
+// until it was merged there on 2026-11-01), and answering it means reading every
 // element, every type and every painted face - a walk this deliberately does
 // not make, so a cheap list never quietly becomes a slow one. How long it
 // takes on a large model is not measured (NEEDS-CHECKING CX6).
@@ -40,6 +52,9 @@ var materialList = "";
 var materialClasses = "";
 var materialIds = new List<ElementId>();
 var libraryAppearances = "";
+// Version 5, from REPORT_MATERIAL_TEXTURES.
+var textures = "";
+var missing = new List<string>();
 var findings = new List<string>();
 
 {
@@ -212,6 +227,59 @@ var findings = new List<string>();
     materialCount = found.Count;
     materialList = string.Join("  ||  ", rows);
 
+    // THE IMAGE FILES BEHIND EACH LISTED MATERIAL'S APPEARANCE (version 5,
+    // from REPORT_MATERIAL_TEXTURES) - every slot of the rendering asset whose
+    // connected asset holds a bitmap, each stored path checked on disk. A
+    // missing texture renders as a plain colour and travels with the model to
+    // every consultant, so the missing ones are listed apart.
+    if (withTextures || onlyMissing)
+    {
+        var textureLines = new List<string>();
+        var texturedCount = 0;
+        var fileCount = 0;
+        foreach (var material in found)
+        {
+            if (material.AppearanceAssetId == ElementId.InvalidElementId) continue;
+            var appearance = doc.GetElement(material.AppearanceAssetId) as AppearanceAssetElement;
+            if (appearance == null) continue;
+            var asset = appearance.GetRenderingAsset();
+            if (asset == null) continue;
+            var counted = false;
+
+            for (var i = 0; i < asset.Size; i++)
+            {
+                var slot = asset.Get(i);
+                if (slot == null || slot.NumberOfConnectedProperties == 0) continue;
+                var connected = slot.GetSingleConnectedAsset();
+                if (connected == null) continue;
+                var bitmap = connected.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
+                if (bitmap == null || string.IsNullOrEmpty(bitmap.Value)) continue;
+
+                if (!counted) { texturedCount++; counted = true; }
+                foreach (var raw in bitmap.Value.Split('|'))
+                {
+                    var path = raw.Trim();
+                    if (path == "") continue;
+                    fileCount++;
+                    string state;
+                    if (!System.IO.Path.IsPathRooted(path))
+                        state = "relative - looked up in Revit's texture folders, not checked here";
+                    else if (System.IO.File.Exists(path)) state = "found";
+                    else
+                    {
+                        state = "MISSING";
+                        missing.Add(material.Name + " / " + slot.Name + ": " + path);
+                    }
+                    if (!onlyMissing || state == "MISSING")
+                        textureLines.Add(material.Name + " | " + slot.Name + " | " + path + " | " + state);
+                }
+            }
+        }
+        textures = string.Join("\n", textureLines);
+        findings.Add(texturedCount + " material(s) use " + fileCount + " texture file(s); " + missing.Count
+            + " stored with a full path where no file is." + (onlyMissing ? " Only the missing ones are listed." : ""));
+    }
+
     var classes = new List<string>();
     foreach (var pair in byClass) classes.Add(pair.Key + " " + pair.Value);
     materialClasses = string.Join(", ", classes);
@@ -227,7 +295,10 @@ var findings = new List<string>();
             ? string.Format("No materials at all in this {0} - '{1}'", kind, doc.Title)
             : string.Format("{0} material(s) in this {1} - '{2}'", materialCount, kind, doc.Title));
 
-    findings.Add("Listed used or not - unused ones: FIND_UNUSED_MATERIALS");
+    // VERSION 5: the tool named is the one that answers it now -
+    // FIND_UNUSED_MATERIALS was merged into FIND_PURGEABLE_ELEMENTS on
+    // 2026-11-01 and is offered by nothing.
+    findings.Add("Listed used or not - unused ones: FIND_PURGEABLE_ELEMENTS with includeMaterials");
 
     // REVIT'S APPEARANCE LIBRARY - what SET_MATERIAL_APPEARANCE and
     // CREATE_STARTER_MATERIALS take by name. What it holds depends on the PC's

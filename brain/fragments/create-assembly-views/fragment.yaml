@@ -90,8 +90,8 @@ compatibility-note: >
 #
 #   "make the shop drawings for this     -> here
 #    assembly"
-#   "put them on a sheet"                -> CREATE_SHEET then
-#                                           PLACE_VIEWS_ON_SHEET. The title
+#   "put them on a sheet"                -> CREATE_SHEETS then
+#                                           PLACE_VIEW_ON_SHEET. The title
 #                                           block and the numbering are the
 #                                           office's, not this call's
 #   "group these elements"               -> GROUP_ELEMENTS. A group is not an

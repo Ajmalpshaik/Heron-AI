@@ -18,7 +18,7 @@ purpose: >
   and totals them.
 
   **AREA, VOLUME AND LENGTH WERE ALL COVERED AND PERIMETER WAS NOT.**
-  `REPORT_AREAS`, `MEASURE_ELEMENT_VOLUME` and `MEASURE_ELEMENT_LENGTHS` answer
+  `REPORT_AREAS`, `MEASURE_ELEMENT_VOLUME` and `MEASURE_RUN_QUANTITIES` answer
   the other three. Perimeter appears in this library only INSIDE
   `REPORT_DUCT_WEIGHT` and `MEASURE_RUN_QUANTITIES`, as sheet-metal arithmetic on
   a duct section, and never as a number anybody can ask for about a room or a
@@ -90,11 +90,11 @@ compatibility-note: >
   millimetres ONCE here, at the report, because that is what the answer speaks -
   304.8 appears exactly once in this file (D-20).
 
-# ROUTING - repeated in REPORT_AREAS and MEASURE_ELEMENT_LENGTHS.
+# ROUTING - repeated in REPORT_AREAS and MEASURE_RUN_QUANTITIES.
 #
 #   "how long is the skirting"        -> here, on the rooms
 #   "what is the area"                -> REPORT_AREAS / READ_ROOM_GEOMETRY
-#   "how long is this duct"           -> MEASURE_ELEMENT_LENGTHS
+#   "how long is this duct"           -> MEASURE_RUN_QUANTITIES
 #   "how much metal in this ductwork" -> REPORT_DUCT_WEIGHT - it uses a
 #                                        perimeter internally and reports kilos
 

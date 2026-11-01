@@ -37,7 +37,108 @@ negative:
       the extra sheets created and named by Revit, reported in namedAs. Number
       and name are read back separately because they fail independently
 
+  # VERSION 2 (2026-11-01, CREATE_SHEET merged in). Each of these FAILS on
+  # version 1.
+  - given: VERSION 2. Number "m-101" when a sheet "M-101" titled "Level 1 Plan" already exists
+    expect: >
+      no sheet created; "m-101" in numberTaken and a line in notCreated naming
+      "Level 1 Plan". Version 1 compared with capitals and made the sheet, and
+      Revit then refused the number - an orphan under the number Revit picked
+
+  - given: VERSION 2. An empty number among three, e.g. "M-201", "", "M-203"
+    expect: >
+      two sheets created; notCreated says entry 2 is blank and that Revit has
+      no unnumbered sheets. Version 1 created a sheet for it and left it under
+      the number Revit picked, reported in refused
+
+  - given: >
+      VERSION 2. Two title block families, each with a type "A1" - load a copy
+      of the A1 title block family under another name. titleBlockName "A1"
+    expect: >
+      titleBlockNotFound true, NOTHING created, and titleBlockProblem naming
+      both as Family: Type. Version 1 took whichever came first
+
+  - given: >
+      VERSION 2. The same two families, titleBlockName "Family B: A1" (the
+      copy's name)
+    expect: >
+      the sheets created with that family's title block on them - select the
+      title block on a sheet and read its family in Properties
+
+  - given: VERSION 2. titleBlockName none
+    expect: >
+      the sheets created with NO title block, noTitleblock true,
+      titleBlockNotFound false. Version 1 looked for a title block called
+      "none" and refused
+
+  - given: >
+      VERSION 2. ViewSheet.Create throwing. NOT KNOWN HOW TO PROVOKE IT: the
+      title block here is always one of the OST_TitleBlocks types, so the throw
+      CREATE_SHEET met (a Detail Item type handed in) cannot reach this card.
+      Recorded so a run that meets one is read correctly
+    expect: >
+      the number in notCreated with "Revit said:" and Revit's sentence, and NOT
+      in numberTaken. Version 1 put a failed create in numberTaken, sending the
+      reader to look for a clash that was not there
+
+  # VERSION 3 (2026-11-01, DUPLICATE_SHEETS merged in). Each FAILS on version
+  # 2, which has no copy job and needs numbers.
+  - given: >
+      VERSION 3. Three sheets selected, numbers left out, numberSuffix
+      "-COPY", namePrefix left out
+    expect: >
+      three new sheets in created, each numbered "<original>-COPY", each on
+      its PARENT'S title block (select it on the sheet and read its type),
+      each named as its parent, and NO VIEWS on any of them. notDuplicated and
+      numberTaken empty
+
+  - given: VERSION 3. The same three, namePrefix "DRAFT "
+    expect: every new sheet's NAME is "DRAFT " + the parent's, with the space kept
+
+  - given: >
+      VERSION 3. A sheet whose "-COPY" number ALREADY EXISTS - the case
+      DUPLICATE_SHEETS was built around
+    expect: >
+      that number in numberTaken, the source in notDuplicated, a line in
+      notCreated naming the sheet that holds it, and THE SHEET COUNT
+      UNCHANGED for it - count the sheets in the Project Browser before and
+      after. Nothing may be created and left under Revit's own number
+
+  - given: VERSION 3. Two source sheets whose suffixed numbers would be identical
+    expect: >
+      the first is made, the second's number in numberTaken - a clash between
+      two sheets neither of which existed when the batch started
+
+  - given: VERSION 3. A PLACEHOLDER sheet among the sources
+    expect: its id in notDuplicated and nothing created for it - it has no title block to copy
+
+  - given: VERSION 3. A floor plan among the sources
+    expect: its id in notDuplicated, no exception, the real sheets still copied
+
+  - given: >
+      VERSION 3. Sheets selected, numbers AND numberSuffix left out - "make a
+      new sheet" said with sheets selected
+    expect: >
+      NOTHING created; every selected id in notDuplicated and notCreated
+      asking for the numbers or a suffix. DUPLICATE_SHEETS took an empty
+      suffix and only failed by clashing; a selection must never become copies
+
+  - given: >
+      VERSION 3. Numbers "M-301" given, a title block named, and two sheets
+      selected
+    expect: >
+      ONE sheet, M-301, on the title block named - the selection is not read
+      and nothing is copied
+
+  - given: VERSION 3. Numbers "M-301" given and no title block named
+    expect: >
+      NOTHING created, titleBlockNotFound true and titleBlockProblem saying no
+      title block was named - the title block still has no default
+
 second_route:
   - >
     open the Sheets branch of the Project Browser and read the numbers - that
     list is the drawing register, and it is what gets issued
+  - >
+    version 3: COUNT THE SHEETS before and after a copy run - the rise must
+    equal the length of created - and one Ctrl+Z removes every copy

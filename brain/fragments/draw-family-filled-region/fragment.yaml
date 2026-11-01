@@ -1,20 +1,35 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-117
-semantic-identity: "draw a filled or masking region inside the family being edited - a detail item's hatch, a symbol's mask, a solid plan fill"
+semantic-identity: "draw a filled or masking region - a hatch or mask in a project view, or inside the family being edited: a detail item's hatch, a symbol's mask, a solid plan fill"
 kind: action
 domain: revit.families
 capability: DRAW_FAMILY_FILLED_REGION
-version: 1
+# VERSION 2 (2026-11-01): CREATE_FILLED_REGION was merged into this card on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The keeper is this card because more of the library points at it
+# - nine family-building skills, SET_FAMILY_CATEGORY's table and the family
+# jobs - and it already drew masking regions; the capability keeps its name,
+# so every one of those still reads. From CREATE_FILLED_REGION: a PROJECT's
+# view as well as a family's - named as the Project Browser shows it or
+# "FloorPlan: Level 1"; a view that takes no annotation, a 3D view or a
+# schedule, refused with the reason; and the answer saying every time that a
+# filled region is ANNOTATION, in one view only. A project view at an angle is
+# taken too, its shapes read along the view's right and up. `notAFamily` now
+# says which kind of document it drew in; it is no longer a refusal. The
+# proof below is version 1's and no longer describes the code; DRAFT until
+# version 2 is proved.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Draws a FILLED or MASKING region inside the family open in the Family Editor
+  Draws a FILLED or MASKING region in a project's view, or inside the family
+  open in the Family Editor
   - the hatch of a detail item's insulation, the solid of a cut steel section,
   the white mask a symbol hides what is under it with, the solid fill of a
   plan symbol in a model family. The Family Editor's Filled Region and Masking
@@ -40,6 +55,14 @@ purpose: >
   is masking are read again; one that does not read as asked fails the call.
   Its id comes back.
 
+  **In a project, it exists in ONE view and nowhere else** (version 2, from
+  CREATE_FILLED_REGION) - the drafting patch: a shaft marked up, an area
+  shaded on a key plan, a zone coloured on a coordination drawing. A filled
+  region is annotation, not model: it is on no other drawing, not in the
+  model, and in no schedule, and the answer says so. The view must take
+  annotation - a plan, a section, an elevation, a detail, a drafting view, a
+  legend or a sheet; a 3D view is refused with the reason.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -48,12 +71,17 @@ contract:
       type: Document
     # In a 2D family the VIEW to draw in, as the Project Browser names it -
     # "Ref. Level". In a 3D family a level or a named reference plane facing
-    # left-right, front-back or up.
+    # left-right, front-back or up. Version 2: in a PROJECT the view to draw
+    # in, as the Project Browser names it or "FloorPlan: Level 1" - one that
+    # takes annotation.
     - name: workPlane
       type: string
       source: request
     # Closed loops, `|` between: "circle CX,CY R", "rect X1,Y1 X2,Y2",
-    # "polygon CX,CY R N", or corners "X,Y; X,Y; arc MX,MY X,Y". Millimetres.
+    # "polygon CX,CY R N", or corners "X,Y; X,Y; arc MX,MY X,Y". Millimetres,
+    # in the plane's own two model coordinates - and, in a project view at an
+    # angle (version 2), along the view's right and up from the point of its
+    # plane over the project origin.
     - name: shapes
       type: string
       source: request
@@ -72,6 +100,9 @@ contract:
       role: result
       type: string
     - name: notAFamily
+      # Version 2: true when it drew in a PROJECT's view - which kind of
+      # document it was. Version 1 refused a project; this is no longer a
+      # refusal (D-52: the evidence of where it looked).
       role: accounting
       type: bool
     - name: refused
@@ -127,14 +158,33 @@ compatibility-note: >
   `FilledRegion.CreateMaskingRegion`, both forms, from 2024 (the RevitAPI
   reference assemblies and Autodesk's XML remarks, read 2026-10-01). Both are
   found by signature at run time, so 2020 to 2022 refuse a 3D family's region
-  by name rather than failing to compile.
+  by name rather than failing to compile. Version 2 adds what
+  CREATE_FILLED_REGION was proved with - the view-specific
+  `FilledRegion.Create(Document, ElementId, ElementId, IList<CurveLoop>)` on a
+  project view, the same call - and `View.RightDirection`, `UpDirection`,
+  `Origin` and `ViewDirection` for a view at an angle, present 2020 through
+  2027.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "add a solid fill to this detail item family" -> here
 #   "put a masking region in this family"         -> here
-#   "put a filled region here"                    -> CREATE_FILLED_REGION - a
-#                                                    project's view, not a family
+#   "put a filled region here"                    -> here since version 2, a
+#                                                    project's view (was
+#                                                    CREATE_FILLED_REGION)
+#   "hatch this area on the drawing"              -> here, a project view
+#   "write on the drawing"                        -> CREATE_TEXT_NOTE - the
+#                                                    other markup that lives in
+#                                                    one view only
+#   "make a detail view"                          -> CREATE_DRAFTING_VIEW
+#   "make a floor slab over this area"            -> CREATE_FLOOR. A filled
+#                                                    region LOOKS like a slab on
+#                                                    a plan and is not one
+#   "draw a detail line here"                     -> DRAW_FAMILY_DETAIL_LINES - a line has no
+#                                                    fill
+#   "make a 45 degree hatch pattern"              -> CREATE_FILL_PATTERN - the
+#                                                    pattern, not a region drawn
+#                                                    with one
 #   "draw the valve symbol in plan"               -> DRAW_FAMILY_SYMBOLIC_LINES
 
 utterances:
@@ -142,3 +192,9 @@ utterances:
   - put a masking region in this family
   - draw a filled region in the family
   - fill the insulation hatch in this detail component
+  # MOVED 2026-11-01 from CREATE_FILLED_REGION, merged into this card.
+  - hatch this area on the drawing
+  - shade this bit
+  - put a filled region here
+  - mark this area up on the plan
+  - hatch the shaft on this plan

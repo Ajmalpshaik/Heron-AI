@@ -18,7 +18,24 @@ capability: EDIT_TOPOSOLID
 # 0 shape points" or "unchanged" - and counted in the findings' first line.
 # Excavate, split and smooth are as version 1 had them. DRAFT, never proven:
 # NEEDS-CHECKING Group IY is the proof plan (D-30).
-version: 2
+#
+# VERSION 3 (2026-11-01) - ADD_TOPOSOLID_SUBDIVISION WAS MERGED INTO THIS CARD
+# on the owner's instruction ("make sure there is no duplicate tools", then "ok
+# go ahead merge all"), and is DEPRECATED. The same tool - a toposolid's own
+# edits, on the toposolids handed in, one at a time, read back - and the only
+# difference was the edit. Mode "subdivide" is that card's job: one outline
+# "x,y; x,y; ..." in millimetres, closed automatically, made a subdivision on
+# each toposolid by Toposolid.CreateSubDivision; each toposolid's subdivisions
+# listed before and after, only a new one counted, its id in `resultIds` (that
+# card's `subdivisionIds`); a point that is not two numbers named, fewer than
+# three refused, a toposolid Revit refuses named. ONE RULE WAS NOT CARRIED, THE
+# SAFER KEPT: it drew the outline at the toposolid's level's Elevation, which is
+# measured from the level type's Elevation Base and on a survey-datum model is
+# not the terrain's height; the outline now lies on the toposolid's own sketch
+# plane, as a split's loops always have. Whether CreateSubDivision cares about
+# the loop's height at all is NOT MEASURED - NEEDS REAL REVIT. Nothing else of
+# that card is left out.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -33,17 +50,21 @@ risk: MODIFY
 # Excavation and smoothing are found by name, so the card runs on 2024 and
 # says so when asked for them there.
 #
-# EDIT_SLAB_SHAPE moves the terrain's points and lays a floor to it;
-# ADD_TOPOSOLID_SUBDIVISION paints a region on it; CREATE_TOPOSOLID makes it.
+# EDIT_SLAB_SHAPE moves the terrain's points and lays a floor to it; mode
+# subdivide (version 3) paints a region on it - a car park, a path, a planted
+# bed; CREATE_TOPOSOLID makes it.
 #
 # READ BACK: Revit's own excavation check, the split's new toposolids looked
 # up, shape points counted before and after a simplify - a toposolid whose
-# count did not change is named, never counted as edited - smoothing read again.
+# count did not change is named, never counted as edited - smoothing read again,
+# and a subdivision found among the toposolid's subdivisions listed again.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 purpose: >
   Edits toposolids with their own tools - excavated by a floor or pad, split
-  into pieces by loops, simplified to fewer points, or smoothed.
+  into pieces by loops, simplified to fewer points, or smoothed - or adds a
+  subdivision to each, a car park, a path or a planted bed, from an outline of
+  points in millimetres (version 3).
 
 contract:
   needs:
@@ -51,13 +72,15 @@ contract:
       type: Document
     - name: elements
       type: IList<Element>
-    # "excavate", "unexcavate", "split", "simplify" or "smooth".
+    # "excavate", "unexcavate", "split", "simplify", "smooth" or, since
+    # version 3, "subdivide".
     - name: mode
       type: string
       source: request
     # excavate and unexcavate: element ids, comma separated; split: loops of
     # "x,y; ..." in millimetres split by "|"; simplify: a share 1 to 99;
-    # smooth: "on" or "off".
+    # smooth: "on" or "off"; subdivide (version 3): one outline "x,y; x,y;
+    # ..." in millimetres, closed automatically, wholly inside each toposolid.
     - name: value
       type: string
       source: request
@@ -66,7 +89,9 @@ contract:
       role: result
       type: int
     - name: resultIds
-      # The toposolids edited, or the new ones a split made.
+      # The toposolids edited, or the new ones a split made - or, for mode
+      # subdivide (version 3), the new subdivisions, each read back among its
+      # toposolid's subdivisions.
       role: result
       type: IList<ElementId>
     - name: report
@@ -86,13 +111,21 @@ compatibility-note: >
   CanBeExcavatedBy, SetSmoothedSurface and IsSmoothedSurfaceEnabled from
   2025, found by name so one implementation runs on 2024 - read off
   RevitAPI.xml in the Nice3point reference packages for all eight releases on
-  2026-10-13. The card declares 2024 to 2027.
+  2026-10-13. The card declares 2024 to 2027. Version 3's
+  Toposolid.CreateSubDivision(Document, IList<CurveLoop>) and
+  GetSubDivisionIds are present from 2024 and absent before - read the same
+  way on 2026-10-12 for ADD_TOPOSOLID_SUBDIVISION, merged in.
 
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "cut the terrain with the building pad"   -> here, excavate
 #   "split the site into two toposolids"      -> here, split
 #   "simplify the terrain"                    -> here, simplify
+#   "add a car park area to the terrain"      -> here, subdivide (version 3,
+#                                                ADD_TOPOSOLID_SUBDIVISION
+#                                                merged in)
+#   "make the terrain"                        -> CREATE_TOPOSOLID
+#   "raise the corners of this toposolid by 500" -> EDIT_SLAB_SHAPE, heights
 #   "lay this floor to follow the terrain"    -> EDIT_SLAB_SHAPE, follow
 
 utterances:
@@ -101,3 +134,8 @@ utterances:
   - split the site toposolid along this line into two
   - simplify the terrain to half its points
   - turn on smooth surface for the toposolid
+  # MOVED 2026-11-01 from ADD_TOPOSOLID_SUBDIVISION, merged into this card.
+  - add a car park area to the terrain
+  - subdivide the toposolid for this path
+  - mark out a planted bed on the site
+  - create a subdivision on the topography here

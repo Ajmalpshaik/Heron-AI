@@ -12,10 +12,25 @@
 // CALLER names the file, the new family is saved to exactly that path, the
 // hidden copy is closed, and the file is opened in a real window.
 //
-// CREATE_PROJECT_DOCUMENT IS THE SAME BODY FOR A PROJECT. Everything below the
-// line marked SHARED is identical in both, and tests/test_new_document_twins.py
-// fails the moment the two differ - the save, close and reopen are one job and
-// two drifting copies of it would be worse than either.
+// VERSION 3 (2026-11-01) - CREATE_PROJECT_DOCUMENT MERGED IN. That card was
+// this body for a project, word for word below its first lines, held level by
+// tests/test_new_document_twins.py; it is DEPRECATED, and the five lines that
+// made it a project are here, chosen per call:
+//
+//   THE TEMPLATE'S EXTENSION DECIDES. A template ending .rte makes a PROJECT
+//   (.rvt, NewProjectDocument); one ending .rft makes a FAMILY (.rfa,
+//   NewFamilyDocument). A bare name with no extension - "Metric Generic Model",
+//   "Systems-Default_Metric" - is decided by the savePath the caller typed:
+//   .rvt a project, anything else a family, as versions 1 and 2 always read it.
+//   The other half must then agree - a .rte template with a .rfa savePath is
+//   refused by the body's own savePath rule, never turned into one or the other.
+//
+//   EACH KIND'S OWN TEMPLATE FOLDER for a bare name: this Revit's
+//   FamilyTemplatePath for a family, the folder of its DefaultProjectTemplate
+//   for a project - CREATE_PROJECT_DOCUMENT's lookup, unchanged.
+//
+//   Everything below the SHARED line is the body both cards carried; the one
+//   sentence that named the two cards now names the two extensions instead.
 //
 // THE TEMPLATE IS ASKED FOR AND NEVER GUESSED. A bare name such as "Metric
 // Generic Model" is looked up in the folder THIS Revit says holds its family
@@ -26,14 +41,27 @@
 // is refused - this never overwrites anything - and so is a folder that does
 // not exist, rather than created.
 
-var kind = "family";
-var templateExtension = ".rft";
-var fileExtension = ".rfa";
-var exampleTemplate = "Metric Generic Model";
-Func<string, Document> makeNew = path => app.NewFamilyDocument(path);
-Func<string> templateFolder = () => app.FamilyTemplatePath ?? "";
+Func<string, string> extensionOf = path =>
+{
+    try { return (System.IO.Path.GetExtension((path ?? "").Trim().Trim('"')) ?? "").ToLowerInvariant(); }
+    catch (Exception) { return ""; }
+};
+var askedTemplateExtension = extensionOf(templatePath);
+var isProject = askedTemplateExtension == ".rte"
+    || (askedTemplateExtension != ".rft" && extensionOf(savePath) == ".rvt");
 
-// ---- SHARED with create-project-document from here down ----
+var kind = isProject ? "project" : "family";
+var templateExtension = isProject ? ".rte" : ".rft";
+var fileExtension = isProject ? ".rvt" : ".rfa";
+var exampleTemplate = isProject ? "Mechanical-Default_Metric" : "Metric Generic Model";
+Func<string, Document> makeNew = path =>
+    isProject ? app.NewProjectDocument(path) : app.NewFamilyDocument(path);
+Func<string> templateFolder = () => isProject
+    ? (string.IsNullOrEmpty(app.DefaultProjectTemplate) ? ""
+        : (System.IO.Path.GetDirectoryName(app.DefaultProjectTemplate) ?? ""))
+    : (app.FamilyTemplatePath ?? "");
+
+// ---- SHARED by the family and the project from here down ----
 
 Document created = null;
 string title = null;
@@ -153,8 +181,8 @@ else
         && !templateUsed.EndsWith(templateExtension, StringComparison.OrdinalIgnoreCase))
     {
         refused = string.Format("'{0}' is not {1} template - those end {2}. A family "
-            + "template is CREATE_FAMILY_DOCUMENT's and a project template is "
-            + "CREATE_PROJECT_DOCUMENT's", templateUsed, article, templateExtension);
+            + "template ends .rft and a project template ends .rte, and the template's own "
+            + "extension decides which this makes", templateUsed, article, templateExtension);
     }
 
     Document made = null;

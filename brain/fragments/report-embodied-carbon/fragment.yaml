@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: REPORT_EMBODIED_CARBON
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO REPORT_MATERIAL_TAKEOFF (report-material-takeoff), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools", then "ok go ahead merge all". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to REPORT_MATERIAL_TAKEOFF. A proof below is
+# the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: REPORT_MATERIAL_TAKEOFF
+  why: >
+    The same reading: each element's material volumes from Revit's own
+    takeoff. REPORT_MATERIAL_TAKEOFF since its version 3 takes this card's
+    `factorParameter`, `groupBy` and `top`: the carbon factor from the named
+    Number parameter on each material, kg = m3 x factor, grouped by
+    material, category or type, largest first, the top N with each share;
+    `noFactor` naming the materials with none, never a factor guessed;
+    `noVolume`. The same output names. NOT CARRIED, as the less safe of two
+    rules: an element handed in twice counted twice here; the keeper takes
+    it off once. Nothing else of this card is left out.
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.

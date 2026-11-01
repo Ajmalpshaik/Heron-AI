@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 15
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "make a real schedule view of this category with these fields
 kind: action
 domain: revit.schedules
 capability: CREATE_SCHEDULE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -29,19 +29,63 @@ purpose: >
   finished and is missing a column - and the person reading the drawing has no
   way to know a column was ever asked for.
 
+  **VERSION 2 makes the other schedules too**, by `listKind`: a SHEET LIST -
+  the drawing index, every sheet, placeholders included - or a VIEW LIST,
+  both with their own fields and a sort; and a KEY SCHEDULE - a table of
+  definitions elements point at, so one choice fills several fields - with
+  its key parameter named and no rows yet. Sheets and views are not model
+  elements, so the category route alone cannot make either. Version 1's proof
+  no longer describes the code and is kept as a record; the card is DRAFT
+  until it is proved again.
+
 contract:
   needs:
     - name: doc
       type: Document
     - name: categoryId
+      # The category scheduled, or the one a key schedule belongs to. Version
+      # 2: optional, left out "none" - a sheet list or a view list needs none;
+      # a schedule or a key schedule left without one is refused.
       type: ElementId
       source: request
+      optional: true
+      absent: none
     - name: fieldNames
+      # The columns, by the name Revit shows in the Fields tab, capitals
+      # ignored. Version 2: optional, left out "none" - a key schedule is
+      # usually made with none; any other schedule left with no column is
+      # said in findings.
       type: IList<string>
       source: request
+      optional: true
+      absent: none
     - name: scheduleName
       type: string
       source: request
+    # VERSION 2, from CREATE_SHEET_LIST and CREATE_KEY_SCHEDULE. Which schedule:
+    # left out, "schedule" - a category's, version 1 exactly; "sheets" a sheet
+    # list; "views" a view list; "key" a key schedule. Any other word is
+    # refused and nothing is created - guessing would make the wrong one.
+    - name: listKind
+      type: string
+      source: request
+      optional: true
+      absent: schedule
+    # VERSION 2, from CREATE_SHEET_LIST. A column to sort by, ascending - it
+    # must be one of fieldNames, or findings says it cannot. Left out: "none".
+    - name: sortByField
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 2, from CREATE_KEY_SCHEDULE. A key schedule's key parameter -
+    # "Finish Key". Every key schedule otherwise calls it "Key Name". Left
+    # out: "none", Revit's name stays.
+    - name: keyParameterName
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: created
       role: result
@@ -57,6 +101,19 @@ contract:
       # what it was GIVEN and could not use - `created` is the schedule
       # (D-52).
       role: accounting
+      type: IList<string>
+    - name: fieldsAdded
+      # Version 2, from CREATE_SHEET_LIST. The columns actually added, in the
+      # order asked. A thing it made, so a result.
+      role: result
+      type: IList<string>
+    - name: findings
+      # Version 2. One line each: a field it cannot carry WITH the names it
+      # can; a sort on a field that is not a column; a name already used,
+      # with the name Revit gave instead; a schedule with NO columns; a
+      # category given to a sheet or view list and not used; and for a key
+      # schedule, that it has NO ROWS yet and whether the key parameter took
+      # its name. Prose, so it carries no role (D-51).
       type: IList<string>
 
 proof:
@@ -105,6 +162,14 @@ compatibility-note: >
   words on screen is found, and one asked for by an internal parameter name is
   not.
 
+  Version 2 adds `ViewSchedule.CreateSheetList(Document)` and
+  `CreateViewList(Document)` - present 2020 through 2027, checked in all
+  eight releases' RevitAPI.xml on 2026-09-27 for CREATE_SHEET_LIST - and
+  `ViewSchedule.CreateKeySchedule`, `IsValidCategoryForKeySchedule` and the
+  `KeyScheduleParameterName` setter, read off the reference assemblies at
+  both ends for CREATE_KEY_SCHEDULE; `ScheduleSortGroupField` and
+  `Category.GetCategory(Document, ElementId)` are the same on every release.
+
 # ROUTING - repeated in GROUP_AND_COUNT and COUNT_ELEMENTS.
 #
 #   "make a schedule"              -> here - a VIEW that goes on a sheet
@@ -119,18 +184,61 @@ compatibility-note: >
 #                                     export fragments landed - a routing row
 #                                     that ages into a lie points a reader at
 #                                     nothing
-#   "put the schedule on a sheet"  -> PLACE_SCHEDULE_ON_SHEET - a schedule needs
-#                                     ScheduleSheetInstance, not a viewport
-#   "make a key schedule"            -> CREATE_KEY_SCHEDULE - a table of
-#                                       DEFINITIONS elements point at, not a
-#                                       list of what is in the model
+#   "put the schedule on a sheet"  -> PLACE_VIEW_ON_SHEET, version 4 - a
+#                                     schedule needs ScheduleSheetInstance, not
+#                                     a viewport (PLACE_SCHEDULE_ON_SHEET until
+#                                     it was merged there, 2026-11-01)
+#   "make a key schedule"          -> here, listKind key (version 2) - a table
+#                                     of DEFINITIONS elements point at, not a
+#                                     list of what is in the model
+#   "set up a finish key"          -> here, listKind key
+#   "make a sheet list schedule"   -> here, listKind sheets (version 2) - sheets
+#                                     are not model elements, so the category
+#                                     route alone cannot produce a drawing index
+#   "I need a drawing index"       -> here, listKind sheets
+#   "create a view list"           -> here, listKind views - ViewSchedule.
+#                                     CreateViewList
+#   "schedule of the views on sheets" -> here, listKind views, then
+#                                     SET_SCHEDULE_FILTERS Sheet Number has
+#                                     value. A view list shows every view until
+#                                     it is filtered
+#   "which views are not on a sheet" -> FIND_VIEWS, placement unplaced - a READ, no
+#                                     schedule made
+#   "what sheets are in this model"  -> FIND_SHEETS - a READ, no view made
+#   "make me a new sheet"            -> CREATE_SHEETS
+#   "add a column to the schedule"   -> ADD_SCHEDULE_FIELDS - and it is how a
+#                                     key schedule's own columns get added
+#                                     after this makes the table
 
-#   "make a sheet list schedule"       -> CREATE_SHEET_LIST - sheets are not
-#                                        model elements, so the category route
-#                                        here cannot produce a drawing index
-#   "create a view list"               -> CREATE_SHEET_LIST, listKind=views.
-#                                        Views are not model elements either;
-#                                        it is ViewSchedule.CreateViewList
+# VERSION 2 (2026-11-01) - CREATE_SHEET_LIST AND CREATE_KEY_SCHEDULE WERE
+# MERGED INTO THIS CARD on the owner's instruction ("make sure there is no
+# duplicate tools"), and both are DEPRECATED. The same job - make a schedule
+# view in the project - by the other three calls Revit has for it. What they
+# had and this card lacked is here now: `listKind` - a SHEET LIST
+# (CreateSheetList) or a VIEW LIST (CreateViewList), from CREATE_SHEET_LIST,
+# with its `sortByField`, its `fieldsAdded`, its refusal of an unknown kind
+# with nothing created, a field it cannot carry named WITH the names it can,
+# and the empty-columns warning; and a KEY SCHEDULE (CreateKeySchedule), from
+# CREATE_KEY_SCHEDULE, with Revit asked first whether the category may have
+# one, its `keyParameterName`, and NO ROWS said, read back by name.
+#
+# THE SAFER RULE IN EACH CONFLICT IS KEPT (the owner: "in every conflict keep
+# the safer rule"). A schedule name already used: version 1 let Revit's
+# refusal out, which aborts the caller's transaction; CREATE_SHEET_LIST kept
+# Revit's generated name and said so - kept here, for every kind. Fields:
+# matched ignoring capitals (CREATE_SHEET_LIST), and two fields showing one
+# name still give ONE column (this card). NOT CARRIED, as opposite: in
+# CREATE_SHEET_LIST a BLANK listKind meant a sheet list; here left out, or
+# blank, is a category schedule - version 1's job, which every caller of this
+# card relied on. "sheets" makes the sheet list. A missing field is in
+# missingFields here, and was in CREATE_SHEET_LIST's `refused`; this card's
+# `refused` stays the one sentence for nothing created.
+#
+# WHERE THEIR OUTPUTS ARE NOW: CREATE_SHEET_LIST's sheetList -> created (an
+# id), fieldsAdded -> fieldsAdded, refused (a list) -> refused when nothing
+# was made, findings otherwise; CREATE_KEY_SCHEDULE's created -> created,
+# findings -> findings. Their sentences moved here.
+
 utterances:
   - make a schedule
   - create a schedule of the ducts
@@ -138,3 +246,18 @@ utterances:
   - add a schedule to the project
   - make a quantity schedule
   - schedule these on a drawing
+  # MOVED 2026-11-01 from CREATE_SHEET_LIST, merged into this card.
+  - make a sheet list schedule
+  - I need a drawing index
+  - put a list of all the sheets on the cover
+  - create the drawing register schedule
+  - schedule every sheet in this project
+  - create a view list
+  - schedule of the views on sheets
+  - make a view list schedule of every view placed on a sheet
+  # MOVED 2026-11-01 from CREATE_KEY_SCHEDULE, merged into this card.
+  - make a key schedule
+  - set up a finish key
+  - create a key schedule for the rooms
+  - i want one choice to fill several fields
+  - make a lookup table for the finishes

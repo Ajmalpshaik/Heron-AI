@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "how this schedule's columns read on the sheet - heading text
 kind: action
 domain: revit.schedules
 capability: SET_SCHEDULE_APPEARANCE
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -50,6 +50,15 @@ purpose: >
   than in a fragment of its own: it is one more thing about how a column
   PRINTS, and a second fragment reaching into the same field would be two
   places to look.
+
+  **VERSION 4 SWITCHES ON "CALCULATE TOTALS" for a column** - what each group
+  footer and the grand total add up. Revit is asked first whether the column
+  can be added up; one already totalling is left alone and said; a minimum or
+  maximum it showed is reported as replaced; and each total says where it
+  will print - or that it prints nowhere yet. A name that more than one
+  column answers to, by field name or heading, now touches none of them, for
+  every change here. Version 3's proof no longer describes the code and is
+  kept as a record; the card is DRAFT until it is proved again.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -99,22 +108,35 @@ contract:
     - name: fieldName
       type: string
       source: request
+    # VERSION 4: newHeading, columnWidthMm, alignment, headingSideways and
+    # hideOrShow are OPTIONAL, each left out as the value that already meant
+    # "leave it" - so "calculate totals for the Flow column" names only the
+    # column and the switch. "leave" typed as a heading is read as no heading.
     - name: newHeading
       type: string
       source: request
+      optional: true
+      absent: leave
     - name: columnWidthMm
       type: double
       source: request
+      optional: true
+      absent: 0
     - name: alignment
       type: string
       source: request
+      optional: true
+      absent: leave
     - name: headingSideways
       type: bool
       source: request
+      optional: true
     # VERSION 2. "hide" | "show" | "" to leave it alone.
     - name: hideOrShow
       type: string
       source: request
+      optional: true
+      absent: leave
     # VERSION 3. "horizontal" | "vertical" sets the heading that way; left
     # out it is "leave", and headingSideways decides exactly as in version 2.
     - name: headingOrientation
@@ -122,6 +144,13 @@ contract:
       source: request
       optional: true
       absent: leave
+    # VERSION 4, from SET_SCHEDULE_FIELD_TOTALS. On: switch "Calculate totals"
+    # on for each column named - asked of Revit first (CanTotal), never
+    # turned off. Off, or left out: totals are not touched.
+    - name: calculateTotals
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: changed
       role: result
@@ -139,6 +168,41 @@ contract:
       type: IList<string>
     - name: appliedAppearance
       role: result
+      type: IList<string>
+    - name: ambiguous
+      # Version 4, from SET_SCHEDULE_FIELD_TOTALS. Names that more than one
+      # column answers to, by field name or printed heading - NONE of them was
+      # touched, for any change. Given and unusable (D-52).
+      role: accounting
+      type: IList<string>
+    - name: totalled
+      # Version 4. Columns switched to "Calculate totals" and read back so.
+      role: result
+      type: int
+    - name: appliedTotals
+      # Version 4. A second read of each column switched on, with where its
+      # total prints on that schedule - a footer, the grand total, or NOWHERE
+      # YET - never an echo of the request. ONE STRING, joined with "; ",
+      # because a list reaches the chat as three entries cut at sixty
+      # characters and the cut part is where the total prints.
+      role: result
+      type: string
+    - name: alreadyTotalled
+      # Version 4. Columns that were totalling before this ran and were left
+      # alone. The prior state, never a change it made (D-52).
+      role: accounting
+      type: IList<string>
+    - name: cannotTotal
+      # Version 4. Columns Revit will not add up - CanTotal is its own answer,
+      # asked before anything is set - or refused, or did not read back as
+      # totals. Given and unusable (D-52).
+      role: accounting
+      type: IList<string>
+    - name: replacedCalculation
+      # Version 4. A minimum or maximum the column showed BEFORE it was
+      # switched to totals - Revit allows one calculation per column. The
+      # prior state, reported before it goes (D-52).
+      role: accounting
       type: IList<string>
 
 proof:
@@ -197,6 +261,14 @@ compatibility-note: >
   304.8, plain arithmetic at the edge, which is what D-20 requires and what
   keeps this working across the 2021 units break.
 
+  Version 4 adds `ScheduleField.DisplayType` (get and set),
+  `ScheduleField.CanTotal()`, `IsHidden`, the `ScheduleFieldDisplayType`
+  enum (`Standard`, `Totals`, `MinMax`, `Max`, `Min`),
+  `ScheduleDefinition.GetSortGroupFields`, `ShowGrandTotal` and
+  `ScheduleSortGroupField.ShowFooter` - unchanged 2020 through 2027, read out
+  of each release's reference assembly with `tools/api-surface --members` for
+  SET_SCHEDULE_FIELD_TOTALS, PROVEN on Revit 2020.
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "hide that column"                 -> here, version 2. Hiding keeps any
@@ -212,11 +284,20 @@ compatibility-note: >
 #                                      -> here, version 3: one call for every
 #                                         column, alignment centre and
 #                                         headingOrientation horizontal
-#   "sum this column in the schedule"  -> SET_SCHEDULE_FIELD_TOTALS. A total is
-#                                         what a column CALCULATES, not how it
-#                                         prints, and this sentence used to
-#                                         land here - on a write that renames
-#                                         and widens columns
+#   "sum this column in the schedule"  -> here, calculateTotals (version 4;
+#                                         SET_SCHEDULE_FIELD_TOTALS until it
+#                                         was merged here, 2026-11-01). Only
+#                                         the switch and the column - nothing
+#                                         is renamed or widened unless asked
+#   "calculate totals for the flow column" -> here, calculateTotals
+#   "add a total to the bottom of the  -> SET_SCHEDULE_SORT_GROUP,
+#    schedule"                            showGrandTotal. That switches the
+#                                         grand total ROW on; this decides
+#                                         what the row adds up. Both are
+#                                         needed for a total flow to print
+#   "what is the total per type"       -> GROUP_AND_COUNT (SUM_BY_GROUP until
+#                                         it was merged there, 2026-11-01). A question about the
+#                                         model, answered in the chat
 #   "make the schedule text bold"      -> NOT here and NOT anywhere in this
 #                                         library. Bold, font and size live on
 #                                         the schedule's TEXT TYPE, which other
@@ -238,17 +319,59 @@ compatibility-note: >
 #                                         releases. Revit's route: the
 #                                         schedule's Formatting tab, Field
 #                                         Format
-#   "hide that column"                 -> REMOVE_SCHEDULE_FIELDS with hideOnly
+#   "hide a column but keep the field" -> here, hideOrShow hide. Until
+#                                         2026-11-01 this table ALSO sent "hide
+#                                         that column" to REMOVE_SCHEDULE_FIELDS
+#                                         with hideOnly - two cards claiming one
+#                                         sentence. This card owns it now, the
+#                                         safer of the two: here a hide can
+#                                         never take the field out, where there
+#                                         hideOnly left false REMOVES the column
+#                                         and the sort or filter with it
+#   "remove a column"                  -> REMOVE_SCHEDULE_FIELDS
 #   "add a column"                     -> ADD_SCHEDULE_FIELDS
 #   "what are the headings now"        -> REPORT_SCHEDULE_DEFINITION, which
 #                                         reports the name AND the printed
 #                                         heading when they differ
 
+# VERSION 4 (2026-11-01) - SET_SCHEDULE_FIELD_TOTALS WAS MERGED INTO THIS CARD
+# on the owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same job - one change to how a schedule's named columns are
+# set up on its Formatting tab, found by field name or printed heading, read
+# back - for the one setting this card lacked. What it had and this card
+# lacked is here now: "Calculate totals" (`calculateTotals`), with CanTotal
+# asked first (`cannotTotal`), a column already totalling left alone
+# (`alreadyTotalled`), a minimum or maximum it replaced reported
+# (`replacedCalculation`), where each total prints - a footer, the grand total
+# or nowhere yet, a hidden column nowhere - in one string (`appliedTotals`),
+# `totalled`, a schedule handed in twice changed once, and nothing handed in
+# refused in words.
+#
+# ONE RULE WAS OPPOSITE, AND THE SAFER ONE IS KEPT (the owner: "in every
+# conflict keep the safer rule"). This card took the FIRST column answering to
+# a name; that card refused a name two columns answer to and touched neither.
+# Now no change here touches an ambiguous name - `ambiguous` names it. NOT
+# CARRIED: nothing; its `fieldNames` list is this card's `fieldName` with
+# commas between, which version 3 already reads.
+#
+# WHERE ITS OUTPUTS ARE NOW: totalled, appliedTotals, alreadyTotalled,
+# cannotTotal, notPresent, ambiguous, replacedCalculation and refused under
+# the same names (refused is a list here). Its sentences moved here.
+#
+# AND THE DOUBLE CLAIM ON "HIDE THAT COLUMN" IS SETTLED HERE. This card's
+# version 2 hides a column (hideOrShow), and REMOVE_SCHEDULE_FIELDS hides one
+# too with hideOnly - each card's table sent the sentence to itself, and this
+# one's sent it to both. The safer owner is this card: hiding here can never
+# remove the field, where REMOVE_SCHEDULE_FIELDS removes the column - and any
+# sort or filter on it - whenever hideOnly is left false. Its two hide
+# sentences moved here; it keeps hideOnly in its code, which is PROVEN and
+# not edited.
+
 utterances:
   # "RENAME THE COLUMN HEADING" IS NINTH, PAST WHAT THE RE-RANKER READS (D-134,
   # FRAGMENT-ISSUES 5b-1293, 2026-10-29). First, it put "rename" beside
   # "schedule" in this card's passage, and "rename the schedule" - a whole
-  # schedule, RENAME_ELEMENTS' job - came here on the owner's backend. Still
+  # schedule, then RENAME_ELEMENTS' job and EDIT_TEXT_VALUES' since - came here on the owner's backend. Still
   # declared, so it still reaches this card by identity.
   - change the schedule column heading
   - make the schedule column wider
@@ -274,3 +397,18 @@ utterances:
   # Declaring them fixed three of the four and moved "align the text notes
   # horizontally" on the trained model from MOVE_ANNOTATION, which lines
   # annotation up, to ALIGN_ELEMENTS. Recorded in row 5b-620 for the owner.
+  # MOVED 2026-11-01 from SET_SCHEDULE_FIELD_TOTALS, merged into this card.
+  - calculate totals for the flow column
+  - total the flow per room
+  - add up the airflow in the schedule
+  - sum this column in the schedule
+  # MOVED 2026-11-01 from REMOVE_SCHEDULE_FIELDS, which stays a card: the
+  # "hide" sentences have ONE owner now, this one - see the routing row for
+  # "hide a column but keep the field".
+  - hide a column in the schedule but keep the field
+  - hide that column on the sheet
+  # DECLARED 2026-11-01 because this card's routing row claims it and a
+  # comment is not indexed (row 5b-387's precedent): ranked, it reached
+  # REMOVE_SCHEDULE_FIELDS on the lexical backend before and after the merge -
+  # the card whose hideOnly left false removes the column.
+  - hide a column but keep the field

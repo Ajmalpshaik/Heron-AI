@@ -81,12 +81,12 @@ compatibility-note: >
   unchanged 2020 to 2027, and no ElementId is built from an integer.
 
 # ROUTING - repeated in SHOW_ELEMENTS, SET_CATEGORY_VISIBILITY and
-# SET_VIEW_RANGE.
+# SET_VIEW_PROPERTIES.
 #
 #   "why can I not see this"        -> here FIRST. It says WHICH fix applies
 #   "unhide it"                     -> SHOW_ELEMENTS, if that is the reason
 #   "turn the category back on"     -> SET_CATEGORY_VISIBILITY, if that is it
-#   "fix the view range"            -> SET_VIEW_RANGE, if that is it
+#   "fix the view range"            -> SET_VIEW_PROPERTIES, if that is it
 #
 # GUESSING WHICH FIX TO APPLY IS THE WHOLE PROBLEM. Every one of those three
 # looks like the answer, only one is, and applying the wrong one changes a view
@@ -95,7 +95,7 @@ compatibility-note: >
 #   "what category overrides are on this view" -> REPORT_CATEGORY_OVERRIDES -
 #                                        an override is not visibility
 #   "which categories are turned off in this view" ->
-#                                        REPORT_CATEGORY_VISIBILITY - the whole
+#                                        REPORT_CATEGORY_OVERRIDES - the whole
 #                                        view at once; this asks about ONE
 #                                        element
 utterances:

@@ -1,7 +1,26 @@
 // NOT STANDALONE. Assumes `doc` and `which` are in scope; leaves `formCount`,
-// `formList`, `combinationList`, `scanned`, `notAFamily` and `findings` behind.
+// `formList`, `combinationList`, `scanned`, `notAFamily`, `elements`,
+// `refused` and `findings` behind.
 //
-// READS ONLY. Nothing is changed.
+// READS ONLY. Nothing is changed, and nothing is highlighted - SET_SELECTION
+// does that with the `elements` this leaves, and DELETE_ELEMENTS deletes them.
+//
+// VERSION 4 (2026-11-01) took in SELECT_FAMILY_FORMS, which picked the same
+// forms by the same ids or kinds and handed them on, and is DEPRECATED, merged
+// into this card. What it did that this did not is here now: the forms read
+// are handed on as `elements` - in the order their ids were named, each once
+// - for SET_SELECTION, DELETE_ELEMENTS or any tool that takes elements; a call
+// that reads nothing says why in `refused`; and "freeform" is a kind, as a
+// FreeFormElement is a form. ALL OR NOTHING as that card was: one id that is
+// not a form refuses the call and `elements` stays EMPTY, so a delete after it
+// can never reach part of a list.
+//
+// NOTHING NAMED, NOTHING HANDED ON - the conflict, and the safer rule kept.
+// SELECT_FAMILY_FORMS refused a call that named no form; this card reads
+// every form when `which` is left out (row 5b-488). Both stand: left out,
+// `which` binds the card's own "not named" - every form is READ, as before,
+// and NONE is handed on, so a delete chained after it has nothing to delete.
+// Typing "all" names every form and hands them all on.
 //
 // EVERY FORM IN THE FAMILY OPEN IN THE FAMILY EDITOR, with the id a later step
 // names it by: what kind it is, solid or void, the plane its sketch is on, its
@@ -33,6 +52,9 @@ var formList = "";
 var combinationList = "";
 var scanned = 0;
 var notAFamily = false;
+// VERSION 4, from SELECT_FAMILY_FORMS.
+var elements = new List<Element>();
+string refused = null;
 
 var invariant = System.Globalization.CultureInfo.InvariantCulture;
 Func<double, string> mm = feet => Math.Round(feet * 304.8, 1).ToString(invariant);
@@ -40,7 +62,8 @@ Func<string, string> squash = text =>
     new string((text ?? "").ToLowerInvariant().Where(c => char.IsLetterOrDigit(c)).ToArray());
 
 Func<GenericForm, string> kindOf = f => f is Extrusion ? "extrusion" : f is Revolution ? "revolve"
-    : f is Blend ? "blend" : f is SweptBlend ? "swept blend" : f is Sweep ? "sweep" : "form";
+    : f is Blend ? "blend" : f is SweptBlend ? "swept blend" : f is Sweep ? "sweep"
+    : f is FreeFormElement ? "freeform" : "form";
 
 // The sketch a form stands on, by its plane's name - the work plane it was
 // drawn on. Each kind keeps it under a different name.
@@ -60,14 +83,22 @@ Func<GenericForm, string> planeOf = f =>
     return plane == null ? "(no sketch plane)" : "on " + plane.Name;
 };
 
-var known = new[] { "solid", "void", "extrusion", "revolve", "revolution", "blend", "sweep", "sweptblend" };
-var parts = (which ?? "").Split(',').Select(p => p.Trim()).Where(p => squash(p).Length > 0 && squash(p) != "all").ToList();
+var known = new[] { "solid", "void", "extrusion", "revolve", "revolution", "blend", "sweep", "sweptblend",
+                    "freeform" };
+// LEFT OUT, `which` is the card's "not named": every form read, none handed
+// on (version 4). Anything typed - "all" included - names what is handed on.
+var notNamed = squash(which) == "notnamed";
+var parts = (which ?? "").Split(',').Select(p => p.Trim())
+    .Where(p => squash(p).Length > 0 && squash(p) != "all" && squash(p) != "notnamed").ToList();
 var words = parts.Select(squash).Where(w => known.Contains(w)).ToList();
 var ids = parts.Where(p => !known.Contains(squash(p))).ToList();
 
 var rows = new List<string>();
 var joins = new List<string>();
 var named = new HashSet<string>();
+// The forms named by id, in the order named, each once - the order `elements`
+// hands them on in (SELECT_FAMILY_FORMS' rule).
+var namedInOrder = new List<GenericForm>();
 var problems = new List<string>();
 
 if (doc.IsFamilyDocument && words.Count == 0)
@@ -83,31 +114,36 @@ if (doc.IsFamilyDocument && words.Count == 0)
             problems.Add("\"" + id + "\" is not an id in this family - "
                 + (id.All(char.IsDigit)
                     ? "that is an element number; give the long id the form tools gave back"
-                    : "nor a kind of form or a side (solid, void, extrusion, revolve, blend, sweep, swept blend)"));
+                    : "nor a kind of form or a side (solid, void, extrusion, revolve, blend, sweep, swept blend, "
+                      + "freeform)"));
         else if (form == null)
             problems.Add("\"" + id + "\" is "
                 + (string.IsNullOrEmpty(element.Name) ? "an element" : "\"" + element.Name + "\"")
                 + (element.Category != null ? " (" + element.Category.Name + ")" : "") + ", not a form");
-        else
-            named.Add(form.UniqueId);
+        else if (named.Add(form.UniqueId))
+            namedInOrder.Add(form);
     }
 }
 
 if (!doc.IsFamilyDocument)
 {
     notAFamily = true;
-    findings.Add("The document in front is a project, not a family open in the Family Editor. A family's forms are "
-        + "read inside the family - open it first.");
+    refused = "The document in front is a project, not a family open in the Family Editor. A family's forms are "
+        + "read inside the family - open it first.";
+    findings.Add(refused);
 }
 else if (words.Count > 0 && ids.Count > 0)
 {
-    findings.Add("Nothing was read. Name forms by their ids OR by kind and side, not both in one call - \""
+    refused = "Nothing was read. Name forms by their ids OR by kind and side, not both in one call - \""
         + string.Join(", ", ids) + "\" read as ids beside \"" + string.Join(", ", words) + "\". A word that is "
-        + "neither is read as an id: name solid or void, and extrusion, revolve, blend, sweep or swept blend, or all.");
+        + "neither is read as an id: name solid or void, and extrusion, revolve, blend, sweep, swept blend or "
+        + "freeform, or all.";
+    findings.Add(refused);
 }
 else if (problems.Count > 0)
 {
-    findings.Add("Nothing was read. " + string.Join("; ", problems) + ".");
+    refused = "Nothing was read. " + string.Join("; ", problems) + ".";
+    findings.Add(refused);
 }
 else
 {
@@ -119,6 +155,7 @@ else
         var side = f.IsSolid ? "solid" : "void";
         var matches = words.All(w => w == side || w == squash(kind) || (w == "revolution" && kind == "revolve"));
         if (!matches || (ids.Count > 0 && !named.Contains(f.UniqueId))) continue;
+        if (ids.Count == 0 && !notNamed) elements.Add(f);
 
         var extent = "";
         var box = f.get_BoundingBox(null);
@@ -172,10 +209,19 @@ else
         joins.Add(c.UniqueId + ": " + string.Join(", ", members));
     }
 
+    // BY ID, IN THE ORDER NAMED (version 4) - the order a caller listed them
+    // in is the order they are handed on.
+    if (ids.Count > 0) foreach (var f in namedInOrder) elements.Add(f);
+
     formCount = rows.Count;
     formList = string.Join("  ||  ", rows);
     combinationList = string.Join("  ||  ", joins);
     findings.Add(formCount + " form(s) of " + scanned + " in the family" + (words.Count > 0 ? " match \""
         + string.Join(", ", words) + "\"" : ids.Count > 0 ? ", by id" : "") + "; " + joins.Count + " join(s) or cut(s).");
     if (scanned == 0) findings.Add("This family has no forms yet - nothing has been modelled in it.");
+    findings.Add(notNamed
+        ? "No form was named, so none is handed on - every form was read. Name them by id, by kind and side, or "
+          + "say all, to hand them to SET_SELECTION or DELETE_ELEMENTS."
+        : elements.Count + " form(s) handed on as elements - SET_SELECTION highlights them; DELETE_ELEMENTS "
+          + "deletes them once the modeller has said yes.");
 }

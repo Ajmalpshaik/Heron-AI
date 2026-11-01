@@ -38,7 +38,7 @@ purpose: >
 
   **This says nothing about who OWNS or has CHECKED OUT those elements.**
   Workset is where an element lives; ownership is who is holding it right now.
-  They are different questions and READ_ELEMENT_OWNERSHIP answers the second.
+  They are different questions and REPORT_ELEMENT_OWNERSHIP answers the second.
 
   Reports how many elements were scanned as well as how many matched, so a
   small answer can be read against the size of the sweep.
@@ -92,7 +92,7 @@ compatibility-note: >
   BuiltInCategory values directly rather than ElementIds built from them, so
   2024's move to 64-bit ids cannot reach this code.
 
-# ROUTING - repeated in READ_ELEMENT_OWNERSHIP, LIST_WORKSETS and
+# ROUTING - repeated in REPORT_ELEMENT_OWNERSHIP, LIST_WORKSETS and
 # SET_ELEMENT_WORKSET.
 #
 #   "what is on the linked models workset"   -> here
@@ -100,7 +100,7 @@ compatibility-note: >
 #   "what worksets does this
 #    model have"                     -> LIST_WORKSETS - the names, not the
 #                                       contents
-#   "who has this checked out"       -> READ_ELEMENT_OWNERSHIP - ownership is
+#   "who has this checked out"       -> REPORT_ELEMENT_OWNERSHIP - ownership is
 #                                       not the same fact as workset
 #   "move these onto the MEP
 #    workset"                        -> SET_ELEMENT_WORKSET - this one only

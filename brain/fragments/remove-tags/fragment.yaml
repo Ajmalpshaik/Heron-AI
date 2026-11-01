@@ -14,7 +14,7 @@ source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Deletes tag annotations - and only the tags. It is the undo TAG_ELEMENTS and
+  Deletes tag annotations - and only the tags. It is the undo
   TAG_ELEMENTS_IN_VIEW never had, and the clean-up after a tagging run that
   produced more than anybody wanted.
 
@@ -86,7 +86,7 @@ compatibility-note: >
 #   "remove the tags from this view" -> here
 #   "untag these elements"           -> here. It deletes the TAG, and the thing
 #                                       tagged is untouched
-#   "tag these ducts"                -> TAG_ELEMENTS - the other direction
+#   "tag these ducts"                -> TAG_ELEMENTS_IN_VIEW - the other direction
 #   "delete these ducts"             -> DELETE_ELEMENTS. That deletes MODEL
 #                                       elements, and mixing the two up is the
 #                                       accident this fragment refuses to have

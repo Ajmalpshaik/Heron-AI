@@ -102,7 +102,7 @@ compatibility-note: >
   both ends rather than remembered. Grid and Level both derive from
   `DatumPlane`, so one code path serves both.
 
-# ROUTING - repeated in LIST_GRIDS and LIST_LEVELS.
+# ROUTING - repeated in LIST_GRIDS and REPORT_LEVEL_ELEVATIONS.
 #
 #   "the grid bubbles are on the wrong side" -> here
 #   "flip the bubbles"                       -> here

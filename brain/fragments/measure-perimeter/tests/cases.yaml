@@ -22,7 +22,7 @@ negative:
     expect: >
       all counted in `unmeasurable` - a duct has no horizontal footprint face and
       no room perimeter, and inventing a number from its section would answer a
-      different question. MEASURE_ELEMENT_LENGTHS is what a duct wants
+      different question. MEASURE_RUN_QUANTITIES is what a duct wants
 
   - given: an unplaced room
     expect: >

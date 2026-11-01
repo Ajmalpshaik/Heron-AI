@@ -89,7 +89,8 @@ contract:
       source: request
     - name: matchValue
       # The new rule's value with its operator in front, as
-      # CREATE_VIEW_FILTERS_BY_RULE version 2 takes it: equals, does not
+      # CREATE_VIEW_FILTER takes it (CREATE_VIEW_FILTERS_BY_RULE version 2,
+      # merged into it 2026-11-01, took it the same way): equals, does not
       # equal, contains, does not contain, begins with, does not begin with,
       # ends with, does not end with ("does not contain TRG_MEC"). None means
       # equals. BLANK keeps the rule as it is.
@@ -211,28 +212,29 @@ compatibility-note: >
   `ElementParameterFilter(FilterRule)`, `LogicalOrFilter` and
   `ElementFilter.Inverted { get; }`; a text rule's `CaseSensitive` is read
   by reflection where a release has it. The text rule factories are
-  reached BY REFLECTION exactly as CREATE_VIEW_FILTERS_BY_RULE version 2
-  reaches them - CreateEqualsRule, CreateNotEqualsRule, CreateContainsRule,
+  reached BY REFLECTION exactly as CREATE_VIEW_FILTER version 4 reaches them
+  (CREATE_VIEW_FILTERS_BY_RULE version 2 until it was merged into it) - CreateEqualsRule, CreateNotEqualsRule, CreateContainsRule,
   CreateNotContainsRule, CreateBeginsWithRule, CreateNotBeginsWithRule,
   CreateEndsWithRule and CreateNotEndsWithRule are (ElementId, string, bool)
   on 2020 to 2025 and (ElementId, string) on 2023 to 2027; the two-argument
   one is used where it exists, the three-argument one with `false`
   elsewhere. That code is a COPY - a fragment cannot call another's - and is
-  kept in step with CREATE_VIEW_FILTERS_BY_RULE by hand: the operator words,
+  kept in step with CREATE_VIEW_FILTER by hand: the operator words,
   their factory methods, the parameter matched by label or built-in name,
   and the read-back's rule words.
 
-# ROUTING - the same rows are in CREATE_VIEW_FILTERS_BY_RULE.
+# ROUTING - the same rows are in CREATE_VIEW_FILTER, which
+# CREATE_VIEW_FILTERS_BY_RULE was merged into on 2026-11-01.
 #
-#   "rename this view filter"                -> here, with newName. RENAME_ELEMENTS renames what a finder hands it, never a filter
-#   "rename this view"                       -> RENAME_ELEMENTS, on the views (5b-485) - a view is not a filter
+#   "rename this view filter"                -> here, with newName. EDIT_TEXT_VALUES renames what a finder hands it, never a filter
+#   "rename this view"                       -> EDIT_TEXT_VALUES field Name, on the views (5b-485) - a view is not a filter
 #   "change the filter rule to does not contain TRG_MEC" -> here, with matchValue - the parameter kept
 #   "add grids to this filter"               -> here, with the WHOLE list - the ones it has and Grids
 #   "take the Duct Systems category off      -> here
 #    these view filters"
 #   "add duct insulation and lining to       -> here, with the WHOLE list -
 #    those filters"                             what is not named is taken off
-#   "create a supply air filter for ducts"   -> CREATE_VIEW_FILTERS_BY_RULE.
+#   "create a supply air filter for ducts"   -> CREATE_VIEW_FILTER.
 #                                               This never makes a filter
 #   "put that filter on this view"           -> APPLY_VIEW_FILTER
 #   "take that filter off the view"          -> REMOVE_VIEW_FILTER - the view

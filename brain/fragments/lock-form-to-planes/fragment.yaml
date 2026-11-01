@@ -148,7 +148,7 @@ compatibility-note: >
 # padlock for it and nothing documents it - lock the faces, and FLEX_FAMILY
 # what was locked.
 #
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "lock the cylinder's top to Body Top"        -> here
 #   "align and lock this form to the planes"     -> here

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,33 @@ capability: CREATE_AREA_BOUNDARY_LINES
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_ROOM_SEPARATION_LINES (create-room-separation-lines), on the owner's
+# instruction in conversation: "make sure there is no duplicate tools", then
+# "ok go ahead merge all" and "in every conflict keep the safer rule".
+# Constitution Article 1: kept, never deleted, so its record and its proof
+# stay readable and it can be brought back. Nothing offers it now - retrieval
+# leaves DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to CREATE_ROOM_SEPARATION_LINES. The
+# proof below is the record of what this card's code did, not a claim about
+# today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_ROOM_SEPARATION_LINES
+  why: >
+    The same job - lines drawn on a plan's level that bound a spatial
+    element. CREATE_ROOM_SEPARATION_LINES version 2 draws area boundary
+    lines: lineKind area, the area plan chosen by name (areaPlanName - an
+    area plan, never a floor plan), traceWalls inside, outside or centre
+    along every straight exterior wall on the plan's level with an arc wall
+    named and left, loopsMm closed loops in millimetres each closed
+    automatically with a loop under three points named and left out, a
+    point that is not one refusing the call with nothing drawn, a line Revit
+    refuses named and the rest drawn, every line read back by its id. The
+    kind must be said there. The lines lie on the sketch plane Revit makes
+    on the level, that card's rule, where this one used the level's
+    Elevation. Nothing of this card is left out.
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.

@@ -60,7 +60,8 @@ negative:
 
 second_route:
   - >
-      The same spring by CREATE_FAMILY_SWEPT_BLEND, one half-turn per swept
+      The same spring by CREATE_FAMILY_FORMS kind=swept blend rows
+      (CREATE_FAMILY_SWEPT_BLEND until 2026-11-01), one half-turn per swept
       blend (path "55,0; arc 0,55 -55,0" profiles raised half a pitch, twelve
       of them), read side by side with this one form: extents equal and the
       volumes within a few tenths of a percent - twelve forms against one

@@ -163,7 +163,8 @@ questions:
   - n: 20
     row: 477
     question: "what scale is this section"
-    answer: [READ_VIEW_SCALE]
+    # The read row 477 named was READ_VIEW_SCALE; merged into REPORT_VIEW_SETTINGS on 2026-11-01.
+    answer: [REPORT_VIEW_SETTINGS]
     named: declared
   - n: 21
     row: 477
@@ -321,7 +322,9 @@ questions:
   - n: 62
     row: 478
     question: "what is the sheet number of this sheet"
-    answer: [LIST_SHEETS, READ_ELEMENT_PARAMETERS]
+    # The read row 478 named was LIST_SHEETS; it was merged into FIND_SHEETS on
+    # 2026-11-01 (the same read, with every sheet when nothing narrows it).
+    answer: [FIND_SHEETS, READ_ELEMENT_PARAMETERS]
     named: owners-call
   - n: 63
     row: 478

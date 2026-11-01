@@ -136,7 +136,7 @@ compatibility-note: >
 #   "spaces up to the ceiling"               -> here, the room's own level and
 #                                               the ceiling height
 #   "how high are these rooms"               -> READ_ROOM_GEOMETRY, a read
-#   "put these walls on another level"       -> SET_WALL_CONSTRAINTS, walls only
+#   "put these walls on another level"       -> SET_ELEMENT_LEVEL
 
 utterances:
   - set the room upper limit to the level above

@@ -161,12 +161,12 @@ compatibility-note: >
   value decides - which is why "<By Category>" is handled explicitly, since a
   parameter holding nothing cannot be recognised that way.
 
-# ROUTING - repeated in READ_ELEMENT_MATERIAL and REPORT_MATERIAL_TAKEOFF.
+# ROUTING - repeated in REPORT_MATERIAL_TAKEOFF.
 #
 #   "change the material on these"   -> here
 #   "swap this finish for that one"  -> here
 #   "the client changed the material" -> here
-#   "what material is this"          -> READ_ELEMENT_MATERIAL - a READ, and it
+#   "what material is this"          -> REPORT_MATERIAL_TAKEOFF - a READ, and it
 #                                       must not answer a request to change one
 #   "how much concrete is in this"   -> REPORT_MATERIAL_TAKEOFF
 #   "why will this material not purge" -> here is usually the answer: it is
@@ -177,11 +177,11 @@ compatibility-note: >
 # checker read the continuation marker as part of the sentence - so the claim
 # it extracted could never be matched by any utterance, and reported unreached
 # for ever. A claimed sentence goes on ONE line.
-#   "make a new material"            -> CREATE_MATERIAL - both materials have
+#   "make a new material"            -> CREATE_STARTER_MATERIALS - both materials have
 #                                       to exist before one can replace the
 #                                       other
 #   "which materials is nobody
-#    using"                          -> FIND_UNUSED_MATERIALS - the opposite
+#    using"                          -> FIND_PURGEABLE_ELEMENTS, includeMaterials - the opposite
 #                                       question. That one lists materials with
 #                                       NO user at all, so it cannot say what
 #                                       is still holding on to a particular one

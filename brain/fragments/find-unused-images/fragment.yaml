@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-IMP-019
 heron-step: 17
-heron-status: DRAFT
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,25 @@ capability: FIND_UNUSED_IMAGES
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO FIND_PURGEABLE_ELEMENTS (find-purgeable-elements), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable and
+# it can be brought back. Nothing offers it now - retrieval leaves DEPRECATED
+# out, and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to FIND_PURGEABLE_ELEMENTS. The proof below, where there
+# is one, is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: FIND_PURGEABLE_ELEMENTS
+  why: >
+    The same question for one kind: which images nothing uses.
+    FIND_PURGEABLE_ELEMENTS version 3 took this card's rule - placed, or named
+    by any image parameter of any element or type - and its usedCount, and
+    reports the unused by name. Not carried, the safer rule: this card handed
+    its images on as elements for DELETE_ELEMENTS; there only Revit's own list
+    is handed on, and an image found used is held back from it.
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.
@@ -25,8 +44,9 @@ risk: READ
 # Image, Type Image, shared or family image parameters. An image used ONLY as
 # a schedule header picture is not seen, and the answer says so.
 #
-# FIND_UNUSED_FAMILIES, FIND_UNUSED_MATERIALS and FIND_UNUSED_GROUP_TYPES are
-# the same job for other things.
+# FIND_PURGEABLE_ELEMENTS (families, and everything else Purge Unused
+# offers), FIND_UNUSED_MATERIALS and FIND_UNUSED_GROUP_TYPES are the same job
+# for other things.
 #
 # READ ONLY - opens no transaction.
 purpose: >
@@ -65,7 +85,7 @@ compatibility-note: >
 #
 #   "which images are not used"               -> here
 #   "delete the unused images"                -> here, then DELETE_ELEMENTS
-#   "which families are not used"             -> FIND_UNUSED_FAMILIES
+#   "which families are not used"             -> FIND_PURGEABLE_ELEMENTS
 #   "which materials are not used"            -> FIND_UNUSED_MATERIALS
 
 utterances:

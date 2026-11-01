@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DOC-004
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,27 @@ capability: CREATE_PROJECT_DOCUMENT
 version: 1
 source: OFFICIAL
 risk: ADMIN
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_FAMILY_DOCUMENT
+# (create-family-document), on the owner's instruction in conversation: "make sure there is no
+# duplicate tools", every conflict to keep the SAFER rule. Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable and
+# it can be brought back. Nothing offers it now - retrieval leaves DEPRECATED
+# out, and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to CREATE_FAMILY_DOCUMENT. The proof below, where
+# there is one, is the record of what this card's code did, not a claim about
+# today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_FAMILY_DOCUMENT
+  why: >
+    The same body: CREATE_FAMILY_DOCUMENT version 3 makes a project from a .rte
+    template - or a bare template name with a savePath ending .rvt - looked up
+    under the folder of this Revit's default project template, saved to exactly
+    the caller's .rvt path and never over anything, the windowless copy closed and
+    the file opened in a window, or `openNext` when Heron is working in the window
+    in front. Every output of this card is there with the same name.
 
 purpose: >
   Starts a new Revit project from a project template, saves it to the file the
@@ -147,7 +168,8 @@ compatibility-note: >
 #   "start a new family"           -> CREATE_FAMILY_DOCUMENT - a .rft template
 #                                     and a .rfa file
 #   "open that saved model"        -> ACTIVATE_DOCUMENT - it is already a file
-#   "switch to the other project"  -> SWITCH_ACTIVE_PROJECT - it is already open
+#   "switch to the other project"  -> ACTIVATE_DOCUMENT, by its path - it is
+#                                     already open
 #   "add a project parameter"      -> ADD_PROJECT_PARAMETER - nothing to do with
 #                                     a new project file
 

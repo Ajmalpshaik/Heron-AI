@@ -139,13 +139,15 @@ compatibility-note: >
 #
 #   "dimension the rooms"                -> here
 #   "put the room sizes on the plan"     -> here, as live dimensions
-#   "how big is this room"               -> MEASURE_ROOM_DIMENSIONS. It reads
+#   "how big is this room"               -> REPORT_ROOM_SPACE_DATA. It reads
 #                                           the size and draws nothing, which
 #                                           is what a question wants
 #   "list the rooms and their areas"     -> REPORT_ROOM_SPACE_DATA
-#   "dimension these ducts"              -> DIMENSION_MEP_RUNS
+#   "dimension these ducts"              -> CREATE_DIMENSION
 #   "dimension between these"            -> CREATE_DIMENSION, the general one
-#   "dimension the equipment"            -> DIMENSION_FAMILY_INSTANCES
+#   "dimension the equipment"            -> CREATE_DIMENSION, axis x or y
+#                                           (DIMENSION_FAMILY_INSTANCES until
+#                                           it was merged there, 2026-11-01)
 #   "what is the overall size of this    -> REPORT_BOUNDING_BOX
 #    set"
 

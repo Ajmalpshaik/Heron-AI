@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,32 @@ semantic-identity: "fill in a material's identity, graphics patterns, physical a
 kind: action
 domain: revit.elements
 capability: SET_MATERIAL_PROPERTIES
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+# A settings change: after it runs from the chat, the Companion page offers its
+# values as a table the modeller can edit and apply again (docs/40 section
+# 21.1). Version 2, from SET_MATERIAL_COLOUR, which offered its colour so.
+companion: settings
+companion-subject: materialsNamed
+
+# VERSION 2 (2026-11-01) - SET_MATERIAL_COLOUR WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. One material's shading colour was a job this card already did as
+# its "Shading Colour=" field - by name, never making a material, near misses
+# when a name matches nothing, the colour before and after in materialReport,
+# "already" when it held the colour, the note that the Appearance asset is not
+# touched. What that card had and this one lacked is here now: `wasColour` and
+# `nowColour` as values of their own, and the Companion table. Where its
+# outputs are found now: `changed` -> `fieldsChanged`; `wasColour` and
+# `nowColour` -> the same names; `alreadyThat` -> `alreadyAsAsked`;
+# `nearMisses` -> the closest names in `refused`; `findings` -> `findings`.
+# Its `colour` input is "Shading Colour=r,g,b" in `fieldValues` - which also
+# takes "#RRGGBB". Nothing it did is left out.
+#
+# Version 1's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; the card is DRAFT until version 2 is proved on a real
+# model (D-30).
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.
@@ -43,9 +66,10 @@ risk: MODIFY
 # (a material's name may hold a comma) and `*` / `?` patterns - "TRG_*" is
 # every TRG material, the bulk change by name.
 #
-# SHADING COLOUR IS HERE AS ONE GRAPHICS FIELD AMONG THE REST. One material's
-# colour alone is still SET_MATERIAL_COLOUR, which is PROVEN and reports the
-# colour before; this card is for the tabs that had no tool at all.
+# SHADING COLOUR IS HERE AS ONE GRAPHICS FIELD AMONG THE REST, and since
+# version 2 one material's colour alone is this card's too: SET_MATERIAL_COLOUR
+# was merged in, and `wasColour` and `nowColour` report the colour before and
+# after as that card did.
 #
 # A SHARED PHYSICAL OR THERMAL ASSET IS NEVER EDITED: the material gets its own
 # copy first and the answer names who shared it. Sharing is read as it stood
@@ -64,6 +88,9 @@ purpose: >
   manufacturer, model, cost, keynote, mark, class, surface and cut patterns
   with their colours, physical and thermal assets and their values - on one
   material or every one a name pattern matches, read back after.
+
+  Version 2 reports a material's shading colour before and after as values of
+  their own, `wasColour` and `nowColour`.
 
 contract:
   needs:
@@ -104,6 +131,21 @@ contract:
       type: string
     - name: refused
       # Why nothing was changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: wasColour
+      # VERSION 2, from SET_MATERIAL_COLOUR. The shading colour each material
+      # had BEFORE, read before anything was written - "r,g,b", or "Name:
+      # r,g,b; ..." for several. The evidence it looked, never a change it
+      # made: it is filled whether or not anything moved, so `fieldsChanged`
+      # is what says something did (D-51, D-52). Empty when no Shading Colour
+      # was asked.
+      role: accounting
+      type: string
+    - name: nowColour
+      # VERSION 2, from SET_MATERIAL_COLOUR. The shading colour each material
+      # has NOW, read back after the regeneration - the same shape as
+      # `wasColour`. A reading, never a count (D-52).
       role: accounting
       type: string
     - name: findings
@@ -155,13 +197,21 @@ compatibility-note: >
   shipped assemblies with tools/api-surface --members on 2026-10-20. No unit
   API is called: asset values go through SetValueString in the project's units.
 
-# ROUTING - the same rows are in SET_MATERIAL_COLOUR, SET_MATERIAL_APPEARANCE,
+# ROUTING - the same rows are in SET_MATERIAL_APPEARANCE,
 # CREATE_STARTER_MATERIALS, SET_ELEMENT_MATERIAL and LIST_MATERIALS.
 #
 #   "set the manufacturer of this material"        -> here
 #   "give the material a cut pattern"              -> here
 #   "set the density of the steel material"        -> here
-#   "set the material colour"                      -> SET_MATERIAL_COLOUR
+#   "set the material colour"                      -> here, "Shading Colour=" -
+#                                                     SET_MATERIAL_COLOUR's job
+#                                                     since version 2
+#   "this pipe has no colour"                      -> here, on the material the
+#                                                     segment uses
+#   "make a new material"                          -> CREATE_STARTER_MATERIALS
+#   "what material is this element"                -> REPORT_MATERIAL_TAKEOFF
+#                                                     (READ_ELEMENT_MATERIAL until
+#                                                     it was merged there, 2026-11-01)
 #   "make the glass look like glass when rendered" -> SET_MATERIAL_APPEARANCE
 #   "change the material on these"                 -> REPLACE_MATERIAL
 #   "make these columns concrete"                  -> SET_ELEMENT_MATERIAL
@@ -172,3 +222,10 @@ utterances:
   - fill in the identity tab of these materials
   - set the density and thermal conductivity of the steel material
   - change the class of every TRG material to metal
+  # MOVED 2026-11-01 from SET_MATERIAL_COLOUR, merged into this card.
+  - set the material colour
+  - this material has no colour
+  - make the copper material look copper
+  - change the shading colour of a material
+  # ...and its semantic identity, which nothing else declares:
+  - give an existing material its shading colour, and say what it was

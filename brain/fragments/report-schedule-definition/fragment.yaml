@@ -88,7 +88,7 @@ purpose: >
 #   separator Revit draws AFTER it. An empty one is said "none", so a blank
 #   separator and a missing one do not read alike. Each parameter is named as
 #   the schedule offers it - matched on its id, never read as a number - so it
-#   can be typed straight back into ADD_SCHEDULE_COMBINED_FIELD. The column
+#   can be typed straight back into ADD_SCHEDULE_FIELDS. The column
 #   line in `findings` carries the same drawn form, and the first line counts
 #   the combined columns. A column whose parts will not open is said so and
 #   the rest of the report goes on.
@@ -219,7 +219,7 @@ compatibility-note: >
 #                                              that one was answering
 #   "what is the size column made of"       -> here, VERSION 3 - a combined
 #                                              column's parts and separators
-#   "edit the size column to use width x    -> ADD_SCHEDULE_COMBINED_FIELD -
+#   "edit the size column to use width x    -> ADD_SCHEDULE_FIELDS, version 2 -
 #    height"                                   a WRITE, with editExisting
 #   "take a column out"                     -> REMOVE_SCHEDULE_FIELDS
 #   "sort the schedule by level"            -> SET_SCHEDULE_SORT_GROUP
@@ -229,7 +229,7 @@ compatibility-note: >
 #                                              reports the SET-UP, and those
 #                                              are different questions that
 #                                              sound alike
-#   "which schedules are there"             -> FIND_SCHEDULES, which is what
+#   "which schedules are there"             -> FIND_VIEWS, viewType Schedule, which is what
 #                                              hands the schedules to here
 #   "show units as mm in that column"       -> CANNOT BE DONE by any fragment
 #                                              here. The unit is `UnitType` on

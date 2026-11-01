@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PHS-032
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: SET_VIEW_PHASE
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO SET_VIEW_PROPERTIES (set-view-
+# properties), on the owner's instruction in conversation: "make sure there is
+# no duplicate tools". Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to SET_VIEW_PROPERTIES. Its elements became the views list
+# there, so something that is not a view can no longer be handed in. A view
+# template handed in is refused there, where this card would have tried to
+# write to one - the safer rule kept. The proof below is the record of what
+# this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: SET_VIEW_PROPERTIES
+  why: >
+    The same job: set a view property across many views, refuse what a
+    template holds, read the value back. SET_VIEW_PROPERTIES version 4 took
+    phaseId and phaseFilterId with this card's rules - an id that is not a
+    Phase or a Phase Filter refused before anything is written, the two set
+    separately because they fail separately, each read back - and its outputs
+    phaseSet, phaseFilterSet, alreadySet, templateControlled and unsupported.
 
 purpose: >
   Sets the Phase and the Phase Filter on many views at once - what makes a view

@@ -100,13 +100,13 @@ compatibility-note: >
   lengths, so it needs no unit conversion at all and 2021's unit API rewrite
   cannot reach it - the one number that is the same in feet and in millimetres.
 
-# ROUTING - repeated in ALIGN_MEP_ELEVATION, which is the fragment that gets
+# ROUTING - repeated in ALIGN_ELEMENTS, which is the fragment that gets
 # asked for when this one is meant.
 #
 #   "what fall is on this drain"        -> here
 #   "which pipes are too flat"          -> here, with the minimum stated
-#   "set them all to the same level"    -> ALIGN_MEP_ELEVATION
-#   "put the ducts at 2800"             -> ALIGN_MEP_ELEVATION
+#   "set them all to the same level"    -> ALIGN_ELEMENTS
+#   "put the ducts at 2800"             -> ALIGN_ELEMENTS, by an edge
 #
 # ALIGNING AND SLOPING ARE OPPOSITE JOBS ON THE SAME ELEMENTS. Aligning makes a
 # run flat on purpose; a drain being flat is the defect. Landing on the wrong

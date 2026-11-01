@@ -142,12 +142,14 @@ compatibility-note: >
 #                                           small rooms' tags close together
 #   "which tags overlap"                 -> FIND_OVERLAPPING_TAGS
 #   "what are the tags pointing at"      -> REPORT_TAGS_AND_TARGETS
-#   "tag the rooms"                      -> TAG_ROOMS places them; this only
-#                                           moves room tags that already exist.
-#                                           TAG_ELEMENTS_IN_VIEW, named here
-#                                           until 2026-09-24, has no room entry
-#                                           and cannot place one
-#   "put tags on these"                  -> TAG_ELEMENTS. This one moves the
+#   "tag the rooms"                      -> TAG_ELEMENTS_IN_VIEW places them,
+#                                           since its version 7 (2026-11-01,
+#                                           TAG_ROOMS merged in) as Revit's own
+#                                           room tags; this only moves room
+#                                           tags that already exist. Until then
+#                                           TAG_ELEMENTS_IN_VIEW had no room
+#                                           entry and TAG_ROOMS placed them
+#   "put tags on these"                  -> TAG_ELEMENTS_IN_VIEW. This one moves the
 #                                           ones that are already there
 #   "there is no room for the tags here" -> STACK_TAGS, which gathers them at
 #                                           the side of the plan

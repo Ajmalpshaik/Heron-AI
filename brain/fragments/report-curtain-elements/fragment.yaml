@@ -184,8 +184,10 @@ compatibility-note: >
 #                                          type. Asked through heron_lookup on
 #                                          2026-09-24, before that fragment
 #                                          existed, the sentence resolved here
-#   "change the mullion type on the     -> SET_CURTAIN_WALL_MULLIONS - and that
-#    curtain wall"                         sentence resolved here too
+#   "change the mullion type on the     -> SET_CURTAIN_WALL_GRID, `mullions`
+#    curtain wall"                         (SET_CURTAIN_WALL_MULLIONS until
+#                                          2026-11-01) - and that sentence
+#                                          resolved here too
 #   "set this curtain wall's grid"      -> SET_CURTAIN_WALL_GRID, which takes the
 #                                          TYPE by name. This one prints each
 #                                          wall under its own name, and a wall's

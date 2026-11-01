@@ -164,15 +164,15 @@ def main(argv):
     print("=" * 72)
 
     artefacts = ["Cache/vectors.db", "Fragments/old-duct-sizer",
-                 "Fragments/align-mep-elevation", "Core/Heron.Old.dll",
+                 "Fragments/align-elements", "Core/Heron.Old.dll",
                  "Memory/2024-notes", "who/knows.bin"]
     usage = {
         "Cache/vectors.db": {"since": "2026-06-01", "until": "2026-09-14",
                              "uses": 0},
         "Fragments/old-duct-sizer": {"since": "2026-06-01",
                                      "until": "2026-09-14", "uses": 0},
-        "Fragments/align-mep-elevation": {"since": "2026-06-01",
-                                          "until": "2026-09-14", "uses": 41},
+        "Fragments/align-elements": {"since": "2026-06-01",
+                                     "until": "2026-09-14", "uses": 41},
         "Core/Heron.Old.dll": {"since": "2026-06-01", "until": "2026-09-14",
                                "uses": 0},
         "who/knows.bin": {"since": "2026-06-01", "until": "2026-09-14",

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: MATCH_ELEMENT_TYPE
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CHANGE_ELEMENT_TYPE
+# (change-element-type), on the owner's instruction in conversation: "make
+# sure there is no duplicate tools". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to CHANGE_ELEMENT_TYPE. A proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CHANGE_ELEMENT_TYPE
+  why: >
+    The same job: elements moved onto a type and read back, the only
+    difference being where the type came from. CHANGE_ELEMENT_TYPE names it
+    by id and, since its version 2, takes it from the one selected element
+    (`typeFrom` "selected") with this card's rules: the source skipped, a
+    source with no type refused with the reason, an element of another
+    category refused by id and category, and the sentence that only the TYPE
+    changed. The by-id mode keeps letting a cross-category swap through to
+    Revit (curtain panel to door, measured 2026-10-13). Nothing of this card
+    is left out.
+
 
 purpose: >
   Changes a set of elements to the type of one chosen element - "make these the

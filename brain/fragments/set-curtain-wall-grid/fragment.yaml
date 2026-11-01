@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -52,7 +52,42 @@ capability: SET_CURTAIN_WALL_GRID
 # is refused on it too: the reference does not say whether the type or each
 # curtain system holds the count, and where Revit keeps it is measured, as for
 # a wall.
-version: 3
+#
+# VERSION 4 (2026-11-01) - SET_CURTAIN_WALL_MULLIONS WAS MERGED INTO THIS CARD
+# on the owner's instruction ("make sure there is no duplicate tools", then "ok
+# go ahead merge all"), and is DEPRECATED. The same job on the same type: a
+# curtain wall or curtain system TYPE named, its settings in Type Properties
+# reached by Revit's own ids because each name is worn twice, the walls of the
+# type counted first, nothing written until the whole request is settled, read
+# back after one rebuild. What it had and this card lacked is `mullions`, its
+# table word for word: Interior, Border 1 and Border 2 each way on a wall type
+# (AUTO_MULLION_*_VERT/_HORIZ), grid 1 / grid 2 interior, border 1 and border 2
+# on a curtain system type (AUTO_MULLION_*_GRID1/_GRID2, the same assumption
+# and the same throw as the grid ids); a mullion type named and meaning exactly
+# one in the model, refused with the ones it has, or naming both; "none" takes
+# the mullions off and is the only word that does; a blank refused; no family
+# loaded. `grid` and `mullions` may each be left out, never both. Its outputs
+# are this card's, the same names and types: `applied`, `alreadyAsAsked` and
+# `differs` count positions as well as settings, `readBack` adds the six
+# positions (and, on a curtain system type, the mullion ids it carries),
+# `measured` already counted mullions by type, and an interior type on a
+# direction with no grid lines is said in `findings`, as it was there - counted
+# after this call's own grid write, so a grid and its mullions asked together
+# are judged together.
+#
+# ONE OF ITS RULES WAS NOT CARRIED, AS THE LESS SAFE OF TWO: a mullion position
+# Revit keeps read-only on a WALL type was refused "it may be held by another
+# user in a shared model", the guess this card stopped making for the grid on
+# 2026-10-06 (FRAGMENT-ISSUES 5b-328). A read-only position now gets this
+# card's rule: who holds the type is asked of Revit and said only when Revit
+# says it. Nothing else of that card is left out.
+#
+# Version 3 was proved on main while this merge was being made (NEEDS-CHECKING
+# Group JP, TEST MASS on Revit 2020, signed 2026-11-01 by Ajmal PS, #775) - the
+# proof below. It describes version 3's code, not version 4's, so it stays the
+# record and its fingerprint is stale on purpose. DRAFT until version 4 - the
+# grid, the mullions, and both in one call - is proved and the owner signs.
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -122,6 +157,16 @@ purpose: >
   layout, grid 1 spacing, grid 2 layout, grid 2 spacing. The comments above
   `version` say how they are reached and what is assumed.
 
+  **AND THE TYPE'S MULLIONS (version 4)** - Interior, Border 1 and Border 2
+  for the Vertical and Horizontal Mullions, in a second short table:
+  "vertical interior=Rectangular Mullion: 50 x 150mm; horizontal border
+  2=none". A mullion type is named, and the name has to mean exactly one in
+  the model - a name that matches none is refused with the mullion types the
+  model has, two refused naming both. "none" takes the mullions off a
+  position and is the only word that does; a blank is refused. NOTHING IS
+  LOADED: a mullion family not in the model is refused, because loading one
+  brings its own materials. Either table may be left out, not both.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Every
   refusal is made before the first write. If Revit refuses a write, or cannot
   rebuild the walls with it, the call stops and nothing it did is kept - a type
@@ -153,13 +198,38 @@ contract:
     # spacing. A key left out is left as it was. Layouts: none, fixed
     # distance, maximum spacing, minimum spacing (fixed number is refused -
     # see the purpose). Spacings: millimetres, digits only.
+    #
+    # VERSION 4: MAY BE LEFT OUT, for a call that sets only mullions. Left out
+    # it is read as ";" - the binder's own reading of an empty table - and the
+    # grid is left exactly as it is; `grid` and `mullions` both left out is
+    # refused, "Nothing was named to change".
     - name: grid
       type: IDictionary<string, string>
       source: request
+      optional: true
+      absent: ';'
+    # VERSION 4, from SET_CURTAIN_WALL_MULLIONS - its `mullions`, word for
+    # word. Position=mullion type, SEMICOLONS between - "vertical interior=
+    # Rectangular Mullion: 50 x 150mm; horizontal border 2=none". Positions:
+    # vertical interior, vertical border 1, vertical border 2, horizontal
+    # interior, horizontal border 1, horizontal border 2 - and, for a curtain
+    # system type, grid 1 interior, grid 1 border 1, grid 1 border 2 and the
+    # same three for grid 2. A position left out keeps what it has; "none"
+    # takes its mullions off; a blank is refused. A mullion type is "Family:
+    # Type" or the bare type name when unique, compared exactly. A mullion
+    # type's name cannot hold a semicolon - Revit forbids one in any type name
+    # - so the separator never cuts a name in two. Left out (";", an empty
+    # table) the mullions are left exactly as they are.
+    - name: mullions
+      type: IDictionary<string, string>
+      source: request
+      optional: true
+      absent: ';'
   provides:
     - name: applied
       # Settings Revit now HOLDS as asked AND that this call changed - counted
-      # off the read-back after the rebuild, never off the write.
+      # off the read-back after the rebuild, never off the write. Since
+      # version 4 a mullion position is one setting here.
       role: result
       type: int
     - name: differs
@@ -191,7 +261,9 @@ contract:
       # Justification, Angle and Offset, measured; for a curtain system type,
       # which of Revit's grid ids it carries as well. A STRING, because a reply
       # cuts a list to three items, and this is the evidence. Accounting: it
-      # describes what `applied` counts, and on a refusal it is empty.
+      # describes what `applied` counts, and on a refusal it is empty. Version
+      # 4: all six mullion positions too, asked or not, beside what each held,
+      # and on a curtain system type the mullion ids it carries.
       role: accounting
       type: string
     - name: measured
@@ -204,15 +276,19 @@ contract:
       role: accounting
       type: string
     - name: refused
-      # Why nothing was changed, in plain words. Empty when the call ran.
+      # Why nothing was changed, in plain words - for a mullion name that
+      # matches no mullion type (version 4), WITH the names the model has.
+      # Empty when the call ran.
       role: accounting
       type: string
     - name: findings
       type: IList<string>
 
-# VERSION 2'S PROOF, KEPT AS A RECORD. It no longer describes the code
-# (version 3, 2026-10-29); NEEDS-CHECKING Group JP re-proves the wall-type path
-# and proves the curtain system type's.
+# VERSION 3'S PROOF, KEPT AS A RECORD - NEEDS-CHECKING Group JP, signed
+# 2026-11-01 by Ajmal PS (#775), which settled the curtain system type's grid
+# ids: the type carries SPACING_LAYOUT_1 and _2 and SPACING_LENGTH_1 and _2. It
+# no longer describes the code (version 4, 2026-11-01, the mullions merged in).
+# Version 2's proof, Project2 on Revit 2024 signed 2026-10-06, is in git history.
 proof:
   date: '2026-11-01'
   by: Ajmal PS
@@ -321,9 +397,8 @@ compatibility-note: >
   CurtainGrid.Grid1Angle "the U grid line pattern" and Grid2Angle the V one,
   and says nothing of which way either runs on a face.
 
-# ROUTING - repeated in SET_CURTAIN_WALL_MULLIONS, REPORT_CURTAIN_ELEMENTS,
-# WRITE_ELEMENT_PARAMETERS, DUPLICATE_TYPE, CREATE_WALL and
-# ADD_CURTAIN_GRID_LINES.
+# ROUTING - repeated in REPORT_CURTAIN_ELEMENTS, WRITE_ELEMENT_PARAMETERS,
+# DUPLICATE_TYPE, CREATE_WALL and ADD_CURTAIN_GRID_LINES.
 #
 #   "set the curtain wall grid spacing"    -> here
 #   "make the vertical grid fixed distance
@@ -349,9 +424,44 @@ compatibility-note: >
 #                                             widened, the owner's word, as it is
 #                                             PROVEN (NEEDS-CHECKING JP17)
 #   "change the mullions on this curtain
-#    wall"                                 -> SET_CURTAIN_WALL_MULLIONS. The grid
-#                                             decides where interior mullions can
-#                                             sit; their TYPES are set there
+#    wall", "set the mullions on this
+#    curtain wall type", "put 50 x 150
+#    mullions on the borders"              -> here, `mullions` (version 4,
+#                                             SET_CURTAIN_WALL_MULLIONS merged
+#                                             in). The grid decides where
+#                                             interior mullions can sit; both are
+#                                             set in one call
+#   "take the top mullion off"             -> here, mullions horizontal border 2=none
+#   "put mullions on the curtain system
+#    type"                                 -> here, grid 1 or grid 2 positions
+#                                             (DRAFT until Group JP)
+#   "which mullions are on this curtain
+#    system"                               -> NOT HERE - a question never lands
+#                                             on a write (D-86). Nothing reads a
+#                                             curtain system type's positions yet
+#                                             (NEEDS-CHECKING JP17)
+#   "change the mullions on just this wall" -> DUPLICATE_TYPE first, then
+#                                             CHANGE_ELEMENT_TYPE, then here on
+#                                             the copy
+#   "split this curtain wall into 4 equal bays with mullions" -> ADD_CURTAIN_GRID_LINES
+#                                             - lines on ONE wall, with mullions on
+#                                             those lines only
+#   "change this one mullion"              -> CHANGE_ELEMENT_TYPE, with that
+#                                             mullion selected - one instance
+#   "which mullion type is on the curtain wall borders" -> REPORT_CURTAIN_WALL_TYPE,
+#                                             which reads all six positions by
+#                                             the same ids and changes none
+#   "what are the mullion types in this model" -> SELECT_TYPES, on Curtain Wall
+#                                             Mullions with both name filters
+#                                             blank. Measured 2026-09-24 it
+#                                             reached SET_CURTAIN_WALL_MULLIONS,
+#                                             refused for want of a table; that
+#                                             card's routing block keeps the
+#                                             record
+#   "set the Interior Type parameter"      -> NOT WRITE_ELEMENT_PARAMETERS. The
+#                                             name appears once per direction,
+#                                             and it holds a type reference
+#   "load a mullion family"                -> NOT HERE, and not by Heron
 #   "change the grid on just this curtain wall" -> DUPLICATE_TYPE first, then
 #                                             CHANGE_ELEMENT_TYPE to put that wall
 #                                             on the copy, then here on the copy.
@@ -381,7 +491,7 @@ compatibility-note: >
 #                                             tool typed, never the type's layout.
 #                                             "add a grid line" with no curtain
 #                                             wall in it is a building grid:
-#                                             CREATE_GRID
+#                                             CREATE_GRIDS
 #   "how many grid lines are in this
 #    curtain wall"                         -> REPORT_CURTAIN_ELEMENTS. A question
 #                                             must not land on a write (D-86)
@@ -433,6 +543,25 @@ utterances:
   # sentence, and a comment is not indexed, so ranking decided: "make the
   # vertical grid fixed distance 1500": CREATE_GRID on lexical answered it.
   - make the vertical grid fixed distance 1500
+  # MOVED 2026-11-01 from SET_CURTAIN_WALL_MULLIONS, merged into this card.
+  - set the mullions on this curtain wall type
+  - set a curtain wall's mullions on the type
+  - change the mullion type on the curtain wall
+  - put rectangular mullions on the curtain wall borders
+  - take the border mullions off this curtain wall type
+  # MEASURED 2026-11-01, the trained backend (model2vec potion-base-8M, a
+  # private store per tree): with the merge, three of row 5b-329's select
+  # guards (tests/test_routing_phrases.py) - "select all walls of type Curtain
+  # Wall", "select all the curtain walls of type Storefront", "select all
+  # instances of the Storefront curtain wall type" - rank this card first, a
+  # write; on the base they reached REPORT_CURTAIN_WALL_TYPE, the read. NOT
+  # TUNED AWAY. With this card's searched text put back to version 3's (no
+  # moved sentence, no version 4 paragraph) and only SET_CURTAIN_WALL_MULLIONS
+  # retired, one guard still went to a write (SET_CURTAIN_PANEL_TYPE): the
+  # guards sat within a hair of the setters, and the mullion card's share of
+  # the vote was what held the read first. The fix is a read that owns
+  # "select all walls of type X" - recorded for the owner, never a sentence
+  # reworded here.
   # NOT AN UTTERANCE, MEASURED 2026-10-29: "set the curtain system grid spacing
   # to 1500" - the curtain system type's own case - was declared here with
   # version 3 and taken back the same day. Declared, it moved this card from

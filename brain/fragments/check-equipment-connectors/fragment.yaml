@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,36 @@ capability: CHECK_EQUIPMENT_CONNECTORS
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO REPORT_CONNECTORS (report-connectors), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to REPORT_CONNECTORS. The proof below, where there is one, is the record
+# of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: REPORT_CONNECTORS
+  why: >
+    The same connectors, read once. REPORT_CONNECTORS since its version 3
+    grades every joint on a placed family as this card did - DOMAIN MISMATCH
+    its own class, a round-to-rectangular joint a SHAPE CHANGE said and not
+    measured, same shape compared per shape within `sizeTolerance` in
+    millimetres (now optional, left out compared exactly), NOTHING PLUGGED IN
+    counted in `unconnectedSpigots`, the element named in `mismatched`, the
+    summary warning that sizes are what the family declares, "not a placed
+    family instance" and "no MEP model at all" said - beside its description
+    of each connector. Two rules were opposite and the keeper's, the safer,
+    was kept: this card took the first ref in AllRefs not owned by the unit as
+    the partner, so the logical MEPSystem could be graded as the duct on the
+    other side, and it trusted IsConnected to say a spigot was plugged in;
+    the keeper drops the system and the element's own refs first, and a spigot
+    with no physical partner is open whatever the flag says. That defect is
+    the likeliest reason a tolerance of 0 and of 99999 gave nearly the same
+    `mismatched` on Snowdon (FRAGMENT-ISSUES sections 3c and 3i).
 
 purpose: >
   Checks every connector on a piece of equipment against what is actually

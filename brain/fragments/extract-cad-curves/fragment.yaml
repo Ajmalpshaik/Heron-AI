@@ -131,7 +131,7 @@ compatibility-note: >
   are present 2020 through 2027, compiled at both ends. The layer is read from
   the graphics style's category NAME, never from an id treated as a number.
 
-# ROUTING - repeated in CREATE_LINE, LIST_LINKED_MODELS and REMAP_LINE_STYLES.
+# ROUTING - repeated in DRAW_FAMILY_DETAIL_LINES, LIST_LINKED_MODELS and REMAP_LINE_STYLES.
 #
 #   "trace this cad background"      -> here
 #   "turn the dwg lines into
@@ -139,7 +139,7 @@ compatibility-note: >
 #   "what layers are in this dwg"    -> here, with no layer named. That is the
 #                                       survey, and it creates nothing
 #   "draw a line from here to
-#    there"                          -> CREATE_LINE - one line somebody
+#    there"                          -> DRAW_FAMILY_DETAIL_LINES - one line somebody
 #                                       specifies, not linework read out of a
 #                                       drawing
 #   "what is linked into this

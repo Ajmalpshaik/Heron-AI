@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "every material this project or family holds, by name, with i
 kind: filter
 domain: revit.elements
 capability: LIST_MATERIALS
-version: 4
+version: 5
 source: OFFICIAL
 risk: READ
 
@@ -108,6 +108,28 @@ risk: READ
 # whose description is a sentence its kind shares ("Generic material." on 557
 # assets). Assets Revit marks Hidden are left out and counted. Only
 # withLibraryAppearances' answer changed.
+
+# VERSION 5, 2026-11-01 - REPORT_MATERIAL_TEXTURES WAS MERGED INTO THIS CARD on
+# the owner's instruction ("make sure there is no duplicate tools", then "ok go
+# ahead merge all"), and is DEPRECATED. The same walk - the document's
+# materials, read only - and one more tab of each: the files behind its
+# appearance. What it had and this card lacked: every slot of the rendering
+# asset with a bitmap (diffuse, bump, cutout and the rest), each stored path
+# and whether a file is there; a path with no drive or share reported as
+# RELATIVE - Revit's texture folders and Options' render appearance paths are
+# not readable here - and never called missing; the full paths with no file in
+# `missing`; and `onlyMissing`, the missing ones alone. They are `withTextures`
+# and `onlyMissing` here, `textures` and `missing` the same names and types;
+# its `materialCount` - the materials that USE a texture - is said in the
+# findings, because this card's `materialCount` is every material listed. It
+# reads over the materials this card lists, so namePattern narrows it too.
+# Nothing of that card is left out, and no rule of the two was opposite.
+# While impl/ changed anyway, the second finding's pointer for unused
+# materials was repointed from FIND_UNUSED_MATERIALS - merged into
+# FIND_PURGEABLE_ELEMENTS on 2026-11-01 and offered by nothing - to that tool,
+# with includeMaterials.
+# The proof below (2026-10-20) no longer describes the code (impl/ changed) and is
+# kept as the record; DRAFT until version 5 is proved on a real model (D-30).
 purpose: >
   Counts and lists everything the Material Browser shows for the document
   Heron is working on - a project, or a family open in the Family Editor: how
@@ -116,7 +138,8 @@ purpose: >
 
   **IT LISTS WHAT THE DOCUMENT HOLDS, NOT WHAT IS USED.** One read, and nothing
   else. Whether anything uses an entry means walking every element, every type
-  and every painted face - FIND_UNUSED_MATERIALS' walk, not repeated here.
+  and every painted face - FIND_PURGEABLE_ELEMENTS' walk with includeMaterials
+  (FIND_UNUSED_MATERIALS' until 2026-11-01), not repeated here.
 
   **A FAMILY'S LIST IS THE FAMILY'S OWN.** In the Family Editor the answer is
   what that family carries, never what a project it is loaded into holds, nor
@@ -132,6 +155,10 @@ purpose: >
   identity, graphics and render appearance in one line - and which have no
   appearance at all; `withLibraryAppearances` lists the appearance assets
   Revit's library holds.
+
+  **THE TEXTURE FILES, WHEN ASKED** (version 5): `withTextures` lists the
+  image files each appearance uses, slot by slot, with whether each file is
+  there, and names the missing ones; `onlyMissing` lists only those.
 
   ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
 
@@ -165,6 +192,18 @@ contract:
       source: request
       optional: true
       absent: all
+    # Version 5, from REPORT_MATERIAL_TEXTURES. The image files behind each
+    # listed material's appearance, slot by slot, with whether each is there.
+    - name: withTextures
+      type: bool
+      source: request
+      optional: true
+    # Version 5. Only the texture files that are missing - and the textures
+    # are read for it, withTextures or not. Absent reads false.
+    - name: onlyMissing
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: materialCount
       # How many materials the document holds - or, given namePattern
@@ -193,7 +232,8 @@ contract:
       # The same materials as element ids, in the same order, for a next step
       # in a chain. Named for what it holds - ids, not names - and no
       # fragment's need is called `materialIds`. NOT `materials`, which
-      # READ_ELEMENT_MATERIAL provides as a dictionary of a different type.
+      # REPORT_MATERIAL_TAKEOFF provides (READ_ELEMENT_MATERIAL until 2026-11-01)
+      # as a dictionary of a different type.
       role: result
       type: IList<ElementId>
     - name: libraryAppearances
@@ -204,6 +244,17 @@ contract:
       # CREATE_STARTER_MATERIALS take. Empty when not asked.
       role: result
       type: string
+    - name: textures
+      # Version 5, from REPORT_MATERIAL_TEXTURES. ONE STRING, a line per
+      # texture file: "material | slot | path | found, MISSING or relative".
+      # Empty when not asked.
+      role: result
+      type: string
+    - name: missing
+      # Version 5. "material / slot: path" for each FULL path with no file - a
+      # relative path is never in it (D-52).
+      role: result
+      type: IList<string>
     - name: findings
       type: IList<string>
 
@@ -1113,9 +1164,14 @@ compatibility-note: >
   Application.GetAssets(AssetType.Appearance), Asset.Title, and the property
   names on Generic, UnifiedBitmap and SchemaCommon - present 2020 to 2027,
   read off the shipped assemblies with tools/api-surface on 2026-10-20 - and
-  names the appearance-asset namespace, supplied since D-146.
+  names the appearance-asset namespace, supplied since D-146. Version 5's
+  Asset.Size, Get, FindByName, a property's NumberOfConnectedProperties and
+  GetSingleConnectedAsset, and AssetPropertyString.Value are present 2020
+  through 2027 - read off RevitAPI.xml in the Nice3point reference packages
+  for all eight releases on 2026-10-12, for REPORT_MATERIAL_TEXTURES - and
+  System.IO's Path.IsPathRooted and File.Exists are .NET's own.
 
-# ROUTING - repeated in FIND_UNUSED_MATERIALS and
+# ROUTING - repeated in FIND_PURGEABLE_ELEMENTS and
 # TRANSFER_MATERIALS_BETWEEN_DOCUMENTS, the two that were handed row 5b-376's
 # question before this existed.
 #
@@ -1123,16 +1179,16 @@ compatibility-note: >
 #   "what materials are in this project"  -> here
 #   "show me all the materials"           -> here - the list, used or not
 #   "how many materials are there"        -> here - materialCount
-#   "which materials is nobody using"     -> FIND_UNUSED_MATERIALS - the
+#   "which materials is nobody using"     -> FIND_PURGEABLE_ELEMENTS, includeMaterials - the
 #                                            expensive walk this one does not do
-#   "what material is that"               -> READ_ELEMENT_MATERIAL - the
+#   "what material is that"               -> REPORT_MATERIAL_TAKEOFF - the
 #                                            material of an ELEMENT, a different
 #                                            question with the same word in it
 #   "everything in galvanised steel"      -> SELECT_BY_MATERIAL, which needs a
 #                                            material's name - found here
-#   "set the material colour"             -> SET_MATERIAL_COLOUR, by name
-#   "make this extrusion steel"           -> SET_FAMILY_FORM_MATERIAL, by name
-#   "make a new material"                 -> CREATE_MATERIAL
+#   "set the material colour"             -> SET_MATERIAL_PROPERTIES, Shading Colour, by name
+#   "make this extrusion steel"           -> LINK_FAMILY_PARAMETER, by name
+#   "make a new material"                 -> CREATE_STARTER_MATERIALS
 #   "bring the materials over from the
 #    template"                            -> TRANSFER_MATERIALS_BETWEEN_DOCUMENTS,
 #                                            the write row 5b-376's question was
@@ -1149,7 +1205,12 @@ compatibility-note: >
 
 # ROUTING (2026-10-12, the gap fill)
 #
-#   "which material textures are missing"   -> REPORT_MATERIAL_TEXTURES
+#   "which material textures are missing"   -> here, onlyMissing (version 5,
+#                                              REPORT_MATERIAL_TEXTURES merged in)
+#   "where are the texture images for the materials" -> here, withTextures
+#   "put an oak wood texture image on this material" -> SET_MATERIAL_APPEARANCE -
+#                                              its Image value also repaths a
+#                                              missing file
 #
 # ROUTING (2026-10-20, version 3 - the material tools of Group IA)
 #
@@ -1173,3 +1234,8 @@ utterances:
   - list every material with its appearance and graphics settings
   - show the appearance asset of each material
   - list the appearance assets in the revit library
+  # MOVED 2026-11-01 from REPORT_MATERIAL_TEXTURES, merged into this card.
+  - which material textures are missing
+  - where are the texture images for the materials stored
+  - list the image files the materials use
+  - check the material appearance files are all there

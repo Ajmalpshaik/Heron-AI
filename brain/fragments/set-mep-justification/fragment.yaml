@@ -22,7 +22,7 @@ purpose: >
   reducing to a 250 keeps its CENTRELINE by default, so the top steps up and
   the bottom steps down at the transition. Above a ceiling only the top matters,
   and a run set out on its centres loses headroom at every size change for no
-  reason. ALIGN_MEP_ELEVATION moves whole runs to a level; this decides where
+  reason. ALIGN_ELEMENTS moves whole runs to a level; this decides where
   the pipe sits inside its own size.
 
   **The offsets are set, not the dropdown.** Revit shows justification as a
@@ -81,13 +81,13 @@ compatibility-note: >
   ends. Millimetres become feet by dividing by 304.8 as plain arithmetic - no
   units API, which is what changed shape at 2021.
 
-# ROUTING - repeated in ALIGN_MEP_ELEVATION, SET_MEP_SIZE and
+# ROUTING - repeated in ALIGN_ELEMENTS, SET_MEP_SIZE and
 # MEASURE_DISTANCE.
 #
 #   "line these up on their tops"    -> here
 #   "keep the top flat through the reducer" -> here
 #   "set the justification"          -> here
-#   "put these all at 2800"          -> ALIGN_MEP_ELEVATION - whole runs moved
+#   "put these all at 2800"          -> ALIGN_ELEMENTS - whole runs moved
 #                                       to a level. This decides where the pipe
 #                                       sits INSIDE its own size, which is a
 #                                       different question and often the one

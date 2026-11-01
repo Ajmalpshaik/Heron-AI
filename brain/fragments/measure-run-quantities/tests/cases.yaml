@@ -49,7 +49,47 @@ negative:
       curve or from a recomputation rather than from the parameter Revit
       schedules
 
+  # VERSION 2 - MEASURE_ELEMENT_LENGTHS MERGED IN. Each case below FAILS on
+  # version 1, which had no millimetre outputs, no total and no curve fallback.
+
+  - given: VERSION 2. One duct drawn exactly 2000 mm long, measure left out
+    expect: >
+      lengthsMm holds 2000.0 for it and totalMm is 2000.0 - MEASURED against
+      the Length in Revit's Properties palette - while `lengths` and
+      `quantities` still carry 6.5617 feet, unchanged from version 1, so
+      SUM_BY_GROUP's chain reads what it always did. Leaving `measure` out is
+      length; version 1 refused the call as needing it
+
+  - given: VERSION 2. Four walls from building-shell step 16
+    expect: >
+      totalMm the sum of the four walls' Length in a wall schedule with a Grand
+      Total, to the millimetre; each wall in lengthsMm; each in areaUnknown,
+      which is a fact about a wall, not a failure
+
+  - given: VERSION 2. A structural beam with a location curve and no CURVE_ELEM_LENGTH
+    expect: >
+      measured along its location curve, in lengths and lengthsMm - not in
+      lengthUnknown, where version 1 put it
+
+  - given: VERSION 2. The same duct handed in twice
+    expect: >
+      measured ONCE: one entry in lengthsMm and totalMm counting it once. A
+      double count would show only in the total, which nobody re-checks
+
+  - given: VERSION 2. A selection of 20 ducts and 34 duct FITTINGS
+    expect: >
+      lengthsMm has 20 entries, lengthUnknown the 34 fittings, and totalMm the
+      ducts alone - NOT a 54-element total in which 34 silently counted zero
+
+  - given: VERSION 2. An element whose length reads 0
+    expect: >
+      in lengthUnknown and NOT in lengths, lengthsMm or the total - a
+      degenerate element to look at, not a measurement
+
 second_route:
   - >
     build a Revit schedule of the same category with Length and Area columns
     and a total, and compare - Revit is the second route, not another script
+  - >
+    VERSION 2, from MEASURE_ELEMENT_LENGTHS: a Revit schedule of the same
+    category with a Length column and Grand Total switched on, against totalMm

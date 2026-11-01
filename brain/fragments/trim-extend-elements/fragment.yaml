@@ -40,7 +40,7 @@ purpose: >
   inventing one is worse than saying so.
 
   **This breaks MEP connections at the ends it moves.** A duct dragged off its
-  neighbour is disconnected, and Revit does not put it back. PLACE_MEP_FITTING
+  neighbour is disconnected, and Revit does not put it back. FIT_MEP_JOINTS
   joins the new corner with a real elbow, which is usually the next step.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). The
@@ -110,17 +110,17 @@ compatibility-note: >
 # takeoffs, look at each takeoff before trusting the report, and do not take a
 # terminal reading "connected" as the answer. NEEDS-CHECKING AJ3.
 
-# ROUTING - repeated in PLACE_MEP_FITTING, MOVE_ELEMENTS and FILLET_LINES.
+# ROUTING - repeated in FIT_MEP_JOINTS, MOVE_ELEMENTS and FILLET_LINES.
 #
 #   "make these two meet"            -> here
 #   "trim these back to the corner"  -> here
 #   "extend this until it hits
 #    that one"                       -> here
-#   "put an elbow in"                -> PLACE_MEP_FITTING. Run this FIRST so
+#   "put an elbow in"                -> FIT_MEP_JOINTS. Run this FIRST so
 #                                       the two ends coincide - a fitting needs
 #                                       connectors close enough to bridge
 #   "round that corner off"          -> FILLET_LINES for drafting lines,
-#                                       PLACE_MEP_FITTING for a duct or pipe.
+#                                       FIT_MEP_JOINTS for a duct or pipe.
 #                                       An MEP corner is rounded by a real
 #                                       fitting, not by an arc
 #   "move this duct 200 across"      -> MOVE_ELEMENTS - a whole element, not

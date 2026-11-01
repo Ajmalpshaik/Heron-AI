@@ -83,10 +83,47 @@ namespace Heron.Revit.Addin
         /// 5b-227 had left this case open; CREATE_LINE's optional view, the
         /// case it named, binds null through this too.
         ///
+        /// A THIRD CASE SINCE 2026-11-01: AN `IList<View>` DECLARED
+        /// `optional: true` BINDS AN EMPTY LIST. PLACE_VIEW_ON_SHEET took in
+        /// PLACE_VIEWS_ON_SHEET, whose views were HANDED ON as `elements` -
+        /// FIND_UNPLACED_VIEWS' answer - and the keeper names them in `views`.
+        /// It reads `elements` only when `views` names none, and could not be
+        /// asked that way: an absent view list was refused as the caller's to
+        /// supply. An empty list is the one value a list has for "none named",
+        /// and the card that marks it optional is the one that says what it
+        /// does then - so it is not invented here either. Only that spelling,
+        /// and only when the card marks it; no card marked one before.
+        ///
+        /// A FOURTH CASE SINCE 2026-11-01: AN `Element` OR AN `MEPSystemType`
+        /// DECLARED `optional: true` BINDS NULL. Three merges needed one tool
+        /// to do two jobs, one of which has no such value: TRACE_CONNECTIVITY
+        /// took in FIND_SYSTEM_ISLANDS, which partitions the whole set and has
+        /// no `start`; ALIGN_ELEMENTS took in ALIGN_MEP_ELEVATION, whose typed
+        /// height has no `reference`; CREATE_DUCT_RUNS took in cable tray and
+        /// conduit, and CREATE_MEP_SYSTEM electrical circuits, neither of which
+        /// has a duct or piping system type. An element and a resolved type
+        /// have no empty form but null, and the card that marks one optional
+        /// is the one that says what null does - so it is not invented here
+        /// either. Only those two spellings, and only when the card marks it;
+        /// no card marked one before.
+        /// AND A FIFTH, THE SAME DAY: AN `Element` DECLARED `optional:
+        /// true` BINDS NULL, AND AN `IList<XYZ>` SO DECLARED BINDS AN EMPTY
+        /// LIST. CREATE_OPENING took in CREATE_FAMILY_HOST_OPENING, whose
+        /// opening goes in a family template's OWN wall or ceiling - found by
+        /// the fragment, never named - drawn by a `shape` in millimetres. The
+        /// keeper's `host` and `boundary` are a project's, and left out there
+        /// they were refused as the caller's to supply, so the family half
+        /// could not be asked at all. Null is an element's one value for "none
+        /// named" and an empty list a list's, and the card that marks them
+        /// optional reads them so: in a project it refuses them by name ("No
+        /// host was given", "at least three boundary points") exactly as
+        /// before. Only those spellings, and only when the card marks them; no
+        /// card marked one before.
+        ///
         /// NOTHING ELSE. A name or a number has no value that means "not
         /// asked", and inventing one is how a job runs against the wrong
         /// thing and reports success - so those still refuse, and so does a
-        /// bool or a View nobody marked optional. Row 5b-227's two string
+        /// bool, a View, a view list, an element or a point list nobody marked optional. Row 5b-227's two string
         /// cards are refused exactly as they were. A card that NAMES what
         /// leaving a value out means is DeclaredAbsent's, asked first (row
         /// 5b-488).
@@ -103,6 +140,11 @@ namespace Heron.Revit.Addin
             var wanted = (type ?? "").Trim();
             if (wanted == "bool") return "false";
             if (wanted == "View") return "null";
+            if (wanted == "IList<View>") return "new List<View>()";
+            if (wanted == "Element") return "null";
+            if (wanted == "MEPSystemType") return "null";
+            // 2026-11-01: CREATE_OPENING's family half (see above).
+            if (wanted == "IList<XYZ>") return "new List<XYZ>()";
             return null;
         }
 
@@ -181,6 +223,16 @@ namespace Heron.Revit.Addin
         /// nothing to find" rather than "nobody was asked". A list of
         /// ElementId is not an element list here, as in IsElementList.
         ///
+        /// A SECOND CASE SINCE 2026-11-01: A LIST OF CURVES THE CARD MARKS
+        /// `optional: true` BINDS EMPTY. SET_VIEW_CROP took in
+        /// SET_VIEW_CROP_TO_SHAPE, whose `boundary` loop is handed on from
+        /// READ_ROOM_GEOMETRY - a shaped crop when a loop is handed on, the
+        /// rectangle round the elements when none is. Left unfilled, the need
+        /// was refused, so the rectangle could no longer be asked for at all.
+        /// An empty list is the one value a list has for "none handed on", and
+        /// the card that marks it optional says what it does then. Only those
+        /// spellings, only when marked, and only after the chain was asked.
+        ///
         /// Returns the C# expression to bind, which the caller writes into the
         /// generated prologue. Nothing here touches an Autodesk type, so it is
         /// proved without Revit in Heron.BindingNote.TestHost.
@@ -191,6 +243,13 @@ namespace Heron.Revit.Addin
                 return null;
 
             var shape = (type ?? "").Replace(" ", "");
+            // ONE MORE CASE, 2026-11-01: A QUANTITY PER ELEMENT THE CARD MARKS
+            // OPTIONAL BINDS NULL. GROUP_AND_COUNT version 2 (SUM_BY_GROUP merged
+            // in) counts when no measuring fragment handed `quantities` on and
+            // totals when one did - and tells "nobody handed any on" (null) from
+            // "handed on empty" (every element missing a quantity). An empty
+            // dictionary here would erase exactly that difference, so it is null.
+            if (shape == "IDictionary<ElementId,double>") return "null";
             if (shape.IndexOf("ElementId", System.StringComparison.Ordinal) >= 0) return null;
             switch (shape)
             {
@@ -199,6 +258,11 @@ namespace Heron.Revit.Addin
                 case "ICollection<Element>":
                 case "IEnumerable<Element>":
                     return "new List<Element>()";
+                case "IList<Curve>":
+                case "List<Curve>":
+                case "ICollection<Curve>":
+                case "IEnumerable<Curve>":
+                    return "new List<Curve>()";
                 default:
                     return null;
             }

@@ -571,8 +571,9 @@ def job_file(plan, by_slug, chain_supply, threshold_ordinal,
         add("#     python mcp/client/heron_bridge_client.py prove \\")
         add("#         %s \\" % " \\\n#         ".join(
             f.slug for f in plan.steps))
-        add("#         --set categoryName=%s --set inViewOnly=%s"
-            % (GJ.FILL_IN.replace(" ", "-"), GJ.FILL_IN.replace(" ", "-")))
+        add("#         %s" % " ".join(
+            "--set %s=%s" % (name, GJ.FILL_IN.replace(" ", "-"))
+            for name in GJ.SHARED_INPUTS))
         add("#")
     for line in GJ.wrap(
             "`write: true` is not typed here by hand - it is the fragment's "

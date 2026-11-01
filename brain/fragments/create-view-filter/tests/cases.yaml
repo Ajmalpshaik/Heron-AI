@@ -20,7 +20,115 @@ positive:
       on the view with red lines - the operator read off the front of the
       value (version 3)
 
+  - given: >
+      VERSION 4. filterName "Supply Air, Return Air, Exhaust Air", categoryIds
+      "Air Terminals, Ducts, Flex Ducts, Duct Fittings, Duct Accessories",
+      parameterName "System Classification", matchValue "Supply Air, Return
+      Air, Exhaust Air", NO view and NO colour, in a project with none of
+      those filters
+    expect: >
+      three filters created, on no view - createdIds three, `created` the
+      first. readBack names each with the five categories as Revit holds them,
+      the rule "System Classification equals '<value>'", and "on no view". The
+      count each catches today is the model's own - an exhaust filter in a
+      model with no exhaust ductwork catches 0 and is still created. Version 3
+      takes one name and refuses a missing view, so this FAILS on it
+      (CREATE_VIEW_FILTERS_BY_RULE's case)
+
+  - given: VERSION 4. the same call again, straight after
+    expect: >
+      nothing created, alreadyExists naming all three, and refused saying they
+      were left as they were. Never an overwrite and never a second copy
+
+  - given: >
+      VERSION 4. two names, one of them already a SELECTION filter in the
+      project
+    expect: >
+      the other made, the taken one in alreadyExists. Version 3 scanned rule
+      filters only, so Revit threw on the duplicate - this FAILS on it
+
+  - given: VERSION 4. categoryIds "OST_DuctCurves" instead of "Ducts"
+    expect: the same filter as "Ducts" gives - Revit's own name is taken too. Version 3 refused it
+
+  - given: 'VERSION 4. categories Levels, matchValue "does not contain Level 1", no view'
+    expect: >
+      readBack says "rule Name does not contain 'Level 1'" - the
+      FilterInverseRule Revit holds is unwrapped - and catches the levels not
+      called Level 1
+
+  - given: >
+      VERSION 4 REVIEW FIX. categories Air Terminals, parameterName Comments,
+      matchValue "has no value", filterName "HERON No Comment", no view
+    expect: >
+      one filter created; readBack says "rule Comments has no value" and the
+      count it catches is the air terminals whose Comments is empty. "is
+      blank" makes the same filter. FAILS on the version 4 first draft, which
+      read "has no value" as text and built Comments equals 'has no value'
+      catching 0. NEEDS REAL REVIT for one thing no reference assembly says:
+      whether a Comments typed and then cleared to nothing is caught as well
+      as one never typed - write down which
+
+  - given: >
+      VERSION 4 REVIEW FIX. moreRules "Comments has no value" beside
+      System Classification "Supply Air", combine and
+    expect: >
+      one filter: supply ducts with no Comments - readBack "System
+      Classification equals 'Supply Air' AND Comments has no value"
+
+  - given: >
+      VERSION 4 REVIEW FIX. ONE filterName "HERON Owner", parameterName
+      Comments, matchValue "Smith, John"
+    expect: >
+      one filter, rule Comments equals 'Smith, John' - the comma inside the
+      value kept, as version 3 read it. FAILS on the version 4 first draft:
+      the binder split the list into two values for one name and it was
+      refused "1 filter name(s) and 2 value(s)"
+
+  - given: >
+      VERSION 4 REVIEW FIX. filterName "HERON A, HERON B", matchValue
+      'Supply Air, "Return, Mixed"'
+    expect: >
+      two filters - HERON A equals 'Supply Air', HERON B equals 'Return,
+      Mixed', the quotes taken off. FAILS on the first draft, which split the
+      quoted value at its comma and refused three values for two names
+
+  - given: VERSION 4 REVIEW FIX. matchValue '"does not contain"' in double quotes
+    expect: one filter, rule equals 'does not contain' - quoted text is taken as written
+
 negative:
+  - given: VERSION 4 REVIEW FIX. matchValue left EMPTY, one filter name
+    expect: >
+      refused, nothing made, and the refusal names "has no value" as the way
+      to ask for an empty parameter. An accidental blank never becomes a rule
+
+  - given: VERSION 4 REVIEW FIX. matchValue "has no value Level 1"
+    expect: refused - "has no value" takes nothing after it; "equals has no value Level 1" matches the words
+
+  - given: VERSION 4 REVIEW FIX. two names, matchValue 'Supply Air, "Return'
+    expect: refused - a double quote opened and never closed - before Revit is asked anything
+
+  - given: >
+      VERSION 4. "Air Terminals, Ducts, Walls" with System Classification
+    expect: >
+      NOTHING created, and cannotFilter names Walls - it cannot be filtered by
+      System Classification - while the two good categories are not named.
+      Version 3 said only that no shared parameter has the name, so this FAILS
+      on it
+
+  - given: VERSION 4. three names and two values
+    expect: refused before Revit is asked anything - each filter needs exactly one value, in order
+
+  - given: VERSION 4. a filter name holding a colon, or the same name twice
+    expect: refused by name before anything is created
+
+  - given: VERSION 4. a view given and no colour, or a colour and no view
+    expect: >
+      refused before anything is made - a filter put on a view here is
+      coloured in the same call, and a colour with no view has nowhere to go
+
+  - given: VERSION 4. two names and a moreRules value
+    expect: refused - moreRules makes ONE filter with several rules, and is not shared out
+
   - given: a filter name already in the project
     expect: >
       refused before anything is touched. Filters are project-wide, so another
@@ -66,6 +174,58 @@ negative:
       the same code on every release since version 3 - the factory is found
       by reflection, so there is no branch to take. Version 2 took its
       2023-onward branch and failed on 2020 to 2022
+
+  # VERSION 5 - from CREATE_VIEW_FILTERS_BY_VALUE. Each FAILS on version 4,
+  # which had no perValue.
+  - given: >
+      VERSION 5. ducts carrying five distinct System Type values selected,
+      perValue true, parameterName "System Type", namePrefix "MECH - ", a view,
+      no colour, no categories typed
+    expect: >
+      five filters "MECH - <value>" in the project's filter list, each on the
+      view in its own colour, stepped round the hue wheel - CHECKED in
+      Visibility/Graphics, Filters tab - valuesFound the five values, and a
+      duct drawn AFTER the run matching one value picking up its colour with
+      nobody touching anything
+
+  - given: VERSION 5. the same, some ducts with the parameter blank
+    expect: >
+      a sixth filter "MECH - (no value)" whose rule reads "has no value" -
+      this card's rule, not an equals rule on empty text
+
+  - given: VERSION 5. twelve distinct values
+    expect: twelve visibly different colours - a palette of six repeats on the seventh
+
+  - given: >
+      VERSION 5. a mixed selection where one DERIVED category does not carry
+      the parameter
+    expect: >
+      that category left OUT, named in droppedCategories, and the filters made
+      on the rest. Revit rejects a WHOLE filter naming a category that lacks
+      the parameter
+
+  - given: >
+      VERSION 5. the same selection with that category TYPED in categoryIds
+    expect: >
+      NOTHING made, cannotFilter naming it - a category the caller chose stops
+      the call, as version 4 did. The opposite rule from the derived case, on
+      purpose
+
+  - given: >
+      VERSION 5. elements carrying the parameter's name twice - a shared
+      parameter of the same name as a built-in one (NEEDS-CHECKING P8)
+    expect: >
+      those elements counted in leftOut as carrying the name twice, giving no
+      value, and no rule built on a parameter taken from one of them
+
+  - given: VERSION 5. perValue true and colour "255,0,0"
+    expect: refused - each filter gets its own colour - and nothing made
+
+  - given: VERSION 5. perValue true and nothing handed in
+    expect: refused - the values are read off the elements - nothing made
+
+  - given: VERSION 5. a value name already a filter
+    expect: skipped and named in alreadyExists, never overwritten, the rest made
 
 second_route:
   - Revit's own View > Filters dialog with the same categories and rule, compared for which elements change colour

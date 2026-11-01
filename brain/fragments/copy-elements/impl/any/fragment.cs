@@ -1,6 +1,33 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `offset`, `toLevels`,
-// `turnDegrees`, `turnCentreMm` and `toWorkset` are in scope; leaves `copies`,
-// `notCopied`, `copiedTo`, `onWorksets` and `refused` behind.
+// `turnDegrees`, `turnCentreMm`, `toWorkset`, `count` and `spacingMm` are in
+// scope; leaves `copies`, `notCopied`, `copiedTo`, `onWorksets`, `refused` and
+// `copiesEach` behind.
+//
+// VERSION 4 (2026-11-01) - ARRAY_ELEMENTS MERGED IN. Copied by the offset,
+// the set can now be REPEATED - an even run along a direction, diffusers down
+// a corridor:
+//
+//   count       how many there are AFTERWARDS, THE ORIGINAL INCLUDED - eight
+//               is the original and seven copies, as Revit's own array counts.
+//               Left out it is 2: one copy, version 3 exactly. 1 or less is an
+//               array of nothing and is refused.
+//   spacingMm   the pitch in millimetres. Given, `offset` is read as a
+//               DIRECTION only - NORMALISED, its length ignored - so a
+//               direction typed as the vector between two points 12 m apart
+//               does not multiply the pitch by twelve. Left out, `offset`
+//               itself is the step.
+//
+// THE SET IS COPIED TOGETHER AT EVERY STEP - the safer of the two cards'
+// rules. ARRAY_ELEMENTS copied element by element, which breaks the
+// relationships between them: a duct and its fitting arrive unconnected. Here
+// each step is one CopyElements call over the whole set, as the offset copy
+// always was, and a step Revit copies fewer for is counted in `notCopied`.
+//
+// A PLAIN COPY, NOT A REVIT ARRAY ELEMENT. A real Array is a constrained group
+// that stays linked and renumbers itself; these copies are independent.
+//
+// A count or a pitch is applied only when copying by the offset; onto levels
+// either is refused rather than ignored.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). `offset` is in internal FEET.
 //
@@ -62,6 +89,9 @@ var notCopied = 0;
 var copiedTo = "";
 var onWorksets = "";
 string refused = null;
+// VERSION 4, from ARRAY_ELEMENTS: copies of each element - count less the
+// original.
+var copiesEach = 0;
 
 var source = new List<ElementId>();
 foreach (var element in elements)
@@ -386,11 +416,31 @@ Action readBackWorksets = () =>
     onWorksets = string.Join("\n", lines);
 };
 
+// VERSION 4: THE RUN, read once for both paths.
+var pitchText = (spacingMm ?? "").Trim();
+var byPitch = pitchText.Length > 0 && !string.Equals(pitchText, "none", StringComparison.OrdinalIgnoreCase);
+double pitchMm = 0;
+string runProblem = null;
+if (count < 2)
+    runProblem = string.Format("A count of {0} is an array of nothing - the count is how many there are "
+        + "afterwards, the original included, so one copy is 2.", count);
+else if (byPitch && (!double.TryParse(pitchText, System.Globalization.NumberStyles.Float,
+                                      System.Globalization.CultureInfo.InvariantCulture, out pitchMm)
+                     || double.IsNaN(pitchMm) || double.IsInfinity(pitchMm) || pitchMm <= 0))
+    runProblem = "\"" + pitchText + "\" is not a spacing - a number of millimetres more than 0.";
+else if (byPitch && (offset == null || offset.GetLength() < 1e-9))
+    runProblem = "A spacing was given and the direction to space along is zero - give `offset` as the "
+        + "direction, \"1,0,0\" for along X.";
+
 if (levelsText.Length == 0)
 {
     if (turnProblem != null)
     {
         refused = turnProblem + " Nothing was copied.";
+    }
+    else if (runProblem != null)
+    {
+        refused = runProblem + " Nothing was copied.";
     }
     else if (Math.Abs(turn) > 1e-12 || centreText.Length > 0)
     {
@@ -407,18 +457,27 @@ if (levelsText.Length == 0)
     }
     else if (source.Count > 0)
     {
-        // VERSION 1, UNCHANGED - but for a named workset, made active for it.
-        var made = copyOnWorkset(() => ElementTransformUtils.CopyElements(doc, source, offset));
-        if (made != null) copies.AddRange(made);
+        // VERSION 1, UNCHANGED for a count of 2 - but for a named workset, made
+        // active for it. VERSION 4: one CopyElements call over the WHOLE SET per
+        // step of the run, so the set's own joins and hosts come along each time.
+        var step = byPitch ? offset.Normalize().Multiply(pitchMm / 304.8) : offset;
+        copiesEach = count - 1;
+        for (var i = 1; i <= copiesEach; i++)
+        {
+            var shift = step.Multiply(i);
+            var made = copyOnWorkset(() => ElementTransformUtils.CopyElements(doc, source, shift));
+            var got = made == null ? 0 : made.Count;
+            if (made != null) copies.AddRange(made);
 
-        // Fewer back than went in. Not an error and not silence either - the
-        // caller needs to know the lists do not line up before it starts pairing
-        // originals with copies.
-        notCopied = source.Count - copies.Count;
-        if (notCopied < 0) notCopied = 0;
+            // Fewer back than went in. Not an error and not silence either - the
+            // caller needs to know the lists do not line up before it starts
+            // pairing originals with copies. An empty return is Revit accepting
+            // the call and copying nothing, never a copy.
+            if (got < source.Count) notCopied += source.Count - got;
 
-        // VERSION 3 - nothing at all unless a workset was asked for.
-        putOnWorksets(copies, offset != null ? offset.X : 0, offset != null ? offset.Y : 0);
+            // VERSION 3 - nothing at all unless a workset was asked for.
+            putOnWorksets(made, shift.X, shift.Y);
+        }
         readBackWorksets();
     }
 }
@@ -484,6 +543,10 @@ else
     var problems = new List<string>();
     if (turnProblem != null) problems.Add(turnProblem);
     if (worksetProblem != null) problems.Add(worksetProblem);
+    // VERSION 4: a run is copied by the offset only - never ignored here.
+    if (count != 2 || byPitch)
+        problems.Add("A count or a spacing repeats a copy by the offset, and onto levels each level gets one "
+            + "copy - leave both out, or copy by the offset instead.");
 
     Func<string, string> squeeze = text => string.Join(" ",
         (text ?? "").Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant();

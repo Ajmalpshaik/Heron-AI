@@ -16,7 +16,7 @@ risk: MODIFY
 purpose: >
   Imports a CSV over a family's lookup table - adding the sizes it was missing,
   or correcting the dimensions it had. The write twin of
-  REPORT_FAMILY_SIZE_TABLE, which could read a table and say which sizes were
+  REPORT_FAMILY_TABLES_IN_PROJECT, which could read a table and say which sizes were
   absent but never put one right.
 
   **A SIZE MISSING FROM THE TABLE IS WHY A FITTING DOES NOT APPEAR**, and it
@@ -130,10 +130,10 @@ compatibility-note: >
   2026-09-15. Units are named inside the CSV header, so nothing is converted
   here and the 2021 units move cannot reach it.
 
-# ROUTING - repeated in REPORT_FAMILY_SIZE_TABLE.
+# ROUTING - repeated in REPORT_FAMILY_TABLES_IN_PROJECT.
 #
 #   "add these sizes to the lookup table"  -> here
-#   "the fitting will not appear at my size" -> REPORT_FAMILY_SIZE_TABLE first,
+#   "the fitting will not appear at my size" -> REPORT_FAMILY_TABLES_IN_PROJECT first,
 #                                              to see which rows are absent
 #   "what sizes does the segment have"     -> REPORT_PIPE_SEGMENTS
 

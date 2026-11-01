@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LVL-027
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,29 @@ semantic-identity: "make this grid 2d in this view, or put it back to 3d, and sa
 kind: action
 domain: revit.datums
 capability: SET_DATUM_EXTENT_TYPE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-01) - RESET_DATUM_EXTENTS WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. That card was this one's write in one direction - every dragged,
+# view-specific end back to the shared 3D extent - over many views; here it is
+# viewSpecific false. What it had and this one lacked: MANY VIEWS (`views`
+# beside `view`); a datum not shown in a view skipped there without a refusal;
+# REFUSALS PER DATUM in `refused`; ends counted (`endsChanged`); the datums
+# already as asked (`alreadyAsAsked`); and grids and levels only.
+#
+# A DEFECT OF VERSION 1, FIXED IN THE MERGE: a SetDatumExtentType that threw,
+# or read back on the other extent type, was stepped over without a word - the
+# failed write vanished and the datum was simply not in `changed`. Now it puts
+# the datum in `refused`, as RESET_DATUM_EXTENTS did. Where that card's
+# outputs are now: `endsReset` -> `endsChanged`; `datumsChanged` -> `changed`;
+# `alreadyShared` -> `alreadyAsAsked`; `notADatum` and `refused` -> the same
+# names. Its `views` is `views`.
+#
+# Version 1's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
 
 purpose: >
   Reads whether each grid or level end is on its shared 3D extent or on a
@@ -30,8 +50,8 @@ purpose: >
   `GetDatumExtentTypeInView` and reports which ends are view-specific, but only as
   accounting while it stretches things. Nothing answered *"is this grid 2D or 3D
   in this view"* without modifying the model to find out. So this reads first and
-  reports what it found BEFORE changing it, the way `SET_VIEW_RANGE` and
-  `SET_VIEW_SCALE` both read and set.
+  reports what it found BEFORE changing it, the way `SET_VIEW_PROPERTIES` and
+  `SET_VIEW_PROPERTIES` both read and set.
 
   **EXTENTS ARE SHARED AND BUBBLES ARE NOT, AND CONFUSING THEM CHANGES TWENTY
   VIEWS.** `SET_DATUM_BUBBLES` states it plainly: bubbles are per end and per
@@ -41,15 +61,27 @@ purpose: >
 
   **BOTH ENDS ARE HANDLED SEPARATELY**, because only one is usually dragged.
 
+  Version 2 takes many views at once - `views` - and names every datum an end
+  of which Revit would not change, in `refused`.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
   needs:
     - name: doc
       type: Document
+    # Version 2: `view`, `views`, or both - every view named, each once. One
+    # of them must name a view.
     - name: view
       type: View
       source: request
+      optional: true
+    # VERSION 2, from RESET_DATUM_EXTENTS. More views, every end of every datum
+    # set in each. Left out: an empty list - `view` alone, as version 1.
+    - name: views
+      type: IList<View>
+      source: request
+      optional: true
     - name: elements
       type: IList<Element>
     - name: viewSpecific
@@ -70,6 +102,22 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+    - name: endsChanged
+      # VERSION 2, from RESET_DATUM_EXTENTS. Ends now on the extent type asked,
+      # read back - one datum can change at both ends in three views.
+      role: result
+      type: int
+    - name: alreadyAsAsked
+      # VERSION 2. Datums every shown end of which was ALREADY as asked, so
+      # there was nothing to do. Evidence it looked (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: refused
+      # VERSION 2. Datums with an end Revit would not change - the set threw,
+      # or read back on the other type. Version 1 dropped these without a word
+      # (D-52).
+      role: accounting
+      type: IList<ElementId>
 
 proof:
   date: '2026-09-19'
@@ -107,13 +155,19 @@ compatibility-note: >
   - on every release. Read off the reference assemblies at both ends on
   2026-09-18.
 
-# ROUTING - repeated in RESET_DATUM_EXTENTS, MAXIMIZE_DATUM_EXTENTS and
-# SET_DATUM_BUBBLES.
+# ROUTING - repeated in MAXIMIZE_DATUM_EXTENTS and SET_DATUM_BUBBLES.
 #
 #   "make this grid 2d here"        -> here, viewSpecific true
 #   "is this grid 2d or 3d"         -> here - it reports before it changes
-#   "put the dragged ends back"     -> RESET_DATUM_EXTENTS - the same write, but
-#                                      that one is the tidy-up job and says so
+#   "put the dragged ends back"     -> here, viewSpecific false, with every view
+#                                      in `views` - RESET_DATUM_EXTENTS's job
+#                                      since version 2
+#   "the grid is short in this view only" -> here, viewSpecific false
+#   "the grids only go half way"    -> MAXIMIZE_DATUM_EXTENTS, which lengthens
+#                                      the SHARED extent. Run this first where
+#                                      a view overrides it, or that fix shows
+#                                      nothing there
+#   "list the grids"                -> LIST_GRIDS
 #   "the grids stop in different places" -> MAXIMIZE_DATUM_EXTENTS
 #   "the bubbles are on the wrong side"  -> SET_DATUM_BUBBLES - per VIEW, which
 #                                      the model extent is not
@@ -128,3 +182,12 @@ utterances:
   # sentence, and a comment is not indexed, so ranking decided: "make this
   # grid 2d here": CREATE_GRID on the trained backend answered it.
   - make this grid 2d here
+  # MOVED 2026-11-01 from RESET_DATUM_EXTENTS, merged into this card.
+  - the grid is short in this view
+  - reset the grid extents
+  - someone dragged the grid ends in this view
+  - put the levels back to model extent
+  - the grids look different in every view
+  - someone dragged the grid ends
+  # ...and its semantic identity, which nothing else declares:
+  - somebody dragged a grid end and now it is short in this view only

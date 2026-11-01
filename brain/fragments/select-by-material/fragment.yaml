@@ -152,24 +152,23 @@ compatibility-note: >
   `BuiltInParameter.MATERIAL_ID_PARAM`, read in a family (version 3), are the
   same 2020 through 2027 (tools/api-surface, 2026-10-08).
 
-# ROUTING - repeated in READ_ELEMENT_MATERIAL, REPLACE_MATERIAL and
-# REPORT_MATERIAL_TAKEOFF.
+# ROUTING - repeated in REPLACE_MATERIAL and REPORT_MATERIAL_TAKEOFF.
 #
 #   "which walls are fair faced
 #    block"                          -> here
 #   "everything in galvanised steel" -> here
-#   "what is this wall made of"      -> READ_ELEMENT_MATERIAL - one element,
+#   "what is this wall made of"      -> REPORT_MATERIAL_TAKEOFF - one element,
 #                                       every material it carries, not a sweep
 #   "swap that material for
 #    another"                        -> REPLACE_MATERIAL - this one only reads
 #   "how much of each material"      -> REPORT_MATERIAL_TAKEOFF - quantities,
 #                                       once the elements are chosen
-#   "which materials are unused"     -> FIND_UNUSED_MATERIALS, which asks the
+#   "which materials are unused"     -> FIND_PURGEABLE_ELEMENTS, includeMaterials, which asks the
 #                                       same question of every material at once
 #                                       and is the right shape for that
 #   a family's forms by material     -> here - every form in a family is
 #                                       scanned (version 3)
-#   "select the forms with these ids" -> SELECT_FAMILY_FORMS
+#   "select the forms with these ids" -> REPORT_FAMILY_FORMS
 #   "make this one wall different"   -> DUPLICATE_TYPE first. Material lives on
 #                                       the type, so changing one instance
 #                                       without a new type changes them all

@@ -56,5 +56,46 @@ negative:
       claims one. GetIsFilterEnabled arrived at 2021 and is reached by name, so
       the fragment still compiles and runs on 2020. NOT YET RUN on 2020
 
+  # VERSION 3 - from AUDIT_VIEW_FILTERS. Each FAILS on version 2, which had no
+  # priority, no rule text, no catch count and no verdicts.
+  - given: >
+      VERSION 3. viewName a plan carrying 'Mechanical - Supply' (System
+      Classification contains 'Supply', ducts) above 'Domestic' with its
+      Visibility off, on Revit 2021 or later
+    expect: >
+      filterSettings numbering them "1. 'Mechanical - Supply'" and "2.
+      'Domestic'" in the order the Filters tab lists them, each with its
+      categories, "rule: System Classification contains 'Supply'" and "catches
+      N host element(s) drawn here" - N matching what turns blue - and
+      'Domestic' in `hidden` with a finding naming the view
+
+  - given: VERSION 3. a filter applied with its Enable Filter tick OFF (2021 on)
+    expect: its id in `disabled`, a finding that it is in the list and does nothing
+
+  - given: VERSION 3. a filter added and never given an override
+    expect: >
+      its id in `blankOverride`. A filter carrying ONLY halftone is NOT in it -
+      every slot is asked, and one set is enough
+
+  - given: VERSION 3. a filter on Pipes in a view where Pipes is switched off
+    expect: its id in `nothingToActOn` - the rule is fine, the category is hidden
+
+  - given: VERSION 3. a view whose template controls the filters slot
+    expect: >
+      templateOwned true and a finding naming the template - the answer to "my
+      filter change did not save"
+
+  - given: VERSION 3. viewName a schedule
+    expect: >
+      a note that it does not accept graphic overrides at all - not "carries
+      no filters"
+
+  - given: VERSION 3. Revit 2020
+    expect: >
+      the heading says the order is Revit's, not the dialog's - GetOrderedFilters
+      is absent there - and `disabled` empty with the no-tick sentence, never
+      counted as passed
+
 second_route:
   - Revit's own Manage then Filters for the list, and one view's Visibility/Graphics for the usage
+  - and that view's Filters tab, top to bottom, for the priority order and each tick

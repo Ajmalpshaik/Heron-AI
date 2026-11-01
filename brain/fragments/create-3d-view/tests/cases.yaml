@@ -16,7 +16,7 @@ negative:
   - given: somebody who said "make me a 3D view like the one I am in"
     expect: >
       this is the WRONG fragment - it carries none of that view's settings.
-      DUPLICATE_VIEW is the one that means "like that one", and the sentence
+      DUPLICATE_VIEWS is the one that means "like that one", and the sentence
       does not distinguish them
 
 second_route:

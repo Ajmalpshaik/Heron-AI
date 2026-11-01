@@ -114,7 +114,7 @@ compatibility-note: >
   through 2027 (api-surface, read 2026-09-24). Nothing here depends on a
   parameter's kind, so the move at 2022 does not reach it.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "neck top is height plus neck depth"   -> here
 #   "lock the width at 600"                -> here, a formula of "600 mm"

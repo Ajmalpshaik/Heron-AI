@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "dimension every face of these elements that faces one way - 
 kind: action
 domain: revit.views
 capability: DIMENSION_ELEMENT_FACES
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -25,9 +25,12 @@ risk: MODIFY
 # are the wall's own faces. A curtain wall offers its grid lines instead.
 # Faces at one position count once.
 #
-# DIMENSION_WALL_OPENINGS runs the plan string along a wall through its
-# jambs; DIMENSION_FAMILY_INSTANCES strings family instances (refused here);
-# CREATE_LINEAR_DIMENSION takes named references - grids, levels, planes.
+# The plan string along a wall through its jambs is this card's `along` -
+# since 2026-11-01, when DIMENSION_WALL_OPENINGS was merged in (version 2);
+# CREATE_DIMENSION strings family instances (refused here) - since
+# 2026-11-01, when DIMENSION_FAMILY_INSTANCES was merged into it;
+# CREATE_LINEAR_DIMENSION takes named references - grids, levels, planes -
+# and since its version 5 (2026-11-01) is the one card for grids and levels.
 #
 # Whether Revit hands a compound wall's layers as separate faces is what the
 # proof measures; a wall read as one piece gives its two outer faces only,
@@ -40,6 +43,11 @@ purpose: >
   Draws one dimension string per element through every face of it that faces
   one way - the layers of a wall or slab, the sills and heads in an elevation,
   the grid lines of a curtain wall.
+
+  **VERSION 2 DIMENSIONS THE OPENINGS ALONG A WALL** (DIMENSION_WALL_OPENINGS
+  merged in): along a wall in a plan, end, jamb, jamb, end, with an overall
+  outside it when asked, on the side of the wall the caller names, rooms
+  accepted for their walls. Every string's segments are checked to add up.
 
 contract:
   needs:
@@ -58,6 +66,30 @@ contract:
     - name: offsetMm
       type: double
       source: request
+    # VERSION 2, from DIMENSION_WALL_OPENINGS. true also draws an overall
+    # string twice the offset out, first face to last - the two-tier string a
+    # plan uses. It needs an offset: at 0 it is not drawn, and the line says
+    # why. Absent binds false (row 5b-227), version 1 exactly.
+    - name: withOverall
+      type: bool
+      source: request
+      optional: true
+    # VERSION 2, from DIMENSION_WALL_OPENINGS. Which side of a WALL the strings
+    # go, direction along, in a plan: right or left of the wall as drawn (its
+    # location line, start to end); outside, away from the rooms - a room or
+    # space found 300 mm clear of one face and not the other; with rooms on
+    # both sides or neither, an Exterior wall type's own exterior face, any
+    # other wall the side farther from the middle of the walls joined to it,
+    # only on a tie its exterior face; inside the opposite. Left out ("keep")
+    # is version 1's placement exactly. Named, only walls are strung; a side
+    # it does not know, with another direction, or outside a plan, is refused
+    # whole and nothing is drawn. DIMENSION_WALL_OPENINGS's blank side was
+    # right of the wall as drawn - `right` here.
+    - name: side
+      type: string
+      source: request
+      optional: true
+      absent: keep
   provides:
     - name: created
       role: result
@@ -73,9 +105,39 @@ contract:
       # Elements that offered fewer than two faces that way, or were refused.
       role: accounting
       type: IList<ElementId>
+    - name: segmentsDisagree
+      # VERSION 2, from DIMENSION_WALL_OPENINGS. Elements whose string's
+      # segments do not add up - to the overall when one was drawn, to the
+      # span from the first face to the last otherwise - within 1 mm. An
+      # extra face from a join notch is an extra segment that still reads as a
+      # valid dimension; THE CHECK IS BUILT IN, and this is what it found.
+      role: result
+      type: IList<ElementId>
+    - name: noOpeningFaces
+      # VERSION 2. Walls dimensioned along their run that gave fewer than two
+      # faces, or whose run is curved - no single direction to order faces
+      # along. In noFaces too. The evidence it looked, never a string (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notAWall
+      # VERSION 2. With a side named, what was handed in and is not a wall -
+      # and a room with no wall on its boundary. Given and unusable, never a
+      # thing it found (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: sideUsed
+      # VERSION 2. With a side named, one line per wall strung: which side its
+      # strings went, in plan words (above, below, left of, right of the wall
+      # on the view) and why. How the side was CHOSEN, never a thing it made
+      # (D-52) - the strings are `created`.
+      role: accounting
+      type: IList<string>
     - name: findings
       type: IList<string>
 
+# VERSION 1's PROOF, KEPT AS THE RECORD. Version 2 changed impl/, so its
+# fingerprint no longer describes the code and the card is DRAFT until
+# version 2 is proved on a real model (D-30).
 proof:
   date: '2026-10-18'
   by: Ajmal PS
@@ -124,13 +186,63 @@ compatibility-note: >
   RevitAPI.xml in the Nice3point reference packages for all eight releases on
   2026-10-13.
 
+  Version 2 adds the calls DIMENSION_WALL_OPENINGS made, PROVEN on Revit
+  2020: `Document.GetRoomAtPoint` and `GetSpaceAtPoint` (with a `Phase`), the
+  view's `VIEW_PHASE` parameter, `SpatialElement.GetBoundarySegments`,
+  `LocationCurve.get_ElementsAtJoin`, `WallType.Function` and
+  `Dimension.Value` - present and unchanged 2020 to 2027.
+
+# VERSION 2 (2026-11-01) - DIMENSION_WALL_OPENINGS WAS MERGED INTO THIS CARD
+# on the owner's instruction ("make sure there is no duplicate tools";
+# "merge means ... all area need to be covered"), and is DEPRECATED. The same
+# technique - a wall's own planar faces, read with references computed - was
+# already this card's `along`: ends and jambs, off the wall and never off the
+# door. What that card had and this one lacked is here now: `withOverall`; the
+# segments-add-up check (`segmentsDisagree`); `side` with `sideUsed` - right,
+# left, outside away from the rooms, inside, by that card's rules word for
+# word; rooms accepted for their walls; `notAWall`; `noOpeningFaces`; a curved
+# wall refused along, where version 1 strung it along the view's horizontal.
+#
+# THE SAFER RULE IN EACH CONFLICT IS KEPT. That card checked the segments only
+# with the overall drawn; here every string is checked - against the overall,
+# or the span between its first and last face. That card drew the overall at
+# offset 0 on top of the running string; here it is not drawn and the line
+# says so. A side with a direction other than along, or outside a plan, is
+# refused whole - beside the wall would point into the view. An element
+# handed in twice is strung once.
+#
+# NOT CARRIED, AS OPPOSITE: a blank side meaning right of the wall as drawn.
+# Blank here keeps version 1's placement - this card's PROVEN callers rely on
+# it - and `side=right` is that card's blank, said out loud. And its strings
+# were measured from the wall's location line; here from the middle of the
+# wall, as version 1 measured every string - with side named, the string sits
+# offsetMm from the wall's middle on that side.
+#
+# WHERE ITS OUTPUTS ARE NOW: created -> created (running and overall),
+# segmentsDisagree -> segmentsDisagree, noOpeningFaces -> noOpeningFaces,
+# notAWall -> notAWall, sideUsed -> sideUsed, refused (the unknown-side
+# sentence) -> measured and findings, as every refusal here. Its call
+# `offsetMm, withOverall, side` is `direction=along, offsetMm, withOverall,
+# side=right`. Its sentences moved here.
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "dimension the layers of this wall"           -> here, across
 #   "dimension the floor layers in this section"  -> here, across
 #   "dimension the sills and heads in this elevation" -> here, vertical
 #   "dimension the curtain grid"                  -> here, along
-#   "dimension the openings along this wall"      -> DIMENSION_WALL_OPENINGS
+#   "dimension the openings along this wall"      -> here, along, since
+#                                                    DIMENSION_WALL_OPENINGS
+#                                                    was merged in (version 2)
+#   "dimension the wall with the door in it"      -> here, along
+#   "dimension the outside walls, on the outside" -> here, along, side=outside
+#   "dimension the rooms"                         -> DIMENSION_ROOMS, which
+#                                                    measures a room's size
+#                                                    and cannot see an opening
+#   "how wide is that door"                       -> READ_ELEMENT_PARAMETERS. A
+#                                                    question must not be
+#                                                    answered by marking the
+#                                                    drawing
 #   "dimension between grid A and grid B"         -> CREATE_LINEAR_DIMENSION
 
 utterances:
@@ -139,3 +251,9 @@ utterances:
   - dimension the sills and heads in this elevation
   - dimension the curtain grid
   - dimension each layer of the roof in the section
+  # MOVED 2026-11-01 from DIMENSION_WALL_OPENINGS, merged into this card.
+  - dimension the wall with the door in it
+  - put the door positions on the plan
+  - dimension the openings in these walls
+  - i need the wall dimensions with the windows
+  - dimension the wall and give the overall as well

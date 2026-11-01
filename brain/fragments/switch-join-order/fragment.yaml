@@ -66,8 +66,7 @@ compatibility-note: >
   `AreElementsJoined` and `IsCuttingElementInJoin` are present 2020 through
   2027, compiled at both ends.
 
-# ROUTING - repeated in JOIN_GEOMETRY, UNJOIN_GEOMETRY and
-# REPORT_JOINED_ELEMENTS.
+# ROUTING - repeated in JOIN_GEOMETRY and REPORT_JOINED_ELEMENTS.
 #
 #   "the wrong one is cutting"       -> here
 #   "swap which element cuts"        -> here
@@ -78,7 +77,7 @@ compatibility-note: >
 #   "join these"                     -> JOIN_GEOMETRY - and this refuses a pair
 #                                       that is not joined rather than joining
 #                                       it first
-#   "unjoin these"                   -> UNJOIN_GEOMETRY
+#   "unjoin these"                   -> JOIN_GEOMETRY, join false
 #   "which one is cutting"           -> REPORT_JOINED_ELEMENTS - the read to do
 #                                       first, and the one that shows this
 #                                       worked

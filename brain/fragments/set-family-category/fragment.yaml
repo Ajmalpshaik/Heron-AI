@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,36 @@ capability: SET_FAMILY_CATEGORY
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO SET_FAMILY_SETTINGS (set-family-settings), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to SET_FAMILY_SETTINGS, and so did the live rows of the
+# family-building routing table below - the copy here is the record. The
+# proof below, where there is one, is the record of what this card's code
+# did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: SET_FAMILY_SETTINGS
+  why: >
+    The same dialog, Family Category and Parameters, and the same family
+    being edited. SET_FAMILY_SETTINGS since its version 4 takes
+    "Category=<name>" as one more setting, with this card's code whole: the
+    name matched to the names Revit shows, in its language, and never
+    guessed - close names offered, two matches refused, a project refused as
+    notAFamily naming OPEN_FAMILY_FOR_EDITING and File, New, Family, a Revit
+    refusal thrown with its words and nothing kept - read back as `category`,
+    with `wasCategory` and `parametersGained`. In a combined call the
+    category is written FIRST, because Part Type, the OmniClass Number and
+    which switches the family has are checked against it. Where the two
+    differed the stricter rule was kept: a category Revit did not keep, which
+    this card reported as refused, fails the call and is rolled back; a
+    category already as asked is counted in `alreadySet` rather than refused,
+    nothing written either way. Nothing of this card was left out.
 
 purpose: >
   Changes the CATEGORY of the family open in the Family Editor - the Family
@@ -127,15 +157,22 @@ compatibility-note: >
 #   "add reference planes at 300 each side"   -> CREATE_REFERENCE_PLANES
 #   "label the width with the Width parameter"-> LABEL_FAMILY_DIMENSION
 #   "make a box between these planes"         -> EXTRUDE_BETWEEN_PLANES
-#   "extrude a circle 300 diameter 500 high"  -> CREATE_FAMILY_EXTRUSION -
+#   "extrude a circle 300 diameter 500 high"  -> CREATE_FAMILY_FORMS -
 #                                                any other shape, solid or void
-#   "make a revolve in the family"            -> CREATE_FAMILY_REVOLUTION
+#   "make a revolve in the family"            -> CREATE_FAMILY_FORMS
 #   "build all these forms in one go"         -> CREATE_FAMILY_FORMS - many
 #                                                extrusions and revolves, a
 #                                                row each, one undo
-#   "blend a rectangle into a circle"         -> CREATE_FAMILY_BLEND
-#   "sweep a profile along a path"            -> CREATE_FAMILY_SWEEP
-#   "sweep one shape into another along a path" -> CREATE_FAMILY_SWEPT_BLEND
+#   "blend a rectangle into a circle"         -> CREATE_FAMILY_FORMS, a
+#                                                kind=blend row
+#   "sweep a profile along a path"            -> CREATE_FAMILY_FORMS, a
+#                                                kind=sweep row
+#   "sweep one shape into another along a path" -> CREATE_FAMILY_FORMS, a
+#                                                kind=swept blend row
+#                                                (CREATE_FAMILY_BLEND,
+#                                                CREATE_FAMILY_SWEEP and
+#                                                CREATE_FAMILY_SWEPT_BLEND
+#                                                until 2026-11-01)
 #   "make a spring as one smooth sweep along a helix" -> CREATE_FAMILY_FREEFORM_SOLID -
 #                                                a fixed shape, not parametric
 #   "loft a smooth body through elliptical sections" -> CREATE_FAMILY_FREEFORM_SOLID
@@ -146,9 +183,9 @@ compatibility-note: >
 #   "label the neck diameter with Neck Diameter" -> LABEL_FAMILY_RADIUS
 #   "show this form only in fine"             -> SET_FAMILY_FORM_VISIBILITY
 #   "set the subcategory of these forms"      -> SET_FAMILY_FORM_SUBCATEGORY
-#   "link the body material to Body Material" -> SET_FAMILY_FORM_MATERIAL -
+#   "link the body material to Body Material" -> LINK_FAMILY_PARAMETER -
 #                                                one form, not every one
-#   "link the handle's visible to Show_Handle" -> LINK_FAMILY_FORM_PARAMETER -
+#   "link the handle's visible to Show_Handle" -> LINK_FAMILY_PARAMETER -
 #                                                a form's Visible, angles or
 #                                                extrusion ends, one form
 #   "make this plane the left reference"      -> SET_FAMILY_PLANE_REFERENCE -
@@ -160,15 +197,17 @@ compatibility-note: >
 #   "group these forms in this family"        -> GROUP_ELEMENTS - a group, when
 #                                                asked; a nested family or an
 #                                                array is usually lighter
-#   "put the motor family into this air handler" -> PLACE_NESTED_FAMILY
+#   "put the motor family into this air handler" -> PLACE_FAMILY_INSTANCES -
+#                                                nested, in the family edited
 #   "lock the motor's centre to the centre planes" -> LOCK_NESTED_FAMILY_TO_PLANES
-#   "link the motor type's width to Motor Width" -> LINK_NESTED_TYPE_PARAMETER -
+#   "link the motor type's width to Motor Width" -> LINK_FAMILY_PARAMETER -
 #                                                a nested TYPE's parameter
 #   "make this family work plane based"       -> SET_FAMILY_SETTINGS
 #   "add the shared parameter Equipment Tag to this family"
-#                                             -> ADD_FAMILY_SHARED_PARAMETERS
+#                                             -> ADD_FAMILY_PARAMETERS, kind
+#                                                shared
 #   "replace the family parameter Width with the shared parameter Unit_Width"
-#                                             -> ADD_FAMILY_SHARED_PARAMETERS,
+#                                             -> ADD_FAMILY_PARAMETERS,
 #                                                replaceExisting true
 #   "put a supply air connector on the neck"  -> ADD_FAMILY_CONNECTOR
 #   "make the connector 3 phase 400 V"        -> SET_FAMILY_CONNECTOR_ROLES -
@@ -190,7 +229,8 @@ compatibility-note: >
 #   "draw the profile in this profile family" -> DRAW_FAMILY_DETAIL_LINES -
 #                                                a 2D family's lines
 #   "cut an opening in the host wall of this family"
-#                                             -> CREATE_FAMILY_HOST_OPENING
+#                                             -> CREATE_OPENING - `shape`, in
+#                                                the template's wall or ceiling
 #   "use the handrail profile family for this sweep"
 #                                             -> SET_FAMILY_SWEEP_PROFILE
 #   "add four adaptive points to this family" -> PLACE_ADAPTIVE_POINTS

@@ -28,6 +28,8 @@ namespace Heron.Revit.Addin
     ///   run_fragment_read   opens NO transaction, and Revit refuses a model
     ///                       change made outside one - NOT ALWAYS COMPLETELY.
     ///                       Row 5b-350 is a read run of place-nested-family
+    ///                       (PLACE_FAMILY_INSTANCES in a family since
+    ///                       2026-11-01, when it was merged there)
     ///                       that reported Revit's refusal and still left a
     ///                       real instance in the family, twice; why is not
     ///                       established (NEEDS-CHECKING CP1). So Revit's
@@ -3563,7 +3565,7 @@ namespace Heron.Revit.Addin
         ///
         /// EVERY REFUSAL NAMES BOTH SIDES. "the chain does not match" sends a
         /// reader to look at the wrong fragment; "you expected X and
-        /// select-by-level left Y" is the answer itself.
+        /// filter-elements-by-category left Y" is the answer itself.
         /// </summary>
         private static string ChainDisagrees(Chain chain,
                                              Dictionary<string, object> carried,
@@ -6320,7 +6322,8 @@ namespace Heron.Revit.Addin
         /// <summary>
         /// AN ELECTRICAL PANEL, BY ITS OWN PANEL NAME.
         ///
-        /// ONE NEED IN THE LIBRARY - `create-electrical-circuit`'s `panel` - and
+        /// ONE NEED IN THE LIBRARY - `create-mep-system`'s `panel`, which was
+        /// `create-electrical-circuit`'s until it was merged in on 2026-11-01 - and
         /// the class is keyed on the need's NAME for the same reason `OneIdNamed`
         /// keys on it: a `FamilyInstance` is an INSTANCE, and `Element.Name` on
         /// an instance returns its TYPE's name. Resolving a panel that way would
@@ -6596,8 +6599,8 @@ namespace Heron.Revit.Addin
             //
             //   HostObjAttributes  CREATE_FROM_ROOM_BOUNDARIES branches on
             //                      `hostType is CeilingType` / `is FloorType`
-            //   MEPCurveType       CREATE_ELECTRICAL_RUN builds a cable tray or
-            //                      a conduit from the same value
+            //   MEPCurveType       CREATE_DUCT_RUNS builds duct, pipe, cable tray,
+            //                      conduit or flex from the same value
             //   FilterElement      APPLY_VIEW_FILTER says it in its own comment:
             //                      a rule filter and a selection filter share a
             //                      base class and a view does not care which

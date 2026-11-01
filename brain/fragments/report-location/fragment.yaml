@@ -229,7 +229,7 @@ compatibility-note: >
 #   "is the level height trustworthy" -> REPORT_LEVEL_ELEVATIONS - a LEVEL's
 #                                       two heights and the survey offset, not
 #                                       an element's position
-#   "unload this link"                   -> UNLOAD_LINKS. A link's position
+#   "unload this link"                   -> RELOAD_LINKS, unload true. A link's position
 #                                           is what this reports; unloading
 #                                           keeps it and drops the geometry
 #

@@ -26,7 +26,7 @@ risk: MODIFY
 #
 # READ BACK: each wall's attachments at that end read again.
 #
-# SET_WALL_CONSTRAINTS sets a wall's levels and offsets; this attaches it to an
+# SET_ELEMENT_LEVEL sets a wall's levels and offsets; this attaches it to an
 # element, which follows that element when it moves.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
@@ -84,7 +84,7 @@ compatibility-note: >
 #   "attach these walls to the roof"          -> here
 #   "detach the wall tops"                    -> here, detach
 #   "attach the wall bases to the terrain"    -> here, base
-#   "set the wall top to level 2"             -> SET_WALL_CONSTRAINTS
+#   "set the wall top to level 2"             -> SET_ELEMENT_LEVEL, topLevelId
 
 utterances:
   - attach these walls to the roof above

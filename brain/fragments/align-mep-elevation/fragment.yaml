@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: ALIGN_MEP_ELEVATION
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO ALIGN_ELEMENTS (align-elements), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to ALIGN_ELEMENTS. The proof below, where there is one, is the record
+# of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: ALIGN_ELEMENTS
+  why: >
+    The same move with a different target: line MEP runs up by their top,
+    bottom or centre at one typed height, each run's half-height read from
+    its own size. ALIGN_ELEMENTS does it since its version 2 with `edge` and
+    `targetZ` and no reference, with this card's size parameters, its noSize
+    and notCurveBased, insulation left out and a sloped run levelled at its
+    midpoint. Two rules were opposite and the safer was kept: this card read
+    any edge word but top and bottom as the centre, where ALIGN_ELEMENTS
+    refuses a word it does not know; and this card counted every move without
+    reading it back, where ALIGN_ELEMENTS puts a run Revit would not move in
+    `blocked`.
 
 purpose: >
   Lines up ducts, pipes, trays and conduits by their TOP, their BOTTOM or their

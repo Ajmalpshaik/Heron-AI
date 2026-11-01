@@ -333,8 +333,8 @@ compatibility-note: >
 #                               neither before nor after; a question for
 #                               the owner, not settled here
 #   "open the 3d view"          stays CREATE_3D_VIEW, as before
-#   "what is this element's geometry"      -> REPORT_ELEMENT_GEOMETRY
-#   "list the edges of this beam"          -> REPORT_ELEMENT_GEOMETRY
+#   "what is this element's geometry"      -> MEASURE_ELEMENT_VOLUME
+#   "list the edges of this beam"          -> MEASURE_ELEMENT_VOLUME
 #   "how complex is this family"           -> REPORT_GEOMETRY_COMPLEXITY
 #   "how much geometry does this family carry" -> REPORT_GEOMETRY_COMPLEXITY -
 #                                             triangles counted per type, not

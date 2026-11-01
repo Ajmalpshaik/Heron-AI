@@ -101,8 +101,9 @@ negative:
 
 second_route:
   - >
-    LIST_DATES_ON_SHEETS on the same project before the run: its dateList names
-    the same dates on the same sheets as dateRevisions
+    FIND_DATES_IN_VIEWS with sheetsOnly on (LIST_DATES_ON_SHEETS until it was
+    merged there, 2026-11-01) on the same project before the run: its
+    dateList names the same dates on the same sheets as dateRevisions
   - >
     by eye in Revit: View > Revisions (Sheet Issues/Revisions) for the rows and
     their dates, and each sheet's Revisions on Sheet for the ticks - S-01

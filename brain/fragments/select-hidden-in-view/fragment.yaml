@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SEL-008
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,27 @@ capability: SELECT_HIDDEN_IN_VIEW
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO FILTER_ELEMENTS_BY_CATEGORY
+# (filter-elements-by-category), on the owner's instruction in conversation: "make sure there is no
+# duplicate tools", every conflict to keep the SAFER rule. Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable and
+# it can be brought back. Nothing offers it now - retrieval leaves DEPRECATED
+# out, and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to FILTER_ELEMENTS_BY_CATEGORY. The proof below, where
+# there is one, is the record of what this card's code did, not a claim about
+# today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: FILTER_ELEMENTS_BY_CATEGORY
+  why: >
+    The same job: FILTER_ELEMENTS_BY_CATEGORY version 5 subtracts what a view
+    draws from the model with `notShowingIn` - this card's `view` - in the
+    categories named, with `inModel` and `showing` so the arithmetic can be
+    checked, a view TEMPLATE refused, and `findings` saying the unbounded case
+    counts every view and sheet and that why is DIAGNOSE_VISIBILITY's. It can be
+    narrowed to one level too, which this card never could.
 
 purpose: >
   Hands back the elements that exist in the model, in the categories given, and

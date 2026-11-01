@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LVL-027
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: RESET_DATUM_EXTENTS
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO SET_DATUM_EXTENT_TYPE
+# (set-datum-extent-type), on the owner's instruction in conversation: "make
+# sure there is no duplicate tools". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to SET_DATUM_EXTENT_TYPE. A proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: SET_DATUM_EXTENT_TYPE
+  why: >
+    The same write in one direction: a dragged, view-specific datum end back
+    to the shared 3D extent. SET_DATUM_EXTENT_TYPE sets either direction and
+    reports what it found first; with viewSpecific false it is this card's
+    job, and its version 2 took this card's rules it lacked: many views at
+    once (`views`), a datum not shown in a view skipped there without a
+    refusal, refusals per datum in `refused` - which also fixed its own
+    dropped failed write - ends counted in `endsChanged`, datums already
+    shared in `alreadyAsAsked`, and grids and levels only. Nothing of this
+    card is left out.
+
 
 purpose: >
   Puts grids and levels back on their shared 3D extent in the views given,

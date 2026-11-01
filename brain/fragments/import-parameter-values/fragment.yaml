@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: IMPORT_PARAMETER_VALUES
 version: 5
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO SET_PARAMETER_VALUES_BY_ID (set-parameter-values-by-id), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable and
+# it can be brought back. Nothing offers it now - retrieval leaves DEPRECATED
+# out, and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to SET_PARAMETER_VALUES_BY_ID. The proof below, where there
+# is one, is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: SET_PARAMETER_VALUES_BY_ID
+  why: >
+    The same job: a different value per element, matched by id as text,
+    written and read back. SET_PARAMETER_VALUES_BY_ID version 7 reads the CSV
+    (csvPath), asks blankCells, matches rows by id and gives rowsMatched,
+    rowsUnmatched, valuesRejected, blankCellsSkipped, cellsCleared and
+    rowFindings. Where the rules differed the safer holds: all or nothing,
+    where this card wrote every row it could; and no elements and no
+    selection - the rows alone name the elements, a UniqueId column checked
+    when the file has one. Not carried: this card's `elements` scope (the
+    keeper takes no selection, D-108), includeTypeParameters (a type written
+    from an instance's row is refused) and changedOnRegeneration (there is no
+    early read to count).
 
 purpose: >
   Reads a CSV whose first column identifies the element and whose remaining

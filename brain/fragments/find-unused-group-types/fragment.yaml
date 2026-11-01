@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-GRP-033
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,26 @@ capability: FIND_UNUSED_GROUP_TYPES
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO FIND_PURGEABLE_ELEMENTS (find-purgeable-elements), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable and
+# it can be brought back. Nothing offers it now - retrieval leaves DEPRECATED
+# out, and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to FIND_PURGEABLE_ELEMENTS. The proof below, where there
+# is one, is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: FIND_PURGEABLE_ELEMENTS
+  why: >
+    The same question for one kind: which group definitions have nothing
+    placed. FIND_PURGEABLE_ELEMENTS version 3 took this card's rule that a
+    detail group attached to a placed model group is in use
+    (usedOnlyAsAttached as attachedDetailGroupsInUse), widened the safer way -
+    a placed group that will not answer makes every unplaced detail group type
+    count as in use - and reports the unused by name. Not carried, the safer
+    rule: its id list a delete could take.
 
 purpose: >
   Reports the group definitions - model and detail - with no instance placed
@@ -109,7 +129,7 @@ compatibility-note: >
   removal of `IntegerValue` by 2026.
 
 # ROUTING - repeated in FIND_UNUSED_MATERIALS, FIND_UNUSED_DEFINITIONS,
-# FIND_UNUSED_FAMILIES and UNGROUP_ELEMENTS.
+# FIND_PURGEABLE_ELEMENTS and UNGROUP_ELEMENTS.
 #
 #   "which groups is nobody using"        -> here
 #   "clean up the groups"                 -> here for the list; Revit's own

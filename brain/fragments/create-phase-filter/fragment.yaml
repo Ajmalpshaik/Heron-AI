@@ -21,9 +21,9 @@ semantic-identity: "make a new phase filter under a given name, and set each pha
 # A NEW CAPABILITY, NOT A WIDENING. SET_VIEW_PHASE (FRG-VIEW-095, PROVEN) puts
 # a phase filter that already exists on views; it changes views, not the
 # project's list of filters, and a change under its impl/ would make its proof
-# stale for a job it does not do. CREATE_VIEW_FILTERS_BY_RULE makes VIEW
-# filters - rules on parameters - which are a different element with a
-# different dialog.
+# stale for a job it does not do. CREATE_VIEW_FILTER makes VIEW filters -
+# rules on parameters - which are a different element with a different dialog
+# (CREATE_VIEW_FILTERS_BY_RULE did until it was merged into it, 2026-11-01).
 #
 # A NAME ALREADY IN USE REFUSES, naming the filter and what it shows. It is
 # never edited instead: "Show Complete" is on most views of most projects.
@@ -94,7 +94,7 @@ contract:
       absent: leave
   provides:
     - name: phaseFilterId
-      # The new filter - for SET_VIEW_PHASE's phaseFilterId. InvalidElementId
+      # The new filter - for SET_VIEW_PROPERTIES's phaseFilterId. InvalidElementId
       # when nothing was made.
       role: result
       type: ElementId
@@ -122,11 +122,11 @@ compatibility-note: >
   through 2027 - read with tools/api-surface on 2026-10-31. Ids are carried as
   ElementId and never read as numbers.
 
-# ROUTING - repeated in REPORT_PHASE_FILTERS and SET_VIEW_PHASE.
+# ROUTING - repeated in REPORT_PHASE_FILTERS and SET_VIEW_PROPERTIES.
 #
 #   "create a phase filter called As-Built"     -> here
 #   "what phase filters are there"              -> REPORT_PHASE_FILTERS
-#   "put the As-Built filter on these views"    -> SET_VIEW_PHASE - this one
+#   "put the As-Built filter on these views"    -> SET_VIEW_PROPERTIES - this one
 #                                                  makes the filter, that one
 #                                                  puts it on views
 #   "create a new phase"                        -> NOTHING HERE CAN - no API
@@ -139,7 +139,7 @@ compatibility-note: >
 #                                                  halftone, material per
 #                                                  status) has no API. Set it
 #                                                  by hand. Row 5b-1350
-#   "make a view filter for the fire dampers"   -> CREATE_VIEW_FILTERS_BY_RULE
+#   "make a view filter for the fire dampers"   -> CREATE_VIEW_FILTER
 #   "what is the phase called"                  -> REPORT_PHASES - a question,
 #                                                  never this write. This card
 #                                                  ranked next to it on the
