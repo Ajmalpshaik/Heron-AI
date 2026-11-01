@@ -98,9 +98,17 @@ compatibility-note: >
 #                                       after this makes the table
 
 #   "make a sheet list schedule"       -> CREATE_SHEET_LIST - a drawing index
+#   "add keys to the key schedule"     -> ADD_KEY_SCHEDULE_ROWS - this makes the
+#                                         table EMPTY; its keys are added there
+#                                         (2026-11-01, row 5b-1363). "add a door
+#                                         key schedule" is declared here below
+#                                         because it reached that card when it
+#                                         was written - a whole new table is
+#                                         this card's job
 utterances:
   - make a key schedule
   - set up a finish key
   - create a key schedule for the rooms
   - i want one choice to fill several fields
   - make a lookup table for the finishes
+  - add a door key schedule

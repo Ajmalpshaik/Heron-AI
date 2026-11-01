@@ -7,6 +7,29 @@ positive:
   - given: the new schedule handed to PLACE_VIEW_ON_SHEET
     expect: it lands on the sheet - a schedule is a view, and that is the point of making one
 
+  # VERSION 2 - the other kinds.
+  - given: >
+      kind "material takeoff", category Walls, fields "Material- Name" and
+      "Material- Area" as Revit's field list names them (Material, colon, the name)
+    expect: >
+      a Material Takeoff in the Project Browser, madeAs reading it back as a
+      material takeoff of Walls with 2 columns
+
+  - given: kind "revision schedule", category Revisions, no fields
+    expect: >
+      a Revision Schedule view made, madeAs naming the category Revisions
+
+  - given: kind "keynote legend", category Keynote Tags
+    expect: a Keynote Legend view under Legends, madeAs naming Keynote Tags
+
+  - given: kind "note block", category Generic Annotations, noteBlockFamily the name of a loaded Generic Annotation family
+    expect: >
+      a Note Block schedule of that family; madeAs prints the family the
+      definition reads back (the proof settles that FamilyId is it)
+
+  - given: category Areas, areaScheme "Gross Building"
+    expect: an area schedule of the Gross Building scheme, madeAs naming the scheme
+
 negative:
   - given: a field name the category does not have
     expect: >
@@ -26,5 +49,32 @@ negative:
   - given: a category Revit cannot schedule
     expect: refused, saying so, rather than an empty view left in the browser
 
+  # VERSION 2.
+  - given: kind "revision schedule" with the category Ducts
+    expect: >
+      refused, naming Revisions as the category a revision schedule needs, and
+      NOTHING made - no new view in the Project Browser
+
+  - given: kind "material takeoff" with a category Revit takes no takeoff of (Rooms)
+    expect: >
+      refused before the create call, saying Revit does not make a material
+      takeoff of Rooms; nothing made
+
+  - given: areaScheme "ZZZ NO SUCH SCHEME" with the category Areas
+    expect: refused, listing the area schemes the project has; nothing made
+
+  - given: areaScheme "Gross Building" with the category Ducts
+    expect: refused - an area scheme belongs to an area schedule only; nothing made
+
+  - given: kind "note block" with noteBlockFamily left out
+    expect: refused, listing the families a note block can list; nothing made
+
+  - given: kind "pie chart"
+    expect: refused, naming the five kinds; nothing made
+
 second_route:
   - Revit's own View > Schedules > Schedule/Quantities with the same category and fields, compared column for column
+  - >
+    VERSION 2: View > Schedules > Material Takeoff, Note Block, Keynote Legend,
+    and Schedule/Quantities with Areas and its area scheme picked - the view
+    each makes compared with the one made here, kind, category and columns

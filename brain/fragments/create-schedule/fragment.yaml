@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 15
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,13 +9,45 @@ semantic-identity: "make a real schedule view of this category with these fields
 kind: action
 domain: revit.schedules
 capability: CREATE_SCHEDULE
-version: 1
+# VERSION 2 (2026-11-01, on the owner's word in the brief of that day's
+# session - FRAGMENT-ISSUES row 5b-1363). Ajmal PS made a duct length
+# schedule through Heron on his Revit 2020 job model and asked for a careful
+# check of every schedule setting Heron could not reach; this card made only
+# Revit's plain Schedule/Quantities. It now makes the other kinds on View >
+# Schedules, by `kind`: "material takeoff" (CreateMaterialTakeoff, the category
+# asked about first with IsValidCategoryForMaterialTakeoff), "note block"
+# (CreateNoteBlock, of the family named in `noteBlockFamily`, refused listing
+# GetValidFamiliesForNoteBlock's families), "revision schedule"
+# (CreateRevisionSchedule) and "keynote legend" (CreateKeynoteLegend); and an
+# AREA SCHEDULE of one scheme, by `areaScheme` with the category Areas
+# (CreateSchedule with the scheme's id, refused listing the schemes).
+#
+# `categoryId` STAYS REQUIRED: the add-in has no absent value for an ElementId
+# (HeronBindingNote.AbsentValue). A kind that has a category of its own CHECKS
+# it - Revisions for a revision schedule, Keynote Tags for a keynote legend,
+# Generic Annotations for a note block - and refuses another, naming the right
+# one, so the host sends that category with that kind.
+#
+# All three new needs are `optional: true` with `absent:` - "schedule", "none"
+# and "none" - so a version 1 caller is bound exactly as before and runs
+# version 1's path to the word. `madeAs` is new: a second read of what was
+# made. Version 1's proof below no longer describes the code and is kept as a
+# record; the card is DRAFT until NEEDS-CHECKING Group KF proves version 2 and
+# the owner signs.
+#
+# NOT HERE, ON PURPOSE: "Filter by sheet" and the embedded schedule are
+# settings of a schedule that exists, and are SET_SCHEDULE_OPTIONS'
+# (FRG-VIEW-155). A key schedule stays CREATE_KEY_SCHEDULE's; a sheet list and
+# a view list CREATE_SHEET_LIST's.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
   Creates a schedule view of one category, with the fields asked for, that lives
-  in the project and can go on a sheet.
+  in the project and can go on a sheet - a plain schedule, or (version 2) a
+  material takeoff, a note block, a revision schedule, a keynote legend, or an
+  area schedule of one area scheme.
 
   **A schedule and a count are different deliverables, and both are right
   answers to different sentences.** GROUP_AND_COUNT reads the model and puts
@@ -42,6 +74,29 @@ contract:
     - name: scheduleName
       type: string
       source: request
+    # VERSION 2. "schedule" | "material takeoff" | "note block" |
+    # "revision schedule" | "keynote legend". Left out it is "schedule" -
+    # version 1's Schedule/Quantities, exactly.
+    - name: kind
+      type: string
+      source: request
+      optional: true
+      absent: schedule
+    # VERSION 2. An area scheme's name - "Gross Building", "Rentable" - for an
+    # area schedule of that scheme, with the category Areas. Left out it is
+    # "none": no scheme is named, as in version 1.
+    - name: areaScheme
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 2. The Generic Annotation family a note block lists, by name.
+    # Needed for kind "note block" only; left out it is "none".
+    - name: noteBlockFamily
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: created
       role: result
@@ -58,6 +113,12 @@ contract:
       # (D-52).
       role: accounting
       type: IList<string>
+    - name: madeAs
+      # VERSION 2. A second read of the view made: its name, the category and
+      # what Revit says it is (material takeoff, area scheme, family), and its
+      # column count - never the request echoed.
+      role: result
+      type: string
 
 proof:
   date: '2026-09-13'
@@ -100,6 +161,15 @@ compatibility-note: >
   nothing here builds one from an int and 2024's 64-bit ids do not reach this
   code.
 
+  VERSION 2: `ViewSchedule.CreateMaterialTakeoff`, `CreateNoteBlock`,
+  `CreateRevisionSchedule`, `CreateKeynoteLegend`, the three-argument
+  `CreateSchedule(Document, ElementId, ElementId)` for an area scheme,
+  `IsValidCategoryForMaterialTakeoff`, `GetValidFamiliesForNoteBlock` and
+  `ScheduleDefinition.IsMaterialTakeoff`, `IsKeySchedule`, `AreaSchemeId` and
+  `FamilyId` are present and unchanged 2020 through 2027, read off the shipped
+  assemblies of all eight with tools/api-surface --members on 2026-11-01. No
+  member here is missing on any release, so nothing is reached by name.
+
   Fields are matched by the name `SchedulableField.GetName(doc)` returns, which
   is the name shown in Revit's own field list - so a field asked for in the
   words on screen is found, and one asked for by an internal parameter name is
@@ -131,6 +201,25 @@ compatibility-note: >
 #   "create a view list"               -> CREATE_SHEET_LIST, listKind=views.
 #                                        Views are not model elements either;
 #                                        it is ViewSchedule.CreateViewList
+#   "make a material takeoff of the walls"
+#                                  -> here, version 2: kind material takeoff,
+#                                     the category Walls
+#   "create a revision schedule"   -> here, version 2: kind revision schedule
+#                                     with the category Revisions - the
+#                                     category is required and checked
+#   "make a keynote legend"        -> here, version 2: kind keynote legend with
+#                                     the category Keynote Tags
+#   "make a note block"            -> here, version 2: kind note block, the
+#                                     category Generic Annotations and the
+#                                     family in noteBlockFamily
+#   "make an area schedule for the gross building scheme"
+#                                  -> here, version 2: the category Areas and
+#                                     areaScheme. REPORT_AREAS reads areas and
+#                                     makes nothing; CREATE_AREA_PLAN makes a
+#                                     plan view, not a schedule
+#   "filter the schedule by sheet" -> SET_SCHEDULE_OPTIONS - a setting of a
+#                                     schedule that exists, not a new one
+#   "add an embedded schedule"     -> SET_SCHEDULE_OPTIONS, for the same reason
 utterances:
   - make a schedule
   - create a schedule of the ducts
@@ -138,3 +227,9 @@ utterances:
   - add a schedule to the project
   - make a quantity schedule
   - schedule these on a drawing
+  # VERSION 2 - the other kinds on View > Schedules.
+  - make a material takeoff of the walls
+  - create a revision schedule
+  - make a keynote legend
+  - make a note block
+  - make an area schedule for the gross building scheme
