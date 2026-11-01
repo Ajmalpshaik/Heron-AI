@@ -5,7 +5,12 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-002
-semantic-identity: "turns a set of parameter values into a schedule-style table"
+# IDENTITY REWORDED 2026-11-01 (FRAGMENT-ISSUES 5b-1354). It was "turns a set
+# of parameter values into a schedule-style table", which shares no word with
+# "how many doors of each type" - and REPORT_VIEWPORT_TYPES, whose identity ends
+# "how many use each", answered that question on lexical. The identity is read
+# by all three routes, so it now says the modeller's question first.
+semantic-identity: "how many of each type, size or value there are - a set of parameter values turned into a schedule-style table"
 kind: action
 domain: revit.reporting
 capability: GROUP_AND_COUNT
@@ -112,9 +117,12 @@ tests: tests/
 # that retrieval could not act on, and these resolved elsewhere.
 
 utterances:
+  # THE FIRST EIGHT ARE WHAT THE RE-RANKER READS (D-134), so the order below is
+  # measured, not tidy. "group them and count" was third until 2026-11-01 and
+  # moved last to let a pipe-size sentence in (FRAGMENT-ISSUES 5b-1357); it is
+  # declared whole, so it still answers by its own phrase.
   - what sizes are they
   - break it down by size
-  - group them and count
   - give me a schedule of the types
   - break it down by type
   # ADDED 2026-09-19. Both sentences reached a WRITE: "what sizes are the
@@ -126,6 +134,32 @@ utterances:
   # size" and "give me a schedule of the types"; only the noun differed.
   - what sizes are the ducts
   - duct schedule by size
+  # ADDED 2026-11-01 (FRAGMENT-ISSUES 5b-1354): the question measured reaching
+  # REPORT_VIEWPORT_TYPES. Keep it inside the eight: pushed out, four held-out
+  # door-by-type questions left this card on the re-ranker.
+  - how many doors of each type
+  # ADDED 2026-11-01 (FRAGMENT-ISSUES 5b-1357), the pipe twin of the duct pair
+  # above: "what sizes are these pipes" reached AUTO_SIZE_PIPE or SET_MEP_SIZE -
+  # writes - on every backend, because "size these pipes" (a verb) and "what
+  # sizes are these pipes" (a noun) look alike to both routes. The breakdown
+  # sentence is the size-breakdown skill's, which no card carried; it is the
+  # eighth on purpose - with "what sizes are these pipes" there instead, the
+  # re-ranker moved fewer pipe questions and lost door ones.
+  - give me a breakdown of the pipe sizes
+  # The rest are past the eight, read by the words and nearness routes only.
+  # The two door-free forms of 5b-1354's question - put first, they pushed the
+  # duct-size sentences out of the eight and "give me a breakdown of the duct
+  # sizes" went to AUTO_SIZE_MEP and SET_MEP_SIZE on the re-ranker.
+  - how many of each type are there
+  - count them by type
+  - group them and count
+  - what sizes are these pipes
+  - how many pipes of each size
+  # NOT DECLARED (FRAGMENT-ISSUES 5b-1371): "what is the biggest pipe size",
+  # which reaches AUTO_SIZE_PIPE or SET_MEP_SIZE - writes - on all four
+  # backends on main. Declared here, it took the owner's own request #59,
+  # "Size the pipes.", from AUTO_SIZE_PIPE on lexical and the trained model,
+  # and sent "how big is this pipe" to AUTO_SIZE_PIPE on the re-ranker.
   # MOVED 2026-11-01 from SUM_BY_GROUP, merged into this card.
   - total the lengths by size
   - how many metres of each size
