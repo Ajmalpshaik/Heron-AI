@@ -198,6 +198,6 @@ EXPORT_VIEWS_TO_DWG takes views, and EXPORT_SHEETS_TO_PDF takes elements - **nei
 **Merged later the same day.** `SYNC_SHEET_SETS_BY_PARAMETER` is DEPRECATED: it is `MANAGE_SHEET_SETS`
 version 4's mode `by-parameter` now, with the same inputs, refusals and outputs (its `unchanged` is
 `setsUnchanged`), and its In-Session switch and restore taken for every mode that writes - the safer
-rule. The table row above is the record of what was built first. FRAGMENT-ISSUES row 5b-1377.
+rule. The table row above is the record of what was built first. FRAGMENT-ISSUES row 5b-1379.
 
 What only a Revit run settles is NEEDS-CHECKING Group KA, rows KA11 to KA17.
