@@ -63,7 +63,7 @@ The numbers are the method's own step numbers.
 %%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     S0(["<b>0 · The modeller opens the template</b> - Heron never chooses it<br/>REPORT_FAMILY_TEMPLATE reads the kind and the units"])
-    S1["<b>1 · Category and settings</b><br/>SET_FAMILY_CATEGORY · SET_FAMILY_SETTINGS"]
+    S1["<b>1 · Category and settings</b><br/>SET_FAMILY_SETTINGS - the category first"]
     S2["<b>2-4 · Parameters, the first type, formulas</b><br/>ADD_FAMILY_PARAMETERS · SET_FAMILY_TYPE_VALUES · SET_FAMILY_FORMULA"]
     S5["<b>5-6 · The skeleton</b><br/>CREATE_REFERENCE_PLANES · SET_FAMILY_PLANE_REFERENCE · LABEL_FAMILY_DIMENSION"]
     S7["<b>7 · The forms, one group of parts at a time</b><br/>CREATE_FAMILY_FORMS · EXTRUDE_BETWEEN_PLANES · revolve · blend · sweep"]
@@ -98,7 +98,7 @@ steps 0, 1, 7, 10, 11, 12 and 13 only - the dotted arrows. What the newer tools 
 
 ```text
  0     the modeller opens the template (Heron never chooses it); REPORT_FAMILY_TEMPLATE reads kind and units
- 1     category and settings          SET_FAMILY_CATEGORY, SET_FAMILY_SETTINGS
+ 1     category and settings          SET_FAMILY_SETTINGS, the category first (SET_FAMILY_CATEGORY until 2026-11-01)
  2-4   parameters, first type, formulas  ADD_FAMILY_PARAMETERS, SET_FAMILY_TYPE_VALUES, SET_FAMILY_FORMULA
  5-6   the skeleton                   CREATE_REFERENCE_PLANES, SET_FAMILY_PLANE_REFERENCE, LABEL_FAMILY_DIMENSION
  7     the forms, group by group      CREATE_FAMILY_FORMS, EXTRUDE_BETWEEN_PLANES, revolve, blend, sweep

@@ -101,12 +101,14 @@ compatibility-note: >
   domain-specific model classes, so one code path serves ducts, pipes and
   electrical alike.
 
-# ROUTING - repeated in CHECK_EQUIPMENT_CONNECTORS.
+# ROUTING - repeated in REPORT_CONNECTORS.
 #
 #   "what flow does this connector carry" -> here
 #   "are the equipment connectors the right size for the duct" ->
-#                                        CHECK_EQUIPMENT_CONNECTORS - whether
-#                                        it MATCHES, not what it carries
+#                                        REPORT_CONNECTORS - whether it
+#                                        MATCHES, not what it carries
+#                                        (CHECK_EQUIPMENT_CONNECTORS until
+#                                        2026-11-01)
 utterances:
   - what flow is set on these
   - is the airflow filled in

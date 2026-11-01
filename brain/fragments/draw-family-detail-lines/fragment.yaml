@@ -188,7 +188,7 @@ compatibility-note: >
   with `Categories.get_Item(BuiltInCategory.OST_Lines)` for a project's line
   styles. Built on all eight releases on 2026-11-01.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "draw the profile in this profile family"     -> here
 #   "draw the lines of this detail item family"   -> here

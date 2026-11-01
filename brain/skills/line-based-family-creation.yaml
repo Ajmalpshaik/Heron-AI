@@ -101,7 +101,7 @@ needs:
   - ADD_FAMILY_FLIP_CONTROL
   - LOAD_FAMILY
   # FAMILY-CREATION's steps, which this skill says still hold.
-  - SET_FAMILY_CATEGORY
+  # SET_FAMILY_CATEGORY was listed here until 2026-11-01, when it was merged into SET_FAMILY_SETTINGS.
   - SET_FAMILY_SETTINGS
   # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
   # GUIDs, against the family, before ADD_FAMILY_PARAMETERS' shared kind writes.

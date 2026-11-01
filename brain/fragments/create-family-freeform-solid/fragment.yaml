@@ -179,7 +179,7 @@ compatibility-note: >
   takes tilted and warped sections; a sweep along a path that crosses itself
   is built without complaint. Earlier releases are NEEDS-CHECKING CV.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "make a spring as one smooth sweep along a helix" -> here
 #   "loft a smooth body through elliptical sections"  -> here

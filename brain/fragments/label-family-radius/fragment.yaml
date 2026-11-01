@@ -245,7 +245,7 @@ compatibility-note: >
   difference is in what Revit makes of the two references, which only a run
   on 2020 can read - NEEDS-CHECKING Group IS.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "label the neck diameter with Neck Diameter"   -> here
 #   "drive the radius of this cylinder by Radius"  -> here

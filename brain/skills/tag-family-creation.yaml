@@ -34,7 +34,7 @@ purpose: >
      (FAMILY-CREATION step 0): IMPERIAL where the modeller works in
      millimetres is said before anything is built, with SET_PROJECT_UNITS or
      the Metric template offered.
-  1. SET_FAMILY_CATEGORY to the tag category - Pipe Tags, Duct Tags,
+  1. SET_FAMILY_SETTINGS "Category=<tag category>" - Pipe Tags, Duct Tags,
      Mechanical Equipment Tags - BEFORE any label: a label shows the tagged
      category's parameters, and a label copied from a seed is refused across
      categories. Whether that tool switches a Generic Tag's category the way
@@ -99,7 +99,7 @@ needs:
   - REPORT_PROJECT_UNITS
   - SET_PROJECT_UNITS
   - CREATE_FAMILY_DOCUMENT
-  - SET_FAMILY_CATEGORY
+  # SET_FAMILY_CATEGORY was listed here until 2026-11-01, when it was merged into SET_FAMILY_SETTINGS.
   - REPORT_SHARED_PARAMETER_FILE
   # Step 3: the seed opened, read, and its labels copied in.
   - ACTIVATE_DOCUMENT

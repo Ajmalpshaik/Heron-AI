@@ -226,12 +226,15 @@ compatibility-note: >
   leaves a family type out, is not in the reference - the per-type proof is
   how this call finds out (NEEDS-CHECKING Group IK).
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "set the light source of this fixture family" -> here
 #   "add an electrical connector to the family"  -> ADD_FAMILY_CONNECTOR - the
 #                                                   fixture's power
-#   "set the family category"                    -> SET_FAMILY_CATEGORY
+#   "set the family category"                    -> SET_FAMILY_SETTINGS,
+#                                                   Category=Lighting Fixtures
+#                                                   (SET_FAMILY_CATEGORY until
+#                                                   2026-11-01)
 
 # VERSION 2 - asked by the owner on 2026-10-21, building a pendant LED family
 # on Revit 2020: the Light Source tick, placing or aiming the source and the

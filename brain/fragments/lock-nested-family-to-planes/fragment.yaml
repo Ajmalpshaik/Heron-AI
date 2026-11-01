@@ -129,7 +129,7 @@ compatibility-note: >
   through 2027 (the RevitAPI reference assemblies and their XML remarks, read
   2026-10-01).
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "lock the motor's centre to the centre planes" -> here
 #   "lock the nested family to the reference planes" -> here

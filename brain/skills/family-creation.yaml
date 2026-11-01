@@ -116,8 +116,9 @@ purpose: >
      asked for once, in that one list, and never assumed or scaled off the
      image (D-33). Where the picture cannot show something - the back, the
      inside, a hidden neck - ask rather than invent it.
-  1. SET_FAMILY_CATEGORY first, when the template's category is not the one
-     wanted - a Generic Model that should be an Air Terminal. The category
+  1. SET_FAMILY_SETTINGS "Category=<name>" first, when the template's
+     category is not the one wanted - a Generic Model that should be an Air
+     Terminal; in a call with other settings it is written first. The category
      brings its own built-in parameters, and everything after it builds on
      them. CLASSIFY IT FROM THAT CATEGORY NEXT: REPORT_FAMILY_TEMPLATE's
      classificationCodes line lists the OmniClass Numbers (Classification
@@ -467,7 +468,7 @@ needs:
   # the change the modeller may choose.
   - REPORT_PROJECT_UNITS
   - SET_PROJECT_UNITS
-  - SET_FAMILY_CATEGORY
+  # SET_FAMILY_CATEGORY was listed here until 2026-11-01, when it was merged into SET_FAMILY_SETTINGS.
   - SET_FAMILY_SETTINGS
   - ADD_FAMILY_PARAMETERS
   # Step 2's read first - the shared parameter file and its GUIDs, against

@@ -323,7 +323,7 @@ compatibility-note: >
   `SpecUtils.GetAllSpecs()` and `LabelUtils.GetLabelForSpec` (2021 to 2027);
   `NamingUtils.IsValidName`. Built on all eight releases on 2026-11-01.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "add a Width parameter to this family"   -> here
 #   "make these family parameters instance"  -> here, switchExisting true

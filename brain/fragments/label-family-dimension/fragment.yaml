@@ -228,7 +228,7 @@ compatibility-note: >
   alignment as a `Dimension` with `IsLocked` in every release, and which end
   it moves when both are held, is what NEEDS-CHECKING Group IU has to show.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "label the width with the Width parameter"   -> here
 #   "keep it centred as it resizes"               -> here, with a centre plane

@@ -165,7 +165,7 @@ compatibility-note: >
   `Origin` and `ViewDirection` for a view at an angle, present 2020 through
   2027.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "add a solid fill to this detail item family" -> here
 #   "put a masking region in this family"         -> here

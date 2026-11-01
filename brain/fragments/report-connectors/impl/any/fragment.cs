@@ -1,8 +1,32 @@
-// NOT STANDALONE. Assumes `elements` is in scope, and leaves `connectorFacts`,
-// `connections`, `openConnectors`, `flagDisagrees`, `noConnectors` and
-// `connectorSummary` behind.
+// NOT STANDALONE. Assumes `elements` and `sizeTolerance` are in scope, and
+// leaves `connectorFacts`, `connections`, `openConnectors`, `flagDisagrees`,
+// `noConnectors`, `connectorSummary`, `mismatched`, `unconnectedSpigots` and
+// `findings` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
+//
+// VERSION 3 (2026-11-01) - EVERY JOINT ON A PLACED FAMILY IS GRADED TOO.
+// CHECK_EQUIPMENT_CONNECTORS (check-equipment-connectors) was merged into this
+// card on the owner's instruction and is DEPRECATED. Its grading is carried
+// here, below the description: on each FamilyInstance - equipment, terminal,
+// fixture, fitting, accessory - every connector is compared with what is
+// REALLY joined to it. A pipe on a duct spigot is a DOMAIN MISMATCH, its own
+// class; a round-to-rectangular joint is a SHAPE CHANGE, said and not
+// measured; same shape is compared per shape - diameter, or width and height -
+// within `sizeTolerance` (MILLIMETRES, D-71; left out, 0); and an open spigot
+// is NOTHING PLUGGED IN, counted in `unconnectedSpigots`. `mismatched` names
+// each element with a domain or size mismatch, once. Its sentences are in
+// MILLIMETRES, as that card's were - they are read by a person; the fact lines
+// stay in feet.
+//
+// THE SAFER RULE OF THE TWO IS KEPT. That card took the first ref in AllRefs
+// that was not the unit itself as the partner, and trusted IsConnected to say
+// whether anything was plugged in - so the logical MEPSystem, which AllRefs
+// also carries, could be graded as the "duct" on the other side, and a spigot
+// whose flag lied read as joined. Here the partner is the same physical one
+// the description uses: refs owned by the element itself or by an MEPSystem
+// are dropped first, and a spigot with no physical partner is OPEN whatever
+// the flag says.
 //
 // THE FLAG IS REPORTED, NEVER TRUSTED.
 //
@@ -86,6 +110,47 @@ var openConnectors = new Dictionary<ElementId, int>();
 var flagDisagrees = new List<ElementId>();
 var noConnectors = new List<ElementId>();
 
+// ---- VERSION 3: the grading, from CHECK_EQUIPMENT_CONNECTORS.
+//
+// MILLIMETRES IN, FEET INSIDE (D-71). The add-in converts an XYZ at the
+// boundary and cannot convert a bare double, so the tolerance is converted
+// here, once, before it is used. A negative one grades no size at all and says
+// so, rather than calling every joint a mismatch.
+const double MillimetresPerFoot = 304.8;
+var gradeSizes = !(sizeTolerance < 0) && !double.IsNaN(sizeTolerance);
+var toleranceFeet = gradeSizes ? sizeTolerance / MillimetresPerFoot : 0;
+var mismatched = new List<ElementId>();
+var unconnectedSpigots = 0;
+var findings = new List<string>();
+var gradeLines = new List<string>();
+var gradeLeft = 0;
+var unitsGraded = 0;
+Action<string> grade = line =>
+{
+    // A tool answers a question and never returns the model (D-26): the first
+    // 100 sentences are kept, and the rest are counted.
+    if (gradeLines.Count < 100) gradeLines.Add(line); else gradeLeft++;
+};
+Func<Connector, string> describeMm = connector =>
+{
+    try
+    {
+        if (connector.Shape == ConnectorProfileType.Round)
+        {
+            return string.Format("round {0:0} mm dia", connector.Radius * 2 * MillimetresPerFoot);
+        }
+        if (connector.Shape == ConnectorProfileType.Rectangular
+            || connector.Shape == ConnectorProfileType.Oval)
+        {
+            return string.Format("{0} {1:0} x {2:0} mm",
+                connector.Shape == ConnectorProfileType.Oval ? "oval" : "rect",
+                connector.Width * MillimetresPerFoot, connector.Height * MillimetresPerFoot);
+        }
+    }
+    catch { }
+    return "(size unreadable)";
+};
+
 foreach (var element in elements)
 {
     if (element == null) continue;
@@ -106,7 +171,27 @@ foreach (var element in elements)
         }
     }
 
-    if (manager == null) { noConnectors.Add(element.Id); continue; }
+    if (manager == null)
+    {
+        noConnectors.Add(element.Id);
+        // VERSION 3: CHECK_EQUIPMENT_CONNECTORS's two sentences, kept apart -
+        // nothing to connect, and a family that can never join a system.
+        if (!(element is FamilyInstance))
+            grade(string.Format("{0} (id {1}): not a placed family instance or an MEP run - it has no "
+                + "connectors", element.Name, element.Id));
+        else
+            grade(string.Format("{0} (id {1}): no MEP model at all. A Generic Model used as equipment, "
+                + "or a placeholder - it can never join a system", element.Name, element.Id));
+        continue;
+    }
+
+    // VERSION 3: only a placed family is graded - its spigots against what is
+    // bolted on. A duct's or pipe's own ends are described and not graded, so
+    // a joint between two elements handed in together is judged once, from the
+    // family's side.
+    var unit = curve == null ? element as FamilyInstance : null;
+    var index = 0;
+    var unitMismatched = false;
 
     var facts = new List<string>();
     var partners = new List<ElementId>();
@@ -121,8 +206,12 @@ foreach (var element in elements)
     foreach (Connector connector in set)
     {
         if (connector == null) continue;
+        index++;
 
         var mine = new List<ElementId>();
+        // VERSION 3: the first physical partner's own connector, which is what
+        // a joint is graded against - through a transition, the FITTING.
+        Connector partner = null;
         try
         {
             foreach (Connector reference in connector.AllRefs)
@@ -134,6 +223,7 @@ foreach (var element in elements)
                 if (owner.Id == element.Id) continue;
                 if (owner is MEPSystem) continue;
                 mine.Add(owner.Id);
+                if (partner == null) partner = reference;
             }
         }
         catch { }
@@ -213,9 +303,99 @@ foreach (var element in elements)
                   ", " + joined + " (IsConnected flag: " + flag.ToString() + ")");
 
         foreach (var id in mine) if (!partners.Contains(id)) partners.Add(id);
+
+        // ---- VERSION 3: GRADE THIS JOINT, on a placed family only.
+        if (unit == null) continue;
+        var spigot = describeMm(connector);
+
+        if (partner == null)
+        {
+            // OPEN, decided by what is physically joined and never by the
+            // flag - the safer of the two cards' rules.
+            unconnectedSpigots++;
+            grade(string.Format("{0} (id {1}) connector {2} [{3}]: NOTHING PLUGGED IN{4}. No clash test "
+                + "and no connectivity walk will flag this - the services that ARE connected trace perfectly",
+                element.Name, element.Id, index, spigot,
+                flag ? " - though its IsConnected flag says joined" : ""));
+            continue;
+        }
+
+        var theirs = describeMm(partner);
+        string ownerName = "element";
+        try
+        {
+            if (partner.Owner != null && partner.Owner.Category != null) ownerName = partner.Owner.Category.Name;
+        }
+        catch { }
+
+        // Domain first: a different kind of wrong, never a tolerance.
+        var domainClash = false;
+        try { domainClash = connector.Domain != partner.Domain; }
+        catch { }
+        if (domainClash)
+        {
+            unitMismatched = true;
+            string mineDomain = "unknown domain";
+            string theirDomain = "unknown domain";
+            try { mineDomain = connector.Domain.ToString(); } catch { }
+            try { theirDomain = partner.Domain.ToString(); } catch { }
+            grade(string.Format("{0} (id {1}) connector {2}: DOMAIN MISMATCH - {3} joined to a {4} ({5}). "
+                + "Not a tolerance problem; usually the wrong family was placed",
+                element.Name, element.Id, index, mineDomain, theirDomain, ownerName));
+            continue;
+        }
+
+        // Shape next, never compared as one number. A connector with no
+        // profile - an electrical one - throws on Shape and has no size to
+        // grade; the domain above is all there is to compare.
+        ConnectorProfileType myShape;
+        ConnectorProfileType theirShape;
+        try { myShape = connector.Shape; theirShape = partner.Shape; }
+        catch { continue; }
+        if (myShape != theirShape)
+        {
+            grade(string.Format("{0} (id {1}) connector {2}: SHAPE CHANGE - {3} onto {4} ({5}). May be a "
+                + "correct transition; it should be a decision rather than an accident",
+                element.Name, element.Id, index, spigot, theirs, ownerName));
+            continue;
+        }
+        if (!gradeSizes) continue;
+
+        // Size, per shape. The 1e-9 ft is floating noise, not a tolerance.
+        var differs = false;
+        var detail = "";
+        try
+        {
+            if (myShape == ConnectorProfileType.Round)
+            {
+                var delta = Math.Abs(connector.Radius - partner.Radius) * 2;
+                differs = delta > toleranceFeet + 1e-9;
+                detail = string.Format("{0:0.#} mm on diameter", delta * MillimetresPerFoot);
+            }
+            else if (myShape == ConnectorProfileType.Rectangular || myShape == ConnectorProfileType.Oval)
+            {
+                var dw = Math.Abs(connector.Width - partner.Width);
+                var dh = Math.Abs(connector.Height - partner.Height);
+                differs = dw > toleranceFeet + 1e-9 || dh > toleranceFeet + 1e-9;
+                detail = string.Format("{0:0.#} mm wide, {1:0.#} mm high",
+                    dw * MillimetresPerFoot, dh * MillimetresPerFoot);
+            }
+        }
+        catch { differs = false; }
+
+        if (differs)
+        {
+            unitMismatched = true;
+            grade(string.Format("{0} (id {1}) connector {2}: SIZE MISMATCH - spigot {3}, {4} is {5}. Out by "
+                + "{6}. Revit builds it with a transition and nobody sees it until the airflow does not "
+                + "arrive", element.Name, element.Id, index, spigot, ownerName, theirs, detail));
+        }
     }
 
+    if (unitMismatched && !mismatched.Contains(element.Id)) mismatched.Add(element.Id);
+
     if (facts.Count == 0) { noConnectors.Add(element.Id); continue; }
+    if (unit != null) unitsGraded++;
 
     connectorFacts[element.Id] = facts;
     connections[element.Id] = partners;
@@ -269,3 +449,18 @@ if (connectorFacts.Count > 0)
 
     connectorSummary = string.Join("  ||  ", parts.ToArray());
 }
+
+// ---- VERSION 3: THE GRADING'S OWN SENTENCES, the summary first - in
+// CHECK_EQUIPMENT_CONNECTORS's words, with its warning that every size is what
+// the FAMILY declares.
+findings.Add(string.Format("{0} placed family instance(s) graded: {1} with a mismatched joint, {2} "
+    + "spigot(s) with nothing physically plugged in{3}. Sizes are what the FAMILY declares - check one unit "
+    + "of each type against its datasheet once, or every result agrees with itself and is wrong together",
+    unitsGraded, mismatched.Count, unconnectedSpigots,
+    gradeSizes
+        ? (sizeTolerance > 0 ? string.Format(", sizes compared within {0:0.#} mm", sizeTolerance) : ", sizes compared exactly")
+        : ". NO SIZE WAS GRADED: a sizeTolerance of " + sizeTolerance + " mm is not a tolerance - give 0 or more"));
+findings.AddRange(gradeLines);
+if (gradeLeft > 0)
+    findings.Add(gradeLeft + " more sentence(s) not listed here - select fewer to see them. `mismatched` "
+        + "still names every element with a mismatched joint");

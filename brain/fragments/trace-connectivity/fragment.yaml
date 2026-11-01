@@ -154,8 +154,10 @@ compatibility-note: >
 #                                       zero-flow run is really missing
 
 #   "are the equipment connectors the right size for the duct" ->
-#                                        CHECK_EQUIPMENT_CONNECTORS - one
-#                                        joint compared, not a network walked
+#                                        REPORT_CONNECTORS - one joint
+#                                        compared, not a network walked
+#                                        (CHECK_EQUIPMENT_CONNECTORS until
+#                                        2026-11-01)
 #   "are all the sinks and toilets connected to the drainage" ->
 #                                        CHECK_FIXTURE_CONNECTIVITY
 utterances:

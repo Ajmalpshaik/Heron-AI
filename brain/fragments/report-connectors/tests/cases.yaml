@@ -53,6 +53,38 @@ positive:
       and its lines, the elements joined by "  ||  ". Through a chat it prints
       whole, where the dictionaries print only how many entries they hold
 
+  # VERSION 3 (2026-11-01), CHECK_EQUIPMENT_CONNECTORS's grading. Each of these
+  # FAILS on version 2, which has no `mismatched`, no `unconnectedSpigots` and
+  # no grading sentence at all.
+  - given: an AHU with a 600x400 supply spigot and a 400x300 duct on it, sizeTolerance 0
+    expect: >
+      the AHU's id in `mismatched` and a SIZE MISMATCH sentence with both
+      dimensions out - 200 mm wide, 100 mm high - CHECKED by selecting the duct
+      and reading its size, because Revit builds the joint with a transition
+      and nothing looks wrong
+
+  - given: the same AHU and duct, sizeTolerance 250
+    expect: >
+      `mismatched` EMPTY and no SIZE MISMATCH sentence - the tolerance is in
+      millimetres and is read. The same answer at 0 and 250 is the defect
+      recorded against the retired card (FRAGMENT-ISSUES 3c, 3i)
+
+  - given: an AHU with four connectors, two joined to nothing
+    expect: >
+      `unconnectedSpigots` 2 and both listed NOTHING PLUGGED IN. No clash test
+      flags this, and the services that ARE connected trace perfectly
+
+  - given: a round 300 mm spigot onto a round 300 mm duct, sizeTolerance left out
+    expect: >
+      nothing reported for that joint - left out, the tolerance binds 0 and
+      equal sizes compare equal
+
+  - given: an AHU whose supply connector belongs to a named Supply Air system and is joined to nothing
+    expect: >
+      NOTHING PLUGGED IN, counted in `unconnectedSpigots`, and NOT graded
+      against anything. The system ref in AllRefs is not a duct: the retired
+      card took it as the partner and graded the joint against the system
+
 negative:
   - given: a connector whose `IsConnected` is true with nothing physically joined
     expect: >
@@ -97,8 +129,57 @@ negative:
       no throw, every element accounted for in exactly one of the outputs. One
       element that cannot be read must not lose the rest
 
+  # VERSION 3 (2026-11-01), CHECK_EQUIPMENT_CONNECTORS's negatives. Each FAILS
+  # on version 2, which grades nothing.
+  - given: a round spigot joined to a rectangular duct
+    expect: >
+      SHAPE CHANGE, NOT a size comparison, and the unit NOT in `mismatched`. A
+      round connector reports a radius and a rectangular one width and height;
+      comparing them as one number is how this kind of check produces confident
+      nonsense
+
+  - given: a pipe joined to a duct connector
+    expect: >
+      DOMAIN MISMATCH, its own sentence, and the unit in `mismatched`. It is
+      not a tolerance problem and must not be filed with the size findings
+
+  - given: a Generic Model being used as equipment
+    expect: >
+      its id in `noConnectors` and "no MEP model at all" in `findings` - it can
+      never join a system, which is a different finding from a size being wrong
+
+  - given: an equipment family whose connectors were authored at the wrong size
+    expect: >
+      everything reported as matching, AND the first sentence of `findings`
+      warning that sizes are what the family declares. The fragment cannot
+      detect this and must say so
+
+  - given: a joint through a transition fitting
+    expect: >
+      compared against the FITTING, which is what is physically bolted to the
+      spigot. The transition's far side is a separate joint
+
+  - given: a spigot whose IsConnected flag is true with nothing physically joined
+    expect: >
+      NOTHING PLUGGED IN "though its IsConnected flag says joined", counted in
+      `unconnectedSpigots` - never graded as joined
+
+  - given: a lighting fixture's electrical connector joined to a circuit
+    expect: >
+      no SHAPE CHANGE - an electrical connector has no profile, so it is graded
+      on its domain alone
+
+  - given: sizeTolerance -5
+    expect: >
+      no SIZE MISMATCH at all and the summary saying NO SIZE WAS GRADED, rather
+      than every joint called a mismatch; domains and shapes still graded
+
 second_route:
   - >
     open the element in Revit, click the connector and read the properties
     palette - domain, size and the direction arrow on screen. Revit's own
     display is the second route, not another script
+  - >
+    version 3's grading: select the equipment, hover a connector, and read its
+    size against the duct joined to it - CHECK_EQUIPMENT_CONNECTORS's second
+    route, carried here

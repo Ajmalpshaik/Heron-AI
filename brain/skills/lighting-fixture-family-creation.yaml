@@ -22,7 +22,8 @@ purpose: >
   0. REPORT_FAMILY_TEMPLATE FIRST - free-standing, ceiling-based or
      wall-based, and Lighting Fixtures as its category. A fixture that must
      sit on faces in a LINKED model is a face-based Generic Model changed to
-     Lighting Fixtures with SET_FAMILY_CATEGORY.
+     Lighting Fixtures with SET_FAMILY_SETTINGS "Category=Lighting
+     Fixtures".
      CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
      classificationCodes line lists the OmniClass Numbers (Classification
      Number from Revit 2026) that Revit's taxonomy file gives the category -
@@ -94,7 +95,7 @@ needs:
   # Step 0's units check, as FAMILY-CREATION's.
   - REPORT_PROJECT_UNITS
   - SET_PROJECT_UNITS
-  - SET_FAMILY_CATEGORY
+  # SET_FAMILY_CATEGORY was listed here until 2026-11-01, when it was merged into SET_FAMILY_SETTINGS.
   - ADD_FAMILY_PARAMETERS
   - SET_FAMILY_TYPE_VALUES
   - CREATE_REFERENCE_PLANES

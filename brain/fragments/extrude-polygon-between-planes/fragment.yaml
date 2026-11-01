@@ -166,7 +166,7 @@ compatibility-note: >
   because it moved at 2022 - `Definition.ParameterType` before,
   `Definition.GetDataType()` from.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "make a parametric hexagon / hex head / nut body"  -> here
 #   "extrude a hexagon 20 mm thick"                    -> CREATE_FAMILY_FORMS,
