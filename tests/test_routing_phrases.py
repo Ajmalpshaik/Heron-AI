@@ -307,10 +307,12 @@ DECLARED = [
     ("what is the sill height of these windows", "READ_ELEMENT_PARAMETERS",
      "5b-321: answered PLACE_HOSTED_FAMILY on the model"),
     # 146's last READ gap: nothing read a view's scale until READ_VIEW_SCALE
-    # (2026-10-09), so the question could only land on the write.
-    ("what is the scale of this view", "READ_VIEW_SCALE",
+    # (2026-10-09), so the question could only land on the write. Since
+    # 2026-11-01 READ_VIEW_SCALE is merged into REPORT_VIEW_SETTINGS, which
+    # declares both sentences now - the read that answers them moved.
+    ("what is the scale of this view", "REPORT_VIEW_SETTINGS",
      "146: answered SET_VIEW_SCALE on both"),
-    ("what scale is this plan at", "READ_VIEW_SCALE",
+    ("what scale is this plan at", "REPORT_VIEW_SETTINGS",
      "146: answered CREATE_CALLOUT on the model"),
     # Row 146's gap, not a mis-route: LIST_SHEETS only COUNTS a sheet's views,
     # so no READ named them until LIST_VIEWS_ON_SHEET was written (2026-10-09).
@@ -466,8 +468,13 @@ def main():
             check(got == want and not writes(risk), "%r -> %s, %s" % (text, got, risk or "no risk"))
 
         print("\n8. A QUESTION THAT REACHED A WRITE IS DECLARED ON THE READ THAT ANSWERS IT")
+        # A RETIRED CARD CLAIMS NO SENTENCE (heron_search.RETIRED_FRAGMENTS,
+        # 2026-11-01): its file keeps its sentences as the record, and the
+        # identity table reads them for nobody - so they are not counted here.
         owners = {}
         for frag in on_disk.values():
+            if frag.status in SEARCH.RETIRED_FRAGMENTS:
+                continue
             for said in [frag.data.get("semantic-identity") or ""] + frag.utterances():
                 owners.setdefault(SEARCH.normalise(said), set()).add(frag.data.get("capability"))
         risk_of = dict((frag.data.get("capability"), (frag.data.get("risk") or "").upper())

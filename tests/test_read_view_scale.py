@@ -9,7 +9,15 @@
 
 """
 READ_VIEW_SCALE answers what scale a view is drawn at, and never gives a sheet
-a number.
+a number - and since 2026-11-01 that answer is REPORT_VIEW_SETTINGS'.
+
+THE CARD THIS HOLDS MOVED ON 2026-11-01. READ_VIEW_SCALE was merged into
+REPORT_VIEW_SETTINGS on the owner's instruction ("make sure there is no
+duplicate tools") and is DEPRECATED; its block of C# was carried line for line
+into brain/fragments/report-view-settings/impl/any/fragment.cs, and its
+sentences moved there. So the facts below are measured on REPORT_VIEW_SETTINGS
+now - CARD_DIR and CAPABILITY are the only lines that changed. Every rule,
+pin, sentence and change request is the same.
 
     python tests/test_read_view_scale.py
 
@@ -112,9 +120,11 @@ import scratch_audit                                            # noqa: E402
 # trail (FRAGMENT-ISSUES row 5b-1070).
 scratch_audit.plant()
 
-CARD_DIR = os.path.join(ROOT, "brain", "fragments", "read-view-scale")
+# READ_VIEW_SCALE until 2026-11-01, when it was merged into REPORT_VIEW_SETTINGS
+# (version 2) and DEPRECATED. The scale is read there now, by the same code.
+CARD_DIR = os.path.join(ROOT, "brain", "fragments", "report-view-settings")
 IMPL = os.path.join(CARD_DIR, "impl", "any", "fragment.cs")
-CAPABILITY = "READ_VIEW_SCALE"
+CAPABILITY = "REPORT_VIEW_SETTINGS"
 
 # Row 146's sentences: the ones that reached SET_VIEW_SCALE before this READ.
 ROW_146 = (
@@ -278,8 +288,13 @@ def the_card():
     check(bool(risk) and ladder.get(risk, threshold) < threshold,
           "%s reads: risk %s, below the write line" % (CAPABILITY, risk or "none"))
 
+    # A RETIRED CARD CLAIMS NO SENTENCE (heron_search.RETIRED_FRAGMENTS, since
+    # 2026-11-01): READ_VIEW_SCALE's own file still lists these sentences as
+    # its record, and the identity table reads them for nobody.
     owners = {}
     for frag in on_disk.values():
+        if frag.status in SEARCH.RETIRED_FRAGMENTS:
+            continue
         for said in [frag.data.get("semantic-identity") or ""] + frag.utterances():
             owners.setdefault(SEARCH.normalise(said), set()).add(frag.data.get("capability"))
     for text in ROW_146:
@@ -536,7 +551,7 @@ def main():
         the_card()
         code = code_only(read(IMPL))
         print()
-        check(bool(code), "brain/fragments/read-view-scale/impl/any/fragment.cs is there")
+        check(bool(code), "brain/fragments/report-view-settings/impl/any/fragment.cs is there")
         the_kinds(code)
         the_refusals(code)
         the_template(code)

@@ -62,7 +62,57 @@ positive:
       not written - the style that keeps its edges is Shaded with Edges, which
       it already is - alreadyThatVisualStyle 1, changed 0, edges still on
 
+  # VERSION 4 - from SET_VIEW_PHASE and SET_VIEW_RANGE. Each FAILS on version
+  # 3, which had no phase, no phase filter and no view range.
+  - given: >
+      VERSION 4. 12 floor plans, phaseId "New Construction", phaseFilterId a
+      filter showing previous plus new, nothing else asked
+    expect: >
+      phaseSet 12 and phaseFilterSet 12, each counted from reading the
+      parameter BACK, the scale, detail level and visual style untouched -
+      and in Revit not one wall has moved: the drawing changed, not the
+      building
+
+  - given: VERSION 4. the same 12 views run a second time with the same two ids
+    expect: alreadySet holds them, phaseSet empty, changed 0
+
+  - given: >
+      VERSION 4. 8 plans, 2 schedules and 1 drafting view, both ids valid
+    expect: >
+      the plans take both; the schedules take the phase and are NOT counted
+      as refusing a phase filter they never carried; the drafting view is in
+      unsupported
+
+  - given: VERSION 4. a plan at top 2300, cut 1200, bottom 0, with topMm 4000 and cutMm 3500
+    expect: >
+      viewRangeSet 1, the View Range dialog reading 4000 and 3500 with the
+      bottom still 0 - untouched, it was not asked - and wasTopMm 2300,
+      wasCutMm 1200, wasBottomMm 0 and wasViewRange saying so, so it can be
+      put back. The high-level ducts appear
+
 negative:
+  - given: VERSION 4. a phaseId that is actually the id of a level, with scale 50
+    expect: >
+      NOTHING is written - not the phase, and not the scale either - and a
+      finding says the id is not a Phase. Some views accept an id of the wrong
+      kind, and a view pointing at nonsense is worse than one left alone
+
+  - given: VERSION 4. views whose view template controls the Phase Filter, phaseFilterId given
+    expect: >
+      each in templateControlled and in refused, with REPORT_VIEW_TEMPLATE_CONTROL
+      named - and a view whose phase took while its filter was refused is still
+      named. SET_VIEW_PHASE's 2026-09-13 fix
+
+  - given: VERSION 4. an incoherent range - cutMm above the top
+    expect: >
+      viewRangeSet 0 and the plan named as not reading back as asked. Revit
+      rejects it without always throwing, so only the read-back catches it
+
+  - given: VERSION 4. a SECTION view, cutMm 1500
+    expect: refused by name - a section has no view range - and nothing else on it touched
+
+  - given: VERSION 4. topMm "high"
+    expect: refused before anything is written, the word named
   - given: >
       VERSION 3 REVIEW FIX. a view already at Fine under a template that
       controls detail level, detailLevel Fine

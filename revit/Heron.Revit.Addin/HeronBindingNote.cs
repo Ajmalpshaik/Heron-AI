@@ -193,6 +193,16 @@ namespace Heron.Revit.Addin
         /// nothing to find" rather than "nobody was asked". A list of
         /// ElementId is not an element list here, as in IsElementList.
         ///
+        /// A SECOND CASE SINCE 2026-11-01: A LIST OF CURVES THE CARD MARKS
+        /// `optional: true` BINDS EMPTY. SET_VIEW_CROP took in
+        /// SET_VIEW_CROP_TO_SHAPE, whose `boundary` loop is handed on from
+        /// READ_ROOM_GEOMETRY - a shaped crop when a loop is handed on, the
+        /// rectangle round the elements when none is. Left unfilled, the need
+        /// was refused, so the rectangle could no longer be asked for at all.
+        /// An empty list is the one value a list has for "none handed on", and
+        /// the card that marks it optional says what it does then. Only those
+        /// spellings, only when marked, and only after the chain was asked.
+        ///
         /// Returns the C# expression to bind, which the caller writes into the
         /// generated prologue. Nothing here touches an Autodesk type, so it is
         /// proved without Revit in Heron.BindingNote.TestHost.
@@ -211,6 +221,11 @@ namespace Heron.Revit.Addin
                 case "ICollection<Element>":
                 case "IEnumerable<Element>":
                     return "new List<Element>()";
+                case "IList<Curve>":
+                case "List<Curve>":
+                case "ICollection<Curve>":
+                case "IEnumerable<Curve>":
+                    return "new List<Curve>()";
                 default:
                     return null;
             }

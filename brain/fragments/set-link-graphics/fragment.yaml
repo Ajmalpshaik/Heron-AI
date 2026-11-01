@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LNK-015
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,32 @@ capability: SET_LINK_GRAPHICS
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO OVERRIDE_GRAPHICS_IN_VIEW (override-
+# graphics-in-view), on the owner's instruction in conversation: "make sure
+# there is no duplicate tools". Constitution Article 1: kept, never deleted,
+# so its record and its proof stay readable and it can be brought back.
+# Nothing offers it now - retrieval leaves DEPRECATED out, and its sentences
+# claim nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to OVERRIDE_GRAPHICS_IN_VIEW. Its doc input is the view's
+# own document there. Nothing it did was left behind: its view template
+# refusal, its per-link read-back named by file, its catch of Revit's refusal
+# and its template-wins warning are all in OVERRIDE_GRAPHICS_IN_VIEW version
+# 2, with linksOnly for its notALink rule. The proof below is the record of
+# what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: OVERRIDE_GRAPHICS_IN_VIEW
+  why: >
+    The same job: one prepared graphic override on what is handed in, in one
+    view - a link instance is one element in the host, so one override covers
+    the whole linked model. OVERRIDE_GRAPHICS_IN_VIEW version 2 took
+    everything this card had that it lacked: linksOnly with notALink, a view
+    template refused by name, a view that takes no override refused with its
+    type, a Revit refusal caught per element, each link's override read back
+    and named by its file in appliedTo, and the warning that a view template
+    may win, in refused.
 
 purpose: >
   Applies one graphic override to a whole linked model in one view - the way an

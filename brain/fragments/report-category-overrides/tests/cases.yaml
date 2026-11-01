@@ -89,5 +89,36 @@ negative:
       tick an override would list every category - the trap version 1's header
       names
 
+  # VERSION 3 - from REPORT_CATEGORY_VISIBILITY. Each FAILS on version 2,
+  # which had no hiddenCategories at all.
+  - given: VERSION 3. a plan with Ceilings and Furniture switched off, allCategories left out
+    expect: >
+      both in hiddenCategories and in hiddenCategoryList as SWITCHED OFF -
+      CHECKED in Visibility/Graphics, Model Categories tab - although
+      allCategories is false. THIS IS THE FIRST CASE TO RUN: a hidden
+      category's elements are in no view-scoped collector, so a version that
+      scoped this to the view would report every view as clean
+
+  - given: VERSION 3. a category switched off that has NOTHING in the model
+    expect: >
+      it IS listed, marked "(nothing in the model)" - the safer rule the owner
+      chose; REPORT_CATEGORY_VISIBILITY left it out
+
+  - given: VERSION 3. a view following a template that controls V/G, with 18 categories off
+    expect: >
+      all 18 reported - GetCategoryHidden gives the effective value - and a
+      finding that the template, named, sets them, with templateOwnedCategories
+      counting the rows the view cannot change. CanCategoryBeHidden answers
+      false for every row there and must never be used to skip
+
+  - given: VERSION 3. a view with nothing switched off
+    expect: >
+      hiddenCategories empty AND a finding naming the five other reasons
+      something can be missing, with DIAGNOSE_VISIBILITY
+
+  - given: VERSION 3. a schedule as the view
+    expect: no crash - each category is asked inside its own guard
+
 second_route:
   - Open the view's Visibility/Graphics and look down the Model Categories tab for a non-default row
+  - and for an unticked row - the switched-off categories

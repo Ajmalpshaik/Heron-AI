@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-074
-semantic-identity: "set the scale and detail on these views"
+semantic-identity: "set the scale, detail, visual style, phase or view range on these views"
 kind: action
 domain: revit.views
 capability: SET_VIEW_PROPERTIES
@@ -38,12 +38,28 @@ capability: SET_VIEW_PROPERTIES
 # day: the detail level and the visual style are read first too - a view
 # already so is neither written nor counted as changed, and is counted in
 # `alreadyThatDetailLevel` or `alreadyThatVisualStyle`.
-version: 3
+#
+# Version 4 (2026-11-01): SET_VIEW_PHASE and SET_VIEW_RANGE were merged into
+# this card on the owner's instruction ("make sure there is no duplicate
+# tools"), and are DEPRECATED. From SET_VIEW_PHASE: `phaseId` and
+# `phaseFilterId`, each id checked to be a Phase or a Phase Filter BEFORE
+# anything is written, each property set and read back on its own, with
+# `phaseSet`, `phaseFilterSet`, `alreadySet`, `templateControlled` and
+# `unsupported`. From SET_VIEW_RANGE: `topMm`, `cutMm` and `bottomMm` on a
+# plan, the range READ BEFORE it is changed (`wasViewRange`, and `wasTopMm`,
+# `wasCutMm`, `wasBottomMm` for the first plan), a view that is not a plan
+# refused by name, and the range read back. An offset left out is not
+# touched, where SET_VIEW_RANGE wrote all three - this card's safer rule.
+# scale, detailLevel and visualStyle are optional now, so a phase or a view
+# range can be asked for alone. Version 2's proof below is still the record;
+# the card is DRAFT until version 4 is proved.
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Sets scale, detail level and visual style across many views at once - the
+  Sets scale, detail level, visual style, phase, phase filter and a plan's
+  view range across many views at once - the
   light version of what a view template does, for the case where a template is
   not wanted or does not exist yet.
 
@@ -77,6 +93,19 @@ purpose: >
   view scales can be put back by a caller that kept it. The ids of the views
   that refused anything come back too, and a view named twice is handled once.
 
+  **The phase and the phase filter change what the drawing shows, not the
+  building** (version 4, from SET_VIEW_PHASE) - what makes a view a
+  demolition plan or an existing plan. SET_ELEMENT_PHASE moves elements; this
+  moves nothing. An id that is not a phase, or not a phase filter, is refused
+  before anything is written, and each of the two is set and read back on its
+  own: a schedule has a phase and no phase filter, a drafting view neither.
+
+  **A plan's view range is read before it is changed** (version 4, from
+  SET_VIEW_RANGE) - top, cut plane and bottom, in millimetres from the level
+  each is measured from - and the old offsets come back so it can be put
+  back. The view range is the commonest reason MEP does not appear on a plan.
+  A section, an elevation and a 3D view have none, and are refused by name.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -86,20 +115,66 @@ contract:
     - name: views
       type: IList<View>
       source: request
+    # 1 : N as the number N. Optional since version 4: left out it is 0,
+    # which asks for no scale and touches none.
     - name: scale
       type: int
       source: request
+      optional: true
+      absent: 0
+    # Coarse, Medium or Fine. Optional since version 4: left out it reads
+    # `keep`, and the detail level is not touched.
     - name: detailLevel
       type: string
       source: request
+      optional: true
+      absent: keep
     # A View Control Bar word - Wireframe, Hidden Line, Shaded, Shaded with
     # Edges, Consistent Colors, Realistic, Realistic with Edges, and Textures
     # (2024 on) - or Revit's own name for a style, such as HLR or FlatColors.
     # Spaces and capitals do not matter. Not Ray Trace: Revit will not let a
     # tool set it.
+    # Optional since version 4: left out it reads `keep`, untouched.
     - name: visualStyle
       type: string
       source: request
+      optional: true
+      absent: keep
+    # VERSION 4, from SET_VIEW_PHASE. The phase each view shows, by its name
+    # - "New Construction" - resolved to the Phase. One that is not a Phase
+    # in this model is refused before anything is written. Left out it reads
+    # `none`, InvalidElementId: the phase is not touched.
+    - name: phaseId
+      type: ElementId
+      source: request
+      optional: true
+      absent: none
+    # VERSION 4, from SET_VIEW_PHASE. The phase filter - "Show Complete" -
+    # checked to be a Phase Filter the same way. Left out: untouched.
+    - name: phaseFilterId
+      type: ElementId
+      source: request
+      optional: true
+      absent: none
+    # VERSION 4, from SET_VIEW_RANGE. A plan's top, cut plane and bottom
+    # offsets in millimetres from the level each plane is measured from -
+    # "2300". Each left out reads `keep`, and that plane is not touched. Text,
+    # because the binder has no way to leave a number out.
+    - name: topMm
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: cutMm
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: bottomMm
+      type: string
+      source: request
+      optional: true
+      absent: keep
   provides:
     - name: changed
       role: result
@@ -152,6 +227,60 @@ contract:
       # this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: phaseSet
+      # VERSION 4, from SET_VIEW_PHASE. Views whose phase READ BACK as asked.
+      role: result
+      type: IList<ElementId>
+    - name: phaseFilterSet
+      # VERSION 4, from SET_VIEW_PHASE. Views whose phase filter read back as
+      # asked.
+      role: result
+      type: IList<ElementId>
+    - name: alreadySet
+      # VERSION 4, from SET_VIEW_PHASE. Views ALREADY at the phase or phase
+      # filter asked, so there was nothing to do. The evidence it looked,
+      # never a change it made (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: templateControlled
+      # VERSION 4, from SET_VIEW_PHASE. Views that refused the phase or the
+      # phase filter - read-only, or written and read back unchanged. A VIEW
+      # TEMPLATE holding it is much the commonest reason, never the only one.
+      # A reason rather than a failure, never a view it changed (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: unsupported
+      # VERSION 4, from SET_VIEW_PHASE. Views that carry no view phase at all
+      # - a drafting view, a legend, a sheet. Given and unusable (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: wasViewRange
+      # VERSION 4, from SET_VIEW_RANGE. Every plan's top, cut plane and bottom
+      # BEFORE this ran, in millimetres, read before any write - so a caller
+      # can say what it was and put it back. Empty when no range was asked.
+      # The evidence it looked, never a change it made (D-52).
+      role: accounting
+      type: string
+    - name: wasTopMm
+      # VERSION 4, SET_VIEW_RANGE's three: the FIRST plan's offsets before
+      # this ran. 0 when no range was asked. Evidence, never a change (D-52).
+      role: accounting
+      type: double
+    - name: wasCutMm
+      role: accounting
+      type: double
+    - name: wasBottomMm
+      role: accounting
+      type: double
+    - name: viewRangeSet
+      # VERSION 4. Plans whose view range read back as asked.
+      role: result
+      type: int
+    - name: alreadyThatViewRange
+      # VERSION 4. Plans already at the offsets asked: not written and not
+      # counted in `changed`. The evidence it looked (D-52).
+      role: accounting
+      type: int
 
 proof:
   date: '2026-10-14'
@@ -196,7 +325,13 @@ compatibility-note: >
   not offered, and a release adding a style is matched by its own name.
   `Raytrace` is never offered: Revit 2020 throws on setting it - "it is not
   permitted to directly assign the display style to this value" - measured
-  2026-10-13.
+  2026-10-13. Version 4 adds what SET_VIEW_PHASE and SET_VIEW_RANGE were
+  proved with, unchanged 2020 to 2027: BuiltInParameter VIEW_PHASE and
+  VIEW_PHASE_FILTER, `Parameter.IsReadOnly`, `Set(ElementId)` and
+  `AsElementId`, `Phase`, `PhaseFilter`; `ViewPlan.GetViewRange`,
+  `SetViewRange`, `PlanViewRange.GetOffset` and `SetOffset` and
+  `PlanViewPlane`. Ids are compared as ElementId, never read as a number.
+  Millimetres to feet is arithmetic (D-20).
 
 # ROUTING - repeated in APPLY_VIEW_TEMPLATE and REPORT_VIEW_TEMPLATE_CONTROL.
 #
@@ -209,6 +344,29 @@ compatibility-note: >
 #   "change the scale of this view"  -> here since version 3. SET_VIEW_SCALE,
 #                                       which answered it for one property, was
 #                                       merged into this card on 2026-11-01
+#   "set the phase on these views"   -> here since version 4 (was
+#                                       SET_VIEW_PHASE)
+#   "make this a demolition plan"    -> here - the phase filter is what makes
+#                                       it one
+#   "move these walls to the new phase" -> SET_ELEMENT_PHASE. That changes the
+#                                       BUILDING; this changes what the drawing
+#                                       looks from
+#   "what phases are in this model"  -> REPORT_PHASES
+#   "make a phase filter called As-Built" -> CREATE_PHASE_FILTER - that makes
+#                                       the filter; this puts one on views
+#   "what phase filters are there"   -> REPORT_PHASE_FILTERS
+#   "set the view range"             -> here since version 4 (was
+#                                       SET_VIEW_RANGE)
+#   "what is the view range"         -> REPORT_VIEW_SETTINGS, a READ. A
+#                                       question about a drawing never reaches
+#                                       this write (D-86); SET_VIEW_RANGE
+#                                       declared it for its read mode, which
+#                                       did not come here
+#   "why can I not see my ducts"     -> DIAGNOSE_VISIBILITY first
+#   "crop the view"                  -> SET_VIEW_CROP - a different limit, in
+#                                       the view's plane rather than in height
+#   "show me the floor below"        -> SET_VIEW_UNDERLAY - the ghosted level
+#                                       behind this one, a different setting
 #   "why will it not change"         -> REPORT_VIEW_TEMPLATE_CONTROL. A view
 #                                       under a template refuses the properties
 #                                       that template controls, and that is the
@@ -249,3 +407,24 @@ utterances:
   - the text is too small on this drawing
   - make all these views the same scale
   - the text is too small
+  # MOVED 2026-11-01 from SET_VIEW_PHASE, merged into this card.
+  - set the phase on these views
+  - change the phase filter on these views
+  - make this a demolition plan
+  - show existing construction only on this view
+  - show existing only on this view
+  - put these views on the new construction phase
+  - set the view phase in bulk
+  - put the As-Built phase filter on these views
+  # MOVED 2026-11-01 from SET_VIEW_RANGE, merged into this card. Its "what is
+  # the view range" did NOT move: it is a question, and REPORT_VIEW_SETTINGS -
+  # a read - declares "what is the view range of this plan" (D-86).
+  - set the view range
+  - the plan is cutting too low
+  - raise the cut plane
+  - I cannot see the high level ducts
+  # DECLARED 2026-11-01, after the merge: DIAGNOSE_VISIBILITY's routing row
+  # sends "fix the view range" here, and with SET_VIEW_RANGE retired it reached
+  # REPORT_VIEW_SETTINGS, a read, on the model backend - a change request
+  # answered by something that cannot make it.
+  - fix the view range

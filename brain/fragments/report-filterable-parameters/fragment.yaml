@@ -110,10 +110,10 @@ compatibility-note: >
 #    parameter"                             after the create call throws
 #   "which categories can be filtered"   -> here
 #   "make a view filter"                 -> CREATE_VIEW_FILTER
-#   "one filter per value"               -> CREATE_VIEW_FILTERS_BY_VALUE
+#   "one filter per value"               -> CREATE_VIEW_FILTER
 #   "put the filter on the view"         -> APPLY_VIEW_FILTER
 #   "what filters exist already"         -> REPORT_VIEW_FILTERS
-#   "the filter is on the view and       -> AUDIT_VIEW_FILTERS, which is about
+#   "the filter is on the view and       -> REPORT_VIEW_FILTERS, which is about
 #    nothing is coloured"                   a filter already applied
 #   "what parameters do these elements   -> REPORT_PARAMETER_INVENTORY.
 #    have"                                  Present on the element and legal

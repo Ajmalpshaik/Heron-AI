@@ -143,7 +143,7 @@ compatibility-note: >
 #   "cut a hole for the duct"          -> NOTHING HERE DOES THAT. An opening is
 #                                         its own job and nothing covers it yet
 #   "build a wall between these points" -> CREATE_WALL
-#   "hatch this area on the drawing" -> CREATE_FILLED_REGION. It LOOKS like a
+#   "hatch this area on the drawing" -> DRAW_FAMILY_FILLED_REGION. It LOOKS like a
 #                                       slab on a plan and is in no other
 #                                       view, no schedule and not the model
 #   "make a slab under these rooms"      -> CREATE_FROM_ROOM_BOUNDARIES. This

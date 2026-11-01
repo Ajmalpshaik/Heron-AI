@@ -91,13 +91,15 @@ purpose: >
        matter: the connections, the access panel, the nameplate),
        lookDownDeg 20 to 30, marginPercent 10 to 15 - or the close-up shot.
      - An eye point typed in millimetres ("from the entrance looking at the
-       lobby"): SET_VIEW_CAMERA (version 2) with levelName - eyeMm 1600 above
-       the floor level and targetMm at the SAME height, perspective on.
+       lobby"): FRAME_ELEMENTS_IN_CAMERA (version 5) with eyeMm, targetMm and
+       levelName - eyeMm 1600 above the floor level and targetMm at the SAME
+       height, createIfMissing for a new view. An existing ISOMETRIC view is
+       refused, never turned perspective - name a new one.
      - Field of view: Revit's API has no field-of-view value on any release
        2020 to 2027 (row 5b-1267), but a perspective crop window IS one, and
        FRAME_ELEMENTS_IN_CAMERA sizes it from lensMm (35 mm film) and reads
-       back the lens and the angle across. A camera from SET_VIEW_CAMERA has
-       no lens - its crop stays the modeller's to drag.
+       back the lens and the angle across. A camera from a typed eye and
+       target has no lens - its crop stays the modeller's to drag.
      LOOK BEFORE CALLING IT DONE. Heron cannot see the composition. Export the
      view as a picture - EXPORT_VIEW_IMAGE after FRAME_ELEMENTS_IN_CAMERA in a
      rolled-back run, or revit_view_image on the view once it is kept - and
@@ -232,9 +234,10 @@ needs:
   # Step 0 - read first, change nothing.
   - REPORT_VISUAL_PRESET
   - REPORT_RENDER_SETTINGS
-  # Step 1 - the camera.
+  # Step 1 - the camera. FRAME_ELEMENTS_IN_CAMERA frames the elements or takes
+  # an eye and a target typed; SET_VIEW_CAMERA, which took the typed eye, was
+  # merged into it on 2026-11-01.
   - FRAME_ELEMENTS_IN_CAMERA
-  - SET_VIEW_CAMERA
   - CREATE_3D_VIEW
   - SET_VIEW_SECTION_BOX
   # Step 2 - the materials.

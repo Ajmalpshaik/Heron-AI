@@ -1,7 +1,57 @@
 // NOT STANDALONE. Assumes `doc`, `view`, `filterName`, `categoryIds`,
-// `parameterName`, `matchValue`, `moreRules`, `combine` and `colour` are in
-// scope; leaves `created`, `createdIds`, `readBack`, `alreadyExists`,
-// `cannotFilter` and `refused` behind.
+// `parameterName`, `matchValue`, `moreRules`, `combine`, `colour`,
+// `elements`, `perValue` and `namePrefix` are in scope; leaves `created`,
+// `createdIds`, `readBack`, `alreadyExists`, `cannotFilter`, `refused`,
+// `valuesFound`, `droppedCategories` and `leftOut` behind.
+//
+// VERSION 5 (2026-11-01) - CREATE_VIEW_FILTERS_BY_VALUE MERGED IN, on the
+// owner's instruction ("make sure there is no duplicate tools"). ONE FILTER PER
+// DISTINCT VALUE, THE VALUES READ OFF THE ELEMENTS - "a filter per system",
+// "one for each fire zone" - asked for with `perValue` true and the elements
+// handed in. What that card had that this lacked:
+//
+//   THE VALUES ARE READ OFF THE ELEMENTS, never typed: every distinct value of
+//   the parameter across them, capitals ignored, because the rule ignores
+//   them too. Each filter is named `namePrefix` and the value.
+//
+//   THE CATEGORIES COME FROM THE ELEMENTS when none are typed - the distinct
+//   categories they belong to. THE OPPOSITE RULES, AND WHICH WAS KEPT WHERE:
+//   a category TYPED that cannot take the rule STOPS THE CALL and is named, as
+//   this card always did - the caller named it, so a filter without it is not
+//   what was asked; a category DERIVED from the elements that cannot take the
+//   rule is DROPPED AND NAMED in `droppedCategories`, as that card did -
+//   nobody named it, and Revit rejects a filter whose categories hold one the
+//   parameter does not apply to, so including it would lose every filter.
+//
+//   AN ELEMENT CARRYING THE NAME TWICE IS LEFT OUT - a shared or project
+//   parameter bound beside a built-in one of the same name, where Revit's
+//   lookup picks one "at random" in Autodesk's own words - and never gives a
+//   value; so is one with no such parameter on it or on its type, and one
+//   outside the categories typed. Each kind counted and named in `leftOut`
+//   (D-54 s3, FRAGMENT-ISSUES 5b-203).
+//
+//   THE BLANK GROUP is a filter of its own, named "(no value)", so elements
+//   with nothing in the parameter are not left plain - plain, in a coloured
+//   drawing, reads as "not part of this". Its rule is THIS CARD's: "has no
+//   value" (CreateHasNoValueParameterRule), where that card built an equals
+//   rule on empty text.
+//
+//   THE COLOURS ARE STEPPED EVENLY ROUND THE HUE WHEEL, ONE PER FILTER, on
+//   the view given - a fixed palette of six repeats on the seventh system and
+//   two runs then look like one. So a `colour` beside perValue is refused:
+//   one colour for every value is the opposite of the job. Left out with the
+//   view too, the filters are made on no view, as typed filters are.
+//
+//   Everything else is this card's: a name already taken is skipped and
+//   named, never overwritten; every filter's test is checked by Revit before
+//   any filter exists; a name Revit cannot take stops the call before any is
+//   made; and each new filter is read back. `moreRules` is refused beside
+//   perValue, as it is beside several names.
+//
+// `filterName`, `matchValue` and `categoryIds` are OPTIONAL since version 5,
+// because a perValue call names none of them - left out they read `none`,
+// `none` and INVALID. A typed call that leaves one out is refused here, in
+// words, as the binder refused it before; "equals none" matches the word.
 //
 // VERSION 4 (2026-11-01) - CREATE_VIEW_FILTERS_BY_RULE MERGED IN, on the
 // owner's instruction. What it had that this lacked:
@@ -142,6 +192,19 @@ string refused = null;
 var readBack = "";
 var alreadyExists = new List<string>();
 var cannotFilter = new List<string>();
+var valuesFound = new List<string>();
+var droppedCategories = new List<string>();
+var leftOut = new List<string>();
+
+// Version 5: what leaving a need out reads as, and which road this call is.
+Func<string, bool> isNone = text => string.Equals((text ?? "").Trim(), "none", StringComparison.OrdinalIgnoreCase);
+var prefix = isNone(namePrefix) ? "" : (namePrefix ?? "");
+var noValueGiven = isNone(matchValue) || (matchValue ?? "").Trim().Length == 0;
+var handed = new List<Element>();
+if (elements != null) foreach (var element in elements) if (element != null && element.IsValidObject) handed.Add(element);
+// `moreRules` left out reads "none" (version 5): no more rules, as an empty
+// one always meant.
+if (isNone(moreRules)) moreRules = "";
 
 // One name per filter and one value per name, in the same order (version 4).
 // A single name and a single value bind as a list of one, so every call
@@ -149,6 +212,9 @@ var cannotFilter = new List<string>();
 var names = new List<string>();
 if (filterName != null)
     foreach (var givenName in filterName) names.Add((givenName ?? "").Trim());
+// LEFT OUT reads as the one name "none" (version 5) - no name given.
+if (names.Count == 1 && isNone(names[0])) names.Clear();
+var namesGiven = names.Count > 0;
 
 // THE VALUES, DIVIDED HERE AND NOT BY THE BINDER (review fix, 2026-11-01).
 // One name: the whole text is its one value, commas and all - version 3's
@@ -156,8 +222,12 @@ if (filterName != null)
 // piece dropped as the binder drops one ("a,,b" is a typing slip).
 var values = new List<string>();
 var quoteProblem = "";
-var valueText = (matchValue ?? "").Trim();
-if (names.Count <= 1)
+var valueText = noValueGiven ? "" : (matchValue ?? "").Trim();
+if (perValue)
+{
+    // The values come from the elements, below; none is typed.
+}
+else if (names.Count <= 1)
 {
     values.Add(valueText);
 }
@@ -264,6 +334,8 @@ if (categoryIds != null)
 {
     foreach (var builtIn in categoryIds)
     {
+        // LEFT OUT binds INVALID (version 5), which names no category.
+        if (builtIn == BuiltInCategory.INVALID) continue;
         var categoryId = new ElementId(builtIn);
         if (categoryList.Contains(categoryId)) continue;
         categoryList.Add(categoryId);
@@ -276,6 +348,21 @@ if (categoryIds != null)
         }
         catch { }
         categoryName[categoryId] = shown;
+    }
+}
+
+// THE CATEGORIES FROM THE ELEMENTS (version 5, from CREATE_VIEW_FILTERS_BY_
+// VALUE), when perValue names none: the distinct categories they belong to.
+var categoriesTyped = categoryList.Count > 0;
+if (perValue && !categoriesTyped)
+{
+    foreach (var element in handed)
+    {
+        Category category = null;
+        try { category = element.Category; } catch { category = null; }
+        if (category == null || categoryList.Contains(category.Id)) continue;
+        categoryList.Add(category.Id);
+        categoryName[category.Id] = category.Name;
     }
 }
 
@@ -322,6 +409,36 @@ if (view != null && view.IsTemplate)
 {
     refused = "a filter is put on a real view - a template is not one. Leave the view out to make "
             + "the filter on no view";
+}
+else if (perValue)
+{
+    // ONE FILTER PER VALUE (version 5) - what it needs, checked first.
+    if (handed.Count == 0)
+        refused = "one filter per value reads the values off the elements, and none was handed in - select the "
+                + "elements, or give the filters' names and values instead";
+    else if (namesGiven || !noValueGiven)
+        refused = "one filter per value names each filter after its value and reads the values off the elements - "
+                + "leave filterName and matchValue out, and give namePrefix for the start of every name";
+    else if (!string.IsNullOrWhiteSpace(moreRules))
+        refused = "moreRules makes ONE filter that needs several rules to match, and one filter per value makes "
+                + "several - make that filter in a call of its own; nothing was made";
+    else if (wantColour || colourProblem.Length > 0)
+        refused = "one filter per value gives EACH filter its own colour, stepped evenly round the hue wheel, so "
+                + "one colour for all of them is refused - leave the colour out; nothing was made";
+    else if (wanted.Length == 0)
+        refused = "a filter needs a parameter to test, by the name Revit shows";
+    else if (categoryList.Count == 0)
+        refused = "none of the elements handed in belongs to a category, so there is nothing to filter";
+}
+else if (!namesGiven)
+{
+    refused = "a filter needs a name - it goes in the project's filter list, where other views will see it. "
+            + "For one filter per value read off the elements, set perValue";
+}
+else if (noValueGiven)
+{
+    refused = "no value was given for the rule to match - type it, \"has no value\" to catch the elements whose "
+            + "parameter is empty, or \"equals none\" to match the word none";
 }
 else if (view != null && !wantColour)
 {
@@ -427,8 +544,10 @@ if (refused == null)
     ICollection<ElementId> filterable = null;
     try { filterable = ParameterFilterUtilities.GetAllFilterableCategories(); } catch { }
 
+    var keptCategories = new List<ElementId>();
     foreach (var categoryId in categoryList)
     {
+        var before = cannotFilter.Count;
         if (filterable != null && !filterable.Contains(categoryId))
         {
             cannotFilter.Add(string.Format("{0} - Revit cannot filter this category at all",
@@ -452,6 +571,19 @@ if (refused == null)
         if (allowed == null || !allowed.Any(id => answersTo(id, wanted)))
             cannotFilter.Add(string.Format("{0} - it cannot be filtered by '{1}'",
                 categoryName[categoryId], wanted));
+        if (cannotFilter.Count == before) keptCategories.Add(categoryId);
+    }
+
+    // A CATEGORY DERIVED FROM THE ELEMENTS IS DROPPED AND NAMED (version 5) -
+    // nobody named it. A TYPED one stops the call, below, as it always did.
+    if (perValue && !categoriesTyped && cannotFilter.Count > 0)
+    {
+        droppedCategories.AddRange(cannotFilter);
+        cannotFilter.Clear();
+        categoryList = keptCategories;
+        if (categoryList.Count == 0)
+            refused = string.Format("NOTHING WAS CREATED. None of the elements' categories can take a rule on '{0}': "
+                + "{1}", wanted, string.Join("; ", droppedCategories));
     }
 
     if (cannotFilter.Count > 0)
@@ -561,6 +693,112 @@ if (refused == null)
 {
     firstParameter = parameterCalled(wanted);
     if (firstParameter == null) ruleProblem = parameterProblem;
+}
+
+// ---- ONE FILTER PER VALUE: THE VALUES, READ OFF THE ELEMENTS (version 5) ----
+// The parameter the categories share, read on each element - or on its type,
+// for a type parameter - by its id, never by a name lookup that can pick one
+// of two at random. An element carrying the name twice is left out.
+
+if (perValue && refused == null && ruleProblem == null && firstParameter != null)
+{
+    var builtInName = builtInNameOf(firstParameter);
+    var label = labelOf(firstParameter);
+    ParameterElement asElement = doc.GetElement(firstParameter) as ParameterElement;
+    Func<Element, Parameter> parameterOn = holder =>
+    {
+        if (holder == null) return null;
+        try
+        {
+            if (builtInName.Length > 0)
+                return holder.get_Parameter((BuiltInParameter)(int)long.Parse(firstParameter.ToString()));
+            if (asElement != null && asElement.GetDefinition() != null) return holder.get_Parameter(asElement.GetDefinition());
+        }
+        catch { }
+        return null;
+    };
+
+    var kept = new HashSet<ElementId>(categoryList);
+    var byValue = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    var hasBlank = false;
+    int outside = 0, twice = 0, without = 0;
+    foreach (var element in handed)
+    {
+        Category category = null;
+        try { category = element.Category; } catch { category = null; }
+        if (category == null || !kept.Contains(category.Id)) { outside++; continue; }
+        if (label.Length > 0 && element.GetParameters(label).Count > 1) { twice++; continue; }
+
+        var parameter = parameterOn(element);
+        if (parameter == null)
+        {
+            Element type = null;
+            try { type = doc.GetElement(element.GetTypeId()); } catch { type = null; }
+            parameter = parameterOn(type);
+        }
+        if (parameter == null) { without++; continue; }
+
+        var text = "";
+        try { text = parameter.StorageType == StorageType.String ? parameter.AsString() ?? "" : parameter.AsValueString() ?? ""; }
+        catch { text = ""; }
+        text = text.Trim();
+        if (text.Length == 0) { hasBlank = true; continue; }
+        if (!byValue.ContainsKey(text)) byValue[text] = text;
+    }
+
+    if (outside > 0)
+        leftOut.Add(string.Format("{0} element(s) are in no category the filters are made for - {1} - and gave no "
+            + "value", outside, categoriesTyped ? "outside the categories named" : "a category that cannot take the rule"));
+    if (twice > 0)
+        leftOut.Add(string.Format("{0} element(s) carry TWO OR MORE parameters called '{1}' - usually a shared or "
+            + "project parameter bound beside a built-in one of the same name - and were left out. Revit would pick "
+            + "one of them at random, and a filter is built on one parameter", twice, label));
+    if (without > 0)
+        leftOut.Add(string.Format("{0} element(s) have no '{1}' on themselves or their type and gave no value",
+            without, label));
+
+    var ordered = new List<string>(byValue.Values);
+    ordered.Sort(StringComparer.OrdinalIgnoreCase);
+    foreach (var value in ordered)
+    {
+        valuesFound.Add(value);
+        names.Add(prefix + value);
+        values.Add(value);
+        operators.Add("equals");
+        texts.Add(value);
+    }
+    if (hasBlank)
+    {
+        // THE BLANK GROUP, ITS OWN FILTER, on this card's "has no value" rule.
+        valuesFound.Add("(no value)");
+        names.Add(prefix + "(no value)");
+        values.Add("has no value");
+        operators.Add("has no value");
+        texts.Add("");
+    }
+
+    if (names.Count == 0)
+        ruleProblem = "none of the elements handed in gave a value of '" + wanted + "'";
+    else
+    {
+        var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var oneName in names)
+        {
+            if (!NamingUtils.IsValidName(oneName))
+            {
+                ruleProblem = string.Format("'{0}' cannot be a filter name - Revit does not allow characters such as "
+                    + ": ; [ ] {{ }} | < > ? ` ~ in a name, and a value named it. No filter is made until every name "
+                    + "can be", oneName);
+                break;
+            }
+            if (!seenNames.Add(oneName))
+            {
+                ruleProblem = string.Format("'{0}' would be two filters' name - two values differ only in capitals "
+                    + "or spaces", oneName);
+                break;
+            }
+        }
+    }
 }
 
 // The extra rules of ONE filter, read before anything is made. The operator
@@ -698,6 +936,29 @@ if (refused == null)
         if (view != null)
         {
             view.AddFilter(filter.Id);
+
+            // ONE COLOUR PER FILTER, stepped evenly round the hue wheel
+            // (version 5, from CREATE_VIEW_FILTERS_BY_VALUE) - a fixed palette
+            // of six repeats on the seventh. The typed road keeps its colour.
+            if (perValue)
+            {
+                var step = toCreate.IndexOf(index);
+                var hue = (360.0 * step) / Math.Max(toCreate.Count, 1);
+                var sector = (int)(hue / 60.0) % 6;
+                var fraction = (hue / 60.0) - Math.Floor(hue / 60.0);
+                byte high = 235;
+                byte low = 60;
+                byte rising = (byte)(low + (high - low) * fraction);
+                byte falling = (byte)(high - (high - low) * fraction);
+                byte red = high, green = high, blue = high;
+                if (sector == 0) { red = high; green = rising; blue = low; }
+                else if (sector == 1) { red = falling; green = high; blue = low; }
+                else if (sector == 2) { red = low; green = high; blue = rising; }
+                else if (sector == 3) { red = low; green = falling; blue = high; }
+                else if (sector == 4) { red = rising; green = low; blue = high; }
+                else { red = high; green = low; blue = falling; }
+                paint = new Color(red, green, blue);
+            }
 
             // Projection AND cut, because a duct in a plan is cut by the view
             // range and a duct in a 3D view is not. Setting only one leaves
@@ -851,4 +1112,19 @@ if (refused == null)
             + "they were, not overwritten - filters are project-wide, so another view may be relying "
             + "on one: {1}", alreadyExists.Count, string.Join(", ", alreadyExists));
     }
+}
+
+// VERSION 5: what one filter per value read, said.
+if (perValue && (createdIds.Count > 0 || refused == null) && (valuesFound.Count > 0 || droppedCategories.Count > 0 || leftOut.Count > 0))
+{
+    var said = new List<string>();
+    if (valuesFound.Count > 0)
+        said.Add(string.Format("{0} distinct value(s) of '{1}' read off the elements: {2}. These are FILTERS, not "
+            + "overrides - anything modelled tomorrow that matches a rule is caught", valuesFound.Count, wanted,
+            string.Join(", ", valuesFound)));
+    if (droppedCategories.Count > 0)
+        said.Add("left out of the filters' categories, because Revit would reject every filter with them in: "
+            + string.Join("; ", droppedCategories));
+    said.AddRange(leftOut);
+    readBack = readBack.Length == 0 ? string.Join(" | ", said) : string.Join(" | ", said) + " | " + readBack;
 }

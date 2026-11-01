@@ -21,7 +21,40 @@ positive:
     expect: >
       the arrows still on their elements afterwards
 
+  # VERSION 2 - from ARRANGE_TAGS_TO_VIEW_EDGES. Each FAILS on version 1,
+  # which had one column at a point only.
+  - given: >
+      VERSION 2. a congested, cropped services plan with twenty tags, layout
+      edges, marginMm 10, gapMm 5, 1:100
+    expect: >
+      two tidy columns a metre outside the crop in model terms - 10 mm on
+      paper - the middle of the drawing readable, every tag still leadered to
+      its own element, perSide adding up to stacked. LOOK at the plan
+
+  - given: VERSION 2. tags whose elements are on the left of the view
+    expect: >
+      those tags in the LEFT column. One edge for everything doubles the leader
+      lengths and drags them across the drawing
+
+  - given: VERSION 2. an UNCROPPED view, layout edges
+    expect: >
+      usedTagExtent true and the columns outside the tags' own extent, and a
+      finding saying so
+
 negative:
+  - given: VERSION 2. layout edges with marginMm left out
+    expect: refused in findings - edges needs a margin - nothing moved
+
+  - given: VERSION 2. layout point with stackAt left out
+    expect: >
+      refused in findings - left out it reads 0,0,0, the project origin - and
+      nothing moved. Version 1 could not be asked without one
+
+  - given: VERSION 2. layout "diagonal"
+    expect: refused - point or edges - nothing moved
+
+  - given: VERSION 2. layout edges, a tag with a FREE leader end
+    expect: the arrow still on its element afterwards
   - given: tags sorted by the order the filter returned them
     expect: >
       NOT what this does. The order is by each tag's own element along the

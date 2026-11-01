@@ -383,6 +383,12 @@ def main():
         ({"name": "element", "type": "Element", "optional": "true"}, False),
         ({"name": "elements", "type": "IList<Element>", "source": "request",
           "optional": "true"}, False),
+        # 2026-11-01: a curve list marked optional binds empty, as the host's
+        # EmptyWhenAbsent does (SET_VIEW_CROP's `boundary`).
+        ({"name": "boundary", "type": "IList<Curve>", "optional": "true"}, True),
+        ({"name": "boundary", "type": " IList< Curve > ", "optional": " True "}, True),
+        ({"name": "boundary", "type": "IList<Curve>"}, False),
+        ({"name": "curve", "type": "Curve", "optional": "true"}, False),
     ]
     agrees = all(HF.need_may_be_empty(need) == want for need, want in mirror)
     print("  %s  heron_fragment.need_may_be_empty answers the %d cases the host "

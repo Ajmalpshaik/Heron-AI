@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,32 @@ capability: DUPLICATE_VIEW_TEMPLATE
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO DUPLICATE_VIEWS (duplicate-views), on
+# the owner's instruction in conversation: "make sure there is no duplicate
+# tools". Constitution Article 1: kept, never deleted, so its record and its
+# proof stay readable and it can be brought back. Nothing offers it now -
+# retrieval leaves DEPRECATED out, and its sentences claim nothing in the
+# identity table (heron_search RETIRED_FRAGMENTS). Its sentences moved to
+# DUPLICATE_VIEWS. Its job - a view template copied by name through
+# CopyElements, Revit's suffixed name read back, the copy not renamed in the
+# same call - is templateName there; its copyId is templateCopyIds and its
+# copyName the same name. DUPLICATE_VIEWS still refuses a template on its
+# plain duplicate path, and copies one only when asked for by templateName or
+# copyTemplates. The proof below is the record of what this card's code did,
+# not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: DUPLICATE_VIEWS
+  why: >
+    The same job: copy what is handed in or named. DUPLICATE_VIEWS version 3
+    copies a view template only when asked - by name in templateName (a name
+    that is not a template refused with every template listed) or with
+    copyTemplates - through ElementTransformUtils.CopyElements, because
+    View.Duplicate cannot copy a template; the auto-suffixed name is read
+    back, the copy is checked to be a template, and renaming it is
+    RENAME_ELEMENTS after the commit.
 
 purpose: >
   Copies a view template, so a variant can be made from it instead of rebuilt

@@ -1,15 +1,24 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-041
-semantic-identity: "what filters exist and which views use them"
+semantic-identity: "what filters exist, which views use them, and why a filter on a view draws nothing"
 kind: filter
 domain: revit.views
 capability: REPORT_VIEW_FILTERS
-version: 2
+# VERSION 3 (2026-11-01): AUDIT_VIEW_FILTERS was merged into this card on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. For each view named: every filter numbered in PRIORITY order (the
+# dialog's, from Revit 2021; Revit's own on 2020, and said), its categories,
+# its rule as the Filters dialog reads it, how many host elements it catches in
+# that view, and the four ways a filter can be present and do nothing -
+# `disabled`, `hidden`, `blankOverride`, `nothingToActOn` - with the
+# template-owned verdict, `templateOwned`. The proof below is version 2's and
+# no longer describes the code; the card is DRAFT until version 3 is proved.
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -28,6 +37,15 @@ purpose: >
   Revit greys them out when none of the filter's categories can be cut. It is
   the read half of APPLY_VIEW_FILTER. A blank `viewName` leaves
   `filterSettings` empty and the report is what it always was.
+
+  **And why a filter on a view draws nothing** (version 3, from
+  AUDIT_VIEW_FILTERS). Each filter on a view named comes back numbered in
+  priority order - the higher one wins - with its categories, its rule and
+  how many elements it catches there, and the four ways a filter can be
+  present and do nothing, none of which Revit calls an error: switched off,
+  its visibility off, an empty override, or every one of its categories
+  hidden. A view template owning the filters - the answer to "my change did
+  not save" - is said once, by name. It changes nothing.
 
   **Before this, asking what filters a view has resolved to APPLY_VIEW_FILTER**,
   which is a write. A question about a drawing answered by something that
@@ -75,6 +93,34 @@ contract:
     - name: filterSettings
       role: result
       type: string
+    # VERSION 3, from AUDIT_VIEW_FILTERS - each filled from the views named,
+    # empty with a blank viewName. Each is ONE OF THE FOUR WAYS a filter can be
+    # present and do nothing, so each is an ANSWER, by filter id, with a
+    # finding naming the filter and the view.
+    - name: disabled
+      # Applied, its Enable Filter tick OFF (2021 on - Revit 2020 has no such
+      # tick, and filterSettings says so).
+      role: result
+      type: IList<ElementId>
+    - name: hidden
+      # Its Visibility off: it HIDES what it matches instead of colouring it.
+      role: result
+      type: IList<ElementId>
+    - name: blankOverride
+      # An EMPTY override - every slot asked, none set.
+      role: result
+      type: IList<ElementId>
+    - name: nothingToActOn
+      # Every one of its categories switched off in the view - a correct rule
+      # with nothing to act on. The answer, however much the name reads like
+      # bookkeeping.
+      role: result
+      type: IList<ElementId>
+    - name: templateOwned
+      # THE ANSWER TO "MY CHANGE DID NOT SAVE": a view named follows a template
+      # that controls its filters, named in findings.
+      role: result
+      type: bool
 
 proof:
   date: '2026-10-15'
@@ -294,10 +340,41 @@ compatibility-note: >
   `Category.IsCuttable`, `ParameterFilterElement.GetCategories` and
   `LinePatternElement.GetSolidPatternId` are present 2020 to 2027.
 
+  Version 3 adds what AUDIT_VIEW_FILTERS was proved with: `View.GetOrderedFilters`
+  (2021 to 2027, absent from 2020) reached BY NAME at run time, as
+  GetIsFilterEnabled is - never under a version #if, which AUDIT_VIEW_FILTERS
+  used for the enabled check; and, on every release,
+  `View.AreGraphicsOverridesAllowed`, `View.GetCategoryHidden`,
+  `ParameterFilterElement.GetElementFilter`, `ElementLogicalFilter.GetFilters`,
+  `ElementParameterFilter.GetRules`, `ElementFilter.Inverted`,
+  `FilterRule.GetRuleParameter`, `FilterInverseRule.GetInnerRule`,
+  `FilterCategoryRule`, `HasValueFilterRule`, `HasNoValueFilterRule`, the
+  string and numeric rule getters, `ElementMulticategoryFilter`,
+  `SelectionFilterElement.GetElementIds` and the `ElementId(BuiltInParameter)`
+  constructor. No ElementId number is read.
+
 # ROUTING - repeated in APPLY_VIEW_FILTER, CREATE_VIEW_FILTER and
 # CREATE_SELECTION_FILTER.
 #
 #   "what filters are on this view"  -> here - a READ
+#   "the filter is on the view and nothing is coloured" -> here since version
+#                                       3, with the view named (was
+#                                       AUDIT_VIEW_FILTERS)
+#   "my filter change did not save"  -> here - templateOwned
+#   "list every filter on this view in order with its rules" -> here
+#   "why can I not see my ducts"     -> DIAGNOSE_VISIBILITY, which asks about
+#                                       ONE ELEMENT and every reason it might
+#                                       be invisible
+#   "does this filter catch this element" -> TEST_VIEW_FILTER_MATCH
+#   "which parameters can I filter on" -> REPORT_FILTERABLE_PARAMETERS
+#   "the colours are not showing on this drawing" -> here when a filter is
+#                                       applied and nothing draws;
+#                                       COLOR_BY_PARAMETER when nothing has
+#                                       been coloured yet
+#   "show me the full visibility graphics of this view" ->
+#                                       REPORT_CATEGORY_OVERRIDES with
+#                                       allCategories true - this card is the
+#                                       filters
 #   "what are the filter settings on this view" -> here, with viewName
 #   "read the filter settings back"  -> here, with viewName
 #   "which views use this filter"    -> here
@@ -331,3 +408,11 @@ utterances:
   # Revit 2020 filter, it reached UPDATE_SAVED_SET, a write. Every saved
   # selection set is listed here as "a SAVED LIST" with the views using it.
   - list the saved selection sets in the model
+  # MOVED 2026-11-01 from AUDIT_VIEW_FILTERS, merged into this card.
+  - the filter is on the view but nothing is coloured
+  - why is my view filter not working
+  - check the filters on this view
+  - is this filter switched off
+  - my filter change did not save
+  - the colours are not showing on this drawing
+  - list every filter on this view in order with its rules

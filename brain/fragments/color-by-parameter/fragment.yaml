@@ -214,11 +214,11 @@ compatibility-note: >
 #                                     room, with Revit's own legend
 
 #   "make a filter for every different system type" ->
-#                                        CREATE_VIEW_FILTERS_BY_VALUE - real
+#                                        CREATE_VIEW_FILTER - real
 #                                        filters that catch work modelled
 #                                        tomorrow. These are OVERRIDES, and an
 #                                        element drawn later gets nothing
-#   "the colours are not showing on      -> AUDIT_VIEW_FILTERS when a
+#   "the colours are not showing on      -> REPORT_VIEW_FILTERS when a
 #    this drawing"                          filter is already applied and
 #                                           nothing is drawing; here when
 #                                           nothing has been coloured yet

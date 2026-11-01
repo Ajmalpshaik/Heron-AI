@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,31 @@ capability: CREATE_LEGEND_VIEW
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO DUPLICATE_VIEWS (duplicate-views), on
+# the owner's instruction in conversation: "make sure there is no duplicate
+# tools". Constitution Article 1: kept, never deleted, so its record and its
+# proof stay readable and it can be brought back. Nothing offers it now -
+# retrieval leaves DEPRECATED out, and its sentences claim nothing in the
+# identity table (heron_search RETIRED_FRAGMENTS). Its sentences moved to
+# DUPLICATE_VIEWS. Its job - a new legend copied from one that exists,
+# renamed, its contents carried or not - is one view duplicated there with
+# newName and duplicateOption Duplicate or WithDetailing; its 'created' is
+# newViewIds[0] there. Its refusal of a view that is not a legend was not
+# carried: DUPLICATE_VIEWS copies any view, the job this card pointed away to.
+# The proof below is the record of what this card's code did, not a claim
+# about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: DUPLICATE_VIEWS
+  why: >
+    The same job: copy a view the way stated and hand back the copy.
+    DUPLICATE_VIEWS version 3 took what this card had that it lacked - newName
+    put on one copy and read back, a name Revit refuses said, a legend told it
+    is on no sheet yet and can sit on many, and, with nothing handed in and no
+    legend in the project, the sentence that Revit's API cannot make the first
+    legend on any release.
 
 purpose: >
   Makes a new legend by duplicating one that already exists. That is the only

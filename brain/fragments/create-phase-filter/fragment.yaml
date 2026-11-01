@@ -94,7 +94,7 @@ contract:
       absent: leave
   provides:
     - name: phaseFilterId
-      # The new filter - for SET_VIEW_PHASE's phaseFilterId. InvalidElementId
+      # The new filter - for SET_VIEW_PROPERTIES's phaseFilterId. InvalidElementId
       # when nothing was made.
       role: result
       type: ElementId
@@ -122,11 +122,11 @@ compatibility-note: >
   through 2027 - read with tools/api-surface on 2026-10-31. Ids are carried as
   ElementId and never read as numbers.
 
-# ROUTING - repeated in REPORT_PHASE_FILTERS and SET_VIEW_PHASE.
+# ROUTING - repeated in REPORT_PHASE_FILTERS and SET_VIEW_PROPERTIES.
 #
 #   "create a phase filter called As-Built"     -> here
 #   "what phase filters are there"              -> REPORT_PHASE_FILTERS
-#   "put the As-Built filter on these views"    -> SET_VIEW_PHASE - this one
+#   "put the As-Built filter on these views"    -> SET_VIEW_PROPERTIES - this one
 #                                                  makes the filter, that one
 #                                                  puts it on views
 #   "create a new phase"                        -> NOTHING HERE CAN - no API
