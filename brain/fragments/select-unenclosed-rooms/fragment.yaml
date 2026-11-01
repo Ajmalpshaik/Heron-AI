@@ -167,7 +167,7 @@ compatibility-note: >
 #                                          where REDUNDANT rooms come from -
 #                                          Revit reports those itself
 #   "place the rooms"                   -> PLACE_ROOMS
-#   "how big is this room"              -> MEASURE_ROOM_DIMENSIONS
+#   "how big is this room"              -> REPORT_ROOM_SPACE_DATA
 #   "what is in this room"              -> FILTER_ELEMENTS_IN_ROOM
 
 utterances:

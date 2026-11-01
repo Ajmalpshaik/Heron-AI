@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: PLACE_ROOM_AT_POINT
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO PLACE_ROOMS (place-rooms), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools". Constitution Article 1: kept, never deleted, so its record and its
+# proof stay readable and it can be brought back. Nothing offers it now -
+# retrieval leaves DEPRECATED out, and its sentences claim nothing in the
+# identity table (heron_search RETIRED_FRAGMENTS). Its sentences moved to
+# PLACE_ROOMS. A proof below is the record of what this card's code did, not a
+# claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: PLACE_ROOMS
+  why: >
+    The same job: rooms or spaces placed on a level, and the ones with no
+    area named. PLACE_ROOMS fills every enclosed area and, since its version
+    2, places them at the points chosen (`points`, millimetres, the plan
+    position only) with this card's rules: a point outside any enclosed
+    region still makes a room, measured after one regeneration and named in
+    `unbounded`; a point Revit refuses counted and named, the rest still
+    placed. The safer rules are kept: rooms or spaces must be said, and the
+    phase is required at a point too - this card named no phase. Nothing of
+    this card is left out.
+
 
 purpose: >
   Places a room - or an MEP space - at the points you name, on one level. You

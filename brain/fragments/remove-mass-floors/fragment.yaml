@@ -40,6 +40,16 @@ risk: MODIFY
 # counts.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+#
+# JUDGED 2026-11-01 BY THE DUPLICATE SWEEP, AND KEPT APART FROM
+# CREATE_MASS_FLOORS. The two do opposite jobs on the same input, and that
+# input's EMPTY value means opposite things: here an empty `levelNames` is
+# refused, and there it is every level each mass reaches. One tool would hold
+# "blank is every level" and "blank is refused" on one input, told apart only
+# by a mode word - and a delete that a mis-set mode turns into "every level"
+# is the outcome the refusal exists to prevent (Article 7: a removal needs the
+# owner's yes for THAT removal). The safer arrangement is two tools.
+
 purpose: >
   Removes the mass floors of conceptual masses at the levels named - Roof, or
   Level 5..Level 8 - so a plant or parapet level stops counting in the gross

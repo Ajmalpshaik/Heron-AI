@@ -52,7 +52,7 @@ purpose: >
      counts in the gross floor area is step 5's question.
   3. THE MASSES - one loaded mass family per block, built by the
      MASS-FAMILY-CREATION method, then LOAD_FAMILY (PROVEN) into the project
-     and PLACE_FAMILY_INSTANCES (PROVEN) at each block's insertion point on
+     and PLACE_FAMILY_INSTANCES (DRAFT, version 4 - version 3 was PROVEN; merged 2026-11-01, and until it is proved on a real model a kept change from it is refused, D-117) at each block's insertion point on
      the ground level. Masses already in the model - in-place or loaded -
      are used as they are.
   4. REPORT_MASSES (DRAFT) - every mass with its base, top and height. Check
@@ -70,7 +70,7 @@ purpose: >
   7. JOIN WHERE BLOCKS MEET: REPORT_MASSES names every pair of masses that
      overlap and are NOT joined, with the volume they share - both count it
      in volume and floor area until they are joined (Autodesk Help, joining
-     mass instances). JOIN_GEOMETRY (PROVEN) joins each pair named, then
+     mass instances). JOIN_GEOMETRY (DRAFT, version 2 - version 1 was PROVEN; merged 2026-11-01, and until it is proved on a real model a kept change from it is refused, D-117) joins each pair named, then
      REPORT_MASSES again: the finding gone and the total smaller.
   8. THE NUMBERS: REPORT_MASSES (DRAFT) with siteArea - the m2 from step 1,
      or "property lines" - gives gross floor area by level and by Usage, the

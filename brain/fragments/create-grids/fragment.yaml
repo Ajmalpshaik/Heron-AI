@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LVL-027
 heron-step: 15
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,44 @@ semantic-identity: "set out a whole grid from bay spacings"
 kind: action
 domain: revit.elements
 capability: CREATE_GRIDS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-01) - CREATE_GRID WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same job - straight column grids, named - and the only
+# difference was the input: two points, or bay gaps. Both are here now.
+# What CREATE_GRID had and this one lacked: grids between points given
+# (`gridLines`, with `gridNames`); a line whose ends differ in height by more
+# than a millimetre refused, naming the difference; two identical points
+# refused; both ends forced onto one height within that millimetre. Its
+# `created` (one id) is one entry of this card's `created`; its `refused` is
+# a line of this card's `refused`.
+#
+# THE TWO CARDS' NAME RULES WERE OPPOSITE, AND THE SAFER ONE IS KEPT: a name
+# already taken - by a grid in the project or twice in one call, ignoring
+# capitals - is refused BEFORE ANYTHING IS MADE, as CREATE_GRID did and as
+# CREATE_LEVELS version 2 does for levels. Version 1 of this card created a
+# clashing grid anyway under Revit's own name, in the middle of somebody's
+# setting-out, and reported it after. A grid Revit will not make, or a name
+# it will not take, now undoes the whole call (Article 8) where version 1
+# carried on without it.
+#
+# EVERY INPUT BUT A MODE'S OWN MAY BE LEFT OUT (`optional: true`, `absent:`).
+# A spacing list left out reads "0", which is now none that way: version 1
+# put one grid at the origin for an empty list and two on one line for "0"
+# (seen while merging; the case "spacings in one direction only" below always
+# said the other direction is left alone). A gap of 0 or less among real gaps
+# is refused before anything is made.
+#
+# CREATE_RADIAL_GRIDS WAS JUDGED ON THE SAME RULE AND KEPT APART: it names no
+# grid (Revit numbers them), so the name rule does not bear on it, and its
+# inputs - a centre, radii, spoke angles and a sweep - share nothing with a
+# straight grid's.
+#
+# Version 1's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
 
 purpose: >
   Sets out a whole column grid from a start point and a list of bay dimensions -
@@ -19,11 +54,11 @@ purpose: >
   setting-out job as it is actually described: *"6000, 6000, 7500, 6000 across;
   8000, 8000 up"*.
 
-  **IT EXISTS BESIDE `CREATE_GRID`, AND THE REASON IS THE INPUT.** That one
-  takes two explicit points, which is right when the line is already known. For a bay layout it means working out every
-  coordinate by hand first, and for twelve grids in two directions that is where
-  the mistakes come from. Here the bay dimensions are the input, which is how a
-  drawing states one.
+  **TWO INPUTS, ONE TOOL.** Two explicit points are right when the line is
+  already known. For a bay layout they mean working out every coordinate by
+  hand first, and for twelve grids in two directions that is where the
+  mistakes come from - so the bay dimensions are the other input, which is how
+  a drawing states one.
 
   **THEY ARE GAPS, NOT POSITIONS**, and both readings look sensible. Four of them
   make FIVE grids: the first sits at the start point and each gap steps to the
@@ -32,9 +67,13 @@ purpose: >
 
   **THE NAME HAS TO INCREMENT THE WAY A DRAWING DOES.** Letters run A to Z then
   AA, AB - not A to Z and stop, and not A1. Numbers run from whatever the start
-  is. **A name Revit already holds is refused by Revit itself**, so each grid is
-  created and then named, and a clash leaves that one grid carrying Revit's own
-  name rather than losing the whole run - which is reported per grid.
+  is.
+
+  **VERSION 2 DRAWS GRIDS BETWEEN POINTS GIVEN AS WELL** - `gridLines`, named
+  by `gridNames` - each line level, its ends forced onto one height, one whose
+  ends differ in height refused. **A name already taken is refused before any
+  grid is made**, ignoring capitals, and a grid Revit will not make undoes the
+  whole call.
 
   **The bay dimensions are MILLIMETRES, divided by 304.8 (D-71).** The start
   point is internal FEET, converted from millimetres by the add-in (D-67).
@@ -45,21 +84,53 @@ contract:
   needs:
     - name: doc
       type: Document
+    # Version 2: each of the five below may be left out, so a call that draws
+    # `gridLines` need not send them. Left out: the origin 0,0,0; no spacings
+    # that way ("0" - none); A; 1.
     - name: origin
       type: XYZ
       source: request
+      optional: true
+      absent: 0,0,0
     - name: spacingsAcross
       type: IList<double>
       source: request
+      optional: true
+      absent: '0'
     - name: spacingsUp
       type: IList<double>
       source: request
+      optional: true
+      absent: '0'
     - name: firstLetter
       type: string
       source: request
+      optional: true
+      absent: A
     - name: firstNumber
       type: int
       source: request
+      optional: true
+      absent: '1'
+    # VERSION 2, from CREATE_GRID. Grids between points: two points in
+    # MILLIMETRES per grid, a semicolon between the two ends and a pipe
+    # between grids - "0,0,0; 30000,0,0 | 0,8000,0; 30000,8000,0". Each line
+    # level to a millimetre or refused. Left out ("none"): grids from the bay
+    # spacings, as version 1. Given with spacings as well, refused.
+    - name: gridLines
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 2. The names of the `gridLines` grids, in order, commas between
+    # - one per line, a blank one for Revit's own. Left out ("none"): Revit's
+    # own names. Refused with bay spacings, whose names run from firstLetter
+    # and firstNumber.
+    - name: gridNames
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: created
       role: result
@@ -70,7 +141,9 @@ contract:
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
-      # "did this come back empty" (D-52).
+      # "did this come back empty" (D-52). Since version 2 a refusal means
+      # NOTHING was created; after a run it holds one line saying what was
+      # made.
       role: accounting
       type: IList<string>
 
@@ -117,14 +190,26 @@ compatibility-note: >
   until that day.) Names are compared as text against the grids already in the
   document rather than trusted to Revit's own refusal, which throws.
 
-# ROUTING - repeated in CREATE_GRID, LIST_GRIDS and CREATE_LEVELS.
+# ROUTING - repeated in LIST_GRIDS, SNAP_TO_GRID and CREATE_LEVELS.
 #
 #   "make a grid series across the building" -> here
 #   "set out the grid at 6000 bays"      -> here
 #   "put in the whole column grid"       -> here
-#   "draw a grid line here"              -> CREATE_GRID - ONE line between two
-#                                           known points, which is right when
-#                                           the position is already worked out
+#   "draw a grid line here"              -> here, `gridLines` - ONE line
+#                                           between two known points, which
+#                                           CREATE_GRID did until version 2
+#   "add a grid"                         -> here, `gridLines`
+#   "space these out on a grid"          -> SNAP_TO_GRID, which means a LAYOUT
+#                                           grid - an imaginary spacing for
+#                                           placing diffusers - and not the
+#                                           building's setting-out datum
+#   "draw a detail line here"            -> CREATE_LINE - a line is not a
+#                                           datum: no bubble, no name, no view
+#                                           extents
+#   "add a grid line at 1200 from the bottom of this curtain wall",
+#   "divide this curtain wall into six panels" -> ADD_CURTAIN_GRID_LINES - a
+#                                           CURTAIN grid line is the wall's
+#                                           own, not a datum
 #   "what grids are in this model"       -> LIST_GRIDS - a READ
 #   "add four more floor levels"         -> CREATE_LEVELS - the same
 #                                           one-versus-many pair, for levels
@@ -138,3 +223,11 @@ utterances:
   - set out the grid at 6000 bays
   - put in the whole column grid
   - set out the structural grid
+  # MOVED 2026-11-01 from CREATE_GRID, merged into this card.
+  - add a grid
+  - create a grid line
+  - put a grid here
+  - add another column grid
+  - I need a new grid line
+  # ...and its semantic identity, which nothing else declares:
+  - add a column grid line between these two points

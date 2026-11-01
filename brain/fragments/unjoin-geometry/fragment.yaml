@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: UNJOIN_GEOMETRY
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO JOIN_GEOMETRY (join-geometry), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools". Constitution Article 1: kept, never deleted, so its record and its
+# proof stay readable and it can be brought back. Nothing offers it now -
+# retrieval leaves DEPRECATED out, and its sentences claim nothing in the
+# identity table (heron_search RETIRED_FRAGMENTS). Its sentences moved to
+# JOIN_GEOMETRY. A proof below is the record of what this card's code did, not
+# a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: JOIN_GEOMETRY
+  why: >
+    The same job from the other side. JOIN_GEOMETRY unjoins with join false,
+    counts a pair that was never joined as already apart rather than as
+    done, names a pair Revit refuses with its reason, and reads every pair
+    back. Its version 2 took this card's rules it lacked: the same element
+    on both sides refused by id, never skipped; a missing element named; and
+    the warning that quantities have moved. Not taken, and why: this card's
+    two matched lists and their different-lengths refusal - Heron's binder
+    fills one element list, never two, which is why this DRAFT card never
+    ran; JOIN_GEOMETRY pairs each element with its `target`.
+
 
 purpose: >
   Separates elements that Revit has joined, so each one keeps its own volume

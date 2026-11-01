@@ -21,7 +21,7 @@ risk: MODIFY
 # directionEdge (0 is first corner to second). Revit lays the beams; the count
 # is read back off the system.
 #
-# PLACE_STRUCTURAL_FAMILY places single structural members; this lays a whole
+# PLACE_FAMILY_INSTANCES places single structural members; this lays a whole
 # bay.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
@@ -108,7 +108,12 @@ compatibility-note: >
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "fill this bay with joists at 600"        -> here
-#   "place a beam between these columns"      -> PLACE_STRUCTURAL_FAMILY
+#   "place a beam between these columns"      -> PLACE_LINE_BASED_FAMILY - a beam
+#                                                is driven by its two ends. This row
+#                                                named PLACE_STRUCTURAL_FAMILY,
+#                                                which refused a beam since its
+#                                                version 4 and is merged into
+#                                                PLACE_FAMILY_INSTANCES (2026-11-01)
 
 utterances:
   - fill this bay with a beam system at 1200 mm

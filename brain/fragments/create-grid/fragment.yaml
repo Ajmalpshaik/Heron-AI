@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LVL-027
 heron-step: 16
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: CREATE_GRID
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_GRIDS (create-grids), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools". Constitution Article 1: kept, never deleted, so its record and its
+# proof stay readable and it can be brought back. Nothing offers it now -
+# retrieval leaves DEPRECATED out, and its sentences claim nothing in the
+# identity table (heron_search RETIRED_FRAGMENTS). Its sentences moved to
+# CREATE_GRIDS. A proof below is the record of what this card's code did, not
+# a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_GRIDS
+  why: >
+    The same job: a straight column grid, named. CREATE_GRIDS sets out a
+    whole grid from bay gaps and, since its version 2, draws grids between
+    points given (`gridLines`, named by `gridNames`) with this card's rules:
+    a line whose ends differ in height by more than a millimetre refused,
+    naming the difference; two identical points refused; both ends forced
+    onto one height. The two cards' name rules were opposite and the safer
+    one - this card's - is kept: a name already taken is refused before any
+    grid is made, ignoring capitals. Nothing of this card is left out.
+
 
 purpose: >
   Creates one straight column grid between two points and names it.

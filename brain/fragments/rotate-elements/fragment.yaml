@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,31 @@ semantic-identity: "turn these elements about a vertical axis, and check they re
 kind: action
 domain: revit.geometry
 capability: ROTATE_ELEMENTS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-01) - ROTATE_ELEMENTS_ABOUT_AXIS WAS MERGED INTO THIS CARD
+# on the owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same job - elements turned, and checked that they turned -
+# about a vertical axis here and about any line there. Both are here now:
+# `axisLine`, two points in millimetres, so it can tilt. What that card had
+# and this one lacked: the axis; Revit's outright refusal (pinned) KEPT APART
+# from accepted-and-did-not-move, in `refused`; `rotatedIds`; `findings`.
+#
+# THE SAFER RULE KEPT IN EACH CONFLICT: a zero angle, or a whole turn, is
+# REFUSED and nothing attempted - that card's rule; version 1 here counted it
+# as rotated. An element with nothing to compare is UNVERIFIED, never counted
+# as turned - this card's rule; that one counted it as turned. And that
+# card's check compared a placed element's POSITION only, so one turned about
+# a line through its own point was reported as not moving: fixed in the move,
+# the comparison is now every reading that changes when a thing turns, in
+# three dimensions. Where its outputs are now: `rotated` (ids) ->
+# `rotatedIds`; `didNotMove` -> `blocked`; `refused` -> `refused`; `findings`
+# -> `findings`.
+#
+# Version 1's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
 
 purpose: >
   Turns every element about a vertical axis - a mis-oriented piece of equipment
@@ -25,6 +47,10 @@ purpose: >
   The pivot may be left out, and then each element turns about its own position
   - which is what *"spin that damper round"* means, as against *"swing this
   whole row about the corner"*.
+
+  Version 2 turns about any line given as well - `axisLine` - so a panel can
+  tilt; a zero angle is refused, and Revit refusing outright is kept apart
+  from an element that did not move.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -40,6 +66,15 @@ contract:
     - name: pivot
       type: XYZ
       source: request
+    # VERSION 2, from ROTATE_ELEMENTS_ABOUT_AXIS. The line to turn about, two
+    # points in MILLIMETRES - "0,0,3000; 5000,0,3000" is a horizontal axis 3 m
+    # up, so the elements TILT. Left out ("none"): a vertical axis through
+    # `pivot`, as version 1; given, the pivot is not used.
+    - name: axisLine
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: rotated
       role: result
@@ -56,6 +91,19 @@ contract:
       # evidence it could not check, never a confirmed rotation (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: refused
+      # VERSION 2. Elements Revit would not rotate at all - pinned. KEPT APART
+      # from `blocked`, which Revit accepted and did not move. Evidence, never
+      # a result (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: rotatedIds
+      # VERSION 2. The elements that turned - the ids `rotated` counts.
+      role: result
+      type: IList<ElementId>
+    - name: findings
+      # VERSION 2. The outcomes in a sentence, or why nothing was turned.
+      type: IList<string>
 
 proof:
   date: '2026-09-13'
@@ -93,6 +141,16 @@ compatibility-note: >
   person says are converted at the edge, not here (D-20's rule applied to an
   angle rather than a length).
 
+# ROUTING (2026-11-01, ROTATE_ELEMENTS_ABOUT_AXIS merged in)
+#
+#   "turn this damper round"       -> here - vertical axis, the plan rotation
+#   "tilt this panel"              -> here, `axisLine` horizontal
+#   "rotate this about X"          -> here, `axisLine` - and say WHERE the X
+#                                     axis is
+#   "rotate the beam's section"    -> NOT a rotation at all. A beam's
+#                                     cross-section rotation is an instance
+#                                     PARAMETER - WRITE_ELEMENT_PARAMETERS
+
 # ROUTING (2026-10-12)
 #
 #   "straighten these walls onto the axis" -> STRAIGHTEN_OFF_AXIS_LINES - each
@@ -106,3 +164,12 @@ utterances:
   - swing this row about the corner
   - the diffuser is the wrong way round
   - rotate them 180
+  # MOVED 2026-11-01 from ROTATE_ELEMENTS_ABOUT_AXIS, merged into this card.
+  - tilt these elements
+  - rotate about a horizontal axis
+  - rotate these about this line
+  - rotate on the X axis
+  - rake these supports
+  - tilt this panel
+  # ...and its semantic identity, which nothing else declares:
+  - tilt these about a horizontal axis, not about the vertical one

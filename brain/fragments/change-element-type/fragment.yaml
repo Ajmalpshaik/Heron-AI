@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,31 @@ semantic-identity: "swap these elements to a different type"
 kind: action
 domain: revit.elements
 capability: CHANGE_ELEMENT_TYPE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-01) - MATCH_ELEMENT_TYPE WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same job - elements moved onto a type, read back - and the
+# only difference was where the type came from: named here, taken from an
+# element there. Both are here now. What MATCH_ELEMENT_TYPE had and this card
+# lacked: `typeFrom` "selected", the type taken from the one selected
+# element; the source among the elements skipped; a source with no type
+# refused with the reason; an element of another category refused by id and
+# category; and the sentence that only the TYPE changed, never an instance
+# parameter. Its `changed` is `changed`; its findings are `findings`.
+#
+# THE CATEGORY RULE DIFFERS BY MODE, AND THAT IS KEPT ON PURPOSE (the owner's
+# rule: in every conflict keep the safer one). Taken from a source, another
+# category is refused - MATCH_ELEMENT_TYPE's rule. Named by id, a
+# cross-category swap still goes to Revit, because it is measured and wanted:
+# three selected curtain panels became curtain wall doors here on 2026-10-13
+# (brain/skills/building-shell.yaml, step 9, and the CURTAIN PANELS note
+# below).
+#
+# Version 1's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
 
 purpose: >
   Changes which type an element is - swapping every 600x600 diffuser on a floor
@@ -28,15 +50,36 @@ purpose: >
   only a real move is counted - the same read-back the parameter path needed
   after Revit returned TRUE and stored something else.
 
+  Version 2 takes the type from an element as well - the one selected, its
+  type the one the others take, another category refused - and says that only
+  the type changed.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
   needs:
     - name: elements
       type: IList<Element>
+    # The type, named - or left out ("none") when `typeFrom` says where to take
+    # it from. One of the two, never both.
     - name: newTypeId
       type: ElementId
       source: request
+      optional: true
+      absent: none
+    # VERSION 2, from MATCH_ELEMENT_TYPE. "selected" - the ONE element selected
+    # in Revit is the source and its type is the one the others take; another
+    # category is refused. Left out ("none"): the type is `newTypeId`.
+    - name: typeFrom
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: doc
+      type: Document
+    # Version 2: the selection `typeFrom` reads, in this model only.
+    - name: uidoc
+      type: UIDocument
   provides:
     - name: changed
       role: result
@@ -53,6 +96,10 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: findings
+      # Version 2: what was changed and to what, each refusal by id and
+      # category, and the sentence that only the type changed.
+      type: IList<string>
 
 proof:
   date: '2026-09-13'
@@ -86,10 +133,21 @@ compatibility-note: >
   from an integer and 2024's 64-bit ids do not reach this code.
 
 # ROUTING - repeated in SET_MEP_SIZE, which is what is usually meant when the
-# words are about size.
+# words are about size, and in DUPLICATE_TYPE and COPY_PARAMETER_VALUE.
 #
 #   "change the type"                  -> here
 #   "swap them for the other diffuser" -> here
+#   "make these the same as that one"  -> here, typeFrom selected -
+#                                         MATCH_ELEMENT_TYPE's job since
+#                                         version 2
+#   "match this type onto those"       -> here, typeFrom selected
+#   "make a new type like this one
+#    but 300 wide"                     -> DUPLICATE_TYPE. Nothing here creates
+#                                         a type
+#   "copy the mark across too"         -> COPY_PARAMETER_VALUE. This changes
+#                                         the TYPE and leaves every instance
+#                                         parameter alone, which is not what
+#                                         Revit's own match tool does
 #   "make the duct 300 wide"           -> SET_MEP_SIZE - a dimension on the
 #                                         element, not a different type
 #   "rename the type"                  -> RENAME_ELEMENTS, and note it reaches
@@ -155,3 +213,9 @@ utterances:
   # identity route answers it before any ranking runs.
   - change the type of these air terminals to another type
   - change these elements to a different type
+  # MOVED 2026-11-01 from MATCH_ELEMENT_TYPE, merged into this card.
+  - make these the same as that one
+  - match this type onto those
+  - change these to match that wall
+  - make them all like this one
+  - match element type

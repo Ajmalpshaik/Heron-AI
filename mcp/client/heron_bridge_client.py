@@ -2889,7 +2889,8 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
         # carry commas of their own: a point is "304000,303000,0", and a list of
         # points split on commas became six numbers rather than two points.
         # Without a pipe nothing changes. 5b-298, where PLACE_ROOM_AT_POINT
-        # could not be tracked across point lists for exactly this reason.
+        # (merged into PLACE_ROOMS's `points` on 2026-11-01) could not be
+        # tracked across point lists for exactly this reason.
         separator = "|" if "|" in listed else ","
         vary_values = [v.strip() for v in listed.split(separator) if v.strip()]
 

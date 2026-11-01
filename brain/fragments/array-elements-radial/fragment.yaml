@@ -17,7 +17,7 @@ purpose: >
   Copies elements evenly around a centre point - bollards round a turning head,
   sprinklers round a column, seats round a table, luminaires round an atrium.
 
-  **ARRAY_ELEMENTS IS LINEAR AND ONLY LINEAR, WHICH IS WHY THIS IS SEPARATE.**
+  **COPY_ELEMENTS' RUN IS LINEAR AND ONLY LINEAR, WHICH IS WHY THIS IS SEPARATE.**
   That one takes a direction, a spacing and a count. Nothing in it can sweep
   round a point, and the two share no arithmetic: one adds a vector repeatedly,
   this one rotates about an axis. Folding them together would mean a mode flag
@@ -35,7 +35,7 @@ purpose: >
   is from the sweep itself and says which rule it used.
 
   **THE COUNT IS THE TOTAL, INCLUDING THE ORIGINAL.** Eight means eight things
-  afterwards, not nine - the same promise ARRAY_ELEMENTS makes, and what a
+  afterwards, not nine - the same promise COPY_ELEMENTS' count makes, and what a
   modeller means when they count what appeared.
 
   **THE AXIS IS VERTICAL, THROUGH THE POINT GIVEN.** That is the array anybody
@@ -143,12 +143,17 @@ compatibility-note: >
   2021 move to ForgeTypeId. Ids are carried as `ElementId` and none is read as
   a number.
 
-# ROUTING - repeated in ARRAY_ELEMENTS, COPY_ELEMENTS and ROTATE_ELEMENTS.
+# ROUTING - repeated in COPY_ELEMENTS and ROTATE_ELEMENTS.
+#
+# JUDGED 2026-11-01, when ARRAY_ELEMENTS was merged into COPY_ELEMENTS, and
+# KEPT APART: this card already copies the set together (one CopyElements,
+# then the copies turned), which was the rule that merge was judged on, and a
+# centre, a sweep and the full-circle division share no input with an offset.
 #
 #   "space these round a point"            -> here
 #   "eight of these round the column"      -> here
 #   "copy these round in a circle"         -> here
-#   "space these out along the corridor"   -> ARRAY_ELEMENTS - a direction and a
+#   "space these out along the corridor"   -> COPY_ELEMENTS - a direction and a
 #                                             spacing. It cannot sweep, and
 #                                             this one cannot run along a line
 #   "copy these over there"                -> COPY_ELEMENTS - ONE copy at one

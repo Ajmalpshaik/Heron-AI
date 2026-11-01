@@ -109,7 +109,7 @@ compatibility-note: >
   short-curve limit is taken from the application itself rather than typed as a
   number, because it is a property of the installation and not a constant.
 
-# ROUTING - repeated in FIND_OVERLAPPING_LINES, CREATE_GRID and
+# ROUTING - repeated in FIND_OVERLAPPING_LINES, CREATE_GRIDS and
 # CREATE_FILLED_REGION.
 #
 #   "draw a detail line here"            -> here
@@ -117,7 +117,7 @@ compatibility-note: >
 #   "put a setting out line on this plan" -> here, asDetail true
 #   "the lines are drawn twice on top of each other" -> FIND_OVERLAPPING_LINES -
 #                                          a READ over lines that already exist
-#   "draw a grid line"                   -> CREATE_GRID - a grid is a DATUM with
+#   "draw a grid line"                   -> CREATE_GRIDS - a grid is a DATUM with
 #                                           a bubble and a name, on every view;
 #                                           a line is not
 #   "hatch this area"                    -> CREATE_FILLED_REGION - a filled

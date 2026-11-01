@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,31 @@ semantic-identity: "shift these elements by one offset, and check that they actu
 kind: action
 domain: revit.geometry
 capability: MOVE_ELEMENTS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-01) - MOVE_ELEMENTS_TO_POINT WAS MERGED INTO THIS CARD on
+# the owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same job - elements moved, and checked that they arrived -
+# by an offset here and to an absolute point there. Both are here now:
+# `toPoint`, "x,y,z" in millimetres, with each element's offset worked out
+# from its own location point inside the one call. What that card had and
+# this one lacked: the point; an element positioned by a curve counted in
+# `noLocationPoint`, never moved; `notAtPoint` for one that did not arrive; the
+# ids of what moved (`movedIds`); `findings`.
+#
+# TWO RULES MADE SAFER IN THE MERGE (the owner: in every conflict keep the
+# safer rule): the document is REGENERATED BEFORE ANYTHING IS READ BACK - this
+# card's own rule, where MOVE_ELEMENTS_TO_POINT read the position straight
+# after the move; and SEVERAL ELEMENTS TO ONE POINT IS REFUSED unless
+# `stackOnOnePoint` is true - putting two at one coordinate stacks them, a
+# duplicate that schedules twice, and that card did it without a word.
+# Where its outputs are now: `moved` (ids) -> `movedIds`; `notAtPoint` and
+# `noLocationPoint` -> the same names; `findings` -> `findings`.
+#
+# Version 1's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
 
 purpose: >
   Shifts every element by one offset and reports FOUR outcomes, because "it did
@@ -27,6 +49,11 @@ purpose: >
   So the position is read before and after and compared. That comparison is the
   fragment; the move itself is one line.
 
+  Version 2 also puts elements AT a point - `toPoint` - working each one's
+  offset out from its own location point; one positioned by a curve is
+  counted, never moved, and several to one point are refused unless the
+  caller says so.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a bulk
   move is one undo entry.
 
@@ -36,9 +63,26 @@ contract:
       type: Document
     - name: elements
       type: IList<Element>
+    # Left out ("0,0,0") when `toPoint` says where instead. Both is refused.
     - name: offset
       type: XYZ
       source: request
+      optional: true
+      absent: 0,0,0
+    # VERSION 2, from MOVE_ELEMENTS_TO_POINT. The point to put each element AT,
+    # "x,y,z" in MILLIMETRES - its own location point lands on it. Left out
+    # ("none"): moved by `offset`, as version 1.
+    - name: toPoint
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 2. True to let more than one element be put at ONE point,
+    # stacked. Left out it is false, and more than one is refused.
+    - name: stackOnOnePoint
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: moved
       role: result
@@ -61,6 +105,26 @@ contract:
       # evidence it could not check, never a confirmed move (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: movedIds
+      # VERSION 2. The elements that moved the whole way - or, to a point,
+      # that stand on it after the regeneration. The ids `moved` counts.
+      role: result
+      type: IList<ElementId>
+    - name: notAtPoint
+      # VERSION 2, to a point. Elements that are not within a millimetre of it
+      # after the regeneration - refused, or held by a constraint. Evidence it
+      # looked, never a thing it moved (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: noLocationPoint
+      # VERSION 2, to a point. Positioned by a curve rather than a point, so
+      # "put it at this coordinate" has no single meaning - given and
+      # unusable, never moved (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      # VERSION 2. The four outcomes in a sentence, or why nothing moved.
+      type: IList<string>
 
 proof:
   date: '2026-09-13'
@@ -96,6 +160,13 @@ compatibility-note: >
   and the offset arrives in Revit's internal feet so no units call is made -
   which is what keeps this clear of the 2021 units move.
 
+# ROUTING (2026-11-01, MOVE_ELEMENTS_TO_POINT merged in)
+#
+#   "move it 500 east"         -> here, by `offset`
+#   "put it at 12400, 8600"    -> here, `toPoint`
+#   "move these to level 3"    -> SET_ELEMENT_LEVEL reassigns without moving
+#   "where is it now"          -> REPORT_LOCATION
+
 utterances:
   - move the ducts up 200
   - shift them 300 to the left
@@ -103,3 +174,12 @@ utterances:
   - nudge these over
   - move them down 50
   - drop the services 100 mm
+  # MOVED 2026-11-01 from MOVE_ELEMENTS_TO_POINT, merged into this card.
+  - move this to these coordinates
+  - put it at this exact point
+  - set the location of these
+  - move to 0,0,0
+  - place this at the survey point
+  - put it at 12400, 8600
+  # ...and its semantic identity, which nothing else declares:
+  - put this element at exactly this coordinate

@@ -27,14 +27,36 @@ negative:
 
   - given: 0 degrees, or exactly 360
     expect: >
-      counted as rotated, NOT blocked. Asking for a whole turn is a legitimate
-      request that legitimately changes nothing, and a checker that could not
-      tell the two apart would report a clean run as a failure
+      VERSION 2: REFUSED by name, nothing attempted, `rotated` 0 and nothing
+      in `blocked` - the message saying that is not the same as nothing being
+      turnable. (Version 1 counted both as rotated; the merge with
+      ROTATE_ELEMENTS_ABOUT_AXIS kept the safer rule, so this case FAILS on
+      version 1)
 
   - given: a curve-based element with no pivot given
     expect: >
       its id in `unverified` - there is no location point to turn it about, and
       this fragment will not invent one
+
+  # VERSION 2 (2026-11-01) - ROTATE_ELEMENTS_ABOUT_AXIS merged in. Each FAILS
+  # on version 1. NOT RUN.
+  - given: >
+      three face-based panels and axisLine a HORIZONTAL line through their
+      common edge, 15 degrees as radians
+    expect: >
+      all three TILTED 15 degrees - checked in a section against a protractor,
+      not read off the count. A vertical-axis turn would leave them flat
+  - given: >
+      one family instance and axisLine a horizontal line THROUGH ITS OWN
+      INSERTION POINT
+    expect: >
+      counted as rotated - its point does not move, its placement's axes do.
+      ROTATE_ELEMENTS_ABOUT_AXIS's position-only check called this "did not
+      move"
+  - given: the same elements, pinned
+    expect: all in `refused`, none in `blocked` and none rotated - refused is kept apart from did-not-move
+  - given: axisLine "0,0,0; 0,0,0"
+    expect: refused - a line needs two points - nothing turned
 
 second_route:
   - the element's own Rotation in Revit's properties palette, read after

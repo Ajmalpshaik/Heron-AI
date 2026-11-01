@@ -201,7 +201,7 @@ compatibility-note: >
   none is read as a number.
 
 # ROUTING - repeated in SET_CURTAIN_WALL_GRID, SET_CURTAIN_WALL_MULLIONS,
-# REPORT_CURTAIN_ELEMENTS and CREATE_GRID.
+# REPORT_CURTAIN_ELEMENTS and CREATE_GRIDS.
 #
 #   "divide this curtain wall into six panels" -> here, direction vertical,
 #                                                positions "equal 6"
@@ -234,7 +234,7 @@ compatibility-note: >
 #   "change this one mullion"                 -> CHANGE_ELEMENT_TYPE, with that
 #                                                mullion selected
 #   "add a grid", "add a grid line", "put a
-#    grid line here"                          -> CREATE_GRID - a building grid,
+#    grid line here"                          -> CREATE_GRIDS - a building grid,
 #                                                the setting-out datum. Without
 #                                                "curtain" in the sentence, a
 #                                                grid is a column grid. Measured

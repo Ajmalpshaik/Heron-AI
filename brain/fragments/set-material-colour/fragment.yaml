@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: SET_MATERIAL_COLOUR
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO SET_MATERIAL_PROPERTIES
+# (set-material-properties), on the owner's instruction in conversation: "make
+# sure there is no duplicate tools". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to SET_MATERIAL_PROPERTIES. A proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: SET_MATERIAL_PROPERTIES
+  why: >
+    The same job: one material's shading colour, by name, reported before
+    and after. SET_MATERIAL_PROPERTIES writes it as its "Shading Colour="
+    field on one material or every one a pattern matches - a name matching
+    nothing refused with the closest names, never a material made; read back
+    after a regeneration; "already" counted; the Appearance asset said to be
+    untouched. Its version 2 took what this card had and it lacked:
+    `wasColour` and `nowColour` as values of their own, and the Companion
+    settings table. Nothing of this card is left out.
+
 # A settings change: after it runs from the chat, the Companion page offers its values
 # as a table the modeller can edit and apply again (docs/40 section 21.1).
 companion: settings

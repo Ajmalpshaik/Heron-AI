@@ -139,7 +139,7 @@ compatibility-note: >
 #
 #   "dimension the rooms"                -> here
 #   "put the room sizes on the plan"     -> here, as live dimensions
-#   "how big is this room"               -> MEASURE_ROOM_DIMENSIONS. It reads
+#   "how big is this room"               -> REPORT_ROOM_SPACE_DATA. It reads
 #                                           the size and draws nothing, which
 #                                           is what a question wants
 #   "list the rooms and their areas"     -> REPORT_ROOM_SPACE_DATA

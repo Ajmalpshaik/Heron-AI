@@ -106,15 +106,15 @@ compatibility-note: >
   "All distances are internal feet" until 2026-09-24, while the code and its
   own proof - 600 in, 1.97 feet used - said millimetres.)
 
-# ROUTING - repeated in LIST_GRIDS and CREATE_GRID.
+# ROUTING - repeated in LIST_GRIDS and CREATE_GRIDS.
 #
 # THE WORD "GRID" MEANS TWO DIFFERENT THINGS AND THIS IS THE COLLISION. A
 # LAYOUT grid is an imaginary spacing used to place diffusers evenly - that is
 # what this fragment means. A COLUMN grid is the building's setting-out datum,
-# drawn on every plan, and that is what LIST_GRIDS and CREATE_GRID mean. One
+# drawn on every plan, and that is what LIST_GRIDS and CREATE_GRIDS mean. One
 # word, two jobs, and nothing in the sentence usually says which.
 #
-#   "space these out evenly"    -> ARRAY_ELEMENTS. Even spacing along a
+#   "space these out evenly"    -> COPY_ELEMENTS, count and spacingMm. Even spacing along a
 #                                  direction is what an array IS; this
 #                                  fragment moves things onto the cells of a
 #                                  spacing that is already decided. BOTH
@@ -123,8 +123,8 @@ compatibility-note: >
 #   "put them on a 3 m grid"    -> here - a spacing
 #   "snap these to the grid"    -> here
 #   "list the grids"            -> LIST_GRIDS - the datums
-#   "add a grid"                -> CREATE_GRID - a datum
-#   "align these to grid 5"     -> CREATE_GRID / LIST_GRIDS territory; nothing
+#   "add a grid"                -> CREATE_GRIDS - a datum
+#   "align these to grid 5"     -> CREATE_GRIDS / LIST_GRIDS territory; nothing
 #                                  here aligns elements to a named column grid
 #   "the grid bubbles are on the wrong side" -> SET_DATUM_BUBBLES. This one
 #                                       MOVES elements, and used to answer
