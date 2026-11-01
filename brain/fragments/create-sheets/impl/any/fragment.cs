@@ -1,7 +1,26 @@
-// NOT STANDALONE. Assumes `doc`, `numbers`, `names` and `titleBlockName` are in
-// scope, and leaves `created`, `numberedAs`, `namedAs`, `numberTaken`,
-// `refused`, `titleBlockNotFound`, `noTitleblock`, `titleBlockProblem` and
-// `notCreated` behind.
+// NOT STANDALONE. Assumes `doc`, `numbers`, `names`, `titleBlockName`,
+// `elements`, `numberSuffix` and `namePrefix` are in scope, and leaves
+// `created`, `numberedAs`, `namedAs`, `numberTaken`, `refused`,
+// `titleBlockNotFound`, `noTitleblock`, `titleBlockProblem`, `notCreated` and
+// `notDuplicated` behind.
+//
+// VERSION 3 (2026-11-01) - DUPLICATE_SHEETS MERGED IN. Two ways to say which
+// sheets to make, and the first one given decides:
+//
+//   NUMBERS GIVEN - versions 1 and 2 exactly, on the title block named.
+//   `elements` is not read, so a selection never adds a copy.
+//
+//   NO NUMBERS, SHEETS HANDED IN WITH A `numberSuffix` - a copy of each:
+//   the source's own title block, its number + the suffix, `namePrefix` + its
+//   name. No suffix is refused: the copy would collide with its source, and
+//   "make a new sheet" said with sheets selected must not copy them.
+//
+// NEITHER JOB COPIES THE VIEWS ON A SHEET. Both make sheets with nothing
+// placed on them; DUPLICATE_VIEWS and PLACE_VIEW_ON_SHEET do that.
+//
+// `numberTaken` holds every clash in either job - a number already in the
+// register, or one claimed earlier in the same batch (DUPLICATE_SHEETS'
+// collidedNumbers); `notDuplicated` the sources no copy came back for.
 //
 // ASSUMES AN OPEN TRANSACTION. It does not start one - Golden Rule 16.
 //
@@ -59,8 +78,38 @@ bool titleBlockNotFound = false;
 bool noTitleblock = false;
 string titleBlockProblem = "";
 var notCreated = new List<string>();
+var notDuplicated = new List<ElementId>();
+
+// VERSION 3: WHICH JOB. The card's `absent:` words - "none" for a list or a
+// prefix not given, "from the source sheets" for a title block not named -
+// are read here as nothing given. A sheet numbered "none" is not a sheet
+// anybody means.
+Func<string, string, bool> sameText = (a, b) =>
+    string.Equals((a ?? "").Trim(), b, StringComparison.OrdinalIgnoreCase);
+Func<IList<string>, bool> leftOut = list =>
+    list == null || list.Count == 0
+    || (list.Count == 1 && (sameText(list[0], "none") || (list[0] ?? "").Trim().Length == 0));
+
+bool byNumbers = !leftOut(numbers);
+if (leftOut(names)) names = null;
+var suffix = (numberSuffix ?? "").Trim();
+if (sameText(suffix, "none")) suffix = "";
+var prefix = namePrefix ?? "";
+if (sameText(prefix, "none")) prefix = "";
+// A NAME PREFIX KEEPS ITS SPACE - "DRAFT " is how a modeller types one, and
+// trimming it would run the prefix into the name.
 
 var askedTitleBlock = (titleBlockName ?? "").Trim();
+bool titleBlockLeftOut = sameText(askedTitleBlock, "from the source sheets");
+if (titleBlockLeftOut) askedTitleBlock = "";
+
+bool copying = !byNumbers && elements != null && elements.Any(e => e != null);
+
+if (byNumbers)
+{
+// ---- NUMBERS GIVEN: versions 1 and 2, exactly. `elements` is NOT read, so a
+// sheet that happens to be selected is never copied by a request that named
+// its numbers.
 
 // By NAME among the title block types - a project standard is written in names,
 // and an id is not portable between models. "Family: Type" or "Family : Type"
@@ -203,4 +252,145 @@ if (titleBlockChosen)
 
         if (actualNumber != wantedNumber) refused.Add(sheet.Id);
     }
+}
+}
+else if (copying)
+{
+    // ---- VERSION 3: COPIES OF THE SHEETS HANDED IN, from DUPLICATE_SHEETS.
+    //
+    // Each source sheet gives a new one: the SOURCE'S OWN title block, the
+    // number made by adding `numberSuffix` to the source's, and the name
+    // `namePrefix` + the source's name. THE VIEWS ON THE SOURCE ARE NOT
+    // COPIED - neither job here places anything on a sheet; DUPLICATE_VIEWS
+    // and PLACE_VIEW_ON_SHEET do, and welding them in would hide two
+    // read-backs inside a third.
+    //
+    // THE NUMBER IS CHECKED BEFORE ANY SHEET EXISTS, as for a typed number,
+    // capitals ignored - and each number made is added as it goes, so two
+    // sources in one batch cannot both claim one new number. Measured where
+    // DUPLICATE_SHEETS was re-authored from: "Duplicated 0 of 1 sheet(s), 1
+    // failed" while the sheet count went 2 to 3 and an orphan remained. So
+    // nothing is created that would then have to be deleted.
+    if (suffix.Length == 0)
+    {
+        // A copy numbered like its source collides with it, every time - and
+        // a request that gave no numbers and no suffix may have meant "make a
+        // new sheet" with sheets selected. Refused, nothing made.
+        foreach (var element in elements) if (element != null) notDuplicated.Add(element.Id);
+        notCreated.Add("No sheet numbers were given, and no numberSuffix to number copies of the "
+                     + elements.Count(e => e != null) + " thing(s) handed in - a copy numbered like "
+                     + "its source would clash with it. Give the numbers, or the suffix for the "
+                     + "copies (\"-COPY\"). Nothing was created.");
+    }
+    else
+    {
+        if (!titleBlockLeftOut && askedTitleBlock.Length > 0)
+            titleBlockProblem = "The copies take each source sheet's own title block, so \""
+                + askedTitleBlock + "\" was not used.";
+
+        var taken = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var existing in new FilteredElementCollector(doc)
+                     .OfClass(typeof(ViewSheet))
+                     .Cast<ViewSheet>())
+        {
+            if (existing == null) continue;
+            string number = null, holder = null;
+            try { number = existing.SheetNumber; } catch { }
+            try { holder = existing.Name; } catch { }
+            if (string.IsNullOrEmpty(number) || taken.ContainsKey(number)) continue;
+            taken[number] = holder ?? "";
+        }
+
+        foreach (var element in elements)
+        {
+            if (element == null) continue;
+            var source = element as ViewSheet;
+            if (source == null || source.IsTemplate)
+            {
+                notDuplicated.Add(element.Id);
+                notCreated.Add("'" + element.Name + "': not a sheet, so there is nothing to copy");
+                continue;
+            }
+
+            var wantedNumber = (source.SheetNumber ?? "") + suffix;
+
+            // THE CHECK THAT MAKES THE ORPHAN IMPOSSIBLE. Before anything exists.
+            string holderName;
+            if (taken.TryGetValue(wantedNumber, out holderName))
+            {
+                numberTaken.Add(wantedNumber);
+                notDuplicated.Add(source.Id);
+                notCreated.Add(wantedNumber + ": already used by \"" + holderName + "\" - Revit "
+                             + "refuses a duplicate number, capitals or not");
+                continue;
+            }
+
+            // THE SOURCE'S TITLE BLOCK, so the copy matches its set. A
+            // placeholder has none, and is a reservation in the register, not
+            // a drawing; a sheet stripped of its title block has none either.
+            // Neither is guessed at: an arbitrary title block would make a
+            // sheet that does not match the set it belongs to.
+            var sourceTitleBlockType = ElementId.InvalidElementId;
+            if (!source.IsPlaceholder)
+            {
+                foreach (var tb in new FilteredElementCollector(doc, source.Id)
+                                       .OfCategory(BuiltInCategory.OST_TitleBlocks)
+                                       .WhereElementIsNotElementType())
+                {
+                    sourceTitleBlockType = tb.GetTypeId();
+                    break;
+                }
+            }
+            if (sourceTitleBlockType == ElementId.InvalidElementId)
+            {
+                notDuplicated.Add(source.Id);
+                notCreated.Add(source.SheetNumber + ": "
+                    + (source.IsPlaceholder ? "a placeholder sheet" : "a sheet with no title block")
+                    + " - there is no title block to copy, so no copy was made");
+                continue;
+            }
+
+            ViewSheet made = null;
+            string revitSaid = null;
+            try { made = ViewSheet.Create(doc, sourceTitleBlockType); }
+            catch (Exception failure) { revitSaid = failure.Message; }
+            if (made == null)
+            {
+                notDuplicated.Add(source.Id);
+                notCreated.Add(wantedNumber + ": Revit declined to create the sheet"
+                    + (revitSaid == null ? "" : ". Revit said: " + string.Join(" ", revitSaid.Split())));
+                continue;
+            }
+
+            created.Add(made.Id);
+            var wantedName = prefix + (source.Name ?? "");
+            taken[wantedNumber] = wantedName;
+
+            try { made.SheetNumber = wantedNumber; } catch { }
+            try { made.Name = wantedName; } catch { }
+
+            // READ BACK, number and name apart - they fail independently.
+            string actualNumber = null, actualName = null;
+            try { actualNumber = made.SheetNumber; } catch { }
+            try { actualName = made.Name; } catch { }
+            if (actualNumber != null) numberedAs[made.Id] = actualNumber;
+            if (actualName != null) namedAs[made.Id] = actualName;
+
+            // A COPY WHOSE NUMBER DID NOT TAKE IS NOT THE COPY ASKED FOR - but it
+            // EXISTS, so it stays in `created` with its real number in
+            // numberedAs, is named in `refused`, and its source is in
+            // notDuplicated. The register must show the truth.
+            if (!string.Equals(actualNumber, wantedNumber, StringComparison.OrdinalIgnoreCase))
+            {
+                refused.Add(made.Id);
+                notDuplicated.Add(source.Id);
+            }
+        }
+    }
+}
+else
+{
+    notCreated.Add("No sheet numbers were given and no sheets were handed in to copy, so there is "
+                 + "nothing to create. Give the numbers and names, or select the sheets to copy "
+                 + "with a numberSuffix.");
 }

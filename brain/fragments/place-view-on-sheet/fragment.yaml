@@ -9,7 +9,7 @@ semantic-identity: "put these views onto a sheet - or swap one view for another 
 kind: action
 domain: revit.views
 capability: PLACE_VIEW_ON_SHEET
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -41,6 +41,14 @@ purpose: >
   **Version 2: replace one view with another on its sheets.** Name an
   `oldViewId` and the one view in `views` takes its place, and the old view
   comes off - read back in `swapped`, and anything not done said in `notDone`.
+
+  **Version 4 places schedules too**, as a schedule goes on a sheet - not as a
+  viewport. The point is a viewport's CENTRE but a schedule's TOP-LEFT
+  corner: a schedule hangs from it and grows down and to the right.
+  `placedAt` reads each one back in millimetres and says which. A view can be
+  on one sheet only and the second is refused; a schedule can be on many, so
+  a schedule already placed elsewhere is placed again - Revit's rule.
+  Version 3's proof is not this code; the card is DRAFT until proved again.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -91,7 +99,8 @@ contract:
       optional: true
       absent: none
     - name: views
-      # Placing: the views to put on the sheet. Replacing: the ONE new view.
+      # Placing: the views to put on the sheet - schedules among them since
+      # version 4, each placed as a schedule is. Replacing: the ONE new view.
       # Version 3 review fix: OPTIONAL - left out it is an empty list
       # (HeronBindingNote.AbsentValue's IList<View> case), and the views are
       # then taken from `elements`. Named, they ALWAYS win.
@@ -107,6 +116,8 @@ contract:
       type: IList<Element>
       optional: true
     - name: at
+      # Version 4: for a VIEW the point is its viewport's CENTRE; for a
+      # SCHEDULE it is the schedule's TOP-LEFT CORNER - it hangs from there.
       # Placing: the point on the sheet, in mm, for ONE view (version 3);
       # several views go on a grid and the point is not used - `layout` says
       # so. Left out, or 0,0,0, one view goes to the middle of the sheet.
@@ -173,9 +184,20 @@ contract:
       # Version 3. How the views were arranged: one at the point given, one at
       # the middle of the sheet, or several on a grid of columns x rows - and,
       # when a point was given with several views, that it was not used. Empty
-      # for the swap job. Never a thing it placed (D-52).
+      # for the swap job. Never a thing it placed (D-52). Version 4: when a
+      # schedule is placed, also which point is its corner and which a
+      # viewport's centre.
       role: accounting
       type: string
+    - name: placedAt
+      # Version 4, from PLACE_SCHEDULE_ON_SHEET. Placing: one line per thing
+      # placed, READ BACK from the model in mm from the sheet origin - "'Duct
+      # Schedule' on sheet A101 at 50 mm, 250 mm from the sheet origin - its
+      # top-left corner", or "... - its viewport's centre". The number
+      # somebody checks against the drawing. Empty for the swap job, whose
+      # lines are in `swapped`.
+      role: result
+      type: IList<string>
 
 # VERSION 1'S PROOF, KEPT AS A RECORD. It proves the placing job as it stood
 # at fingerprint 0b724478ecce6d08; version 2 changed impl/, so it is stale and
@@ -246,15 +268,20 @@ compatibility-note: >
 #   "duplicate this view"           -> DUPLICATE_VIEWS - and note a duplicate is
 #                                      how you get a view that CAN go on a
 #                                      second sheet, since the original cannot
-#   "put the SCHEDULE on a sheet"   -> PLACE_SCHEDULE_ON_SHEET. A schedule goes
-#                                      on as a ScheduleSheetInstance, not a
-#                                      viewport - which is the "schedule that
-#                                      needs a different call" named above.
-#                                      This fragment refused them correctly
-#                                      with nothing to hand them to until
-#                                      2026-09-04. Note a schedule CAN be on
-#                                      many sheets, so the one-sheet rule above
-#                                      does not carry across
+#   "put the SCHEDULE on a sheet"   -> here, since version 4 (PLACE_SCHEDULE_ON_
+#                                      SHEET was merged in, 2026-11-01). A
+#                                      schedule goes on as a ScheduleSheetInstance,
+#                                      not a viewport - the "schedule that needs
+#                                      a different call" named above - hanging
+#                                      from its top-left corner. A schedule CAN
+#                                      be on many sheets, so the one-sheet rule
+#                                      above does not carry across
+#   "make a sheet list"             -> CREATE_SCHEDULE, listKind sheets - a NEW
+#                                      schedule of every sheet, which is what
+#                                      "put the schedule on the sheet" once
+#                                      returned
+#   "which schedules are there"     -> FIND_SCHEDULES
+#   "export it instead"             -> EXPORT_SCHEDULE_TO_CSV
 #
 # "A VIEW CAN ONLY BE ON ONE SHEET" IS THE RULE BEHIND HALF THE REFUSALS HERE,
 # and duplicating is the answer to it.
@@ -304,6 +331,30 @@ compatibility-note: >
 #   "which views are not on a sheet"   -> FIND_UNPLACED_VIEWS, the read that
 #                                         comes before this write
 
+# VERSION 4 (2026-11-01) - PLACE_SCHEDULE_ON_SHEET WAS MERGED INTO THIS CARD
+# on the owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same job - put this on a sheet at a point, read back where
+# it landed - for the one kind of view this card had refused on purpose. What
+# it had and this card lacked is here now: a schedule placed with
+# ScheduleSheetInstance.Create; its point taken as the TOP-LEFT corner, where
+# a view's is its viewport's centre, and `layout` saying which applied; a
+# schedule already on another sheet placed again, with no refusal - one
+# sheet per view and many sheets per schedule is Revit's rule; a schedule
+# TEMPLATE refused by name; Revit's refusal, and a placement that made
+# nothing, said and never counted; and `placedAt`, each placement read back
+# in millimetres from the instance's own point.
+#
+# THE SAFER RULE IN EACH CONFLICT IS KEPT. That card placed on a PLACEHOLDER
+# sheet if Revit let it; here a placeholder is refused by name in
+# sheetProblem. That card put every schedule at the one point; here several
+# go on the grid, as several views do - a pile of schedules at one corner is
+# the stacked-viewport failure again. Its atXMm and atYMm are `at` here, in
+# mm, read by the binder.
+#
+# WHERE ITS OUTPUTS ARE NOW: placed -> placed (the instance ids),
+# refused (sentences) -> refused (ids) with each reason in notDone, placedAt
+# -> placedAt. Its sentences moved here.
+
 # ROUTING (2026-10-17, FRAGMENT-ISSUES row 5b-540) - version 2.
 #
 #   "swap the NOTES legend for AS-BUILT NOTES on all sheets"
@@ -319,8 +370,11 @@ compatibility-note: >
 #                                         this card with the re-ranker until declared
 #                                         there (row 5b-540)
 #   "line the viewports up across the sheets"
-#                                      -> ALIGN_VIEWPORTS_ACROSS_SHEETS - same
-#                                         view stays, only its place changes
+#                                      -> CENTER_VIEWPORTS_ON_SHEETS, with a
+#                                         master sheet (ALIGN_VIEWPORTS_ACROSS_
+#                                         SHEETS until it was merged there,
+#                                         2026-11-01) - same view stays, only
+#                                         its place changes
 #   "point the reference at another view"
 #                                      -> REPOINT_VIEW_REFERENCE - a callout or
 #                                         section head, not a viewport
@@ -346,3 +400,10 @@ utterances:
   - put these views on a sheet
   - add these to the sheet
   - put the drawings on the sheet
+  # MOVED 2026-11-01 from PLACE_SCHEDULE_ON_SHEET, merged into this card.
+  - put the schedule on the sheet
+  - place this schedule on the drawing
+  - add the schedule to the sheet
+  - drop the quantity schedule onto the sheet
+  - i need the schedule on this drawing
+  - put the door schedule on sheet A101

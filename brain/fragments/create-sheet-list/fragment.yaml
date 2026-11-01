@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 15
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: CREATE_SHEET_LIST
 version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_SCHEDULE (create-schedule), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable
+# and it can be brought back. Nothing offers it now - retrieval leaves
+# DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to CREATE_SCHEDULE. The proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_SCHEDULE
+  why: >
+    The same job: make a schedule view in the project. CREATE_SCHEDULE
+    version 2 makes this card's two lists by its listKind - sheets, a sheet
+    list through CreateSheetList, and views, a view list through
+    CreateViewList - with every rule of this card's: fields by the name
+    Revit shows, ignoring capitals, a field it cannot carry named with the
+    names it can, sortByField with a sort on a field that is not a column
+    said, an unknown kind refused with nothing created, a name already used
+    leaving Revit's name in place and said, the empty-columns warning, and
+    fieldsAdded. One rule was opposite and the safer was kept: a blank
+    listKind made a sheet list here; there blank or left out is a category
+    schedule, that card's proved job, and "sheets" makes the sheet list.
 
 purpose: >
   Creates a Sheet List - the drawing index that goes on the cover sheet, listing

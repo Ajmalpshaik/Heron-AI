@@ -40,6 +40,14 @@ Each pair takes the same arguments and hands back the same shape, and
 each does a different job - DIMENSION_FAMILY_INSTANCES is not
 DIMENSION_MEP_RUNS. The signature matched because the plumbing matched.
 
+(2026-11-01: the owner had both dimension cards merged into
+CREATE_DIMENSION, which now draws by either route - centrelines for a
+run, built-in centre references for a family instance - and both are
+DEPRECATED, never deleted. That was a merge of two ROUTES of one job,
+decided by a person reading the cards, not by their signature; the two
+retired cards still share one, and the verdict below is still right
+about two cards that declare two capabilities.)
+
 So a matching signature is a QUESTION, never an answer, and the one
 answer this agent gives on its own is KEEP SEPARATE - when the two
 declare different capabilities, the match is a coincidence of plumbing

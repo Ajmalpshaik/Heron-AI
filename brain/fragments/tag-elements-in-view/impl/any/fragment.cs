@@ -1,7 +1,23 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `view`, `tagTypeHintId`,
 // `tagTypeId`, `leader`, `minLengthMm` and `leaderOffsetMm` are in scope, and
 // leaves `tagged`, `alreadyTagged`, `skipped`, `typeCorrections`,
-// `notTagged`, `notTaggedWhy` and `tagTypesUsed` behind.
+// `notTagged`, `notTaggedWhy`, `tagTypesUsed`, `newTags`, `mismatched`,
+// `unplaced`, `notEnclosed`, `otherLevel` and `findings` behind.
+//
+// VERSION 7 (2026-11-01) - TAG_ROOMS MERGED IN, on the owner's instruction.
+// ROOMS, MEP SPACES AND HVAC ZONES ARE TAGGED HERE NOW, each with its OWN kind
+// of tag through Revit's own call - NewRoomTag, NewSpaceTag, and for a zone an
+// IndependentTag on a reference to the zone with a Zone Tags type - and never
+// with an ordinary element tag (the 2026-09-23 failure). The tag type for one
+// is the type named, which must be of that kind or the element is refused;
+// else the hint of that kind; else the project's default for the kind -
+// never the first one loaded. Placed only in a plan of the element's own
+// level: `unplaced`, `notEnclosed` and `otherLevel` name the rest; a room
+// already tagged in this plan - or a view sharing its tags - is skipped; each
+// tag is read back for its type and its target, and one that is wrong is
+// removed again (`mismatched`). The block is in the loop below, marked
+// VERSION 7; everything else is version 6 exactly. `newTags` is every tag
+// this placed, of either kind. An AREA is still refused.
 //
 // VERSION 6 (2026-11-01) - TAG_ELEMENTS MERGED IN, on the owner's
 // instruction. What it had that this lacked:
@@ -27,7 +43,8 @@
 //   the `alreadyTagged` count.
 //
 // KEPT FROM VERSION 5, THE SAFER RULE IN EACH CASE: a room, area or space is
-// refused to TAG_ROOMS in both modes; a riser is skipped in both; a HINT of
+// never given an independent tag in either mode (version 7 tags rooms, spaces
+// and zones with their own tags, and refuses an area); a riser is skipped in both; a HINT of
 // the wrong category is set aside for the category's default, and
 // `tagTypesUsed` says so.
 //
@@ -154,10 +171,9 @@ var tagCategoryFor = new Dictionary<BuiltInCategory, BuiltInCategory>
 // unchanged, because OST_DuctCurves -> OST_DuctTags is exactly the kind of
 // pair this rule cannot see.
 //
-// ROOMS, AREAS AND SPACES ARE NOT TAGGED HERE. Their tags are a different kind
-// of element (a room tag, not an independent tag), placed by TAG_ROOMS, and
-// IndependentTag.Create refuses them - so they are named in the answer rather
-// than attempted.
+// ROOMS, AREAS AND SPACES ARE NOT TAGGED BY THIS ROUTE. Their tags are a
+// different kind of element (a room tag, not an independent tag) - version 7
+// places them by the room route in the loop below, and an area is refused.
 var derivedTagCategory = new Dictionary<ElementId, BuiltInCategory>();
 Func<Category, BuiltInCategory> tagCategoryByName = elementCategory =>
 {
@@ -278,6 +294,141 @@ if (tagTypeId != null && tagTypeId != ElementId.InvalidElementId)
 var typeForCategory = new Dictionary<BuiltInCategory, ElementId>();
 var routeFor = new Dictionary<BuiltInCategory, string>();
 
+// ---- VERSION 7: ROOMS, SPACES AND HVAC ZONES, from TAG_ROOMS -----------------
+//
+// A ROOM IS NEVER GIVEN AN ORDINARY ELEMENT TAG. A room tag is its own kind
+// of element, made by the document's own call for it - NewRoomTag for a room,
+// NewSpaceTag for a space. An IndependentTag on a room is the other kind: on
+// 2026-09-23 TAG_ELEMENTS "tagged 5, refused 0" rooms in Project1's "1 - Mech"
+// that way (revit_annotation counted 5 IndependentTags), and CENTER_ROOM_TAGS,
+// STACK_TAGS and ARRANGE_TAGS work on the RoomTag kind. A ZONE has no tag call
+// of its own; what tags one is IndependentTag.Create on a reference to the
+// zone with a Zone Tags type - measured 2026-10-03 on Project2 (Revit 2024),
+// rolled back, and proved by TAG_ROOMS the same day.
+//
+// THE TAG TYPE FOR A ROOM IS NAMED OR IS THE PROJECT'S DEFAULT, NEVER GUESSED
+// (D-33). "Room Tag", "Room Tag With Area" and "Room Tag With Volume" print
+// different drawings. So: `tagTypeId` if named - and it must be a Room Tags
+// type for a room, Space Tags for a space, Zone Tags for a zone, or that
+// element is REFUSED, never tagged with the type it was given; else the hint,
+// when it is of that kind; else the project's own default for the kind. With
+// none of them there is no tag - never the first one loaded.
+//
+// THE PLAN SAYS WHICH ROOMS. A room, space or zone is tagged only in a plan of
+// its own level: one on another level is `otherLevel`, one never placed
+// `unplaced`, one placed with no area `notEnclosed`. A view template, or a
+// view that is not a plan of one level, tags none of them.
+//
+// ONE TAG PER ROOM PER VIEW. The room, space and zone tags already in this
+// plan are read from the WHOLE MODEL by the view that owns them, never from
+// what the view shows - a tag the view hides still counts - and a dependent
+// view shares its tags with its primary and the primary's other dependents.
+//
+// EVERY TAG IS READ BACK: the type asked for, and the room, space or zone it
+// points at. One that is wrong is removed again inside the same undo.
+//
+// LINKED ROOMS AND SPACES ARE NOT TAGGED HERE. One from another model is
+// refused, never tagged by an id that means something else in this one.
+var roomTagsCategory = new ElementId(BuiltInCategory.OST_RoomTags);
+var spaceTagsCategory = new ElementId(BuiltInCategory.OST_MEPSpaceTags);
+var zoneTagsCategory = new ElementId(BuiltInCategory.OST_ZoneTags);
+var newTags = new List<ElementId>();
+var mismatched = new List<ElementId>();
+var unplaced = new List<ElementId>();
+var notEnclosed = new List<ElementId>();
+var otherLevel = new List<ElementId>();
+var findings = new List<string>();
+int spatialHanded = 0;
+int spatialTagged = 0;
+string firstSpatialRefusal = null;
+var spatialCategoriesUsed = new HashSet<ElementId>();
+
+// WHAT A ZONE TAG POINTS AT, on every release: the 2022-and-later method where
+// Revit has it, the 2020/2021 property where it does not. Found by name on the
+// tag, because the add-in compiles this with no release symbols, so an #if
+// always takes its #else (row 5b-181). TAG_ROOMS did the same.
+Func<IndependentTag, List<ElementId>> zoneTagTargets = t =>
+{
+    var found = new List<ElementId>();
+    var many = t.GetType().GetMethod("GetTaggedLocalElementIds", Type.EmptyTypes);
+    if (many != null)
+    {
+        var all = many.Invoke(t, null) as IEnumerable<ElementId>;
+        if (all != null) found.AddRange(all);
+        return found;
+    }
+    var single = t.GetType().GetProperty("TaggedLocalElementId");
+    var one = single == null ? null : single.GetValue(t, null) as ElementId;
+    if (one != null) found.Add(one);
+    return found;
+};
+
+// How a type reads in Revit's own Properties palette - "M_Room Tag: Room Tag
+// With Area" - so a refusal names the thing the modeller can see.
+Func<ElementType, string> typeLabel = t =>
+{
+    if (t == null) return "(no type)";
+    string family = null;
+    try { family = t.FamilyName; } catch { }
+    return string.IsNullOrEmpty(family) ? t.Name : family + ": " + t.Name;
+};
+
+Level planLevel = null;
+try { planLevel = view.GenLevel; } catch { }
+
+// The views that share this plan's annotation: itself, its dependents, its
+// primary and the primary's other dependents. A room tagged in any of them is
+// already tagged in this one. Believed from how Revit treats dependent views,
+// NOT yet seen through this card on a model - NEEDS-CHECKING says so.
+var viewsSharingTags = new HashSet<ElementId>();
+viewsSharingTags.Add(view.Id);
+try
+{
+    foreach (var dependentId in view.GetDependentViewIds()) viewsSharingTags.Add(dependentId);
+    var primaryId = view.GetPrimaryViewId();
+    if (primaryId != null && primaryId != ElementId.InvalidElementId)
+    {
+        viewsSharingTags.Add(primaryId);
+        var primary = doc.GetElement(primaryId) as View;
+        if (primary != null)
+            foreach (var siblingId in primary.GetDependentViewIds()) viewsSharingTags.Add(siblingId);
+    }
+}
+catch { }
+
+// The rooms, spaces and zones ALREADY tagged in this plan - read once, from
+// the whole model by CATEGORY (Revit's class filter refuses the room tag
+// class), and only when one was handed in.
+HashSet<ElementId> spatialTaggedHere = null;
+Func<HashSet<ElementId>> readSpatialTags = () =>
+{
+    var held = new HashSet<ElementId>();
+    foreach (var tagCategory in new[] { roomTagsCategory, spaceTagsCategory, zoneTagsCategory })
+    {
+        foreach (var existing in new FilteredElementCollector(doc)
+                                     .OfCategoryId(tagCategory)
+                                     .WhereElementIsNotElementType())
+        {
+            if (!viewsSharingTags.Contains(existing.OwnerViewId)) continue;
+            var targets = new List<ElementId>();
+            try
+            {
+                var existingRoomTag = existing as RoomTag;
+                if (existingRoomTag != null) targets.Add(existingRoomTag.TaggedLocalRoomId);
+                var existingSpaceTag = existing as SpaceTag;
+                if (existingSpaceTag != null && existingSpaceTag.Space != null)
+                    targets.Add(existingSpaceTag.Space.Id);
+                var existingZoneTag = existing as IndependentTag;
+                if (existingZoneTag != null) targets.AddRange(zoneTagTargets(existingZoneTag));
+            }
+            catch { }
+            foreach (var targetId in targets)
+                if (targetId != null && targetId != ElementId.InvalidElementId) held.Add(targetId);
+        }
+    }
+    return held;
+};
+
 foreach (var element in elements)
 {
     if (element == null || element.Category == null)
@@ -291,6 +442,257 @@ foreach (var element in elements)
     {
         notTagged.Add(element.Id);
         because(exactProblem);
+        continue;
+    }
+
+    // ---- VERSION 7: A ROOM, A SPACE OR AN HVAC ZONE takes its OWN tag -------
+    var asRoom = element as Room;
+    var asSpace = element as Space;
+    var asZone = element as Zone;
+    if (asRoom != null || asSpace != null || asZone != null)
+    {
+        spatialHanded++;
+        var kindWord = asZone != null ? "zone" : asSpace != null ? "space" : "room";
+        var kindTagCategory = asZone != null ? zoneTagsCategory
+                            : asSpace != null ? spaceTagsCategory : roomTagsCategory;
+        var kindTagBuiltIn = asZone != null ? BuiltInCategory.OST_ZoneTags
+                           : asSpace != null ? BuiltInCategory.OST_MEPSpaceTags
+                           : BuiltInCategory.OST_RoomTags;
+        var kindTagWord = asZone != null ? "Zone Tags" : asSpace != null ? "Space Tags" : "Room Tags";
+        var where = element.Category.Name;
+
+        // ONE FROM ANOTHER MODEL. Its id means an element of THAT model.
+        bool inThisModel = false;
+        try { inThisModel = element.Document != null && element.Document.Equals(doc); } catch { }
+        if (!inThisModel)
+        {
+            notTagged.Add(element.Id);
+            because(where + ": from another model - a linked " + kindWord + " is not tagged here");
+            continue;
+        }
+
+        if (view.IsTemplate || planLevel == null)
+        {
+            notTagged.Add(element.Id);
+            because(where + ": \"" + view.Name + "\" is " + (view.IsTemplate ? "a view template"
+                  : "not a plan of one level") + " - a " + kindWord + " tag goes in the floor or "
+                  + "ceiling plan of its own level");
+            continue;
+        }
+
+        // THE TAG TYPE: named, or the hint of this kind, or the project's own
+        // default for this kind. A named type of ANOTHER kind is refused for
+        // this element - never an ordinary element tag on a room.
+        ElementId spatialTypeId = ElementId.InvalidElementId;
+        string spatialRoute;
+        if (exactType != null)
+        {
+            if (exactType.Category == null || exactType.Category.Id != kindTagCategory)
+            {
+                notTagged.Add(element.Id);
+                because(where + ": \"" + typeLabel(exactType) + "\" is a "
+                      + (exactType.Category == null ? "tag" : exactType.Category.Name)
+                      + " type, not a " + kindTagWord + " type - a " + kindWord + " takes its own "
+                      + "kind of tag and is never given another. Name a " + kindTagWord + " type");
+                continue;
+            }
+            spatialTypeId = exactType.Id;
+            spatialRoute = "the caller's exact type";
+        }
+        else
+        {
+            spatialRoute = "the caller's hint";
+            if (tagTypeHintId != null && tagTypeHintId != ElementId.InvalidElementId)
+            {
+                var spatialHint = doc.GetElement(tagTypeHintId) as FamilySymbol;
+                if (spatialHint != null && spatialHint.Category != null && spatialHint.Category.Id == kindTagCategory)
+                    spatialTypeId = spatialHint.Id;
+            }
+            if (spatialTypeId == ElementId.InvalidElementId)
+            {
+                spatialRoute = "the project's default";
+                try { spatialTypeId = doc.GetDefaultFamilyTypeId(kindTagCategory); }
+                catch { spatialTypeId = ElementId.InvalidElementId; }
+            }
+            if (spatialTypeId == null || spatialTypeId == ElementId.InvalidElementId)
+            {
+                notTagged.Add(element.Id);
+                because(where + ": no " + kindTagWord + " type was named and the project sets no "
+                      + "default one - name the " + kindWord + " tag type to use. It is never "
+                      + "guessed: \"Room Tag\" and \"Room Tag With Area\" print different drawings");
+                continue;
+            }
+        }
+        if (!typeForCategory.ContainsKey(kindTagBuiltIn))
+        {
+            typeForCategory[kindTagBuiltIn] = spatialTypeId;
+            routeFor[kindTagBuiltIn] = spatialRoute;
+        }
+
+        if (spatialTaggedHere == null) spatialTaggedHere = readSpatialTags();
+        if (spatialTaggedHere.Contains(element.Id))
+        {
+            alreadyTagged++;
+            skipped.Add(element.Id);
+            continue;
+        }
+
+        // WHERE THE TAG GOES, AND ON WHICH LEVEL. A room or space: its own
+        // reference point and level. A zone has no point of its own - it is a
+        // group of spaces - so its tag goes at the reference point of its
+        // LARGEST space on this plan's level, which lies inside the zone by
+        // construction. The Default zone, and a zone holding no spaces, has
+        // nowhere to go.
+        XYZ point = null;
+        ElementId levelId = ElementId.InvalidElementId;
+        double area = 0;
+        if (asZone != null)
+        {
+            // THE DEFAULT ZONE holds every space no zone was given. Its flag is
+            // read BY NAME: Revit 2027 removed IsDefaultZone (row 5b-181).
+            bool isDefaultZone = false;
+            try
+            {
+                var defaultFlag = asZone.GetType().GetProperty("IsDefaultZone");
+                if (defaultFlag != null) isDefaultZone = (bool)defaultFlag.GetValue(asZone, null);
+            }
+            catch { }
+
+            var zoneSpaces = new List<Space>();
+            try
+            {
+                if (!isDefaultZone && asZone.Spaces != null)
+                    foreach (Space member in asZone.Spaces)
+                        if (member != null) zoneSpaces.Add(member);
+            }
+            catch { }
+
+            if (zoneSpaces.Count == 0)
+            {
+                unplaced.Add(element.Id);
+                continue;
+            }
+
+            levelId = asZone.LevelId;
+            if (levelId == null || levelId == ElementId.InvalidElementId) levelId = zoneSpaces[0].LevelId;
+
+            Space largest = null;
+            foreach (var member in zoneSpaces)
+            {
+                if (member.LevelId != planLevel.Id) continue;
+                if (!(member.Location is LocationPoint)) continue;
+                double memberArea = 0;
+                try { memberArea = member.Area; } catch { }
+                if (memberArea <= 0) continue;
+                area += memberArea;
+                if (largest == null || memberArea > largest.Area) largest = member;
+            }
+            if (largest != null) point = ((LocationPoint)largest.Location).Point;
+        }
+        else
+        {
+            // NOT PLACED - in the schedule, in no plan. Nowhere to put a tag.
+            var placedAt = element.Location as LocationPoint;
+            if (placedAt == null || placedAt.Point == null)
+            {
+                unplaced.Add(element.Id);
+                continue;
+            }
+            point = placedAt.Point;
+            levelId = element.LevelId;
+            try { area = ((SpatialElement)element).Area; } catch { }
+        }
+
+        // ANOTHER LEVEL - left for that level's plan rather than tagged where
+        // it is not drawn.
+        if (levelId != planLevel.Id)
+        {
+            otherLevel.Add(element.Id);
+            continue;
+        }
+
+        // NO AREA - not enclosed by walls or separation lines, or redundant.
+        if (area <= 0 || point == null)
+        {
+            notEnclosed.Add(element.Id);
+            continue;
+        }
+
+        var spatialSymbol = doc.GetElement(spatialTypeId) as FamilySymbol;
+        if (spatialSymbol != null && !spatialSymbol.IsActive) spatialSymbol.Activate();
+
+        // AT THAT POINT, by the document's own call for the kind.
+        var at = new UV(point.X, point.Y);
+        Element spatialMade = null;
+        try
+        {
+            if (asZone != null)
+                spatialMade = IndependentTag.Create(doc, spatialTypeId, view.Id, new Reference(asZone), false,
+                                             TagOrientation.Horizontal, new XYZ(point.X, point.Y, 0));
+            else if (asSpace != null)
+                spatialMade = doc.Create.NewSpaceTag(asSpace, at, view);
+            else
+                spatialMade = doc.Create.NewRoomTag(new LinkElementId(asRoom.Id), at, view.Id);
+        }
+        catch (Exception failure)
+        {
+            if (firstSpatialRefusal == null) firstSpatialRefusal = failure.Message;
+        }
+
+        if (spatialMade == null)
+        {
+            notTagged.Add(element.Id);
+            because(where + ": Revit would not place a " + kindWord + " tag here"
+                  + (firstSpatialRefusal == null ? "" : " - see findings for its words"));
+            continue;
+        }
+
+        // THE TYPE ASKED FOR, SET AND THEN READ BACK. The room and space calls
+        // make the project's default tag of their kind.
+        try
+        {
+            if (spatialMade.GetTypeId() != spatialTypeId) spatialMade.ChangeTypeId(spatialTypeId);
+        }
+        catch (Exception failure)
+        {
+            if (firstSpatialRefusal == null) firstSpatialRefusal = failure.Message;
+        }
+        if (spatialMade.GetTypeId() != spatialTypeId)
+        {
+            try { doc.Delete(spatialMade.Id); } catch { }
+            notTagged.Add(element.Id);
+            because(where + ": the " + kindWord + " tag would not take the type asked for, so it "
+                  + "was taken out again");
+            continue;
+        }
+
+        // AND WHAT IT POINTS AT, READ BACK. A tag on the wrong room still prints
+        // a confident name.
+        bool pointsRight = false;
+        try
+        {
+            var madeRoomTag = spatialMade as RoomTag;
+            if (madeRoomTag != null) pointsRight = madeRoomTag.TaggedLocalRoomId == element.Id;
+            var madeSpaceTag = spatialMade as SpaceTag;
+            if (madeSpaceTag != null && madeSpaceTag.Space != null)
+                pointsRight = madeSpaceTag.Space.Id == element.Id;
+            var madeZoneTag = spatialMade as IndependentTag;
+            if (madeZoneTag != null) pointsRight = zoneTagTargets(madeZoneTag).Contains(element.Id);
+        }
+        catch { }
+
+        if (!pointsRight)
+        {
+            try { doc.Delete(spatialMade.Id); } catch { }
+            mismatched.Add(element.Id);
+            continue;
+        }
+
+        newTags.Add(spatialMade.Id);
+        spatialTaggedHere.Add(element.Id);
+        spatialCategoriesUsed.Add(kindTagCategory);
+        spatialTagged++;
+        tagged++;
         continue;
     }
 
@@ -383,13 +785,15 @@ foreach (var element in elements)
         }
     }
 
-    // A ROOM, AREA OR SPACE IS TAG_ROOMS' IN BOTH MODES. With an exact type
-    // too: an independent tag is not a room tag, whatever family is named.
+    // AN AREA - the one spatial element version 7's room route does not take
+    // (rooms, spaces and zones went there above). It takes an area tag in an
+    // area plan, which nothing in Heron places yet; an independent tag is not
+    // that, whatever family is named, so it is refused in both modes.
     if (exactType != null && element is SpatialElement)
     {
         notTagged.Add(element.Id);
-        because(element.Category.Name + ": a room, area or space takes its own kind of "
-              + "tag - TAG_ROOMS places room tags");
+        because(element.Category.Name + ": an area takes an area tag in an area plan, which "
+              + "nothing in Heron places yet - never an ordinary element tag");
         continue;
     }
 
@@ -401,13 +805,14 @@ foreach (var element in elements)
     }
     else if (!known)
     {
-        // NOT ON THE MEP MAP: a room, area or space is TAG_ROOMS' job, and
-        // anything else takes the tag category Revit's names give it.
+        // NOT ON THE MEP MAP: an area (the rooms, spaces and zones were
+        // tagged above, version 7) is refused, and anything else takes the
+        // tag category Revit's names give it.
         if (element is SpatialElement)
         {
             notTagged.Add(element.Id);
-            because(element.Category.Name + ": a room, area or space takes its own kind of "
-                  + "tag - TAG_ROOMS places room tags");
+            because(element.Category.Name + ": an area takes an area tag in an area plan, which "
+                  + "nothing in Heron places yet - never an ordinary element tag");
             continue;
         }
 
@@ -590,6 +995,7 @@ foreach (var element in elements)
     }
 
     tagged++;
+    newTags.Add(made.Id);
     heldTag(element.Id, chosenTypeId);
 }
 
@@ -618,4 +1024,33 @@ foreach (var entry in typeForCategory)
     tagTypesUsed.Add(tagCategoryShown + ": "
         + (symbolUsed == null ? "none" : symbolUsed.FamilyName + ": " + symbolUsed.Name)
         + " (" + (routeTaken ?? "unknown") + ")");
+}
+
+// VERSION 7. THE ROOM, SPACE AND ZONE ANSWER AS ONE LINE, because a reply
+// shows a list's first three entries and its count - this line carries every
+// count in words - and what would otherwise only show on the drawing: tags
+// placed in a plan that hides their category, and Revit's own first refusal.
+if (spatialHanded > 0)
+{
+    findings.Add(spatialTagged + " room, space or zone tag(s) placed in \"" + view.Name
+        + "\". Of the " + spatialHanded + " handed in, not tagged: " + unplaced.Count
+        + " not placed (or a zone holding no spaces), " + notEnclosed.Count + " not enclosed, "
+        + otherLevel.Count + " on another level, " + mismatched.Count + " read back on the wrong "
+        + "one and removed; the rest are in notTagged with why, or skipped as already tagged.");
+
+    var hiddenWords = new List<string>();
+    foreach (var used in spatialCategoriesUsed)
+    {
+        bool hidden = false;
+        try { hidden = view.GetCategoryHidden(used); } catch { }
+        if (hidden)
+            hiddenWords.Add(used == zoneTagsCategory ? "Zone Tags"
+                          : used == spaceTagsCategory ? "Space Tags" : "Room Tags");
+    }
+    if (hiddenWords.Count > 0)
+        findings.Add(string.Join(" and ", hiddenWords.ToArray()) + " are turned off in \""
+            + view.Name + "\" - in its Visibility/Graphics or its view template - so the tags "
+            + "placed are in the model and NOT SHOWN in that view.");
+    if (firstSpatialRefusal != null)
+        findings.Add("Revit's first refusal said: " + firstSpatialRefusal);
 }

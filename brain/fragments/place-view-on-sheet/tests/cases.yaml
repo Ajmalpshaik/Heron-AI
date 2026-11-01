@@ -117,9 +117,10 @@ negative:
 
   - given: a schedule handed in with the views
     expect: >
-      it is in refused rather than throwing. A schedule goes on a sheet through
-      a different call, and an exception here would abandon whatever came after
-      it in the list
+      versions 1 to 3: it is in refused rather than throwing. VERSION 4: it is
+      PLACED, through the schedule's own call, beside the views on the grid -
+      see the version 4 cases below. Either way no exception abandons what
+      came after it in the list
 
   - given: Viewport.Create returning null without throwing
     expect: it is in refused, NOT counted as placed - a returned null is not a placement
@@ -148,9 +149,51 @@ negative:
   - given: VERSION 1 with sheetId left out and no oldViewId
     expect: every view in refused and notDone asking for the sheet number - nothing placed
 
+  # VERSION 4 (2026-11-01, PLACE_SCHEDULE_ON_SHEET merged in). Each FAILS on
+  # version 3, which refuses every schedule (CanAddViewToSheet says no).
+  - given: VERSION 4. A duct schedule and sheet A101, at 50,250,0
+    expect: >
+      the schedule on that sheet with its TOP-LEFT corner at that point -
+      measured on the sheet, not taken from the return value - and placedAt
+      reading roughly "at 50 mm, 250 mm from the sheet origin - its top-left
+      corner". THE UNIT CASE: a version handing 50 straight to Revit places
+      it 15 metres across the sheet. layout says a schedule hangs from its
+      top-left corner
+
+  - given: VERSION 4. One floor plan, the same sheet, at 50,250,0
+    expect: >
+      its viewport's CENTRE at that point, and placedAt saying "its
+      viewport's centre". The same point, the other meaning - which is why
+      placedAt names it
+
+  - given: VERSION 4. A schedule already placed on another sheet
+    expect: >
+      PLACED AGAIN, with no refusal - a schedule can be on many sheets,
+      Revit's rule. A floor plan already on another sheet is still refused
+
+  - given: VERSION 4. Three schedules and one sheet, no point
+    expect: >
+      three schedule instances on a 2 x 2 grid, distinctPositions 3 - NOT a
+      pile at one corner, which is what PLACE_SCHEDULE_ON_SHEET did with one
+      point for all
+
+  - given: VERSION 4. A schedule TEMPLATE handed in
+    expect: >
+      in refused, and notDone saying it is a template with nothing to print -
+      not Revit's own error, which reads as a general failure
+
+  - given: VERSION 4. A schedule onto a PLACEHOLDER sheet
+    expect: >
+      nothing placed, sheetProblem naming the placeholder. PLACE_SCHEDULE_ON_
+      SHEET did not check
+
 second_route:
   - Open the sheet. The viewports are there and can be dragged apart
   - >
     Version 2: open each sheet the old view was on, select the new viewport,
     and read its Properties - the view name, the viewport type - and, with the
     old position noted before the run, check the box sits where the old one sat
+  - >
+    Version 4: drag the schedule from the Project Browser onto an open sheet
+    - Revit's own way - and compare where its top-left corner lands against
+    placedAt

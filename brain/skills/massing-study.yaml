@@ -81,7 +81,9 @@ purpose: >
      the Mass Floor category with Mass : Family and Type, Level, Usage,
      Floor Area, Floor Perimeter, Exterior Surface Area and Floor Volume;
      SET_SCHEDULE_SORT_GROUP (PROVEN) by Usage then Level, and
-     SET_SCHEDULE_FIELD_TOTALS (PROVEN) on Floor Area. That a Mass Floor
+     SET_SCHEDULE_APPEARANCE with calculateTotals on Floor Area (DRAFT,
+     version 4 - SET_SCHEDULE_FIELD_TOTALS, PROVEN, was merged into it on
+     2026-11-01). That a Mass Floor
      schedule is made this way is owed in NEEDS-CHECKING Group JO.
   10. REVISE AND READ AGAIN: a block changed in its family is reloaded with
      LOAD_FAMILY reload=true; the mass floors follow the new shape. Run
@@ -131,7 +133,9 @@ needs:
   - JOIN_GEOMETRY
   - CREATE_SCHEDULE
   - SET_SCHEDULE_SORT_GROUP
-  - SET_SCHEDULE_FIELD_TOTALS
+  # SET_SCHEDULE_APPEARANCE since 2026-11-01: SET_SCHEDULE_FIELD_TOTALS was
+  # merged into it as its calculateTotals switch.
+  - SET_SCHEDULE_APPEARANCE
   - CREATE_WALLS_BY_FACE
   - CREATE_CURTAIN_SYSTEM
   - CREATE_FLOOR

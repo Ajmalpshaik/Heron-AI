@@ -304,7 +304,9 @@ compatibility-note: >
 #                                        -> FIND_SHEETS - every sheet, with how
 #                                           many views each holds, and no names
 #   "put these views on a sheet"         -> PLACE_VIEW_ON_SHEET. A CHANGE
-#   "put the schedule on the sheet"      -> PLACE_SCHEDULE_ON_SHEET. A CHANGE
+#   "put the schedule on the sheet"      -> PLACE_VIEW_ON_SHEET, version 4 (PLACE_
+#                                           SCHEDULE_ON_SHEET until it was merged
+#                                           there, 2026-11-01). A CHANGE
 #   "which views are not on a sheet"     -> FIND_UNPLACED_VIEWS
 #   "which sheet is this view on"        -> here, SINCE VERSION 2 (row
 #                                           5b-560): viewName names the view and

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,32 @@ capability: TAG_ROOMS
 version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO TAG_ELEMENTS_IN_VIEW (tag-elements-in-view), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable
+# and it can be brought back. Nothing offers it now - retrieval leaves
+# DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to TAG_ELEMENTS_IN_VIEW. The proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: TAG_ELEMENTS_IN_VIEW
+  why: >
+    The same job: a tag on each element handed in, in one view, never a
+    second. TAG_ELEMENTS_IN_VIEW version 7 tags rooms, spaces and HVAC zones
+    as this card did - Revit's own NewRoomTag and NewSpaceTag, and
+    IndependentTag.Create on a reference to a zone with a Zone Tags type at
+    its largest space's point - never an ordinary element tag on a room;
+    only in a plan of the element's own level, with unplaced, notEnclosed
+    and otherLevel; the tags already in the plan read by category over the
+    whole model, a dependent view's shared; every tag read back for its type
+    and its target and a wrong one removed (mismatched); newTags; the
+    hidden-category caution and Revit's first refusal in findings; and one
+    from another model refused. The safer tag-type rule was kept: a type
+    named, of the element's own kind or that element is refused, or the
+    project's default room, space or zone tag - never the first one loaded.
 
 purpose: >
   Places one room tag on each room handed in - or one SPACE tag on each MEP

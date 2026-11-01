@@ -28,8 +28,9 @@ risk: MODIFY
 #
 # READ BACK: each length off the viewport after a regeneration.
 #
-# ALIGN_VIEWPORTS_ACROSS_SHEETS and CENTER_VIEWPORTS_ON_SHEETS move viewports;
-# neither touches the title line.
+# CENTER_VIEWPORTS_ON_SHEETS moves viewports - to the middle of the title
+# block or, since 2026-11-01, when ALIGN_VIEWPORTS_ACROSS_SHEETS was merged
+# into it, to a master sheet's place; it never touches the title line.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 purpose: >
@@ -109,7 +110,8 @@ compatibility-note: >
 #
 #   "shorten the title lines to 80 mm"        -> here
 #   "fit the title lines to the titles"       -> here, lengthMm 0
-#   "line up the viewports on every sheet"    -> ALIGN_VIEWPORTS_ACROSS_SHEETS
+#   "line up the viewports on every sheet"    -> CENTER_VIEWPORTS_ON_SHEETS, with
+#                                                a master sheet
 #   "which viewport types are there"          -> REPORT_VIEWPORT_TYPES
 
 utterances:

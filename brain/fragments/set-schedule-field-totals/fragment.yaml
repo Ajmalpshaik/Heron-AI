@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,32 @@ capability: SET_SCHEDULE_FIELD_TOTALS
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO SET_SCHEDULE_APPEARANCE (set-schedule-appearance), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable
+# and it can be brought back. Nothing offers it now - retrieval leaves
+# DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to SET_SCHEDULE_APPEARANCE. The proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: SET_SCHEDULE_APPEARANCE
+  why: >
+    The same job: one change to how a schedule's named columns are set up on
+    its Formatting tab, found by field name or printed heading and read
+    back. SET_SCHEDULE_APPEARANCE version 4 switches Calculate totals on by
+    its calculateTotals switch, with every rule of this card's: CanTotal
+    asked before anything is set, a column already totalling left alone and
+    named in alreadyTotalled, a minimum or maximum replaced and reported,
+    where each total prints said in one appliedTotals string (a hidden
+    column nowhere), a name two columns answer to touching neither
+    (ambiguous) - now for every change that card makes - a schedule handed
+    in twice changed once, and nothing handed in refused in words. Nothing
+    was opposite that was not settled the safer way: that card took the
+    first column a name fitted, and now refuses an ambiguous name as this
+    one did.
 
 purpose: >
   Switches on "Calculate totals" for named columns of a schedule - Schedule

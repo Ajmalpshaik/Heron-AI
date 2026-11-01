@@ -1,6 +1,29 @@
 // NOT STANDALONE. Assumes `doc`, `sheetId`, `views`, `elements`, `at` and
 // `oldViewId` are in scope; leaves `placed`, `refused`, `swapped`, `notDone`,
-// `placedCount`, `distinctPositions`, `sheetProblem` and `layout` behind.
+// `placedCount`, `distinctPositions`, `sheetProblem`, `layout` and `placedAt`
+// behind.
+//
+// VERSION 4 (2026-11-01) - PLACE_SCHEDULE_ON_SHEET MERGED IN. THE PLACING JOB
+// PLACES SCHEDULES TOO. A view goes on a sheet as a Viewport; a schedule goes
+// on as a ScheduleSheetInstance, a different call - this card used to refuse
+// schedules correctly with nothing to hand them to. Now a schedule in `views`
+// or handed on in `elements` is placed by ScheduleSheetInstance.Create:
+//
+//   THE POINT IS A VIEWPORT'S CENTRE BUT A SCHEDULE'S TOP-LEFT CORNER. A
+//   schedule hangs from its corner and grows down and to the right, so a
+//   schedule placed where a viewport would be centred sits half off the
+//   sheet if the point was meant as its centre. `layout` says which applied,
+//   and `placedAt` reads each one back in millimetres - the corner for a
+//   schedule, the centre for a viewport - from the instance, not the request.
+//
+//   ONE SHEET PER VIEW, MANY SHEETS PER SCHEDULE - REVIT'S RULE. A plan or a
+//   section can be on one sheet; a schedule can be placed again and again, so
+//   a schedule already on another sheet is NOT refused, where a view is. An
+//   accidental double placement is possible for a schedule in a way it is not
+//   for a drawing, which is why each placement is named by sheet.
+//
+//   A SCHEDULE TEMPLATE is refused by name - nothing to print - and Revit's
+//   own refusal or a placement that made nothing is said in `notDone`.
 //
 // VERSION 3, REVIEW FIX OF 2026-11-01 - THE VIEWS MAY BE HANDED ON, as
 // PLACE_VIEWS_ON_SHEET took them: `elements`, from FIND_UNPLACED_VIEWS or a
@@ -65,6 +88,7 @@ int placedCount = 0;
 int distinctPositions = 0;
 string sheetProblem = "";
 string layout = "";
+var placedAt = new List<string>();
 
 // Where each viewport this run made now sits - sheet, then millimetres -
 // filled from the model after each one is made.
@@ -149,6 +173,25 @@ else if (!replacing)
         var placeable = new List<View>();
         foreach (var view in chosen)
         {
+            // VERSION 4: A SCHEDULE GOES ON AS A ScheduleSheetInstance, not a
+            // viewport, so CanAddViewToSheet - which answers no for every
+            // schedule - is not its question. A schedule TEMPLATE has nothing
+            // to print and is refused by name; any other schedule is placed,
+            // even one already on another sheet or on this one - a schedule may
+            // be on many sheets, which is Revit's rule, not this card's.
+            var asSchedule = view as ViewSchedule;
+            if (asSchedule != null)
+            {
+                if (asSchedule.IsTemplate)
+                {
+                    refused.Add(view.Id);
+                    notDone.Add("'" + view.Name + "' is a schedule TEMPLATE, not a schedule - there "
+                        + "is nothing to print, so it was not placed.");
+                    continue;
+                }
+                placeable.Add(view);
+                continue;
+            }
 
             if (!Viewport.CanAddViewToSheet(doc, sheetId, view.Id))
             {
@@ -197,9 +240,54 @@ else if (!replacing)
                                 : "");
         }
 
+        // VERSION 4. Which point is which, said whenever a schedule is placed.
+        if (placeable.Any(v => v is ViewSchedule))
+            layout += " A schedule hangs from its TOP-LEFT corner, so its corner is at the "
+                    + (placeable.Count == 1 && pointGiven ? "point" : "cell's centre")
+                    + " and it grows down and to the right; a view's viewport is CENTRED on it.";
+
         for (int i = 0; i < placeable.Count; i++)
         {
             var view = placeable[i];
+
+            // VERSION 4, from PLACE_SCHEDULE_ON_SHEET. A schedule's point is its
+            // instance's TOP-LEFT corner, read back from the instance itself -
+            // the first guess is usually the centre, and a schedule placed by
+            // its centre sits half off the sheet.
+            if (view is ViewSchedule)
+            {
+                try
+                {
+                    var instance = ScheduleSheetInstance.Create(doc, sheetId, view.Id, slots[i]);
+                    if (instance == null)
+                    {
+                        refused.Add(view.Id);
+                        notDone.Add("'" + view.Name + "' on sheet " + target.SheetNumber + " - Revit "
+                            + "reported no error and placed nothing.");
+                        continue;
+                    }
+                    placed.Add(instance.Id);
+                    XYZ corner = null;
+                    try { corner = instance.Point; } catch (Exception) { }
+                    noteLanding(sheetId, corner);
+                    placedAt.Add(corner == null
+                        ? "'" + view.Name + "' on sheet " + target.SheetNumber + " - placed, and its "
+                          + "position could not be read back"
+                        : string.Format("'{0}' on sheet {1} at {2:0.#} mm, {3:0.#} mm from the sheet "
+                          + "origin - its top-left corner", view.Name, target.SheetNumber,
+                          corner.X * 304.8, corner.Y * 304.8));
+                }
+                catch (Exception ex)
+                {
+                    // One schedule's problem, said in Revit's own words; let out,
+                    // it would roll back the caller's work.
+                    refused.Add(view.Id);
+                    notDone.Add("'" + view.Name + "' on sheet " + target.SheetNumber
+                        + " - Revit refused: " + ex.Message);
+                }
+                continue;
+            }
+
             try
             {
                 var viewport = Viewport.Create(doc, sheetId, view.Id, slots[i]);
@@ -210,7 +298,14 @@ else if (!replacing)
                 else
                 {
                     placed.Add(viewport.Id);
-                    noteLanding(sheetId, viewport.GetBoxCenter());
+                    var centre = viewport.GetBoxCenter();
+                    noteLanding(sheetId, centre);
+                    // VERSION 4: where each one landed, read back, beside a
+                    // schedule's corner - a viewport is placed by its CENTRE.
+                    if (centre != null)
+                        placedAt.Add(string.Format("'{0}' on sheet {1} at {2:0.#} mm, {3:0.#} mm "
+                            + "from the sheet origin - its viewport's centre", view.Name,
+                            target.SheetNumber, centre.X * 304.8, centre.Y * 304.8));
                 }
             }
             catch (Exception)

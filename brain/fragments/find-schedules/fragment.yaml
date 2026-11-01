@@ -120,7 +120,9 @@ compatibility-note: >
 #   "filter it"                        -> SET_SCHEDULE_FILTERS
 #   "heading text, width, alignment"   -> SET_SCHEDULE_APPEARANCE
 #   "export it to excel"               -> EXPORT_SCHEDULE_TO_CSV
-#   "put it on a sheet"                -> PLACE_SCHEDULE_ON_SHEET
+#   "put it on a sheet"                -> PLACE_VIEW_ON_SHEET (PLACE_SCHEDULE_ON_
+#                                         SHEET until it was merged there,
+#                                         2026-11-01)
 #   "make a new schedule"              -> CREATE_SCHEDULE
 
 utterances:

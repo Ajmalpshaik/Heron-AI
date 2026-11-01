@@ -151,7 +151,14 @@ compatibility-note: >
 #
 #   "remove a column from the schedule"   -> here
 #   "take the level column out"           -> here
-#   "hide a column but keep the field"    -> here, with hideOnly
+#   "hide a column but keep the field"    -> SET_SCHEDULE_APPEARANCE, hideOrShow
+#                                            hide (2026-11-01). This card's
+#                                            hideOnly still works, and is no
+#                                            longer where the sentence goes:
+#                                            two cards claimed it, and the
+#                                            safer owner is the one that can
+#                                            never remove the field - here
+#                                            hideOnly left false REMOVES it
 #   "add a column to the schedule"        -> ADD_SCHEDULE_FIELDS - the opposite,
 #                                            and what these sentences used to
 #                                            resolve to
@@ -168,6 +175,7 @@ utterances:
   - take the level column out of the schedule
   - delete this field from the schedule
   - i do not want that column any more
-  - hide a column in the schedule but keep the field
-  - hide that column on the sheet
+  # "hide a column in the schedule but keep the field" and "hide that column
+  # on the sheet" MOVED 2026-11-01 to SET_SCHEDULE_APPEARANCE, the one owner
+  # of hiding a column now - see the routing row above.
   - take these fields off the schedule

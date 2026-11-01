@@ -26,7 +26,8 @@ risk: MODIFY
 # Faces at one position count once.
 #
 # DIMENSION_WALL_OPENINGS runs the plan string along a wall through its
-# jambs; DIMENSION_FAMILY_INSTANCES strings family instances (refused here);
+# jambs; CREATE_DIMENSION strings family instances (refused here) - since
+# 2026-11-01, when DIMENSION_FAMILY_INSTANCES was merged into it;
 # CREATE_LINEAR_DIMENSION takes named references - grids, levels, planes.
 #
 # Whether Revit hands a compound wall's layers as separate faces is what the

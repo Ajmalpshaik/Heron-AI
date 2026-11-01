@@ -23,7 +23,11 @@ risk: READ
 deprecated:
   date: '2026-11-01'
   by: Ajmal PS
-  superseded-by: LIST_DATES_ON_SHEETS
+  # LIST_DATES_ON_SHEETS was itself merged into FIND_DATES_IN_VIEWS later on
+  # 2026-11-01 ("make sure there is no duplicate tools"), carrying all of the
+  # above, so the live successor is that card. `why` below is the record of
+  # the first merge, kept as written.
+  superseded-by: FIND_DATES_IN_VIEWS
   why: >
     The same reading: dates typed in text notes on sheets, a written month only,
     every candidate checked against the calendar, a note inside a placed view

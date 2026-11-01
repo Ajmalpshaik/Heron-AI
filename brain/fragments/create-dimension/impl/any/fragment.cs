@@ -1,6 +1,43 @@
 // NOT STANDALONE. Assumes `doc`, `view`, `elements`, `axis` and `offsetMm` are
-// in scope; leaves `created`, `refused`, `notLinear`, `dimensionedCount` and
-// `problem` behind.
+// in scope; leaves `created`, `refused`, `notLinear`, `noReference`,
+// `dimensionedCount` and `problem` behind.
+//
+// VERSION 3 (2026-11-01) - DIMENSION_FAMILY_INSTANCES MERGED IN, AND WHAT IT
+// HAD THAT THIS LACKED:
+//
+//   THE FAMILY-INSTANCE ROUTE, BESIDE THE CENTRELINE WALK. An air terminal, a
+//   fixture, a piece of equipment has no centreline; it publishes BUILT-IN
+//   CENTRE REFERENCES - CenterLeftRight, CenterFrontBack - and a strong
+//   reference on its body. Along `x` the CenterLeftRight is asked for first,
+//   along `y` the CenterFrontBack, then the strong reference: centre
+//   references are what make a dimension HOLD when the element later moves.
+//   The instances are sorted along the axis first, so the string reads
+//   left-to-right or bottom-to-top as a drafter would draw it, and it sits
+//   `offsetMm` square to the axis. An axis MUST be named for them - x or y -
+//   because "across" is worked out from runs, and an instance has no run
+//   direction; guessing one would measure the wrong way and look plausible.
+//
+//   `noReference` - instances that publish no centre and no strong reference,
+//   duct fittings and accessories among them (all four come back empty).
+//   Reported by id; fewer than two left draws nothing.
+//
+//   A ROOM CANNOT BE DIMENSIONED HERE. A room's boundary is not a family
+//   instance and offers none of these references; dimensioning the nearest
+//   thing this CAN reach - the fixtures inside it - would put a real string
+//   on a drawing nobody asked for. A room, space or area handed in goes to
+//   `notLinear` and `problem` says so, naming DIMENSION_ROOMS, which puts room
+//   sizes on the plan, and MEASURE_ROOM_DIMENSIONS, which reads them.
+//
+//   ONE STRING, ONE KIND. Runs and family instances handed in together are
+//   REFUSED, nothing drawn, and `problem` says how many of each: a duct's
+//   centreline and a diffuser's centre plane in one string has not been
+//   measured on any release, and drawing half the set while dropping the rest
+//   reads as a finished dimension. Hand each kind in on its own.
+//
+//   THE SAFER RULES OF THIS CARD APPLY TO BOTH ROUTES: a dimension Revit makes
+//   holding fewer than two references is deleted again, never left in the
+//   caller's transaction; an axis pointing straight out of the view is
+//   refused; Revit's own refusal is caught and said.
 //
 // VERSION 2 (2026-11-01) - DIMENSION_MEP_RUNS MERGED IN, AND WHAT IT HAD:
 //
@@ -19,9 +56,9 @@
 //   problem and is said in `problem`; let out of here, it would abort the
 //   caller's transaction and every change made before it (Golden Rule 16).
 //
-//   `problem` SAYS WHY NOTHING WAS DRAWN, in one sentence - and when nothing
-//   handed in was a run, that DIMENSION_FAMILY_INSTANCES is the route for air
-//   terminals, fixtures and equipment.
+//   `problem` SAYS WHY NOTHING WAS DRAWN, in one sentence. (Version 2 named
+//   DIMENSION_FAMILY_INSTANCES there for air terminals, fixtures and
+//   equipment; version 3 dimensions them itself.)
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -58,6 +95,7 @@ var offset = offsetMm / 304.8;
 ElementId created = null;
 var refused = new List<ElementId>();
 var notLinear = new List<ElementId>();
+var noReference = new List<ElementId>();
 int dimensionedCount = 0;
 string problem = "";
 
@@ -73,6 +111,220 @@ else if (wantedAxis.Length > 0)
             + "measure the wrong direction and the drawing would still look plausible, so NOTHING "
             + "WAS DRAWN";
 
+// VERSION 3. SORT WHAT WAS HANDED IN BY KIND, before any geometry is read: a
+// straight run (a location LINE) takes the centreline walk; a family
+// instance without one takes the built-in centre references; a room, space or
+// area is refused; anything else is not linear.
+var runElements = new List<Element>();
+var instances = new List<FamilyInstance>();
+int roomsHanded = 0;
+
+foreach (var element in elements)
+{
+    if (problem.Length > 0) break;
+    if (element == null) continue;
+
+    // A ROOM IS NEVER DIMENSIONED HERE - its boundary offers no reference
+    // this can hold, and the fixtures inside it are not what was asked for.
+    if (element is SpatialElement)
+    {
+        notLinear.Add(element.Id);
+        roomsHanded++;
+        continue;
+    }
+
+    // A quick structural test before touching geometry. A straight location
+    // curve is a run - a duct, pipe, conduit or cable tray.
+    var location = element.Location as LocationCurve;
+    if (location != null && location.Curve is Line) { runElements.Add(element); continue; }
+
+    var instance = element as FamilyInstance;
+    if (instance != null) { instances.Add(instance); continue; }
+
+    notLinear.Add(element.Id);
+}
+
+// The room sentence, said whatever else happens: rooms handed in are never
+// silently left out of a string that was drawn.
+string roomSentence = roomsHanded == 0 ? "" :
+    roomsHanded + " room(s), space(s) or area(s) were handed in and CANNOT BE DIMENSIONED HERE - "
+    + "a room's boundary offers none of the references this draws to, and dimensioning the "
+    + "fixtures inside it would put a string nobody asked for on the drawing. DIMENSION_ROOMS "
+    + "puts room sizes on the plan; MEASURE_ROOM_DIMENSIONS reads them";
+
+bool mixed = runElements.Count > 0 && instances.Count > 0;
+
+if (problem.Length > 0)
+{
+    // An axis that is not one: nothing was looked at, nothing is drawn.
+}
+else if (mixed)
+{
+    // ONE STRING, ONE KIND (version 3). Refused whole, nothing drawn.
+    foreach (var run in runElements) refused.Add(run.Id);
+    foreach (var instance in instances) refused.Add(instance.Id);
+    problem = string.Format("{0} run(s) and {1} family instance(s) were handed in together. One "
+            + "dimension string is drawn through one kind - run centrelines, or the centre "
+            + "references of family instances - and a string mixing the two has not been "
+            + "measured, so NOTHING WAS DRAWN. Dimension the runs and the instances in two calls",
+            runElements.Count, instances.Count);
+}
+else if (instances.Count > 0)
+{
+    // ---- THE FAMILY-INSTANCE ROUTE (version 3, from DIMENSION_FAMILY_INSTANCES)
+    //
+    // A ZERO HERE MEANS "USE THE OTHER ROUTE", NEVER "IMPOSSIBLE". Duct fittings
+    // and accessories publish no references at all, and the first conclusion
+    // drawn from that was "MEP cannot be dimensioned" - true of THIS route,
+    // not of MEP: ducts and pipes dimension by their centrelines.
+    if (namedAxis == null)
+    {
+        foreach (var instance in instances) refused.Add(instance.Id);
+        problem = "family instances are dimensioned along an axis - name x for the horizontal "
+                + "spacing in plan or y for the vertical. Across is worked out from runs, and an "
+                + "instance has none; guessing one would measure the wrong direction. NOTHING "
+                + "WAS DRAWN";
+    }
+    else if (Math.Abs(namedAxis.DotProduct(view.ViewDirection)) > 0.999)
+    {
+        foreach (var instance in instances) refused.Add(instance.Id);
+        problem = string.Format("the axis named, {0}, points straight out of this view, so a "
+                + "dimension along it cannot be drawn here. Name the other axis. NOTHING WAS "
+                + "DRAWN", wantedAxis);
+    }
+    else
+    {
+        // The reference types worth asking for, in the order that produces the
+        // dimension a drafter would place. Centre references are what makes a
+        // dimension HOLD when the element later moves; a strong reference on
+        // the body does not.
+        var wantedTypes = wantedAxis == "x"
+            ? new[] { FamilyInstanceReferenceType.CenterLeftRight,
+                      FamilyInstanceReferenceType.StrongReference }
+            : new[] { FamilyInstanceReferenceType.CenterFrontBack,
+                      FamilyInstanceReferenceType.StrongReference };
+
+        // Sorted along the axis first, so the chain reads left-to-right or
+        // bottom-to-top the way somebody would draw it by hand.
+        var ordered = new List<FamilyInstance>(instances);
+        ordered.Sort(delegate (FamilyInstance a, FamilyInstance b)
+        {
+            var pa = a.Location as LocationPoint;
+            var pb = b.Location as LocationPoint;
+            if (pa == null || pb == null) return 0;
+            double va = wantedAxis == "x" ? pa.Point.X : pa.Point.Y;
+            double vb = wantedAxis == "x" ? pb.Point.X : pb.Point.Y;
+            return va.CompareTo(vb);
+        });
+
+        var array = new ReferenceArray();
+        var held = new List<ElementId>();
+        XYZ firstPoint = null;
+        XYZ lastPoint = null;
+
+        foreach (var instance in ordered)
+        {
+            Reference picked = null;
+            foreach (var type in wantedTypes)
+            {
+                IList<Reference> found = null;
+                try { found = instance.GetReferences(type); } catch { }
+                if (found != null && found.Count > 0) { picked = found[0]; break; }
+            }
+
+            if (picked == null)
+            {
+                // No usable reference. Reported by id rather than dropped: a
+                // short string with no explanation reads as this choosing, when
+                // the content had nothing to hold on to.
+                noReference.Add(instance.Id);
+                continue;
+            }
+
+            array.Append(picked);
+            held.Add(instance.Id);
+            var point = instance.Location as LocationPoint;
+            if (point != null)
+            {
+                if (firstPoint == null) firstPoint = point.Point;
+                lastPoint = point.Point;
+            }
+        }
+
+        if (array.Size < 2)
+        {
+            refused.AddRange(held);
+            problem = "fewer than two of these expose a reference a dimension can hold on to, so "
+                    + "nothing was drawn - a one-reference dimension is degenerate and Revit drops "
+                    + "it at commit. If these are duct fittings or accessories, they publish none; "
+                    + "ducts and pipes handed in on their own dimension by their centrelines";
+        }
+        else if (firstPoint == null || lastPoint == null)
+        {
+            refused.AddRange(held);
+            problem = "these have no readable location, so there is no line to put the dimension "
+                    + "on. NOTHING WAS DRAWN";
+        }
+        else
+        {
+            // `offsetMm` square to the axis, in plan. Millimetres to Revit's
+            // internal feet by plain arithmetic (D-20).
+            Line line = wantedAxis == "x"
+                ? Line.CreateBound(
+                      new XYZ(firstPoint.X, firstPoint.Y + offset, firstPoint.Z),
+                      new XYZ(lastPoint.X, firstPoint.Y + offset, firstPoint.Z))
+                : Line.CreateBound(
+                      new XYZ(firstPoint.X + offset, firstPoint.Y, firstPoint.Z),
+                      new XYZ(firstPoint.X + offset, lastPoint.Y, firstPoint.Z));
+
+            Dimension made = null;
+            try
+            {
+                made = doc.Create.NewDimension(view, line, array);
+            }
+            catch (Exception ex)
+            {
+                problem = "Revit refused the dimension: " + ex.Message + ". NOTHING WAS DRAWN";
+            }
+
+            // THE READ-BACK, and NOT via Dimension.Curve - that throws "The
+            // input curve is not bound" on a dimension this new.
+            if (made != null)
+            {
+                created = made.Id;
+                try { dimensionedCount = made.References == null ? 0 : made.References.Size; }
+                catch { dimensionedCount = 0; }
+                if (dimensionedCount < 2)
+                {
+                    // THIS CARD'S SAFER RULE, now on this route too: taken out
+                    // again rather than left in the caller's transaction.
+                    try { doc.Delete(made.Id); } catch { }
+                    created = null;
+                    dimensionedCount = 0;
+                    problem = "Revit made a dimension holding fewer than two references, which "
+                            + "will not survive a commit, so it was taken out again. NOTHING WAS "
+                            + "DRAWN";
+                }
+                else if (dimensionedCount < array.Size)
+                {
+                    problem = string.Format("the dimension holds {0} of the {1} references asked "
+                            + "for - Revit dropped {2}. Check which instances it measures before "
+                            + "relying on it", dimensionedCount, array.Size,
+                            array.Size - dimensionedCount);
+                }
+            }
+            else if (problem.Length == 0)
+            {
+                problem = "no dimension was created, and Revit reported no reason";
+            }
+
+            if (dimensionedCount < 2) refused.AddRange(held);
+        }
+    }
+}
+else
+{
+// ---- THE CENTRELINE WALK, versions 1 and 2 ---------------------------------
 var options = new Options();
 options.ComputeReferences = true;
 options.IncludeNonVisibleObjects = true;
@@ -94,17 +346,8 @@ var accepted = new List<ElementId>();
 // the first run's direction is known, and it has to apply to all of them.
 var centrelines = new List<KeyValuePair<ElementId, Line>>();
 
-foreach (var element in elements)
+foreach (var element in runElements)
 {
-    if (problem.Length > 0) break;
-    if (element == null) continue;
-
-    // A quick structural test before touching geometry. An element with no
-    // location curve has no centreline to dimension and is a different job -
-    // an air terminal, a piece of equipment - not a failure of this one.
-    var location = element.Location as LocationCurve;
-    if (location == null || !(location.Curve is Line)) { notLinear.Add(element.Id); continue; }
-
     var geometry = element.get_Geometry(options);
     if (geometry == null) { refused.Add(element.Id); continue; }
 
@@ -154,11 +397,7 @@ foreach (var entry in centrelines)
 
 // Two references is the minimum a dimension can hold. One is not a short
 // dimension, it is not a dimension.
-if (problem.Length > 0)
-{
-    // An axis that is not one: nothing was looked at, nothing is drawn.
-}
-else if (references.Count >= 2 && runDirection != null)
+if (references.Count >= 2 && runDirection != null)
 {
     // ACROSS THE RUNS, unless an axis was named. The view's own normal crossed
     // with the run direction is the only direction that is both across the
@@ -289,12 +528,27 @@ else
     // Fewer than two usable references. One reference is not a short
     // dimension, it is not a dimension.
     refused.AddRange(accepted);
-    problem = notLinear.Count > 0 && accepted.Count == 0 && refused.Count == 0
-        ? "nothing handed in is a straight run - a duct, pipe, conduit or cable tray - so there "
-          + "is no centreline to dimension. If these are air terminals, fixtures or equipment, "
-          + "DIMENSION_FAMILY_INSTANCES is the route that works. NOTHING WAS DRAWN"
-        : "fewer than two of these gave up a centreline parallel to the first, so nothing was "
-          + "drawn - a one-reference dimension is degenerate and Revit drops it at commit. If "
-          + "these are air terminals or equipment, DIMENSION_FAMILY_INSTANCES is the route that "
-          + "works";
+    if (roomsHanded > 0 && runElements.Count == 0 && notLinear.Count == roomsHanded)
+    {
+        // Only rooms were handed in: the room sentence below is the whole answer.
+        problem = "NOTHING WAS DRAWN";
+    }
+    else if (runElements.Count == 0)
+    {
+        problem = "nothing handed in is a straight run - a duct, pipe, conduit or cable tray - or a "
+                + "family instance - an air terminal, fixture or piece of equipment - so there is "
+                + "nothing here to dimension. NOTHING WAS DRAWN";
+    }
+    else
+    {
+        problem = "fewer than two of these gave up a centreline parallel to the first, so nothing "
+                + "was drawn - a one-reference dimension is degenerate and Revit drops it at "
+                + "commit. If these are air terminals or equipment, hand them in on their own with "
+                + "an axis, x or y";
+    }
 }
+}
+
+// A ROOM HANDED IN IS SAID WHATEVER ELSE HAPPENED (version 3).
+if (roomSentence.Length > 0)
+    problem = problem.Length == 0 ? roomSentence : problem + ". " + roomSentence;

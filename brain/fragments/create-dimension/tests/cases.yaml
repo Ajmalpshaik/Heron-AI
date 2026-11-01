@@ -25,8 +25,10 @@ negative:
 
   - given: an air terminal, which has no location curve
     expect: >
-      it goes to `notLinear`, kept separate from `refused`. It is a different
-      job needing a face reference, not a failure of this one
+      versions 1 and 2: it goes to `notLinear`, kept separate from `refused`.
+      VERSION 3: it takes the family-instance route - see the version 3 cases
+      below; something with neither a straight run nor a family instance, a
+      text note, still goes to `notLinear`
 
   - given: geometry read without ComputeReferences and IncludeNonVisibleObjects
     expect: >
@@ -72,10 +74,70 @@ negative:
       nothing looked at, nothing drawn, `problem` naming x, y or empty. A
       guessed axis measures the wrong direction and still looks plausible
 
-  - given: two air terminals and nothing else
+  - given: two air terminals and nothing else, axis left out
     expect: >
-      both in `notLinear`, nothing drawn, and `problem` naming
-      DIMENSION_FAMILY_INSTANCES as the route for family instances
+      VERSION 3: nothing drawn, both in `refused`, and `problem` saying family
+      instances are dimensioned along an axis - name x or y. (Version 2 put
+      them in `notLinear` and named DIMENSION_FAMILY_INSTANCES, now retired
+      into this card.)
+
+  # VERSION 3 (2026-11-01, DIMENSION_FAMILY_INSTANCES merged in). Each FAILS on
+  # version 2, which puts every family instance in notLinear and draws nothing.
+  - given: >
+      VERSION 3. Three supply diffusers in a plan view at a known spacing, axis
+      x, offsetMm 1000
+    expect: >
+      `created` is a real dimension, `dimensionedCount` 3, `noReference`
+      empty. Then READ THE DIMENSION IN REVIT: the segments must show the real
+      spacing in millimetres, and MOVING one diffuser must move the dimension
+      with it - the centre references are why
+
+  - given: VERSION 3. The same three diffusers, axis y
+    expect: the string runs the other way, and the segments read the other spacing
+
+  - given: >
+      VERSION 3. A MIXED set - three parallel ducts and two diffusers - with
+      axis x
+    expect: >
+      NOTHING drawn, all five in `refused`, `created` null, and `problem`
+      saying "3 run(s) and 2 family instance(s) were handed in together" and
+      to dimension them in two calls. Version 2 dimensioned the three ducts
+      and put the diffusers in notLinear - half the set, looking finished.
+      Then run the ducts alone (one string, dimensionedCount 3) and the
+      diffusers alone with axis x (one string, dimensionedCount 2)
+
+  - given: VERSION 3. Duct fittings or duct accessories only, axis x
+    expect: >
+      every id in `noReference`, nothing drawn, and `problem` saying they
+      publish no references and that ducts and pipes dimension by their
+      centrelines - the zero is true of this route, not of MEP
+
+  - given: VERSION 3. Exactly ONE diffuser, axis x
+    expect: nothing drawn and `problem` saying fewer than two references
+
+  - given: >
+      VERSION 3. Two rooms selected in a floor plan - "dimension the rooms"
+      reaching this card
+    expect: >
+      NOTHING drawn, both in `notLinear`, and `problem` saying a room cannot
+      be dimensioned here and naming DIMENSION_ROOMS and
+      MEASURE_ROOM_DIMENSIONS. Version 2 put them in notLinear and said only
+      that nothing was a run
+
+  - given: >
+      VERSION 3. Three parallel ducts and one room, axis left out
+    expect: >
+      ONE string across the three ducts, the room in `notLinear`, and
+      `problem` carrying the room sentence - a room handed in is never left
+      out in silence
+
+  - given: VERSION 3. Two diffusers, axis y, in a section looking north
+    expect: >
+      nothing drawn, and `problem` saying the axis points out of this view.
+      DIMENSION_FAMILY_INSTANCES had no such check and handed Revit a line it
+      could not draw
 
 second_route:
   - Revit's own Aligned Dimension tool snapped to the same two centrelines, compared for the value it reports
+  - for family instances, read the dimension's segment values against a tape on the model, and move one instance to confirm the dimension follows
+  - do NOT verify with Dimension.Curve - it throws on a dimension this new
