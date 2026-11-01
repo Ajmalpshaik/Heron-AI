@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: SET_FAMILY_FORM_MATERIAL
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO LINK_FAMILY_PARAMETER (link-family-parameter), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to LINK_FAMILY_PARAMETER. The proof below is the record of what this
+# card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: LINK_FAMILY_PARAMETER
+  why: >
+    The same field: a form's Material, linked to a family material parameter or
+    set to a material the family holds. LINK_FAMILY_PARAMETER does both since
+    its version 3, by forms= the ids or selected - links Material=Body Material
+    links it, Material=Steel sets it, Material=by category puts it back - with
+    every rule of this card's: a name that is both a parameter and a material is
+    refused, a parameter of another kind or a reporting one is refused, a void
+    is refused, a linked field is unlinked before a value is written and the
+    answer says so, every form read back; linked says linked rather than set.
+    One rule was opposite and the safer kept: this card read none as by
+    category; there none unlinks and keeps the value.
 
 purpose: >
   LINKS or SETS the Material field of particular forms in the family open in the

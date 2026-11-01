@@ -140,7 +140,7 @@ compatibility-note: >
 #                                          sweeps the whole model for them.
 #                                          This one reports the set it is
 #                                          given and names the faults it finds
-#   "the airflow in the spaces"         -> REPORT_SPACE_AIRFLOW
+#   "the airflow in the spaces"         -> READ_SPACE_LOADS
 #   "report the areas"                  -> REPORT_AREAS - the Area-plan kind,
 #                                          a third spatial element that is
 #                                          neither a Room nor a Space

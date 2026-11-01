@@ -5,19 +5,28 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-052
-semantic-identity: "draw every duct run of a layout, each at its own size, in one go"
+semantic-identity: "draw straight duct or pipe - one run from here to there or every run of a layout, each at its own size, in one go"
 kind: action
 domain: revit.mep
 capability: CREATE_DUCT_RUNS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Draws straight duct - one run from here to there, or every main and every
-  branch of a layout - in ONE call and ONE undo step, each run at its own size.
-  Since 2026-11-01 it is the one straight-duct tool: CREATE_DUCT, which drew one
-  run per call, was merged into it.
+  Draws straight duct OR straight pipe - one run from here to there, or every
+  main and every branch of a layout - in ONE call and ONE undo step, each run
+  at its own size. Since 2026-11-01 it is the one straight-duct and
+  straight-pipe tool: CREATE_DUCT, which drew one duct run per call, and
+  CREATE_PIPE, which drew straight pipe between points, were merged into it.
+
+  **Duct or pipe: the type decides (version 2, 2026-11-01).** Name a duct type
+  and a duct system and it draws duct; name a pipe type and a piping system
+  and it draws pipe - as CREATE_FLEX_PIPE does for flex. The two must go
+  together, checked by name before Revit is asked. A pipe run's size is a
+  diameter, `d50`; a width by height on a pipe type is refused. Revit snaps a
+  pipe size to its segment's sizes and still reports success - 77 asked, 80
+  made - so every size is read back, and a snap fails the whole job, named.
 
   **It exists because drawing was the slow half once the fittings were not.**
   On 2026-09-23 a five-room supply layout took twenty-five CREATE_DUCT calls
@@ -54,11 +63,21 @@ contract:
     - name: doc
       type: Document
     # RESOLVED OBJECTS, never ids - the 2024 ElementId trap (D-05).
+    # Version 2: a duct system OR a piping system - MEPSystemType, which the
+    # binder resolves as "duct or pipe system type". It must go with the type
+    # below: a duct type with a duct system, a pipe type with a piping system,
+    # checked by name before Revit is asked. Version 1 took a
+    # MechanicalSystemType only.
     - name: systemType
-      type: MechanicalSystemType
+      type: MEPSystemType
       source: request
+    # A DUCT type or a PIPE type (version 2), and which it is decides what is
+    # drawn. MEPCurveType because the binder resolves that class by name and
+    # both derive from it; anything else is refused by name. Still called
+    # `ductType` so every call written for version 1 runs unchanged - for a
+    # pipe it is the pipe type (CREATE_PIPE's `pipeType`).
     - name: ductType
-      type: DuctType
+      type: MEPCurveType
       source: request
     - name: level
       type: Level
@@ -70,8 +89,9 @@ contract:
       type: string
       source: request
   provides:
-    # The new ducts, named `elements` on purpose so FIT_MEP_JOINTS can take
-    # them straight from here with expect_from.
+    # The new ducts or pipes, named `elements` on purpose so FIT_MEP_JOINTS
+    # can take them straight from here with expect_from. CREATE_PIPE's
+    # `created`.
     - name: elements
       role: result
       type: IList<Element>
@@ -95,7 +115,8 @@ tests: tests/
 
 compatibility-note: >
   `Duct.Create(Document, ElementId, ElementId, ElementId, XYZ, XYZ)`, as
-  CREATE_DUCT used it until it was merged in, and the `RBS_CURVE_WIDTH_PARAM`,
+  CREATE_DUCT used it until it was merged in, `Pipe.Create` with the same
+  arguments, as CREATE_PIPE used it, `RBS_PIPE_DIAMETER_PARAM`, and the `RBS_CURVE_WIDTH_PARAM`,
   `RBS_CURVE_HEIGHT_PARAM` and `RBS_CURVE_DIAMETER_PARAM` parameters, as SET_MEP_SIZE uses them - all
   unchanged 2020 to 2027. The numbers are read with the invariant culture, so a
   PC set to a comma decimal separator reads 3122.5 as the caller meant it.
@@ -121,8 +142,25 @@ compatibility-note: >
 # names each problem. Half a layout that looks drawn is worse than none, so the
 # keep-the-rest rule is NOT carried.
 
+# VERSION 2 (2026-11-01) - CREATE_PIPE WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same drawing in the other domain: straight pipe between
+# consecutive points, a system type, a pipe type and a level, nothing
+# connected. Widened the way CREATE_FLEX_PIPE was: the type class decides,
+# MEPCurveType and MEPSystemType. Where its inputs and outputs are now: its
+# `pipeType` is `ductType`, holding the pipe type; its `points` (internal feet)
+# are a run's points in millimetres in `runs`; its `created` is `elements`; its
+# `tooShort` and `refused` counts are a refusal naming each one.
+#
+# THE CONFLICTS, AND THE SAFER RULES KEPT: CREATE_PIPE kept the segments that
+# worked and counted the ones Revit refused; this card is all or nothing
+# (Article 8), as it was for CREATE_DUCT. CREATE_PIPE set no size and left the
+# snap to SET_MEP_SIZE; here a size is optional per run and READ BACK - a pipe
+# drawn at its type's own size when none is given, and a snapped size failing
+# the job by name - so the snap is caught where the pipe is made.
+
 # ROUTING - the neighbours this must not be confused with. Repeated in
-# SPLIT_MEP_RUN, PLACE_MEP_FITTING, CREATE_PIPE and CREATE_ELECTRICAL_RUN.
+# SPLIT_MEP_RUN, FIT_MEP_JOINTS and CREATE_ELECTRICAL_RUN.
 #
 #   "draw all the ducts"            -> here
 #   "draw the mains and the branches" -> here
@@ -132,21 +170,21 @@ compatibility-note: >
 #   "put the fittings in"           -> FIT_MEP_JOINTS, which follows this
 #   "connect the open ends"         -> CONNECT_OPEN_ENDS, which follows that
 #   "split this duct"               -> SPLIT_MEP_RUN - the run already exists
-#   "join these two"                -> PLACE_MEP_FITTING. Connecting two
+#   "join these two"                -> FIT_MEP_JOINTS. Connecting two
 #                                      existing runs is not drawing a new one
-#   "connect these two ducts"       -> PLACE_MEP_FITTING
-#   "put an elbow here"             -> PLACE_MEP_FITTING - the fitting is
+#   "connect these two ducts"       -> FIT_MEP_JOINTS
+#   "put an elbow here"             -> FIT_MEP_JOINTS - the fitting is
 #                                      CHOSEN from the geometry, not named
 #   "add a dimension between these" -> CREATE_DIMENSION
-#   "run a pipe from here to there" -> CREATE_PIPE - the same job, other
-#                                      domain
-#   "put a drain line in"           -> CREATE_PIPE
+#   "run a pipe from here to there" -> here - a pipe type and a piping system
+#                                      (CREATE_PIPE until 2026-11-01)
+#   "put a drain line in"           -> here - it is still a pipe
 #   "give it a fall of 1 in 100"    -> SET_MEP_SLOPE - drawn flat, then sloped
 #   "they are touching but not connected" -> CONNECT_OPEN_ENDS
 #   "draw a cable tray"             -> CREATE_ELECTRICAL_RUN
 #   "draw a conduit"                -> CREATE_ELECTRICAL_RUN
 #   "run flex to that diffuser"     -> CREATE_FLEX_PIPE - FLEXIBLE duct or
-#                                      pipe; this makes rigid duct
+#                                      pipe; this makes rigid duct and pipe
 
 utterances:
   - draw all the ducts
@@ -162,3 +200,11 @@ utterances:
   - draw the duct run
   - put a supply duct in
   - add a duct
+  # MOVED 2026-11-01 from CREATE_PIPE, merged into this card.
+  - run a pipe from here to there
+  - draw a pipe between these points
+  - draw the pipe run
+  - add a pipe
+  - put a drain line in
+  - add a drain line
+  - draw the chilled water pipe

@@ -157,7 +157,7 @@ compatibility-note: >
 #   "make a surface from these lines"             -> here
 #   "extrude the adaptive panel outline 50 mm"    -> here, in an adaptive or
 #                                                    pattern-based family
-#   "extrude a circle 300 diameter 500 high"      -> CREATE_FAMILY_EXTRUSION -
+#   "extrude a circle 300 diameter 500 high"      -> CREATE_FAMILY_FORMS -
 #                                                    any other family
 #   "draw lines between the adaptive points"      -> DRAW_FAMILY_POINT_CURVES
 #   "loft through these sections in the family"   -> CREATE_FAMILY_FREEFORM_SOLID -

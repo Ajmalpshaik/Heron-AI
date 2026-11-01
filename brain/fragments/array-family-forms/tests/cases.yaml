@@ -2,7 +2,7 @@ positive:
   - given: >
       a new family from the metric Generic Model template with an Integer type
       parameter "Blade Count" holding 5, and one solid extrusion made by
-      create-family-extrusion, rect -300,-10 300,10 on Ref. Level from 0 to
+      create-family-forms, rect -300,-10 300,10 on Ref. Level from 0 to
       50; form = its id, count "Blade Count", step "Y 100"
     expect: >
       labelled true; members four ids; five blades 100 mm apart along +Y in the

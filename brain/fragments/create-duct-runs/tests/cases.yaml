@@ -22,6 +22,20 @@ positive:
       segments sharing a point are expected to arrive NOT connected, and
       FIT_MEP_JOINTS is what joins them
 
+  # VERSION 2 (2026-11-01), from CREATE_PIPE. Each FAILS on version 1, which
+  # took a DuctType and a MechanicalSystemType only.
+  - given: >
+      CREATE_PIPE's case: a pipe type, a piping system type, a level, and ONE
+      run of five points along a corridor - `0,0,2700; 3000,0,2700;
+      6000,0,2700; 9000,0,2700; 12000,0,2700` - no size
+    expect: >
+      FOUR pipes, not five, each at the pipe type's own diameter, each one's
+      end points read back as the points given; runsDrawn 1, segments 4,
+      sized 0, and the pipes left as elements for FIT_MEP_JOINTS
+
+  - given: a pipe run sized d50 on a copper pipe type whose segment has 50 mm
+    expect: the pipes 50 mm, read back in the Properties palette; sized counted
+
 negative:
   - given: one run of twenty with a point written 3075;-2100 instead of x,y,z
     expect: >
@@ -35,6 +49,24 @@ negative:
 
   - given: two consecutive points closer than Revit's short-curve tolerance
     expect: refused by name with the rest rolled back - no duct can exist there
+
+  # VERSION 2 (2026-11-01), from CREATE_PIPE.
+  - given: a pipe run sized d77 on a pipe type whose segment has 65 and 80 mm only
+    expect: >
+      THROWS and nothing is kept, naming the segment, 77 asked and the size
+      Revit made - CREATE_PIPE's "77 asked, 80 delivered", caught where the
+      pipe is made
+
+  - given: a pipe type with a DUCT system type, or a duct type with a piping system
+    expect: refused by name before any pipe or duct exists - the two must go together
+
+  - given: a pipe run sized 300x200
+    expect: refused - a pipe is round, write d50 - and nothing drawn
+
+  - given: a pipe type whose routing has no segment that suits, so Revit refuses the second of four segments
+    expect: >
+      THROWS with Revit's words for that segment, and NONE of the four kept -
+      CREATE_PIPE kept three and counted one refused; that rule is not carried
 
 second_route:
   - CREATE_DUCT once per run followed by SET_MEP_SIZE per size, over the same points - the ducts are the same, segment for segment. CREATE_DUCT is DEPRECATED since 2026-11-01 and offered by nothing, so this route is Revit's own Duct tool over the same points

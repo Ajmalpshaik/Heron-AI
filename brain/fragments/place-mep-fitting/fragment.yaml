@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 15
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,31 @@ capability: PLACE_MEP_FITTING
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO FIT_MEP_JOINTS (fit-mep-joints), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to FIT_MEP_JOINTS. The proof below is the record of what this
+# card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: FIT_MEP_JOINTS
+  why: >
+    The same job: the fitting two, three or four open duct or pipe ends call for
+    - elbow, union, transition, tee or cross - chosen from the geometry, nothing
+    moved to close a gap. FIT_MEP_JOINTS fits the one joint between two runs
+    handed in, or every joint among all the runs handed in, in one undo. Its
+    version 3 took every rule of this card's it lacked: two free ends that are
+    apart are named with the gap in gaps, a run with no open end is named in
+    noOpenEnd, and when nothing is fitted refused says why in this card's words.
+    Two rules were not carried as they were, the safer kept: a transition is
+    built with the LARGER end first (measured), not in the order found; and five
+    runs are a layout, not a refusal - the two-to-four rule is kept for one
+    joint, where five ends meeting fails the whole job.
 
 purpose: >
   Joins the open ends of two, three or four ducts or pipes with a fitting -

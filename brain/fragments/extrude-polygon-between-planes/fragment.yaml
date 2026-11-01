@@ -29,7 +29,7 @@ purpose: >
   4 to 12, centred on the family's origin, one pair of flats facing front and
   back.
 
-  **WHY A TOOL OF ITS OWN.** A polygon drawn with CREATE_FAMILY_EXTRUSION is
+  **WHY A TOOL OF ITS OWN.** A polygon drawn with CREATE_FAMILY_FORMS is
   fixed: nothing ties its slanted sides to anything, and EXTRUDE_BETWEEN_PLANES
   builds boxes only, between planes that run left-right and front-back. So
   this one makes a vertical reference plane for EVERY side, named after the
@@ -169,7 +169,7 @@ compatibility-note: >
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
 #   "make a parametric hexagon / hex head / nut body"  -> here
-#   "extrude a hexagon 20 mm thick"                    -> CREATE_FAMILY_EXTRUSION,
+#   "extrude a hexagon 20 mm thick"                    -> CREATE_FAMILY_FORMS,
 #                                                         a fixed shape
 #   "make a box between these planes"                  -> EXTRUDE_BETWEEN_PLANES
 

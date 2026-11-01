@@ -55,7 +55,7 @@ purpose: >
   is not whole (measured).
 
   **A VOID CUTS NOTHING BY BEING MADE** - COMBINE_FAMILY_FORMS cuts a solid
-  with it. Its material is SET_FAMILY_FORM_MATERIAL.
+  with it. Its material is LINK_FAMILY_PARAMETER.
 
   **READ BACK, ALL OR NOTHING.** The form must have an extent and a solid a
   volume, both reported. Any refusal from Revit fails the call and nothing is
@@ -191,7 +191,7 @@ compatibility-note: >
 #                                                   parallel shapes, parametric
 #   "loft a form through these two profiles"     -> CREATE_CONCEPTUAL_FORM - in
 #                                                   an adaptive or mass family
-#   "link the body material to Body Material"    -> SET_FAMILY_FORM_MATERIAL
+#   "link the body material to Body Material"    -> LINK_FAMILY_PARAMETER
 #   "cut the solid with the void"                -> COMBINE_FAMILY_FORMS
 
 utterances:

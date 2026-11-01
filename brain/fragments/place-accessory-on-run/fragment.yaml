@@ -95,7 +95,7 @@ compatibility-note: >
 #
 #   "put a damper in this duct"          -> here. The run is cut and rejoined
 #   "add a valve to the pipe"            -> here
-#   "join these two duct ends"           -> PLACE_MEP_FITTING, which fits an
+#   "join these two duct ends"           -> FIT_MEP_JOINTS, which fits an
 #                                           elbow or a transition between ENDS
 #                                           that already exist
 #   "cut this duct in two"               -> SPLIT_MEP_RUN, the break alone

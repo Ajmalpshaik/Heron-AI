@@ -224,7 +224,7 @@ compatibility-note: >
 #                                                   project view
 #   "draw the valve symbol in plan"              -> DRAW_FAMILY_SYMBOLIC_LINES -
 #                                                   2D lines, no 3D body
-#   "set the material of the lettering"          -> SET_FAMILY_FORM_MATERIAL is
+#   "set the material of the lettering"          -> LINK_FAMILY_PARAMETER is
 #                                                   for FORMS; model text takes
 #                                                   material= here, as it is placed
 #   "change the label text height to 5 mm"       -> SET_TEXT_TYPE - a label's or

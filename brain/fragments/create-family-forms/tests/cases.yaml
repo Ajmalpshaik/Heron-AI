@@ -27,6 +27,34 @@ positive:
       the same ten forms built and read back on the FIRST call, with no copy
       into Revit's own folder
 
+  # VERSION 2 (2026-11-01), from CREATE_FAMILY_EXTRUSION and
+  # CREATE_FAMILY_REVOLUTION. Each FAILS on version 1, which gave no `formId`
+  # and said nothing of loops, angles or axis.
+  - given: >
+      CREATE_FAMILY_EXTRUSION's case as ONE row: kind=extrusion workPlane=Ref.
+      Level profile=rect -300,-200 300,200 | circle 0,0 50 startMm=0 endMm=20
+      solid=true
+    expect: >
+      formCount 1, formId the same id as formIds, and built reading "2 loop(s)
+      (1 outline, 1 hole inside it) from 0 to 20 mm", the plane "horizontal, Z
+      0 mm", the plate's extent and volume - the hole a hole, read by where it
+      lies
+
+  - given: two circles side by side in one extrusion row - circle -200,0 50 | circle 200,0 50
+    expect: built reading "2 loop(s) (2 separate outlines)" - two bodies in one form
+
+  - given: >
+      CREATE_FAMILY_REVOLUTION's case as ONE row: kind=revolve
+      workPlane=Center (Front/Back) profile=0,0; 150,0; 0,300 axisLine=0,0
+      0,1000 startDegrees=0 endDegrees=180 solid=true
+    expect: >
+      formId the new form's id, built reading "1 loop(s) turned from 0 to 180
+      degrees about the axis 0,0 to 0,1000", and a finding that a part-turn's
+      sweep is Revit's rule for the plane - look at it
+
+  - given: a method step written for CREATE_FAMILY_EXTRUSION, binding `formId` from this card's answer into LOCK_FORM_TO_PLANES
+    expect: the lock reaches the form just built - formId binds as it did
+
 negative:
   - given: >
       the ten rows with row 7's workPlane "Ref Lvl", a name the family does
@@ -62,3 +90,9 @@ second_route:
       and CREATE_FAMILY_REVOLUTION on a second scratch family; the two
       families' REPORT_FAMILY_FORMS read side by side - the same kinds,
       extents and volumes - and the undo list read: ten entries there, one here
+  - >
+      2026-11-01: CREATE_FAMILY_EXTRUSION and CREATE_FAMILY_REVOLUTION are
+      DEPRECATED and offered by nothing, so the route above is now Revit's own:
+      the same ten forms drawn by hand with Create > Extrusion and Create >
+      Revolve on a second scratch family, read side by side with
+      REPORT_FAMILY_FORMS

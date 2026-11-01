@@ -1,6 +1,33 @@
-// NOT STANDALONE. Assumes `doc`, `category`, `system` and `links` are in scope;
-// leaves `linkReport`, `changed`, `alreadyLinked`, `matched`, `notAFamily`,
-// `refused` and `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `uidoc`, `category`, `system`, `forms`,
+// `family`, `type` and `links` are in scope; leaves `linkReport`, `changed`,
+// `alreadyLinked`, `matched`, `linked`, `notAFamily`, `refused` and `findings`
+// behind.
+//
+// VERSION 3 (2026-11-01): ONE TOOL FOR "ASSOCIATE FAMILY PARAMETER". Three
+// cards were merged into this one and are DEPRECATED:
+//
+//   LINK_FAMILY_FORM_PARAMETER  particular forms and nested copies, named by
+//                               the ids the form tools or PLACE_NESTED_FAMILY
+//                               gave back, or `selected` - `forms` here
+//   LINK_NESTED_TYPE_PARAMETER  a nested family's TYPE parameters, named by
+//                               the family and its type - `family` and `type`
+//   SET_FAMILY_FORM_MATERIAL    a form's Material linked, or SET to a material
+//                               the family holds, or put back to <By Category>
+//                               - "Material=Steel", "Material=by category"
+//
+// The elements are named ONE way per call: a category (with `system`), forms
+// by id, or a nested family and type; left out, each binds "none". What each
+// card refused first is refused here too: a reporting family parameter cannot
+// drive anything; a TYPE parameter of a nested copy belongs to its type and is
+// named by family and type; an instance parameter of a nested type is on the
+// copy; a void has no material; a name that is both a family parameter and a
+// material is not guessed between; a field already linked is unlinked before
+// a material is written into it, and the answer says so.
+//
+// THE CONFLICT, AND THE SAFER RULE KEPT: SET_FAMILY_FORM_MATERIAL read "none"
+// as <By Category>; here "none" UNLINKS, as it always has on this card, and
+// leaves the value - <By Category> is said "by category". Unlinking changes no
+// material; reading "none" as a material change would.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -45,6 +72,10 @@ var alreadyLinked = 0;
 var matched = 0;
 var notAFamily = false;
 string refused = null;
+// VERSION 3, from SET_FAMILY_FORM_MATERIAL: true when the call left at least
+// one parameter linked to a family parameter, false when it only unlinked or
+// set values - "linked rather than set".
+var linked = false;
 
 var flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static;
 var revitAssembly = typeof(Document).Assembly;
@@ -161,6 +192,14 @@ Func<Definition, Tuple<object, string>> kindOf = definition =>
 // its Revit category.
 Func<Element, string> kindName = e =>
 {
+    // A NESTED TYPE (version 3, LINK_NESTED_TYPE_PARAMETER's): its family and
+    // its type, the words in Type Properties.
+    var nestedType = e as FamilySymbol;
+    if (nestedType != null)
+    {
+        try { return "Nested type \"" + nestedType.FamilyName + " : " + nestedType.Name + "\""; }
+        catch (Exception) { return "Nested type"; }
+    }
     var connector = e as ConnectorElement;
     if (connector != null)
     {
@@ -258,7 +297,13 @@ var asked = new List<Tuple<string, string, bool>>();
 // Each link to make: the element, its parameter, the family parameter (null to
 // unlink), the parameter's name as typed, and the family parameter it is
 // linked to now.
-var plans = new List<Tuple<Element, Parameter, FamilyParameter, string, FamilyParameter>>();
+// VERSION 3: and the material to SET, for a Material written rather than
+// linked - InvalidElementId for <By Category>, null for a link or an unlink.
+var plans = new List<Tuple<Element, Parameter, FamilyParameter, string, FamilyParameter, ElementId>>();
+// Beside each plan: what a Material read before the call, and whether it
+// already held the material asked for.
+var planBefore = new List<string>();
+var planAlready = new List<bool>();
 var chosen = new List<Element>();
 var leftOut = 0;
 // Each element "all" left out, and the parameters asked for that it lacks.
@@ -278,10 +323,45 @@ Func<string> whatEachLacks = () => string.Join("; ", lacking
     .Select(g => g.Count() + (g.Count() == 1 ? " lacks " : " lack ") + g.Key + ": "
         + string.Join(", ", g.Take(20).Select(l => describe(l.Item1)))
         + (g.Count() > 20 ? " and " + (g.Count() - 20) + " more" : "")));
-var saidCategory = (category ?? "").Trim();
-var saidSystem = (system ?? "").Trim();
+// WHAT EACH SELECTOR BINDS WHEN LEFT OUT is "none", read as not given
+// (version 3) - and a "none" typed reads the same.
+Func<string, string> unlessNone = text =>
+{
+    var said = (text ?? "").Trim();
+    return string.Equals(said, "none", StringComparison.OrdinalIgnoreCase) ? "" : said;
+};
+var saidCategory = unlessNone(category);
+var saidSystem = unlessNone(system);
+var saidForms = unlessNone(forms);
+var saidFamily = unlessNone(family);
+var saidType = unlessNone(type);
 var everyCategory = squash(saidCategory) == "all";
 var everySystem = squash(saidSystem) == "all";
+var byCategory = saidCategory.Length > 0;
+var byForms = saidForms.Length > 0;
+var byNested = saidFamily.Length > 0 || saidType.Length > 0;
+var ways = (byCategory ? 1 : 0) + (byForms ? 1 : 0) + (byNested ? 1 : 0);
+
+// A FORM'S MATERIAL FIELD, by Revit's id for it (SET_FAMILY_FORM_MATERIAL's
+// field) - the one parameter a material may be SET on here as well as linked.
+var materialField = new ElementId(BuiltInParameter.MATERIAL_ID_PARAM);
+Func<Parameter, bool> isMaterialField = p =>
+{
+    try { return p != null && p.Id == materialField; }
+    catch (Exception) { return false; }
+};
+Func<Element, bool> isVoidForm = e =>
+{
+    var form = e as GenericForm;
+    if (form == null) return false;
+    try { return !form.IsSolid; } catch (Exception) { return false; }
+};
+Func<ElementId, string> materialWords = id =>
+{
+    if (id == null || id == ElementId.InvalidElementId) return "<By Category>";
+    var material = doc.GetElement(id) as Material;
+    return material == null ? "<By Category>" : material.Name;
+};
 
 if (!doc.IsFamilyDocument)
 {
@@ -396,15 +476,29 @@ else
         }
     }
 
-    if (saidCategory.Length == 0)
-        problems.Add("No elements were named - a category such as \"Duct Connector\" or \"Extrusion\", or \"all\".");
+    // THE ELEMENTS, NAMED ONE WAY (version 3).
+    if (ways == 0)
+        problems.Add("No elements were named - a category such as \"Duct Connector\" or \"Extrusion\", or \"all\" "
+            + "(with a system); or forms and nested parts by the ids the form tools or PLACE_NESTED_FAMILY gave "
+            + "back, or \"selected\"; or a nested family and its type, for its type parameters.");
+    else if (ways > 1)
+        problems.Add("Name the elements ONE way in a call - a category, forms by id, or a nested family and its "
+            + "type - not " + (byCategory ? "category \"" + saidCategory + "\"" : "")
+            + (byCategory && byForms ? " and " : "") + (byForms ? "forms \"" + saidForms + "\"" : "")
+            + ((byCategory || byForms) && byNested ? " and " : "")
+            + (byNested ? "family \"" + saidFamily + "\" type \"" + saidType + "\"" : "") + " together.");
 
     // A BLANK SYSTEM IS NOT "ALL". Read as all, a missing classification on
     // "Duct Connector" would relink supply, return and exhaust alike, and the
     // choice would be this code's rather than the modeller's (Codex, PR #356).
-    if (saidSystem.Length == 0)
+    if (ways == 1 && byCategory && saidSystem.Length == 0)
         problems.Add("No system was named - a connector classification such as \"Supply Air\", or \"all\" for "
             + "every element whatever its system. A blank is not read as all.");
+    // A SYSTEM NARROWS A CATEGORY. Forms and nested types are named exactly,
+    // so a system beside them would be a narrowing nobody can see applied.
+    if (ways == 1 && !byCategory && saidSystem.Length > 0 && !everySystem)
+        problems.Add("A system narrows a category of connectors - \"" + saidSystem + "\" cannot narrow "
+            + (byForms ? "forms named by id" : "a nested type") + ". Leave the system out.");
 
     // A SYSTEM REVIT DOES NOT HAVE is refused with the close ones, before the
     // family is searched for it. Every classification Revit has counts but
@@ -429,9 +523,84 @@ else
         }
     }
 
+    // FORMS AND NESTED PARTS BY ID, or SELECTED (version 3, from
+    // LINK_FAMILY_FORM_PARAMETER and SET_FAMILY_FORM_MATERIAL). In a family
+    // open in the Family Editor every FamilyInstance is a nested family's
+    // placed copy; nothing but a form or a copy gets in.
+    if (problems.Count == 0 && byForms)
+    {
+        var named = new List<Element>();
+        if (string.Equals(saidForms, "selected", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(saidForms, "selection", StringComparison.OrdinalIgnoreCase))
+        {
+            if (uidoc == null || uidoc.Document == null || !uidoc.Document.Equals(doc))
+                problems.Add("\"selected\" means what is selected in this family's window, and this family is not "
+                    + "the window in front. Bring it to the front, or name the forms by their ids.");
+            else
+                foreach (var id in uidoc.Selection.GetElementIds())
+                {
+                    var element = doc.GetElement(id);
+                    if (element != null) named.Add(element);
+                }
+        }
+        else
+            foreach (var part in saidForms.Split(',').Select(x => x.Trim()).Where(x => x.Length > 0))
+            {
+                Element element = null;
+                try { element = doc.GetElement(part); } catch (Exception) { element = null; }
+                if (element == null) problems.Add("No element in this family has the id \"" + part + "\".");
+                else named.Add(element);
+            }
+
+        foreach (var element in named)
+        {
+            if (!(element is GenericForm) && !(element is FamilyInstance))
+                problems.Add("\"" + (element.Name ?? element.UniqueId) + "\" (" + element.UniqueId + ") is neither a "
+                    + "form - an extrusion, revolve, blend, sweep or swept blend - nor a nested family placed in "
+                    + "this one.");
+            else if (!chosen.Any(c => c.Id == element.Id)) chosen.Add(element);
+        }
+        if (problems.Count == 0 && chosen.Count == 0)
+            problems.Add("No form or nested part was named. Name them by the ids the form tools or "
+                + "PLACE_NESTED_FAMILY gave back, commas between, or select them and say \"selected\".");
+        if (problems.Count > 0) chosen.Clear();
+    }
+
+    // A NESTED FAMILY'S TYPE (version 3, from LINK_NESTED_TYPE_PARAMETER) - by
+    // the family's name as loaded into this one, and its type's.
+    if (problems.Count == 0 && byNested)
+    {
+        if (saidFamily.Length == 0 || saidType.Length == 0)
+            problems.Add("A nested type is named by its family AND its type - "
+                + (saidFamily.Length == 0 ? "no family" : "no type") + " was given.");
+        else
+        {
+            var ownFamily = doc.OwnerFamily == null ? ElementId.InvalidElementId : doc.OwnerFamily.Id;
+            var loaded = new FilteredElementCollector(doc).OfClass(typeof(Family)).Cast<Family>()
+                .Where(f => f.Id != ownFamily).ToList();
+            var nestedFamily = loaded.FirstOrDefault(f => string.Equals(f.Name, saidFamily,
+                StringComparison.OrdinalIgnoreCase));
+            if (nestedFamily == null)
+                problems.Add("No family called \"" + saidFamily + "\" is loaded into this family. Loaded: "
+                    + (loaded.Count == 0 ? "none"
+                        : string.Join(", ", loaded.Select(f => f.Name).OrderBy(n => n).Take(25))) + ".");
+            else
+            {
+                var types = nestedFamily.GetFamilySymbolIds().Select(id => doc.GetElement(id) as FamilySymbol)
+                    .Where(x => x != null).ToList();
+                var nestedType = types.FirstOrDefault(x => string.Equals(x.Name, saidType,
+                    StringComparison.OrdinalIgnoreCase));
+                if (nestedType == null)
+                    problems.Add("\"" + nestedFamily.Name + "\" has no type called \"" + saidType + "\". Its types: "
+                        + string.Join(", ", types.Select(x => x.Name).OrderBy(n => n)) + ".");
+                else chosen.Add(nestedType);
+            }
+        }
+    }
+
     // EVERY ELEMENT THAT HAS SOMETHING TO LINK.
     var candidates = new List<Element>();
-    if (problems.Count == 0)
+    if (problems.Count == 0 && byCategory)
     {
         foreach (var e in new FilteredElementCollector(doc).WhereElementIsNotElementType())
         {
@@ -550,6 +719,9 @@ else
         found.Item2.Add(describe(e));
     };
 
+    // THE MATERIALS THIS FAMILY HOLDS, for a Material SET by name (version 3).
+    var materials = new FilteredElementCollector(doc).OfClass(typeof(Material)).Cast<Material>().ToList();
+
     if (problems.Count == 0)
     {
         foreach (var e in chosen)
@@ -560,7 +732,27 @@ else
                 var linkable = named.Where(canLink).ToList();
                 if (linkable.Count == 0)
                 {
-                    if (named.Count == 0)
+                    // A TYPE PARAMETER OF A NESTED COPY is not on the copy - say
+                    // whose it is rather than "no such parameter" (version 3,
+                    // LINK_FAMILY_FORM_PARAMETER's rule). And an INSTANCE
+                    // parameter is not on a nested type.
+                    var copy = e as FamilyInstance;
+                    var onType = false;
+                    try
+                    {
+                        onType = named.Count == 0 && copy != null && copy.Symbol != null
+                            && parametersNamed(copy.Symbol, link.Item1).Count > 0;
+                    }
+                    catch (Exception) { onType = false; }
+                    if (onType)
+                        refuseFor("\"" + link.Item1 + "\" is a TYPE parameter of <<ELEMENTS>> - it belongs to every copy "
+                            + "of that type. Name the nested family and its type (family=, type=) to link it there. "
+                            + "What can be linked on this copy alone: " + string.Join(", ", linkableNames(e)) + ".", e);
+                    else if (named.Count == 0 && e is FamilySymbol)
+                        refuseFor("No parameter called \"" + link.Item1 + "\" on <<ELEMENTS>>. What can be linked there: "
+                            + string.Join(", ", linkableNames(e)) + ". An INSTANCE parameter of the nested family is "
+                            + "on its placed copy - name the copy by its id (forms=).", e);
+                    else if (named.Count == 0)
                         refuseFor("No parameter called \"" + link.Item1 + "\" on <<ELEMENTS>>. What can be linked there: "
                             + string.Join(", ", linkableNames(e)) + ".", e);
                     else
@@ -597,6 +789,65 @@ else
                 if (!link.Item3)
                 {
                     target = familyParameterNamed(link.Item2);
+
+                    // A FORM'S MATERIAL, LINKED OR SET (version 3, from
+                    // SET_FAMILY_FORM_MATERIAL). The name is looked for as a
+                    // family parameter and as a material the family holds, and
+                    // "by category" puts it back. Never guessed between: a name
+                    // that is both is refused. A void has no material to show -
+                    // refused for a value anywhere, and for a link when the
+                    // void was named by its id.
+                    if (isMaterialField(own))
+                    {
+                        var putBack = squash(link.Item2) == "bycategory";
+                        var asMaterial = materials.FirstOrDefault(m => string.Equals(m.Name, link.Item2,
+                            StringComparison.OrdinalIgnoreCase));
+                        if (target != null && asMaterial != null)
+                        {
+                            refuseFor("\"" + link.Item2 + "\" is both a family parameter and a material in this "
+                                + "family, so it does not say which is meant for the Material of <<ELEMENTS>>. "
+                                + "Rename one of them.", e);
+                            continue;
+                        }
+                        if (isVoidForm(e) && (target == null || byForms))
+                        {
+                            refuseFor("<<ELEMENTS>> is a void, and a void has no material to show.", e);
+                            continue;
+                        }
+                        if (target == null && (putBack || asMaterial != null))
+                        {
+                            var wantedId = putBack ? ElementId.InvalidElementId : asMaterial.Id;
+                            ElementId wasId = null;
+                            try { wasId = own.AsElementId(); } catch (Exception) { wasId = null; }
+                            plans.Add(Tuple.Create(e, own, (FamilyParameter)null, link.Item1, now, wantedId));
+                            planBefore.Add(now != null ? "linked to " + nameOf(now) : materialWords(wasId));
+                            planAlready.Add(now == null && wasId != null && wasId == wantedId);
+                            continue;
+                        }
+                        if (target == null)
+                        {
+                            var fieldKind = kindOf(own.Definition);
+                            var materialParameters = familyParameters.Where(fp =>
+                            {
+                                try
+                                {
+                                    var theirs = kindOf(fp.Definition);
+                                    return fp.StorageType == own.StorageType && fieldKind.Item1 != null
+                                        && theirs.Item1 != null && sameKind(fieldKind.Item1, theirs.Item1);
+                                }
+                                catch (Exception) { return false; }
+                            }).Select(nameOf).OrderBy(n => n).ToList();
+                            refuseFor("\"" + link.Item2 + "\" is neither a family parameter nor a material in this "
+                                + "family, for the Material of <<ELEMENTS>>. Its material parameters are "
+                                + (materialParameters.Count == 0 ? "none - ADD_FAMILY_PARAMETERS makes one"
+                                    : string.Join(", ", materialParameters))
+                                + "; its materials include "
+                                + string.Join(", ", materials.Select(m => m.Name).OrderBy(n => n).Take(15))
+                                + "; or say \"by category\".", e);
+                            continue;
+                        }
+                    }
+
                     if (target == null)
                     {
                         var drivers = couldDrive(own);
@@ -605,6 +856,18 @@ else
                               + "<<ELEMENTS>>: " + string.Join(", ", drivers) + "."
                             : " None in this family could drive \"" + link.Item1 + "\" (" + kindOf(own.Definition).Item2
                               + ") on <<ELEMENTS>> - ADD_FAMILY_PARAMETERS makes one."), e);
+                        continue;
+                    }
+
+                    // A REPORTING PARAMETER only reads a value off the family -
+                    // it cannot drive one (version 3: LINK_FAMILY_FORM_PARAMETER
+                    // and LINK_NESTED_TYPE_PARAMETER refused it first).
+                    var reporting = false;
+                    try { reporting = target.IsReporting; } catch (Exception) { reporting = false; }
+                    if (reporting)
+                    {
+                        refuseFor("\"" + nameOf(target) + "\" is a reporting parameter - it reads a value off the "
+                            + "family and cannot drive \"" + link.Item1 + "\" on <<ELEMENTS>>.", e);
                         continue;
                     }
 
@@ -625,7 +888,9 @@ else
                     }
                 }
 
-                plans.Add(Tuple.Create(e, own, target, link.Item1, now));
+                plans.Add(Tuple.Create(e, own, target, link.Item1, now, (ElementId)null));
+                planBefore.Add("");
+                planAlready.Add(false);
             }
         }
     }
@@ -663,8 +928,33 @@ if (refused == null)
     var asItWas = string.Join("; ", plans.Select(p => describe(p.Item1) + " " + p.Item4 + " " + nameOf(p.Item5)));
 
     var any = false;
-    foreach (var plan in plans)
+    for (var index = 0; index < plans.Count; index++)
     {
+        var plan = plans[index];
+
+        // A MATERIAL SET (version 3, SET_FAMILY_FORM_MATERIAL's way): a linked
+        // field is unlinked first, because a linked field cannot hold a value
+        // of its own and leaving the link would leave the value ignored.
+        if (plan.Item6 != null)
+        {
+            if (planAlready[index]) continue;
+            try
+            {
+                if (plan.Item5 != null) fm.AssociateElementParameterToFamilyParameter(plan.Item2, null);
+                if (!plan.Item2.Set(plan.Item6))
+                    throw new InvalidOperationException("Revit did not take the value");
+                any = true;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Revit refused to give " + describe(plan.Item1) + " the material "
+                    + materialWords(plan.Item6) + ": " + ex.Message + " The call failed there, and Heron rolls the "
+                    + "whole call back - read the links again to see that it did. As they stood before the call: "
+                    + asItWas + ".");
+            }
+            continue;
+        }
+
         if (same(plan.Item5, plan.Item3)) continue;
         try
         {
@@ -687,8 +977,10 @@ if (refused == null)
     foreach (var e in chosen)
     {
         var parts = new List<string>();
-        foreach (var plan in plans.Where(p => p.Item1.Id == e.Id))
+        for (var index = 0; index < plans.Count; index++)
         {
+            var plan = plans[index];
+            if (plan.Item1.Id != e.Id) continue;
             // A READ-BACK THAT FAILED FAILS THE CALL. Taken as null it would pass
             // an unlink it never saw (Codex, PR #356).
             FamilyParameter after = null;
@@ -702,6 +994,31 @@ if (refused == null)
                     + "back after the call: " + ex.Message + " The call failed, and Heron rolls the whole call back - "
                     + "read the links again to see that it did. As they stood before the call: " + asItWas + ".");
             }
+            // A MATERIAL SET IS READ BACK AS ONE: no link left, and the material
+            // asked for (version 3).
+            if (plan.Item6 != null)
+            {
+                ElementId nowId = null;
+                try { nowId = plan.Item2.AsElementId(); } catch (Exception) { nowId = null; }
+                if (after != null || nowId == null || nowId != plan.Item6)
+                    throw new InvalidOperationException("\"" + plan.Item4 + "\" on " + describe(e) + " reads "
+                        + (after != null ? "linked to " + nameOf(after) : materialWords(nowId)) + " after being given "
+                        + materialWords(plan.Item6) + ". The call failed, and Heron rolls the whole call back - read "
+                        + "the links again to see that it did. As they stood before the call: " + asItWas + ".");
+                if (planAlready[index])
+                {
+                    alreadyLinked++;
+                    parts.Add(plan.Item4 + " already " + materialWords(nowId));
+                }
+                else
+                {
+                    changed++;
+                    parts.Add(plan.Item4 + " " + planBefore[index] + " -> " + materialWords(nowId)
+                        + (plan.Item5 != null ? " (its link was removed first)" : ""));
+                }
+                continue;
+            }
+
             if (!same(after, plan.Item3))
                 throw new InvalidOperationException("\"" + plan.Item4 + "\" on " + describe(e) + " reads " + nameOf(after)
                     + " after the call, not " + (plan.Item3 == null ? "unlinked" : "\"" + nameOf(plan.Item3) + "\"")
@@ -724,10 +1041,22 @@ if (refused == null)
         rows.Add(describe(e) + ": " + string.Join("; ", parts));
     }
     linkReport = string.Join("  ||  ", rows);
+    linked = plans.Any(p => p.Item6 == null && p.Item3 != null);
 
-    findings.Add("Family '" + doc.Title + "': " + changed + " link(s) changed and " + alreadyLinked
-        + " already as asked, on " + matched + " element(s) matching \"" + saidCategory + "\""
-        + (everySystem ? "" : " on the system \"" + saidSystem + "\"") + " - read back from the family.");
+    findings.Add("Family '" + doc.Title + "': " + changed + " link(s) or value(s) changed and " + alreadyLinked
+        + " already as asked, on " + matched + " element(s) "
+        + (byCategory ? "matching \"" + saidCategory + "\"" + (everySystem ? "" : " on the system \"" + saidSystem + "\"")
+            : byForms ? (string.Equals(saidForms, "selected", StringComparison.OrdinalIgnoreCase) ? "selected"
+                : "named by id")
+            : "- the nested type \"" + saidFamily + " : " + saidType + "\"")
+        + " - read back from the family.");
+    if (byNested && changed > 0)
+        findings.Add("Every copy of \"" + saidFamily + " : " + saidType + "\" placed in this family follows these "
+            + "links; another type of that family does not, until it is linked too.");
+    if (plans.Any(p => p.Item6 != null) && changed > 0)
+        findings.Add("A Material SET holds that material in every type. Linked to a family material parameter "
+            + "instead, its value is picked per type in Family Types - SET_FAMILY_TYPE_VALUES refuses a material "
+            + "by name, as its card says.");
     // With one link what the ones left out lack is that link; with more, which
     // one each lacks is named (row 5b-260).
     if (leftOut > 0 && asked.Count == 1)

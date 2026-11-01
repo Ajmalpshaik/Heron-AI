@@ -135,11 +135,11 @@ compatibility-note: >
   implementation impossible. Values cross as Revit's own strings instead, so
   no unit is named here at all.
 
-# ROUTING - repeated in REPORT_FAMILY_SIZE_TABLE.
+# ROUTING - repeated in REPORT_FAMILY_TABLES_IN_PROJECT.
 #
 #   "where does this family get its material" -> here
 #   "what parameters does this family have"   -> here
-#   "what sizes does the lookup table hold"   -> REPORT_FAMILY_SIZE_TABLE
+#   "what sizes does the lookup table hold"   -> REPORT_FAMILY_TABLES_IN_PROJECT
 #   "what material is this element"           -> READ_ELEMENT_MATERIAL, in a project
 
 utterances:

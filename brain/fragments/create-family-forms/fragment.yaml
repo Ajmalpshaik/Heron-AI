@@ -1,24 +1,34 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-GEO-060
-semantic-identity: "build a list of extrusions and revolves in one call, solid or void, as one undo"
+semantic-identity: "build extrusions and revolves in the family - one form or a whole list in one call, solid or void, as one undo"
 kind: action
 domain: revit.families
 capability: CREATE_FAMILY_FORMS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Builds MANY FORMS IN ONE CALL in the family open in the Family Editor -
-  a list of extrusions and revolves, one row per form, solid or void - and
-  gives back every form's id in the order listed. For a family of dozens of
-  parts, where CREATE_FAMILY_EXTRUSION and CREATE_FAMILY_REVOLUTION build one
-  form a call: the whole list is one call and ONE entry in the undo list.
+  Builds FORMS in the family open in the Family Editor - one extrusion or one
+  revolve, or a list of them, one row per form, solid or void - and gives back
+  every form's id in the order listed. A family of dozens of parts is one call
+  and ONE entry in the undo list.
+
+  **ONE FORM IS A LIST OF ONE ROW (version 2, 2026-11-01).**
+  CREATE_FAMILY_EXTRUSION and CREATE_FAMILY_REVOLUTION, which built one form a
+  call, were merged into this card and are DEPRECATED: "extrude a circle 300
+  diameter 500 high" is the row `kind=extrusion workPlane=Ref. Level
+  profile=circle 0,0 150 startMm=0 endMm=500 solid=true`. `formId` gives back
+  the first form's id alone, beside `formIds`, so a step written for those
+  tools' `formId` binds unchanged. The read-back says what theirs said: an
+  extrusion's loops - how many are outlines and how many holes inside them,
+  by where they lie - a revolve's angles and its axis, the plane's facing,
+  and a part-turn's warning to look at which way it swept.
 
   **EACH ROW STARTS `kind=extrusion` OR `kind=revolve`** and carries the
   single-form tools' own fields: `workPlane`, `profile` and `solid`, then
@@ -79,14 +89,23 @@ contract:
       # between - what the lock, link, cut, material and visibility tools take.
       role: result
       type: string
+    - name: formId
+      # VERSION 2, from CREATE_FAMILY_EXTRUSION and CREATE_FAMILY_REVOLUTION:
+      # the FIRST form's unique id alone - the whole answer for a list of one
+      # row - so every method step and chain written for those tools'
+      # `formId` binds unchanged. Empty when nothing was built.
+      role: result
+      type: string
     - name: formCount
       # How many forms were built - every row, or none.
       role: result
       type: int
     - name: built
       # Each form as Revit now holds it, one entry per row with || between:
-      # solid or void, kind, plane, its extent on all three axes in
-      # millimetres, a solid's volume, and any material or visibility set.
+      # solid or void, kind, plane and its facing, an extrusion's loops -
+      # outlines and holes inside them - and start and end, a revolve's angles
+      # and axis (version 2), its extent on all three axes in millimetres, a
+      # solid's volume, and any material or visibility set.
       role: result
       type: string
     - name: notAFamily
@@ -189,28 +208,51 @@ runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  The calls CREATE_FAMILY_EXTRUSION, CREATE_FAMILY_REVOLUTION,
-  SET_FAMILY_FORM_MATERIAL and SET_FAMILY_FORM_VISIBILITY already make on
+  The calls CREATE_FAMILY_EXTRUSION and CREATE_FAMILY_REVOLUTION made until
+  they were merged in, and LINK_FAMILY_PARAMETER and SET_FAMILY_FORM_VISIBILITY
+  make, on
   every release 2020 to 2027 - `FamilyItemFactory.NewExtrusion` and
   `NewRevolution`, `SketchPlane.Create(Document, ElementId)`,
   `Extrusion.StartOffset`, `Application.ShortCurveTolerance`,
   `FamilyManager.AssociateElementParameterToFamilyParameter`,
   `GenericForm.SetVisibility` and `Element.UniqueId` - with the material
-  parameter's kind read by reflection as SET_FAMILY_FORM_MATERIAL reads it,
+  parameter's kind read by reflection as LINK_FAMILY_PARAMETER reads it,
   because its type moved in 2022 and 2023. `System.IO.Path.GetTempPath`,
   `Guid.TryParse` and `File.ReadAllText` are the framework's own (.NET 4.0
   and later). Compiles on every release
   (tools/check-fragments-compile.py, 2026-10-11); how it behaves has not yet
   been run in Revit.
 
+# 2026-11-01 - CREATE_FAMILY_EXTRUSION AND CREATE_FAMILY_REVOLUTION WERE MERGED
+# INTO THIS CARD (version 2) on the owner's instruction ("make sure there is no
+# duplicate tools"), and are DEPRECATED. The same building: a closed profile
+# sketched on a named plane, extruded from a start to an end or turned about
+# an axis, solid or void, read back all or nothing. Their inputs are a row's
+# fields by the same names - workPlane, profile, startMm, endMm, solid;
+# axisLine, startDegrees, endDegrees - written exactly as they took them; their
+# `formId` is `formId` here, the first form's; their `built` is the row's entry
+# in `built`, saying what theirs said; notAFamily, refused and findings by the
+# same names. Added in version 2: `formId`, and the loops, angles, axis and
+# facing in `built`. NOTHING WAS OPPOSITE: this card was written from theirs,
+# with the same reader, the same checks and the same read-back.
+
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
 #   "build all these forms in one go"            -> here, a list of rows
 #   "make these ten extrusions and revolves"     -> here
-#   "extrude a circle 300 diameter 500 high"     -> CREATE_FAMILY_EXTRUSION,
-#                                                   one form
-#   "revolve this profile into a cone"           -> CREATE_FAMILY_REVOLUTION,
-#                                                   one form
+#   "extrude a circle 300 diameter 500 high"     -> here, a list of one row
+#                                                   (CREATE_FAMILY_EXTRUSION
+#                                                   until 2026-11-01)
+#   "make a void extrusion"                      -> here, solid=false
+#   "revolve this profile into a cone"           -> here, one kind=revolve row
+#                                                   (CREATE_FAMILY_REVOLUTION
+#                                                   until 2026-11-01)
+#   "make a box between these planes"            -> EXTRUDE_BETWEEN_PLANES,
+#                                                   a box locked to four planes
+#   "make an opening in this wall"               -> CREATE_OPENING, a project
+#                                                   wall or floor, not a family
+#   "array these round a circle"                 -> ARRAY_ELEMENTS_RADIAL,
+#                                                   copies, not a turned form
 #   "make a blend / sweep"                       -> their own tools; a row
 #                                                   here is an extrusion or a
 #                                                   revolve
@@ -222,3 +264,20 @@ utterances:
   - make these extrusions and revolves in one call
   - create the family's forms from this list
   - build every part of the family at once
+  # MOVED 2026-11-01 from CREATE_FAMILY_EXTRUSION, merged into this card.
+  - extrude a circle 300 diameter 500 high in the family
+  - make a cylinder on the ref level
+  - extrude this shape on the reference plane
+  - make an extrusion with this profile
+  - create a void extrusion in the family
+  - extrude a hexagon 20 mm thick
+  - make an L shaped extrusion
+  - extrude a circle 300 diameter 500 high
+  - make a void extrusion
+  # MOVED 2026-11-01 from CREATE_FAMILY_REVOLUTION, merged into this card.
+  - make a revolve in the family
+  - revolve this profile around the axis
+  - make a cone with a revolve
+  - create a revolved dome in the family
+  - make a void revolve
+  - turn this half section into a round body

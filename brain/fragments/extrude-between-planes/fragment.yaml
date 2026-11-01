@@ -42,7 +42,7 @@ purpose: >
   the API cuts nothing on its own - an earlier family build measured five ways
   and found no volume change - and the cut is COMBINE_FAMILY_FORMS's, which
   measures it. Any other shape, round ones included, is
-  CREATE_FAMILY_EXTRUSION's, and a round size is labelled by
+  CREATE_FAMILY_FORMS's, and a round size is labelled by
   LABEL_FAMILY_RADIUS. This card said until 2026-10-01 that a circle's size
   cannot be driven through the API on Revit 2020; that was measured for a
   PROJECT, and in a family the calls exist on every release - whether the
@@ -144,7 +144,7 @@ compatibility-note: >
 #
 #   "make a box between these planes"          -> here
 #   "extrude the neck on top of the body"      -> here, the body's top as base
-#   "cut a hole with a void"                   -> CREATE_FAMILY_EXTRUSION with
+#   "cut a hole with a void"                   -> CREATE_FAMILY_FORMS with
 #                                                 solid false, then
 #                                                 COMBINE_FAMILY_FORMS
 #   "make a floor from these room boundaries"  -> CREATE_FROM_ROOM_BOUNDARIES,

@@ -1,7 +1,7 @@
 positive:
   - given: >
       a new family from the metric Generic Model template with one solid
-      extrusion made by create-family-extrusion; forms = its id, subcategory
+      extrusion made by create-family-forms; forms = its id, subcategory
       "Casing", which the family does not have
     expect: >
       createdSubcategory true; changed reads the form going from "Generic

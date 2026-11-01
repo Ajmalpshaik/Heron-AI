@@ -16,7 +16,7 @@ risk: MODIFY
 purpose: >
   Draws electrical containment between consecutive points - cable tray or
   conduit, one segment per pair. The electrical half of the same job
-  CREATE_DUCT_RUNS and CREATE_PIPE do for air and water.
+  CREATE_DUCT_RUNS does for air and water.
 
   **Tray and conduit are ONE fragment, and that is a decision worth the
   sentence.** They are separate Revit classes with the same creation shape, and
@@ -107,13 +107,13 @@ compatibility-note: >
   live in the electrical namespace, which the wrapper already carries. No units
   API is touched and no ElementId is constructed.
 
-# ROUTING - repeated in CREATE_DUCT_RUNS, CREATE_PIPE and SET_MEP_SIZE.
+# ROUTING - repeated in CREATE_DUCT_RUNS and SET_MEP_SIZE.
 #
 #   "draw a cable tray"              -> here, with tray asked for
 #   "draw a conduit"                 -> here, with conduit asked for
 #   "run the containment across"     -> here
 #   "draw a duct from here to there" -> CREATE_DUCT_RUNS
-#   "run a pipe from here to there"  -> CREATE_PIPE
+#   "run a pipe from here to there"  -> CREATE_DUCT_RUNS, with a pipe type
 #   "make it 300 wide"               -> SET_MEP_SIZE - the run already exists
 #   "they are touching but not
 #    connected"                      -> CONNECT_OPEN_ENDS

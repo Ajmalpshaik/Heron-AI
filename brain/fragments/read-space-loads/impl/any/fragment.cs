@@ -1,5 +1,23 @@
 // NOT STANDALONE. Assumes `doc` and `elements` are in scope; leaves `findings`,
-// `heatingW`, `coolingW`, `airflowLs`, `notSpaces` and `noLoad` behind.
+// `heatingW`, `coolingW`, `airflowLs`, `notSpaces` and `noLoad` behind - and,
+// since version 2, `specifiedSupplyLs`, `calculatedSupplyLs`,
+// `specifiedReturnLs`, `specifiedExhaustLs`, `actualSupplyLs`,
+// `actualReturnLs`, `actualExhaustLs`, `noDesignFigure` and `unplaced`.
+//
+// VERSION 2 (2026-11-01) took in REPORT_SPACE_AIRFLOW, which is DEPRECATED,
+// merged into this card. What it read that this did not is read here now:
+// the SPECIFIED (typed) supply, return and exhaust airflow and the ACTUAL
+// supply, return and exhaust - the sum of what the space's terminals carry,
+// Revit's own figure - in litres per second; `noDesignFigure`, the spaces
+// with no typed airflow of any kind, so a zero-against-zero space never reads
+// as balanced; and `unplaced`, a space with no area, named and not read.
+//
+// TYPED AND CALCULATED ARE KEPT APART - the safer of the two cards' rules.
+// `airflowLs` is what version 1 gave: the typed figure where one was entered,
+// the calculated one otherwise, and the finding says which. The design TARGET
+// is never taken from a calculated figure silently: `specifiedSupplyLs` holds
+// only what was typed, `calculatedSupplyLs` only what the analysis gave, and
+// `noDesignFigure` is decided on typed figures alone.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -39,6 +57,30 @@ var airflowLs = new Dictionary<ElementId, double>();
 var notSpaces = new List<ElementId>();
 var noLoad = new List<ElementId>();
 
+// VERSION 2, from REPORT_SPACE_AIRFLOW - see the header.
+var specifiedSupplyLs = new Dictionary<ElementId, double>();
+var calculatedSupplyLs = new Dictionary<ElementId, double>();
+var specifiedReturnLs = new Dictionary<ElementId, double>();
+var specifiedExhaustLs = new Dictionary<ElementId, double>();
+var actualSupplyLs = new Dictionary<ElementId, double>();
+var actualReturnLs = new Dictionary<ElementId, double>();
+var actualExhaustLs = new Dictionary<ElementId, double>();
+var noDesignFigure = new List<ElementId>();
+var unplaced = new List<ElementId>();
+
+// A built-in airflow parameter in Revit's internal cubic feet per second, 0
+// when the space has none - REPORT_SPACE_AIRFLOW's own read.
+Func<Element, BuiltInParameter, double> flowOf = (element, which) =>
+{
+    try
+    {
+        var p = element.get_Parameter(which);
+        if (p != null && p.HasValue) return p.AsDouble();
+    }
+    catch (Exception) { }
+    return 0.0;
+};
+
 // Exact. See above.
 var litresPerCubicFoot = 28.316846592;
 
@@ -55,6 +97,54 @@ foreach (var element in elements)
     // a model with rooms and no spaces answers nothing here, and that is the
     // finding, not an empty result.
     if (space == null) { notSpaces.Add(element.Id); continue; }
+
+    var label = string.Format("{0} {1}", space.Number ?? "", space.Name ?? "").Trim();
+
+    // AN UNPLACED SPACE IS REPORTED, NOT HIDDEN (version 2, from
+    // REPORT_SPACE_AIRFLOW). Revit gives it an area of zero and it carries no
+    // meaningful load or flow; a space in the schedule that is not in the model
+    // is a real finding, and reading it would print zeros as if they were
+    // figures.
+    double area = 0.0;
+    try { area = space.Area; } catch (Exception) { area = 0.0; }
+    if (area <= 0.0)
+    {
+        unplaced.Add(space.Id);
+        findings.Add(string.Format("{0}  - NOT PLACED. In the schedule, not in the model - it has no area, "
+            + "so nothing is read from it", label));
+        continue;
+    }
+
+    // THE AIRFLOWS, TYPED AND ACTUAL (version 2). Read before the loads,
+    // because they do not throw where the loads do, and a space whose loads
+    // cannot be computed still has its typed design flow and its terminals.
+    var typedSupply = flowOf(space, BuiltInParameter.ROOM_DESIGN_SUPPLY_AIRFLOW_PARAM);
+    var typedReturn = flowOf(space, BuiltInParameter.ROOM_DESIGN_RETURN_AIRFLOW_PARAM);
+    var typedExhaust = flowOf(space, BuiltInParameter.ROOM_DESIGN_EXHAUST_AIRFLOW_PARAM);
+    var realSupply = flowOf(space, BuiltInParameter.ROOM_ACTUAL_SUPPLY_AIRFLOW_PARAM);
+    var realReturn = flowOf(space, BuiltInParameter.ROOM_ACTUAL_RETURN_AIRFLOW_PARAM);
+    var realExhaust = flowOf(space, BuiltInParameter.ROOM_ACTUAL_EXHAUST_AIRFLOW_PARAM);
+
+    specifiedSupplyLs[space.Id] = typedSupply * litresPerCubicFoot;
+    specifiedReturnLs[space.Id] = typedReturn * litresPerCubicFoot;
+    specifiedExhaustLs[space.Id] = typedExhaust * litresPerCubicFoot;
+    actualSupplyLs[space.Id] = realSupply * litresPerCubicFoot;
+    actualReturnLs[space.Id] = realReturn * litresPerCubicFoot;
+    actualExhaustLs[space.Id] = realExhaust * litresPerCubicFoot;
+
+    // A SPACE WITH NO DESIGN FLOW LOOKS BALANCED - zero typed, zero actual,
+    // difference zero. No typed target of ANY kind - supply, return and
+    // exhaust all zero - is the case; a return-only space is not it. A
+    // CALCULATED supply is never counted as a design target here.
+    var noDesign = typedSupply <= 1e-9 && typedReturn <= 1e-9 && typedExhaust <= 1e-9;
+    if (noDesign) noDesignFigure.Add(space.Id);
+
+    var flows = string.Format(
+        "; specified supply {0:0.#}, return {1:0.#}, exhaust {2:0.#} L/s; actual supply {3:0.#}, "
+        + "return {4:0.#}, exhaust {5:0.#} L/s{6}",
+        typedSupply * litresPerCubicFoot, typedReturn * litresPerCubicFoot, typedExhaust * litresPerCubicFoot,
+        realSupply * litresPerCubicFoot, realReturn * litresPerCubicFoot, realExhaust * litresPerCubicFoot,
+        noDesign ? " - NO DESIGN AIRFLOW TYPED: zero against zero is not a balance, nobody has designed it" : "");
 
     // THESE SIX PROPERTIES THROW, AND THE HANDLER FOR IT WAS UNREACHABLE.
     //
@@ -97,8 +187,8 @@ foreach (var element in elements)
             "{0}  - NO LOAD READABLE. Revit refused the figures, which it does when "
             + "the model's Areas and Volumes computation is off or the space is "
             + "unbounded. Turn on Area and Volume Computations, or bound the space, "
-            + "and ask again",
-            string.Format("{0} {1}", space.Number ?? "", space.Name ?? "").Trim()));
+            + "and ask again{1}",
+            label, flows));
         continue;
     }
 
@@ -116,6 +206,7 @@ foreach (var element in elements)
     heatingW[space.Id] = heat * wattsPerInternalLoad;
     coolingW[space.Id] = cool * wattsPerInternalLoad;
     airflowLs[space.Id] = air * litresPerCubicFoot;
+    calculatedSupplyLs[space.Id] = calcAir * litresPerCubicFoot;
 
     var name = string.Format("{0} {1}", space.Number ?? "", space.Name ?? "").Trim();
 
@@ -126,7 +217,7 @@ foreach (var element in elements)
         noLoad.Add(space.Id);
         findings.Add(string.Format(
             "{0}  - NO LOAD. Either the heating and cooling analysis has never been "
-            + "run, or the space is unbounded and has no volume to load", name));
+            + "run, or the space is unbounded and has no volume to load{1}", name, flows));
         continue;
     }
 
@@ -134,9 +225,9 @@ foreach (var element in elements)
     // the calculated one is either a decision or a stale analysis, and the row
     // has to let somebody tell which.
     findings.Add(string.Format(
-        "{0}  - heating {1:0} W ({2}), cooling {3:0} W ({4}), supply {5:0.#} L/s ({6})",
+        "{0}  - heating {1:0} W ({2}), cooling {3:0} W ({4}), supply {5:0.#} L/s ({6}){7}",
         name,
         heat * wattsPerInternalLoad, heatIsDesign ? "entered" : "calculated",
         cool * wattsPerInternalLoad, coolIsDesign ? "entered" : "calculated",
-        air * litresPerCubicFoot, airIsDesign ? "entered" : "calculated"));
+        air * litresPerCubicFoot, airIsDesign ? "entered" : "calculated", flows));
 }

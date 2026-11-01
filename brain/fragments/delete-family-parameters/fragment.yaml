@@ -13,7 +13,7 @@ semantic-identity: "delete these family parameters from the family being edited,
 # delete - and PROVIDES `added`. A remove mode would have to make all three
 # optional, put its proof back to DRAFT, and leave one card answering both
 # "add a Width parameter" and "delete Width" under one risk declaration.
-# SET_FAMILY_FORMULA, LINK_FAMILY_PARAMETER and LINK_FAMILY_FORM_PARAMETER each
+# SET_FAMILY_FORMULA and LINK_FAMILY_PARAMETER (LINK_FAMILY_FORM_PARAMETER merged in) each
 # act on ONE parameter's wiring, which is exactly what this refuses to touch.
 # DELETE_ELEMENTS takes elements, and a family parameter is not one a view can
 # select. Asked for on 2026-10-04 after two leftover parameters in a PPR check

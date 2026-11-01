@@ -45,7 +45,7 @@ purpose: >
      it: the Left elevation for a beam, the plan for a column; then
      LABEL_FAMILY_DIMENSION each size.
   4. A BEAM'S SECTION: Heron cannot edit the sample's sketch, so the section
-     is a NEW CREATE_FAMILY_EXTRUSION on a plane facing left or right (the
+     is a NEW extrusion row of CREATE_FAMILY_FORMS on a plane facing left or right (the
      section in Y,Z), its two end faces locked to Member Left and Member Right
      and its sides to the section planes with LOCK_FORM_TO_PLANES - then
      DELETE_ELEMENTS removes the template's sample, its id from
@@ -55,7 +55,7 @@ purpose: >
   5. SET_FAMILY_SETTINGS "Material for Model Behavior=Steel" (or Concrete,
      Precast Concrete, Wood, Other) - steel and wood get cutback and shape
      handles, concrete auto-joins - and "Section Shape=..." from Revit's own
-     list. SET_FAMILY_FORM_MATERIAL to a material parameter;
+     list. LINK_FAMILY_PARAMETER, links Material=<it>, to a material parameter;
      SET_FAMILY_FORM_VISIBILITY where the 3D form should not show at Coarse.
   6. REPORT_FAMILY_FORMS, then FLEX_FAMILY at the smallest and largest
      sections - then LOAD_FAMILY into a test project: a beam placed between two
@@ -84,12 +84,12 @@ needs:
   - REPORT_FAMILY_TYPE_CATALOG
   - CREATE_REFERENCE_PLANES
   - LABEL_FAMILY_DIMENSION
-  - CREATE_FAMILY_EXTRUSION
+  - CREATE_FAMILY_FORMS
   - EXTRUDE_BETWEEN_PLANES
   - LOCK_FORM_TO_PLANES
   - DELETE_ELEMENTS
   - SET_FAMILY_SETTINGS
-  - SET_FAMILY_FORM_MATERIAL
+  # SET_FAMILY_FORM_MATERIAL was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - SET_FAMILY_FORM_VISIBILITY
   - REPORT_FAMILY_FORMS
   # FAMILY-CREATION's steps, which this skill says still hold.
@@ -99,18 +99,18 @@ needs:
   - REPORT_SHARED_PARAMETER_FILE
   - ADD_FAMILY_SHARED_PARAMETERS
   - SET_FAMILY_PLANE_REFERENCE
-  - CREATE_FAMILY_REVOLUTION
+  # CREATE_FAMILY_REVOLUTION was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
   - CREATE_FAMILY_BLEND
   - CREATE_FAMILY_SWEEP
   - CREATE_FAMILY_SWEPT_BLEND
-  - LINK_FAMILY_FORM_PARAMETER
+  # LINK_FAMILY_FORM_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - LABEL_FAMILY_RADIUS
   - COMBINE_FAMILY_FORMS
   - ARRAY_FAMILY_FORMS
   - ADD_FAMILY_CONNECTOR
   - PLACE_NESTED_FAMILY
   - LOCK_NESTED_FAMILY_TO_PLANES
-  - LINK_NESTED_TYPE_PARAMETER
+  # LINK_NESTED_TYPE_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - ADD_FAMILY_TYPE_PARAMETER
   - LINK_FAMILY_PARAMETER
   - SET_FAMILY_FORM_SUBCATEGORY

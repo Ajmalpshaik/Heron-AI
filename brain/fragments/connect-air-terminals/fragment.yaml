@@ -168,7 +168,7 @@ compatibility-note: >
 # refused. NEEDS-CHECKING AJ1 is the check on a real model: one terminal that
 # should move and one that should not.
 
-# ROUTING - repeated in CONNECT_OPEN_ENDS and PLACE_MEP_FITTING.
+# ROUTING - repeated in CONNECT_OPEN_ENDS and FIT_MEP_JOINTS.
 #
 #   "connect the diffusers to the duct" -> here - a TAP cut into the duct's side
 #   "tap these terminals in"            -> here
@@ -176,7 +176,7 @@ compatibility-note: >
 #   "they are touching but not
 #    connected"                         -> CONNECT_OPEN_ENDS - two ends already
 #                                          at one point, and no fitting added
-#   "join these two ducts"              -> PLACE_MEP_FITTING
+#   "join these two ducts"              -> FIT_MEP_JOINTS
 #   "the flow is zero everywhere"       -> often this: nothing is tapped in, so
 #                                          Revit has no terminals to draw air
 #                                          through the run
