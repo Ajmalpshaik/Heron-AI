@@ -548,8 +548,10 @@ def door_refusal(door, declared, capability):
     server could put anything through run_fragment_read. What holds for every
     caller is two things, and the first is NOT a guarantee on its own: Revit
     refuses a change made outside a transaction - yet row 5b-350 is a read run
-    of place-nested-family that reported that refusal and still left a real
-    instance in the family, twice, cause not established (NEEDS-CHECKING CP1).
+    of place-nested-family (PLACE_FAMILY_INSTANCES in a family since
+    2026-11-01, when it was merged there) that reported that refusal and still left a
+    real instance in the family, twice, cause not established (NEEDS-CHECKING
+    CP1).
     So the add-in also counts the model before and after every read run and
     answers one that moved it `read_changed_model`, never as a read. That
     second check sees an element that appeared or disappeared and a model newly

@@ -40,7 +40,8 @@ purpose: >
      another a hole - no construction lines, which would become part of it.
   6. FLEX_FAMILY at two really different sizes.
   7. TO USE IT: LOAD_FAMILY into the family that sweeps it, sweep the path with
-     CREATE_FAMILY_SWEEP, then SET_FAMILY_SWEEP_PROFILE to draw that sweep with
+     a CREATE_FAMILY_FORMS kind=sweep row, then SET_FAMILY_SWEEP_PROFILE, by
+     the sweep's id from formIds, to draw that sweep with
      the loaded profile; ADD_FAMILY_TYPE_PARAMETER of the Profiles category,
      naming the sweep, lets each type choose its profile. In a project the
      profile is chosen in the wall sweep's, railing's or mullion's own type.
@@ -65,13 +66,14 @@ needs:
   - LABEL_FAMILY_DIMENSION
   - DRAW_FAMILY_DETAIL_LINES
   # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
-  # GUIDs, against the family, before ADD_FAMILY_SHARED_PARAMETERS writes.
+  # GUIDs, against the family, before ADD_FAMILY_PARAMETERS' shared kind writes.
   - REPORT_SHARED_PARAMETER_FILE
-  - ADD_FAMILY_SHARED_PARAMETERS
+  # ADD_FAMILY_SHARED_PARAMETERS was listed here until 2026-11-01, when it was merged into ADD_FAMILY_PARAMETERS.
   # The proof, and never skipped.
   - FLEX_FAMILY
   - LOAD_FAMILY
-  - CREATE_FAMILY_SWEEP
+  # CREATE_FAMILY_SWEEP was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  - CREATE_FAMILY_FORMS
   - SET_FAMILY_SWEEP_PROFILE
   - ADD_FAMILY_TYPE_PARAMETER
 

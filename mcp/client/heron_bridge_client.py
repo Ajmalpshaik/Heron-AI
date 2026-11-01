@@ -1307,7 +1307,8 @@ def write_operation(root, name):
 # was left off, on purpose: no transaction is open there, Revit refuses the
 # change, and the run shows how far the C# gets. Row 5b-350 is that run
 # leaving a real element in the model - place-nested-family, twice, while
-# reporting Revit's refusal. Row 73 is the same shape from the other side:
+# reporting Revit's refusal (PLACE_FAMILY_INSTANCES places a nested family
+# since 2026-11-01, when place-nested-family was merged there). Row 73 is the same shape from the other side:
 # unload-links - RELOAD_LINKS with unload true since 2026-11-01, when it was
 # merged there - run this way, unloaded six links for real with no undo. A
 # run that may change the model goes with --write, inside a TransactionGroup

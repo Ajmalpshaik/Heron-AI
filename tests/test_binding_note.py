@@ -440,6 +440,16 @@ def main():
          None, False),
         ({"name": "names", "type": "IList<string>", "source": "request",
           "optional": "true"}, None, False),
+        # 2026-11-01: an Element marked optional binds null and a point list
+        # empty, as the host's AbsentValue does (CREATE_OPENING's family half).
+        ({"name": "host", "type": "Element", "source": "request",
+          "optional": "true"}, None, True),
+        ({"name": "host", "type": "Element", "source": "request"},
+         None, False),
+        ({"name": "boundary", "type": "IList<XYZ>", "source": "request",
+          "optional": "true"}, None, True),
+        ({"name": "point", "type": "XYZ", "source": "request",
+          "optional": "true"}, None, False),
     ]
     mirrored = absent_text is not None and all(
         absent_text(need) == text and HF.need_may_be_absent(need) == may

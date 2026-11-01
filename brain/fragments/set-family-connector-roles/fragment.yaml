@@ -41,7 +41,7 @@ purpose: >
   dialog does with New Parameter - when the family has none; "voltage=400 V
   [Voltage]" does both and writes 400 V into the current type. A project
   schedules a family's value only through a SHARED parameter: add it first
-  with ADD_FAMILY_SHARED_PARAMETERS and name it in the brackets. Voltage in
+  with ADD_FAMILY_PARAMETERS, kind shared, and name it in the brackets. Voltage in
   V or kV, Apparent Load in VA or kVA, Number of Poles 1 to 3 (a three-phase
   connector is 3), Power Factor above 0 to 1 or a percentage. Revit keeps a
   voltage and a load in its own internal units; the conversion is checked

@@ -68,7 +68,7 @@ through only while the owner's **Publish** or **Admin** switch is on in the ribb
 
 **Since 2026-10-17** `fragment` and `validate` without `--write`, and every `prove`, refuse a fragment
 or setup step declared `MODIFY` or above before Revit is asked. A read run of `place-nested-family`
-reported Revit's refusal and still left a real instance in the family, twice
+(`place-family-instances` in a family since 2026-11-01, when it was merged there) reported Revit's refusal and still left a real instance in the family, twice
 ([row 5b-350](../../../docs/fragment-issues/section-5b-rows-326-350.md)). To see a MODIFY fragment's
 refusals, run it with `--write` and no `--apply`: the same refusals, and a rollback behind them. A
 NEEDS-CHECKING row that says "without `--write`" for a MODIFY fragment was written before this.

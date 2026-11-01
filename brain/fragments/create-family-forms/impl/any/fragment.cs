@@ -12,6 +12,28 @@
 // `formId`, the FIRST form's id, beside `formIds`, so every method step and
 // chain written for the single-form tools' `formId` binds unchanged.
 //
+// VERSION 3 (2026-11-01) took in CREATE_FAMILY_BLEND, CREATE_FAMILY_SWEEP and
+// CREATE_FAMILY_SWEPT_BLEND, merged into this card and DEPRECATED. A row may
+// now be `kind=blend` (workPlane, baseProfile, topProfile, topMm, solid),
+// `kind=sweep` (workPlane, path, profile, solid) or `kind=swept blend`
+// (workPlane, path, bottomProfile, topProfile, solid) - each card's own
+// fields, read as that card read them, with its own checks and read-back:
+//   A BLEND'S profiles are one loop each, the top `topMm` along the axis the
+//   plane faces; a circle is split in two before Revit sees it; which way it
+//   runs is Revit's call from the way the loops go round (5b-369), so up to
+//   four ways are built - base first as written, reversed, then top first -
+//   and each READ BACK (plane to top along the axis, the base's outline on
+//   the plane and the top's at the top), a wrong one deleted before the next.
+//   A SWEEP'S path is open corners and arcs, never closed back to its start
+//   by anything but its own last corner; its profile is drawn about its own
+//   origin, loops | between, a loop inside another a hole by where it lies
+//   (5b-276); the profile's area and the path's length are said beside the
+//   volume, so a sweep far from area x length is seen at once.
+//   A SWEPT BLEND'S path is ONE straight piece or ONE arc; its two profiles
+//   are one loop each, bottom at the path's start and top at its end.
+// Every row's id is in `formIds`, so SET_FAMILY_SWEEP_PROFILE takes a
+// sweep's id from here as it took CREATE_FAMILY_SWEEP's `formId`.
+//
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one - so the
 // whole list is ONE entry in the Family Editor's undo list, and one Undo takes
 // every form back (Article 8).
@@ -284,6 +306,90 @@ Func<string, string, List<double[]>> loopOf = (text, where) =>
     return segments;
 };
 
+// VERSION 3, CREATE_FAMILY_SWEEP's reader: A PATH, as segments in the same
+// shape as a loop's - but open, and never closed back to its start by anything
+// but its own last corner.
+Func<string, string, List<double[]>> pathOf = (text, where) =>
+{
+    var said = System.Text.RegularExpressions.Regex.Replace((text ?? "").Trim(), @"\s*,\s*", ",");
+    var items = said.Split(';').Select(s => s.Trim()).Where(s => s.Length > 0).ToList();
+    var first = items.Count == 0 ? null : pair(items[0]);
+    if (first == null)
+    {
+        problems.Add(where + ": the path does not start with a point \"X,Y\". A path is corners with semicolons "
+            + "between, and arcs \"arc MX,MY X,Y\" - \"0,0; 1000,0; arc 1300,300 1000,600\". It reads \"" + said + "\".");
+        return null;
+    }
+    var segments = new List<double[]>();
+    var at = first;
+    foreach (var item in items.Skip(1))
+    {
+        var parts = item.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length > 0 && parts[0].ToLowerInvariant() == "arc")
+        {
+            var through = parts.Length == 3 ? pair(parts[1]) : null;
+            var end = parts.Length == 3 ? pair(parts[2]) : null;
+            if (through == null || end == null)
+            {
+                problems.Add(where + ": the path's \"" + item + "\" is not an arc written \"arc MX,MY X,Y\".");
+                return null;
+            }
+            segments.Add(new[] { 1.0, at[0], at[1], through[0], through[1], end[0], end[1] });
+            at = end;
+        }
+        else
+        {
+            var next = parts.Length == 1 ? pair(parts[0]) : null;
+            if (next == null)
+            {
+                problems.Add(where + ": the path's \"" + item + "\" is neither a point \"X,Y\" nor an arc \"arc MX,MY X,Y\".");
+                return null;
+            }
+            segments.Add(new[] { 0.0, at[0], at[1], 0, 0, next[0], next[1] });
+            at = next;
+        }
+    }
+    if (segments.Count == 0)
+    {
+        problems.Add(where + ": the path has one point and no length - it needs at least a second point.");
+        return null;
+    }
+    foreach (var s in segments)
+    {
+        var chord = Math.Sqrt(Math.Pow(s[5] - s[1], 2) + Math.Pow(s[6] - s[2], 2));
+        if (s[0] == 0.0 && chord < shortest)
+        {
+            problems.Add(where + ": the path has a piece from " + plain(s[1]) + "," + plain(s[2]) + " to " + plain(s[5])
+                + "," + plain(s[6]) + " shorter than Revit's shortest line, " + plain(shortest) + " mm.");
+            return null;
+        }
+        if (s[0] == 1.0)
+        {
+            var ux = s[3] - s[1]; var uy = s[4] - s[2];
+            var vx = s[5] - s[1]; var vy = s[6] - s[2];
+            var lu = Math.Sqrt(ux * ux + uy * uy);
+            var lv = Math.Sqrt(vx * vx + vy * vy);
+            var lw = Math.Sqrt(Math.Pow(s[5] - s[3], 2) + Math.Pow(s[6] - s[4], 2));
+            if (lu < shortest || lv < shortest || lw < shortest || Math.Abs(ux * vy - uy * vx) < 1e-6 * lu * lv)
+            {
+                problems.Add(where + ": the path's arc from " + plain(s[1]) + "," + plain(s[2]) + " through "
+                    + plain(s[3]) + "," + plain(s[4]) + " to " + plain(s[5]) + "," + plain(s[6]) + " is not an arc - "
+                    + "its three points are in a line, or two are in the same place.");
+                return null;
+            }
+        }
+    }
+    // A LAST CORNER ALL BUT ON THE FIRST CLOSES THE PATH EXACTLY.
+    var lastPiece = segments[segments.Count - 1];
+    var gap = Math.Sqrt(Math.Pow(lastPiece[5] - first[0], 2) + Math.Pow(lastPiece[6] - first[1], 2));
+    if (gap > 1e-9 && gap < shortest)
+    {
+        lastPiece[5] = first[0];
+        lastPiece[6] = first[1];
+    }
+    return segments;
+};
+
 // ---- the planes -------------------------------------------------------------
 
 // (element, axis it faces, position along that axis in feet, name) for every
@@ -355,7 +461,24 @@ Func<FamilyParameter, bool> isMaterial = p =>
 
 // Every field a row may carry - the single-form tools' own names for them.
 var fieldNames = new[] { "kind", "workPlane", "profile", "startMm", "endMm", "axisLine", "startDegrees",
-    "endDegrees", "solid", "material", "detailLevels", "views" };
+    "endDegrees", "solid", "material", "detailLevels", "views",
+    // VERSION 3: CREATE_FAMILY_BLEND's, CREATE_FAMILY_SWEEP's and
+    // CREATE_FAMILY_SWEPT_BLEND's own names.
+    "baseProfile", "topProfile", "topMm", "path", "bottomProfile" };
+// Each kind's own fields, and every field that belongs to a kind - so a field
+// of another kind in a row is refused rather than ignored.
+var kindFields = new Dictionary<string, string[]>
+{
+    { "extrusion", new[] { "workPlane", "profile", "startMm", "endMm", "solid" } },
+    { "revolve", new[] { "workPlane", "profile", "axisLine", "startDegrees", "endDegrees", "solid" } },
+    { "blend", new[] { "workPlane", "baseProfile", "topProfile", "topMm", "solid" } },
+    { "sweep", new[] { "workPlane", "path", "profile", "solid" } },
+    { "swept blend", new[] { "workPlane", "path", "bottomProfile", "topProfile", "solid" } },
+};
+var kindOwned = new[] { "profile", "startMm", "endMm", "axisLine", "startDegrees", "endDegrees", "baseProfile",
+    "topProfile", "topMm", "path", "bottomProfile" };
+Func<string, string> kindWords = k => k == "extrusion" ? "an extrusion" : k == "revolve" ? "a revolve"
+    : k == "blend" ? "a blend" : k == "sweep" ? "a sweep" : "a swept blend";
 var mostRows = 200;
 Func<string, string> shortened = text =>
 {
@@ -377,7 +500,12 @@ var rowMaterial = new List<Material>();
 var rowByCategory = new List<bool>();
 var rowShows = new List<bool[]>();
 var rowSnapped = new List<int>();
+// VERSION 3: a blend's and a swept blend's second profile, one loop - and a
+// sweep's or a swept blend's path. Null for the kinds that have none.
+var rowTopLoop = new List<List<double[]>>();
+var rowPath = new List<List<double[]>>();
 var rowCount = 0;
+var everyKind = "kind=extrusion, kind=revolve, kind=blend, kind=sweep or kind=swept blend";
 
 if (!doc.IsFamilyDocument)
 {
@@ -393,8 +521,8 @@ else
     var said = (forms ?? "").Trim();
     string rowsText = null;
     if (said.Length == 0)
-        problems.Add("No forms were listed. Each row starts kind=extrusion or kind=revolve - or give the full path "
-            + "of a file that holds the rows.");
+        problems.Add("No forms were listed. Each row starts " + everyKind + " - or give the full "
+            + "path of a file that holds the rows.");
     else if (System.Text.RegularExpressions.Regex.IsMatch(said, @"\bkind\s*=", ignoreCase))
         rowsText = said;
     else
@@ -420,8 +548,8 @@ else
         try { if (System.IO.Path.IsPathRooted(path)) full = System.IO.Path.GetFullPath(path); }
         catch (Exception) { full = null; }
         if (full == null)
-            problems.Add("\"" + shortened(said) + "\" is neither a list of forms - each row starts kind=extrusion or "
-                + "kind=revolve - nor the full path of a file that holds one.");
+            problems.Add("\"" + shortened(said) + "\" is neither a list of forms - each row starts " + everyKind
+                + " - nor the full path of a file that holds one.");
         else if (!full.StartsWith(temporary, StringComparison.OrdinalIgnoreCase)
             && (shared == null || !full.StartsWith(shared, StringComparison.OrdinalIgnoreCase)))
             problems.Add("The file " + full + " is not in the temporary folder, " + temporary
@@ -446,11 +574,11 @@ else
         if (pieces.Count > 0 && !System.Text.RegularExpressions.Regex.IsMatch(pieces[0], @"^kind\s*=", ignoreCase))
         {
             problems.Add("The list has \"" + shortened(pieces[0]) + "\" before its first row - every row starts "
-                + "kind=extrusion or kind=revolve.");
+                + everyKind + ".");
             pieces.RemoveAt(0);
         }
         if (pieces.Count == 0 && problems.Count == 0)
-            problems.Add("The list holds no rows - each row starts kind=extrusion or kind=revolve.");
+            problems.Add("The list holds no rows - each row starts " + everyKind + ".");
         if (pieces.Count > mostRows)
             problems.Add("The list has " + pieces.Count + " rows, and one call builds at most " + mostRows
                 + ". Split it into calls of up to " + mostRows + ".");
@@ -487,29 +615,29 @@ else
         }
         Func<string, string> field = name => fields.ContainsKey(name) ? fields[name] : null;
 
-        var kindSaid = (field("kind") ?? "").Trim().ToLowerInvariant();
+        // VERSION 3: blend, sweep and swept blend as well - CREATE_FAMILY_BLEND's,
+        // CREATE_FAMILY_SWEEP's and CREATE_FAMILY_SWEPT_BLEND's own kinds.
+        var kindSaid = squash(field("kind"));
         var kindIs = kindSaid == "extrusion" ? "extrusion"
-            : kindSaid == "revolve" || kindSaid == "revolution" ? "revolve" : null;
+            : kindSaid == "revolve" || kindSaid == "revolution" ? "revolve"
+            : kindSaid == "blend" ? "blend"
+            : kindSaid == "sweep" ? "sweep"
+            : kindSaid == "sweptblend" ? "swept blend" : null;
         if (kindIs == null)
         {
-            problems.Add(where + ": kind is \"" + shortened(kindSaid) + "\" - a row here is an extrusion or a "
-                + "revolve. A blend, a sweep and a swept blend each have a tool of their own.");
+            problems.Add(where + ": kind is \"" + shortened(field("kind") ?? "") + "\" - a row here is an extrusion, "
+                + "a revolve, a blend, a sweep or a swept blend.");
             continue;
         }
 
-        var needed = kindIs == "extrusion" ? new[] { "workPlane", "profile", "startMm", "endMm", "solid" }
-            : new[] { "workPlane", "profile", "axisLine", "startDegrees", "endDegrees", "solid" };
-        var foreign = kindIs == "extrusion" ? new[] { "axisLine", "startDegrees", "endDegrees" }
-            : new[] { "startMm", "endMm" };
+        var needed = kindFields[kindIs];
         var missing = needed.Where(n => string.IsNullOrEmpty(field(n))).ToList();
         if (missing.Count > 0)
-            problems.Add(where + " (" + (kindIs == "extrusion" ? "an extrusion" : "a revolve") + ") has no "
-                + string.Join(", ", missing) + ".");
-        var stray = foreign.Where(n => field(n) != null).ToList();
+            problems.Add(where + " (" + kindWords(kindIs) + ") has no " + string.Join(", ", missing) + ".");
+        var stray = kindOwned.Where(n => !needed.Contains(n) && field(n) != null).ToList();
         if (stray.Count > 0)
-            problems.Add(where + " is " + (kindIs == "extrusion" ? "an extrusion" : "a revolve") + " and gives "
-                + string.Join(", ", stray) + " - " + (kindIs == "extrusion" ? "a revolve's" : "an extrusion's")
-                + " fields. Say kind=" + (kindIs == "extrusion" ? "revolve" : "extrusion") + " if that is meant.");
+            problems.Add(where + " is " + kindWords(kindIs) + " and gives " + string.Join(", ", stray)
+                + " - another kind's fields. This kind takes " + string.Join(", ", needed) + ".");
         if (problems.Count > problemsBefore) continue;
 
         // THE PLANE, by its name, as the single-form tools find it.
@@ -523,19 +651,86 @@ else
         else if (found.Count > 1) problems.Add(where + ": \"" + wanted + "\" names " + found.Count
             + " planes - rename one first.");
         else if (found[0].Item2 < 0)
-            problems.Add(where + ": \"" + wanted + "\" is at an angle. A profile here is written in the model's own "
+            problems.Add(where + ": \"" + wanted + "\" is at an angle. A " + (kindIs == "sweep"
+                || kindIs == "swept blend" ? "path" : "profile") + " here is written in the model's own "
                 + "coordinates, so the plane must face left-right, front-back or up.");
         else plane = found[0];
 
-        // THE PROFILE, loops with `|` between - the single-form tools' own reader.
-        var loopTexts = field("profile").Split('|').Select(p => p.Trim()).Where(p => p.Length > 0).ToList();
+        // THE PROFILE, loops with `|` between - the single-form tools' own
+        // reader. A blend's and a swept blend's profiles are ONE loop each, as
+        // CREATE_FAMILY_BLEND and CREATE_FAMILY_SWEPT_BLEND took them (version 3).
         var loops = new List<List<double[]>>();
-        if (loopTexts.Count == 0) problems.Add(where + " has no profile.");
-        for (var i = 0; i < loopTexts.Count; i++)
+        var loopTexts = new List<string>();
+        List<double[]> topLoop = null;
+        List<double[]> route = null;
+        Func<string, string, List<double[]>> oneLoop = (fieldName, words) =>
         {
-            var loop = loopOf(loopTexts[i], loopTexts.Count == 1 ? where + "'s profile"
-                : where + ", loop " + (i + 1) + " of the profile,");
-            if (loop != null) loops.Add(loop);
+            var text = field(fieldName) ?? "";
+            if (text.Contains("|"))
+            {
+                problems.Add(where + ": the " + words + " has more than one loop. " + kindWords(kindIs)
+                    + "'s profiles are one loop each" + (kindIs == "blend" ? ", with no holes." : "."));
+                return null;
+            }
+            return loopOf(text, where + "'s " + words);
+        };
+        if (kindIs == "blend" || kindIs == "swept blend")
+        {
+            var firstName = kindIs == "blend" ? "baseProfile" : "bottomProfile";
+            var firstLoop = oneLoop(firstName, kindIs == "blend" ? "base profile" : "bottom profile");
+            topLoop = oneLoop("topProfile", "top profile");
+            loopTexts.Add(field(firstName));
+            if (firstLoop != null) loops.Add(firstLoop);
+        }
+        else
+        {
+            loopTexts = field("profile").Split('|').Select(p => p.Trim()).Where(p => p.Length > 0).ToList();
+            if (loopTexts.Count == 0) problems.Add(where + " has no profile.");
+            for (var i = 0; i < loopTexts.Count; i++)
+            {
+                var loop = loopOf(loopTexts[i], loopTexts.Count == 1 ? where + "'s profile"
+                    : where + ", loop " + (i + 1) + " of the profile,");
+                if (loop != null) loops.Add(loop);
+            }
+        }
+
+        // THE PATH - CREATE_FAMILY_SWEEP's reader for a sweep; for a swept
+        // blend ONE straight piece or ONE arc and nothing after it, Revit's own
+        // rule, as CREATE_FAMILY_SWEPT_BLEND refused anything longer.
+        if (kindIs == "sweep") route = pathOf(field("path"), where);
+        else if (kindIs == "swept blend")
+        {
+            var pathSaid = System.Text.RegularExpressions.Regex.Replace(field("path").Trim(), @"\s*,\s*", ",");
+            var steps = pathSaid.Split(';').Select(t => t.Trim()).Where(t => t.Length > 0).ToList();
+            var start = steps.Count == 2 ? pair(steps[0]) : null;
+            var bits = steps.Count == 2 ? steps[1].Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+                : new string[0];
+            if (start != null && bits.Length == 1 && pair(bits[0]) != null)
+            {
+                var end = pair(bits[0]);
+                if (Math.Sqrt(Math.Pow(end[0] - start[0], 2) + Math.Pow(end[1] - start[1], 2)) < shortest)
+                    problems.Add(where + ": the path is shorter than Revit's shortest line, " + plain(shortest) + " mm.");
+                else route = new List<double[]> { new[] { 0.0, start[0], start[1], 0, 0, end[0], end[1] } };
+            }
+            else if (start != null && bits.Length == 3 && bits[0].ToLowerInvariant() == "arc"
+                && pair(bits[1]) != null && pair(bits[2]) != null)
+            {
+                var through = pair(bits[1]);
+                var end = pair(bits[2]);
+                var ux = through[0] - start[0]; var uy = through[1] - start[1];
+                var vx = end[0] - start[0]; var vy = end[1] - start[1];
+                var lu = Math.Sqrt(ux * ux + uy * uy);
+                var lv = Math.Sqrt(vx * vx + vy * vy);
+                var lw = Math.Sqrt(Math.Pow(end[0] - through[0], 2) + Math.Pow(end[1] - through[1], 2));
+                if (lu < shortest || lv < shortest || lw < shortest || Math.Abs(ux * vy - uy * vx) < 1e-6 * lu * lv)
+                    problems.Add(where + ": the path's arc is not an arc - its three points are in a line, or two are "
+                        + "in the same place.");
+                else route = new List<double[]> { new[] { 1.0, start[0], start[1], through[0], through[1], end[0], end[1] } };
+            }
+            else
+                problems.Add(where + ": a swept blend's path is ONE piece - a straight \"X,Y; X,Y\" or an arc \"X,Y; arc "
+                    + "MX,MY X,Y\". It reads \"" + shortened(pathSaid) + "\". A longer path is kind=sweep, which "
+                    + "carries one profile.");
         }
 
         var solidSaid = squash(field("solid"));
@@ -569,7 +764,19 @@ else
                         + " mm deep.");
             }
         }
-        else
+        else if (kindIs == "blend")
+        {
+            // VERSION 3, CREATE_FAMILY_BLEND's rule: the top `topMm` from the
+            // plane along the axis it faces, and a blend needs a height.
+            var top = number(field("topMm"));
+            if (!top.HasValue) problems.Add(where + ": topMm \"" + shortened(field("topMm")) + "\" is not a number "
+                + "of millimetres.");
+            else if (Math.Abs(top.Value) < shortest)
+                problems.Add(where + ": the top profile is " + plain(top.Value) + " mm from the base - a blend needs a "
+                    + "height.");
+            else last = top.Value;
+        }
+        else if (kindIs == "revolve")
         {
             var a = number(field("startDegrees"));
             var b = number(field("endDegrees"));
@@ -746,6 +953,8 @@ else
         rowByCategory.Add(byCategory);
         rowShows.Add(shows);
         rowSnapped.Add(snapped);
+        rowTopLoop.Add(topLoop);
+        rowPath.Add(route);
     }
 
     if (problems.Count > 0)
@@ -765,6 +974,12 @@ if (refused == null)
     // lies inside which - CREATE_FAMILY_EXTRUSION's read-back (version 2).
     var rowRings = new List<List<List<double[]>>>();
     var rowTurn = new List<Line>();
+    // VERSION 3: which way Revit took a blend's profiles and the ways it turned
+    // down; a sweep's path length and profile area, a swept blend's length.
+    var rowOrder = new List<string>();
+    var rowTurnedDown = new List<List<string>>();
+    var rowLength = new List<double>();
+    var rowArea = new List<double>();
     var count = rowKind.Count;
     Func<int, string> whose = r => "Row " + (r + 1) + " (" + (rowSolid[r] ? "solid " : "void ") + rowKind[r] + " on \""
         + rowPlane[r].Item4 + "\")";
@@ -789,7 +1004,12 @@ if (refused == null)
         var curves = new List<Curve>();
         var rings = new List<List<double[]>>();
         Line turnAbout = null;
-        GenericForm form;
+        GenericForm form = null;
+        string blendFailure = null;
+        var blendOrder = "";
+        var blendTurnedDown = new List<string>();
+        var pathLength = 0.0;
+        var profileArea = 0.0;
         try
         {
             // A FRESH SKETCH PLANE FOR EVERY FORM, made on the plane itself so
@@ -799,6 +1019,231 @@ if (refused == null)
             if (axisOf(surface.Normal) != axis || Math.Abs(along(surface.Origin, axis) - at) > halfMillimetre)
                 throw new InvalidOperationException("the sketch plane made on \"" + plane.Item4 + "\" does not lie on it");
 
+            // VERSION 3: a profile drawn about its own origin, in its own XY -
+            // a sweep's and a swept blend's, which Revit lays onto the path.
+            Func<double, double, XYZ> flat = (one, two) => new XYZ(one / 304.8, two / 304.8, 0);
+            Func<List<double[]>, CurveArray> flatArray = loop =>
+            {
+                var array = new CurveArray();
+                foreach (var s in loop)
+                {
+                    var a = flat(s[1], s[2]);
+                    var b = flat(s[5], s[6]);
+                    array.Append(s[0] == 0.0 ? (Curve)Line.CreateBound(a, b) : Arc.Create(a, b, flat(s[3], s[4])));
+                }
+                return array;
+            };
+            Func<List<double[]>, CurveArray> trailOf = steps =>
+            {
+                var trail = new CurveArray();
+                foreach (var s in steps)
+                {
+                    var a = onPlane(s[1], s[2]);
+                    var b = onPlane(s[5], s[6]);
+                    Curve piece = s[0] == 0.0 ? (Curve)Line.CreateBound(a, b) : Arc.Create(a, b, onPlane(s[3], s[4]));
+                    trail.Append(piece);
+                    pathLength += piece.Length;
+                }
+                return trail;
+            };
+
+            if (rowKind[r] == "sweep")
+            {
+                // CREATE_FAMILY_SWEEP's call, its profile at the path's start.
+                var trail = trailOf(rowPath[r]);
+                var shape = new CurveArrArray();
+                var flatRings = new List<List<XYZ>>();
+                var areas = new List<double>();
+                foreach (var loop in rowLoops[r])
+                {
+                    var array = flatArray(loop);
+                    shape.Append(array);
+                    var ring = new List<XYZ>();
+                    foreach (Curve piece in array)
+                        for (var k = 0; k < 64; k++) ring.Add(piece.Evaluate(k / 64.0, true));
+                    var twice = 0.0;
+                    for (var k = 0; k < ring.Count; k++)
+                        twice += ring[k].X * ring[(k + 1) % ring.Count].Y - ring[(k + 1) % ring.Count].X * ring[k].Y;
+                    flatRings.Add(ring);
+                    areas.Add(Math.Abs(twice) / 2);
+                }
+                // A LOOP IS A HOLE ONLY WHEN IT LIES INSIDE ANOTHER - inside an
+                // odd number of the others, every point of it; never by its place
+                // in the list (5b-276).
+                Func<XYZ, List<XYZ>, bool> insideFlat = (point, ring) =>
+                {
+                    var odd = false;
+                    for (int i = 0, j = ring.Count - 1; i < ring.Count; j = i++)
+                        if ((ring[i].Y > point.Y) != (ring[j].Y > point.Y)
+                            && point.X < (ring[j].X - ring[i].X) * (point.Y - ring[i].Y) / (ring[j].Y - ring[i].Y) + ring[i].X)
+                            odd = !odd;
+                    return odd;
+                };
+                for (var i = 0; i < flatRings.Count; i++)
+                {
+                    var within = 0;
+                    for (var j = 0; j < flatRings.Count; j++)
+                        if (j != i && flatRings[i].All(point => insideFlat(point, flatRings[j]))) within++;
+                    profileArea += (within % 2 == 1 ? -1 : 1) * areas[i];
+                }
+                var carried = doc.Application.Create.NewCurveLoopsProfile(shape);
+                form = doc.FamilyCreate.NewSweep(rowSolid[r], trail, sketch, carried, 0, ProfilePlaneLocation.Start);
+            }
+            else if (rowKind[r] == "swept blend")
+            {
+                // CREATE_FAMILY_SWEPT_BLEND's call: one piece of path, the bottom
+                // profile at its start and the top at its end.
+                var trail = trailOf(rowPath[r]);
+                Curve route = null;
+                foreach (Curve piece in trail) route = piece;
+                var bottomShape = new CurveArrArray();
+                bottomShape.Append(flatArray(rowLoops[r][0]));
+                var topShape = new CurveArrArray();
+                topShape.Append(flatArray(rowTopLoop[r]));
+                form = doc.FamilyCreate.NewSweptBlend(rowSolid[r], route, sketch,
+                    doc.Application.Create.NewCurveLoopsProfile(bottomShape),
+                    doc.Application.Create.NewCurveLoopsProfile(topShape));
+            }
+            else if (rowKind[r] == "blend")
+            {
+                // CREATE_FAMILY_BLEND's way. REVIT TAKES A BLEND'S DIRECTION FROM
+                // THE WAY ITS LOOPS RUN, not from where the top lies (5b-369):
+                // each way is BUILT AND READ BACK, a wrong one deleted before the
+                // next, and its sketch plane goes with it, so each try makes its
+                // own.
+                var topFeet = rowTo[r] / 304.8;
+                Func<double, double, double, XYZ> lifted = (one, two, offset) =>
+                {
+                    var xyz = new double[3];
+                    xyz[axis] = at + offset;
+                    xyz[u] = one / 304.8;
+                    xyz[v] = two / 304.8;
+                    return new XYZ(xyz[0], xyz[1], xyz[2]);
+                };
+                // REVERSED, each loop runs the other way round - the same corners,
+                // every side's ends swapped and the sides in the opposite order.
+                Func<List<double[]>, double, bool, CurveArray> arrayOf = (loop, offset, reversed) =>
+                {
+                    var array = new CurveArray();
+                    foreach (var s in reversed ? Enumerable.Reverse(loop) : loop)
+                    {
+                        var a = lifted(s[1], s[2], offset);
+                        var b = lifted(s[5], s[6], offset);
+                        if (reversed) { var swap = a; a = b; b = swap; }
+                        Curve piece = s[0] == 0.0 ? (Curve)Line.CreateBound(a, b) : Arc.Create(a, b, lifted(s[3], s[4], offset));
+                        array.Append(piece);
+                        curves.Add(piece);
+                    }
+                    return array;
+                };
+                // How far some points reach across the axis, {u low, v low, u high, v high}.
+                Func<IEnumerable<XYZ>, double[]> reachOf = points =>
+                {
+                    var reach = new[] { double.MaxValue, double.MaxValue, double.MinValue, double.MinValue };
+                    foreach (var point in points)
+                    {
+                        reach[0] = Math.Min(reach[0], along(point, u));
+                        reach[1] = Math.Min(reach[1], along(point, v));
+                        reach[2] = Math.Max(reach[2], along(point, u));
+                        reach[3] = Math.Max(reach[3], along(point, v));
+                    }
+                    return reach;
+                };
+                Func<CurveArray, double[]> reachOfLoop = array => reachOf(array.Cast<Curve>()
+                    .SelectMany(c => Enumerable.Range(0, 257).Select(k => c.Evaluate(k / 256.0, true))));
+                var low = at + Math.Min(0.0, topFeet);
+                var high = at + Math.Max(0.0, topFeet);
+                // WHERE A BLEND LANDED. Null when it runs from the plane to the top
+                // with the base's own outline on the plane and the top's at the
+                // top; otherwise what it reads. The ends are told apart by outline.
+                Func<Blend, CurveArray, CurveArray, string> landing = (candidate, baseArray, topArray) =>
+                {
+                    var box = candidate.get_BoundingBox(null);
+                    if (box == null) return "it has no extent to read back";
+                    var says = "it reads " + axisLetters[axis] + " " + mm(along(box.Min, axis)) + " to "
+                        + mm(along(box.Max, axis)) + " mm";
+                    if (Math.Abs(along(box.Min, axis) - low) > halfMillimetre
+                        || Math.Abs(along(box.Max, axis) - high) > halfMillimetre)
+                        return says;
+                    var ends = new List<PlanarFace>();
+                    var shape = candidate.get_Geometry(new Options());
+                    if (shape != null)
+                        foreach (GeometryObject bit in shape)
+                        {
+                            var lump = bit as Solid;
+                            if (lump == null) continue;
+                            foreach (Face side in lump.Faces)
+                            {
+                                var flatFace = side as PlanarFace;
+                                if (flatFace != null && axisOf(flatFace.FaceNormal) == axis) ends.Add(flatFace);
+                            }
+                        }
+                    foreach (var end in new[] { Tuple.Create(at, baseArray, "base"), Tuple.Create(at + topFeet, topArray, "top") })
+                    {
+                        var face = ends.FirstOrDefault(f => Math.Abs(along(f.Origin, axis) - end.Item1) <= halfMillimetre);
+                        if (face == null) return says + ", with no flat end at " + mm(end.Item1) + " mm";
+                        var wantReach = reachOfLoop(end.Item2);
+                        var gotReach = reachOf(face.EdgeLoops.Cast<EdgeArray>().SelectMany(l => l.Cast<Edge>())
+                            .SelectMany(e => e.Tessellate()));
+                        for (var i = 0; i < 2; i++)
+                        {
+                            var allowance = 1.0 / 304.8 + 0.005 * (wantReach[i + 2] - wantReach[i]);
+                            if (Math.Abs(gotReach[i] - wantReach[i]) > allowance
+                                || Math.Abs(gotReach[i + 2] - wantReach[i + 2]) > allowance)
+                                return says + ", but its end at " + mm(end.Item1) + " mm is not the " + end.Item3
+                                    + " profile's outline";
+                        }
+                    }
+                    return null;
+                };
+                var tries = new[] { "base first", "base first, both loops reversed", "top first",
+                    "top first, both loops reversed" };
+                Blend kept = null;
+                for (var t = 0; t < tries.Length && kept == null; t++)
+                {
+                    if (sketch == null || !sketch.IsValidObject)
+                    {
+                        sketch = SketchPlane.Create(doc, plane.Item1.Id);
+                        var again = sketch.GetPlane();
+                        if (axisOf(again.Normal) != axis || Math.Abs(along(again.Origin, axis) - at) > halfMillimetre)
+                            throw new InvalidOperationException("the sketch plane made on \"" + plane.Item4
+                                + "\" does not lie on it");
+                    }
+                    curves.Clear();
+                    var bottom = arrayOf(rowLoops[r][0], 0.0, t % 2 == 1);
+                    var topArray = arrayOf(rowTopLoop[r], topFeet, t % 2 == 1);
+                    Blend tried;
+                    try
+                    {
+                        tried = t < 2 ? doc.FamilyCreate.NewBlend(rowSolid[r], bottom, topArray, sketch)
+                                      : doc.FamilyCreate.NewBlend(rowSolid[r], topArray, bottom, sketch);
+                    }
+                    catch (Exception refusal)
+                    {
+                        blendTurnedDown.Add(tries[t] + ": Revit refused it (" + refusal.Message + ")");
+                        continue;
+                    }
+                    doc.Regenerate();
+                    var wrong = landing(tried, bottom, topArray);
+                    if (wrong == null)
+                    {
+                        kept = tried;
+                        blendOrder = tries[t];
+                    }
+                    else
+                    {
+                        blendTurnedDown.Add(tries[t] + ": " + wrong);
+                        doc.Delete(tried.Id);
+                    }
+                }
+                if (kept == null)
+                    blendFailure = whose(r) + " was asked to run from the plane at " + mm(at) + " mm to the top at "
+                        + mm(at + topFeet) + " mm along " + axisLetters[axis] + ", and none of the four ways Revit was "
+                        + "offered the profiles built that - " + string.Join("; ", blendTurnedDown) + "." + keptNothing;
+                form = kept;
+            }
+            else
+            {
             var outline = new CurveArrArray();
             foreach (var loop in rowLoops[r])
             {
@@ -840,15 +1285,22 @@ if (refused == null)
                 form = doc.FamilyCreate.NewRevolution(rowSolid[r], outline, sketch, turnAbout,
                     rowFrom[r] * Math.PI / 180.0, rowTo[r] * Math.PI / 180.0);
             }
+            }
         }
         catch (Exception ex)
         {
             throw new InvalidOperationException(whose(r) + ": Revit refused it: " + ex.Message + keptNothing);
         }
+        if (blendFailure != null) throw new InvalidOperationException(blendFailure);
+        if (form == null) throw new InvalidOperationException(whose(r) + ": Revit made no form." + keptNothing);
         made.Add(form);
         rowCurves.Add(curves);
         rowRings.Add(rings);
         rowTurn.Add(turnAbout);
+        rowOrder.Add(blendOrder);
+        rowTurnedDown.Add(blendTurnedDown);
+        rowLength.Add(pathLength);
+        rowArea.Add(profileArea);
     }
 
     // ONE REGENERATION FOR THE WHOLE LIST, then every form read back.
@@ -902,6 +1354,50 @@ if (refused == null)
                         + "profile covers " + mm(spanMin[index]) + " to " + mm(spanMax[index]) + " mm." + keptNothing);
             }
 
+            var geometry = form.get_Geometry(new Options());
+            if (geometry != null)
+                foreach (GeometryObject piece in geometry)
+                {
+                    var body = piece as Solid;
+                    if (body != null && body.Volume > 0) volume += body.Volume;
+                }
+            reads = string.Join(", ", new[] { 0, 1, 2 }.Select(i => axisLetters[i] + " " + mm(along(bounds.Min, i))
+                + " to " + mm(along(bounds.Max, i)))) + " mm";
+        }
+        else if (rowKind[r] != "revolve")
+        {
+            // VERSION 3 - A BLEND, A SWEEP, A SWEPT BLEND, read back as their own
+            // tools read them: an extent, and a solid's volume. A blend was read
+            // along its axis as it was built; across the plane it must cover both
+            // its profiles, with the allowance a curved face's tessellated extent
+            // needs - CREATE_FAMILY_BLEND's check.
+            var bounds = form.get_BoundingBox(null);
+            if (bounds == null)
+                throw new InvalidOperationException(whose(r) + " was built and has no extent to read back." + keptNothing);
+            if (rowKind[r] == "blend")
+            {
+                var spanMin = new[] { double.MaxValue, double.MaxValue, double.MaxValue };
+                var spanMax = new[] { double.MinValue, double.MinValue, double.MinValue };
+                foreach (var c in rowCurves[r])
+                    for (var k = 0; k <= 256; k++)
+                    {
+                        var p = c.Evaluate(k / 256.0, true);
+                        foreach (var index in new[] { u, v })
+                        {
+                            spanMin[index] = Math.Min(spanMin[index], along(p, index));
+                            spanMax[index] = Math.Max(spanMax[index], along(p, index));
+                        }
+                    }
+                foreach (var index in new[] { u, v })
+                {
+                    var slack = 1.0 / 304.8 + 0.005 * (spanMax[index] - spanMin[index]);
+                    if (Math.Abs(along(bounds.Min, index) - spanMin[index]) > slack
+                        || Math.Abs(along(bounds.Max, index) - spanMax[index]) > slack)
+                        throw new InvalidOperationException(whose(r) + " reads " + axisLetters[index] + " "
+                            + mm(along(bounds.Min, index)) + " to " + mm(along(bounds.Max, index)) + " mm and its two "
+                            + "profiles cover " + mm(spanMin[index]) + " to " + mm(spanMax[index]) + " mm." + keptNothing);
+                }
+            }
             var geometry = form.get_Geometry(new Options());
             if (geometry != null)
                 foreach (GeometryObject piece in geometry)
@@ -1105,13 +1601,24 @@ if (refused == null)
             shapeWords = ", " + rings.Count + " loop(s)" + (rings.Count > 1 ? " (" + string.Join(", ", loopParts) + ")" : "")
                 + " from " + plain(rowFrom[r]) + " to " + plain(rowTo[r]) + " mm";
         }
-        else
+        else if (rowKind[r] == "revolve")
         {
             var ax = rowAxis[r];
             shapeWords = ", " + rowLoops[r].Count + " loop(s) turned from " + plain(rowFrom[r]) + " to "
                 + plain(rowTo[r]) + " degrees about the axis " + plain(ax[0]) + "," + plain(ax[1]) + " to "
                 + plain(ax[2]) + "," + plain(ax[3]);
         }
+        // VERSION 3: what CREATE_FAMILY_BLEND, CREATE_FAMILY_SWEEP and
+        // CREATE_FAMILY_SWEPT_BLEND said of theirs.
+        else if (rowKind[r] == "blend")
+            shapeWords = ", the top profile " + plain(rowTo[r]) + " mm along " + axisLetters[axis] + ", the profiles "
+                + "taken " + rowOrder[r];
+        else if (rowKind[r] == "sweep")
+            shapeWords = ", a path of " + rowPath[r].Count + " piece(s), " + plain(rowLength[r] * 304.8)
+                + " mm long, carrying a profile of " + rowLoops[r].Count + " loop(s)";
+        else
+            shapeWords = ", " + (rowPath[r][0][0] == 0.0 ? "a straight path" : "an arc path") + " "
+                + plain(rowLength[r] * 304.8) + " mm long";
 
         lines.Add((r + 1) + " " + (rowSolid[r] ? "solid " : "void ") + rowKind[r] + " on \"" + rowPlane[r].Item4
             + "\" (" + facing[axis] + ", " + axisLetters[axis] + " " + mm(at) + " mm)" + shapeWords + ": " + reads
@@ -1125,10 +1632,37 @@ if (refused == null)
 
     var extrusions = rowKind.Count(k => k == "extrusion");
     var voids = rowSolid.Count(s => !s);
-    findings.Add("Built " + formCount + " form(s) in this one call - " + extrusions + " extrusion(s) and "
-        + (formCount - extrusions) + " revolve(s), " + (formCount - voids) + " solid and " + voids + " void - every "
+    // VERSION 3: every kind counted, never "the rest are revolves".
+    var kindCounts = new[] { "extrusion", "revolve", "blend", "sweep", "swept blend" }
+        .Select(k => Tuple.Create(k, rowKind.Count(x => x == k))).Where(t => t.Item2 > 0)
+        .Select(t => t.Item2 + " " + t.Item1 + "(s)").ToList();
+    findings.Add("Built " + formCount + " form(s) in this one call - " + string.Join(", ", kindCounts) + ", "
+        + (formCount - voids) + " solid and " + voids + " void - every "
         + "one read back. ONE entry in the undo list takes them all back. Their ids, in the order listed, are in "
         + "formIds, commas between - name them so to the tools that lock, link, cut, colour or hide them.");
+    for (var r = 0; r < count; r++)
+    {
+        if (rowKind[r] == "blend")
+        {
+            findings.Add("Row " + (r + 1) + ": Revit took the blend's profiles " + rowOrder[r] + ", and paired their "
+                + "corners itself - a twist it chose is undone by hand with Edit Vertices.");
+            if (rowTurnedDown[r].Count > 0)
+                findings.Add("Row " + (r + 1) + ", before that, and deleted at once: " + string.Join("; ", rowTurnedDown[r])
+                    + ". Revit decides which way a blend runs from the way its loops go round, not from where the top "
+                    + "lies.");
+        }
+        else if (rowKind[r] == "sweep")
+            findings.Add("Row " + (r + 1) + ", for comparison: the profile encloses "
+                + Math.Round(rowArea[r] * 92903.04, 1).ToString(invariant) + " square millimetres, and a profile "
+                + "centred on a path of this length sweeps about " + volumeWords(rowArea[r] * rowLength[r]) + ". An arc "
+                + "in the path with the profile off-centre changes that. The profile was laid square to the path where "
+                + "it starts, turned by Revit's own rule - LOOK at an asymmetric one. SET_FAMILY_SWEEP_PROFILE gives it "
+                + "a loaded profile family by this form's id.");
+        else if (rowKind[r] == "swept blend")
+            findings.Add("Row " + (r + 1) + ": the bottom profile was laid square to the path's start and the top square "
+                + "to its end, turned by Revit's own rule, with their corners paired by Revit - LOOK at an asymmetric "
+                + "profile.");
+    }
     var withMaterial = Enumerable.Range(0, count).Count(r => rowParameter[r] != null || rowMaterial[r] != null
         || rowByCategory[r]);
     var withShows = rowShows.Count(s => s != null);

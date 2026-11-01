@@ -54,8 +54,8 @@ purpose: >
      planes: EXTRUDE_BETWEEN_PLANES for a rectangular section, with the two
      length planes as its left and right; any other section drawn with
      CREATE_FAMILY_FORMS (a kind=extrusion row) on the plane at the start and its far face locked
-     to the end plane with LOCK_FORM_TO_PLANES - or CREATE_FAMILY_SWEEP along
-     the line, its path ends on those planes.
+     to the end plane with LOCK_FORM_TO_PLANES - or a CREATE_FAMILY_FORMS
+     kind=sweep row along the line, its path ends on those planes.
   5. A PART THAT REPEATS ALONG THE LENGTH is one form and ARRAY_FAMILY_FORMS,
      stepping to the "last" member, the count labelled with the Integer from
      step 2; the first member is locked to the start plane and the last to the
@@ -88,7 +88,7 @@ needs:
   - LABEL_FAMILY_DIMENSION
   - EXTRUDE_BETWEEN_PLANES
   - CREATE_FAMILY_FORMS
-  - CREATE_FAMILY_SWEEP
+  # CREATE_FAMILY_SWEEP was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
   - LOCK_FORM_TO_PLANES
   - ARRAY_FAMILY_FORMS
   # SET_FAMILY_FORM_MATERIAL was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
@@ -104,16 +104,17 @@ needs:
   - SET_FAMILY_CATEGORY
   - SET_FAMILY_SETTINGS
   # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
-  # GUIDs, against the family, before ADD_FAMILY_SHARED_PARAMETERS writes.
+  # GUIDs, against the family, before ADD_FAMILY_PARAMETERS' shared kind writes.
   - REPORT_SHARED_PARAMETER_FILE
-  - ADD_FAMILY_SHARED_PARAMETERS
+  # ADD_FAMILY_SHARED_PARAMETERS was listed here until 2026-11-01, when it was merged into ADD_FAMILY_PARAMETERS.
   # CREATE_FAMILY_REVOLUTION was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
-  - CREATE_FAMILY_BLEND
-  - CREATE_FAMILY_SWEPT_BLEND
+  # CREATE_FAMILY_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # CREATE_FAMILY_SWEPT_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
   - LABEL_FAMILY_RADIUS
   - COMBINE_FAMILY_FORMS
   - ADD_FAMILY_CONNECTOR
-  - PLACE_NESTED_FAMILY
+  # PLACE_NESTED_FAMILY was listed here until 2026-11-01, when it was merged into PLACE_FAMILY_INSTANCES.
+  - PLACE_FAMILY_INSTANCES
   - LOCK_NESTED_FAMILY_TO_PLANES
   # LINK_NESTED_TYPE_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - ADD_FAMILY_TYPE_PARAMETER

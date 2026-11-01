@@ -268,7 +268,9 @@ def need_may_be_absent(entry):
     asked of the whole model, and this mirror handed the call back for want of
     a view before Revit was asked) - or an `IList<View>` marked so, which binds
     an empty list since 2026-11-01 (PLACE_VIEW_ON_SHEET reads its handed-on
-    `elements` when no view is named) - and HeronBindingNote.DeclaredAbsent
+    `elements` when no view is named) - or, since 2026-11-01, an `Element`
+    marked so, which binds null, and an `IList<XYZ>`, which binds an empty
+    list (CREATE_OPENING's family half names neither) - and HeronBindingNote.DeclaredAbsent
     binds one whose card names what leaving it out means (`absent:`,
     need_absent_text). Every other request need is still refused when absent
     (FRAGMENT-ISSUES rows 5b-227 and 5b-252), so it answers False for them.
@@ -284,8 +286,10 @@ def need_may_be_absent(entry):
 
 # The types HeronBindingNote.AbsentValue binds when absent and marked optional -
 # its switch, word for word: a bool to false, a View to null, a view list to an
-# empty one.
-ABSENT_BINDS = ("bool", "View", "IList<View>")
+# empty one - and since 2026-11-01 an Element to null and a point list to an
+# empty one (CREATE_OPENING's family half, merged in from
+# CREATE_FAMILY_HOST_OPENING, names neither).
+ABSENT_BINDS = ("bool", "View", "IList<View>", "Element", "IList<XYZ>")
 
 
 # The element lists HeronBindingNote.EmptyWhenAbsent binds empty - its switch,

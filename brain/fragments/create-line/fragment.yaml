@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 15
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,32 @@ capability: CREATE_LINE
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO DRAW_FAMILY_DETAIL_LINES (draw-family-detail-lines), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to DRAW_FAMILY_DETAIL_LINES. The proof below is the record of what this
+# card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: DRAW_FAMILY_DETAIL_LINES
+  why: >
+    The same drawing: straight lines between points, as detail lines in one
+    view or as model lines on a plane. DRAW_FAMILY_DETAIL_LINES draws them
+    since its version 2 in a project too, from the millimetre shape language
+    ("path X,Y; X,Y", arcs, closed shapes), with lineKind detail or model
+    asked for in a project - this card's rule, there is no safe default - a
+    detail line refused with no view or in a 3D view in this card's words,
+    model lines on the plane planeMm gives (with no view a horizontal plane at
+    that height), its `created` elements for the next step, and every line
+    read back. NOT CARRIED, the one opposite rule: this card skipped a pair
+    shorter than Revit's shortest line, counted it in tooShort and drew the
+    rest; the keeper refuses the whole call naming the piece - all or nothing,
+    the safer rule, kept on the owner's instruction.
 
 purpose: >
   Draws plain straight lines between pairs of points - either DETAIL lines,

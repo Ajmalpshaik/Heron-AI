@@ -55,6 +55,60 @@ positive:
   - given: a method step written for CREATE_FAMILY_EXTRUSION, binding `formId` from this card's answer into LOCK_FORM_TO_PLANES
     expect: the lock reaches the form just built - formId binds as it did
 
+  # VERSION 3 (2026-11-01), from CREATE_FAMILY_BLEND, CREATE_FAMILY_SWEEP and
+  # CREATE_FAMILY_SWEPT_BLEND - each their own card's positive case as ONE row.
+  # Each FAILS on version 2, which refused every kind but extrusion and revolve.
+  - given: >
+      kind=blend workPlane=Ref. Level baseProfile=rect -300,-200 300,200
+      topProfile=circle 0,0 125 topMm=300 solid=true
+    expect: >
+      formCount 1; built reading a solid blend, "the top profile 300 mm along
+      Z", X -300 to 300, Y -200 to 200, Z 0 to 300 mm and a volume above zero;
+      a finding naming which way Revit took the profiles - LOOKED AT in 3D as
+      a rectangle at the bottom turning into a circle 250 across at the top
+
+  - given: >
+      (5b-369) a plane made by CREATE_REFERENCE_PLANES axis=left-right,
+      "Divider Plane=-2230", facing -X; kind=blend workPlane=Divider Plane
+      baseProfile=rect 1040,150 1160,450 topProfile=rect 1090,60 1110,90
+      topMm=-330 solid=true
+    expect: >
+      X -2560 to -2230 mm - the base on the plane, the top at -2560 - and the
+      findings naming the first way Revit was offered the loops as deleted
+      for reading X -2890 to -2560
+
+  - given: >
+      kind=sweep workPlane=Ref. Level path=0,0; 1000,0; arc 1300,300 1000,600
+      profile=circle 0,0 25 | circle 0,0 20 solid=true
+    expect: >
+      a tube 50 mm across with a 40 mm bore, built reading "a path of 2
+      piece(s)"; a finding giving the profile's area and area x length -
+      LOOKED AT in 3D as one hollow piece with no kink at the join
+
+  - given: >
+      kind=sweep workPlane=Ref. Level path=0,0; 1000,0 profile=circle -40,0 10 |
+      circle 40,0 10 solid=true - two circles side by side
+    expect: >
+      two rods, volume about 0.628 L, and the comparison finding giving about
+      628.3 square millimetres (5b-276: neither circle taken for a hole)
+
+  - given: >
+      SET_FAMILY_SWEEP_PROFILE run after it with sweeps = the sweep row's id
+      from formIds and a loaded profile family
+    expect: the sweep takes the profile - the chain CREATE_FAMILY_SWEEP's formId fed binds unchanged
+
+  - given: >
+      kind=swept blend workPlane=Ref. Level path=0,0; arc 424.26,175.74 600,600
+      bottomProfile=rect -150,-100 150,100 topProfile=circle 0,0 100 solid=true
+    expect: >
+      built reading "an arc path" and its length, an extent and a volume -
+      LOOKED AT in 3D as one piece, rectangular where the path starts and
+      round where it ends
+
+  - given: >
+      the ten version-1 rows and one row of each new kind in ONE list
+    expect: formCount 13, ONE entry in the undo list, every form read back
+
 negative:
   - given: >
       the ten rows with row 7's workPlane "Ref Lvl", a name the family does
@@ -66,8 +120,29 @@ negative:
   - given: the ten rows with row 3's startMm -148.5 and endMm -148, 0.5 mm deep
     expect: refused naming row 3, 0.5 mm deep and the least depth that builds, and no form made
 
-  - given: a row whose kind is "blend"
-    expect: refused naming the row, saying a row is an extrusion or a revolve, and no form made
+  # VERSION 3: "blend" is a kind now (it was this negative until 2026-11-01).
+  - given: a row whose kind is "loft"
+    expect: refused naming the row and the five kinds a row may be, and no form made
+
+  # VERSION 3, each the retired card's own negative as one row. Each FAILS on
+  # version 2, which refused the row for its kind rather than for this.
+  - given: kind=blend with baseProfile "rect -300,-200 300,200 | circle 0,0 50", a loop with a hole
+    expect: refused naming the row as more than one loop, and no form made
+
+  - given: kind=blend with topMm 0
+    expect: refused naming the row as having no height, and no form made
+
+  - given: kind=sweep with path "0,0" alone
+    expect: refused naming the row as a path with no length, and no form made
+
+  - given: kind=sweep with path "0,0; 1000,0; arc 2000,0 3000,0"
+    expect: refused naming the row's arc as not an arc, and no form made
+
+  - given: kind=swept blend with path "0,0; 600,0; 600,600", two pieces
+    expect: refused naming the row as more than one piece, naming kind=sweep, and no form made
+
+  - given: kind=sweep with startMm=0 given as well
+    expect: refused naming startMm as another kind's field, and no form made
 
   - given: forms the full path of a file outside the temporary folder
     expect: refused naming the temporary folder, and nothing read or made
@@ -96,3 +171,8 @@ second_route:
       the same ten forms drawn by hand with Create > Extrusion and Create >
       Revolve on a second scratch family, read side by side with
       REPORT_FAMILY_FORMS
+  - >
+      Version 3 (2026-11-01): CREATE_FAMILY_BLEND, CREATE_FAMILY_SWEEP and
+      CREATE_FAMILY_SWEPT_BLEND are DEPRECATED too - Create > Blend, Sweep and
+      Swept Blend by hand on a second scratch family, with the same profiles
+      and paths, read side by side with REPORT_FAMILY_FORMS

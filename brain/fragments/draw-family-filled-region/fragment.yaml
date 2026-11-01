@@ -180,7 +180,7 @@ compatibility-note: >
 #   "make a floor slab over this area"            -> CREATE_FLOOR. A filled
 #                                                    region LOOKS like a slab on
 #                                                    a plan and is not one
-#   "draw a detail line here"                     -> CREATE_LINE - a line has no
+#   "draw a detail line here"                     -> DRAW_FAMILY_DETAIL_LINES - a line has no
 #                                                    fill
 #   "make a 45 degree hatch pattern"              -> CREATE_FILL_PATTERN - the
 #                                                    pattern, not a region drawn

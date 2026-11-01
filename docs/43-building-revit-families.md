@@ -69,7 +69,7 @@ flowchart TD
     S7["<b>7 · The forms, one group of parts at a time</b><br/>CREATE_FAMILY_FORMS · EXTRUDE_BETWEEN_PLANES · revolve · blend · sweep"]
     S8["<b>8-9 · Lock the faces, label round sizes</b><br/>LOCK_FORM_TO_PLANES · LINK_FAMILY_PARAMETER · LABEL_FAMILY_RADIUS"]
     S10["<b>10 · Voids, joins, arrays</b><br/>COMBINE_FAMILY_FORMS · ARRAY_FAMILY_FORMS"]
-    S11["<b>11 · Connectors and nested parts</b><br/>ADD_FAMILY_CONNECTOR · SET_FAMILY_CONNECTOR_ROLES · LOAD_FAMILY · PLACE_NESTED_FAMILY"]
+    S11["<b>11 · Connectors and nested parts</b><br/>ADD_FAMILY_CONNECTOR · SET_FAMILY_CONNECTOR_ROLES · LOAD_FAMILY · PLACE_FAMILY_INSTANCES"]
     S12["<b>12 · Materials, subcategories, visibility</b><br/>LINK_FAMILY_PARAMETER · SET_FAMILY_FORM_SUBCATEGORY · SET_FAMILY_FORM_VISIBILITY"]
     S13["<b>13 · Read it back, then look at it</b><br/>REPORT_FAMILY_FORMS · revit_view_image"]
     S14["<b>14-15 · Flex it, then a type catalog</b><br/>FLEX_FAMILY · REPORT_FAMILY_TYPE_CATALOG"]
@@ -105,7 +105,7 @@ steps 0, 1, 7, 10, 11, 12 and 13 only - the dotted arrows. What the newer tools 
  8-9   lock faces, label round sizes  LOCK_FORM_TO_PLANES, LINK_FAMILY_PARAMETER, LABEL_FAMILY_RADIUS
  10    voids, joins, arrays           COMBINE_FAMILY_FORMS, ARRAY_FAMILY_FORMS
  11    connectors, nested parts       ADD_FAMILY_CONNECTOR, SET_FAMILY_CONNECTOR_ROLES, LOAD_FAMILY,
-                                      PLACE_NESTED_FAMILY
+                                      PLACE_FAMILY_INSTANCES (nested; PLACE_NESTED_FAMILY until 2026-11-01)
  12    materials and visibility       LINK_FAMILY_PARAMETER, SET_FAMILY_FORM_SUBCATEGORY,
                                       SET_FAMILY_FORM_VISIBILITY
  13    read back, then look           REPORT_FAMILY_FORMS, revit_view_image
@@ -125,7 +125,7 @@ how Revit reports each kind, and §11 the tools each one uses.
 | Kind | The template the modeller opens | `heron_method` job | What its method adds |
 |---|---|---|---|
 | Level- or work-plane-based - equipment, a valve, a box | a Generic Model, or the category's own | `family-creation` | the base method above |
-| Wall-, ceiling-, floor-, roof- or face-based | the host's own template; face-based for a host in a linked model | `hosted-family-creation` | reads the host first; an opening in the host, `CREATE_FAMILY_HOST_OPENING` |
+| Wall-, ceiling-, floor-, roof- or face-based | the host's own template; face-based for a host in a linked model | `hosted-family-creation` | reads the host first; an opening in the host, `CREATE_OPENING` with `shape` (`CREATE_FAMILY_HOST_OPENING` until 2026-11-01) |
 | Line-based - a lintel, a cable ladder run | a line-based template | `line-based-family-creation` | the Length from the two clicks; the template's planes never moved |
 | Adaptive component | Generic Model Adaptive | `adaptive-family-creation` | numbered points, `PLACE_ADAPTIVE_POINTS`, `DRAW_FAMILY_POINT_CURVES`, `CREATE_CONCEPTUAL_FORM` |
 | Pattern-based curtain panel | a pattern-based template | `pattern-based-family-creation` | points and lines, not planes; the tile pattern of the surface it fills |
@@ -629,7 +629,8 @@ releases with [`tools/api-surface`](../tools/api-surface/) (`--dump` and `--memb
 - **UI automation of the Edit Label dialog** was assessed and not built: [Q-82](OPEN-QUESTIONS.md).
 
 **8.3b The seed route - copy a label that is already right (DRAFT, NEEDS REAL REVIT).**
-`COPY_LABELS_FROM_FAMILY` copies labels view to view from a seed family open in the same Revit into the family
+`COPY_ELEMENTS_BETWEEN_DOCUMENTS` with `labels=true` (`COPY_LABELS_FROM_FAMILY` until it was merged into it,
+2026-11-01) copies labels view to view from a seed family open in the same Revit into the family
 in front, refuses a seed of another category in Revit's own words, puts the first label at a point, and reads
 each copy back against its seed - on 2027 parameter by parameter. **Whether a copied label keeps its parameter
 binding, sample value, prefix, suffix and unit format is measured by NEEDS-CHECKING
@@ -804,14 +805,14 @@ Source category with `ElementTransformUtils` and reads the transform back (**UNS
 | Kind | Skill | The new tools it uses |
 |---|---|---|
 | Level- and work-plane-based | [`family-creation`](../brain/skills/family-creation.yaml), widened | `REPORT_FAMILY_TEMPLATE`, `ADD_FAMILY_TYPE_PARAMETER`, `DRAW_FAMILY_FILLED_REGION`, `ADD_FAMILY_FLIP_CONTROL`, `REPORT_FAMILY_TYPE_CATALOG` |
-| Wall-, ceiling-, floor-, roof-, face-based | [`hosted-family-creation`](../brain/skills/hosted-family-creation.yaml) | `CREATE_FAMILY_HOST_OPENING`, `SET_FAMILY_SETTINGS` (Cut with Voids When Loaded, Maintain Annotation Orientation) |
+| Wall-, ceiling-, floor-, roof-, face-based | [`hosted-family-creation`](../brain/skills/hosted-family-creation.yaml) | `CREATE_OPENING` with `shape`, `SET_FAMILY_SETTINGS` (Cut with Voids When Loaded, Maintain Annotation Orientation) |
 | Line-based | [`line-based-family-creation`](../brain/skills/line-based-family-creation.yaml) | `REPORT_FAMILY_TEMPLATE` with the arrays and locks already built |
 | Pattern-based panel | [`pattern-based-family-creation`](../brain/skills/pattern-based-family-creation.yaml) | `DRAW_FAMILY_POINT_CURVES`, `CREATE_CONCEPTUAL_FORM`, `PLACE_ADAPTIVE_POINTS` for points hosted on its edges, `DIVIDE_FAMILY_SURFACE` in the mass it fills |
 | Conceptual mass | [`mass-family-creation`](../brain/skills/mass-family-creation.yaml), and in the project [`massing-study`](../brain/skills/massing-study.yaml) (both DRAFT, Group JO) | `CREATE_CONCEPTUAL_FORM` (every form, a revolve too), `DIVIDE_FAMILY_SURFACE`; in the project `REPORT_MASSES`, `SET_MASS_FLOOR_USAGE`, `REMOVE_MASS_FLOORS`, `CREATE_WALLS_BY_FACE`; a curtain system on a mass is `CREATE_CURTAIN_SYSTEM` (Group JM) (built 2026-10-28, DRAFT) |
 | Adaptive component | [`adaptive-family-creation`](../brain/skills/adaptive-family-creation.yaml) | `PLACE_ADAPTIVE_POINTS` (free or hosted), `SET_ADAPTIVE_POINT_ORIENTATION` (each placement point's Orientation - DRAFT, Group JK), `DRAW_FAMILY_POINT_CURVES`, `CREATE_CONCEPTUAL_FORM` (a sweep along a path for a two-point beam) |
 | Profile | [`profile-family-creation`](../brain/skills/profile-family-creation.yaml) | `DRAW_FAMILY_DETAIL_LINES`, `SET_FAMILY_SETTINGS` (Profile Usage), `SET_FAMILY_SWEEP_PROFILE` |
 | Detail item, annotation symbol | [`detail-family-creation`](../brain/skills/detail-family-creation.yaml) | `DRAW_FAMILY_DETAIL_LINES`, `DRAW_FAMILY_FILLED_REGION` |
-| Tag - pipe, duct, equipment, any tag category | [`tag-family-creation`](../brain/skills/tag-family-creation.yaml) | `REPORT_FAMILY_LABELS`, `COPY_LABELS_FROM_FAMILY`, `SET_FAMILY_LABEL_LAYOUT` (DRAFT, Group IJ), with the category, line, type and load tools already built |
+| Tag - pipe, duct, equipment, any tag category | [`tag-family-creation`](../brain/skills/tag-family-creation.yaml) | `REPORT_FAMILY_LABELS`, `COPY_ELEMENTS_BETWEEN_DOCUMENTS` with `labels=true`, `SET_FAMILY_LABEL_LAYOUT` (DRAFT, Group IJ), with the category, line, type and load tools already built |
 | Duct or pipe fitting | [`mep-fitting-family-creation`](../brain/skills/mep-fitting-family-creation.yaml) | `SET_FAMILY_SETTINGS` (Part Type) with the size table and connector tools already built, `SET_FAMILY_CONNECTOR_ROLES` |
 | Door, window, curtain wall door | [`door-window-family-creation`](../brain/skills/door-window-family-creation.yaml) | `REPORT_FAMILY_TEMPLATE`, `ADD_FAMILY_TYPE_PARAMETER`, `ADD_FAMILY_FLIP_CONTROL` with the form, symbol and nesting tools already built |
 | Structural framing, structural column | [`structural-family-creation`](../brain/skills/structural-family-creation.yaml) | `REPORT_FAMILY_TEMPLATE`, `SET_FAMILY_SETTINGS` (Material for Model Behavior, Section Shape) with the extrusion, lock and delete tools already built |
@@ -822,7 +823,7 @@ Source category with `ElementTransformUtils` and reads the transform back (**UNS
 | Not built | Why |
 |---|---|
 | A part that rotates about a reference line | No documented call gives a reference line's planes (§9) |
-| A label in a tag, symbol or title block | Revit's API cannot make one on any release, and cannot change what one shows (§8.3a). **Built 2026-10-21, DRAFT:** `REPORT_FAMILY_LABELS` reads them (their parameters on 2027 only), `SET_FAMILY_LABEL_LAYOUT` moves and sizes them, `COPY_LABELS_FROM_FAMILY` copies them from a seed family of the same category (§8.3b) - owed Group IJ |
+| A label in a tag, symbol or title block | Revit's API cannot make one on any release, and cannot change what one shows (§8.3a). **Built 2026-10-21, DRAFT:** `REPORT_FAMILY_LABELS` reads them (their parameters on 2027 only), `SET_FAMILY_LABEL_LAYOUT` moves and sizes them, `COPY_ELEMENTS_BETWEEN_DOCUMENTS` with `labels=true` copies them from a seed family of the same category (§8.3b) - owed Group IJ |
 | Setting a pattern-based panel's tile pattern | `CurtainPanelTilePattern` is read-only (§7) |
 | A point hosted on a line at a ratio; a profile on a point's plane | **Built 2026-10-02** - `PLACE_ADAPTIVE_POINTS` hosts points on a line (`NewPointOnEdge`) or on a point's own plane (`PointOnPlane.NewPointOnPlane`), and `CREATE_CONCEPTUAL_FORM` sweeps a profile along a path (`NewSweptBlendForm`) - the two-point beam; owed BV19 and BV20 |
 | A connector's primary flag, linked connectors, a light source | **Built 2026-10-02** - `SET_FAMILY_CONNECTOR_ROLES` and `SET_FAMILY_LIGHT_SOURCE`, owed BV17 and BV18. The Light Source tick, the light source's position and aim, a wattage, loss factor, dimming and filter **built 2026-10-21**, owed Group IK (§10); by hand only unticking Light Source |

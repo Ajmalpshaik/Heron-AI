@@ -26,7 +26,7 @@ positive:
   - given: >
       version 2, a NESTED FAMILY. A host family with planes "Pitch" at 30 and
       "Top Turn Start" at 120; a level-based Generic Model family loaded,
-      placed at 0,0,0 on Ref. Level by PLACE_NESTED_FAMILY, moved up 30 by
+      placed at 0,0,0 on Ref. Level by PLACE_FAMILY_INSTANCES, moved up 30 by
       MOVE_ELEMENTS, its Bottom locked to "Pitch"; form = its id, count "3",
       step "Z 60 last"
     expect: >

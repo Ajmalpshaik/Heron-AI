@@ -118,6 +118,21 @@ namespace Heron.BindingNote.TestHost
                   "a view list NOT marked optional is still refused - the views are the caller's to name");
             Check(HeronBindingNote.AbsentValue("IList<View>", "false") == null,
                   "and so is one marked optional: false");
+            // 2026-11-01: AN OPTIONAL ELEMENT BINDS NULL AND AN OPTIONAL POINT
+            // LIST EMPTY, so CREATE_OPENING's family half - the template's own
+            // wall or ceiling, found by the fragment - can be asked at all.
+            Check(HeronBindingNote.AbsentValue("Element", "true") == "null",
+                  "an absent Element marked optional binds null");
+            Check(HeronBindingNote.AbsentValue(" Element ", " True ") == "null",
+                  "however the card spells it");
+            Check(HeronBindingNote.AbsentValue("Element", null) == null,
+                  "an Element NOT marked optional is still refused - the element is the caller's to name");
+            Check(HeronBindingNote.AbsentValue("IList<XYZ>", "true") == "new List<XYZ>()",
+                  "an absent IList<XYZ> marked optional binds an empty list");
+            Check(HeronBindingNote.AbsentValue("IList<XYZ>", "false") == null,
+                  "and a point list marked optional: false is still refused");
+            Check(HeronBindingNote.AbsentValue("XYZ", "true") == null,
+                  "an optional single point is still refused - no point means 'not asked'");
             Check(HeronBindingNote.AbsentValue("IList<Element>", "true") == null,
                   "an element list is EmptyWhenAbsent's case, never this one");
             Check(HeronBindingNote.AbsentValue("IList<string>", "true") == null,

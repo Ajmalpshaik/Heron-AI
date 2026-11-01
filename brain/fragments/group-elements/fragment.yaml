@@ -135,7 +135,7 @@ compatibility-note: >
 #                                        row in a family, its count a
 #                                        parameter; lighter than a group
 #   "put the motor family into this air handler"
-#                                     -> PLACE_NESTED_FAMILY - one nested
+#                                     -> PLACE_FAMILY_INSTANCES - one nested
 #                                        family placed many times is the
 #                                        lighter way to repeat a part
 #   "why will these not move"         -> MOVE_ELEMENTS reports blocked; a GROUP

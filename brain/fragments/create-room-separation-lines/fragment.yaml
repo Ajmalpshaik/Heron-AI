@@ -23,7 +23,7 @@ purpose: >
   shop-and-flat plan in Project2 (Revit 2024): the kitchen and the living room
   were joined by a 900 mm opening, PLACE_ROOM_AT_POINT made one room of both
   because nothing bounded the gap, and no fragment called the API that makes a
-  separation line (FRAGMENT-ISSUES row 5b-289). A plain line from CREATE_LINE
+  separation line (FRAGMENT-ISSUES row 5b-289). A plain line from DRAW_FAMILY_DETAIL_LINES
   does not bound a room - it is a drawing or reference line, a different
   category Revit's room boundary never reads.
 
@@ -146,7 +146,7 @@ compatibility-note: >
   number.
 
 # ROUTING - the rows naming another fragment are repeated in
-# PLACE_ROOMS and CREATE_LINE.
+# PLACE_ROOMS and DRAW_FAMILY_DETAIL_LINES.
 #
 #   "draw a room separation line across an opening" -> here
 #   "add a room separator here"          -> here
@@ -156,7 +156,7 @@ compatibility-note: >
 #                                           the line and places no room; the
 #                                           half without one needs placing
 #   "draw a detail line here", "add a model line"
-#                                        -> CREATE_LINE. A detail or model line
+#                                        -> DRAW_FAMILY_DETAIL_LINES. A detail or model line
 #                                           is drawing, and Revit's room
 #                                           boundary never reads it
 #   "put a wall here"                    -> CREATE_WALL. A wall bounds a room

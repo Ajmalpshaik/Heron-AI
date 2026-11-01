@@ -1,15 +1,20 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-067
-semantic-identity: "cut the hole through this wall or slab"
+semantic-identity: "cut the hole through this wall or slab - or the opening in a wall- or ceiling-based family's own template wall or ceiling"
 kind: action
 domain: revit.elements
 capability: CREATE_OPENING
-version: 2
+# VERSION 3 (2026-11-01) - CREATE_FAMILY_HOST_OPENING WAS MERGED INTO THIS
+# CARD on the owner's instruction ("make sure there is no duplicate tools",
+# every conflict to keep the safer rule), and is DEPRECATED. Version 2's proof
+# below no longer describes the code (impl/ changed) and is kept as the
+# record; DRAFT until version 3 is proved on a real model (D-30).
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -21,6 +26,16 @@ purpose: >
   **A BEAM, BRACE OR COLUMN** (version 2, 2026-10-12, the gap fill) takes the
   framing opening: perpendicularFace true cuts through the web, false through
   the flanges - the duct or pipe penetration through a steel beam's web.
+
+  **IN A WALL- OR CEILING-BASED FAMILY (version 3, 2026-11-01)** - the
+  Opening tool those templates offer, CREATE_FAMILY_HOST_OPENING's job, merged
+  in: `shape` is ONE closed loop in millimetres in the template's own wall or
+  ceiling - along the wall and up it, X,Y in plan for a ceiling - and the
+  template's one wall or ceiling is found, so `host` and `boundary` are left
+  out. An opening cut there is cut in every wall or ceiling the family is
+  placed on. A floor- or roof-based family is refused by name - Revit's call
+  takes a wall or a ceiling. Its size is FIXED as drawn, and the answer says
+  so. Read back, all or nothing: its host and its extent, to a millimetre.
 
   **THIS IS THE HALF `PROPOSE_MEP_OPENINGS` SAYS SOMEBODY ELSE MUST DO, AND
   NOBODY DID.** Its own purpose reads: *"It creates nothing... The list this
@@ -46,19 +61,57 @@ contract:
   needs:
     - name: doc
       type: Document
+    # The wall, floor, roof, ceiling, beam, brace or column to cut through, in
+    # a project. Left out it binds null (version 3): in a family the
+    # template's own wall or ceiling is found; in a project it is refused,
+    # "No host was given", as before. A host named in a family must be the
+    # template's own.
     - name: host
       type: Element
       source: request
+      optional: true
+    # The closed boundary in a project, in the host's plane. Left out it binds
+    # empty (version 3): a family's opening is `shape`; in a project it is
+    # refused, "at least three boundary points", as before. Refused in a
+    # family when given.
     - name: boundary
       type: IList<XYZ>
       source: request
+      optional: true
+    # true cuts perpendicular to the face (a beam's web), false vertically (a
+    # beam's flanges). Not used in a family - give it false.
     - name: perpendicularFace
       type: bool
       source: request
+    # VERSION 3, from CREATE_FAMILY_HOST_OPENING: the opening in a family, ONE
+    # closed loop in millimetres in the template's wall or ceiling's own two
+    # coordinates - "rect -300,600 300,1200" on a wall along X is 600 wide and
+    # 600 high, its sill at 600; "circle 0,0 100" in a ceiling. Left out
+    # ("none"): a project's opening, by host and boundary. Refused in a project.
+    - name: shape
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: created
       role: result
       type: ElementId
+    - name: openingId
+      # VERSION 3, CREATE_FAMILY_HOST_OPENING's: the new opening's unique id -
+      # in a project too.
+      role: result
+      type: string
+    - name: built
+      # VERSION 3: the host and the opening's extent - read back in a family;
+      # in a project, the host and the cut.
+      role: result
+      type: string
+    - name: refused
+      # VERSION 3: why nothing was cut, in plain words. Empty when the call
+      # cut one (D-52).
+      role: accounting
+      type: string
     - name: findings
       type: IList<string>
 
@@ -94,6 +147,11 @@ compatibility-note: >
   2027 - read off the reference assemblies at both ends on 2026-09-18. The bool
   chooses whether the profile is cut perpendicular to the face or vertically,
   which matters on a sloped roof and on nothing else. Lengths are internal FEET.
+  Version 3 adds CREATE_FAMILY_HOST_OPENING's call, unchanged 2020 to 2027 -
+  `FamilyItemFactory.NewOpening(Element, CurveArray)`, "an opening to cut the
+  wall or ceiling", which Autodesk's remarks say throws when the host is
+  neither - with `Opening.Host` and `BoundaryCurves`. Built on all eight
+  releases on 2026-11-01.
 
 # TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
 #
@@ -123,6 +181,22 @@ compatibility-note: >
 #   "make the stair and its opening" -> CREATE_STAIRS with cutOpening=true; it
 #                                       cuts the top level's slab itself, over
 #                                       the stair it made
+#   "cut an opening in the host wall of this family" -> here since version 3,
+#                                       `shape` - CREATE_FAMILY_HOST_OPENING
+#                                       until 2026-11-01
+#   "cut the solid with the void"    -> COMBINE_FAMILY_FORMS
+#
+# VERSION 3 - WHERE CREATE_FAMILY_HOST_OPENING'S INPUTS AND OUTPUTS ARE NOW:
+#   shape                 shape, the same one closed loop in millimetres
+#   (the template host)   found here, never named; host and boundary left out
+#   openingId, built      openingId, built - read back the same way
+#   refused, findings     refused, findings
+#   notAFamily            NOT AN OUTPUT HERE: a project is this card's own
+#                         case, so being one is no refusal. A `shape` given in
+#                         a project is refused, saying it is a family's.
+# NOTHING WAS OPPOSITE. The two never cut the same host: the family half keeps
+# that card's rules whole - a Revit refusal there THROWS and rolls the call
+# back; the project half keeps this card's, a refusal reported in findings.
 
 utterances:
   - cut an opening in this wall
@@ -131,3 +205,10 @@ utterances:
   - create an opening
   - put a hole in this wall for the duct
   - cut a hole through the web of this beam for the duct
+  # MOVED 2026-11-01 from CREATE_FAMILY_HOST_OPENING, merged into this card.
+  - cut an opening in the host wall of this family
+  - add an opening to the wall based family
+  - cut the ceiling opening in this ceiling based family
+  - make the opening in the template wall
+  # ...and CREATE_FAMILY_HOST_OPENING's semantic identity, which nothing else declares:
+  - cut an opening in the template's own wall or ceiling, in a wall-based or ceiling-based family

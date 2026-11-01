@@ -25,7 +25,7 @@ purpose: >
   LINK_NESTED_TYPE_PARAMETER were merged into this card and are DEPRECATED.
   The elements are named ONE way a call: by category, as before; or
   PARTICULAR forms and nested copies by the ids the form tools or
-  PLACE_NESTED_FAMILY gave back, or `selected` (`forms`) - one form's Visible,
+  PLACE_FAMILY_INSTANCES gave back, or `selected` (`forms`) - one form's Visible,
   a revolve's End Angle, one copy's Thread Size, its other copies left alone;
   or a nested family's TYPE by its family and type (`family`, `type`) - the
   motor's Width following Motor Width. A form's Material is LINKED to a
@@ -105,7 +105,8 @@ contract:
       absent: none
     # VERSION 3, from LINK_FAMILY_FORM_PARAMETER and SET_FAMILY_FORM_MATERIAL:
     # PARTICULAR forms and nested copies, by the ids the form tools or
-    # PLACE_NESTED_FAMILY gave back, commas between - or `selected`, what is
+    # PLACE_FAMILY_INSTANCES gave back (PLACE_NESTED_FAMILY until 2026-11-01),
+    # commas between - or `selected`, what is
     # selected in this family's window. Anything that is not a form or a
     # nested copy refuses the call. Optional, "none" when left out.
     - name: forms

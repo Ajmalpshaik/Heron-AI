@@ -203,7 +203,7 @@ compatibility-note: >
 #                                           grid - an imaginary spacing for
 #                                           placing diffusers - and not the
 #                                           building's setting-out datum
-#   "draw a detail line here"            -> CREATE_LINE - a line is not a
+#   "draw a detail line here"            -> DRAW_FAMILY_DETAIL_LINES - a line is not a
 #                                           datum: no bubble, no name, no view
 #                                           extents
 #   "add a grid line at 1200 from the bottom of this curtain wall",

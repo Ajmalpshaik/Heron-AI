@@ -70,17 +70,17 @@ purpose: >
      it, and its geometry:
        Elbow          2  Elbows       pipe: a CREATE_FAMILY_FORMS revolve about the
                                       centre-line radius; rectangular or oval
-                                      duct: CREATE_FAMILY_SWEEP of the duct
-                                      profile along the arc
+                                      duct: a CREATE_FAMILY_FORMS sweep of
+                                      the duct profile along the arc
        Tee            3  Junctions    run: one form along X through the origin;
                                       branch: one along Y to the branch end;
                                       COMBINE_FAMILY_FORMS joins them
        Cross          4  Crosses      as a tee, with a second branch along -Y
        Transition     2  Transitions  round to round: a CREATE_FAMILY_FORMS revolve
-                                      of the cone's outline or
-                                      CREATE_FAMILY_BLEND; rectangular:
-                                      CREATE_FAMILY_BLEND, base one size, top
-                                      the other; a rectangular-to-round or
+                                      of the cone's outline or a
+                                      CREATE_FAMILY_FORMS blend; rectangular:
+                                      a CREATE_FAMILY_FORMS blend, base one
+                                      size, top the other; a rectangular-to-round or
                                       -oval duct transition is a multi-shape
                                       one, offered by its own group
                                       (Rectangular to Round, Rectangular to
@@ -310,8 +310,8 @@ needs:
   - CREATE_REFERENCE_PLANES
   - LABEL_FAMILY_DIMENSION
   - CREATE_FAMILY_FORMS
-  - CREATE_FAMILY_SWEEP
-  - CREATE_FAMILY_SWEPT_BLEND
+  # CREATE_FAMILY_SWEEP was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # CREATE_FAMILY_SWEPT_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
   # CREATE_FAMILY_EXTRUSION was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
   - LOCK_FORM_TO_PLANES
   # LINK_FAMILY_FORM_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
@@ -326,16 +326,17 @@ needs:
   - CHECK_FAMILY_SIZE_TABLES
   # FAMILY-CREATION's steps, which this skill says still hold.
   # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
-  # GUIDs, against the family, before ADD_FAMILY_SHARED_PARAMETERS writes.
+  # GUIDs, against the family, before ADD_FAMILY_PARAMETERS' shared kind writes.
   - REPORT_SHARED_PARAMETER_FILE
-  - ADD_FAMILY_SHARED_PARAMETERS
+  # ADD_FAMILY_SHARED_PARAMETERS was listed here until 2026-11-01, when it was merged into ADD_FAMILY_PARAMETERS.
   - SET_FAMILY_PLANE_REFERENCE
   - EXTRUDE_BETWEEN_PLANES
-  - CREATE_FAMILY_BLEND
+  # CREATE_FAMILY_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
   - LABEL_FAMILY_RADIUS
   - COMBINE_FAMILY_FORMS
   - ARRAY_FAMILY_FORMS
-  - PLACE_NESTED_FAMILY
+  # PLACE_NESTED_FAMILY was listed here until 2026-11-01, when it was merged into PLACE_FAMILY_INSTANCES.
+  - PLACE_FAMILY_INSTANCES
   - LOCK_NESTED_FAMILY_TO_PLANES
   # LINK_NESTED_TYPE_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - ADD_FAMILY_TYPE_PARAMETER
