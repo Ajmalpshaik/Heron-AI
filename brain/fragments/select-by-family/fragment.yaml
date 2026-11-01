@@ -176,7 +176,7 @@ compatibility-note: >
 #   "which families are not used"        -> FIND_PURGEABLE_ELEMENTS
 #   "these are in the wrong category"    -> CHECK_CATEGORY_MISMATCH
 #   "load this family"                   -> LOAD_FAMILY
-#   "rename this family"                 -> RENAME_FAMILY
+#   "rename this family"                 -> EDIT_TEXT_VALUES, field Family (RENAME_FAMILY until 2026-11-01)
 
 utterances:
   - find all the VCDs

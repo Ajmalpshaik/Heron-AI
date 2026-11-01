@@ -295,7 +295,9 @@ compatibility-note: >
 #                                           refuses them as a shared name
 #                                           (5b-203); that one reaches each by
 #                                           Revit's own parameter id
-#   "change the mullion type on the      -> SET_CURTAIN_WALL_MULLIONS. The same
+#   "change the mullion type on the      -> SET_CURTAIN_WALL_GRID, `mullions`
+#                                           (SET_CURTAIN_WALL_MULLIONS until
+#                                           2026-11-01). The same
 #    curtain wall"                          shared names, which this one
 #                                           refuses as ambiguous - even though
 #                                           an element reference takes a name

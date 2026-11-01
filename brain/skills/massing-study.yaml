@@ -98,12 +98,15 @@ purpose: >
         "top" for a glazed roof. Both stay tied to the faces; after the
         mass changes, Update to Face by hand.
      b. SLABS: REPORT_MASSES with withOutlines gives each mass floor's
-        outline in the writing CREATE_FLOOR (PROVEN, version 2) takes - one
+        outline in the writing CREATE_FLOOR (version 2 PROVEN; DRAFT at
+        version 3 since 2026-11-01, so a kept change is refused until it is
+        proved again, D-117) takes - one
         CREATE_FLOOR per outline, on its level. A slab made this way does
         NOT follow the mass; say so. An outline with a hole - a courtyard,
         an atrium - is the outside edge only: CREATE_OPENING (PROVEN) cuts
         the hole after, from the inner edge the modeller confirms.
-     c. ROOF: CREATE_ROOF (PROVEN) on the top outline, or Roof by Face by
+     c. ROOF: CREATE_FLOOR with a roof type on the top outline (CREATE_ROOF,
+        PROVEN, until it was merged in on 2026-11-01), or Roof by Face by
         hand - no API makes one.
      d. HIDE THE MASSES, never delete them while walls hang on their faces:
         SET_CATEGORY_VISIBILITY (PROVEN) turns Mass off in the views that
@@ -140,7 +143,6 @@ needs:
   - CREATE_CURTAIN_SYSTEM
   - CREATE_FLOOR
   - CREATE_OPENING
-  - CREATE_ROOF
   - SET_CATEGORY_VISIBILITY
 
 preconditions:

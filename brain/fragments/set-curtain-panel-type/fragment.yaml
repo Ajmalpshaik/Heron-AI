@@ -195,8 +195,8 @@ compatibility-note: >
   Categories are compared through new ElementId(BuiltInCategory), on every
   release; no ElementId is built from a number and none is read as one.
 
-# ROUTING - the same rows are in CHANGE_ELEMENT_TYPE, SET_CURTAIN_WALL_MULLIONS,
-# SET_CURTAIN_WALL_GRID, REPORT_CURTAIN_ELEMENTS and REPLACE_MATERIAL.
+# ROUTING - the same rows are in CHANGE_ELEMENT_TYPE, SET_CURTAIN_WALL_GRID,
+# REPORT_CURTAIN_ELEMENTS and REPLACE_MATERIAL.
 #
 #   "change the bottom row of panels on this curtain wall to solid panels" -> here
 #   "put spandrel panels on every floor line"   -> here, whichPanels floor lines
@@ -224,7 +224,7 @@ compatibility-note: >
 #                                                  wall; the type's Curtain Panel
 #                                                  is an element reference, which
 #                                                  WRITE_ELEMENT_PARAMETERS refuses
-#   "change the mullions on this curtain wall"  -> SET_CURTAIN_WALL_MULLIONS. A
+#   "change the mullions on this curtain wall"  -> SET_CURTAIN_WALL_GRID, `mullions`. A
 #                                                  mullion is on the type's grid
 #                                                  lines; a panel fills a cell
 #   "set the curtain wall grid spacing"         -> SET_CURTAIN_WALL_GRID. The grid

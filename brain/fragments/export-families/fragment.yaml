@@ -94,7 +94,7 @@ compatibility-note: >
 #                                           library
 #   "find all the VCDs"                  -> SELECT_BY_PARAMETER_VALUE
 #   "export the model to IFC"            -> EXPORT_MODEL_TO_IFC
-#   "rename this family"                 -> RENAME_FAMILY
+#   "rename this family"                 -> EDIT_TEXT_VALUES, field Family (RENAME_FAMILY until 2026-11-01)
 
 utterances:
   - get the families out of this model

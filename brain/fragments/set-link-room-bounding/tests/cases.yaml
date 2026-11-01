@@ -6,7 +6,33 @@ positive:
       changed 1, the link type read back ON; Type Properties shows Room
       Bounding ticked
 
+  # VERSION 2 - SET_LINK_PATH_TYPE merged in. Each fails on version 1, which
+  # had no pathType and required roomBounding.
+  - given: VERSION 2. Two Revit links stored Absolute, linkName empty, pathType relative, roomBounding left out
+    expect: >
+      changed 2, each reading Relative in Manage Links afterwards; Room
+      Bounding of neither touched - SET_LINK_PATH_TYPE's own case
+
+  - given: VERSION 2. One link Absolute and not Room Bounding, pathType relative, roomBounding true
+    expect: >
+      changed 1 - one link type, both settings read back - and the findings
+      naming both
+
 negative:
+  - given: VERSION 2. The two links straight after, pathType relative
+    expect: >
+      changed 0 and alreadyThat 2 - nothing written twice
+
+  - given: VERSION 2. pathType sideways
+    expect: refused before any link is touched
+
+  - given: VERSION 2. roomBounding and pathType both left out
+    expect: refused "Nothing was asked"; nothing changed
+
+  - given: VERSION 2. A cloud or Revit Server link, pathType relative
+    expect: >
+      named in `report` as a Revit Server or cloud link Revit will not
+      switch, and left alone
   - given: >
       the same link, already ON, with roomBounding true
     expect: >

@@ -112,7 +112,7 @@ compatibility-note: >
 #                                      is the opposite of duplicating it
 #   "make the new type 300 wide"     -> WRITE_ELEMENT_PARAMETERS on the type
 #                                      this creates. Nothing here sets a size
-#   "rename the family"              -> RENAME_FAMILY
+#   "rename the family"              -> EDIT_TEXT_VALUES, field Family (RENAME_FAMILY until 2026-11-01)
 
 #   "make a duct system type"            -> CREATE_MEP_SYSTEM_TYPE - a SYSTEM
 #                                        type is colour, abbreviation and which
@@ -123,9 +123,9 @@ compatibility-note: >
 #                                        curtain-wall skill: this card first,
 #                                        then
 #                                        CHANGE_ELEMENT_TYPE to put that wall on
-#                                        the copy, then SET_CURTAIN_WALL_GRID or
-#                                        SET_CURTAIN_WALL_MULLIONS on the copy.
-#                                        Both change a TYPE, and so every wall
+#                                        the copy, then SET_CURTAIN_WALL_GRID -
+#                                        its grid, its mullions or both - on the
+#                                        copy. It changes a TYPE, and so every wall
 #                                        of it
 
 # ROUTING (2026-10-13, the gap fill)

@@ -1,7 +1,21 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `field`, `mode`, `text` and
 // `replacement` are in scope, and leaves `changed`, `untouched`, `blank`,
 // `readOnly`, `absent`, `ambiguous`, `unverified`, `refused`,
-// `noteFormatting`, `typesEdited`, `collisions` and `notMatched` behind.
+// `noteFormatting`, `typesEdited`, `collisions`, `notMatched` and
+// `familyRename` behind.
+//
+// VERSION 8 (2026-11-01) - RENAME_FAMILY MERGED IN: field "Family" renames the
+// LOADED FAMILY behind what is handed in - a family, one of its types or an
+// instance - one level above the type name field Name edits. Its rules come
+// with it: more than one family is refused (family names are unique, so one
+// name over three takes on the first and quietly not the rest), an in-place
+// family is refused, a system family has none and lands in `absent`, and the
+// types that follow are counted and named. Mode "set" - the new name whole -
+// is allowed for this field and field Text only; prefix, suffix (never
+// stacked) and replace work too, and the batch collision check of version 7
+// runs against every other family's name first, so a name already taken is
+// refused before Revit is asked. `familyRename` says what changed and that the
+// .rfa on disk keeps its own name.
 //
 // VERSION 7 (2026-11-01) - RENAME_ELEMENTS MERGED IN: for field Name every new
 // name is worked out first and checked against the others and against the
@@ -177,6 +191,14 @@ string noteFormatting = null;
 
 bool editingName = string.Equals((field ?? "").Trim(), "Name",
                                  StringComparison.OrdinalIgnoreCase);
+// VERSION 8 - the loaded family itself (RENAME_FAMILY, merged in). Before
+// version 8 "Family" was looked up as a parameter, and the built-in one of that
+// name holds an element id, so it was refused as not text: nothing that worked
+// stops working.
+bool editingFamily = string.Equals((field ?? "").Trim(), "Family",
+                                   StringComparison.OrdinalIgnoreCase);
+// One line about the family renamed, or why it was not (version 8).
+string familyRename = null;
 // A text note's wording. Decided per element below, because a set handed in
 // can mix text notes with other elements; on anything that is not a note,
 // "Text" is looked up as a parameter like any other name.
@@ -200,10 +222,11 @@ else if (how.Length == 0)
     refused = "no mode was given, so there is nothing to do. Use prefix, suffix or replace. "
         + "NOTHING WAS CHANGED";
 }
-else if (how == "set" && !askingText)
+else if (how == "set" && !askingText && !editingFamily)
 {
-    refused = "'set' writes the whole wording of a text note and is for field Text only. To set "
-        + "one value on a parameter, that is WRITE_ELEMENT_PARAMETERS. NOTHING WAS CHANGED";
+    refused = "'set' writes the whole wording of a text note, or a family's whole new name, and is "
+        + "for field Text and field Family only. To set one value on a parameter, that is "
+        + "WRITE_ELEMENT_PARAMETERS. NOTHING WAS CHANGED";
 }
 else if (how == "format" && !askingText)
 {
@@ -490,6 +513,133 @@ Func<string, string> transform = current =>
 var collisions = new List<string>();
 var notMatched = new List<ElementId>();
 
+// ===========================================================================
+// VERSION 8 (2026-11-01) - FIELD "Family": THE LOADED FAMILY, RENAMED ONCE
+// ===========================================================================
+//
+// RENAME_FAMILY's job, with its rules. Renaming a family changes it
+// EVERYWHERE: every type in it and every instance of those types follow,
+// across the model, whether or not they were handed in - so the types are
+// counted and named in `typesEdited`, and `familyRename` says so. MORE THAN
+// ONE FAMILY IS A REFUSAL, not a loop: family names must be unique, so one
+// literal name over three takes on the first and quietly not on the rest. AN
+// IN-PLACE FAMILY IS REFUSED: it is tied to the element that made it. THE FILE
+// ON DISK IS UNTOUCHED - reloading the .rfa brings the old name back.
+//
+// AND VERSION 7'S COLLISION CHECK RUNS FIRST: the new name against every other
+// family in the model, capitals ignored, and an empty one refused - so a name
+// already taken is refused before Revit is asked, never left to Revit's own
+// throw (RENAME_FAMILY reported Revit's refusal after the attempt).
+if (refused == null && editingFamily)
+{
+    var families = new List<Family>();
+    foreach (var element in elements)
+    {
+        if (element == null) continue;
+        // Handed the family itself, one of its types, or an instance of one.
+        Family family = element as Family;
+        if (family == null)
+        {
+            var symbol = element as FamilySymbol;
+            if (symbol != null) family = symbol.Family;
+        }
+        if (family == null)
+        {
+            var instance = element as FamilyInstance;
+            if (instance != null && instance.Symbol != null) family = instance.Symbol.Family;
+        }
+        if (family == null) { absent.Add(element.Id); continue; }
+        if (!families.Any(known => known.Id == family.Id)) families.Add(family);
+    }
+
+    if (families.Count == 0)
+    {
+        refused = string.Format("nothing handed in belongs to a loaded family, so NOTHING WAS RENAMED - "
+            + "system families such as walls, ducts and pipes have no family to rename; their TYPE names "
+            + "are field Name's. {0} element(s) looked at", absent.Count);
+        absent.Clear();
+    }
+    else if (families.Count > 1)
+    {
+        refused = string.Format(
+            "what was handed in covers {0} different families, and one name cannot serve them all - Revit "
+            + "needs family names to be unique, so NOTHING WAS RENAMED. They are: {1}",
+            families.Count, string.Join(", ", families.Select(f => "'" + f.Name + "'").ToArray()));
+    }
+    else if (families[0].IsInPlace)
+    {
+        refused = string.Format("'{0}' is an in-place family - it is tied to the element that made it, and "
+            + "renaming it does not mean what it looks like it means. NOTHING WAS RENAMED", families[0].Name);
+    }
+    else
+    {
+        var family = families[0];
+        var wasCalled = family.Name ?? "";
+        var wanted = transform(wasCalled);
+
+        if (wanted == wasCalled)
+        {
+            untouched.Add(family.Id);
+            familyRename = string.Format("'{0}' already reads that way - nothing was renamed", wasCalled);
+        }
+        else
+        {
+            if (wanted.Trim().Length == 0)
+                collisions.Add(string.Format("'{0}' (id {1}) would be left with NO name", wasCalled, family.Id));
+            else
+            {
+                foreach (var other in new FilteredElementCollector(doc).OfClass(typeof(Family)).ToElements())
+                {
+                    if (other.Id == family.Id) continue;
+                    string held = null;
+                    try { held = other.Name; } catch { held = null; }
+                    if (string.Equals(held, wanted.Trim(), StringComparison.OrdinalIgnoreCase))
+                        collisions.Add(string.Format("'{0}' - planned for family id {1}, and already the name "
+                            + "of family id {2}", wanted.Trim(), family.Id, other.Id));
+                }
+            }
+
+            if (collisions.Count > 0)
+            {
+                refused = string.Format("the new family name clashes, so NOTHING WAS RENAMED: {0}. Two "
+                    + "families cannot share a name, and inventing a suffix would leave a family nobody can "
+                    + "find by the name they asked for", string.Join("; ", collisions.ToArray()));
+            }
+            else
+            {
+                var typeIds = new List<ElementId>();
+                try { typeIds.AddRange(family.GetFamilySymbolIds()); } catch { }
+                try
+                {
+                    family.Name = wanted.Trim();
+                    // READ IT BACK. The name Revit settled on is the answer.
+                    var nowCalled = (doc.GetElement(family.Id) as Family).Name;
+                    if (nowCalled == wanted.Trim())
+                    {
+                        changed.Add(family.Id);
+                        typesEdited.AddRange(typeIds);
+                    }
+                    else unverified.Add(family.Id);
+                    familyRename = string.Format(
+                        "'{0}' is now '{1}'. Its {2} type(s) and EVERY instance of them changed with it, "
+                        + "across the whole model and not only what was handed in. The .rfa file on disk keeps "
+                        + "its own name - reloading from it will bring '{0}' back",
+                        wasCalled, nowCalled, typeIds.Count);
+                }
+                catch (Exception ex)
+                {
+                    // Refused by Revit - a question for the modeller, never
+                    // worked round by inventing a name.
+                    readOnly.Add(family.Id);
+                    familyRename = string.Format("'{0}' could not be renamed to '{1}': {2}",
+                        wasCalled, wanted.Trim(), ex.Message);
+                }
+            }
+        }
+    }
+    if (familyRename == null && refused != null) familyRename = refused;
+}
+
 if (refused == null && editingName)
 {
     var plannedName = new Dictionary<string, ElementId>(StringComparer.OrdinalIgnoreCase);
@@ -626,8 +776,9 @@ foreach (var element in elements)
 {
     // An unworkable request stops here rather than reporting on each element
     // in turn. Every one of them would answer identically anyway, and a list
-    // of identical non-answers is what made this hard to see.
-    if (refused != null) break;
+    // of identical non-answers is what made this hard to see. Field Family
+    // (version 8) was done whole, above.
+    if (refused != null || editingFamily) break;
     if (element == null) continue;
     handed++;
 
