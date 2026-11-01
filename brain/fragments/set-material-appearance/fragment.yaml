@@ -189,7 +189,7 @@ compatibility-note: >
   `#if REVIT2020`.
 
 # ROUTING - the same rows are in SET_MATERIAL_PROPERTIES,
-# CREATE_STARTER_MATERIALS and REPORT_MATERIAL_TEXTURES.
+# CREATE_STARTER_MATERIALS and LIST_MATERIALS.
 #
 #   "make the glass look like glass when rendered" -> here
 #   "give these materials a render appearance"     -> here
@@ -197,7 +197,8 @@ compatibility-note: >
 #   "the family is grey in realistic view"         -> here, matchShading
 #   "set the material colour"                      -> SET_MATERIAL_PROPERTIES - the shading colour
 #   "fill in the identity tab"                     -> SET_MATERIAL_PROPERTIES - every other tab
-#   "which material textures are missing"          -> REPORT_MATERIAL_TEXTURES
+#   "which material textures are missing"          -> LIST_MATERIALS, onlyMissing
+#                                                     (REPORT_MATERIAL_TEXTURES until 2026-11-01)
 #   "add a starter set of materials"               -> CREATE_STARTER_MATERIALS
 utterances:
   - give these materials a render appearance

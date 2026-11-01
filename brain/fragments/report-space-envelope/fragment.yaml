@@ -183,7 +183,8 @@ compatibility-note: >
 #   "read the spaces' walls and windows for the loads"  -> here
 #   "what load does Revit hold on each space"           -> READ_SPACE_LOADS
 #   "list the spaces and their airflow"                 -> READ_SPACE_LOADS
-#   "read the thermal U value of every floor type and roof type" -> here, never CREATE_ROOF
+#   "read the thermal U value of every floor type and roof type" -> here, never CREATE_FLOOR
+#                                                          (CREATE_ROOF until 2026-11-01)
 #   "add windows to the outside walls"                  -> PLACE_HOSTED_FAMILY - a
 #                                                          change; this card only reads
 #

@@ -120,7 +120,9 @@ compatibility-note: >
 #                                          the sentence and this card's DOWN
 #                                          walk answers it; REPORT_FAMILY_FORMS
 #                                          already pointed it here
-#   "give me the nested parts to act on" -> SELECT_SUBCOMPONENTS, the DOWN walk
+#   "give me the nested parts to act on" -> SELECT_GROUP_MEMBERS, a family
+#                                          instance opened (SELECT_SUBCOMPONENTS
+#                                          until 2026-11-01): the DOWN walk
 #                                          alone, when the parts themselves are
 #                                          what the next step acts on
 #   "which elements are in this group"  -> SELECT_GROUP_MEMBERS. A group is

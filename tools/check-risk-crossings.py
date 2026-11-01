@@ -354,9 +354,13 @@ QUESTIONS = [
     # The session building loads in Project2 asked it and was answered
     # CREATE_ROOF, a MODIFY, with REPORT_SPACE_ENVELOPE - which reads every
     # type's U-value - a hair behind. The card fix sends it to the take-off on
-    # the trained model; on spelling alone it is still CREATE_ROOF, and this
+    # the trained model; on spelling alone it was still CREATE_ROOF, and this
     # sweep is where that stays visible. tests/test_routing_phrases.py asks it
-    # on the model.
+    # on the model. MEASURED 2026-11-01 (score-routing --sentences, private
+    # stores): REPORT_SPACE_ENVELOPE on both the lexical and the trained
+    # backend, before and after CREATE_ROOF was merged into CREATE_FLOOR that
+    # day - the roof-making card it once reached is now CREATE_FLOOR with a
+    # roof type.
     "read the thermal U value of every floor type and roof type",
 ]
 

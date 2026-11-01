@@ -222,6 +222,44 @@ positive:
       the same answer as JP2. Two spellings of one name resolve to one type,
       by the add-in's own rule
 
+  # VERSION 4 (2026-11-01) - SET_CURTAIN_WALL_MULLIONS MERGED IN. NOT RUN.
+  # Each case below FAILS ON VERSION 3: that version took no `mullions`, and
+  # refused a call with no `grid` table as "Nothing was named to change".
+  # SET_CURTAIN_WALL_MULLIONS' own cases (its tests/cases.yaml, kept) are the
+  # mullion half's plan, and run here unchanged with `grid` left out.
+  - given: >
+      VERSION 4. The arrangement above ("HERON CW GRID PROOF", one wall); grid
+      left out; mullions "vertical interior=Rectangular Mullion: 30mm Square"
+      - SET_CURTAIN_WALL_MULLIONS' own proof case (Project1, 2026-10-18)
+    expect: >
+      applied 1, differs empty, refused empty; readBack ends with the six
+      mullion positions, "vertical interior mullions: 'Rectangular Mullion:
+      30mm Square', was ... - asked for 'Rectangular Mullion: 30mm Square'"
+      and the other five "- not asked, left as it was", and the grid's two
+      directions "- not asked, left as it was" twice each. Version 3 refused
+      it "Nothing was named to change"
+
+  - given: >
+      VERSION 4, BOTH TABLES IN ONE CALL. The arrangement; grid "vertical
+      layout=fixed distance; vertical spacing=1500"; mullions "vertical
+      interior=Rectangular Mullion: 30mm Square; horizontal border 2=none"
+    expect: >
+      applied 4 (two grid settings, two positions, fewer with alreadyAsAsked
+      making up the difference), differs empty; measured on the one wall:
+      vertical grid lines 5 now and mullions by type naming 'Rectangular
+      Mullion: 30mm Square' vertical. NO finding that the vertical grid puts no
+      lines on the wall - the lines this call laid out are counted before that
+      finding is judged. ONE undo entry for both
+
+  - given: >
+      VERSION 4. A copy of "Curtain Wall 1" whose vertical layout is None, one
+      wall of it; grid left out; mullions "vertical interior=Rectangular
+      Mullion: 30mm Square"
+    expect: >
+      applied 1, and a finding "The vertical grid puts no lines on wall ...,
+      so its interior mullion type shows on none of it - the type holds it all
+      the same". Not a failure
+
 negative:
   - given: >
       the same arrangement and the SAME grid, "vertical layout=fixed distance;
@@ -314,6 +352,49 @@ negative:
       type and the curtain system type in the Properties spelling; applied 0.
       Never chosen from (D-54 s3). Close the rig without saving afterwards, or
       delete the copy
+
+  # VERSION 4 - the mullion refusals, each with nothing written, grid or
+  # mullions. Each fails on version 3, which had no `mullions` at all.
+  - given: >
+      VERSION 4. The arrangement; grid left out; mullions "vertical
+      interior=Rectangular Mullion: ZZZ No Such Size" - SET_CURTAIN_WALL_MULLIONS'
+      own negative
+    expect: >
+      refused "No mullion type called 'Rectangular Mullion: ZZZ No Such Size'
+      in this model - capitals count. The mullion types it has are: ...",
+      naming every one, and "Heron does not load families. Nothing was
+      changed"; applied 0, readBack empty
+
+  - given: >
+      VERSION 4. The arrangement; grid "vertical layout=fixed distance;
+      vertical spacing=1500"; mullions "vertical interior=" - a blank
+    expect: >
+      refused "'vertical interior' was given no mullion type. Name one, or say
+      none"; applied 0 and the GRID NOT WRITTEN either - the vertical layout
+      still reads as it did. One refusal refuses the whole request
+
+  - given: VERSION 4. The arrangement; grid and mullions both left out
+    expect: >
+      refused "Nothing was named to change", naming both tables; applied 0
+
+  - given: >
+      VERSION 4. A curtain system type (Group JP's "Heron JP 1500"); mullions
+      "vertical interior=Rectangular Mullion: 30mm Square"
+    expect: >
+      refused "'vertical interior' is a curtain WALL type's position, and
+      'Curtain System: Heron JP 1500' is a curtain system type"; nothing
+      written
+
+  - given: >
+      VERSION 4, THE RULE THAT CHANGED. A workshared copy, the curtain wall
+      type held by another user; mullions "vertical interior=Rectangular
+      Mullion: 30mm Square"
+    expect: >
+      refused "Revit keeps the vertical interior mullion of '...' read-only,
+      and in this shared model '...' is held by" and the user's name. On a
+      model that is not shared, a read-only position is never said to be held
+      by another user - SET_CURTAIN_WALL_MULLIONS version 2 said "it may be
+      held by another user in a shared model" whatever the model
 
 second_route:
   - >

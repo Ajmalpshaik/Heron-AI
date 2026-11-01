@@ -235,8 +235,8 @@ compatibility-note: >
 #                                          nothing is built and nothing changes.
 #                                          Only the sentence with the points a
 #                                          wall needs is declared here
-#   "set the curtain wall grid", "set   -> SET_CURTAIN_WALL_GRID and
-#    the mullions"                         SET_CURTAIN_WALL_MULLIONS. A curtain
+#   "set the curtain wall grid", "set   -> SET_CURTAIN_WALL_GRID, its `grid`
+#    the mullions"                         and its `mullions`. A curtain
 #                                          wall's grid and mullions come from
 #                                          its TYPE, never from here
 #   "what is this curtain wall type set

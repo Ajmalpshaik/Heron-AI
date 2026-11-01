@@ -273,14 +273,15 @@ compatibility-note: >
   family document holds an Assembly Code table, are Revit's - an empty read
   is NOT CHECKED, never blank (NEEDS-CHECKING).
 
-# ROUTING - repeated in RENAME_FAMILY, FIND_PURGEABLE_ELEMENTS and
+# ROUTING - repeated in EDIT_TEXT_VALUES, FIND_PURGEABLE_ELEMENTS and
 # READ_ELEMENT_PARAMETERS.
 #
 #   "check the families are named to our standard" -> here - a READ
 #   "audit the family library"           -> here
 #   "why does nothing schedule properly" -> here - a missing parameter on the
 #                                           TYPE is the usual cause
-#   "rename this family"                 -> RENAME_FAMILY - a WRITE, and it must
+#   "rename this family"                 -> EDIT_TEXT_VALUES, field Family
+#                                           (RENAME_FAMILY until 2026-11-01) - a WRITE, and it must
 #                                           not answer a question about whether
 #                                           the names are right
 #   "which families are not used"        -> FIND_PURGEABLE_ELEMENTS - about USAGE,

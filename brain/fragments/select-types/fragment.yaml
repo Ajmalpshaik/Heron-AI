@@ -130,7 +130,9 @@ compatibility-note: >
 #                                       -> here, category Curtain Wall Mullions.
 #                                          A LISTING question. Without this row
 #                                          it reached SET_CURTAIN_WALL_MULLIONS,
-#                                          a write, measured 2026-09-25; the one
+#                                          a write, measured 2026-09-25 (merged
+#                                          into SET_CURTAIN_WALL_GRID on
+#                                          2026-11-01); the one
 #                                          type's mullions are
 #                                          REPORT_CURTAIN_WALL_TYPE's
 #   "rename that type"                  -> EDIT_TEXT_VALUES does the renaming.

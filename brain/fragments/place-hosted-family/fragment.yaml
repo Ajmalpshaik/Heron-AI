@@ -498,7 +498,7 @@ compatibility-note: >
 #                                      the family decides, and this tool
 #                                      refuses a face-based family by name
 #   "place these sprinklers"        -> PLACE_FAMILY_INSTANCES - free-standing
-#   "put a roof over this",         -> CREATE_ROOF, CREATE_FLOOR and
+#   "put a roof over this",         -> CREATE_FLOOR (a roof type for a roof) and
 #    "add a slab here", "put a         CREATE_FROM_ROOM_BOUNDARIES - the host
 #    ceiling in every room"            itself, not a family hosted in it
 #   "the plan is off to the side,   -> CENTER_VIEWPORTS_ON_SHEETS - a viewport

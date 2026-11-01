@@ -231,10 +231,11 @@ compatibility-note: >
 #                                               This makes the curtain system;
 #                                               that sets the type it is of
 #   "put mullions on the curtain system
-#    type"                                   -> SET_CURTAIN_WALL_MULLIONS, the
-#                                               same way - Grid 1 and Grid 2
-#                                               Mullions (version 2, DRAFT until
-#                                               Group JP)
+#    type"                                   -> SET_CURTAIN_WALL_GRID, `mullions`,
+#                                               the same way - Grid 1 and Grid 2
+#                                               Mullions (SET_CURTAIN_WALL_MULLIONS
+#                                               merged into it 2026-11-01; DRAFT
+#                                               until Group JP)
 #   "put this family on the face of the
 #    mass"                                   -> PLACE_FAMILY_ON_FACE
 

@@ -246,7 +246,7 @@ compatibility-note: >
 #   "rename the family parameter CC 1 to 2"  -> here, renameExisting true
 #   "rename these walls / views / sheets"    -> EDIT_TEXT_VALUES field Name (elements, not
 #                                               a family's parameters)
-#   "rename this family"                     -> RENAME_FAMILY
+#   "rename this family"                     -> EDIT_TEXT_VALUES, field Family (RENAME_FAMILY until 2026-11-01)
 #   "delete these family parameters"         -> DELETE_FAMILY_PARAMETERS
 #   "add a shared parameter to the project"  -> ADD_PROJECT_PARAMETER
 #   "replace the family parameter Width with the shared parameter Unit_Width"

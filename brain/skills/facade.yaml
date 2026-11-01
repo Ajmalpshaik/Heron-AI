@@ -40,7 +40,7 @@ purpose: >
   ROUTE A - CURTAIN WALL. Follow the curtain-wall method: REPORT_CURTAIN_WALL_TYPE
      first, DUPLICATE_TYPE + CHANGE_ELEMENT_TYPE when only this wall must
      change, CREATE_WALL with the curtain type (a curved one is one wall on an
-     arc), SET_CURTAIN_WALL_GRID and SET_CURTAIN_WALL_MULLIONS on the type.
+     arc), SET_CURTAIN_WALL_GRID - its grid and its mullions - on the type.
      Then, on THIS wall only:
      - a bay or a transom the type's spacing does not give, or "divide into
        N equal panels": ADD_CURTAIN_GRID_LINES, with a mullion type when the
@@ -58,7 +58,7 @@ purpose: >
      1. CREATE_CURTAIN_SYSTEM on the mass's faces - its side faces by
         default, all of them or its top only when the modeller says so. The
         grid and mullions come from the CURTAIN SYSTEM TYPE.
-     2. SET_CURTAIN_WALL_GRID and SET_CURTAIN_WALL_MULLIONS on the curtain
+     2. SET_CURTAIN_WALL_GRID - grid and mullions - on the curtain
         system type, named as Revit writes it: its Grid 1 and Grid 2 - a
         layout and a spacing in millimetres - and its Grid 1 and Grid 2
         mullions, never vertical and horizontal, because which way each grid
@@ -159,7 +159,6 @@ needs:
   - CHANGE_ELEMENT_TYPE
   - CREATE_WALL
   - SET_CURTAIN_WALL_GRID
-  - SET_CURTAIN_WALL_MULLIONS
   - ADD_CURTAIN_GRID_LINES
   - SET_CURTAIN_PANEL_TYPE
   - SELECT_IN_REGION
@@ -210,7 +209,9 @@ note: >
   SET_CURTAIN_WALL_GRID (version 3) and SET_CURTAIN_WALL_MULLIONS (version 2)
   were widened to a curtain system type for route B, on the owner's word; their
   proofs went stale with it, so routes A and B are both refused a kept grid or
-  mullion change until NEEDS-CHECKING Group JP proves them again. The whole
+  mullion change until NEEDS-CHECKING Group JP proves them again. On 2026-11-01
+  SET_CURTAIN_WALL_MULLIONS was merged into SET_CURTAIN_WALL_GRID (version 4),
+  which sets the grid and the mullions, in one call or two. The whole
   method is DRAFT until each route has been run on a scratch model with a
   negative case (D-30). The coverage, route by route, is in
   docs/work-notes/plans/facade-capability.md.

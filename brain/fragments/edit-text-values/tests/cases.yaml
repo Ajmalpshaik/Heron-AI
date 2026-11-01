@@ -66,6 +66,23 @@ positive:
       A paragraph Revit renumbers with its list but that was not named is said
       by number in `noteFormatting` and puts the note in `unverified`
 
+  # VERSION 8 - RENAME_FAMILY merged in, field Family. NOT RUN. Each fails on
+  # version 7, which read "Family" as a parameter - the built-in one holds an
+  # element id, so it was refused as not text - and refused mode set on it.
+  - given: >
+      VERSION 8. One air terminal instance handed in, field Family, mode set,
+      text the project standard's name - RENAME_FAMILY's own first case
+    expect: >
+      `changed` holds the family's id, `typesEdited` its types, and
+      `familyRename` "'<old>' is now '<new>'. Its N type(s) and EVERY instance
+      of them changed with it" - N matching what the project browser shows
+      under that family. LOOKED AT in the browser: the new name, the same
+      types beneath it, every instance following
+
+  - given: VERSION 8. The same family, field Family, mode prefix, text "AJ_", run twice
+    expect: >
+      the first run "AJ_<old>", the second `untouched` - never "AJ_AJ_<old>"
+
 negative:
   - given: >
       VERSION 5, mode "format". The same four-paragraph note, text "numbers
@@ -217,6 +234,36 @@ negative:
     expect: >
       `changed` holds 4 and `notMatched` the other 36 - the same ids as
       `untouched`. Version 6 had no `notMatched`
+
+  # VERSION 8 - field Family's refusals, nothing renamed in any of them.
+  - given: >
+      VERSION 8. Instances of THREE different families, field Family, mode
+      set, one new name
+    expect: >
+      REFUSED "covers 3 different families", the three named; nothing renamed
+
+  - given: >
+      VERSION 8. One instance, field Family, mode set, text a name another
+      loaded family already has (in other capitals)
+    expect: >
+      REFUSED BEFORE THE RENAME, `collisions` naming the other family's id -
+      RENAME_FAMILY tried first and reported Revit's refusal after
+
+  - given: VERSION 8. An IN-PLACE family's instance, field Family, mode set
+    expect: refused "is an in-place family" before anything is attempted
+
+  - given: VERSION 8. Walls and ducts handed in, field Family, mode set
+    expect: >
+      REFUSED "nothing handed in belongs to a loaded family" - system
+      families have none; their TYPE names are field Name's
+
+  - given: VERSION 8. A mark parameter, mode set
+    expect: >
+      still REFUSED - "set" is for field Text and field Family only; one
+      value on a parameter is WRITE_ELEMENT_PARAMETERS
+
+  - given: VERSION 8. The family renamed, then reloaded from its .rfa
+    expect: the OLD name back - nothing here touches the file on disk
 
 second_route:
   - >

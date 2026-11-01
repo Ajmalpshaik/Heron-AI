@@ -105,7 +105,9 @@ purpose: >
      not follow when the level above is moved, and one tied to it does.
      Because step 3 drew it to that height, nothing moves when it is tied:
      heightChanged must be empty and unconnectedTop too.
-  5. CREATE_FLOOR (PROVEN, version 2 - as CREATE_WALL in step 3; an arc has
+  5. CREATE_FLOOR (DRAFT at version 3 since 2026-11-01, when CREATE_CEILING
+     and CREATE_ROOF were merged into it - version 2 was PROVEN, and until
+     version 3 is proved a change kept from it is refused (D-117); an arc has
      run through the pre-2022 call only, and the 2022-and-later one is still
      owed in Group HM), one slab per floor, drawn to the OUTSIDE faces of the
      outside walls - not to their centrelines, which leaves the slab half a
@@ -229,9 +231,11 @@ purpose: >
       a curtain wall, a separation line or a linked wall is not lined, and is
       counted, never passed over. A second run lays a second finish over the
       first: count the finish type's walls before running it again.
-  11. CREATE_ROOF (PROVEN) on the top level, from the outline of the outside
-      walls. It makes a FLAT roof, and it takes its level as an input, so which
-      view is open does not decide where it goes.
+  11. CREATE_FLOOR with a ROOF type on the top level, from the outline of the
+      outside walls (CREATE_ROOF, PROVEN, until it was merged into CREATE_FLOOR
+      on 2026-11-01 - DRAFT until version 3 is proved, as step 5). It makes a
+      FLAT roof, and it takes its level as an input, so which view is open does
+      not decide where it goes.
   12. SLOPE_ROOF_EDGES (PROVEN), only when the roof is pitched: a gable slopes
       the two long eaves and leaves the two ends upright, a hip slopes every
       edge. The pitch is the modeller's and is never assumed.
@@ -391,7 +395,8 @@ needs:
   - CHANGE_ELEMENT_TYPE
   # The ceilings - and, with a wall type, the wall finishes - see step 10.
   - CREATE_FROM_ROOM_BOUNDARIES
-  - CREATE_ROOF
+  # The roof is CREATE_FLOOR with a roof type - see step 11, and CREATE_FLOOR
+  # above.
   # Only for a pitched roof - see step 12.
   - SLOPE_ROOF_EDGES
   # Only for a curved or organic part - a family of freeform forms, step 13.

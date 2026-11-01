@@ -14,7 +14,31 @@ positive:
       reports it as zero, which on a finishes schedule reads as "that material
       is not in this model" rather than "I did not ask for it"
 
+  # VERSION 3 - REPORT_EMBODIED_CARBON merged in. Each fails on version 2,
+  # which took no factorParameter and had no carbon, totalKg or noFactor.
+  - given: >
+      VERSION 3. Two concrete floors of 10 m3 each, the material Concrete
+      carrying a Number parameter "Carbon Factor" of 300, factorParameter
+      "Carbon Factor", groupBy left out, top 0 - REPORT_EMBODIED_CARBON's own case
+    expect: >
+      totalKg 6000 and the Concrete line first in `carbon` with 6000 kgCO2e,
+      20 m3, 100%; volumes and areas exactly as without the factor
+
+  - given: VERSION 3. One of the floors handed in twice, the factor 300
+    expect: >
+      totalKg 3000 - taken off once. REPORT_EMBODIED_CARBON gave 6000
+
+  - given: VERSION 3. factorParameter left out
+    expect: >
+      carbon empty, totalKg 0, noFactor empty, noVolume 0 - the takeoff alone,
+      version 2's to the number
+
 negative:
+  # VERSION 3 - the carbon negative; fails on version 2, which had no noFactor.
+  - given: VERSION 3. The same floors with the Carbon Factor parameter cleared
+    expect: >
+      totalKg 0 and noFactor naming Concrete - never a factor guessed
+
   - given: a material applied ONLY as paint, nowhere in any geometry
     expect: >
       an area and NO volume entry. Paint is a surface, not a body - the missing

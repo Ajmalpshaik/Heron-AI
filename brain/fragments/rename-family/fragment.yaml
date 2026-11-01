@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,32 @@ capability: RENAME_FAMILY
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO EDIT_TEXT_VALUES (edit-text-values), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools", then "ok go ahead merge all". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to EDIT_TEXT_VALUES. A proof below is
+# the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: EDIT_TEXT_VALUES
+  why: >
+    The same job one level up: a name read, changed and read back.
+    EDIT_TEXT_VALUES since its version 8 has field "Family": it goes up from
+    an instance or a type to the loaded family, refuses more than one
+    family naming them, refuses an in-place family, counts the types that
+    follow (named in `typesEdited`) and says the .rfa on disk keeps its
+    own name (`familyRename`); mode set gives the whole new name, for that
+    field and Text only, and prefix, suffix and replace work too. Its
+    `renamed` is the keeper's `changed`, `notFamilies` its `absent`. The
+    keeper is SAFER on one rule: a name another family holds is refused
+    before the rename, with its batch collision check, where this card
+    tried and reported Revit's refusal after. Nothing of this card is left
+    out.
 
 purpose: >
   Renames the FAMILY behind the elements handed in - the loaded component
