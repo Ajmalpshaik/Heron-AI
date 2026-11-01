@@ -1807,6 +1807,67 @@ function dashBoard(B) {
   return sec;
 }
 
+// Colour Revit's active view by a parameter, or clear the colours (docs/40
+// s21.14). A CHANGE to the view's graphics: the page asks first, Revit's Keep
+// or Discard asks again while Ask to Keep is on, and it is one entry in
+// Revit's undo list. Nothing in any element's data changes.
+function dashColourBox() {
+  const sec = el("section", "d-colour");
+  sec.append(el("h3", "d-sub", "Colour Revit's active view"));
+  const row = el("div", "d-tools");
+  const name = el("input", "d-params");
+  name.type = "text";
+  name.placeholder = "A parameter as Revit shows it - System Type, Fire Rating, Level";
+  name.setAttribute("aria-label", "Parameter to colour the active view by");
+  const said = el("p", "result");
+  said.setAttribute("role", "status");
+  const send = async body => {
+    if (dashBusy) return;
+    dashBusy = true;
+    document.querySelectorAll("#dashboard button").forEach(b => { b.disabled = true; });
+    said.className = "result";
+    said.textContent = "Asking Revit… if Revit asks Keep or Discard, answer it there.";
+    try {
+      const res = await fetch("/api/dashboard/colour", {
+        method: "POST",
+        headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
+        credentials: "same-origin",
+        body: JSON.stringify(body),
+      });
+      const answer = await res.json();
+      said.className = answer.ok ? "result ok" : "result failed";
+      said.textContent = answer.said || answer.error || (answer.ok ? "Done." : "Not done.");
+    } catch (e) {
+      said.className = "result failed";
+      said.textContent = "The page could not reach Heron. Look at Revit's undo list before trying again.";
+    }
+    document.querySelectorAll("#dashboard button").forEach(b => { b.disabled = false; });
+    dashBusy = false;
+  };
+  const colour = el("button", "btn-lite", "Colour the view");
+  colour.type = "button";
+  colour.title = "Give every value of the parameter its own colour in Revit's active view - a change to the view's graphics";
+  colour.addEventListener("click", () => {
+    const p = name.value.trim();
+    if (!p) { said.className = "result failed"; said.textContent = "Name the parameter first."; return; }
+    if (!confirm("Colour everything Revit's active view shows by '" + p + "'?\n\nThis changes the view's " +
+                 "graphics - one entry in Revit's undo list. No element's data changes.")) return;
+    send({ parameter: p });
+  });
+  const clear = el("button", "btn-lite", "Clear colours");
+  clear.type = "button";
+  clear.title = "Take the per-element colours off everything Revit's active view shows - a change to the view's graphics";
+  clear.addEventListener("click", () => {
+    if (!confirm("Clear the per-element colours on everything Revit's active view shows?\n\n" +
+                 "One entry in Revit's undo list. A category's own colour is not touched.")) return;
+    send({ clear: true });
+  });
+  row.append(name, colour, clear, said);
+  sec.append(row, el("p", "muted small", "Every value gets its own colour, the same each time. " +
+    "Undo in Revit takes it back in one step."));
+  return sec;
+}
+
 function dashFilter(text, state) {
   const words = String(text || "").trim().toLowerCase();
   document.querySelectorAll("#dashboard .d-bar, #dashboard .d-fill-table tbody tr").forEach(n => {
@@ -1964,6 +2025,7 @@ function renderDashboard(D) {
   (D.charts || []).forEach(c => charts.append(dashChart(c)));
   box.append(charts);
   if (D.board) box.append(dashBoard(D.board));
+  if (!D.demo) box.append(dashColourBox());
   if (D.fill) box.append(dashFill(D.fill, colours));
   box.append(dashLook(D, colours));
   const legend = el("ul", "d-legend");

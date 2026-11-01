@@ -1211,3 +1211,29 @@ else) - the owner's decision, asked in the work note. A whole-model 3D view is p
 **Proved without Revit:** `tests/test_model_dashboard.py` and `tests/test_companion.py`; the page driven
 in Chromium with sample data - the fill table, the filter, the CSV download and the print view.
 **Not run in Revit** - the fill-rate's run is owed in [group JT](needs-checking/group-jt.md).
+
+### 21.14 Colour Revit's active view from the Model Dashboard (2026-11-01)
+
+The plan's phase 5, first part, on the owner's *"CONTINEW UNTILE ALL FINISH"* - BIMLens's *colour the model
+by a chart*, re-made the Heron way. **It is a change** - to the active view's graphics, never to an
+element's data:
+
+- **Colour the view** - type a parameter as Revit shows it (*System Type*, *Fire Rating*, *Level*).
+  `SELECT_VISIBLE_IN_VIEW` reads what the active view shows (READ, PROVEN); `COLOR_BY_PARAMETER` gives
+  every distinct value its own colour, the same colours every run, a blank its own group (MODIFY, PROVEN).
+- **Clear colours** - `RESET_GRAPHIC_OVERRIDES` on the same elements (MODIFY, PROVEN). A category's own
+  colour is not touched; only the per-element ones come off.
+
+Both run `revit_change`'s own body (`_dashboard_colour`): the gate, the Changes switch, the pin, D-117's
+PROVEN-only rule, **one named entry in Revit's undo list**, and Revit's Keep or Discard while *Ask to
+Keep* is on (D-126). The page asks the modeller first; only on the model the dashboard was read from;
+never on the DEMO. Declared `companion_dashboard_colour` and `companion_dashboard_clear_colours`, MODIFY.
+
+**Not built from phase 5, and why:** *fix from a row* (fill a parameter, rename to the standard, move to
+a workset) needs `SET_PARAMETER_VALUES_BY_ID` PROVEN first ([group FE](needs-checking/group-fe.md)) and
+the owner's word on which fixes; *purge unused families* is destructive - Article 7 asks the owner's yes
+for that exact job, so it is not offered as a button.
+
+**Proved without Revit:** `tests/test_companion.py` - the hook gets the parameter and the read's model,
+the demo and an empty name change nothing, the route is behind the pairing, the server goes through
+`revit_change` under the lock. **Not run in Revit** - group JT row JT27.

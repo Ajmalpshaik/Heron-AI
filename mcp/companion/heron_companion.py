@@ -1298,6 +1298,9 @@ class DashboardPanel(object):
         self.show_hook = None
         #: demo_hook() -> brain answer for the invented DEMO model.
         self.demo_hook = None
+        #: colour_hook(parameter, clear, identity) -> {"ok", "said"} - a change
+        #: to the active view's graphics through revit_change (docs/40 s21.14).
+        self.colour_hook = None
 
     def open(self, document, answer, identity=None, parameters="", board=""):
         built = answer.get("dashboard") or {}
@@ -1347,6 +1350,41 @@ class DashboardPanel(object):
 
 
     SHOWS = ("select", "isolate", "reset")
+
+    def colour(self, body):
+        """
+        Colour Revit's active view by a parameter, or clear the colours - a
+        CHANGE to the view's graphics, through revit_change's own body (the
+        hook). The page asks the modeller first; Revit's Keep or Discard asks
+        again while Ask to Keep is on. One at a time; never on the DEMO.
+        """
+        hook = self.colour_hook
+        if hook is None:
+            return {"ok": False, "said": "Nothing was changed: %s." % self.GONE}
+        if not isinstance(body, dict):
+            return {"ok": False, "said": "Nothing was changed: not a colour request."}
+        clear = body.get("clear") is True
+        parameter = body.get("parameter") if isinstance(body.get("parameter"), str) else ""
+        if not clear and not parameter.strip():
+            return {"ok": False, "said": "Nothing was changed: name the parameter to colour by."}
+        with self._lock:
+            if self._busy:
+                return {"ok": False, "said": "Nothing was changed: %s." % self.BUSY}
+            held = self._held
+            if not held:
+                return {"ok": False, "said": "Nothing was changed: read the model first - ask the "
+                                             "chat for a model dashboard."}
+            if held.get("demo"):
+                return {"ok": False, "said": "Nothing was changed: this is the DEMO, an invented "
+                                             "model."}
+            identity = list(held["identity"]) if held.get("identity") else None
+            self._busy = True
+        try:
+            got = hook(parameter.strip()[:100], clear, identity) or {}
+        finally:
+            with self._lock:
+                self._busy = False
+        return {"ok": bool(got.get("ok")), "said": got.get("said") or ""}
 
     @staticmethod
     def _ids_for(held, body):
@@ -2039,6 +2077,16 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             if why:
                 return self._refuse(403, why)
             return self._json(200, DASHBOARD_PANEL.demo())
+        if path == "/api/dashboard/colour":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 4096)
+                body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except (ValueError, UnicodeDecodeError):
+                return self._refuse(400, "unreadable")
+            return self._json(200, DASHBOARD_PANEL.colour(body))
         if path == "/api/dashboard/show":
             why = self._api_ok()
             if why:
