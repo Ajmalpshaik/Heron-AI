@@ -1,0 +1,186 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-077
+semantic-identity: "add a voltage type or a distribution system to the project's Electrical Settings"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "add a 230 V voltage type" and
+# "add a 400/230 V 3-phase 4-wire distribution system" - Revit's Manage > MEP
+# Settings > Electrical Settings, Voltage Definitions and Distribution Systems.
+# No card in the library added either (grep of brain/fragments that day for
+# AddVoltageType and AddDistributionSysType: nothing). CREATE_MEP_SYSTEM_TYPE
+# duplicates a duct or pipe system type; this is the electrical supply a
+# panel is set to, a different setting.
+#
+# ONE OF A SET. REPORT_ELECTRICAL_SETTINGS (FRG-MEP-076) answers every question
+# about these settings - which voltages and distribution systems exist and
+# their exact names and values - so no question reaches this write (D-86).
+# ADD_LOAD_CLASSIFICATION (FRG-MEP-078) adds load classifications and demand
+# factors, a different dialog. WHY TWO WRITES, NOT ONE: voltages and
+# distribution systems live in Electrical Settings and take volts, phases and
+# wires; load classifications and demand factors are elements of their own
+# and take percentages over kVA - one contract for all four would carry a
+# dozen inputs, most meaningless for any one run.
+#
+# NEVER OVERWRITES, RENAMES OR DELETES. A name already present, in any
+# capitals, is skipped and named. With no name given, an item with the same
+# values already present is skipped and named instead of a copy being made.
+#
+# NEVER GUESSED (D-33). A distribution system's phases, wires and - for
+# 3-phase - wye or delta are the modeller's: each missing one is refused and
+# named. Its voltages are taken from the model's voltage types by value; a
+# value none has is refused, and the voltage is added first, as its own run.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: ADD_ELECTRICAL_DISTRIBUTION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Adds one voltage type - its actual, minimum and maximum volts - or one
+  distribution system - 1-phase or 3-phase, wye or delta, its number of wires
+  and its line-to-line and line-to-ground voltages from the voltage types
+  already defined - to Electrical Settings, reporting the voltages or
+  distribution systems before and after. A name already present is skipped,
+  never overwritten.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: add
+      # voltage | distribution - which of the two is added.
+      type: string
+      source: request
+    - name: volts
+      # voltage: its actual value. distribution: the line-to-line voltage,
+      # which must be a voltage type the model already has. In volts.
+      type: double
+      source: request
+    - name: name
+      # The new item's name. Left out: "<volts> V" for a voltage,
+      # "<line>/<ground> V <phases>-phase <wires>-wire" for a distribution
+      # system - and then an item with the same values already present is
+      # skipped rather than copied.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: minVolts
+      # voltage only: the lowest voltage it covers. Left out, the actual value.
+      type: double
+      source: request
+      optional: true
+      absent: "0"
+    - name: maxVolts
+      # voltage only: the highest voltage it covers. Left out, the actual value.
+      type: double
+      source: request
+      optional: true
+      absent: "0"
+    - name: lineToGroundVolts
+      # distribution only: the line-to-ground voltage, which must be a voltage
+      # type the model has. Left out (0), none - a 3-wire delta.
+      type: double
+      source: request
+      optional: true
+      absent: "0"
+    - name: phases
+      # distribution only: 1 or 3. Never guessed - left out, refused.
+      type: int
+      source: request
+      optional: true
+      absent: "0"
+    - name: configuration
+      # distribution, 3-phase only: wye or delta. Never guessed.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: wires
+      # distribution only: 2 or 3 for 1-phase, 3 or 4 for 3-phase. Never
+      # guessed.
+      type: int
+      source: request
+      optional: true
+      absent: "0"
+  provides:
+    - name: added
+      # 1 when the voltage type or distribution system was added, else 0.
+      # Something the write DID, read back from Revit's own list.
+      role: result
+      type: int
+    - name: before
+      # The voltages, or the distribution systems, before - each with its
+      # values (D-52).
+      role: accounting
+      type: IList<string>
+    - name: after
+      # The same list after (D-52).
+      role: accounting
+      type: IList<string>
+    - name: skipped
+      # A name or a definition already present, named - left as it is, never
+      # overwritten (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in Revit words: a voltage the model has no voltage
+      # type for, phases, wires or wye/delta not given, a name Revit will not
+      # take. Never a thing done (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release but the unit check.
+  ElectricalSetting.GetElectricalSettings, VoltageTypes, DistributionSysTypes,
+  AddVoltageType(string, double, double, double) and
+  AddDistributionSysType(string, ElectricalPhase, ElectricalPhaseConfiguration,
+  int, VoltageType, VoltageType); VoltageType.ActualValue, MinValue and
+  MaxValue; DistributionSysType.ElectricalPhase, ElectricalPhaseConfiguration,
+  NumWires, VoltageLineToLine and VoltageLineToGround carry the same
+  signatures 2020 through 2027 - read with tools/api-surface --members on
+  2026-11-01. Volts are written as volts x 1 / 0.3048^2 internal units, the
+  factor SET_FAMILY_CONNECTOR_ROLES uses, checked against UnitUtils on the
+  release that runs - DisplayUnitType.DUT_VOLTS in 2020 (#if REVIT2020),
+  UnitTypeId.Volts from 2021 - and nothing is written if they disagree. An
+  ElementId is compared with ==, never read as a number.
+
+# ROUTING (2026-11-01) - the same rows are in REPORT_ELECTRICAL_SETTINGS and
+# ADD_LOAD_CLASSIFICATION.
+#
+#   "add a 230 V voltage type"                             -> here, add voltage,
+#                                                             volts 230
+#   "add a 400/230 V 3-phase 4-wire distribution system"   -> here, add
+#                                                             distribution, volts
+#                                                             400,
+#                                                             lineToGroundVolts
+#                                                             230, phases 3,
+#                                                             wires 4 - wye or
+#                                                             delta asked, never
+#                                                             guessed
+#   "what voltages and distribution systems are set up in this model" -> REPORT_ELECTRICAL_SETTINGS
+#   "add a load classification called Kitchen Equipment"   -> ADD_LOAD_CLASSIFICATION
+#   "add a demand factor of 80% over 10 kVA"               -> ADD_LOAD_CLASSIFICATION
+#   "make a duct system type"                              -> CREATE_MEP_SYSTEM_TYPE -
+#                                                             a duct or pipe system,
+#                                                             not an electrical supply
+#   "make the connector 3 phase 400 V"                     -> SET_FAMILY_CONNECTOR_ROLES -
+#                                                             a family's connector,
+#                                                             not the project's supply
+utterances:
+  - add a 230 V voltage type
+  - add a 400/230 V 3-phase 4-wire distribution system

@@ -1,0 +1,70 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "changed a setting nobody asked for": an existing voltage
+# type overwritten with new values, or a second copy made of one already here.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE - the same scratch project as
+# REPORT_ELECTRICAL_SETTINGS' group (docs/NEEDS-CHECKING.md names it): new from
+# Revit's metric ELECTRICAL template, saved under %TEMP%\heron-work, never a
+# working model. Before the run, read Manage > MEP Settings > Electrical
+# Settings, Voltage Definitions and Distribution Systems, and write down what
+# the template has; if it has a 230 V or a 400 V voltage type, delete it by
+# hand first so the positive cases have something to add, and note its name.
+# REPORT_ELECTRICAL_SETTINGS is run before and after every case - and the
+# dialog read - the second route.
+#
+# Every run below is ROLLED BACK (validate --write) except the one try-once,
+# which the modeller keeps or discards.
+#
+# The negative leg is a DIFFERENT VALUE, not an empty one: a name the template
+# already has. It must come back with `added` 0 and that voltage type's
+# values unchanged.
+
+positive:
+  - given: >
+      add voltage, volts 230, name left out
+    expect: >
+      added 1; after holds "\"230 V\" 230 V (min 230, max 230)" and
+      everything before; findings "Added voltage type \"230 V\" ..."; the
+      Voltage Definitions dialog shows it
+
+  - given: add voltage, volts 400, minVolts 380, maxVolts 420
+    expect: >
+      added 1; after holds "\"400 V\" 400 V (min 380, max 420)"
+
+  - given: >
+      after 230 V and 400 V are kept: add distribution, volts 400,
+      lineToGroundVolts 230, phases 3, configuration wye, wires 4
+    expect: >
+      added 1; after holds "\"400/230 V 3-phase 4-wire\" 3-phase wye 4-wire,
+      line to line 400 V, line to ground 230 V"; the Distribution Systems
+      dialog shows it with those voltages
+
+negative:
+  - given: >
+      add voltage, volts 999, name - the exact name of a voltage type the
+      template already has (from the arrangement)
+    expect: >
+      added 0; skipped "A voltage type is already named ... - left as it is,
+      nothing added"; that voltage type's actual, minimum and maximum values
+      the same in before and after. THE FIRST CASE TO RUN
+
+  - given: add distribution, volts 415, phases 3, configuration wye, wires 4
+    expect: >
+      added 0 - no voltage type is 415 V; refused "No voltage type of 415 V
+      for the line-to-line voltage. The model's voltage types are: ..."
+
+  - given: add distribution, volts 400, lineToGroundVolts 230, wires 4, phases left out
+    expect: >
+      added 0; refused "phases must be 1 or 3 - ... never guessed"
+
+  - given: add voltage, volts 230 again after it is kept, name left out
+    expect: >
+      added 0; skipped "A voltage type of 230 V is already here ... Give a
+      name to add a second one."
+
+second_route:
+  - >
+    Revit's own Manage > MEP Settings > Electrical Settings dialog, Voltage
+    Definitions and Distribution Systems: the item added, with the name,
+    voltages, phases, wye or delta and wires in `after` - and nothing else in
+    either list different from `before`

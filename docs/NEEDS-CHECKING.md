@@ -1194,6 +1194,18 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-kt.md`](needs-checking/group-kt.md)
 
+## Group KU - which voltages, distribution systems, load classifications and demand factors a model has: `REPORT_ELECTRICAL_SETTINGS` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-ku.md`](needs-checking/group-ku.md)
+
+## Group KV - add a voltage type or a distribution system: `ADD_ELECTRICAL_DISTRIBUTION` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kv.md`](needs-checking/group-kv.md)
+
+## Group KW - add a load classification or a demand factor: `ADD_LOAD_CLASSIFICATION` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kw.md`](needs-checking/group-kw.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
