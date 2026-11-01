@@ -1,0 +1,123 @@
+heron-agent: HERON-REVIT-SCH-026
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-158
+semantic-identity: "fill an existing key table with new keys - one data row per Key Name"
+kind: action
+domain: revit.schedules
+capability: ADD_KEY_SCHEDULE_ROWS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WRITTEN 2026-11-01 FOR FRAGMENT-ISSUES ROW 5b-1367 (NEEDS-CHECKING Group KK;
+# the row was 5b-1363 until main took that number),
+# on the owner's word in the brief of that day's session. Ajmal PS made a duct
+# length schedule through Heron on his Revit 2020 job model and asked for a
+# careful check of every schedule setting Heron could not reach. Item 16 of
+# that check: a key schedule made by Heron - CREATE_KEY_SCHEDULE then, and
+# CREATE_SCHEDULE with listKind key since that card was merged into it on
+# 2026-11-01 - is made as the table and
+# NO ROWS, and nothing in the library added one - so a key schedule made by
+# Heron offered an empty drop-down until somebody pressed Insert Data Row by
+# hand once per key.
+#
+# A NEW CARD, NOT A WIDENING. Making the key schedule and filling it are two
+# jobs: a key schedule is made once and its keys are added for months after.
+# CREATE_SCHEDULE makes the table, with listKind key; this fills it.
+#
+# THE ONE THING THE REFERENCE DOES NOT SETTLE, AND THE PROOF MUST: whether
+# `TableSectionData.InsertRow` on a key schedule's BODY makes a key element on
+# 2020 to 2027, and whether the schedule view owns it (FilteredElementCollector
+# on the schedule's id). The fragment counts the keys before and after each
+# row and throws - rolling the whole call back - unless exactly one new key
+# appeared, so a wrong assumption costs a refusal, never a half-filled table.
+purpose: >
+  Inserts data rows into a key table that already exists - one row per Key
+  Name given, each name written and read back - so the drop-down on an element
+  offers those keys. The other values of each key (the finish, the
+  description) are filled after, the way any element's values are.
+
+  **ITS ROWS ARE ITS KEYS.** A schedule of elements has no rows to insert - its
+  rows are the model - so it is refused by name and left untouched.
+
+  **A NAME ALREADY THERE IS LEFT ALONE**, and said: two keys of one name are two
+  entries nobody can tell apart in a drop-down. The same name twice in one
+  request is one key.
+
+  **ALL OR NOTHING.** Revit is asked where a row may go before anything is
+  inserted. A row that brings no key, or a name that does not read back, throws
+  and the add-in rolls every key of the call back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The key schedule: a schedule found by name (chained), or its placement
+    # on a sheet, read through to the schedule behind it.
+    - name: elements
+      type: IList<Element>
+    # Each a new key's Key Name, commas between - "Finish A, Finish B".
+    - name: keyNames
+      type: IList<string>
+      source: request
+  provides:
+    - name: added
+      role: result
+      type: int
+    - name: addedKeys
+      # A second read of each new key's name, with its schedule and row,
+      # joined with "; " - never the request echoed.
+      role: result
+      type: string
+    - name: alreadyThere
+      # Key names the schedule already had, left as they were. The prior
+      # state, never a key it added (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND (D-52).
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewSchedule.GetTableData`,
+  `TableData.GetSectionData(SectionType)`, `TableSectionData.CanInsertRow`,
+  `InsertRow`, `FirstRowNumber` and `LastRowNumber`,
+  `ScheduleDefinition.IsKeySchedule`, `BuiltInParameter.REF_TABLE_ELEM_NAME`
+  and the `FilteredElementCollector(Document, ElementId)` constructor are
+  present and unchanged 2020 through 2027, read off the shipped assemblies of
+  all eight with tools/api-surface --members on 2026-11-01. What they DO to a
+  key schedule is the proof's to say, not the reference's.
+
+# ROUTING - the same rows are in CREATE_SCHEDULE.
+#
+#   "add keys to the finish key schedule"  -> here
+#   "add a row to the key schedule"        -> here
+#   "make a key schedule"                  -> CREATE_SCHEDULE, listKind key -
+#                                             the table, with no rows
+#   "fill in the finish for key A"         -> WRITE_ELEMENT_PARAMETERS - a
+#                                             key's other values are values of
+#                                             an element like any other
+#   "add a column to the key schedule"     -> ADD_SCHEDULE_FIELDS
+#   "add a row to the duct schedule"       -> NOT here and not possible: a
+#                                             schedule of elements' rows are
+#                                             the model - place a duct instead
+
+utterances:
+  - add keys to the key schedule
+  - add rows to the key schedule
+  - insert a data row in the key schedule
+  - add finish keys A, B and C to the room finish key
+  - put these key names in the key schedule
+  - fill in the key schedule

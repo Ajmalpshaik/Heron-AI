@@ -18,7 +18,37 @@ positive:
       each gets the field if its category has it, and availableFields holds the
       union of what those categories offer
 
+  - given: >
+      VERSION 3 - a duct schedule whose Fields tab reads Family and Type, Size,
+      Length, and fieldNames ["Comments"] with position "2"
+    expect: >
+      added = 1, appliedOrder reading "1 Family and Type, 2 Comments (new),
+      3 Size, 4 Length", and the Fields tab showing Comments second. Then
+      OPEN THE SCHEDULE - Comments is the second printed column
+
+  - given: VERSION 3 - fieldNames ["Mark", "Comments"] with position "after Size" and no columnName
+    expect: >
+      Mark straight after Size and Comments straight after Mark, in the order
+      given, read back in appliedOrder; notPlaced empty
+
 negative:
+  - given: >
+      VERSION 3 - fieldNames ["Comments"], position "after ZZZ NO SUCH
+      COLUMN", no columnName, on the same duct schedule
+    expect: >
+      notPlaced naming the schedule and that 'ZZZ NO SUCH COLUMN' is not a
+      column in it, added = 0, and the Fields tab EXACTLY as before - nothing
+      added at the end instead. THIS IS THE FIRST VERSION 3 CASE TO RUN
+
+  - given: VERSION 3 - fieldNames ["Comments"], position "9" on a schedule with 3 fields
+    expect: >
+      notPlaced saying it has 3 fields and to give 1 to 4, nothing added
+
+  - given: VERSION 3 - position left out
+    expect: >
+      the column added at the END, exactly as version 1 - the absent word is
+      "keep"
+
   - given: a field name misspelled, e.g. "Coments"
     expect: >
       it in unknownField, added = 0 for it, AND availableFields listing the real
@@ -91,9 +121,11 @@ negative:
   - given: VERSION 2. editExisting true and a heading two columns share
     expect: refused, refusedWhy naming both column numbers; neither changed
 
-  - given: VERSION 2. position "after Equipment Tag" with no columnName
+  - given: VERSION 2. position "after Equipment Tag" with no columnName and no fieldNames
     expect: >
-      refused whole, nothing added or changed - there is no column to place
+      refused whole, nothing added or changed - there is no column to place.
+      VERSION 3: still refused when fieldNames is empty too; with fieldNames
+      it places those columns (the version 3 cases above)
 
   - given: VERSION 2. fieldNames ["Comments"] AND a combined column in one call
     expect: >

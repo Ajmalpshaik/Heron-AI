@@ -1154,6 +1154,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-kj.md`](needs-checking/group-kj.md)
 
+## Group KK - the schedule settings Heron could not set: a column's units, min/max, multiple-values text and font; footers, blank lines, per-level sorting and the grand total title; column order and insert; the schedule's own switches; header groups; more kinds of schedule; key rows; split schedules (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kk.md`](needs-checking/group-kk.md)
+
 ## Group KL - the span direction of structural floors: `SET_FLOOR_SPAN_DIRECTION` (2026-11-01)
 
 **Its own file:** [`needs-checking/group-kl.md`](needs-checking/group-kl.md)

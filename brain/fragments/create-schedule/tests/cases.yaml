@@ -7,6 +7,29 @@ positive:
   - given: the new schedule handed to PLACE_VIEW_ON_SHEET
     expect: it lands on the sheet - a schedule is a view, and that is the point of making one
 
+  # VERSION 3 - the other kinds, as more words of listKind.
+  - given: >
+      listKind "material takeoff", category Walls, fields "Material: Name" and
+      "Material: Area" as Revit's field list names them
+    expect: >
+      a Material Takeoff in the Project Browser, madeAs reading it back as a
+      material takeoff of Walls with 2 columns
+
+  - given: listKind "revision schedule", category Revisions or none, no fields
+    expect: >
+      a Revision Schedule view made, madeAs naming the category Revisions
+
+  - given: listKind "keynote legend", category Keynote Tags or none
+    expect: a Keynote Legend view under Legends, madeAs naming Keynote Tags
+
+  - given: listKind "note block", noteBlockFamily the name of a loaded Generic Annotation family
+    expect: >
+      a Note Block schedule of that family; madeAs prints the family the
+      definition reads back (the proof settles that FamilyId is it)
+
+  - given: category Areas, areaScheme "Gross Building"
+    expect: an area schedule of the Gross Building scheme, madeAs naming the scheme
+
 negative:
   - given: a field name the category does not have
     expect: >
@@ -50,7 +73,7 @@ negative:
 
   - given: VERSION 2. listKind "drawings" - a kind this does not make
     expect: >
-      refused naming schedule, sheets, views and key, and NOTHING created -
+      refused naming every kind this makes, and NOTHING created -
       created null. Guessing a kind makes the wrong one and reports it made
 
   - given: VERSION 2. sortByField naming a field that was not added
@@ -82,7 +105,34 @@ negative:
   - given: VERSION 2. listKind "sheets" with fieldNames left out
     expect: the sheet list created, and findings saying it has NO columns and prints as an empty box
 
+  # VERSION 3.
+  - given: listKind "revision schedule" with the category Ducts
+    expect: >
+      refused, naming Revisions as the category a revision schedule needs, and
+      NOTHING made - no new view in the Project Browser
+
+  - given: listKind "material takeoff" with a category Revit takes no takeoff of (Rooms)
+    expect: >
+      refused before the create call, saying Revit does not make a material
+      takeoff of Rooms; nothing made
+
+  - given: areaScheme "ZZZ NO SUCH SCHEME" with the category Areas
+    expect: refused, listing the area schemes the project has; nothing made
+
+  - given: areaScheme "Gross Building" with the category Ducts
+    expect: refused - an area scheme belongs to an area schedule only; nothing made
+
+  - given: listKind "note block" with noteBlockFamily left out
+    expect: refused, listing the families a note block can list; nothing made
+
+  - given: listKind "pie chart"
+    expect: refused, naming every kind this makes; nothing made
+
 second_route:
   - Revit's own View > Schedules > Schedule/Quantities with the same category and fields, compared column for column
   - for a sheet list, View > Schedules > Sheet List - compare its row count against the Sheets branch of the Project Browser
   - for a key schedule, View > Schedules > Schedule/Quantities with Schedule keys chosen
+  - >
+    VERSION 3: View > Schedules > Material Takeoff, Note Block, Keynote Legend,
+    and Schedule/Quantities with Areas and its area scheme picked - the view
+    each makes compared with the one made here, kind, category and columns

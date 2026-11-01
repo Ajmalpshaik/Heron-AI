@@ -2,7 +2,32 @@
 // `partFields`, `partSeparators`, `editExisting` and `position` are in scope,
 // and leaves `added`, `alreadyPresent`, `unknownField`, `availableFields`,
 // `refused`, `edited`, `columnNow`, `partMissing`, `notASchedule`,
-// `refusedSchedules` and `refusedWhy` behind.
+// `refusedSchedules`, `refusedWhy`, `notPlaced` and `appliedOrder` behind.
+//
+// VERSION 3 (2026-11-01, FRAGMENT-ISSUES row 5b-1367, NEEDS-CHECKING Group
+// KK): `position` ALSO places the PLAIN columns `fieldNames` adds, when no
+// `columnName` is given. Version 2 refused that call ("a position was given
+// with no columnName"); every call version 2 ran, it runs the same way:
+//
+//   columnName given      position places THAT column, exactly version 2. The
+//                         plain columns of the same call still go last.
+//   no columnName, plain  position places the new plain columns, in the order
+//   columns asked         given, from that place, by InsertField: first, last,
+//                         after <column>, before <column>, or a place in the
+//                         Fields tab's list counted from 1 - hidden fields
+//                         count, as they do in that list and in GetFieldOrder,
+//                         the list InsertField's index counts in. "Mark, Size"
+//                         at 2 makes Mark the 2nd field and Size the 3rd. "keep"
+//                         (left out) and "last" are version 1's AddField.
+//   neither               refused, as version 2 refused it.
+//
+// A field already on the schedule is NOT moved (alreadyPresent, as version 1):
+// moving one is `columnName` with `editExisting`, or SET_SCHEDULE_FIELD_ORDER
+// for a whole order. A PLACE THAT CANNOT BE FOUND ON A SCHEDULE ADDS NOTHING TO
+// IT: worked out before the first InsertField there, named in `notPlaced`, the
+// schedule left as it was, the other schedules still done. `appliedOrder` is
+// each such schedule's field order read back, the new columns marked; a column
+// that did not land where asked is named in `notPlaced` with where it did.
 //
 // VERSION 2 (2026-11-01) - ADD_SCHEDULE_COMBINED_FIELD MERGED IN, AND WHAT IT
 // HAD THAT THIS LACKED. Its code is carried below whole, after this card's
@@ -105,6 +130,10 @@ int alreadyPresent = 0;
 var unknownField = new List<string>();
 var availableFields = new List<string>();
 string refused = null;
+// VERSION 3.
+var notPlaced = new List<string>();
+var appliedOrder = "";
+var orderParts = new List<string>();
 
 var handed = 0;
 var schedulesSeen = 0;
@@ -260,9 +289,15 @@ Func<ScheduleDefinition, IList<SchedulableField>, IList<TableCellCombinedParamet
     return "'" + text.ToString() + "'";
 };
 
+// VERSION 3. A position with no columnName, given with plain columns to add,
+// places THOSE columns - version 2 refused it.
+bool positionForPlain = wantedName.Length == 0 && wanted.Count > 0
+    && (positionKind != "keep" || positionProblem != null);
+
 // VERSION 2. Was a combined column, an edit or a move asked for at all?
 bool combinedAsked = wantedName.Length > 0 || editExisting || !keepParts
-    || (partSeparators != null && !keepSeparators) || positionKind != "keep" || positionProblem != null;
+    || (partSeparators != null && !keepSeparators)
+    || (!positionForPlain && (positionKind != "keep" || positionProblem != null));
 
 // What was handed in and is not a schedule, once, for both paths.
 var notASchedule = new List<ElementId>();
@@ -280,10 +315,14 @@ else if (combinedAsked && wantedName.Length == 0)
     // heading, or the column to edit or move. Refused before either path
     // writes anything.
     refused = (positionKind != "keep" || positionProblem != null)
-        ? "a position was given with no columnName, so there is no column to place - the plain "
-          + "columns fieldNames adds go last. NOTHING WAS ADDED OR CHANGED - name the column"
+        ? "a position was given with no column to place, so NOTHING WAS ADDED OR CHANGED - name "
+          + "the new columns in fieldNames, or the column to move in columnName"
         : "a combined column, an edit or a move needs columnName - the new column's heading, or "
           + "the heading of the column to change. NOTHING WAS ADDED OR CHANGED";
+}
+else if (positionForPlain && positionProblem != null)
+{
+    refused = positionProblem + " NOTHING WAS ADDED.";
 }
 
 foreach (var element in elements)
@@ -315,6 +354,48 @@ foreach (var element in elements)
         if (existing != null) present.Add(existing.GetName());
     }
 
+    // VERSION 3: where the first new plain column goes on THIS schedule,
+    // worked out before anything is inserted. -1 is version 1's AddField.
+    var insertAt = -1;
+    if (positionForPlain && positionKind != "keep" && positionKind != "last")
+    {
+        var fieldOrder = definition.GetFieldOrder();
+        if (positionKind == "first") insertAt = 0;
+        else if (positionKind == "at")
+        {
+            if (positionNumber > fieldOrder.Count + 1)
+            {
+                notPlaced.Add(string.Format("'{0}' - it has {1} field(s) in its Fields tab, so place {2} "
+                    + "does not exist; give 1 to {3}. NOTHING WAS ADDED to it", schedule.Name,
+                    fieldOrder.Count, positionNumber, fieldOrder.Count + 1));
+                continue;
+            }
+            insertAt = positionNumber - 1;
+        }
+        else
+        {
+            var anchors = columnsCalled(definition, positionAnchor);
+            if (anchors.Count != 1)
+            {
+                notPlaced.Add(string.Format(anchors.Count == 0
+                    ? "'{0}' - '{1}' is not a column in it, so there is nowhere to put the new column. "
+                      + "NOTHING WAS ADDED to it"
+                    : "'{0}' - {2} columns answer to '{1}', so where '{3}' is, is not clear. "
+                      + "NOTHING WAS ADDED to it", schedule.Name, positionAnchor, anchors.Count, positionKind));
+                continue;
+            }
+            var at = fieldOrder.IndexOf(anchors[0].FieldId);
+            if (at < 0)
+            {
+                notPlaced.Add(string.Format("'{0}' - '{1}' could not be found in its field order. NOTHING "
+                    + "WAS ADDED to it", schedule.Name, positionAnchor));
+                continue;
+            }
+            insertAt = positionKind == "after" ? at + 1 : at;
+        }
+    }
+    var placedHere = new List<KeyValuePair<string, int>>();
+
     foreach (var name in wanted)
     {
         if (present.Contains(name))
@@ -345,7 +426,8 @@ foreach (var element in elements)
 
         try
         {
-            definition.AddField(match);
+            if (insertAt < 0) definition.AddField(match);
+            else definition.InsertField(match, insertAt);
         }
         catch (Exception)
         {
@@ -370,10 +452,46 @@ foreach (var element in elements)
             }
         }
 
-        if (nowPresent) { added++; present.Add(name); }
+        if (nowPresent)
+        {
+            added++;
+            present.Add(name);
+            if (insertAt >= 0) { placedHere.Add(new KeyValuePair<string, int>(name, insertAt)); insertAt++; }
+        }
         else if (!unknownField.Contains(name)) unknownField.Add(name);
     }
+
+    // VERSION 3: with a position, the order read back, the new columns marked,
+    // and any that did not land where asked named.
+    if (positionForPlain)
+    {
+        var readOrder = new List<string>();
+        var fresh = definition.GetFieldOrder();
+        for (var i = 0; i < fresh.Count; i++)
+        {
+            var f = definition.GetField(fresh[i]);
+            if (f == null) continue;
+            var fieldName = f.GetName();
+            var isNew = placedHere.Any(p => string.Equals(p.Key, fieldName, StringComparison.OrdinalIgnoreCase));
+            readOrder.Add((i + 1) + " " + fieldName + (isNew ? " (new)" : "") + (f.IsHidden ? " (hidden)" : ""));
+        }
+        foreach (var p in placedHere)
+        {
+            var landed = -1;
+            for (var i = 0; i < fresh.Count; i++)
+            {
+                var f = definition.GetField(fresh[i]);
+                if (f != null && string.Equals(f.GetName(), p.Key, StringComparison.OrdinalIgnoreCase)) { landed = i; break; }
+            }
+            if (landed != p.Value)
+                notPlaced.Add(string.Format("'{0}' - '{1}' was asked for at place {2} and a read back finds it at "
+                    + "{3}", schedule.Name, p.Key, p.Value + 1, landed < 0 ? "no place" : (landed + 1).ToString()));
+        }
+        orderParts.Add(string.Format("'{0}': {1}", schedule.Name, string.Join(", ", readOrder)));
+    }
 }
+
+appliedOrder = string.Join("; ", orderParts);
 
 availableFields.Sort(StringComparer.OrdinalIgnoreCase);
 

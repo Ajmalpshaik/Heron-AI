@@ -1,0 +1,99 @@
+# The proof of CREATE_SCHEDULE version 3 (create-schedule, FRG-VIEW-023) and
+# ADD_KEY_SCHEDULE_ROWS (add-key-schedule-rows, FRG-VIEW-158), written
+# 2026-11-01 for FRAGMENT-ISSUES row 5b-1367 - NEEDS-CHECKING Group KK. NOT
+# RUN - written and read back with --dry-run only.
+#
+#     python tools/batch-prove.py tools/jobs/schedule-settings-kinds-scratch-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/schedule-settings-kinds-scratch-2026-11-01.yaml
+#
+# WHY. Ajmal PS made a duct length schedule through Heron on his Revit 2020
+# job model and asked for a check of every schedule setting Heron could not
+# reach. These two legs are items 15 (the other kinds of schedule) and 16
+# (rows in a key schedule) of that check.
+#
+# ONE LEG PER FRAGMENT, ON PURPOSE. batch-prove writes each leg's record to
+# one path per fragment name, so a second leg of create-schedule in this file
+# would overwrite the first. The other kinds - revision schedule, keynote
+# legend, note block, area scheme - are run by hand from the NEEDS-CHECKING
+# rows, one at a time, rolled back.
+#
+# THE MODEL: A NEW PROJECT, NEVER 4355-* nor any project of Ajmal PS's. In
+# Revit 2020: File, New, Project, the default metric template, saved as
+# "Heron Schedules KF Kinds". ARRANGE BY HAND FIRST - a setup step that changes the
+# model cannot be given values of its own:
+#
+#   1. Draw four walls (Basic Wall, Generic - 200mm), and two ducts
+#   2. View > Schedules > Schedule/Quantities, Ducts, named "HERON KF Duct
+#      Schedule", fields Family and Type, Length. OK
+#   3. View > Schedules > Schedule/Quantities, Rooms, tick Schedule keys,
+#      named "HERON KF Room Key" - leave it with NO rows. OK
+#   4. Save the project, so every run below starts from the same state
+#
+# `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
+# Read the Project Browser afterwards: no HERON KF Takeoff view, and HERON KF
+# Room Key still with no rows - rather than assuming the rollback held.
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: the expected result filled on the positive, empty on the negative
+#   - NEG NOT EMPTY: the negative made or added something. A FAIL - each
+#     negative asks for something the fragment must refuse
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   create-schedule, positive: madeAs reading "asked as a material takeoff;
+#     Revit reads it back as a schedule of 'Walls' (a material takeoff), with
+#     2 column(s)", missingFields empty
+#   create-schedule, negative: refused "a revision schedule is a schedule of
+#     Revisions, and the category given was 'Ducts' ..."; created empty
+#   add-key-schedule-rows, positive: added 2, addedKeys naming both keys with
+#     their rows. THIS SETTLES WHETHER InsertRow ON A KEY SCHEDULE MAKES A
+#     KEY: a refusal "Revit added no key ... rolled back" is a FINDING about
+#     Revit, recorded in row 5b-1367, not a failed arrangement
+#   add-key-schedule-rows, negative: refused "'HERON KF Duct Schedule' is a
+#     schedule of elements, not a key schedule"; added 0
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Heron Schedules KF Kinds (a NEW project from Revit 2020's default metric template, arranged by hand as above), Revit 2020
+
+defaults:
+  in: "Heron Schedules KF Kinds"
+  setup: []
+
+jobs:
+  - fragment: create-schedule
+    write: true
+    expect: created
+    set:
+      categoryId: "Walls"
+      listKind: "material takeoff"
+      fieldNames: "Material: Name, Material: Area"
+      scheduleName: "HERON KF Takeoff"
+      areaScheme: "none"
+      noteBlockFamily: "none"
+    negative-set:
+      categoryId: "Ducts"
+      listKind: "revision schedule"
+      fieldNames: "Family and Type"
+      scheduleName: "HERON KF Not Made"
+      areaScheme: "none"
+      noteBlockFamily: "none"
+    note: >
+      KF kinds. A material takeoff of the walls, read back as one. The
+      negative asks for a revision schedule with the wrong category, and must
+      make nothing.
+
+  - fragment: add-key-schedule-rows
+    write: true
+    expect: added
+    keep-chain: true
+    setup: [find-schedules]
+    setup-set: {nameContains: "HERON KF Room Key"}
+    negative-setup-set: {nameContains: "HERON KF Duct Schedule"}
+    set:
+      keyNames: "HERON KF Finish A, HERON KF Finish B"
+    negative-set:
+      keyNames: "HERON KF Finish A, HERON KF Finish B"
+    note: >
+      KF key rows. Two keys in an empty key schedule. The negative hands it
+      a schedule of ducts, which is not a key schedule, and must add nothing.

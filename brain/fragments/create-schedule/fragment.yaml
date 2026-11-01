@@ -9,13 +9,47 @@ semantic-identity: "make a real schedule view of this category with these fields
 kind: action
 domain: revit.schedules
 capability: CREATE_SCHEDULE
-version: 2
+# VERSION 3 (2026-11-01, on the owner's word in the brief of that day's
+# session - FRAGMENT-ISSUES row 5b-1367, renumbered from 5b-1363 when main
+# took that number). Ajmal PS made a duct length schedule through Heron on his
+# Revit 2020 job model and asked for a careful check of every schedule setting
+# Heron could not reach; this card made a category's schedule, a sheet list,
+# a view list and a key schedule, and none of the other kinds on View >
+# Schedules. Version 3 adds them as more words of version 2's `listKind`, not
+# a second input: "material takeoff" (CreateMaterialTakeoff, the category
+# asked about first with IsValidCategoryForMaterialTakeoff), "note block"
+# (CreateNoteBlock, of the family named in `noteBlockFamily`, refused listing
+# GetValidFamiliesForNoteBlock's families), "revision schedule"
+# (CreateRevisionSchedule) and "keynote legend" (CreateKeynoteLegend); and an
+# AREA SCHEDULE of one scheme, by `areaScheme` with the category Areas
+# (CreateSchedule with the scheme's id, refused listing the schemes).
+#
+# A CATEGORY GIVEN WITH A KIND THAT HAS ITS OWN IS CHECKED: Revisions for a
+# revision schedule, Keynote Tags for a keynote legend, Generic Annotations
+# for a note block - another is refused naming the right one. Left out, those
+# three need none. A material takeoff needs a category, as a schedule does.
+#
+# `areaScheme` and `noteBlockFamily` are `optional: true` with `absent: none`,
+# and every version 2 word of `listKind` means what it meant, so a version 2
+# caller is bound exactly as before and runs version 2's path to the word.
+# `madeAs` is new: a second read of what was made, for every kind. The
+# version 2 card was itself not yet proved; version 1's proof below is kept
+# as a record, and the card is DRAFT until NEEDS-CHECKING Group KK (KK31-KK37)
+# proves version 3 and the owner signs.
+#
+# NOT HERE, ON PURPOSE: "Filter by sheet" and the embedded schedule are
+# settings of a schedule that exists, and are SET_SCHEDULE_OPTIONS'
+# (FRG-VIEW-155). Keys added to a key schedule are ADD_KEY_SCHEDULE_ROWS'
+# (FRG-VIEW-158): this makes the table, with no rows.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
   Creates a schedule view of one category, with the fields asked for, that lives
-  in the project and can go on a sheet.
+  in the project and can go on a sheet - a plain schedule, a sheet list, a view
+  list or a key schedule, or (version 3) a material takeoff, a note block, a
+  revision schedule, a keynote legend, or an area schedule of one area scheme.
 
   **A schedule and a count are different deliverables, and both are right
   answers to different sentences.** GROUP_AND_COUNT reads the model and puts
@@ -64,8 +98,10 @@ contract:
       source: request
     # VERSION 2, from CREATE_SHEET_LIST and CREATE_KEY_SCHEDULE. Which schedule:
     # left out, "schedule" - a category's, version 1 exactly; "sheets" a sheet
-    # list; "views" a view list; "key" a key schedule. Any other word is
-    # refused and nothing is created - guessing would make the wrong one.
+    # list; "views" a view list; "key" a key schedule. VERSION 3: "material
+    # takeoff", "note block", "revision schedule", "keynote legend". Any other
+    # word is refused and nothing is created - guessing would make the wrong
+    # one.
     - name: listKind
       type: string
       source: request
@@ -82,6 +118,23 @@ contract:
     # "Finish Key". Every key schedule otherwise calls it "Key Name". Left
     # out: "none", Revit's name stays.
     - name: keyParameterName
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 3. The area scheme an area schedule lists - "Gross Building".
+    # Only with the category Areas and listKind left as schedule; refused
+    # with anything else, and a name no scheme carries is refused listing
+    # the schemes. Left out: "none", a plain CreateSchedule.
+    - name: areaScheme
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 3. The Generic Annotation family a note block lists - only with
+    # listKind note block, which refuses without it, listing the families a
+    # note block can list. Left out: "none".
+    - name: noteBlockFamily
       type: string
       source: request
       optional: true
@@ -115,6 +168,12 @@ contract:
       # schedule, that it has NO ROWS yet and whether the key parameter took
       # its name. Prose, so it carries no role (D-51).
       type: IList<string>
+    - name: madeAs
+      # Version 3. A second read of the view made - its name, its category,
+      # what Revit says it is (a material takeoff, a key schedule, its area
+      # scheme, its family) and its column count. Never the request echoed.
+      role: result
+      type: string
 
 proof:
   date: '2026-09-13'
@@ -170,6 +229,15 @@ compatibility-note: >
   both ends for CREATE_KEY_SCHEDULE; `ScheduleSortGroupField` and
   `Category.GetCategory(Document, ElementId)` are the same on every release.
 
+  Version 3: `ViewSchedule.CreateMaterialTakeoff`, `CreateNoteBlock`,
+  `CreateRevisionSchedule`, `CreateKeynoteLegend`, the three-argument
+  `CreateSchedule(Document, ElementId, ElementId)` for an area scheme,
+  `IsValidCategoryForMaterialTakeoff`, `GetValidFamiliesForNoteBlock` and
+  `ScheduleDefinition.IsMaterialTakeoff`, `IsKeySchedule`, `AreaSchemeId` and
+  `FamilyId` are present and unchanged 2020 through 2027, read off the shipped
+  assemblies of all eight with tools/api-surface --members on 2026-11-01. No
+  member here is missing on any release, so nothing is reached by name.
+
 # ROUTING - repeated in GROUP_AND_COUNT and COUNT_ELEMENTS.
 #
 #   "make a schedule"              -> here - a VIEW that goes on a sheet
@@ -209,6 +277,34 @@ compatibility-note: >
 #   "add a column to the schedule"   -> ADD_SCHEDULE_FIELDS - and it is how a
 #                                     key schedule's own columns get added
 #                                     after this makes the table
+#   "make a revision schedule"       -> here, listKind revision schedule -
+#                                     CREATE_REVISION makes a revision, not a
+#                                     schedule of them (declared here,
+#                                     row 5b-1367)
+#   "make a sheet list"              -> here, listKind sheets - FIND_SHEETS
+#                                     reads the sheets and makes nothing
+#   "add keys to the key schedule"   -> ADD_KEY_SCHEDULE_ROWS - this makes the
+#                                     table EMPTY; its keys are added there.
+#                                     "add a door key schedule" is declared
+#                                     here below: a whole new table is this
+#                                     card's job (row 5b-1367)
+#   "make a material takeoff of the walls"
+#                                  -> here, version 3: listKind material
+#                                     takeoff, the category Walls
+#   "create a revision schedule"   -> here, version 3: listKind revision
+#                                     schedule; the category Revisions or none
+#   "make a keynote legend"        -> here, version 3: listKind keynote
+#                                     legend; Keynote Tags or none
+#   "make a note block"            -> here, version 3: listKind note block,
+#                                     the family in noteBlockFamily
+#   "make an area schedule for the gross building scheme"
+#                                  -> here, version 3: the category Areas and
+#                                     areaScheme. REPORT_AREAS reads areas and
+#                                     makes nothing; CREATE_AREA_PLAN makes a
+#                                     plan view, not a schedule
+#   "filter the schedule by sheet" -> SET_SCHEDULE_OPTIONS - a setting of a
+#                                     schedule that exists, not a new one
+#   "add an embedded schedule"     -> SET_SCHEDULE_OPTIONS, for the same reason
 
 # VERSION 2 (2026-11-01) - CREATE_SHEET_LIST AND CREATE_KEY_SCHEDULE WERE
 # MERGED INTO THIS CARD on the owner's instruction ("make sure there is no
@@ -266,3 +362,20 @@ utterances:
   - create a key schedule for the rooms
   - i want one choice to fill several fields
   - make a lookup table for the finishes
+  # ADDED 2026-11-01 (row 5b-1367): it reached ADD_KEY_SCHEDULE_ROWS when that
+  # card was written - a whole new table is this card's job.
+  - add a door key schedule
+  # ADDED 2026-11-01 (row 5b-1367), measured on a scratch store after main's
+  # merge: "make a key schedule for the doors" reached ADD_KEY_SCHEDULE_ROWS,
+  # which fills a key schedule that exists; "make a revision schedule" reached
+  # CREATE_REVISION, which makes a revision, not a schedule; "make a sheet
+  # list" reached FIND_SHEETS, a read that makes nothing. Each is this card's.
+  - make a key schedule for the doors
+  - make a revision schedule
+  - make a sheet list
+  # VERSION 3 - the other kinds on View > Schedules.
+  - make a material takeoff of the walls
+  - create a revision schedule
+  - make a keynote legend
+  - make a note block
+  - make an area schedule for the gross building scheme

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,29 @@ semantic-identity: "sort and group this schedule by these fields, with headers a
 kind: action
 domain: revit.schedules
 capability: SET_SCHEDULE_SORT_GROUP
-version: 1
+# VERSION 2 (2026-11-01, on the owner's word in the brief of that day's
+# session: Ajmal PS asked, after a duct length schedule on his Revit 2020 job
+# model could not have its Length column set to metres, for every schedule
+# setting Heron is missing - FRAGMENT-ISSUES row 5b-1367). The rest of the
+# Sorting/Grouping tab: a footer's title and count (`showFooterTitle`,
+# `showFooterCount`), the blank line between groups (`showBlankLine`), order,
+# header, footer, footer title, footer count and blank line PER SORT LEVEL
+# (`levelOptions`, ";" between levels, "," between words - a string, because
+# an optional list left out would bind its absent word as a one-entry list),
+# and the grand total's title text and its title and count switches
+# (`grandTotalTitle`, `showGrandTotalTitle`, `showGrandTotalCount`). Every new
+# input is `optional: true` with an `absent:` word - "leave" or "none" - and
+# left out does EXACTLY what version 1 did: the blank line is still not set
+# unless asked (version 1's comment at the write, kept), and the grand total's
+# title and count are still forced on with it. Every word is read before any
+# schedule is touched; a bad one refuses the whole call. Version 1's proof
+# below no longer describes the code and is kept as a record; the card is DRAFT
+# until NEEDS-CHECKING Group KK proves version 2 and the owner signs.
+#
+# ASSUMPTION THE PROOF SETTLES: what a NEW sort level holds for footer title,
+# footer count and blank line when they are left out. The reference does not
+# say; appliedOrder reads all three back per level, and the proof records them.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -71,6 +93,55 @@ contract:
     - name: itemized
       type: bool
       source: request
+    # VERSION 2. Each "yes" | "no"; left out ("leave") nothing is set - for
+    # the footer title and count on a new level that is Revit's own default.
+    # Applied to every level that has a footer.
+    - name: showFooterTitle
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    - name: showFooterCount
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    # VERSION 2. "yes" | "no" on every level; left out, NOT SET - version 1
+    # never set it, and a blank line is a drafting choice nobody asked for.
+    - name: showBlankLine
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    # VERSION 2. One entry per sort level, in the order of sortFieldNames,
+    # ";" between levels, "," between words: ascending, descending, header,
+    # no header, footer, no footer, footer title, no footer title, footer
+    # count, no footer count, blank line, no blank line. Overrides the flat
+    # switches for that level only. Left out it is "none".
+    - name: levelOptions
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 2. The grand total's title text; it also turns the title on.
+    # Left out ("leave"), Revit's text is kept.
+    - name: grandTotalTitle
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    # VERSION 2. "yes" | "no"; left out ("leave") both are forced on with
+    # the grand total, as version 1 did.
+    - name: showGrandTotalTitle
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    - name: showGrandTotalCount
+      type: string
+      source: request
+      optional: true
+      absent: leave
   provides:
     - name: sorted
       role: result
@@ -150,10 +221,16 @@ compatibility-note: >
   (`Ascending`, `Descending`) are present and unchanged 2020 through 2027, with
   the same argument counts.
 
-  `ShowBlankLine` exists on every release and is deliberately NOT set - a blank
-  line between groups is a separate drafting choice, and setting it from the
-  footer flag would be this fragment inventing a preference and then changing
-  the sheet to match it.
+  `ShowBlankLine` exists on every release and is deliberately NOT set unless
+  asked - a blank line between groups is a separate drafting choice, and
+  setting it from the footer flag would be this fragment inventing a
+  preference and then changing the sheet to match it. VERSION 2 sets it only
+  from an explicit `showBlankLine` or a level's "blank line" word.
+
+  VERSION 2: `ScheduleSortGroupField.ShowFooterTitle`, `ShowFooterCount` and
+  `ShowBlankLine` (get and set) and `ScheduleDefinition.GrandTotalTitle` (get
+  and set) are present and unchanged 2020 through 2027, read off the
+  reference assemblies with `tools/api-surface --members`.
 
   Field identity is `ScheduleFieldId`, not an `ElementId`. No units call is made.
 
@@ -186,6 +263,21 @@ compatibility-note: >
 #                                          WHICH rows. Both get said as "by
 #                                          level" and they are different jobs
 #   "how is it sorted now"              -> REPORT_SCHEDULE_DEFINITION
+#   "show the count in each group footer"
+#                                       -> here, version 2, showFooterCount
+#   "put a blank line between the groups"
+#                                       -> here, version 2, showBlankLine
+#   "sort level descending, mark ascending"
+#                                       -> here, version 2, levelOptions
+#   "change the grand total title to Total Length"
+#                                       -> here, version 2, grandTotalTitle
+#   "calculate the maximum flow for each group"
+#                                       -> SET_SCHEDULE_APPEARANCE, its
+#                                          calculation (SET_SCHEDULE_FIELD_TOTALS
+#                                          until it was merged there). What a
+#                                          COLUMN calculates is chosen there;
+#                                          a footer's title and count are a
+#                                          sort level's switches, here
 
 utterances:
   - sort the schedule by level
@@ -196,3 +288,8 @@ utterances:
   - group these rows together
   - one line per size instead of every duct
   - put a header on each group
+  # VERSION 2 - the rest of the Sorting/Grouping tab.
+  - show the count in each group footer
+  - put a blank line between the groups
+  - sort level descending, mark ascending
+  - change the grand total title to Total Length
