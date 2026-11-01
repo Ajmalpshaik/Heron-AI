@@ -129,7 +129,7 @@ compatibility-note: >
 #
 #   "add reference planes at 300 each side"   -> here
 #   "label the width between those planes"    -> LABEL_FAMILY_DIMENSION
-#   "draw a detail line"                      -> CREATE_LINE - a line, not a plane
+#   "draw a detail line"                      -> DRAW_FAMILY_DETAIL_LINES - a line, not a plane
 #   "set the grid or level extents"           -> SET_DATUM_EXTENT_TYPE
 
 utterances:

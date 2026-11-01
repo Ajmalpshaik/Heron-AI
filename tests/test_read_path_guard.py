@@ -71,6 +71,9 @@ import heron_bridge_client as CLIENT                          # noqa: E402
 
 # THE FRAGMENT IN THE ROW, by name. Section 1 checks it is still MODIFY, so a
 # card that changed its risk fails there rather than making section 2 vacuous.
+# DEPRECATED since 2026-11-01 - merged into place-family-instances, which places
+# a nested family now - and kept here on purpose: it is the card the row names,
+# still on disk and still MODIFY, so the fact this holds has not changed.
 PLACER = "place-nested-family"
 SELECTOR = "set-selection"
 

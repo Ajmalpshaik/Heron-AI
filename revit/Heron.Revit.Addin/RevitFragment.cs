@@ -28,6 +28,8 @@ namespace Heron.Revit.Addin
     ///   run_fragment_read   opens NO transaction, and Revit refuses a model
     ///                       change made outside one - NOT ALWAYS COMPLETELY.
     ///                       Row 5b-350 is a read run of place-nested-family
+    ///                       (PLACE_FAMILY_INSTANCES in a family since
+    ///                       2026-11-01, when it was merged there)
     ///                       that reported Revit's refusal and still left a
     ///                       real instance in the family, twice; why is not
     ///                       established (NEEDS-CHECKING CP1). So Revit's

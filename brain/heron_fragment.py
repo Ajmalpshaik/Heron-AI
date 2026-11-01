@@ -271,7 +271,8 @@ def need_may_be_absent(entry):
     `elements` when no view is named) - or an `Element` or an `MEPSystemType`
     marked so, which binds null since 2026-11-01 (TRACE_CONNECTIVITY with no
     `start` partitions the whole set; CREATE_DUCT_RUNS draws cable tray with no
-    system type) - and HeronBindingNote.DeclaredAbsent
+    system type), or an `IList<XYZ>`, which binds an empty list (CREATE_OPENING's
+    family half names neither) - and HeronBindingNote.DeclaredAbsent
     binds one whose card names what leaving it out means (`absent:`,
     need_absent_text). Every other request need is still refused when absent
     (FRAGMENT-ISSUES rows 5b-227 and 5b-252), so it answers False for them.
@@ -288,8 +289,9 @@ def need_may_be_absent(entry):
 # The types HeronBindingNote.AbsentValue binds when absent and marked optional -
 # its switch, word for word: a bool to false, a View to null, a view list to an
 # empty one, and - since 2026-11-01 - one Element or one duct-or-pipe system
-# type to null.
-ABSENT_BINDS = ("bool", "View", "IList<View>", "Element", "MEPSystemType")
+# type to null, and a point list to an empty one (CREATE_OPENING's family
+# half, merged in from CREATE_FAMILY_HOST_OPENING, names neither).
+ABSENT_BINDS = ("bool", "View", "IList<View>", "Element", "MEPSystemType", "IList<XYZ>")
 
 
 # The element lists HeronBindingNote.EmptyWhenAbsent binds empty - its switch,

@@ -25,6 +25,32 @@ positive:
       the two copies 20 m north of where the link shows them - the link's
       transform first, then the offset
 
+  # VERSION 3, added 2026-11-01 with the merge of COPY_LABELS_FROM_FAMILY. NONE
+  # OF THESE HAS BEEN RUN. Each FAILS on version 2, which left every label out
+  # as view-specific. Arranged as NEEDS-CHECKING Group IJ names, on SCRATCH
+  # families only: "Heron Label Seed.rfa", a Pipe Tag holding three labels
+  # (System Abbreviation; Diameter with prefix "Ø"; Bottom Elevation with
+  # prefix "BOP ", mm with the + sign), "Heron Label Target.rfa", a new Pipe
+  # Tag with no labels, in front, and "Heron Duct Seed.rfa", a Duct Tag.
+  - given: >
+      Heron Label Target in front on Revit 2020, labels true,
+      sourceDocumentTitle "Heron Label Seed", categories empty, elementIds
+      empty, offsetMm empty, placeAtMm "0,5"
+    expect: >
+      copied 3, kept 3, readBack naming each copy against its seed id, the top
+      left one at 0,5 mm and the other two keeping their spacing;
+      REPORT_FAMILY_LABELS on the target lists 3 labels; one entry in the
+      target's undo list and none in the seed's
+  - given: the same families upgraded on copies, Revit 2027, labels true, labelContains "Bottom Elevation"
+    expect: >
+      copied 1, kept 1, readBack comparing Bottom Elevation parameter by
+      parameter - prefix "BOP ", the + sign, millimetres - the same on both
+      sides, or DIFFERS naming what Revit did not carry
+  - given: the same seed, labels LEFT OUT, categories "all"
+    expect: >
+      no label copied - view-specific elements stay out by default - and the
+      report counting them as left
+
 negative:
   - given: 'sourceDocumentTitle "No Such File", categories "all"'
     expect: >
@@ -43,5 +69,27 @@ negative:
   - given: fromLink true, a link that is not loaded
     expect: refused naming RELOAD_LINKS; nothing copied
 
+  # VERSION 3, label mode. NONE OF THESE HAS BEEN RUN.
+  - given: Heron Label Target in front, labels true, sourceDocumentTitle "Heron Duct Seed"
+    expect: >
+      copied 0, a report quoting Revit's rule that labels are not pasted across
+      categories - Duct Tags against Pipe Tags - and NOTHING WAS COPIED. THIS
+      IS THE FIRST LABEL CASE TO RUN
+  - given: labels true, sourceDocumentTitle "Heron Label Seed", labelContains "ZZZ_Not_A_Label"
+    expect: copied 0, a report saying no label in the seed matched and how many it has, nothing copied
+  - given: labels true and fromLink true
+    expect: refused - labels come from a seed family, never a link - nothing copied
+  - given: labels true with a project in front
+    expect: refused - labels are copied into a family - nothing copied
+  - given: >
+      labels true where one picked label's view kind is missing in the target
+    expect: >
+      the WHOLE call rolled back, nothing copied - COPY_LABELS_FROM_FAMILY
+      skipped that one and kept the rest; the safer rule is kept
+
 second_route:
   - Revit's Copy to Clipboard and Paste Aligned, Same Place, between the same windows
+  - >
+      label mode: by hand - pick the seed's label, Copy to Clipboard, switch to
+      the target and Paste Aligned to Current View; Edit Label on both; and
+      REPORT_FAMILY_LABELS on the seed and on the target

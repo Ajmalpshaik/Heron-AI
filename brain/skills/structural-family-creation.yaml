@@ -95,20 +95,21 @@ needs:
   # FAMILY-CREATION's steps, which this skill says still hold.
   - SET_FAMILY_CATEGORY
   # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
-  # GUIDs, against the family, before ADD_FAMILY_SHARED_PARAMETERS writes.
+  # GUIDs, against the family, before ADD_FAMILY_PARAMETERS' shared kind writes.
   - REPORT_SHARED_PARAMETER_FILE
-  - ADD_FAMILY_SHARED_PARAMETERS
+  # ADD_FAMILY_SHARED_PARAMETERS was listed here until 2026-11-01, when it was merged into ADD_FAMILY_PARAMETERS.
   - SET_FAMILY_PLANE_REFERENCE
   # CREATE_FAMILY_REVOLUTION was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
-  - CREATE_FAMILY_BLEND
-  - CREATE_FAMILY_SWEEP
-  - CREATE_FAMILY_SWEPT_BLEND
+  # CREATE_FAMILY_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # CREATE_FAMILY_SWEEP was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # CREATE_FAMILY_SWEPT_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
   # LINK_FAMILY_FORM_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - LABEL_FAMILY_RADIUS
   - COMBINE_FAMILY_FORMS
   - ARRAY_FAMILY_FORMS
   - ADD_FAMILY_CONNECTOR
-  - PLACE_NESTED_FAMILY
+  # PLACE_NESTED_FAMILY was listed here until 2026-11-01, when it was merged into PLACE_FAMILY_INSTANCES.
+  - PLACE_FAMILY_INSTANCES
   - LOCK_NESTED_FAMILY_TO_PLANES
   # LINK_NESTED_TYPE_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - ADD_FAMILY_TYPE_PARAMETER

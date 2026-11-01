@@ -52,7 +52,8 @@ contract:
       type: Document
     - name: uidoc
       type: UIDocument
-    # The nested family, by the id PLACE_NESTED_FAMILY gave back, an array
+    # The nested family, by the instanceId PLACE_FAMILY_INSTANCES gave back
+    # (PLACE_NESTED_FAMILY until 2026-11-01), an array
     # copy's id from ARRAY_FAMILY_FORMS, or `selected`.
     - name: instance
       type: string

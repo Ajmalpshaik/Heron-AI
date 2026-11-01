@@ -183,12 +183,17 @@ compatibility-note: >
 #
 #   "make a spring as one smooth sweep along a helix" -> here
 #   "loft a smooth body through elliptical sections"  -> here
-#   "sweep a profile along a path"               -> CREATE_FAMILY_SWEEP - a
-#                                                   path in one plane, and it
-#                                                   stays parametric
-#   "sweep one shape into another along a path"  -> CREATE_FAMILY_SWEPT_BLEND
-#   "blend a rectangle into a circle"            -> CREATE_FAMILY_BLEND - two
+#   "sweep a profile along a path"               -> CREATE_FAMILY_FORMS, a
+#                                                   kind=sweep row - a path in
+#                                                   one plane, and it stays
+#                                                   parametric
+#   "sweep one shape into another along a path"  -> CREATE_FAMILY_FORMS, a
+#                                                   kind=swept blend row
+#   "blend a rectangle into a circle"            -> CREATE_FAMILY_FORMS, a
+#                                                   kind=blend row - two
 #                                                   parallel shapes, parametric
+#                                                   (the three were their own
+#                                                   cards until 2026-11-01)
 #   "loft a form through these two profiles"     -> CREATE_CONCEPTUAL_FORM - in
 #                                                   an adaptive or mass family
 #   "link the body material to Body Material"    -> LINK_FAMILY_PARAMETER

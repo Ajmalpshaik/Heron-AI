@@ -114,7 +114,8 @@ compatibility-note: >
 #   "make the nested family swappable by type"    -> here
 #   "link the motor type's width to Motor Width"  -> LINK_FAMILY_PARAMETER -
 #                                                    a nested TYPE's parameter
-#   "put the motor family into this air handler"  -> PLACE_NESTED_FAMILY
+#   "put the motor family into this air handler"  -> PLACE_FAMILY_INSTANCES, in
+#                                                    the family being edited
 
 utterances:
   - let each type choose which motor it uses

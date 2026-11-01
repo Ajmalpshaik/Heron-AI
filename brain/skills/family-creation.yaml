@@ -138,7 +138,10 @@ purpose: >
   2. ADD_FAMILY_PARAMETERS - the sizes the family is driven by, as TYPE
      lengths when they describe the product; a diameter is a length too. Any
      value a project must TAG or SCHEDULE is a shared parameter instead, from
-     the office's shared parameter file: ADD_FAMILY_SHARED_PARAMETERS. READ
+     the office's shared parameter file: ADD_FAMILY_PARAMETERS with kind
+     shared (ADD_FAMILY_SHARED_PARAMETERS until it was merged into it,
+     2026-11-01 - every ADD_FAMILY_PARAMETERS call needs Admin as well as
+     Changes since then, the shared file being outside Undo). READ
      FIRST, before any shared parameter is added: REPORT_SHARED_PARAMETER_FILE,
      nameContains the names wanted and compareWithDocument true - which file
      Revit is set to now, whether each name is in it and with which GUID, and
@@ -181,8 +184,10 @@ purpose: >
      CREATE_FAMILY_FORMS for any other shape pushed straight or turned - a
      kind=extrusion or kind=revolve row, one form or many (CREATE_FAMILY_EXTRUSION
      and CREATE_FAMILY_REVOLUTION until they were merged into it, 2026-11-01);
-     CREATE_FAMILY_BLEND, CREATE_FAMILY_SWEEP and
-     CREATE_FAMILY_SWEPT_BLEND for the rest. Every one gives back its form's
+     CREATE_FAMILY_FORMS for the rest too - a kind=blend, kind=sweep or
+     kind=swept blend row (CREATE_FAMILY_BLEND, CREATE_FAMILY_SWEEP and
+     CREATE_FAMILY_SWEPT_BLEND until they were merged into it, 2026-11-01).
+     Every one gives back its form's
      id, which every later step names it by. A FORM THAT WILL BE ARRAYED is
      sketched on a plane no parameter moves; a part in a row that a size
      stretches is a nested family instead - step 10. MANY extrusions and
@@ -258,7 +263,7 @@ purpose: >
       A PART IN A ROW THAT A SIZE STRETCHES IS A NESTED FAMILY: made as step
       11's a to g, Work Plane-Based, its own planes and labels stretching it;
       its lengths linked to the host's formulas with LINK_FAMILY_PARAMETER, family= and type=;
-      placed with PLACE_NESTED_FAMILY at a FIXED point - the host's origin on
+      placed with PLACE_FAMILY_INSTANCES, nested, at a FIXED point - the host's origin on
       Ref. Level, never on a plane that moves; then ARRAY_FAMILY_FORMS on the
       nested instance, its count an Integer formula. A row both ways from the
       centre is two arrays: one up from Z 0, and one down from a second
@@ -300,7 +305,9 @@ purpose: >
       gave in step 0's list, never assumed (D-33), or a family parameter in
       square brackets that drives it, a shared one where a project must
       schedule it (step 2). A part that is a family of its own, loaded in with LOAD_FAMILY:
-      PLACE_NESTED_FAMILY on the plane it sits on - a Work Plane-Based family
+      PLACE_FAMILY_INSTANCES, nested in the family being edited, on the plane
+      it sits on - workPlane= a reference plane, or the level (PLACE_NESTED_FAMILY
+      until it was merged into it, 2026-11-01) - a Work Plane-Based family
       is placed on every
       release, a level-based one only from Revit 2024 - then
       LOCK_NESTED_FAMILY_TO_PLANES by its own Left, Right, Front, Back, Top,
@@ -332,7 +339,7 @@ purpose: >
       f. SAVE_DOCUMENT aimed at the host, documentPath the part's file,
          closeWindow=true - saved, its window closed. LOAD_FAMILY refuses a
          part still open with unsaved work: a load reads the file.
-      g. LOAD_FAMILY into the host, PLACE_NESTED_FAMILY at each point, then
+      g. LOAD_FAMILY into the host, PLACE_FAMILY_INSTANCES at each point, then
          count the host's elements of that category against the number
          placed - a stray copy is found by the count (row 5b-350).
       b needs the Admin switch and f the Publish switch, each with Changes.
@@ -464,9 +471,9 @@ needs:
   - SET_FAMILY_SETTINGS
   - ADD_FAMILY_PARAMETERS
   # Step 2's read first - the shared parameter file and its GUIDs, against
-  # the family, before ADD_FAMILY_SHARED_PARAMETERS writes anything.
+  # the family, before ADD_FAMILY_PARAMETERS' shared kind writes anything.
   - REPORT_SHARED_PARAMETER_FILE
-  - ADD_FAMILY_SHARED_PARAMETERS
+  # ADD_FAMILY_SHARED_PARAMETERS was listed here until 2026-11-01, when it was merged into ADD_FAMILY_PARAMETERS.
   # Values BEFORE labels - see step 3.
   - SET_FAMILY_TYPE_VALUES
   - SET_FAMILY_FORMULA
@@ -477,9 +484,9 @@ needs:
   - EXTRUDE_POLYGON_BETWEEN_PLANES
   # CREATE_FAMILY_EXTRUSION was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
   # CREATE_FAMILY_REVOLUTION was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
-  - CREATE_FAMILY_BLEND
-  - CREATE_FAMILY_SWEEP
-  - CREATE_FAMILY_SWEPT_BLEND
+  # CREATE_FAMILY_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # CREATE_FAMILY_SWEEP was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # CREATE_FAMILY_SWEPT_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
   # Step 7's many forms at once - extrusions and revolves, one row each.
   - CREATE_FAMILY_FORMS
   - CREATE_FAMILY_FREEFORM_SOLID
@@ -497,7 +504,8 @@ needs:
   - REPORT_OPEN_DOCUMENTS
   - SAVE_DOCUMENT
   - LOAD_FAMILY
-  - PLACE_NESTED_FAMILY
+  # PLACE_NESTED_FAMILY was listed here until 2026-11-01, when it was merged into PLACE_FAMILY_INSTANCES.
+  - PLACE_FAMILY_INSTANCES
   - LOCK_NESTED_FAMILY_TO_PLANES
   # Step 11's nested part that came in upside down (version 3, row 5b-1335).
   - FLIP_ELEMENTS

@@ -61,7 +61,8 @@ purpose: >
         fix, and nothing is kept.
      It reads back what Type Properties shows, and reports every light value.
      One light source per family - more lights are nested fixtures
-     (PLACE_NESTED_FAMILY). A shape size or angle that must DIFFER by type is
+     (PLACE_FAMILY_INSTANCES in the fixture family - PLACE_NESTED_FAMILY until
+     2026-11-01). A shape size or angle that must DIFFER by type is
      linked to a family type parameter first (LINK_FAMILY_PARAMETER naming
      the Light Source element), then set per type (SET_FAMILY_TYPE_VALUES).
   4. THE POWER: ADD_FAMILY_CONNECTOR with a power system on the face the
@@ -102,21 +103,22 @@ needs:
   - CREATE_FAMILY_FORMS
   - LOCK_FORM_TO_PLANES
   - SET_FAMILY_LIGHT_SOURCE
-  - PLACE_NESTED_FAMILY
+  # PLACE_NESTED_FAMILY was listed here until 2026-11-01, when it was merged into PLACE_FAMILY_INSTANCES.
+  - PLACE_FAMILY_INSTANCES
   - ADD_FAMILY_CONNECTOR
   - LINK_FAMILY_PARAMETER
   # SET_FAMILY_FORM_MATERIAL was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - REPORT_FAMILY_FORMS
   # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
-  # GUIDs, against the family, before ADD_FAMILY_SHARED_PARAMETERS writes.
+  # GUIDs, against the family, before ADD_FAMILY_PARAMETERS' shared kind writes.
   - REPORT_SHARED_PARAMETER_FILE
-  - ADD_FAMILY_SHARED_PARAMETERS
+  # ADD_FAMILY_SHARED_PARAMETERS was listed here until 2026-11-01, when it was merged into ADD_FAMILY_PARAMETERS.
   - SET_FAMILY_FORMULA
   - SET_FAMILY_PLANE_REFERENCE
-  - CREATE_FAMILY_BLEND
+  # CREATE_FAMILY_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
   # CREATE_FAMILY_REVOLUTION was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
-  - CREATE_FAMILY_SWEEP
-  - CREATE_FAMILY_SWEPT_BLEND
+  # CREATE_FAMILY_SWEEP was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # CREATE_FAMILY_SWEPT_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
   # LINK_FAMILY_FORM_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - SET_FAMILY_FORM_SUBCATEGORY
   - SET_FAMILY_FORM_VISIBILITY
@@ -133,7 +135,8 @@ needs:
   # LINK_NESTED_TYPE_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - ADD_FAMILY_TYPE_PARAMETER
   - REPORT_FAMILY_TYPE_CATALOG
-  - CREATE_FAMILY_HOST_OPENING
+  # CREATE_FAMILY_HOST_OPENING was listed here until 2026-11-01, when it was merged into CREATE_OPENING.
+  - CREATE_OPENING
   # The proof, and never skipped.
   - FLEX_FAMILY
   - LOAD_FAMILY

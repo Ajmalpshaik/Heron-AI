@@ -51,7 +51,7 @@ positive:
       "Show_Handle"; the FIRST form untouched - one form, not every extrusion
 
   - given: >
-      two copies of a small nested family placed by PLACE_NESTED_FAMILY, a
+      two copies of a small nested family placed by PLACE_FAMILY_INSTANCES, a
       Length type parameter "Bolt Length"; forms = the SECOND copy's id, links
       "Thread Size=Bolt Length" (an instance length on the nut)
     expect: >
@@ -59,7 +59,8 @@ positive:
       Thread Size and leaves the first copy's as it was
 
   - given: >
-      the nested box from place-nested-family, type "300" with a Length type
+      the nested box from place-family-instances (place-nested-family until
+      2026-11-01), type "300" with a Length type
       parameter "Width"; this family's Length "Motor Width" holding 450;
       family "Heron Nested Box", type "300", links "Width=Motor Width"
     expect: >

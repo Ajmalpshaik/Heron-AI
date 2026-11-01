@@ -1,6 +1,34 @@
 // NOT STANDALONE. Assumes `doc`, `symbol`, `points`, `level`,
-// `structuralType`, `topLevelName` and `topOffset` are in scope, and leaves
-// `placed`, `failed`, `readBack`, `tops`, `refused` and `findings` behind.
+// `structuralType`, `topLevelName`, `topOffset` and `workPlane` are in scope,
+// and leaves `placed`, `failed`, `readBack`, `tops`, `instanceId`, `refused`
+// and `findings` behind.
+//
+// VERSION 5 (2026-11-01) - PLACE_NESTED_FAMILY MERGED IN. In the FAMILY being
+// edited, a type of a family loaded into it is placed in it - a nested
+// component: a motor in an air handler, a handle on a valve - by the family's
+// own creation object, because the project's throws in a family document.
+// That card's rules, moved whole:
+//
+//   HOW IT SITS IS THE NESTED FAMILY'S OWN KIND, never a guess. A Work
+//   Plane-Based one sits on the reference plane `workPlane` names - or, left
+//   out, on `level` - and moves with it; each point must lie ON that plane, or
+//   the call is refused. A level-based one sits on `level`, its Z the level's
+//   own height (its offset is a parameter of the placed family); the API
+//   places one inside a family only from Revit 2024, found by reflection, and
+//   on an earlier release the answer says to make it Work Plane-Based and load
+//   it again. Any other kind is refused by name.
+//
+//   NON-STRUCTURAL ONLY, as PLACE_NESTED_FAMILY placed every one. A column or
+//   footing asked in a family is refused; a Structural Columns or Foundations
+//   family is still refused until "non-structural" is said (version 4's rule).
+//
+//   READ BACK, ALL OR NOTHING: each one's type, and where it stands, to half a
+//   millimetre. A null from Revit THROWS here - PLACE_NESTED_FAMILY's rule -
+//   where a project's layout counts it in `failed`. `instanceId` is the first
+//   one's unique id, what PLACE_NESTED_FAMILY gave back, so every later step
+//   written for it - LOCK_NESTED_FAMILY_TO_PLANES, LINK_FAMILY_PARAMETER -
+//   binds unchanged. `workPlane` given in a project is refused: a project's
+//   family goes on its level.
 //
 // VERSION 4 (2026-11-01) - PLACE_STRUCTURAL_FAMILY MERGED IN. Every point-
 // based placement is this one tool now; what that card had, and its rules
@@ -157,6 +185,8 @@ var failed = 0;
 var readBack = "";
 // VERSION 4, from PLACE_STRUCTURAL_FAMILY.
 var tops = new List<string>();
+// VERSION 5, from PLACE_NESTED_FAMILY: the first placed one's unique id.
+var instanceId = "";
 string refused = null;
 var findings = new List<string>();
 
@@ -256,9 +286,193 @@ else if (topName.Length > 0)
         else topLevel = matches[0];
     }
 }
+
+// ---- VERSION 5: A NESTED COMPONENT, IN THE FAMILY BEING EDITED --------------
+var nestedHere = doc.IsFamilyDocument;
+var planeName = notAsked(workPlane) ? "" : workPlane.Trim();
+if (refused == null && !nestedHere && planeName.Length > 0)
+    refused = "workPlane names the plane a NESTED family sits on, in the family being edited. In a project a "
+        + "family goes on its level - leave workPlane out. Nothing was placed";
+if (refused == null && nestedHere && structural)
+    refused = "In the family being edited a nested component is placed non-structurally, as Revit's family "
+        + "creation call places it - a column or a footing is a project's. Say non-structural, or leave the "
+        + "structural type out. Nothing was placed";
+if (refused == null && nestedHere)
+{
+    var nestMm = 304.8;
+    var halfMm = 0.5 / nestMm;
+    var culture = System.Globalization.CultureInfo.InvariantCulture;
+    Func<double, string> mmText = feet => Math.Round(feet * nestMm, 2).ToString(culture);
+    Func<XYZ, string> whereAt = p => mmText(p.X) + ", " + mmText(p.Y) + ", " + mmText(p.Z) + " mm";
+    Func<ReferencePlane, string> planeOwnName = rp =>
+    {
+        var named = rp.get_Parameter(BuiltInParameter.DATUM_TEXT);
+        var text = named == null ? null : named.AsString();
+        return string.IsNullOrEmpty(text) ? "" : text;
+    };
+    var nestProblems = new List<string>();
+    var nestedFamily = symbol.Family;
+    var nestedKind = nestedFamily == null ? FamilyPlacementType.Invalid : nestedFamily.FamilyPlacementType;
+    var nestedName = (nestedFamily == null ? "" : nestedFamily.Name + " : ") + symbol.Name;
+    if (nestedFamily != null && doc.OwnerFamily != null && nestedFamily.Id == doc.OwnerFamily.Id)
+        nestProblems.Add("\"" + nestedName + "\" is the family being edited itself, not one loaded into it.");
+
+    // THE PLANE IT SITS ON: the reference plane named, or the level.
+    Element sitsOn = level;
+    var sitsOnName = level == null ? "" : level.Name;
+    if (planeName.Length > 0)
+    {
+        sitsOn = null;
+        foreach (var rp in new FilteredElementCollector(doc).OfClass(typeof(ReferencePlane)).Cast<ReferencePlane>())
+            if (string.Equals(planeOwnName(rp), planeName, StringComparison.OrdinalIgnoreCase))
+            {
+                if (sitsOn != null) { nestProblems.Add("\"" + planeName + "\" names two planes - rename one first."); break; }
+                sitsOn = rp;
+            }
+        foreach (var lv in new FilteredElementCollector(doc).OfClass(typeof(Level)).Cast<Level>())
+            if (string.Equals(lv.Name, planeName, StringComparison.OrdinalIgnoreCase))
+            {
+                if (sitsOn != null) { nestProblems.Add("\"" + planeName + "\" names more than one plane or level."); break; }
+                sitsOn = lv;
+            }
+        if (sitsOn == null) nestProblems.Add("No reference plane or level is called \"" + planeName + "\".");
+        sitsOnName = planeName;
+    }
+
+    var pointCount = points == null ? 0 : points.Count;
+    if (pointCount == 0) nestProblems.Add("No point was given - X,Y,Z in millimetres from the family's origin.");
+    if (points != null && points.Any(p => p == null)) nestProblems.Add("A point could not be read.");
+
+    if (nestProblems.Count == 0)
+    {
+        if (nestedKind == FamilyPlacementType.WorkPlaneBased)
+        {
+            Plane surface = sitsOn is ReferencePlane ? ((ReferencePlane)sitsOn).GetPlane()
+                : Plane.CreateByNormalAndOrigin(XYZ.BasisZ, new XYZ(0, 0, ((Level)sitsOn).Elevation));
+            foreach (var p in points)
+            {
+                var off = (p - surface.Origin).DotProduct(surface.Normal);
+                if (Math.Abs(off) > halfMm)
+                    nestProblems.Add("The point " + whereAt(p) + " is " + mmText(Math.Abs(off)) + " mm off \"" + sitsOnName
+                        + "\" - a Work Plane-Based family sits ON its plane. Give a point on it.");
+            }
+        }
+        else if (nestedKind == FamilyPlacementType.OneLevelBased)
+        {
+            if (!(sitsOn is Level))
+                nestProblems.Add("\"" + nestedName + "\" is level-based, so it sits on a LEVEL - name one, such as Ref. "
+                    + "Level, not the reference plane \"" + sitsOnName + "\".");
+            else
+                foreach (var p in points)
+                    if (Math.Abs(p.Z - ((Level)sitsOn).Elevation) > halfMm)
+                        nestProblems.Add("A level-based family is placed ON its level, and Z " + mmText(p.Z) + " mm is "
+                            + "not \"" + sitsOnName + "\" at " + mmText(((Level)sitsOn).Elevation) + " mm. Give Z at the "
+                            + "level; its offset is a parameter of the placed family.");
+        }
+        else
+            nestProblems.Add("\"" + nestedName + "\" is placed " + nestedKind + " - a nested family is placed here only "
+                + "Work Plane-Based or level-based.");
+    }
+
+    if (nestProblems.Count > 0)
+    {
+        refused = "Nothing was placed. " + string.Join(" ", nestProblems.Distinct());
+    }
+    else
+    {
+        if (!symbol.IsActive)
+        {
+            symbol.Activate();
+            doc.Regenerate();
+        }
+        var nestedMade = new List<Tuple<FamilyInstance, XYZ>>();
+        var how = "";
+        foreach (var p in points)
+        {
+            FamilyInstance one = null;
+            try
+            {
+                if (nestedKind == FamilyPlacementType.WorkPlaneBased)
+                {
+                    var reference = sitsOn is ReferencePlane ? ((ReferencePlane)sitsOn).GetReference()
+                        : ((Level)sitsOn).GetPlaneReference();
+                    var normal = sitsOn is ReferencePlane ? ((ReferencePlane)sitsOn).Normal : XYZ.BasisZ;
+                    // A direction IN the plane for the family's own X - the
+                    // model's X unless the plane faces along it.
+                    var across = Math.Abs(normal.X) > 0.9999 ? XYZ.BasisY : XYZ.BasisX;
+                    across = (across - normal * across.DotProduct(normal)).Normalize();
+                    one = doc.FamilyCreate.NewFamilyInstance(reference, p, across, symbol);
+                    how = "on \"" + sitsOnName + "\"";
+                }
+                else
+                {
+                    var onLevel = (Level)sitsOn;
+                    // From 2024 a family's creation object takes a level; before,
+                    // only the project's did. Reached by reflection so 2020 to
+                    // 2023 compile.
+                    var withLevel = doc.FamilyCreate.GetType().GetMethod("NewFamilyInstance",
+                        new[] { typeof(XYZ), typeof(FamilySymbol), typeof(Level), typeof(StructuralType) });
+                    if (withLevel != null)
+                    {
+                        one = (FamilyInstance)withLevel.Invoke(doc.FamilyCreate,
+                            new object[] { p, symbol, onLevel, StructuralType.NonStructural });
+                        how = "on the level \"" + onLevel.Name + "\"";
+                    }
+                    else
+                    {
+                        one = doc.FamilyCreate.NewFamilyInstance(p, symbol, StructuralType.NonStructural);
+                        how = "at the point, with no level (this release has no family call that takes one)";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                var inner = ex is System.Reflection.TargetInvocationException && ex.InnerException != null
+                    ? ex.InnerException : ex;
+                throw new InvalidOperationException("Revit would not place \"" + nestedName + "\" at " + whereAt(p) + ": "
+                    + inner.Message + (nestedKind == FamilyPlacementType.OneLevelBased
+                        ? " A level-based family is placed inside a family through the API only from Revit 2024. Make "
+                          + "the nested family Work Plane-Based (Family Category and Parameters, in that family), load "
+                          + "it again, and place it on a plane."
+                        : "") + " The call failed, and Heron rolls the whole call back.");
+            }
+            if (one == null)
+                throw new InvalidOperationException("Revit placed nothing at " + whereAt(p) + ". The call failed, and "
+                    + "Heron rolls the whole call back.");
+            nestedMade.Add(Tuple.Create(one, p));
+        }
+
+        doc.Regenerate();
+
+        // READ BACK: the type, and where each stands.
+        var stood = new List<string>();
+        foreach (var m in nestedMade)
+        {
+            if (m.Item1.Symbol == null || m.Item1.Symbol.Id != symbol.Id)
+                throw new InvalidOperationException("The placed family is not of the type \"" + symbol.Name + "\". The "
+                    + "call failed, and Heron rolls the whole call back.");
+            var location = m.Item1.Location as LocationPoint;
+            if (location == null)
+                throw new InvalidOperationException("The placed family has no point to read back. The call failed, and "
+                    + "Heron rolls the whole call back.");
+            if (location.Point.DistanceTo(m.Item2) > halfMm)
+                throw new InvalidOperationException("The placed family stands at " + whereAt(location.Point) + ", not "
+                    + whereAt(m.Item2) + ". The call failed, and Heron rolls the whole call back.");
+            placed.Add(m.Item1.Id);
+            stood.Add(whereAt(location.Point));
+        }
+
+        instanceId = nestedMade[0].Item1.UniqueId;
+        readBack = nestedMade.Count + " x \"" + nestedName + "\" nested " + how + " at " + string.Join("; ", stood)
+            + " - read back. The first one's id is " + instanceId + ".";
+        findings.Add(readBack);
+        findings.Add("Next: LOCK_NESTED_FAMILY_TO_PLANES locks its own reference planes to this family's, so it moves "
+            + "with them; LINK_FAMILY_PARAMETER links its instance parameters and, with family= and type=, its type's.");
+    }
+}
 if (refused != null) findings.Add(refused);
 
-if (refused == null)
+if (refused == null && !nestedHere)
 {
 
 const double MillimetresPerFoot = 304.8;

@@ -18,6 +18,34 @@ positive:
       one straight line and two arcs on the new subcategory "Heron Detail",
       read back; the finding saying the subcategory was made
 
+  # VERSION 2 (2026-11-01), from CREATE_LINE. Each FAILS on version 1, which
+  # refused every project as not a family.
+  - given: >
+      a project, a floor plan "Level 1"; view "Level 1", lineKind detail,
+      shapes "path 0,0; 5000,0 | path 0,0; 0,5000 | path 0,5000; 5000,5000",
+      subcategory "none", lockToPlanes false
+    expect: >
+      three detail lines in THAT view and in no other - CHECKED by opening a
+      second plan and confirming they are absent, which is the whole
+      difference between the two kinds; `created` the three, `lineIds` their
+      ids
+
+  - given: the same three shapes with lineKind model, view "none", planeMm 0
+    expect: >
+      three model lines, visible in every view that sees that height,
+      including the 3D
+
+  - given: lineKind model, view "none", planeMm 3000, shapes "path 0,0; 4000,0"
+    expect: the line read back at Z 3000 mm, on its own horizontal plane
+
+  - given: >
+      lineKind detail, view "Level 1", subcategory one of the project's line
+      styles, "<Thin Lines>" or an office style
+    expect: every line read back on that style
+
+  - given: FILLET_LINES run after it with the `created` of two model lines meeting at a corner
+    expect: the corner rounded - the chain CREATE_LINE's created fed binds unchanged
+
 negative:
   - given: shapes "path 0,0; 100,0" in the Profile family
     expect: refused - every line in a profile family is part of the profile - nothing drawn
@@ -25,10 +53,43 @@ negative:
   - given: a new family from the plain metric Generic Model template
     expect: refused as a 3D model family, naming DRAW_FAMILY_SYMBOLIC_LINES - nothing drawn
 
-  - given: a project in front
-    expect: notAFamily true and nothing drawn
+  # VERSION 2: a project is drawn in now - this negative is the unsaid kind.
+  - given: a project in front, lineKind left out
+    expect: >
+      refused asking detail or model - there is no safe default - notAFamily
+      true and nothing drawn. On version 1 it was refused as not a family
+
+  # VERSION 2, CREATE_LINE's own negatives, and the rule it had that is NOT
+  # carried.
+  - given: >
+      a project, lineKind model, shapes "path 0,0; 5000,0 | path 100,100;
+      100,100.2" - the second piece shorter than Revit's shortest line
+    expect: >
+      the WHOLE call refused naming the short piece, and NOTHING drawn - the
+      first line included. THIS IS THE FIRST CASE TO RUN: CREATE_LINE drew the
+      first and counted the second in tooShort; the safer all-or-nothing rule
+      is kept on purpose
+
+  - given: a project, lineKind detail, view left out
+    expect: refused - a detail line has to be drawn in a view - before anything is drawn
+
+  - given: a project, lineKind detail, view a 3D view
+    expect: refused with the reason - detail lines are drawing and a 3D view holds none
+
+  - given: a project, lineKind model, planeMm left out
+    expect: refused asking for the plane, nothing drawn
+
+  - given: a project, subcategory "No Such Style"
+    expect: refused naming the project's line styles - no style made - nothing drawn
+
+  - given: a family in front, lineKind model
+    expect: refused - a family's lines are detail lines - nothing drawn
 
 second_route:
   - >
       In the Family Editor, select a line: Properties shows it as a Line with
       its subcategory; the padlocks show on the locked lines
+  - >
+      In a project (version 2): Annotate tab, Detail Line, or Architecture tab,
+      Model Line, by hand along the same points - then a second view checked to
+      see which kind each is

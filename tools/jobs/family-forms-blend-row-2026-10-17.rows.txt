@@ -2,6 +2,9 @@
 #
 # The ten rows of family-forms-ten-2026-10-17.rows.txt with ROW 10 kind=blend.
 # Refused naming row 10 - a row is an extrusion or a revolve; none built.
+# SINCE 2026-11-01 (version 3, CREATE_FAMILY_BLEND merged in) kind=blend is a
+# kind, and row 10 is refused for giving a revolve's fields and none of a
+# blend's - still by number, still none built.
 #
 # Copied under C:/Users/ajmal/AppData/Local/Temp/heron-work/da/ and its full
 # path given as `forms`. The commands, and what each run must answer, are

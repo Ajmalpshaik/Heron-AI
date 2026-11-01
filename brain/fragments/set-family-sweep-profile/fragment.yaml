@@ -21,7 +21,8 @@ purpose: >
   a change to it reaches them all when it is loaded again, and a Family Type
   parameter can swap it per type (ADD_FAMILY_TYPE_PARAMETER).
 
-  **THE SWEEPS ARE NAMED BY ID** - the id CREATE_FAMILY_SWEEP gives back or
+  **THE SWEEPS ARE NAMED BY ID** - the id a CREATE_FAMILY_FORMS kind=sweep
+  row gives back in formIds (CREATE_FAMILY_SWEEP's formId until 2026-11-01) or
   REPORT_FAMILY_FORMS reads. A swept blend has two profiles and is refused by
   name rather than half set.
 
@@ -112,8 +113,10 @@ compatibility-note: >
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
 #   "use the handrail profile family for this sweep" -> here
-#   "sweep a profile along a path"                -> CREATE_FAMILY_SWEEP - a
-#                                                    typed shape
+#   "sweep a profile along a path"                -> CREATE_FAMILY_FORMS, a
+#                                                    kind=sweep row - a typed
+#                                                    shape (CREATE_FAMILY_SWEEP
+#                                                    until 2026-11-01)
 #   "make the sweep profile a family type parameter" -> ADD_FAMILY_TYPE_PARAMETER
 
 utterances:

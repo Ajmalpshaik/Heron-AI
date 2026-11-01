@@ -115,7 +115,7 @@ compatibility-note: >
 #                                       needs a real corner between the two
 #                                       directions; it does not need them to
 #                                       be touching already
-#   "draw an arc"                    -> CREATE_LINE. A fillet is a corner being
+#   "draw an arc"                    -> DRAW_FAMILY_DETAIL_LINES. A fillet is a corner being
 #                                       rounded, not an arc being drawn
 
 utterances:

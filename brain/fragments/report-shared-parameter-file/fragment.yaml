@@ -20,7 +20,8 @@ risk: READ
 # set to. Nothing could - checked by grep of brain/fragments, DRAFT and PROVEN
 # alike. Three tools touch the setting and all three WRITE:
 # ADD_FAMILY_SHARED_PARAMETERS (ADMIN, reads it inside and names the file in
-# its answer), ADD_PROJECT_PARAMETER and
+# its answer - ADD_FAMILY_PARAMETERS' shared kind since 2026-11-01, when it was
+# merged there, ADMIN too), ADD_PROJECT_PARAMETER and
 # TRANSFER_PROJECT_PARAMETERS_BETWEEN_DOCUMENTS (both set it for a moment and
 # put it back). Every question about the file reached one of those writes
 # (measured 2026-10-21 on main, lexical and the trained model - FRAGMENT-ISSUES
@@ -182,7 +183,7 @@ compatibility-note: >
   Family Type parameter's category - all three 2022 to 2027. One #if picks:
   REVIT2020 or REVIT2021 the first, 2022 on the second.
 
-# ROUTING - the same rows are in ADD_FAMILY_SHARED_PARAMETERS and
+# ROUTING - the same rows are in ADD_FAMILY_PARAMETERS and
 # ADD_PROJECT_PARAMETER.
 #
 #   "which shared parameter file is Revit using"       -> here
@@ -192,8 +193,9 @@ compatibility-note: >
 #                                                      -> here,
 #                                                         compareWithDocument
 #   "add the shared parameter Equipment Tag to this family"
-#                                                      -> ADD_FAMILY_SHARED_PARAMETERS,
-#                                                         the write (D-86)
+#                                                      -> ADD_FAMILY_PARAMETERS,
+#                                                         kind shared - the
+#                                                         write (D-86)
 #   "add a shared parameter to the project"            -> ADD_PROJECT_PARAMETER
 #   "what parameters does this family have"            -> REPORT_FAMILY_PARAMETERS,
 #                                                         the family's own list
