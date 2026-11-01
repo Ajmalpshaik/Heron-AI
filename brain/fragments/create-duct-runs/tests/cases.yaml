@@ -36,6 +36,38 @@ positive:
   - given: a pipe run sized d50 on a copper pipe type whose segment has 50 mm
     expect: the pipes 50 mm, read back in the Properties palette; sized counted
 
+  # VERSION 3 (2026-11-01), from CREATE_ELECTRICAL_RUN and CREATE_FLEX_PIPE.
+  # Each FAILS on version 2, which drew duct and pipe only and refused any
+  # other type by name.
+  - given: >
+      CREATE_ELECTRICAL_RUN's case: a cable tray type, NO system type, Level 1,
+      and one run of five points along a corridor - `0,75000,2500;
+      5000,75000,2500; 5000,78000,2500; 9000,78000,2500; 9000,80000,2500`
+    expect: >
+      FOUR cable trays, not five, each one's end points read back as the points
+      given; runsDrawn 1, segments 4, sized 0. A schedule counts them as Cable
+      Trays - the element kind is what a schedule reads
+
+  - given: the same points with a CONDUIT type, no system type, sized d25
+    expect: >
+      four conduits, 25 mm read back in the Properties palette, sized 4, and a
+      schedule that counts them as Conduits rather than trays
+
+  - given: >
+      CREATE_FLEX_PIPE's case: two points 600 mm apart, straight down from a
+      branch line to a pendent sprinkler, the Fire Protection Wet system type, a
+      FLEX PIPE type, Level 1, maxLengthMm 1200
+    expect: >
+      ONE flexible pipe - Revit's Flex Pipes category - segments 1, lengthMm 600,
+      and the summary saying plainly it is connected to NOTHING
+
+  - given: >
+      CREATE_FLEX_PIPE's duct case: FOUR points forming a dropped S from a branch
+      duct to a diffuser, Supply Air, a FLEX DUCT type, maxLengthMm 3000
+    expect: >
+      ONE flexible duct through all four points in the order given - not three
+      pieces, and no sorting or simplification - segments 1
+
 negative:
   - given: one run of twenty with a point written 3075;-2100 instead of x,y,z
     expect: >
@@ -68,6 +100,46 @@ negative:
       THROWS with Revit's words for that segment, and NONE of the four kept -
       CREATE_PIPE kept three and counted one refused; that rule is not carried
 
+  # VERSION 3 (2026-11-01), from CREATE_ELECTRICAL_RUN and CREATE_FLEX_PIPE.
+  - given: a flex pipe route of 2,400 mm with maxLengthMm 1200
+    expect: >
+      THROWS before anything is made, both numbers stated, nothing kept. THIS
+      IS THE CASE THAT MATTERS for flex - a drop over its listed length is
+      exceeded by accident
+
+  - given: a flex duct type with maxLengthMm left out
+    expect: refused - the limit is required for flex and asked for, never assumed - and nothing made
+
+  - given: a cable tray type WITH a system type named, Supply Air
+    expect: >
+      refused by name before Revit is asked - tray carries no system, so
+      naming one says duct was meant - and nothing drawn
+
+  - given: a CONDUIT type with runKind "tray"
+    expect: >
+      refused naming both, nothing drawn. CREATE_ELECTRICAL_RUN counted this in
+      `refused` and drew nothing; here the whole call is refused before Revit is
+      asked
+
+  - given: runKind "cable"
+    expect: refused, naming duct, pipe, tray, conduit, flex duct and flex pipe - never guessed
+
+  - given: a cable tray run sized d100
+    expect: refused - a tray is width x height - and nothing drawn
+
+  - given: a flex pipe type on a DUCT system, or a flex duct type on a piping system
+    expect: refused by name before Revit is asked, the type and the system both named
+
+  - given: a RIGID pipe type with runKind "flex pipe"
+    expect: refused - the two disagree - and nothing drawn; CREATE_FLEX_PIPE refused a rigid type by name the same way
+
+  - given: >
+      a cable tray run of five points where Revit refuses the third segment
+    expect: >
+      THROWS with Revit's words, NONE kept - CREATE_ELECTRICAL_RUN kept the
+      other three and counted one; that rule is not carried
+
 second_route:
   - CREATE_DUCT once per run followed by SET_MEP_SIZE per size, over the same points - the ducts are the same, segment for segment. CREATE_DUCT is DEPRECATED since 2026-11-01 and offered by nothing, so this route is Revit's own Duct tool over the same points
   - select the new duct in Revit and read Length in the properties palette - it must match the distance between the points asked for
+  - Revit's own Cable Tray, Conduit, Flex Duct and Flex Pipe tools drawn between the same points, and the two compared - Length in the Properties palette agreeing with lengthMm

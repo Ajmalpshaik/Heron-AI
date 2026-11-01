@@ -94,6 +94,19 @@ namespace Heron.Revit.Addin
         /// does then - so it is not invented here either. Only that spelling,
         /// and only when the card marks it; no card marked one before.
         ///
+        /// A FOURTH CASE SINCE 2026-11-01: AN `Element` OR AN `MEPSystemType`
+        /// DECLARED `optional: true` BINDS NULL. Three merges needed one tool
+        /// to do two jobs, one of which has no such value: TRACE_CONNECTIVITY
+        /// took in FIND_SYSTEM_ISLANDS, which partitions the whole set and has
+        /// no `start`; ALIGN_ELEMENTS took in ALIGN_MEP_ELEVATION, whose typed
+        /// height has no `reference`; CREATE_DUCT_RUNS took in cable tray and
+        /// conduit, and CREATE_MEP_SYSTEM electrical circuits, neither of which
+        /// has a duct or piping system type. An element and a resolved type
+        /// have no empty form but null, and the card that marks one optional
+        /// is the one that says what null does - so it is not invented here
+        /// either. Only those two spellings, and only when the card marks it;
+        /// no card marked one before.
+        ///
         /// NOTHING ELSE. A name or a number has no value that means "not
         /// asked", and inventing one is how a job runs against the wrong
         /// thing and reports success - so those still refuse, and so does a
@@ -115,6 +128,8 @@ namespace Heron.Revit.Addin
             if (wanted == "bool") return "false";
             if (wanted == "View") return "null";
             if (wanted == "IList<View>") return "new List<View>()";
+            if (wanted == "Element") return "null";
+            if (wanted == "MEPSystemType") return "null";
             return null;
         }
 

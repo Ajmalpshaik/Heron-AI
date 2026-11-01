@@ -5,7 +5,7 @@ positive:
     expect: >
       order holds all 40 ids as one sequence, links holds 39 steps with a length
       each, totalLengthMm is their sum and guarantee reads "heuristic". The
-      sequence is what CREATE_ELECTRICAL_RUN and RENUMBER_SEQUENTIAL have always
+      sequence is what CREATE_DUCT_RUNS and RENUMBER_SEQUENTIAL have always
       needed a human to supply
 
   - given: the same 40 fittings with mode "tree"

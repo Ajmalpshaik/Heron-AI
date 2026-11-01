@@ -6320,7 +6320,8 @@ namespace Heron.Revit.Addin
         /// <summary>
         /// AN ELECTRICAL PANEL, BY ITS OWN PANEL NAME.
         ///
-        /// ONE NEED IN THE LIBRARY - `create-electrical-circuit`'s `panel` - and
+        /// ONE NEED IN THE LIBRARY - `create-mep-system`'s `panel`, which was
+        /// `create-electrical-circuit`'s until it was merged in on 2026-11-01 - and
         /// the class is keyed on the need's NAME for the same reason `OneIdNamed`
         /// keys on it: a `FamilyInstance` is an INSTANCE, and `Element.Name` on
         /// an instance returns its TYPE's name. Resolving a panel that way would
@@ -6596,8 +6597,8 @@ namespace Heron.Revit.Addin
             //
             //   HostObjAttributes  CREATE_FROM_ROOM_BOUNDARIES branches on
             //                      `hostType is CeilingType` / `is FloorType`
-            //   MEPCurveType       CREATE_ELECTRICAL_RUN builds a cable tray or
-            //                      a conduit from the same value
+            //   MEPCurveType       CREATE_DUCT_RUNS builds duct, pipe, cable tray,
+            //                      conduit or flex from the same value
             //   FilterElement      APPLY_VIEW_FILTER says it in its own comment:
             //                      a rule filter and a selection filter share a
             //                      base class and a view does not care which

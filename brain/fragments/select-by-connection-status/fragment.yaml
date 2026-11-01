@@ -21,8 +21,8 @@ purpose: >
   **It is a local check, not a trace.** It asks each element about its own
   connectors and walks nothing. A run whose every piece is joined to its
   neighbour passes here and can still lead nowhere - it can be a closed loop
-  connected to no plant at all. FIND_SYSTEM_ISLANDS and TRACE_CONNECTIVITY
-  follow the chain; this is the question that costs one pass and catches the
+  connected to no plant at all. TRACE_CONNECTIVITY follows the chain,
+  and splits a whole set into its networks; this is the question that costs one pass and catches the
   commonest defect.
 
   **ASKING A CONNECTOR WHETHER IT IS CONNECTED CAN THROW, and that is not
@@ -137,8 +137,7 @@ compatibility-note: >
   `IsConnected` is only read on End connectors and is guarded regardless -
   reading it on a surface connector throws rather than returning false.
 
-# ROUTING - repeated in CONNECT_OPEN_ENDS, TRACE_CONNECTIVITY and
-# FIND_SYSTEM_ISLANDS.
+# ROUTING - repeated in CONNECT_OPEN_ENDS and TRACE_CONNECTIVITY.
 #
 #   "find the loose ends"            -> here, wantOpenEnds true
 #   "which ducts are not joined up"  -> here
@@ -147,7 +146,7 @@ compatibility-note: >
 #   "what connects to what"          -> TRACE_CONNECTIVITY - it WALKS the
 #                                       chain. This asks each element about
 #                                       itself and walks nothing
-#   "which bits are orphaned"        -> FIND_SYSTEM_ISLANDS. A run can pass
+#   "which bits are orphaned"        -> TRACE_CONNECTIVITY, no start. A run can pass
 #                                       this check at every joint and still
 #                                       reach no plant - that is what an island
 #                                       is, and this cannot see it

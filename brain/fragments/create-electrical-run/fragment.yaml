@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,32 @@ capability: CREATE_ELECTRICAL_RUN
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_DUCT_RUNS (create-duct-runs), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to CREATE_DUCT_RUNS. The proof below, where there is one, is the record
+# of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_DUCT_RUNS
+  why: >
+    The same drawing for containment: cable tray or conduit between
+    consecutive points, a type and a level, nothing connected, no size set.
+    CREATE_DUCT_RUNS draws cable tray and conduit since its version 3, the type
+    class deciding as it does for duct, pipe and flex: a cable tray or conduit
+    type with NO system type draws containment, one run of points or every run
+    of a layout, in one undo. This card's runType is its ductType, its runKind
+    its optional runKind - checked against the type - its points a run in
+    millimetres, its created its elements. Two rules were opposite and the
+    safer was kept: all or nothing (Article 8), where this card kept the
+    segments that worked and counted the refused and the too-short ones; and a
+    size is optional per run and read back, where this card left the snap to
+    SET_MEP_SIZE.
 
 purpose: >
   Draws electrical containment between consecutive points - cable tray or

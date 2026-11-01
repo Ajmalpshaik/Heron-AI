@@ -440,6 +440,19 @@ def main():
          None, False),
         ({"name": "names", "type": "IList<string>", "source": "request",
           "optional": "true"}, None, False),
+        # 2026-11-01: one Element or one MEPSystemType marked optional binds
+        # null, as the host's AbsentValue does - only when marked.
+        ({"name": "start", "type": "Element", "source": "request",
+          "optional": "true"}, None, True),
+        ({"name": "start", "type": " Element ", "source": "request",
+          "optional": " True "}, None, True),
+        ({"name": "start", "type": "Element", "source": "request"}, None, False),
+        ({"name": "systemType", "type": "MEPSystemType", "source": "request",
+          "optional": "true"}, None, True),
+        ({"name": "systemType", "type": "MEPSystemType", "source": "request"},
+         None, False),
+        ({"name": "systemType", "type": "PipingSystemType", "source": "request",
+          "optional": "true"}, None, False),
     ]
     mirrored = absent_text is not None and all(
         absent_text(need) == text and HF.need_may_be_absent(need) == may

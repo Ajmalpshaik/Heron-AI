@@ -342,7 +342,7 @@ def main(argv):
     print()
     print("  And the one difference, examined:")
     entry = compare({"count": 247, "kind": "duct"},
-                    {"count": 261, "kind": "duct"}, on="align-mep-elevation")
+                    {"count": 261, "kind": "duct"}, on="align-elements")
     print("    %s" % entry["why"][:92])
     answer = verdict([entry])
     print("    unexamined        %s - %s"

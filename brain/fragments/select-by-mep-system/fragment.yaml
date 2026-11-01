@@ -25,7 +25,7 @@ purpose: >
   share one type, which is exactly the difference somebody is checking when
   they ask. Guessing between them would answer a different question than the
   one asked and look identical - the same decision READ_MEP_SYSTEM makes for a
-  single element, and CREATE_ELECTRICAL_RUN makes between tray and conduit.
+  single element, and CREATE_DUCT_RUNS makes between tray and conduit.
 
   **They are read from different parameters, and getting that wrong is silent.**
   The name is on `RBS_SYSTEM_NAME_PARAM`. The type is an ElementId-valued
@@ -140,8 +140,7 @@ compatibility-note: >
   what would have made 2024's 64-bit ids matter here. Categories go to
   `ElementMulticategoryFilter` as BuiltInCategory values.
 
-# ROUTING - repeated in READ_MEP_SYSTEM, TRACE_CONNECTIVITY and
-# FIND_SYSTEM_ISLANDS.
+# ROUTING - repeated in READ_MEP_SYSTEM and TRACE_CONNECTIVITY.
 #
 #   "select everything on DXS 1"     -> here, matching the NAME
 #   "all the supply air"             -> here, matching the TYPE
@@ -158,7 +157,7 @@ compatibility-note: >
 #                                       This is the data side, and a duct can
 #                                       carry a system name while being
 #                                       physically disconnected
-#   "which bits are orphaned"        -> FIND_SYSTEM_ISLANDS. An element with no
+#   "which bits are orphaned"        -> TRACE_CONNECTIVITY, no start. An element with no
 #                                       system at all is counted here but not
 #                                       diagnosed here
 #   "rename this system"             -> not this one. This only reads

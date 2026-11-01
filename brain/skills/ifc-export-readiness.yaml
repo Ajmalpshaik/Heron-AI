@@ -41,9 +41,9 @@ purpose: >
   6. CHECK_MODEL_STANDARDS with the parameters the receiving party asked to
      be filled (fire rating, load bearing, classification) as its required
      parameters - named by the modeller, never by Heron.
-  7. READ_MEP_SYSTEM and FIND_SYSTEM_ISLANDS for MEP pieces on no system and
-     runs cut off from their source - they lose their system grouping in the
-     file.
+  7. READ_MEP_SYSTEM, and TRACE_CONNECTIVITY with no start element - the whole
+     set split into its networks - for MEP pieces on no system and runs cut
+     off from their source - they lose their system grouping in the file.
   8. revit_export_check, the export questions that are not IFC's alone:
      unloaded links, placeholder sheets.
 
@@ -77,7 +77,9 @@ needs:
   - GROUP_AND_COUNT
   - CHECK_MODEL_STANDARDS
   - READ_MEP_SYSTEM
-  - FIND_SYSTEM_ISLANDS
+  # FIND_SYSTEM_ISLANDS until it was merged into this one, 2026-11-01 -
+  # asked with no start element, it splits the whole set into its networks.
+  - TRACE_CONNECTIVITY
 
 # What must be true BEFORE it runs, so it fails early with something
 # useful instead of deep inside a transaction (docs/09 s2).

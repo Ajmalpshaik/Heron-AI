@@ -275,7 +275,8 @@ RECEIVABLE = frozenset([
     # argument as `SpatialElement`, one layer along: an instance normally has
     # only its TYPE's name, and a panel is the exception because its Panel Name
     # is its own - "LP-1", unique on the schedule, and the name
-    # `create-electrical-circuit` already reads back as `PanelName`. The
+    # `create-mep-system` reads back as `PanelName` (create-electrical-circuit
+    # did, until it was merged in on 2026-11-01). The
     # need's NAME is what reaches it; every other FamilyInstance is refused.
     "FamilyInstance",
 ])

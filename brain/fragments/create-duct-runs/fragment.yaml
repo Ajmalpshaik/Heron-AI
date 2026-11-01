@@ -5,11 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-052
-semantic-identity: "draw straight duct or pipe - one run from here to there or every run of a layout, each at its own size, in one go"
+semantic-identity: "draw duct, pipe, cable tray or conduit - or a flexible duct or pipe - one run from here to there or every run of a layout, each at its own size, in one go"
 kind: action
 domain: revit.mep
 capability: CREATE_DUCT_RUNS
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -20,9 +20,21 @@ purpose: >
   straight-pipe tool: CREATE_DUCT, which drew one duct run per call, and
   CREATE_PIPE, which drew straight pipe between points, were merged into it.
 
+  **Cable tray, conduit and flex too: the type decides (version 3,
+  2026-11-01).** CREATE_ELECTRICAL_RUN, which drew cable tray or conduit, and
+  CREATE_FLEX_PIPE, which made one flexible duct or pipe, were merged in. A
+  cable tray or conduit type draws containment between consecutive points and
+  takes NO system type - one named with it is refused. A flex duct or flex pipe
+  type makes ONE flexible curve through every point of a run, and needs a
+  maximum length: `maxLengthMm` greater than zero, and a run whose route is
+  longer is refused before anything is made. `runKind` - tray, conduit, duct,
+  pipe, flex duct, flex pipe - may be said as well, and must then agree with
+  the type. Sizes stay optional per run and read back: a tray is WxH, a
+  conduit d25.
+
   **Duct or pipe: the type decides (version 2, 2026-11-01).** Name a duct type
   and a duct system and it draws duct; name a pipe type and a piping system
-  and it draws pipe - as CREATE_FLEX_PIPE does for flex. The two must go
+  and it draws pipe - as a flex type draws flex. The two must go
   together, checked by name before Revit is asked. A pipe run's size is a
   diameter, `d50`; a width by height on a pipe type is refused. Revit snaps a
   pipe size to its segment's sizes and still reports success - 77 asked, 80
@@ -68,11 +80,20 @@ contract:
     # below: a duct type with a duct system, a pipe type with a piping system,
     # checked by name before Revit is asked. Version 1 took a
     # MechanicalSystemType only.
+    #
+    # Version 3: OPTIONAL. Cable tray and conduit carry no system in Revit, so
+    # it is left out for a cable tray or conduit type - and one named with them
+    # is refused, because it says duct or pipe was meant. Left out for any
+    # other type, that type is refused by name. Absent binds null
+    # (HeronBindingNote.AbsentValue).
     - name: systemType
       type: MEPSystemType
       source: request
-    # A DUCT type or a PIPE type (version 2), and which it is decides what is
-    # drawn. MEPCurveType because the binder resolves that class by name and
+      optional: true
+    # A DUCT type or a PIPE type (version 2), or a CABLE TRAY, CONDUIT, FLEX
+    # DUCT or FLEX PIPE type (version 3), and which it is decides what is
+    # drawn - CREATE_ELECTRICAL_RUN's `runType`, CREATE_FLEX_PIPE's
+    # `flexPipeType`. MEPCurveType because the binder resolves that class by name and
     # both derive from it; anything else is refused by name. Still called
     # `ductType` so every call written for version 1 runs unchanged - for a
     # pipe it is the pipe type (CREATE_PIPE's `pipeType`).
@@ -88,6 +109,25 @@ contract:
     - name: runs
       type: string
       source: request
+    # Version 3, CREATE_FLEX_PIPE's limit, in millimetres. REQUIRED greater
+    # than zero for a flex duct or flex pipe type; a run whose route, measured
+    # along its points, is longer is refused before anything is made. Given for
+    # a rigid type it holds there too. Left out it is 0 - no limit for rigid,
+    # refused for flex.
+    - name: maxLengthMm
+      type: double
+      source: request
+      optional: true
+      absent: '0'
+    # Version 3, CREATE_ELECTRICAL_RUN's "asked for, never guessed": duct,
+    # pipe, tray, conduit, flex duct or flex pipe. Left out it is `any` and the
+    # type decides; said, it must agree with the type or nothing is drawn. Any
+    # other word is refused, naming the ones it takes.
+    - name: runKind
+      type: string
+      source: request
+      optional: true
+      absent: any
   provides:
     # The new ducts or pipes, named `elements` on purpose so FIT_MEP_JOINTS
     # can take them straight from here with expect_from. CREATE_PIPE's
@@ -104,6 +144,12 @@ contract:
     - name: sized
       role: result
       type: int
+    # Version 3: the length drawn, in millimetres, measured along the points
+    # given - CREATE_FLEX_PIPE's `lengthMm`, now for every kind. Nothing drawn
+    # is a refusal, never a 0 here.
+    - name: lengthMm
+      role: result
+      type: double
     # The whole answer as ONE string, because a string reaches the reader whole.
     - name: summary
       role: result
@@ -122,6 +168,14 @@ compatibility-note: >
   PC set to a comma decimal separator reads 3122.5 as the caller meant it.
 
   Millimetres to feet is arithmetic - divide by 304.8, per D-20.
+
+  Version 3: `CableTray.Create` and `Conduit.Create(Document, ElementId, XYZ,
+  XYZ, ElementId)`, as CREATE_ELECTRICAL_RUN used them, `FlexDuct.Create` and
+  `FlexPipe.Create(Document, ElementId, ElementId, ElementId, IList<XYZ>)` and
+  `FlexPipe.IsFlexPipeTypeId`, as CREATE_FLEX_PIPE used them, and
+  `RBS_CABLETRAY_WIDTH_PARAM`, `RBS_CABLETRAY_HEIGHT_PARAM` and
+  `RBS_CONDUIT_DIAMETER_PARAM` - present 2020 to 2027, compiled against all
+  eight reference assemblies on 2026-11-01. No ElementId is built from a number.
 
 # 2026-11-01 - CREATE_DUCT WAS MERGED INTO THIS CARD on the owner's
 # instruction ("now merge the other duplicates also"), and is DEPRECATED. The
@@ -159,8 +213,35 @@ compatibility-note: >
 # drawn at its type's own size when none is given, and a snapped size failing
 # the job by name - so the snap is caught where the pipe is made.
 
+# VERSION 3 (2026-11-01) - CREATE_ELECTRICAL_RUN AND CREATE_FLEX_PIPE WERE
+# MERGED INTO THIS CARD on the owner's instruction ("make sure there is no
+# duplicate tools", "in every conflict keep the safer rule"), and both are
+# DEPRECATED. Where their inputs and outputs are now:
+#
+#   CREATE_ELECTRICAL_RUN  runType -> ductType (a cable tray or conduit type);
+#                          runKind -> runKind, now optional and checked against
+#                          the type; points (internal feet) -> a run's points in
+#                          millimetres in `runs`; created -> elements; tooShort
+#                          and refused -> a refusal naming each one; findings ->
+#                          summary. No system type: left out.
+#   CREATE_FLEX_PIPE       flexPipeType -> ductType (a flex duct or flex pipe
+#                          type); systemType -> systemType; points -> ONE run in
+#                          `runs`, drawn as ONE flex curve through every point;
+#                          maxLengthMm -> maxLengthMm, required for flex, the
+#                          route refused before anything is made; created ->
+#                          elements (one per run); lengthMm -> lengthMm;
+#                          refused and findings -> the refusal, or summary.
+#
+# THE CONFLICTS, AND THE SAFER RULES KEPT: CREATE_ELECTRICAL_RUN kept the
+# segments that worked and counted the refused and the too-short ones; this
+# card is all or nothing (Article 8). Both set no size and left Revit's snap to
+# SET_MEP_SIZE; here a size is optional per run and READ BACK, a snap failing
+# the job by name. CREATE_FLEX_PIPE answered a refused route with no exception
+# and `created` null; here it throws, so the caller's transaction rolls back
+# with nothing made - the same outcome, one rule for every kind.
+
 # ROUTING - the neighbours this must not be confused with. Repeated in
-# SPLIT_MEP_RUN, FIT_MEP_JOINTS and CREATE_ELECTRICAL_RUN.
+# SPLIT_MEP_RUN, FIT_MEP_JOINTS and SET_MEP_SIZE.
 #
 #   "draw all the ducts"            -> here
 #   "draw the mains and the branches" -> here
@@ -181,10 +262,20 @@ compatibility-note: >
 #   "put a drain line in"           -> here - it is still a pipe
 #   "give it a fall of 1 in 100"    -> SET_MEP_SLOPE - drawn flat, then sloped
 #   "they are touching but not connected" -> CONNECT_OPEN_ENDS
-#   "draw a cable tray"             -> CREATE_ELECTRICAL_RUN
-#   "draw a conduit"                -> CREATE_ELECTRICAL_RUN
-#   "run flex to that diffuser"     -> CREATE_FLEX_PIPE - FLEXIBLE duct or
-#                                      pipe; this makes rigid duct and pipe
+#   "draw a cable tray"             -> here, with a cable tray type and no
+#                                      system (CREATE_ELECTRICAL_RUN until
+#                                      2026-11-01)
+#   "draw a conduit"                -> here, with a conduit type
+#   "run the containment across"    -> here
+#   "run flex to that diffuser"     -> here, with a FLEX duct type, a duct
+#                                      system and a maximum length
+#                                      (CREATE_FLEX_PIPE until 2026-11-01)
+#   "make the flex drop to the head" -> here, with a FLEX pipe type
+#   "circuit these sockets"         -> CREATE_MEP_SYSTEM - a circuit is the
+#                                      electrical relationship, not containment
+#   "connect the terminal to the duct" -> CONNECT_AIR_TERMINALS. This makes
+#                                      the flex and does NOT join it up
+#   "is the sprinkler connected"    -> TRACE_CONNECTIVITY
 
 utterances:
   - draw all the ducts
@@ -208,3 +299,22 @@ utterances:
   - put a drain line in
   - add a drain line
   - draw the chilled water pipe
+  # MOVED 2026-11-01 from CREATE_ELECTRICAL_RUN, merged into this card.
+  - draw a cable tray
+  - draw a conduit
+  - run the cable tray across the corridor
+  - add a conduit between these points
+  - draw the containment
+  - put a cable tray in here
+  - run the containment across
+  # MOVED 2026-11-01 from CREATE_FLEX_PIPE, merged into this card.
+  - draw a flexible pipe along these points
+  - draw a flex hose down to that sprinkler head
+  - create flex pipe to the sprinkler on this route
+  - draw flex pipe from the branch to the head
+  - make the flex drop to the head
+  - run the flexible drop from the branch to the diffuser, along the points I give
+  - run a flexible duct along these points
+  - make the flex drop to that diffuser
+  - create flexible ductwork on this route
+  - draw a flexible pipe from the sprinkler branch line down to the head, along the points I give
