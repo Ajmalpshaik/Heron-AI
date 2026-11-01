@@ -345,8 +345,12 @@ var spatialCategoriesUsed = new HashSet<ElementId>();
 
 // WHAT A ZONE TAG POINTS AT, on every release: the 2022-and-later method where
 // Revit has it, the 2020/2021 property where it does not. Found by name on the
-// tag, because the add-in compiles this with no release symbols, so an #if
-// always takes its #else (row 5b-181). TAG_ROOMS did the same.
+// tag, as TAG_ROOMS found it. TAG_ROOMS chose that when the add-in compiled
+// fragments with no release symbols, so an #if always took its #else (row
+// 5b-181); since revit/Heron.Revit.Addin/HeronFragmentSymbols.cs the add-in
+// hands a fragment the release symbols it was built with, and an #if would
+// take the right branch. The lookup by name is kept because it is the code
+// TAG_ROOMS ran, and it needs no list of releases to stay right.
 Func<IndependentTag, List<ElementId>> zoneTagTargets = t =>
 {
     var found = new List<ElementId>();

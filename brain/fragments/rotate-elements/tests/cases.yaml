@@ -18,6 +18,18 @@ positive:
       probe would call this blocked - which is why rotation reads an endpoint
       rather than reusing the move fragment's check
 
+  # VERSION 3 (2026-11-01, the review of the merges). NOT RUN. Each FAILS on
+  # version 2, whose XYZ pivot the add-in refused when it was left out.
+  - given: 4 free-standing air terminals, 90 degrees as radians, pivot LEFT OUT
+    expect: >
+      bound as "pivot not given - \"none\", the card's own default", and all 4
+      rotated about THEMSELVES - each terminal facing a new way and the row
+      where it was, `findings` saying "a vertical axis through each one's own
+      point". Version 2 never ran: the add-in refused the call for want of
+      pivot (needs_request_values)
+  - given: the same 4, pivot "itself"
+    expect: the same answer as left out
+
 negative:
   - given: 2 of the terminals put inside a REVIT GROUP
     expect: >
@@ -57,6 +69,12 @@ negative:
     expect: all in `refused`, none in `blocked` and none rotated - refused is kept apart from did-not-move
   - given: axisLine "0,0,0; 0,0,0"
     expect: refused - a line needs two points - nothing turned
+
+  # VERSION 3 (2026-11-01, the review of the merges). NOT RUN.
+  - given: pivot "the corner"
+    expect: >
+      refused in `findings` - a pivot is three numbers in millimetres or none
+      - rotated 0, nothing attempted, nothing in blocked or refused
 
 second_route:
   - the element's own Rotation in Revit's properties palette, read after

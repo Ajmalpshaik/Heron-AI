@@ -269,9 +269,13 @@ def retired(doc):
     return status in SEARCH.RETIRED_FRAGMENTS
 
 
-def utterances():
+def utterances(gone=None):
     """(fragment id, sentence) for every declared utterance of a LIVE card -
-    a retired one's are skipped (retired()) - and every card's risk."""
+    a retired one's are skipped (retired()) - and every card's risk.
+
+    `gone`, a set when given, is filled with every retired card's id, so a
+    caller ranking against the store can leave those out of what it calls
+    the winner - see report()."""
     try:
         import yaml
     except ImportError:
@@ -290,6 +294,8 @@ def utterances():
             doc = yaml.safe_load(fh)
         risk[doc["id"]] = doc.get("risk") or "?"
         if retired(doc):
+            if gone is not None:
+                gone.add(doc["id"])
             continue
         for said in doc.get("utterances") or []:
             out.append((doc["id"], said))
@@ -610,7 +616,15 @@ def report(revit):
         SEARCH.index(store)
         EMBED.index(store)
 
-        rows, risk = utterances()
+        # A RETIRED CARD IS NO RIVAL (2026-11-01). The store still indexes its
+        # text - it is kept as the record - so both routes below still rank
+        # it, and a merged card's own words found it first: the list at the
+        # end named DEPRECATED cards as what "answers instead" for sentences
+        # their successor answers, and the nearness counts were taken against
+        # cards nothing offers. Left out of both rankings here, as
+        # heron_retrieve's eligible set leaves them out of every lookup.
+        gone = set()
+        rows, risk = utterances(gone)
         if not rows:
             print("  no fragment declares an utterance - nothing to check")
             return 0
@@ -620,8 +634,10 @@ def report(revit):
         taken = []
 
         for fid, said in rows:
-            by_word = [h["id"] for h in SEARCH.keywords(store, said, limit=size)]
-            by_near = [i for i, _s in EMBED.nearest(store, said, limit=size)]
+            by_word = [h["id"] for h in SEARCH.keywords(store, said, limit=size)
+                       if h["id"] not in gone]
+            by_near = [i for i, _s in EMBED.nearest(store, said, limit=size)
+                       if i not in gone]
 
             wr = by_word.index(fid) + 1 if fid in by_word else None
             nr = by_near.index(fid) + 1 if fid in by_near else None

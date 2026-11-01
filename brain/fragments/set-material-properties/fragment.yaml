@@ -209,7 +209,9 @@ compatibility-note: >
 #   "this pipe has no colour"                      -> here, on the material the
 #                                                     segment uses
 #   "make a new material"                          -> CREATE_MATERIAL
-#   "what material is this element"                -> READ_ELEMENT_MATERIAL
+#   "what material is this element"                -> REPORT_MATERIAL_TAKEOFF
+#                                                     (READ_ELEMENT_MATERIAL until
+#                                                     it was merged there, 2026-11-01)
 #   "make the glass look like glass when rendered" -> SET_MATERIAL_APPEARANCE
 #   "change the material on these"                 -> REPLACE_MATERIAL
 #   "make these columns concrete"                  -> SET_ELEMENT_MATERIAL

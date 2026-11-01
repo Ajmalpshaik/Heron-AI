@@ -244,6 +244,38 @@ def main():
                       "and the sentences a merge moved reach their successor "
                       "by identity (%d)" % moved)
 
+            # 4c. NOR IS ONE SHOWN AS A CANDIDATE by the words-only route
+            # (2026-11-01). The ranked lookup filters retired cards through
+            # its eligible set; ask() printed them, so a merged card's own
+            # words showed it ahead of the card that answers now. Asked with
+            # each retired card's identity - the sentence most likely to
+            # find it - which none of them claims by identity (above), so it
+            # reaches the words route.
+            shown_retired = []
+            asked_live = 0
+            for card in retired_cards:
+                said = card.semantic_identity or ""
+                if not said:
+                    continue
+                answer = SEARCH.ask(store, said)
+                if answer.route != "keywords":
+                    continue
+                asked_live += 1
+                for row in answer.candidates:
+                    if row["id"] in retired_ids:
+                        shown_retired.append((said, row["id"]))
+                live_matches = [r for r in SEARCH.keywords(store, said, 200)
+                                if r["id"] not in retired_ids]
+                if len(answer.candidates) < min(5, len(live_matches)):
+                    shown_retired.append((said, "only %d shown"
+                                          % len(answer.candidates)))
+            if retired_cards:
+                check(asked_live > 0 and not shown_retired,
+                      "4c. the words-only route shows no retired card as a "
+                      "candidate, and still fills its five (%d asked)%s"
+                      % (asked_live, "" if not shown_retired
+                         else ": %r" % shown_retired[:3]))
+
             print()
             print("5. Two fragments claiming one sentence is a MISS")
             store.execute(

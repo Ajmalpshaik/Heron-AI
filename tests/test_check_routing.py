@@ -1088,6 +1088,20 @@ def main():
               "back to it" % len(gone))
         check(all(one in risk for one in gone),
               "and each still has its risk read - a winner may be any card")
+        # 2026-11-01: A RETIRED CARD IS NO RIVAL EITHER. The words and
+        # nearness rankings report() reads come from the store, which still
+        # indexes a retired card's text; the list of sentences "two fragments
+        # both want" named DEPRECATED cards as what answers instead.
+        filled = set()
+        CR.utterances(filled)
+        check(filled == set(gone),
+              "utterances(gone) names every retired card - %d - so report() "
+              "can leave them out of both rankings" % len(filled))
+        ranking = source.split("\ndef report(", 1)[1].split("for fid, said in rows:", 1)
+        ranking = ranking[1].split("total = len(rows)", 1)[0] if len(ranking) > 1 else ""
+        check('if h["id"] not in gone' in ranking and "if i not in gone" in ranking,
+              "and report() drops them from the words ranking and the nearness "
+              "ranking alike, before either names a winner")
         report_body = source.split("\ndef report(", 1)[1]
         loop = report_body.split("for sentence in routing_claims(text):", 1)[0]
         check("if retired(doc):" in loop[-600:],

@@ -7,8 +7,9 @@
 //   MILLIMETRES BESIDE THE FEET. `lengthsMm` is every length in millimetres and
 //   `totalMm` their sum - the takeoff answer a person reads. `quantities`,
 //   `lengths` and `areas` stay in Revit's internal feet and square feet,
-//   exactly as version 1 handed them on, because SUM_BY_GROUP totals
-//   `quantities` in whatever unit it arrives in, and an existing output never
+//   exactly as version 1 handed them on, because GROUP_AND_COUNT (SUM_BY_GROUP
+//   until it was merged there, 2026-11-01) totals `quantities` in whatever
+//   unit it arrives in, and an existing output never
 //   changes its unit under a caller.
 //
 //   ANY ELEMENT WITH A LENGTH, not only a duct or a pipe - a wall, a beam, a
@@ -61,8 +62,8 @@
 //
 // "How much ductwork is there" means metres to one person and square metres to
 // another. Choosing one silently answers a question nobody asked. `measure`
-// says which, and the chosen one is copied into `quantities` so SUM_BY_GROUP
-// can total it WITHOUT KNOWING WHAT IT IS - which is what lets one totalling
+// says which, and the chosen one is copied into `quantities` so GROUP_AND_COUNT
+// (SUM_BY_GROUP until 2026-11-01) can total it WITHOUT KNOWING WHAT IT IS - which is what lets one totalling
 // serve length, area, insulation, tray weight and concrete rather than being
 // rewritten per material. Both are still returned separately.
 //

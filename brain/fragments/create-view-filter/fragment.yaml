@@ -259,7 +259,11 @@ contract:
     - name: leftOut
       # VERSION 5. The elements that gave no value, counted by why - outside
       # the categories, carrying the parameter's name twice, or without it.
-      # The evidence it looked, never a thing it made (D-52).
+      # The evidence it looked, never a thing it made (D-52). The name twice is
+      # CREATE_VIEW_FILTERS_BY_VALUE's guard, carried: Revit's lookup by name
+      # returns one of the two at random, so such an element gives no value
+      # (D-54 s3, FRAGMENT-ISSUES 5b-203; tests/test_same_name_guard.py
+      # check 6 holds it).
       role: accounting
       type: IList<string>
 

@@ -295,7 +295,8 @@ compatibility-note: >
 #                                         grand total ROW on; this decides
 #                                         what the row adds up. Both are
 #                                         needed for a total flow to print
-#   "what is the total per type"       -> SUM_BY_GROUP. A question about the
+#   "what is the total per type"       -> GROUP_AND_COUNT (SUM_BY_GROUP until
+#                                         it was merged there, 2026-11-01). A question about the
 #                                         model, answered in the chat
 #   "make the schedule text bold"      -> NOT here and NOT anywhere in this
 #                                         library. Bold, font and size live on

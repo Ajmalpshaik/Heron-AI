@@ -1076,6 +1076,32 @@ def match_breadth(store, text, keep=None):
     return len([r for r in rows if r["id"] in keep])
 
 
+def live_keywords(store, text, limit=5):
+    """keywords(), with every RETIRED card left out - what this route SHOWS.
+
+    A DEPRECATED or ARCHIVED card is kept as a record, offered by no route
+    (heron_retrieve.OFFERABLE) and claiming no phrase (index()). The ranked
+    lookup filters it through its eligible set; the words-only command line
+    below printed it as a candidate - a merged card's own words found it
+    first, and the card it was merged into, the one that answers, came after
+    it or not at all (2026-11-01). The status is the index row's, which
+    refresh() copies from the card's file.
+
+    THE WINDOW GROWS until `limit` live rows are found or the matches run out,
+    as heron_retrieve's _until_filled does: taking `limit` and dropping the
+    retired ones would show fewer candidates than were asked for while live
+    matches sat just below.
+    """
+    size = max(int(limit or 0), 1)
+    while True:
+        found = keywords(store, text, size)
+        live = [row for row in found
+                if (row.get("status") or "").upper() not in RETIRED_FRAGMENTS]
+        if len(live) >= limit or len(found) < size:
+            return live[:limit]
+        size *= 2
+
+
 def ask(store, text, limit=5):
     """One question, one Answer, and it says which route produced it."""
     ensure_tables(store)
@@ -1092,7 +1118,7 @@ def ask(store, text, limit=5):
         return Answer("cache", fid, note="seen %d time(s) before; a candidate, "
                                          "never a decision" % hits)
 
-    found = keywords(store, text, limit)
+    found = live_keywords(store, text, limit)
     if not found:
         return Answer("nothing", note="no fragment matched these words")
     return Answer("keywords", found[0]["id"], candidates=found,

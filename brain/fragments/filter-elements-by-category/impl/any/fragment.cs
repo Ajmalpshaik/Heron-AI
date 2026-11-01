@@ -5,6 +5,15 @@
 // `nearMisses`, `examined`, `inModel`, `showing` and `findings` in scope for
 // whatever is composed after it.
 //
+// VERSION 6 (2026-11-01, the review of the merges) - "WHAT HAS NO LEVEL" WITH
+// NO CATEGORY IS ANSWERED AGAIN, OVER THE MODEL CATEGORIES ONLY. Version 5
+// refused `withoutLevel` with nothing else named; SELECT_WITHOUT_LEVEL answered
+// it, with every view, sheet and material in the answer and a warning. Here it
+// is answered, and bounded: only elements of a MODEL category (CategoryType
+// .Model) that are not views, materials, types, project information or
+// view-specific are looked at - in a link as here - and `findings` and
+// `resolvedTo` say so. A category named is still the bound, unchanged.
+//
 // VERSION 5 (2026-11-01) - SELECT_BY_LEVEL, SELECT_VISIBLE_IN_VIEW,
 // SELECT_WITHOUT_LEVEL AND SELECT_HIDDEN_IN_VIEW MERGED IN, AND WHAT THEY HAD
 // THAT VERSION 4 LACKED:
@@ -142,10 +151,12 @@
 //
 // A VIEW IS READ THROUGH EACH LINK PLACEMENT, AND ONLY FROM 2023. Revit 2023
 // added a collector that reads a link's elements as a host view draws them,
-// per link placement. It is reached by reflection because the add-in compiles
-// fragments without release symbols (row 5b-181); on 2020-2022 it is absent
-// and the answer says so rather than reading the whole link and calling it
-// the view.
+// per link placement. It is reached by reflection, chosen when the add-in
+// compiled fragments without release symbols (row 5b-181) - since
+// revit/Heron.Revit.Addin/HeronFragmentSymbols.cs it hands a fragment the
+// symbols it was built with, and reflection is kept as the code that was
+// written and needs no list of releases. On 2020-2022 it is absent and the
+// answer says so rather than reading the whole link and calling it the view.
 //
 // NESTED LINKS ARE NOT READ, AND THE ANSWER COUNTS THEM. A link inside a link
 // is a real case D-59 left open; the owner decided on 2026-09-28 to keep them
@@ -214,19 +225,20 @@ if (byName.Length > 0 && wanted.Count > 0)
         + "category / categories for Revit's own categories.");
 
 // VERSION 5: a level alone, or a view alone, bounds the read too - everything
-// on that level, everything that view draws. Refused only when NOTHING bounds
-// it: an unbounded read of every category hands back every view, sheet and
+// on that level, everything that view draws. VERSION 6: so does `withoutLevel`
+// alone - SELECT_WITHOUT_LEVEL's "what has no level", answered over the MODEL
+// categories only (see `modelOnly` below). Refused only when NOTHING bounds it:
+// an unbounded read of every category hands back every view, sheet and
 // material in the model, and nobody asked for that.
 var levelGiven = levelId != ElementId.InvalidElementId;
 if (byName.Length == 0 && wanted.Count == 0 && !levelGiven && inViewOnly == null
-    && notShowingIn == null)
+    && notShowingIn == null && !withoutLevel)
     throw new InvalidOperationException("Nothing was named to look for, so NOTHING was read. "
         + "Name a category - Ducts, Mechanical Equipment, OST_DuctCurves - or several with "
         + "categories, separated by commas, or one by the name the model holds with "
         + "categoryName; or a level with levelId for everything on it; or a view with "
-        + "inViewOnly for everything it draws, or notShowingIn for what it does not. "
-        + "withoutLevel needs one of those too: unbounded, the elements with no level are "
-        + "every view, sheet and material in the model.");
+        + "inViewOnly for everything it draws, or notShowingIn for what it does not; or "
+        + "withoutLevel for the model elements on no level.");
 
 if (inViewOnly != null && notShowingIn != null)
     throw new InvalidOperationException("Two views were named - inViewOnly '" + inViewOnly.Name
@@ -323,11 +335,36 @@ if (namedCategory != null)
 }
 // No category named at all (version 5): every category, and said so.
 var everyCategory = namedCategory == null && wanted.Count == 0 && !nameMissed;
+
+// VERSION 6 - "WHAT HAS NO LEVEL", WITH NO CATEGORY, OVER THE MODEL ONLY.
+// SELECT_WITHOUT_LEVEL answered `withoutLevel` with no category list; version
+// 5 refused it. Restored here, and bounded: with no category named, only
+// elements of a MODEL category are looked at - Revit's own CategoryType.Model,
+// the Model Categories tab of Visibility/Graphics. Not a view or a sheet, not
+// a material, not a type (never collected), not project information, and not
+// a view-specific element (a detail item, a filled region): every one of
+// those correctly has no level, and an answer made of them is SELECT_WITHOUT_
+// LEVEL's own "correct and useless". With a category named nothing changes -
+// the category is the bound, as before.
+var modelOnly = withoutLevel && everyCategory;
+Func<Element, bool> isModelElement = e =>
+{
+    if (e == null || e is View || e is Material || e is ElementType || e is ProjectInfo)
+        return false;
+    try
+    {
+        if (e.ViewSpecific) return false;
+        var c = e.Category;
+        return c != null && c.CategoryType == CategoryType.Model;
+    }
+    catch (Exception) { return false; }
+};
 var resolvedTo = nameMissed
     ? "NO CATEGORY in " + doc.Title + " is called \"" + byName + "\", so nothing was read"
       + (nearMisses.Count > 0 ? " - the nearest names are in nearMisses" : " - and no name is near it")
     : everyCategory
-        ? "every category - none was named"
+        ? (withoutLevel ? "every MODEL category - none was named (withoutLevel, version 6)"
+                        : "every category - none was named")
         : string.Join(", ", resolvedNames.ToArray());
 
 // One category is OfCategory, as versions 1 to 3 read it; several are one
@@ -387,6 +424,15 @@ else
         .ToElements();
 }
 
+// VERSION 6: with no category and withoutLevel, the model elements only.
+if (modelOnly)
+{
+    var model = new List<Element>();
+    foreach (var e in matching)
+        if (isModelElement(e)) model.Add(e);
+    matching = model;
+}
+
 // How many were looked at, so a small answer can be told from a small scan.
 var examined = matching.Count;
 
@@ -428,9 +474,6 @@ int found = elements.Count;
 
 var findings = new List<string>();
 var scope = everyCategory ? ", across every category" : ", within " + resolvedTo;
-const string unboundedWarning = ". NO CATEGORY BOUNDED THIS, so it includes views, sheets, "
-    + "materials and annotation - most of which correctly have no level and none of which is "
-    + "the answer to anything. Give a category list";
 
 if (nameMissed)
 {
@@ -440,7 +483,14 @@ else
 {
     if (withoutLevel)
         findings.Add(string.Format("{0} of {1} element(s) examined have no level{2}{3}",
-            found, examined, scope, everyCategory ? unboundedWarning : ""));
+            found, examined,
+            modelOnly ? ", across the MODEL categories only" : scope,
+            modelOnly
+                ? ". No category was named, so only elements of a model category were looked "
+                  + "at - views, sheets, materials, types, project information and view-specific "
+                  + "elements such as detail items were left out, because each of them correctly "
+                  + "has no level. Give a category list to look at one kind"
+                : ""));
     else if (levelGiven)
         findings.Add(string.Format("{0} of {1} scanned element(s) are on level '{2}'{3}. {4} carry "
             + "no level at all", found, examined, askedLevel.Name, scope, unresolvedLevel));
@@ -633,6 +683,10 @@ else
         var linkMatched = 0;
         var linkUnresolved = 0;
         var linkByCategory = new Dictionary<string, int>();
+
+        // VERSION 6: the same model-only bound in a link as here.
+        if (modelOnly)
+            linkedElements = linkedElements.Where(isModelElement).ToList();
 
         foreach (var e in linkedElements)
         {

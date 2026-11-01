@@ -201,7 +201,8 @@ compatibility-note: >
 #   "make a template from this view" -> CREATE_VIEW_TEMPLATE_FROM_VIEW - a new
 #                                       template out of a view's settings,
 #                                       rather than a copy of one that exists
-#   "rename the copy"                -> RENAME_ELEMENTS, and for a template
+#   "rename the copy"                -> EDIT_TEXT_VALUES field Name (RENAME_ELEMENTS
+#                                       until it was merged there, 2026-11-01), and for a template
 #                                       copy a SEPARATE call: its name is
 #                                       settled once this transaction commits
 #   "make a detail view"             -> CREATE_DRAFTING_VIEW

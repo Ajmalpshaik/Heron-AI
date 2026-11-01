@@ -3,8 +3,16 @@
 // `refused`, `rotatedIds` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). The angle is in RADIANS;
-// `pivot` is internal FEET, converted by the add-in; `axisLine` is
-// MILLIMETRES, converted below (D-71).
+// `pivot` and `axisLine` are MILLIMETRES, converted below (D-71).
+//
+// VERSION 3 (2026-11-01, the review of the merges) - THE PIVOT MAY BE LEFT OUT,
+// AS THE PURPOSE ALWAYS SAID. `pivot` was a point the add-in converted, and an
+// absent point is refused before this runs - so "each about its own point",
+// the "spin that damper round" job version 1's code handled with a null pivot,
+// could never be asked. It is text now, "x,y,z" in millimetres as before, and
+// left out it binds "none": each element turns about a vertical axis through
+// its own location point. "itself" is read the same way. A pivot that is not
+// three numbers is refused and nothing is turned.
 //
 // VERSION 2 (2026-11-01) - ROTATE_ELEMENTS_ABOUT_AXIS MERGED IN:
 //
@@ -97,26 +105,41 @@ var full = 2.0 * Math.PI;
 var normalised = Math.Abs(angleRadians % full);
 var askedForNothing = normalised < 1e-9 || Math.Abs(normalised - full) < 1e-9;
 
+// A POINT IN MILLIMETRES, to feet - the axis's ends and, since version 3, the
+// pivot. Null for anything that is not three finite numbers within 100 km.
+Func<string, XYZ> pointMm = text =>
+{
+    var bits = (text ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+    if (bits.Length != 3) return null;
+    var v = new double[3];
+    for (var i = 0; i < 3; i++)
+    {
+        if (!double.TryParse(bits[i].Trim(), System.Globalization.NumberStyles.Float, culture, out v[i])
+            || double.IsNaN(v[i]) || double.IsInfinity(v[i]) || Math.Abs(v[i]) > 100000000.0) return null;
+    }
+    return new XYZ(v[0] / 304.8, v[1] / 304.8, v[2] / 304.8);
+};
+
+// THE PIVOT (version 3): "none" - the card's `absent:` - or "itself" is each
+// element about its own point; anything else must be a point.
+string stop = null;
+var pivotText = (pivot ?? "").Trim();
+var eachAboutItself = pivotText.Length == 0
+    || string.Equals(pivotText, "none", StringComparison.OrdinalIgnoreCase)
+    || string.Equals(pivotText, "itself", StringComparison.OrdinalIgnoreCase);
+XYZ pivotPoint = eachAboutItself ? null : pointMm(pivotText);
+if (!eachAboutItself && pivotPoint == null)
+    stop = "\"" + pivotText + "\" is not a pivot. A pivot is a point - three numbers in millimetres, "
+        + "\"24000,3000,0\" - or leave it out (\"none\") to turn each element about its own point. "
+        + "Nothing was turned";
+
 // THE AXIS, IF ONE WAS GIVEN - two points in millimetres, to feet.
 var axisText = (axisLine ?? "").Trim();
 var aboutALine = axisText.Length > 0 && !string.Equals(axisText, "none", StringComparison.OrdinalIgnoreCase);
 Line given = null;
-string stop = null;
 
-if (aboutALine)
+if (stop == null && aboutALine)
 {
-    Func<string, XYZ> pointMm = text =>
-    {
-        var bits = (text ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-        if (bits.Length != 3) return null;
-        var v = new double[3];
-        for (var i = 0; i < 3; i++)
-        {
-            if (!double.TryParse(bits[i].Trim(), System.Globalization.NumberStyles.Float, culture, out v[i])
-                || double.IsNaN(v[i]) || double.IsInfinity(v[i]) || Math.Abs(v[i]) > 100000000.0) return null;
-        }
-        return new XYZ(v[0] / 304.8, v[1] / 304.8, v[2] / 304.8);
-    };
     var ends = axisText.Split(';').Select(each => each.Trim()).Where(each => each.Length > 0).ToList();
     var a = ends.Count == 2 ? pointMm(ends[0]) : null;
     var b = ends.Count == 2 ? pointMm(ends[1]) : null;
@@ -163,10 +186,10 @@ else
         var axis = given;
         if (axis == null)
         {
-            // `pivot` MAY BE NULL: each element then turns about its own
-            // position - "spin that damper round" against "swing this row
-            // about the corner".
-            var about = pivot;
+            // NO PIVOT (left out, version 3): each element then turns about
+            // its own position - "spin that damper round" against "swing this
+            // row about the corner".
+            var about = pivotPoint;
             if (about == null)
             {
                 var placed = element.Location as LocationPoint;
@@ -220,8 +243,8 @@ else
         "{0} turned about {1}, {2} accepted the call and did not move (a group member, or held by a "
         + "constraint), {3} Revit would not turn at all (pinned), {4} could not be checked{5}",
         rotated,
-        given != null ? "the axis given" : pivot != null ? "a vertical axis through the pivot"
+        given != null ? "the axis given" : pivotPoint != null ? "a vertical axis through the pivot"
             : "a vertical axis through each one's own point",
         blocked.Count, refused.Count, unverified.Count,
-        given != null && pivot != null ? ". The pivot is not used when an axis is given" : ""));
+        given != null && pivotPoint != null ? ". The pivot is not used when an axis is given" : ""));
 }

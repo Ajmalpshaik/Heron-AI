@@ -28,10 +28,12 @@ WHAT IT PROVES
 
   5. A FRAGMENT WITH NO CONTRACT IS LISTED, never dropped.
 
-  6. AGAINST THE REAL LIBRARY: exactly three groups share a signature, and
-     ALL are keep-separate. The third arrived 2026-10-06 on purpose:
-     CREATE_FAMILY_DOCUMENT and CREATE_PROJECT_DOCUMENT take the same four
-     inputs and are two cards because a family and a project route apart. That is the finding this agent exists for -
+  6. AGAINST THE REAL LIBRARY: exactly two groups of LIVE cards share a
+     signature, and BOTH are keep-separate. Four did until 2026-11-01; the
+     other two each held a retired card (CREATE_PROJECT_DOCUMENT merged into
+     CREATE_FAMILY_DOCUMENT; both dimension cards merged into
+     CREATE_DIMENSION), and a retired card is no longer compared - it is
+     listed under `retired`. That is the finding this agent exists for -
      the answer people expect from a merge agent is the one it gives
      least.
 
@@ -138,12 +140,25 @@ def main():
     check(asked["at_production"] == [],
           "nothing here is at PRODUCTION")
     live = MRG.look([frag("a", "X", DOC, OUT, status="PRODUCTION"),
-                     frag("b", "X", DOC, OUT, status="DEPRECATED")])[
-        "for_the_host"][0]
-    check(live["at_production"] == ["a"] and live["leaving"] == ["b"],
-          "and when they are, the evidence says which is live and which "
-          "is already on the way out")
-    check("already on the way out" in live["why"], "in words too")
+                     frag("b", "X", DOC, OUT)])["for_the_host"][0]
+    check(live["at_production"] == ["a"],
+          "and when one is, the evidence says which")
+    # THE FACT CHANGED ON 2026-11-01: a retired card is no longer compared, so
+    # a live card beside its DEPRECATED twin is no pair at all - the owner
+    # decided which to keep when he retired one. Until then this asserted the
+    # pair went to the host with `leaving` naming the retired one.
+    gone = MRG.look([frag("a", "X", DOC, OUT, status="PRODUCTION"),
+                     frag("b", "X", DOC, OUT, status="DEPRECATED")])
+    check(gone["for_the_host"] == [] and gone["decided"] == [],
+          "a live card beside its DEPRECATED twin is not a pair - the retired "
+          "card is not compared")
+    check(gone["retired"] == ["b"] and gone["of"] == 1,
+          "and the retired card is listed, never dropped")
+    both = MRG.look([frag("a", "X", DOC, OUT, status="DEPRECATED"),
+                     frag("b", "Y", DOC, OUT, status="ARCHIVED")])
+    check(both["decided"] == [] and both["retired"] == ["a", "b"],
+          "two retired cards with one signature make no 'keep separate' group "
+          "either - ARCHIVED is retired too")
 
     print("\n5. a fragment with no contract is listed")
     odd = MRG.look([{"id": "a"}, frag("b", "X", DOC, OUT),
@@ -166,8 +181,14 @@ def main():
     print("\n6. against the real library")
     found, problems = FRAG.load_all()
     real = MRG.look(list(found.values()))
-    check(real["looked"] and real["of"] == len(found),
-          "all %d fragments were compared" % len(found))
+    gone = sorted(f.slug for f in found.values()
+                  if f.status in FRAG.STATUSES[FRAG.STATUSES.index("DEPRECATED"):])
+    check(real["looked"] and real["of"] + len(real["retired"]) == len(found),
+          "all %d fragments were read - %d compared, %d retired and listed"
+          % (len(found), real["of"], len(real["retired"])))
+    check(real["retired"] == gone,
+          "and the retired ones are exactly the cards whose own status is "
+          "DEPRECATED or ARCHIVED (%d)" % len(gone))
     # FOUR SINCE 2026-10-06, each a pair doing two different jobs, so each
     # keep-separate: CREATE_FAMILY_DOCUMENT and CREATE_PROJECT_DOCUMENT make a
     # document from a template the same way, and SET_PROJECT_LOCATION and
@@ -176,20 +197,23 @@ def main():
     # On 2026-11-01 CREATE_PROJECT_DOCUMENT was merged into
     # CREATE_FAMILY_DOCUMENT and DEPRECATED - the owner's call, made against
     # this agent's keep-separate. The library still holds both cards with one
-    # signature, so this count is unchanged; the pair is now a retired card
-    # beside its successor, not two live jobs.
-    check(len(real["decided"]) == 4,
-          "exactly four groups share a contract signature")
+    # signature - and from the same day a retired card is no longer compared
+    # (heron_search.RETIRED_FRAGMENTS). THE FACT CHANGED, SO THE COUNT DID:
+    # four groups to two. Gone: create-family-document / create-project-
+    # document (the second DEPRECATED) and dimension-family-instances /
+    # dimension-mep-runs (both DEPRECATED, merged into CREATE_DIMENSION).
+    check(len(real["decided"]) == 2,
+          "exactly two groups of live cards share a contract signature")
     check(real["for_the_host"] == [],
           "and NOT ONE of them needs the host - all are keep-separate")
     names = sorted(one for group in real["decided"]
                    for one in group["fragments"])
-    check(names == ["create-family-document", "create-project-document",
-                    "dimension-family-instances", "dimension-mep-runs",
-                    "set-project-location", "set-project-units",
+    check(names == ["set-project-location", "set-project-units",
                     "transfer-materials-between-documents",
                     "transfer-view-filters-between-documents"],
-          "the eight are: %s" % ", ".join(names))
+          "the four are: %s" % ", ".join(names))
+    check(not set(names) & set(real["retired"]),
+          "and no retired card is in any group")
     check(all(len(one["capabilities"]) == 2 for one in real["decided"]),
           "each pair declares two different capabilities - the answer "
           "people expect from a merge agent is the one it gives least")

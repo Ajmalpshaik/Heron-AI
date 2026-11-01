@@ -141,6 +141,24 @@ positive:
       `elements` unchanged from the host-only run, and the link's line in
       `linkedMatches` reading "N of M have no level"
 
+  # VERSION 6, added 2026-11-01 with the review of the merges. NOT RUN. FAILS
+  # on version 5, which refused withoutLevel with nothing else named.
+  - given: >
+      withoutLevel true and NOTHING else - no category, no categoryName, no
+      levelId, no view - on a model with some ducts whose level was cleared,
+      a few work plane-based families placed on no level, and the usual
+      views, sheets, materials and detail items
+    expect: >
+      the cleared ducts and the unlevelled families in `elements`, and NOT ONE
+      view, sheet, material, type, project information or detail item - select
+      them in Revit and read the Properties palette's category of each.
+      `resolvedTo` reads "every MODEL category - none was named", `examined`
+      counts model elements only (far fewer than the model's element count),
+      and `findings` reads "N of M element(s) examined have no level, across
+      the MODEL categories only" with the sentence naming what was left out.
+      Version 5 REFUSED this call ("Nothing was named to look for"), and
+      SELECT_WITHOUT_LEVEL answered it with the views and sheets in
+
 negative:
   - given: >
       VERSION 4 REVIEW FIX. categoryName "Duct Accessory" - singular, which no
@@ -223,13 +241,23 @@ negative:
       an empty set, found 0, and `perCategory` still listing both at 0
 
   # VERSION 5, added 2026-11-01. NONE OF THESE HAS BEEN RUN.
-  - given: no category, no categoryName, no levelId and no view - withoutLevel true or not
+  - given: no category, no categoryName, no levelId, no view, and withoutLevel false or left out
     expect: >
       REFUSED before anything is read - "Nothing was named to look for" -
-      never every view, sheet and material in the model. The SAFER rule:
-      SELECT_WITHOUT_LEVEL answered this with the whole model's unlevelled
-      elements and a warning. Version 4 refused it with "No category was
-      named", which is why the v4 case above now reads in these words
+      never every element in the model. Version 4 refused it with "No
+      category was named", which is why the v4 case above now reads in these
+      words. VERSION 6: withoutLevel TRUE with nothing else is no longer this
+      case - it is answered over the model categories (the positive case
+      above); version 5 refused it here
+
+  - given: >
+      VERSION 6. withoutLevel true, nothing else named, includeLinks true, a
+      loaded link holding views, sheets and unlevelled ducts
+    expect: >
+      the link's line in `linkedMatches` counting the link's MODEL elements
+      only - "N of M have no level", M far below the link's element count -
+      and none of its views or sheets among the N. FAILS on version 5, which
+      refused the call
 
   - given: inViewOnly, or notShowingIn, a view TEMPLATE
     expect: >

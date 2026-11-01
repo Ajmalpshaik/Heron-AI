@@ -53,7 +53,16 @@ capability: FILTER_ELEMENTS_BY_CATEGORY
 # are not read for it. A levelId that is no level is refused. Refused only when
 # no category, no categoryName, no level and no view is given. `findings` says
 # how many of how many, and warns when no category bounded the read.
-version: 5
+#
+# VERSION 6 (2026-11-01, the review of the merges): `withoutLevel` with nothing
+# else named is ANSWERED again, as SELECT_WITHOUT_LEVEL answered it - and
+# bounded to the MODEL categories: no view, sheet, material, type, project
+# information or view-specific element is looked at, here or in a link, and
+# `findings` and `resolvedTo` say so. Version 5 refused it, which left "what
+# has no level" - that card's own sentence - with no answer at all. Version
+# 3's proof below is still the record and still does not describe the code;
+# the card stays DRAFT until version 6 is proved on a real model (D-30).
+version: 6
 source: OFFICIAL
 risk: READ
 
@@ -96,6 +105,10 @@ purpose: >
   "What is on level 2" and "what is showing on this view" need no category.
   `withoutLevel` gives the elements on no level; `notShowingIn` what the model
   holds that a view does not show. Version 5 is DRAFT until proved.
+
+  **WHAT HAS NO LEVEL, ACROSS THE MODEL (version 6).** `withoutLevel` with no
+  category is answered over the model categories alone - never the views,
+  sheets and materials that rightly have no level. DRAFT until proved.
 
 contract:
   needs:
@@ -165,7 +178,10 @@ contract:
       # VERSION 5, from SELECT_WITHOUT_LEVEL: hand on the elements whose level
       # CANNOT be found - the ones `unresolvedLevel` only counts. This card's
       # own lookup, row 5b-335's fix. Left out it binds false. Given with
-      # `levelId` it is refused.
+      # `levelId` it is refused. VERSION 6: given with NOTHING else - no
+      # category, no level, no view - it is answered, over the MODEL
+      # categories only (CategoryType.Model, not a view, material, type,
+      # project information or view-specific element); version 5 refused it.
       type: bool
       source: request
       optional: true
@@ -343,7 +359,9 @@ compatibility-note: >
 #                                           level and no category - it was
 #                                           SELECT_BY_LEVEL's, merged in
 #   "what has no level"                  -> here since version 5, withoutLevel
-#                                           and a category list - it was
+#                                           - with a category list, or since
+#                                           version 6 with none, over the
+#                                           model categories only. It was
 #                                           SELECT_WITHOUT_LEVEL's
 #   "what is not showing here"           -> here since version 5, notShowingIn
 #                                           that view - it was
@@ -444,10 +462,13 @@ compatibility-note: >
 # Here a level or a view alone is enough to read (SELECT_BY_LEVEL's and
 # SELECT_VISIBLE_IN_VIEW's whole-model questions), and the warning travels in
 # `findings` whenever no category bounded the read; refused only when no
-# category, no categoryName, no level and no view is given - so `withoutLevel`
-# with nothing else is refused rather than answered with the whole model's
-# views and sheets, which SELECT_WITHOUT_LEVEL's own test called "correct and
-# useless". SELECT_VISIBLE_IN_VIEW and SELECT_HIDDEN_IN_VIEW answered no view
+# category, no categoryName, no level and no view is given. `withoutLevel`
+# with nothing else was refused by version 5 rather than answered with the
+# whole model's views and sheets, which SELECT_WITHOUT_LEVEL's own test called
+# "correct and useless" - and that lost the question. VERSION 6 (the review of
+# the merges, 2026-11-01) answers it over the MODEL categories only: the
+# question SELECT_WITHOUT_LEVEL answered, without the views, sheets, materials
+# and types it padded the answer with. SELECT_VISIBLE_IN_VIEW and SELECT_HIDDEN_IN_VIEW answered no view
 # with an empty set and a sentence; here no view means the model, and a view
 # named and not found is refused by the binder. A level id that is not a
 # level, which SELECT_BY_LEVEL refused in a sentence, is refused here too.

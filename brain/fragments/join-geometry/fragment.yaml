@@ -33,6 +33,20 @@ risk: MODIFY
 # `target`, the one input that names the other side. Two matched lists wait
 # for a binder that can fill them; the length guard belongs to that input.
 #
+# AND NOT AS TYPED PAIRS EITHER - looked at again on 2026-11-01, in the review
+# of the merges, and left out for two reasons in the add-in, neither of them
+# this card's to change. (1) `target` is a request `Element`, and the binder
+# has no value for one left out (HeronBindingNote.AbsentValue binds only a
+# bool, a View or a view list), so a call naming pairs would still have to
+# name a target - "selected" with exactly one element selected - which means
+# nothing to a list of pairs. (2) A string of ids such as "1234:5678;
+# 2345:6789" read by the card would match ids typed by hand on a WRITE, and the
+# binder refuses exactly that: typed ids are matched only on a read, so what
+# each one is shows before anything changes (HeronBindingNote.TypedIdsOnAWrite,
+# FRAGMENT-ISSUES 5b-441). A card parsing them itself would go round that
+# rule. Both need a binder decision - an optional Element, and pairs handed on
+# from a read such as FILTER_ELEMENTS_BY_ID - recorded for the owner.
+#
 # Version 1's proof below no longer describes the code (impl/ changed) and is
 # kept as the record; DRAFT until version 2 is proved on a real model (D-30).
 
