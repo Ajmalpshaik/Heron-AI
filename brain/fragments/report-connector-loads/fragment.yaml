@@ -109,6 +109,21 @@ compatibility-note: >
 #                                        MATCHES, not what it carries
 #                                        (CHECK_EQUIPMENT_CONNECTORS until
 #                                        2026-11-01)
+# JUDGED 2026-11-01 (a duplicate sweep's look-alike, on the owner's rule "if one
+# tool can safely do both, merge") AGAINST REPORT_CONNECTORS AND KEPT APART -
+# the next sweep should not reopen it unless one of these stops being true:
+#   - THE SAME CONNECTORS, A DIFFERENT QUESTION AND A DIFFERENT FINDING. This
+#     reads what each connector CARRIES - flow, demand, K-factor, fixture
+#     units, loss coefficient, pressure drop - guarded value by value because a
+#     value a domain does not have THROWS, and splits the zero that is a hole
+#     (a fixture with no demand, `unset`) from the zero that is normal (a duct's
+#     own, `expectedEmpty`). That card reads the geometry - domain, size,
+#     shape, where it sits, which way it faces, and what is REALLY joined to it
+#     (AllRefs, not IsConnected) - and judges a partner's size.
+#   - Folding the loads in would put a per-domain guarded read into every
+#     geometry look before a duct is drawn, and the zero split - this card's
+#     whole reason - into a list judged on other terms.
+
 utterances:
   - what flow is set on these
   - is the airflow filled in

@@ -108,7 +108,8 @@ purpose: >
      - it is a fixed shape on a face (a bracket, a canopy arm): a face-based
        family (hosted-family-creation), PLACE_FAMILY_ON_FACE.
      - it repeats at an even spacing: place one, then COPY_ELEMENTS with a
-       count and spacingMm - or ARRAY_ELEMENTS_RADIAL round a curved facade.
+       count and spacingMm - or with sweepDegrees round a curved facade
+       (ARRAY_ELEMENTS_RADIAL until 2026-11-01).
      - its section is a profile swept along a line (a louvre blade, a fin, a
        mullion cap): profile-family-creation builds the profile, and the
        family's sweep takes it with SET_FAMILY_SWEEP_PROFILE. A band round
@@ -180,7 +181,6 @@ needs:
   - PLACE_ADAPTIVE_COMPONENTS
   - PLACE_FAMILY_ON_FACE
   - COPY_ELEMENTS
-  - ARRAY_ELEMENTS_RADIAL
   - CREATE_EDGE_SWEEPS
   - SET_FAMILY_SWEEP_PROFILE
   # Route E

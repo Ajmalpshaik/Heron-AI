@@ -175,6 +175,19 @@ compatibility-note: >
 #                                               changes the SEGMENT
 #   "what fitting will this insert"          -> REPORT_ROUTING_PREFERENCES
 
+# JUDGED 2026-11-01 (a duplicate sweep's look-alike, on the owner's rule "if one
+# tool can safely do both, merge") AGAINST SET_ROUTING_PREFERENCE AND KEPT APART -
+# the next sweep should not reopen it unless one of these stops being true:
+#   - THE SAME REVIT OBJECT (a type's RoutingPreferenceManager) AND TWO
+#     DIFFERENT EDITS, WITH NO INPUT IN COMMON. This takes ANOTHER TYPE and
+#     rebuilds EVERY rule of each group from it - a group often holds a full
+#     tee AND a reduced tee - with Segments left out unless named, because the
+#     segment is the material. That takes a PART NAME and rebuilds ONE rule at
+#     its index, carrying that rule's size window across. A merged tool would
+#     take a source type or a part, never both - a mode flag with half the
+#     inputs meaningless in each - and each half's safety rule (read all before
+#     clearing; carry the size window) belongs to its own edit. Both PROVEN.
+
 utterances:
   - give this type the same fittings as that one
   - copy the routing preferences from that type

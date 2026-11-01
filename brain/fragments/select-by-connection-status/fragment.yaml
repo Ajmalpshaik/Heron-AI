@@ -157,6 +157,18 @@ compatibility-note: >
 #                                           one narrows a set to act on
 #   "report the connectors"              -> REPORT_CONNECTORS
 
+# JUDGED 2026-11-01 (a duplicate sweep's look-alike, on the owner's rule "if one
+# tool can safely do both, merge") AGAINST FIND_DEAD_ENDS AND KEPT APART -
+# the next sweep should not reopen it unless one of these stops being true:
+#   - A DIFFERENT KIND AND A DIFFERENT RESULT (D-29). This is a FILTER: it
+#     takes categories, splits them into what has an open end and what is
+#     joined at every end, and HANDS ON THE SET for the next step to act on -
+#     links read when asked (D-59). That is an ACTION: it takes elements and
+#     CLASSIFIES each open end - served, capped, stub, deadEnd - so only the
+#     unexplained ones are the finding. This one's set is what that one is
+#     given; one tool doing both would either hand on a set or a judgement,
+#     not both under one name.
+
 utterances:
   - find the loose ends
   - which ducts are not joined up

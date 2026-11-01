@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,36 @@ capability: ARRAY_ELEMENTS_RADIAL
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO COPY_ELEMENTS (copy-elements) version 5,
+# on the owner's instruction in conversation: "make sure there is no duplicate
+# tools", "merge means ... all area need to be covered", "in every conflict
+# keep the safer rule". Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its sentences
+# moved to COPY_ELEMENTS. The ROUTING block below that says "KEPT APART" is the
+# record of the first judgement that day, reopened and reversed: COPY_ELEMENTS
+# already had the count, the centre and copies turned about it, and Revit's
+# own Array is one command, Linear or Radial. The proof below is the record of
+# what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: COPY_ELEMENTS
+  why: >
+    The same job - the set copied, repeated, and handed back - in a second
+    shape. COPY_ELEMENTS version 5 takes sweepDegrees with turnCentreMm and
+    count: count positions in all, the original the first, about a vertical
+    axis through the centre; a full circle divided by the count and a part
+    sweep by the count less one, the angle in stepDegrees and the rule said
+    in copiedTo; the set copied together each step; every copy counted from
+    the model. Not taken, and why - the safer rule in each conflict: a sweep
+    over 360 is refused where this card stepped 720 / count and stacked half
+    its copies; a copy Revit will not turn takes the whole call back where
+    this card left it on top of the original; copies are made a kilometre
+    aside and brought back, the keeper's measured join lesson, where this
+    card copied in place; a sweep with no centre is refused.
 
 purpose: >
   Copies elements evenly around a centre point - bollards round a turning head,

@@ -198,8 +198,10 @@ compatibility-note: >
 #
 #   "make a revolve in the family"               -> here
 #   "revolve this profile around the axis"       -> here
-#   "array these round a circle"                 -> ARRAY_ELEMENTS_RADIAL,
+#   "array these round a circle"                 -> COPY_ELEMENTS, sweepDegrees -
 #                                                   copies, not a turned form
+#                                                   (ARRAY_ELEMENTS_RADIAL until
+#                                                   2026-11-01)
 
 utterances:
   - make a revolve in the family

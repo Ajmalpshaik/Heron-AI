@@ -434,6 +434,23 @@ compatibility-note: >
 # set `refused` - nothing is written either way. Nothing of that card was left
 # out.
 
+# JUDGED 2026-11-01 (a duplicate sweep's look-alike, on the owner's rule "if one
+# tool can safely do both, merge") AGAINST SET_FAMILY_LIGHT_SOURCE AND KEPT APART -
+# the next sweep should not reopen it unless one of these stops being true:
+#   - NOTHING IS CODED TWICE. This card ticks Light Source - one switch in
+#     Family Category and Parameters, the built-in LIGHTING_FIXTURE_LIGHT_EMITTER,
+#     written with the other switches and after Category=Lighting Fixtures in
+#     the same call. That card defines the light the tick makes - LightFamily
+#     and LightType, shape, distribution, position, aim, each type's values -
+#     and never ticks it: it refuses a family without the tick and names
+#     "Light Source=yes" here.
+#   - DIFFERENT OBJECTS IN REVIT: a family parameter here; the light source
+#     element and its lighting API there.
+#   - A SAFETY REASON ONE TOOL CANNOT HOLD: that card already refuses its two
+#     halves in one call because Revit lost type values when the family's
+#     light changed in the same transaction (5b-1297). Ticking the box creates
+#     the light source; defining it in the same call is the untested case.
+
 utterances:
   - make this family work plane based
   - make the motor family shared
