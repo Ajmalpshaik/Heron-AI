@@ -118,3 +118,10 @@ utterances:
   # GROUP_AND_COUNT 4th -> 5th. Nothing on any frozen set became riskier.
   - how many air terminals are there
   - how many walls are there
+  # ADDED 2026-11-01 (FRAGMENT-ISSUES 5b-1354). Once GROUP_AND_COUNT declared
+  # "how many doors of each type", this card held no word "doors", and on
+  # lexical the bare count "how many doors are there" left it for that one.
+  # Not among the first eight on purpose: put there, it pushed "give me the
+  # number of fire dampers" out of what the re-ranker reads, and "how many
+  # fire dampers are there" went to SELECT_BY_FAMILY.
+  - how many doors are in this project

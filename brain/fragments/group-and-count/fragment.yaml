@@ -5,7 +5,12 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-002
-semantic-identity: "turns a set of parameter values into a schedule-style table"
+# IDENTITY REWORDED 2026-11-01 (FRAGMENT-ISSUES 5b-1354). It was "turns a set
+# of parameter values into a schedule-style table", which shares no word with
+# "how many doors of each type" - and REPORT_VIEWPORT_TYPES, whose identity ends
+# "how many use each", answered that question on lexical. The identity is read
+# by all three routes, so it now says the modeller's question first.
+semantic-identity: "how many of each type, size or value there are - a set of parameter values turned into a schedule-style table"
 kind: action
 domain: revit.reporting
 capability: GROUP_AND_COUNT
@@ -79,3 +84,12 @@ utterances:
   # size" and "give me a schedule of the types"; only the noun differed.
   - what sizes are the ducts
   - duct schedule by size
+  # ADDED 2026-11-01 (FRAGMENT-ISSUES 5b-1354): the question measured reaching
+  # REPORT_VIEWPORT_TYPES, then two door-free forms of it. KEEP THEM LAST. The
+  # re-ranker reads only the first eight utterances (D-134); put first, these
+  # pushed the two duct-size sentences out of them, and on the re-ranker "give
+  # me a breakdown of the duct sizes" went to AUTO_SIZE_MEP and SET_MEP_SIZE -
+  # writes.
+  - how many doors of each type
+  - how many of each type are there
+  - count them by type
