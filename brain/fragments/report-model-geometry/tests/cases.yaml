@@ -1,0 +1,150 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - here,
+# a drawing of the whole model handed back when the view asked for showed
+# nothing. Every case reads only. The model is a FRESH copy of Snowdon Towers
+# Sample HVAC.rvt (Revit 2024), whose building is in its six Revit links: the
+# host holds the ducts, the air terminals and the mechanical equipment.
+#
+# Read geometryJson, not only `triangles`: the runner judges `triangles`
+# alone (geometryJson and findings are accounting, always written).
+
+positive:
+  # THE CASE THAT MATTERS - the batch-prove leg is its wholeModel twin (tools/jobs).
+  - given: >
+      a fresh copy of Snowdon Towers Sample HVAC in front, its {3D} view
+      active and untouched, nothing selected; categories, maxTriangles and
+      wholeModel left out
+    expect: >
+      triangles above 0 and equal to the sum of every element's t length / 3;
+      geometryJson format 1, units "m", scope "active 3D view '{3D}'";
+      categories holds Ducts, Duct Fittings, Air Terminals and Mechanical
+      Equipment, sorted by name, and no category the view hides; every
+      element's c indexes categories, every t index is below its v length / 3,
+      and len(elements) + noGeometry + leftOut = elementsRead; every id is an
+      element of this model (none of a link's); notRead has a "links:" line
+      for the links the view shows, and no "active view:" line; capped []
+      and stopped null unless leftOut is above 0; findings has a "Read in N s
+      of the 40 s limit" line
+
+  - given: the same run, its offset and v beside the model
+    expect: >
+      offset is the middle of the drawn services in metres from the internal
+      origin, and every v coordinate is within half the building's size of
+      0 - small numbers; an air terminal's v plus offset lands where its
+      Properties place it, to the millimetre
+
+  - given: the same run, a duct in it, with the {3D} view at Coarse
+    expect: >
+      the duct is drawn as a tube - an element with triangles, not counted
+      in noGeometry - and findings has the line saying how many were only
+      lines at the view's detail level and were read again at Fine
+
+  - given: maxTriangles 2000, the same {3D} view
+    expect: >
+      triangles at most 2000 and above 0; leftOut above 0; stopped
+      "triangles"; capped has one line, "triangles: the budget of 2000 was
+      reached; N element(s) left out - the largest were drawn first", N being
+      leftOut; the elements drawn are
+      among the longest in the view (equipment and main ducts, not grilles)
+
+  - given: >
+      a floor plan active (Mechanical, Level 1 or any plan), wholeModel left
+      out
+    expect: >
+      scope "whole model"; notRead's first line "active view: '<the plan's
+      name>' is not a 3D view, so the whole model was read - open a 3D view
+      first to draw only what it shows"; triangles above 0
+
+  - given: wholeModel true, with {3D} active
+    expect: >
+      scope "whole model", no "active view:" line; elementsRead at least the
+      {3D} run's - more where the {3D} view hides anything
+
+  - given: categories "OST_DuctCurves", the same {3D} view
+    expect: >
+      categories ["Ducts"] and nothing else; every id a duct; triangles below
+      the first run's; capitals forgiven - "ost_ductcurves" answers the same
+
+  - given: >
+      categories "OST_Wals" - a misspelling - and then maxTriangles 600000
+    expect: >
+      both REFUSED before anything is read: the first names 'OST_Wals' and
+      how a category is spelt, the second names the limit of 500000; no
+      geometryJson either time
+
+  - given: the whole model (wholeModel true) on the same copy, timed
+    expect: >
+      it answers inside revit.operationTimeoutSeconds (60 s by default), and
+      the time and triangles are recorded on the NEEDS-CHECKING row - the
+      measure of what a large model costs; findings' "Read in" line agrees
+      with the time on the reply, less the JSON's writing
+
+  # VERSION 2 - THE CLOCK. The case that matters for it.
+  - given: >
+      version 2, the whole Snowdon model - wholeModel true, maxTriangles
+      500000 so the budget cannot stop it first - and timeLimitSeconds 5
+    expect: >
+      stopped "time"; leftOut above 0; capped has one line, "time: stopped at
+      5 s; N element(s) left out - the largest were drawn first", N being
+      leftOut, and no "triangles:" line; len(elements) + noGeometry + leftOut
+      = elementsRead still; the elements drawn are the longest in the model;
+      the reply arrives well inside the 60-second stop, with geometryJson -
+      never "stopped, rolled back". If the extent pass alone took 5 s,
+      elements is [] and leftOut = elementsRead: still stopped "time", and
+      the run says so rather than drawing nothing silently
+
+  - given: version 2, timeLimitSeconds 4, then timeLimitSeconds 56
+    expect: >
+      both REFUSED before anything is read, each naming the limits 5 and 55;
+      no geometryJson either time
+
+  - given: version 2, timeLimitSeconds left out, on a read that finishes
+    expect: >
+      the answer is version 1's plus "stopped": null and findings' "Read in N
+      s of the 40 s limit" line; format still 1
+
+negative:
+  # THE CASE THAT MATTERS - the batch-prove leg (tools/jobs).
+  - given: >
+      a 3D view duplicated from {3D} and named "Heron empty box", its section
+      box dragged wholly clear of the building, ACTIVE; wholeModel left out
+      (false)
+    expect: >
+      triangles 0; geometryJson scope "active 3D view 'Heron empty box'",
+      elements [] and categories [] - never null - offset [0, 0, 0],
+      elementsRead 0, noGeometry 0, leftOut 0, capped [], stopped null. Not one of the
+      positive's ids appears: nothing fell back to the whole model
+
+  - given: >
+      {3D} active with Ducts unticked in its Visibility/Graphics, categories
+      "OST_DuctCurves"
+    expect: >
+      triangles 0 and elements [] - a category the view hides is not drawn;
+      findings says Ducts (OST_DuctCurves) has nothing in the active 3D view
+      '{3D}'
+
+  - given: categories "OST_DuctTags", {3D} active
+    expect: >
+      triangles 0, elements []; notRead "categories: Duct Tags (OST_DuctTags)
+      is not a model category, so nothing of it is drawn" - an annotation
+      category is answered, not refused
+
+  - given: >
+      categories "OST_Walls", wholeModel true - the walls are in the
+      architectural link, not the host (check first that a Walls schedule
+      in the host is empty)
+    expect: >
+      triangles 0, elements []; findings says Walls (OST_Walls) has nothing in
+      the whole model - the link's walls are never drawn
+
+second_route: >
+  Revit's own view, and the readers of one part. FILTER_ELEMENTS_BY_CATEGORY
+  with inViewOnly the 3D view and categoryName a category - Ducts - selects
+  what the view
+  shows of it: its count must equal that category's elements drawn plus its
+  share of noGeometry and leftOut. REPORT_BOUNDING_BOX on the elements drawn
+  gives a combined box whose middle is offset, within the few millimetres an
+  extent is wider than its solid. REPORT_GEOMETRY_COMPLEXITY's coarse count
+  for one family placed once is that element's t length / 3 or a little
+  more - triangles collapsed at the millimetre are dropped here - unless the
+  family is only lines at Coarse. A part that disagrees is a finding for
+  FRAGMENT-ISSUES, never a rounding.

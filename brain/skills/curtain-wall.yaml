@@ -31,10 +31,9 @@ purpose: >
      his height, when the wall is not drawn yet. A CURVED curtain wall is one
      wall on an arc: `arc MX,MY X,Y` in the points - a point it passes through,
      then where it ends - and a round one is two arcs. Never a run of short
-     straight walls, which reads as flat facets close up. CREATE_WALL is DRAFT
-     at version 3, and until NEEDS-CHECKING Group JG proves it a change kept
-     from it is refused (D-117); how the panels sit on an arc is recorded in
-     Group HM.
+     straight walls, which reads as flat facets close up. CREATE_WALL version
+     3 was proved on Revit 2020 and signed on 2026-11-01 (NEEDS-CHECKING Group
+     JG); how the panels sit on an arc is recorded in Group HM.
   4. SET_CURTAIN_WALL_GRID on the type - the vertical grid, the horizontal
      grid or both: a layout (none, fixed distance, maximum or minimum spacing)
      and a spacing in millimetres. A direction nobody mentioned is left alone.
@@ -44,9 +43,11 @@ purpose: >
      refused with the names it does have; loading one is the modeller's. Steps
      4 and 5 may be one call - both tables together - since 2026-11-01, when
      SET_CURTAIN_WALL_MULLIONS was merged into SET_CURTAIN_WALL_GRID.
-     Steps 4 and 5 are DRAFT since 2026-10-29, when the setter was widened
-     to curtain system types: a kept change is refused until
-     NEEDS-CHECKING Group JP proves it again (D-117).
+     Steps 4 and 5 were widened to curtain system types on 2026-10-29 and
+     proved again on Revit 2020 on 2026-11-01 (NEEDS-CHECKING Group JP), as
+     the two setters' version 3 and version 2; a curtain wall type's keys and
+     words are unchanged. The merged setter, SET_CURTAIN_WALL_GRID version 4,
+     is DRAFT until it is proved: a kept change is refused until then (D-117).
   6. REPORT_CURTAIN_ELEMENTS on the wall - its grid lines each way and its
      mullions by type, measured - against what the spacing should give. A 9000
      mm wall at a 1500 mm fixed distance has five vertical lines inside it. The

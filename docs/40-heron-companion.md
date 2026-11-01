@@ -1113,3 +1113,187 @@ again when their fragments are PROVEN - [group FE](needs-checking/group-fe.md) f
 page *"shows the model, the view and the selection ... and changes nothing"*. The Selected card is off
 since §21.6, and the page's Apply, Finalize and Place change the model under the same switches as a chat.
 Until the reply is fixed, describe the page from this section, not from that reply.
+
+### 21.10 The Model Dashboard panel (2026-11-01)
+
+A fifth kind of content, on the owner's word - *"Check always this as a referance and buld the conpnaiban
+app with this and what are the ideas you have you can add that aslo okkey"* - with
+[BIMLens](https://github.com/IbrahimFahdah/BIMLens) as the reference for ideas. **Studied, never
+imported:** its repository holds a README only, with no code and no licence, so nothing of its code,
+name, wording or look is in Heron ([D-25](decisions/D-25.md)). One part of how it works is refused - its
+page is served from the internet and calls the PC; this page stays served from the PC (README rule 1).
+Every idea, phased, is in the work note
+[`companion-model-dashboard-2026-11-01`](work-notes/plans/companion-model-dashboard-2026-11-01.md).
+
+**What it shows.** `revit_model_dashboard` (ANALYZE, through `run_fragment_read`) reads the model once
+with `REPORT_MODEL_DASHBOARD` - one pass, one JSON string, no transaction - and `brain/heron_model_dashboard.py`
+makes everything on the panel:
+
+- **Tiles** - model elements, worksets, warnings, views, sheets, families, Revit links, CAD files, rooms.
+- **Bars** - elements by category, by level and by workset; warnings by kind, an error's bar in the error
+  colour; views by type. Past twelve bars the rest fold into *Others*.
+- **Worth a look** - error warnings, warnings, rooms and Spaces not placed or not enclosed, empty sheets,
+  families and group types never placed, CAD imported rather than linked, Revit links not loaded or not
+  pinned, closed worksets, elements on no level, then the plain counts: views with no template, views
+  off every sheet, in-place families. Each row says why it costs time and where Revit shows it, and
+  **Copy IDs** puts its element ids on the clipboard, semicolon-separated, for Manage > Inquiry > Select
+  by ID - the page changes nothing in Revit, not even the selection.
+- **Refresh** - the modeller's press reads the model again (`_dashboard_refresh`, under the lock every
+  tool call holds, the pin's refusal standing). Never on a timer (README rule 3); one read at a time.
+
+**It keeps this page's rules.** The panel holds data and calls one hook; every number, colour and line is
+made in `brain/`; model text reaches the page through `textContent`. It writes nothing, so it has no
+`COMPANION_ACTIONS` row. **A count, never a verdict** - `heron_modelqa`'s rule: no row calls a model
+compliant, clean or healthy, and there is no score. A part the read could not reach is shown as *not
+read*, never as zero.
+
+**Proved without Revit:** `tests/test_model_dashboard.py` (the brain), `tests/test_companion.py`'s
+Dashboard group (the panel, its routes behind the pairing, Refresh under the lock and never on a timer),
+and `tests/test_mcp_serves.py` (served with the SDK's Context; refused when the Companion is off).
+**Not run in Revit** - `REPORT_MODEL_DASHBOARD` is DRAFT, and its proof on a named model, with its
+negative case, is owed before the panel is relied on.
+
+### 21.11 Select in Revit and Isolate from the Model Dashboard (2026-11-01)
+
+**§18 question 7 asked again, and answered.** §21's table recorded *no Select-in-Revit button in V1*. The
+Model Dashboard's plan put the button in its phase 2 and asked the owner first; the owner answered
+*"DO IT UNITLE FINISH CONTINEWSLY"*, and then, asked plainly, **confirmed it in the owner's own words on
+2026-11-01: *"yes allow select button"*.** §18 question 7 now reads *yes, from the Model Dashboard* - the
+three buttons below, on screen only; taking them out would be one revert.
+
+Each *Worth a look* row with element ids gets **Select in Revit** and **Isolate in view**, and the panel
+gets **Reset isolate**. **On screen only - nothing in the model changes:**
+
+| Button | What runs | Declared |
+|---|---|---|
+| Select in Revit | `FILTER_ELEMENTS_BY_ID` with the row's ids (READ, PROVEN) through `revit_read`'s body, then `SET_SELECTION` on what it found (EXECUTE, PROVEN) through `revit_show`'s body | `companion_dashboard_select`, EXECUTE |
+| Isolate in view | `revit_isolate_temporary`'s body - Revit's Temporary Hide/Isolate in the active view ([group ES](needs-checking/group-es.md)) | `companion_dashboard_isolate`, EXECUTE |
+| Reset isolate | `revit_reset_temporary`'s body | `companion_dashboard_reset`, EXECUTE |
+
+**The page names a row, never ids.** `DashboardPanel.show` takes the row's key and sends the ids its own
+read found, so a page - or anything else that reaches the port - cannot hand Revit ids the read did not
+find. `_dashboard_show` runs under the lock every tool call holds and only on the model the dashboard was
+read from (`_moved_since`); otherwise it sends nothing and says *press Refresh*. One action at a time,
+shared with Refresh. A typed id the model no longer holds makes `FILTER_ELEMENTS_BY_ID` refuse the whole
+call, naming it, so nothing is selected rather than part of the row.
+
+**Proved without Revit:** `tests/test_companion.py`'s Dashboard group - the hook gets the panel's ids and
+identity, not the page's; a row with no ids, an unknown action and a gone chat send nothing; every route
+behind the pairing. **Not run in Revit** - with the panel's own read, owed in [group JT](needs-checking/group-jt.md).
+
+### 21.12 The Model Dashboard grows: parameters filled, a filter, since the last read, print, CSV and a demo (2026-11-01)
+
+The rest of the plan's phases 2 and 4 that need no new decision, built the same day on the owner's word
+(*"DO IT UNITLE FINISH CONTINEWSLY"*). Each idea came from the BIMLens study
+([work note](work-notes/plans/companion-model-dashboard-2026-11-01.md)) and is Heron's own.
+
+- **Parameters filled.** `revit_model_dashboard` takes `parameters` - *"Mark, Fire Rating"* - and the
+  panel has a box for them that Refresh sends. `REPORT_MODEL_DASHBOARD` counts, per category, how many
+  elements have each one **filled, empty, or not at all** - `heron_modelqa`'s three states, never merged:
+  empty is a value nobody typed, missing is a parameter the category does not carry. Each parameter left
+  empty becomes a *Worth a look* row whose ids Select and Isolate use.
+- **A filter** - words, and the row's state. The page's own: it hides rows and bars on what the brain
+  already sent, and reads nothing from Revit.
+- **Since the last read.** With a project key (D-113), each read is kept beside the project's other
+  answers - **numbers only**, no element ids or names - and the next read lists what moved: elements,
+  warnings, sheets, rooms, families, and the ten categories that moved most. A part not read in either
+  read is never compared; with nowhere to keep it, the panel says so and is shown all the same.
+- **Print / PDF and CSV.** Print shows the dashboard alone, without its buttons - Save as PDF is the
+  browser's. The CSV is made in the page from what the brain sent; a cell that starts like a formula
+  (`= + - @`) is prefixed, so a spreadsheet shows model text and never runs it.
+- **The demo.** The empty panel offers *Try the demo*: an invented model made in `brain/` through a hook
+  the server sets. It is marked DEMO, never kept or compared, never replaces a read of the modeller's
+  model, and nothing on it reaches Revit - not even Reset.
+
+**Not built, and why:** *the model has changed - Refresh* needs the add-in to watch for changes, which
+amends [D-09](decisions/D-09.md) a second time (D-108 allowed `Idling` for the selection and nothing
+else) - the owner's decision, asked in the work note. A whole-model 3D view is phase 6.
+
+**Proved without Revit:** `tests/test_model_dashboard.py` and `tests/test_companion.py`; the page driven
+in Chromium with sample data - the fill table, the filter, the CSV download and the print view.
+**Not run in Revit** - the fill-rate's run is owed in [group JT](needs-checking/group-jt.md).
+
+### 21.13 A 3D view of the model in the Model Dashboard (2026-11-01)
+
+Asked by the owner: *"3D VIEWS ALOS ADD IN THE COMPANION APP ??"* - the plan's phase 6, and the idea
+BIMLens shows as its 3D viewer, re-made Heron's way.
+
+- **The read.** `REPORT_MODEL_GEOMETRY` (READ, DRAFT) reads the shapes at coarse detail, within a triangle
+  limit: by default **what Revit's active 3D view shows** - its section box and hidden categories
+  respected, and temporary hide expected to be (row JU12 measures it), so the modeller decides how much is
+  read - or the whole model. Metres, by the
+  fixed factor, so every release reads the same. Nothing in the model changes.
+- **The brain.** `brain/heron_model_view.py` checks every triangle names a point its element has - a
+  damaged read is refused whole, never drawn half right - and decides every colour: fixed ones for the
+  categories a modeller reads by colour (ducts blue, pipes green, sprinklers red), an even hue step for
+  the rest, the same colour for the same category every time. What the limit left out is said.
+- **The page.** `static/model3d.js` is Heron's own WebGL - no library, nothing from the internet, like the
+  Loads and Sprinkler panels' 3D views. Drag to turn, right-drag or Shift to pan, wheel to zoom, Fit.
+  **A click picks an element** - a second pass paints each element in its own colour code and the pixel
+  under the click names it - and shows its category and id with **Select in Revit** and **Copy ID**.
+  **Show in 3D** on a *Worth a look* row lights its elements up and fades the rest.
+- **Load 3D** - *active 3D view* or *whole model* - is the modeller's own press, under the lock every tool
+  call holds, never on a timer; `revit_model_dashboard` takes `view3d` for the chat. The shapes are held
+  apart from the rest of the panel and fetched only when they change - they can be megabytes. A click's
+  Select sends only an id the panel's own 3D read found. Not on the DEMO, which has no shapes.
+
+**Proved without Revit:** `tests/test_model_view.py` (the brain - damaged reads refused, colours stable
+and distinct); `tests/test_companion.py`'s Dashboard group (the routes behind the pairing, the shapes kept
+out of the state, Select by the 3D read's own ids); and the page driven in headless Chromium - drawn,
+turned, an element picked and highlighted. **Not run in Revit**: the fragment's proof is owed in
+[group JU](needs-checking/group-ju.md).
+
+**Recorded for the owner, not decided here** (from the fragment's author):
+- **How big a read is.** About 5 MB at the default limit of 150,000 triangles, estimated near 17 MB at the
+  500,000 ceiling. Through the dashboard it stays on the page; asked through `revit_read` directly, all of
+  it is printed into the chat - the card says so.
+- **Revit's 60-second stop - answered: *"Yes, stop at ~40 s"*.** Version 2 watches the clock
+  (`Environment.TickCount`, in every release's core library) and **stops itself at `timeLimitSeconds`, 40 by
+  default**, handing back what it has drawn, largest elements first; `stopped` says which limit ended the
+  read - `triangles` or `time` - and the page says so. Refused below 5 or above 55. With the default 60 s
+  `revit.operationTimeoutSeconds` the add-in stops a fragment at 50 s, so a limit above about 45 s will
+  usually lose to that stop and return nothing - row JU17 records which comes first.
+- **The active-view scope uses the view's own detail level**, because Revit refuses `Options.View` and
+  `Options.DetailLevel` together; pipes and ducts that come back as lines are read again at Fine (JU6).
+
+### 21.14 Colour Revit's active view from the Model Dashboard (2026-11-01)
+
+The plan's phase 5, first part, on the owner's *"CONTINEW UNTILE ALL FINISH"* - BIMLens's *colour the model
+by a chart*, re-made the Heron way. **It is a change** - to the active view's graphics, never to an
+element's data:
+
+- **Colour the view** - type a parameter as Revit shows it (*System Type*, *Fire Rating*, *Level*).
+  `FILTER_ELEMENTS_BY_CATEGORY` with `inViewOnly` reads what the active view shows (READ, DRAFT - it took
+  over `SELECT_VISIBLE_IN_VIEW`, PROVEN, merged into it on 2026-11-01); `COLOR_BY_PARAMETER` gives
+  every distinct value its own colour, the same colours every run, a blank its own group (MODIFY, PROVEN).
+- **Clear colours** - `RESET_GRAPHIC_OVERRIDES` on the same elements (MODIFY, PROVEN). A category's own
+  colour is not touched; only the per-element ones come off.
+
+Both run `revit_change`'s own body (`_dashboard_colour`): the gate, the Changes switch, the pin, D-117's
+PROVEN-only rule, **one named entry in Revit's undo list**, and Revit's Keep or Discard while *Ask to
+Keep* is on (D-126). The page asks the modeller first; only on the model the dashboard was read from;
+never on the DEMO. Declared `companion_dashboard_colour` and `companion_dashboard_clear_colours`, MODIFY.
+
+**Not built from phase 5, and why:** *fix from a row* (fill a parameter, rename to the standard, move to
+a workset) needs `SET_PARAMETER_VALUES_BY_ID` PROVEN first ([group FE](needs-checking/group-fe.md)) and
+the owner's word on which fixes; *purge unused families* is destructive - Article 7 asks the owner's yes
+for that exact job, so it is not offered as a button.
+
+**Proved without Revit:** `tests/test_companion.py` - the hook gets the parameter and the read's model,
+the demo and an empty name change nothing, the route is behind the pairing, the server goes through
+`revit_change` under the lock. **Not run in Revit** - group JT row JT27.
+
+### 21.15 "The model has changed - press Refresh" (2026-11-01)
+
+The plan's last phase-2 item, on the owner's word ([D-147](decisions/D-147.md), amending D-09): *"Yes, add
+it"*. The add-in **counts** every committed change to each model on Revit's `DocumentChanged` - nothing
+read, nothing written in the event - and the once-a-second `Idling` check writes the count for the model
+in front to the live file as `changes`. The dashboard keeps the count at its read (`live_changes`, right
+after a good read); on the state poll the page already makes, it shows *The model has changed in Revit
+since this read - press Refresh* once the live count is higher for the same model. **It never refreshes by
+itself**, and it asks Revit nothing. Heron's own changes count too - a colour from the page, a change from
+the chat - since the page then shows the model as it was before them.
+
+Until the add-in is redeployed the live file has no `changes` and the page shows no note - never a wrong
+one. **Compiled 2020-2027** (`tools/check-compile.py`, `tools/check-api-surface.py`); **not run in Revit** -
+[group JT](needs-checking/group-jt.md) row JT28.

@@ -215,6 +215,7 @@ an edit.
 | [D-144](#d-144--a-superseded-decision-says-so-under-its-own-heading-where-its-citations-land) | A superseded decision says so under its own heading, where its citations land | ✅ Accepted · 2026-10-19 |
 | [D-145](#d-145--a-card-may-let-its-caller-answer-one-named-revit-dialog-for-one-job-and-every-other-dialog-is-still-declined) | A card may let its caller answer one named Revit dialog, for one job, and every other dialog is still declined | 🕐 Proposed - **owner has not read this back** |
 | [D-146](#d-146--a-fragment-may-name-revits-appearance-asset-namespace-so-a-materials-render-appearance-can-be-edited) | A fragment may name Revit's appearance-asset namespace, so a material's render appearance can be edited | 🕐 Proposed - **owner has not read this back** |
+| [D-147](#d-147--the-add-in-counts-each-models-changes-so-the-companion-can-say-the-model-has-changed-since-its-read) | The add-in counts each model's changes, so the Companion can say the model has changed since its read | ✅ Accepted · 2026-11-01 |
 
 ## Format
 
@@ -1274,3 +1275,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`check-fragments-compile.py`](../tools/check-fragments-compile.py) (`USINGS`), [`HeronFragmentImports.cs`](../revit/Heron.Revit.Addin/HeronFragmentImports.cs), [`set-material-appearance`](../brain/fragments/set-material-appearance/fragment.yaml), [`create-starter-materials`](../brain/fragments/create-starter-materials/fragment.yaml), [`list-materials`](../brain/fragments/list-materials/fragment.yaml) version 3, [row 5b-1264](fragment-issues/section-5b-rows-401-425.md), [Group IA](needs-checking/group-ia.md)
 
 **Full record:** [`decisions/D-146.md`](decisions/D-146.md)
+
+## D-147 — The add-in counts each model's changes, so the Companion can say the model has changed since its read
+
+**Status:** Accepted · **Date:** 2026-11-01 · **Accepted:** Ajmal PS, 2026-11-01, in conversation, answering *"Yes, add it"* to whether the add-in may watch for model changes so the Model Dashboard can say the model has changed
+**Amends:** [D-09](#d-09--revit-thread-marshalling-externalevent) - a second Revit event, `DocumentChanged`, counted and nothing else
+**Affects:** [`HeronLiveState.cs`](../revit/Heron.Revit.Addin/HeronLiveState.cs), [`heron_companion.py`](../mcp/companion/heron_companion.py), [40 §21.15](40-heron-companion.md)
+
+**Full record:** [`decisions/D-147.md`](decisions/D-147.md)

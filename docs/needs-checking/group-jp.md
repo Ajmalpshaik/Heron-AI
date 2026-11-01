@@ -104,7 +104,53 @@ after it - then JP17 to JP19.**
 
 A row that fails stays open; nothing in a row changes to make it pass.
 
+### Results - Revit 2020, 2026-11-01
+
+**Not run on JP0's rigs.** Run in the owner's scratch *TEST MASS* (Revit 2020, session 6588; his real
+*4355-BHVD-3D-50S20-BL001A* was the document in front, and every run was pinned with `--in "TEST MASS"` - both
+records name TEST MASS for both legs). The arrangement was re-made inside each rolled-back run by
+`validate --setup create-curtain-system`: one curtain system of the template's *Curtain System : 1500 x 3000mm*
+on the 12 upright faces of the loaded mass *TRG_Mass_Acrobatic_7F* (instance 351071; Group JM). So JP2's and
+JP11's derived counts do not apply. Fingerprints: grid `e550585eab50dee5`, mullions `aa8013e76b5a93e3`.
+
+| # | Result | What it read |
+|---|---|---|
+| JP0, JP1 | NOT RUN | No hand rig; no Revit 2024 project |
+| JP2 | PASS, rolled back | `grid=grid 1 layout=maximum spacing; grid 1 spacing=3000; grid 2 layout=minimum spacing; grid 2 spacing=2000`: `systemsOfType` 1, `wallsOfType` 0, `applied` 3, `alreadyAsAsked` 1 (grid 1 spacing was already 3000), `differs` empty; readBack *grid 1: layout Maximum Spacing [Revit's value 3], was Fixed Distance [Revit's value 1]* and *grid 2: layout Minimum Spacing [Revit's value 5] ... 2000.0 mm, was 1500.0 mm*. *"Of Revit's grid ids, 'Curtain System: 1500 x 3000mm' carries: SPACING_LAYOUT_1, SPACING_LAYOUT_2, SPACING_LENGTH_1, SPACING_LENGTH_2, ..."*. Number, Justification, Angle and Offset: on the type none, on the curtain system all eight. measured, 12 faces: vertical lines 96 before and after (Revit's V set), horizontal 64 -> 32 (Revit's U set) - **Grid 1 runs upright on these faces, Grid 2 level** |
+| JP3, JP4, JP6 to JP9 | NOT RUN | |
+| JP5 | PASS, rolled back | The same grid on *Curtain Wall: Storefront*: `applied` 0, readBack and measured empty, refused *"'grid 1 layout' is not a grid setting this changes. Name one or more of: vertical layout, vertical spacing, horizontal layout, horizontal spacing. Nothing was changed"* |
+| JP10 | NOT RUN | |
+| JP11 | PASS, rolled back | `mullions=grid 1 interior=Rectangular Mullion: 30mm Square`: `systemsOfType` 1, `applied` 1, `differs` empty; readBack *grid 1 interior: 'Rectangular Mullion: 30mm Square', was none*; *"Of Revit's mullion ids ... carries: AUTO_MULLION_INTERIOR_GRID1 ... AUTO_MULLION_BORDER2_GRID2; not: AUTO_MULLION_INTERIOR_VERT, AUTO_MULLION_INTERIOR_HORIZ"*. measured: 96 vertical and 64 horizontal lines, mullions none before, **580 x vertical** now - agreeing with JP2 that Grid 1 is upright |
+| JP12, JP13, JP15 to JP18 | NOT RUN | |
+| JP14 | PASS, rolled back | The same mullions on *Curtain Wall: Storefront*: `applied` 0, refused *"'grid 1 interior' is not a mullion position. Name one or more of: vertical interior, ... horizontal border 2. Nothing was changed"* |
+| JP19 | PASS | `accept --by "Ajmal PS"` on both, run in his own terminal on his word *"Yes, sign both"*; both cards PROVEN in the same change |
+
+Still owed: JP1 and JP10 (the curtain WALL type path again, word for word with the earlier versions - not re-run
+here), JP3, JP4, JP6 to JP9, JP12, JP13, JP15 to JP18, and Revit 2024 / 2027 release entries.
+
 **What this group does not settle.** Reading a curtain system type's settings back - `REPORT_CURTAIN_WALL_TYPE`
 reads a wall type and refuses this name, and nothing else reads one. Changing ONE curtain system without its
 type: `DUPLICATE_TYPE` and `CHANGE_ELEMENT_TYPE` have not been run on a curtain system, and the setters' answer
 says so. A curtain system on a sloped or curved face, where neither grid runs upright or level.
+
+### More results - Revit 2020, 2026-11-01, later the same day
+
+The same rig and method as above, every leg rolled back and pinned to *TEST MASS*.
+
+| # | Result | What it read |
+|---|---|---|
+| JP1 | PASS, on Revit 2020 | `--setup create-wall` (a 9000 mm *Curtain Wall: Curtain Wall* on Level 1), vertical and horizontal fixed distance 2500 / 4000: `systemsOfType` 0, `wallsOfType` 1, `applied` 4; readBack and measured version 2's words - *"vertical grid lines 0 before, 3 (Revit's U set 0, V set 3) now; horizontal 0 before, 0 now"*. Negative: the vertical-spacing-without-layout refusal. Revit 2024, as the row asks, NOT RUN |
+| JP3 | PASS | `grid 2 layout=fixed distance; grid 2 spacing=3000`: `applied` 1, `alreadyAsAsked` 1, grid 1 *not asked, left as it was*; level lines 64 -> 28, upright 96 unchanged - only Grid 2's direction moved, the other one from JP2's Grid 1 |
+| JP4 | PASS | `curtainWallType=Curtain System: 1500 x 3000mm` (no space before the colon): JP2's answer, label *Curtain System: 1500 x 3000mm* |
+| JP6 | PASS | `vertical layout` on the curtain system type refused: *"'vertical layout' is a curtain WALL type's setting ... Name one or more of: grid 1 layout, grid 1 spacing, grid 2 layout, grid 2 spacing. Nothing was changed"* |
+| JP7 | PASS | `grid 1 layout=fixed number` refused: *"Fixed Number is not set here ..."* |
+| JP8 | PASS | *"No wall type or curtain system type called "Heron JP No Such Type" in TEST MASS ..."*, listing the three curtain wall types and *Curtain System: 1500 x 3000mm* |
+| JP9 | NOT RUN | Needs a curtain wall type renamed to the curtain system type's bare name |
+| JP10 | PASS, on Revit 2020 | Storefront `vertical interior=Rectangular Mullion: 30mm Square`: `applied` 1, version 1's readBack words; `wallsOfType` 32 (the building's Storefront walls - version 1's model had none), measured on wall 345820: 42 vertical 50 x 150 before, 38 x 30mm Square + 4 x 50 x 150 (borders) now |
+| JP12 | PASS | `grid 2 interior`: **550 x horizontal** - the other of JP11's two answers |
+| JP13 | PASS | `grid 1 border 1=none`: `applied` 0, `alreadyAsAsked` 1, no refusal |
+| JP15 | PASS | `vertical interior` on the curtain system type refused, naming Grid 1 and Grid 2 Mullions and the six grid positions |
+| JP16 | PASS | *"No mullion type called 'HERON NO SUCH MULLION' in this model ..."*, with the eight mullion types |
+| JP17 | PASS | `heron_lookup` on the PC: *"set the curtain system grid spacing to 1500"* -> `SET_CURTAIN_WALL_GRID`, *"put mullions on the curtain system type"* -> `SET_CURTAIN_WALL_MULLIONS` (words #1, nearness #1); *"what is the grid spacing on this curtain system"* (question) -> `REPORT_CURTAIN_WALL_TYPE`; *"which mullions are on this curtain system"* -> `REPORT_CURTAIN_WALL_TYPE` with the question flag and `SET_CURTAIN_WALL_MULLIONS` without it, as the cloud measured, with Heron's *"CHECK THIS IS A CHANGE YOU MEANT TO MAKE"* beside it. `tests/test_routing_phrases.py` PASSED on the PC (exit 0, with an empty scratch `HERON_KNOWLEDGE`) |
+
+Still owed: JP9, JP18 (the kept runs), JP1 on Revit 2024, and the Revit 2024 / 2027 release entries.

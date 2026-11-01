@@ -59,9 +59,12 @@ purpose: >
      each block against the brief table before going on; a mass 200 mm off
      a level misses a mass floor.
   5. CREATE_MASS_FLOORS (PROVEN) with REPORT_MASSES' elements through
-     expect_from, levelNames empty for every level each mass reaches. Revit
-     makes no mass floor at a level on the TOP face of a mass (Autodesk Help,
-     mass floors at the top of a mass). A level the study should NOT count -
+     expect_from, levelNames empty for every level each mass reaches. A level
+     on the TOP face of a mass still gets a mass floor element - measured on
+     Revit 2020, 2026-11-01, FRAGMENT-ISSUES 5b-1353 - but REPORT_MASSES
+     reads it EMPTY, 0 m2, and no total counts it; Autodesk Help says no
+     mass floor is made there, and which is right on other releases is not
+     measured. Say it in the count. A level the study should NOT count -
      a plant deck, a parapet - is taken off with REMOVE_MASS_FLOORS (DRAFT),
      naming it; that is a change the modeller says yes to (Article 7).
   6. SET_MASS_FLOOR_USAGE (DRAFT) - "Level 1=Retail; Level 2..Level 6=Office;
@@ -94,8 +97,12 @@ purpose: >
      a. CREATE_WALLS_BY_FACE (DRAFT) with a wall type - Wall by Face on
         every side face, Finish Face: Exterior on the mass face unless the
         modeller says otherwise. A glazed block is CREATE_CURTAIN_SYSTEM
-        (DRAFT) with a curtain system type instead - its upright faces, or
-        "top" for a glazed roof. Both stay tied to the faces; after the
+        (PROVEN, Group JM) with a curtain system type instead - its upright
+        faces, or "top" for a glazed roof - and its grid and mullions are
+        SET_CURTAIN_WALL_GRID on that curtain system type, Grid 1 and Grid 2
+        (Group JP proved the grid and the mullion setters on 2026-11-01; the
+        mullions were merged into the grid setter that day, version 4, DRAFT
+        until proved again, D-117). Both stay tied to the faces; after the
         mass changes, Update to Face by hand.
      b. SLABS: REPORT_MASSES with withOutlines gives each mass floor's
         outline in the writing CREATE_FLOOR (version 2 PROVEN; DRAFT at

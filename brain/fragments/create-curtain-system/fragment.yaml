@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -153,6 +153,61 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-01'
+  by: Ajmal PS
+  model: TEST MASS (6,816 elements), Revit 2020, session 6588
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned OneMillimetre 0.00328083989501312,
+    SquareFeetToSquareMetres 0.09290304, alreadyNear 0, bySelection false, canHost Func`2,
+    chosenType CurtainSystemType, created 1 item(s) [CurtainSystem], describe Func`2, elements
+    0 item(s), facesAsked 12, facesKind vertical, facesSaid vertical, facesTaken 12, familyOf
+    Func`2, findings 2 item(s) [Made 1 curtain system(s) of "Curtain System : 1500 x 3000mm"...,
+    Mass 351071 "TRG_Mass_Acrobatic_7F : TRG_Mass_Acrobatic_7F",...], fullName Func`2, genericCategory
+    1 item(s) [id -2000151], hostText 351071, hosts 1 item(s) [TRG_Mass_Acrobatic_7F], invariant
+    CultureInfo, kindOf Func`3, kinds 5 item(s) [vertical, top, underside, ...], levelWithin
+    0.0174524064372835, markOf Func`2, massCategory 1 item(s) [id -2003400], nameFits Func`3,
+    notAHost Func`2, overlaps Func`3, plans 1 item(s) [(Autodesk.Revit.DB.FamilyInstance,
+    Autodesk.Revit.DB.Referen...], problems 0 item(s), readBack Mass 351071 "TRG_Mass_Acrobatic_7F
+    : TRG_Mass_Acrobatic_7F", 12 face(s) asked, 2547.2 m2 (its faces: 12 vertical, 3 top,
+    3 underside): curtain system 351081 of "Curtain System : 1500 x 3000mm", 12 face(s) taken
+    - grid 1: U lines 7, V lines 10, panels 88, mullions 0; grid 2: U lines 5, V lines 10,
+    panels 66, mullions 0; grid 3: U lines 7, V lines 4, panels 40, mullions 0; grid 4: U
+    lines 5, V lines 10, panels 66, mullions 0; grid 5: U lines 4, V lines 5, panels 30, mullions
+    0; grid 6: U lines 5, V lines 6, panels 42, mullions 0; grid 7: U lines 7, V lines 4,
+    panels 40, mullions 0; grid 8: U lines 5, V lines 6, panels 42, mullions 0; grid 9: U
+    lines 4, V lines 13, panels 70, mullions 0; grid 10: U lines 7, V lines 10, panels 88,
+    mullions 0; grid 11: U lines 4, V lines 5, panels 30, mullions 0; grid 12: U lines 4,
+    V lines 13, panels 70, mullions 0, refused (null), sameText Func`3, squash Func`2, standing
+    0 item(s), systemTypes 1 item(s) [1500 x 3000mm], tally Func`2, typeFits Func`3, typeOf
+    Func`2, typeText Curtain System : 1500 x 3000mm, typesKnown "Curtain System : 1500 x 3000mm",
+    upWithin 0.999847695156391. inputs came elements not given - none (optional); host as
+    given; curtainSystemType as given; faces not given - "vertical", the card''s own default
+    (optional). on TEST MASS'
+  negative_case: 'run with host=347005, curtainSystemType=Curtain System : 1500 x 3000mm instead
+    - chosen because it should not contain what this fragment reports - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned OneMillimetre
+    0.00328083989501312, SquareFeetToSquareMetres 0.09290304, alreadyNear 0, bySelection false,
+    canHost Func`2, chosenType CurtainSystemType, created 0 item(s), describe Func`2, elements
+    0 item(s), facesAsked 0, facesKind vertical, facesSaid vertical, facesTaken 0, familyOf
+    Func`2, findings 1 item(s) [Walls 347005 "Basic Wall : Generic - 200mm" is not a mass
+    or...], fullName Func`2, genericCategory 1 item(s) [id -2000151], hostText 347005, hosts
+    0 item(s), invariant CultureInfo, kindOf Func`3, kinds 5 item(s) [vertical, top, underside,
+    ...], levelWithin 0.0174524064372835, markOf Func`2, massCategory 1 item(s) [id -2003400],
+    nameFits Func`3, notAHost Func`2, overlaps Func`3, plans 0 item(s), problems 1 item(s)
+    [Walls 347005 "Basic Wall : Generic - 200mm" is not a mass or...], readBack , refused
+    Walls 347005 "Basic Wall : Generic - 200mm" is not a mass or a generic model - Revit puts
+    a curtain system on their faces only. A curtain WALL drawn along a line is CREATE_WALL''s.
+    NOTHING WAS MADE., sameText Func`3, squash Func`2, standing 0 item(s), systemTypes 1 item(s)
+    [1500 x 3000mm], tally Func`2, typeFits Func`3, typeOf Func`2, typeText Curtain System
+    : 1500 x 3000mm, typesKnown "Curtain System : 1500 x 3000mm", upWithin 0.999847695156391.
+    inputs came elements not given - none (optional); host as given; curtainSystemType as
+    given; faces not given - "vertical", the card''s own default (optional). on TEST MASS'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 2b413376a70ffcfa
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

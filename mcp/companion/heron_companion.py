@@ -83,6 +83,8 @@ PAGES = {
     "/loads3d.js": ("loads3d.js", "text/javascript; charset=utf-8"),
     # The Sprinkler panel's 3D view - pipes as lines, heads as dots (docs/46).
     "/sprinkler3d.js": ("sprinkler3d.js", "text/javascript; charset=utf-8"),
+    # The Model Dashboard's 3D view - Heron's own WebGL, no library (docs/40 s21.13).
+    "/model3d.js": ("model3d.js", "text/javascript; charset=utf-8"),
     "/companion.css": ("companion.css", "text/css; charset=utf-8"),
 }
 
@@ -1266,6 +1268,256 @@ class LayoutPanel(object):
 LAYOUT_PANEL = LayoutPanel()
 
 
+class DashboardPanel(object):
+    """
+    The Model Dashboard a chat opens with revit_model_dashboard (docs/40
+    section 21.10) - one read of the model, the newest replacing the last.
+
+    IT HOLDS DATA AND CALLS HOOKS - NOTHING ELSE (README rule 4). Every
+    tile, bar, colour and line on it was made in brain/
+    (heron_model_dashboard). Refresh is the modeller's own press: it calls
+    refresh_hook, which READS the model again under the chat's lock and pin
+    and puts the new read here - never a timer, so the page never asks Revit
+    by itself (README rule 3). One refresh at a time; a second press while
+    one runs is told so and sends nothing. It writes nothing to the model; a
+    row's Select and Isolate change only what is on screen, declared at
+    EXECUTE in COMPANION_ACTIONS (docs/40 s21.11). With no hook set, each
+    answers that the chat is gone and does nothing.
+    """
+
+    GONE = LoadsPanel.GONE
+    BUSY = "the model is already being read for the dashboard - wait for that read to finish"
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._held = None
+        self._busy = False
+        #: Set by the MCP server. refresh_hook() -> {"ok", "said"}; it calls
+        #: open() itself when the read is good. show_hook(action, ids,
+        #: identity) -> {"ok", "said"} - select, isolate or reset, on screen
+        #: only (docs/40 s21.11).
+        self.refresh_hook = None
+        self.show_hook = None
+        #: demo_hook() -> brain answer for the invented DEMO model.
+        self.demo_hook = None
+        #: colour_hook(parameter, clear, identity) -> {"ok", "said"} - a change
+        #: to the active view's graphics through revit_change (docs/40 s21.14).
+        self.colour_hook = None
+        #: load3d_hook(whole) -> {"ok", "said"}; it calls set_view() itself
+        #: when the read is good (docs/40 s21.13). The geometry is held apart
+        #: from the rest: it can be megabytes, and the page fetches it only
+        #: when it changes.
+        self.load3d_hook = None
+        self._view = None
+        self._view_ids = frozenset()
+
+    def open(self, document, answer, identity=None, parameters="", board="", changes=None):
+        built = answer.get("dashboard") or {}
+        with self._lock:
+            self._held = {
+                # D-147: the add-in's change count for this model when it was
+                # read; the page says "the model has changed" once the live
+                # file's count is higher. None when the add-in sent none.
+                "changes_at_read": changes if isinstance(changes, int) else None,
+                "parameters": parameters or "", "board_key": board or "",
+                "board": built.get("board"), "boards": built.get("boards") or [],
+                "fill": built.get("fill"),
+                "since": built.get("since"), "demo": bool(built.get("demo")),
+                "document": document, "at": time.strftime("%H:%M:%S"),
+                "identity": list(identity) if identity else None,
+                "model": built.get("model") or {}, "tiles": built.get("tiles") or [],
+                "charts": built.get("charts") or [], "look": built.get("look") or [],
+                "notRead": built.get("notRead") or [], "capped": built.get("capped") or [],
+                "states": built.get("states") or [],
+                "said": answer.get("said")}
+
+    def current(self):
+        with self._lock:
+            if not self._held:
+                return None
+            held = dict(self._held, busy=self._busy)
+            view = self._view
+            if view:
+                held["view3d"] = {k: view.get(k) for k in (
+                    "key", "scope", "legend", "drawn", "triangles", "leftOut", "noGeometry", "stopped",
+                    "notRead", "capped", "said")}
+        return json.loads(json.dumps(held))
+
+    def set_view(self, answer, identity=None):
+        """Hold a 3D read (brain/heron_model_view's answer) for the page."""
+        built = answer.get("view") or None
+        with self._lock:
+            if built is None:
+                self._view, self._view_ids = None, frozenset()
+                return
+            self._view = dict(built, key=time.strftime("%H:%M:%S") + "/%d" % built.get("drawn", 0),
+                              identity=list(identity) if identity else None)
+            self._view_ids = frozenset(str(e.get("id")) for e in built.get("elements") or [])
+
+    def view(self):
+        """The 3D view's data, drawn by the page (static/model3d.js), made in brain/."""
+        with self._lock:
+            return self._view
+
+    def load3d(self, body=None):
+        """Read the model's shapes for the 3D view - the active 3D view, or the
+        whole model with {"whole": true}. The modeller's own press, one read at a time."""
+        hook = self.load3d_hook
+        if hook is None:
+            return {"ok": False, "said": "Not read: %s." % self.GONE}
+        whole = bool(isinstance(body, dict) and body.get("whole") is True)
+        with self._lock:
+            if self._busy:
+                return {"ok": False, "said": "Not read: %s." % self.BUSY}
+            if self._held and self._held.get("demo"):
+                return {"ok": False, "said": "Not read: the dashboard shows the DEMO. Ask the chat "
+                                             "for a model dashboard first."}
+            self._busy = True
+        try:
+            got = hook(whole) or {}
+        finally:
+            with self._lock:
+                self._busy = False
+        return {"ok": bool(got.get("ok")), "said": got.get("said") or ""}
+
+    def refresh(self, body=None):
+        """Read the model again. `body` may carry "parameters", the names to
+        count filled - typed on the page; left out, the last read's are kept."""
+        hook = self.refresh_hook
+        if hook is None:
+            return {"ok": False, "said": "Not read: %s." % self.GONE}
+        with self._lock:
+            if self._busy:
+                return {"ok": False, "said": "Not read: %s." % self.BUSY}
+            wanted = (body or {}).get("parameters") if isinstance(body, dict) else None
+            if not isinstance(wanted, str):
+                wanted = (self._held or {}).get("parameters") or ""
+            board = (body or {}).get("board") if isinstance(body, dict) else None
+            if not isinstance(board, str):
+                board = (self._held or {}).get("board_key") or ""
+            self._busy = True
+        try:
+            got = hook(wanted[:600], board[:40]) or {}
+        finally:
+            with self._lock:
+                self._busy = False
+        return {"ok": bool(got.get("ok")), "said": got.get("said") or ""}
+
+
+    SHOWS = ("select", "isolate", "reset")
+
+    def colour(self, body):
+        """
+        Colour Revit's active view by a parameter, or clear the colours - a
+        CHANGE to the view's graphics, through revit_change's own body (the
+        hook). The page asks the modeller first; Revit's Keep or Discard asks
+        again while Ask to Keep is on. One at a time; never on the DEMO.
+        """
+        hook = self.colour_hook
+        if hook is None:
+            return {"ok": False, "said": "Nothing was changed: %s." % self.GONE}
+        if not isinstance(body, dict):
+            return {"ok": False, "said": "Nothing was changed: not a colour request."}
+        clear = body.get("clear") is True
+        parameter = body.get("parameter") if isinstance(body.get("parameter"), str) else ""
+        if not clear and not parameter.strip():
+            return {"ok": False, "said": "Nothing was changed: name the parameter to colour by."}
+        with self._lock:
+            if self._busy:
+                return {"ok": False, "said": "Nothing was changed: %s." % self.BUSY}
+            held = self._held
+            if not held:
+                return {"ok": False, "said": "Nothing was changed: read the model first - ask the "
+                                             "chat for a model dashboard."}
+            if held.get("demo"):
+                return {"ok": False, "said": "Nothing was changed: this is the DEMO, an invented "
+                                             "model."}
+            identity = list(held["identity"]) if held.get("identity") else None
+            self._busy = True
+        try:
+            got = hook(parameter.strip()[:100], clear, identity) or {}
+        finally:
+            with self._lock:
+                self._busy = False
+        return {"ok": bool(got.get("ok")), "said": got.get("said") or ""}
+
+    def _ids_for(self, held, body):
+        """The ids THIS panel holds for a worth-a-look row ("row": its key) or a
+        board bar ("bar": [chart key, label]) - never ids the page sent."""
+        held = held or {}
+        if body.get("element") is not None:
+            return [str(body["element"])] if str(body["element"]) in self._view_ids else []
+        if body.get("row") is not None:
+            rows = [r for r in held.get("look") or [] if r.get("key") == body.get("row")]
+            return list(rows[0].get("ids") or []) if rows else []
+        bar = body.get("bar")
+        if isinstance(bar, list) and len(bar) == 2:
+            for chart in (held.get("board") or {}).get("charts") or []:
+                if chart.get("key") == bar[0]:
+                    for b in chart.get("bars") or []:
+                        if b.get("label") == bar[1]:
+                            return list(b.get("ids") or [])
+        return []
+
+    def demo(self):
+        """Open the DEMO - an invented model, made in brain/ - when no read is held.
+        A real read is never replaced by it."""
+        with self._lock:
+            if self._held and not self._held.get("demo"):
+                return {"ok": False, "said": "The dashboard already shows a read of your model; "
+                                             "the demo does not replace it."}
+        hook = self.demo_hook
+        if hook is None:
+            return {"ok": False, "said": "No demo: %s." % self.GONE}
+        answer = hook() or {}
+        if not answer.get("dashboard"):
+            return {"ok": False, "said": answer.get("said") or "The demo could not be made."}
+        self.open("DEMO", answer, None)
+        return {"ok": True, "said": answer["said"]}
+
+    def show(self, body):
+        """
+        A row's Select in Revit or Isolate in view, or Reset isolate. The ids
+        must be ones THIS panel holds - a page cannot send Revit ids the read
+        did not find - and the model must be the one the read came from (the
+        hook checks it under the lock).
+        """
+        hook = self.show_hook
+        if hook is None:
+            return {"ok": False, "said": "Nothing was sent to Revit: %s." % self.GONE}
+        if not isinstance(body, dict) or body.get("action") not in self.SHOWS:
+            return {"ok": False, "said": "Nothing was sent to Revit: not a dashboard action."}
+        action = body["action"]
+        with self._lock:
+            if self._busy:
+                return {"ok": False, "said": "Nothing was sent to Revit: %s." % self.BUSY}
+            held = self._held
+            # THE DEMO IS INVENTED: none of its rows names an element of any
+            # model, so nothing on it ever reaches Revit.
+            if held and held.get("demo"):
+                return {"ok": False, "said": "Nothing was sent to Revit: this is the DEMO, an "
+                                             "invented model. Ask the chat for a model dashboard "
+                                             "to read your own."}
+            if action != "reset":
+                ids = self._ids_for(held, body)
+                if not ids:
+                    return {"ok": False, "said": "Nothing was sent to Revit: that row has no "
+                                                 "element ids on this dashboard."}
+            else:
+                ids = []
+            identity = list(held["identity"]) if held and held.get("identity") else None
+            self._busy = True
+        try:
+            got = hook(action, ids, identity) or {}
+        finally:
+            with self._lock:
+                self._busy = False
+        return {"ok": bool(got.get("ok")), "said": got.get("said") or ""}
+
+
+DASHBOARD_PANEL = DashboardPanel()
+
+
 def companion_dir():
     """Where each chat leaves the note the Companion button in Revit reads -
     HeronPaths.Companion, mirrored (D-109). Under the temporary folder since
@@ -1362,6 +1614,19 @@ def read_live(folder=None, discovery_dir=None, is_alive=None):
         record["updatedSecondsAgo"] = max(0, int(time.time() - modified))
         out[pid] = record
     return out
+
+
+def live_changes(pid, folder=None, discovery_dir=None, is_alive=None):
+    """
+    How many times the model in front of Revit `pid` has changed since that
+    Revit started - the add-in's DocumentChanged count in its live file
+    (D-147) - or None when the file, the model or the count is not there.
+    """
+    if pid is None:
+        return None
+    record = read_live(folder, discovery_dir, is_alive).get(pid) or {}
+    got = record.get("changes")
+    return got if isinstance(got, int) and not isinstance(got, bool) and got >= 0 else None
 
 
 def state(bound_pid, folder=None, discovery_dir=None, is_alive=None):
@@ -1770,6 +2035,16 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             if why:
                 return self._refuse(403, why)
             return self._json(200, {"ok": True, "layout": LAYOUT_PANEL.current()})
+        if path == "/api/dashboard":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, {"ok": True, "dashboard": DASHBOARD_PANEL.current()})
+        if path == "/api/dashboard/view":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, {"ok": True, "view": DASHBOARD_PANEL.view()})
         if path.startswith("/report/"):
             return self._report_file(path)
         return self._refuse(404, "not found")
@@ -1861,6 +2136,51 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             if path.endswith("/preview"):
                 return self._json(200, LAYOUT_PANEL.preview(body))
             return self._json(200, LAYOUT_PANEL.place(body))
+        if path == "/api/dashboard/refresh":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 4096)
+                body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except (ValueError, UnicodeDecodeError):
+                return self._refuse(400, "unreadable")
+            return self._json(200, DASHBOARD_PANEL.refresh(body))
+        if path == "/api/dashboard/demo":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, DASHBOARD_PANEL.demo())
+        if path == "/api/dashboard/load3d":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 4096)
+                body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except (ValueError, UnicodeDecodeError):
+                return self._refuse(400, "unreadable")
+            return self._json(200, DASHBOARD_PANEL.load3d(body))
+        if path == "/api/dashboard/colour":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 4096)
+                body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except (ValueError, UnicodeDecodeError):
+                return self._refuse(400, "unreadable")
+            return self._json(200, DASHBOARD_PANEL.colour(body))
+        if path == "/api/dashboard/show":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 4096)
+                body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except (ValueError, UnicodeDecodeError):
+                return self._refuse(400, "unreadable")
+            return self._json(200, DASHBOARD_PANEL.show(body))
         if path == "/api/changes/clear":
             why = self._api_ok()
             if why:

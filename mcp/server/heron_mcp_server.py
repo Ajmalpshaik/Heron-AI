@@ -3907,6 +3907,272 @@ def revit_sprinkler_layout(spaces: str = "", inputs: str = "", ctx: _Context = N
     return answer["said"]
 
 
+def _read_dashboard(companion_page, origin="chat", ctx=None, parameters="", board=""):
+    """
+    One read of the model for the Model Dashboard (docs/40 s21.10): READ
+    REPORT_MODEL_DASHBOARD through revit_read - no transaction, the chat's
+    lock and pin - make the panel in the brain, and put it on the page.
+    Returns (ended, said): how it ended, as revit_read's endings are labelled
+    (row 5b-389), and the sentence to give.
+    """
+    out = {}
+    wanted = ", ".join(p.strip() for p in (parameters or "").replace(";", ",").split(",")
+                       if p.strip())
+    board = (board or "").strip().lower()
+    try:
+        breakdowns = brain.model_dashboard_board(board)
+    except ValueError as why:
+        return "refused", "Nothing was read: %s" % why
+    except brain.BrainUnavailable as why:
+        return "failed", str(why)
+    values = "\n".join(v for v in (("parameters=" + wanted) if wanted else "",
+                                    ("breakdowns=" + breakdowns) if breakdowns else "") if v)
+    said = _through(revit_read, reply_out=out, origin=origin)(
+        "REPORT_MODEL_DASHBOARD", values, "", ctx=ctx)
+    reply = out.get("reply")
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return out.get("ended"), said
+    # THE PIN'S REFUSAL STANDS, as in revit_building_loads: a good read of
+    # ANOTHER model must never be shown as this chat's model.
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return "refused", wrong_model
+    provides = reply.get("provides") or {}
+    try:
+        answer = brain.model_dashboard(provides.get("dashboardJson") or "",
+                                       project=pinned.project_key, project_name=pinned.title,
+                                       board=board or None)
+    except brain.BrainUnavailable as why:
+        return "failed", str(why)
+    if answer.get("dashboard") is None:
+        return "failed", answer["said"]
+    # D-147: the model's change count as the add-in's live file has it now,
+    # so the page can say when the model has changed since this read.
+    try:
+        changes = companion_page.live_changes(binding.pid)
+    except Exception:                                # noqa: BLE001 - only a note is lost
+        changes = None
+    companion_page.DASHBOARD_PANEL.open(reply.get("document"), answer, _pin_identity(),
+                                        parameters=wanted, board=board, changes=changes)
+    return "ok", answer["said"]
+
+
+@server.tool()
+def revit_model_dashboard(parameters: str = "", board: str = "", view3d: bool = False,
+                          ctx: _Context = None) -> str:
+    """
+    Open the Model Dashboard in the Heron Companion: element counts by
+    category, level and workset, warnings by kind, views, sheets, families,
+    links, CAD and rooms - and the things worth a look, each with its element
+    ids. Heron reads the model once (REPORT_MODEL_DASHBOARD, which changes
+    nothing). Use when the user asks for a "model dashboard", "model
+    overview" or "how is this model doing". `parameters`, comma separated,
+    adds how many elements have each one filled, empty or missing - "Mark,
+    Fire Rating". `board` adds one board's charts: rooms, doors, walls,
+    structure, mep, fire or phases. `view3d` adds a 3D view of the active 3D
+    view's elements. You are told one line; the charts and
+    lists are on the page, and its Refresh reads the model again. It counts
+    what the model holds and never calls a model compliant.
+    """
+    companion_page = _companion_module()
+    if not companion_page.enabled():
+        _ended("refused")
+        return ("The Heron Companion is switched off in Revit, so the model was not read. "
+                "To turn it on, click the arrow under the Companion button on the "
+                "Heron tab.")
+    ended, said = _read_dashboard(companion_page, ctx=ctx, parameters=parameters, board=board)
+    if ended != "ok":
+        return _ended(ended, said)
+    if view3d:
+        ended3d, said3d = _read_view3d(companion_page, ctx=ctx)
+        said = "%s\n%s" % (said, said3d if ended3d == "ok" else "The 3D view was not made: " + said3d)
+    _ended("ok")
+    _open_companion(companion_page)
+    return said
+
+
+#: What a dashboard row's buttons may ask of Revit, each through a door that
+#: changes only what is on screen (docs/40 s21.11). Declared in
+#: heron_tools.COMPANION_ACTIONS at EXECUTE.
+DASHBOARD_SHOWS = ("select", "isolate", "reset")
+
+
+def _dashboard_show(action, ids, identity=None):
+    """
+    A dashboard row's Select in Revit, Isolate in view, or Reset isolate -
+    pressed on the page. Nothing in the model changes:
+
+      select   FILTER_ELEMENTS_BY_ID with the row's ids (READ, PROVEN), then
+               SET_SELECTION on what it found (EXECUTE, PROVEN), through
+               revit_read's and revit_show's own bodies
+      isolate  revit_isolate_temporary's body - Revit's Temporary
+               Hide/Isolate in the active view
+      reset    revit_reset_temporary's body
+
+    Under the lock every tool call holds, and only on the model the
+    dashboard was read from. Returns {"ok", "said"}.
+    """
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    tool = "companion_dashboard_" + action
+    ids = [str(i) for i in (ids or []) if str(i).isdigit()][:500]
+    if action not in DASHBOARD_SHOWS or (action != "reset" and not ids):
+        said = "Nothing was sent to Revit: the row has no element ids."
+        _note(tool, started, 0, reply=said, outcome="refused")
+        return {"ok": False, "said": said}
+    with _revit_lock:
+        if _moved_since(identity):
+            said = ("The dashboard was read from another model or another Revit, so nothing "
+                    "was sent. Press Refresh to read the model in front, then try again.")
+            _note(tool, started, 0, reply=said, outcome="refused")
+            return {"ok": False, "said": said}
+        out = {}
+        if action == "select":
+            said = _through(revit_read, reply_out=out, origin="companion")(
+                "FILTER_ELEMENTS_BY_ID", "elementIds=" + ", ".join(ids))
+            if out.get("ended") == "ok":
+                out = {}
+                said = _through(revit_show, reply_out=out, origin="companion")(
+                    "SET_SELECTION", "", "FILTER_ELEMENTS_BY_ID")
+        elif action == "isolate":
+            said = _through(revit_isolate_temporary, reply_out=out, origin="companion")(
+                ids=", ".join(ids))
+        else:
+            said = _through(revit_reset_temporary, reply_out=out, origin="companion")()
+    ok = out.get("ended") == "ok"
+    _note(tool, started, time.time() - clock, reply=said, outcome=None if ok else "refused")
+    return {"ok": ok, "said": said}
+
+
+def _dashboard_colour(parameter, clear=False, identity=None):
+    """
+    The Model Dashboard's Colour the view / Clear colours (docs/40 s21.14) -
+    pressed on the page, after its own confirm. A CHANGE to the active view's
+    graphics, never to an element's data:
+
+      FILTER_ELEMENTS_BY_CATEGORY with inViewOnly on the active view (READ;
+      SELECT_VISIBLE_IN_VIEW, PROVEN, was merged into it on 2026-11-01), then
+      COLOR_BY_PARAMETER - every distinct value of `parameter` its own colour,
+      stable from run to run - or RESET_GRAPHIC_OVERRIDES (both MODIFY, PROVEN),
+      through revit_change's own body: the gate, the Changes switch, the pin,
+      one named entry in Revit's undo list, and Revit's Keep or Discard while
+      Ask to Keep is on (D-126). Only on the model the dashboard was read from.
+    Returns {"ok", "said"}.
+    """
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    tool = "companion_dashboard_" + ("clear_colours" if clear else "colour")
+    parameter = (parameter or "").strip()
+    if not clear and (not parameter or len(parameter) > 100 or "\n" in parameter
+                      or "=" in parameter):
+        said = "Nothing was sent to Revit: name one parameter as Revit shows it - System Type, say."
+        _note(tool, started, 0, reply=said, outcome="refused")
+        return {"ok": False, "said": said}
+    with _revit_lock:
+        if _moved_since(identity):
+            said = ("The dashboard was read from another model or another Revit, so nothing "
+                    "was sent. Press Refresh to read the model in front, then try again.")
+            _note(tool, started, 0, reply=said, outcome="refused")
+            return {"ok": False, "said": said}
+        try:
+            session = binding.resolve()
+        except NotBound as unbound:
+            _note(tool, started, 0, reply=str(unbound), outcome="refused")
+            return {"ok": False, "said": str(unbound)}
+        views = session.request("list_views")
+        session.close()
+        if not isinstance(views, dict) or not views.get("ok"):
+            said = "Revit did not say which view is active, so nothing was changed."
+            _note(tool, started, 0, reply=said, outcome="refused")
+            return {"ok": False, "said": said}
+        wrong_model = pinned.check(views)
+        if wrong_model is not None:
+            _note(tool, started, 0, reply=wrong_model, outcome="refused")
+            return {"ok": False, "said": wrong_model}
+        view = views.get("activeView")
+        if not view:
+            said = "Revit has no active view, so nothing was changed."
+            _note(tool, started, 0, reply=said, outcome="refused")
+            return {"ok": False, "said": said}
+        out = {}
+        said = _through(revit_read, reply_out=out, origin="companion")(
+            "FILTER_ELEMENTS_BY_CATEGORY", "inViewOnly=%s" % view)
+        if out.get("ended") == "ok":
+            out = {}
+            if clear:
+                said = _through(revit_change, reply_out=out, origin="companion")(
+                    "RESET_GRAPHIC_OVERRIDES", "view=%s" % view, "filter-elements-by-category")
+            else:
+                said = _through(revit_change, reply_out=out, origin="companion")(
+                    "COLOR_BY_PARAMETER", NEWLINE.join(("view=%s" % view,
+                                                        "parameterName=%s" % parameter,
+                                                        "colourBand=vivid")),
+                    "filter-elements-by-category")
+    ok = out.get("ended") == "ok"
+    _note(tool, started, time.time() - clock, reply=said, outcome=None if ok else "refused")
+    return {"ok": ok, "said": said}
+def _read_view3d(companion_page, whole=False, origin="chat", ctx=None):
+    """
+    One read of the model's shapes for the Model Dashboard's 3D view (docs/40
+    s21.13): READ REPORT_MODEL_GEOMETRY through revit_read - the active 3D
+    view, or the whole model - check it in the brain, and hold it on the page.
+    Returns (ended, said), as _read_dashboard does.
+    """
+    out = {}
+    said = _through(revit_read, reply_out=out, origin=origin)(
+        "REPORT_MODEL_GEOMETRY", "wholeModel=true" if whole else "", "", ctx=ctx)
+    reply = out.get("reply")
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return out.get("ended"), said
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return "refused", wrong_model
+    try:
+        answer = brain.model_view((reply.get("provides") or {}).get("geometryJson") or "")
+    except brain.BrainUnavailable as why:
+        return "failed", str(why)
+    if answer.get("view") is None:
+        return "failed", answer["said"]
+    companion_page.DASHBOARD_PANEL.set_view(answer, _pin_identity())
+    return "ok", answer["said"]
+
+
+def _dashboard_load3d(whole=False):
+    """The 3D view's Load, pressed on the page: under the lock every tool
+    call holds, never on a timer. Returns {"ok", "said"}."""
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    companion_page = _companion_module()
+    with _revit_lock:
+        ended, said = _read_view3d(companion_page, whole=whole, origin="companion")
+    _note("companion_dashboard_3d", started, time.time() - clock, reply=said,
+          outcome=None if ended == "ok" else "refused")
+    return {"ok": ended == "ok", "said": said}
+
+
+def _dashboard_demo():
+    """The DEMO the page's empty Model Dashboard offers - made in the brain,
+    sending nothing to Revit."""
+    try:
+        return brain.model_dashboard_demo()
+    except brain.BrainUnavailable as why:
+        return {"dashboard": None, "said": str(why)}
+
+
+def _dashboard_refresh(parameters="", board=""):
+    """
+    The Model Dashboard's Refresh, pressed on the page: the same read as
+    revit_model_dashboard, from the page's thread, under the lock every tool
+    call holds. Returns {"ok", "said"}. Never on a timer (Companion README
+    rule 3) - only when the modeller presses it.
+    """
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    companion_page = _companion_module()
+    with _revit_lock:
+        ended, said = _read_dashboard(companion_page, origin="companion",
+                                      parameters=parameters, board=board)
+    _note("companion_dashboard", started, time.time() - clock, reply=said,
+          outcome=None if ended == "ok" else "refused")
+    return {"ok": ended == "ok", "said": said}
+
+
 @server.tool()
 def revit_use_this_model() -> str:
     """
@@ -7246,6 +7512,11 @@ if __name__ == "__main__":
             companion_page.SPRINKLER_PANEL.report_hook = _sprinkler_report
             companion_page.LAYOUT_PANEL.preview_hook = _sprinkler_layout_preview
             companion_page.LAYOUT_PANEL.place_hook = _sprinkler_layout_place
+            companion_page.DASHBOARD_PANEL.refresh_hook = _dashboard_refresh
+            companion_page.DASHBOARD_PANEL.show_hook = _dashboard_show
+            companion_page.DASHBOARD_PANEL.demo_hook = _dashboard_demo
+            companion_page.DASHBOARD_PANEL.colour_hook = _dashboard_colour
+            companion_page.DASHBOARD_PANEL.load3d_hook = _dashboard_load3d
             companion_page.keep(bound_pid=_companion_revit)
         except Exception as why:                         # noqa: BLE001 - never cost the chat
             sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)

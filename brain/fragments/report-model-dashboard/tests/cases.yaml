@@ -1,0 +1,238 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - here,
+# a dashboard read from some document other than the one it was given.
+# Every case reads only. The model is the owner's to name; the figures below
+# are what Snowdon Towers Sample HVAC.rvt (Revit 2024) answered the readers of
+# each part on 2026-09-13, and they are checked against a FRESH copy - a copy
+# that has been worked in will have moved, and the readers are then re-run on
+# it instead (second_route).
+
+positive:
+  - given: >
+      a project open and in front - Snowdon Towers Sample HVAC.rvt, a fresh
+      copy - nothing selected, with Project1 (a second, unrelated project) open
+      beside it
+    expect: >
+      dashboardJson is format 1, model.title the Snowdon file's, isFamily
+      false; elementTotal above 0 and equal to the sum of categories'
+      instances, and to the sum of levels' instances plus noLevel; every part
+      a value, notRead empty; and nothing in it is Project1's - its title, its
+      sheets and its warnings appear nowhere
+
+  - given: the same run, its warnings part beside READ_MODEL_WARNINGS on the same model
+    expect: >
+      warnings.total is READ_MODEL_WARNINGS' warningCount (145 on 2026-09-13)
+      and warnings.groups has as many kinds as its findings have lines (5), in
+      the same order - errors first, then commonest - each with the same count;
+      every id in ids resolves to an element of this model
+
+  - given: the same run, its views and sheets beside FIND_VIEWS with placement unplaced and FIND_SHEETS
+    expect: >
+      views.notOnSheets is the number of views FIND_VIEWS with placement
+      unplaced returns (7) and notOnSheetsIds are their ids; sheets.total is
+      FIND_SHEETS' count (17);
+      views.total leaves out the view templates, which are counted in
+      views.templates
+
+  - given: the same run, its links beside LIST_LINKED_MODELS
+    expect: >
+      links has one row per linked file - six, every one loaded true - each
+      with the placement count LIST_LINKED_MODELS gives it; pinned true only
+      for a file whose every placement is pinned
+
+  - given: one level's Properties open on screen
+    expect: >
+      that level's elevationMm is the Elevation its Properties show, in
+      millimetres; levels read bottom to top
+
+  - given: >
+      a WORKSHARED project with one user workset closed in Collaborate >
+      Worksets (Project1 work_ajmal.al, or the owner's own local)
+    expect: >
+      model.isWorkshared true; worksets lists every user workset by name, the
+      closed one open false with instances 0; elementTotal LOWER than the same
+      run with every workset open - by the elements on the closed one - and
+      findings says nothing on a closed workset is loaded or counted
+
+  # VERSION 2 - the fill part. The first is the batch-prove leg (tools/jobs).
+  - given: >
+      version 2, parameters "Mark" on the same Snowdon copy, with one
+      mechanical equipment item's Mark typed "AHU-01" beforehand and another's
+      Mark cleared
+    expect: >
+      fill.parameters ["Mark"]; one row per category in categories, by name,
+      each with populated + empty + absent + doubled equal to that category's
+      instances; the Mechanical Equipment row counts AHU-01 as populated and
+      lists the cleared one's id in emptyIds; the populated count matches a
+      Mechanical Equipment schedule with Mark, filtered to Mark has a value
+
+  - given: >
+      version 2, parameters "  type MARK ,  mark  " - capitals and spaces
+      wrong on purpose
+    expect: >
+      fill.parameters ["type MARK", "mark"] in that order; the same counts as
+      "Type Mark, Mark"; Type Mark read from each element's TYPE (a type's
+      Type Mark filled once counts every instance of it as populated)
+
+  - given: >
+      version 2, parameters naming 13 parameters
+    expect: >
+      fill null; notRead has one "fill:" line saying 13 were given and at most
+      12 are read; every other part read as with none asked; sectionsNotRead 1
+
+  - given: version 2, parameters left out, then parameters ""
+    expect: >
+      both answers are version 1's, part for part, with "fill": null and NO
+      "fill:" line in notRead - not asking is not a part that failed
+
+  # VERSION 3 - breakdowns. The first is the batch-prove leg (tools/jobs).
+  - given: >
+      version 3, breakdowns "ducts-system|OST_DuctCurves|@system|@length" on
+      the Snowdon copy
+    expect: >
+      breakdowns has one entry, key "ducts-system", unit "m"; one row per
+      duct system type as the ducts' Properties show it (Supply Air, Return
+      Air, Exhaust Air ...), most ducts first; the rows' counts add up to the
+      categories part's Ducts instances; each row's sum, in metres, matches a
+      Duct schedule grouped by System Type with Length totalled, to the
+      millimetre; noSum 0 on every row - every duct has a length
+
+  - given: >
+      version 3, breakdowns "rooms-level|OST_Rooms|@level|@area" on a project
+      with rooms on two levels, one of them not enclosed
+    expect: >
+      unit "m2" (with the superscript); one row per level, the sums matching a
+      Room schedule's Area totals per level in square metres; the room that
+      is not enclosed is counted, adds 0 m2, and is in its level's ids; an
+      unplaced room is in no row
+
+  - given: >
+      version 3, breakdowns "doors-type|OST_Doors|@type|;doors-fire|OST_Doors|FIRE_RATING|"
+      on a project with doors
+    expect: >
+      two entries, unit null, sum null on every row; doors-type values read
+      "Family: Type" as the Properties palette shows them; doors-fire groups by
+      the Fire Rating text, the doors with none under "" - and both entries'
+      counts add up to the categories part's Doors instances
+
+  - given: version 3, breakdowns left out, then breakdowns ""
+    expect: >
+      both answers are version 2's, with "breakdowns": null and NO
+      "breakdowns:" line in notRead
+
+negative:
+  # THE CASE THAT MATTERS - the batch-prove leg (tools/jobs).
+  - given: >
+      a FAMILY document open beside the project (Family1, or any .rfa), the
+      run sent to the family - `in:` the family, the project still open
+    expect: >
+      elementTotal 0 and sectionsNotRead 13; dashboardJson's model block
+      reads the family's title with isFamily true, every other part is null -
+      never 0 or [] - and notRead names all thirteen parts as "not a project";
+      not one of the project's numbers appears
+
+  # VERSION 2 - the batch-prove leg sends parameters "Mark" to both documents.
+  - given: version 2, parameters "Mark", the run sent to the family as above
+    expect: >
+      elementTotal 0 and sectionsNotRead 14 - the thirteen and "fill: not a
+      project"; fill null, never a table of zeros
+
+  # VERSION 2 - THE FILL CASE THAT MATTERS: a name no parameter has.
+  - given: >
+      version 2, parameters "Mark, Heron No Such Parameter" on the Snowdon copy
+    expect: >
+      every row for "Heron No Such Parameter" has populated 0, empty 0,
+      doubled 0 and absent equal to its category's instances, emptyIds [] -
+      ABSENT, never empty: an element without the parameter has nowhere to
+      type a value; the Mark rows are those of the positive, unchanged
+
+  - given: >
+      version 2, a shared parameter "Fire Rating" bound to Doors beside the
+      door family's own Fire Rating, parameters "Fire Rating"
+    expect: >
+      the doors that carry both count as doubled - never populated or empty -
+      and every door is in exactly one of the four counts (D-54 s3, 5b-203)
+
+  # VERSION 3 - THE BREAKDOWN CASES THAT MATTER: a category the model has
+  # none of is READ AND EMPTY; a name Revit has not got is NOT READ.
+  - given: >
+      version 3, breakdowns "ducts-system|OST_DuctCurves|@system|@length;
+      none-here|OST_Planting|@type|;bad-name|OST_NoSuchCategory|@type|" on the
+      Snowdon copy - check in Visibility/Graphics, or a schedule, that the host
+      model holds no planting first
+    expect: >
+      none-here comes back with rows [] - never null - and no notRead line;
+      bad-name comes back with rows null and one notRead line, "breakdowns:
+      bad-name - Revit has no built-in category named OST_NoSuchCategory";
+      ducts-system reads exactly as in the positive - one refused breakdown
+      stops nothing else
+
+  - given: >
+      version 3, breakdowns "ducts-flow|OST_DuctCurves|@system|RBS_DUCT_FLOW_PARAM"
+    expect: >
+      rows null and a notRead line saying the sum is not a length, an area or
+      a volume - airflow is never summed, and never in feet
+
+  - given: >
+      version 3, breakdowns "equipment-length|OST_MechanicalEquipment|@type|@length"
+    expect: >
+      unit "m"; every row's sum null - never 0 - and noSum equal to its count:
+      equipment has no length to add
+
+  - given: version 3, nine breakdowns
+    expect: >
+      breakdowns null, one "breakdowns:" line naming the limit of 8, every
+      other part read
+
+  - given: >
+      version 3, the job's breakdowns sent to the family document, with
+      parameters "Mark"
+    expect: >
+      elementTotal 0, sectionsNotRead 15 - the thirteen, "fill: not a
+      project" and "breakdowns: not a project"; breakdowns null
+
+  - given: a project that is NOT workshared (Snowdon Towers, or Project2)
+    expect: >
+      model.isWorkshared false and worksets [] - and notRead has NO worksets
+      entry: a file with no worksets is not a part that failed
+
+  - given: >
+      a new project from the default template, nothing placed, no sheets, no
+      links, no CAD, no rooms
+    expect: >
+      every part a value, not null - links [], cad.total 0, rooms.total 0,
+      sheets.total 0, warnings.total 0 - and notRead empty: a part read and
+      found empty is zero, a part not read is null, and the two never swap
+
+  - given: a room deleted from its plan (left in the schedule) and a room whose walls were opened
+    expect: >
+      rooms.unplaced 1 with that room's id in unplacedIds, rooms.notEnclosed 1
+      with the other's in notEnclosedIds; rooms.placed counts the second and
+      not the first; neither is in the other's list
+
+  - given: >
+      a sheet with only a title block on it, and a second sheet holding one
+      schedule and nothing else
+    expect: >
+      sheets.empty counts the first and not the second - a schedule is
+      something on a sheet, and the title block's own revision schedule is not
+
+second_route: >
+  The reader of each part, run on the same model in the same session, and
+  Revit's own windows. READ_MODEL_WARNINGS' warningCount and Manage >
+  Warnings must equal warnings.total; LIST_LINKED_MODELS and Manage Links
+  must list the same files, loaded the same way; FIND_VIEWS' elements with
+  placement unplaced must be views.notOnSheets, and with withoutTemplate true
+  views.withoutTemplate; LIST_WORKSETS' worksetCount and closedCount
+  must match the worksets rows; FIND_PURGEABLE_ELEMENTS' wholeFamilyUnused must
+  be families.unused, and its unusedGroupTypeNames counted must be
+  groups.unusedTypes; SELECT_UNENCLOSED_ROOMS with rooms only must give
+  rooms.unplaced and rooms.notEnclosed, and with spaces only the spaces'. A
+  part that disagrees with its reader is a finding for FRAGMENT-ISSUES, never
+  a rounding. Version 2's fill: READ_ELEMENT_PARAMETERS on one category's
+  elements with the same name must give the same populated, empty (its blank)
+  and absent counts, for a text or number parameter whose exact name no
+  element carries twice - that reader takes the first of a doubled name and
+  reads an element parameter's display text, which this does not. Version 3's
+  breakdowns: a schedule of the same category, grouped by the same field with
+  the same total, must give the same counts and, in SI, the same sums - and
+  "*" rows must add up to elementTotal.

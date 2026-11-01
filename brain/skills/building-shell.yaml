@@ -70,9 +70,8 @@ purpose: >
   2. CREATE_GRIDS (DRAFT, version 2 - version 1 was PROVEN; merged 2026-11-01, and until it is proved on a real model a kept change from it is refused, D-117) when the plan is set out on bays - the lines the
      walls are drawn to, so a wall position is read off the plan rather than
      worked out.
-  3. CREATE_WALL (DRAFT at version 3 - version 2 was signed on 2026-10-19 on
-     Revit 2020, NEEDS-CHECKING Group HM; until Group JG signs version 3, a
-     wall is kept only through its one try-once, D-117), one run of points per
+  3. CREATE_WALL (PROVEN, version 3 - signed on 2026-11-01 on Revit 2020,
+     NEEDS-CHECKING Group JG; version 2 in Group HM), one run of points per
      wall line, on its level, at the height from that level to the one above.
      A wall that starts part-way up a storey - a crown post, a parapet on a
      terrace slab - takes baseOffset, millimetres above its level, and its

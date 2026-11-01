@@ -365,6 +365,12 @@ TOOLS = {
     # nothing. Placing is the page's companion_sprinkler_place below.
     "revit_sprinkler_layout":   (ANALYZE, "run_fragment_read"),
 
+    # The Model Dashboard (docs/40 s21.10). The same level: it reads the
+    # model once with REPORT_MODEL_DASHBOARD, makes the tiles, charts and
+    # worth-a-look rows in the brain, and changes nothing. The page's Refresh
+    # is the same read, so it has no COMPANION_ACTIONS row.
+    "revit_model_dashboard":    (ANALYZE, "run_fragment_read"),
+
     # Puts a settings capability's CURRENT values on the Companion page as an
     # editable table, sending nothing to Revit. READ, no operation. The
     # page's Apply is companion_apply below, at MODIFY - never this tool.
@@ -391,6 +397,21 @@ COMPANION_ACTIONS = {
     # previewed layout through PLACE_FAMILY_INSTANCES, in revit_change's body.
     # Preview touches no model - the brain works on the rooms the panel holds.
     "companion_sprinkler_place": (MODIFY, "run_fragment_write"),
+    # The Model Dashboard's row buttons (docs/40 s21.11): what is on screen
+    # only, never the model. Select reads the row's ids with
+    # FILTER_ELEMENTS_BY_ID, then selects through revit_show's body - EXECUTE
+    # at its highest. Isolate and Reset are revit_isolate_temporary's and
+    # revit_reset_temporary's own bodies and operations.
+    "companion_dashboard_select":  (EXECUTE, "run_fragment_show"),
+    "companion_dashboard_isolate": (EXECUTE, "isolate_temporary"),
+    "companion_dashboard_reset":   (EXECUTE, "reset_temporary"),
+    # Colour the view / Clear colours (docs/40 s21.14): a CHANGE to the active
+    # view's graphics - COLOR_BY_PARAMETER or RESET_GRAPHIC_OVERRIDES on what
+    # FILTER_ELEMENTS_BY_CATEGORY found with inViewOnly (SELECT_VISIBLE_IN_VIEW
+    # until 2026-11-01), through revit_change's own body. MODIFY,
+    # exactly revit_change's level and operation; both PROVEN (D-117).
+    "companion_dashboard_colour":        (MODIFY, "run_fragment_write"),
+    "companion_dashboard_clear_colours": (MODIFY, "run_fragment_write"),
 }
 
 

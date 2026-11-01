@@ -63,8 +63,11 @@ purpose: >
         layout and a spacing in millimetres - and its Grid 1 and Grid 2
         mullions, never vertical and horizontal, because which way each grid
         runs is the face's. Every curtain system of that type changes, and
-        the answer says how many. DRAFT until NEEDS-CHECKING Group JP proves
-        them.
+        the answer says how many. Proved on Revit 2020 on 2026-11-01
+        (NEEDS-CHECKING Group JP) as the two setters' version 3 and version 2:
+        on a mass's upright faces Grid 1 ran upright and Grid 2 level - read
+        it off each answer, never assume it. The merged setter, version 4, is
+        DRAFT until it is proved again (D-117).
      3. A panel that differs: SELECT_IN_REGION on that panel, then
         CHANGE_ELEMENT_TYPE to a curtain panel type. SET_CURTAIN_PANEL_TYPE
         works on curtain WALLS only and refuses a curtain system; a panel on
@@ -209,9 +212,11 @@ note: >
   SET_CURTAIN_WALL_GRID (version 3) and SET_CURTAIN_WALL_MULLIONS (version 2)
   were widened to a curtain system type for route B, on the owner's word; their
   proofs went stale with it, so routes A and B are both refused a kept grid or
-  mullion change until NEEDS-CHECKING Group JP proves them again. On 2026-11-01
+  mullion change until NEEDS-CHECKING Group JP proves them again. Group JP
+  proved both on Revit 2020 on 2026-11-01. The same day
   SET_CURTAIN_WALL_MULLIONS was merged into SET_CURTAIN_WALL_GRID (version 4),
-  which sets the grid and the mullions, in one call or two. The whole
+  which sets the grid and the mullions, in one call or two, and is DRAFT until
+  it is proved in its turn. The whole
   method is DRAFT until each route has been run on a scratch model with a
   negative case (D-30). The coverage, route by route, is in
   docs/work-notes/plans/facade-capability.md.
