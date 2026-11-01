@@ -345,3 +345,8 @@ utterances:
   - the filter list is full of rubbish
   - what can i purge from the templates
   - unused view filters
+  # ADDED 2026-11-01 with REPORT_VIEW_FILTERS version 4, whose table sends
+  # it here: the unused question, with a filter only templates carry counted
+  # as in use. Ranked here already on lexical and model; declared so the
+  # identity route answers it.
+  - which filters are unused

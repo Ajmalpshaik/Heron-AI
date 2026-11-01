@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: SELECT_TOUCHING
 version: 2
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO FIND_CLASHES (find-clashes), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools", "merge means ... all area need to be covered". Constitution Article
+# 1: kept, never deleted, so its record and its proof stay readable and it can
+# be brought back. Nothing offers it now - retrieval leaves DEPRECATED out, and
+# its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to FIND_CLASHES. The proof below is
+# the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: FIND_CLASHES
+  why: >
+    The same solid-overlap test, one element against the model. FIND_CLASHES
+    version 4 takes it with no second set typed: `against` may be left out,
+    and with no `against` and no link asked for it searches this model for
+    `categories` (names, or all) - the element handed in never returned as
+    touching itself - and hands what overlaps on as `elements`, this model's
+    own only, for SET_SELECTION or ISOLATE_ELEMENTS. "Overlapping is not
+    meeting" is said when nothing overlaps; links are read only when asked
+    (D-59), the linked hits named as text with their Fire Rating. Nothing
+    was left out.
 
 purpose: >
   Finds the elements whose real geometry OVERLAPS one given element -

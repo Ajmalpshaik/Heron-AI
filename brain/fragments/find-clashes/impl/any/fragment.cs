@@ -1,7 +1,37 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `against`, `includeLinks`,
 // `categories`, `includeHost` and `compareParameter` are in scope; leaves
 // `clashes`, `clashing`, `clear`, `notChecked`, `findings`, `linksSearched`,
-// `linkedMatches`, `passedThrough`, `mismatched` and `comparison` behind.
+// `linkedMatches`, `passedThrough`, `mismatched`, `comparison` and `elements`
+// behind.
+//
+// ===========================================================================
+// VERSION 4 (2026-11-01) - SELECT_TOUCHING MERGED IN, on the owner's
+// instruction ("make sure there is no duplicate tools"). Its job - ONE element
+// against the model, "what is clashing with this", "what runs through this
+// wall" - is this card's with nothing typed for the second set:
+//
+//   `against` MAY BE LEFT OUT. Absent it reads "none" - an empty set - and
+//   the no-element id that spelling gives is dropped here, so it is never a
+//   set of one invalid id.
+//
+//   WITH NO `against` AND NO LINK ASKED FOR, THIS MODEL IS SEARCHED - as
+//   includeHost asks - for `categories`, the elements handed in left out, so
+//   an element is never returned as touching itself. Version 3 answered that
+//   call "NOTHING WAS LOOKED IN", which was no answer. `against`'s own verdict
+//   is unchanged: tested against nothing, nothing is clear or clashing BY IT.
+//
+//   WHAT THEY TOUCH IS HANDED ON AS `elements` - this model's elements that
+//   overlap the ones handed in, from `against` and from the search, each
+//   once, so SELECT or ISOLATE can act on them. NEVER A LINKED ELEMENT: the
+//   chain revives ids against this model (FRAGMENT-ISSUES row 75). Empty when
+//   nothing overlaps - and then a finding says OVERLAPPING IS NOT MEETING:
+//   two runs joined at a connector share a face and no volume, so a correctly
+//   connected duct returns nothing here; TRACE_CONNECTIVITY answers "what is
+//   connected to this".
+//
+// SELECT_TOUCHING's categories (a list of categories) are `categories` here -
+// names, or `all` for every model category; left out, the building list.
+// ===========================================================================
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -128,11 +158,17 @@ var findings = new List<string>();
 var whyNot = new Dictionary<string, int>();
 var handed = 0;
 
-if (against == null || against.Count == 0)
+// VERSION 4: `against` left out reads "none" - one no-element id - and that
+// id, or any other no-element id, is dropped: an empty set, never a set of one
+// invalid id handed to the collector.
+against = (against ?? new List<ElementId>())
+    .Where(id => id != null && id != ElementId.InvalidElementId).ToList();
+
+if (against.Count == 0)
 {
     foreach (var element in elements) if (element != null) handed++;
-    findings.Add(string.Format("Nothing was given to check against, so NOTHING WAS CHECKED - none of "
-        + "the {0} element(s) is clear and none clashes. Hand in the second set.", handed));
+    findings.Add(string.Format("Nothing was given to check against, so `against` tested nothing - none of "
+        + "the {0} element(s) is clear or clashing BY IT. Where else was looked is said below.", handed));
 }
 else
 {
@@ -776,7 +812,10 @@ var comparison = new List<string>();
 var handedIds = new HashSet<ElementId>();
 foreach (var element in elements) if (element != null) handedIds.Add(element.Id);
 
-var searchHost = includeHost && linkBlocked.Length == 0;
+// VERSION 4, SELECT_TOUCHING's job: no `against` and no link asked for means
+// THIS MODEL is searched, as includeHost asks.
+var modelByDefault = !includeHost && !includeLinks && against.Count == 0;
+var searchHost = (includeHost || modelByDefault) && linkBlocked.Length == 0;
 var searchLinks = linkDocs.Count > 0 && linkBlocked.Length == 0;
 var lookFilter = anyCategory || lookFor.Count == 0 ? null : new ElementMulticategoryFilter(lookFor);
 
@@ -808,6 +847,11 @@ var places = new List<string>();
 if (searchLinks) places.Add(linkDocs.Count + " link(s)");
 if (againstGiven) places.Add("`against`");
 if (searchHost) places.Add("this model");
+
+// VERSION 4: this model's elements the handed-in ones overlap, each once -
+// handed on as `elements` at the end. Never a linked element (row 75).
+var touching = new List<Element>();
+var touchingIds = new HashSet<ElementId>();
 
 var done = new HashSet<ElementId>();
 foreach (var element in places.Count > 0 ? elements : new List<Element>())
@@ -873,6 +917,7 @@ foreach (var element in places.Count > 0 ? elements : new List<Element>())
     }
     foreach (var found in hostHits)
     {
+        if (!handedIds.Contains(found.Id) && touchingIds.Add(found.Id)) touching.Add(found);
         var measured = measure(found, own, centre, facing, run);
         var text = string.Format("this model: {0} '{1}' (id {2}), {3}{4}",
             found.Category == null ? "element" : found.Category.Name, typeNameOf(found), found.Id,
@@ -1075,3 +1120,33 @@ else
         comparison.Add(string.Format("  {0} hit(s) have no thickness to compare and were left out - "
             + "passedThrough says why", hitsUnmeasured));
 }
+
+// ---- version 4: what they touch, handed on --------------------------------
+
+if (searchHost)
+{
+    findings.Add(string.Format("{0} looked in THIS MODEL for {1}{2}: {3} element(s) of this model overlap "
+        + "the {4} handed in, handed on as `elements`{5}",
+        modelByDefault ? "No `against` and no link was asked for, so this" : "This", lookingFor,
+        ", the elements handed in left out", touching.Count, done.Count,
+        modelByDefault ? " - name `categories`, or `all`, for more than the building's elements" : ""));
+}
+else if (touching.Count > 0)
+{
+    findings.Add(string.Format("{0} element(s) of this model in `against` overlap the ones handed in, "
+        + "handed on as `elements`", touching.Count));
+}
+else if (places.Count == 0 || linkBlocked.Length > 0)
+{
+    findings.Add("NOTHING WAS CHECKED - hand in `against`, or set includeHost or includeLinks. Not one "
+        + "element is clear; none was tested");
+}
+
+if (touching.Count == 0 && (searchHost || againstGiven) && linkBlocked.Length == 0)
+    findings.Add("Nothing in this model OVERLAPS them. That is not the same as nothing being related: two "
+        + "runs joined at a connector meet face to face and share no volume, so a correctly connected duct "
+        + "returns nothing here. TRACE_CONNECTIVITY answers 'what is connected to this'");
+
+// THE HAND-ON. This model's own elements only - a linked element is text in
+// linkedMatches and passedThrough, never carried (row 75).
+elements = touching;

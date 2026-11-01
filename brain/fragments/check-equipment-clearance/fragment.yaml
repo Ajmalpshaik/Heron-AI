@@ -177,7 +177,7 @@ compatibility-note: >
   1 in, 0.0033 feet used, for each of the four - said millimetres.)
 
 # ROUTING - repeated in CHECK_MINIMUM_CLEARANCE, CHECK_VALVE_ACCESSIBILITY and
-# CHECK_OBSTRUCTIONS.
+# PROBE_AROUND_ELEMENTS.
 #
 #   "is there enough space in front of the panel to open the door" -> here
 #   "can this unit be serviced"          -> here
@@ -189,8 +189,9 @@ compatibility-note: >
 #   "what is too close to what"          -> CHECK_MINIMUM_CLEARANCE - a gap in
 #                                        ANY direction between two sets. This
 #                                        one is a zone with a front and a back
-#   "is anything above this point"       -> CHECK_OBSTRUCTIONS - one ray from
-#                                        one point
+#   "is anything above this point"       -> PROBE_AROUND_ELEMENTS, `points` -
+#                                        rays from one point (CHECK_OBSTRUCTIONS
+#                                        until 2026-11-01, merged into it)
 #   "what is around this equipment"      -> PROBE_AROUND_ELEMENTS, for what
 #                                           is actually there rather than
 #                                           whether a stated clearance holds

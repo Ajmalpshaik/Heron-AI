@@ -170,7 +170,7 @@ compatibility-note: >
   a level has two heights and only one is in the same space as a point in the
   model.
 
-# ROUTING - repeated in CHECK_EQUIPMENT_CLEARANCE and CHECK_OBSTRUCTIONS.
+# ROUTING - repeated in CHECK_EQUIPMENT_CLEARANCE and PROBE_AROUND_ELEMENTS.
 #
 #   "can we reach the valve to operate it" -> here
 #   "are the dampers accessible"         -> here
@@ -180,7 +180,7 @@ compatibility-note: >
 #                                        DIRECTIONAL zone off a family's facing
 #                                        direction, which plant has and a valve
 #                                        in a pipe does not
-#   "is anything above this point"       -> CHECK_OBSTRUCTIONS - one ray, one
+#   "is anything above this point"       -> PROBE_AROUND_ELEMENTS - one ray, one
 #                                        point, no ceiling or reach question
 #   "add a valve to the pipe"            -> PLACE_ACCESSORY_ON_RUN. This one
 #                                           asks whether an existing one can

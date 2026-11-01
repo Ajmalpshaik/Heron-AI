@@ -62,15 +62,47 @@ capability: COPY_ELEMENTS
 # are now: `created` -> `copies`; `copiesEach` -> `copiesEach`; `refused` (the
 # ids of a refused run) -> `refused`, the sentence, and `notCopied`.
 #
-# ARRAY_ELEMENTS_RADIAL WAS JUDGED ON THE SAME RULE AND KEPT APART: it already
-# copies the set together (one CopyElements, then RotateElements of the
-# copies), and its job - a centre, a sweep, and the full-circle rule that a
-# circle divides by the count and a sweep by the count less one - shares no
-# input with an offset. This card names it for a turn by the offset path.
+# ARRAY_ELEMENTS_RADIAL WAS JUDGED ON THE SAME RULE AND KEPT APART that day
+# ("a centre and a sweep share no input with an offset"). REOPENED THE SAME
+# DAY AND MERGED - see version 5: this card already had a count, a centre
+# (turnCentreMm) and copies turned about it, and Revit's own Array is one
+# command with a Linear and a Radial mode.
+#
+# VERSION 5 (2026-11-01) - ARRAY_ELEMENTS_RADIAL WAS MERGED INTO THIS CARD on
+# the owner's instruction ("make sure there is no duplicate tools", "merge
+# means ... all area need to be covered", "in every conflict keep the safer
+# rule"), and is DEPRECATED. What it had and this card lacked is here now:
+# `sweepDegrees` - copies ROUND A POINT on the originals' own level, about a
+# vertical axis through `turnCentreMm`, `count` positions in all with the
+# original the first; THE FULL-CIRCLE RULE - 360 divides by the count (the
+# last gap closes back to the start), a part sweep by the count less one
+# (both ends occupied) - and `stepDegrees`, the angle used; and which rule ran,
+# said in `copiedTo`. Its other rules were already here: the count is the
+# total, the set copied together in one CopyElements per step, every copy
+# counted from the model, a count under 2 refused, the originals not moved.
+#
+# THE SAFER RULE KEPT IN EACH CONFLICT - NOT CARRIED from ARRAY_ELEMENTS_RADIAL:
+#   - a sweep of more than 360 degrees is REFUSED. That card read 720 as a
+#     full circle and stepped 720 / count: eight round 720 stood copies at
+#     360, 450, 540 and 630 - four on top of the original and the other copies;
+#   - a copy Revit will not bring round TAKES THE WHOLE CALL BACK. That card
+#     left it where CopyElements made it, ON TOP OF THE ORIGINAL, and reported
+#     it - a stacked duplicate that schedules twice (Article 8);
+#   - copies are made a KILOMETRE ASIDE and brought back, as the level path
+#     does since Revit refused to keep a copy joined to its original once it
+#     was turned (2026-10-14). That card copied in place, then turned;
+#   - a sweep with NO CENTRE is refused. Blank turnCentreMm on the level path
+#     is the middle of what is copied; round a point it would stack one
+#     element's copies on its own spot.
+# Where its outputs are now: `created` -> `copies`; `copiesEach` ->
+# `copiesEach`; `stepDegrees` -> `stepDegrees`; `refused` (per-copy failures)
+# -> the call's own failure, nothing kept, or `refused` before anything is
+# copied; `findings` -> `copiedTo`. Its centreXMm and centreYMm -> turnCentreMm
+# "x, y"; totalSweepDegrees -> sweepDegrees.
 #
 # Version 3's proof below no longer describes the code (impl/ changed) and is
-# kept as the record; DRAFT until version 4 is proved on a real model (D-30).
-version: 4
+# kept as the record; DRAFT until version 5 is proved on a real model (D-30).
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -105,6 +137,9 @@ purpose: >
   Or onto other levels, as Paste Aligned to Selected Levels does: one copy on
   each level named in toLevels, each belonging to that level, optionally turned
   a further turnDegrees per level about turnCentreMm.
+
+  Version 5 copies round a point too - count in all across sweepDegrees about
+  turnCentreMm, a full circle divided by the count.
 
   Unlike moving and rotating, this one is self-evidencing: Revit returns the
   ids it created, and a copy that did not happen is a copy that is not in that
@@ -178,6 +213,18 @@ contract:
       source: request
       optional: true
       absent: none
+    # VERSION 5, from ARRAY_ELEMENTS_RADIAL. Degrees to copy ROUND A POINT -
+    # 360 for a full circle, 90 for a quarter; negative goes clockwise. Given,
+    # `count` positions in all, the original the first, about a vertical axis
+    # through turnCentreMm (required). A full circle divides by the count, a
+    # part sweep by the count less one. More than 360, with toLevels,
+    # turnDegrees, spacingMm or a non-zero offset, or with no centre, refused.
+    # Left out ("none"): version 4 exactly.
+    - name: sweepDegrees
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: copies
       role: result
@@ -214,6 +261,13 @@ contract:
       # asked, never a thing found (D-52).
       role: accounting
       type: int
+    - name: stepDegrees
+      # VERSION 5, from ARRAY_ELEMENTS_RADIAL. The angle between one position
+      # and the next round a point, worked out from the sweep and the count
+      # before anything is made; 0 when no sweep was asked. Arithmetic, never a
+      # thing found (D-52).
+      role: accounting
+      type: double
 
 # VERSION 2's PROOF, KEPT AS A RECORD. Version 3 changed impl/, so its
 # fingerprint no longer describes the code and the card is DRAFT until Group GP
@@ -297,8 +351,19 @@ compatibility-note: >
 #
 #   "array them along the corridor"  -> here, count and spacingMm
 #   "put eight of them along here"   -> here, count 8
-#   "array these round a circle"     -> ARRAY_ELEMENTS_RADIAL - a centre and a
+#   "array these round a circle"     -> here since version 5, sweepDegrees
+#                                       and turnCentreMm - a centre and a
 #                                       sweep, not a direction
+#                                       (ARRAY_ELEMENTS_RADIAL until 2026-11-01)
+#   "eight of these round the column"  -> here, sweepDegrees 360, count 8
+#   "turn these round"                 -> ROTATE_ELEMENTS - rotates what is
+#                                         already there and creates nothing.
+#                                         "rotate these round the column"
+#                                         means THAT, not this
+#
+# THE WORD "ARRAY" MEANS BOTH SHAPES and a modeller says it for either. Which
+# one is meant shows in the rest of the sentence: a direction or a spacing is
+# spacingMm, a centre or a circle is sweepDegrees.
 #   "line them up on the grid"       -> SNAP_TO_GRID
 
 # ROUTING - the same rows are in the fragments named here.
@@ -342,3 +407,11 @@ utterances:
   - copy this along the branch
   # ...and its semantic identity, which nothing else declares:
   - space copies of these out evenly along a direction
+  # MOVED 2026-11-01 from ARRAY_ELEMENTS_RADIAL, merged into this card.
+  - array these round a circle
+  - put eight of these round the column
+  - copy these round in a circle
+  - radial array
+  - space these evenly around a point
+  # ...and its semantic identity, which nothing else declares:
+  - space copies of these evenly around a centre point

@@ -288,7 +288,7 @@ Model text reaches the page as text, never as HTML (Golden Rule 19), as on every
 | Not here | Why |
 |---|---|
 | Pipes | Routing branch lines and mains is a much larger job; the modeller draws them, then the Sprinkler panel runs the hydraulics |
-| Obstructions - beams, ducts, lights | The grid cannot see them. `CHECK_OBSTRUCTIONS` and the engine's `obstruction` rule check them after; said in the answer |
+| Obstructions - beams, ducts, lights | The grid cannot see them. `PROBE_AROUND_ELEMENTS` (its `points`) and the engine's `obstruction` rule check them after; said in the answer |
 | Face-hosted sprinkler types | `PLACE_FAMILY_INSTANCES` takes a level, not a face - and **many sprinkler families are face-based**, so this will often bite. A face needs Revit's own picking, not a typed value |
 | Rooms in a linked model | The read is this model's Spaces and Rooms. An MEP model usually has its own Spaces - place those |
 | Sloped ceilings, sidewall and extended-coverage heads | Each is its own rule set in NFPA 13; a grid at one height is not them |

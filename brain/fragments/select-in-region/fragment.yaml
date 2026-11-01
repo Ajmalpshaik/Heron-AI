@@ -161,8 +161,7 @@ compatibility-note: >
   as plain arithmetic, for the REPORT only - no units API, which is what
   changed shape at 2021.
 
-# ROUTING - repeated in FILTER_ELEMENTS_IN_ROOM, SELECT_TOUCHING and
-# FIND_CLASHES.
+# ROUTING - repeated in FILTER_ELEMENTS_IN_ROOM and FIND_CLASHES.
 #
 #   "what is in this area"           -> here
 #   "everything in this box"         -> here
@@ -170,7 +169,7 @@ compatibility-note: >
 #                                       modelled. It uses the room's real
 #                                       boundary, which an L-shaped room needs
 #                                       and a box cannot express
-#   "what is touching this duct"     -> SELECT_TOUCHING - one element as the
+#   "what is touching this duct"     -> FIND_CLASHES - one element as the
 #                                       target, not a volume
 #   "what clashes with what"         -> FIND_CLASHES - pairs across two sets,
 #                                       not membership of a region
