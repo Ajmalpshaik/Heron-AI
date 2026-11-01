@@ -139,6 +139,8 @@ compatibility-note: >
 #   "what circuits are on panel DB-1"  -> REPORT_PANEL_CIRCUITS (2026-10-12)
 #   "draw wires between these sockets" -> CREATE_WIRES - drawn wiring, not the
 #                                         circuit
+#   "add these lights to circuit 3"    -> EDIT_ELECTRICAL_CIRCUIT (2026-11-01) -
+#                                         a circuit that already exists
 
 utterances:
   - put these devices on one circuit
@@ -150,3 +152,9 @@ utterances:
   # the same words, asking for the change - then tied with it and landed on
   # that read. Declared here so the command reaches the tool that makes it.
   - put these lights on a circuit
+  # ADDED 2026-11-01, FRAGMENT-ISSUES row 5b-1356: EDIT_ELECTRICAL_CIRCUIT
+  # (DRAFT) declares "take this socket off its circuit", and this sentence -
+  # claimed in the ROUTING table above - then reached that edit on a coin toss.
+  # Declared here so the command reaches the tool that makes a new circuit.
+  # Outside impl/, so the proof's fingerprint is unchanged.
+  - circuit these sockets

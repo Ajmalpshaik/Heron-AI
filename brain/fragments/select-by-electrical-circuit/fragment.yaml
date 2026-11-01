@@ -163,6 +163,9 @@ compatibility-note: >
 # CREATE_ELECTRICAL_RUN.
 #
 #   "what is on this circuit"        -> here
+#   "what is on circuit 3"           -> here, a question - never
+#                                       EDIT_ELECTRICAL_CIRCUIT (2026-11-01)
+#   "add these lights to circuit 3"  -> EDIT_ELECTRICAL_CIRCUIT - the change
 #   "select all the lighting circuits" -> here, matching the kind
 #   "what is wired to panel A"       -> here, matching the name - and read the
 #                                       panels list, because the panel itself
@@ -189,3 +192,9 @@ utterances:
   # model; nothing found what no circuit carries.
   # Declared, not ranked: with "none" built it still ranked to the write.
   - which lights are not on a circuit
+  # ADDED 2026-11-01, FRAGMENT-ISSUES row 5b-1356: EDIT_ELECTRICAL_CIRCUIT
+  # (DRAFT, a write) declares "add these lights to circuit 3", and this
+  # question - routed here by CREATE_ELECTRICAL_CIRCUIT's table - then reached
+  # that write whenever the host did not mark it a question. Declared, not
+  # ranked. Outside impl/, so the proof's fingerprint is unchanged.
+  - what is on circuit 3

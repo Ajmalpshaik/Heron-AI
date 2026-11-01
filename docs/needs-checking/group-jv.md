@@ -59,18 +59,15 @@ pass.
 owner's PC ranks with `model+rerank`, which is **NOT RUN** here. The four sentences above reach this card
 by identity. *"remove this light from the circuit"*, *"change the panel of circuit 5 to LP-2"* and *"add
 this receptacle to the existing circuit"* reach it ranked; on the same tree without it they reached
-`SELECT_BY_ELECTRICAL_CIRCUIT` or `REPORT_PANEL_CIRCUITS`. **Two sentences it took that it should not**, each
-measured against the same tree without this card:
-*"circuit these sockets"*, which `CREATE_ELECTRICAL_CIRCUIT`'s routing table claims, reached that card
-before and reaches this one now - a coin toss on fusion, pulled by *"take this socket off its circuit"*;
-and *"what is on circuit 3"*, a question `SELECT_BY_ELECTRICAL_CIRCUIT`'s table claims, which reaches
-that reader when the host marks it a question (D-128) and this write when it does not - pulled by *"add
-these lights to circuit 3"*. Neither is one of `check-routing`'s crossings, because neither is a
-declared utterance; both are paraphrase. The modeller's own sentences on this card were not weakened to
-buy them back.
-**JV12, owed:** declare *"circuit these sockets"* as an utterance on `CREATE_ELECTRICAL_CIRCUIT` and *"what
-is on circuit 3"* on `SELECT_BY_ELECTRICAL_CIRCUIT`, and add
-this card to the routing tables of `CREATE_ELECTRICAL_CIRCUIT`, `SELECT_BY_ELECTRICAL_CIRCUIT` and
-`REPORT_PANEL_CIRCUITS`. All three are PROVEN and were not touched by the change that built this one; an
-edit to `fragment.yaml` outside `impl/` does not change a proof's fingerprint. Meanwhile `revit_change`
-refuses a DRAFT ([D-117](../DECISIONS.md)), so neither sentence can run this edit unasked.
+`SELECT_BY_ELECTRICAL_CIRCUIT` or `REPORT_PANEL_CIRCUITS`. **Two sentences it took when it was written**, each
+measured against the same tree without this card: *"circuit these sockets"*, which
+`CREATE_ELECTRICAL_CIRCUIT`'s routing table claims - a coin toss on fusion, pulled by *"take this socket
+off its circuit"* - and *"what is on circuit 3"*, a question `SELECT_BY_ELECTRICAL_CIRCUIT`'s table
+claims, which reached this write whenever the host did not mark it a question (D-128) - pulled by *"add
+these lights to circuit 3"*. The modeller's own sentences on this card were not weakened to buy them
+back. ~~**JV12** - declare each on the card that answers it.~~ **DONE 2026-11-01**, [row
+5b-1356](../fragment-issues/section-5b-rows-401-425.md): *"circuit these sockets"* declared on
+`CREATE_ELECTRICAL_CIRCUIT`, *"what is on circuit 3"* on `SELECT_BY_ELECTRICAL_CIRCUIT`, and this card
+named in the routing tables of both and of `REPORT_PANEL_CIRCUITS`. Each sentence now reaches its card
+by identity (scratch store, `model` backend). All three cards are PROVEN; the edit is outside `impl/`, so
+no fingerprint moved.
