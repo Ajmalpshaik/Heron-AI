@@ -1,0 +1,188 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-070
+semantic-identity: "edit a circuit already in the model - Add to Circuit, Remove from Circuit, Select Panel or Disconnect Panel"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "add these lights to circuit 3",
+# "take this socket off its circuit", "move these circuits to panel DB-2" and
+# "disconnect this circuit from its panel". Nothing in Heron edited a circuit
+# that already exists (checked that day with brain/heron_retrieve.py on each
+# sentence, Revit 2024: SELECT_BY_ELECTRICAL_CIRCUIT, CREATE_ELECTRICAL_CIRCUIT,
+# REPORT_PANEL_CIRCUITS, CREATE_WIRES and DISCONNECT_CONNECTORS came back, and
+# none of them changes an existing circuit's devices or its panel).
+#
+# A NEW CAPABILITY, NOT A WIDENING. CREATE_ELECTRICAL_CIRCUIT (FRG-MEP-045,
+# PROVEN) makes a NEW circuit and can pick a panel only for the circuit it has
+# just made; a change under its impl/ would make its proof stale for a job it
+# does not do. DISCONNECT_CONNECTORS breaks a physical connector join, not a
+# circuit's membership or its panel.
+#
+# ONE FRAGMENT FOR THE FOUR BUTTONS, NOT TWO. Add to Circuit, Remove from
+# Circuit, Select Panel and Disconnect Panel sit together on Revit's
+# Electrical Circuits tab, act on the same element - one ElectricalSystem that
+# already exists - and need the same things: which circuit, which devices,
+# which panel. `edit` says which button. Split into two, both cards would
+# declare the same needs and answer the same "which circuit" question twice.
+#
+# WHICH CIRCUIT IS NEVER GUESSED. A number repeating on two panels refuses and
+# names both; a device on two circuits (power and data) is skipped and both
+# are named; two circuits selected for an add refuses.
+#
+# TAKING EVERY DEVICE OFF A CIRCUIT IS REFUSED for that circuit. Revit may
+# delete a circuit left empty, and deleting one is not an edit (Article 7).
+# What Revit actually does is NOT known from the assemblies - NEEDS-CHECKING
+# Group JV, JV9.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: EDIT_ELECTRICAL_CIRCUIT
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Edits an electrical circuit that already exists, the four buttons of
+  Revit's Electrical Circuits tab: Add to Circuit, Remove from Circuit, Select
+  Panel and Disconnect Panel. Every change is read back from the circuit
+  afterwards.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The selection: the devices to add or take off - lights, sockets,
+    # equipment - and/or circuits picked in Revit. Optional, so a circuit
+    # named by number can be moved or disconnected with nothing selected.
+    - name: elements
+      type: IList<Element>
+      optional: true
+    # Which button: "add", "remove", "select panel" or "disconnect" (also
+    # "add to circuit", "remove from circuit", "move to panel",
+    # "disconnect panel"). Anything else refuses and changes nothing.
+    - name: edit
+      type: string
+      source: request
+    # The circuit's number as the panel schedule shows it - "3". Left out,
+    # the circuit is the one selected, or the one a selected device is on.
+    - name: circuitNumber
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # The panel the circuit is on NOW, by its Panel Name, to tell circuit 3 on
+    # DB-1 from circuit 3 on DB-2. Never changes a panel.
+    - name: circuitPanel
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # The panel the sentence names, by its Panel Name. For "select panel" it
+    # is where the circuit goes; for the other three it can only be the panel
+    # the circuit is on now, so it narrows which circuit is meant and changes
+    # no panel.
+    - name: panel
+      type: FamilyInstance
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: circuitIds
+      # The circuits that read back changed.
+      role: result
+      type: IList<ElementId>
+    - name: changed
+      # Devices that read back added or taken off, or circuits that read back
+      # on the new panel or on none - never what was asked.
+      role: result
+      type: int
+    - name: report
+      # ONE STRING, a line per circuit changed: before and after.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was changed, in the modeller's words - evidence it looked
+      # and said no, never a thing it found (D-52). Null when something was
+      # changed. ONE STRING, because a list reaches the reply cut to sixty
+      # characters an item.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. ElectricalSystem.AddToCircuit
+  (ElementSet) returning bool, RemoveFromCircuit(ElementSet),
+  SelectPanel(FamilyInstance) and DisconnectPanel(), with CircuitNumber,
+  PanelName, LoadName and MEPSystem.Elements, and new ElementSet() with
+  Insert, are present and unchanged 2020 through 2027 - read with
+  tools/api-surface on 2026-11-01. Membership is read from each circuit's own
+  Elements, never MEPModel.ElectricalSystems or GetElectricalSystems(),
+  neither of which compiles on all eight (SELECT_BY_ELECTRICAL_CIRCUIT's
+  card). Ids are carried as ElementId and never read as numbers.
+
+# ROUTING - the sentences CREATE_ELECTRICAL_CIRCUIT, SELECT_BY_ELECTRICAL_CIRCUIT
+# and REPORT_PANEL_CIRCUITS already claim in their own tables, with the winner.
+# Those three are PROVEN and were not edited, so this edit is not yet named in
+# theirs - owed, NEEDS-CHECKING Group JV.
+#
+#   "add these lights to circuit 3"            -> here, edit add
+#   "take this socket off its circuit"         -> here, edit remove
+#   "move these circuits to panel DB-2"        -> here, edit select panel
+#   "disconnect this circuit from its panel"   -> here, edit disconnect
+#   "put these devices on one circuit"         -> CREATE_ELECTRICAL_CIRCUIT -
+#                                                 a NEW circuit
+#   "put these lights on a circuit"            -> CREATE_ELECTRICAL_CIRCUIT
+#   "circuit these sockets"                    -> CREATE_ELECTRICAL_CIRCUIT, as
+#                                                 its own table says. MEASURED
+#                                                 2026-11-01, cloud container,
+#                                                 `model` backend, re-ranker
+#                                                 absent: THIS card wins it, a
+#                                                 coin toss (words #2, nearness
+#                                                 #1 against 045's #1 and #3),
+#                                                 pulled by "take this socket
+#                                                 off its circuit". Answered by
+#                                                 declaring the sentence on
+#                                                 CREATE_ELECTRICAL_CIRCUIT, a
+#                                                 PROVEN card this change did not
+#                                                 touch - owed, NEEDS-CHECKING
+#                                                 Group JV row JV12. A DRAFT is refused
+#                                                 by revit_change (D-117), so it
+#                                                 cannot run unasked meanwhile
+#   "what is on circuit 3"                     -> SELECT_BY_ELECTRICAL_CIRCUIT,
+#                                                 as its table says. MEASURED
+#                                                 2026-11-01, as above: with the
+#                                                 host's question flag it lands
+#                                                 there; WITHOUT it, ranked, it
+#                                                 lands HERE, pulled by "add
+#                                                 these lights to circuit 3".
+#                                                 Answered by declaring it on
+#                                                 SELECT_BY_ELECTRICAL_CIRCUIT
+#                                                 (PROVEN, not touched) - owed,
+#                                                 Group JV row JV12
+#   "what is on this circuit"                  -> SELECT_BY_ELECTRICAL_CIRCUIT
+#                                                 - a question, never this
+#                                                 write. This card outranks it
+#                                                 on WORDS alone; the host
+#                                                 answers it by identity there
+#                                                 (measured 2026-11-01)
+#   "which lights are not on a circuit"        -> SELECT_BY_ELECTRICAL_CIRCUIT,
+#                                                 the same, by identity
+#   "what circuits are on panel DB-1"          -> REPORT_PANEL_CIRCUITS
+#   "disconnect this duct from the fitting"    -> DISCONNECT_CONNECTORS - a
+#                                                 physical join, not a circuit
+
+utterances:
+  - add these lights to circuit 3
+  - take this socket off its circuit
+  - move these circuits to panel DB-2
+  - disconnect this circuit from its panel

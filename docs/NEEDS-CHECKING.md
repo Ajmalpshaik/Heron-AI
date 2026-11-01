@@ -1094,6 +1094,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ju.md`](needs-checking/group-ju.md)
 
+## Group JV - a circuit that already exists, edited: `EDIT_ELECTRICAL_CIRCUIT` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-jv.md`](needs-checking/group-jv.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
