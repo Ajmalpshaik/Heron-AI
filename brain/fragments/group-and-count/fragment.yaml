@@ -108,3 +108,10 @@ utterances:
   - group them and count
   - what sizes are these pipes
   - how many pipes of each size
+  # ADDED 2026-11-01 (FRAGMENT-ISSUES 5b-1363): measured on main reaching
+  # AUTO_SIZE_PIPE or SET_MEP_SIZE, writes, on all four backends. The owner's
+  # answer key gives its duct twin, "What is the biggest duct size?", to this
+  # card. Its cost, recorded there: once this card holds "biggest pipe", it
+  # enters the shortlist of "how big is this pipe" on the re-ranker, which
+  # then answers AUTO_SIZE_PIPE.
+  - what is the biggest pipe size
