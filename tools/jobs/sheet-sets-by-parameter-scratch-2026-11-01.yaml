@@ -1,8 +1,14 @@
-# The proof of SYNC_SHEET_SETS_BY_PARAMETER (sync-sheet-sets-by-parameter,
-# FRG-SHT-034) and CHECK_SHEET_SETS_BY_PARAMETER (check-sheet-sets-by-parameter,
-# FRG-SHT-035), written 2026-11-01 for FRAGMENT-ISSUES row 5b-1361 -
-# NEEDS-CHECKING Group KA, rows KA12 and KA13. NOT RUN - written and read back
-# with --dry-run only.
+# The proof of MANAGE_SHEET_SETS version 4's mode by-parameter
+# (manage-sheet-sets, FRG-SHT-015) and CHECK_SHEET_SETS_BY_PARAMETER
+# (check-sheet-sets-by-parameter, FRG-SHT-035), written 2026-11-01 for
+# FRAGMENT-ISSUES row 5b-1361 - NEEDS-CHECKING Group KA, rows KA12 and KA13.
+# NOT RUN - written and read back with --dry-run only.
+#
+# REPOINTED 2026-11-01: the first leg was SYNC_SHEET_SETS_BY_PARAMETER
+# (sync-sheet-sets-by-parameter, FRG-SHT-034), merged that day into
+# MANAGE_SHEET_SETS version 4 as mode "by-parameter" and DEPRECATED. The same
+# values, the same verdicts; setName and newName are left out, which version 4
+# binds as no name.
 #
 #     python tools/batch-prove.py tools/jobs/sheet-sets-by-parameter-scratch-2026-11-01.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/sheet-sets-by-parameter-scratch-2026-11-01.yaml
@@ -24,16 +30,16 @@
 #   3. No View/Sheet Set saved. File, Print: Print Range "Current window", Close
 #   4. Save the project
 #
-# `write: true` runs the sync inside a transaction group and ROLLS IT BACK.
+# `write: true` runs the by-parameter leg inside a transaction group and ROLLS IT BACK.
 # The print manager is not transactional: open File, Print afterwards - the
 # range must read Current window and no set may be listed, rather than
 # assuming the rollback held.
 #
 # WHAT TO READ BEYOND THE VERDICT:
-#   KA12 sync, positive: created "'01_IAB-ISSUED AS-BUILT' (3);
+#   KA12 by-parameter, positive: created "'01_IAB-ISSUED AS-BUILT' (3);
 #     '02_IFI-ISSUED FOR INFORMATION' (2)", printRange put back to Current
 #     window, A106 in neither
-#   KA12 sync, negative: refused naming 'ZZZ NO SUCH PARAMETER', nothing made
+#   KA12 by-parameter, negative: refused naming 'ZZZ NO SUCH PARAMETER', nothing made
 #   KA13 check, positive (the project as saved, no set): both values in
 #     missingSets, every row NO SET
 #   KA13 check, negative: refused naming 'ZZZ NO SUCH PARAMETER'
@@ -48,14 +54,16 @@ defaults:
   setup: []
 
 jobs:
-  - fragment: sync-sheet-sets-by-parameter
+  - fragment: manage-sheet-sets
     write: true
     expect: created
     set:
+      mode: "by-parameter"
       parameterName: "HERON Browser 1"
       setPrefix: "none"
       values: "all"
     negative-set:
+      mode: "by-parameter"
       parameterName: "ZZZ NO SUCH PARAMETER"
       setPrefix: "none"
       values: "all"

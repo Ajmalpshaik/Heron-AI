@@ -1,6 +1,7 @@
-// NOT STANDALONE. Assumes `doc`, `elements`, `setName`, `mode` and `newName`
-// are in scope, and leaves `memberCount`, `done`, `notASheet`, `refused`,
-// `changed`, `unchanged` and `printRange` behind.
+// NOT STANDALONE. Assumes `doc`, `elements`, `setName`, `mode`, `newName`,
+// `parameterName`, `setPrefix`, `values` and `updateExisting` are in scope, and
+// leaves `memberCount`, `done`, `notASheet`, `refused`, `changed`, `unchanged`,
+// `printRange`, `created`, `updated`, `setsUnchanged` and `skipped` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) - for the document side of it.
 //
@@ -50,6 +51,44 @@
 // before the copy; afterwards the copy AND the original are found again by
 // name, read again and compared by id - so a SaveAs that renamed rather than
 // copied would be refused, not reported done.
+//
+// BY-PARAMETER, AND THE IN-SESSION RULE FOR EVERY MODE (version 4,
+// 2026-11-01). SYNC_SHEET_SETS_BY_PARAMETER (sync-sheet-sets-by-parameter,
+// version 1) was merged into this card on the owner's word and is DEPRECATED.
+// What it had and this card lacked is here now:
+//
+//   - mode "by-parameter" ("by parameter" and "sync" taken as the same): every
+//     non-template sheet and view carrying `parameterName`, grouped by its
+//     value; one set per value, named `setPrefix` + the value, many in one
+//     call; `values` (";" between them) narrows it to those values;
+//   - an existing set for a value is LEFT ALONE and reported in
+//     `setsUnchanged` unless `updateExisting`, and then made to hold exactly
+//     its value's sheets and views - Save() on it, Revert() when Revit does not
+//     save, and a set already in step not saved again;
+//   - a parameter no sheet or view has is refused naming it, and so is a value
+//     asked for that no sheet carries, and so is a parameter every carrier has
+//     empty;
+//   - a value Revit will not make a set for goes to `skipped` with Revit's
+//     reason, and the others are still made;
+//   - THE SAFER RULE, TAKEN FOR EVERY MODE THAT WRITES: the current set and
+//     the In-Session set's members are read before anything is touched, a new
+//     set is written through the In-Session set, and both are put back in the
+//     finally, before the range. Versions 1 to 3 wrote create's views onto
+//     WHICHEVER SET WAS CURRENT - a saved set, if the Print dialog was on one -
+//     and left the Print dialog on whatever set each mode made current. If the
+//     current set and the In-Session members cannot be read, nothing is
+//     written: what cannot be read cannot be put back;
+//   - and create, like that card, reads the bool SaveAs returns (row 5b-1361
+//     recorded that version 3's create did not) and never saves over a set
+//     that already has the name - that card never wrote a new set under a
+//     name in use, and duplicate already refused one.
+//
+// Every set written is found again BY ITS NAME afterwards and its members read
+// from the element, never from whichever set the print manager has current.
+//
+// `setName` and `newName` are optional since version 4 so by-parameter can be
+// asked with neither: left out, the card binds the word "none", read here as
+// no name at all - and every mode that needs one refuses as it always did.
 
 int memberCount = 0;
 bool done = false;
@@ -61,16 +100,103 @@ string refused = "";
 int changed = 0;
 var unchanged = new List<ElementId>();
 string printRange = "";
+// Version 4, by-parameter only: the sets made and brought back in step, each
+// with what it holds; the existing sets left as they were, each saying why;
+// and the values Revit would not make a set for, with Revit's reason.
+string created = "";
+string updated = "";
+string setsUnchanged = "";
+string skipped = "";
 
-string wanted = (setName ?? "").Trim();
+// "none" is the card's word for a name left out (version 4), so it is no name.
+Func<string, string> givenName = text =>
+{
+    string trimmed = (text ?? "").Trim();
+    return string.Equals(trimmed, "none", StringComparison.OrdinalIgnoreCase) ? "" : trimmed;
+};
+
+string wanted = givenName(setName);
 string operation = (mode ?? "").Trim().ToLowerInvariant();
 if (operation == "copy") operation = "duplicate";
+if (operation == "by parameter" || operation == "byparameter" || operation == "sync") operation = "by-parameter";
 
-if (wanted.Length == 0)
+if (operation != "create" && operation != "rename" && operation != "delete"
+    && operation != "add" && operation != "remove" && operation != "duplicate" && operation != "by-parameter")
+    refused = "Mode '" + mode + "' is not one of create, rename, delete, add, remove, duplicate, by-parameter.";
+else if (operation != "by-parameter" && wanted.Length == 0)
     refused = "No set name was given.";
-else if (operation != "create" && operation != "rename" && operation != "delete"
-         && operation != "add" && operation != "remove" && operation != "duplicate")
-    refused = "Mode '" + mode + "' is not one of create, rename, delete, add, remove, duplicate.";
+
+// BY-PARAMETER, before the print manager is touched: every sheet and view that
+// carries the parameter, by value - and the refusals that need no set at all.
+string parameterWanted = givenName(parameterName);
+string valuePrefix = setPrefix ?? "";
+if (string.Equals(valuePrefix.Trim(), "none", StringComparison.OrdinalIgnoreCase)) valuePrefix = "";
+string onlyText = (values ?? "").Trim();
+if (string.Equals(onlyText, "all", StringComparison.OrdinalIgnoreCase)) onlyText = "";
+var onlyValues = new HashSet<string>(onlyText.Split(new[] { ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+    .Select(v => v.Trim()).Where(v => v.Length > 0), StringComparer.OrdinalIgnoreCase);
+var byValue = new Dictionary<string, List<View>>(StringComparer.OrdinalIgnoreCase);
+
+if (refused.Length == 0 && operation == "by-parameter")
+{
+    Func<Parameter, string> valueOf = parameter =>
+    {
+        if (parameter == null || !parameter.HasValue) return "";
+        string text = "";
+        try { text = parameter.StorageType == StorageType.String ? parameter.AsString() : parameter.AsValueString(); } catch { }
+        return (text ?? "").Trim();
+    };
+
+    if (parameterWanted.Length == 0) refused = "No parameter name was given.";
+    else
+    {
+        int carriers = 0;
+        foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(View)))
+        {
+            var view = element as View;
+            if (view == null || view.IsTemplate) continue;
+            Parameter carried = null;
+            try { carried = view.LookupParameter(parameterWanted); } catch { }
+            if (carried == null) continue;
+            carriers++;
+            string value = valueOf(carried);
+            if (value.Length == 0) continue;
+            if (onlyValues.Count > 0 && !onlyValues.Contains(value)) continue;
+            List<View> group;
+            if (!byValue.TryGetValue(value, out group)) { group = new List<View>(); byValue[value] = group; }
+            group.Add(view);
+        }
+
+        if (carriers == 0)
+            refused = "No sheet or view in " + (doc.Title ?? "this model") + " has a parameter called '" + parameterWanted
+                + "'. Name it exactly as the sheet's Properties show it. Nothing was changed.";
+        else
+        {
+            var nobody = onlyValues.Where(v => !byValue.ContainsKey(v)).ToList();
+            if (nobody.Count > 0)
+                refused = "No sheet or view carries '" + parameterWanted + "' = "
+                    + string.Join(", ", nobody.Select(v => "'" + v + "'")) + ". Nothing was changed.";
+            else if (byValue.Count == 0)
+                refused = "Every sheet and view with '" + parameterWanted + "' has it empty, so there is no value to make a "
+                    + "set for. Nothing was changed.";
+        }
+    }
+}
+
+// A saved set found by its name, read from the element - never assumed to be
+// the set the print manager has current.
+Func<string, ViewSheetSet> findSet = lookFor =>
+{
+    foreach (var each in new FilteredElementCollector(doc).OfClass(typeof(ViewSheetSet)))
+    {
+        var hit = each as ViewSheetSet;
+        if (hit == null) continue;
+        string hitName = "";
+        try { hitName = (hit.Name ?? "").Trim(); } catch { }
+        if (string.Equals(hitName, (lookFor ?? "").Trim(), StringComparison.OrdinalIgnoreCase)) return hit;
+    }
+    return null;
+};
 
 if (refused.Length == 0)
 {
@@ -81,6 +207,17 @@ if (refused.Length == 0)
     PrintRange rangeBefore = PrintRange.Select;
     bool rangeRead = false;
     bool rangeChanged = false;
+    // Version 4. The current set and the In-Session set's own members, copied,
+    // so they can be put back - writing through the In-Session set to make a
+    // new set must not leave the Print dialog holding what was written.
+    IViewSheetSet currentBefore = null;
+    ViewSet inSessionBefore = null;
+    bool sessionRead = false;
+    // The set delete removed, so putting back a current set that no longer
+    // exists is not reported as a failure.
+    ElementId deletedId = ElementId.InvalidElementId;
+    // The name the set written ends up under, for the read-back.
+    string finalName = wanted;
 
     try
     {
@@ -95,14 +232,145 @@ if (refused.Length == 0)
             rangeChanged = true;
         }
         setting = printManager.ViewSheetSetting;
+        currentBefore = setting.CurrentViewSheetSet;
+        inSessionBefore = new ViewSet();
+        foreach (View member in setting.InSession.Views) if (member != null) inSessionBefore.Insert(member);
+        sessionRead = true;
     }
-    catch { refused = "The print manager would not open its sheet-set setting."; }
+    catch
+    {
+        refused = setting == null
+            ? "The print manager would not open its sheet-set setting. Nothing was changed."
+            : "Revit would not hand back the Print dialog's current set and its In-Session selection, so they could "
+              + "not be put back afterwards - nothing was changed.";
+    }
 
     try
     {
-        if (setting != null)
+        if (setting != null && sessionRead)
         {
-            if (operation == "create")
+            if (operation == "by-parameter")
+            {
+                var sets = new Dictionary<string, ViewSheetSet>(StringComparer.OrdinalIgnoreCase);
+                foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(ViewSheetSet)))
+                {
+                    var set = element as ViewSheetSet;
+                    if (set == null) continue;
+                    string name = "";
+                    try { name = (set.Name ?? "").Trim(); } catch { }
+                    if (name.Length > 0 && !sets.ContainsKey(name)) sets[name] = set;
+                }
+
+                var made = new List<string>();
+                var brought = new List<string>();
+                var left = new List<string>();
+                var notMade = new List<string>();
+                int holding = 0;
+
+                var order = byValue.Keys.ToList();
+                order.Sort(StringComparer.OrdinalIgnoreCase);
+                foreach (var value in order)
+                {
+                    var group = byValue[value];
+                    string valueSetName = (valuePrefix + value).Trim();
+                    var members = new ViewSet();
+                    foreach (var view in group) members.Insert(view);
+
+                    ViewSheetSet existing;
+                    if (!sets.TryGetValue(valueSetName, out existing))
+                    {
+                        bool saved = false;
+                        try
+                        {
+                            setting.CurrentViewSheetSet = setting.InSession;
+                            setting.CurrentViewSheetSet.Views = members;
+                            saved = setting.SaveAs(valueSetName);
+                            if (!saved) notMade.Add("'" + valueSetName + "': Revit did not save it");
+                        }
+                        catch (Exception failure) { notMade.Add("'" + valueSetName + "': " + failure.Message); }
+
+                        if (saved)
+                        {
+                            // Read back from the set itself, found by its name.
+                            var madeSet = findSet(valueSetName);
+                            int holds = -1;
+                            try
+                            {
+                                if (madeSet != null)
+                                {
+                                    holds = 0;
+                                    foreach (View member in madeSet.Views) if (member != null) holds++;
+                                }
+                            }
+                            catch { holds = -1; }
+
+                            if (madeSet == null)
+                                notMade.Add("'" + valueSetName + "': Revit reported it saved, but no set by that name was found "
+                                    + "afterwards - check File - Print - Settings");
+                            else if (holds < 0)
+                                made.Add("'" + valueSetName + "' (saved; Revit would not hand back what it holds)");
+                            else
+                            {
+                                made.Add("'" + valueSetName + "' (" + holds + ")");
+                                holding += holds;
+                            }
+                        }
+                        continue;
+                    }
+
+                    var holdsIds = new HashSet<ElementId>();
+                    try { foreach (View member in existing.Views) if (member != null) holdsIds.Add(member.Id); }
+                    catch { notMade.Add("'" + existing.Name + "': its members could not be read, so it was not touched"); continue; }
+                    var wantIds = new HashSet<ElementId>(group.Select(v => v.Id));
+                    int goingIn = wantIds.Count(id => !holdsIds.Contains(id));
+                    int comingOut = holdsIds.Count(id => !wantIds.Contains(id));
+
+                    if (goingIn == 0 && comingOut == 0) { left.Add("'" + existing.Name + "' already in step"); continue; }
+                    if (!updateExisting)
+                    {
+                        left.Add("'" + existing.Name + "' out of step (" + goingIn + " to add, " + comingOut
+                            + " to take out) - left alone, updating existing sets was not asked");
+                        continue;
+                    }
+                    try
+                    {
+                        setting.CurrentViewSheetSet = existing;
+                        setting.CurrentViewSheetSet.Views = members;
+                        if (setting.Save())
+                        {
+                            int holdsNow = 0;
+                            try { foreach (View member in existing.Views) if (member != null) holdsNow++; }
+                            catch { holdsNow = members.Size; }
+                            brought.Add("'" + existing.Name + "' (" + goingIn + " in, " + comingOut + " out)");
+                            holding += holdsNow;
+                        }
+                        else
+                        {
+                            notMade.Add("'" + existing.Name + "': Revit did not save the change");
+                            try { setting.Revert(); } catch { }
+                        }
+                    }
+                    catch (Exception failure)
+                    {
+                        notMade.Add("'" + existing.Name + "': " + failure.Message);
+                        try { setting.Revert(); } catch { }
+                    }
+                }
+
+                created = string.Join("; ", made);
+                updated = string.Join("; ", brought);
+                setsUnchanged = string.Join("; ", left);
+                skipped = string.Join("; ", notMade);
+                done = made.Count + brought.Count > 0;
+                memberCount = holding;
+                if (!done && notMade.Count == 0)
+                    refused = "Every set for '" + parameterWanted + "' already exists" + (updateExisting ? " and is in step" : "")
+                        + " - nothing was changed."
+                        + (updateExisting ? "" : " To bring existing sets back in step, ask for updateExisting.");
+                else if (!done)
+                    refused = "No set for '" + parameterWanted + "' was saved - see skipped for Revit's reasons.";
+            }
+            else if (operation == "create")
             {
                 var views = new ViewSet();
                 foreach (var element in elements)
@@ -119,13 +387,19 @@ if (refused.Length == 0)
 
                 if (memberCount == 0)
                     refused = "No views or sheets to put in the set.";
+                else if (findSet(wanted) != null)
+                    refused = "A sheet set called '" + wanted + "' already exists - nothing was saved. To change what it "
+                        + "holds, use mode add or remove.";
                 else
                 {
                     try
                     {
+                        // Version 4: through the In-Session set, never onto
+                        // whichever saved set the Print dialog had current.
+                        setting.CurrentViewSheetSet = setting.InSession;
                         setting.CurrentViewSheetSet.Views = views;
-                        setting.SaveAs(wanted);
-                        done = true;
+                        if (setting.SaveAs(wanted)) done = true;
+                        else refused = "Revit did not save a set called '" + wanted + "'.";
                     }
                     catch { refused = "Revit refused to save a set called '" + wanted + "'."; }
                 }
@@ -157,22 +431,23 @@ if (refused.Length == 0)
 
                     if (refused.Length == 0 && operation == "delete")
                     {
-                        try { setting.Delete(); done = true; }
+                        ElementId goingId = existing.Id;
+                        try { setting.Delete(); done = true; deletedId = goingId; }
                         catch { refused = "Revit refused to delete the set '" + wanted + "'."; }
                     }
                     else if (refused.Length == 0 && operation == "rename")
                     {
-                        string renameTo = (newName ?? "").Trim();
+                        string renameTo = givenName(newName);
                         if (renameTo.Length == 0) refused = "No new name was given for the rename.";
                         else
                         {
-                            try { setting.Rename(renameTo); done = true; }
+                            try { setting.Rename(renameTo); done = true; finalName = renameTo; }
                             catch { refused = "Revit refused to rename '" + wanted + "'."; }
                         }
                     }
                     else if (refused.Length == 0 && operation == "duplicate")
                     {
-                        string copyName = (newName ?? "").Trim();
+                        string copyName = givenName(newName);
                         bool nameTaken = false;
                         foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(ViewSheetSet)))
                         {
@@ -270,7 +545,9 @@ if (refused.Length == 0)
                                 {
                                     done = true;
                                     memberCount = copyIds.Count;
-                                    try { setting.CurrentViewSheetSet = copy; } catch { }
+                                    finalName = copyName;
+                                    // Version 3 made the copy current here; since
+                                    // version 4 the current set is put back below.
                                 }
                             }
                         }
@@ -364,14 +641,19 @@ if (refused.Length == 0)
             }
 
             // What the set holds NOW, read back rather than assumed from what was
-            // sent - a view deleted since leaves a hole in it.
-            if (done && operation != "delete")
+            // sent - a view deleted since leaves a hole in it. Since version 4
+            // read from the set FOUND BY ITS NAME, not from the current one.
+            if (done && operation != "delete" && operation != "by-parameter")
             {
                 try
                 {
-                    int actual = 0;
-                    foreach (View member in setting.CurrentViewSheetSet.Views) if (member != null) actual++;
-                    memberCount = actual;
+                    var written = findSet(finalName);
+                    if (written != null)
+                    {
+                        int actual = 0;
+                        foreach (View member in written.Views) if (member != null) actual++;
+                        memberCount = actual;
+                    }
                 }
                 catch { }
             }
@@ -379,9 +661,42 @@ if (refused.Length == 0)
     }
     finally
     {
-        // PUT THE PRINT RANGE BACK, whatever happened above - a refusal, a
-        // throw, a rollback the caller does afterwards. The words are the
-        // Print dialog's own.
+        // PUT THE PRINT MANAGER BACK, whatever happened above - a refusal, a
+        // throw, a rollback the caller does afterwards. Version 4: the
+        // In-Session set's members, then the current set, then the range.
+        string sessionNote = "";
+        if (setting != null && sessionRead)
+        {
+            bool sessionBack = false;
+            try
+            {
+                setting.CurrentViewSheetSet = setting.InSession;
+                setting.CurrentViewSheetSet.Views = inSessionBefore;
+                sessionBack = true;
+            }
+            catch { }
+
+            bool currentBack = false;
+            bool currentGone = false;
+            try
+            {
+                var wasElement = currentBefore as Element;
+                currentGone = wasElement != null && !deletedId.Equals(ElementId.InvalidElementId)
+                    && wasElement.Id.Equals(deletedId);
+            }
+            catch { currentGone = true; }
+            if (!currentGone)
+            {
+                try { if (currentBefore != null) setting.CurrentViewSheetSet = currentBefore; currentBack = true; } catch { }
+            }
+            else currentBack = true;
+
+            if (!sessionBack || !currentBack)
+                sessionNote = " The Print dialog's " + (!sessionBack ? "In-Session selection" : "current set")
+                    + " could NOT be put back as it was - check File - Print - Settings.";
+        }
+
+        // The words are the Print dialog's own.
         Func<PrintRange, string> rangeWords = range =>
             range == PrintRange.Current ? "Current window"
             : range == PrintRange.Visible ? "Visible portion of current window"
@@ -404,5 +719,7 @@ if (refused.Length == 0)
         }
         else if (rangeRead && rangeBefore == PrintRange.Select)
             printRange = "Print range was already Selected views/sheets and is left there.";
+
+        printRange += sessionNote;
     }
 }

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,35 @@ capability: SYNC_SHEET_SETS_BY_PARAMETER
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO MANAGE_SHEET_SETS (manage-sheet-sets)
+# version 4, mode "by-parameter", on the owner's instruction in conversation:
+# "if there's duplicate tools you can work for that also merging", "merge
+# means ... all area need to be covered", "in every conflict keep the safer
+# rule". Constitution Article 1: kept, never deleted, so its record stays
+# readable and it can be brought back. Nothing offers it now - retrieval
+# leaves DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to MANAGE_SHEET_SETS.
+# The paragraph below, "A NEW CARD, NOT A WIDENING", is the record of why it
+# stood apart when it was written; it stopped being true when commit 574dfb67
+# made MANAGE_SHEET_SETS DRAFT version 3 (row 5b-1361).
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: MANAGE_SHEET_SETS
+  why: >
+    The same job - a View/Sheet Set saved through the print manager's SaveAs,
+    the print range read first and put back, a failed save reverted - in a
+    second card. MANAGE_SHEET_SETS version 4 takes mode "by-parameter" with
+    parameterName, setPrefix, values and updateExisting: one set per value,
+    many in one call, an existing set left alone unless updateExisting and
+    then made to hold exactly its value's sheets and views; the same
+    refusals for a parameter no sheet has, a value no sheet carries and a
+    parameter every carrier has empty; a value Revit will not take in
+    skipped. Its outputs are there under the same names, but `unchanged` is
+    `setsUnchanged`. This card's In-Session switch and restore - the safer
+    rule - is now that card's for every mode that writes. Nothing of this
+    card was left out.
 
 # WRITTEN 2026-11-01 FOR FRAGMENT-ISSUES ROW 5b-1361. Ajmal PS keeps one
 # View/Sheet Set per value of his sheet parameter "TCM_Project Browser 1"
