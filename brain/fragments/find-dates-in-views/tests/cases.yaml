@@ -64,3 +64,67 @@ negative:
       NOTHING found. That date is already data Revit can schedule and filter.
       What this fragment exists for is the one typed by hand, which is invisible
       to every schedule in the model
+
+  # VERSION 2 (2026-11-01, LIST_DATES_ON_SHEETS merged in). Each of these
+  # FAILS on version 1, which has no switch and no dateList. The arrangement
+  # is that card's: "Heron Sheet Dates", a scratch project with four sheets.
+  # Typed ON the sheets, each while that sheet is the open view: S-01 "ISSUED
+  # 09 SEP 2026" and "REV A 22 Jul 2025"; S-02 "22/JUL/25" and "15 MAY 2026";
+  # S-03 "15 May 2026"; S-04 "09-09-2026", "31 SEP 2026" and "2 OFF 300". A
+  # floor plan is placed on S-04 with "01 JAN 2026" typed INSIDE the plan.
+  # It is never made in one of the owner's working models.
+  - given: VERSION 2. "Heron Sheet Dates", sheetsOnly on, nothing selected
+    expect: >
+      uniqueDateCount 3 and dateList, oldest first,
+      "22-JUL-2025 - 2 note(s) on 2 sheet(s): S-01, S-02  ||
+      15-MAY-2026 - 2 note(s) on 2 sheet(s): S-02, S-03  ||
+      09-SEP-2026 - 1 note(s) on 1 sheet(s): S-01". sheetsWithDateCount 3,
+      sheetsRead 4, notesOnSheets 8, sheetsWithNoDate "S-04", and
+      notesInViewsNotRead at least 1. 01-JAN-2026 is NOT in the list - it is
+      inside a plan. Version 1 has no switch and reports it
+
+  - given: VERSION 2. The same project, both switches left out
+    expect: >
+      every note read, as version 1 - 01-JAN-2026 IS found, against the plan
+      it was typed in; notesInViewsNotRead 0; dateList carries all four dates
+      oldest first, each with its views
+
+  - given: >
+      VERSION 2. sheetsOnly on, in a project whose only dates are typed
+      inside a floor plan placed on a sheet, in a drafting view on no sheet,
+      and in a sheet's Sheet Issue Date parameter
+    expect: >
+      uniqueDateCount 0, dateList empty, every sheet in sheetsWithNoDate,
+      notesInViewsNotRead at least 2. A version that read every view shows
+      the plan's and the drafting view's dates here
+
+  - given: >
+      VERSION 2. onlySheetsGiven on, S-01 and S-03 handed in (selected in the
+      Project Browser)
+    expect: >
+      sheetsRead 2, uniqueDateCount 3 - 22-JUL-2025 and 09-SEP-2026 from S-01,
+      15-MAY-2026 from S-03 - each row naming only S-01 or S-03: S-02's notes
+      are NOT read, and the summary says how many notes on other sheets were
+      not. datesFound has the same three dates, each with those sheets' ids
+
+  - given: VERSION 2. onlySheetsGiven on and NOTHING handed in
+    expect: >
+      sheetsRead 0, uniqueDateCount 0, and the summary saying no sheet was
+      handed in and nothing was read. NOT every sheet - an empty list is what
+      the binder hands in when nothing is given
+
+  - given: VERSION 2. onlySheetsGiven on, S-01 handed in with a floor plan VIEW and a duct
+    expect: the plan's and the duct's ids in notASheet, never read; S-01 read
+
+  - given: VERSION 2. onlySheetsGiven left out, S-01 selected, sheetsOnly on
+    expect: >
+      every sheet read, exactly the answer with nothing selected. The
+      selection is ignored when the switch is off
+
+  - given: >
+      VERSION 2. A view template for sheets in the project, sheetsOnly on, on
+      a release that lets one be made (which release first does is NOT
+      MEASURED here)
+    expect: >
+      not counted in sheetsRead and not listed in sheetsWithNoDate - it is
+      not a sheet

@@ -20,9 +20,9 @@ purpose: >
 
   **NOTHING IN THE LIBRARY MOVED AN ANNOTATION TO A POINT, AND THAT IS A SHAPE
   RATHER THAN ONE MISSING FRAGMENT.** Every tag fragment here is RULE-based:
-  `ARRANGE_TAGS` spreads them out, `STACK_TAGS` columns them at the side,
-  `CENTER_ROOM_TAGS` puts them back in the middle, `ARRANGE_TAGS_TO_VIEW_EDGES`
-  parks them down the edges. All four decide the position themselves. Not one
+  `ARRANGE_TAGS` spreads them out, `STACK_TAGS` columns them at the side or
+  parks them down the edges, `CENTER_ROOM_TAGS` puts them back in the middle.
+  All of them decide the position themselves. Not one
   takes a position. So *move this tag*, *move this dimension* and *set the tag
   location* were one missing capability wearing three names.
 
@@ -106,7 +106,7 @@ compatibility-note: >
 #                                    answer when there are forty of them
 #   "stack the tags at the side"   -> STACK_TAGS
 #   "put the room tags back"       -> CENTER_ROOM_TAGS
-#   "move a model element"         -> MOVE_ELEMENTS_TO_POINT
+#   "move a model element"         -> MOVE_ELEMENTS
 #   "move the tags off the elements" -> OFFSET_TAGS_FROM_HOST - each tag to
 #                                    its OWN element plus an offset, not all
 #                                    to one point

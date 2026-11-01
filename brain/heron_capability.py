@@ -330,7 +330,15 @@ def gaps(store, required=None):
     report, no separate list to keep in step - the absence is the finding.
     """
     ensure_tables(store)
-    have = set(row["capability"] for row in store.fragments() if row["capability"])
+    # PROVIDED BY A LIVE CARD. A capability whose only providers are retired
+    # (DEPRECATED, ARCHIVED) is a gap: retrieval offers none of them, so a
+    # method that still needs it would quietly run a card the library has
+    # retired - or, through the search, reach nothing at all. Counting it as
+    # provided kept every method green after its card was merged away (found
+    # 2026-11-01 merging duplicate cards; the methods are repointed instead).
+    have = set(row["capability"] for row in store.fragments()
+               if row["capability"]
+               and row["status"] not in SEARCH.RETIRED_FRAGMENTS)
 
     wanted = {}
     for row in store.execute(

@@ -71,6 +71,39 @@ negative:
       back either, the run throws, the whole group rolls back, and nothing on
       any sheet is kept
 
+  # VERSION 2 (2026-11-01, ALIGN_VIEWPORTS_ACROSS_SHEETS merged in). Each FAILS
+  # on version 1, which has no master and centres every sheet on its own title
+  # block.
+  - given: >
+      VERSION 2. Eight sheets of the same plan at 1:100 on one title block
+      family, masterSheetNumber one of them
+    expect: >
+      aligned 7, the master "left as it is", and the plan in the same place on
+      all eight - page through them in Revit, the building must not shift
+
+  - given: VERSION 2. A master sheet NOT among the sheets handed in
+    expect: the set still lined up to it - aligning to a sheet already right is the normal case
+
+  - given: VERSION 2. A sheet whose view is at 1:50 while the master is 1:100
+    expect: its id in scaleMismatch and NOT moved
+
+  - given: >
+      VERSION 2. A sheet whose title block sits at another origin than the
+      master's (move it 100 mm on that sheet first)
+    expect: >
+      its id in titleBlockElsewhere, its viewport NOT moved and its title
+      block STILL where it was put. ALIGN_VIEWPORTS_ACROSS_SHEETS moved the
+      title block onto the master's origin - a second change nobody asked for
+
+  - given: VERSION 2. masterSheetNumber matching no sheet
+    expect: every sheet in refused, each line naming the missing master, nothing moved
+
+  - given: VERSION 2. A master carrying two viewports
+    expect: every sheet in refused - which of the master's is the plan is not answerable
+
+  - given: VERSION 2. The same alignment run twice
+    expect: aligned 0 the second time and every sheet in alreadyCentred - nothing nudged again
+
 second_route:
   - >
     open each sheet in Revit, select the viewport and read where its box sits

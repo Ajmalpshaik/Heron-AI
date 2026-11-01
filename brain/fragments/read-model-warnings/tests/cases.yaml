@@ -16,6 +16,19 @@ positive:
     expect: >
       the offending elements alone are left visible - the whole reason this provides `elements` and not just a count
 
+  # VERSION 2, added 2026-11-01 with the merge of SELECT_WITH_WARNINGS. NONE OF
+  # THESE HAS BEEN RUN. Each FAILS on version 1, which took no filter.
+  - given: errorsOnly true on a model with both severities
+    expect: >
+      only the Error rows, `matched` the Error count, `warningCount` still the
+      model's whole total, and every element in `elements` present in the
+      unfiltered run's set too - a strictly smaller set
+
+  - given: descriptionContains "duplicate" on a model carrying identical-instance warnings
+    expect: >
+      only those warnings' elements, the first `findings` line naming the
+      phrase, and the other kinds of warning absent from the rows
+
 negative:
   - given: >
       a warning naming an element that was deleted, whose id no longer resolves
@@ -31,6 +44,23 @@ negative:
       NOTHING is reported. GetWarnings() reads this document only, so a clean
       result here never means the federated model is clean, and reporting it
       as clean would be the wrong answer with full confidence
+
+  # VERSION 2, added 2026-11-01. NONE OF THESE HAS BEEN RUN.
+  - given: descriptionContains "ZZZNOTHINGHERE"
+    expect: >
+      0 elements, `matched` 0, and "No warning matched that filter - the model
+      may still have others" - NOT "This model has no warnings at all", which
+      is the answer only with no filter. Version 1 took no phrase and answered
+      every warning
+
+  - given: one wall named by three separate overlap warnings, errorsOnly false
+    expect: >
+      that wall ONCE in `elements`. SELECT_WITH_WARNINGS' first case, kept
+
+  - given: a model with no warnings at all, nothing filtered
+    expect: >
+      0 elements and findings saying "This model has no warnings at all" and
+      that an empty answer is not a clean model - version 1 said nothing
 
 second_route:
   - Revit's own Manage > Review Warnings dialog, and its exported HTML report, counted against the same model

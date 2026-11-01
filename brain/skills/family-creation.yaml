@@ -116,8 +116,9 @@ purpose: >
      asked for once, in that one list, and never assumed or scaled off the
      image (D-33). Where the picture cannot show something - the back, the
      inside, a hidden neck - ask rather than invent it.
-  1. SET_FAMILY_CATEGORY first, when the template's category is not the one
-     wanted - a Generic Model that should be an Air Terminal. The category
+  1. SET_FAMILY_SETTINGS "Category=<name>" first, when the template's
+     category is not the one wanted - a Generic Model that should be an Air
+     Terminal; in a call with other settings it is written first. The category
      brings its own built-in parameters, and everything after it builds on
      them. CLASSIFY IT FROM THAT CATEGORY NEXT: REPORT_FAMILY_TEMPLATE's
      classificationCodes line lists the OmniClass Numbers (Classification
@@ -138,7 +139,10 @@ purpose: >
   2. ADD_FAMILY_PARAMETERS - the sizes the family is driven by, as TYPE
      lengths when they describe the product; a diameter is a length too. Any
      value a project must TAG or SCHEDULE is a shared parameter instead, from
-     the office's shared parameter file: ADD_FAMILY_SHARED_PARAMETERS. READ
+     the office's shared parameter file: ADD_FAMILY_PARAMETERS with kind
+     shared (ADD_FAMILY_SHARED_PARAMETERS until it was merged into it,
+     2026-11-01 - every ADD_FAMILY_PARAMETERS call needs Admin as well as
+     Changes since then, the shared file being outside Undo). READ
      FIRST, before any shared parameter is added: REPORT_SHARED_PARAMETER_FILE,
      nameContains the names wanted and compareWithDocument true - which file
      Revit is set to now, whether each name is in it and with which GUID, and
@@ -178,9 +182,13 @@ purpose: >
      a nut - which makes its own side planes, labels them and locks itself,
      so the size needs no step 5 or 6 of its own (never one fixed hexagon
      per size switched by type: that was the only way until 2026-10-24);
-     CREATE_FAMILY_EXTRUSION for any other shape pushed straight;
-     CREATE_FAMILY_REVOLUTION, CREATE_FAMILY_BLEND, CREATE_FAMILY_SWEEP and
-     CREATE_FAMILY_SWEPT_BLEND for the rest. Every one gives back its form's
+     CREATE_FAMILY_FORMS for any other shape pushed straight or turned - a
+     kind=extrusion or kind=revolve row, one form or many (CREATE_FAMILY_EXTRUSION
+     and CREATE_FAMILY_REVOLUTION until they were merged into it, 2026-11-01);
+     CREATE_FAMILY_FORMS for the rest too - a kind=blend, kind=sweep or
+     kind=swept blend row (CREATE_FAMILY_BLEND, CREATE_FAMILY_SWEEP and
+     CREATE_FAMILY_SWEPT_BLEND until they were merged into it, 2026-11-01).
+     Every one gives back its form's
      id, which every later step names it by. A FORM THAT WILL BE ARRAYED is
      sketched on a plane no parameter moves; a part in a row that a size
      stretches is a nested family instead - step 10. MANY extrusions and
@@ -220,7 +228,7 @@ purpose: >
      flat face that lies on a plane a parameter moves. A face not locked stays
      where it was drawn when its plane moves, and looks parametric until the
      first flex. Where the size is the form's OWN field rather than a plane,
-     LINK_FAMILY_FORM_PARAMETER instead: an extrusion's end to a length, a
+     LINK_FAMILY_PARAMETER with forms= its id instead: an extrusion's end to a length, a
      revolve's end angle to an angle - a bend whose angle the types choose.
      Never both on one face.
   9. LABEL_FAMILY_RADIUS for every round size - the parameter holding the size
@@ -255,8 +263,8 @@ purpose: >
       the type in front - and the modeller undid 15 steps (row 5b-1261).
       A PART IN A ROW THAT A SIZE STRETCHES IS A NESTED FAMILY: made as step
       11's a to g, Work Plane-Based, its own planes and labels stretching it;
-      its lengths linked to the host's formulas with LINK_NESTED_TYPE_PARAMETER;
-      placed with PLACE_NESTED_FAMILY at a FIXED point - the host's origin on
+      its lengths linked to the host's formulas with LINK_FAMILY_PARAMETER, family= and type=;
+      placed with PLACE_FAMILY_INSTANCES, nested, at a FIXED point - the host's origin on
       Ref. Level, never on a plane that moves; then ARRAY_FAMILY_FORMS on the
       nested instance, its count an Integer formula. A row both ways from the
       centre is two arrays: one up from Z 0, and one down from a second
@@ -298,11 +306,13 @@ purpose: >
       gave in step 0's list, never assumed (D-33), or a family parameter in
       square brackets that drives it, a shared one where a project must
       schedule it (step 2). A part that is a family of its own, loaded in with LOAD_FAMILY:
-      PLACE_NESTED_FAMILY on the plane it sits on - a Work Plane-Based family
+      PLACE_FAMILY_INSTANCES, nested in the family being edited, on the plane
+      it sits on - workPlane= a reference plane, or the level (PLACE_NESTED_FAMILY
+      until it was merged into it, 2026-11-01) - a Work Plane-Based family
       is placed on every
       release, a level-based one only from Revit 2024 - then
       LOCK_NESTED_FAMILY_TO_PLANES by its own Left, Right, Front, Back, Top,
-      Bottom or centres, then LINK_NESTED_TYPE_PARAMETER for its type's sizes
+      Bottom or centres, then LINK_FAMILY_PARAMETER (family=, type=) for its type's sizes
       and LINK_FAMILY_PARAMETER for its instance's. A nested part that came in
       facing inward or upside down - its plane's normal points the wrong way -
       is FLIP_ELEMENTS with flipWorkPlane=true, never a rotation (row 5b-1335).
@@ -330,11 +340,13 @@ purpose: >
       f. SAVE_DOCUMENT aimed at the host, documentPath the part's file,
          closeWindow=true - saved, its window closed. LOAD_FAMILY refuses a
          part still open with unsaved work: a load reads the file.
-      g. LOAD_FAMILY into the host, PLACE_NESTED_FAMILY at each point, then
+      g. LOAD_FAMILY into the host, PLACE_FAMILY_INSTANCES at each point, then
          count the host's elements of that category against the number
          placed - a stray copy is found by the count (row 5b-350).
       b needs the Admin switch and f the Publish switch, each with Changes.
-  12. SET_FAMILY_FORM_MATERIAL for each form's material - linked to a family
+  12. LINK_FAMILY_PARAMETER for each form's material - forms= its ids, links
+      Material=<parameter or material> (SET_FAMILY_FORM_MATERIAL until it was
+      merged in, 2026-11-01) - linked to a family
       material parameter when a project must set it per type, the body and
       the neck apart - then SET_FAMILY_FORM_SUBCATEGORY and
       SET_FAMILY_FORM_VISIBILITY where a project must show or style a part on
@@ -343,7 +355,7 @@ purpose: >
       Styles sets them, are CREATE_LINE_STYLE with familyCategory true -
       updateExisting true once the subcategory exists. A part only some types
       have from step 0:
-      LINK_FAMILY_FORM_PARAMETER, its Visible to that Yes/No parameter. Where a
+      LINK_FAMILY_PARAMETER, forms= its id, its Visible to that Yes/No parameter. Where a
       plan must show a SYMBOL rather than the body - a valve's bow tie, a fan's
       circle and cross - DRAW_FAMILY_SYMBOLIC_LINES on Ref. Level at the levels
       the body is hidden at, with DRAW_FAMILY_FILLED_REGION for a solid or
@@ -355,15 +367,18 @@ purpose: >
       two model coordinates, its height, depth and material on the row, so
       it stays editable text; never letters built of forms in step 7. A
       fixed family's materials are set outright:
-      CREATE_MATERIAL for each colour - the shading colour only, nothing a
-      render uses, with a transparencies value for glass or a vial
-      (2026-10-14, Revit 2020) - then SET_FAMILY_FORM_MATERIAL once per
+      CREATE_STARTER_MATERIALS with materialNames, colours and transparencies
+      for each colour (CREATE_MATERIAL's job since 2026-11-01, DRAFT until
+      proved again; none of the starter set is made beside names) - the
+      shading colour only, nothing a render uses, with a transparencies value
+      for glass or a vial (2026-10-14, Revit 2020) - then
+      LINK_FAMILY_PARAMETER (links Material=<it>) once per
       material, naming
       every form id that takes it. Made before step 7, the materials can be
       named on CREATE_FAMILY_FORMS's rows instead. A FAMILY THAT WILL BE
       RENDERED, or shown in a Realistic view, gives each material an
       appearance too: SET_MATERIAL_APPEARANCE with materialsNamed the names
-      CREATE_MATERIAL made (';' between, or the prefix and *) and
+      CREATE_STARTER_MATERIALS made (';' between, or the prefix and *) and
       matchShading true - a shading colour alone draws flat dark grey there
       (2026-10-20, Revit 2020, row 5b-1263). A better look than its own
       colour - glass, a metal, a texture - is SET_MATERIAL_APPEARANCE's
@@ -379,9 +394,11 @@ purpose: >
       revit_show; SET_VIEW_PROPERTIES views "View 1", visualStyle "Shaded
       with Edges", detailLevel Fine, scale 0 (left as it is), through
       revit_change, so a part shown only at Fine is in the picture;
-      SELECT_FAMILY_FORMS forms "solid" through revit_read; ZOOM_TO_ELEMENTS
-      through revit_show with expect_from "select-family-forms" and
-      alsoSelect false, so the modeller's screen shows the whole family too.
+      REPORT_FAMILY_FORMS which "solid" through revit_read; SET_SELECTION
+      through revit_show with expect_from "report-family-forms", show true
+      and keepSelection true, so the modeller's screen shows the whole family
+      too (ZOOM_TO_ELEMENTS with alsoSelect false until it was merged into
+      SET_SELECTION on 2026-11-01).
       revit_show changes only what is on screen and opens no transaction,
       and Revit moves no view inside one (D-125). If revit_show is not
       offered, or Revit's Heron does not know it yet, ask the modeller to
@@ -454,13 +471,13 @@ needs:
   # the change the modeller may choose.
   - REPORT_PROJECT_UNITS
   - SET_PROJECT_UNITS
-  - SET_FAMILY_CATEGORY
+  # SET_FAMILY_CATEGORY was listed here until 2026-11-01, when it was merged into SET_FAMILY_SETTINGS.
   - SET_FAMILY_SETTINGS
   - ADD_FAMILY_PARAMETERS
   # Step 2's read first - the shared parameter file and its GUIDs, against
-  # the family, before ADD_FAMILY_SHARED_PARAMETERS writes anything.
+  # the family, before ADD_FAMILY_PARAMETERS' shared kind writes anything.
   - REPORT_SHARED_PARAMETER_FILE
-  - ADD_FAMILY_SHARED_PARAMETERS
+  # ADD_FAMILY_SHARED_PARAMETERS was listed here until 2026-11-01, when it was merged into ADD_FAMILY_PARAMETERS.
   # Values BEFORE labels - see step 3.
   - SET_FAMILY_TYPE_VALUES
   - SET_FAMILY_FORMULA
@@ -469,16 +486,16 @@ needs:
   - LABEL_FAMILY_DIMENSION
   - EXTRUDE_BETWEEN_PLANES
   - EXTRUDE_POLYGON_BETWEEN_PLANES
-  - CREATE_FAMILY_EXTRUSION
-  - CREATE_FAMILY_REVOLUTION
-  - CREATE_FAMILY_BLEND
-  - CREATE_FAMILY_SWEEP
-  - CREATE_FAMILY_SWEPT_BLEND
+  # CREATE_FAMILY_EXTRUSION was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # CREATE_FAMILY_REVOLUTION was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # CREATE_FAMILY_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # CREATE_FAMILY_SWEEP was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # CREATE_FAMILY_SWEPT_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
   # Step 7's many forms at once - extrusions and revolves, one row each.
   - CREATE_FAMILY_FORMS
   - CREATE_FAMILY_FREEFORM_SOLID
   - LOCK_FORM_TO_PLANES
-  - LINK_FAMILY_FORM_PARAMETER
+  # LINK_FAMILY_FORM_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - LABEL_FAMILY_RADIUS
   - COMBINE_FAMILY_FORMS
   - ARRAY_FAMILY_FORMS
@@ -491,14 +508,15 @@ needs:
   - REPORT_OPEN_DOCUMENTS
   - SAVE_DOCUMENT
   - LOAD_FAMILY
-  - PLACE_NESTED_FAMILY
+  # PLACE_NESTED_FAMILY was listed here until 2026-11-01, when it was merged into PLACE_FAMILY_INSTANCES.
+  - PLACE_FAMILY_INSTANCES
   - LOCK_NESTED_FAMILY_TO_PLANES
   # Step 11's nested part that came in upside down (version 3, row 5b-1335).
   - FLIP_ELEMENTS
-  - LINK_NESTED_TYPE_PARAMETER
+  # LINK_NESTED_TYPE_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - ADD_FAMILY_TYPE_PARAMETER
   - LINK_FAMILY_PARAMETER
-  - SET_FAMILY_FORM_MATERIAL
+  # SET_FAMILY_FORM_MATERIAL was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - SET_FAMILY_FORM_SUBCATEGORY
   # Step 12's subcategory colour, weight and pattern (version 2, row 5b-463).
   - CREATE_LINE_STYLE
@@ -508,8 +526,8 @@ needs:
   - ADD_FAMILY_FLIP_CONTROL
   # Step 12's lettering.
   - ADD_FAMILY_MODEL_TEXT
-  # A fixed family's colours, before SET_FAMILY_FORM_MATERIAL - see step 12.
-  - CREATE_MATERIAL
+  # A fixed family's colours, before LINK_FAMILY_PARAMETER sets them - see step 12.
+  - CREATE_STARTER_MATERIALS
   # Step 12's appearance for a family that will be rendered (row 5b-1263).
   - SET_MATERIAL_APPEARANCE
   - REPORT_FAMILY_FORMS
@@ -518,8 +536,11 @@ needs:
   # revit_view_image tool, which is not a capability (row 5b-651).
   - OPEN_VIEW
   - SET_VIEW_PROPERTIES
-  - SELECT_FAMILY_FORMS
-  - ZOOM_TO_ELEMENTS
+  # SELECT_FAMILY_FORMS was listed here until it was merged into
+  # REPORT_FAMILY_FORMS, above, on 2026-11-01.
+  # ZOOM_TO_ELEMENTS was listed here until it was merged into SET_SELECTION,
+  # its show switch, on 2026-11-01.
+  - SET_SELECTION
   # The proof of a parametric family, and never skipped there.
   - FLEX_FAMILY
   - REPORT_FAMILY_TYPE_CATALOG

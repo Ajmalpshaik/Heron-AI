@@ -1,11 +1,11 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-004
-semantic-identity: "place instances of one family type at these points"
+semantic-identity: "place instances of one family type at these points - in a project, or nested in the family being edited"
 kind: action
 domain: revit.elements
 capability: PLACE_FAMILY_INSTANCES
@@ -20,7 +20,47 @@ capability: PLACE_FAMILY_INSTANCES
 # measure to - and no longer at its insertion point. See "VERSION 3" below.
 # Version 3's tracking run in Project1, Revit 2020, was signed by Ajmal PS on
 # 2026-10-17 and replaced version 2's proof.
-version: 3
+#
+# VERSION 4 (2026-11-01) - PLACE_STRUCTURAL_FAMILY WAS MERGED INTO THIS CARD
+# on the owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same job - one point-based family type at a list of points
+# on a level, every one read back - and that card's only difference was the
+# structural type. What it had and this one lacked is here now:
+# `structuralType` - column, footing or non-structural, left out for version 3
+# exactly; a Structural Columns family only as a column and a Structural
+# Foundations one only as a footing, or non-structural when SAID; a beam, a
+# brace or any Structural Framing family refused before anything is placed,
+# naming PLACE_LINE_BASED_FAMILY; a column's top - `topLevelName` and
+# `topOffset` - judged before anything is placed, set on the built-in Top
+# Level and Top Offset and read back in `tops`; the no-solid-geometry check
+# whenever a structural type was asked; `findings`.
+#
+# THE SAFER RULES KEPT (the owner: in every conflict keep the safer rule):
+# ONE INSTANCE LANDING WRONG UNDOES THE WHOLE LAYOUT (Article 8) - this card's
+# rule since version 2. PLACE_STRUCTURAL_FAMILY removed a column with no
+# settable top, or one Revit left with no solid, and kept the rest, and only
+# listed a top that read back wrong; each of those now throws, naming every
+# one, and nothing is kept - so its `topWrong` and `topRefused` lists are the
+# words of that refusal rather than outputs of a run that kept something. A
+# Structural Columns or Foundations family with no structural type said is
+# REFUSED and asked which, where version 3 placed it non-structurally without
+# a word - D-33, and the defect PLACE_STRUCTURAL_FAMILY was written for. A
+# point's Z is its height in the model for a structural member too - this
+# card's rule; where Revit's call puts a column's or a footing's height from
+# the point, and which parameter holds it (Base Offset, Elevation from Level),
+# is NEEDS REAL REVIT.
+#
+# Version 3's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; DRAFT until version 4 is proved on a real model (D-30).
+#
+# VERSION 5 (2026-11-01) - PLACE_NESTED_FAMILY WAS MERGED INTO THIS CARD on
+# the owner's instruction ("make sure there is no duplicate tools", every
+# conflict to keep the safer rule), and is DEPRECATED: a type of a family
+# loaded into the FAMILY being edited, placed in it - a nested component - by
+# the family's own creation object. See "VERSION 5" above `utterances` for
+# where each of its inputs and outputs is now. DRAFT until version 5 is proved
+# on a real model (D-30); version 4 was never proved either.
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -33,8 +73,21 @@ purpose: >
   It activates the symbol first, which is the step that makes this fragment
   worth having: an unactivated type places nothing and says nothing.
 
+  Version 4 places a family as a real structural member when asked - a column
+  with its top level and offset, a footing - and refuses a beam or a brace.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so
   twenty-four sprinklers are one undo entry rather than twenty-four.
+
+# VERSION 5, WRITTEN HERE AND NOT IN THE PURPOSE, for the reason the comment
+# below gives for version 2: a purpose is searched. It places a NESTED
+# component in the family being edited - a motor in an air handler, a handle
+# on a valve: a Work Plane-Based one on the reference plane `workPlane` names
+# or on the level, a level-based one on the level, every point on its plane,
+# read back. Measured 2026-11-01 on the model backend: with this paragraph in
+# the purpose, the answer key's rows 55 and 65 (the sprinkler and terminal
+# layouts) reached this card 4th and 2nd, where they had reached it 2nd and
+# 1st; moved here, with the identity widened, both read exactly as before.
 
 # VERSION 2, AND WHY IT IS WRITTEN HERE AND NOT IN THE PURPOSE ABOVE.
 #
@@ -114,6 +167,41 @@ contract:
     - name: level
       type: Level
       source: request
+    # VERSION 4, from PLACE_STRUCTURAL_FAMILY. "column", "footing" or
+    # "non-structural". Left out ("none"): non-structural, version 3 exactly -
+    # but a Structural Columns or Structural Foundations family is then
+    # refused and asked which. "beam" and "brace" are refused: a point gives
+    # them no line.
+    - name: structuralType
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 4. A column's top level, by its whole name exactly. Left out
+    # ("none"): the top as Revit placed it, and the answer says so. Columns
+    # only.
+    - name: topLevelName
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 4. Millimetres above (negative, below) the top level. Left out
+    # ("none"): 0. Refused without a top level.
+    - name: topOffset
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 5, from PLACE_NESTED_FAMILY (its `host`): in the FAMILY being
+    # edited, the reference plane - or level - a Work Plane-Based nested
+    # family sits on, by name, "Center (Front/Back)". Left out ("none"): on
+    # `level`, "Ref. Level". Every point must lie on it. Refused in a project,
+    # where a family goes on its level.
+    - name: workPlane
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: placed
       role: result
@@ -132,6 +220,28 @@ contract:
       # list to three items. Accounting: it describes what `placed` counts.
       role: accounting
       type: string
+    - name: instanceId
+      # VERSION 5, from PLACE_NESTED_FAMILY: the first placed one's unique id -
+      # what a later step names a nested family by (LOCK_NESTED_FAMILY_TO_PLANES,
+      # LINK_FAMILY_PARAMETER) - in a project too. Empty when nothing was placed.
+      role: result
+      type: string
+    - name: tops
+      # VERSION 4, from PLACE_STRUCTURAL_FAMILY. One line per column given a
+      # top: asked, read back from its Top Level and Top Offset, and its
+      # geometry's top. A reading of what was done, never a thing found.
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # VERSION 4. Why NOTHING was placed, in a sentence - an unknown or
+      # line-driven structural type, a family asked as another kind, a top
+      # that cannot be judged. Null when the call ran (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      # VERSION 4. How many were placed and as what, and what was done with a
+      # column's top.
+      type: IList<string>
 
 proof:
   date: '2026-10-17'
@@ -181,7 +291,15 @@ compatibility-note: >
   tools/check-fragments-compile.py built it against all eight releases on
   2026-10-06. Only Revit 2024 has run it. Version 3 adds
   `Instance.GetTransform()` (unchanged 2020 to 2027); built against all eight
-  releases on 2026-10-17 and run, rolled back, in Revit 2020.
+  releases on 2026-10-17 and run, rolled back, in Revit 2020. Version 5 adds
+  PLACE_NESTED_FAMILY's calls: `ItemFactoryBase.NewFamilyInstance(Reference,
+  XYZ, XYZ, FamilySymbol)` for a Work Plane-Based family and
+  `NewFamilyInstance(XYZ, FamilySymbol, StructuralType)` read the same 2020
+  through 2027; `NewFamilyInstance(XYZ, FamilySymbol, Level, StructuralType)`
+  is on the family's creation object only from 2024 - reached by reflection,
+  so every release compiles. `Document.Create` "throws when the current
+  document is family document", which is why a nested placement goes through
+  `Document.FamilyCreate`. Built against all eight releases on 2026-11-01.
 
 # TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
 #
@@ -216,10 +334,18 @@ compatibility-note: >
 # version 2 reads back its height and level, never its host. A door goes
 # through PLACE_HOSTED_FAMILY.
 
-# ROUTING - repeated in LOAD_FAMILY and CHANGE_ELEMENT_TYPE.
+# ROUTING - repeated in LOAD_FAMILY, CHANGE_ELEMENT_TYPE and
+# PLACE_LINE_BASED_FAMILY.
 #
 #   "place a diffuser"           -> here
 #   "put a damper here"          -> here
+#   "put a column at each grid intersection" -> here, structuralType column -
+#                                   PLACE_STRUCTURAL_FAMILY's job since
+#                                   version 4
+#   "place the pad footings"     -> here, structuralType footing
+#   "put a beam along this line" -> PLACE_LINE_BASED_FAMILY - a beam or a
+#                                   brace is refused here (5b-1201)
+#   "fill this bay with joists at 600" -> CREATE_BEAM_SYSTEM
 #   "load a family"              -> LOAD_FAMILY. The family has to be IN the
 #                                   project before anything can be placed from
 #                                   it, and this fragment does not load one
@@ -232,6 +358,28 @@ compatibility-note: >
 #   "add a detail component here" -> PLACE_DETAIL_COMPONENTS. A detail item or
 #                                   an annotation symbol belongs to ONE VIEW and
 #                                   this card cannot place one (2026-10-14)
+#   "put the motor family into this air handler" -> here, in the family being
+#                                   edited - PLACE_NESTED_FAMILY until
+#                                   2026-11-01
+#   "lock the motor's centre to the centre planes" -> LOCK_NESTED_FAMILY_TO_PLANES,
+#                                   by the instanceId given back here
+#   "what families are nested in this one" -> REPORT_NESTED_FAMILIES
+#
+# VERSION 5 - WHERE PLACE_NESTED_FAMILY'S INPUTS AND OUTPUTS ARE NOW:
+#   family, type        symbol - "Family : Type", a family loaded into the one
+#                       being edited
+#   point "X,Y,Z" mm    points - one or more, millimetres from the family's
+#                       origin
+#   host                workPlane - a reference plane or level by name; left
+#                       out, `level`. Its "none" placed nothing (both kinds
+#                       refused it), so it is not an input here
+#   instanceId          instanceId - the first one's
+#   placed (a sentence) readBack - the same sentence; `placed` here is the ids
+#   refused, findings   refused, findings
+#   notAFamily          NOT AN OUTPUT HERE: a project is this card's own case
+# THE RULES ARE ITS OWN IN A FAMILY, and they are the safer ones: every point ON
+# its plane, a level-based one AT its level, non-structural only, a null from
+# Revit refusing the whole call. A project's layout keeps this card's rules.
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search
@@ -252,3 +400,23 @@ utterances:
   - insert the family at these locations
   - place a diffuser
   - put a damper here
+  # MOVED 2026-11-01 from PLACE_STRUCTURAL_FAMILY, merged into this card.
+  - place structural columns at these points
+  - put a column at each grid intersection
+  - place the pad footings
+  - place these as structural
+  - add columns on this level
+  # ...and its semantic identity, which nothing else declares:
+  - put a structural column or a footing at each of these points
+  # MOVED 2026-11-01 from PLACE_NESTED_FAMILY, merged into this card.
+  - put the motor family into this air handler
+  - place the nested handle on the front plane
+  - nest this family in the one I am editing
+  - place a nested family at the origin of this family
+  # PLACE_NESTED_FAMILY's semantic identity, "place a loaded component in the
+  # family being edited, nested in it", is NOT declared here: measured
+  # 2026-11-01 on the model backend, declared it moved the answer key's row 65
+  # (the terminal layout, "Add the diffusers at 2100 in a 2 x 4 grid") from
+  # reaching this card 1st to 2nd, SNAP_TO_GRID first. The owner's own row
+  # outranks a retired card's identity; left out, that phrase reaches LOAD_FAMILY
+  # (lexical) or SELECT_SUBCOMPONENTS (model) - recorded, not chased.

@@ -99,7 +99,7 @@ compatibility-note: >
   both loadable family types and system types like duct, pipe and wall types.
   ElementIds are compared as ElementIds and never read as numbers.
 
-# ROUTING - repeated in CHANGE_ELEMENT_TYPE and RENAME_ELEMENTS.
+# ROUTING - repeated in CHANGE_ELEMENT_TYPE and EDIT_TEXT_VALUES.
 #
 #   "make a new duct type"           -> here
 #   "duplicate this type"            -> here
@@ -107,12 +107,12 @@ compatibility-note: >
 #                                      WRITE_ELEMENT_PARAMETERS for the 300
 #   "change these to the 300 type"   -> CHANGE_ELEMENT_TYPE - the type already
 #                                      exists and the instances move onto it
-#   "rename this type"               -> RENAME_ELEMENTS - and note it renames
+#   "rename this type"               -> EDIT_TEXT_VALUES field Name - and note it renames
 #                                      the type EVERYWHERE it is used, which
 #                                      is the opposite of duplicating it
 #   "make the new type 300 wide"     -> WRITE_ELEMENT_PARAMETERS on the type
 #                                      this creates. Nothing here sets a size
-#   "rename the family"              -> RENAME_FAMILY
+#   "rename the family"              -> EDIT_TEXT_VALUES, field Family (RENAME_FAMILY until 2026-11-01)
 
 #   "make a duct system type"            -> CREATE_MEP_SYSTEM_TYPE - a SYSTEM
 #                                        type is colour, abbreviation and which
@@ -123,9 +123,9 @@ compatibility-note: >
 #                                        curtain-wall skill: this card first,
 #                                        then
 #                                        CHANGE_ELEMENT_TYPE to put that wall on
-#                                        the copy, then SET_CURTAIN_WALL_GRID or
-#                                        SET_CURTAIN_WALL_MULLIONS on the copy.
-#                                        Both change a TYPE, and so every wall
+#                                        the copy, then SET_CURTAIN_WALL_GRID -
+#                                        its grid, its mullions or both - on the
+#                                        copy. It changes a TYPE, and so every wall
 #                                        of it
 
 # ROUTING (2026-10-13, the gap fill)

@@ -16,14 +16,15 @@ purpose: >
   Changes the wording of the general notes on a view or a legend and keeps
   their 1-2-3 numbering, bullets and indents. Five steps, in this order:
 
-  1. SELECT_VISIBLE_IN_VIEW through revit_read, view=<the view or legend, by
-     its name in the Project Browser>, categories=Text Notes. The PROVEN way
-     to collect one view's notes: measured 2026-10-17 on a scratch copy of
-     Autodesk's rst_basic sample, Revit 2020 - 109 notes in the drafting
-     view "Spread Footing". A legend has not been measured yet.
+  1. FILTER_ELEMENTS_BY_CATEGORY through revit_read, inViewOnly=<the view or
+     legend, by its name in the Project Browser>, category=Text Notes - version
+     5, DRAFT. SELECT_VISIBLE_IN_VIEW, the PROVEN way to collect one view's
+     notes until it was merged there on 2026-11-01, was measured 2026-10-17 on
+     a scratch copy of Autodesk's rst_basic sample, Revit 2020 - 109 notes in
+     the drafting view "Spread Footing". A legend has not been measured yet.
 
   2. READ_ELEMENT_PARAMETERS through revit_read, parameterName=Text,
-     expect_from="select-visible-in-view". Its noteWording gives one line
+     expect_from="filter-elements-by-category". Its noteWording gives one line
      per note: the note's id, its wording with \r where a paragraph ends
      (Enter) and \v where a line breaks inside one (Shift+Enter), each
      paragraph's list type and indent, each list's start number, which
@@ -82,16 +83,16 @@ purpose: >
   TRY-ONCE EDITS WHAT IS SELECTED IN REVIT. It starts a clean chain and takes
   no expect_from, so step 4 acts on the notes selected in the window. Select
   them first: for a replace, step 1 again and then SET_SELECTION through
-  revit_show with expect_from="select-visible-in-view"; for a set, the one
+  revit_show with expect_from="filter-elements-by-category"; for a set, the one
   note alone - FILTER_ELEMENTS_BY_ID elementIds=<its id from step 2> and then
   SET_SELECTION with expect_from="filter-elements-by-id", or clicked by the
   modeller. Once both cards are PROVEN, step 4 goes through revit_change
-  instead, the same way: step 1 again and expect_from="select-visible-in-view"
+  instead, the same way: step 1 again and expect_from="filter-elements-by-category"
   for a replace, FILTER_ELEMENTS_BY_ID and expect_from="filter-elements-by-id"
   for a set.
 
   THE CHAIN NAMES THE LAST RUN. Every run, step 2's read included, becomes
-  what the chain carries, so expect_from="select-visible-in-view" sent after
+  what the chain carries, so expect_from="filter-elements-by-category" sent after
   step 2 is refused as chain_mismatch. Collect again - step 1 again - right
   before anything that names it.
 
@@ -118,7 +119,8 @@ utterances:
 # 5b-940). SET_SELECTION and FILTER_ELEMENTS_BY_ID, which only pick the notes
 # for try-once, are left off for the same reason.
 needs:
-  - SELECT_VISIBLE_IN_VIEW
+  # SELECT_VISIBLE_IN_VIEW until it was merged into this one, 2026-11-01.
+  - FILTER_ELEMENTS_BY_CATEGORY
   - EDIT_TEXT_VALUES
 
 # What must be true BEFORE it runs, so it fails early with something

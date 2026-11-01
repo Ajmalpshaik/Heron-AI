@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LVL-027
 heron-step: 15
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,33 @@ capability: LIST_LEVELS
 version: 2
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO REPORT_LEVEL_ELEVATIONS (report-level-elevations), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable and
+# it can be brought back. Nothing offers it now - retrieval leaves DEPRECATED
+# out, and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to REPORT_LEVEL_ELEVATIONS. The proof below, where there
+# is one, is the record of what this card's code did, not a claim about today.
+# ITS READING OF THE TWO HEIGHTS WAS INVERTED, AND IS NOT CARRIED. Its purpose
+# and code comments call Elevation "from the project's internal origin" and
+# ProjectElevation "the level head". RevitAPI.xml says ProjectElevation is
+# relative to the project origin whatever the Elevation Base says, and
+# Elevation is relative to the base the level type names - what the keeper has
+# always said (row 5b-180). The keeper's reading stands; this card's
+# elevationsMm (ProjectElevation) and the keeper's (Elevation) agree only on a
+# model whose base was never moved.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: REPORT_LEVEL_ELEVATIONS
+  why: >
+    The same job: every level in the project in height order with its
+    elevation, links' levels listed when asked. REPORT_LEVEL_ELEVATIONS
+    version 4 took this card's levels handed on as elements, its mm dictionary
+    elevationsMm, its findings line per level, and lists each link's levels
+    with their own level heads. Not carried: this card's reading of the two
+    heights, which was inverted - see the comment above.
 
 purpose: >
   Collects the project's levels bottom to top and reports each one's elevation
@@ -113,7 +140,7 @@ compatibility-note: >
   because `UnitUtils` was rewritten in 2021 and the 2020 call does not exist on
   2022.
 
-# ROUTING - repeated in READ_ELEMENT_LEVEL, SET_ELEMENT_LEVEL and CREATE_LEVEL.
+# ROUTING - repeated in READ_ELEMENT_LEVEL, SET_ELEMENT_LEVEL and CREATE_LEVELS.
 #
 #   "list the levels"           -> here - the levels THEMSELVES
 #   "how many levels"           -> here
@@ -122,7 +149,8 @@ compatibility-note: >
 #                                  ELEMENT, which is a different question with
 #                                  the same words in it
 #   "move these to level 3"     -> SET_ELEMENT_LEVEL
-#   "add a level"               -> CREATE_LEVEL
+#   "add a level"               -> CREATE_LEVELS - one level or many; CREATE_LEVEL
+#                                  was merged into it on 2026-11-01
 #   "sort the schedule by level"-> SET_SCHEDULE_SORT_GROUP. NOT HERE. That
 #                                  sentence resolved to this fragment until
 #                                  2026-09-04 - a question about the ORDER OF

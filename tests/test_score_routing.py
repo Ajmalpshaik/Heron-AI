@@ -554,7 +554,11 @@ def _load_model():
     return None
 '''
 
-FIXTURE_CARDS = ("rename-elements", "find-views", "rename-family",
+# The first card must be LIVE: a DEPRECATED card is offered by nothing. It was
+# rename-elements until 2026-11-01, when that card was merged into
+# edit-text-values and retired - the fact the fixture rested on changed, not
+# the tool under test.
+FIXTURE_CARDS = ("edit-text-values", "find-views", "rename-family",
                  "count-elements")
 
 # Words no card says, so the fake scorer's winner is certain whatever the
@@ -816,14 +820,14 @@ def asked_for_real(tool, work):
 
     tree_a = _fixture_tree(os.path.join(work, "tree-a"))
     tree_b = _fixture_tree(os.path.join(work, "tree-b"),
-                           [c for c in FIXTURE_CARDS if c != "rename-elements"])
-    declared = _declared("rename-elements")
-    check(bool(declared), "rename-elements declares an utterance to ask")
+                           [c for c in FIXTURE_CARDS if c != "edit-text-values"])
+    declared = _declared("edit-text-values")
+    check(bool(declared), "edit-text-values declares an utterance to ask")
     sentences = os.path.join(work, "set.yaml")
     with io.open(sentences, "w", encoding="utf-8") as handle:
         handle.write("groups:\n"
                      "  - group: the card's own\n"
-                     "    expect: want RENAME_ELEMENTS\n"
+                     "    expect: want EDIT_TEXT_VALUES\n"
                      "    sentences:\n"
                      "      - %s\n"
                      "      - %s\n"
@@ -946,11 +950,11 @@ def asked_for_real(tool, work):
     items = tool.items_from_record(record)
     win, take = "rename plugh xyzzy", "how many frotz"
     holding = [a for a in ranked if a["say"] in (WANTED, QUESTION)
-               and any(e.get("capability") == "RENAME_ELEMENTS"
+               and any(e.get("capability") == "EDIT_TEXT_VALUES"
                        for e in a.get("shortlist") or [])]
     check(len(holding) == 2, "the fixture's precondition: both made-up "
           "sentences' shortlists hold the card (%d do)" % len(holding))
-    found = tool.rescore(items, reread, "RENAME_ELEMENTS", [win, take],
+    found = tool.rescore(items, reread, "EDIT_TEXT_VALUES", [win, take],
                          lambda q, ps: [_overlap(q, p) for p in ps], rung,
                          threshold)
     lines = dict((identity, t) for identity, t in found["lines"])
@@ -966,7 +970,7 @@ def asked_for_real(tool, work):
           "and one holding the question's words takes that question, which a "
           "write must not: %s" % lines[take])
     turned = [dict(item, n=k) for k, item in enumerate(reversed(items), 1)]
-    again = tool.rescore(turned, reread, "RENAME_ELEMENTS", [win, take],
+    again = tool.rescore(turned, reread, "EDIT_TEXT_VALUES", [win, take],
                          lambda q, ps: [_overlap(q, p) for p in ps], rung,
                          threshold)
     check(again["lines"] == found["lines"],
@@ -976,8 +980,8 @@ def asked_for_real(tool, work):
     for answer in gone["answers"]:
         if answer["say"] == WANTED:
             answer["shortlist"] = [e for e in answer["shortlist"]
-                                   if e["capability"] != "RENAME_ELEMENTS"]
-    out_of_reach = tool.rescore(items, gone, "RENAME_ELEMENTS", [win],
+                                   if e["capability"] != "EDIT_TEXT_VALUES"]
+    out_of_reach = tool.rescore(items, gone, "EDIT_TEXT_VALUES", [win],
                                 lambda q, ps: [_overlap(q, p) for p in ps],
                                 rung, threshold)
     check(out_of_reach["out_of_reach"]["wanted"] == 1,
@@ -993,14 +997,14 @@ def asked_for_real(tool, work):
     try:
         RERANK._CACHE[:] = [lambda pairs: [_overlap(q, p) for q, p in pairs]]
         code, said = _run(tool, ["--identities", candidates, "--card",
-                                 "RENAME_ELEMENTS", "--from", record_a])
+                                 "EDIT_TEXT_VALUES", "--from", record_a])
         check(code == 0 and said.count("RE-SCORED OFFLINE") == 2
               and '"%s"' % take in said,
               "--identities --from re-scores every run's shortlists, one line "
               "per candidate (got %r)" % (code,))
         RERANK._CACHE[:] = [None]
         code, said = _run(tool, ["--identities", candidates, "--card",
-                                 "RENAME_ELEMENTS", "--from", record_a])
+                                 "EDIT_TEXT_VALUES", "--from", record_a])
         check(code == 2 and "needs a cross-encoder" in said,
               "with no cross-encoder on this machine it is exit 2, not a score")
     finally:
@@ -1012,7 +1016,7 @@ def asked_for_real(tool, work):
              "--record with a sentence set - the history holds his and the "
              "plain sets only"),
             (["--sentences", sentences, "--identities", candidates, "--card",
-              "RENAME_ELEMENTS"], "--identities asking without --shortlists"),
+              "EDIT_TEXT_VALUES"], "--identities asking without --shortlists"),
             (["--identities", candidates, "--from", record_a],
              "--identities with no --card"),
             (["--from", record_a, "--out", os.path.join(work, "x.json")],

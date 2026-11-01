@@ -23,7 +23,7 @@ risk: READ
 # REVIT 2024 opened a view's link settings to code, so the card declares 2024
 # on. linkName narrows to one link by its name or its start.
 #
-# SET_LINK_GRAPHICS greys or fades a link in one view; this only reads.
+# OVERRIDE_GRAPHICS_IN_VIEW greys or fades a link in one view; this only reads.
 #
 # READ ONLY - opens no transaction.
 purpose: >
@@ -70,7 +70,7 @@ compatibility-note: >
 #
 #   "which views show the architect's link by linked view" -> here
 #   "why does the link show the wrong level in this plan"   -> here
-#   "grey out the linked model"               -> SET_LINK_GRAPHICS
+#   "grey out the linked model"               -> OVERRIDE_GRAPHICS_IN_VIEW
 #   "which models are linked"                 -> LIST_LINKED_MODELS
 
 utterances:

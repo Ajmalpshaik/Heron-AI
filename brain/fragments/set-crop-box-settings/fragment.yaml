@@ -105,7 +105,7 @@ compatibility-note: >
   as a nullable boolean, because a tri-state that a caller can omit is exactly
   what a batch of this shape needs and text says what it means at the edge.
 
-# ROUTING - repeated in SET_VIEW_CROP and SET_VIEW_CROP_TO_SHAPE.
+# ROUTING - repeated in SET_VIEW_CROP.
 #
 #   "turn the crop on for all these views" -> here
 #   "the tags are printing outside the crop" -> here - the ANNOTATION crop, which
@@ -114,7 +114,7 @@ compatibility-note: >
 #   "hide the crop boundary lines"       -> here
 #   "just show me this part of the plan" -> SET_VIEW_CROP - it SIZES the crop
 #                                           round some elements, one view
-#   "crop the view to follow the room shape" -> SET_VIEW_CROP_TO_SHAPE
+#   "crop the view to follow the room shape" -> SET_VIEW_CROP
 
 utterances:
   - turn the crop on for all these views

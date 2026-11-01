@@ -32,7 +32,7 @@ purpose: >
 
   **IT MAKES THE VIEW AND DRAWS NO BOUNDARY.** Revit's own dialog offers to
   draw boundary lines round the exterior walls; this does not, and says so.
-  CREATE_AREA_BOUNDARY_LINES is that step.
+  CREATE_ROOM_SEPARATION_LINES, with lineKind area, is that step.
 
   ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 
@@ -97,15 +97,19 @@ compatibility-note: >
   through 2027, read with tools/api-surface on 2026-10-14. Ids are compared as
   ElementIds, never as numbers.
 
-# ROUTING - the same rows are in PLACE_AREAS and CREATE_PLAN_VIEW.
+# ROUTING - the same rows are in PLACE_ROOMS and CREATE_PLAN_VIEW.
 #
 #   "make the gross area plan for level 1"  -> here
 #   "add a rentable area plan"              -> here
 #   "make the plan for this level"          -> CREATE_PLAN_VIEW - a floor or
 #                                              ceiling plan, not an area plan
-#   "draw the area boundaries"              -> CREATE_AREA_BOUNDARY_LINES, in
-#                                              the plan made here
-#   "place the areas in the GIA plan"       -> PLACE_AREAS, after both
+#   "draw the area boundaries"              -> CREATE_ROOM_SEPARATION_LINES,
+#                                              lineKind area, in the plan made
+#                                              here (CREATE_AREA_BOUNDARY_LINES
+#                                              until 2026-11-01)
+#   "place the areas in the GIA plan"       -> PLACE_ROOMS, placeKind area,
+#                                              after both (PLACE_AREAS until
+#                                              2026-11-01)
 
 utterances:
   - make the gross building area plan for level 1

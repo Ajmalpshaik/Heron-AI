@@ -26,6 +26,27 @@ negative:
   - given: no view
     expect: refused by name
 
+  # VERSION 2 (2026-11-01) - RESET_DATUM_EXTENTS merged in. Each FAILS on
+  # version 1. NOT RUN.
+  - given: >
+      a grid dragged short in two plans, both in `views`, viewSpecific false,
+      `view` left out
+    expect: >
+      the grid at its full shared length in BOTH plans, endsChanged counting
+      ends (1 to 4), changed its id. Version 1 took one view only
+  - given: a datum already on the shared extent in every view named
+    expect: its id in `alreadyAsAsked`, endsChanged 0 - nothing counted as reset
+  - given: a datum not shown in one of the views
+    expect: that view skipped for it without a refusal, the other views still done
+  - given: an end whose set Revit refuses, or that reads back on the other type
+    expect: >
+      the datum's id in `refused` and named in findings. Version 1 dropped the
+      failed write without a word
+  - given: a reference plane handed in with the grids
+    expect: in `notADatum` - grids and levels only
+  - given: neither `view` nor `views`
+    expect: refused by name, nothing changed
+
 second_route:
   - >
       the 3D/2D toggle clicked by hand on the same grid end in Revit, and the two

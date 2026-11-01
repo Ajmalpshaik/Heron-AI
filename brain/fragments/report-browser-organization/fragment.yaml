@@ -62,8 +62,8 @@ compatibility-note: >
 #
 #   "how is the project browser organised"    -> here
 #   "why can't I find this view in the browser" -> here
-#   "which views are not on a sheet"          -> FIND_UNPLACED_VIEWS
-#   "which views have no template"            -> FIND_VIEWS_WITHOUT_TEMPLATE
+#   "which views are not on a sheet"          -> FIND_VIEWS, placement unplaced
+#   "which views have no template"            -> FIND_VIEWS, withoutTemplate true
 
 utterances:
   - how is the project browser organised

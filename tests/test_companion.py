@@ -1512,7 +1512,7 @@ def test_dashboard_panel():
     check("DASHBOARD_PANEL.colour_hook = _dashboard_colour" in server
           and "with _revit_lock:" in colour_src and "_moved_since(identity)" in colour_src
           and "_through(revit_change" in colour_src and '"COLOR_BY_PARAMETER"' in colour_src
-          and '"RESET_GRAPHIC_OVERRIDES"' in colour_src and '"SELECT_VISIBLE_IN_VIEW"' in colour_src,
+          and '"RESET_GRAPHIC_OVERRIDES"' in colour_src and '"FILTER_ELEMENTS_BY_CATEGORY"' in colour_src,
           "Colour runs under the lock, on the read's model only, through revit_change's own "
           "body - the gate, the switch, one undo entry")
     check("DASHBOARD_PANEL.load3d_hook = _dashboard_load3d" in server

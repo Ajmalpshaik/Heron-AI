@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -43,6 +43,35 @@ capability: SET_CURTAIN_WALL_MULLIONS
 version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO SET_CURTAIN_WALL_GRID (set-curtain-wall-grid), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools", then "ok go ahead merge all". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to SET_CURTAIN_WALL_GRID. A proof below is
+# the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: SET_CURTAIN_WALL_GRID
+  why: >
+    The same job on the same type: a curtain wall or curtain system
+    type's settings in Type Properties, reached by Revit's own ids because
+    each name is worn twice, the walls of the type counted first, nothing
+    written until the whole request is settled, read back after one rebuild.
+    SET_CURTAIN_WALL_GRID since its version 4 takes this card's `mullions`
+    table word for word - Interior, Border 1 and Border 2 each way, grid 1
+    and grid 2 on a curtain system type; a mullion type that must mean
+    exactly one in the model, refused with the ones it has; "none" the only
+    word that takes mullions off; a blank refused; no family loaded - and
+    says when an interior type sits on a direction with no grid lines, in
+    the same call that can lay those lines out. NOT CARRIED, as the less safe
+    of two rules: a read-only position on a wall type was refused "it may be
+    held by another user in a shared model" whatever the model; the keeper
+    asks Revit who holds the type and says so only when Revit does
+    (FRAGMENT-ISSUES 5b-328). Nothing else of this card is left out.
 
 purpose: >
   Sets the mullion types of a curtain wall TYPE - its Interior, Border 1 and
@@ -181,9 +210,12 @@ contract:
     - name: findings
       type: IList<string>
 
-# VERSION 1'S PROOF, KEPT AS A RECORD. It no longer describes the code
-# (version 2, 2026-10-29); NEEDS-CHECKING Group JP re-proves the wall-type path
-# and proves the curtain system type's.
+# VERSION 2'S PROOF, KEPT AS A RECORD - NEEDS-CHECKING Group JP, signed
+# 2026-11-01 by Ajmal PS (#775), which settled the curtain system type's
+# mullion ids: AUTO_MULLION_*_GRID1 and _GRID2, and not the _VERT or _HORIZ
+# ones. The card was PROVEN on main for that day and is DEPRECATED here, merged
+# into SET_CURTAIN_WALL_GRID; the proof is the record of what this card's code
+# did. Version 1's proof, Project1 on Revit 2020, is in git history.
 proof:
   date: '2026-11-01'
   by: Ajmal PS

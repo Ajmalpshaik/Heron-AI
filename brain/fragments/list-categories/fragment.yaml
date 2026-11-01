@@ -37,14 +37,18 @@ risk: READ
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.
 #
-# NOTHING LISTED THEM. SELECT_BY_CATEGORY_NAME returns NEAR MISSES when a name
-# does not match, which is the closest thing in the library and is not a list -
-# it only answers once somebody has already guessed wrong. So the question a
-# modeller asks first, what is even in here, had no answer.
+# NOTHING LISTED THEM. SELECT_BY_CATEGORY_NAME returned NEAR MISSES when a name
+# did not match, which was the closest thing in the library and is not a list -
+# it only answered once somebody had already guessed wrong. So the question a
+# modeller asks first, what is even in here, had no answer. (That card was
+# merged into FILTER_ELEMENTS_BY_CATEGORY on 2026-11-01, where a word that is
+# no category is refused and no near misses are listed - this list is where
+# the names are.)
 #
 # CATEGORY NAMES ARE LOCALISED AND THE INTERNAL IDENTIFIERS ARE NOT. On a
 # French or Arabic Revit the names come back in that language. That is not a
-# defect to work around: it is exactly why SELECT_BY_CATEGORY_NAME exists, and
+# defect to work around: it is exactly why FILTER_ELEMENTS_BY_CATEGORY takes the
+# name Revit shows, and
 # this fragment is what tells somebody which names their machine will accept.
 #
 # IT LISTS WHAT THE DOCUMENT HAS, NOT WHAT REVIT KNOWS. Every release carries
@@ -233,7 +237,7 @@ compatibility-note: >
   Version 3 adds no Revit member: narrowing by name and the nearest names are
   string work on the names version 2 already reads.
 
-# ROUTING - repeated in SELECT_BY_CATEGORY_NAME and REPORT_FILTERABLE_PARAMETERS;
+# ROUTING - repeated in FILTER_ELEMENTS_BY_CATEGORY and REPORT_FILTERABLE_PARAMETERS;
 # the object-style rows in CREATE_LINE_STYLE, SET_FAMILY_FORM_SUBCATEGORY and
 # DRAW_FAMILY_DETAIL_LINES.
 #
@@ -252,7 +256,7 @@ compatibility-note: >
 #                                          Declaring it moved another question onto
 #                                          a write (row 5b-630)
 #   "what colour are the lines in this family" -> here
-#   "everything in duct accessories"    -> SELECT_BY_CATEGORY_NAME - and this
+#   "everything in duct accessories"    -> FILTER_ELEMENTS_BY_CATEGORY - and this
 #                                          fragment is what tells you the name
 #                                          that machine will accept
 #   "which parameters can I filter on"  -> REPORT_FILTERABLE_PARAMETERS

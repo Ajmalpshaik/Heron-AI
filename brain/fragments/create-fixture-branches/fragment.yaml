@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,31 @@ capability: CREATE_FIXTURE_BRANCHES
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CONNECT_AIR_TERMINALS (connect-air-terminals), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to CONNECT_AIR_TERMINALS. The proof below, where there is one, is the record
+# of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CONNECT_AIR_TERMINALS
+  why: >
+    The pipe twin of the same job: join each sprinkler or fixture to the main
+    beside it. CONNECT_AIR_TERMINALS does it since its version 2 for any
+    element with a pipe connector and no duct one - a riser and an arm, the
+    connector facing up or down, the arm clear of the main's ends, within
+    maxDistanceMm, joined at the head, `runs` handed on to FIT_MEP_JOINTS -
+    with this card's pipes in its `ducts` and its branched, runs and
+    noMainNear under the same names. One rule was opposite and the safer was
+    kept: this card kept the pipes drawn when Revit refused the rest of a
+    branch, or a branch that would not join the head; CONNECT_AIR_TERMINALS
+    takes each head's branch back whole, as it leaves a terminal Revit
+    declines unchanged.
 
 purpose: >
   For each sprinkler or plumbing fixture handed in, draws the branch pipe from

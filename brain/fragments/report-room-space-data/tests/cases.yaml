@@ -48,6 +48,31 @@ negative:
       identical numbers. A drift means the area is being recomputed from the
       boundary rather than read off the element
 
+  # VERSION 2 (2026-11-01) - MEASURE_ROOM_DIMENSIONS merged in. Each FAILS on
+  # version 1, which measured no length or width. NOT RUN.
+  - given: a plain rectangular room square to project north, 8000 x 4000 mm
+    expect: >
+      lengths 8000 and widths 4000 within a millimetre (as feet), rotation
+      about 0, irregular near 0 - checked against a dimension placed by hand
+  - given: THE SAME ROOM ROTATED 30 DEGREES
+    expect: >
+      STILL 8000 x 4000, rotation about 30, irregular near 0. A bounding box
+      gives about 8900 x 7500 here
+  - given: a room with a structural column inside it, so its boundary has a hole
+    expect: the room's own outside dimensions, not the column's
+  - given: an L-shaped room
+    expect: irregular clearly above zero
+  - given: a room whose longer side runs north-south
+    expect: lengths still the longer number
+  - given: every room in a project with Area and Volume Computations set to areas only
+    expect: volumeComputationOff TRUE, and every room in volumeNotComputed
+  - given: one badly-bounded room with no volume where the others compute
+    expect: volumeComputationOff FALSE
+  - given: an unplaced room and an unenclosed one in the same set
+    expect: >
+      one in `unplaced` and the other in `unenclosed`, and neither measured -
+      MEASURE_ROOM_DIMENSIONS called both unplaced
+
 second_route:
   - >
     build a Revit room schedule with Number, Name, Level, Area and Volume and

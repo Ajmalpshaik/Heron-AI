@@ -34,7 +34,7 @@ purpose: >
      (FAMILY-CREATION step 0): IMPERIAL where the modeller works in
      millimetres is said before anything is built, with SET_PROJECT_UNITS or
      the Metric template offered.
-  1. SET_FAMILY_CATEGORY to the tag category - Pipe Tags, Duct Tags,
+  1. SET_FAMILY_SETTINGS "Category=<tag category>" - Pipe Tags, Duct Tags,
      Mechanical Equipment Tags - BEFORE any label: a label shows the tagged
      category's parameters, and a label copied from a seed is refused across
      categories. Whether that tool switches a Generic Tag's category the way
@@ -47,7 +47,9 @@ purpose: >
      opens the seed (the office's seed for that category, named by the
      modeller - docs/43 section 8.3b), REPORT_FAMILY_LABELS on it lists its
      labels, ACTIVATE_DOCUMENT brings the new tag back in front, then
-     COPY_LABELS_FROM_FAMILY with the labels wanted and placeAtMm at the
+     COPY_ELEMENTS_BETWEEN_DOCUMENTS with labels=true (COPY_LABELS_FROM_FAMILY
+     until it was merged into it, 2026-11-01), the labels wanted by
+     elementIds or labelContains, and placeAtMm at the
      insertion point - "0,0" for a label centred on it. Its readBack compares
      each copy with its seed: a copy that DIFFERS is said, never hidden.
      Whether a copy keeps its parameter, sample value, prefix, suffix and unit
@@ -97,12 +99,13 @@ needs:
   - REPORT_PROJECT_UNITS
   - SET_PROJECT_UNITS
   - CREATE_FAMILY_DOCUMENT
-  - SET_FAMILY_CATEGORY
+  # SET_FAMILY_CATEGORY was listed here until 2026-11-01, when it was merged into SET_FAMILY_SETTINGS.
   - REPORT_SHARED_PARAMETER_FILE
   # Step 3: the seed opened, read, and its labels copied in.
   - ACTIVATE_DOCUMENT
   - REPORT_FAMILY_LABELS
-  - COPY_LABELS_FROM_FAMILY
+  # COPY_LABELS_FROM_FAMILY was listed here until 2026-11-01, when it was merged into COPY_ELEMENTS_BETWEEN_DOCUMENTS.
+  - COPY_ELEMENTS_BETWEEN_DOCUMENTS
   - SET_FAMILY_LABEL_LAYOUT
   - CHANGE_ELEMENT_TYPE
   # Step 6: the label type's text, read and changed (row 5b-1300).

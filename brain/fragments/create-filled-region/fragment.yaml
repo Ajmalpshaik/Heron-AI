@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,33 @@ capability: CREATE_FILLED_REGION
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO DRAW_FAMILY_FILLED_REGION (draw-family-
+# filled-region), on the owner's instruction in conversation: "make sure there
+# is no duplicate tools". Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to DRAW_FAMILY_FILLED_REGION. Its view, regionType and
+# boundary inputs are workPlane, regionType (by name) and shapes there - the
+# boundary in millimetres in that card's shape language rather than XYZ points
+# in feet. DRAW_FAMILY_FILLED_REGION was kept rather than this card because
+# more of the library points at it - nine family-building skills,
+# SET_FAMILY_CATEGORY's table and the family jobs - and it already drew
+# masking regions. Nothing this card did was left behind. The proof below is
+# the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: DRAW_FAMILY_FILLED_REGION
+  why: >
+    The same job: draw a filled or masking region from closed loops.
+    DRAW_FAMILY_FILLED_REGION version 2 draws in a project's view as well as
+    inside a family - the view named as the Project Browser shows it, a view
+    that takes no annotation (a 3D view, a schedule) or a template refused
+    with the reason, a view at an angle read along its right and up, and the
+    answer saying every time that a filled region is annotation, in one view
+    only, in no schedule.
 
 purpose: >
   Draws a filled region - a hatched or solid patch - inside one view, from a

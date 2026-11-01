@@ -27,7 +27,59 @@ positive:
       2020 and NewFloor is gone by 2024, so a run that throws a missing-method
       error means the run-time lookup is not working
 
+  # VERSION 3 - CREATE_CEILING and CREATE_ROOF merged in. NOT RUN. Each fails
+  # on version 2, whose `floorType` took a floor type only and which had no
+  # `heightAboveLevel`, `edges` or `measuredMm`.
+  - given: >
+      VERSION 3. A rectangular boundary in a room on Level 1, floorType a
+      ceiling type ("Compound Ceiling: 600 x 600mm Grid"), heightAboveLevel
+      2700, on Revit 2024 - CREATE_CEILING's own first case
+    expect: >
+      a ceiling at 2700 mm above that level - MEASURED in a section against
+      the level, not read off the report - and the finding "Ceiling created on
+      'Level 1' at 2700 mm above it". MEASURE_CEILING_HEIGHT over the same
+      room agrees
+
+  - given: >
+      VERSION 3. "0,0,0; 10000,0,0; 10000,6000,0; 0,6000,0" on the top level,
+      floorType a roof type ("Basic Roof: Generic - 400mm"), on Revit 2024 -
+      CREATE_ROOF's own case
+    expect: >
+      edges 4, measuredMm "10000 x 6000 mm on plan, base at" the level's
+      height, "level '...' sits at" the same; the finding "It is FLAT - no
+      slope has been set on any edge". Checked IN A SECTION against the level
+
+  - given: VERSION 3. The roof case on Revit 2020
+    expect: >
+      the same roof - NewFootPrintRoof did not change at 2022, so one path
+
 negative:
+  - given: >
+      VERSION 3. The ceiling case on Revit 2020 - CREATE_CEILING's FIRST CASE
+      TO RUN
+    expect: >
+      NOTHING created, and "This Revit cannot create a ceiling - the method
+      arrived in Revit 2022 ... Draw ONE by hand (Architecture, then
+      Ceiling)". A missing-method error means the run-time lookup is broken
+
+  - given: >
+      VERSION 3. floorType a WALL type, "Basic Wall: Generic - 200mm"
+    expect: >
+      refused by name, "is a Walls type, and this makes a floor, a ceiling or
+      a footprint roof"; nothing created
+
+  - given: VERSION 3. floorType a ceiling type, heightAboveLevel left out
+    expect: >
+      refused "A ceiling needs its height above the level"; nothing created
+
+  - given: VERSION 3. floorType a floor type, heightAboveLevel 2700
+    expect: >
+      refused "heightAboveLevel is a ceiling's height above its level" -
+      never a floor made with the number quietly dropped
+
+  - given: VERSION 3. floorType a roof type, a boundary of two points
+    expect: refused "A roof needs at least three boundary points and 2 were given"
+
   - given: a model set out to a survey datum, where Elevation and ProjectElevation differ
     expect: >
       the slab at the height Revit shows for that level, NOT off by the survey

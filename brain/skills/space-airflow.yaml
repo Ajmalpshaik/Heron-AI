@@ -43,7 +43,8 @@ purpose: >
      each calculated Space through SET_PARAMETER_VALUES_BY_ID (refused whole if
      any Space changed since it was read), then each Space's flow split across
      its diffusers through SET_AIR_TERMINAL_FLOW. Two undo entries. Then
-     READ_SPACE_LOADS and REPORT_SPACE_AIRFLOW read back what Revit holds.
+     READ_SPACE_LOADS reads back what Revit holds - loads, and the typed and
+     actual airflow (REPORT_SPACE_AIRFLOW until it was merged in, 2026-11-01).
 
   A load here is a peak estimate from published methods, not an hourly
   simulation like HAP; the engineer of record approves every value.
@@ -78,7 +79,8 @@ needs:
   - SET_PARAMETER_VALUES_BY_ID
   - FILTER_ELEMENTS_BY_ID
   - SET_AIR_TERMINAL_FLOW
-  - REPORT_SPACE_AIRFLOW
+  # REPORT_SPACE_AIRFLOW was listed here until 2026-11-01, when it was merged
+  # into READ_SPACE_LOADS above - the airflow read-back is that card's now.
 
 # What must be true BEFORE it runs, so it fails early with something
 # useful instead of deep inside a transaction (docs/09 s2).

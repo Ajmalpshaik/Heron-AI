@@ -1,6 +1,6 @@
 heron-agent: HERON-QA-BIM-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,25 @@ capability: FIND_UNUSED_DEFINITIONS
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO FIND_PURGEABLE_ELEMENTS (find-purgeable-elements), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable and
+# it can be brought back. Nothing offers it now - retrieval leaves DEPRECATED
+# out, and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to FIND_PURGEABLE_ELEMENTS. The proof below, where there
+# is one, is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: FIND_PURGEABLE_ELEMENTS
+  why: >
+    The same question for view templates and view filters.
+    FIND_PURGEABLE_ELEMENTS version 3 took this card's rules - a template a
+    view family type names as the default for new views is in use, and filters
+    used only by unused templates are their own list - and reports by name.
+    Not carried, the safer rule: its dictionaries of ids a delete could take;
+    SELECT_VIEW_TEMPLATES still hands templates on as elements to act on.
 
 purpose: >
   Reports the view templates and view filters that nothing in the project uses -
@@ -108,7 +127,7 @@ compatibility-note: >
 #                                           two. Both check the view-family-type
 #                                           default, and they did not always -
 #                                           see the purpose
-#   "which families are unused"          -> FIND_UNUSED_FAMILIES
+#   "which families are unused"          -> FIND_PURGEABLE_ELEMENTS
 #   "which materials are unused"         -> FIND_UNUSED_MATERIALS
 #   "which groups are unused"            -> FIND_UNUSED_GROUP_TYPES
 #   "which views are not on a sheet"     -> FIND_UNPLACED_VIEWS

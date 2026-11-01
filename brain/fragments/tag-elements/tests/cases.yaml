@@ -15,7 +15,7 @@ positive:
       every door tagged and refused empty - the curtain-panel door has no
       location, and its tag sits at the centre of its extent in the plan.
       Version 1 put that door in refused (5b-454). Count the tags back with
-      SELECT_BY_CATEGORY_NAME Door Tags in that view
+      FILTER_ELEMENTS_BY_CATEGORY Door Tags in that view
 
 negative:
   - given: a second run with alreadyTagged EMPTY on a view whose 12 ducts are all tagged

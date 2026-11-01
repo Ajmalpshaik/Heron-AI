@@ -1,7 +1,50 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `fieldName`, `newHeading`,
-// `columnWidthMm`, `alignment`, `headingSideways`, `hideOrShow` and
-// `headingOrientation` are in scope; leaves `changed`, `notPresent`, `refused`
-// and `appliedAppearance` behind.
+// `columnWidthMm`, `alignment`, `headingSideways`, `hideOrShow`,
+// `headingOrientation` and `calculateTotals` are in scope; leaves `changed`,
+// `notPresent`, `refused`, `appliedAppearance`, `ambiguous`, `totalled`,
+// `appliedTotals`, `alreadyTotalled`, `cannotTotal` and `replacedCalculation`
+// behind.
+//
+// VERSION 4 (2026-11-01) - SET_SCHEDULE_FIELD_TOTALS MERGED IN.
+//
+//   CALCULATE TOTALS - the drop-down on a schedule's Formatting tab, per
+//   column - when `calculateTotals` is on. Until a column has it, a group
+//   footer and the grand total print only a COUNT of rows, which is why a
+//   schedule grouped by room, with footers on, still shows no total flow.
+//   Switching the footers on is SET_SCHEDULE_SORT_GROUP's job; this is the
+//   other half. ON ONLY: nothing here turns totals off.
+//
+//   CAN IT TOTAL IS ASKED FIRST. CanTotal is Revit's own answer - text such as
+//   a type name or a room name cannot be added up - asked before anything is
+//   set, so a refusal changes nothing (`cannotTotal`).
+//
+//   A COLUMN ALREADY TOTALLING is reported in `alreadyTotalled` and left
+//   alone, so a second run is the read-back: it finds it already totalled.
+//
+//   REVIT ALLOWS ONE CALCULATION PER COLUMN. A column showing its minimum or
+//   maximum is switched to totals, because totals is what was asked for, and
+//   what it showed before is reported in `replacedCalculation`, never lost.
+//
+//   WHERE IT PRINTS is said beside every column switched on - a footer, the
+//   grand total, or NOWHERE YET - and a HIDDEN column's total prints nowhere
+//   until the column is shown. ONE STRING, `appliedTotals`, because a list
+//   reaches the chat as three entries cut at sixty characters.
+//
+//   A NAME THAT COULD MEAN TWO COLUMNS TOUCHES NEITHER - now for EVERY change
+//   this card makes, not only totals. A column is found by its field name or
+//   its printed heading, and a heading can be renamed to another column's
+//   field name. Version 3 took the first match, which restyles whichever
+//   column happens to come first; the safer rule is kept and the name is
+//   named in `ambiguous`.
+//
+//   A SCHEDULE HANDED IN TWICE - itself and its placement on a sheet - is one
+//   schedule, changed and counted once. NOTHING HANDED IN AT ALL is refused
+//   in words, never `changed 0`.
+//
+//   EVERY STYLE INPUT MAY BE LEFT OUT, so "calculate totals for the Flow
+//   column" needs only the column and the switch: newHeading, alignment and
+//   hideOrShow left out are "leave", columnWidthMm 0, headingSideways false -
+//   each the value that already meant "leave it".
 //
 // VERSION 3 (FRAGMENT-ISSUES row 5b-620). Two gaps found 2026-10-15 on a real
 // project, Revit 2020:
@@ -82,11 +125,27 @@ var changed = 0;
 var notPresent = new List<string>();
 var refused = new List<string>();
 var appliedAppearance = new List<string>();
+var ambiguous = new List<string>();
+var totalled = 0;
+string appliedTotals = "";
+var alreadyTotalled = new List<string>();
+var cannotTotal = new List<string>();
+var replacedCalculation = new List<string>();
+var appliedParts = new List<string>();
 
 var handed = 0;
 var schedulesSeen = 0;
+// VERSION 4: a schedule selected twice - itself and its placement on a sheet,
+// or placed on two sheets - is one schedule.
+var scheduleIdsSeen = new HashSet<ElementId>();
+
+// VERSION 4: the card's `absent:` word "leave" is the empty that always meant
+// "leave it alone".
+if (string.Equals((newHeading ?? "").Trim(), "leave", StringComparison.OrdinalIgnoreCase))
+    newHeading = "";
 
 var wantedAlignment = (alignment ?? "").Trim().ToLowerInvariant();
+if (wantedAlignment == "leave") wantedAlignment = "";
 
 // VERSION 3. "leave", "" or "unchanged" leaves the heading as it is; anything
 // but horizontal or vertical is refused once, by name, below.
@@ -135,11 +194,46 @@ foreach (var element in elements)
 
     var schedule = scheduleBehind(element);
     if (schedule == null) continue;
+    if (!scheduleIdsSeen.Add(schedule.Id)) continue;
     schedulesSeen++;
 
     ScheduleDefinition definition;
     try { definition = schedule.Definition; }
     catch (Exception) { continue; }
+
+    // VERSION 4. Where a total prints on this schedule: a group footer, the
+    // grand total, or neither - said beside every column switched on, because
+    // totals on a schedule with no footer and no grand total print nowhere.
+    string printsWhere = "";
+    if (calculateTotals)
+    {
+        var footerGroups = new List<string>();
+        try
+        {
+            foreach (var rule in definition.GetSortGroupFields())
+            {
+                if (!rule.ShowFooter) continue;
+                var groupField = definition.GetField(rule.FieldId);
+                footerGroups.Add(groupField == null ? "(a field no longer in the schedule)" : groupField.GetName());
+            }
+        }
+        catch (Exception) { }
+
+        bool grandTotal = false;
+        try { grandTotal = definition.ShowGrandTotal; } catch (Exception) { }
+
+        if (footerGroups.Count > 0 && grandTotal)
+            printsWhere = string.Format("prints in each {0} footer and in the grand total",
+                string.Join(" / ", footerGroups));
+        else if (footerGroups.Count > 0)
+            printsWhere = string.Format("prints in each {0} footer; the grand total is off",
+                string.Join(" / ", footerGroups));
+        else if (grandTotal)
+            printsWhere = "prints in the grand total; no group has a footer";
+        else
+            printsWhere = "BUT PRINTS NOWHERE YET - no group has a footer and the grand total is "
+                + "off. Switch one on in the schedule's Sorting/Grouping";
+    }
 
     var fields = new List<ScheduleField>();
     foreach (var fieldId in definition.GetFieldOrder())
@@ -154,14 +248,19 @@ foreach (var element in elements)
 
     // The whole text first, exactly as version 2 matched it - so a field
     // called "all", or one whose name holds a comma, is still that one field.
-    foreach (var field in fields)
+    // VERSION 4: EVERY column answering to it is found, and more than one
+    // touches NONE - a heading renamed to another column's field name would
+    // otherwise restyle whichever came first.
+    var wholeMatches = fields.Where(f => answersTo(f, fieldName)).ToList();
+    if (wholeMatches.Count > 1)
     {
-        if (answersTo(field, fieldName))
-        {
-            targets.Add(new KeyValuePair<ScheduleField, string>(field, fieldName));
-            break;
-        }
+        ambiguous.Add(string.Format("'{0}' on '{1}' - {2} columns answer to that name, by field "
+            + "name or heading, so NONE was touched. Rename a heading, or name the column "
+            + "another way", fieldName, schedule.Name, wholeMatches.Count));
+        continue;
     }
+    if (wholeMatches.Count == 1)
+        targets.Add(new KeyValuePair<ScheduleField, string>(wholeMatches[0], fieldName));
 
     if (targets.Count == 0 && meansEvery)
     {
@@ -183,11 +282,17 @@ foreach (var element in elements)
             var wanted = piece.Trim();
             if (wanted.Length == 0) continue;
 
-            ScheduleField match = null;
-            foreach (var field in fields)
+            // VERSION 4: every column answering to the piece; more than one
+            // touches none of them.
+            var pieceMatches = fields.Where(f => answersTo(f, wanted)).ToList();
+            if (pieceMatches.Count > 1)
             {
-                if (answersTo(field, wanted)) { match = field; break; }
+                ambiguous.Add(string.Format("'{0}' on '{1}' - {2} columns answer to that name, by "
+                    + "field name or heading, so NONE was touched. Rename a heading, or name the "
+                    + "column another way", wanted, schedule.Name, pieceMatches.Count));
+                continue;
             }
+            ScheduleField match = pieceMatches.Count == 1 ? pieceMatches[0] : null;
 
             if (match == null)
             {
@@ -327,6 +432,84 @@ foreach (var element in elements)
             }
         }
 
+        // VERSION 4, from SET_SCHEDULE_FIELD_TOTALS. CALCULATE TOTALS, asked of
+        // Revit first, never turned off, read back through a fresh lookup.
+        if (calculateTotals)
+        {
+            var name = found.GetName();
+            var canTotal = false;
+            try { canTotal = found.CanTotal(); }
+            catch (Exception) { canTotal = false; }
+
+            if (!canTotal)
+            {
+                cannotTotal.Add(string.Format("'{0}' on '{1}' - Revit does not total this column. "
+                    + "Only a number can be added up; text such as a type name or a room name "
+                    + "cannot", name, schedule.Name));
+            }
+            else if (found.DisplayType == ScheduleFieldDisplayType.Totals)
+            {
+                alreadyTotalled.Add(string.Format("'{0}' on '{1}' - already calculates totals, left "
+                    + "as it was", name, schedule.Name));
+            }
+            else
+            {
+                var before = found.DisplayType;
+                var totalsTook = false;
+                try { found.DisplayType = ScheduleFieldDisplayType.Totals; totalsTook = true; }
+                catch (Exception ex)
+                {
+                    cannotTotal.Add(string.Format("'{0}' on '{1}' - Revit refused to total it: {2}",
+                        name, schedule.Name, ex.Message));
+                }
+
+                ScheduleField readBack = null;
+                if (totalsTook)
+                {
+                    try { readBack = definition.GetField(found.FieldId); } catch (Exception) { }
+                    if (readBack == null || readBack.DisplayType != ScheduleFieldDisplayType.Totals)
+                    {
+                        cannotTotal.Add(string.Format("'{0}' on '{1}' - asked for totals, a read back "
+                            + "finds {2}", name, schedule.Name,
+                            readBack == null ? "the column gone" : readBack.DisplayType.ToString()));
+                        totalsTook = false;
+                    }
+                }
+
+                if (totalsTook)
+                {
+                    didSomething = true;
+
+                    var was = "";
+                    if (before != ScheduleFieldDisplayType.Standard)
+                    {
+                        if (before == ScheduleFieldDisplayType.MinMax) was = "its minimum and maximum";
+                        else if (before == ScheduleFieldDisplayType.Max) was = "its maximum";
+                        else if (before == ScheduleFieldDisplayType.Min) was = "its minimum";
+                        else was = before.ToString();
+
+                        replacedCalculation.Add(string.Format("'{0}' on '{1}' was calculating {2}. "
+                            + "Revit allows one calculation per column, so it now calculates totals "
+                            + "instead", name, schedule.Name, was));
+                    }
+
+                    // A HIDDEN COLUMN'S TOTAL PRINTS NOWHERE. The setting is
+                    // kept - it shows the moment the column does - but saying
+                    // it prints in the footer would be untrue.
+                    var isHidden = false;
+                    try { isHidden = readBack.IsHidden; } catch (Exception) { isHidden = false; }
+
+                    totalled++;
+                    appliedParts.Add(string.Format("'{0}' on '{1}' now calculates totals{2} - {3}",
+                        name, schedule.Name,
+                        was.Length == 0 ? "" : string.Format(" (it was calculating {0})", was),
+                        isHidden
+                            ? "BUT THE COLUMN IS HIDDEN, so its total prints nowhere until the column is shown"
+                            : printsWhere));
+                }
+            }
+        }
+
         if (!didSomething) continue;
 
         // Read back, one line per column. Width is reported in mm, which is what
@@ -368,3 +551,12 @@ if (handed > 0 && schedulesSeen == 0)
         + "category 'Schedule Graphics'",
         handed));
 }
+else if (handed == 0 && !requestUnusable)
+{
+    // VERSION 4, from SET_SCHEDULE_FIELD_TOTALS: nothing handed in is said in
+    // words, never left to read as "changed 0".
+    refused.Add("no schedule was handed in - nothing was found by that name, and nothing is "
+        + "selected - so NOTHING WAS CHANGED. Name the schedule, or click it on a sheet");
+}
+
+appliedTotals = string.Join("; ", appliedParts);

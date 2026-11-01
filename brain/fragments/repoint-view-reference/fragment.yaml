@@ -88,7 +88,7 @@ compatibility-note: >
 #                                           fix when the bubble is EMPTY rather
 #                                           than wrong
 #   "make a section here"                -> CREATE_SECTION_VIEW
-#   "take the mark off these"            -> REMOVE_PARAMETER_VALUE, for the
+#   "take the mark off these"            -> WRITE_ELEMENT_PARAMETERS clear=true, for the
 #                                           Mark parameter. A section mark is
 #                                           not that
 

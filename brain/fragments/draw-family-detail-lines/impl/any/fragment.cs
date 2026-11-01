@@ -1,8 +1,37 @@
-// NOT STANDALONE. Assumes `doc`, `view`, `shapes`, `subcategory` and
-// `lockToPlanes` are in scope; leaves `lineIds`, `drawn`, `notAFamily`,
-// `refused` and `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `view`, `shapes`, `subcategory`,
+// `lockToPlanes`, `lineKind` and `planeMm` are in scope; leaves `lineIds`,
+// `created`, `drawn`, `notAFamily`, `refused` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
+//
+// VERSION 2 (2026-11-01) took in CREATE_LINE, merged into this card and
+// DEPRECATED: lines in a PROJECT too, in the same millimetre shape language.
+//
+//   DETAIL OR MODEL IS THE DECISION, AND IN A PROJECT IT IS ASKED FOR -
+//   `lineKind` "detail" or "model", CREATE_LINE's rule: a detail line lives in
+//   ONE view and prints with it, a model line is a real object that shows in
+//   every view that sees it, and there is no safe default, so left out
+//   ("auto") in a project the call is refused asking which. In a family it is
+//   detail, version 1 exactly, and "model" there is refused.
+//
+//   A DETAIL LINE NEEDS A VIEW, A MODEL LINE A PLANE. A detail line is drawn in
+//   the view named, in its two model coordinates - never a 3D view, refused in
+//   CREATE_LINE's words, nor a schedule. A model line lies on the plane
+//   `planeMm` millimetres along the view's direction from the project's
+//   origin - on a plan, its height - and with no view named ("none") on a
+//   horizontal plane, written X,Y: CREATE_LINE drew its model lines on a
+//   horizontal plane through their own height, and the height is asked for
+//   here rather than taken from a point.
+//
+//   A LINE SHORTER THAN REVIT'S SHORTEST REFUSES THE CALL, all or nothing in
+//   millimetres, this card's rule. CREATE_LINE skipped such a pair, counted it
+//   and kept the rest; that is the opposite rule and is NOT carried - the
+//   safer one is kept, and the refusal names the piece.
+//
+//   A PROJECT'S LINE STYLE is named in `subcategory` - one of the Lines
+//   category's styles already in the project, or "none" for Revit's default.
+//   A style is never made in a project here: CREATE_LINE_STYLE makes one.
+//   Locks to planes are a family's, and refused in a project.
 //
 // THE LINES OF A 2D FAMILY - a profile, a detail item, an annotation symbol, a
 // title block - drawn in its view with the Family Editor's Line tool, which in
@@ -30,6 +59,9 @@
 
 var findings = new List<string>();
 var lineIds = "";
+// VERSION 2, CREATE_LINE's `created`: the lines drawn, as elements, for the
+// next step that takes them (FILLET_LINES, FIND_OVERLAPPING_LINES).
+var created = new List<Element>();
 var drawn = "";
 var notAFamily = false;
 string refused = null;
@@ -344,29 +376,84 @@ Category wanted = null;
 var wantedName = (subcategory ?? "").Trim();
 var onCategory = squash(wantedName) == "none";
 
-if (!doc.IsFamilyDocument)
+// VERSION 2: DETAIL OR MODEL, AND IN A PROJECT. See the header.
+var inProject = !doc.IsFamilyDocument;
+notAFamily = inProject;
+var kindSaid = squash(lineKind);
+var asModel = kindSaid == "model" || kindSaid == "modelline" || kindSaid == "modellines";
+var asDetail = kindSaid == "detail" || kindSaid == "detailline" || kindSaid == "detaillines";
+var kindUnsaid = kindSaid.Length == 0 || kindSaid == "auto";
+var planeSaid = (planeMm ?? "").Trim();
+var planeGiven = planeSaid.Length > 0 && squash(planeSaid) != "none";
+double planeAtMm = 0;
+// With no view, a model line lies on a horizontal plane, written X,Y.
+var noView = squash(view).Length == 0 || squash(view) == "none";
+
+if (!kindUnsaid && !asModel && !asDetail)
 {
-    notAFamily = true;
-    refused = "The document in front, \"" + doc.Title + "\", is a project, not a family open in the Family Editor. "
-        + "Lines in a project's view are CREATE_LINE; these are drawn inside a 2D family - open it first.";
+    refused = "lineKind is \"" + (lineKind ?? "") + "\" - say detail, a line in one view that prints with it, or "
+        + "model, a real line in the model that shows in every view that sees it. Nothing was drawn.";
 }
-else if (!twoD)
+else if (inProject && kindUnsaid)
+{
+    refused = "Detail lines or model lines? A detail line lives in ONE view and prints with it; a model line is a "
+        + "real object that turns up in every plan, section and 3D view that sees it. There is no safe default, so "
+        + "it is asked: give lineKind detail or model. Nothing was drawn.";
+}
+else if (!inProject && asModel)
+{
+    refused = "A family's lines are drawn here as detail lines, in its view; model lines are a project's. A 3D "
+        + "family's 2D symbol is DRAW_FAMILY_SYMBOLIC_LINES. Nothing was drawn.";
+}
+else if (!inProject && !twoD)
 {
     refused = "This is a 3D model family (" + (category == null ? "no category" : category.Name) + "). Its 2D symbol "
         + "is drawn with DRAW_FAMILY_SYMBOLIC_LINES; detail lines belong to a profile, a detail item, an annotation "
         + "or a title block. Nothing was drawn.";
+}
+else if (inProject && asDetail && noView)
+{
+    // CREATE_LINE's own refusal.
+    refused = "A detail line has to be drawn in a view, and no view was given. Nothing was drawn.";
 }
 else
 {
     var said = (view ?? "").Trim();
     var views = new FilteredElementCollector(doc).OfClass(typeof(View)).Cast<View>().Where(v => !v.IsTemplate).ToList();
     var found = views.Where(v => string.Equals(v.Name, said, StringComparison.OrdinalIgnoreCase)).ToList();
-    if (said.Length == 0 || found.Count != 1)
+    if (inProject && asModel && noView) { }
+    else if (said.Length == 0 || found.Count != 1)
         problems.Add((said.Length == 0 ? "No view was named." : "No single view is called \"" + said + "\".")
-            + " This family's views: " + string.Join(", ", views.Select(v => v.Name).Take(10)) + ".");
+            + " This " + (inProject ? "project" : "family") + "'s views include: "
+            + string.Join(", ", views.Select(v => v.Name).Take(10)) + ".");
+    else if (inProject && asDetail && found[0].ViewType == ViewType.ThreeD)
+        // CREATE_LINE's own words.
+        problems.Add("'" + found[0].Name + "' is a 3D view and cannot hold detail lines - they are drawing, not model. "
+            + "Draw model lines instead, or pick a plan or a section.");
+    else if (inProject && (found[0].ViewType == ViewType.Schedule || found[0].ViewType == ViewType.PanelSchedule
+        || found[0].ViewType == ViewType.ColumnSchedule))
+        problems.Add("'" + found[0].Name + "' is a schedule, which holds no lines.");
     else if (axisOf(found[0].ViewDirection) < 0)
-        problems.Add("The view \"" + said + "\" looks at an angle; a shape here is written in model coordinates.");
+        problems.Add("The view \"" + said + "\" looks at an angle; a shape here is written in model coordinates"
+            + (inProject && asModel ? " - leave the view out (\"none\") for model lines on a horizontal plane." : "."));
     else target = found[0];
+
+    // A MODEL LINE'S PLANE, asked for and never assumed; a detail line lies in
+    // its view, and a plane given for one is refused rather than ignored.
+    if (inProject && asModel)
+    {
+        if (!planeGiven)
+            problems.Add("A model line needs a plane to lie on: give planeMm, its place in millimetres along the "
+                + (noView ? "Z axis - its height" : "view's direction") + " from the project's origin.");
+        else if (!double.TryParse(planeSaid, System.Globalization.NumberStyles.Float, invariant, out planeAtMm)
+            || double.IsNaN(planeAtMm) || double.IsInfinity(planeAtMm))
+            problems.Add("planeMm \"" + planeSaid + "\" is not a number of millimetres.");
+    }
+    else if (planeGiven)
+        problems.Add("planeMm is a model line's plane; a detail line lies in its view. Leave it out.");
+    if (inProject && lockToPlanes)
+        problems.Add("Locks to reference planes are a family's - lines drawn in a project are left free. Give "
+            + "lockToPlanes false.");
 
     var texts = (shapes ?? "").Split('|').Select(p => p.Trim()).Where(p => p.Length > 0).ToList();
     if (texts.Count == 0) problems.Add("No shapes were given.");
@@ -467,7 +554,28 @@ else
             }
     }
 
-    if (wantedName.Length == 0)
+    if (inProject)
+    {
+        // VERSION 2: A PROJECT'S LINE STYLE - one of the Lines category's own,
+        // already in the project, or "none" for Revit's default. Never made here.
+        Category lines = null;
+        try { lines = doc.Settings.Categories.get_Item(BuiltInCategory.OST_Lines); } catch (Exception) { lines = null; }
+        if (wantedName.Length == 0)
+            problems.Add("No line style was named. Name one of the project's line styles, or \"none\" for Revit's "
+                + "default.");
+        else if (!onCategory)
+        {
+            if (lines != null)
+                foreach (Category sub in lines.SubCategories)
+                    if (string.Equals(sub.Name, wantedName, StringComparison.OrdinalIgnoreCase)) { wanted = sub; break; }
+            if (wanted == null)
+                problems.Add("No line style called \"" + wantedName + "\" is in this project - a style is never made "
+                    + "here; CREATE_LINE_STYLE makes one. Its line styles include: " + (lines == null ? "none read"
+                        : string.Join(", ", lines.SubCategories.Cast<Category>().Select(c => c.Name).OrderBy(n => n)
+                            .Take(15))) + ".");
+        }
+    }
+    else if (wantedName.Length == 0)
         problems.Add("No subcategory was named. Name one for the lines' weight, or \"none\" for the family's own "
             + "category, " + (category == null ? "" : category.Name) + ".");
     else if (onCategory) wanted = category;
@@ -489,8 +597,10 @@ else
 
 if (refused == null)
 {
-    var axis = axisOf(target.ViewDirection);
-    var at = along(target.Origin, axis);
+    // VERSION 2: a model line with no view lies on a horizontal plane; a model
+    // line's plane is planeMm along the view's axis, never the view's own.
+    var axis = target == null ? 2 : axisOf(target.ViewDirection);
+    var at = inProject && asModel ? planeAtMm / 304.8 : along(target.Origin, axis);
     var u = inPlane[axis][0];
     var v = inPlane[axis][1];
     Func<double, double, XYZ> onPlane = (first, second) =>
@@ -503,7 +613,8 @@ if (refused == null)
     };
 
     var madeSubcategory = false;
-    if (wanted == null)
+    // Made only in a family; a project's style was found, or is "none".
+    if (wanted == null && !inProject)
     {
         try
         {
@@ -530,22 +641,39 @@ if (refused == null)
                 + "to take. The call failed, and Heron rolls the whole call back.");
     }
 
-    var made = new List<Tuple<DetailCurve, XYZ, XYZ>>();
+    // VERSION 2: ONE SKETCH PLANE for every model line of the call, on the plane
+    // asked for - CREATE_LINE made a horizontal one through each line's height.
+    SketchPlane modelPlane = null;
+    if (inProject && asModel)
+    {
+        var normal = axis == 0 ? XYZ.BasisX : axis == 1 ? XYZ.BasisY : XYZ.BasisZ;
+        try { modelPlane = SketchPlane.Create(doc, Plane.CreateByNormalAndOrigin(normal, normal.Multiply(at))); }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("Revit would not make a plane for the model lines at " + plain(planeAtMm)
+                + " mm: " + ex.Message + " The call failed, and Heron rolls the whole call back.");
+        }
+    }
+    var where = target == null ? "a horizontal plane at " + plain(planeAtMm) + " mm" : "\"" + target.Name + "\"";
+
+    var made = new List<Tuple<CurveElement, XYZ, XYZ>>();
     foreach (var piece in pieces)
         foreach (var s in piece.Item1)
         {
             var a = onPlane(s[1], s[2]);
             var b = onPlane(s[5], s[6]);
-            DetailCurve line;
+            CurveElement line;
             try
             {
                 Curve curve = s[0] == 0.0 ? (Curve)Line.CreateBound(a, b) : Arc.Create(a, b, onPlane(s[3], s[4]));
-                line = doc.FamilyCreate.NewDetailCurve(target, curve);
+                line = !inProject ? (CurveElement)doc.FamilyCreate.NewDetailCurve(target, curve)
+                    : asModel ? (CurveElement)doc.Create.NewModelCurve(curve, modelPlane)
+                    : doc.Create.NewDetailCurve(target, curve);
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException("Revit refused a line from " + plain(s[1]) + "," + plain(s[2]) + " to "
-                    + plain(s[5]) + "," + plain(s[6]) + " in \"" + target.Name + "\": " + ex.Message + " The call failed, "
+                    + plain(s[5]) + "," + plain(s[6]) + " in " + where + ": " + ex.Message + " The call failed, "
                     + "and Heron rolls the whole call back.");
             }
             if (line == null)
@@ -648,8 +776,14 @@ if (refused == null)
                 + "failed, and Heron rolls the whole call back.");
         var p0 = curve.GetEndPoint(0);
         var p1 = curve.GetEndPoint(1);
-        var asked = (p0.DistanceTo(m.Item2) <= halfMillimetre && p1.DistanceTo(m.Item3) <= halfMillimetre)
-            || (p0.DistanceTo(m.Item3) <= halfMillimetre && p1.DistanceTo(m.Item2) <= halfMillimetre);
+        // VERSION 2: a project's DETAIL line is read in its view's two
+        // coordinates - where Revit keeps it along the view's direction is the
+        // view's affair; a model line and a family's line are read in full.
+        Func<XYZ, XYZ, double> apart = (p, q) => inProject && asDetail
+            ? Math.Sqrt(Math.Pow(along(p, u) - along(q, u), 2) + Math.Pow(along(p, v) - along(q, v), 2))
+            : p.DistanceTo(q);
+        var asked = (apart(p0, m.Item2) <= halfMillimetre && apart(p1, m.Item3) <= halfMillimetre)
+            || (apart(p0, m.Item3) <= halfMillimetre && apart(p1, m.Item2) <= halfMillimetre);
         if (!asked)
             throw new InvalidOperationException("A line reads from " + mm(along(p0, u)) + "," + mm(along(p0, v)) + " to "
                 + mm(along(p1, u)) + "," + mm(along(p1, v)) + " mm, not where it was drawn"
@@ -660,16 +794,25 @@ if (refused == null)
                 + "failed, and Heron rolls the whole call back.");
         styleNames.Add(m.Item1.LineStyle == null ? "none" : m.Item1.LineStyle.Name);
         ids.Add(m.Item1.UniqueId);
+        created.Add(m.Item1);
         length += curve.Length;
     }
 
     lineIds = string.Join(",", ids);
-    drawn = made.Count + " detail line(s) in " + pieces.Count + " shape(s) in \"" + target.Name + "\", " + mm(length)
+    drawn = made.Count + (inProject && asModel ? " model" : " detail") + " line(s) in " + pieces.Count + " shape(s) "
+        + (inProject && asModel ? "on " : "in ") + where + ", " + mm(length)
         + " mm in all, on " + (style != null ? "\"" + wanted.Name + "\""
             : "Revit's default style, \"" + string.Join("\", \"", styleNames.Distinct()) + "\"")
         + (lockToPlanes ? ", " + locks.Count + " lock(s) to " + string.Join(", ", locks.Distinct()) + " and " + free
             + " straight line(s) on no named plane" : "") + " - read back.";
     findings.Add(drawn);
+    // VERSION 2: what the kind means, said every time - CREATE_LINE's reason
+    // for asking.
+    if (inProject)
+        findings.Add(asModel
+            ? "These are MODEL lines: real objects that show in every plan, section and 3D view that sees that plane."
+            : "These are DETAIL lines: they belong to \"" + target.Name + "\" alone and print with it - no other view "
+              + "shows them.");
     if (madeSubcategory)
         findings.Add("Made the subcategory \"" + wanted.Name + "\"; its weight and colour are Revit's defaults until set "
             + "in Object Styles.");

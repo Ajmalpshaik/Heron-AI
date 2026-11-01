@@ -40,8 +40,11 @@ that day**:
 
 **To carry the PROVING on in a fresh session, say:** *"Read the PROVING track entry in HANDOVER.md and
 carry on proving fragments."* There are TWO proving entries now and the newer one
-(2026-09-09) supersedes the older on method: chain `select-by-category-name` into `set-selection`
-rather than selecting by hand, and use SMALL views. Between them they hold everything — the three
+(2026-09-09) supersedes the older on method: chain a category read into `set-selection` rather than
+selecting by hand, and use SMALL views. The chain is `filter-elements-by-category` into
+`set-selection` - `SETUP_CHAIN` in [`tools/generate-jobs.py`](../tools/generate-jobs.py), which writes
+it into every job file; the archived entries name `select-by-category-name`, merged into
+`filter-elements-by-category` and DEPRECATED on 2026-11-01. Between them they hold everything — the three
 shapes of proof, why clearing the selection proves nothing, which things have to be DRAWN in the host
 because the model's content is linked, and how to arrange a case without getting the positive and the
 negative backwards. **16 to 52 in one night, then 52 to 142 the next; the method is why, not the

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: CHECK_INSULATION_CLEARANCE
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO CHECK_MINIMUM_CLEARANCE
+# (check-minimum-clearance), on the owner's instruction in conversation: "make sure there is no
+# duplicate tools", every conflict to keep the SAFER rule. Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable and
+# it can be brought back. Nothing offers it now - retrieval leaves DEPRECATED
+# out, and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to CHECK_MINIMUM_CLEARANCE. The proof below, where
+# there is one, is the record of what this card's code did, not a claim about
+# today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CHECK_MINIMUM_CLEARANCE
+  why: >
+    The same sweep: CHECK_MINIMUM_CLEARANCE version 3 takes each element's own
+    insulation off the gap with `includeInsulation`, the thickest wrap governing
+    and lining not counted, and carries this card's `assumeThicknessMm` with
+    ASSUMED on every row it touches, `ignoreConnected`, `maxRows`, one set
+    measured against itself with each pair once, `insulatedCount` and `bareCount`
+    with the warning first when some carry none, the element ids in a pair too
+    close as `tooCloseIds`, `violations`, and elements with no extent said, never
+    passed.
 
 purpose: >
   The same clearance sweep as `CHECK_MINIMUM_CLEARANCE`, with the one correction
@@ -181,7 +204,7 @@ compatibility-note: >
 #   "which runs still need insulating"   -> not a clearance question. This
 #                                           fragment REPORTS the bare count as a
 #                                           side effect and is not the way to ask
-#   "draw the dimension"                 -> DIMENSION_MEP_RUNS
+#   "draw the dimension"                 -> CREATE_DIMENSION
 #   "insulate these"                     -> SET_MEP_INSULATION, which PUTS THE
 #                                           LAGGING ON. This fragment only
 #                                           measures, and ranked first on that

@@ -1,6 +1,17 @@
 // NOT STANDALONE. Assumes `doc`, `materialsNamed` and `fieldValues` are in
 // scope; leaves `changedMaterialIds`, `materialReport`, `fieldsChanged`,
-// `alreadyAsAsked`, `sharedAssets`, `refused` and `findings` behind.
+// `alreadyAsAsked`, `sharedAssets`, `refused`, `wasColour`, `nowColour` and
+// `findings` behind.
+//
+// VERSION 2 (2026-11-01) - SET_MATERIAL_COLOUR MERGED IN. Everything that card
+// did this one already did - a material named, never made; the near misses
+// when a name matches nothing; the shading colour written, read back and
+// reported before and after; "already" when it held the colour asked; the
+// note that the Appearance asset is not touched. What it had that this one
+// lacked is added: `wasColour` and `nowColour`, the shading colour before and
+// after AS THEIR OWN VALUES, not only inside `materialReport`. "r,g,b" for one
+// material, "Name: r,g,b; Name: r,g,b" for several; empty when no Shading
+// Colour was asked or nothing was changed. Nothing else in this file moved.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
@@ -60,6 +71,9 @@ var fieldsChanged = 0;
 var alreadyAsAsked = 0;
 var sharedAssets = "";
 var refused = "";
+// VERSION 2, from SET_MATERIAL_COLOUR.
+var wasColour = "";
+var nowColour = "";
 var findings = new List<string>();
 
 {
@@ -651,6 +665,26 @@ var findings = new List<string>();
                 changedMaterialIds.Add(material.Id);
 
         materialReport = string.Join("  ||  ", targets.Select(each => each.Name + ": " + string.Join(", ", lines[each.Id.ToString()])));
+
+        // VERSION 2, FROM SET_MATERIAL_COLOUR: the shading colour it had and the
+        // one it has now, read back after the regeneration above - the
+        // evidence that something moved, because "set to X" is true whether or
+        // not it was already X.
+        if (asked.Any(each => each.Item1 == "Shading Colour"))
+        {
+            var wasParts = new List<string>();
+            var nowParts = new List<string>();
+            foreach (var material in targets)
+            {
+                string had;
+                if (!before.TryGetValue(material.Id + "|Shading Colour", out had)) continue;
+                var has = colourText(material.Color);
+                wasParts.Add(targets.Count == 1 ? had : material.Name + ": " + had);
+                nowParts.Add(targets.Count == 1 ? has : material.Name + ": " + has);
+            }
+            wasColour = string.Join("; ", wasParts);
+            nowColour = string.Join("; ", nowParts);
+        }
         sharedAssets = string.Join("; ", shareNotes);
 
         findings.Add(string.Format("{0} field(s) changed on {1} of the {2} material(s) named; {3} already held the value asked",

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CAT-009
 heron-step: 17
-heron-status: DRAFT
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -26,6 +26,29 @@ proof-held: >
   the add-in rebuilt.
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO FILTER_ELEMENTS_BY_CATEGORY
+# (filter-elements-by-category), on the owner's instruction in conversation:
+# "now merge the other duplicates also". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to FILTER_ELEMENTS_BY_CATEGORY. The
+# proof below is the record of what this card's code did, not a claim about
+# today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: FILTER_ELEMENTS_BY_CATEGORY
+  why: >
+    The same job, for several categories at once: FILTER_ELEMENTS_BY_CATEGORY
+    version 4 takes `categories`, this card's list of the same type, and
+    collects them in one multi-category pass, with `perCategory` showing a
+    category asked for and empty at 0, `found`, an optional view, and links
+    counted per link with their own breakdown - through a view only on Revit
+    2023 and later. It also scopes to a level, which this card never could.
+    The safer rule where they differed: no category named is refused before
+    anything is read, never answered with an empty set.
 
 # LINKED MODELS, THE DETAIL - KEPT HERE BECAUSE `purpose` IS SEARCHED
 # (FRAGMENT-ISSUES 5b-1293, 2026-10-29). Version 2's paragraph on links

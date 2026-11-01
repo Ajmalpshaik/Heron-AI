@@ -25,7 +25,8 @@ purpose: >
   simply stops calculating sensible flow past that point, which is then blamed
   on the equipment.
 
-  **IT IS THE OTHER HALF OF `FIND_SYSTEM_ISLANDS`.** That one asks whether the
+  **IT IS THE OTHER HALF OF `TRACE_CONNECTIVITY`'s whole-set split** (FIND_SYSTEM_ISLANDS
+  until 2026-11-01). That one asks whether the
   pieces are joined at all. This asks whether the joins make sense. A system can
   be perfectly whole and still have two pumps facing each other, and a
   connectivity check reports it as one healthy network.

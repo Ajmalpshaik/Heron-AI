@@ -55,7 +55,7 @@ purpose: >
   is not whole (measured).
 
   **A VOID CUTS NOTHING BY BEING MADE** - COMBINE_FAMILY_FORMS cuts a solid
-  with it. Its material is SET_FAMILY_FORM_MATERIAL.
+  with it. Its material is LINK_FAMILY_PARAMETER.
 
   **READ BACK, ALL OR NOTHING.** The form must have an extent and a solid a
   volume, both reported. Any refusal from Revit fails the call and nothing is
@@ -179,19 +179,24 @@ compatibility-note: >
   takes tilted and warped sections; a sweep along a path that crosses itself
   is built without complaint. Earlier releases are NEEDS-CHECKING CV.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "make a spring as one smooth sweep along a helix" -> here
 #   "loft a smooth body through elliptical sections"  -> here
-#   "sweep a profile along a path"               -> CREATE_FAMILY_SWEEP - a
-#                                                   path in one plane, and it
-#                                                   stays parametric
-#   "sweep one shape into another along a path"  -> CREATE_FAMILY_SWEPT_BLEND
-#   "blend a rectangle into a circle"            -> CREATE_FAMILY_BLEND - two
+#   "sweep a profile along a path"               -> CREATE_FAMILY_FORMS, a
+#                                                   kind=sweep row - a path in
+#                                                   one plane, and it stays
+#                                                   parametric
+#   "sweep one shape into another along a path"  -> CREATE_FAMILY_FORMS, a
+#                                                   kind=swept blend row
+#   "blend a rectangle into a circle"            -> CREATE_FAMILY_FORMS, a
+#                                                   kind=blend row - two
 #                                                   parallel shapes, parametric
+#                                                   (the three were their own
+#                                                   cards until 2026-11-01)
 #   "loft a form through these two profiles"     -> CREATE_CONCEPTUAL_FORM - in
 #                                                   an adaptive or mass family
-#   "link the body material to Body Material"    -> SET_FAMILY_FORM_MATERIAL
+#   "link the body material to Body Material"    -> LINK_FAMILY_PARAMETER
 #   "cut the solid with the void"                -> COMBINE_FAMILY_FORMS
 
 utterances:

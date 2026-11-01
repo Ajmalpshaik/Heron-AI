@@ -10,7 +10,49 @@ positive:
   - given: the same 5 with alignX and alignY both true
     expect: they end up stacked on one point, which is what was asked for
 
+  # VERSION 2 (2026-11-01), from ALIGN_MEP_ELEVATION. Each FAILS on version
+  # 1, which had no edge and needed a reference.
+  - given: a 600 mm rectangular duct and a 100 mm pipe in one corridor, edge "bottom", targetZ 2700, no reference
+    expect: >
+      THEIR UNDERSIDES ARE LEVEL at 2700, measured in a section - not their
+      centrelines. A version that moved both centrelines to the same Z leaves
+      the soffits 250 mm apart and looks plausible on plan
+
+  - given: the same two, edge "top"
+    expect: their tops level, and the centrelines therefore NOT level
+
+  - given: edge "centre"
+    expect: centrelines level, the one case where half-height does not matter
+
 negative:
+  # VERSION 2, from ALIGN_MEP_ELEVATION.
+  - given: an element carrying none of the four size parameters, edge "bottom"
+    expect: its id in `noSize` and NOT MOVED - never treated as zero-height
+
+  - given: a damper or a valve in the list, edge "top"
+    expect: its id in `notCurveBased`, and no attempt made
+
+  - given: an INSULATED duct, edge "bottom"
+    expect: aligned on its BARE size, its insulation proud of the line - deliberate
+
+  - given: a SLOPED run, edge "bottom"
+    expect: its midpoint on the height, its slope kept - RECORD WHAT HAPPENS
+
+  - given: edge "soffit"
+    expect: >
+      REFUSED, naming top, bottom and centre, and NOTHING moved.
+      ALIGN_MEP_ELEVATION levelled the centrelines for any word it did not
+      know; that rule is not carried
+
+  - given: edge "bottom" with no targetZ
+    expect: refused - an edge needs a height - nothing moved
+
+  - given: edge "bottom", targetZ 2700 AND a reference with alignZ
+    expect: refused - asked both ways at once - nothing moved
+
+  - given: a duct inside a REVIT GROUP, edge "bottom"
+    expect: its id in `blocked`, not counted as aligned - ALIGN_MEP_ELEVATION counted it
+
   - given: TWO DUCTS OF DIFFERENT LENGTHS aligned in X
     expect: >
       their MIDPOINTS share an X and their ENDS DO NOT. Right for equipment,
@@ -20,7 +62,7 @@ negative:
   - given: two MEP runs of different sizes aligned in Z
     expect: >
       their centrelines match and their tops and bottoms do not. This is the
-      case that belongs to ALIGN_MEP_ELEVATION instead, and proving it here is
+      case that belongs to `edge` instead (ALIGN_MEP_ELEVATION until 2026-11-01), and proving it here is
       what makes the boundary between the two fragments real
 
   - given: elements inside a REVIT GROUP

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,34 @@ capability: CREATE_VIEW_FILTERS_BY_VALUE
 version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_VIEW_FILTER (create-view-filter),
+# on the owner's instruction in conversation: "make sure there is no duplicate
+# tools". Constitution Article 1: kept, never deleted, so its record and its
+# proof stay readable and it can be brought back. Nothing offers it now -
+# retrieval leaves DEPRECATED out, and its sentences claim nothing in the
+# identity table (heron_search RETIRED_FRAGMENTS). Its sentences moved to
+# CREATE_VIEW_FILTER. Its two opposite rules were settled on the owner's rule,
+# the safer kept where each applies: a category DERIVED from the elements that
+# cannot take the rule is dropped and named there, as here, while one the
+# caller TYPED still stops the call; its blank group is built on that card's
+# 'has no value' rule rather than an equals rule on empty text; its colour
+# stays one per filter, hue-stepped. Its created list is createdIds there. The
+# proof below is the record of what this card's code did, not a claim about
+# today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_VIEW_FILTER
+  why: >
+    The same job: persistent rule-based view filters on a parameter, put on a
+    view and coloured. CREATE_VIEW_FILTER version 5 makes one filter per
+    distinct value when asked with perValue - the values read off the
+    elements, the categories from the elements when none are typed (one that
+    cannot take the rule dropped and named), an element carrying the name
+    twice left out, the blank group a filter of its own, each filter its own
+    hue-stepped colour, namePrefix at the front of every name, a name already
+    a filter skipped.
 
 purpose: >
   Reads every distinct value of one parameter across a set of elements and
@@ -140,12 +168,14 @@ compatibility-note: >
 #                                           overrides, right for looking at
 #                                           something NOW. An element drawn
 #                                           tomorrow gets nothing
-#   "make a filter for supply air"       -> CREATE_VIEW_FILTER - ONE rule, one
-#                                           filter, when the value is known
-#   "make filters for supply return and  -> CREATE_VIEW_FILTERS_BY_RULE - the
-#    exhaust air"                           values and categories are TYPED,
-#                                           not read off the model, and the
-#                                           filters go on no view
+#   "make a filter for supply air"       -> CREATE_VIEW_FILTER - the value is
+#                                           known
+#   "make filters for supply return and  -> CREATE_VIEW_FILTER (version 4,
+#    exhaust air"                           which CREATE_VIEW_FILTERS_BY_RULE
+#                                           was merged into) - the values and
+#                                           categories are TYPED, not read off
+#                                           the model, and with no view given
+#                                           the filters go on no view
 #   "put that filter on this view"       -> APPLY_VIEW_FILTER
 
 utterances:

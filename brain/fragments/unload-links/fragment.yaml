@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LNK-015
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,27 @@ capability: UNLOAD_LINKS
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO RELOAD_LINKS
+# (reload-links), on the owner's instruction in conversation: "make sure there is no
+# duplicate tools", every conflict to keep the SAFER rule. Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable and
+# it can be brought back. Nothing offers it now - retrieval leaves DEPRECATED
+# out, and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to RELOAD_LINKS. The proof below, where
+# there is one, is the record of what this card's code did, not a claim about
+# today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: RELOAD_LINKS
+  why: >
+    The same job: RELOAD_LINKS version 2 unloads with `unload` true, on link
+    types - three instances of one link are one unload - and never removes. It
+    skips a link already unloaded into `alreadyUnloaded`, reads every unload back
+    through RevitLinkType.IsLoaded, and puts one still loaded, or refused by
+    Revit, in `refused`; `unloaded` holds only those that read unloaded.
+    `notALink` is its `notLinks`.
 
 purpose: >
   Unloads linked models - the link stays in the project and its geometry leaves

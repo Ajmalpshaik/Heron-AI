@@ -13,12 +13,43 @@ positive:
       ProjectElevation, which is the one every coordinate in the model uses
 
 negative:
-  - given: A NAME THAT ANOTHER LEVEL ALREADY HAS
+  - given: >
+      VERSION 2. A NAME THAT ANOTHER LEVEL ALREADY HAS - "Level 2" asked for at
+      a free height while the project has "Level 2"
     expect: >
-      the level IS created, its id in `nameRefused`, and namedAs carrying the
-      name Revit actually gave it. This is the case a count cannot show: the
-      number comes back right and the Project Browser shows "Level 7" where
-      "Level 3" was asked for
+      NO LEVEL IS CREATED - not that one and not the others in the same call -
+      `created` empty, and `refused` naming "Level 2", the height asked for and
+      the level that holds the name. Version 1 created the level and put its id
+      in `nameRefused`, leaving a level called "Level 7" where "Level 3" was
+      asked for; on version 1 this case FAILS, because a level is made. Count
+      the levels in an elevation view before and after: the same number
+
+  - given: VERSION 2. The same name in other capitals - "level 2" when "Level 2" exists
+    expect: >
+      refused exactly as above. Revit compares level names ignoring capitals,
+      so a clash checked case by case would let it through to be refused by
+      Revit after the level exists
+
+  - given: VERSION 2. One call asking for two new levels both named "Roof"
+    expect: >
+      refused before anything is created, `refused` saying the second clashes
+      with another level in the same request
+
+  - given: >
+      VERSION 2. A height Level.Create refuses or returns nothing for, among
+      three good ones
+    expect: >
+      THE JOB THROWS and Revit's undo list gains nothing: the message names the
+      height and says Revit refused it, or "Revit declined to create the
+      level", and that nothing was kept. Version 1 swallowed the refusal and
+      returned the other levels with one fewer than asked and nothing said - on
+      version 1 this case FAILS, because levels are kept
+
+  - given: VERSION 2. Any successful creation, then the Project Browser is checked
+    expect: >
+      `noViewsMade` true, and NO floor plan and NO ceiling plan for the new
+      levels. Revit's Level TOOL makes those; Level.Create does not. Version 1
+      had no `noViewsMade` at all, so the answer could not say it
 
   - given: an elevation where a level ALREADY EXISTS
     expect: >
@@ -42,3 +73,8 @@ second_route:
   - >
     open an elevation or section view in Revit and look at the level heads -
     the names and heights there are the answer, not the fragment's count
+  - >
+    VERSION 2, from CREATE_LEVEL: Revit's own Level tool at the same height,
+    with the two level heads compared in an elevation view. On a model whose
+    base point has been moved this is also row 5b-180's question - whether the
+    head reads the height asked for

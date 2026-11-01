@@ -25,10 +25,11 @@ positive:
       the same order - errors first, then commonest - each with the same count;
       every id in ids resolves to an element of this model
 
-  - given: the same run, its views and sheets beside FIND_UNPLACED_VIEWS and LIST_SHEETS
+  - given: the same run, its views and sheets beside FIND_VIEWS with placement unplaced and FIND_SHEETS
     expect: >
-      views.notOnSheets is the number of views FIND_UNPLACED_VIEWS returns (7)
-      and notOnSheetsIds are their ids; sheets.total is LIST_SHEETS' count (17);
+      views.notOnSheets is the number of views FIND_VIEWS with placement
+      unplaced returns (7) and notOnSheetsIds are their ids; sheets.total is
+      FIND_SHEETS' count (17);
       views.total leaves out the view templates, which are counted in
       views.templates
 
@@ -219,11 +220,11 @@ second_route: >
   The reader of each part, run on the same model in the same session, and
   Revit's own windows. READ_MODEL_WARNINGS' warningCount and Manage >
   Warnings must equal warnings.total; LIST_LINKED_MODELS and Manage Links
-  must list the same files, loaded the same way; FIND_UNPLACED_VIEWS'
-  elements must be views.notOnSheets; FIND_VIEWS_WITHOUT_TEMPLATE's elements
-  must be views.withoutTemplate; LIST_WORKSETS' worksetCount and closedCount
-  must match the worksets rows; FIND_UNUSED_FAMILIES' wholeFamilyUnused must
-  be families.unused; FIND_UNUSED_GROUP_TYPES' unusedGroupTypes must be
+  must list the same files, loaded the same way; FIND_VIEWS' elements with
+  placement unplaced must be views.notOnSheets, and with withoutTemplate true
+  views.withoutTemplate; LIST_WORKSETS' worksetCount and closedCount
+  must match the worksets rows; FIND_PURGEABLE_ELEMENTS' wholeFamilyUnused must
+  be families.unused, and its unusedGroupTypeNames counted must be
   groups.unusedTypes; SELECT_UNENCLOSED_ROOMS with rooms only must give
   rooms.unplaced and rooms.notEnclosed, and with spaces only the spaces'. A
   part that disagrees with its reader is a finding for FRAGMENT-ISSUES, never

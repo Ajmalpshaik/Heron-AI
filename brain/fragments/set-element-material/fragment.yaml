@@ -30,7 +30,7 @@ risk: MODIFY
 # - a door's frame and panel - skips the element naming them, and
 # materialParameter says which; nothing is guessed.
 #
-# BY CATEGORY OR TYPE is the selection handed in: SELECT_BY_CATEGORY_NAME,
+# BY CATEGORY OR TYPE is the selection handed in: FILTER_ELEMENTS_BY_CATEGORY,
 # SELECT_TYPES or the modeller's own selection. Types handed in are written
 # directly, and a type is written once however many of its elements arrive.
 #
@@ -145,7 +145,7 @@ compatibility-note: >
 #   "change the material on these"                -> REPLACE_MATERIAL - swap one for another
 #   "everything in galvanised steel"              -> SELECT_BY_MATERIAL
 #   "set the finish layer of this wall to plaster" -> SET_COMPOUND_LAYER_WIDTH
-#   "what material is this"                       -> READ_ELEMENT_MATERIAL
+#   "what material is this"                       -> REPORT_MATERIAL_TAKEOFF
 utterances:
   - make these columns concrete
   - give these ducts the galvanised material

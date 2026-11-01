@@ -52,7 +52,8 @@ contract:
       type: Document
     - name: uidoc
       type: UIDocument
-    # The nested family, by the id PLACE_NESTED_FAMILY gave back, an array
+    # The nested family, by the instanceId PLACE_FAMILY_INSTANCES gave back
+    # (PLACE_NESTED_FAMILY until 2026-11-01), an array
     # copy's id from ARRAY_FAMILY_FORMS, or `selected`.
     - name: instance
       type: string
@@ -128,7 +129,7 @@ compatibility-note: >
   through 2027 (the RevitAPI reference assemblies and their XML remarks, read
   2026-10-01).
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "lock the motor's centre to the centre planes" -> here
 #   "lock the nested family to the reference planes" -> here

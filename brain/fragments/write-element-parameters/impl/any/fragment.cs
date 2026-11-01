@@ -1,6 +1,10 @@
-// NOT STANDALONE. Assumes `doc`, `elements`, `parameterName` and `value` are in
-// scope, and leaves `written`, `snapped`, `unverified`, `readOnly`, `absent`,
-// `ambiguous`, `refused`, `alreadyThat` and `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `elements`, `parameterName`, `value` and
+// `clear` are in scope, and leaves `written`, `snapped`, `unverified`,
+// `readOnly`, `absent`, `ambiguous`, `refused`, `alreadyThat`, `findings`,
+// `cleared` and `alreadyEmpty` behind.
+//
+// VERSION 6 (2026-11-01) - REMOVE_PARAMETER_VALUE MERGED IN: `clear` true
+// empties the parameter instead of writing a value. See "CLEARING" below.
 //
 // ASSUMES AN OPEN TRANSACTION. It does not start one. Golden Rule 16 wants one
 // user action to be one undo entry, and that is owned by the operation's
@@ -112,6 +116,44 @@ var ambiguous = new List<ElementId>();
 var refused = new List<ElementId>();
 var alreadyThat = new List<ElementId>();
 var findings = new List<string>();
+
+// ===========================================================================
+// CLEARING (version 6, from REMOVE_PARAMETER_VALUE).
+// ===========================================================================
+//
+// AN EMPTY PARAMETER AND A ZERO ARE NOT THE SAME THING. A blank in a schedule
+// means nobody has said; 0 means somebody said none. An empty value written as
+// text clears a text parameter and NOT a length, an airflow or an element
+// reference - so `clear` true asks Revit's own ClearValue, which works on
+// every storage kind that can be cleared, and never writes a 0.
+//
+//   REVIT REFUSES ClearValue ON A PLAIN TEXT BUILT-IN - Comments, measured
+//   2026-09-13 on `test projject`, every one refused "Cannot call Clear...".
+//   For a TEXT parameter the empty string IS the empty state, so that is the
+//   fallback, and only for text: a number or a reference that will not clear
+//   is refused, never set to zero.
+//   A TYPE PARAMETER REACHED FROM AN INSTANCE IS REFUSED. A type is shared;
+//   clearing it from forty instances empties it on every other instance in
+//   the project. Hand in the types if that is what is meant.
+//   ALREADY EMPTY is `alreadyEmpty`, not `cleared`, and every clear is READ
+//   BACK - empty after, or it is `unverified`.
+//   A READ-ONLY PARAMETER (Area, Volume, Length - computed by Revit) is
+//   `readOnly`, reported, never skipped in silence.
+//
+// `clear` with a value as well is two opposite asks, and is refused before
+// anything is touched.
+var cleared = 0;
+var alreadyEmpty = new List<ElementId>();
+var clearOnType = 0;
+var clearRefusals = new List<string>();
+var notThere = 0;
+var clearAndValue = clear && !string.IsNullOrEmpty(value);
+if (clearAndValue)
+{
+    findings.Add(string.Format("clear was asked AND a value ('{0}') was given - two opposite asks, so "
+        + "NOTHING WAS CHANGED. To empty '{1}', give clear=true and leave value empty; to write a "
+        + "value, leave clear out", value, parameterName));
+}
 
 // SpecTypeId.Boolean.YesNo on 2022 and later; null on 2020 and 2021, which
 // answer through ParameterType instead.
@@ -302,6 +344,11 @@ var askedReference = new List<ElementId>();
 
 foreach (var element in elements)
 {
+    // Version 6, REMOVE_PARAMETER_VALUE's rule: an element deleted since it was
+    // found is counted and passed over, and the rest of the batch completes.
+    if (element == null || !element.IsValidObject) { notThere++; continue; }
+    if (clearAndValue) { refused.Add(element.Id); continue; }
+
     // TWO PARAMETERS CAN ANSWER TO ONE NAME, AND THEN A WRITE BY NAME IS A COIN
     // TOSS. A shared or project parameter can be bound beside a built-in one of
     // the same name, and a curtain wall type carries its grid and mullion
@@ -317,6 +364,57 @@ foreach (var element in elements)
     }
 
     var parameter = element.LookupParameter(parameterName);
+
+    if (clear)
+    {
+        if (parameter == null)
+        {
+            // On the TYPE rather than the instance - a different, wider act.
+            Element elementType = null;
+            try { elementType = doc.GetElement(element.GetTypeId()); } catch { elementType = null; }
+            if (elementType != null && elementType.LookupParameter(parameterName) != null)
+            {
+                clearOnType++;
+                refused.Add(element.Id);
+            }
+            else absent.Add(element.Id);
+            continue;
+        }
+        if (parameter.IsReadOnly) { readOnly.Add(element.Id); continue; }
+
+        bool emptyNow = !parameter.HasValue
+            || (parameter.StorageType == StorageType.String && string.IsNullOrEmpty(parameter.AsString()));
+        if (emptyNow) { alreadyEmpty.Add(element.Id); continue; }
+
+        var done = false;
+        string why = null;
+        try { parameter.ClearValue(); done = true; }
+        catch (Exception ex) { why = ex.Message; }
+        if (!done && parameter.StorageType == StorageType.String)
+        {
+            try { done = parameter.Set(string.Empty); }
+            catch (Exception ex) { why = ex.Message; }
+        }
+        if (!done)
+        {
+            refused.Add(element.Id);
+            clearRefusals.Add(string.Format("{0} (id {1}): {2}", element.Name, element.Id,
+                why ?? "Revit would not clear it"));
+            continue;
+        }
+
+        // READ BACK. A clear that threw nothing is not evidence it took.
+        var emptyAfter = false;
+        try
+        {
+            emptyAfter = !parameter.HasValue
+                || (parameter.StorageType == StorageType.String && string.IsNullOrEmpty(parameter.AsString()));
+        }
+        catch { emptyAfter = false; }
+        if (emptyAfter) cleared++;
+        else unverified.Add(element.Id);
+        continue;
+    }
 
     if (parameter == null)
     {
@@ -465,4 +563,31 @@ if (notAYesNoWord > 0)
         "'{2}' is a Yes/No parameter: say Yes or No - True/False, On/Off, 1/0 " +
         "and Ticked/Unticked mean the same.",
         value, notAYesNoWord, parameterName));
+}
+
+// VERSION 6 - what a clear did, said the way REMOVE_PARAMETER_VALUE said it.
+if (notThere > 0)
+{
+    findings.Add(string.Format("{0} element(s) handed in are no longer in the model - deleted since they "
+        + "were found - and were passed over; the rest were done", notThere));
+}
+if (clear && !clearAndValue)
+{
+    if (clearOnType > 0)
+    {
+        findings.Add(string.Format("{0} element(s) carry '{1}' on their TYPE, not on the instance. "
+            + "Clearing it there would empty it on every other instance using that type, so it was NOT "
+            + "done - hand in the types if that is what you want", clearOnType, parameterName));
+    }
+    if (readOnly.Count > 0)
+    {
+        findings.Add(string.Format("{0} element(s) carry '{1}' as READ-ONLY and it cannot be cleared. "
+            + "Area, Volume and Length are computed by Revit", readOnly.Count, parameterName));
+    }
+    foreach (var line in clearRefusals.Take(10)) findings.Add("not cleared - " + line);
+    if (clearRefusals.Count > 10)
+        findings.Add(string.Format("and {0} more not cleared", clearRefusals.Count - 10));
+    findings.Add(string.Format("{0} cleared, {1} already empty. An empty field and a zero are different "
+        + "things in a schedule - blank means nobody has said, 0 means somebody said none",
+        cleared, alreadyEmpty.Count));
 }

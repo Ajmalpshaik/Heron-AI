@@ -1,15 +1,15 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-023
-semantic-identity: "tap these diffusers into the duct running past them"
+semantic-identity: "tap these diffusers into the duct running past them, or pipe these sprinklers and fixtures to the main beside them"
 kind: action
 domain: revit.mep
 capability: CONNECT_AIR_TERMINALS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -49,6 +49,20 @@ purpose: >
   **A terminal already connected is skipped, not reconnected**, because
   reconnecting leaves the old tap behind as an orphan fitting.
 
+  **Sprinklers and fixtures too (version 2, 2026-11-01).** CREATE_FIXTURE_BRANCHES
+  was merged in. An element with a pipe connector and no duct one - a pendent
+  sprinkler, a floor drain - is branched to the nearest straight PIPE among
+  `ducts`: a riser from its connector to the main's centreline height and a
+  level arm across to the main, at the connector's size, on the main's pipe
+  type and system, joined at the head. The connector must face up or down and
+  the main must be that way; the arm lands at least 100 mm or two main
+  diameters in from a main's end; riser and arm together within maxDistanceMm.
+  No fitting is made: `runs` holds the branches and the mains they land on, for
+  FIT_MEP_JOINTS to make the elbows and the taps. A head whose branch Revit
+  refuses, or that will not join, is taken back WHOLE - nothing is left for it,
+  as nothing is left for a terminal Revit declines. Version 2's proof is owed;
+  the card is DRAFT and the version 1 proof below is the record.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Joining
   raises Revit warnings on a real model; how those are handled belongs to
   whoever owns the transaction.
@@ -57,14 +71,22 @@ contract:
   needs:
     - name: doc
       type: Document
-    # The air terminals.
+    # The air terminals - and, version 2, the sprinklers or plumbing fixtures
+    # (CREATE_FIXTURE_BRANCHES' `elements`). A duct connector makes an element
+    # an air terminal; a pipe connector and no duct one, a head to branch.
     - name: elements
       type: IList<Element>
     # The ducts to tap into. Handing them in rather than searching the model
-    # keeps the choice with whoever knows which system is which.
+    # keeps the choice with whoever knows which system is which. Version 2:
+    # the PIPE mains a head branches to go here too - CREATE_FIXTURE_BRANCHES'
+    # `pipes` - named "Pipes", or "Ducts, Pipes" with terminals. A terminal
+    # never taps a pipe, and a head branches only to a straight pipe.
     - name: ducts
       type: IList<Element>
       source: request
+    # For a terminal, how far its connector may be from the duct; for a head
+    # (version 2), the longest branch allowed, riser and arm together. A head
+    # with no main this close is listed, never connected by a long pipe.
     - name: maxDistanceMm
       type: double
       source: request
@@ -101,6 +123,23 @@ contract:
     - name: notMeasured
       # Terminals whose position could not be read before or after, so
       # whether they moved is NOT known. Never counted as unmoved (D-52).
+      role: accounting
+      type: IList<ElementId>
+    # VERSION 2 - CREATE_FIXTURE_BRANCHES' answers, under its own names.
+    - name: branched
+      # How many sprinkler or fixture heads got a branch drawn AND joined at
+      # the head, read back off the head's connector.
+      role: result
+      type: int
+    - name: runs
+      # The new branch pipes and the mains they land on - what FIT_MEP_JOINTS
+      # takes next as its `elements`. Empty when only terminals were handed in.
+      role: result
+      type: IList<Element>
+    - name: noMainNear
+      # Heads with no straight pipe main within reach in the direction they
+      # face, clear of its ends. The evidence it looked, never a thing it
+      # found (D-52).
       role: accounting
       type: IList<ElementId>
 
@@ -153,6 +192,32 @@ compatibility-note: >
   rather than remembered. It lives in the mechanical namespace, which the
   wrapper already carries.
 
+  Version 2, from CREATE_FIXTURE_BRANCHES: `Pipe.Create(Document, ElementId,
+  ElementId, ElementId, XYZ, XYZ)`, `MEPCurve.ReferenceLevel`,
+  `Connector.ConnectTo`, `Connector.Radius` / `Shape` / `Domain` /
+  `CoordinateSystem`, `RBS_PIPE_DIAMETER_PARAM`, `RBS_PIPING_SYSTEM_TYPE_PARAM`
+  and `SubTransaction` (`Start`, `Commit`, `RollBack`, `HasStarted`,
+  `HasEnded`) are present 2020 through 2027. The connector overload of
+  Pipe.Create is NOT used: RevitAPI.xml says that when it cannot join it still
+  creates the pipe and THROWS, which leaves a pipe nothing here can name.
+
+# VERSION 2 (2026-11-01) - CREATE_FIXTURE_BRANCHES WAS MERGED INTO THIS CARD on
+# the owner's instruction ("make sure there is no duplicate tools", "in every
+# conflict keep the safer rule"), and is DEPRECATED. Its `elements` (the heads)
+# are this card's `elements`; its `pipes` (the mains) go in `ducts`; its
+# maxDistanceMm is this card's, read as the longest branch for a head; its
+# branched, runs and noMainNear are here under the same names; its
+# alreadyConnected and refused are this card's; its findings sentence is said
+# here when a head was handed in.
+#
+# THE CONFLICT, AND THE SAFER RULE KEPT: CREATE_FIXTURE_BRANCHES kept the pipes
+# it had made when Revit refused the rest of a branch, and kept a branch that
+# would not join the head, listing it in `refused` and in `runs`. This card
+# leaves an element Revit declines unchanged. KEPT: each head's branch is drawn
+# in its own SubTransaction and rolled back whole when any part is refused or
+# the head still reads open - a pipe left hanging beside a head reads as piped
+# on plan and is not.
+
 # TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
 #
 # Another tool, on real models and mostly on Revit 2020, saw this same Revit
@@ -168,7 +233,7 @@ compatibility-note: >
 # refused. NEEDS-CHECKING AJ1 is the check on a real model: one terminal that
 # should move and one that should not.
 
-# ROUTING - repeated in CONNECT_OPEN_ENDS and PLACE_MEP_FITTING.
+# ROUTING - repeated in CONNECT_OPEN_ENDS and FIT_MEP_JOINTS.
 #
 #   "connect the diffusers to the duct" -> here - a TAP cut into the duct's side
 #   "tap these terminals in"            -> here
@@ -176,14 +241,19 @@ compatibility-note: >
 #   "they are touching but not
 #    connected"                         -> CONNECT_OPEN_ENDS - two ends already
 #                                          at one point, and no fitting added
-#   "join these two ducts"              -> PLACE_MEP_FITTING
+#   "join these two ducts"              -> FIT_MEP_JOINTS
 #   "the flow is zero everywhere"       -> often this: nothing is tapped in, so
 #                                          Revit has no terminals to draw air
 #                                          through the run
-#   "pipe these sprinklers to the main" -> CREATE_FIXTURE_BRANCHES - there is no
-#                                          pipe twin of this call, so the branch
-#                                          is drawn there and fitted after
-#                                          (2026-10-14)
+#   "pipe these sprinklers to the main" -> here - there is no pipe twin of the
+#                                          tap call, so the branch is drawn and
+#                                          FIT_MEP_JOINTS fits it after, from
+#                                          `runs` (CREATE_FIXTURE_BRANCHES until
+#                                          2026-11-01)
+#   "draw the drops from the sprinklers to the branch line" -> here
+#   "make the flex drop to that diffuser" -> CREATE_DUCT_RUNS - it makes flex
+#                                          and does NOT join it up
+#   "is every sprinkler actually piped" -> CHECK_FIXTURE_CONNECTIVITY
 
 utterances:
   - connect the diffusers to the duct
@@ -191,3 +261,8 @@ utterances:
   - the diffusers are not connected
   - connect the air terminals
   - join the grilles to the ductwork
+  # MOVED 2026-11-01 from CREATE_FIXTURE_BRANCHES, merged into this card.
+  - draw the drops from the sprinklers to the branch line
+  - pipe these sprinklers to the main above
+  - run branch pipes from these heads to the pipe
+  - draw the branch from each floor drain down to the drain line

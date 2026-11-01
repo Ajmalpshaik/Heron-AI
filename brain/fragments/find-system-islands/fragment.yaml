@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: FIND_SYSTEM_ISLANDS
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO TRACE_CONNECTIVITY (trace-connectivity), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to TRACE_CONNECTIVITY. The proof below, where there is one, is the record
+# of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: TRACE_CONNECTIVITY
+  why: >
+    The other question about the same connectors: split the whole set into its
+    separate networks, each one's size, and the networks no equipment feeds.
+    TRACE_CONNECTIVITY does it since its version 2 when `start` is left out,
+    with this card's code and this card's four answers under the same names -
+    islandOf, islandSizes, sourceless, islandCount. One rule was opposite:
+    this card trusted Revit's own joins, and TRACE_CONNECTIVITY follows
+    connectors touching within a tolerance too. The safer was kept - the
+    islands are Revit's own joins and touching is counted separately in
+    joinedByGeometry, never added into one count, so a break Revit's flow
+    calculation sees is never read as joined.
 
 purpose: >
   Walks a whole set through its connectors and reports how many **separate**

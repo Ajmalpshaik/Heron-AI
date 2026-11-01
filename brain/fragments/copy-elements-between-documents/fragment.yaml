@@ -1,15 +1,38 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-098
-semantic-identity: "copy these elements from the other open file into this one - family to family, project to project"
+semantic-identity: "copy these elements from the other open file into this one - family to family, project to project - or the labels of a seed tag or title block family, view to view"
 kind: action
 domain: revit.elements
 capability: COPY_ELEMENTS_BETWEEN_DOCUMENTS
-version: 1
+# VERSION 2 (2026-11-01): COPY_FROM_LINK was merged into this card on the
+# owner's instruction - "make sure there is no duplicate tools" - and is
+# DEPRECATED; see the merge block above `utterances`. Version 1's proof below
+# is kept as the record; it no longer describes the code, so the card is DRAFT
+# until version 2 is proved on a real model (D-30).
+#
+# VERSION 2, THE DETAIL. With `fromLink` true, `sourceDocumentTitle` names a
+# LINK in this model - part of its name as Manage Links shows it, or of its
+# file's title - the ids are ids INSIDE the link, and the copies land where the
+# link puts them: the placement's total transform, then the offset. One
+# placement only: words matching two are refused with both named. A link not
+# loaded is refused naming RELOAD_LINKS. The copies are ours and stop tracking
+# the link, said in the answer. Without `fromLink` a LINKED document is never
+# a source - version 1 could match one in Application.Documents and copy out of
+# it with no transform - and words matching only a link are refused pointing
+# at `fromLink`. Fewer arriving than were picked is said.
+#
+# VERSION 3 (2026-11-01): COPY_LABELS_FROM_FAMILY was merged into this card on
+# the owner's instruction and is DEPRECATED - `labels` true copies a seed
+# family's labels into the tag, annotation or title block family in front,
+# view to view, same category only, each read back against its seed. See the
+# merge block above `utterances`. DRAFT until version 3 is proved (D-30);
+# version 2 was never proved either.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -25,8 +48,9 @@ risk: MODIFY
 # copies those view to view. Types and materials come along as Revit's own
 # paste brings them.
 #
-# COPY_ELEMENTS copies within this model; COPY_FROM_LINK copies out of a
-# linked model; the TRANSFER_*_BETWEEN_DOCUMENTS cards carry views, filters,
+# COPY_ELEMENTS copies within this model; this card copies out of a linked
+# model too since version 2, with fromLink; the TRANSFER_*_BETWEEN_DOCUMENTS
+# cards carry views, filters,
 # materials, line and object styles and project parameters.
 #
 # READ BACK: every id Revit returns is looked up in this document.
@@ -35,6 +59,17 @@ risk: MODIFY
 purpose: >
   Copies model elements from another open document - a project or a family -
   into the one in front, by category or by id, aligned or moved by an offset.
+
+  **OR OUT OF A LINKED MODEL, WITH ITS TRANSFORM (version 2).** With `fromLink`
+  the source is a link, and the copies land where the link puts them - and
+  stop tracking it. Version 2 is DRAFT until proved.
+
+  **OR A SEED FAMILY'S LABELS, VIEW TO VIEW (version 3).** View-specific
+  elements stay out unless asked: with `labels` true, labels set up once in
+  Edit Label in a seed family are copied into the tag, annotation or title
+  block family in front - the route to a new label, which Revit's API cannot
+  make. Same category only; the first lands at `placeAtMm`; each copy is read
+  back against its seed, on Revit 2027 parameter by parameter.
 
 contract:
   needs:
@@ -50,6 +85,8 @@ contract:
       type: string
       source: request
     # Ids in the other document, comma separated; an EMPTY value is none.
+    # With `labels` true, label ids in the SEED, as REPORT_FAMILY_LABELS lists
+    # them on the seed; EMPTY or "all" is every label.
     - name: elementIds
       type: string
       source: request
@@ -57,6 +94,40 @@ contract:
     - name: offsetMm
       type: string
       source: request
+    # VERSION 2, from COPY_FROM_LINK: true when the source is a LINK in this
+    # model - sourceDocumentTitle then names the link, the ids are ids in the
+    # link, and the link's own transform places the copies. Left out it binds
+    # false: another open document, never a link.
+    - name: fromLink
+      type: bool
+      source: request
+      optional: true
+    # VERSION 3, from COPY_LABELS_FROM_FAMILY: true copies LABELS from a seed
+    # family open in this Revit - sourceDocumentTitle names it - into the tag,
+    # annotation or title block family in front, view to view, the same
+    # category only. categories is then empty, "all" or "labels", offsetMm
+    # empty and fromLink false. Left out it binds false: view-specific
+    # elements stay out, version 2 exactly.
+    - name: labels
+      type: bool
+      source: request
+      optional: true
+    # VERSION 3, label mode. Part of a label's text - or, on 2027, of a
+    # parameter's name, sample, prefix or suffix - "Diameter"; several with
+    # commas between. Left out, "all".
+    - name: labelContains
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # VERSION 3, label mode. "x,y" in millimetres: where the first label
+    # picked - the top left one - lands; the rest keep their spacing. Left
+    # out, "keep": where they are in the seed.
+    - name: placeAtMm
+      type: string
+      source: request
+      optional: true
+      absent: keep
   provides:
     - name: copied
       role: result
@@ -64,6 +135,18 @@ contract:
     - name: copiedIds
       role: result
       type: IList<ElementId>
+    - name: kept
+      # VERSION 3, label mode: copies that read back showing exactly what their
+      # seed shows. 0 outside label mode. A reading of what was copied, never a
+      # thing found (D-52).
+      role: accounting
+      type: int
+    - name: readBack
+      # VERSION 3, label mode: one line per copy, joined by "  ||  ": its id,
+      # its seed's id, where it landed, and what it shows - or DIFFERS with
+      # both sides. Empty outside label mode.
+      role: accounting
+      type: string
     - name: report
       # ONE STRING: picked, arrived by category, view-specific left (D-52).
       role: accounting
@@ -118,13 +201,79 @@ compatibility-note: >
   Application.Documents, Element.OwnerViewId, Category.Parent and
   CategoryType are present 2020 through 2027 - read off RevitAPI.xml in the
   Nice3point reference packages for all eight releases on 2026-10-13.
+  Version 3 adds COPY_LABELS_FROM_FAMILY's calls:
+  ElementTransformUtils.CopyElements(View, ICollection<ElementId>, View,
+  Transform, CopyPasteOptions), Family.FamilyCategory, Element.GetTypeId,
+  View.ViewType, TextElement.Coord and Text, all eight releases (tools/api-
+  surface --members, 2026-10-21); the parameter-by-parameter comparison reads
+  AnnotationLabel under #if REVIT2027_OR_GREATER - 2020 to 2026 compare text
+  and type only. Built on all eight releases on 2026-11-01.
 
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "copy the extrusions from the valve family into this one" -> here
 #   "copy the furniture over from the other project"          -> here
 #   "copy these walls 3 m to the east"                        -> COPY_ELEMENTS
-#   "copy the ducts out of the linked model"                  -> COPY_FROM_LINK
+#   "copy the ducts out of the linked model"                  -> here since
+#                                         version 2, fromLink=true - it was
+#                                         COPY_FROM_LINK's, merged in
+#   "bring the grids in from the architect"                   -> here, fromLink
+#   "what links are in this model"                            -> LIST_LINKED_MODELS
+#   "reload the links"                                        -> RELOAD_LINKS -
+#                                         and the copies made from a link do
+#                                         NOT update when it does
+#   "copy the diameter label from the seed pipe tag into this tag" -> here,
+#                                         labels=true - COPY_LABELS_FROM_FAMILY
+#                                         until 2026-11-01
+#   "read the labels in this tag family"                      -> REPORT_FAMILY_LABELS
+#   "move the diameter label up 2 mm"                         -> SET_FAMILY_LABEL_LAYOUT
+#
+# VERSION 2 (2026-11-01) - COPY_FROM_LINK WAS MERGED INTO THIS CARD on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools", every conflict to keep the SAFER rule. It is DEPRECATED - DRAFT,
+# never proved. The same CopyElements across documents; a link is one more
+# kind of source document, with a transform. Where each retired input and
+# output is now:
+#
+#   COPY_FROM_LINK                      here, fromLink=true
+#     linkInstance                      sourceDocumentTitle, naming the link -
+#                                       one placement, refused when two match
+#     linkedElementIds                  elementIds, ids in the link - or
+#                                       categories
+#     the link's total transform        applied, then offsetMm
+#     created                           copiedIds, read back; copied
+#     findings                          findings - placed through the link's
+#                                       transform, ours and not tracking it,
+#                                       fewer arrived said, a link not loaded
+#                                       refused naming RELOAD_LINKS
+#
+# THE SAFER RULE WHERE THEY DIFFERED. COPY_FROM_LINK copied whatever ids it
+# was given; this card leaves view-specific elements and counts them - Revit
+# copies those view to view - and that is kept. Version 1 here could copy out
+# of a link's document by title with no transform; that is closed.
+#
+# VERSION 3 (2026-11-01) - COPY_LABELS_FROM_FAMILY WAS MERGED INTO THIS CARD,
+# same instruction, and is DEPRECATED - DRAFT, never proved. Where each of its
+# inputs and outputs is now:
+#
+#   COPY_LABELS_FROM_FAMILY             here, labels=true
+#     sourceDocumentTitle               sourceDocumentTitle - the seed family,
+#                                       open in this Revit, never a link
+#     labelIds                          elementIds - label ids in the seed;
+#                                       empty or "all" is every label
+#     labelContains, placeAtMm          the same names, the same absent words
+#     copied, copiedIds, kept,          the same names
+#     readBack, report, findings
+#
+# THE DEFAULT STAYS: view-specific elements are left unless `labels` is said -
+# a label is view-specific, and nothing else of a view's comes along. The
+# category rule, the seed-by-seed read-back (2027 parameter by parameter) and
+# the type-name clash named before the copy are that card's, moved whole.
+# THE SAFER RULE WHERE THEY DIFFERED: that card skipped a label Revit refused,
+# or one with no view of its kind here, and kept the rest; here such a call
+# copies NOTHING - it throws and is rolled back, as every copy this card makes
+# is all or nothing. A copy that DIFFERS from its seed is named, never counted
+# kept - both cards' rule.
 
 utterances:
   - copy the forms from the other family into this family
@@ -133,3 +282,16 @@ utterances:
   - copy the furniture over from the other project
   - copy these element ids from the other file into this one
   - paste the generic models from the template project here
+  # MOVED 2026-11-01 from COPY_FROM_LINK, merged into this card.
+  - copy these out of the link
+  - bring the grids in from the architect
+  - take the elements out of the linked model
+  - copy from the link into our model
+  - i need a real copy of what is in the link
+  # MOVED 2026-11-01 from COPY_LABELS_FROM_FAMILY, merged into this card.
+  - copy the diameter label from the seed pipe tag into this tag family
+  - add a label for bottom elevation from our seed tag family
+  - copy the sheet number label from our seed title block
+  - create a label in this tag family from the seed family
+  # ...and COPY_LABELS_FROM_FAMILY's semantic identity, which nothing else declares:
+  - copy labels already set up in a seed tag or title block family, open in the same Revit, into the family in front - same category only, at a point - and read each copy back against its seed

@@ -2925,7 +2925,7 @@ def calc_ventilation(a):
         a.result("Per person", "%s L/s" % _f(vot / sum_pz, 2))
     a.result("Per floor area", "%s L/s per m2" % _f(vot / total_area, 3))
     a.into_revit("WRITE_ELEMENT_PARAMETERS can set each Space's outdoor-air figures; "
-                 "REPORT_SPACE_AIRFLOW reads design against actual")
+                 "READ_SPACE_LOADS reads design against actual")
 
 
 @calculation("exhaust", "Exhaust airflow and pressure balance", "ventilation")

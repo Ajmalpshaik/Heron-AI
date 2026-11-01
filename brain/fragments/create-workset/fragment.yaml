@@ -95,7 +95,7 @@ compatibility-note: >
 #                                       answer a request to make one
 #   "put these on the MEP workset"   -> SET_ELEMENT_WORKSET - the workset
 #                                       already exists
-#   "who owns this element"          -> READ_ELEMENT_OWNERSHIP
+#   "who owns this element"          -> REPORT_ELEMENT_OWNERSHIP
 
 #   "rename this workset"                -> RENAME_WORKSET
 utterances:

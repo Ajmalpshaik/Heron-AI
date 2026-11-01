@@ -52,7 +52,8 @@ purpose: >
      block. SAY BEFORE STARTING: Revit's API cannot MAKE a label on any
      release 2020 to 2027, nor change what one SHOWS - its parameters, sample
      value, prefix, suffix, spaces, break and unit format (docs/43 section
-     8.3a). COPY_LABELS_FROM_FAMILY copies them from a seed family of the
+     8.3a). COPY_ELEMENTS_BETWEEN_DOCUMENTS with labels=true copies them
+     (COPY_LABELS_FROM_FAMILY until 2026-11-01) from a seed family of the
      same category open in the same Revit; otherwise the modeller makes them
      by hand in Edit Label. REPORT_FAMILY_LABELS reads them back - their
      parameters on Revit 2027 only - and SET_FAMILY_LABEL_LAYOUT moves and
@@ -89,14 +90,15 @@ needs:
   - DRAW_FAMILY_FILLED_REGION
   - LINK_FAMILY_PARAMETER
   # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
-  # GUIDs, against the family, before ADD_FAMILY_SHARED_PARAMETERS writes.
+  # GUIDs, against the family, before ADD_FAMILY_PARAMETERS' shared kind writes.
   - REPORT_SHARED_PARAMETER_FILE
-  - ADD_FAMILY_SHARED_PARAMETERS
+  # ADD_FAMILY_SHARED_PARAMETERS was listed here until 2026-11-01, when it was merged into ADD_FAMILY_PARAMETERS.
   # The proof, and never skipped.
   - FLEX_FAMILY
   # Step 7's labels: read, copied from a seed of the same category, laid out.
   - REPORT_FAMILY_LABELS
-  - COPY_LABELS_FROM_FAMILY
+  # COPY_LABELS_FROM_FAMILY was listed here until 2026-11-01, when it was merged into COPY_ELEMENTS_BETWEEN_DOCUMENTS.
+  - COPY_ELEMENTS_BETWEEN_DOCUMENTS
   - SET_FAMILY_LABEL_LAYOUT
 
 preconditions:

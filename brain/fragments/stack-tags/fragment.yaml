@@ -1,15 +1,26 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-087
-semantic-identity: "stack these tags in a tidy column at the side"
+semantic-identity: "stack these tags in a tidy column at the side, or park them in columns down both edges of the view"
 kind: action
 domain: revit.annotation
 capability: STACK_TAGS
-version: 1
+# VERSION 2 (2026-11-01): ARRANGE_TAGS_TO_VIEW_EDGES was merged into this card
+# on the owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. `layout` `edges` parks the tags in TWO columns just outside the
+# view's left and right edges - each tag to the side its own element is on,
+# each column ordered by the elements up the view - `marginMm` paper
+# millimetres out, multiplied by the scale; the crop is the edge, or the tags'
+# own extent when the view is not cropped (`usedTagExtent`), with `perSide`
+# saying how many went each way. `point`, the default, is version 1's one
+# column at `stackAt`; a stack point left out reads 0,0,0 and is refused on
+# that road. Version 1's proof below no longer describes the code; DRAFT until
+# version 2 is proved.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -34,6 +45,14 @@ purpose: >
   stays on its element; a free one is carried back to where it was, so the
   arrows do not come off the things they point at.
 
+  **Or two columns down the view's edges** (version 2, from
+  ARRANGE_TAGS_TO_VIEW_EDGES) - the "I cannot read the drawing for tags" fix
+  on a busy services plan. Each tag goes to the side its own element is on,
+  so the leaders stay short; each column follows the elements up the view, so
+  they do not cross; the margin is paper millimetres from the crop, or from
+  the tags' own extent when the view is not cropped, and the answer says
+  which.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -45,14 +64,35 @@ contract:
       source: request
     - name: elements
       type: IList<Element>
-    # Where the top of the stack goes, in the view's plane.
+    # Where the top of the stack goes, in the view's plane. Optional since
+    # version 2, for layout edges: left out it reads 0,0,0 - the project
+    # origin - which the point layout refuses rather than stacking there.
     - name: stackAt
       type: XYZ
       source: request
+      optional: true
+      absent: 0,0,0
     # Paper millimetres between tags - multiplied by the view scale here.
     - name: gapMm
       type: double
       source: request
+    # VERSION 2, from ARRANGE_TAGS_TO_VIEW_EDGES. point - one column at
+    # stackAt, version 1's - or edges, two columns just outside the view's
+    # left and right edges. Left out: point.
+    - name: layout
+      type: string
+      source: request
+      optional: true
+      absent: point
+    # VERSION 2, from ARRANGE_TAGS_TO_VIEW_EDGES. Paper millimetres from the
+    # view's edge to the column, multiplied by the view scale - edges needs
+    # it. Left out: none, and edges is refused. Text, because the binder has
+    # no way to leave a number out.
+    - name: marginMm
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: stacked
       role: result
@@ -73,6 +113,22 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: perSide
+      # VERSION 2, from ARRANGE_TAGS_TO_VIEW_EDGES. With edges, how the parked
+      # tags were split between the left and right edges. A breakdown of the
+      # answer, never more of it (D-52).
+      role: accounting
+      type: IDictionary<string, int>
+    - name: usedTagExtent
+      # VERSION 2, from ARRANGE_TAGS_TO_VIEW_EDGES. With edges, whether the
+      # tags' own extent stood in for an uncropped view's edges. Which method
+      # ran, never a tag it moved (D-52).
+      role: accounting
+      type: bool
+    - name: findings
+      # VERSION 2. The refusal of a layout, a missing margin or a stack point
+      # left out, and with edges how many went to each side and against what.
+      type: IList<string>
 
 proof:
   date: '2026-09-14'
@@ -135,6 +191,10 @@ compatibility-note: >
 #                                           there is no room at all
 #   "centre the room tags"               -> CENTER_ROOM_TAGS
 #   "make the leaders L-shaped"          -> FORCE_TAG_LEADER_LSHAPE
+#   "park the tags at the sides"         -> here since version 2, layout
+#                                           edges (was ARRANGE_TAGS_TO_VIEW_
+#                                           EDGES)
+#   "i cannot read the drawing for tags" -> here, layout edges
 #   "put tags on these"                  -> TAG_ELEMENTS_IN_VIEW. This one
 #                                           only moves tags that exist
 #   "move the tags beside the diffusers" -> OFFSET_TAGS_FROM_HOST - each tag
@@ -155,3 +215,8 @@ utterances:
   - stack the tags
   - put the tags in a column
   - align the tags vertically
+  # MOVED 2026-11-01 from ARRANGE_TAGS_TO_VIEW_EDGES, merged into this card.
+  - park the tags down the sides
+  - i cannot read the drawing for tags
+  - move the tags to the edge of the view
+  - put the tags in columns at the sides

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: CREATE_FAMILY_SWEPT_BLEND
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_FAMILY_FORMS (create-family-forms), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to CREATE_FAMILY_FORMS. The proof below is the record of what this
+# card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_FAMILY_FORMS
+  why: >
+    The same building: one closed loop at the start of one straight or curved
+    piece of path on a named family plane changing into another at its end,
+    solid or void, read back all or nothing. CREATE_FAMILY_FORMS builds it as
+    a list of one row - kind=swept blend with this card's own fields,
+    workPlane, path, bottomProfile, topProfile and solid, read as this card
+    read them: the path ONE piece, refused otherwise naming kind=sweep, and
+    each profile one loop. Its version 3 said what this card said: the path's
+    kind and length, the extent and the volume. formId is the first row's id
+    there. Nothing was opposite.
 
 purpose: >
   Builds a SWEPT BLEND in the family open in the Family Editor - one closed

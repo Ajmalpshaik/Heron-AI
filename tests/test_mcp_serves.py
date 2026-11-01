@@ -375,9 +375,12 @@ async def exercise(server):
           "and that a rebuild is needed - this store is the suite's own")
 
     # D-128, THROUGH THE DISPATCH A HOST USES. "what scale is this view" is a
-    # question a write declares (D-86's own example), so without the flag it
-    # answers by identity with SET_VIEW_SCALE; with `question` the write is
-    # not offered and the reply says what was left out.
+    # question a write declared (D-86's own example) and answered by identity
+    # with SET_VIEW_SCALE. Since 2026-11-01 that card is merged into
+    # SET_VIEW_PROPERTIES and DEPRECATED, the sentence is declared nowhere and
+    # ranks to READ_VIEW_SCALE - so the write that a question must not be
+    # handed is SET_VIEW_PROPERTIES now; with `question` it is not offered and
+    # the reply says what was left out.
     print()
     print("  a question, through the SDK's own dispatch - D-128")
     import heron_brain as BRAIN
@@ -409,7 +412,7 @@ async def exercise(server):
     check("Asked as a question" not in plain,
           "without `question` the reply is the lookup it always was")
     check("Asked as a question" in asked and "D-128" in asked
-          and "would need   SET_VIEW_SCALE" not in asked,
+          and "would need   SET_VIEW_PROPERTIES" not in asked,
           "with it, the write is not the answer and the reply says what was "
           "not offered")
 

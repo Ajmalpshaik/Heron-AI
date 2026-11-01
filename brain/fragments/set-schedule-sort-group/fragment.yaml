@@ -164,7 +164,9 @@ compatibility-note: >
 #                                          sorting with a header in Revit
 #   "put a total at the bottom"         -> here, showGrandTotal
 #   "calculate totals for the flow column"
-#                                       -> SET_SCHEDULE_FIELD_TOTALS. A footer
+#                                       -> SET_SCHEDULE_APPEARANCE, calculateTotals
+#                                          (SET_SCHEDULE_FIELD_TOTALS until it
+#                                          was merged there, 2026-11-01). A footer
 #                                          and the grand total are switched on
 #                                          HERE; what they add up is chosen per
 #                                          column THERE. Until a column has
@@ -176,7 +178,7 @@ compatibility-note: >
 #                                          exactly: a table claiming a sentence
 #                                          the index never saw records a
 #                                          decision nothing acts on
-#   "list the levels in the project"    -> LIST_LEVELS. A question about the
+#   "list the levels in the project"    -> REPORT_LEVEL_ELEVATIONS. A question about the
 #                                          MODEL, and it is what "sort the
 #                                          schedule by level" used to return
 #   "filter the schedule to level 2"    -> SET_SCHEDULE_FILTERS. Sorting decides

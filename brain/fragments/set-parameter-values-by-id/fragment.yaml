@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -159,7 +159,12 @@ capability: SET_PARAMETER_VALUES_BY_ID
 #   The proof below no longer describes the code and is kept as a record; the
 #   card is DRAFT until NEEDS-CHECKING Group JF proves version 6. Kept out of
 #   the purpose and the identity line, for the reason version 3 gives.
-version: 6
+#
+# VERSION 7 (2026-11-01) - IMPORT_PARAMETER_VALUES MERGED IN: rows read from a
+# CSV, `blankCells`, rows matched by id as text - see the purpose's last
+# paragraph and the comment above `utterances`. The proof below is version
+# 6's, kept as the record; DRAFT until version 7 is proved on a real model.
+version: 7
 source: OFFICIAL
 risk: MODIFY
 
@@ -201,6 +206,15 @@ purpose: >
   TransactionGroup makes the whole Apply one entry in Revit's undo list
   (Golden Rule 16).
 
+  **Or from a spreadsheet** (version 7, when IMPORT_PARAMETER_VALUES was merged
+  in): `csvPath` names a CSV whose first column is each element's id and whose
+  other columns are parameter names - a different value per element, from a
+  table edited outside Revit, the client's equipment tags sent back. Each cell
+  is an id row, so all or nothing holds for the file: an id naming no element
+  here, a missing parameter or a value Revit will not take, and nothing is
+  written. `blankCells` - skip or clear - says what an empty cell means; it is
+  asked, never assumed. The rows alone name the elements, as for every row.
+
 contract:
   needs:
     - name: doc
@@ -224,6 +238,29 @@ contract:
     - name: rows
       type: string
       source: request
+      # Version 7: left out it reads "none", no rows - for a run from csvPath.
+      optional: true
+      absent: none
+    # VERSION 7, from IMPORT_PARAMETER_VALUES: a CSV to read the rows from -
+    # first column the element's id as Revit prints it (EXPORT_PARAMETERS_TO_CSV
+    # writes it as ElementId), then one column per parameter; a UniqueId column,
+    # if the file has one, must name the same element. Left out: "none", rows
+    # only. Given with rows, refused. A CSV goes in the session's scratch
+    # folder, never beside Heron or the model.
+    - name: csvPath
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 7, from IMPORT_PARAMETER_VALUES: "skip" or "clear" - what an
+    # EMPTY cell of the CSV means. ASKED, NO DEFAULT: one of the two deletes
+    # what somebody typed, so Heron never picks. Left out ("none") with a CSV,
+    # the run is refused before the file is read.
+    - name: blankCells
+      type: string
+      source: request
+      optional: true
+      absent: none
     # VERSION 3 (5b-610). The ONE face of every element written that stays
     # where it is: outside - the face looking out of the building - or left,
     # right, top, bottom, near or far of a named view, as "left of Section 3".
@@ -282,6 +319,40 @@ contract:
     - name: findings
       role: accounting
       type: IList<string>
+    # VERSION 7, from IMPORT_PARAMETER_VALUES - for a CSV.
+    - name: rowsMatched
+      # CSV rows whose id named an element here. What it could act on, never
+      # a value written (D-52).
+      role: accounting
+      type: int
+    - name: rowsUnmatched
+      # CSV rows whose id named nothing here, or whose UniqueId was another
+      # element's. One is enough for nothing to be written (D-52).
+      role: accounting
+      type: int
+    - name: blankCellsSkipped
+      # Empty cells left alone because blankCells was skip. Deliberately not
+      # used - never a value written (D-52).
+      role: accounting
+      type: int
+    - name: cellsCleared
+      # Text values emptied because their cell was blank and blankCells was
+      # clear - also in `written`. Zero when nothing was written.
+      role: result
+      type: int
+    - name: valuesRejected
+      # Values Revit took and then read back different, after the one
+      # regeneration - text exactly, a tick box by its 1 or 0, a reference by
+      # its id; never counted in `written`. On every route since version 7
+      # (D-52).
+      role: accounting
+      type: int
+    - name: rowFindings
+      # Every stale and refused row as ONE string joined by " | ", shown whole
+      # where a list is cut to three items (IMPORT_PARAMETER_VALUES' 5b-439).
+      # Empty on a clean run (D-52).
+      role: accounting
+      type: string
 
 # VERSION 3's PROOF, KEPT AS A RECORD. Version 4 changed impl/ (rows 5b-1259,
 # 5b-1260), so its fingerprint no longer describes the code and the card is
@@ -356,6 +427,49 @@ compatibility-note: >
   and `Definition.Name` are unchanged 2020 to 2027, and `Guid.TryParse` is the
   .NET Framework 4 call every runtime here carries.
 
+# IMPORT_PARAMETER_VALUES WAS MERGED INTO THIS CARD on 2026-11-01, on the
+# owner's instruction ("make sure there is no duplicate tools"; "in every
+# conflict keep the safer rule"), and is DEPRECATED. The same job: a different
+# value per element, matched by id, written and read back. Where its inputs and
+# outputs are now: csvPath and blankCells the same names; valuesWritten ->
+# written; rowsMatched, rowsUnmatched,
+# valuesRejected, blankCellsSkipped, cellsCleared, rowFindings the same names;
+# findings the same. Its Yes/No words, its element reference by name, its
+# GUID-less shared-name refusal and its one regeneration before the read-back
+# were this card's already.
+#
+# THE SAFER RULE WHERE THEY DIFFERED:
+#   ALL OR NOTHING. The import wrote every row it could and named the rest -
+#   an unmatched id was skipped, the other rows written. Here one row that
+#   cannot be used and NOTHING is written.
+#   NEVER WIDENED PAST THE ROWS. The import was "scoped to the selection": a
+#   row whose id was not among the elements handed in was skipped. This card
+#   takes NO elements and no selection - one made after the table was read
+#   would be written onto (D-108; tests/test_companion.py holds it) - so the
+#   import's `elements` is NOT carried, as an opposite rule: the rows alone
+#   name the elements and nothing outside them is ever touched; each id must
+#   name one element here or nothing is written; and a UniqueId column, when
+#   the file has one, must agree - the check that catches another model's
+#   file, which the selection scope caught. A file from another model whose
+#   ids happen to name elements here that carry every column is NOT caught
+#   without a UniqueId column: export one, or check the count first.
+# NOT CARRIED, as opposite rules: includeTypeParameters (a type parameter
+# written from an instance's row) - a type is shared, so here that row is
+# refused and the type's own id is named in the row instead; and
+# changedOnRegeneration, which measured the import's early read - this card
+# reads back only after the regeneration, so there is no early read to count.
+# ROUTING, from IMPORT_PARAMETER_VALUES:
+#   "import the parameter values from this csv" / "the client sent the tags
+#    back"                               -> here, csvPath and blankCells
+#   "set the comments to issued"         -> WRITE_ELEMENT_PARAMETERS - ONE
+#                                           literal on every element
+#   "put AJ- in front of every mark"     -> EDIT_TEXT_VALUES
+#   "copy the Mark into Comments"        -> COPY_PARAMETER_VALUE
+#   "export the schedule so i can edit it" -> EXPORT_SCHEDULE_TO_CSV, the
+#                                           outward leg; check its header
+#   "which of these are blank"           -> DESCRIBE_BLANK_PARAMETERS
+#   "clear these values"                 -> WRITE_ELEMENT_PARAMETERS clear=true
+
 utterances:
   - apply the values edited in the Companion table
   - write these edited parameter values back to the elements
@@ -369,3 +483,12 @@ utterances:
   # purpose was left as it was so that nothing else moves (5b-610).
   - set the wall width to 100 and keep the outside face
   - change the opening depth keeping its outer face
+  # MOVED 2026-11-01 from IMPORT_PARAMETER_VALUES, merged into this card.
+  - import the parameter values from this csv
+  - load these values back into the model from the spreadsheet
+  - the client sent the equipment tags back in excel
+  - write these marks onto the elements from a file
+  - update the parameters from this table
+  - bulk set different values per element from a file
+  - push the edited schedule back into revit
+  - the client sent the tags back

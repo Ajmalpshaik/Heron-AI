@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: REPORT_ELEMENT_GEOMETRY
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO MEASURE_ELEMENT_VOLUME
+# (measure-element-volume), on the owner's instruction in conversation: "make
+# sure there is no duplicate tools". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to MEASURE_ELEMENT_VOLUME. A proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: MEASURE_ELEMENT_VOLUME
+  why: >
+    The same read: an element's solids, nested ones as placed, and the ones
+    with none named. MEASURE_ELEMENT_VOLUME totals the volume and surface
+    area, measures an element handed in twice once, and since its version 2
+    lists the shape this card listed - `geometry`, solids, faces, edges,
+    volume and box in millimetres, each edge or face with `detail`, stopping
+    at 200 lines - with `solidCount` and `findings`. Both now read at Fine
+    detail, this card's level; whether the old card's numbers move at Fine
+    is NEEDS REAL REVIT. Nothing of this card is left out.
+
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.

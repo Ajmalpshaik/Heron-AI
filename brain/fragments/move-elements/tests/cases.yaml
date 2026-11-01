@@ -33,6 +33,27 @@ negative:
   - given: an empty element list
     expect: all four outputs empty or zero, reported as nothing to do
 
+  # VERSION 2 (2026-11-01) - MOVE_ELEMENTS_TO_POINT merged in. Each FAILS on
+  # version 1, which had no `toPoint`. NOT RUN.
+  - given: one free-standing family instance and toPoint 5 m from where it is, offset left out
+    expect: >
+      moved 1, movedIds its id, and the element AT that coordinate - checked
+      with REPORT_LOCATION and a dimension in Revit, not read off the count
+  - given: a wall handed in with toPoint
+    expect: in `noLocationPoint`, NOT moved - a wall is positioned by a curve
+  - given: an element constrained to a grid, toPoint off that grid
+    expect: in `notAtPoint`, not in movedIds
+  - given: an element already at the point
+    expect: counted as moved, nothing attempted, no error
+  - given: two family instances and one toPoint, stackOnOnePoint left out
+    expect: >
+      REFUSED, nothing moved - two elements on one point is a stacked
+      duplicate. MOVE_ELEMENTS_TO_POINT moved both there without a word
+  - given: the same two with stackOnOnePoint true
+    expect: both moved there, both in movedIds
+  - given: toPoint and a non-zero offset together
+    expect: refused - two answers to where - nothing moved
+
 second_route:
   - a tape measure in Revit on ONE element, which is the only check that catches feet-for-millimetres
   - one Ctrl+Z puts the whole move back in a single step (Golden Rule 16)

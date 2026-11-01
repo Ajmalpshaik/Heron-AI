@@ -23,7 +23,7 @@ negative:
       DUCT FITTINGS or duct accessories - content that publishes no references
     expect: >
       every id in noReference, NO dimension created, and problem POINTING AT
-      DIMENSION_MEP_RUNS. This is the case whose first reading was too broad:
+      CREATE_DIMENSION. This is the case whose first reading was too broad:
       the zero is true of this route, not of MEP, and the answer must say so
       rather than implying it cannot be done
 

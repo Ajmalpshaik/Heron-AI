@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LVL-027
 heron-step: 15
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,28 @@ capability: CREATE_LEVEL
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_LEVELS (create-levels), on the owner's instruction
+# in conversation: "now merge the other duplicates also". Constitution Article 1:
+# kept, never deleted, so its record and its proof stay readable and it can be
+# brought back. Nothing offers it now - retrieval leaves DEPRECATED out, and
+# its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to CREATE_LEVELS. The proof below is the
+# record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_LEVELS
+  why: >
+    The same job: a level at a height, named. CREATE_LEVELS makes one or many,
+    skips a height that already has a level, and reads back the name and the
+    height each one ended with. Its version 2 took this card's rules it lacked -
+    a name already taken refused before anything is created, ignoring capitals,
+    with a sentence; noViewsMade; and Revit declining a level named, never
+    dropped. Not taken on purpose: this card's base-point shift before
+    Level.Create, because which of Elevation and ProjectElevation is measured
+    from where is FRAGMENT-ISSUES row 5b-180, open until a real Revit settles
+    it.
 
 purpose: >
   Creates one level at a given height and names it.

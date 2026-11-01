@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,32 @@ capability: PLACE_AREAS
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO PLACE_ROOMS (place-rooms), on the owner's
+# instruction in conversation: "make sure there is no duplicate tools", then
+# "ok go ahead merge all" and "in every conflict keep the safer rule".
+# Constitution Article 1: kept, never deleted, so its record and its proof
+# stay readable and it can be brought back. Nothing offers it now - retrieval
+# leaves DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to PLACE_ROOMS. The
+# proof below is the record of what this card's code did, not a claim about
+# today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: PLACE_ROOMS
+  why: >
+    The same job - one spatial element at each point chosen, the ones with
+    no size named. PLACE_ROOMS version 3 places areas: placeKind area, the
+    area plan chosen by name (areaPlanName - an area plan, never a floor
+    plan), NewArea at each point (two or three numbers, millimetres), names
+    and numbers in point order with an empty value leaving Revit's, an area
+    with no size named in unbounded after one regeneration, a point Revit
+    refuses counted and named while the rest are placed, and the same
+    refusals - no such area plan, no point, a point that is not one. Areas
+    need no phase there, and the kind must still be said. Safer, new for the
+    merge: a name or number that does not read back undoes the call, and more
+    names or numbers than points is refused. Nothing of this card is left out.
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.

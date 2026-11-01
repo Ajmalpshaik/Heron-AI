@@ -127,7 +127,7 @@ compatibility-note: >
   documented, so they are a first try and never trusted: every write is read
   back in Revit's words (NEEDS-CHECKING BP4).
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "set the left plane's is reference to left"   -> here
 #   "set this plane to not a reference"           -> here

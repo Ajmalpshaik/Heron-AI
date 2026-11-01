@@ -12,6 +12,21 @@ positive:
       the pipe following them in the order given, with no sorting or
       simplification
 
+  - given: >
+      VERSION 2, CREATE_FLEX_DUCT's case. Two points 900 mm apart from a branch
+      duct down to a diffuser, the Supply Air system type, a FLEX DUCT type
+      ("Flex Duct Round: Flex - Round") as flexPipeType, Level 1, a 3000 mm limit
+    expect: >
+      one FLEXIBLE DUCT created - Revit's Flex Ducts category, not Flex Pipes -
+      900 mm reported, the finding saying it is connected to NOTHING. On
+      version 1 this FAILS: Supply Air is not a piping system and the binder
+      refuses it, or a flex duct type is refused as not a flex pipe type
+
+  - given: VERSION 2. Four points forming a dropped S route, with a flex duct type on Supply Air
+    expect: >
+      the flex duct following them in the order given, with no sorting or
+      simplification
+
 negative:
   - given: a route of 2,400 mm with a 1,200 mm limit
     expect: >
@@ -23,6 +38,25 @@ negative:
     expect: >
       refused by name before Revit is asked, pointed at CREATE_PIPE, and
       nothing created
+
+  - given: VERSION 2. A RIGID duct type named as flexPipeType, on Supply Air
+    expect: >
+      refused by name as neither a flex duct nor a flex pipe type, pointed at
+      CREATE_DUCT_RUNS, nothing created
+
+  - given: >
+      VERSION 2. A flex DUCT type on a PIPING system - Domestic Cold Water - or
+      a flex PIPE type on a DUCT system - Supply Air
+    expect: >
+      refused BY NAME before Revit is asked, the type and the system both named
+      and which goes with which said, nothing created. CREATE_FLEX_DUCT left
+      the duct case to an exception from Create; version 1 of this card could
+      not be handed a duct system at all
+
+  - given: VERSION 2. A flex duct route of 2,400 mm with a 1,500 mm limit
+    expect: >
+      REFUSED before anything is created, both numbers stated, lengthMm 0 and
+      created null - the same rule for duct as for pipe
 
   - given: a maximum length of zero
     expect: >

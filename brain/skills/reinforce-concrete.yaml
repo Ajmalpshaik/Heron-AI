@@ -44,9 +44,10 @@ purpose: >
      CREATE_REBAR_COVER_TYPE (name and distance), CREATE_REBAR_HOOK_TYPE
      (name, angle, extension as a multiple of the bar, standard or
      stirrup/tie). The name follows the modeller's own naming rules.
-  3. THE HOSTS: the modeller's selection, or SELECT_BY_CATEGORY_NAME in a view
-     he names - Structural Columns, Structural Framing, Structural
-     Foundations, Floors or Walls. Count them and say the number before step 5.
+  3. THE HOSTS: the modeller's selection, or FILTER_ELEMENTS_BY_CATEGORY with
+     inViewOnly the view he names and category - or several in categories -
+     Structural Columns, Structural Framing, Structural Foundations, Floors or
+     Walls. Count them and say the number before step 5.
   4. SET_REBAR_COVER on the hosts, when the spec's cover is not what the host
      holds - REPORT_HOST_REBAR reads it. Setting the host keeps its schedule,
      its tags and every later bar agreeing with the spec; a placing tool's own
@@ -103,7 +104,7 @@ needs:
   - CREATE_REBAR_BAR_TYPE
   - CREATE_REBAR_COVER_TYPE
   - CREATE_REBAR_HOOK_TYPE
-  - SELECT_BY_CATEGORY_NAME
+  - FILTER_ELEMENTS_BY_CATEGORY
   - SET_REBAR_COVER
   - PLACE_COLUMN_REBAR
   - PLACE_BEAM_REBAR

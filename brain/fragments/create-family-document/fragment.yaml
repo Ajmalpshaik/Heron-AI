@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,12 @@ semantic-identity: "start a brand new family from a template and save it where I
 kind: action
 domain: revit.document
 capability: CREATE_FAMILY_DOCUMENT
-version: 2
+# VERSION 3 (2026-11-01): CREATE_PROJECT_DOCUMENT was merged into this card on
+# the owner's instruction - "make sure there is no duplicate tools" - and is
+# DEPRECATED; see the merge block above `utterances`. Version 2's proof below
+# is kept as the record; it no longer describes the code, so the card is DRAFT
+# until version 3 is proved on a real model (D-30).
+version: 3
 source: OFFICIAL
 risk: ADMIN
 
@@ -49,8 +54,10 @@ purpose: >
   file the same day. Aimed (`--in`) at a document that is not in front, the
   family opens in this one call.
 
-  **A PROJECT IS CREATE_PROJECT_DOCUMENT'S**, with the same body word for word
-  below its first lines - tests/test_new_document_twins.py holds them level.
+  **A PROJECT TOO, SINCE VERSION 3 - THE TEMPLATE'S EXTENSION DECIDES.** A .rte
+  template makes a project saved as .rvt, a .rft one a family saved as .rfa; a
+  bare template name goes by the savePath typed, and each kind looks in its own
+  template folder. The other half must agree. Version 3 is DRAFT until proved.
 
   **IT MAKES AN EMPTY FAMILY AND NOTHING ELSE.** No geometry, no parameters, no
   types. The family stays open and is the caller's, like any file opened by
@@ -67,11 +74,16 @@ contract:
       type: UIDocument
     # A full .rft path, or a template's file name such as "Metric Generic
     # Model", looked up by exact name in this Revit's FamilyTemplatePath.
+    # VERSION 3: or a full .rte path - a PROJECT - or a project template's
+    # name, looked up under the folder of this Revit's default project
+    # template when savePath ends .rvt (CREATE_PROJECT_DOCUMENT's lookup).
     - name: templatePath
       type: string
       source: request
-    # The full .rfa path the new family is saved to. Named by the caller and
-    # never invented; refused if it exists or its folder does not.
+    # The full .rfa path the new family is saved to - or, version 3, the .rvt
+    # path a new project is. Named by the caller and never invented; refused
+    # if it exists, if its folder does not, or if it is not the template's
+    # kind.
     - name: savePath
       type: string
       source: request
@@ -154,12 +166,41 @@ compatibility-note: >
   setting of each installation, which is why it is read from Revit rather than
   written here.
 
-# ROUTING - repeated in CREATE_PROJECT_DOCUMENT, LOAD_FAMILY and
-# OPEN_FAMILY_FOR_EDITING.
+# ROUTING - repeated in LOAD_FAMILY and OPEN_FAMILY_FOR_EDITING.
 #
 #   "start a new family"           -> here
-#   "start a new project"          -> CREATE_PROJECT_DOCUMENT - a .rte template
-#                                     and a .rvt file
+#   "start a new project"          -> here since version 3 - a .rte template
+#                                     and a .rvt file. It was
+#                                     CREATE_PROJECT_DOCUMENT's, merged in
+#   "switch to the other project"  -> ACTIVATE_DOCUMENT, by its path - it is
+#                                     already open
+#   "add a project parameter"      -> ADD_PROJECT_PARAMETER - nothing to do with
+#                                     a new project file
+#
+# VERSION 3 (2026-11-01) - CREATE_PROJECT_DOCUMENT WAS MERGED INTO THIS CARD on
+# the owner's instruction in conversation: "make sure there is no duplicate
+# tools", every conflict to keep the SAFER rule. It is DEPRECATED. The two
+# were one body word for word below their first five lines, held level by
+# tests/test_new_document_twins.py, and differed only in a family against a
+# project. Where each retired input and output is now:
+#
+#   CREATE_PROJECT_DOCUMENT             here
+#     templatePath (.rte or a name)     templatePath - a .rte decides project;
+#                                       a bare name with savePath .rvt does too
+#     savePath (.rvt)                   savePath
+#     its template folder               the folder of DefaultProjectTemplate,
+#                                       for a project
+#     created, title, savedTo,          the same, word for word
+#     templateUsed, openNext,
+#     refused, findings
+#
+# THE SAFER RULE WHERE THEY DIFFERED. Each refused the other's template by
+# name, pointing at the other card. Here the template's own extension decides,
+# and a template and a savePath of different kinds are refused by the savePath
+# rule - nothing is ever turned into the other kind. Nothing of it was not
+# carried. tests/test_new_document_twins.py now holds that this card makes
+# both kinds and keeps the body's safety rules; the retired card's impl/ is
+# left as the record and no longer compared.
 #   "open that saved family"       -> ACTIVATE_DOCUMENT - it is already a file
 #   "load this family in"          -> LOAD_FAMILY - it already exists as a file
 #   "open that family to edit it"  -> OPEN_FAMILY_FOR_EDITING - it is already
@@ -175,3 +216,9 @@ utterances:
   - open a new family from the generic model template
   - new family from the metric generic model template and save it as
   - make a new family file
+  # MOVED 2026-11-01 from CREATE_PROJECT_DOCUMENT, merged into this card.
+  - start a new project from the template
+  - new project from this template
+  - create a new Revit project
+  - make a new model from our office template
+  - start a fresh project file and save it as

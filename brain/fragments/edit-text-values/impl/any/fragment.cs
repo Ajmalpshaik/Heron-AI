@@ -1,7 +1,34 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `field`, `mode`, `text` and
 // `replacement` are in scope, and leaves `changed`, `untouched`, `blank`,
-// `readOnly`, `absent`, `ambiguous`, `unverified`, `refused` and
-// `noteFormatting` behind.
+// `readOnly`, `absent`, `ambiguous`, `unverified`, `refused`,
+// `noteFormatting`, `typesEdited`, `collisions`, `notMatched` and
+// `familyRename` behind.
+//
+// VERSION 8 (2026-11-01) - RENAME_FAMILY MERGED IN: field "Family" renames the
+// LOADED FAMILY behind what is handed in - a family, one of its types or an
+// instance - one level above the type name field Name edits. Its rules come
+// with it: more than one family is refused (family names are unique, so one
+// name over three takes on the first and quietly not the rest), an in-place
+// family is refused, a system family has none and lands in `absent`, and the
+// types that follow are counted and named. Mode "set" - the new name whole -
+// is allowed for this field and field Text only; prefix, suffix (never
+// stacked) and replace work too, and the batch collision check of version 7
+// runs against every other family's name first, so a name already taken is
+// refused before Revit is asked. `familyRename` says what changed and that the
+// .rfa on disk keeps its own name.
+//
+// VERSION 7 (2026-11-01) - RENAME_ELEMENTS MERGED IN: for field Name every new
+// name is worked out first and checked against the others and against the
+// names already in the model; one clash and NOTHING is renamed, `collisions`
+// says which. `notMatched` names what a replace found nothing to replace in.
+// An unreadable name is refused in `readOnly`, never edited as blank.
+//
+// VERSION 6 (2026-11-01) - EDIT_PARAMETER_TEXT MERGED IN, AND ITS THREE RULES
+// WITH IT: a prefix or suffix already there is not added again, so a re-run
+// never stacks; a type's parameter is written ONCE however many of its
+// instances are handed in, and the types changed are named in `typesEdited`
+// because every other instance of them changed too; and a non-text instance
+// parameter gives way to a text one of the same name on the type.
 //
 // ASSUMES AN OPEN TRANSACTION. It does not start one - Golden Rule 16 wants
 // one user action to be one undo entry, and that belongs to the operation's
@@ -164,6 +191,14 @@ string noteFormatting = null;
 
 bool editingName = string.Equals((field ?? "").Trim(), "Name",
                                  StringComparison.OrdinalIgnoreCase);
+// VERSION 8 - the loaded family itself (RENAME_FAMILY, merged in). Before
+// version 8 "Family" was looked up as a parameter, and the built-in one of that
+// name holds an element id, so it was refused as not text: nothing that worked
+// stops working.
+bool editingFamily = string.Equals((field ?? "").Trim(), "Family",
+                                   StringComparison.OrdinalIgnoreCase);
+// One line about the family renamed, or why it was not (version 8).
+string familyRename = null;
 // A text note's wording. Decided per element below, because a set handed in
 // can mix text notes with other elements; on anything that is not a note,
 // "Text" is looked up as a parameter like any other name.
@@ -187,10 +222,11 @@ else if (how.Length == 0)
     refused = "no mode was given, so there is nothing to do. Use prefix, suffix or replace. "
         + "NOTHING WAS CHANGED";
 }
-else if (how == "set" && !askingText)
+else if (how == "set" && !askingText && !editingFamily)
 {
-    refused = "'set' writes the whole wording of a text note and is for field Text only. To set "
-        + "one value on a parameter, that is WRITE_ELEMENT_PARAMETERS. NOTHING WAS CHANGED";
+    refused = "'set' writes the whole wording of a text note, or a family's whole new name, and is "
+        + "for field Text and field Family only. To set one value on a parameter, that is "
+        + "WRITE_ELEMENT_PARAMETERS. NOTHING WAS CHANGED";
 }
 else if (how == "format" && !askingText)
 {
@@ -357,6 +393,13 @@ if (refused == null && how == "format")
 
 var handed = 0;
 var notText = 0;
+// VERSION 6 - ONE WRITE PER TYPE. A type's parameter is edited once however many
+// of its instances are handed in; each later instance lands where the first did.
+// `typesEdited` names the types whose value changed, because every instance of
+// them changed too - including the ones nobody handed in.
+var typesEdited = new List<ElementId>();
+var typeLanded = new Dictionary<ElementId, List<ElementId>>();
+var typeNotText = new HashSet<ElementId>();
 // Text notes a format left alone because a paragraph it named is not there.
 var pastEnd = 0;
 
@@ -416,8 +459,14 @@ Func<IList<Element>, string> namesOnHand = given =>
 
 Func<string, string> transform = current =>
 {
-    if (how == "prefix") return text + current;
-    if (how == "suffix") return current + text;
+    // VERSION 6 - A PREFIX OR SUFFIX ALREADY THERE IS NOT ADDED AGAIN, so a
+    // re-run leaves AJ_M-01 and never AJ_AJ_M-01 (EDIT_PARAMETER_TEXT's rule,
+    // merged in). Batch jobs get re-run - after an undo, after a filter is
+    // widened, after somebody is not sure it took.
+    if (how == "prefix")
+        return current.StartsWith(text, StringComparison.OrdinalIgnoreCase) ? current : text + current;
+    if (how == "suffix")
+        return current.EndsWith(text, StringComparison.OrdinalIgnoreCase) ? current : current + text;
     if (how == "set") return text;
     if (how == "replace")
     {
@@ -427,12 +476,309 @@ Func<string, string> transform = current =>
     return current;
 };
 
+// ===========================================================================
+// VERSION 7 (2026-11-01) - RENAME_ELEMENTS MERGED IN: A NAME EDIT IS PLANNED
+// FOR THE WHOLE BATCH, AND ONE CLASH STOPS ALL OF IT
+// ===========================================================================
+//
+// RENAME_ELEMENTS worked every intended name out before writing one, and
+// stopped the whole batch on two names landing as one: Revit throws on a
+// duplicate type or view name and quietly accepts a duplicate instance name,
+// and neither is wanted half way through forty renames. Version 6 wrote names
+// one at a time, so a clash at element 31 left 30 renamed and the rest not -
+// two conventions in one model and no record of where it stopped.
+//
+// So for field Name, BEFORE ANY ELEMENT IS WRITTEN:
+//
+//   1. every element's new name is worked out with the same `transform` the
+//      write uses, so the plan and the write cannot disagree
+//   2. the new names are checked AGAINST EACH OTHER - two the same, whatever
+//      kind of element, is a clash (RENAME_ELEMENTS' rule)
+//   3. each is checked AGAINST THE MODEL - a name already held by another
+//      element of the same kind: any view or view template for a view, the
+//      same family for a loadable family's type, the same class and category
+//      for anything else. Capitals are ignored. An element ALSO in the batch
+//      still holds its old name when the first write lands, so a swap (A to
+//      B and B to A) is a clash too - do it in two runs, through a name
+//      nobody holds
+//   4. a new name left EMPTY by a replace is a clash - Revit refuses it
+//
+// Any one of them and NOTHING IS WRITTEN: `collisions` names each clash and
+// `refused` says why. All or nothing is the safer of the two cards' rules.
+//
+// `notMatched` (RENAME_ELEMENTS' output) is filled after the loop: for mode
+// replace, the elements whose text did not contain the words to replace - on
+// any field, not only Name. It is `untouched` for a replace, said in
+// RENAME_ELEMENTS' word, and the honest clue that the search text was wrong.
+var collisions = new List<string>();
+var notMatched = new List<ElementId>();
+
+// ===========================================================================
+// VERSION 8 (2026-11-01) - FIELD "Family": THE LOADED FAMILY, RENAMED ONCE
+// ===========================================================================
+//
+// RENAME_FAMILY's job, with its rules. Renaming a family changes it
+// EVERYWHERE: every type in it and every instance of those types follow,
+// across the model, whether or not they were handed in - so the types are
+// counted and named in `typesEdited`, and `familyRename` says so. MORE THAN
+// ONE FAMILY IS A REFUSAL, not a loop: family names must be unique, so one
+// literal name over three takes on the first and quietly not on the rest. AN
+// IN-PLACE FAMILY IS REFUSED: it is tied to the element that made it. THE FILE
+// ON DISK IS UNTOUCHED - reloading the .rfa brings the old name back.
+//
+// AND VERSION 7'S COLLISION CHECK RUNS FIRST: the new name against every other
+// family in the model, capitals ignored, and an empty one refused - so a name
+// already taken is refused before Revit is asked, never left to Revit's own
+// throw (RENAME_FAMILY reported Revit's refusal after the attempt).
+if (refused == null && editingFamily)
+{
+    var families = new List<Family>();
+    foreach (var element in elements)
+    {
+        if (element == null) continue;
+        // Handed the family itself, one of its types, or an instance of one.
+        Family family = element as Family;
+        if (family == null)
+        {
+            var symbol = element as FamilySymbol;
+            if (symbol != null) family = symbol.Family;
+        }
+        if (family == null)
+        {
+            var instance = element as FamilyInstance;
+            if (instance != null && instance.Symbol != null) family = instance.Symbol.Family;
+        }
+        if (family == null) { absent.Add(element.Id); continue; }
+        if (!families.Any(known => known.Id == family.Id)) families.Add(family);
+    }
+
+    if (families.Count == 0)
+    {
+        refused = string.Format("nothing handed in belongs to a loaded family, so NOTHING WAS RENAMED - "
+            + "system families such as walls, ducts and pipes have no family to rename; their TYPE names "
+            + "are field Name's. {0} element(s) looked at", absent.Count);
+        absent.Clear();
+    }
+    else if (families.Count > 1)
+    {
+        refused = string.Format(
+            "what was handed in covers {0} different families, and one name cannot serve them all - Revit "
+            + "needs family names to be unique, so NOTHING WAS RENAMED. They are: {1}",
+            families.Count, string.Join(", ", families.Select(f => "'" + f.Name + "'").ToArray()));
+    }
+    else if (families[0].IsInPlace)
+    {
+        refused = string.Format("'{0}' is an in-place family - it is tied to the element that made it, and "
+            + "renaming it does not mean what it looks like it means. NOTHING WAS RENAMED", families[0].Name);
+    }
+    else
+    {
+        var family = families[0];
+        var wasCalled = family.Name ?? "";
+        var wanted = transform(wasCalled);
+
+        if (wanted == wasCalled)
+        {
+            untouched.Add(family.Id);
+            familyRename = string.Format("'{0}' already reads that way - nothing was renamed", wasCalled);
+        }
+        else
+        {
+            if (wanted.Trim().Length == 0)
+                collisions.Add(string.Format("'{0}' (id {1}) would be left with NO name", wasCalled, family.Id));
+            else
+            {
+                foreach (var other in new FilteredElementCollector(doc).OfClass(typeof(Family)).ToElements())
+                {
+                    if (other.Id == family.Id) continue;
+                    string held = null;
+                    try { held = other.Name; } catch { held = null; }
+                    if (string.Equals(held, wanted.Trim(), StringComparison.OrdinalIgnoreCase))
+                        collisions.Add(string.Format("'{0}' - planned for family id {1}, and already the name "
+                            + "of family id {2}", wanted.Trim(), family.Id, other.Id));
+                }
+            }
+
+            if (collisions.Count > 0)
+            {
+                refused = string.Format("the new family name clashes, so NOTHING WAS RENAMED: {0}. Two "
+                    + "families cannot share a name, and inventing a suffix would leave a family nobody can "
+                    + "find by the name they asked for", string.Join("; ", collisions.ToArray()));
+            }
+            else
+            {
+                var typeIds = new List<ElementId>();
+                try { typeIds.AddRange(family.GetFamilySymbolIds()); } catch { }
+                try
+                {
+                    family.Name = wanted.Trim();
+                    // READ IT BACK. The name Revit settled on is the answer.
+                    var nowCalled = (doc.GetElement(family.Id) as Family).Name;
+                    if (nowCalled == wanted.Trim())
+                    {
+                        changed.Add(family.Id);
+                        typesEdited.AddRange(typeIds);
+                    }
+                    else unverified.Add(family.Id);
+                    familyRename = string.Format(
+                        "'{0}' is now '{1}'. Its {2} type(s) and EVERY instance of them changed with it, "
+                        + "across the whole model and not only what was handed in. The .rfa file on disk keeps "
+                        + "its own name - reloading from it will bring '{0}' back",
+                        wasCalled, nowCalled, typeIds.Count);
+                }
+                catch (Exception ex)
+                {
+                    // Refused by Revit - a question for the modeller, never
+                    // worked round by inventing a name.
+                    readOnly.Add(family.Id);
+                    familyRename = string.Format("'{0}' could not be renamed to '{1}': {2}",
+                        wasCalled, wanted.Trim(), ex.Message);
+                }
+            }
+        }
+    }
+    if (familyRename == null && refused != null) familyRename = refused;
+}
+
+if (refused == null && editingName)
+{
+    var plannedName = new Dictionary<string, ElementId>(StringComparer.OrdinalIgnoreCase);
+    // The kind of element a name must be unique within, and the elements
+    // whose names are checked - kind -> (an example element, the batch's ids).
+    var kinds = new Dictionary<string, Element>();
+    var plannedByKind = new Dictionary<string, List<KeyValuePair<ElementId, string>>>();
+
+    Func<Element, string> kindOf = e =>
+    {
+        if (e is View) return "view";
+        var symbol = e as FamilySymbol;
+        if (symbol != null && symbol.Family != null) return "family " + symbol.Family.Id;
+        return e.GetType().FullName + " " + (e.Category == null ? "-" : e.Category.Id.ToString());
+    };
+
+    foreach (var element in elements)
+    {
+        if (element == null) continue;
+        string was = null;
+        try { was = element.Name; } catch { was = null; }
+        if (string.IsNullOrEmpty(was)) continue;
+        var wanted = transform(was);
+        if (wanted == was) continue;
+
+        if (wanted.Trim().Length == 0)
+        {
+            collisions.Add(string.Format("'{0}' (id {1}) would be left with NO name", was, element.Id));
+            continue;
+        }
+
+        ElementId already;
+        if (plannedName.TryGetValue(wanted, out already))
+        {
+            collisions.Add(string.Format("'{0}' - planned for both id {1} and id {2}",
+                wanted, already, element.Id));
+            continue;
+        }
+        plannedName[wanted] = element.Id;
+
+        string kind;
+        try { kind = kindOf(element); } catch { kind = element.GetType().FullName + " -"; }
+        if (!kinds.ContainsKey(kind))
+        {
+            kinds[kind] = element;
+            plannedByKind[kind] = new List<KeyValuePair<ElementId, string>>();
+        }
+        plannedByKind[kind].Add(new KeyValuePair<ElementId, string>(element.Id, wanted));
+    }
+
+    // AGAINST THE MODEL, one collector per kind of element in the batch.
+    foreach (var entry in kinds)
+    {
+        var example = entry.Value;
+        // Every holder of each name - two others may share one, and the
+        // element being renamed must not hide the other.
+        var inUse = new Dictionary<string, List<ElementId>>(StringComparer.OrdinalIgnoreCase);
+        IEnumerable<Element> others = null;
+        try
+        {
+            if (example is View)
+                others = new FilteredElementCollector(doc).OfClass(typeof(View)).ToElements();
+            else if (example is FamilySymbol && ((FamilySymbol)example).Family != null)
+            {
+                var familyId = ((FamilySymbol)example).Family.Id;
+                others = new FilteredElementCollector(doc).OfClass(typeof(FamilySymbol)).ToElements()
+                    .Where(o => { var s = o as FamilySymbol; return s != null && s.Family != null
+                        && s.Family.Id == familyId; });
+            }
+            else
+            {
+                var cls = example.GetType();
+                var catId = example.Category == null ? null : example.Category.Id;
+                others = new FilteredElementCollector(doc).OfClass(cls).ToElements()
+                    .Where(o => o.GetType() == cls
+                        && (catId == null ? o.Category == null : (o.Category != null && o.Category.Id == catId)));
+            }
+        }
+        catch
+        {
+            // OfClass refuses some classes (a room is one). The category is
+            // asked instead; with neither, the names cannot be checked against
+            // the model, and a rename that cannot be checked is not made.
+            try
+            {
+                var cls = example.GetType();
+                if (example.Category != null)
+                    others = new FilteredElementCollector(doc).OfCategoryId(example.Category.Id)
+                        .ToElements().Where(o => o.GetType() == cls);
+            }
+            catch { others = null; }
+        }
+
+        if (others == null)
+        {
+            collisions.Add(string.Format("the names already used by {0} elements could not be read, so "
+                + "a new name for id {1} cannot be checked against them", example.GetType().Name,
+                example.Id));
+            continue;
+        }
+
+        foreach (var other in others)
+        {
+            string held = null;
+            try { held = other.Name; } catch { held = null; }
+            if (string.IsNullOrEmpty(held)) continue;
+            if (!inUse.ContainsKey(held)) inUse[held] = new List<ElementId>();
+            inUse[held].Add(other.Id);
+        }
+
+        foreach (var plan in plannedByKind[entry.Key])
+        {
+            List<ElementId> holders;
+            if (!inUse.TryGetValue(plan.Value, out holders)) continue;
+            var holder = holders.FirstOrDefault(h => h != plan.Key);
+            if (holder != null)
+                collisions.Add(string.Format("'{0}' - planned for id {1}, and already the name of id {2}",
+                    plan.Value, plan.Key, holder));
+        }
+    }
+
+    if (collisions.Count > 0)
+    {
+        refused = string.Format("{0} of the new names clash - with each other, with a name already in "
+            + "the model, or by leaving a name empty - so NOTHING WAS RENAMED: {1}. Every name is "
+            + "checked before the first is written, because Revit refuses a duplicate type or view "
+            + "name and accepts a duplicate instance name, and a batch half renamed carries two "
+            + "conventions", collisions.Count, string.Join("; ", collisions.Take(5).ToArray())
+            + (collisions.Count > 5 ? string.Format("; and {0} more", collisions.Count - 5) : ""));
+    }
+}
+
 foreach (var element in elements)
 {
     // An unworkable request stops here rather than reporting on each element
     // in turn. Every one of them would answer identically anyway, and a list
-    // of identical non-answers is what made this hard to see.
-    if (refused != null) break;
+    // of identical non-answers is what made this hard to see. Field Family
+    // (version 8) was done whole, above.
+    if (refused != null || editingFamily) break;
     if (element == null) continue;
     handed++;
 
@@ -797,8 +1143,11 @@ foreach (var element in elements)
             continue;
         }
 
-        string wantedNote = how == "prefix" ? find + wording
-            : how == "suffix" ? wording + find
+        // Version 6: a prefix or suffix the note already has is not added again.
+        string wantedNote = how == "prefix"
+                ? (wording.StartsWith(find, StringComparison.OrdinalIgnoreCase) ? wording : find + wording)
+            : how == "suffix"
+                ? (wording.EndsWith(find, StringComparison.OrdinalIgnoreCase) ? wording : wording + find)
             : how == "set" ? find
             : (find.Length == 0 ? wording : wording.Replace(find, putIn));
         if (wantedNote == wording) { untouched.Add(element.Id); continue; }
@@ -958,9 +1307,22 @@ foreach (var element in elements)
         continue;
     }
 
+    // The type whose parameter this element's field resolved to, or null for an
+    // instance parameter or the element's own name. `land` records where the
+    // element landed and, for a type, where its later instances land too.
+    ElementId heldType = null;
+    Action<List<ElementId>> land = list =>
+    {
+        list.Add(element.Id);
+        if (heldType != null) typeLanded[heldType] = list;
+    };
+
     if (editingName)
     {
-        try { current = element.Name; } catch { }
+        // A name that cannot be read cannot be renamed (RENAME_ELEMENTS'
+        // rule, version 7): refused in `readOnly`, never edited as if blank.
+        try { current = element.Name; }
+        catch { land(readOnly); continue; }
     }
     else
     {
@@ -973,46 +1335,96 @@ foreach (var element in elements)
         if (element.GetParameters(field).Count > 1) { ambiguous.Add(element.Id); continue; }
 
         parameter = element.LookupParameter(field);
-        if (parameter == null)
+        // The type is asked second, never first: an instance parameter of the
+        // same name is the one the modeller edited. Version 6: an instance
+        // parameter that is NOT TEXT gives way to a text one of the same name on
+        // the type - where Type Mark, Manufacturer and Model live - as
+        // EDIT_PARAMETER_TEXT did; with no text one there, the instance's stands
+        // and is reported as not text.
+        if (parameter == null || parameter.StorageType != StorageType.String)
         {
-            // The type is asked second, never first: an instance parameter of
-            // the same name is the one the modeller edited.
             Element elementType = null;
             try { elementType = doc.GetElement(element.GetTypeId()); } catch { }
-            if (elementType != null && elementType.GetParameters(field).Count > 1)
+            int onType = 0;
+            if (elementType != null) { try { onType = elementType.GetParameters(field).Count; } catch { } }
+            // Ambiguous on the type only where the type would be the one
+            // edited: always when the instance has no such field, and - for a
+            // non-text instance field - only when one of the type's is text.
+            // Otherwise the instance's field stands, as in version 5.
+            if (onType > 1)
             {
-                ambiguous.Add(element.Id);
-                continue;
+                bool typeWouldBeUsed = parameter == null;
+                if (!typeWouldBeUsed)
+                {
+                    try
+                    {
+                        foreach (Parameter candidate in elementType.GetParameters(field))
+                            if (candidate.StorageType == StorageType.String) typeWouldBeUsed = true;
+                    }
+                    catch { }
+                }
+                if (typeWouldBeUsed) { ambiguous.Add(element.Id); continue; }
             }
-            if (elementType != null) parameter = elementType.LookupParameter(field);
+            else
+            {
+                Parameter typeParameter = null;
+                if (elementType != null) typeParameter = elementType.LookupParameter(field);
+                if (typeParameter != null
+                    && (parameter == null || typeParameter.StorageType == StorageType.String))
+                {
+                    parameter = typeParameter;
+                    heldType = elementType.Id;
+                }
+            }
         }
 
+        // A TYPE HANDED IN ITSELF, beside its own instances, shares their
+        // once-per-type record - or a replace whose new text holds the old
+        // would grow once for the type and once for its instances.
+        if (heldType == null && parameter != null && element is ElementType) heldType = element.Id;
+
         if (parameter == null) { absent.Add(element.Id); continue; }
+
+        // ONE WRITE PER TYPE (version 6). Forty instances of one type resolve
+        // to ONE parameter: editing it forty times would put the prefix on
+        // forty times, and a replace whose new text holds the old would grow
+        // on every pass. The first instance decides; the rest land with it.
+        if (heldType != null && typeLanded.ContainsKey(heldType))
+        {
+            typeLanded[heldType].Add(element.Id);
+            if (typeNotText.Contains(heldType)) notText++;
+            continue;
+        }
+
         // Counted apart from the other two ways into `readOnly`, and only so
         // that "was it text on ANY of them" can be answered below. A locked
         // text field is a real finding; a number is a wrong request.
         if (parameter.StorageType != StorageType.String)
         {
             notText++;
-            readOnly.Add(element.Id);
+            if (heldType != null) typeNotText.Add(heldType);
+            land(readOnly);
             continue;
         }
-        if (parameter.IsReadOnly) { readOnly.Add(element.Id); continue; }
-        try { current = parameter.AsString(); } catch { }
+        if (parameter.IsReadOnly) { land(readOnly); continue; }
+        // A value that cannot be read is not a blank one: it is refused, as
+        // EDIT_PARAMETER_TEXT did, never edited as if empty.
+        try { current = parameter.AsString(); }
+        catch { land(readOnly); continue; }
     }
 
     // A blank stays blank. (A note's wording being SET, the one exception,
     // was handled with the rest of the note above.)
     if (string.IsNullOrEmpty(current))
     {
-        blank.Add(element.Id);
+        land(blank);
         continue;
     }
     if (current == null) current = "";
-    if (how == "set") { absent.Add(element.Id); continue; }
+    if (how == "set") { land(absent); continue; }
 
     string wanted = transform(current);
-    if (wanted == current) { untouched.Add(element.Id); continue; }
+    if (wanted == current) { land(untouched); continue; }
 
     bool accepted = false;
     try
@@ -1020,9 +1432,9 @@ foreach (var element in elements)
         if (editingName) { element.Name = wanted; accepted = true; }
         else accepted = parameter.Set(wanted);
     }
-    catch { readOnly.Add(element.Id); continue; }
+    catch { land(readOnly); continue; }
 
-    if (!accepted) { readOnly.Add(element.Id); continue; }
+    if (!accepted) { land(readOnly); continue; }
 
     // READ BACK. A count of attempts is not a count of changes - which is the
     // failure this whole project is built around.
@@ -1034,9 +1446,13 @@ foreach (var element in elements)
     }
     catch { }
 
-    if (now == null) unverified.Add(element.Id);
-    else if (now == wanted) changed.Add(element.Id);
-    else unverified.Add(element.Id);
+    if (now == null) land(unverified);
+    else if (now == wanted)
+    {
+        land(changed);
+        if (heldType != null) typesEdited.Add(heldType);
+    }
+    else land(unverified);
 }
 
 // AFTER THE LOOP, AND ONLY BECAUSE NOTHING WAS WRITTEN ON EITHER PATH. Both
@@ -1080,3 +1496,7 @@ else if (refused == null && !editingName && handed > 0 && notText == handed)
         + "figure as the truth", field, handed);
     readOnly.Clear();
 }
+
+// VERSION 7 - RENAME_ELEMENTS' `notMatched`: for a replace, what did not hold
+// the words to replace. Never an edit made (D-52).
+if (how == "replace") notMatched.AddRange(untouched);

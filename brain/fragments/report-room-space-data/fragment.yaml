@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,34 @@ semantic-identity: "the room and space schedule - number, name, level, area and 
 kind: action
 domain: revit.rooms
 capability: REPORT_ROOM_SPACE_DATA
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
+
+# VERSION 2 (2026-11-01) - MEASURE_ROOM_DIMENSIONS WAS MERGED INTO THIS CARD on
+# the owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. Both read a set of rooms and spaces - area, volume, the rooms
+# that could not be read - and only that card measured them. What it had and
+# this one lacked is here now: LENGTH AND WIDTH ALONG THE ROOM'S OWN WALLS
+# (the longest segment of the outer loop, the loop picked by its area, the
+# boundary turned in memory - never the bounding box), the ROTATION of that
+# axis, HOW FAR FROM RECTANGULAR it is (`irregular`), `unmeasurable`, and
+# `volumeComputationOff` said once for the run.
+#
+# THE SAFER RULE KEPT: an UNPLACED room is kept apart from an UNENCLOSED one.
+# MEASURE_ROOM_DIMENSIONS put both in `unplaced` because both have no area;
+# one is placed or deleted and the other is a wall or a room-bounding setting
+# to fix, and this card tells them apart by the location. Where its outputs
+# are now: `lengths`, `widths`, `rotations`, `irregular`, `areas`, `volumes`,
+# `volumeComputationOff`, `unmeasurable` -> the same names; `unplaced` ->
+# `unplaced` and `unenclosed`, apart.
+#
+# STILL DRAWS NOTHING. "Put the room sizes on the plan" is DIMENSION_ROOMS,
+# which creates real dimensions; a question about a room's size must never be
+# answered by something that marks the drawing.
+#
+# Version 1's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
 
 purpose: >
   The room and space table: number, name, level, area and volume for every
@@ -43,8 +68,11 @@ purpose: >
   simply do not carry it. Adding a column here would be a second place that
   reads parameters, and the two would drift.
 
-  Areas are square feet and volumes cubic feet - Revit's internal units, per
-  D-20, converted at the edge where the user is.
+  Version 2 also gives each one's length and width along its own walls, its
+  rotation, and how far from rectangular it is.
+
+  Areas are square feet, volumes cubic feet and lengths feet - Revit's
+  internal units, per D-20, converted at the edge where the user is.
 
   ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
 
@@ -89,6 +117,36 @@ contract:
       # found (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: lengths
+      # VERSION 2, from MEASURE_ROOM_DIMENSIONS. The LONGER side of the room's
+      # own rectangle, along its own walls - never the bounding box. Feet.
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: widths
+      # VERSION 2. The shorter side, the same way.
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: rotations
+      # VERSION 2. The room's own axis, degrees from project X, -90 to 90.
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: irregular
+      # VERSION 2. How much bigger the room's own rectangle is than the room,
+      # in percent - large means genuinely not rectangular, and that room
+      # needs splitting rather than quoting.
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: unmeasurable
+      # VERSION 2. Rooms and spaces with an area whose own axes could not be
+      # established. The evidence it looked, never a thing it found (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: volumeComputationOff
+      # VERSION 2. Every placed Room read has no volume - Area and Volume
+      # Computations is not set to volumes. It explains a column of missing
+      # room volumes at once; one room doing it does not set it.
+      role: result
+      type: bool
 
 proof:
   date: '2026-09-07'
@@ -131,16 +189,21 @@ compatibility-note: >
 #                                          selected this one is refused, so
 #                                          the filter finds every room and
 #                                          this follows it (5b-426)
-#   "how big is this room"              -> MEASURE_ROOM_DIMENSIONS - the
-#                                          length and width of ONE room, for
-#                                          setting out
+#   "how big is this room"              -> here - the length and width
+#                                          along its own walls (version 2,
+#                                          MEASURE_ROOM_DIMENSIONS's job)
+#   "what is the bounding box of this"  -> REPORT_BOUNDING_BOX - the extent in
+#                                          PROJECT X and Y. Right for a duct;
+#                                          WRONG for a rotated room
+#   "put the room sizes on the plan"    -> DIMENSION_ROOMS, which creates real
+#                                          dimensions. This draws nothing
 #   "what shape is the room"            -> READ_ROOM_GEOMETRY - the outline,
 #                                          for laying something out inside it
 #   "which rooms are not enclosed"      -> SELECT_UNENCLOSED_ROOMS, which
 #                                          sweeps the whole model for them.
 #                                          This one reports the set it is
 #                                          given and names the faults it finds
-#   "the airflow in the spaces"         -> REPORT_SPACE_AIRFLOW
+#   "the airflow in the spaces"         -> READ_SPACE_LOADS
 #   "report the areas"                  -> REPORT_AREAS - the Area-plan kind,
 #                                          a third spatial element that is
 #                                          neither a Room nor a Space
@@ -177,3 +240,12 @@ utterances:
   # five fields this fragment reports, and it already declares 'which rooms are
   # not placed', the same shape of question about a different field.
   - which rooms have no name
+  # MOVED 2026-11-01 from MEASURE_ROOM_DIMENSIONS, merged into this card.
+  - how big is this room
+  - what are the room sizes
+  - what size is room 4
+  - give me the room dimensions
+  - how wide is that room
+  - length and width of each room
+  # ...and its semantic identity, which nothing else declares:
+  - how big each room is, measured along the room's own walls

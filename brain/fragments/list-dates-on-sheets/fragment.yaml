@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,35 @@ semantic-identity: "every distinct date typed in a text note on a sheet, across 
 kind: action
 domain: revit.sheets
 capability: LIST_DATES_ON_SHEETS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO FIND_DATES_IN_VIEWS (find-dates-in-views), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable
+# and it can be brought back. Nothing offers it now - retrieval leaves
+# DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to FIND_DATES_IN_VIEWS. The proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: FIND_DATES_IN_VIEWS
+  why: >
+    The same reading: the dates typed in text notes, one parser, a note's
+    own owner view deciding where it was typed. FIND_DATES_IN_VIEWS version
+    2 took every rule of this card's: a sheets-only switch (sheetsOnly) that
+    reads only text typed ON a sheet and counts the notes inside views as
+    not read; onlySheetsGiven with elements and notASheet, never inferred
+    from an empty list; a sheet view template left out; every date once,
+    oldest first, in one uncapped dateList; datesFound with each date's
+    sheet ids; and uniqueDateCount, sheetsWithDateCount, sheetsRead,
+    notesOnSheets, notesInViewsNotRead, sheetsWithNoDate and summary under
+    the same names. The parser is the same text character for character.
+    Nothing was opposite: this card's every-sheet reading is sheetsOnly on
+    there, because off there means every view, that card's proved job.
+    CREATE_REVISIONS_FROM_SHEET_DATES, the write, stays a card of its own.
 
 # WHY THIS EXISTS. 2026-10-10, Revit 2020, model 4355-BHVD-3D-50C10-BL001A (19
 # sheets): a modeller asked to "check all sheets, take all the text on the
@@ -80,9 +106,15 @@ purpose: >
   title block label or parameter. The notes inside views are counted as not
   read, so an empty answer shows what was looked at.
 
-  **THE SAME DATE RULES AS EXTRACT_DATES_FROM_TEXT.** A day, a written month
+  **THE DATE RULES, ONE PARSER FOR EVERY SHEET-DATE CARD.** A day, a written month
   and a year; 31 SEP is refused, and so is a numeric month - 03-04-2026 is
   3 April in one country and 4 March in another.
+
+  **VERSION 2 can read only the sheets handed in**, when the switch
+  `onlySheetsGiven` says so - never guessed from what is selected. Something
+  handed in that is not a sheet is named in `notASheet`, and `datesFound` gives
+  each date with the ids of its sheets. Version 1's proof no longer describes
+  the code and is kept as a record; the card is DRAFT until it is proved again.
 
   ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
 
@@ -90,6 +122,21 @@ contract:
   needs:
     - name: doc
       type: Document
+    - name: elements
+      # Version 2, from EXTRACT_DATES_FROM_TEXT. The sheets to read when
+      # onlySheetsGiven is on - a selection or the step before. Read ONLY then:
+      # with the switch off every sheet is read and this is ignored. Left out,
+      # it binds empty (HeronBindingNote.EmptyWhenAbsent), which is why an
+      # empty list never means "every sheet" here.
+      type: IList<Element>
+      optional: true
+    - name: onlySheetsGiven
+      # Version 2. On: read only the sheets in elements - "what dates are on
+      # THESE sheets". Off, or left out: every sheet, as version 1. Said by the
+      # caller, never inferred from an empty elements.
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: uniqueDateCount
       # How many distinct dates are typed on sheets. A thing it FOUND, so a
@@ -135,6 +182,18 @@ contract:
       # next to how much was looked at.
       role: accounting
       type: string
+    - name: datesFound
+      # Version 2, from EXTRACT_DATES_FROM_TEXT. Each distinct date, spelt
+      # DD-MON-YYYY, with the ids of the sheets that carry it, in sheet-number
+      # order - the answer SET_SHEET_REVISIONS reads. A thing it FOUND (D-52).
+      role: result
+      type: IDictionary<string, IList<ElementId>>
+    - name: notASheet
+      # Version 2, from EXTRACT_DATES_FROM_TEXT. Handed in with onlySheetsGiven
+      # on and not a sheet - a view, a duct, a sheet view template. Never read.
+      # The evidence it looked, not a date it found (D-52).
+      role: accounting
+      type: IList<ElementId>
 
 proof:
   date: '2026-10-18'
@@ -199,28 +258,55 @@ compatibility-note: >
   and nothing calls `IntegerValue`, deprecated at 2024 and gone by 2026. The
   date reading is plain string work with no Revit type in it.
 
-# ROUTING - the dates-on-sheets rows are repeated in EXTRACT_DATES_FROM_TEXT
-# and FIND_DATES_IN_VIEWS.
+# VERSION 2 (2026-11-01) - EXTRACT_DATES_FROM_TEXT WAS MERGED INTO THIS CARD
+# on the owner's instruction ("now merge the other duplicates also"), and is
+# DEPRECATED. The same reading - the dates typed in text notes on sheets, a
+# written month, 31 SEP refused, a note inside a placed view not counted - and
+# this card already read every sheet and answered in one readable line. What
+# EXTRACT_DATES_FROM_TEXT had and this card lacked is here now: the sheets
+# handed in rather than every sheet, by an explicit switch (onlySheetsGiven,
+# never inferred from an empty list), notASheet, and datesFound per sheet ids.
+# This card's parser is kept character for character
+# (tests/test_sheet_date_parser.py), and its owner-view test - stronger than
+# EXTRACT_DATES_FROM_TEXT's sheet-scoped collector - is kept too.
+#
+# WHERE EXTRACT_DATES_FROM_TEXT'S OUTPUTS ARE NOW: datesFound -> datesFound,
+# notASheet -> notASheet, sheetsWithNoDate (ids) -> sheetsWithNoDate (sheet
+# numbers, one line). Its sentences moved here. FIND_DATES_IN_VIEWS and
+# CREATE_REVISIONS_FROM_SHEET_DATES stay separate cards.
+#
+# ROUTING - the dates-on-sheets rows are repeated in FIND_DATES_IN_VIEWS.
 #
 #   "take the dates in that text from      -> here - every sheet, nothing
 #    all sheets"                              selected, each date once
-#   "what dates are on these sheets"       -> EXTRACT_DATES_FROM_TEXT - the
+#   "what dates are on these sheets"       -> here, onlySheetsGiven on - the
 #                                             sheets SELECTED, per sheet, the
 #                                             answer SET_SHEET_REVISIONS reads
-#   "which sheets carry this date"         -> EXTRACT_DATES_FROM_TEXT
+#   "which sheets carry this date"         -> here
+#   "put that revision on the sheets       -> SET_SHEET_REVISIONS, fed by this.
+#    that carry its date"                     Reading the dates and attaching
+#                                             the revision are two decisions
+#   "change the revision date"             -> EDIT_REVISION
 #   "where is this date typed"             -> FIND_DATES_IN_VIEWS - every view,
 #                                             plans and sections included
 #   "find every typed date in the model"   -> FIND_DATES_IN_VIEWS
 #   "read the sheet issue date"            -> READ_ELEMENT_PARAMETERS - a date
 #                                             that IS a parameter
-#   "list the sheets"                      -> LIST_SHEETS
+#   "list the sheets"                      -> FIND_SHEETS
 #   "change the text in a note"            -> EDIT_TEXT_VALUES
 #   "create revisions for the dates on the sheets" -> CREATE_REVISIONS_FROM_SHEET_DATES -
 #                                         makes the revisions this card only lists,
 #                                         each on the sheets carrying its date
 
 # WHERE THE SENTENCE CAME FROM. The modeller's own, typed 2026-10-10 in Revit
-# 2020 with model 4355-BHVD-3D-50C10-BL001A open. Nothing else is declared.
+# 2020 with model 4355-BHVD-3D-50C10-BL001A open. Nothing else was declared
+# until 2026-11-01, when EXTRACT_DATES_FROM_TEXT's four sentences moved here
+# with the merge.
 
 utterances:
   - check all sheets, take all the text on the sheets, take the dates in that text from all sheets, and keep only unique dates
+  # MOVED 2026-11-01 from EXTRACT_DATES_FROM_TEXT, merged into this card.
+  - what dates are written on these sheets
+  - find the dates in the title block text
+  - which sheets carry this date
+  - the date is typed in a text note
