@@ -970,10 +970,11 @@ def test_loads():
     said = view_panel.confirm()
     check(said["ok"] and view_panel.current()["confirmed"] is True,
           "'The take-off is right' records the check through the brain")
+    # The Model Dashboard's 3D view joined the list on 2026-11-01 (docs/40 s21.13).
     check(hc.PAGES.get("/loads3d.js", (None,))[0] == "loads3d.js"
           and set(hc.PAGES) == {"/", "/companion.js", "/companion.css", "/loads3d.js",
-                                "/sprinkler3d.js"},
-          "the page files are a fixed list - the two 3D views' scripts are on it, nothing "
+                                "/sprinkler3d.js", "/model3d.js"},
+          "the page files are a fixed list - the three 3D views' scripts are on it, nothing "
           "else (the Sprinkler panel's added 2026-10-04, docs/46)")
     for route in ("/api/loads/view", "/api/loads/confirm"):
         check(route in source, "the page can ask for %s" % route)
@@ -1476,6 +1477,14 @@ def test_dashboard_panel():
     j = source.index('if path == "/api/dashboard/refresh":')
     k = source.index('if path == "/api/dashboard/show":')
     m = source.index('if path == "/api/dashboard/demo":')
+    q = source.index('if path == "/api/dashboard/colour":')
+    check(source.index("why = self._api_ok()", q) < source.index("DASHBOARD_PANEL.colour(", q),
+          "the colour route is behind _api_ok like every other route")
+    n = source.index('if path == "/api/dashboard/load3d":')
+    o = source.index('if path == "/api/dashboard/view":')
+    check(source.index("why = self._api_ok()", n) < source.index("DASHBOARD_PANEL.load3d(", n)
+          and source.index("why = self._api_ok()", o) < source.index("DASHBOARD_PANEL.view()", o),
+          "the 3D routes are behind _api_ok like every other route")
     check(source.index("why = self._api_ok()", i) < source.index("DASHBOARD_PANEL.current()", i)
           and source.index("why = self._api_ok()", j) < source.index("DASHBOARD_PANEL.refresh(", j)
           and source.index("why = self._api_ok()", k) < source.index("DASHBOARD_PANEL.show(", k)
@@ -1498,15 +1507,31 @@ def test_dashboard_panel():
     check("DASHBOARD_PANEL.show_hook = _dashboard_show" in server
           and "DASHBOARD_PANEL.demo_hook = _dashboard_demo" in server,
           "the server sets the Dashboard's show_hook and demo_hook")
+    colour_src = server[server.index("def _dashboard_colour("):]
+    colour_src = colour_src[:colour_src.index(chr(10) + "def ", 10)]
+    check("DASHBOARD_PANEL.colour_hook = _dashboard_colour" in server
+          and "with _revit_lock:" in colour_src and "_moved_since(identity)" in colour_src
+          and "_through(revit_change" in colour_src and '"COLOR_BY_PARAMETER"' in colour_src
+          and '"RESET_GRAPHIC_OVERRIDES"' in colour_src and '"SELECT_VISIBLE_IN_VIEW"' in colour_src,
+          "Colour runs under the lock, on the read's model only, through revit_change's own "
+          "body - the gate, the switch, one undo entry")
+    check("DASHBOARD_PANEL.load3d_hook = _dashboard_load3d" in server
+          and '"REPORT_MODEL_GEOMETRY"' in server,
+          "the server sets the 3D view's load3d_hook, reading REPORT_MODEL_GEOMETRY")
     check("with _revit_lock:" in refresh_src and "revit_change" not in read_src
           and '"REPORT_MODEL_DASHBOARD"' in read_src and "pinned.check(reply)" in read_src,
           "Refresh reads under the lock, through revit_read only, and the pin's refusal stands")
     mine = dict((k, v) for k, v in tools.COMPANION_ACTIONS.items() if "dashboard" in k)
+    on_screen = ("companion_dashboard_isolate", "companion_dashboard_reset",
+                 "companion_dashboard_select")
+    view_changes = ("companion_dashboard_clear_colours", "companion_dashboard_colour")
     check(tools.TOOLS.get("revit_model_dashboard") == (tools.ANALYZE, "run_fragment_read")
-          and sorted(mine) == ["companion_dashboard_isolate", "companion_dashboard_reset",
-                               "companion_dashboard_select"]
-          and all(risk == tools.EXECUTE for risk, _op in mine.values()),
-          "the chat tool reads only, and the page's three actions are on screen only, at EXECUTE")
+          and sorted(mine) == sorted(on_screen + view_changes)
+          and all(mine[k][0] == tools.EXECUTE for k in on_screen)
+          and all(mine[k] == (tools.MODIFY, "run_fragment_write") for k in view_changes),
+          "the chat tool reads only; the page's Select, Isolate and Reset are on screen only, at "
+          "EXECUTE; Colour and Clear change the view's graphics at revit_change's level, and "
+          "nothing goes above MODIFY (docs/40 s21.14)")
 
     # THE ROW BUTTONS (docs/40 s21.11): the page names a row, never ids.
     shown = hc.DashboardPanel()
@@ -1571,6 +1596,55 @@ def test_dashboard_panel():
           "the empty panel opens the demo, marked as the demo")
     check(demo.show({"action": "reset"})["ok"] is False and len(sent) == before,
           "on the demo, not even Reset reaches Revit")
+
+    # COLOUR THE VIEW (docs/40 s21.14): a change, through the hook only, never
+    # on the demo, and never without a parameter.
+    coloured = []
+    demo.colour_hook = lambda p, clear, identity: (coloured.append(p) or {"ok": True})
+    check(demo.colour({"parameter": "System Type"})["ok"] is False and not coloured,
+          "the demo is never coloured")
+    check(hc.DashboardPanel().colour({"parameter": "System Type"})["said"]
+          == "Nothing was changed: %s." % hc.DashboardPanel.GONE,
+          "with no chat connected, Colour says so and changes nothing")
+    shown.colour_hook = lambda p, clear, identity: (coloured.append((p, clear, identity))
+                                                   or {"ok": True, "said": "coloured"})
+    check(shown.colour({"parameter": "  "})["ok"] is False and not coloured,
+          "no parameter, no change")
+    check(shown.colour({"parameter": " System Type "})["ok"]
+          and coloured[-1] == ("System Type", False, ["Tower MEP", "", "11"]),
+          "Colour hands the parameter and the read's model to the hook")
+    check(shown.colour({"clear": True})["ok"] and coloured[-1][1] is True,
+          "Clear colours needs no parameter")
+    check(tools.COMPANION_ACTIONS.get("companion_dashboard_colour") == (tools.MODIFY, "run_fragment_write")
+          and tools.COMPANION_ACTIONS.get("companion_dashboard_clear_colours")
+          == (tools.MODIFY, "run_fragment_write"),
+          "Colour and Clear are declared at revit_change's own level")
+    # THE 3D VIEW (docs/40 s21.13): held apart, fetched on its own, and a
+    # click selects only an element the panel's own 3D read found.
+    import heron_brain as brain3d
+    import test_model_view as VIEW
+    check(demo.load3d({})["ok"] is False, "no 3D read with no chat connected")
+    demo.load3d_hook = lambda whole: {"ok": True, "said": "read"}
+    check(demo.load3d({})["ok"] is False and "DEMO" in demo.load3d({})["said"],
+          "no 3D read while the dashboard shows the demo")
+    whole_asked = []
+    shown.load3d_hook = lambda whole: (whole_asked.append(whole) or {"ok": True, "said": "read"})
+    check(shown.load3d({"whole": True})["ok"] and shown.load3d({"whole": "yes"})["ok"]
+          and whole_asked == [True, False],
+          "Load 3D asks for the whole model only when the page says exactly true")
+    got3d = brain3d.model_view(VIEW.sample())
+    shown.set_view(got3d, ("Tower MEP", "", "11"))
+    small = shown.current()["view3d"]
+    check(small["drawn"] == 4 and "elements" not in small and shown.view()["elements"],
+          "the panel's state carries the 3D summary, never the shapes - those come from "
+          "/api/dashboard/view")
+    check(shown.show({"action": "select", "element": "102"})["ok"] and sent[-1][1] == ["102"],
+          "a click in the 3D view selects that element by the panel's own 3D read")
+    check(shown.show({"action": "select", "element": "999"})["ok"] is False,
+          "an element the 3D read did not find sends nothing")
+    shown.set_view({"view": None})
+    check(shown.view() is None and "view3d" not in shown.current(),
+          "a failed 3D read leaves no stale view behind")
     page = io.open(PAGE_JS, encoding="utf-8").read()
     dash = page[page.index("// ---------------------------------------------------------------- dashboard"):
                 page.index("// ---------------------------------------------------------------- sprinkler")]

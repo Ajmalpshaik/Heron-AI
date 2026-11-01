@@ -886,3 +886,13 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
 #dashboard .d-bar-pick:hover { text-decoration: underline; }
 #dashboard .d-changed { margin: 0 0 12px; padding: 9px 12px; border-radius: 8px; font-size: 13px; background: var(--warn-bg); border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent); border-left: 4px solid var(--warn); }
 #dashboard .d-changed[hidden] { display: none; }
+#dashboard .d-colour { margin: 0 0 16px; }
+/* The 3D view (docs/40 s21.13). */
+#dashboard .m3d { margin: 0 0 12px; }
+#dashboard .m3d[hidden] { display: none; }
+#dashboard .m3d-stage { position: relative; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); overflow: hidden; }
+#dashboard .m3d-stage canvas { display: block; width: 100%; height: 560px; touch-action: none; cursor: grab; }
+#dashboard .m3d-stage canvas:active { cursor: grabbing; }
+#dashboard .d-3d-tools { margin: 0 0 14px; }
+#dashboard .d-picked { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; font-size: 13px; }
+@media print { #dashboard .m3d, #dashboard .d-3d-tools .d-tools { display: none !important; } }

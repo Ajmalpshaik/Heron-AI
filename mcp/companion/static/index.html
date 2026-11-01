@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="/companion.css">
 <script src="/loads3d.js" defer></script>
 <script src="/sprinkler3d.js" defer></script>
+<script src="/model3d.js" defer></script>
 <script src="/companion.js" defer></script>
 </head>
 <body>
@@ -58,6 +59,8 @@
     <p id="d-changed" class="d-changed" role="status" aria-live="polite" hidden>The model has changed in Revit since this
       read - press <b>Refresh</b> to read it again.</p>
     <div id="d-box"></div>
+    <div id="d-box2"></div>
+    <div id="d-3d" class="m3d" hidden></div>
     <p id="d-empty" class="empty">Ask the chat for a "model dashboard". Heron reads the model once and shows its
       elements, warnings, views, sheets, families, links and rooms here, with the things worth a look and their
       element ids to paste into Revit's Select by ID.

@@ -1575,7 +1575,7 @@ async function dashRefresh(button, said, parameters, board) {
 // A row's Select in Revit / Isolate in view, or Reset isolate. On screen only:
 // the selection and the active view's Temporary Hide/Isolate - never the model.
 // The page sends the row's key, never ids: Heron uses the ids its own read found.
-async function dashShow(action, row, button, bar) {
+async function dashShow(action, row, button, bar, element) {
   if (dashBusy) return;
   dashBusy = true;
   const said = $("d-said");
@@ -1586,7 +1586,8 @@ async function dashShow(action, row, button, bar) {
       method: "POST",
       headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
       credentials: "same-origin",
-      body: JSON.stringify(bar ? { action: action, bar: bar } : { action: action, row: row }),
+      body: JSON.stringify(element ? { action: action, element: String(element) }
+                           : bar ? { action: action, bar: bar } : { action: action, row: row }),
     });
     const answer = await res.json();
     if (said) {
@@ -1790,7 +1791,11 @@ function dashBoard(B) {
         label.type = "button";
         label.classList.add("d-bar-pick");
         label.title = "Select these " + b.count + " element(s) in Revit - nothing in the model changes";
-        label.addEventListener("click", () => dashShow("select", null, label, [c.key, b.label]));
+        label.addEventListener("click", () => {
+          // With the 3D view loaded, the bar's elements light up there too.
+          if (window.HeronModel3D && !$("d-3d").hidden) window.HeronModel3D.highlight(b.ids);
+          dashShow("select", null, label, [c.key, b.label]);
+        });
       } else label.title = b.label;
       const track = el("span", "d-bar-track");
       const fill = el("i", "d-bar-fill");
@@ -1804,6 +1809,67 @@ function dashBoard(B) {
     grid.append(box);
   });
   sec.append(grid);
+  return sec;
+}
+
+// Colour Revit's active view by a parameter, or clear the colours (docs/40
+// s21.14). A CHANGE to the view's graphics: the page asks first, Revit's Keep
+// or Discard asks again while Ask to Keep is on, and it is one entry in
+// Revit's undo list. Nothing in any element's data changes.
+function dashColourBox() {
+  const sec = el("section", "d-colour");
+  sec.append(el("h3", "d-sub", "Colour Revit's active view"));
+  const row = el("div", "d-tools");
+  const name = el("input", "d-params");
+  name.type = "text";
+  name.placeholder = "A parameter as Revit shows it - System Type, Fire Rating, Level";
+  name.setAttribute("aria-label", "Parameter to colour the active view by");
+  const said = el("p", "result");
+  said.setAttribute("role", "status");
+  const send = async body => {
+    if (dashBusy) return;
+    dashBusy = true;
+    document.querySelectorAll("#dashboard button").forEach(b => { b.disabled = true; });
+    said.className = "result";
+    said.textContent = "Asking Revit… if Revit asks Keep or Discard, answer it there.";
+    try {
+      const res = await fetch("/api/dashboard/colour", {
+        method: "POST",
+        headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
+        credentials: "same-origin",
+        body: JSON.stringify(body),
+      });
+      const answer = await res.json();
+      said.className = answer.ok ? "result ok" : "result failed";
+      said.textContent = answer.said || answer.error || (answer.ok ? "Done." : "Not done.");
+    } catch (e) {
+      said.className = "result failed";
+      said.textContent = "The page could not reach Heron. Look at Revit's undo list before trying again.";
+    }
+    document.querySelectorAll("#dashboard button").forEach(b => { b.disabled = false; });
+    dashBusy = false;
+  };
+  const colour = el("button", "btn-lite", "Colour the view");
+  colour.type = "button";
+  colour.title = "Give every value of the parameter its own colour in Revit's active view - a change to the view's graphics";
+  colour.addEventListener("click", () => {
+    const p = name.value.trim();
+    if (!p) { said.className = "result failed"; said.textContent = "Name the parameter first."; return; }
+    if (!confirm("Colour everything Revit's active view shows by '" + p + "'?\n\nThis changes the view's " +
+                 "graphics - one entry in Revit's undo list. No element's data changes.")) return;
+    send({ parameter: p });
+  });
+  const clear = el("button", "btn-lite", "Clear colours");
+  clear.type = "button";
+  clear.title = "Take the per-element colours off everything Revit's active view shows - a change to the view's graphics";
+  clear.addEventListener("click", () => {
+    if (!confirm("Clear the per-element colours on everything Revit's active view shows?\n\n" +
+                 "One entry in Revit's undo list. A category's own colour is not touched.")) return;
+    send({ clear: true });
+  });
+  row.append(name, colour, clear, said);
+  sec.append(row, el("p", "muted small", "Every value gets its own colour, the same each time. " +
+    "Undo in Revit takes it back in one step."));
   return sec;
 }
 
@@ -1843,6 +1909,19 @@ function dashLook(D, colours) {
       iso.title = "Revit's Temporary Isolate in the active view - nothing in the model changes";
       iso.addEventListener("click", () => dashShow("isolate", r.key, iso));
       tools.append(sel, iso);
+      if (D.view3d) {
+        const in3d = el("button", "btn-lite", "Show in 3D");
+        in3d.type = "button";
+        in3d.title = "Light these elements up in the 3D view - every other one fades";
+        in3d.addEventListener("click", () => {
+          const found = window.HeronModel3D ? window.HeronModel3D.highlight(r.ids) : 0;
+          const s3 = $("d-3d-said");
+          if (s3) { s3.className = "result"; s3.textContent = found + " of " + r.ids.length + " shown in the 3D view" +
+            (found < r.ids.length ? " - the rest are not in what the 3D read covers." : "."); }
+          $("d-3d").scrollIntoView({ behavior: "smooth", block: "nearest" });
+        });
+        tools.append(in3d);
+      }
       const copy = el("button", "btn-lite", "Copy " + r.ids.length + " ID(s)");
       copy.type = "button";
       copy.title = "Copy the element ids for Manage > Inquiry > Select by ID in Revit";
@@ -1964,6 +2043,7 @@ function renderDashboard(D) {
   (D.charts || []).forEach(c => charts.append(dashChart(c)));
   box.append(charts);
   if (D.board) box.append(dashBoard(D.board));
+  if (!D.demo) box.append(dashColourBox());
   if (D.fill) box.append(dashFill(D.fill, colours));
   box.append(dashLook(D, colours));
   const legend = el("ul", "d-legend");
@@ -1975,6 +2055,120 @@ function renderDashboard(D) {
     legend.append(li);
   });
   box.append(legend);
+  dash3dControls(D);
+}
+
+// The 3D view's controls (docs/40 s21.13). The canvas lives in #d-3d, outside
+// what each redraw replaces, so turning the model survives a Refresh; these
+// buttons, the legend and the picked element go in #d-box2.
+let dashPicked = null;
+
+function dash3dControls(D) {
+  const box = $("d-box2");
+  box.replaceChildren();
+  if (!D) return;
+  const sec = el("section", "d-3d-tools");
+  sec.append(el("h3", "d-sub", "3D view"));
+  const row = el("div", "d-tools");
+  const said = el("p", "result");
+  said.id = "d-3d-said";
+  said.setAttribute("role", "status");
+  const load = (whole, button) => async () => {
+    if (dashBusy) return;
+    dashBusy = true;
+    document.querySelectorAll("#dashboard button").forEach(b => { b.disabled = true; });
+    said.className = "result";
+    said.textContent = "Reading the model's shapes in Revit… a big model can take a minute.";
+    try {
+      const res = await fetch("/api/dashboard/load3d", {
+        method: "POST",
+        headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
+        credentials: "same-origin",
+        body: JSON.stringify({ whole: whole }),
+      });
+      const answer = await res.json();
+      said.className = answer.ok ? "result ok" : "result failed";
+      said.textContent = answer.said || answer.error || (answer.ok ? "Read." : "Not read.");
+    } catch (e) {
+      said.className = "result failed";
+      said.textContent = "The page could not reach Heron. Nothing was read.";
+    }
+    const kept = { cls: said.className, text: said.textContent };
+    document.querySelectorAll("#dashboard button").forEach(b => { b.disabled = false; });
+    dashBusy = false;
+    dashShown = null;
+    await dashboard_();
+    const after = $("d-3d-said");
+    if (after) { after.className = kept.cls; after.textContent = kept.text; }
+  };
+  const active = el("button", "btn-lite", D.view3d ? "Read again - active 3D view" : "Load 3D - active 3D view");
+  active.type = "button";
+  active.title = "Read the shapes of what Revit's active 3D view shows - section box and hidden elements respected. Nothing in the model changes";
+  active.addEventListener("click", load(false, active));
+  const whole = el("button", "btn-lite", "Load 3D - whole model");
+  whole.type = "button";
+  whole.title = "Read the shapes of the whole model, coarse - slower on a big model. Nothing in the model changes";
+  whole.addEventListener("click", load(true, whole));
+  row.append(active, whole);
+  if (D.view3d) {
+    const fit = el("button", "btn-lite", "Fit");
+    fit.type = "button";
+    fit.addEventListener("click", () => { if (window.HeronModel3D) window.HeronModel3D.fit(); });
+    const clear = el("button", "btn-lite", "Clear highlight");
+    clear.type = "button";
+    clear.addEventListener("click", () => { if (window.HeronModel3D) window.HeronModel3D.highlight(null); });
+    row.append(fit, clear);
+  }
+  row.append(said);
+  sec.append(row);
+  if (D.demo) {
+    sec.append(el("p", "muted small", "The DEMO has no shapes - ask the chat for a model dashboard to read your model, then load the 3D view."));
+  } else if (!D.view3d) {
+    sec.append(el("p", "muted small", "Drag to turn, right-drag (or Shift) to pan, wheel to zoom, click an element to see what it is. " +
+      "Open a 3D view in Revit first; a section box keeps the read small."));
+  } else {
+    const V = D.view3d;
+    sec.append(el("p", "muted small", (V.scope || "") + " · " + num(V.drawn, 0) + " element(s), " + num(V.triangles, 0) +
+      " triangle(s)" + (V.leftOut ? " · " + num(V.leftOut, 0) + " left out - " +
+        (V.stopped === "time" ? "the read stopped itself before Revit's time limit" : "the triangle limit") : "") +
+      (V.noGeometry ? " · " + num(V.noGeometry, 0) + " with nothing to draw" : "")));
+    ((V.notRead || []).concat(V.capped || [])).forEach(n => sec.append(el("p", "d-notread", n)));
+    const legend = el("ul", "d-legend");
+    (V.legend || []).forEach(c => {
+      const li = el("li");
+      const sw = el("i", "d-swatch");
+      sw.style.background = dashColour(c.colour, "#9e9e9e");
+      li.append(sw, el("span", null, c.name + " (" + num(c.count, 0) + ")"));
+      legend.append(li);
+    });
+    const picked = el("div", "d-picked");
+    picked.id = "d-picked";
+    sec.append(legend, picked);
+  }
+  box.append(sec);
+  dashPick(dashPicked);
+}
+
+// What a click in the 3D view picked - its id and category, and Select in Revit
+// by that id (the panel checks the id is one its own 3D read found).
+function dashPick(p) {
+  dashPicked = p;
+  const box = $("d-picked");
+  if (!box) return;
+  box.replaceChildren();
+  if (!p) {
+    box.append(el("span", "muted small", "Click an element in the 3D view to see what it is."));
+    return;
+  }
+  box.append(el("span", null, p.category + " · element " + p.id + " "));
+  const sel = el("button", "btn-lite", "Select in Revit");
+  sel.type = "button";
+  sel.addEventListener("click", () => dashShow("select", null, sel, null, p.id));
+  const copy = el("button", "btn-lite", "Copy ID");
+  copy.type = "button";
+  copy.addEventListener("click", () => copyIds([p.id], copy));
+  box.append(sel, copy);
+  if (window.HeronModel3D) window.HeronModel3D.highlight([p.id]);
 }
 
 // THE MODEL HAS CHANGED (D-147): the add-in counts every committed change to
@@ -2000,10 +2194,13 @@ async function dashboard_() {
     if (!res.ok) return;
     const D = (await res.json()).dashboard;
     dashLast = D;
-    const key = D ? D.at + "/" + (D.document || "") + "/" + (D.busy ? "b" : "") : "none";
+    const key = D ? D.at + "/" + (D.document || "") + "/" + (D.busy ? "b" : "") + "/" +
+                    ((D.view3d && D.view3d.key) || "") : "none";
     if (key === dashShown) return;
     dashShown = key;
     renderDashboard(D);
+    if (!D) dash3dControls(null);
+    if (window.HeronModel3D) window.HeronModel3D.update($("d-3d"), D && D.view3d ? D.view3d.key : null, dashPick);
   } catch (e) { /* the state poll reports a closed page */ }
 }
 

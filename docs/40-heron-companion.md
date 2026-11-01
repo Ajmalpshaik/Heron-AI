@@ -1213,6 +1213,75 @@ else) - the owner's decision, asked in the work note. A whole-model 3D view is p
 in Chromium with sample data - the fill table, the filter, the CSV download and the print view.
 **Not run in Revit** - the fill-rate's run is owed in [group JT](needs-checking/group-jt.md).
 
+### 21.13 A 3D view of the model in the Model Dashboard (2026-11-01)
+
+Asked by the owner: *"3D VIEWS ALOS ADD IN THE COMPANION APP ??"* - the plan's phase 6, and the idea
+BIMLens shows as its 3D viewer, re-made Heron's way.
+
+- **The read.** `REPORT_MODEL_GEOMETRY` (READ, DRAFT) reads the shapes at coarse detail, within a triangle
+  limit: by default **what Revit's active 3D view shows** - its section box and hidden categories
+  respected, and temporary hide expected to be (row JU12 measures it), so the modeller decides how much is
+  read - or the whole model. Metres, by the
+  fixed factor, so every release reads the same. Nothing in the model changes.
+- **The brain.** `brain/heron_model_view.py` checks every triangle names a point its element has - a
+  damaged read is refused whole, never drawn half right - and decides every colour: fixed ones for the
+  categories a modeller reads by colour (ducts blue, pipes green, sprinklers red), an even hue step for
+  the rest, the same colour for the same category every time. What the limit left out is said.
+- **The page.** `static/model3d.js` is Heron's own WebGL - no library, nothing from the internet, like the
+  Loads and Sprinkler panels' 3D views. Drag to turn, right-drag or Shift to pan, wheel to zoom, Fit.
+  **A click picks an element** - a second pass paints each element in its own colour code and the pixel
+  under the click names it - and shows its category and id with **Select in Revit** and **Copy ID**.
+  **Show in 3D** on a *Worth a look* row lights its elements up and fades the rest.
+- **Load 3D** - *active 3D view* or *whole model* - is the modeller's own press, under the lock every tool
+  call holds, never on a timer; `revit_model_dashboard` takes `view3d` for the chat. The shapes are held
+  apart from the rest of the panel and fetched only when they change - they can be megabytes. A click's
+  Select sends only an id the panel's own 3D read found. Not on the DEMO, which has no shapes.
+
+**Proved without Revit:** `tests/test_model_view.py` (the brain - damaged reads refused, colours stable
+and distinct); `tests/test_companion.py`'s Dashboard group (the routes behind the pairing, the shapes kept
+out of the state, Select by the 3D read's own ids); and the page driven in headless Chromium - drawn,
+turned, an element picked and highlighted. **Not run in Revit**: the fragment's proof is owed in
+[group JU](needs-checking/group-ju.md).
+
+**Recorded for the owner, not decided here** (from the fragment's author):
+- **How big a read is.** About 5 MB at the default limit of 150,000 triangles, estimated near 17 MB at the
+  500,000 ceiling. Through the dashboard it stays on the page; asked through `revit_read` directly, all of
+  it is printed into the chat - the card says so.
+- **Revit's 60-second stop - answered: *"Yes, stop at ~40 s"*.** Version 2 watches the clock
+  (`Environment.TickCount`, in every release's core library) and **stops itself at `timeLimitSeconds`, 40 by
+  default**, handing back what it has drawn, largest elements first; `stopped` says which limit ended the
+  read - `triangles` or `time` - and the page says so. Refused below 5 or above 55. With the default 60 s
+  `revit.operationTimeoutSeconds` the add-in stops a fragment at 50 s, so a limit above about 45 s will
+  usually lose to that stop and return nothing - row JU17 records which comes first.
+- **The active-view scope uses the view's own detail level**, because Revit refuses `Options.View` and
+  `Options.DetailLevel` together; pipes and ducts that come back as lines are read again at Fine (JU6).
+
+### 21.14 Colour Revit's active view from the Model Dashboard (2026-11-01)
+
+The plan's phase 5, first part, on the owner's *"CONTINEW UNTILE ALL FINISH"* - BIMLens's *colour the model
+by a chart*, re-made the Heron way. **It is a change** - to the active view's graphics, never to an
+element's data:
+
+- **Colour the view** - type a parameter as Revit shows it (*System Type*, *Fire Rating*, *Level*).
+  `SELECT_VISIBLE_IN_VIEW` reads what the active view shows (READ, PROVEN); `COLOR_BY_PARAMETER` gives
+  every distinct value its own colour, the same colours every run, a blank its own group (MODIFY, PROVEN).
+- **Clear colours** - `RESET_GRAPHIC_OVERRIDES` on the same elements (MODIFY, PROVEN). A category's own
+  colour is not touched; only the per-element ones come off.
+
+Both run `revit_change`'s own body (`_dashboard_colour`): the gate, the Changes switch, the pin, D-117's
+PROVEN-only rule, **one named entry in Revit's undo list**, and Revit's Keep or Discard while *Ask to
+Keep* is on (D-126). The page asks the modeller first; only on the model the dashboard was read from;
+never on the DEMO. Declared `companion_dashboard_colour` and `companion_dashboard_clear_colours`, MODIFY.
+
+**Not built from phase 5, and why:** *fix from a row* (fill a parameter, rename to the standard, move to
+a workset) needs `SET_PARAMETER_VALUES_BY_ID` PROVEN first ([group FE](needs-checking/group-fe.md)) and
+the owner's word on which fixes; *purge unused families* is destructive - Article 7 asks the owner's yes
+for that exact job, so it is not offered as a button.
+
+**Proved without Revit:** `tests/test_companion.py` - the hook gets the parameter and the read's model,
+the demo and an empty name change nothing, the route is behind the pairing, the server goes through
+`revit_change` under the lock. **Not run in Revit** - group JT row JT27.
+
 ### 21.15 "The model has changed - press Refresh" (2026-11-01)
 
 The plan's last phase-2 item, on the owner's word ([D-147](decisions/D-147.md), amending D-09): *"Yes, add

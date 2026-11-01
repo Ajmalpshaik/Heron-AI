@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -214,64 +214,75 @@ contract:
 # (version 3, 2026-10-29); NEEDS-CHECKING Group JP re-proves the wall-type path
 # and proves the curtain system type's.
 proof:
-  date: '2026-10-06'
+  date: '2026-11-01'
   by: Ajmal PS
-  model: Project2, Revit 2024, session 51820 - the count is NOT recorded because 1,790 elements
-    was measured on GM_PipeSupport_HexNut, the document in front, and this ran against another
-    one (row 15)
+  model: TEST MASS, Revit 2020, session 6588 - the count is NOT recorded because 32,372 elements
+    was measured on 4355-BHVD-3D-50S20-BL001A, the document in front, and this ran against
+    another one (row 15)
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    create-wall with this phase''s own values - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned LargestSpacingMm 100000, MillimetresPerFoot
-    304.8, SameSpacingMm 0.5, SmallestSpacingMm 100, alreadyAsAsked 0, applied 4, askedLayout
-    2 item(s) [1, 1], askedSpacingMm 2 item(s) [2500, 4000], cannotWrite Func`4, differs 0
-    item(s), directions 2 item(s) [vertical, horizontal], findings 2 item(s) [''Curtain Wall:
-    Curtain Wall'' is used by 1 wall in this model..., Read back from Revit: vertical layout
-    Fixed Distance, vertic...], fixedNumber 2, fullName Func`2, label Curtain Wall: Curtain
-    Wall, layoutIds 2 item(s) [SPACING_LAYOUT_VERT, SPACING_LAYOUT_HORIZ], layoutNumber Func`2,
-    layoutParameter 2 item(s) [Autodesk.Revit.DB.Parameter, Autodesk.Revit.DB.Parameter],
-    layoutShown 5 item(s) [None, Fixed Distance, Fixed Number, ...], layoutValues 5 item(s)
-    [0, 1, 2, ...], layoutWords 5 item(s) [none, fixed distance, fixed number, ...], layoutWordsShown
-    Func`2, measured wall 359372, 9000 mm long: vertical grid lines 0 before, 3 (Revit''s
-    U set 0, V set 3) now; horizontal 0 before, 0 now; at an angle 0 before, 0 now. Mullions
-    before: none. Now: none, perWallIds 8 item(s) [SPACING_NUM_DIVISIONS_VERT, SPACING_NUM_DIVISIONS_HORIZ,
-    SPACING_JUSTIFICATION_VERT, ...], perWallNames 8 item(s) [vertical Number, horizontal
-    Number, vertical Justification, ...], plain Func`2, readBack vertical: layout Fixed Distance
-    [Revit''s value 1], was None [Revit''s value 0] - asked; spacing 2500.0 mm, was 0.0 mm
-    - asked | horizontal: layout Fixed Distance [Revit''s value 1], was None [Revit''s value
-    0] - asked; spacing 4000.0 mm, was 0.0 mm - asked | Number, Justification, Angle and Offset,
-    both ways, measured - on the TYPE: none of them; on wall 359372: all eight, readOnlyBecause
-    Func`3, refused , spacingIds 2 item(s) [SPACING_LENGTH_VERT, SPACING_LENGTH_HORIZ], spacingMm
-    Func`2, spacingParameter 2 item(s) [Autodesk.Revit.DB.Parameter, Autodesk.Revit.DB.Parameter],
-    usesSpacing Func`2, wallsOfType 1. inputs came curtainWallType as given; grid as given
-    (4). on Project2'
-  negative_case: 'run with level=Level 1, wallType=Curtain Wall: Curtain Wall, points=0,60000,0;
-    9000,60000,0, height=3000, structural=false, curtainWallType=Curtain Wall: Curtain Wall,
-    grid=vertical spacing=1500 instead - chosen because it should not contain what this fragment
-    reports - the arrangement was re-made first by running create-wall with this phase''s
-    own values - run inside a transaction, and Revit reported the transaction group ROLLED
-    BACK afterwards. returned LargestSpacingMm 100000, MillimetresPerFoot 304.8, SameSpacingMm
-    0.5, SmallestSpacingMm 100, alreadyAsAsked 0, applied 0, askedLayout 2 item(s) [-1, -1],
-    askedSpacingMm 2 item(s) [1500, NaN], cannotWrite Func`4, differs 0 item(s), directions
-    2 item(s) [vertical, horizontal], findings 1 item(s) [A vertical spacing does nothing
-    while the vertical layout is...], fixedNumber 2, fullName Func`2, label Curtain Wall:
-    Curtain Wall, layoutIds 2 item(s) [SPACING_LAYOUT_VERT, SPACING_LAYOUT_HORIZ], layoutNumber
+    create-curtain-system with this phase''s own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned LargestSpacingMm 100000,
+    MillimetresPerFoot 304.8, SameSpacingMm 0.5, SmallestSpacingMm 100, alreadyAsAsked 1,
+    applied 3, asSystem CurtainSystemType, asWall (null), askedLayout 2 item(s) [3, 4], askedSpacingMm
+    2 item(s) [3000, 2000], cannotWrite Func`4, chosen CurtainSystemType, differs 0 item(s),
+    directions 2 item(s) [grid 1, grid 2], findings 2 item(s) [''Curtain System: 1500 x 3000mm''
+    is used by 1 curtain system ..., Read back from Revit: grid 1 layout Maximum Spacing,
+    grid 1 ...], fixedNumber 2, fullName Func`2, idsCarried Func`1, isSystem true, label Curtain
+    System: 1500 x 3000mm, layoutIds 2 item(s) [SPACING_LAYOUT_1, SPACING_LAYOUT_2], layoutNumber
     Func`2, layoutParameter 2 item(s) [Autodesk.Revit.DB.Parameter, Autodesk.Revit.DB.Parameter],
     layoutShown 5 item(s) [None, Fixed Distance, Fixed Number, ...], layoutValues 5 item(s)
     [0, 1, 2, ...], layoutWords 5 item(s) [none, fixed distance, fixed number, ...], layoutWordsShown
-    Func`2, measured , perWallIds 8 item(s) [SPACING_NUM_DIVISIONS_VERT, SPACING_NUM_DIVISIONS_HORIZ,
-    SPACING_JUSTIFICATION_VERT, ...], perWallNames 8 item(s) [vertical Number, horizontal
-    Number, vertical Justification, ...], plain Func`2, readBack , readOnlyBecause Func`3,
-    refused A vertical spacing does nothing while the vertical layout is None - there are
-    no evenly spaced lines to space. Say the layout as well: fixed distance, maximum spacing
-    or minimum spacing. Nothing was changed, spacingIds 2 item(s) [SPACING_LENGTH_VERT, SPACING_LENGTH_HORIZ],
-    spacingMm Func`2, spacingParameter 2 item(s) [Autodesk.Revit.DB.Parameter, Autodesk.Revit.DB.Parameter],
-    usesSpacing Func`2, wallsOfType 0. inputs came curtainWallType as given; grid as given
-    (1). on Project2'
+    Func`2, manyUsers curtain systems, measured curtain system 351935, on 12 face(s): vertical
+    grid lines 96 (Revit''s U set 0, V set 96) before, 96 (Revit''s U set 0, V set 96) now;
+    horizontal 64 (Revit''s U set 64, V set 0) before, 32 (Revit''s U set 32, V set 0) now;
+    at an angle 0 before, 0 now. By face, Revit''s U and V lines before -> now: face 1 U 4
+    -> 4, V 5 -> 4; face 2 U 4 -> 2, V 13 -> 13; face 3 U 7 -> 4, V 4 -> 10; face 4 U 7 ->
+    2, V 10 -> 5; face 5 U 4 -> 2, V 5 -> 10; face 6 U 4 -> 4, V 13 -> 4; face 7 U 7 -> 2,
+    V 4 -> 10; face 8 U 5 -> 4, V 6 -> 10; and 4 more face(s). Mullions before: none. Now:
+    none, nameFits Func`2, nameProblem , oneUser curtain system, perWallIds 8 item(s) [SPACING_NUM_DIVISIONS_1,
+    SPACING_NUM_DIVISIONS_2, SPACING_JUSTIFICATION_1, ...], perWallNames 8 item(s) [grid 1
+    Number, grid 2 Number, grid 1 Justification, ...], plain Func`2, probeIds 9 item(s) [SPACING_LAYOUT_1,
+    SPACING_LAYOUT_2, SPACING_LENGTH_1, ...], readBack grid 1: layout Maximum Spacing [Revit''s
+    value 3], was Fixed Distance [Revit''s value 1] - asked; spacing 3000.0 mm, was 3000.0
+    mm - asked | grid 2: layout Minimum Spacing [Revit''s value 5], was Fixed Distance [Revit''s
+    value 1] - asked; spacing 2000.0 mm, was 1500.0 mm - asked | Number, Justification, Angle
+    and Offset, both grids, measured - on the TYPE: none of them; on curtain system 351935:
+    all eight | Of Revit''s grid ids, ''Curtain System: 1500 x 3000mm'' carries: SPACING_LAYOUT_1,
+    SPACING_LAYOUT_2, SPACING_LENGTH_1, SPACING_LENGTH_2, SPACING_LAYOUT_U, SPACING_LAYOUT_V,
+    SPACING_LAYOUT_VERT, SPACING_LAYOUT_HORIZ, SPACING_LAYOUT; not: none, readOnlyBecause
+    Func`3, refused , spacingIds 2 item(s) [SPACING_LENGTH_1, SPACING_LENGTH_2], spacingMm
+    Func`2, spacingParameter 2 item(s) [Autodesk.Revit.DB.Parameter, Autodesk.Revit.DB.Parameter],
+    systemsOfType 1, typeAsked Curtain System : 1500 x 3000mm, usesSpacing Func`2, wallsOfType
+    0. inputs came curtainWallType as given; grid as given (4). on TEST MASS'
+  negative_case: 'run with host=351071, curtainSystemType=Curtain System : 1500 x 3000mm,
+    curtainWallType=Curtain Wall: Storefront, grid=grid 1 layout=maximum spacing; grid 1 spacing=3000;
+    grid 2 layout=minimum spacing; grid 2 spacing=2000 instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    create-curtain-system with this phase''s own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned LargestSpacingMm 100000,
+    MillimetresPerFoot 304.8, SameSpacingMm 0.5, SmallestSpacingMm 100, alreadyAsAsked 0,
+    applied 0, asSystem (null), asWall WallType, askedLayout 2 item(s) [-1, -1], askedSpacingMm
+    2 item(s) [NaN, NaN], cannotWrite Func`4, chosen WallType, differs 0 item(s), directions
+    2 item(s) [vertical, horizontal], findings 1 item(s) [''grid 1 layout'' is not a grid
+    setting this changes. Name one...], fixedNumber 2, fullName Func`2, idsCarried Func`1,
+    isSystem false, label Curtain Wall: Storefront, layoutIds 2 item(s) [SPACING_LAYOUT_VERT,
+    SPACING_LAYOUT_HORIZ], layoutNumber Func`2, layoutParameter 2 item(s) [(null), (null)],
+    layoutShown 5 item(s) [None, Fixed Distance, Fixed Number, ...], layoutValues 5 item(s)
+    [0, 1, 2, ...], layoutWords 5 item(s) [none, fixed distance, fixed number, ...], layoutWordsShown
+    Func`2, manyUsers walls, measured , nameFits Func`2, nameProblem , oneUser wall, perWallIds
+    8 item(s) [SPACING_NUM_DIVISIONS_VERT, SPACING_NUM_DIVISIONS_HORIZ, SPACING_JUSTIFICATION_VERT,
+    ...], perWallNames 8 item(s) [vertical Number, horizontal Number, vertical Justification,
+    ...], plain Func`2, probeIds 9 item(s) [SPACING_LAYOUT_1, SPACING_LAYOUT_2, SPACING_LENGTH_1,
+    ...], readBack , readOnlyBecause Func`3, refused ''grid 1 layout'' is not a grid setting
+    this changes. Name one or more of: vertical layout, vertical spacing, horizontal layout,
+    horizontal spacing. Nothing was changed, spacingIds 2 item(s) [SPACING_LENGTH_VERT, SPACING_LENGTH_HORIZ],
+    spacingMm Func`2, spacingParameter 2 item(s) [(null), (null)], systemsOfType 0, typeAsked
+    Curtain Wall: Storefront, usesSpacing Func`2, wallsOfType 0. inputs came curtainWallType
+    as given; grid as given (4). on TEST MASS'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: aa5106c798b16c04
-
+  fingerprint: e550585eab50dee5
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
