@@ -38,6 +38,12 @@ import tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 sys.path.insert(0, os.path.join(ROOT, "tests"))
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                          # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070) - the snapshot test sets HERON_KNOWLEDGE.
+scratch_audit.plant()
 
 import heron_model_dashboard as D                             # noqa: E402
 from test_takeoff import run_all                              # noqa: E402
@@ -272,15 +278,15 @@ def test_since_the_last_read_says_what_moved():
 
 
 def test_a_part_unread_is_never_compared():
-    was = D.snapshot(D.read(sample()))
+    was = D.dashboard_snapshot(D.read(sample()))
     data = D.read(sample(sheets=None, notRead=["sheets: could not be read"]))
-    now = D.snapshot(data)
+    now = D.dashboard_snapshot(data)
     assert "sheets.total" not in now["numbers"]
     assert not [r for r in D.compare(was, now) if r["label"] in ("Sheets", "Empty sheets")]
 
 
 def test_a_snapshot_keeps_no_ids_or_names():
-    snap = json.dumps(D.snapshot(D.read(sample())))
+    snap = json.dumps(D.dashboard_snapshot(D.read(sample())))
     for text in ("501", "ARCH.rvt", "Old Diffuser", "site.dwg"):
         assert text not in snap, text
 
