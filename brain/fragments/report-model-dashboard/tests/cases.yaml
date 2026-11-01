@@ -83,6 +83,41 @@ positive:
       both answers are version 1's, part for part, with "fill": null and NO
       "fill:" line in notRead - not asking is not a part that failed
 
+  # VERSION 3 - breakdowns. The first is the batch-prove leg (tools/jobs).
+  - given: >
+      version 3, breakdowns "ducts-system|OST_DuctCurves|@system|@length" on
+      the Snowdon copy
+    expect: >
+      breakdowns has one entry, key "ducts-system", unit "m"; one row per
+      duct system type as the ducts' Properties show it (Supply Air, Return
+      Air, Exhaust Air ...), most ducts first; the rows' counts add up to the
+      categories part's Ducts instances; each row's sum, in metres, matches a
+      Duct schedule grouped by System Type with Length totalled, to the
+      millimetre; noSum 0 on every row - every duct has a length
+
+  - given: >
+      version 3, breakdowns "rooms-level|OST_Rooms|@level|@area" on a project
+      with rooms on two levels, one of them not enclosed
+    expect: >
+      unit "m2" (with the superscript); one row per level, the sums matching a
+      Room schedule's Area totals per level in square metres; the room that
+      is not enclosed is counted, adds 0 m2, and is in its level's ids; an
+      unplaced room is in no row
+
+  - given: >
+      version 3, breakdowns "doors-type|OST_Doors|@type|;doors-fire|OST_Doors|FIRE_RATING|"
+      on a project with doors
+    expect: >
+      two entries, unit null, sum null on every row; doors-type values read
+      "Family: Type" as the Properties palette shows them; doors-fire groups by
+      the Fire Rating text, the doors with none under "" - and both entries'
+      counts add up to the categories part's Doors instances
+
+  - given: version 3, breakdowns left out, then breakdowns ""
+    expect: >
+      both answers are version 2's, with "breakdowns": null and NO
+      "breakdowns:" line in notRead
+
 negative:
   # THE CASE THAT MATTERS - the batch-prove leg (tools/jobs).
   - given: >
@@ -115,6 +150,44 @@ negative:
     expect: >
       the doors that carry both count as doubled - never populated or empty -
       and every door is in exactly one of the four counts (D-54 s3, 5b-203)
+
+  # VERSION 3 - THE BREAKDOWN CASES THAT MATTER: a category the model has
+  # none of is READ AND EMPTY; a name Revit has not got is NOT READ.
+  - given: >
+      version 3, breakdowns "ducts-system|OST_DuctCurves|@system|@length;
+      none-here|OST_Planting|@type|;bad-name|OST_NoSuchCategory|@type|" on the
+      Snowdon copy - check in Visibility/Graphics, or a schedule, that the host
+      model holds no planting first
+    expect: >
+      none-here comes back with rows [] - never null - and no notRead line;
+      bad-name comes back with rows null and one notRead line, "breakdowns:
+      bad-name - Revit has no built-in category named OST_NoSuchCategory";
+      ducts-system reads exactly as in the positive - one refused breakdown
+      stops nothing else
+
+  - given: >
+      version 3, breakdowns "ducts-flow|OST_DuctCurves|@system|RBS_DUCT_FLOW_PARAM"
+    expect: >
+      rows null and a notRead line saying the sum is not a length, an area or
+      a volume - airflow is never summed, and never in feet
+
+  - given: >
+      version 3, breakdowns "equipment-length|OST_MechanicalEquipment|@type|@length"
+    expect: >
+      unit "m"; every row's sum null - never 0 - and noSum equal to its count:
+      equipment has no length to add
+
+  - given: version 3, nine breakdowns
+    expect: >
+      breakdowns null, one "breakdowns:" line naming the limit of 8, every
+      other part read
+
+  - given: >
+      version 3, the job's breakdowns sent to the family document, with
+      parameters "Mark"
+    expect: >
+      elementTotal 0, sectionsNotRead 15 - the thirteen, "fill: not a
+      project" and "breakdowns: not a project"; breakdowns null
 
   - given: a project that is NOT workshared (Snowdon Towers, or Project2)
     expect: >
@@ -158,4 +231,7 @@ second_route: >
   elements with the same name must give the same populated, empty (its blank)
   and absent counts, for a text or number parameter whose exact name no
   element carries twice - that reader takes the first of a doubled name and
-  reads an element parameter's display text, which this does not.
+  reads an element parameter's display text, which this does not. Version 3's
+  breakdowns: a schedule of the same category, grouped by the same field with
+  the same total, must give the same counts and, in SI, the same sums - and
+  "*" rows must add up to elementTotal.

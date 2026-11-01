@@ -1,5 +1,5 @@
-// NOT STANDALONE. Assumes `doc` and `parameters` are in scope, and leaves
-// `dashboardJson`, `elementTotal`, `sectionsNotRead` and `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `parameters` and `breakdowns` are in scope, and
+// leaves `dashboardJson`, `elementTotal`, `sectionsNotRead` and `findings` behind.
 //
 // READS ONLY. No transaction is opened and nothing is set.
 //
@@ -105,6 +105,48 @@
 //
 // A FAULT IN THIS PART IS fill NULL AND A "fill:" LINE, never a table of zeros;
 // the rest of the dashboard is unaffected.
+//
+// ----------------------------------------------------------------------
+// VERSION 3 (2026-11-01) - BREAKDOWNS, FOR THE COMPANION'S BOARDS
+// ----------------------------------------------------------------------
+//
+// `breakdowns` asks for up to 8, separated by ";", each "key|categories|
+// groupBy|sum" - brain/heron_model_dashboard.py's BOARDS writes them. Left
+// out, empty or "none", `breakdowns` is null; more than 8 refuses the part.
+//
+//   key         lower-case letters, digits and hyphens, echoed back
+//   categories  built-in names - OST_Rooms, OST_DuctCurves - so a board means
+//               the same in every Revit language; "*" is every element the
+//               dashboard counts. A name Revit has not got refuses that
+//               breakdown alone. Rooms, Spaces and Areas are read from their
+//               own category, every placed one (see the part below)
+//   groupBy     @level (the dashboard's own four steps), @type ("Family:
+//               Type"), @family, @workset, @phase (Phase Created),
+//               @designoption ("Main Model" when none), @system (READ_MEP_SYSTEM's
+//               reading: the duct or pipe system type, else the
+//               classification, else "(none)"), @size (RBS_CALCULATED_SIZE) -
+//               or a built-in parameter's name, instance first then type, as
+//               Revit shows it: text as typed, an element by its name, a
+//               number as printed. Nothing there groups as ""
+//   sum         "" counts only; @length CURVE_ELEM_LENGTH; @area ROOM_AREA for
+//               rooms, spaces and areas, else HOST_AREA_COMPUTED; @volume
+//               ROOM_VOLUME for rooms and spaces, else HOST_VOLUME_COMPUTED; or
+//               a built-in parameter holding a length, an area or a volume
+//
+// SI BY EXACT FACTORS, NO UNITS API (D-20). Revit holds lengths in feet on
+// every release from 2020 to 2027, so * 0.3048 for metres, * 0.09290304 for
+// square metres and * 0.028316846592 for cubic metres - REPORT_AREAS' and
+// REPORT_SPACE_ENVELOPE's factors. What KIND a built-in parameter's number is
+// cannot be asked one way on every release: GetDataType is 2022 on and
+// ParameterType 2020 to 2022, so both are found by reflection, the newer
+// first - ADD_FAMILY_CONNECTOR's adapter. A kind that is not a length, an area
+// or a volume refuses that breakdown, never a sum in feet.
+//
+// AN ELEMENT WITH NOTHING TO SUM IS COUNTED, NOT SUMMED: `noSum` says how many,
+// and a row where no element held the value has sum null - never 0.
+//
+// One breakdown's fault is that breakdown's rows null and a "breakdowns: <key>"
+// line in notRead; the others, and the dashboard, still read.
 
 var dashboardJson = "";
 var findings = "";
@@ -200,6 +242,154 @@ var sectionsNotRead = 0;
         lines.Add("Fill: REFUSED - " + fillRefused);
     }
 
+    // ---- version 3: the breakdowns asked for --------------------------------
+    //
+    // "key|categories|groupBy|sum", up to 8, separated by ";". Each is held in
+    // the lists below at one index - a fragment declares no types of its own.
+    // One that cannot be read as asked is refused alone: its reason is in
+    // bFailed, its rows are null, and the others still read.
+    string breakdownsJson = "null";
+    var breakdownMost = 8;
+    var rowMost = 200;
+    var squared = "m" + ((char)178).ToString();     // m2 and m3 with their own
+    var cubed = "m" + ((char)179).ToString();       // superscripts, from codes
+    var groupWords = new[] { "@level", "@type", "@family", "@workset", "@phase", "@designoption", "@system", "@size" };
+    var bKey = new List<string>();
+    var bAll = new List<bool>();
+    var bCats = new List<HashSet<ElementId>>();
+    var bSpatial = new List<List<BuiltInCategory>>();
+    var bGroup = new List<string>();                 // a word above, or "" for a parameter
+    var bGroupParameter = new List<BuiltInParameter?>();
+    var bSum = new List<string>();                   // "", "@length", "@area", "@volume", or "" + parameter
+    var bSumParameter = new List<BuiltInParameter?>();
+    var bUnit = new List<string>();                  // null for a count, or until a parameter's kind is read
+    var bFactor = new List<double>();                // internal units to SI
+    var bFailed = new List<string>();
+    var bRows = new List<Dictionary<string, double[]>>();   // value -> count, sum, summed, noSum
+    var bIds = new List<Dictionary<string, List<string>>>();
+    string breakdownsRefused = null;
+
+    // A built-in category or parameter BY ITS NAME, never by a number - a
+    // number parses too, and means nothing a board could have meant.
+    Func<string, BuiltInCategory?> categoryNamed = text =>
+    {
+        BuiltInCategory found;
+        if (!text.StartsWith("OST_", StringComparison.OrdinalIgnoreCase)) return null;
+        if (!Enum.TryParse(text, true, out found) || !Enum.IsDefined(typeof(BuiltInCategory), found)) return null;
+        return found;
+    };
+    Func<string, BuiltInParameter?> parameterNamed = text =>
+    {
+        BuiltInParameter found;
+        if (text.Length == 0 || !char.IsLetter(text[0])) return null;
+        if (!Enum.TryParse(text, true, out found) || !Enum.IsDefined(typeof(BuiltInParameter), found)) return null;
+        return found;
+    };
+    var spatialCategories = new[] { BuiltInCategory.OST_Rooms, BuiltInCategory.OST_MEPSpaces, BuiltInCategory.OST_Areas };
+
+    if (nameKey(breakdowns) != "" && nameKey(breakdowns) != "none")
+    {
+        var entries = (breakdowns ?? "").Split(';').Select(t => t.Trim()).Where(t => t.Length > 0).ToList();
+        if (entries.Count > breakdownMost)
+        {
+            breakdownsRefused = whole(entries.Count) + " breakdowns were given and at most " + whole(breakdownMost)
+                + " are read - none was made; ask again with " + whole(breakdownMost) + " or fewer";
+            notRead.Add("breakdowns: " + breakdownsRefused);
+            lines.Add("Breakdowns: REFUSED - " + breakdownsRefused);
+        }
+        else
+        {
+            foreach (var entry in entries)
+            {
+                var pieces = entry.Split('|');
+                var key = pieces[0].Trim();
+                string failure = null;
+                var all = false;
+                var cats = new HashSet<ElementId>();
+                var spatialAsked = new List<BuiltInCategory>();
+                var group = "";
+                BuiltInParameter? groupParameter = null;
+                var sum = "";
+                BuiltInParameter? sumParameter = null;
+                string unit = null;
+                var factor = 1.0;
+
+                if (pieces.Length < 3 || pieces.Length > 4)
+                    failure = "is not key|categories|groupBy|sum";
+                else if (key.Length == 0 || key.Any(c => !(c >= 'a' && c <= 'z') && !(c >= '0' && c <= '9') && c != '-'))
+                    failure = "a key is lower-case letters, digits and hyphens only";
+                else if (bKey.Contains(key))
+                    failure = "the key is used twice";
+
+                if (failure == null)
+                {
+                    var categoryText = pieces[1].Trim();
+                    if (categoryText == "*") all = true;
+                    else
+                    {
+                        foreach (var name in categoryText.Split(',').Select(t => t.Trim()).Where(t => t.Length > 0))
+                        {
+                            var found = categoryNamed(name);
+                            if (!found.HasValue) { failure = "Revit has no built-in category named " + name; break; }
+                            if (spatialCategories.Contains(found.Value)) { if (!spatialAsked.Contains(found.Value)) spatialAsked.Add(found.Value); }
+                            else cats.Add(new ElementId(found.Value));
+                        }
+                        if (failure == null && cats.Count == 0 && spatialAsked.Count == 0)
+                            failure = "names no category - give built-in names such as OST_Doors, or * for all";
+                    }
+                }
+                if (failure == null)
+                {
+                    var groupText = pieces[2].Trim();
+                    if (groupText.StartsWith("@"))
+                    {
+                        group = groupText.ToLowerInvariant();
+                        if (!groupWords.Contains(group)) failure = "cannot group by " + groupText;
+                    }
+                    else
+                    {
+                        groupParameter = parameterNamed(groupText);
+                        if (!groupParameter.HasValue) failure = "Revit has no built-in parameter named " + groupText;
+                    }
+                }
+                if (failure == null)
+                {
+                    var sumText = pieces.Length == 4 ? pieces[3].Trim() : "";
+                    var sumWord = sumText.ToLowerInvariant();
+                    // Internal feet, square feet and cubic feet to SI by their
+                    // exact factors, as REPORT_AREAS and REPORT_SPACE_ENVELOPE
+                    // convert - the same on every release (D-20).
+                    if (sumText.Length == 0) { }
+                    else if (sumWord == "@length") { sum = sumWord; unit = "m"; factor = 0.3048; }
+                    else if (sumWord == "@area") { sum = sumWord; unit = squared; factor = 0.09290304; }
+                    else if (sumWord == "@volume") { sum = sumWord; unit = cubed; factor = 0.028316846592; }
+                    else if (sumText.StartsWith("@")) failure = "cannot sum " + sumText;
+                    else
+                    {
+                        sumParameter = parameterNamed(sumText);
+                        if (!sumParameter.HasValue) failure = "Revit has no built-in parameter named " + sumText;
+                        else sum = "parameter";
+                    }
+                }
+
+                bKey.Add(key);
+                bAll.Add(all);
+                bCats.Add(cats);
+                bSpatial.Add(spatialAsked);
+                bGroup.Add(group);
+                bGroupParameter.Add(groupParameter);
+                bSum.Add(sum);
+                bSumParameter.Add(sumParameter);
+                bUnit.Add(unit);
+                bFactor.Add(factor);
+                bFailed.Add(failure);
+                bRows.Add(new Dictionary<string, double[]>());
+                bIds.Add(new Dictionary<string, List<string>>());
+            }
+        }
+    }
+    var breakdownsAsked = bKey.Count > 0;
+
     if (isFamily)
     {
         // The names notRead starts with are the parts' own: "elements" for
@@ -209,6 +399,8 @@ var sectionsNotRead = 0;
             notRead.Add(part + ": not a project - this is a family document, and the dashboard reads projects only");
         if (fillAsked)
             notRead.Add("fill: not a project - this is a family document, and the dashboard reads projects only");
+        if (breakdownsAsked)
+            notRead.Add("breakdowns: not a project - this is a family document, and the dashboard reads projects only");
         lines.Add("Nothing else was read: the dashboard reads projects only.");
     }
     else
@@ -318,6 +510,230 @@ var sectionsNotRead = 0;
             return states;
         };
 
+        // SELECT_WITHOUT_LEVEL's four steps, in its order - the levels part and
+        // the breakdowns' @level read an element's level by this one rule.
+        Func<Element, ElementId> levelIdOf = element =>
+        {
+            var at = ElementId.InvalidElementId;
+            var wall = element as Wall;
+            if (wall != null) at = wall.LevelId;
+            if (at == ElementId.InvalidElementId) at = element.LevelId;
+            if (at == ElementId.InvalidElementId)
+            {
+                var parameter = element.get_Parameter(BuiltInParameter.FAMILY_LEVEL_PARAM);
+                if (parameter != null && parameter.HasValue) at = parameter.AsElementId();
+            }
+            if (at == ElementId.InvalidElementId)
+            {
+                var parameter = element.get_Parameter(BuiltInParameter.RBS_START_LEVEL_PARAM);
+                if (parameter != null && parameter.HasValue) at = parameter.AsElementId();
+            }
+            return at;
+        };
+
+        // ---- version 3: one element into one breakdown --------------------------
+        //
+        // The group's value AS REVIT SHOWS IT, and the summed amount in SI, are
+        // both read before anything is added, so a fault leaves no half a row.
+        var typeElementOf = new Dictionary<ElementId, Element>();
+        var worksetNameOf = new Dictionary<WorksetId, string>();
+        var phaseNameOf = new Dictionary<ElementId, string>();
+        Func<ElementId, Element> typeOf = id =>
+        {
+            if (id == null || id == ElementId.InvalidElementId) return null;
+            Element found;
+            if (!typeElementOf.TryGetValue(id, out found)) { found = doc.GetElement(id); typeElementOf[id] = found; }
+            return found;
+        };
+        // Text as typed; an element as its name; a number as Revit prints it.
+        Func<Parameter, string> shownValue = p =>
+        {
+            if (p == null || !p.HasValue) return "";
+            if (p.StorageType == StorageType.String) return p.AsString() ?? "";
+            if (p.StorageType == StorageType.ElementId)
+            {
+                var held = p.AsElementId();
+                if (held == null || held == ElementId.InvalidElementId) return "";
+                var named = doc.GetElement(held);
+                if (named != null) return named.Name ?? "";
+                return p.AsValueString() ?? "";
+            }
+            var printed = p.AsValueString();
+            if (printed != null) return printed;
+            if (p.StorageType == StorageType.Integer) return p.AsInteger().ToString(invariant);
+            if (p.StorageType == StorageType.Double) return p.AsDouble().ToString("R", invariant);
+            return "";
+        };
+        // Instance first, then its type - as READ_ELEMENT_PARAMETERS asks.
+        Func<Element, Element, BuiltInParameter, Parameter> onEither = (element, type, which) =>
+        {
+            var p = element.get_Parameter(which);
+            if (p == null && type != null) p = type.get_Parameter(which);
+            return p;
+        };
+        // WHAT KIND OF NUMBER A PARAMETER HOLDS: "Length", "Area", "Volume" or
+        // null. Neither way of asking is on every release - GetDataType is
+        // 2022 on, ParameterType 2020 to 2022 - so each is found by reflection,
+        // the newer first: ADD_FAMILY_CONNECTOR's adapter, which is PROVEN.
+        var reflectionFlags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static;
+        var revitAssembly = typeof(Document).Assembly;
+        var dbNamespace = typeof(Document).Namespace;
+        Func<object, object, bool> sameKind = (first, second) =>
+        {
+            if (first == null || second == null) return false;
+            var nameEquals = first.GetType().GetMethod("NameEquals", new[] { second.GetType() });
+            if (nameEquals != null)
+            {
+                try { return (bool)nameEquals.Invoke(first, new[] { second }); }
+                catch (Exception) { }
+            }
+            return first.Equals(second);
+        };
+        Func<Parameter, string> kindOf = p =>
+        {
+            try
+            {
+                var definition = p.Definition;
+                if (definition == null) return null;
+                var getDataType = definition.GetType().GetMethod("GetDataType", System.Type.EmptyTypes);
+                if (getDataType != null)
+                {
+                    var spec = getDataType.Invoke(definition, null);
+                    var owner = revitAssembly.GetType(dbNamespace + ".SpecTypeId");
+                    foreach (var word in new[] { "Length", "Area", "Volume" })
+                    {
+                        var property = owner == null ? null : owner.GetProperty(word, reflectionFlags);
+                        if (property != null && sameKind(spec, property.GetValue(null))) return word;
+                    }
+                    return null;
+                }
+                var old = definition.GetType().GetProperty("ParameterType");
+                var value = old == null ? null : old.GetValue(definition);
+                var said = value == null ? null : value.ToString();
+                return said == "Length" || said == "Area" || said == "Volume" ? said : null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        };
+        var roomsId = new ElementId(BuiltInCategory.OST_Rooms);
+        var spacesId = new ElementId(BuiltInCategory.OST_MEPSpaces);
+        var areasId = new ElementId(BuiltInCategory.OST_Areas);
+        Action<int, Element, ElementId, ElementId, WorksetId> addTo = (b, element, typeId, levelId, worksetId) =>
+        {
+            var type = typeOf(typeId);
+            var category = element.Category;
+            var categoryId = category == null ? ElementId.InvalidElementId : category.Id;
+            var g = bGroup[b];
+            string value;
+            if (g == "@level")
+                value = levelId != null && levelOf.ContainsKey(levelId) ? levelOf[levelId].Name ?? "" : "";
+            else if (g == "@type" || g == "@family")
+            {
+                var elementType = type as ElementType;
+                var familyName = elementType == null ? "" : elementType.FamilyName ?? "";
+                var typeName = type == null ? "" : type.Name ?? "";
+                // "Family: Type", as Revit shows it; a type with no family name
+                // is shown by its own name.
+                value = g == "@family" ? familyName : familyName.Length > 0 ? familyName + ": " + typeName : typeName;
+            }
+            else if (g == "@workset")
+            {
+                value = "";
+                if (isWorkshared && worksetId != null)
+                {
+                    if (!worksetNameOf.TryGetValue(worksetId, out value))
+                    {
+                        var workset = doc.GetWorksetTable().GetWorkset(worksetId);
+                        value = workset == null ? "" : workset.Name ?? "";
+                        worksetNameOf[worksetId] = value;
+                    }
+                }
+            }
+            else if (g == "@phase")
+            {
+                value = "";
+                var phaseId = element.CreatedPhaseId;
+                if (phaseId != null && phaseId != ElementId.InvalidElementId)
+                {
+                    if (!phaseNameOf.TryGetValue(phaseId, out value))
+                    {
+                        var phase = doc.GetElement(phaseId);
+                        value = phase == null ? "" : phase.Name ?? "";
+                        phaseNameOf[phaseId] = value;
+                    }
+                }
+            }
+            else if (g == "@designoption")
+            {
+                var option = element.DesignOption;
+                value = option == null ? "Main Model" : option.Name ?? "";
+            }
+            else if (g == "@system")
+            {
+                // READ_MEP_SYSTEM's reading: the duct or pipe system type an
+                // MEP curve or fitting carries, else the classification.
+                value = shownValue(element.get_Parameter(BuiltInParameter.RBS_DUCT_SYSTEM_TYPE_PARAM));
+                if (value.Trim().Length == 0) value = shownValue(element.get_Parameter(BuiltInParameter.RBS_PIPING_SYSTEM_TYPE_PARAM));
+                if (value.Trim().Length == 0) value = shownValue(element.get_Parameter(BuiltInParameter.RBS_SYSTEM_CLASSIFICATION_PARAM));
+                if (value.Trim().Length == 0) value = "(none)";
+            }
+            else if (g == "@size")
+                value = shownValue(element.get_Parameter(BuiltInParameter.RBS_CALCULATED_SIZE));
+            else
+                value = shownValue(onEither(element, type, bGroupParameter[b].Value));
+
+            double? amount = null;
+            var s = bSum[b];
+            if (s.Length > 0)
+            {
+                Parameter held;
+                var isSpatial = categoryId == roomsId || categoryId == spacesId || categoryId == areasId;
+                if (s == "@length") held = element.get_Parameter(BuiltInParameter.CURVE_ELEM_LENGTH);
+                else if (s == "@area")
+                    held = element.get_Parameter(isSpatial ? BuiltInParameter.ROOM_AREA : BuiltInParameter.HOST_AREA_COMPUTED);
+                else if (s == "@volume")
+                    held = element.get_Parameter(categoryId == roomsId || categoryId == spacesId
+                        ? BuiltInParameter.ROOM_VOLUME : BuiltInParameter.HOST_VOLUME_COMPUTED);
+                else held = onEither(element, type, bSumParameter[b].Value);
+                if (held != null && held.HasValue && held.StorageType == StorageType.Double)
+                {
+                    if (s == "parameter" && bUnit[b] == null)
+                    {
+                        // The first value met decides the unit: one built-in
+                        // parameter is one kind of number everywhere.
+                        var kind = kindOf(held);
+                        if (kind == "Length") { bUnit[b] = "m"; bFactor[b] = 0.3048; }
+                        else if (kind == "Area") { bUnit[b] = squared; bFactor[b] = 0.09290304; }
+                        else if (kind == "Volume") { bUnit[b] = cubed; bFactor[b] = 0.028316846592; }
+                        else
+                        {
+                            bFailed[b] = "the sum, " + bSumParameter[b].Value.ToString()
+                                + ", is not a length, an area or a volume - only those are summed";
+                            return;
+                        }
+                    }
+                    amount = held.AsDouble() * bFactor[b];
+                }
+            }
+
+            double[] nums;
+            if (!bRows[b].TryGetValue(value, out nums))
+            {
+                nums = new double[4];
+                bRows[b][value] = nums;
+                bIds[b][value] = new List<string>();
+            }
+            nums[0] = nums[0] + 1;
+            if (s.Length > 0)
+            {
+                if (amount.HasValue) { nums[1] = nums[1] + amount.Value; nums[2] = 1; }
+                else nums[3] = nums[3] + 1;
+            }
+            if (bIds[b][value].Count < most) bIds[b][value].Add(element.Id.ToString());
+        };
+
         try
         {
             foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(Level)))
@@ -349,21 +765,7 @@ var sectionsNotRead = 0;
                     var categoryId = category.Id;
                     var categoryLabel = category.Name;
 
-                    // SELECT_WITHOUT_LEVEL's four steps, in its order.
-                    var at = ElementId.InvalidElementId;
-                    var wall = element as Wall;
-                    if (wall != null) at = wall.LevelId;
-                    if (at == ElementId.InvalidElementId) at = element.LevelId;
-                    if (at == ElementId.InvalidElementId)
-                    {
-                        var parameter = element.get_Parameter(BuiltInParameter.FAMILY_LEVEL_PARAM);
-                        if (parameter != null && parameter.HasValue) at = parameter.AsElementId();
-                    }
-                    if (at == ElementId.InvalidElementId)
-                    {
-                        var parameter = element.get_Parameter(BuiltInParameter.RBS_START_LEVEL_PARAM);
-                        if (parameter != null && parameter.HasValue) at = parameter.AsElementId();
-                    }
+                    var at = levelIdOf(element);
 
                     WorksetId worksetKey = null;
                     if (isWorkshared) worksetKey = element.WorksetId;
@@ -414,6 +816,16 @@ var sectionsNotRead = 0;
                             if (fillStates[j] == 1 && fillEmptyIds[categoryId][j].Count < most)
                                 fillEmptyIds[categoryId][j].Add(element.Id.ToString());
                         }
+                    }
+
+                    // Version 3. Each breakdown that takes this category, in
+                    // its own try: a fault stops that breakdown alone.
+                    for (var b = 0; b < bKey.Count; b++)
+                    {
+                        if (bFailed[b] != null) continue;
+                        if (!bAll[b] && !bCats[b].Contains(categoryId)) continue;
+                        try { addTo(b, element, hasType ? typeId : null, at, worksetKey); }
+                        catch (Exception ex) { bFailed[b] = why(ex); }
                     }
                 }
                 catch (Exception ex)
@@ -555,6 +967,102 @@ var sectionsNotRead = 0;
                     lines.Add("Fill: NOT READ - " + why(ex));
                 }
             }
+        }
+
+        // ---- version 3: the breakdowns part --------------------------------------
+        //
+        // ROOMS, SPACES AND AREAS ARE READ FROM THEIR OWN CATEGORY when a
+        // breakdown names them - every one that is placed (has a location). A
+        // room that is not enclosed has no extent, so the element pass above,
+        // which counts only what has one, could leave it out of a room board.
+        // "*" is the pass's own set, rooms in it or not, as the dashboard
+        // counts them.
+
+        if (breakdownsAsked && scanFailed != null)
+        {
+            for (var b = 0; b < bKey.Count; b++)
+                if (bFailed[b] == null) bFailed[b] = "the model's elements could not be read - " + scanFailed;
+        }
+        else if (breakdownsAsked)
+        {
+            for (var b = 0; b < bKey.Count; b++)
+            {
+                if (bFailed[b] != null || bSpatial[b].Count == 0) continue;
+                try
+                {
+                    foreach (var asked in bSpatial[b])
+                    {
+                        foreach (var element in new FilteredElementCollector(doc).OfCategory(asked).WhereElementIsNotElementType())
+                        {
+                            var one = element as SpatialElement;
+                            if (one == null || one.Location == null) continue;
+                            var typeId = one.GetTypeId();
+                            addTo(b, one, typeId != null && typeId != ElementId.InvalidElementId ? typeId : null,
+                                  levelIdOf(one), isWorkshared ? one.WorksetId : null);
+                            if (bFailed[b] != null) break;
+                        }
+                        if (bFailed[b] != null) break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    bFailed[b] = why(ex);
+                }
+            }
+        }
+
+        if (breakdownsAsked)
+        {
+            var made = new List<string>();
+            var said = new List<string>();
+            for (var b = 0; b < bKey.Count; b++)
+            {
+                if (bFailed[b] != null)
+                {
+                    notRead.Add("breakdowns: " + bKey[b] + " - " + bFailed[b]);
+                    said.Add(bKey[b] + " NOT READ");
+                    made.Add("{" + esc("key") + ":" + esc(bKey[b]) + "," + esc("unit") + ":" + esc(bUnit[b])
+                        + "," + esc("rows") + ":null}");
+                    continue;
+                }
+                // Most elements first; a tie by value, so the order is the same
+                // on every run.
+                var rows = bRows[b];
+                var order = rows.Keys
+                    .OrderByDescending(v => rows[v][0])
+                    .ThenBy(v => v, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                if (order.Count > rowMost)
+                {
+                    capped.Add("breakdowns." + bKey[b] + ".rows: " + whole(order.Count) + " values, the first "
+                        + whole(rowMost) + " (the most elements) are listed");
+                    order = order.GetRange(0, rowMost);
+                }
+                var cut = 0;
+                var rowJson = new List<string>();
+                foreach (var v in order)
+                {
+                    var nums = rows[v];
+                    if (nums[0] > most) cut++;
+                    // A sum is null where nothing was summed: a count only, or
+                    // no element of the row held the value - never a 0.
+                    var sumText = bSum[b].Length == 0 || nums[2] == 0 ? "null"
+                        : Math.Round(nums[1], 3).ToString("R", invariant);
+                    rowJson.Add("{" + esc("value") + ":" + esc(v)
+                        + "," + esc("count") + ":" + whole((int)nums[0])
+                        + "," + esc("sum") + ":" + sumText
+                        + "," + esc("noSum") + ":" + whole((int)nums[3])
+                        + "," + esc("ids") + ":" + textList(bIds[b][v]) + "}");
+                }
+                if (cut > 0)
+                    capped.Add("breakdowns." + bKey[b] + ".rows.ids: " + whole(cut) + " row(s) have more than "
+                        + whole(most) + " elements, and the first " + whole(most) + " of each are listed");
+                made.Add("{" + esc("key") + ":" + esc(bKey[b]) + "," + esc("unit") + ":" + esc(bUnit[b])
+                    + "," + esc("rows") + ":[" + string.Join(",", rowJson.ToArray()) + "]}");
+                said.Add(bKey[b] + " " + whole(rows.Count) + " value(s)");
+            }
+            breakdownsJson = "[" + string.Join(",", made.ToArray()) + "]";
+            lines.Add("Breakdowns: " + string.Join("; ", said.ToArray()));
         }
 
         // ---- worksets (LIST_WORKSETS) ----------------------------------------
@@ -1047,6 +1555,7 @@ var sectionsNotRead = 0;
         + "," + esc("rooms") + ":" + roomsJson
         + "," + esc("spaces") + ":" + spacesJson
         + "," + esc("fill") + ":" + fillJson
+        + "," + esc("breakdowns") + ":" + breakdownsJson
         + "," + esc("notRead") + ":" + textList(notRead)
         + "," + esc("capped") + ":" + textList(capped) + "}";
 }
