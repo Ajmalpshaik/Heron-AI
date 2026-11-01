@@ -78,7 +78,7 @@ purpose: >
 # placed by PLACE_NESTED_FAMILY on a front reference plane made by
 # CREATE_REFERENCE_PLANES - every plane it makes has normal +Y - came in on
 # the front (-Y) side facing inward and upside down. ROTATE_ELEMENTS_ABOUT_AXIS
-# was refused by Revit ("Can't rotate element into this position"); a
+# (merged into ROTATE_ELEMENTS on 2026-11-01) was refused by Revit ("Can't rotate element into this position"); a
 # rolled-back probe setting IsWorkPlaneFlipped = true put it right - bounding
 # box Y -345..-301 and Z -25..121, following Width. flipHand and flipFacing
 # cannot do that, so the owner flipped it by hand. `flipWorkPlane` (optional,

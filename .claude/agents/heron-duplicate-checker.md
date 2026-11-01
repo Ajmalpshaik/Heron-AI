@@ -74,7 +74,7 @@ Skip cards already `DEPRECATED` or `ARCHIVED`; each names its successor in `depr
 
 **3. Read each candidate pair in full** - the card's purpose, contract and ROUTING comments, the C# under
 `impl/`, and `tests/cases.yaml`. A name or an identity is never the evidence. Many near pairs say on their
-own card why they are separate (*"IT EXISTS BESIDE `CREATE_GRID` FOR THE SAME REASON..."*) - read that and
+own card why they are separate (*"`COPY_ELEMENTS`' RUN IS LINEAR AND ONLY LINEAR, WHICH IS WHY THIS IS SEPARATE"*) - read that and
 weigh it, do not repeat it as a finding.
 
 **4. Decide each pair, and write down what each covers.** Name every behaviour - an input, an output, a

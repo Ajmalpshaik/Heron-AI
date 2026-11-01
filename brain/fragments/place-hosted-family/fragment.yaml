@@ -454,8 +454,8 @@ compatibility-note: >
   `Document.Create.NewFamilyInstance(XYZ, FamilySymbol, Element, Level, StructuralType)`
   is present 2020 through 2027 - read off the reference assemblies at both ends
   on 2026-09-18. `StructuralType.NonStructural` is passed deliberately: a door is
-  not a structural member, and PLACE_STRUCTURAL_FAMILY is where that decision
-  belongs. Points arrive in internal FEET (D-20).
+  not a structural member, and PLACE_FAMILY_INSTANCES' `structuralType` is
+  where that decision belongs. Points arrive in internal FEET (D-20).
 
   Version 3, read off the reference assemblies 2020 to 2027 on 2026-10-04:
   `BuiltInParameter.INSTANCE_SILL_HEIGHT_PARAM` and `FAMILY_HEIGHT_PARAM`

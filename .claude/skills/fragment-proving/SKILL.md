@@ -256,7 +256,7 @@ something, nothing when it is empty or `(null)`, and read the same way in the ne
 in both legs are `NEG NOT EMPTY`, never a pass. Until 2026-10-11 a sentence was `POSITIVE UNREADABLE`
 however well both legs held - `edit-revision`'s `changed`, [row 5b-411](../../../docs/fragment-issues/section-5b-rows-401-425.md).
 **Beside a count or a flag, the count decides** (D-51): a sentence that reads back the state -
-`set-material-colour`'s `wasColour` - is filled whether or not anything changed, so with `changed 0`
+`set-material-properties`' `wasColour` (version 2, from the retired `set-material-colour`) - is filled whether or not anything changed, so with `fieldsChanged 0`
 the positive is `POSITIVE EMPTY` however full the sentence. Naming the sentence alone in `expect:`
 satisfies batch-prove and NOT `accept` - see the `expect:` paragraph below. A sentence the fragment always writes - a report that says *"nothing was
 checked"* - is never empty in the negative; give it `role: accounting`, or prove the fragment by

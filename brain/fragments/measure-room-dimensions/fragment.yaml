@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: MEASURE_ROOM_DIMENSIONS
 version: 2
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO REPORT_ROOM_SPACE_DATA
+# (report-room-space-data), on the owner's instruction in conversation: "make
+# sure there is no duplicate tools". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to REPORT_ROOM_SPACE_DATA. A proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: REPORT_ROOM_SPACE_DATA
+  why: >
+    The same read: a set of rooms and spaces with their area and volume, and
+    the ones that could not be read. REPORT_ROOM_SPACE_DATA reports number,
+    name, level, area and volume and, since its version 2, this card's
+    measurement: length and width along the room's own walls (the outer loop
+    picked by its area, never the bounding box, length always the longer
+    side), the rotation of that axis, how far from rectangular it is,
+    `unmeasurable`, and `volumeComputationOff` said once. The safer rule is
+    kept: an unplaced room is kept apart from an unenclosed one, where this
+    card called both unplaced. Nothing of this card is left out.
+
 
 purpose: >
   Length and width of each room measured on THE ROOM'S OWN AXES, plus how far

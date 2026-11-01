@@ -40,7 +40,7 @@ purpose: >
   | What you meant | Use |
   |---|---|
   | "how many fit in here", "lay them out in this space" | **this fragment** |
-  | "how big is this room", "what are the room sizes" | `MEASURE_ROOM_DIMENSIONS` |
+  | "how big is this room", "what are the room sizes" | `REPORT_ROOM_SPACE_DATA` |
 
   It carried *"how big is this room"* and *"what is the room size"* until
   `MEASURE_ROOM_DIMENSIONS` existed, and answering those with a list of curves
@@ -130,7 +130,8 @@ compatibility-note: >
 
 # ROUTING - repeated in PLACE_ROOMS and FILTER_ELEMENTS_IN_ROOM.
 #
-#   "how big is this room"       -> MEASURE_ROOM_DIMENSIONS. This row said
+#   "how big is this room"       -> REPORT_ROOM_SPACE_DATA, since 2026-11-01
+#                                   the card that measures a room. This row said
 #                                   "here" until 2026-09-05, contradicting the
 #                                   table in this fragment's OWN purpose ten
 #                                   lines above it - which records that the

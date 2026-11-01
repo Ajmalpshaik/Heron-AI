@@ -67,7 +67,7 @@ purpose: >
      a slab and a roof each belong to a level, and a level added afterwards
      leaves what was already built on the wrong one. Count them before going
      on.
-  2. CREATE_GRIDS (PROVEN) when the plan is set out on bays - the lines the
+  2. CREATE_GRIDS (DRAFT, version 2 - version 1 was PROVEN; merged 2026-11-01, and until it is proved on a real model a kept change from it is refused, D-117) when the plan is set out on bays - the lines the
      walls are drawn to, so a wall position is read off the plan rather than
      worked out.
   3. CREATE_WALL (DRAFT at version 3 - version 2 was signed on 2026-10-19 on
@@ -150,8 +150,11 @@ purpose: >
      "slightly off axis" warning fired even at 0.5 degrees, and
      READ_MODEL_WARNINGS at step 16 lists each one. On 2026-10-19 the calls
      went in batches of 6 at once and none was lost.
-  6. PLACE_ROOM_AT_POINT (PROVEN) with a point inside every space, all of one
-     level in one call. Then SELECT_UNENCLOSED_ROOMS (PROVEN) must return none:
+  6. PLACE_ROOMS (DRAFT, version 2 - PLACE_ROOM_AT_POINT, which was PROVEN,
+     was merged into it on 2026-11-01, and until it is proved again a kept
+     change from it is refused, D-117) with `points`, a point inside every
+     space, all of one level in one call, placeKind room and the phase named -
+     both are asked for, never taken from the document. Then SELECT_UNENCLOSED_ROOMS (PROVEN) must return none:
      a room that is not enclosed has no area, and it almost always means two
      walls do not meet. SET_ROOM_LIMITS (PROVEN) ties each room's top to the
      level above, when the rooms must reach it. Names go on in ONE
@@ -204,7 +207,7 @@ purpose: >
      once the curtain wall is up (the curtain-wall method). LOAD_FAMILY
      (PROVEN) the curtain-wall door family when its type is not in the model;
      SELECT_IN_REGION (PROVEN) with categories=Curtain Panels, on a box inside
-     that one panel only; then CHANGE_ELEMENT_TYPE (PROVEN) of that panel to
+     that one panel only; then CHANGE_ELEMENT_TYPE (DRAFT, version 2 - version 1 was PROVEN; merged 2026-11-01, and until it is proved on a real model a kept change from it is refused, D-117) of that panel to
      the door type, with expect_from naming that select. On 2026-10-13 this
      worked on a wall whose grid is on its type, with nothing unpinned, and
      the door took the whole panel's size - so the grid lines decide the
@@ -263,7 +266,7 @@ purpose: >
          unsaved work, because a load reads the file.
       e. With the project in front again - ACTIVATE_DOCUMENT with its file,
          as the family method brings a host back - LOAD_FAMILY (PROVEN) the
-         .rfa, then PLACE_FAMILY_INSTANCES (PROVEN) at 0,0,0 on the base
+         .rfa, then PLACE_FAMILY_INSTANCES (DRAFT, version 4 - version 3 was PROVEN; merged 2026-11-01, and until it is proved on a real model a kept change from it is refused, D-117) at 0,0,0 on the base
          level. A point's Z is its height in the model, so the family's
          origin lands on the project's.
   14. BEAMS BETWEEN TWO POINTS are PLACE_LINE_BASED_FAMILY (DRAFT, no proof
@@ -271,12 +274,13 @@ purpose: >
       in the beam type the modeller names, with structuralType=Beam - asked,
       never assumed. As a DRAFT its change is kept only through try-once:
       one run on a saved model with nothing unsaved, behind Revit's Keep or
-      Discard (D-117, D-119, D-121). NEVER PLACE_STRUCTURAL_FAMILY for a
-      beam: it places at POINTS, and on 2026-10-19 the beams it made had no
-      length. Its version 4 (DRAFT, FRAGMENT-ISSUES 5b-1201, NEEDS-CHECKING
-      Group HO) refuses a beam, a brace or a Structural Framing family
-      before anything is placed and sends it here, and counts a placement
-      Revit leaves with no geometry as failed, not placed.
+      Discard (D-117, D-119, D-121). NEVER A POINT PLACEMENT for a beam -
+      PLACE_FAMILY_INSTANCES, which took PLACE_STRUCTURAL_FAMILY in on
+      2026-11-01: it places at POINTS, and on 2026-10-19 the beams the
+      structural one made had no length. It refuses a beam, a brace or a
+      Structural Framing family before anything is placed and sends it here,
+      and a placement Revit leaves with no geometry undoes the whole layout
+      (FRAGMENT-ISSUES 5b-1201).
   15. COLOURS, only when the modeller asks for them. First CREATE_MATERIAL
       (PROVEN), one material per colour, named, with its colour and
       transparency. Then one of three routes.
@@ -288,7 +292,7 @@ purpose: >
       leave the thickness. With a layer given by its index, leave
       layerFunction blank: given there, it is written onto the layer. It
       changes every element of that type, so
-      DUPLICATE_TYPE (PROVEN) first and CHANGE_ELEMENT_TYPE (PROVEN) the walls
+      DUPLICATE_TYPE (PROVEN) first and CHANGE_ELEMENT_TYPE (DRAFT, version 2) the walls
       that should change onto the copy. Version 2 was proved and signed on
       2026-10-18, on Revit 2020 only; the other releases wait in
       NEEDS-CHECKING Group DU (FRAGMENT-ISSUES 5b-449).
@@ -365,7 +369,7 @@ needs:
   # a levelId - listed below, for step 8 - then copied onto the levels - see
   # step 5. SELECT_BY_LEVEL until it was merged into that one, 2026-11-01.
   - COPY_ELEMENTS
-  - PLACE_ROOM_AT_POINT
+  - PLACE_ROOMS
   # The rooms' own check, before a ceiling is hung from any of them.
   - SELECT_UNENCLOSED_ROOMS
   # Only when the rooms must reach the level above - see step 6.

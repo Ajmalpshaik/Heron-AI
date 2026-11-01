@@ -23,7 +23,7 @@ negative:
       TO RUN. The number is correct as an extent and wrong as a size, and nothing
       about it looks wrong
 
-  - given: a room asked about here rather than through MEASURE_ROOM_DIMENSIONS
+  - given: a room asked about here rather than through REPORT_ROOM_SPACE_DATA
     expect: >
       a box that overstates a rotated room by half again. The routing table is the
       fix, not the code - this fragment must not start measuring room axes

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -43,7 +43,34 @@ capability: COPY_ELEMENTS
 # or a workset name the model does not have, is refused before anything is
 # copied. Changing impl/ made version 2's proof stale: DRAFT until it is proved
 # again (NEEDS-CHECKING Group GP). Version 2's proof is kept below as a record.
-version: 3
+#
+# VERSION 4 (2026-11-01) - ARRAY_ELEMENTS WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same job - the set duplicated by an offset - repeated:
+# ARRAY_ELEMENTS's own routing said "one offset repeated N times is this; one
+# offset once is COPY_ELEMENTS". What it had and this card lacked is here now:
+# `count`, how many there are afterwards with the original included (left
+# out, 2 - one copy, version 3 exactly), a count of 1 or less refused;
+# `spacingMm`, the pitch along `offset` read as a DIRECTION, normalised, so a
+# direction typed as the vector between two points does not multiply the
+# pitch; `copiesEach`; an empty return from Revit counted, never a copy.
+#
+# THE SAFER RULE KEPT: THE SET IS COPIED TOGETHER AT EVERY STEP - one
+# CopyElements call over the whole set per step, as this card always copied.
+# ARRAY_ELEMENTS copied element by element, which breaks the relationships
+# between them - a duct and its fitting arrive unconnected. Where its outputs
+# are now: `created` -> `copies`; `copiesEach` -> `copiesEach`; `refused` (the
+# ids of a refused run) -> `refused`, the sentence, and `notCopied`.
+#
+# ARRAY_ELEMENTS_RADIAL WAS JUDGED ON THE SAME RULE AND KEPT APART: it already
+# copies the set together (one CopyElements, then RotateElements of the
+# copies), and its job - a centre, a sweep, and the full-circle rule that a
+# circle divides by the count and a sweep by the count less one - shares no
+# input with an offset. This card names it for a turn by the offset path.
+#
+# Version 3's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; DRAFT until version 4 is proved on a real model (D-30).
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -134,6 +161,23 @@ contract:
       source: request
       optional: true
       absent: active
+    # VERSION 4, from ARRAY_ELEMENTS. How many there are AFTERWARDS, the
+    # original included - 8 is the original and 7 copies, as Revit's own array
+    # counts. Left out: 2, one copy, version 3 exactly. 1 or less is refused.
+    # By the offset only; onto levels anything but 2 is refused.
+    - name: count
+      type: int
+      source: request
+      optional: true
+      absent: '2'
+    # VERSION 4. The pitch in MILLIMETRES between one copy and the next. Given,
+    # `offset` is a DIRECTION only - normalised, its length ignored. Left out
+    # ("none"): `offset` is the step itself.
+    - name: spacingMm
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: copies
       role: result
@@ -164,6 +208,12 @@ contract:
       # Evidence it looked and said no, never a thing it did (D-52).
       role: accounting
       type: string
+    - name: copiesEach
+      # VERSION 4, from ARRAY_ELEMENTS. Copies of each element - the count less
+      # the original - so "8" is never left to be read as 8 or 9. How it was
+      # asked, never a thing found (D-52).
+      role: accounting
+      type: int
 
 # VERSION 2's PROOF, KEPT AS A RECORD. Version 3 changed impl/, so its
 # fingerprint no longer describes the code and the card is DRAFT until Group GP
@@ -243,6 +293,14 @@ compatibility-note: >
 #     the join once the copy was turned ("Can't keep elements joined"), so the
 #     copy is made a kilometre aside and brought back.
 
+# ROUTING (2026-11-01, ARRAY_ELEMENTS merged in)
+#
+#   "array them along the corridor"  -> here, count and spacingMm
+#   "put eight of them along here"   -> here, count 8
+#   "array these round a circle"     -> ARRAY_ELEMENTS_RADIAL - a centre and a
+#                                       sweep, not a direction
+#   "line them up on the grid"       -> SNAP_TO_GRID
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "copy these out of the link"     -> COPY_ELEMENTS_BETWEEN_DOCUMENTS,
@@ -276,3 +334,11 @@ utterances:
   - repeat this storey on every level up to the roof
   # Version 3 - the owner's own words for the workset choice (2026-10-17).
   - copy these and keep them on the same workset
+  # MOVED 2026-11-01 from ARRAY_ELEMENTS, merged into this card.
+  - array them along the corridor
+  - space these out evenly
+  - repeat this every 3 metres
+  - put eight of them along here
+  - copy this along the branch
+  # ...and its semantic identity, which nothing else declares:
+  - space copies of these out evenly along a direction

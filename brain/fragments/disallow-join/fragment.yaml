@@ -126,7 +126,7 @@ compatibility-note: >
 #   "join these two elements"            -> JOIN_GEOMETRY, which is geometry
 #                                           joining between elements, NOT the
 #                                           end cleanup of a wall
-#   "unjoin these"                       -> UNJOIN_GEOMETRY
+#   "unjoin these"                       -> JOIN_GEOMETRY, join false
 #   "the wrong one is cutting"           -> SWITCH_JOIN_ORDER
 #   "put these walls on another level"   -> SET_ELEMENT_LEVEL
 #   "is the model clean"                 -> READ_MODEL_WARNINGS, which is

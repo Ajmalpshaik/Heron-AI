@@ -186,7 +186,7 @@ compatibility-note: >
 #                                             ones; this names the rooms a
 #                                             flipped door reads backwards
 #   "place the rooms"                      -> PLACE_ROOMS. One reads, one makes
-#   "how big is this room"                 -> MEASURE_ROOM_DIMENSIONS
+#   "how big is this room"                 -> REPORT_ROOM_SPACE_DATA
 #   "what is in this room"                 -> FILTER_ELEMENTS_IN_ROOM
 #   "fix the from and to room on these
 #    doors"                                -> FLIP_ELEMENTS with fromToRoomOnly.

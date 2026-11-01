@@ -39,5 +39,34 @@ negative:
   - given: a level with no enclosed area at all
     expect: refused, saying rooms need bounding elements, rather than reporting a successful placement of nothing
 
+  # VERSION 2 (2026-11-01) - PLACE_ROOM_AT_POINT merged in. Each FAILS on
+  # version 1, which had no `points`. NOT RUN.
+  - given: >
+      points "3000,2000,0; 9000,2000,0" inside two enclosed areas on a level,
+      placeKind room, the phase named
+    expect: >
+      created 2, each tag where its point was, both with a real area, and both
+      in the phase named - read Phase in Properties
+  - given: placeKind space, one point inside and one OUTSIDE any enclosed region
+    expect: >
+      created 2, `unbounded` naming only the outside one - measured after one
+      regeneration, so the inside one is not called unenclosed (5b-298)
+  - given: points with no phase named
+    expect: refused - the phase is required at a point too - nothing placed
+  - given: points with placeKind left empty
+    expect: refused, asking rooms or spaces - nothing placed
+  - given: placeKind space at points with no plan view
+    expect: placed - a space at a point needs no plan view
+  - given: a point Revit refuses outright among three
+    expect: pointsRefused 1, refusedPoints naming it, the other two placed
+  - given: a Z value in the points
+    expect: ignored, the level deciding the height
+  - given: >
+      placeKind room at a point on a model whose phase named is not the one
+      Revit puts a room placed at a point in
+    expect: >
+      the whole call undone, naming the phase each came out in. NEEDS REAL
+      REVIT: which phase that is has not been seen
+
 second_route:
   - Revit's own Architecture > Room > Place Rooms Automatically, or Analyze > Space, on the same level, with the counts compared

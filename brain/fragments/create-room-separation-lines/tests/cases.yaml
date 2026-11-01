@@ -14,7 +14,7 @@ positive:
       the findings matching the two points to the millimetre, lying on the
       plan's level. Then, by eye: Revit's room boundary now stops at the line -
       the existing room shrinks to its own side or warns, and the other side is
-      left with no room until PLACE_ROOM_AT_POINT places one. Record which
+      left with no room until PLACE_ROOMS places one at a point. Record which
 
   - given: the same two points with asSpace true, in a plan where Spaces are placed
     expect: >

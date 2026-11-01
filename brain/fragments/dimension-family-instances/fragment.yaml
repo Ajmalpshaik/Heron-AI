@@ -50,7 +50,7 @@ purpose: >
   | What you meant | What happens |
   |---|---|
   | "dimension the rooms", "put the room sizes on the plan" | **nothing here does that yet** - not this fragment |
-  | "how big is room 4", "what are the room sizes" - to know | `MEASURE_ROOM_DIMENSIONS`, read-only |
+  | "how big is room 4", "what are the room sizes" - to know | `REPORT_ROOM_SPACE_DATA`, read-only |
 
   A room's boundary is not a family instance and offers none of the references
   this works from. Dimensioning the nearest thing it CAN reach - the fixtures

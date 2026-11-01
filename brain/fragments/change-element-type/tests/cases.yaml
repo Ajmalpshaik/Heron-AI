@@ -20,5 +20,35 @@ negative:
       that id is in refused and the rest of the batch still changes - not an
       exception that abandons the remainder after some have already swapped
 
+  # VERSION 2 (2026-11-01) - MATCH_ELEMENT_TYPE merged in. Each FAILS on
+  # version 1, which had no `typeFrom`. NOT RUN.
+  - given: >
+      typeFrom "selected" with one 200 blockwork wall selected, newTypeId left
+      out, and twelve 100 stud walls chained in as elements
+    expect: >
+      changed 12, each reading 200 blockwork in Properties, and the finding
+      that only the TYPE changed - every Mark the same as before. Check one by
+      hand
+  - given: the same, with the source wall among the twelve
+    expect: changed 11, the source skipped without comment
+  - given: typeFrom "selected" and a duct among the walls
+    expect: >
+      the duct in `refused` and named by id and category in findings, NOT
+      changed - from a source, another category is refused
+  - given: typeFrom "selected" with a source that has no type
+    expect: refused with the reason, nothing changed
+  - given: typeFrom "selected" with three elements selected
+    expect: refused - one source, never a guess at which of three - nothing changed
+  - given: typeFrom "selected" AND a newTypeId
+    expect: refused - two answers to one question - nothing changed
+  - given: neither typeFrom nor newTypeId
+    expect: refused - no type named - nothing changed
+  - given: >
+      by id, three selected curtain panels and newTypeId a curtain wall door
+      type (building-shell step 9)
+    expect: >
+      changed 3 - the cross-category swap by id still goes to Revit, as it did
+      on 2026-10-13
+
 second_route:
   - Select one element in Revit and read the type in the Properties palette

@@ -70,6 +70,42 @@ positive:
       placed 1, 2, 3 and 5, each read back at 3000 mm on Level 1's plane - the
       D-53 tracking the version 2 draft records
 
+  # VERSION 4 (2026-11-01) - PLACE_STRUCTURAL_FAMILY merged in. Each FAILS on
+  # version 3, which had no structuralType and placed everything
+  # NonStructural. NOT RUN.
+  - given: >
+      four points at grid intersections on Level 1 (at 0 mm, z 0), a loaded
+      Structural Columns type, structuralType "column"
+    expect: >
+      four columns, EVERY ONE READING AS STRUCTURAL in the structural column
+      schedule (Structural Usage), standing on Level 1
+  - given: the same points with a Structural Foundations type and structuralType "footing"
+    expect: footings, reading as footings in the schedule
+  - given: >
+      Level 2 above Level 1, two points z 0 on Level 1, a column type,
+      structuralType "column", topLevelName "Level 2", topOffset "-150"
+    expect: >
+      two columns reading Top Level "Level 2" and Top Offset -150 in
+      Properties, `tops` reading the same elevation asked and read
+  - given: the same with topLevelName and topOffset left out
+    expect: two columns, and a finding that every top was left as Revit placed it
+  - given: a Structural Columns type with structuralType LEFT OUT
+    expect: >
+      REFUSED, asking column or non-structural - nothing placed. Version 3
+      placed it non-structurally without a word
+  - given: a column type at z 3000 on Level 1 (at 0)
+    expect: >
+      the column's base 3000 mm above Level 1 - Base Offset 3000 - or the
+      layout refused naming Base Offset, nothing kept. NEEDS REAL REVIT: which
+      of the two Revit's call gives
+  - given: >
+      a point-based family with NO SOLID of its own at two points,
+      structuralType "non-structural"
+    expect: >
+      the whole layout undone, naming both points, the Generic Models count
+      the same as before. PLACE_STRUCTURAL_FAMILY removed both and said
+      failed 2; the merge kept the safer rule
+
 negative:
   - given: an empty point list
     expect: >
@@ -116,6 +152,33 @@ negative:
       both refuse with the same words and keep nothing - reading the height
       where the family's own level stands does not let a family that cannot
       be lifted through. RAN: the same, twice (Revit 2020, rolled back)
+
+  # VERSION 4 - each refused BEFORE anything is placed.
+  - given: a Structural Columns type with structuralType "beam" (row 128)
+    expect: nothing placed, a finding naming it a Structural Columns family and saying to ask for it as a column
+  - given: a Structural Framing type, structuralType "beam", three points (5b-1201)
+    expect: >
+      nothing placed, the Structural Framing count unchanged, the finding
+      naming PLACE_LINE_BASED_FAMILY and its `curves` form
+  - given: the same Structural Framing type with structuralType "column"
+    expect: refused the same way - a framing family never goes in at a point
+  - given: a family of no structural category asked as "brace"
+    expect: refused, "A brace is placed along a line between its two ends"
+  - given: structuralType "sprinkler"
+    expect: refused by name with the list of what Revit knows - never a fall back to NonStructural
+  - given: topLevelName "Level 1" - the base level itself
+    expect: refused, "is not above the base level"
+  - given: topLevelName "Level 9", a name no level carries
+    expect: refused, "No level is named 'Level 9' exactly" - never the nearest
+  - given: structuralType "footing" with topLevelName "Level 2"
+    expect: refused - a top level is set only on columns
+  - given: topOffset "300" with topLevelName left out
+    expect: refused - which level the offset is measured from is not guessed
+  - given: >
+      a column type whose family has no settable Top Level, with a top asked
+    expect: >
+      the whole layout undone, naming the column. PLACE_STRUCTURAL_FAMILY
+      removed that one and kept the rest
 
 second_route:
   - a schedule of that family, counted against the number asked for

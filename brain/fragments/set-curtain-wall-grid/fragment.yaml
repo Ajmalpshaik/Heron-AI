@@ -370,7 +370,7 @@ compatibility-note: >
 #                                             tool typed, never the type's layout.
 #                                             "add a grid line" with no curtain
 #                                             wall in it is a building grid:
-#                                             CREATE_GRID
+#                                             CREATE_GRIDS
 #   "how many grid lines are in this
 #    curtain wall"                         -> REPORT_CURTAIN_ELEMENTS. A question
 #                                             must not land on a write (D-86)

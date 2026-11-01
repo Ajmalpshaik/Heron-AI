@@ -19,7 +19,7 @@ purpose: >
   linear array: the Family Editor's Array, with its count LABELLED to an
   Integer family parameter when the types must choose how many.
 
-  **A LINKED REVIT ARRAY, the kind ARRAY_ELEMENTS leaves out on purpose** -
+  **A LINKED REVIT ARRAY, the kind COPY_ELEMENTS leaves out on purpose** -
   that tool's loose copies cannot follow a count a type chooses.
 
   **ONE FORM PER ARRAY** - a second form takes a second call, and both may
@@ -173,7 +173,7 @@ compatibility-note: >
 #   "array the blade along X with Blade Count"    -> here
 #   "repeat this fin along the width"             -> here
 #   "array the nested family up with the count"   -> here, version 2
-#   "array them along the corridor"               -> ARRAY_ELEMENTS, loose
+#   "array them along the corridor"               -> COPY_ELEMENTS, loose
 #                                                    copies in a project
 
 utterances:

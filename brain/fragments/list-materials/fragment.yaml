@@ -1132,7 +1132,7 @@ compatibility-note: >
 #                                            question with the same word in it
 #   "everything in galvanised steel"      -> SELECT_BY_MATERIAL, which needs a
 #                                            material's name - found here
-#   "set the material colour"             -> SET_MATERIAL_COLOUR, by name
+#   "set the material colour"             -> SET_MATERIAL_PROPERTIES, Shading Colour, by name
 #   "make this extrusion steel"           -> LINK_FAMILY_PARAMETER, by name
 #   "make a new material"                 -> CREATE_MATERIAL
 #   "bring the materials over from the

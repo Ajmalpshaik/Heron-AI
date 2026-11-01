@@ -58,8 +58,8 @@ purpose: >
   filed each one under, their ends in millimetres and their total length.
 
   **IT PLACES NO ROOM AND JOINS NOTHING.** Splitting a room that already exists
-  is two steps: this line, then PLACE_ROOM_AT_POINT for the half that has no
-  room. What Revit does to the existing room when the line cuts it, and the
+  is two steps: this line, then PLACE_ROOMS at a point for the half that has
+  no room. What Revit does to the existing room when the line cuts it, and the
   warning it gives for a line lying on a wall or on another separation line,
   are Revit's, and are recorded by the proof rather than claimed.
 
@@ -146,13 +146,13 @@ compatibility-note: >
   number.
 
 # ROUTING - the rows naming another fragment are repeated in
-# PLACE_ROOM_AT_POINT and CREATE_LINE.
+# PLACE_ROOMS and CREATE_LINE.
 #
 #   "draw a room separation line across an opening" -> here
 #   "add a room separator here"          -> here
 #   "draw a space separation line"       -> here, with asSpace true
 #   "close off this archway with a separation line" -> here
-#   "put a room in the other half"       -> PLACE_ROOM_AT_POINT. This draws
+#   "put a room in the other half"       -> PLACE_ROOMS, `points`. This draws
 #                                           the line and places no room; the
 #                                           half without one needs placing
 #   "draw a detail line here", "add a model line"
