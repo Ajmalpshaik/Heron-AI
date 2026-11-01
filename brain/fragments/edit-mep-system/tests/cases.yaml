@@ -1,0 +1,78 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for an edit, "changed a system nobody named" or "emptied a system".
+# Arrange on MEP NIGHT TEST in Revit 2020 (NEEDS-CHECKING Group JW) - the
+# model REPORT_MEP_PRESSURE_DROP was proved on, 51 duct and piping systems,
+# among them "Mechanical Supply Air 1", "Mechanical Supply Air 2" and
+# "Mechanical Supply Air 3". JW1 reads the diffusers' systems with
+# READ_MEP_SYSTEM before anything runs; where the
+# counts differ from those below, the job file changes - never the card.
+# EVERY RUN ROLLED BACK, so each case starts from the model as saved.
+
+positive:
+  - given: >
+      two of the supply diffusers of "Mechanical Supply Air 2" selected by
+      hand in a plan, edit "remove", nothing named
+    expect: >
+      changed 2; systemIds the one system; report "system "Mechanical Supply
+      Air 2" (Supply Air): N element(s) before, N-2 after - 2 taken out";
+      READ_MEP_SYSTEM on the two diffusers in the same rolled-back group finds
+      them on no system, and the rest of that system's diffusers still on it
+  - given: >
+      the same two diffusers, edit "add", systemName "Mechanical Supply Air 2" -
+      after the remove above, in the same rolled-back group, or on two supply
+      diffusers that are on no system
+    expect: >
+      changed 2; report "N-2 element(s) before, N after - 2 added"; both read
+      back on it
+  - given: >
+      one sprinkler or plumbing fixture on no piping system and one piping
+      system of its classification, edit "add", systemName that system's name
+    expect: >
+      changed 1 - a PIPING system edited through the same card, the system's
+      own kind deciding which connector joins
+
+negative:
+  - given: >
+      two supply diffusers selected, edit "add", systemName "Mechanical Supply
+      Air" - a word every supply system holds
+    expect: >
+      changed 0, NOTHING WAS CHANGED, the refusal naming Mechanical Supply Air
+      1, 2, 3 and the rest; no system gained a diffuser. THIS IS THE FIRST
+      CASE TO RUN: picking one would add to a system nobody named
+  - given: >
+      EVERY diffuser of "Mechanical Supply Air 3" selected, edit "remove"
+    expect: >
+      changed 0, NOTHING WAS CHANGED, the finding saying it would leave the
+      system with nothing on it; the system still there with all of them
+      (Article 7, and Revit's own rule)
+  - given: >
+      two diffusers already on "Mechanical Supply Air 1" selected, edit "add",
+      systemName "Mechanical Supply Air 2"
+    expect: >
+      changed 0, each named as on Mechanical Supply Air 1 already, to be taken
+      out of it first; both still on Mechanical Supply Air 1 and NOT on 2 -
+      an add never moves an element between systems
+  - given: >
+      two ducts of "Mechanical Supply Air 2" selected, edit "remove"
+    expect: >
+      changed 0, each duct named as on its system through what it connects
+      to; the system's members unchanged
+  - given: >
+      two supply diffusers selected, edit "rewire", systemName "Mechanical
+      Supply Air 2"
+    expect: >
+      changed 0, "rewire" named as not one of add or remove
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one operation is one undo entry
+
+second_route:
+  - >
+    Revit's System Browser, read by eye inside the same rolled-back group:
+    the system's terminal count before and after, the diffusers under it or
+    gone from it
+  - >
+    READ_MEP_SYSTEM on the edited elements - the system name `report` gives,
+    or none for an element taken out
+  - one Ctrl+Z takes the whole edit away in a single step (Golden Rule 16)

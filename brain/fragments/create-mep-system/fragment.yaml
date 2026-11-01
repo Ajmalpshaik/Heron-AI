@@ -137,9 +137,18 @@ compatibility-note: >
 
 # ROUTING - the same rows are in the fragments named here.
 #
-#   "make a supply air system from these"   -> here
+#   "make a supply air system from these"   -> here. DECLARED below since
+#                                              2026-11-01: ranked, it reached
+#                                              CREATE_VIEW_FILTERS_BY_RULE, and
+#                                              then EDIT_MEP_SYSTEM once that
+#                                              card was written (FRAGMENT-ISSUES
+#                                              row 5b-1357)
 #   "create a system for this pump"         -> here
 #   "put these diffusers on the FCU's system" -> here
+#   "add these diffusers to Supply Air 2"   -> EDIT_MEP_SYSTEM - a system that
+#                                              already exists, Add to System
+#   "take this terminal out of the system"  -> EDIT_MEP_SYSTEM, Remove from
+#                                              System
 #   "make a new system type"                -> CREATE_MEP_SYSTEM_TYPE - a type
 #                                              in the Project Browser, not a
 #                                              system of elements
@@ -155,3 +164,7 @@ utterances:
   - create a piping system for this pump and the fixtures
   - put these terminals on one system with the FCU as base equipment
   - put these diffusers on the FCU's system
+  # ADDED 2026-11-01, row 5b-1357. The routing table above claims it and a
+  # comment is not indexed, so ranking decided: CREATE_VIEW_FILTERS_BY_RULE
+  # took it, and EDIT_MEP_SYSTEM after that card was written.
+  - make a supply air system from these

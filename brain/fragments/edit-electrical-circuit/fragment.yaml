@@ -161,6 +161,9 @@ compatibility-note: >
 #   "what circuits are on panel DB-1"          -> REPORT_PANEL_CIRCUITS
 #   "disconnect this duct from the fitting"    -> DISCONNECT_CONNECTORS - a
 #                                                 physical join, not a circuit
+#   "add these diffusers to Supply Air 2"      -> EDIT_MEP_SYSTEM - the same two
+#                                                 buttons on a duct or piping
+#                                                 system (2026-11-01)
 
 utterances:
   - add these lights to circuit 3
