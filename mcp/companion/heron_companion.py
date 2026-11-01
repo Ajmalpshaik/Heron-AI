@@ -1301,7 +1301,8 @@ class DashboardPanel(object):
                 "identity": list(identity) if identity else None,
                 "model": board.get("model") or {}, "tiles": board.get("tiles") or [],
                 "charts": board.get("charts") or [], "look": board.get("look") or [],
-                "notRead": board.get("notRead") or [], "states": board.get("states") or [],
+                "notRead": board.get("notRead") or [], "capped": board.get("capped") or [],
+                "states": board.get("states") or [],
                 "said": answer.get("said")}
 
     def current(self):

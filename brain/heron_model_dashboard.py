@@ -28,8 +28,9 @@ it does is the engineer's or the client's call, not Heron's. No row says a
 model is compliant, clean or healthy, and there is no score: a score is a
 judgement dressed as a number.
 
-WHAT WAS NOT READ IS SAID. A section the fragment could not read arrives in
-`notRead` and is shown as not read - never as zero.
+WHAT WAS NOT READ IS SAID. A part the fragment could not read arrives as
+null, named in `notRead`, and is shown as not read - never as zero. A list
+cut at the fragment's limit is named in `capped`, and the page says so.
 
 Standard library only.
 """
@@ -54,6 +55,12 @@ STATES = (("look", "#d9822b", "worth a look - usually costs time later"),
 BAR = "#4f7fd1"
 BAR_OTHERS = "#9fb3c8"
 BAR_ERROR = "#c53030"
+#: Each part of the read, and the key its value comes under - the fragment
+#: sends null for a part it could not read and names the part in notRead.
+PARTS = (("elements", "elementTotal"), ("categories", "categories"), ("levels", "levels"),
+         ("worksets", "worksets"), ("warnings", "warnings"), ("views", "views"),
+         ("sheets", "sheets"), ("families", "families"), ("groups", "groups"),
+         ("links", "links"), ("cad", "cad"), ("rooms", "rooms"), ("spaces", "spaces"))
 
 
 # ----------------------------------------------------------------- reading
@@ -177,11 +184,17 @@ def read(text):
         out[kind] = {k: _int(got.get(k)) for k in ("total", "placed", "unplaced", "notEnclosed")}
         out[kind]["unplacedIds"] = _ids(got.get("unplacedIds"))
         out[kind]["notEnclosedIds"] = _ids(got.get("notEnclosedIds"))
-    # A part the fragment left out entirely is not a part with nothing in it.
-    for key in ("categories", "levels", "warnings", "views", "sheets", "families", "links",
-                "cad", "rooms", "spaces"):
-        if key not in data and not any(n.lower().startswith(key) for n in out["notRead"]):
-            out["notRead"].append("%s: not in what Revit sent" % key)
+    # A PART IS NOT READ WHEN ITS VALUE IS MISSING OR null - the fragment's
+    # own rule for a part that failed. A note that names a part whose value
+    # came WITH it ("3 element(s) could not be read") is a caveat on that
+    # number, shown beside it, and never hides it.
+    out["unread"] = []
+    for part, key in PARTS:
+        if data.get(key) is None:
+            out["unread"].append(part)
+            if not any(n.lower().startswith(part) for n in out["notRead"]):
+                out["notRead"].append("%s: not in what Revit sent" % part)
+    out["capped"] = _names(data.get("capped"))
     return out
 
 
@@ -189,10 +202,12 @@ def read(text):
 
 def _missing(data, key):
     """The reason a part was not read, or None when it was."""
+    if key not in data.get("unread", ()):
+        return None
     for note in data["notRead"]:
         if note.lower().startswith(key):
             return note
-    return None
+    return "%s: not read" % key
 
 
 def _plural(n, one, many=None):
@@ -396,6 +411,7 @@ def build(data):
     rows = look_at(data)
     return {"format": FORMAT, "model": dict(data["model"]), "tiles": tiles(data),
             "charts": charts(data), "look": rows, "notRead": list(data["notRead"]),
+            "capped": list(data.get("capped") or []),
             "states": [{"key": k, "colour": c, "means": m} for k, c, m in STATES],
             "said": summary(data, rows)}
 

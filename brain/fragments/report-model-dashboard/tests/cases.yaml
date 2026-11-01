@@ -1,0 +1,104 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - here,
+# a dashboard read from some document other than the one it was given.
+# Every case reads only. The model is the owner's to name; the figures below
+# are what Snowdon Towers Sample HVAC.rvt (Revit 2024) answered the readers of
+# each part on 2026-09-13, and they are checked against a FRESH copy - a copy
+# that has been worked in will have moved, and the readers are then re-run on
+# it instead (second_route).
+
+positive:
+  - given: >
+      a project open and in front - Snowdon Towers Sample HVAC.rvt, a fresh
+      copy - nothing selected, with Project1 (a second, unrelated project) open
+      beside it
+    expect: >
+      dashboardJson is format 1, model.title the Snowdon file's, isFamily
+      false; elementTotal above 0 and equal to the sum of categories'
+      instances, and to the sum of levels' instances plus noLevel; every part
+      a value, notRead empty; and nothing in it is Project1's - its title, its
+      sheets and its warnings appear nowhere
+
+  - given: the same run, its warnings part beside READ_MODEL_WARNINGS on the same model
+    expect: >
+      warnings.total is READ_MODEL_WARNINGS' warningCount (145 on 2026-09-13)
+      and warnings.groups has as many kinds as its findings have lines (5), in
+      the same order - errors first, then commonest - each with the same count;
+      every id in ids resolves to an element of this model
+
+  - given: the same run, its views and sheets beside FIND_UNPLACED_VIEWS and LIST_SHEETS
+    expect: >
+      views.notOnSheets is the number of views FIND_UNPLACED_VIEWS returns (7)
+      and notOnSheetsIds are their ids; sheets.total is LIST_SHEETS' count (17);
+      views.total leaves out the view templates, which are counted in
+      views.templates
+
+  - given: the same run, its links beside LIST_LINKED_MODELS
+    expect: >
+      links has one row per linked file - six, every one loaded true - each
+      with the placement count LIST_LINKED_MODELS gives it; pinned true only
+      for a file whose every placement is pinned
+
+  - given: one level's Properties open on screen
+    expect: >
+      that level's elevationMm is the Elevation its Properties show, in
+      millimetres; levels read bottom to top
+
+  - given: >
+      a WORKSHARED project with one user workset closed in Collaborate >
+      Worksets (Project1 work_ajmal.al, or the owner's own local)
+    expect: >
+      model.isWorkshared true; worksets lists every user workset by name, the
+      closed one open false with instances 0; elementTotal LOWER than the same
+      run with every workset open - by the elements on the closed one - and
+      findings says nothing on a closed workset is loaded or counted
+
+negative:
+  # THE CASE THAT MATTERS - the batch-prove leg (tools/jobs).
+  - given: >
+      a FAMILY document open beside the project (Family1, or any .rfa), the
+      run sent to the family - `in:` the family, the project still open
+    expect: >
+      elementTotal 0 and sectionsNotRead 13; dashboardJson's model block
+      reads the family's title with isFamily true, every other part is null -
+      never 0 or [] - and notRead names all thirteen parts as "not a project";
+      not one of the project's numbers appears
+
+  - given: a project that is NOT workshared (Snowdon Towers, or Project2)
+    expect: >
+      model.isWorkshared false and worksets [] - and notRead has NO worksets
+      entry: a file with no worksets is not a part that failed
+
+  - given: >
+      a new project from the default template, nothing placed, no sheets, no
+      links, no CAD, no rooms
+    expect: >
+      every part a value, not null - links [], cad.total 0, rooms.total 0,
+      sheets.total 0, warnings.total 0 - and notRead empty: a part read and
+      found empty is zero, a part not read is null, and the two never swap
+
+  - given: a room deleted from its plan (left in the schedule) and a room whose walls were opened
+    expect: >
+      rooms.unplaced 1 with that room's id in unplacedIds, rooms.notEnclosed 1
+      with the other's in notEnclosedIds; rooms.placed counts the second and
+      not the first; neither is in the other's list
+
+  - given: >
+      a sheet with only a title block on it, and a second sheet holding one
+      schedule and nothing else
+    expect: >
+      sheets.empty counts the first and not the second - a schedule is
+      something on a sheet, and the title block's own revision schedule is not
+
+second_route: >
+  The reader of each part, run on the same model in the same session, and
+  Revit's own windows. READ_MODEL_WARNINGS' warningCount and Manage >
+  Warnings must equal warnings.total; LIST_LINKED_MODELS and Manage Links
+  must list the same files, loaded the same way; FIND_UNPLACED_VIEWS'
+  elements must be views.notOnSheets; FIND_VIEWS_WITHOUT_TEMPLATE's elements
+  must be views.withoutTemplate; LIST_WORKSETS' worksetCount and closedCount
+  must match the worksets rows; FIND_UNUSED_FAMILIES' wholeFamilyUnused must
+  be families.unused; FIND_UNUSED_GROUP_TYPES' unusedGroupTypes must be
+  groups.unusedTypes; SELECT_UNENCLOSED_ROOMS with rooms only must give
+  rooms.unplaced and rooms.notEnclosed, and with spaces only the spaces'. A
+  part that disagrees with its reader is a finding for FRAGMENT-ISSUES, never
+  a rounding.

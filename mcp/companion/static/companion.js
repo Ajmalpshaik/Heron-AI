@@ -1700,6 +1700,12 @@ function renderDashboard(D) {
     nr.append(el("span", null, D.notRead.join(" · ")));
     box.append(nr);
   }
+  if ((D.capped || []).length) {
+    const cut = el("div", "d-notread");
+    cut.append(el("strong", null, "Lists cut short: "));
+    cut.append(el("span", null, D.capped.join(" · ")));
+    box.append(cut);
+  }
   const charts = el("div", "d-charts");
   (D.charts || []).forEach(c => charts.append(dashChart(c)));
   box.append(charts, dashLook(D, colours));

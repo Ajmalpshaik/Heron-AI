@@ -115,9 +115,10 @@ def test_numbers_are_the_ones_sent():
 
 
 def test_a_part_not_read_is_never_zero():
-    board = built(notRead=["sheets: the title blocks could not be read"])
+    board = built(sheets=None, notRead=["sheets: the title blocks could not be read"])
     assert tile(board, "sheets")["state"] == "not read"
     assert tile(board, "sheets")["value"] is None
+    assert tile(board, "sheets")["note"] == "sheets: the title blocks could not be read"
     assert row(board, "sheets-empty")["count"] is None
     data = json.loads(sample())
     del data["rooms"]
@@ -125,9 +126,31 @@ def test_a_part_not_read_is_never_zero():
     assert tile(board, "rooms")["state"] == "not read"
 
 
+def test_a_note_beside_a_number_never_hides_it():
+    note = "elements: 3 element(s) could not be read and are in no count"
+    board = built(notRead=[note])
+    assert tile(board, "elements")["value"] == 1250
+    assert tile(board, "elements")["state"] == "info"
+    assert note in board["notRead"]
+
+
+def test_a_list_cut_short_is_said():
+    board = built(capped=["warnings: 812 kinds, the first 500 sent"])
+    assert board["capped"] == ["warnings: 812 kinds, the first 500 sent"]
+
+
+def test_a_family_document_reads_nothing_as_zero():
+    parts = dict((key, None) for _part, key in D.PARTS)
+    board = built(model={"title": "Diffuser.rfa", "isFamily": True, "isWorkshared": False},
+                  notRead=["%s: not a project" % p for p, _k in D.PARTS], **parts)
+    assert all(t["state"] == "not read" for t in board["tiles"] if t["key"] != "worksets")
+    assert all(r["count"] is None for r in board["look"])
+
+
 def test_not_workshared_has_no_closed_worksets_row():
+    # As the fragment sends it: an empty list, and no note.
     board = built(model={"title": "Small", "isFamily": False, "isWorkshared": False},
-                  worksets=[], notRead=["worksets: the model is not workshared"])
+                  worksets=[])
     assert not [r for r in board["look"] if r["key"] == "worksets-closed"]
     assert tile(board, "worksets")["note"] == "not workshared"
     assert tile(board, "worksets")["state"] == "info"
