@@ -179,7 +179,7 @@ def build(data):
 
 def summary(data):
     """One line for the chat and the page."""
-    said = "3D view of %s: %d element(s), %d triangle(s)." % (
+    said = "3D view - %s: %d element(s), %d triangle(s)." % (
         data["scope"] or "the model", len(data["elements"]), data["triangles"])
     if data["leftOut"]:
         said += (" %d element(s) were left out - the triangle limit was reached; read the "
