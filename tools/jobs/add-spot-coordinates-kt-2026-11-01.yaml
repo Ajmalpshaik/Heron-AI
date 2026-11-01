@@ -1,0 +1,51 @@
+# NEEDS-CHECKING Group KT - ADD_SPOT_COORDINATES, built 2026-11-01 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/add-spot-coordinates-kt-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/add-spot-coordinates-kt-2026-11-01.yaml
+#
+# THE MODEL is a scratch project from Revit's metric ARCHITECTURAL template,
+# Revit 2024: F1 (a rectangular 200 mm floor) and C1 (a rectangular concrete
+# column, 400 x 400 mm, standing on F1) on Level 1, grids A, B, 1 and 2
+# crossing over F1, and one text note T1 in "FloorPlan: Level 1". KT1 makes it
+# and SAVES it, with no spot coordinate in the plan. Never a working model.
+#
+# THE SPOT TYPE'S NAME IS NOT KNOWN. KT2 runs this card with spotType left
+# out, which places nothing and lists the spot coordinate types the template
+# has; write one into `spotType` below, in both legs, before the batch. Until
+# then no type answers to the name and the run is refused naming the loaded
+# types - expected, NOT RUN.
+#
+# THE ARRANGEMENT: SELECT_BY_CATEGORY_NAME and SET_SELECTION, as Group KM -
+# Floors in "FloorPlan: Level 1" for the positive (F1), Text Notes for the
+# negative (T1): a different set, not an empty one, and one with no face to
+# put a spot on. Every write here is ROLLED BACK.
+
+model: scratch project from the metric architectural template (KT1), Revit 2024
+
+defaults:
+  write: true
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: add-spot-coordinates
+    expect: placed
+    setup-set:
+      categoryName: Floors
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categoryName: Text Notes
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      view: "Level 1"
+      spotType: "THE TYPE KT2 READ"
+    negative-set:
+      view: "Level 1"
+      spotType: "THE TYPE KT2 READ"
+    note: >
+      KT3. Positive - placed 1 on F1, newSpots 1 id, report quoting the text
+      the spot shows (or saying Revit handed back none). Negative - THE FIRST
+      CASE TO RUN: the text note instead of the floor, so placed 0 and T1 in
+      notPlaced with "no face of it looks at the viewer".

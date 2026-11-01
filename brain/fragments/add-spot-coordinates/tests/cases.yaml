@@ -1,0 +1,90 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that annotates, "annotated something nobody asked for": a spot on
+# a text note, in a schedule or an unlocked 3D view, of a type nobody named, or
+# a second spot stacked on the first.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE. The model is a scratch project from
+# Revit's metric ARCHITECTURAL template, Revit 2024: F1 (a rectangular 200 mm
+# floor) and C1 (a rectangular concrete column, 400 x 400 mm, standing on F1)
+# on Level 1, grids A, B, 1 and 2 crossing over F1, and one text note T1 in
+# "FloorPlan: Level 1" - SAVED before the run, with no spot coordinate in the
+# plan (NEEDS-CHECKING Group KT, KT1).
+#
+# The floors are collected by SELECT_BY_CATEGORY_NAME with Floors in
+# "FloorPlan: Level 1" - F1 - and SET_SELECTION, as Group KM does. The negative
+# leg is the SAME call with Text Notes: a different set, not an empty one
+# (fragment-proving, rules 3 and 5) - a text note has no face, so nothing may be
+# placed. Where the model differs, the job file changes - never the card. EVERY
+# RUN ROLLED BACK.
+
+positive:
+  - given: >
+      F1 from SELECT_BY_CATEGORY_NAME with Floors and SET_SELECTION, view
+      "Level 1" (a floor plan), spotType naming a spot coordinate type the model
+      has - the one KT2 lists - and `at` left out
+    expect: >
+      placed 1; newSpots 1 id; notPlaced empty; refused empty; findings "1 spot
+      coordinate(s) placed in "Level 1" as ..., at the centre", and report
+      naming the spot with the text Revit shows (or saying it handed back none).
+      Look at the plan - one spot coordinate at the middle of F1's top, reading
+      a north and an east
+
+  - given: C1 alone, the same plan and type, at "corners"
+    expect: >
+      placed 4 - one at each corner of the column's top face; report "corner 1"
+      to "corner 4", each with its text. Read the four norths and easts: they
+      differ by the column's 400 mm in pairs
+
+  - given: grids A, B, 1 and 2 with F1, the same plan and type
+    expect: >
+      placed 4 - one at each crossing of a lettered and a numbered grid, on F1's
+      top; report "grid A/1" and its like. A and B never cross, nor 1 and 2, so
+      nothing for those pairs
+
+  - given: the first case again, after it was KEPT
+    expect: >
+      placed 0, F1 in notPlaced, report "a spot coordinate is already there in
+      this view" - no second spot stacked on the first
+
+negative:
+  - given: >
+      the text notes of Level 1 instead - SELECT_BY_CATEGORY_NAME with Text
+      Notes - with the same plan and the same spot type
+    expect: >
+      placed 0, newSpots empty, T1 in notPlaced with "no face of it looks at
+      the viewer". No spot of any kind placed. THE FIRST CASE TO RUN - a
+      fragment that annotated whatever it was handed shows here
+
+  - given: the positive's F1 with spotType left out
+    expect: >
+      placed 0; refused "No spot coordinate type was named, and one is never
+      chosen for you ..."; typesLoaded lists the spot coordinate types the model
+      has
+
+  - given: the positive's F1 with spotType naming a spot ELEVATION type
+    expect: placed 0; refused naming it as a SpotElevation type, not a spot coordinate type
+
+  - given: the positive's F1 with view an unlocked 3D view, then a schedule
+    expect: >
+      placed 0 both times; refused naming the view - "is a 3D view that is not
+      locked", "is a Schedule view" - and "Nothing was placed."
+
+  - given: grids A and 1 alone, with nothing under them
+    expect: placed 0; refused "Only grids were selected ..." - a grid has no face
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one view of spots is one undo entry
+
+second_route:
+  - >
+    In Revit, select the new spot after a KEPT run: Properties names its type,
+    and the north and east on the drawing are what `report` quoted. Then
+    REPORT_SPOT_DIMENSIONS on "Level 1" lists the same spot with the same text -
+    and Revit's own Annotate > Spot Coordinate placed by hand on the same point
+    of F1 reads the same north and east
+  - >
+    REPORT_LOCATION on C1 with sharedCoordinates set gives the column's east and
+    north in shared coordinates; with a spot type measured from the Survey
+    Point, the four corner spots straddle it by half the column each way

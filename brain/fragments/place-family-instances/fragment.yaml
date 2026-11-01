@@ -364,6 +364,12 @@ compatibility-note: >
 #   "lock the motor's centre to the centre planes" -> LOCK_NESTED_FAMILY_TO_PLANES,
 #                                   by the instanceId given back here
 #   "what families are nested in this one" -> REPORT_NESTED_FAMILIES
+#   "add spot coordinates to these column corners" -> ADD_SPOT_COORDINATES -
+#                                   annotates columns already there. On the
+#                                   keyword route alone it ranks "put a column
+#                                   at each grid intersection" first; this
+#                                   card declares that sentence and keeps it
+#                                   (2026-11-01)
 #
 # VERSION 5 - WHERE PLACE_NESTED_FAMILY'S INPUTS AND OUTPUTS ARE NOW:
 #   family, type        symbol - "Family : Type", a family loaded into the one

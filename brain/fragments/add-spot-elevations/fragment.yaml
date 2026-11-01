@@ -118,6 +118,14 @@ compatibility-note: >
 # ROUTING (2026-10-12, the gap fill)
 #
 #   "what do the spot levels say"          -> REPORT_SPOT_DIMENSIONS - a READ
+
+
+# ROUTING (2026-11-01) - repeated in ADD_SPOT_COORDINATES.
+#
+#   "put a spot coordinate on this point"  -> ADD_SPOT_COORDINATES - the north
+#                                             and east of a point, not a height
+#   "add spot coordinates to these column  -> ADD_SPOT_COORDINATES
+#    corners"
 utterances:
   - put the levels on the drawing
   - add spot levels to these

@@ -1,0 +1,202 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-164
+semantic-identity: "draw a spot coordinate annotation on each of these in this view, at its centre, its corners or under grid intersections"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "add spot coordinates to these
+# column corners", "put a spot coordinate on this point" and "show the
+# north/east coordinates of these grid intersections" - Revit's Annotate >
+# Spot Coordinate. Checked that day with brain/heron_retrieve.py on a scratch
+# store, Revit 2024: the first reached REPORT_SPOT_DIMENSIONS, the second
+# ACQUIRE_COORDINATES, the third REPORT_LOCATION - two reads and an ADMIN that
+# moves the project's coordinates. Nothing in the library placed a spot
+# coordinate (the 2026-11-01 ribbon coverage note lists it MISSING).
+#
+# WHY A CARD OF ITS OWN AND NOT ADD_SPOT_ELEVATIONS WIDENED. That card is
+# PROVEN, and any change under its impl/ makes its proof stale. It is also a
+# different annotation: a height on a face, from NewSpotElevation and a spot
+# elevation type, where this is the north and east of a point, from
+# NewSpotCoordinate and a spot coordinate type, at the face's corners or under
+# grid intersections, which that card has no notion of. The way a reference is
+# taken is copied from it: every candidate face collected, never first-wins,
+# and the face chosen by a POSITIVE test on its normal.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33):
+#   view            the view, as the Project Browser names it. Revit places a
+#                   spot coordinate in a plan, a ceiling plan, a structural or
+#                   area plan, a section, an elevation, a detail view, and a 3D
+#                   view only when it is LOCKED and not a perspective. Any other
+#                   view - a schedule, a sheet, a legend, a drafting view, an
+#                   unlocked 3D view, a template - is refused BY NAME and
+#                   nothing is placed
+#   elements        the selection - the columns, floors or other elements to
+#                   put the spots on. Two or more GRIDS among them switch to
+#                   grid intersections (below)
+#   spotType        the spot coordinate type, by its Project Browser name. Left
+#                   out, or a name no spot coordinate type has: NOTHING IS
+#                   PLACED and the loaded spot coordinate types come back in
+#                   `typesLoaded`. The type decides which origin the north and
+#                   east are measured from, so it is never chosen for you
+#   at              "centre" (left out) - one spot at the middle of the face
+#                   that looks at the viewer - or "corners" - one at each end
+#                   of every straight edge of that face, a column's corners
+#   leaderOffsetMm  how far the leader runs out, in millimetres; left out or 0
+#                   means 300 mm, the same as ADD_SPOT_ELEVATIONS
+#
+# GRID INTERSECTIONS. A grid has no face to put a spot on. With two or more
+# straight grids in the selection, each place two of them cross is a point,
+# and the spot goes on the selected floor or element whose upward face lies
+# under it - the highest one. Plans only, because only there do grids cross
+# at a point the view looks down on. An intersection with nothing selected
+# under it is named, A/1 style, and nothing is placed for it.
+#
+# THE FACE IS THE ONE THAT LOOKS AT THE VIEWER - its normal within about 25
+# degrees of the view direction, and the nearest such face. In a plan that is
+# the top, never the soffit (ADD_SPOT_ELEVATIONS' -300 mm lesson). An element
+# with no such face is named and skipped, NOT annotated on some other face.
+#
+# A SECOND SPOT IS NOT STACKED ON THE FIRST. A spot coordinate already in the
+# view within 1 mm of the point is reported and the point left alone.
+#
+# EVERY SPOT IS READ BACK: its type, its view, and the text Revit shows
+# (Dimension.ValueString). If Revit hands back no text, the reply says so
+# rather than inventing a north and east - the figure on the drawing depends
+# on the type's origin setting, which only Revit applies. A spot that reads
+# back with the wrong type or view is removed again inside the same undo.
+#
+# RISK MODIFY. It adds spot coordinates and deletes nothing it did not just
+# make.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.annotation
+capability: ADD_SPOT_COORDINATES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places a spot coordinate - the north and east of a point - on each element
+  handed in, in one view, of the spot coordinate type the modeller names:
+  Revit's Annotate > Spot Coordinate, at the centre or the corners of the face
+  that looks at the viewer, or under each grid intersection in a plan. Says what
+  it placed, the text each spot shows, and why it left anything else.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The view the spots go in, BY NAME. Any view Revit cannot hold a spot
+    # coordinate in is refused by name and nothing is placed.
+    - name: view
+      type: View
+      source: request
+    # The elements to put the spots on, from the selection. Two or more grids
+    # among them mean grid intersections, on the other elements under them.
+    - name: elements
+      type: IList<Element>
+    # The spot coordinate type, by its Project Browser name. Left out, nothing
+    # is placed and the loaded spot coordinate types are listed.
+    - name: spotType
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # "centre" or "corners". Left out, the centre.
+    - name: at
+      type: string
+      source: request
+      optional: true
+      absent: centre
+    # The leader's run, in millimetres. Left out or 0, 300 mm.
+    - name: leaderOffsetMm
+      type: double
+      source: request
+      optional: true
+      absent: 0
+  provides:
+    - name: placed
+      role: result
+      type: int
+    - name: newSpots
+      # The spot coordinates this placed, each read back carrying the type
+      # asked for, in this view.
+      role: result
+      type: IList<ElementId>
+    - name: notPlaced
+      # Elements handed in that got no spot - no face looking at the viewer,
+      # refused by Revit, read back wrong, of another model, or already showing
+      # one at that point (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: typesLoaded
+      # The spot coordinate types the model has - what to name.
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING, point by point: the spot placed and the text it shows, or
+      # why it was left (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was placed at all, in plain words. Empty when it ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Document.Create.NewSpotCoordinate(View,
+  Reference, XYZ origin, XYZ bend, XYZ end, XYZ refPt, bool hasLeader),
+  SpotDimension.SpotDimensionType (get and set), Dimension.Origin,
+  Dimension.ValueString, SpotDimensionType.StyleType,
+  DimensionStyleType.SpotCoordinate, BuiltInCategory.OST_SpotCoordinates,
+  View3D.IsLocked and IsPerspective, View.ViewDirection, RightDirection and
+  UpDirection, Grid.Curve, Face.Project, Face.IsInside(UV), Face.EdgeLoops,
+  Edge.AsCurve, PlanarFace.FaceNormal and IntersectionResult.UVPoint and
+  XYZPoint are present with these signatures 2020 through 2027 -
+  tools/api-surface --members on 2026-11-01. Only the ViewType values present
+  in all eight releases are named. Millimetres become feet by dividing by 304.8
+  (D-20). No ElementId is built from a number or read as one.
+
+# ROUTING (2026-11-01) - the same rows are in ADD_SPOT_ELEVATIONS,
+# REPORT_SPOT_DIMENSIONS and REPORT_LOCATION.
+#
+#   "add spot coordinates to these column    -> here, at "corners"
+#    corners"
+#   "put a spot coordinate on this point"    -> here
+#   "show the north/east coordinates of      -> here, on the floor under them -
+#    these grid intersections"                  a request to annotate. Asked as
+#                                               a question (D-128) it reaches a
+#                                               read, never this
+#   "what are the coordinates of this"       -> REPORT_LOCATION - a question,
+#                                               answered without drawing
+#   "read the spot coordinates in the model" -> REPORT_SPOT_DIMENSIONS - what
+#                                               spots already say. It declares
+#                                               it; this card outranks it on
+#                                               the keyword route alone
+#   "what are the coordinates of this point" -> REPORT_LOCATION, by its
+#                                               declaration - a question this
+#                                               card took the moment it existed
+#                                               (FRAGMENT-ISSUES 5b-1377)
+#   "put a column at each grid intersection" -> PLACE_FAMILY_INSTANCES, by its
+#                                               declaration - places columns,
+#                                               where this annotates them
+#   "add spot levels to these"               -> ADD_SPOT_ELEVATIONS - a height,
+#                                               not a north and east
+#   "acquire coordinates from this link"     -> ACQUIRE_COORDINATES - moves the
+#                                               project's coordinates, draws
+#                                               nothing
+utterances:
+  - add spot coordinates to these column corners
+  - put a spot coordinate on this point
+  - show the north/east coordinates of these grid intersections

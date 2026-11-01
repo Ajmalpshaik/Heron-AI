@@ -139,6 +139,11 @@ compatibility-note: >
 #   "list the spot elevations on this plan"   -> here
 #   "list the dimensions in this view with their values and references" -> here
 #   "put spot levels on these"                -> ADD_SPOT_ELEVATIONS - a WRITE
+#   "put a spot coordinate on this point"     -> ADD_SPOT_COORDINATES - a WRITE
+#   "read the spot coordinates in the model"  -> here, by its declaration -
+#                                                ADD_SPOT_COORDINATES ranks it
+#                                                first on the keyword route
+#                                                alone (2026-11-01)
 #   "dimension between grid A and grid B"     -> CREATE_LINEAR_DIMENSION - a WRITE
 #   "which dimensions are less than 500"      -> SELECT_DIMENSIONS_BY_VALUE
 #   "find the locked dimensions on these"     -> REPORT_CONSTRAINTS

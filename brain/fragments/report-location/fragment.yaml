@@ -229,6 +229,11 @@ compatibility-note: >
 #   "is the level height trustworthy" -> REPORT_LEVEL_ELEVATIONS - a LEVEL's
 #                                       two heights and the survey offset, not
 #                                       an element's position
+#   "what are the coordinates of this point" -> here - a question, answered
+#                                       without drawing
+#   "put a spot coordinate on this point" -> ADD_SPOT_COORDINATES, which draws
+#                                       the north and east on the view instead
+#                                       of reporting them
 #   "unload this link"                   -> RELOAD_LINKS, unload true. A link's position
 #                                           is what this reports; unloading
 #                                           keeps it and drops the geometry
@@ -295,3 +300,8 @@ utterances:
   # they are declared here and answered by identity (rows 116 and 146).
   - where is this fan coil unit
   - where does this pipe start and end
+  # ADDED 2026-11-01, FRAGMENT-ISSUES row 5b-1377: ADD_SPOT_COORDINATES, a
+  # write that draws spot coordinates, took this question on a scratch store
+  # (CHECK_LINK_COORDINATES, a read about links, had it before). It is a
+  # question about where a point is, and this read answers it.
+  - what are the coordinates of this point
