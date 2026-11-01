@@ -143,7 +143,7 @@ compatibility-note: >
 # dimension attached to the wrong thing - but it is a failure, and the first
 # run against a real model is what settles it.
 
-# ROUTING - repeated in MEASURE_ELEMENT_LENGTHS and TAG_ELEMENTS.
+# ROUTING - repeated in MEASURE_ELEMENT_LENGTHS and TAG_ELEMENTS_IN_VIEW.
 #
 #   "add a dimension between these"  -> here
 #   "dimension the duct spacing"     -> here, since DIMENSION_MEP_RUNS was
@@ -156,7 +156,7 @@ compatibility-note: >
 #                                       puts it on the drawing. Asking a
 #                                       question must not annotate the model
 #   "how long is this duct"          -> MEASURE_ELEMENT_LENGTHS
-#   "tag these"                      -> TAG_ELEMENTS - a tag reads a parameter,
+#   "tag these"                      -> TAG_ELEMENTS_IN_VIEW - a tag reads a parameter,
 #                                       a dimension measures a distance
 
 # VERSION 2 (2026-11-01) - DIMENSION_MEP_RUNS WAS MERGED INTO THIS CARD on the

@@ -134,16 +134,18 @@ CHANGES = [
     # these back on private stores - the read took the first two from the
     # write on the model and the first, third, fourth and fifth on spelling
     # (where this suite cannot run; tests/test_read_view_scale.py asks them
-    # there).
-    ("update the view scale", "SET_VIEW_SCALE",
+    # there). 2026-11-01: SET_VIEW_SCALE was merged into SET_VIEW_PROPERTIES
+    # on the owner's instruction and DEPRECATED, so the write these reach is
+    # SET_VIEW_PROPERTIES now - a retired card is offered for nothing.
+    ("update the view scale", "SET_VIEW_PROPERTIES",
      "146: a first draft of READ_VIEW_SCALE answered it on both backends"),
-    ("set the scale of these views", "SET_VIEW_SCALE",
+    ("set the scale of these views", "SET_VIEW_PROPERTIES",
      "146: a first draft of READ_VIEW_SCALE answered it on the model"),
-    ("set the view scale", "SET_VIEW_SCALE",
+    ("set the view scale", "SET_VIEW_PROPERTIES",
      "146: a first draft of READ_VIEW_SCALE answered it on spelling"),
-    ("set view scale", "SET_VIEW_SCALE",
+    ("set view scale", "SET_VIEW_PROPERTIES",
      "146: a first draft of READ_VIEW_SCALE answered it on spelling"),
-    ("adjust the view scale", "SET_VIEW_SCALE",
+    ("adjust the view scale", "SET_VIEW_PROPERTIES",
      "146: a first draft of READ_VIEW_SCALE answered it on spelling"),
     # Row 146, 2026-10-09: the first draft of LIST_VIEWS_ON_SHEET named the
     # write and said "placed" in its purpose and "on sheet a-101" in its

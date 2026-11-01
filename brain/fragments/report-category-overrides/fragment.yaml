@@ -78,7 +78,8 @@ contract:
     - name: overrideList
       # EVERY OVERRIDDEN CATEGORY, EACH LINE IN FULL, JOINED - the answer this
       # fragment exists to give, and the one to read when this is the read
-      # half of SET_CATEGORY_GRAPHICS or SET_CATEGORY_SOLID_FILL. A STRING
+      # half of SET_CATEGORY_GRAPHICS, with its solidFill switch or without
+      # (SET_CATEGORY_SOLID_FILL was merged into it 2026-11-01). A STRING
       # because a reply shows a list as its first three entries, each cut to
       # sixty characters, and a category's fill starts past the sixtieth once
       # its line colours are set: measured 2026-09-22, the Walls line after a
@@ -193,7 +194,8 @@ compatibility-note: >
 #                                        a view-scoped collector to find
 #
 # VERSION 2 - with allCategories true. A QUESTION ABOUT THE DIALOG GOES TO A
-# READ: SET_CATEGORY_VISIBILITY, SET_CATEGORY_GRAPHICS, SET_CATEGORY_SOLID_FILL
+# READ: SET_CATEGORY_VISIBILITY, SET_CATEGORY_GRAPHICS (with or without its
+# solidFill switch, which took SET_CATEGORY_SOLID_FILL's job on 2026-11-01)
 # and APPLY_VIEW_FILTER change the view, and on 2026-10-15 the first of these
 # sentences reached SET_CATEGORY_VISIBILITY.
 #

@@ -147,7 +147,7 @@ compatibility-note: >
 #                                           TAG_ELEMENTS_IN_VIEW, named here
 #                                           until 2026-09-24, has no room entry
 #                                           and cannot place one
-#   "put tags on these"                  -> TAG_ELEMENTS. This one moves the
+#   "put tags on these"                  -> TAG_ELEMENTS_IN_VIEW. This one moves the
 #                                           ones that are already there
 #   "there is no room for the tags here" -> STACK_TAGS, which gathers them at
 #                                           the side of the plan

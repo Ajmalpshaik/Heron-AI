@@ -193,24 +193,42 @@ compatibility-note: >
 # SET_VIEW_SCALE, CREATE_CALLOUT and REPORT_VIEW_TEMPLATE_CONTROL. The other
 # rows below are written here only.
 #
+# 2026-11-01: SET_VIEW_SCALE WAS MERGED INTO SET_VIEW_PROPERTIES on the
+# owner's instruction and is DEPRECATED, so every row below that read
+# "-> SET_VIEW_SCALE" reads "-> SET_VIEW_PROPERTIES" - the write that sets a
+# view's scale now. SET_VIEW_SCALE's rows are its record and stay as written.
+#
 #   "what is the scale of this view"    -> here
 #   "what scale is this plan at"        -> here
 #   "what scale are these views at"     -> here
-#   "set this view to 1:50"             -> SET_VIEW_SCALE. A change, and this
-#                                          reads; a question never reaches
+#   "set this view to 1:50"             -> SET_VIEW_PROPERTIES. A change, and
+#                                          this reads; a question never reaches
 #                                          that write (D-86)
-#   "set the scale of this view"        -> SET_VIEW_SCALE
-#   "make all these views the same scale" -> SET_VIEW_SCALE
-#   "set the view scale"                -> SET_VIEW_SCALE. This row and the
-#   "set view scale"                    -> SET_VIEW_SCALE  four below it were
-#   "update the view scale"             -> SET_VIEW_SCALE  answered HERE by the
-#   "adjust the view scale"             -> SET_VIEW_SCALE  first draft of this
-#   "set the scale of these views"      -> SET_VIEW_SCALE  card's purpose; see
-#                                          WHY `purpose` SAYS "RATIO" above
-#   "what scale is this view"           -> SET_VIEW_SCALE TODAY, by identity:
-#                                          that PROVEN card declares it, and
-#                                          moving it here is the owner's call
-#                                          (rows 146 and 158). It belongs here
+#   "set the scale of this view"        -> SET_VIEW_PROPERTIES
+#   "make all these views the same scale" -> SET_VIEW_PROPERTIES
+#   "set the view scale"                -> SET_VIEW_PROPERTIES. This row and
+#   "set view scale"                    -> SET_VIEW_PROPERTIES  the four below
+#   "update the view scale"             -> SET_VIEW_PROPERTIES  it were answered
+#   "adjust the view scale"             -> SET_VIEW_PROPERTIES  HERE by the first
+#   "set the scale of these views"      -> SET_VIEW_PROPERTIES  draft of this
+#                                          card's purpose; see WHY `purpose`
+#                                          SAYS "RATIO" above
+#   "what scale is this view"           -> HERE since 2026-11-01, BY RANKING,
+#                                          and on purpose NOT declared below.
+#                                          SET_VIEW_SCALE declared it until it
+#                                          was merged into SET_VIEW_PROPERTIES
+#                                          (rows 146 and 158), and the merge
+#                                          was to move it here. Measured that
+#                                          day on private stores: declared
+#                                          here, this card took 8 of the 10
+#                                          change requests in
+#                                          tests/test_read_view_scale.py on the
+#                                          trained model and 1 on spelling;
+#                                          not declared, it reaches here on
+#                                          both and so do three phrasings like
+#                                          it, and the change requests reach
+#                                          SET_VIEW_PROPERTIES (9 of 10 on the
+#                                          model, 10 of 10 on spelling)
 #   "why is the scale greyed out"       -> REPORT_VIEW_TEMPLATE_CONTROL - it
 #                                          names everything the template holds.
 #                                          This says only whether the scale is

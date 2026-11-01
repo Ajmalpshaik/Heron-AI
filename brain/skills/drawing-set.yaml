@@ -41,7 +41,8 @@ purpose: >
      asked - from the size of each drawing at the scale against the title
      block's drawing area, never from habit: AT 1:50 ONLY ONE ELEVATION OF A
      BUILDING ABOUT 23 M LONG FITTED ON AN A1 SHEET.
-  2. SET_VIEW_PROPERTIES (PROVEN) on every plan and elevation going on a
+  2. SET_VIEW_PROPERTIES (DRAFT on 2026-11-01, version 3 - SET_VIEW_SCALE
+     was merged into it; version 2 PROVEN) on every plan and elevation going on a
      sheet: the scale (50 for 1:50) and the detail level ("Fine").
   3. CREATE_PLAN_VIEW (PROVEN) for each level that has no floor plan - a level
      made through the API comes with none - then step 2 on that plan alone,
@@ -59,13 +60,16 @@ purpose: >
   6. LOAD_FAMILY (PROVEN) the door tag family, only when no door tag is loaded
      - from the path the modeller gives, in the library of the release in use.
   7. DOOR TAGS, one level at a time. FILTER_ELEMENTS_BY_CATEGORY with
-     category=Doors and that levelId, then FIND_UNTAGGED_ELEMENTS (PROVEN) in
-     that level's plan, then TAG_ELEMENTS (PROVEN) with the door tag type,
-     each step's expect_from naming the one before it. TAG_ELEMENTS_IN_VIEW
-     (DRAFT) tags doors since its version 4 but is not signed, so it is not
-     the route yet. A door that is a curtain panel is tagged too, at the
-     centre of its extent - TAG_ELEMENTS version 2 (5b-454); version 1
-     refused it.
+     category=Doors and that levelId, then TAG_ELEMENTS_IN_VIEW in that
+     level's plan with tagTypeHintId the door tag type, tagTypeId=none,
+     leader=none, minLengthMm=0 and leaderOffsetMm=0, expect_from naming the
+     filter. It reads the plan's own tags and never stacks a second on a door
+     already tagged there, so no FIND_UNTAGGED_ELEMENTS is needed in front of
+     it. Its status: version 5 was signed on 2026-10-13 and tagged doors
+     since version 4; TAG_ELEMENTS, which this step used until then, was
+     merged into it on 2026-11-01, and version 6 is DRAFT until it is proved.
+     A door that is a curtain panel is tagged too, at the centre of its
+     extent (5b-454).
   8. DIMENSIONS, on each plan. DIMENSION_ROOMS (PROVEN) on that level's rooms
      with measureTo=inside, and DIMENSION_WALL_OPENINGS (PROVEN) on that
      level's walls with withOverall=true, each at the offsetMm the modeller
@@ -88,9 +92,10 @@ purpose: >
       PLACE_SCHEDULE_ON_SHEET (PROVEN) at atXMm and atYMm on the schedules'
       sheet, expect_from naming the find.
   11. PRESENTATION GRAPHICS, when the modeller asks for a look. On ONE plan
-      only: SET_CATEGORY_SOLID_FILL (PROVEN) for the categories cut or seen
-      as solid colour - walls, floors, mullions - and SET_CATEGORY_GRAPHICS
-      (PROVEN) for the lines and colours of the rest - panels, railings,
+      only: SET_CATEGORY_GRAPHICS with solidFill=true for the categories
+      cut or seen as solid colour - walls, floors, mullions - and
+      SET_CATEGORY_GRAPHICS with solidFill left out for the lines and colours
+      of the rest - panels, railings,
       doors, stairs, dimensions, tags. Then CREATE_VIEW_TEMPLATE_FROM_VIEW
       (PROVEN) from that plan under the template name the modeller gives, and
       APPLY_VIEW_TEMPLATE (PROVEN) to the other plans - one look, set once.
@@ -163,8 +168,7 @@ needs:
   - TAG_ROOMS
   # Only when no door tag is loaded - see step 6.
   - LOAD_FAMILY
-  - FIND_UNTAGGED_ELEMENTS
-  - TAG_ELEMENTS
+  - TAG_ELEMENTS_IN_VIEW
   - DIMENSION_ROOMS
   - DIMENSION_WALL_OPENINGS
   # Only for one element in a section or elevation - see step 8.
@@ -173,8 +177,9 @@ needs:
   - CREATE_SCHEDULE
   - FIND_SCHEDULES
   - PLACE_SCHEDULE_ON_SHEET
-  # Only when a look is asked for - see step 11.
-  - SET_CATEGORY_SOLID_FILL
+  # Only when a look is asked for - see step 11. DRAFT, version 3 of
+  # 2026-11-01: SET_CATEGORY_SOLID_FILL was merged into it as its solidFill
+  # switch.
   - SET_CATEGORY_GRAPHICS
   - CREATE_VIEW_TEMPLATE_FROM_VIEW
   - APPLY_VIEW_TEMPLATE

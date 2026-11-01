@@ -138,8 +138,12 @@ NEVER = (
     "SystemBrowser", "Internal", "Undefined",
 )
 
-# The write this card is the read half of.
-WRITE = "SET_VIEW_SCALE"
+# The write this card is the read half of. SET_VIEW_SCALE until 2026-11-01,
+# when it was merged into SET_VIEW_PROPERTIES on the owner's instruction and
+# DEPRECATED: the write that sets a view's scale, and declares the change
+# sentences SET_VIEW_SCALE did, is SET_VIEW_PROPERTIES now. The fact section
+# 7c measures moved with it - a retired card's sentences answer to nothing.
+WRITE = "SET_VIEW_PROPERTIES"
 
 # Change requests a first draft of this card took from SET_VIEW_SCALE, asked on
 # heron_retrieve.find over private stores on 2026-10-09. The first five are the

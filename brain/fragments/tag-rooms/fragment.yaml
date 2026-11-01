@@ -21,8 +21,9 @@ purpose: >
   type the zones, and one call tags one kind. Rooms and spaces get Revit's own
   tag elements, from the document's own calls - NewRoomTag, NewSpaceTag - at
   their own reference point. Version 2, 2026-10-03, added spaces and zones:
-  nothing else in Heron placed either, and TAG_ELEMENTS' category map has
-  neither. TAG_ELEMENTS makes the kind of tag every other
+  nothing else in Heron placed either, and TAG_ELEMENTS_IN_VIEW refuses
+  both. TAG_ELEMENTS - merged into TAG_ELEMENTS_IN_VIEW on 2026-11-01 - made
+  the kind of tag every other
   category takes, and that is NOT the same element: it did tag rooms on
   2026-09-23 - "tagged 5, refused 0" in Project1's "1 - Mech" - but as
   IndependentTags (revit_annotation's count rose 0 to 5). Whether those act as
@@ -268,14 +269,15 @@ compatibility-note: >
   2026-10-03, not by reading - so on 2027 no zone is treated as the Default
   one and a zone holding no spaces is still named `unplaced`.
 
-# ROUTING - the rows about room tags are also in TAG_ELEMENTS and
+# ROUTING - the rows about room tags are also in TAG_ELEMENTS_IN_VIEW and
 # CENTER_ROOM_TAGS.
 #
 #   "tag the spaces"                       -> here, after FILTER_ELEMENTS_BY_
 #                                            CATEGORY with category=Spaces and
 #                                            the plan's level, and a Space Tags
-#                                            type as tagTypeId. TAG_ELEMENTS
-#                                            has no space entry
+#                                            type as tagTypeId.
+#                                            TAG_ELEMENTS_IN_VIEW refuses a
+#                                            space to here
 #   "tag the hvac zones"                   -> here, after FILTER_ELEMENTS_BY_
 #                                            CATEGORY with category=HVAC Zones
 #                                            and the plan's level, and a Zone
@@ -287,7 +289,7 @@ compatibility-note: >
 #                                            scoped collect: it can return no
 #                                            rooms at all
 #   "tag the rooms"                        -> here
-#   "put tags on these"                    -> TAG_ELEMENTS. Ducts, pipes,
+#   "put tags on these"                    -> TAG_ELEMENTS_IN_VIEW. Ducts, pipes,
 #                                            equipment - the tag a room will
 #                                            not take
 #   "tag everything in this view"          -> TAG_ELEMENTS_IN_VIEW, a mixed set

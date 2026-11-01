@@ -34,6 +34,30 @@ positive:
       87 to 93 m from its duct, while the count still said tagged 3 (5b-452).
       A count cannot see where a tag went; IndependentTag.TagHeadPosition can
 
+  - given: >
+      VERSION 6. a mixed set - ducts, pipes and doors, none tagged - with
+      tagTypeId a Multi-Category tag type
+    expect: >
+      every element tagged with THAT Multi-Category type, typeCorrections
+      reading back to it, and `tagTypesUsed` one line, "every category: ...
+      (the caller's exact type, on every category)". Version 5 has no
+      tagTypeId and tags each category with its own family, so this FAILS on
+      it (TAG_ELEMENTS' case)
+
+  - given: >
+      VERSION 6. ducts already tagged with M_Duct Size Tag, then the same call
+      with tagTypeId a different duct tag type ("tag the ducts again using this
+      tag family")
+    expect: >
+      every duct gains ONE tag of the new type, alreadyTagged 0, skipped empty.
+      Version 5 counts any tag as already tagged and tags none, so this FAILS
+      on it
+
+  - given: VERSION 6. the same exact-type call run a SECOND time
+    expect: >
+      tagged 0, alreadyTagged equal to the count and every id in `skipped` - a
+      tag of that type is already there, so nothing is stacked
+
 negative:
   - given: >
       any successful run - check typeCorrections whatever the result
@@ -59,6 +83,28 @@ negative:
 
   - given: an empty element list
     expect: all counts zero, notTagged empty, reported as nothing to do
+
+  - given: VERSION 6. rooms and doors with tagTypeId a door tag type
+    expect: >
+      the rooms in notTagged sent to TAG_ROOMS, the doors tagged. An exact type
+      does not make an independent tag a room tag - the safer rule kept over
+      TAG_ELEMENTS, which tagged rooms as independent tags
+
+  - given: VERSION 6. tagTypeId naming a door TYPE, not a tag type
+    expect: >
+      every element in notTagged with "the tag type given is not a tag family
+      type", nothing created
+
+  - given: VERSION 6. a riser among the ducts, with tagTypeId a duct tag type
+    expect: the riser in verticalSkipped, untagged, as without an exact type
+
+  - given: >
+      tagTypeHintId a PIPE tag type handed in for ducts, no tagTypeId
+    expect: >
+      the ducts tagged with the project's default duct tag, and `tagTypesUsed`
+      saying "the project's default - the hint given is not a tag for this
+      category" (version 6 says why). The hint is set aside, never placed:
+      a pipe tag on a duct prints blank
 
   - given: the same ducts with minLengthMm longer than any of them
     expect: >

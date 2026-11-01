@@ -237,8 +237,12 @@ purpose: >
      makes a copy of every tag its old one carries, in every view: the same
      type, head, leader, end and orientation, read back, and `notReproduced`
      names what differs. It never deletes the old tags; a second run makes
-     none. Or re-tag from the TAGS lines of step 1's record with TAG_ELEMENTS
-     (view, tagTypeId, addLeader), or hand the list to the modeller - on
+     none. Or re-tag from the TAGS lines of step 1's record with
+     TAG_ELEMENTS_IN_VIEW (DRAFT, version 6 - TAG_ELEMENTS was merged into it
+     on 2026-11-01): view, tagTypeId the old tag's own type, tagTypeHintId=
+     none, leader none or straight as the old tag had, minLengthMm=0 and
+     leaderOffsetMm=0. A new one already carrying a tag of that type in the
+     view is skipped. Or hand the list to the modeller - on
      2026-10-12 the owner chose to re-tag himself. NOTHING COPIES A
      DIMENSION: one that measured to an old one goes with it, and step 10
      names it.
@@ -316,7 +320,7 @@ needs:
   - IMPORT_PARAMETER_VALUES
   - COMPARE_ELEMENTS
   - COPY_TAGS_TO_REPLACEMENTS
-  - TAG_ELEMENTS
+  - TAG_ELEMENTS_IN_VIEW
   - DELETE_ELEMENTS
 
 # What must be true BEFORE it runs, so it fails early with something
