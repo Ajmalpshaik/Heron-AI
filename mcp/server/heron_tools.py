@@ -405,6 +405,12 @@ COMPANION_ACTIONS = {
     "companion_dashboard_select":  (EXECUTE, "run_fragment_show"),
     "companion_dashboard_isolate": (EXECUTE, "isolate_temporary"),
     "companion_dashboard_reset":   (EXECUTE, "reset_temporary"),
+    # Colour the view / Clear colours (docs/40 s21.14): a CHANGE to the active
+    # view's graphics - COLOR_BY_PARAMETER or RESET_GRAPHIC_OVERRIDES on what
+    # SELECT_VISIBLE_IN_VIEW found, through revit_change's own body. MODIFY,
+    # exactly revit_change's level and operation; both PROVEN (D-117).
+    "companion_dashboard_colour":        (MODIFY, "run_fragment_write"),
+    "companion_dashboard_clear_colours": (MODIFY, "run_fragment_write"),
 }
 
 

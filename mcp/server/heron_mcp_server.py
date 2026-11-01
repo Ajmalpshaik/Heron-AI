@@ -4034,6 +4034,71 @@ def _dashboard_show(action, ids, identity=None):
     return {"ok": ok, "said": said}
 
 
+def _dashboard_colour(parameter, clear=False, identity=None):
+    """
+    The Model Dashboard's Colour the view / Clear colours (docs/40 s21.14) -
+    pressed on the page, after its own confirm. A CHANGE to the active view's
+    graphics, never to an element's data:
+
+      SELECT_VISIBLE_IN_VIEW on the active view (READ, PROVEN), then
+      COLOR_BY_PARAMETER - every distinct value of `parameter` its own colour,
+      stable from run to run - or RESET_GRAPHIC_OVERRIDES (both MODIFY, PROVEN),
+      through revit_change's own body: the gate, the Changes switch, the pin,
+      one named entry in Revit's undo list, and Revit's Keep or Discard while
+      Ask to Keep is on (D-126). Only on the model the dashboard was read from.
+    Returns {"ok", "said"}.
+    """
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    tool = "companion_dashboard_" + ("clear_colours" if clear else "colour")
+    parameter = (parameter or "").strip()
+    if not clear and (not parameter or len(parameter) > 100 or "\n" in parameter
+                      or "=" in parameter):
+        said = "Nothing was sent to Revit: name one parameter as Revit shows it - System Type, say."
+        _note(tool, started, 0, reply=said, outcome="refused")
+        return {"ok": False, "said": said}
+    with _revit_lock:
+        if _moved_since(identity):
+            said = ("The dashboard was read from another model or another Revit, so nothing "
+                    "was sent. Press Refresh to read the model in front, then try again.")
+            _note(tool, started, 0, reply=said, outcome="refused")
+            return {"ok": False, "said": said}
+        try:
+            session = binding.resolve()
+        except NotBound as unbound:
+            _note(tool, started, 0, reply=str(unbound), outcome="refused")
+            return {"ok": False, "said": str(unbound)}
+        views = session.request("list_views")
+        session.close()
+        if not isinstance(views, dict) or not views.get("ok"):
+            said = "Revit did not say which view is active, so nothing was changed."
+            _note(tool, started, 0, reply=said, outcome="refused")
+            return {"ok": False, "said": said}
+        wrong_model = pinned.check(views)
+        if wrong_model is not None:
+            _note(tool, started, 0, reply=wrong_model, outcome="refused")
+            return {"ok": False, "said": wrong_model}
+        view = views.get("activeView")
+        if not view:
+            said = "Revit has no active view, so nothing was changed."
+            _note(tool, started, 0, reply=said, outcome="refused")
+            return {"ok": False, "said": said}
+        out = {}
+        said = _through(revit_read, reply_out=out, origin="companion")(
+            "SELECT_VISIBLE_IN_VIEW", "view=%s" % view)
+        if out.get("ended") == "ok":
+            out = {}
+            if clear:
+                said = _through(revit_change, reply_out=out, origin="companion")(
+                    "RESET_GRAPHIC_OVERRIDES", "view=%s" % view, "SELECT_VISIBLE_IN_VIEW")
+            else:
+                said = _through(revit_change, reply_out=out, origin="companion")(
+                    "COLOR_BY_PARAMETER", NEWLINE.join(("view=%s" % view,
+                                                        "parameterName=%s" % parameter,
+                                                        "colourBand=vivid")),
+                    "SELECT_VISIBLE_IN_VIEW")
+    ok = out.get("ended") == "ok"
+    _note(tool, started, time.time() - clock, reply=said, outcome=None if ok else "refused")
+    return {"ok": ok, "said": said}
 def _read_view3d(companion_page, whole=False, origin="chat", ctx=None):
     """
     One read of the model's shapes for the Model Dashboard's 3D view (docs/40
@@ -7440,6 +7505,7 @@ if __name__ == "__main__":
             companion_page.DASHBOARD_PANEL.refresh_hook = _dashboard_refresh
             companion_page.DASHBOARD_PANEL.show_hook = _dashboard_show
             companion_page.DASHBOARD_PANEL.demo_hook = _dashboard_demo
+            companion_page.DASHBOARD_PANEL.colour_hook = _dashboard_colour
             companion_page.DASHBOARD_PANEL.load3d_hook = _dashboard_load3d
             companion_page.keep(bound_pid=_companion_revit)
         except Exception as why:                         # noqa: BLE001 - never cost the chat
