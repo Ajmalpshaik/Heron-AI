@@ -1,14 +1,17 @@
 // NOT STANDALONE. Assumes `doc`, `sheetId`, `views`, `at` and `oldViewId` are
-// in scope; leaves `placed`, `refused`, `swapped` and `notDone` behind.
+// in scope; leaves `placed`, `refused`, `swapped`, `notDone`, `placedCount`,
+// `distinctPositions`, `sheetProblem` and `layout` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
 // TWO JOBS, ONE QUESTION - WHERE DOES THE VIEW GO. With no `oldViewId` this
-// is version 1, unchanged: each view at the point `at`, on the sheet
-// `sheetId`. With an `oldViewId` it is version 2: the one view in `views` goes
-// where the old view sits, on every sheet the old view is on - or only on
-// `sheetId` when one is named - and the old view comes off those sheets. The
-// old view stays in the project; only its place on the sheet is taken.
+// is the placing job, on the sheet `sheetId`: one view at the point `at`, or
+// several laid out on a grid (version 3, below). With an `oldViewId` it is
+// version 2's swap, unchanged but for the read-back of where each one landed:
+// the one view in `views` goes where the old view sits, on every sheet the
+// old view is on - or only on `sheetId` when one is named - and the old view
+// comes off those sheets. The old view stays in the project; only its place
+// on the sheet is taken.
 //
 // ASKED BEFORE ATTEMPTED. `CanAddViewToSheet` is Revit's own answer and it
 // covers what would otherwise be exceptions - a view already on another sheet,
@@ -20,31 +23,82 @@
 // knowing before reading a batch that placed eleven of thirty. A legend and a
 // schedule are the two that can be on many sheets.
 //
-// EVERY VIEWPORT AT THE SAME POINT, deliberately, when placing. Laying out a
-// sheet - what goes where, at what scale, aligned with what - is drafting
-// judgement and its own job. Stacking them is honest and predictable: a
-// viewport that exists can be dragged, and one that was never placed cannot.
+// VERSION 3 (2026-11-01) - PLACE_VIEWS_ON_SHEET MERGED IN.
+//
+// SEVERAL VIEWS ARE LAID OUT ON A GRID, NEVER STACKED. Versions 1 and 2 put
+// every viewport at the one point `at`, and PLACE_VIEWS_ON_SHEET was written
+// because a job that did that reported "placed 3" over three viewports on one
+// spot - a true count and an unusable sheet. The two rules were opposite and
+// the safer is kept (the owner's answer, 2026-11-01): several views go on a
+// grid across the sheet's outline, sized to the views that WILL place - each
+// is asked first, so no refused view leaves a hole. A point given is used
+// only when ONE view is placed; with several it is not used, and `layout`
+// says so. Left out (0,0,0), one view goes to the sheet's centre.
+//
+// THE READ-BACK. `distinctPositions` counts the viewports this run made that
+// sit in DIFFERENT places, read back from the model and rounded to the
+// millimetre - placed 3 with distinctPositions 1 says out loud what otherwise
+// only the drawing knows. Counted for the swap job as well, per sheet.
+//
+// THE SHEET. The binder finds `sheetId` by its number, capitals ignored, and
+// refuses a number no sheet has before this runs. What this card still has to
+// refuse is said in `sheetProblem`: no sheet named, a PLACEHOLDER sheet -
+// FIND_SHEETS hands placeholders back on purpose, on the promise that the
+// action refuses them by name - and an id that is not a sheet.
 
 var placed = new List<ElementId>();
 var refused = new List<ElementId>();
 var swapped = new List<string>();
 var notDone = new List<string>();
+int placedCount = 0;
+int distinctPositions = 0;
+string sheetProblem = "";
+string layout = "";
+
+// Where each viewport this run made now sits - sheet, then millimetres -
+// filled from the model after each one is made.
+var landedAt = new HashSet<string>();
+Action<ElementId, XYZ> noteLanding = (onSheet, point) =>
+{
+    if (point == null) return;
+    landedAt.Add(onSheet.ToString() + ":" + Math.Round(point.X * 304.8).ToString() + ","
+                 + Math.Round(point.Y * 304.8).ToString());
+};
 
 bool replacing = oldViewId != null && oldViewId != ElementId.InvalidElementId;
 
 if (!replacing)
 {
-    // VERSION 1. `sheetId` may be left out since version 2, because "every
-    // sheet the old view is on" needs no sheet named - but placing still does.
+    // THE PLACING JOB. `sheetId` may be left out since version 2, because
+    // "every sheet the old view is on" needs no sheet named - but placing
+    // still does.
+    var target = sheetId == null || sheetId == ElementId.InvalidElementId
+        ? null : doc.GetElement(sheetId) as ViewSheet;
+
     if (sheetId == null || sheetId == ElementId.InvalidElementId)
+        sheetProblem = "No sheet was named, so nothing was placed. Name the sheet by its "
+                     + "number - A101.";
+    else if (target == null)
+        sheetProblem = "What was named as the sheet is not a sheet in " + doc.Title
+                     + ", so nothing was placed.";
+    else if (target.IsPlaceholder)
+        // VERSION 3, from PLACE_VIEWS_ON_SHEET: refused BY NAME, never failed
+        // obscurely. A placeholder has no title block and cannot hold a view.
+        sheetProblem = "Sheet " + target.SheetNumber + " is a placeholder and cannot hold a "
+                     + "view, so nothing was placed.";
+
+    if (sheetProblem.Length > 0)
     {
         foreach (var view in views)
             if (view != null) refused.Add(view.Id);
-        notDone.Add("No sheet was named, so nothing was placed. Name the sheet by its "
-                  + "number - A101.");
+        notDone.Add(sheetProblem);
     }
     else
     {
+        // ASK FIRST, for every view, and keep only the ones Revit will accept,
+        // so the grid is sized to the views that will place and a refused one
+        // leaves no hole (VERSION 3).
+        var placeable = new List<View>();
         foreach (var view in views)
         {
             if (view == null) continue;
@@ -54,18 +108,69 @@ if (!replacing)
                 refused.Add(view.Id);
                 continue;
             }
+            placeable.Add(view);
+        }
 
+        // WHERE EACH ONE GOES, decided before any is made. One view and a
+        // point: the point. Otherwise a grid over the sheet's outline, cell
+        // centres so nothing sits on the edge - one view and no point is the
+        // one cell's centre, the middle of the sheet.
+        bool pointGiven = at != null && !at.IsZeroLength();
+        var slots = new List<XYZ>();
+        if (placeable.Count == 1 && pointGiven)
+        {
+            slots.Add(at);
+            layout = "1 view, at the point given.";
+        }
+        else if (placeable.Count > 0)
+        {
+            int columns = (int)Math.Ceiling(Math.Sqrt(placeable.Count));
+            int rows = (int)Math.Ceiling(placeable.Count / (double)columns);
+
+            var outline = target.Outline;
+            double spanU = outline.Max.U - outline.Min.U;
+            double spanV = outline.Max.V - outline.Min.V;
+            double cellU = spanU / columns;
+            double cellV = spanV / rows;
+
+            for (int i = 0; i < placeable.Count; i++)
+            {
+                int column = i % columns;
+                int row = i / columns;
+                slots.Add(new XYZ(outline.Min.U + cellU * (column + 0.5),
+                                  outline.Max.V - cellV * (row + 0.5), 0));
+            }
+
+            layout = placeable.Count == 1
+                ? "1 view, at the centre of sheet " + target.SheetNumber + " - no point was given."
+                : placeable.Count + " views on a grid of " + columns + " x " + rows
+                  + " across sheet " + target.SheetNumber + "."
+                  + (pointGiven ? " The point given was not used - a point places one view, "
+                                  + "and several on one point would sit on top of each other."
+                                : "");
+        }
+
+        for (int i = 0; i < placeable.Count; i++)
+        {
+            var view = placeable[i];
             try
             {
-                var viewport = Viewport.Create(doc, sheetId, view.Id, at);
+                var viewport = Viewport.Create(doc, sheetId, view.Id, slots[i]);
 
                 // A null back without an exception is the silent no-op shape this
                 // repository has met on the move and parameter paths. Never counted.
                 if (viewport == null) refused.Add(view.Id);
-                else placed.Add(viewport.Id);
+                else
+                {
+                    placed.Add(viewport.Id);
+                    noteLanding(sheetId, viewport.GetBoxCenter());
+                }
             }
             catch (Exception)
             {
+                // Accepted the question, refused the act. One view's problem,
+                // and it must not cost the others - the transaction belongs to
+                // the caller and letting this out would roll back their work.
                 refused.Add(view.Id);
             }
         }
@@ -234,6 +339,7 @@ else
             string why = null;
             var lines = new List<string>();
             var made = new List<ElementId>();
+            var madeAt = new List<XYZ>();
 
             if (newWasOn.Contains(sheet.Id))
                 why = "'" + newView.Name + "' is already on this sheet, and putting it here again "
@@ -431,6 +537,7 @@ else
                             double moved = Math.Sqrt(movedX * movedX + movedY * movedY);
 
                             made.Add(fresh.Id);
+                            madeAt.Add(landed);
                             lines.Add(string.Format("Sheet {0}: '{1}' gone, '{2}' in its place - "
                                 + "{3} {4:0.0} mm from the old one, {5}{6}",
                                 sheet.SheetNumber, oldView.Name, newView.Name,
@@ -474,6 +581,7 @@ else
             {
                 placed.AddRange(made);
                 swapped.AddRange(lines);
+                foreach (var point in madeAt) noteLanding(sheet.Id, point);
                 // A plan, section or drafting view is on a sheet now and can go
                 // on no other - the next sheet's refusal names this one.
                 if (newFirstSheet == null) newFirstSheet = sheet;
@@ -481,3 +589,7 @@ else
         }
     }
 }
+
+// VERSION 3. The counts, from what the model holds - never from what was asked.
+placedCount = placed.Count;
+distinctPositions = landedAt.Count;

@@ -75,5 +75,5 @@ second_route:
     select each one and count the ticked sheets and views. The names and
     counts must match sheetSets set for set
   - >
-    LIST_SHEETS on the same model: every sheet number in a set here is a
-    sheet LIST_SHEETS lists - two collectors, one set of numbers
+    FIND_SHEETS on the same model: every sheet number in a set here is a
+    sheet FIND_SHEETS lists - two collectors, one set of numbers

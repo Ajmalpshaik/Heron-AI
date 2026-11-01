@@ -126,7 +126,7 @@ compatibility-note: >
 #   "make a sheet list"                -> CREATE_SHEET_LIST - a NEW schedule of
 #                                         every sheet, and what "put the
 #                                         schedule on the sheet" used to return
-#   "make a new sheet"                 -> CREATE_SHEET. Creating the sheet and
+#   "make a new sheet"                 -> CREATE_SHEETS. Creating the sheet and
 #                                         placing on it stay different jobs
 #   "which schedules are there"        -> FIND_SCHEDULES
 #   "export it instead"                -> EXPORT_SCHEDULE_TO_CSV

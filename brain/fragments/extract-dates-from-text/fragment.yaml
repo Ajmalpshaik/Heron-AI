@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,27 @@ capability: EXTRACT_DATES_FROM_TEXT
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO LIST_DATES_ON_SHEETS (list-dates-on-sheets), on the owner's instruction
+# in conversation: "now merge the other duplicates also". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable
+# and it can be brought back. Nothing offers it now - retrieval leaves
+# DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to LIST_DATES_ON_SHEETS. The proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: LIST_DATES_ON_SHEETS
+  why: >
+    The same reading: dates typed in text notes on sheets, a written month only,
+    every candidate checked against the calendar, a note inside a placed view
+    not counted against the sheet. LIST_DATES_ON_SHEETS reads every sheet and
+    answers each date once in one readable line. Its version 2 took what this
+    card had and it lacked: the sheets handed in rather than every sheet - by an
+    explicit switch, onlySheetsGiven, never inferred from an empty list -
+    notASheet, and datesFound with the ids of each date's sheets.
+    FIND_DATES_IN_VIEWS and CREATE_REVISIONS_FROM_SHEET_DATES stay separate.
 
 purpose: >
   Reads the text notes on sheets and pulls out the dates written in them, with

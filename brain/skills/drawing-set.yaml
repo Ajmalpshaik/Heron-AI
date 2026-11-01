@@ -34,9 +34,12 @@ purpose: >
      line what is at stake and go on. Twice in two days a whole build was
      lost this way - a house with 9 sheets and a 32-floor tower, 2026-10-13
      and 14.
-  1. CREATE_SHEET (PROVEN), one call per sheet: its number, its name and the
-     title block by its type name ("A1 metric"). The number is checked for a
-     clash before anything is made. Decide the sheets first - one per plan,
+  1. CREATE_SHEETS (DRAFT on 2026-11-01 - version 2, with CREATE_SHEET,
+     PROVEN, merged into it), one call for the sheets: their numbers, their
+     names and the title block by its type name ("A1 metric"), or as
+     Family: Type when two families share the type name. Each number is
+     checked for a clash, capitals ignored, before anything is made, and a
+     sheet not made is said in notCreated. Decide the sheets first - one per plan,
      one per elevation unless two fit, one for the schedules, and a cover when
      asked - from the size of each drawing at the scale against the title
      block's drawing area, never from habit: AT 1:50 ONLY ONE ELEVATION OF A
@@ -157,7 +160,8 @@ utterances:
 needs:
   # Step 0's check that the model has a file to go back to.
   - REPORT_OPEN_DOCUMENTS
-  - CREATE_SHEET
+  # CREATE_SHEETS since 2026-11-01: CREATE_SHEET was merged into it.
+  - CREATE_SHEETS
   - SET_VIEW_PROPERTIES
   # Only for a level with no floor plan - see step 3.
   - CREATE_PLAN_VIEW

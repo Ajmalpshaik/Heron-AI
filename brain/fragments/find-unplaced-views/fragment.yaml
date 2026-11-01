@@ -81,7 +81,9 @@ compatibility-note: >
 #                                           on a sheet tomorrow
 #   "which views are there"              -> FIND_VIEWS, narrowed by type and
 #                                           name rather than by placement
-#   "put these views on sheets"          -> PLACE_VIEWS_ON_SHEET
+#   "put these views on sheets"          -> PLACE_VIEW_ON_SHEET, the views
+#                                           named - since 2026-11-01 it does
+#                                           not take this card's elements
 #   "which families are unused"          -> FIND_UNUSED_FAMILIES
 #   "what else is unused"                -> FIND_UNUSED_DEFINITIONS, for view
 #                                           templates and filters

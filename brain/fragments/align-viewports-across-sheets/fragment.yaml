@@ -133,7 +133,7 @@ compatibility-note: >
 #                                           until 2026-09-27
 #   "put this view on a sheet"           -> PLACE_VIEW_ON_SHEET, which places
 #                                           one. This moves ones already placed
-#   "put these views on sheets"          -> PLACE_VIEWS_ON_SHEET
+#   "put these views on sheets"          -> PLACE_VIEW_ON_SHEET
 #   "make the sheets"                    -> CREATE_SHEETS
 #   "change the title block"             -> SET_SHEET_TITLE_BLOCK. This
 #                                           fragment only MOVES a title block,

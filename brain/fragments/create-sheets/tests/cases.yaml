@@ -37,6 +37,50 @@ negative:
       the extra sheets created and named by Revit, reported in namedAs. Number
       and name are read back separately because they fail independently
 
+  # VERSION 2 (2026-11-01, CREATE_SHEET merged in). Each of these FAILS on
+  # version 1.
+  - given: VERSION 2. Number "m-101" when a sheet "M-101" titled "Level 1 Plan" already exists
+    expect: >
+      no sheet created; "m-101" in numberTaken and a line in notCreated naming
+      "Level 1 Plan". Version 1 compared with capitals and made the sheet, and
+      Revit then refused the number - an orphan under the number Revit picked
+
+  - given: VERSION 2. An empty number among three, e.g. "M-201", "", "M-203"
+    expect: >
+      two sheets created; notCreated says entry 2 is blank and that Revit has
+      no unnumbered sheets. Version 1 created a sheet for it and left it under
+      the number Revit picked, reported in refused
+
+  - given: >
+      VERSION 2. Two title block families, each with a type "A1" - load a copy
+      of the A1 title block family under another name. titleBlockName "A1"
+    expect: >
+      titleBlockNotFound true, NOTHING created, and titleBlockProblem naming
+      both as Family: Type. Version 1 took whichever came first
+
+  - given: >
+      VERSION 2. The same two families, titleBlockName "Family B: A1" (the
+      copy's name)
+    expect: >
+      the sheets created with that family's title block on them - select the
+      title block on a sheet and read its family in Properties
+
+  - given: VERSION 2. titleBlockName none
+    expect: >
+      the sheets created with NO title block, noTitleblock true,
+      titleBlockNotFound false. Version 1 looked for a title block called
+      "none" and refused
+
+  - given: >
+      VERSION 2. ViewSheet.Create throwing. NOT KNOWN HOW TO PROVOKE IT: the
+      title block here is always one of the OST_TitleBlocks types, so the throw
+      CREATE_SHEET met (a Detail Item type handed in) cannot reach this card.
+      Recorded so a run that meets one is read correctly
+    expect: >
+      the number in notCreated with "Revit said:" and Revit's sentence, and NOT
+      in numberTaken. Version 1 put a failed create in numberTaken, sending the
+      reader to look for a clash that was not there
+
 second_route:
   - >
     open the Sheets branch of the Project Browser and read the numbers - that

@@ -15,6 +15,15 @@ positive:
       those sheets returned and matchedOnName equal to their count. This is the
       half a number-only filter answers with a confident zero
 
+  - given: >
+      VERSION 2. A sheet with two plans on it, one with only a schedule on it,
+      and a placeholder, asked with no filter
+    expect: >
+      one findings row each, in sheet-number order: the first "(2 views)", the
+      second "(0 views) - EMPTY" - a schedule is not a view - and the
+      placeholder "- PLACEHOLDER, no titleblock and cannot be printed".
+      Version 1 had no findings at all
+
 negative:
   - given: >
       a model containing PLACEHOLDER sheets, asked for with no filter
@@ -37,6 +46,14 @@ negative:
 
   - given: a model with no sheets at all
     expect: all three outputs empty, reported as nothing to do rather than as a fault
+
+  # VERSION 2 (2026-11-01, LIST_SHEETS merged in). Each of these FAILS on
+  # version 1.
+  - given: VERSION 2. A project holding a view template for sheets, asked with no filter
+    expect: >
+      it is NOT in elements and has no findings row. It carries a number and a
+      name and looks exactly like a sheet; version 1 returned it, and a row in
+      the register that can never be issued went to whatever acted next
 
 second_route:
   - count the sheets in the Project Browser by eye and compare

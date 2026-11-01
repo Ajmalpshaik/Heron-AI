@@ -33,7 +33,7 @@ purpose: >
   **A SHEET THAT DOES NOT EXIST YET CAN STILL BE ON THE INDEX.** Revit calls it
   a placeholder sheet - a number and a name with no titleblock and no views -
   and it appears on a sheet list like any other. That is how a drawing register
-  is set up before the drawings are. CREATE_SHEET makes them; this lists them.
+  is set up before the drawings are. CREATE_SHEETS makes them; this lists them.
 
   **A VIEW LIST IS THE SAME JOB, ONE CALL OVER.** `listKind` = `views` makes
   Revit's View List through `ViewSchedule.CreateViewList` - a schedule of the
@@ -127,8 +127,8 @@ compatibility-note: >
   parameter id, which is what keeps one implementation working across the
   release where parameter identity changed.
 
-# ROUTING - repeated in CREATE_SCHEDULE, CREATE_KEY_SCHEDULE, LIST_SHEETS and
-# CREATE_SHEET.
+# ROUTING - repeated in CREATE_SCHEDULE, CREATE_KEY_SCHEDULE, FIND_SHEETS and
+# CREATE_SHEETS.
 #
 #   "make a sheet list schedule"      -> here
 #   "I need a drawing index"          -> here
@@ -146,8 +146,8 @@ compatibility-note: >
 #                                        elements; sheets are not model elements
 #                                        and the category route cannot make this
 #   "make a room finish schedule I can type into" -> CREATE_KEY_SCHEDULE
-#   "what sheets are in this model"   -> LIST_SHEETS - a READ, no view made
-#   "make me a new sheet"             -> CREATE_SHEET
+#   "what sheets are in this model"   -> FIND_SHEETS - a READ, no view made
+#   "make me a new sheet"             -> CREATE_SHEETS
 #   "put the schedule on the sheet"   -> PLACE_SCHEDULE_ON_SHEET. NOT HERE.
 #                                        That sentence resolved to this
 #                                        fragment until 2026-09-04, and this
