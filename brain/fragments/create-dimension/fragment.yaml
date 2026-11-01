@@ -5,24 +5,22 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-021
-semantic-identity: "put one dimension string through these on this view - parallel runs, fixtures, grids or levels"
+semantic-identity: "put one dimension string through these on this view - parallel runs or fixtures"
 kind: action
 domain: revit.annotation
 capability: CREATE_DIMENSION
-version: 4
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
   Draws one linear dimension across a set of parallel linear elements in a
-  view, measuring centre to centre - and, since version 4, across grids or
-  levels.
+  view, measuring centre to centre - or through family instances.
 
-  **This is the duct-spacing dimension, and the setting-out one.** It
-  dimensions between the CENTRELINES of linear elements - ducts, pipes,
-  conduit, cable tray - which is how MEP spacing is dimensioned and checked,
-  and across grids or levels, each referenced as the whole element. It does
-  not dimension to wall faces, or between two points the user names. Those
+  **This is the duct-spacing dimension.** It dimensions between the
+  CENTRELINES of linear elements - ducts, pipes, conduit, cable tray - which
+  is how MEP spacing is dimensioned and checked. It does not dimension to
+  wall faces, grids or levels, or between two points the user names. Those
   are real jobs and each needs a different kind of reference.
 
   **A reference has to be asked for before it exists.** Revit only hands back
@@ -53,7 +51,7 @@ purpose: >
   | What you are dimensioning | Use |
   |---|---|
   | Ducts, pipes, conduit, cable tray | **this fragment** - their centrelines |
-  | Grids, or levels in a section or elevation | **this fragment**, axis left out |
+  | Grids, or levels in a section or elevation | `CREATE_LINEAR_DIMENSION` - "grid A, grid B" |
   | Air terminals, fixtures, equipment - any family instance | **this fragment**, axis x or y - built-in centre references, which a run does not have |
   | Rooms - "dimension the rooms", "put the room sizes on the plan" | `DIMENSION_ROOMS`; to know them, `MEASURE_ROOM_DIMENSIONS` |
 
@@ -70,8 +68,8 @@ contract:
     # along that axis of the model - for risers seen end-on in a plan.
     # Version 3: family instances NEED x or y - "across" is worked out from
     # runs, and an instance has none; left out with instances, it is refused.
-    # Version 4: grids and levels need it LEFT OUT - they are measured across
-    # themselves; named with them, it is refused.
+    # (Version 4's grids and levels went to CREATE_LINEAR_DIMENSION in
+    # version 5; handed in here they are refused, whole.)
     - name: axis
       type: string
       source: request
@@ -96,14 +94,8 @@ contract:
       # dimensioned here; version 4, every reference plane, which is left out
       # on purpose (usually invisible on the sheet). A count of what it was GIVEN and could not use,
       # never a thing it found (D-52).
-      role: accounting
-      type: IList<ElementId>
-    - name: notVisibleInView
-      # Version 4, from DIMENSION_GRIDS_AND_LEVELS. Grids and levels handed in
-      # that the view is not showing, set aside BEFORE anything is drawn -
-      # Revit throws when asked to dimension to one, and the throw takes the
-      # whole string down. Given and unusable, never a dimension it made
-      # (D-52).
+      # (Version 4's `notVisibleInView` went with the grid and level route to
+      # CREATE_LINEAR_DIMENSION in version 5.)
       role: accounting
       type: IList<ElementId>
     - name: noReference
@@ -199,11 +191,12 @@ compatibility-note: >
 #                                       DIMENSION_FAMILY_INSTANCES was merged in
 #                                       (version 3) - built-in centre
 #                                       references, which a run has not
-#   "dimension the grids"            -> here, axis left out, since
-#                                       DIMENSION_GRIDS_AND_LEVELS was merged in
-#                                       (version 4) - each grid referenced as
-#                                       the whole element
-#   "dimension between the levels"   -> here, in a section or elevation
+#   "dimension the grids"            -> CREATE_LINEAR_DIMENSION, since version 5
+#                                       - "grid A | grid B". Here in version 4
+#                                       (DIMENSION_GRIDS_AND_LEVELS merged in),
+#                                       and given to that card alone 2026-11-01
+#   "dimension between the levels"   -> CREATE_LINEAR_DIMENSION, in a section
+#                                       or elevation, since version 5
 #   "dimension this opening from the level and the grid" -> CREATE_LINEAR_DIMENSION
 #                                       (5b-482) - a datum to an element's own
 #                                       face, not datum to datum
@@ -303,6 +296,38 @@ compatibility-note: >
 # notVisibleInView -> notVisibleInView, notADatum -> notLinear (what is
 # neither a run, an instance, a grid nor a level), findings -> problem (one
 # sentence, the datum sentence appended). Its sentences moved here.
+#
+# (Since version 5 all of that is CREATE_LINEAR_DIMENSION's - below.)
+
+# VERSION 5 (2026-11-01) - THE GRID AND LEVEL ROUTE IS GIVEN TO
+# CREATE_LINEAR_DIMENSION ALONE, on the owner's instruction ("make sure there
+# is no duplicate tools", "ok go ahead merge all", "in every conflict keep
+# the safer rule"). After version 4 BOTH cards dimensioned grids and levels.
+# CREATE_LINEAR_DIMENSION's version 5 carries what this card's datum route
+# had and it lacked: a datum the view is not showing found and named before
+# anything is drawn (`notVisibleInView`), an arc grid and grids out of
+# parallel refused, levels refused in a plan, a level placed by its
+# ProjectElevation (row 5b-179), grids or levels at one position drawing
+# nothing, and grids with levels refused. This card keeps the centreline walk
+# and the family-instance route. A grid or a level handed in here is never
+# dimensioned and never silently left out: the whole set is refused, nothing
+# drawn, every id in `refused`, and `problem` names CREATE_LINEAR_DIMENSION.
+# `notVisibleInView` is gone from the contract with the route. The six grid
+# and level sentences DIMENSION_GRIDS_AND_LEVELS brought here moved on to
+# CREATE_LINEAR_DIMENSION, and that retired card's `superseded-by` names it.
+#
+# NOT CARRIED, AND WHY: the string PLACED AUTOMATICALLY offsetMm clear of the
+# grid ends, from a selection. On CREATE_LINEAR_DIMENSION where the string
+# sits is the caller's (D-33) - two points, or one point given twice for the
+# string to run through it square to the grids - and the references are
+# named, "grid A | grid B". And this card drew the datums the view shows
+# while setting aside the ones it does not; there, a datum not shown refuses
+# the string and nothing is drawn, as any unusable reference does - the
+# safer rule, since a string through some of the grids named reads as the
+# one asked for.
+#
+# Version 1's proof below no longer describes the code and is kept as the
+# record; DRAFT until version 5 is proved on a real model (D-30).
 
 utterances:
   - add a dimension between these
@@ -327,10 +352,5 @@ utterances:
   - add a dimension string to the equipment
   - dimension the spacing of these
   - show the spacing on the drawing
-  # MOVED 2026-11-01 from DIMENSION_GRIDS_AND_LEVELS, merged into this card.
-  - dimension the grids
-  - put the setting out dimensions on this plan
-  - dimension between the levels
-  - grid to grid dimension
-  - add a dimension string across the grid lines
-  - dimension the floor to floor heights
+  # (Six sentences MOVED here 2026-11-01 from DIMENSION_GRIDS_AND_LEVELS went
+  # on to CREATE_LINEAR_DIMENSION with the grid and level route, version 5.)

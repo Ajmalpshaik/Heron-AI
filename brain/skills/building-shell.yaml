@@ -285,9 +285,11 @@ purpose: >
       Structural Framing family before anything is placed and sends it here,
       and a placement Revit leaves with no geometry undoes the whole layout
       (FRAGMENT-ISSUES 5b-1201).
-  15. COLOURS, only when the modeller asks for them. First CREATE_MATERIAL
-      (PROVEN), one material per colour, named, with its colour and
-      transparency. Then one of three routes.
+  15. COLOURS, only when the modeller asks for them. First
+      CREATE_STARTER_MATERIALS with materialNames, colours and transparencies
+      - CREATE_MATERIAL's job since 2026-11-01, DRAFT until proved again -
+      one material per colour, named, with its colour and transparency, and
+      none of the starter set. Then one of three routes.
       A COLOUR THAT IS PART OF THE WALL, FLOOR OR ROOF TYPE - every wall of a
       type finished alike: SET_COMPOUND_LAYER_WIDTH (PROVEN), version 2, sets
       one layer's material by name - hostType= the type, layerIndex (0 is the
@@ -409,7 +411,7 @@ needs:
   - PLACE_LINE_BASED_FAMILY
   # Only when colours are asked for - see step 15: a type's layer, paint, or
   # a type's material swapped.
-  - CREATE_MATERIAL
+  - CREATE_STARTER_MATERIALS
   - DUPLICATE_TYPE
   - SET_COMPOUND_LAYER_WIDTH
   - REPORT_MATERIAL_TAKEOFF

@@ -21,10 +21,15 @@ risk: MODIFY
 # sentences claim nothing in the identity table (heron_search
 # RETIRED_FRAGMENTS). Its sentences moved to CREATE_DIMENSION. The proof below
 # is the record of what this card's code did, not a claim about today.
+#
+# RE-HOMED THE SAME DAY: CREATE_DIMENSION version 5 gave the grid and level
+# job to CREATE_LINEAR_DIMENSION alone (two cards were dimensioning grids),
+# with this card's rules and its six sentences, so `superseded-by` names
+# that card now. The `why` below is the record of the first merge.
 deprecated:
   date: '2026-11-01'
   by: Ajmal PS
-  superseded-by: CREATE_DIMENSION
+  superseded-by: CREATE_LINEAR_DIMENSION
   why: >
     The same job - one dimension string through a set on a view.
     CREATE_DIMENSION version 4 took this card's route beside its centreline

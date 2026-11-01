@@ -1,6 +1,21 @@
 // NOT STANDALONE. Assumes `doc`, `view`, `elements`, `axis` and `offsetMm` are
 // in scope; leaves `created`, `refused`, `notLinear`, `noReference`,
-// `notVisibleInView`, `dimensionedCount` and `problem` behind.
+// `dimensionedCount` and `problem` behind.
+//
+// VERSION 5 (2026-11-01) - THE GRID AND LEVEL ROUTE IS TAKEN OUT AGAIN.
+// Grids and levels were dimensioned by this card (version 4, below) AND by
+// CREATE_LINEAR_DIMENSION, two tools for one job. On the owner's instruction
+// ("make sure there is no duplicate tools", "in every conflict keep the safer
+// rule") the job is CREATE_LINEAR_DIMENSION's alone - "grid A | grid B", or
+// "level Level 1 | level Level 2" in a section - and its version 5 carries
+// version 4's rules: a datum the view does not show found and named before
+// anything is drawn, an arc grid and grids out of parallel refused, levels
+// refused in a plan, a level placed by ProjectElevation, grids with levels
+// refused. This card keeps runs and family instances. A grid or a level
+// handed in here is never dimensioned and never silently left out: the whole
+// set is refused - nothing drawn, every id in `refused` - and `problem`
+// names CREATE_LINEAR_DIMENSION. `notVisibleInView` is gone with the route;
+// the version 4 text below is the record of what it did.
 //
 // VERSION 4 (2026-11-01) - DIMENSION_GRIDS_AND_LEVELS MERGED IN, AND WHAT IT
 // HAD THAT THIS LACKED:
@@ -149,14 +164,8 @@ var runElements = new List<Element>();
 var instances = new List<FamilyInstance>();
 int roomsHanded = 0;
 
-// VERSION 4. Grids and levels, referenced as the whole element. Asked of the
-// view once, per class, and only when a datum was handed in: a view-scoped
-// collector is the only honest answer to "will Revit let me dimension to this
-// here".
-var grids = new List<Grid>();
-var levels = new List<Level>();
-var notVisibleInView = new List<ElementId>();
-HashSet<ElementId> visibleDatumIds = null;
+// VERSION 5. Grids and levels handed in - CREATE_LINEAR_DIMENSION's job.
+var datumsHanded = new List<ElementId>();
 
 foreach (var element in elements)
 {
@@ -172,25 +181,11 @@ foreach (var element in elements)
         continue;
     }
 
-    // VERSION 4 (DIMENSION_GRIDS_AND_LEVELS merged in). A grid or a level is
-    // tested FIRST, before any location: it is referenced as itself, and a
-    // datum the view is not showing is set aside now - Revit throws when asked
-    // to dimension to it, and that throw takes the whole string down with the
-    // datums that were fine.
-    var datumGrid = element as Grid;
-    var datumLevel = element as Level;
-    if (datumGrid != null || datumLevel != null)
+    // VERSION 5. A grid or a level is tested FIRST, before any location, and
+    // set aside for the refusal below - CREATE_LINEAR_DIMENSION draws it.
+    if (element is Grid || element is Level)
     {
-        if (visibleDatumIds == null)
-        {
-            visibleDatumIds = new HashSet<ElementId>();
-            foreach (var shown in new FilteredElementCollector(doc, view.Id).OfClass(typeof(Grid)))
-                visibleDatumIds.Add(shown.Id);
-            foreach (var shown in new FilteredElementCollector(doc, view.Id).OfClass(typeof(Level)))
-                visibleDatumIds.Add(shown.Id);
-        }
-        if (!visibleDatumIds.Contains(element.Id)) { notVisibleInView.Add(element.Id); continue; }
-        if (datumGrid != null) grids.Add(datumGrid); else levels.Add(datumLevel);
+        datumsHanded.Add(element.Id);
         continue;
     }
 
@@ -213,260 +208,41 @@ string roomSentence = roomsHanded == 0 ? "" :
     + "fixtures inside it would put a string nobody asked for on the drawing. DIMENSION_ROOMS "
     + "puts room sizes on the plan; MEASURE_ROOM_DIMENSIONS reads them";
 
-// The datum sentence, said whatever else happens (version 4).
-string datumSentence = notVisibleInView.Count == 0 ? "" :
-    notVisibleInView.Count + " grid(s) or level(s) are not shown in this view and were left out - "
-    + "Revit throws when asked to dimension to something the view is not showing, and that "
-    + "throw would have lost the whole string";
-
-// ONE STRING, ONE KIND - runs, family instances, grids, levels. Version 3
-// refused runs with instances; version 4 refuses ANY two kinds together,
-// whole, naming each - the safer of the two cards' rules (the owner: "in
-// every conflict keep the safer rule"). DIMENSION_GRIDS_AND_LEVELS
-// dimensioned the grids and set a wall or a duct handed in with them aside;
-// here that set is refused, because a string drawn through part of what was
-// handed in reads as the whole job done.
+// ONE STRING, ONE KIND - runs or family instances. Version 3 refused runs
+// with instances, whole, naming each - the safer of the two cards' rules (the
+// owner: "in every conflict keep the safer rule"): a string drawn through part
+// of what was handed in reads as the whole job done.
 var kindsHanded = new List<string>();
 if (runElements.Count > 0) kindsHanded.Add(runElements.Count + " run(s)");
 if (instances.Count > 0) kindsHanded.Add(instances.Count + " family instance(s)");
-if (grids.Count > 0) kindsHanded.Add(grids.Count + " grid(s)");
-if (levels.Count > 0) kindsHanded.Add(levels.Count + " level(s)");
 bool mixed = kindsHanded.Count > 1;
-bool datums = grids.Count > 0 || levels.Count > 0;
 
 if (problem.Length > 0)
 {
     // An axis that is not one: nothing was looked at, nothing is drawn.
 }
-else if (mixed)
+else if (datumsHanded.Count > 0)
 {
-    // ONE STRING, ONE KIND (versions 3 and 4). Refused whole, nothing drawn.
+    // VERSION 5. A GRID OR A LEVEL IS CREATE_LINEAR_DIMENSION'S. The whole
+    // set is refused, never the datums dropped and the rest drawn: a string
+    // through part of what was handed in reads as the job done.
     foreach (var run in runElements) refused.Add(run.Id);
     foreach (var instance in instances) refused.Add(instance.Id);
-    foreach (var grid in grids) refused.Add(grid.Id);
-    foreach (var level in levels) refused.Add(level.Id);
-    problem = string.Join(", ", kindsHanded) + " were handed in together. One dimension "
-            + "string is drawn through one kind - run centrelines, the centre references of "
-            + "family instances, grids, or levels - and a string mixing them has not been "
-            + "measured"
-            + (grids.Count > 0 && levels.Count > 0
-                ? " (grids and levels are measured along axes at right angles to each other, so "
-                  + "one string across both measures the wrong thing for whichever kind loses)"
-                : "")
-            + ", so NOTHING WAS DRAWN. Dimension each kind in its own call";
+    refused.AddRange(datumsHanded);
+    problem = datumsHanded.Count + " grid(s) or level(s) were handed in. Grids and levels are dimensioned by "
+            + "CREATE_LINEAR_DIMENSION - \"grid A | grid B\", or \"level Level 1 | level Level 2\" in a "
+            + "section - which checks each is shown in this view first; this draws run centrelines and the "
+            + "centre references of family instances. NOTHING WAS DRAWN";
 }
-else if (datums)
+else if (mixed)
 {
-    // ---- THE DATUM ROUTE (version 4, from DIMENSION_GRIDS_AND_LEVELS) ------
-    //
-    // A GRID AND A LEVEL ARE REFERENCED AS THE WHOLE ELEMENT - new
-    // Reference(grid) - with no geometry read at all; the geometry route
-    // returns nothing for a grid. Reference planes are NOT taken: they are not
-    // what a setting-out drawing dimensions to, they are usually invisible on
-    // the sheet, and one swept in would put a witness line to nothing anybody
-    // can see. They go to notLinear with everything else this cannot use.
-    //
-    // THE LINE IS WHERE THE STRING SITS, NOT WHAT IT MEASURES. Revit works the
-    // measurement out from the references; the line decides where the text
-    // and witness lines land, so it is built ACROSS the datums in the view
-    // plane, with offsetMm sliding it clear along the other axis.
-    var datumIds = new List<ElementId>();
-    foreach (var grid in grids) datumIds.Add(grid.Id);
-    foreach (var level in levels) datumIds.Add(level.Id);
-
-    var references = new List<Reference>();
-    var positions = new List<double>();
-    var accepted = new List<ElementId>();
-    XYZ across = null;
-    XYZ placementSeed = null;
-
-    if (namedAxis != null)
-    {
-        // A datum string is measured ACROSS the datums - grids across the
-        // plan, levels up the elevation - and that direction is worked out
-        // from them. A named x or y could point along the grids or flat
-        // across the levels, and would measure nothing; refused rather than
-        // guessed which the caller meant.
-        refused.AddRange(datumIds);
-        problem = "grids and levels are measured across themselves, and the direction is worked out "
-                + "from them - leave axis out. NOTHING WAS DRAWN";
-    }
-    else if (grids.Count > 0)
-    {
-        XYZ gridDirection = null;
-        var lines = new List<Line>();
-
-        foreach (var grid in grids)
-        {
-            var line = grid.Curve as Line;
-            if (line == null)
-            {
-                // AN ARC GRID IS REFUSED: it has no one direction, so no single
-                // axis a string across it measures along. Named, never dropped.
-                refused.Add(grid.Id);
-                continue;
-            }
-
-            var along = line.GetEndPoint(1) - line.GetEndPoint(0);
-            if (along.GetLength() < 1e-9) { refused.Add(grid.Id); continue; }
-            along = along.Normalize();
-
-            if (gridDirection == null)
-            {
-                gridDirection = along;
-                placementSeed = line.GetEndPoint(0);
-            }
-            else if (Math.Abs(along.DotProduct(gridDirection)) < 0.999)
-            {
-                // Out of parallel by more than about two and a half degrees:
-                // the gap between them is not one number.
-                refused.Add(grid.Id);
-                continue;
-            }
-
-            references.Add(new Reference(grid));
-            lines.Add(line);
-            accepted.Add(grid.Id);
-        }
-
-        // Across the grids and drawable on this view.
-        if (gridDirection != null) across = view.ViewDirection.CrossProduct(gridDirection);
-        if (across != null && across.GetLength() >= 1e-9)
-        {
-            across = across.Normalize();
-            foreach (var line in lines) positions.Add(line.GetEndPoint(0).DotProduct(across));
-        }
-        else across = null;
-    }
-    else
-    {
-        // Levels stack vertically, so the measuring axis is up. A PLAN LOOKS
-        // STRAIGHT DOWN IT: no level-to-level string can be drawn there, and
-        // Revit would take the whole string down. Refused with the reason.
-        if (Math.Abs(XYZ.BasisZ.DotProduct(view.ViewDirection)) > 0.001)
-        {
-            refused.AddRange(datumIds);
-            problem = "levels cannot be dimensioned in this view - it looks along the vertical, which "
-                    + "is the axis the dimension would have to measure. A section or an elevation is "
-                    + "where floor to floor heights go. NOTHING WAS DRAWN";
-        }
-        else
-        {
-            across = XYZ.BasisZ;
-            placementSeed = view.Origin;
-            foreach (var level in levels)
-            {
-                references.Add(new Reference(level));
-
-                // ProjectElevation, NOT Elevation (FRAGMENT-ISSUES 5b-179).
-                // These positions build the dimension LINE, in model
-                // coordinates. Elevation is measured from the level type's
-                // Elevation Base - a survey point, a moved base point - and is
-                // off by that offset in model space; two level types on
-                // different bases can even put two heights at one number,
-                // which the zero check below would then refuse.
-                positions.Add(level.ProjectElevation);
-                accepted.Add(level.Id);
-            }
-        }
-    }
-
-    if (problem.Length > 0)
-    {
-        // Refused above; nothing drawn.
-    }
-    else if (references.Count >= 2 && across != null && placementSeed != null)
-    {
-        var offsetDirection = across.CrossProduct(view.ViewDirection);
-        if (offsetDirection.GetLength() < 1e-9)
-        {
-            refused.AddRange(accepted);
-            problem = "the measuring axis and the view direction are the same line, so the string "
-                    + "has nowhere to sit on this view. NOTHING WAS DRAWN";
-        }
-        else
-        {
-            offsetDirection = offsetDirection.Normalize();
-
-            double lowest = positions[0], highest = positions[0];
-            for (int i = 1; i < positions.Count; i++)
-            {
-                lowest = Math.Min(lowest, positions[i]);
-                highest = Math.Max(highest, positions[i]);
-            }
-
-            var basePoint = placementSeed - across * placementSeed.DotProduct(across)
-                          + offsetDirection * offset;
-            var from = basePoint + across * lowest;
-            var to = basePoint + across * highest;
-
-            if ((to - from).GetLength() > 1e-6)
-            {
-                var array = new ReferenceArray();
-                foreach (var reference in references) array.Append(reference);
-
-                // THIS CARD'S SAFER RULES, now on the datum route too, which
-                // had none of them: Revit's refusal caught and said rather
-                // than let out to abort the caller's transaction; the
-                // dimension read back; one holding fewer than two references
-                // taken out again.
-                Dimension made = null;
-                try
-                {
-                    made = doc.Create.NewDimension(view, Line.CreateBound(from, to), array);
-                }
-                catch (Exception ex)
-                {
-                    problem = "Revit refused the dimension: " + ex.Message + ". NOTHING WAS DRAWN";
-                }
-
-                if (made != null)
-                {
-                    created = made.Id;
-                    try { dimensionedCount = made.References == null ? 0 : made.References.Size; }
-                    catch { dimensionedCount = 0; }
-                    if (dimensionedCount < 2)
-                    {
-                        try { doc.Delete(made.Id); } catch { }
-                        created = null;
-                        dimensionedCount = 0;
-                        problem = "Revit made a dimension holding fewer than two references, which "
-                                + "will not survive a commit, so it was taken out again. NOTHING WAS "
-                                + "DRAWN";
-                    }
-                    else if (dimensionedCount < array.Size)
-                    {
-                        problem = string.Format("the dimension holds {0} of the {1} datums asked "
-                                + "for - Revit dropped {2}. Check which it measures before relying "
-                                + "on it", dimensionedCount, array.Size, array.Size - dimensionedCount);
-                    }
-                }
-                else if (problem.Length == 0)
-                {
-                    problem = "no dimension was created, and Revit reported no reason";
-                }
-
-                if (dimensionedCount < 2) refused.AddRange(accepted);
-            }
-            else
-            {
-                // Two grids drawn on top of each other, or two levels at one
-                // elevation: the string would measure zero.
-                refused.AddRange(accepted);
-                problem = "every datum given sits at the same position along the measuring axis, so "
-                        + "the string would measure zero. NOTHING WAS DRAWN";
-            }
-        }
-    }
-    else
-    {
-        refused.AddRange(accepted);
-        problem = references.Count == 1
-            ? "only one grid or level was usable. One reference is not a short dimension, it is not "
-              + "a dimension. NOTHING WAS DRAWN"
-            : "no grid here could be dimensioned - an arc grid has no single direction, and grids out "
-              + "of parallel have no one gap between them. NOTHING WAS DRAWN";
-    }
+    // ONE STRING, ONE KIND (version 3). Refused whole, nothing drawn.
+    foreach (var run in runElements) refused.Add(run.Id);
+    foreach (var instance in instances) refused.Add(instance.Id);
+    problem = string.Join(", ", kindsHanded) + " were handed in together. One dimension "
+            + "string is drawn through one kind - run centrelines, or the centre references of "
+            + "family instances - and a string mixing them has not been measured, so NOTHING WAS "
+            + "DRAWN. Dimension each kind in its own call";
 }
 else if (instances.Count > 0)
 {
@@ -827,18 +603,17 @@ else
     // Fewer than two usable references. One reference is not a short
     // dimension, it is not a dimension.
     refused.AddRange(accepted);
-    if (runElements.Count == 0 && notLinear.Count == roomsHanded
-        && (roomsHanded > 0 || notVisibleInView.Count > 0))
+    if (runElements.Count == 0 && notLinear.Count == roomsHanded && roomsHanded > 0)
     {
-        // Only rooms, or only datums this view is not showing, were handed
-        // in: the sentences below are the whole answer.
+        // Only rooms were handed in: the sentence below is the whole answer.
         problem = "NOTHING WAS DRAWN";
     }
     else if (runElements.Count == 0)
     {
-        problem = "nothing handed in is a straight run - a duct, pipe, conduit or cable tray - a "
-                + "family instance - an air terminal, fixture or piece of equipment - or a grid or "
-                + "a level, so there is nothing here to dimension. NOTHING WAS DRAWN";
+        problem = "nothing handed in is a straight run - a duct, pipe, conduit or cable tray - or a "
+                + "family instance - an air terminal, fixture or piece of equipment - so there is "
+                + "nothing here to dimension (grids and levels are CREATE_LINEAR_DIMENSION's). NOTHING "
+                + "WAS DRAWN";
     }
     else
     {
@@ -853,7 +628,3 @@ else
 // A ROOM HANDED IN IS SAID WHATEVER ELSE HAPPENED (version 3).
 if (roomSentence.Length > 0)
     problem = problem.Length == 0 ? roomSentence : problem + ". " + roomSentence;
-
-// A DATUM THE VIEW IS NOT SHOWING IS SAID WHATEVER ELSE HAPPENED (version 4).
-if (datumSentence.Length > 0)
-    problem = problem.Length == 0 ? datumSentence : problem + ". " + datumSentence;

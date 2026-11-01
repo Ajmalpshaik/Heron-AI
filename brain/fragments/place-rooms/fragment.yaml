@@ -9,9 +9,39 @@ semantic-identity: "fill every enclosed area on this level with rooms, or with s
 kind: action
 domain: revit.rooms
 capability: PLACE_ROOMS
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 3 (2026-11-01) - PLACE_AREAS WAS MERGED INTO THIS CARD on the
+# owner's instruction ("ok go ahead merge all", after "make sure there is no
+# duplicate tools" and "in every conflict keep the safer rule"), and is
+# DEPRECATED. The same job - the spatial element of one kind placed at the
+# points chosen, the ones with no size named - for the third spatial element.
+# What that card had and this one lacked: placeKind `area`; `areaPlanName`,
+# the AREA PLAN chosen by name (an area plan only, never a floor plan of that
+# name); NewArea at each point; `names` and `numbers` in point order, an
+# empty value leaving Revit's; a point of two numbers; an area with no size,
+# measured after one regeneration, named in `unbounded`; a point Revit
+# refuses counted and named, the rest placed; no area plan of that name, no
+# point, a point that is not one - refused, nothing placed.
+#
+# AREAS HAVE NO PHASE. The phase requirement is for rooms and spaces only:
+# `phaseId` and `levelId` may now be left out ("none"), and a room or a space
+# with either left out is refused exactly as before. The KIND must still be
+# said - areas are never inferred from an area plan being named.
+#
+# THE SAFER RULES, NEW FOR THE MERGE: a name or a number that does not read
+# back as given undoes the whole call (PLACE_AREAS set them and never looked);
+# more names or numbers than points is refused, the lists not lining up; a
+# level named that is not the area plan's own is refused; names or numbers
+# handed in for rooms or spaces are refused rather than silently dropped.
+# Nothing of PLACE_AREAS is left out. Where its outputs are now: `areaIds` ->
+# `created`; `unenclosed` -> `unbounded`; `placed` -> `created` less
+# `unbounded`; `report` and `findings` -> `refused` and `refusedPoints`.
+#
+# Version 1's proof below no longer describes the code and is kept as the
+# record; DRAFT until version 3 is proved on a real model (D-30).
 
 # VERSION 2 (2026-11-01) - PLACE_ROOM_AT_POINT WAS MERGED INTO THIS CARD on the
 # owner's instruction ("make sure there is no duplicate tools"), and is
@@ -56,19 +86,32 @@ purpose: >
   Version 2 places them at chosen points as well - `points` - with the phase
   and the kind asked for there too.
 
+  Version 3 places areas too - placeKind area, in the area plan named, at
+  the points given, with names and numbers in point order.
+
 contract:
   needs:
     - name: doc
       type: Document
+    # Version 3: may be left out ("none") for AREAS, which go on their area
+    # plan's own level - a level named for them must be that one. Rooms and
+    # spaces with none are refused, as before.
     - name: levelId
       type: ElementId
       source: request
+      optional: true
+      absent: none
+    # rooms, spaces or - version 3 - areas. Always said, never inferred.
     - name: placeKind
       type: string
       source: request
+    # Version 3: may be left out ("none") - an AREA has no phase. Rooms and
+    # spaces with none named are refused, as before.
     - name: phaseId
       type: ElementId
       source: request
+      optional: true
+      absent: none
     # SPACES ONLY. Revit needs a plan view to place spaces from and rooms
     # needs none - see the compatibility note. Ignored when rooms are asked
     # for, rather than made a separate capability: it is the same job.
@@ -88,6 +131,27 @@ contract:
       source: request
       optional: true
       absent: none
+    # VERSION 3, from PLACE_AREAS. AREAS ONLY: the area plan they go in, as
+    # the Project Browser names it - an area plan, never a floor plan.
+    - name: areaPlanName
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 3, from PLACE_AREAS. AREAS ONLY: names, comma separated, in
+    # point order; left out leaves Revit's. Refused for rooms and spaces.
+    - name: names
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 3, from PLACE_AREAS. AREAS ONLY: numbers, comma separated, in
+    # point order; left out leaves Revit's.
+    - name: numbers
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: created
       role: result
@@ -101,7 +165,9 @@ contract:
     - name: unbounded
       # Rooms this fragment PLACED that came back with no area, because the
       # boundaries there do not close. A fact it established about what it
-      # made - they sit in the schedule looking like real rooms.
+      # made - they sit in the schedule looking like real rooms. Version 3:
+      # areas placed where no boundary encloses them, too (PLACE_AREAS'
+      # `unenclosed`).
       role: result
       type: IList<ElementId>
     - name: untagged
@@ -203,6 +269,13 @@ compatibility-note: >
 #   "report the areas"           -> REPORT_AREAS. An AREA is a third spatial
 #                                   element, not a room - placed separately, in
 #                                   schemes that overlap on purpose
+#   "place the areas in the GIA plan" -> here, placeKind area, since version 3
+#                                   (PLACE_AREAS until it was merged here,
+#                                   2026-11-01)
+#   "draw the area boundaries"   -> CREATE_ROOM_SEPARATION_LINES, lineKind area
+#                                   - the boundaries the areas go inside
+#   "make the gross area plan for level 1" -> CREATE_AREA_PLAN - the area plan
+#                                   areas are placed in
 #   "what is the heating load"   -> READ_SPACE_LOADS - and it can report
 #                                   nothing until the spaces exist, which is
 #                                   what this fragment is for
@@ -266,3 +339,10 @@ utterances:
   - add a space in that area
   # ...and its semantic identity, which nothing else declares:
   - put a room here, at this point
+  # MOVED 2026-11-01 from PLACE_AREAS, merged into this card.
+  - place areas in the gross area plan at these points
+  - add an area in each zone of this area plan
+  - put areas named Office and Store in the area plan
+  - place the areas for the lettable area plan
+  # ...and its semantic identity, which nothing else declares:
+  - place areas in this area plan at these points

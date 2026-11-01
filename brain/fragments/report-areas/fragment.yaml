@@ -193,8 +193,8 @@ compatibility-note: >
 
 # ROUTING (2026-10-12, the gap fill)
 #
-#   "place the areas in the GIA plan"       -> PLACE_AREAS
-#   "trace the exterior walls for the areas" -> CREATE_AREA_BOUNDARY_LINES
+#   "place the areas in the GIA plan"       -> PLACE_ROOMS, placeKind area
+#   "trace the exterior walls for the areas" -> CREATE_ROOM_SEPARATION_LINES, lineKind area
 utterances:
   - report the areas in this model
   - what areas do we have

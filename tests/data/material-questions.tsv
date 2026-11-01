@@ -15,7 +15,8 @@
 #      (READ_ELEMENT_MATERIAL until 2026-11-01, when it was merged into that card)
 #      (a question about UNUSED materials           -> FIND_PURGEABLE_ELEMENTS,
 #       FIND_UNUSED_MATERIALS until 2026-11-01)
-#   C  asking to make a material                    -> CREATE_MATERIAL
+#   C  asking to make a material                    -> CREATE_STARTER_MATERIALS
+#      (CREATE_MATERIAL until 2026-11-01, when it was merged into that card)
 #   S  selecting by a material                      -> SELECT_BY_MATERIAL
 #   W  swapping a material                          -> REPLACE_MATERIAL
 #   L  listing a document's materials               -> LIST_MATERIALS, once it exists

@@ -132,10 +132,10 @@ compatibility-note: >
   `Color.Red/Green/Blue` are unchanged 2020 through 2027. A colour is three
   bytes and names no unit, so the 2021 units move cannot reach it.
 
-# ROUTING - repeated in CREATE_MATERIAL.
+# ROUTING - repeated in CREATE_STARTER_MATERIALS.
 #
 #   "this pipe has no colour"        -> here, on the material the segment uses
-#   "make a new material"            -> CREATE_MATERIAL
+#   "make a new material"            -> CREATE_STARTER_MATERIALS
 #   "what material is this element"  -> REPORT_MATERIAL_TAKEOFF
 #   "swap one material for another"  -> REPLACE_MATERIAL
 

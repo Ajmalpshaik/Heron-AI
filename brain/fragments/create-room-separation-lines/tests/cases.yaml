@@ -8,7 +8,7 @@
 positive:
   - given: >
       a floor plan, and two points across an open archway between two areas
-      that Revit currently reads as ONE room (asSpace not given)
+      that Revit currently reads as ONE room, lineKind room (version 1, asSpace not given)
     expect: >
       one line in `created`, read back as Room Separation Lines, its ends in
       the findings matching the two points to the millimetre, lying on the
@@ -16,7 +16,7 @@ positive:
       the existing room shrinks to its own side or warns, and the other side is
       left with no room until PLACE_ROOMS places one at a point. Record which
 
-  - given: the same two points with asSpace true, in a plan where Spaces are placed
+  - given: the same two points with lineKind space (version 1, asSpace true), in a plan where Spaces are placed
     expect: >
       one line read back as Space Separation Lines - NOT Room Separation. The
       category in the findings is the evidence; the two look alike on screen
@@ -36,7 +36,7 @@ negative:
       a line where no plan shows it
 
   - given: >
-      asSpace true across an opening between two ROOMS
+      lineKind space (version 1, asSpace true) across an opening between two ROOMS
     expect: >
       the line read back as Space Separation Lines, and the rooms NOT split -
       the room schedule unchanged. A space separation line bounds spaces only,
@@ -55,9 +55,45 @@ negative:
   - given: a family document open
     expect: refused before anything is made - the lines belong to a project
 
+  # VERSION 2 (2026-11-01) - CREATE_AREA_BOUNDARY_LINES merged in. Each FAILS
+  # on version 1, which has no lineKind and no area kind. NOT RUN. Arranged as
+  # that card's proof was: CREATE_AREA_PLAN first, on a TEST COPY.
+  - given: >
+      lineKind area, areaPlanName an area plan on Level 1 over four straight
+      exterior walls (wall type Function Exterior), traceWalls outside, no
+      view, no points
+    expect: >
+      four lines in `created`, each read back as Area Boundary lines (the
+      category in the findings), each along the OUTSIDE face of its wall -
+      measured against the wall in the plan; then PLACE_ROOMS placeKind area
+      at a point inside gives an area with a size
+  - given: the same, traceWalls inside, then traceWalls centre
+    expect: four lines each time, at the inside face and on the centreline
+  - given: lineKind area, loopsMm "0,0; 6000,0; 6000,4000; 0,4000 | 8000,0; 9000,0"
+    expect: >
+      four lines (the first loop, closed automatically) and `refused` naming
+      the loop of two points as left out
+  - given: lineKind area, loopsMm with "abc,0" among the points
+    expect: refused naming the point - nothing drawn, not even the good loop
+  - given: lineKind area, areaPlanName of a FLOOR plan
+    expect: refused - no area plan of that name - nothing drawn
+  - given: lineKind area, an area plan, no traceWalls, no loopsMm, no points
+    expect: refused - neither walls, loops nor points - nothing drawn
+  - given: lineKind area over a level with an arc exterior wall among straight ones, traceWalls outside
+    expect: the straight ones traced, the arc wall named in `refused` and left
+  - given: lineKind area on a level whose walls are all interior, traceWalls outside
+    expect: nothing drawn and `refused` saying no exterior wall was traced
+  - given: two points in a floor plan with lineKind LEFT OUT
+    expect: >
+      refused before anything is drawn, asking room, space or area - version
+      1 drew a room separation line here
+  - given: lineKind room with traceWalls outside
+    expect: refused - tracing walls is for area lines - nothing drawn
+
 second_route:
   - >
     Architecture tab, Room Separator (Analyze tab, Space Separator for the
     space kind), drawn by hand across the same opening on a second test copy:
     the line's category in Properties, its length, and the rooms either side
     in a room schedule compared with what this fragment's line gave
+  - for area lines, the area plan read by eye, each line on the wall face measured, and one Ctrl+Z removing them all

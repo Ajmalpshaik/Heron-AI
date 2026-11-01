@@ -19,6 +19,38 @@ negative:
   - given: starterPick "copper", libraryLooks "Pipe Copper=No Such Look", namePrefix "IA_"
     expect: refused - no appearance asset is called 'No Such Look'; no IA_ material made
 
+  # VERSION 4 (2026-11-01) - CREATE_MATERIAL merged in. Each FAILS on version
+  # 3, which has no materialNames and makes all twelve when starterPick is
+  # left out. NOT RUN.
+  - given: >
+      materialNames "HERON MAT A, HERON MAT B", colours "255,0,0; 0,0,255",
+      transparencies "0, 150", starterPick left out
+    expect: >
+      two materials made with exactly those names - no TRG_ prefix - and none
+      of the twelve; A shades 255,0,0, B 0,0,255 at transparency 100, and a
+      finding saying 150 was clamped to 100. Manage > Materials: both there,
+      each with NO appearance asset - the answer says they draw flat in
+      Realistic
+  - given: the same call again
+    expect: nothing made, both names in `alreadyThere` - never duplicated
+  - given: materialNames "Default Wall, HERON MAT C", where Default Wall exists
+    expect: HERON MAT C made, Default Wall in `alreadyThere` and left as it is
+  - given: materialNames "HERON MAT D, , HERON MAT E" (a blank name)
+    expect: >
+      refused naming the blank name - NOTHING made. CREATE_MATERIAL skipped
+      the blank and made the other two; the safer rule is all or nothing
+  - given: materialNames "HERON[MAT]"
+    expect: refused - a character Revit refuses in a name - nothing made
+  - given: colours "300,0,0" beside a name
+    expect: refused - not a colour - nothing made
+  - given: materialNames "HERON MAT F", starterPick "copper"
+    expect: HERON MAT F and TRG_Pipe Copper both made
+  - given: materialNames "HERON MAT G" in a FAMILY document
+    expect: made in the family, as CREATE_MATERIAL made them - the family method's colours step
+  - given: everything left out, after this version
+    expect: all twelve starters, exactly as version 3 - starterPick "auto" with no names is all
+
 second_route:
   - Manage > Materials, Project Materials - the twelve, each one's Graphics and Appearance tabs read by eye
   - one Ctrl+Z takes all twelve back (Golden Rule 16)
+  - for materials made by name, Manage > Materials read after the run - name, Graphics colour and transparency - as CREATE_MATERIAL's second route

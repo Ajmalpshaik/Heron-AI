@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -69,7 +69,42 @@ capability: CREATE_LINEAR_DIMENSION
 # anywhere - this model or another loaded link. Every version 3 word reads as
 # it did; the purpose is still version 2's, word for word. DRAFT until
 # NEEDS-CHECKING Group EH runs it on a new project linking a saved test one.
-version: 4
+#
+# VERSION 5 (2026-11-01) - GRIDS AND LEVELS ARE THIS CARD'S ALONE. After
+# CREATE_DIMENSION's version 4 (DIMENSION_GRIDS_AND_LEVELS merged in) two
+# cards dimensioned grids and levels; on the owner's instruction ("make sure
+# there is no duplicate tools", "ok go ahead merge all", "in every conflict
+# keep the safer rule") the job is given to this card, and CREATE_DIMENSION
+# keeps runs and family instances and refuses a grid or a level handed in,
+# naming this card. What that route had and this card lacked, carried in
+# impl/: a grid or a level of this model the view is NOT SHOWING found and
+# named before anything is drawn (its notVisibleInView - Revit throws on one
+# and does not say which); an ARC grid refused, named; grids OUT OF PARALLEL
+# refused, named; LEVELS IN A PLAN refused with the reason; a level placed by
+# its ProjectElevation, never its Elevation (row 5b-179 - version 4 used
+# Elevation for the one-point string); grids or levels all at one position
+# drawing nothing. THE SAFER RULE ON MIXING: a GRID WITH A LEVEL is refused,
+# naming both, as CREATE_DIMENSION refused it; a grid or a level WITH A FACE,
+# a wall, a family's reference, a line or a plane is still one string - the
+# builders-work opening dimensioned from its grid and its level (5b-482).
+#
+# NOT CARRIED, AND WHY: CREATE_DIMENSION placed the string automatically
+# offsetMm clear of the grid ends, from a selection; here where the string
+# sits is the caller's (D-33) - two points, or one point twice for the string
+# to run through it square to the grids - and the datums are named, "grid A |
+# grid B". And it drew the datums the view shows while setting aside the rest;
+# here one not shown refuses the string, nothing drawn, as any reference that
+# cannot be used does on this card - the safer rule. Its six grid and level
+# sentences moved here.
+#
+# THE PROOF BELOW WAS NOT STALE before version 5. The comment above it said it
+# was version 2's; `python brain/heron_fragment.py` and Fragment.proof_is_stale
+# measured its fingerprint, 6155c5d9503d6351, equal to version 4's impl/ on
+# 2026-11-01 - it was taken on version 4's code on 2026-10-18 (its returned
+# values carry the link variables only version 4 has), though its cases ran
+# grids in a floor plan only. Version 5 changed impl/, so it is now the record
+# and this card is DRAFT until version 5 is proved on a real model (D-30).
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -103,6 +138,9 @@ purpose: >
 
   **READ BACK.** The dimension's references are counted and each segment's value
   is read again, so `measured` is what Revit measured, not what was asked.
+
+  **VERSION 5 IS THE ONE TOOL FOR GRIDS AND LEVELS.** A grid or level this view
+  does not show, an arc grid, or a grid with a level is refused, nothing drawn.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -156,11 +194,11 @@ contract:
     - name: findings
       type: IList<string>
 
-# THIS PROOF IS VERSION 2's AND IT IS STALE. It ran grids in a floor plan and
-# never reached a family instance, a solid face or a string run through one
-# point - none of which version 2 had - nor a link, which version 4 reaches.
-# The fingerprint below no longer matches the implementation; Groups EF and EH
-# are the runs that replace it.
+# THIS PROOF RAN GRIDS IN A FLOOR PLAN ONLY, and never reached a family
+# instance, a solid face, a string run through one point or a link. (This
+# comment said it was version 2's and stale; on 2026-11-01 its fingerprint
+# matched version 4's impl/ - see the version 5 note at the top.) Version 5
+# changed impl/; Groups EF and EH, and the version 5 cases, replace it.
 proof:
   date: '2026-10-18'
   by: Ajmal PS
@@ -233,11 +271,13 @@ compatibility-note: >
 #                                       reference inside a loaded link
 #   "dimension the duct spacing"     -> CREATE_DIMENSION - centrelines of
 #                                       parallel MEP runs
-#   "dimension the grids"            -> CREATE_DIMENSION, version 4 - grid to
-#                                       grid, or level to level, each the
-#                                       whole element (DIMENSION_GRIDS_AND_
-#                                       LEVELS until it was merged there,
-#                                       2026-11-01)
+#   "dimension the grids"            -> here, version 5 - "grid A | grid B",
+#                                       or level to level in a section. It was
+#                                       CREATE_DIMENSION's version 4 too
+#                                       (DIMENSION_GRIDS_AND_LEVELS merged
+#                                       there) until 2026-11-01, when the job
+#                                       was given to this card alone
+#   "dimension between the levels"   -> here, version 5, in a section
 #   "dimension the rooms"            -> DIMENSION_ROOMS
 #   "dimension the doors in this wall"-> DIMENSION_ELEMENT_FACES, along
 #                                       (DIMENSION_WALL_OPENINGS until it was
@@ -287,3 +327,12 @@ utterances:
   # DIMENSION_WALL_OPENINGS to this card on the model2vec backend; without
   # the word it stays there on both backends measured.
   - dimension the builders work layout from the grid
+  # MOVED 2026-11-01 from CREATE_DIMENSION, with the grid and level route
+  # (version 5). They came to that card from DIMENSION_GRIDS_AND_LEVELS the
+  # same day.
+  - dimension the grids
+  - put the setting out dimensions on this plan
+  - dimension between the levels
+  - grid to grid dimension
+  - add a dimension string across the grid lines
+  - dimension the floor to floor heights
