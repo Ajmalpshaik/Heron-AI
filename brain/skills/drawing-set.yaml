@@ -55,7 +55,8 @@ purpose: >
      elevation, the walls of the face it looks at - then SET_VIEW_CROP
      (PROVEN) on that view with marginMm, expect_from naming that select. The
      crop then frames the building, not the site round it.
-  5. ROOM TAGS, one level at a time. FILTER_ELEMENTS_BY_CATEGORY (PROVEN) with
+  5. ROOM TAGS, one level at a time. FILTER_ELEMENTS_BY_CATEGORY (PROVEN to
+     version 3; version 4 DRAFT) with
      category=Rooms and that levelId, then TAG_ROOMS (PROVEN) in that level's
      plan with the room tag type named ("Room Tag With Area"). Name the plan
      with its view type - "FloorPlan: Level 1" - whenever a ceiling plan has

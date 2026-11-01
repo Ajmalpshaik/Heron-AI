@@ -1,7 +1,7 @@
 positive:
   - given: >
       the 90 air terminal tags on FloorPlan "Level 1 - Air Terminal Layout" (1:75), fed by
-      SELECT_BY_CATEGORY_NAME categoryName Air Terminal Tags inViewOnly that view, with
+      FILTER_ELEMENTS_BY_CATEGORY category Air Terminal Tags inViewOnly that view, with
       tagCategories Air Terminal Tags, offsetRightMm 8, offsetUpMm 6 and addLeader true
     expect: >
       moved 90, leadersOn 90, every moved head within half a paper millimetre of its

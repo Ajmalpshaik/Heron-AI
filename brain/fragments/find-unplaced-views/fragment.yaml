@@ -84,7 +84,7 @@ compatibility-note: >
 #   "put these views on sheets"          -> PLACE_VIEW_ON_SHEET, the views
 #                                           named - since 2026-11-01 it does
 #                                           not take this card's elements
-#   "which families are unused"          -> FIND_UNUSED_FAMILIES
+#   "which families are unused"          -> FIND_PURGEABLE_ELEMENTS
 #   "what else is unused"                -> FIND_UNUSED_DEFINITIONS, for view
 #                                           templates and filters
 #   "delete these"                       -> DELETE_ELEMENTS, deliberately and

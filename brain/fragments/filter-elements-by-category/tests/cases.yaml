@@ -42,6 +42,45 @@ positive:
       matching 3 here, and the loads' Finalize then wrote no flow to any of
       them
 
+  # VERSION 4, added 2026-11-01 - SELECT_BY_CATEGORIES and
+  # SELECT_BY_CATEGORY_NAME merged in. NONE OF THESE HAS BEEN RUN. Each is
+  # written to FAIL on version 3, which had no `categories`, no view, no
+  # `perCategory`, `found` or `resolvedTo`, and refused a levelId left out.
+  - given: >
+      categories "Ducts, Duct Fittings, Duct Accessories, Flex Ducts", category
+      and levelId LEFT OUT, on a model with ducts and fittings and no flex duct
+    expect: >
+      one set holding every duct, fitting and accessory, `found` its count, and
+      `perCategory` with all FOUR names - Flex Ducts at 0, not missing. Each
+      number agrees with a Revit schedule of that category. Version 3 refused
+      the call: category and levelId were values the caller had to supply
+
+  - given: >
+      category Pipes, inViewOnly a floor plan that shows only part of the
+      model's pipes, levelId left out
+    expect: >
+      only the pipes that view draws - fewer than the same call without the
+      view. Version 3 had no view and answered for the whole model
+
+  - given: category "duct accessories", lower case
+    expect: >
+      `resolvedTo` "Duct Accessories" - Revit's own name for what the words
+      were read as - and the same elements as category OST_DuctAccessory
+
+  - given: >
+      category Ducts AND categories "Ducts, Duct Fittings"
+    expect: >
+      every element once, and Ducts once in `perCategory`. A category named
+      twice is asked for once
+
+  - given: >
+      includeLinks true, inViewOnly a plan, category Doors, levelId the plan's
+      level, on Revit 2023 or later with a linked model the plan shows
+    expect: >
+      `elements` the host's doors in that view only, and the link's line in
+      `linkedMatches` counting its doors as that plan draws them on a level
+      named as the host's - never added to `elements`
+
 negative:
   - given: the same model, which has no air terminals
     category: OST_DuctTerminal
@@ -78,6 +117,34 @@ negative:
   - given: one linked file placed TWICE, with includeLinks true
     expect: >
       linksSearched 1, not 2 - it counts files, not placements
+
+  # VERSION 4, added 2026-11-01. NONE OF THESE HAS BEEN RUN.
+  - given: category AND categories both left out
+    expect: >
+      REFUSED before anything is read - "No category was named, so NOTHING was
+      read" - never an empty set that reads as "there are none". Version 3 was
+      refused by the binder instead, for want of `category`; the sentence is
+      this card's own now
+
+  - given: category "Duct Accessory", singular - a word that is no category
+    expect: >
+      refused by the binder before this runs - "is not a category Revit
+      knows" - and nothing read. The SAFER of the two merged rules:
+      SELECT_BY_CATEGORY_NAME answered this with an empty set and near
+      misses, and an empty set is the plausible zero. LIST_CATEGORIES gives the
+      names to choose from
+
+  - given: >
+      includeLinks true WITH a view, on Revit 2020, 2021 or 2022, on a model
+      that has a loaded link
+    expect: >
+      "Links NOT read: this Revit cannot read a link through a view" and
+      linksSearched 0 - never the whole link reported as if it were the view.
+      Version 3 had no view and read the whole link
+
+  - given: categories "Ducts, Duct Fittings", inViewOnly a view that draws neither
+    expect: >
+      an empty set, found 0, and `perCategory` still listing both at 0
 
 second_route:
   - compare against Revit's own schedule count for the category

@@ -158,7 +158,7 @@ compatibility-note: >
   `FilteredElementCollector` are unchanged 2020 to 2027 - checked by compiling
   this fragment against the reference assemblies for all eight.
 
-# ROUTING - cross-referenced in FIND_VIEWS, SWITCH_ACTIVE_PROJECT and ZOOM_TO_ELEMENTS.
+# ROUTING - cross-referenced in FIND_VIEWS, ACTIVATE_DOCUMENT and ZOOM_TO_ELEMENTS.
 #
 #   "open the Level 2 ceiling plan"    -> here
 #   "go to the section"                -> here
@@ -173,7 +173,7 @@ compatibility-note: >
 #   "which views are there"            -> FIND_VIEWS. Run it first when the exact
 #                                         name is not known - this one needs the
 #                                         name
-#   "switch to the other project"      -> SWITCH_ACTIVE_PROJECT. This one moves
+#   "switch to the other project"      -> ACTIVATE_DOCUMENT. This one moves
 #                                         inside the project already active
 #   "take me to these elements"        -> ZOOM_TO_ELEMENTS, which lets Revit pick
 #                                         a view that can SEE them rather than

@@ -102,7 +102,7 @@ compatibility-note: >
   as a number, so nothing here meets the 2024 widening to 64-bit or the removal
   of `IntegerValue` by 2026.
 
-# ROUTING - repeated in FIND_UNUSED_DEFINITIONS, FIND_UNUSED_FAMILIES and
+# ROUTING - repeated in FIND_UNUSED_DEFINITIONS, FIND_PURGEABLE_ELEMENTS and
 # FIND_UNUSED_GROUP_TYPES.
 #
 #   "which materials is nobody using"     -> here
@@ -118,7 +118,7 @@ compatibility-note: >
 #   "purge unused"                        -> ALL FOUR, and they answer about
 #                                            different content. Materials here;
 #                                            family types
-#                                            FIND_UNUSED_FAMILIES; view
+#                                            FIND_PURGEABLE_ELEMENTS; view
 #                                            templates and view filters
 #                                            FIND_UNUSED_DEFINITIONS; group
 #                                            definitions

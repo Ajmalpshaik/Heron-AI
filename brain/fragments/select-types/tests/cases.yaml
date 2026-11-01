@@ -67,4 +67,4 @@ second_route: >
   Revit's Project Browser lists loaded family types under Families, and the
   system family types under their own headings - the same set, read by eye. The
   Purge Unused dialog shows a narrower version of it: the types with nothing
-  placed, which is FIND_UNUSED_FAMILIES rather than this.
+  placed, which is FIND_PURGEABLE_ELEMENTS rather than this.

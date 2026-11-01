@@ -147,7 +147,8 @@ compatibility-note: >
 #   "start a new family"           -> CREATE_FAMILY_DOCUMENT - a .rft template
 #                                     and a .rfa file
 #   "open that saved model"        -> ACTIVATE_DOCUMENT - it is already a file
-#   "switch to the other project"  -> SWITCH_ACTIVE_PROJECT - it is already open
+#   "switch to the other project"  -> ACTIVATE_DOCUMENT, by its path - it is
+#                                     already open
 #   "add a project parameter"      -> ADD_PROJECT_PARAMETER - nothing to do with
 #                                     a new project file
 

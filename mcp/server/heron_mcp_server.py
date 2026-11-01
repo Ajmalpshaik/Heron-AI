@@ -1782,8 +1782,8 @@ def revit_change(capability: str = "", values: str = "",
     # WHAT THIS DESCRIPTION SAID AT LENGTH UNTIL 2026-10-17, and where the host
     # hears it now - every chat paid for it before its first call
     # (tests/test_tool_sizes.py, docs/04 s8.8):
-    #   - expect_from's `where k=v` form - expect_from="select-by-categories
-    #     where categories=Pipes" checks what the fragment ran with too - and why
+    #   - expect_from's `where k=v` form - expect_from="filter-elements-by-category
+    #     where category=Pipes" checks what the fragment ran with too - and why
     #     empty is the safe default: without it a later call could act on
     #     elements collected by something nobody remembers running. Said by
     #     _contract_lines, under any capability that takes a value from the
@@ -4373,7 +4373,7 @@ def _contract_lines(capability, separator=True, notes=True):
     # under a capability that takes a value from the fragment before it, so
     # it is said there, once.
     expect = (['  To act on what an earlier fragment left, name it: '
-               'expect_from="select-by-categories where categories=Pipes" - Heron '
+               'expect_from="filter-elements-by-category where category=Pipes" - Heron '
                'checks that fragment left the values - and, with `where`, what it '
                'ran with - before binding anything. Left empty, the call starts '
                'clean, the safe default.'] if chained else [])

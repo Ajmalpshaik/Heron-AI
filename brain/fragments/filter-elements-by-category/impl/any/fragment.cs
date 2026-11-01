@@ -1,6 +1,38 @@
-// NOT STANDALONE. Assumes `doc`, `category`, `levelId` and `includeLinks` are
-// already in scope, and leaves `elements`, `unresolvedLevel`, `linksSearched`
-// and `linkedMatches` in scope for whatever is composed after it.
+// NOT STANDALONE. Assumes `doc`, `category`, `categories`, `levelId`,
+// `inViewOnly` and `includeLinks` are already in scope, and leaves `elements`,
+// `unresolvedLevel`, `linksSearched`, `linkedMatches`, `perCategory`, `found`
+// and `resolvedTo` in scope for whatever is composed after it.
+//
+// VERSION 4 (2026-11-01) - SELECT_BY_CATEGORY_NAME AND SELECT_BY_CATEGORIES
+// MERGED IN, AND WHAT THEY HAD THAT THIS LACKED:
+//
+//   SEVERAL CATEGORIES IN ONE PASS (SELECT_BY_CATEGORIES). `categories` names
+//   them, comma separated - "the ductwork" is five categories and one answer.
+//   One ElementMulticategoryFilter asks once, so no element can come back
+//   twice. `category` still names one, exactly as before, and the two may be
+//   given together. NEITHER GIVEN IS REFUSED, here, before anything is read:
+//   an empty list falling through to "every category" would hand back the
+//   whole model, and an answer of 0 would read as "there are none".
+//
+//   THE BREAKDOWN (SELECT_BY_CATEGORIES). `perCategory` has one entry per
+//   category ASKED FOR, by Revit's own name, and one asked for and empty is
+//   there at 0 - the absence is the finding. `found` is the total.
+//
+//   ONE VIEW (both). `inViewOnly` narrows the read to what that view draws;
+//   left out it is null, the whole model, as version 3 always read.
+//
+//   THE LEVEL MAY BE LEFT OUT. `levelId` left out reads as none - the whole
+//   model - which is what every caller of version 3 typed `levelId=none` for.
+//
+//   WHICH CATEGORY THE WORDS FOUND (SELECT_BY_CATEGORY_NAME). `resolvedTo` is
+//   Revit's own name for each category collected, so a word that bound to a
+//   different category than the one meant shows in the answer. The WORD is
+//   turned into a category by the add-in's binder before this runs - the
+//   name Visibility/Graphics shows first, localised as the model is, then the
+//   API name - and a word that is no category is refused THERE, with nothing
+//   read (row 5b-444's route, tests/test_category_by_name.py).
+//
+//   LINKS THROUGH A VIEW, ONLY FROM 2023 (both). See below.
 //
 // WHAT REVIT ACTUALLY DOES WITH LEVELS, AND WHY THIS IS NOT A PROPERTY READ.
 //
@@ -43,19 +75,27 @@
 // D-59. Absent `includeLinks` means host only, which is what this did before
 // and what its proof measured. When it is set, each loaded link is read with
 // the same test and its matches are reported as TEXT in `linkedMatches`, one
-// line per link. They never enter `elements`: that list feeds the next
-// fragment in a chain, and the chain revives ids against the HOST document, so
-// a linked id that happens to be in use in the host binds an unrelated element
-// silently (FRAGMENT-ISSUES row 75, 2 of 1128 measured).
+// line per link. They never enter `elements` or `perCategory`: that list feeds
+// the next fragment in a chain, and the chain revives ids against the HOST
+// document, so a linked id that happens to be in use in the host binds an
+// unrelated element silently (FRAGMENT-ISSUES row 75, 2 of 1128 measured).
 //
-// NESTED LINKS ARE NOT READ, AND THE ANSWER COUNTS THEM - see
-// SELECT_BY_CATEGORY_NAME, which carries the same rule.
+// A VIEW IS READ THROUGH EACH LINK PLACEMENT, AND ONLY FROM 2023. Revit 2023
+// added a collector that reads a link's elements as a host view draws them,
+// per link placement. It is reached by reflection because the add-in compiles
+// fragments without release symbols (row 5b-181); on 2020-2022 it is absent
+// and the answer says so rather than reading the whole link and calling it
+// the view.
+//
+// NESTED LINKS ARE NOT READ, AND THE ANSWER COUNTS THEM. A link inside a link
+// is a real case D-59 left open; the owner decided on 2026-09-28 to keep them
+// counted and unread for now (FRAGMENT-ISSUES row 5b-253).
 //
 // A LINK'S LEVELS ARE ITS OWN, SO THE LEVEL IS MATCHED BY NAME THERE. `levelId`
 // names a level in THIS model; in a link the same id means nothing, or another
 // element. The host level's NAME is what the modeller chose, and it is what
-// the link is asked for - and the answer says so, because two models can
-// disagree about what "Level 2" is.
+// the link is asked for - through a view as well as without one - and the
+// answer says so, because two models can disagree about what "Level 2" is.
 
 var levelParameterOrder = new[]
 {
@@ -88,8 +128,65 @@ Func<Element, ElementId> levelOf = e =>
     return ElementId.InvalidElementId;
 };
 
-var matching = new FilteredElementCollector(doc)
-    .OfCategory(category)
+// ---- which categories: `category`, `categories`, or both -------------------
+//
+// Left out, each binds BuiltInCategory.INVALID (the card's `absent: INVALID`),
+// which names no category and is dropped here. Named twice, a category is
+// asked for once.
+
+var wanted = new List<BuiltInCategory>();
+if (category != BuiltInCategory.INVALID) wanted.Add(category);
+if (categories != null)
+{
+    foreach (var one in categories)
+        if (one != BuiltInCategory.INVALID && !wanted.Contains(one)) wanted.Add(one);
+}
+
+if (wanted.Count == 0)
+    throw new InvalidOperationException("No category was named, so NOTHING was read. Name one "
+        + "with category - Ducts, Mechanical Equipment, OST_DuctCurves - or several with "
+        + "categories, separated by commas - Ducts, Duct Fittings, Duct Accessories.");
+
+// Every category asked for starts at zero, so one with nothing in it is still
+// in the report - by the name Revit shows, which is what the reader uses.
+var perCategory = new Dictionary<string, int>();
+var resolvedNames = new List<string>();
+foreach (var one in wanted)
+{
+    string name = null;
+    try
+    {
+        var definition = Category.GetCategory(doc, one);
+        if (definition != null) name = definition.Name;
+    }
+    catch (Exception) { name = null; }
+    if (string.IsNullOrEmpty(name)) name = one.ToString();
+    if (!perCategory.ContainsKey(name))
+    {
+        perCategory[name] = 0;
+        resolvedNames.Add(name);
+    }
+}
+var resolvedTo = string.Join(", ", resolvedNames.ToArray());
+
+// One category is OfCategory, as versions 1 to 3 read it; several are one
+// multi-category filter, which cannot return an element twice.
+Func<FilteredElementCollector, FilteredElementCollector> ofWanted = c =>
+    wanted.Count == 1
+        ? c.OfCategory(wanted[0])
+        : c.WherePasses(new ElementMulticategoryFilter(wanted));
+
+Func<Element, string> categoryOf = e =>
+{
+    string name = "(no category)";
+    try { if (e.Category != null) name = e.Category.Name ?? name; }
+    catch (Exception) { }
+    return name;
+};
+
+var matching = ofWanted(inViewOnly != null
+        ? new FilteredElementCollector(doc, inViewOnly.Id)
+        : new FilteredElementCollector(doc))
     .WhereElementIsNotElementType()
     .ToElements();
 
@@ -98,16 +195,19 @@ var elements = new List<Element>();
 
 foreach (var e in matching)
 {
-    if (levelId == ElementId.InvalidElementId)
+    if (levelId != ElementId.InvalidElementId)
     {
-        elements.Add(e);
-        continue;
+        var at = levelOf(e);
+        if (at == ElementId.InvalidElementId) { unresolvedLevel++; continue; }
+        if (at != levelId) continue;
     }
 
-    var found = levelOf(e);
-    if (found == ElementId.InvalidElementId) unresolvedLevel++;
-    else if (found == levelId) elements.Add(e);
+    elements.Add(e);
+    var name = categoryOf(e);
+    perCategory[name] = perCategory.ContainsKey(name) ? perCategory[name] + 1 : 1;
 }
+
+int found = elements.Count;
 
 // ---- D-59: which links, only when asked for --------------------------------
 
@@ -164,43 +264,97 @@ if (levelId != ElementId.InvalidElementId)
     if (hostLevel != null) hostLevelName = hostLevel.Name;
 }
 
-if (levelId != ElementId.InvalidElementId && hostLevelName == null)
+// Revit 2023 and later only - see the header. Null on 2020-2022, and never
+// asked for without a view.
+var linkThroughView = inViewOnly == null ? null
+    : typeof(FilteredElementCollector).GetConstructor(
+        new[] { typeof(Document), typeof(ElementId), typeof(ElementId) });
+
+if (linkDocs.Count > 0 && levelId != ElementId.InvalidElementId && hostLevelName == null)
 {
-    if (linkDocs.Count > 0)
-        linkBlocked = "Links NOT read: the level asked for has no name here to look for";
+    linkBlocked = "Links NOT read: the level asked for has no name here to look for";
+}
+else if (linkDocs.Count > 0 && inViewOnly != null && linkThroughView == null)
+{
+    linkBlocked = "Links NOT read: this Revit cannot read a link through a view "
+        + "(2023 and later can) - ask without the view";
 }
 else
 {
     for (var i = 0; i < linkDocs.Count; i++)
     {
         var linked = linkDocs[i];
+        var linkedElements = new List<Element>();
+        var unreadPlacements = 0;
+
+        if (inViewOnly == null)
+        {
+            try
+            {
+                foreach (var e in ofWanted(new FilteredElementCollector(linked))
+                             .WhereElementIsNotElementType())
+                    if (e != null) linkedElements.Add(e);
+            }
+            catch (Exception) { }
+        }
+        else
+        {
+            // Per placement, and each element once however many placements
+            // show it.
+            var seen = new HashSet<ElementId>();
+            foreach (var placement in linkPlacements[i])
+            {
+                try
+                {
+                    var through = linkThroughView.Invoke(
+                        new object[] { doc, inViewOnly.Id, placement.Id })
+                        as FilteredElementCollector;
+                    if (through == null) { unreadPlacements++; continue; }
+                    foreach (var e in ofWanted(through).WhereElementIsNotElementType())
+                        if (e != null && seen.Add(e.Id)) linkedElements.Add(e);
+                }
+                catch (Exception) { unreadPlacements++; }
+            }
+        }
+
         var linkMatched = 0;
         var linkUnresolved = 0;
+        var byName = new Dictionary<string, int>();
 
-        try
+        foreach (var e in linkedElements)
         {
-            foreach (var e in new FilteredElementCollector(linked)
-                         .OfCategory(category)
-                         .WhereElementIsNotElementType())
+            if (hostLevelName != null)
             {
-                if (hostLevelName == null) { linkMatched++; continue; }
-
                 var at = levelOf(e);
                 if (at == ElementId.InvalidElementId) { linkUnresolved++; continue; }
 
                 var linkedLevel = linked.GetElement(at) as Level;
-                if (linkedLevel != null
-                    && string.Equals(linkedLevel.Name, hostLevelName, StringComparison.OrdinalIgnoreCase))
-                    linkMatched++;
+                if (linkedLevel == null
+                    || !string.Equals(linkedLevel.Name, hostLevelName, StringComparison.OrdinalIgnoreCase))
+                    continue;
             }
+
+            linkMatched++;
+            var name = categoryOf(e);
+            byName[name] = byName.ContainsKey(name) ? byName[name] + 1 : 1;
         }
-        catch (Exception) { }
+
+        // The link's own breakdown, in the same words as the host's - only
+        // when more than one category was asked, where it says something.
+        var parts = new List<string>();
+        if (wanted.Count > 1)
+            foreach (var entry in byName) parts.Add(entry.Key + " " + entry.Value);
 
         linksSearched++;
         linkedTotal += linkMatched;
-        linkedMatches.Add(string.Format("{0}: {1}{2}{3}", linked.Title, linkMatched,
+        linkedMatches.Add(string.Format("{0}: {1}{2}{3}{4}{5}", linked.Title, linkMatched,
             hostLevelName == null ? "" : string.Format(" on a level named '{0}'", hostLevelName),
-            linkUnresolved > 0 ? string.Format(", {0} with no level found", linkUnresolved) : ""));
+            parts.Count > 0 ? " (" + string.Join(", ", parts.ToArray()) + ")" : "",
+            linkUnresolved > 0 ? string.Format(", {0} with no level found", linkUnresolved) : "",
+            unreadPlacements > 0
+                ? string.Format(" ({0} placement(s) could not be read through this view)",
+                    unreadPlacements)
+                : ""));
     }
 }
 

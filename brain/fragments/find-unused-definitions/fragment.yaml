@@ -108,7 +108,7 @@ compatibility-note: >
 #                                           two. Both check the view-family-type
 #                                           default, and they did not always -
 #                                           see the purpose
-#   "which families are unused"          -> FIND_UNUSED_FAMILIES
+#   "which families are unused"          -> FIND_PURGEABLE_ELEMENTS
 #   "which materials are unused"         -> FIND_UNUSED_MATERIALS
 #   "which groups are unused"            -> FIND_UNUSED_GROUP_TYPES
 #   "which views are not on a sheet"     -> FIND_UNPLACED_VIEWS

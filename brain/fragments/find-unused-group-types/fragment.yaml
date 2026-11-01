@@ -109,7 +109,7 @@ compatibility-note: >
   removal of `IntegerValue` by 2026.
 
 # ROUTING - repeated in FIND_UNUSED_MATERIALS, FIND_UNUSED_DEFINITIONS,
-# FIND_UNUSED_FAMILIES and UNGROUP_ELEMENTS.
+# FIND_PURGEABLE_ELEMENTS and UNGROUP_ELEMENTS.
 #
 #   "which groups is nobody using"        -> here
 #   "clean up the groups"                 -> here for the list; Revit's own

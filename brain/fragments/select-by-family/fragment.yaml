@@ -154,7 +154,7 @@ compatibility-note: >
 #                                           takes a name and needs no example
 #   "all the ducts"                      -> FILTER_ELEMENTS_BY_CATEGORY, when
 #                                           the CATEGORY is what is meant
-#   "which families are not used"        -> FIND_UNUSED_FAMILIES
+#   "which families are not used"        -> FIND_PURGEABLE_ELEMENTS
 #   "these are in the wrong category"    -> CHECK_CATEGORY_MISMATCH
 #   "load this family"                   -> LOAD_FAMILY
 #   "rename this family"                 -> RENAME_FAMILY

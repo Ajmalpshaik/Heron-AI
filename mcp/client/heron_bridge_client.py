@@ -2367,7 +2367,7 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     ------------------------------------------------------------------
     By default the fragment under test RESETS the chain, so a setup chain hands
     over only what lives in Revit's own state - the SELECTION - and never a
-    value. `select-by-category-name` then `set-selection` survives because
+    value. `filter-elements-by-category` then `set-selection` survives because
     `set-selection` writes the real selection; `read-element-parameters` then
     `group-and-count` does not, and both `group-and-count` and `sum-by-group`
     came back `needs_unbound: 'values' was never supplied` on 2026-09-10 while
@@ -2702,7 +2702,7 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
                 return False
             # ONLY THE FIRST STEP RESETS THE CHAIN. The whole point of a
             # setup chain is that step two consumes what step one left -
-            # select-by-category-name leaves `elements`, set-selection needs
+            # filter-elements-by-category leaves `elements`, set-selection needs
             # them - and resetting between them throws that away. Sent as
             # "reset" for every step for one commit, and set-selection
             # refused with "elements was never supplied", which reads as a
@@ -3373,8 +3373,8 @@ def main(argv):
             print("                          of resetting. Refused if something else")
             print("                          left it. Add \"where k=v\" to check its")
             print("                          inputs too:")
-            print("                            --expect-from \"select-by-categories")
-            print("                             where categories=Pipes\"")
+            print("                            --expect-from \"filter-elements-by-category")
+            print("                             where category=Pipes\"")
             return 2
         if apply_it and not writing:
             print("--apply only means something with --write. A read leaves nothing to keep.")
@@ -3456,7 +3456,7 @@ def main(argv):
         kept = "--kept" in rest
         rest = [r for r in rest if r != "--kept"]
         # --setup names a fragment to run BEFORE each phase, repeatable and in
-        # order. It re-makes the arrangement - typically select-by-category-name
+        # order. It re-makes the arrangement - typically filter-elements-by-category
         # then set-selection - because a rolled-back write clears the selection.
         rest, session = pull_session(rest)
         setup = []
@@ -3546,7 +3546,7 @@ def main(argv):
             print("  --setup <fragment>    run this BEFORE each phase to re-make the")
             print("                        arrangement. Repeatable, in order. A rolled-back")
             print("                        write clears the selection, so a selection-based")
-            print("                        write needs it: --setup select-by-category-name")
+            print("                        write needs it: --setup filter-elements-by-category")
             print("                        --setup set-selection")
             print("                        With --write a step that changes the model runs")
             print("                        last, so one that reads typed after it is refused")

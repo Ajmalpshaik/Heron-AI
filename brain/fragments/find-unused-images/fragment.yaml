@@ -25,8 +25,9 @@ risk: READ
 # Image, Type Image, shared or family image parameters. An image used ONLY as
 # a schedule header picture is not seen, and the answer says so.
 #
-# FIND_UNUSED_FAMILIES, FIND_UNUSED_MATERIALS and FIND_UNUSED_GROUP_TYPES are
-# the same job for other things.
+# FIND_PURGEABLE_ELEMENTS (families, and everything else Purge Unused
+# offers), FIND_UNUSED_MATERIALS and FIND_UNUSED_GROUP_TYPES are the same job
+# for other things.
 #
 # READ ONLY - opens no transaction.
 purpose: >
@@ -65,7 +66,7 @@ compatibility-note: >
 #
 #   "which images are not used"               -> here
 #   "delete the unused images"                -> here, then DELETE_ELEMENTS
-#   "which families are not used"             -> FIND_UNUSED_FAMILIES
+#   "which families are not used"             -> FIND_PURGEABLE_ELEMENTS
 #   "which materials are not used"            -> FIND_UNUSED_MATERIALS
 
 utterances:

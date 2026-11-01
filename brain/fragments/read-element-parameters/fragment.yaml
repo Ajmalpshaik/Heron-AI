@@ -240,8 +240,10 @@ compatibility-note: >
 #   parameterName=Text and expect_from select-visible-in-view. Measured
 #   2026-10-17 on the scratch copy "Heron note scratch", Revit 2020: 109 notes
 #   in the drafting view "Spread Footing", all 109 read. SELECT_BY_CATEGORY_NAME
-#   categoryName=Text Notes inViewOnly=<the view> hands on the same 109 and is
-#   DRAFT. FILTER_ELEMENTS_BY_CATEGORY takes a LEVEL and a note has none.
+#   categoryName=Text Notes inViewOnly=<the view> handed on the same 109; it was
+#   merged into FILTER_ELEMENTS_BY_CATEGORY on 2026-11-01, whose version 4
+#   takes category=Text Notes inViewOnly=<the view> with the level left out -
+#   a note has none - and is DRAFT.
 #   "which level are these walls on"      -> here, Level (5b-468)
 #   "what is the base constraint of these walls" -> here, Base Constraint
 #   "change the walls' base level"        -> SET_ELEMENT_LEVEL, which

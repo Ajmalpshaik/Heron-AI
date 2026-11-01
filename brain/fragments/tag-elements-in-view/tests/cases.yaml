@@ -22,7 +22,7 @@ positive:
       plan view
     expect: >
       every door tagged with THAT door tag, `tagTypesUsed` naming it with "the
-      caller's hint". Count them back with SELECT_BY_CATEGORY_NAME Door Tags
+      caller's hint". Count them back with FILTER_ELEMENTS_BY_CATEGORY Door Tags
       inViewOnly=<the view>. Version 3 answered notTagged for every door
 
   - given: >

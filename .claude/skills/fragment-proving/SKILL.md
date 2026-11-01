@@ -88,8 +88,8 @@ nothing at all about the fragment.** `set-mep-size` timed out on 307 ducts and s
 immediately when retried on a smaller view.
 
 Find the small one before starting, and put it in the job file's `defaults:`. In the sample HVAC
-model, `select-by-category-name --set "inViewOnly=FloorPlan: M1"` gives 22 ducts where
-`FloorPlan: L3` gives 307. Every model has such a pair; look for it rather than assuming this one.
+model, `filter-elements-by-category --set "inViewOnly=FloorPlan: M1"` gives 22 ducts where
+`FloorPlan: L3` gives 307 (measured with `select-by-category-name`, merged into it on 2026-11-01). Every model has such a pair; look for it rather than assuming this one.
 
 ### 2. Ask for what the model has
 
@@ -175,7 +175,7 @@ Three things the shape of the file is doing:
   Revit for a count first and the dry run said `WOULD RUN`. Measured 2026-10-15 making a filter for `set-view-filter-categories` to edit
   (row 5b-481): what worked was ONE value list both steps read - the names they share (`filterNames`,
   `categories`, `parameterName`) must then mean the same for both - or arranging on something the model
-  already holds. A read-only setup chain (`select-by-category-name`) takes `setup-set:` as before.
+  already holds. A read-only setup chain (`filter-elements-by-category`) takes `setup-set:` as before.
 - **A job with no `negative-set:` or `negative-in:` is refused.** Without one, `validate` stops and
   waits for somebody at the keyboard, which in a batch is a hang. It is also the leg D-30 exists for.
 

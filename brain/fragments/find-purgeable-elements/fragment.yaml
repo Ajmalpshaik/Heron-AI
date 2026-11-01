@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,13 @@ semantic-identity: "which elements of every category are unused in this project 
 kind: filter
 domain: revit.selection
 capability: FIND_PURGEABLE_ELEMENTS
-version: 1
+# VERSION 2 (2026-11-01): FIND_UNUSED_FAMILIES was merged into this card on the
+# owner's instruction, and is DEPRECATED - see the comment block above
+# `utterances`. Version 1's proof below is kept as the record; it no longer
+# describes the code, so the card is DRAFT until version 2 is proved on a real
+# model (D-30) - on 2024 or later for Revit's list, and on 2020-2023 for the
+# fallback.
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -24,17 +30,28 @@ risk: READ
 # run after the delete finds the next rung. Revit 2024 opened the list to
 # code.
 #
+# VERSION 2: REVIT 2020 TO 2023 TOO. The list is reached by reflection, so one
+# file compiles on every release; where Revit has no list, FIND_UNUSED_FAMILIES'
+# own count of placed instances is the stated fallback - and it is a REPORT
+# ONLY: `elements` stays empty there, because a family placed only inside
+# another family has no instance of its own and would read as unused.
+#
 # A loaded family is purged by opening it (OPEN_FAMILY_FOR_EDITING), running
 # this and DELETE_ELEMENTS there, and loading it back (LOAD_FAMILY) - a
 # family cannot be opened inside a change in the project.
 #
-# FIND_UNUSED_FAMILIES, FIND_UNUSED_MATERIALS, FIND_UNUSED_GROUP_TYPES and
-# FIND_UNUSED_IMAGES each answer for one kind, on every release.
+# FIND_UNUSED_MATERIALS, FIND_UNUSED_GROUP_TYPES and FIND_UNUSED_IMAGES each
+# answer for one kind, on every release. Families are answered here, on every
+# release, since version 2.
 #
 # READ ONLY - opens no transaction.
 purpose: >
   Finds every element Revit counts as unused - in a project or a family, in
   every category or the ones named - and hands them on for deleting.
+
+  Version 2 also answers which families are unused, family by family, and on
+  Revit 2020 to 2023 counts placed instances instead - a report that hands
+  nothing on for deleting, because a family nested in another reads as unused.
 
 contract:
   needs:
@@ -57,6 +74,25 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+    - name: perFamily
+      # VERSION 2, from FIND_UNUSED_FAMILIES. One line per family with types
+      # unused - "M_Diffuser  - 3 of 5 type(s) unused: ..." - on both routes.
+      # TEXT on purpose: on the 2020-2023 fallback it is the whole answer, and
+      # text cannot be carried to a delete (D-52).
+      role: accounting
+      type: IList<string>
+    - name: wholeFamilyUnused
+      # VERSION 2, from FIND_UNUSED_FAMILIES: the families with NOTHING used -
+      # whole files that could go - by NAME. That card handed them on as ids;
+      # here they are names, so the fallback list stays a report (D-52).
+      role: accounting
+      type: IList<string>
+    - name: route
+      # VERSION 2. Which list answered: Revit's own (2024 and later), or the
+      # placed-instance count (2020-2023), which hands nothing on. About the
+      # method, never an element (D-52).
+      role: accounting
+      type: string
 
 proof:
   date: '2026-10-23'
@@ -81,24 +117,64 @@ proof:
     none
   fingerprint: 850270d4166a24ce
 
-revit: ["2024", "2025", "2026", "2027"]
-runtime: [net48, net8.0-windows, net10.0-windows]
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
   Document.GetUnusedElements(ISet<ElementId>) is present from 2024 and absent
   before - read off RevitAPI.xml in the Nice3point reference packages for all
-  eight releases on 2026-10-13 - so the card declares 2024 to 2027 only.
+  eight releases on 2026-10-13. Version 2 reaches it by reflection, so the one
+  implementation compiles on all eight; on 2020-2023 it is absent and the
+  placed-instance count answers instead, with `route` saying so.
+  `Family.GetFamilySymbolIds()`, `Family.FamilyCategory` and
+  `Element.GetTypeId()` are unchanged 2020 to 2027, and no ElementId is built
+  from an int.
 
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "list everything purgeable in this family" -> here
 #   "every unused element, all categories"     -> here, then DELETE_ELEMENTS
-#   "purge unused"                             -> FIND_UNUSED_FAMILIES, families on every release
+#   "purge unused"                             -> here, AS A LIST. Nothing here deletes;
+#                                                 DELETE_ELEMENTS removes what the modeller
+#                                                 has seen, and on 2020-2023 nothing is
+#                                                 handed on at all
+#   "which families are unused"                -> here (version 2), family by family, on
+#                                                 every release
+#   "purge the unused stuff"                   -> here, AS A LIST (FIND_UNUSED_FAMILIES'
+#                                                 row, moved)
 #   "purge this loaded family"                 -> OPEN_FAMILY_FOR_EDITING, here, DELETE_ELEMENTS, LOAD_FAMILY
 #   "which materials are unused"               -> FIND_UNUSED_MATERIALS
+
+# VERSION 2 (2026-11-01) - FIND_UNUSED_FAMILIES WAS MERGED INTO THIS CARD on
+# the owner's instruction in conversation: "now merge the other duplicates
+# also", every conflict to keep the SAFER rule. It is DEPRECATED. The same
+# question - what is loaded and unused - and this card answers it from Revit's
+# own list where Revit has one. Where each retired output is now:
+#
+#   elements           elements on 2024+ (Revit's list, handed on); EMPTY on
+#                      2020-2023, where the same families are in perFamily
+#   findings           findings, with the nested-family warning on 2020-2023
+#   wholeFamilyUnused  wholeFamilyUnused, as NAMES rather than ids
+#
+# THE SAFER RULE WHERE THEY DIFFERED. FIND_UNUSED_FAMILIES handed its unplaced
+# types on as `elements` and said they were not to be deleted; this card hands
+# Revit's list on for DELETE_ELEMENTS. Here a list that is Revit's is handed
+# on, and the placed-instance count - which calls a nested-only family unused
+# - is a report that hands nothing on.
+#
+# ROUTING - repeated in CHECK_FAMILY_STANDARDS, FIND_UNUSED_MATERIALS,
+# FIND_UNUSED_GROUP_TYPES, FIND_UNUSED_IMAGES, SELECT_TYPES, LOAD_FAMILY and
+# FIND_LIBRARY_FAMILIES.
 
 utterances:
   - list everything purgeable in this family
   - every unused element, all categories
   - find the unused elements of every category in the model
+  # MOVED 2026-11-01 from FIND_UNUSED_FAMILIES, merged into this card.
+  - which families are unused
+  - purge unused
+  - what can be purged
+  - find the families nobody is using
+  - which types are not placed
+  - clean up the unused families

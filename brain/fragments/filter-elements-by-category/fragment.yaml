@@ -3,7 +3,7 @@
 # one home and this repository has been bitten by the alternative.
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 7
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -19,18 +19,33 @@ capability: FILTER_ELEMENTS_BY_CATEGORY
 # with the first one an element HAD. Three work plane-based diffusers with
 # FAMILY_LEVEL_PARAM empty and SCHEDULE_LEVEL_PARAM on Level 1 were on no
 # level ("matching 3", "elements 0"), so the loads' Finalize gave them no flow.
-version: 3
+# VERSION 4 (2026-11-01): SELECT_BY_CATEGORY_NAME and SELECT_BY_CATEGORIES were
+# merged into this card on the owner's instruction, and are DEPRECATED - see
+# the comment block above `utterances`. Version 3's proof below is kept as the
+# record; it no longer describes the code, so the card is DRAFT until version
+# 4 is proved on a real model (D-30).
+#
+# VERSION 4, THE DETAIL - KEPT HERE BECAUSE `purpose` IS SEARCHED (the lesson
+# of FRAGMENT-ISSUES 5b-1293: a hundred words of mechanics in a purpose moved
+# a card out of the duct shortlists). `resolvedTo` says which categories the
+# words were read as, by Revit's own names. Neither `category` nor
+# `categories` given is refused before anything is read - never an empty set.
+# `levelId` may be left out for the whole model. With `includeLinks` and a
+# view, each link is read through that view on Revit 2023 and later, and
+# refused in words on 2020-2022; the level is matched by name in a link
+# either way.
+version: 4
 source: OFFICIAL
 risk: READ
 
 purpose: >
-  Answers "which elements" for a single Revit category, in the active document,
-  excluding types, optionally scoped to one level. It is the filter half of
+  Answers "which elements" for one Revit category or several, in the active
+  document, excluding types, optionally scoped to one level. It is the filter half of
   every "select the X" and "how many X" job, which is exactly why it is a
   fragment and not part of either: two questions sharing one filter is D-29's
   design working.
 
-  Pass ElementId.InvalidElementId as levelId for the whole model.
+  Leave levelId out, or pass none, for the whole model.
 
   Reports unresolvedLevel - how many elements had NO level found at all - so a
   broken level lookup reads as "12 found, 12 with no level" instead of as a
@@ -50,16 +65,54 @@ purpose: >
   is version 3 - version 2 read the links - and version 1's proof no longer
   describes the code; version 3's does.
 
+  **SEVERAL CATEGORIES, OR ONE VIEW (version 4).** `categories` names several
+  in one pass, `perCategory` shows each - one asked for and empty at 0 - and
+  `inViewOnly` narrows it to what one view draws. This is version 4; version
+  3's proof no longer describes the code, and the fragment is DRAFT until it
+  is proved again.
+
 contract:
   needs:
     - name: doc
       type: Document
     - name: category
+      # ONE category, by the name Visibility/Graphics shows or the API name -
+      # the binder turns the word into the category and refuses one that is
+      # none, before this runs. Optional since version 4, so several can be
+      # named in `categories` instead; left out it binds INVALID, which names
+      # no category and is dropped. Neither given is refused here. The name and
+      # the type are what versions 1 to 3 declared, and stay: the loads'
+      # Finalize, the companion and drawing-set.yaml call `category=`.
       type: BuiltInCategory
       source: request
+      optional: true
+      absent: INVALID
+    - name: categories
+      # VERSION 4, from SELECT_BY_CATEGORIES: several categories, comma
+      # separated, collected in ONE pass - "Ducts, Duct Fittings, Duct
+      # Accessories". Optional; left out it binds INVALID, as `category` does.
+      # A list of its own rather than `category` widened, because a
+      # BuiltInCategory need is one category everywhere else in the binder.
+      type: IList<BuiltInCategory>
+      source: request
+      optional: true
+      absent: INVALID
     - name: levelId
+      # Optional since version 4: left out reads as `none`, the whole model -
+      # what the binder already made of `levelId=none`
+      # (HeronBindingNote.DeclaredAbsent, then OneIdNamed).
       type: ElementId
       source: request
+      optional: true
+      absent: none
+    - name: inViewOnly
+      # VERSION 4, from SELECT_BY_CATEGORY_NAME and SELECT_BY_CATEGORIES: only
+      # what this view draws. Left out, or given empty, it binds null - the
+      # whole model (HeronBindingNote.AbsentValue, row 5b-1320). A view NAMED
+      # and not found is still refused.
+      type: View
+      source: request
+      optional: true
     - name: includeLinks
       # D-59. THE MODELLER DECIDES, JOB BY JOB, and absent means host only -
       # which is what this fragment did before and what its proof measured.
@@ -98,6 +151,26 @@ contract:
       # up in THIS model (FRAGMENT-ISSUES row 75).
       role: accounting
       type: IList<string>
+    - name: perCategory
+      # VERSION 4, from SELECT_BY_CATEGORIES. One entry per category ASKED
+      # FOR, by Revit's own name, with how many of `elements` are in it - one
+      # asked for and empty is there at 0, because the absence is the finding
+      # (no dampers in the model, or a category left out). About the answer,
+      # never an element (D-52).
+      role: accounting
+      type: IDictionary<string, int>
+    - name: found
+      # VERSION 4, from both merged cards: how many are in `elements`.
+      role: result
+      type: int
+    - name: resolvedTo
+      # VERSION 4, from SELECT_BY_CATEGORY_NAME. Which categories the words
+      # were read as, by Revit's own names, comma separated - the guard
+      # against a word binding to a different category than the one meant.
+      # A statement about the LOOKUP, filled in whether anything was found
+      # or not (D-52).
+      role: accounting
+      type: string
 proof:
   date: '2026-10-06'
   by: Ajmal PS
@@ -165,10 +238,58 @@ compatibility-note: >
 #   "find all the VCDs"                 -> SELECT_BY_FAMILY, when the FAMILY
 #                                           name is what is known and the
 #                                           category is not
-#   "all the ductwork"                   -> SELECT_BY_CATEGORIES. Ducts,
-#                                           fittings, accessories, flex and
-#                                           insulation are five categories
-#                                           and one answer
+#   "all the ductwork"                   -> here, with `categories` (version
+#                                           4). Ducts, fittings, accessories,
+#                                           flex and insulation are five
+#                                           categories and one answer
+#   "everything in duct accessories"     -> here, category Duct Accessories -
+#                                           the words are the input
+#   "select all the pipes in this view"  -> here, category Pipes, inViewOnly
+#                                           that view
+#   "what is visible in this view"       -> SELECT_VISIBLE_IN_VIEW, which is
+#                                           about visibility rather than
+#                                           category
+#   "these are in the wrong category"    -> CHECK_CATEGORY_MISMATCH
+#   "which categories are there"         -> LIST_CATEGORIES - the names a
+#                                           word that was refused here can be
+#                                           checked against
+
+# VERSION 4 (2026-11-01) - SELECT_BY_CATEGORY_NAME AND SELECT_BY_CATEGORIES
+# WERE MERGED INTO THIS CARD on the owner's instruction in conversation: "now
+# merge the other duplicates also", every conflict to keep the SAFER rule.
+# Both are DEPRECATED. The same job - which elements of a category, or of
+# several, in the model or in one view, optionally on one level, links counted
+# and never selected - and this card is the one eleven methods, the loads'
+# Finalize and the companion already call. Where each retired output is now:
+#
+#   SELECT_BY_CATEGORY_NAME             here
+#     categoryName                      category (or categories) - the binder
+#                                       reads the name Revit shows first,
+#                                       localised, as that card did
+#     inViewOnly                        inViewOnly
+#     elements, found                   elements, found
+#     resolvedTo                        resolvedTo
+#     nearMisses                        NOT CARRIED - a word that is no
+#                                       category is refused by the binder
+#                                       before this runs, in the binder's own
+#                                       words, which carry no near misses.
+#                                       LIST_CATEGORIES lists the names
+#     linksSearched, linkedMatches      the same, through a view on 2023+
+#
+#   SELECT_BY_CATEGORIES                here
+#     categories                        categories, the same type
+#     inViewOnly                        inViewOnly
+#     elements, perCategory, found      the same
+#     linksSearched, linkedMatches      the same, each link's breakdown too
+#
+# THE SAFER RULE WHERE THEY DIFFERED. SELECT_BY_CATEGORY_NAME answered an
+# unknown name with an empty set and near misses; SELECT_BY_CATEGORIES
+# answered an empty list with an empty set. Here nothing runs for either: the
+# binder refuses a word that is no category, and this refuses no category
+# named - no zero that reads as "there are none".
+#
+# ROUTING - repeated in SELECT_BY_MEP_SYSTEM, SELECT_OPENINGS,
+# SET_CATEGORY_GRAPHICS, DESCRIBE_ELEMENTS and LIST_CATEGORIES.
 
 utterances:
   - select all ducts
@@ -245,3 +366,22 @@ utterances:
   # Nothing on any frozen set became riskier (retrieval-history.md, that day).
   - how many rooms are on level 1
   - which rooms are on level 2
+  # MOVED 2026-11-01 from SELECT_BY_CATEGORY_NAME, merged into this card.
+  - everything in duct accessories
+  - select the mechanical equipment category
+  - all elements in the category called ducts
+  - i do not know the category code
+  - select all the pipes in this view
+  # MOVED 2026-11-01 from SELECT_BY_CATEGORIES, merged into this card.
+  - all the ductwork
+  - show me all the ductwork
+  - select the whole pipe system
+  - ducts and fittings and accessories together
+  - everything in these categories
+  - all the mep in this view
+  - all the pipework
+  # ADDED 2026-11-01 WITH THE MERGE. Three routing tables send "all the ducts"
+  # here - SELECT_BY_FAMILY's, and the two merged cards' - and a comment is not
+  # indexed (row 5b-387's lesson). SELECT_BY_CATEGORIES answered it by ranking;
+  # with that card retired, lexical sent it to CREATE_DUCT_RUNS, a write.
+  - all the ducts

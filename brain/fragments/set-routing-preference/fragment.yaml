@@ -47,7 +47,7 @@ purpose: >
 
   **A PART NAMED BUT NOT FOUND RETURNS THE NEAR MISSES.** "Copper" and
   "Copper - K" are different segments, and picking one for the caller is a
-  confident wrong answer wearing a right one's clothes. SELECT_BY_CATEGORY_NAME
+  confident wrong answer wearing a right one's clothes. FILTER_ELEMENTS_BY_CATEGORY
   refuses that guess for a category; this refuses it for a part.
 
   **EDITING A TYPE CHANGES EVERY ELEMENT OF THAT TYPE**, not only the ones

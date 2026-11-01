@@ -162,7 +162,7 @@ compatibility-note: >
 #                                       system at all is counted here but not
 #                                       diagnosed here
 #   "rename this system"             -> not this one. This only reads
-#   "all the ductwork"                   -> SELECT_BY_CATEGORIES, when the
+#   "all the ductwork"                   -> FILTER_ELEMENTS_BY_CATEGORY, when the
 #                                           categories are what is meant
 #                                           rather than one named system
 

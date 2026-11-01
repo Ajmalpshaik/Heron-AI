@@ -184,10 +184,13 @@ purpose: >
      that stair) only when it has none, or it ends up with two sets. For another
      railing type on a stair, the modeller changes the model's default stair
      railing type before the stair is made. Count
-     them with SELECT_BY_CATEGORY_NAME (PROVEN), categoryName=Railings:
-     FILTER_ELEMENTS_BY_CATEGORY and SELECT_IN_REGION answered 0 for two
-     railings that day (5b-444), and the fix for that has not yet been run in
-     Revit.
+     them with FILTER_ELEMENTS_BY_CATEGORY, category=OST_StairsRailing - the
+     API name, which the add-in takes exactly as typed. "Railings" was read as
+     a different category, OST_Railings, and answered 0 for two railings that
+     day in it and in SELECT_IN_REGION (5b-444); the add-in now asks the name
+     Revit shows first, and that fix has not yet been run in Revit.
+     SELECT_BY_CATEGORY_NAME, which counted them by the name that day, was
+     merged into FILTER_ELEMENTS_BY_CATEGORY on 2026-11-01.
   9. PLACE_HOSTED_FAMILY (PROVEN) for the doors and windows, after the rooms
      because each door is turned toward the room it opens into: for every one,
      a point on its wall's line, a point inside that room and a point at its
@@ -310,11 +313,12 @@ purpose: >
       API's, so "Shaded" was refused. Never Ray Trace: Revit will not let a
       tool set it.
   16. The count, and it is the proof that the shell is the plan - the calls
-      not failing is not. FILTER_ELEMENTS_BY_CATEGORY (PROVEN) then
+      not failing is not. FILTER_ELEMENTS_BY_CATEGORY (PROVEN to version 3;
+     version 4, which merged two other selectors in, DRAFT) then
       COUNT_ELEMENTS (PROVEN) for the walls, floors, rooms, stairs, doors,
       windows and ceilings on each level against the plan's own numbers -
       and the families and beams steps 13 and 14 placed - and
-      the railings with SELECT_BY_CATEGORY_NAME as in step 8;
+      the railings with FILTER_ELEMENTS_BY_CATEGORY as in step 8;
       MEASURE_RUN_QUANTITIES (DRAFT, version 2 - MEASURE_ELEMENT_LENGTHS was
       merged into it on 2026-11-01; a read, so nothing is kept) for the total
       length of wall against the plan's - its totalMm, with lengthUnknown
@@ -363,8 +367,9 @@ needs:
   - SET_PARAMETER_VALUES_BY_ID
   # After the rooms and the slab above, with cutOpening - see step 7.
   - CREATE_STAIRS
-  # Counts the railings a stair came with before any are added - step 8.
-  - SELECT_BY_CATEGORY_NAME
+  # Counts the railings a stair came with before any are added - step 8 -
+  # and, at the end, everything the shell made (step 16).
+  - FILTER_ELEMENTS_BY_CATEGORY
   - CREATE_RAILING
   # After the rooms: each door is turned toward the room it opens into.
   - PLACE_HOSTED_FAMILY
@@ -394,8 +399,7 @@ needs:
   - REPLACE_MATERIAL
   - PAINT_FACES
   - SET_VIEW_PROPERTIES
-  # The count. Never skipped.
-  - FILTER_ELEMENTS_BY_CATEGORY
+  # The count. Never skipped - FILTER_ELEMENTS_BY_CATEGORY, above, then these.
   - COUNT_ELEMENTS
   # The wall total, totalMm (MEASURE_ELEMENT_LENGTHS until 2026-11-01).
   - MEASURE_RUN_QUANTITIES
