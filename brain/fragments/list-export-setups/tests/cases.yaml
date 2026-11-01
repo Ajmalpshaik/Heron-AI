@@ -1,0 +1,69 @@
+# D-30: the negative case is what catches "answered, and about another model".
+# The proof plan is tools/jobs/export-setups-scratch-2026-11-01.yaml,
+# NEEDS-CHECKING Group KA. NEVER on a 4355-* job model: a scratch copy of a
+# Revit sample, named in the run record.
+
+positive:
+  - given: >
+      a scratch project holding two DWG/DXF export setups made for the proof -
+      "HERON DWG A" in millimetres, AutoCAD 2013, shared coordinates, views on
+      sheets as external references, and "HERON DWG B" left as Revit made it -
+      and Revit's own default setup if the template has one. COUNT THEM FIRST
+      in File - Export - CAD Formats - DWG - "Select Export Setup"
+    expect: >
+      setupCount equal to the DWG/DXF setups the dialog lists plus every
+      other kind's, both HERON setups in `setups` as "DWG/DXF: <name> - ...",
+      HERON DWG A reading "AutoCAD 2013 format, units Millimeter, Shared
+      coordinates, views on sheets as external references", and the one the
+      dialog opens on marked ACTIVE and named in activeSetups
+
+  - given: kind dwg and setupName "HERON DWG A"
+    expect: >
+      only that setup in `setups`, setupCount 1, and layerTable holding its
+      category rows - the Ducts row reading the layer name the dialog's
+      layer table shows for Ducts
+
+  - given: a Revit 2022 or later scratch project with one PDF export setup saved
+    expect: >
+      it listed as "PDF: <name> - ..." with its paper, zoom, colours and its
+      file naming rule, matching File - Export - PDF
+
+  - given: a project with two print settings saved in File - Print - Setup
+    expect: >
+      both listed as "print: <name> - paper ..., orientation ...", the
+      current one marked CURRENT
+
+negative:
+  - given: setupName "ZZZ NO SUCH SETUP" on the same scratch project
+    expect: >
+      `refused` saying no export setup called 'ZZZ NO SUCH SETUP', naming the
+      setups that ARE there (HERON DWG A among them), setups empty and
+      setupCount 0. A setup listed for a name that is not there is what a
+      read of the wrong thing would show
+
+  - given: >
+      "Heron Export Setups Empty", a second project from Revit's default
+      template with no DWG, DGN or PDF setup saved - a DIFFERENT model, open
+      at the same time
+    expect: >
+      the HERON setups NOT listed - only what that template holds - and the
+      finding naming that model's title. The scratch project's setups
+      appearing is what a read of the wrong document would show
+
+  - given: kind "ifc"
+    expect: >
+      `refused` saying IFC keeps no setup the Revit API can read - not an
+      empty list that reads as "this project has none"
+
+  - given: Revit 2020 or 2021, kind left out
+    expect: >
+      DWG/DXF, DGN and print setups listed, and a finding that PDF setups
+      need Revit 2022 or later - never a failure
+
+second_route:
+  - >
+    File - Export - CAD Formats - DWG, the "Select Export Setup" list, and
+    Modify DWG/DXF Export Setups for the options of each - read by a person
+  - >
+    EXPORT_VIEWS_TO_DWG asked for a setup name this listed and one it did
+    not: the first found by ExportDWGSettings.FindByName, the second refused
