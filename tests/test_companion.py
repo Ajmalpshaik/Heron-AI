@@ -1445,9 +1445,11 @@ def test_dashboard_panel():
     i = source.index('if path == "/api/dashboard":')
     j = source.index('if path == "/api/dashboard/refresh":')
     k = source.index('if path == "/api/dashboard/show":')
+    m = source.index('if path == "/api/dashboard/demo":')
     check(source.index("why = self._api_ok()", i) < source.index("DASHBOARD_PANEL.current()", i)
           and source.index("why = self._api_ok()", j) < source.index("DASHBOARD_PANEL.refresh(", j)
-          and source.index("why = self._api_ok()", k) < source.index("DASHBOARD_PANEL.show(", k),
+          and source.index("why = self._api_ok()", k) < source.index("DASHBOARD_PANEL.show(", k)
+          and source.index("why = self._api_ok()", m) < source.index("DASHBOARD_PANEL.demo(", m),
           "every Dashboard route is behind _api_ok like every other route")
     server = io.open(SERVER, encoding="utf-8").read()
     check("DASHBOARD_PANEL.refresh_hook = _dashboard_refresh" in server,
@@ -1463,8 +1465,9 @@ def test_dashboard_panel():
           and '"FILTER_ELEMENTS_BY_ID"' in show_src,
           "Select, Isolate and Reset run under the lock, on the read's model only, and "
           "never through revit_change")
-    check("DASHBOARD_PANEL.show_hook = _dashboard_show" in server,
-          "the server sets the Dashboard's show_hook")
+    check("DASHBOARD_PANEL.show_hook = _dashboard_show" in server
+          and "DASHBOARD_PANEL.demo_hook = _dashboard_demo" in server,
+          "the server sets the Dashboard's show_hook and demo_hook")
     check("with _revit_lock:" in refresh_src and "revit_change" not in read_src
           and '"REPORT_MODEL_DASHBOARD"' in read_src and "pinned.check(reply)" in read_src,
           "Refresh reads under the lock, through revit_read only, and the pin's refusal stands")
@@ -1499,6 +1502,21 @@ def test_dashboard_panel():
           "an action that is not select, isolate or reset is refused")
     check(shown.show({"action": "reset"})["ok"] and sent[-1] == ("reset", [], ["Tower MEP", "", "11"]),
           "Reset needs no row")
+
+    # THE DEMO (docs/40 s21.12): invented, made in brain/ through a hook, and
+    # nothing on it ever reaches Revit.
+    shown.demo_hook = brain_seam.model_dashboard_demo
+    check(shown.demo()["ok"] is False and shown.current()["document"] == "Tower MEP",
+          "the demo never replaces a read of the modeller's model")
+    demo = hc.DashboardPanel()
+    check(demo.demo()["ok"] is False, "with no chat connected there is no demo")
+    demo.demo_hook = brain_seam.model_dashboard_demo
+    demo.show_hook = shown.show_hook
+    before = len(sent)
+    check(demo.demo()["ok"] and demo.current()["demo"] is True,
+          "the empty panel opens the demo, marked as the demo")
+    check(demo.show({"action": "reset"})["ok"] is False and len(sent) == before,
+          "on the demo, not even Reset reaches Revit")
     page = io.open(PAGE_JS, encoding="utf-8").read()
     dash = page[page.index("// ---------------------------------------------------------------- dashboard"):
                 page.index("// ---------------------------------------------------------------- sprinkler")]

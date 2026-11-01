@@ -281,6 +281,14 @@ def test_nothing_kept_without_a_project():
     assert D.dashboard(sample())["dashboard"]["since"] is None
 
 
+def test_the_demo_is_invented_and_names_no_element():
+    got = D.demo()
+    board = got["dashboard"]
+    assert board["demo"] is True and got["said"].startswith("DEMO")
+    assert all(not r["ids"] for r in board["look"])
+    assert board["since"] is None if "since" in board else True
+
+
 def test_imports_only_the_standard_library():
     allowed = set(getattr(sys, "stdlib_module_names", ())) or {"json"}
     tree = ast.parse(open(os.path.join(ROOT, "brain", "heron_model_dashboard.py")).read())

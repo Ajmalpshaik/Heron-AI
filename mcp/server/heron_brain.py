@@ -2656,3 +2656,16 @@ def proof_status(folder):
         "model": str(proof.get("model") or "") or None,
         "by": str(proof.get("by") or "") or None,
     }
+
+
+def model_dashboard_demo():
+    """The Model Dashboard's DEMO - an invented model, for trying the panel with
+    no Revit (docs/40 s21.12). Never kept, never compared; the panel refuses
+    Select and Isolate on it."""
+    try:
+        import heron_model_dashboard as DASH
+    except ImportError as exc:
+        raise BrainUnavailable("Heron's Model Dashboard could not be imported: %s. It needs "
+                               "nothing beyond Python itself, so this is a broken install."
+                               % exc)
+    return DASH.demo()

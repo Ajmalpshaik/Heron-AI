@@ -657,3 +657,57 @@ def since(project_key, data):
     except (ValueError, OSError) as why:
         return moved, "This read was not kept: %s" % why
     return moved, None
+
+
+# ------------------------------------------------------------------- demo
+
+#: A made-up model for trying the panel with no Revit - for training. Every
+#: name and number is invented; no id in it belongs to any model, and the
+#: panel refuses Select and Isolate on it.
+DEMO = {
+    "format": 1,
+    "model": {"title": "DEMO - an invented office building", "isFamily": False,
+              "isWorkshared": True},
+    "elementTotal": 4210,
+    "categories": [{"name": n, "instances": c, "types": t} for n, c, t in (
+        ("Ducts", 1180, 6), ("Duct Fittings", 960, 14), ("Pipes", 720, 5),
+        ("Pipe Fittings", 610, 12), ("Air Terminals", 240, 4), ("Sprinklers", 210, 2),
+        ("Mechanical Equipment", 64, 9), ("Doors", 120, 7), ("Walls", 106, 11))],
+    "levels": [{"name": n, "elevationMm": e, "instances": c} for n, e, c in (
+        ("Ground Floor", 0, 1520), ("First Floor", 4200, 1370), ("Roof", 8400, 1290))],
+    "noLevel": 30,
+    "worksets": [{"name": "MEP", "open": True, "instances": 3950},
+                 {"name": "Architecture link", "open": True, "instances": 1},
+                 {"name": "Shared Levels and Grids", "open": False, "instances": 259}],
+    "warnings": {"total": 87, "errors": 2, "groups": [
+        {"text": "Duct is slightly off axis and may cause inaccuracies.", "severity": "warning",
+         "count": 52, "ids": []},
+        {"text": "There are identical instances in the same place.", "severity": "warning",
+         "count": 33, "ids": []},
+        {"text": "Elements have duplicate 'Mark' values.", "severity": "error", "count": 2,
+         "ids": []}]},
+    "views": {"total": 146, "templates": 12, "onSheets": 61, "notOnSheets": 85,
+              "withoutTemplate": 40, "byType": {"FloorPlan": 58, "CeilingPlan": 22,
+                                                "Section": 31, "ThreeD": 24, "Schedule": 11},
+              "notOnSheetsIds": []},
+    "sheets": {"total": 34, "empty": 3, "placeholders": 2, "emptyIds": []},
+    "families": {"loaded": 132, "inPlace": 2, "unused": 27, "types": 410,
+                 "unusedNames": ["Old Diffuser 600", "Spare Valve"]},
+    "groups": {"modelTypes": 4, "detailTypes": 6, "unusedTypes": 3},
+    "links": [{"name": "Architecture.rvt", "loaded": True, "pinned": False, "instances": 1}],
+    "cad": {"total": 4, "linked": 3, "imported": 1, "names": ["survey.dwg"]},
+    "rooms": {"total": 0, "placed": 0, "unplaced": 0, "notEnclosed": 0,
+              "unplacedIds": [], "notEnclosedIds": []},
+    "spaces": {"total": 48, "placed": 46, "unplaced": 1, "notEnclosed": 1,
+               "unplacedIds": [], "notEnclosedIds": []},
+    "notRead": [], "capped": [], "fill": None,
+}
+
+
+def demo():
+    """The panel's content for DEMO - invented, never kept, never compared."""
+    built = build(read(json.dumps(DEMO)))
+    built["demo"] = True
+    built["said"] = ("DEMO - an invented model, for trying the Model Dashboard with no Revit. "
+                     "Ask the chat for a model dashboard to read your own model.")
+    return {"dashboard": built, "said": built["said"]}

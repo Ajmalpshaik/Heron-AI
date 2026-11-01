@@ -4018,6 +4018,15 @@ def _dashboard_show(action, ids, identity=None):
     return {"ok": ok, "said": said}
 
 
+def _dashboard_demo():
+    """The DEMO the page's empty Model Dashboard offers - made in the brain,
+    sending nothing to Revit."""
+    try:
+        return brain.model_dashboard_demo()
+    except brain.BrainUnavailable as why:
+        return {"dashboard": None, "said": str(why)}
+
+
 def _dashboard_refresh(parameters=""):
     """
     The Model Dashboard's Refresh, pressed on the page: the same read as
@@ -7376,6 +7385,7 @@ if __name__ == "__main__":
             companion_page.LAYOUT_PANEL.place_hook = _sprinkler_layout_place
             companion_page.DASHBOARD_PANEL.refresh_hook = _dashboard_refresh
             companion_page.DASHBOARD_PANEL.show_hook = _dashboard_show
+            companion_page.DASHBOARD_PANEL.demo_hook = _dashboard_demo
             companion_page.keep(bound_pid=_companion_revit)
         except Exception as why:                         # noqa: BLE001 - never cost the chat
             sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)

@@ -1829,6 +1829,8 @@ function renderDashboard(D) {
   if (!D) return;
   const colours = {};
   (D.states || []).forEach(s => { colours[s.key] = s.colour; });
+  if (D.demo) box.append(el("p", "d-notread", "DEMO - an invented model, for trying the dashboard. " +
+    "Nothing here is from your model, and Select and Isolate are off. Ask the chat for a model dashboard to read yours."));
   const meta = el("div", "l-meta");
   [["Model", D.document || (D.model && D.model.title) || "—"], ["Read from Revit", D.at || "—"]]
     .forEach(([k, v]) => {
@@ -1928,7 +1930,6 @@ async function dashboard_() {
     const key = D ? D.at + "/" + (D.document || "") + "/" + (D.busy ? "b" : "") : "none";
     if (key === dashShown) return;
     dashShown = key;
-    $("dashboard").hidden = !D;
     renderDashboard(D);
   } catch (e) { /* the state poll reports a closed page */ }
 }
@@ -2787,6 +2788,19 @@ async function tableTool(button, path, body) {
   document.querySelectorAll(".c-tools button").forEach(b => { b.disabled = false; });
   changes();
 }
+
+$("d-demo").addEventListener("click", async () => {
+  try {
+    await fetch("/api/dashboard/demo", {
+      method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
+      credentials: "same-origin",
+      body: "{}",
+    });
+  } catch (e) { /* the state poll reports a closed page */ }
+  dashShown = null;
+  dashboard_();
+});
 
 if (SHOW_CHANGES) {
   $("c-load-filters").addEventListener("click", () => tableTool(null, "/api/changes/load", { kind: "filters" }));

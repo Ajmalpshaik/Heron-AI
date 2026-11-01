@@ -1296,13 +1296,15 @@ class DashboardPanel(object):
         #: only (docs/40 s21.11).
         self.refresh_hook = None
         self.show_hook = None
+        #: demo_hook() -> brain answer for the invented DEMO model.
+        self.demo_hook = None
 
     def open(self, document, answer, identity=None, parameters=""):
         board = answer.get("dashboard") or {}
         with self._lock:
             self._held = {
                 "parameters": parameters or "", "fill": board.get("fill"),
-                "since": board.get("since"),
+                "since": board.get("since"), "demo": bool(board.get("demo")),
                 "document": document, "at": time.strftime("%H:%M:%S"),
                 "identity": list(identity) if identity else None,
                 "model": board.get("model") or {}, "tiles": board.get("tiles") or [],
@@ -1341,6 +1343,22 @@ class DashboardPanel(object):
 
     SHOWS = ("select", "isolate", "reset")
 
+    def demo(self):
+        """Open the DEMO - an invented model, made in brain/ - when no read is held.
+        A real read is never replaced by it."""
+        with self._lock:
+            if self._held and not self._held.get("demo"):
+                return {"ok": False, "said": "The dashboard already shows a read of your model; "
+                                             "the demo does not replace it."}
+        hook = self.demo_hook
+        if hook is None:
+            return {"ok": False, "said": "No demo: %s." % self.GONE}
+        answer = hook() or {}
+        if not answer.get("dashboard"):
+            return {"ok": False, "said": answer.get("said") or "The demo could not be made."}
+        self.open("DEMO", answer, None)
+        return {"ok": True, "said": answer["said"]}
+
     def show(self, body):
         """
         A row's Select in Revit or Isolate in view, or Reset isolate. The ids
@@ -1358,6 +1376,12 @@ class DashboardPanel(object):
             if self._busy:
                 return {"ok": False, "said": "Nothing was sent to Revit: %s." % self.BUSY}
             held = self._held
+            # THE DEMO IS INVENTED: none of its rows names an element of any
+            # model, so nothing on it ever reaches Revit.
+            if held and held.get("demo"):
+                return {"ok": False, "said": "Nothing was sent to Revit: this is the DEMO, an "
+                                             "invented model. Ask the chat for a model dashboard "
+                                             "to read your own."}
             if action != "reset":
                 rows = [r for r in (held or {}).get("look") or [] if r.get("key") == body.get("row")]
                 if not rows or not rows[0].get("ids"):
@@ -1989,6 +2013,11 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             except (ValueError, UnicodeDecodeError):
                 return self._refuse(400, "unreadable")
             return self._json(200, DASHBOARD_PANEL.refresh(body))
+        if path == "/api/dashboard/demo":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, DASHBOARD_PANEL.demo())
         if path == "/api/dashboard/show":
             why = self._api_ok()
             if why:
