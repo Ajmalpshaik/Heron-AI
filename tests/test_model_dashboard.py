@@ -234,6 +234,14 @@ def test_fill_keeps_empty_and_absent_apart():
     assert row(board, "fill:Fire Rating")["state"] == "ok"
 
 
+def test_two_parameters_of_one_name_are_worth_a_look():
+    fill = {"parameters": ["Fire Rating"], "rows": [
+        {"category": "Walls", "parameter": "Fire Rating", "populated": 5, "empty": 0,
+         "absent": 0, "doubled": 3, "emptyIds": []}]}
+    p = built(fill=fill)["fill"]["parameters"][0]
+    assert p["doubled"] == 3 and p["rows"][0]["total"] == 8 and p["rows"][0]["state"] == "look"
+
+
 def test_fill_not_read_is_null_not_zero():
     board = built(fill=None, notRead=["fill: the parameters could not be read"])
     assert board["fill"] is None

@@ -52,6 +52,37 @@ positive:
       run with every workset open - by the elements on the closed one - and
       findings says nothing on a closed workset is loaded or counted
 
+  # VERSION 2 - the fill part. The first is the batch-prove leg (tools/jobs).
+  - given: >
+      version 2, parameters "Mark" on the same Snowdon copy, with one
+      mechanical equipment item's Mark typed "AHU-01" beforehand and another's
+      Mark cleared
+    expect: >
+      fill.parameters ["Mark"]; one row per category in categories, by name,
+      each with populated + empty + absent + doubled equal to that category's
+      instances; the Mechanical Equipment row counts AHU-01 as populated and
+      lists the cleared one's id in emptyIds; the populated count matches a
+      Mechanical Equipment schedule with Mark, filtered to Mark has a value
+
+  - given: >
+      version 2, parameters "  type MARK ,  mark  " - capitals and spaces
+      wrong on purpose
+    expect: >
+      fill.parameters ["type MARK", "mark"] in that order; the same counts as
+      "Type Mark, Mark"; Type Mark read from each element's TYPE (a type's
+      Type Mark filled once counts every instance of it as populated)
+
+  - given: >
+      version 2, parameters naming 13 parameters
+    expect: >
+      fill null; notRead has one "fill:" line saying 13 were given and at most
+      12 are read; every other part read as with none asked; sectionsNotRead 1
+
+  - given: version 2, parameters left out, then parameters ""
+    expect: >
+      both answers are version 1's, part for part, with "fill": null and NO
+      "fill:" line in notRead - not asking is not a part that failed
+
 negative:
   # THE CASE THAT MATTERS - the batch-prove leg (tools/jobs).
   - given: >
@@ -62,6 +93,28 @@ negative:
       reads the family's title with isFamily true, every other part is null -
       never 0 or [] - and notRead names all thirteen parts as "not a project";
       not one of the project's numbers appears
+
+  # VERSION 2 - the batch-prove leg sends parameters "Mark" to both documents.
+  - given: version 2, parameters "Mark", the run sent to the family as above
+    expect: >
+      elementTotal 0 and sectionsNotRead 14 - the thirteen and "fill: not a
+      project"; fill null, never a table of zeros
+
+  # VERSION 2 - THE FILL CASE THAT MATTERS: a name no parameter has.
+  - given: >
+      version 2, parameters "Mark, Heron No Such Parameter" on the Snowdon copy
+    expect: >
+      every row for "Heron No Such Parameter" has populated 0, empty 0,
+      doubled 0 and absent equal to its category's instances, emptyIds [] -
+      ABSENT, never empty: an element without the parameter has nowhere to
+      type a value; the Mark rows are those of the positive, unchanged
+
+  - given: >
+      version 2, a shared parameter "Fire Rating" bound to Doors beside the
+      door family's own Fire Rating, parameters "Fire Rating"
+    expect: >
+      the doors that carry both count as doubled - never populated or empty -
+      and every door is in exactly one of the four counts (D-54 s3, 5b-203)
 
   - given: a project that is NOT workshared (Snowdon Towers, or Project2)
     expect: >
@@ -101,4 +154,8 @@ second_route: >
   groups.unusedTypes; SELECT_UNENCLOSED_ROOMS with rooms only must give
   rooms.unplaced and rooms.notEnclosed, and with spaces only the spaces'. A
   part that disagrees with its reader is a finding for FRAGMENT-ISSUES, never
-  a rounding.
+  a rounding. Version 2's fill: READ_ELEMENT_PARAMETERS on one category's
+  elements with the same name must give the same populated, empty (its blank)
+  and absent counts, for a text or number parameter whose exact name no
+  element carries twice - that reader takes the first of a doubled name and
+  reads an element parameter's display text, which this does not.

@@ -214,7 +214,8 @@ def read(text):
             "parameters": _names(fill.get("parameters")),
             "rows": [{"category": _text(r.get("category")), "parameter": _text(r.get("parameter")),
                       "populated": _int(r.get("populated")), "empty": _int(r.get("empty")),
-                      "absent": _int(r.get("absent")), "emptyIds": _ids(r.get("emptyIds"))}
+                      "absent": _int(r.get("absent")), "doubled": _int(r.get("doubled")),
+                      "emptyIds": _ids(r.get("emptyIds"))}
                      for r in _rows(fill, "rows")]}
     else:
         out["fill"] = None
@@ -447,15 +448,20 @@ def fill(data):
         for r in got["rows"]:
             if r["parameter"].lower() != name.lower():
                 continue
-            total = r["populated"] + r["empty"] + r["absent"]
+            # DOUBLED: two parameters answer to the name on the element (or
+            # none there and two on its type) - the fragment will not guess
+            # which, so neither does the panel. Worth a look, like empty.
+            total = r["populated"] + r["empty"] + r["absent"] + r["doubled"]
             share = int(round(100.0 * r["populated"] / total)) if total else 0
             rows.append(dict(r, total=total, share=share,
-                             state="look" if r["empty"] else ("info" if r["absent"] else "ok")))
+                             state="look" if (r["empty"] or r["doubled"])
+                             else ("info" if r["absent"] else "ok")))
         rows.sort(key=lambda r: (-r["empty"], r["category"]))
         out.append({"parameter": name, "rows": rows,
                     "populated": sum(r["populated"] for r in rows),
                     "empty": sum(r["empty"] for r in rows),
-                    "absent": sum(r["absent"] for r in rows)})
+                    "absent": sum(r["absent"] for r in rows),
+                    "doubled": sum(r["doubled"] for r in rows)})
     return {"parameters": out}
 
 

@@ -1674,7 +1674,8 @@ function dashFill(F, colours) {
     const box = el("figure", "d-chart");
     box.append(el("figcaption", "d-chart-title",
       p.parameter + " - " + num(p.populated, 0) + " filled · " + num(p.empty, 0) + " empty · " +
-      num(p.absent, 0) + " without it"));
+      num(p.absent, 0) + " without it" +
+      (p.doubled ? " · " + num(p.doubled, 0) + " with two of that name - Heron will not guess which" : "")));
     const table = el("table", "d-fill-table");
     const head = el("tr");
     ["Category", "", "Filled", "Empty", "Without it"].forEach(h => head.append(el("th", null, h)));

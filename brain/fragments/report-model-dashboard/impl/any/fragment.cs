@@ -1,5 +1,5 @@
-// NOT STANDALONE. Assumes `doc` is in scope, and leaves `dashboardJson`,
-// `elementTotal`, `sectionsNotRead` and `findings` behind.
+// NOT STANDALONE. Assumes `doc` and `parameters` are in scope, and leaves
+// `dashboardJson`, `elementTotal`, `sectionsNotRead` and `findings` behind.
 //
 // READS ONLY. No transaction is opened and nothing is set.
 //
@@ -67,6 +67,44 @@
 // THE BACKSLASH AND THE QUOTE ARE BUILT FROM THEIR CHARACTER CODES, as in
 // read-element-table and report-space-envelope: the tools that write these
 // files have eaten typed backslashes before.
+//
+// ----------------------------------------------------------------------
+// VERSION 2 (2026-11-01) - HOW FULL THE NAMED PARAMETERS ARE
+// ----------------------------------------------------------------------
+//
+// `parameters` names up to 12 parameters, comma separated - "Mark, Type Mark,
+// Fire Rating". Capitals and extra spaces are forgiven. Left out, empty or
+// "none" (the card's `absent: none`), nothing is counted and `fill` is null -
+// version 1's answer plus that one key, so "format" stays 1: a format-1 reader
+// ignores a key it does not know. More than 12 is refused for this part: `fill`
+// null, a "fill:" line in notRead naming the limit, the rest read as before.
+//
+// For every element the dashboard counts - the placed model elements, nothing
+// else - each name is in one of heron_modelqa's three states, kept apart:
+//
+//   populated   the instance's parameter, else its type's, holds a value: a
+//               text that is not blank, a number or a Yes/No (0 and No ARE
+//               values), or an element that is not "none"
+//   empty       the parameter is there and holds nothing
+//   absent      neither the instance nor its type has it - a family or a
+//               category question, not a value to type in
+//
+// and a fourth, never folded into them: DOUBLED - two parameters on the
+// element (or, with none on it, on its type) answer to the name. Which one is
+// meant is not guessed (D-54 s3, FRAGMENT-ISSUES 5b-203): a shared "Fire
+// Rating" bound beside the family's own is the case.
+//
+// INSTANCE FIRST, THEN THE TYPE, as READ_ELEMENT_PARAMETERS asks: the one the
+// modeller edits on the element wins.
+//
+// MARK AND TYPE MARK BY WHAT THEY ARE, NOT BY NAME - READ_ELEMENT_TABLE's rule,
+// ALL_MODEL_MARK and ALL_MODEL_TYPE_MARK. Typed "Mark" or "Type Mark", they
+// are read through those two built-in parameters, so they are found in a Revit
+// of any language; the name is asked only where the built-in is not there.
+// Their own local names are found by name, like any other.
+//
+// A FAULT IN THIS PART IS fill NULL AND A "fill:" LINE, never a table of zeros;
+// the rest of the dashboard is unaffected.
 
 var dashboardJson = "";
 var findings = "";
@@ -129,7 +167,38 @@ var sectionsNotRead = 0;
     string elementTotalJson = "null", categoriesJson = "null", levelsJson = "null", noLevelJson = "null",
            worksetsJson = "null", warningsJson = "null", viewsJson = "null", sheetsJson = "null",
            familiesJson = "null", groupsJson = "null", linksJson = "null", cadJson = "null",
-           roomsJson = "null", spacesJson = "null";
+           roomsJson = "null", spacesJson = "null", fillJson = "null";
+
+    // ---- version 2: the parameter names asked for ---------------------------
+    //
+    // A name is compared with capitals and runs of spaces forgiven. "none", or
+    // nothing at all, is no name - the card's `absent: none`.
+    Func<string, string> nameKey = text =>
+        string.Join(" ", (text ?? "").Split((char[])null, StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant();
+    var fillMost = 12;
+    var fillNames = new List<string>();      // as typed, outer spaces trimmed
+    var fillKeys = new List<string>();       // compared form, same order
+    string fillRefused = null;
+    if (nameKey(parameters) != "" && nameKey(parameters) != "none")
+    {
+        foreach (var piece in (parameters ?? "").Split(','))
+        {
+            var typed = piece.Trim();
+            var key = nameKey(typed);
+            if (key.Length == 0 || fillKeys.Contains(key)) continue;
+            fillNames.Add(typed);
+            fillKeys.Add(key);
+        }
+        if (fillKeys.Count > fillMost)
+            fillRefused = whole(fillKeys.Count) + " parameter names were given and at most " + whole(fillMost)
+                + " are read - nothing was counted for them; ask again with " + whole(fillMost) + " or fewer";
+    }
+    var fillAsked = fillKeys.Count > 0 && fillRefused == null;
+    if (fillRefused != null)
+    {
+        notRead.Add("fill: " + fillRefused);
+        lines.Add("Fill: REFUSED - " + fillRefused);
+    }
 
     if (isFamily)
     {
@@ -138,6 +207,8 @@ var sectionsNotRead = 0;
         foreach (var part in new[] { "elements", "categories", "levels", "worksets", "warnings", "views",
                                      "sheets", "families", "groups", "links", "cad", "rooms", "spaces" })
             notRead.Add(part + ": not a project - this is a family document, and the dashboard reads projects only");
+        if (fillAsked)
+            notRead.Add("fill: not a project - this is a family document, and the dashboard reads projects only");
         lines.Add("Nothing else was read: the dashboard reads projects only.");
     }
     else
@@ -161,6 +232,91 @@ var sectionsNotRead = 0;
         var unreadable = 0;
         string firstUnreadable = null;
         string scanFailed = null;
+
+        // ---- version 2: what each named parameter holds, per element ---------
+        //
+        // States: 0 populated, 1 empty, 2 absent, 3 doubled - see the header.
+        var fillCounts = new Dictionary<ElementId, int[,]>();       // category -> [name, state]
+        var fillEmptyIds = new Dictionary<ElementId, List<string>[]>(); // category -> per name, first `most`
+        string fillFailed = null;
+        var wantedKeys = new HashSet<string>(fillKeys);
+        var builtIns = new BuiltInParameter?[fillKeys.Count];
+        for (var i = 0; i < fillKeys.Count; i++)
+        {
+            if (fillKeys[i] == "mark") builtIns[i] = BuiltInParameter.ALL_MODEL_MARK;
+            else if (fillKeys[i] == "type mark") builtIns[i] = BuiltInParameter.ALL_MODEL_TYPE_MARK;
+        }
+        // An element's parameters that answer to an asked name, by compared
+        // name - each parameter once, by its id.
+        Func<Element, Dictionary<string, List<Parameter>>> matchesOn = holder =>
+        {
+            var found = new Dictionary<string, List<Parameter>>();
+            var seenParameters = new HashSet<string>();
+            foreach (Parameter p in holder.Parameters)
+            {
+                if (p == null || p.Definition == null) continue;
+                var key = nameKey(p.Definition.Name);
+                if (!wantedKeys.Contains(key)) continue;
+                if (!seenParameters.Add(p.Id.ToString())) continue;
+                List<Parameter> list;
+                if (!found.TryGetValue(key, out list)) { list = new List<Parameter>(); found[key] = list; }
+                list.Add(p);
+            }
+            return found;
+        };
+        // heron_modelqa's _filled: nothing in it is empty; 0 and No are values.
+        Func<Parameter, int> stateOf = p =>
+        {
+            if (!p.HasValue) return 1;
+            if (p.StorageType == StorageType.String) return string.IsNullOrWhiteSpace(p.AsString()) ? 1 : 0;
+            if (p.StorageType == StorageType.Integer || p.StorageType == StorageType.Double) return 0;
+            if (p.StorageType == StorageType.ElementId)
+            {
+                // An element parameter set to none holds the invalid id.
+                var held = p.AsElementId();
+                return held == null || held == ElementId.InvalidElementId ? 1 : 0;
+            }
+            return 1;
+        };
+        var typeMatches = new Dictionary<ElementId, Dictionary<string, List<Parameter>>>();
+        var typeHolder = new Dictionary<ElementId, Element>();
+        Func<Element, ElementId, int[]> readFill = (element, typeId) =>
+        {
+            Element type = null;
+            Dictionary<string, List<Parameter>> onType = null;
+            if (typeId != null && typeId != ElementId.InvalidElementId)
+            {
+                if (!typeHolder.ContainsKey(typeId))
+                {
+                    var found = doc.GetElement(typeId);
+                    typeHolder[typeId] = found;
+                    typeMatches[typeId] = found == null ? null : matchesOn(found);
+                }
+                type = typeHolder[typeId];
+                onType = typeMatches[typeId];
+            }
+            // The element's own parameters are walked only when a name is left
+            // that no built-in answered - asking for Mark alone walks none.
+            Dictionary<string, List<Parameter>> onElement = null;
+            var states = new int[fillKeys.Count];
+            for (var i = 0; i < fillKeys.Count; i++)
+            {
+                Parameter chosen = null;
+                if (builtIns[i].HasValue)
+                {
+                    chosen = element.get_Parameter(builtIns[i].Value);
+                    if (chosen == null && type != null) chosen = type.get_Parameter(builtIns[i].Value);
+                }
+                if (chosen != null) { states[i] = stateOf(chosen); continue; }
+                if (onElement == null) onElement = matchesOn(element);
+                List<Parameter> list;
+                if (!onElement.TryGetValue(fillKeys[i], out list) && (onType == null || !onType.TryGetValue(fillKeys[i], out list)))
+                    states[i] = 2;
+                else
+                    states[i] = list.Count > 1 ? 3 : stateOf(list[0]);
+            }
+            return states;
+        };
 
         try
         {
@@ -212,6 +368,15 @@ var sectionsNotRead = 0;
                     WorksetId worksetKey = null;
                     if (isWorkshared) worksetKey = element.WorksetId;
 
+                    // Version 2. A fault here stops the fill part only - the
+                    // element is still counted everywhere else.
+                    int[] fillStates = null;
+                    if (fillAsked && fillFailed == null)
+                    {
+                        try { fillStates = readFill(element, hasType ? typeId : null); }
+                        catch (Exception ex) { fillFailed = why(ex); fillStates = null; }
+                    }
+
                     elementTotal++;
                     if (!categoryCount.ContainsKey(categoryId))
                     {
@@ -230,6 +395,26 @@ var sectionsNotRead = 0;
 
                     if (worksetKey != null)
                         onWorkset[worksetKey] = (onWorkset.ContainsKey(worksetKey) ? onWorkset[worksetKey] : 0) + 1;
+
+                    if (fillStates != null)
+                    {
+                        int[,] tally;
+                        if (!fillCounts.TryGetValue(categoryId, out tally))
+                        {
+                            tally = new int[fillKeys.Count, 4];
+                            fillCounts[categoryId] = tally;
+                            var lists = new List<string>[fillKeys.Count];
+                            for (var j = 0; j < fillKeys.Count; j++) lists[j] = new List<string>();
+                            fillEmptyIds[categoryId] = lists;
+                        }
+                        for (var j = 0; j < fillKeys.Count; j++)
+                        {
+                            tally[j, fillStates[j]] = tally[j, fillStates[j]] + 1;
+                            // Kept to the cap; the count beside it is never cut.
+                            if (fillStates[j] == 1 && fillEmptyIds[categoryId][j].Count < most)
+                                fillEmptyIds[categoryId][j].Add(element.Id.ToString());
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -260,8 +445,8 @@ var sectionsNotRead = 0;
         {
             if (unreadable > 0)
                 notRead.Add("elements: " + whole(unreadable) + " element(s) could not be read and are in no count, "
-                    + "so elementTotal, categories, levels and worksets are short by up to that many - first: "
-                    + firstUnreadable);
+                    + "so elementTotal, categories, levels, worksets" + (fillAsked ? " and fill" : "")
+                    + " are short by up to that many - first: " + firstUnreadable);
             elementTotalJson = whole(elementTotal);
             lines.Add("Elements: " + whole(elementTotal) + " placed model element(s) in "
                 + whole(categoryCount.Count) + " categor" + (categoryCount.Count == 1 ? "y" : "ies"));
@@ -305,6 +490,70 @@ var sectionsNotRead = 0;
             {
                 notRead.Add("levels: " + why(ex));
                 lines.Add("Levels: NOT READ - " + why(ex));
+            }
+        }
+
+        // ---- version 2: the fill part -----------------------------------------
+        //
+        // One row per category with an element counted and per name, the
+        // categories by name, the names in the order typed.
+
+        if (fillAsked)
+        {
+            if (scanFailed != null)
+            {
+                notRead.Add("fill: the model's elements could not be read - " + scanFailed);
+                lines.Add("Fill: NOT READ - " + scanFailed);
+            }
+            else if (fillFailed != null)
+            {
+                notRead.Add("fill: the parameters could not be read - " + fillFailed);
+                lines.Add("Fill: NOT READ - " + fillFailed);
+            }
+            else
+            {
+                try
+                {
+                    var rows = new List<string>();
+                    var cut = 0;
+                    var totals = new int[fillKeys.Count, 4];
+                    var order = fillCounts.Keys
+                        .OrderBy(id => categoryName.ContainsKey(id) ? categoryName[id] ?? "" : "", StringComparer.OrdinalIgnoreCase)
+                        .ThenBy(id => id.ToString(), StringComparer.Ordinal)
+                        .ToList();
+                    foreach (var categoryId in order)
+                    {
+                        var tally = fillCounts[categoryId];
+                        for (var j = 0; j < fillKeys.Count; j++)
+                        {
+                            for (var s = 0; s < 4; s++) totals[j, s] = totals[j, s] + tally[j, s];
+                            if (tally[j, 1] > most) cut++;
+                            rows.Add("{" + esc("category") + ":" + esc(categoryName[categoryId])
+                                + "," + esc("parameter") + ":" + esc(fillNames[j])
+                                + "," + esc("populated") + ":" + whole(tally[j, 0])
+                                + "," + esc("empty") + ":" + whole(tally[j, 1])
+                                + "," + esc("absent") + ":" + whole(tally[j, 2])
+                                + "," + esc("doubled") + ":" + whole(tally[j, 3])
+                                + "," + esc("emptyIds") + ":" + textList(fillEmptyIds[categoryId][j]) + "}");
+                        }
+                    }
+                    if (cut > 0)
+                        capped.Add("fill.rows.emptyIds: " + whole(cut) + " row(s) have more than " + whole(most)
+                            + " empty elements, and the first " + whole(most) + " of each are listed");
+                    fillJson = "{" + esc("parameters") + ":" + textList(fillNames)
+                        + "," + esc("rows") + ":[" + string.Join(",", rows.ToArray()) + "]}";
+                    var said = new List<string>();
+                    for (var j = 0; j < fillKeys.Count; j++)
+                        said.Add(fillNames[j] + " " + whole(totals[j, 0]) + " populated, " + whole(totals[j, 1]) + " empty, "
+                            + whole(totals[j, 2]) + " absent" + (totals[j, 3] > 0 ? ", " + whole(totals[j, 3]) + " doubled" : ""));
+                    lines.Add("Fill: " + string.Join("; ", said.ToArray()) + " - over " + whole(elementTotal)
+                        + " placed model element(s)");
+                }
+                catch (Exception ex)
+                {
+                    notRead.Add("fill: " + why(ex));
+                    lines.Add("Fill: NOT READ - " + why(ex));
+                }
             }
         }
 
@@ -797,6 +1046,7 @@ var sectionsNotRead = 0;
         + "," + esc("cad") + ":" + cadJson
         + "," + esc("rooms") + ":" + roomsJson
         + "," + esc("spaces") + ":" + spacesJson
+        + "," + esc("fill") + ":" + fillJson
         + "," + esc("notRead") + ":" + textList(notRead)
         + "," + esc("capped") + ":" + textList(capped) + "}";
 }
