@@ -16,13 +16,17 @@ semantic-identity: "material tags or multi-category tags, of the material or mul
 # TAG_ELEMENTS_IN_VIEW, TAG_ROOMS and COPY_TAGS_TO_REPLACEMENTS. None of them
 # places either kind on purpose.
 #
-# WHY A NEW CARD AND NOT A WIDENING OF TAG_ELEMENTS. TAG_ELEMENTS takes any tag
-# type and would hand a multi-category type to IndependentTag.Create - but it
-# is PROVEN, and a change under its impl/ would make its proof stale. And its
-# contract is not this one: it skips an element carrying ANY tag (its
-# alreadyTagged comes from FIND_UNTAGGED_ELEMENTS), never checks what kind of
-# tag type it was given, and lists nothing when none is named. A wall with a
-# wall tag still wants a material tag.
+# WHY A NEW CARD AND NOT A WIDENING. Written when TAG_ELEMENTS was PROVEN;
+# main's #777 has since merged it into TAG_ELEMENTS_IN_VIEW, DRAFT (version
+# 7), and retired it (corrected 2026-11-01). TAG_ELEMENTS_IN_VIEW already
+# takes one exact tag type on every element (`tagTypeId`), a Multi-Category tag
+# included, and skips an element only when it carries a tag of THAT TYPE in
+# the view. Its contract is still not this one: with no type named it uses
+# the project's default per category where this card lists the types loaded
+# and places nothing, and it never checks the type named is a material or
+# multi-category tag. A wall with a wall tag still wants a material tag.
+# Whether this card merges into TAG_ELEMENTS_IN_VIEW is OPEN for the owner -
+# row 5b-1382.
 #
 # WHY ONE CARD FOR TWO KINDS, as TAG_ROOMS carries rooms, spaces and zones:
 # the same Revit call, the same inputs and the same answer, and the tag type

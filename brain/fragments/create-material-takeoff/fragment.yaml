@@ -13,17 +13,19 @@ semantic-identity: "make a Material Takeoff schedule view of one category with t
 # for floors" and "material takeoff of all the concrete" - Revit's View >
 # Schedules > Material Takeoff. Checked that day with brain/heron_retrieve.py
 # on a scratch store, Revit 2024: the three reached READ_ELEMENT_MATERIAL,
-# CREATE_PARTS and READ_ELEMENT_MATERIAL. Nothing in the library made a
-# material takeoff VIEW: CREATE_SCHEDULE calls ViewSchedule.CreateSchedule,
-# which has no material rows; REPORT_MATERIAL_TAKEOFF reads the same numbers
-# into the reply and makes nothing; ADD_SCHEDULE_FIELDS adds columns to a
-# schedule that already exists.
+# CREATE_PARTS and READ_ELEMENT_MATERIAL. REPORT_MATERIAL_TAKEOFF reads the
+# same numbers into the reply and makes nothing; ADD_SCHEDULE_FIELDS adds
+# columns to a schedule that already exists.
 #
-# WHY A NEW CARD AND NOT A WIDENING OF CREATE_SCHEDULE. CREATE_SCHEDULE is
-# PROVEN, and any change under its impl/ would make its proof stale. And the
-# creation call, the list of allowed categories and the fields are all
-# different: a takeoff has one row per material per element, and its Material:
-# fields exist on no ordinary schedule.
+# CORRECTED 2026-11-01: THIS IS NOT THE ONLY CARD THAT MAKES ONE. When this
+# card was written CREATE_SCHEDULE was PROVEN and called only
+# ViewSchedule.CreateSchedule, which has no material rows - the reason given
+# then for a new card rather than a widening. CREATE_SCHEDULE is DRAFT since
+# main's #777, and its version 3 (#785) makes a Material Takeoff itself
+# (listKind "material", ViewSchedule.CreateMaterialTakeoff). The two now do
+# the same job, with opposite rules for a name already used (refused here, Revit's
+# kept there) and an empty takeoff. Whether this card merges into
+# CREATE_SCHEDULE is OPEN for the owner - row 5b-1382.
 #
 # EVERY VALUE IS THE MODELLER'S (D-33):
 #   category     the category, as Revit names it - "Walls", "Floors". Only a
@@ -162,7 +164,9 @@ compatibility-note: >
 #   "material takeoff of all the concrete"  -> here, then SET_SCHEDULE_FILTERS
 #                                              on Material: Name
 #   "make a schedule"                       -> CREATE_SCHEDULE - a schedule of
-#                                              elements, no material rows
+#                                              elements; its version 3 makes a
+#                                              Material Takeoff too, an overlap
+#                                              OPEN for the owner (row 5b-1382)
 #   "give me a material takeoff"            -> REPORT_MATERIAL_TAKEOFF - the
 #                                              numbers in the reply, nothing made
 utterances:

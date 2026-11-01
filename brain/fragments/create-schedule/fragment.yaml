@@ -337,9 +337,12 @@ compatibility-note: >
 
 # ROUTING (2026-11-01) - repeated in CREATE_MATERIAL_TAKEOFF.
 #   "create a material takeoff schedule for floors" -> CREATE_MATERIAL_TAKEOFF -
-#                                        Revit's Material Takeoff, one row per
-#                                        material per element, which a schedule
-#                                        made here never has
+#                                        Revit's Material Takeoff. This card's
+#                                        version 3 makes one too (listKind
+#                                        material): both cards do the same job,
+#                                        with opposite rules, and whether they
+#                                        merge is OPEN for the owner - row
+#                                        5b-1382
 utterances:
   - make a schedule
   - create a schedule of the ducts

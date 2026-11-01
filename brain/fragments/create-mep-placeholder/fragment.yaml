@@ -15,8 +15,11 @@ semantic-identity: "draw duct or pipe placeholders along these points - Revit's 
 # CREATE_DUCT, the second CREATE_FLEX_PIPE. Nothing in the library drew a
 # placeholder.
 #
-# WHY A NEW CARD AND NOT A WIDENING OF CREATE_DUCT OR CREATE_PIPE. Both are
-# PROVEN, and a change under their impl/ would make their proofs stale. And a
+# WHY A NEW CARD AND NOT A WIDENING. Written when CREATE_DUCT and CREATE_PIPE
+# were PROVEN; main's #777 has since merged both into CREATE_DUCT_RUNS, DRAFT
+# (version 3: duct, pipe, tray, conduit and flex, one run or a layout), and
+# retired them (corrected 2026-11-01). CREATE_DUCT_RUNS draws no placeholder.
+# Whether this card merges into it is OPEN for the owner - row 5b-1382. A
 # placeholder is a different element to a duct: Revit draws it single-line,
 # with no fittings, and it is what CONVERT_MEP_PLACEHOLDERS turns into real
 # duct or pipe later. The run of points is copied from them, so the same

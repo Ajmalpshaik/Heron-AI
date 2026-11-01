@@ -16,10 +16,13 @@ semantic-identity: "edit a circuit already in the model - Add to Circuit, Remove
 # REPORT_PANEL_CIRCUITS, CREATE_WIRES and DISCONNECT_CONNECTORS came back, and
 # none of them changes an existing circuit's devices or its panel).
 #
-# A NEW CAPABILITY, NOT A WIDENING. CREATE_ELECTRICAL_CIRCUIT (FRG-MEP-045,
-# PROVEN) makes a NEW circuit and can pick a panel only for the circuit it has
-# just made; a change under its impl/ would make its proof stale for a job it
-# does not do. DISCONNECT_CONNECTORS breaks a physical connector join, not a
+# A NEW CAPABILITY, NOT A WIDENING. Written when CREATE_ELECTRICAL_CIRCUIT
+# (FRG-MEP-045) was PROVEN; main's #777 has since merged it into
+# CREATE_MEP_SYSTEM, DRAFT (version 2), and retired it (corrected
+# 2026-11-01). CREATE_MEP_SYSTEM makes a NEW circuit and can pick a panel only
+# for the circuit it has just made; it edits no existing one. This card
+# overlaps EDIT_MEP_SYSTEM, the same buttons for duct and piping systems:
+# whether the two merge is OPEN for the owner - row 5b-1382. DISCONNECT_CONNECTORS breaks a physical connector join, not a
 # circuit's membership or its panel.
 #
 # ONE FRAGMENT FOR THE FOUR BUTTONS, NOT TWO. Add to Circuit, Remove from

@@ -19,10 +19,12 @@ semantic-identity: "make a foundation slab from these corners - Structure > Foun
 # CREATE_FROM_ROOM_BOUNDARIES and CREATE_ROOM_ELEVATIONS behind them. None makes
 # a foundation slab.
 #
-# A NEW CAPABILITY, NOT A WIDENING. CREATE_FLOOR is PROVEN and makes an
-# architectural floor of an ordinary floor type: its creation calls take no
-# foundation flag, and widening it would change its job and make its proof
-# stale. Nothing here touches it. Its boundary writing is copied, so one
+# A NEW CAPABILITY, NOT A WIDENING. Written when CREATE_FLOOR was PROVEN;
+# it is DRAFT since main's #777 (version 3: a floor, a ceiling or a flat roof,
+# the type deciding), so no proof stands in the way now (corrected
+# 2026-11-01). Its creation calls take no foundation flag, and nothing here
+# touches it. Whether this card merges into CREATE_FLOOR is OPEN for the
+# owner - row 5b-1382. Its boundary writing is copied, so one
 # writing serves both. CREATE_WALL_FOUNDATION makes the strip under a wall;
 # PLACE_STRUCTURAL_FAMILY places an isolated footing family at points.
 #

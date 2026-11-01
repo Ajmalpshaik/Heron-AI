@@ -18,12 +18,15 @@ semantic-identity: "edit the members of a duct or piping system already in the m
 # system's members). The Revit ribbon survey of the same day marked Add /
 # Remove from System PARTIAL for exactly this.
 #
-# A NEW CAPABILITY, NOT A WIDENING. CREATE_MEP_SYSTEM (FRG-MEP-062, PROVEN)
-# makes a NEW system from elements on none; a change under its impl/ would
-# make its proof stale for a job it does not do. SET_MEP_SYSTEM_TYPE changes a
-# run's classification, not which system a terminal is on.
+# A NEW CAPABILITY, NOT A WIDENING. CREATE_MEP_SYSTEM (FRG-MEP-062) makes a
+# NEW system from elements on none - DRAFT since main's #777, version 2, which
+# also makes circuits (CREATE_ELECTRICAL_CIRCUIT merged in); written when it
+# was PROVEN (corrected 2026-11-01). It edits no existing system.
+# SET_MEP_SYSTEM_TYPE changes a run's classification, not which system a
+# terminal is on.
 # EDIT_ELECTRICAL_CIRCUIT (FRG-MEP-070) is the same two buttons for circuits,
-# and its shape and its care are copied here.
+# and its shape and its care are copied here. Whether the two merge, and
+# into which, is OPEN for the owner - row 5b-1382.
 #
 # ONE FRAGMENT FOR THE TWO BUTTONS. Add to System and Remove from System act
 # on the same element - one duct or piping system that already exists - and
