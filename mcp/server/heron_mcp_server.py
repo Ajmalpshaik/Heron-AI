@@ -3937,7 +3937,8 @@ def _read_dashboard(companion_page, origin="chat", ctx=None, parameters="", boar
     provides = reply.get("provides") or {}
     try:
         answer = brain.model_dashboard(provides.get("dashboardJson") or "",
-                                       project=pinned.project_key, board=board or None)
+                                       project=pinned.project_key, project_name=pinned.title,
+                                       board=board or None)
     except brain.BrainUnavailable as why:
         return "failed", str(why)
     if answer.get("dashboard") is None:

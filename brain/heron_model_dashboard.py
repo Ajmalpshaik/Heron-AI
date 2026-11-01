@@ -517,7 +517,7 @@ def summary(data, rows=None):
     return said + " The charts and lists are on the Companion page. Nothing was changed."
 
 
-def dashboard(text, project_key=None, board_key=None):
+def dashboard(text, project_key=None, board_key=None, project_name=None):
     """
     read() then build(), as the MCP server calls it. Returns {"dashboard",
     "said"}; "dashboard" is None, and "said" says why, when the text could
@@ -529,7 +529,7 @@ def dashboard(text, project_key=None, board_key=None):
     except ValueError as why:
         return {"dashboard": None, "said": "No dashboard was made: %s" % why}
     built = build(data, board_key)
-    built["since"], note = (since(project_key, data) if project_key and
+    built["since"], note = (since(project_key, data, project_name) if project_key and
                             not data["model"]["isFamily"] else (None, None))
     if note:
         built["notRead"] = built["notRead"] + [note]
@@ -566,12 +566,16 @@ def _dig(data, path):
     return got
 
 
-def snapshot(data, when=None):
+def dashboard_snapshot(data, when=None, project_name=None):
     """
     What a read is kept as: numbers only - the headlines and each category's
-    count - with the parts not read named, so they are never compared.
+    count - with the parts not read named, so they are never compared, and
+    the project's display name beside the key it is filed under. Named
+    dashboard_snapshot because tools/check-reachable.py matches functions by
+    name, and a bare `snapshot` made heron_runtime's look reached.
     """
     return {"format": 1, "when": when or time.strftime("%Y-%m-%d %H:%M"),
+            "project": project_name or "",
             "unread": list(data.get("unread") or []),
             "numbers": {key: _dig(data, key) for key, _label, part in HEADLINES
                         if part not in (data.get("unread") or [])},
@@ -651,13 +655,13 @@ def kept(project_key):
     return out
 
 
-def since(project_key, data):
+def since(project_key, data, project_name=None):
     """
     Compare this read with the last one kept for the project, then keep this
     one. Returns ({"when", "rows"} or None, a note or None). The note says why
     nothing was kept - never a reason to refuse the dashboard.
     """
-    now = snapshot(data)
+    now = dashboard_snapshot(data, project_name=project_name)
     earlier = kept(project_key)
     moved = {"when": earlier[0].get("when"), "rows": compare(earlier[0], now)} if earlier else None
     try:

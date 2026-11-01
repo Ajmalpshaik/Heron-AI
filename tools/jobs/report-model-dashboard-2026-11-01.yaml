@@ -23,8 +23,8 @@
 # Read the dashboardJson the run quotes - the runner judges elementTotal
 # alone (dashboardJson and findings are accounting, always written).
 #
-# NEGATIVE: the family - elementTotal 0, sectionsNotRead 14, every part null
-# and named "not a project", fill among them. Not one of Snowdon's numbers may
+# NEGATIVE: the family - elementTotal 0, sectionsNotRead 15, every part null
+# and named "not a project", fill and breakdowns among them. Not one of Snowdon's numbers may
 # appear: that is what shows it read the document it was sent to, with
 # another one open.
 #
@@ -33,9 +33,16 @@
 # counts summing to the category's instances. Before the run, type "AHU-01" in
 # one mechanical equipment item's Mark and clear another's (Group JT row JT10).
 #
-# BY HAND AFTERWARDS (Group JT rows JT4 to JT8, JT11 to JT14): each part beside
-# its own reader, a workshared copy with one workset closed, a new empty
-# project, and the fill part's own cases - the made-up name all absent.
+# VERSION 3 (2026-11-01): both legs send one breakdown too - duct length by
+# system, "ducts-system|OST_DuctCurves|@system|@length" - so the positive
+# carries a breakdowns entry, unit "m", whose rows add up to the ducts (Group
+# JT row JT17).
+#
+# BY HAND AFTERWARDS (Group JT rows JT4 to JT8, JT11 to JT16, JT18 to JT21):
+# each part beside its own reader, a workshared copy with one workset closed,
+# a new empty project, the fill part's own cases - the made-up name all
+# absent - and the breakdowns' own: a category with none is rows [], a name
+# Revit has not got is rows null.
 
 model: Snowdon Towers Sample HVAC (fresh copy) and Family1, Revit 2024
 
@@ -46,12 +53,16 @@ jobs:
     negative-in: "Family1"
     set:
       parameters: "Mark"
+      breakdowns: "ducts-system|OST_DuctCurves|@system|@length"
     negative-set:
       parameters: "Mark"
+      breakdowns: "ducts-system|OST_DuctCurves|@system|@length"
     note: >
       Positive - elementTotal above 0, the categories' instances summing to
       it, notRead empty, warnings.total 145 in 5 kinds, six links loaded;
       fill.parameters ["Mark"], AHU-01 populated and the cleared Mark's id in
-      the Mechanical Equipment row's emptyIds. Negative - elementTotal 0,
-      sectionsNotRead 14, the family's title in the model block with isFamily
-      true and every other part null, fill too.
+      the Mechanical Equipment row's emptyIds; breakdowns ducts-system in
+      metres, a row per duct system type, the counts adding up to the ducts.
+      Negative - elementTotal 0, sectionsNotRead 15, the family's title in the
+      model block with isFamily true and every other part null, fill and
+      breakdowns too.

@@ -2145,7 +2145,7 @@ def model_dashboard_board(key):
     return DASH.board_request(key)
 
 
-def model_dashboard(dashboard_json, project=None, board=None):
+def model_dashboard(dashboard_json, project=None, board=None, project_name=None):
     """
     The Companion's Model Dashboard from REPORT_MODEL_DASHBOARD's
     dashboardJson - docs/40 s21.10.
@@ -2163,7 +2163,8 @@ def model_dashboard(dashboard_json, project=None, board=None):
         raise BrainUnavailable("Heron's Model Dashboard could not be imported: %s. It needs "
                                "nothing beyond Python itself, so this is a broken install."
                                % exc)
-    got = DASH.dashboard(dashboard_json, project_key=project, board_key=board)
+    got = DASH.dashboard(dashboard_json, project_key=project, board_key=board,
+                         project_name=project_name)
     board = got.get("dashboard")
     _audit().record("qa.model_dashboard", board is not None,
                     fields={"status": "ok" if board is not None else "unreadable"},
