@@ -1211,3 +1211,32 @@ else) - the owner's decision, asked in the work note. A whole-model 3D view is p
 **Proved without Revit:** `tests/test_model_dashboard.py` and `tests/test_companion.py`; the page driven
 in Chromium with sample data - the fill table, the filter, the CSV download and the print view.
 **Not run in Revit** - the fill-rate's run is owed in [group JT](needs-checking/group-jt.md).
+
+### 21.13 A 3D view of the model in the Model Dashboard (2026-11-01)
+
+Asked by the owner: *"3D VIEWS ALOS ADD IN THE COMPANION APP ??"* - the plan's phase 6, and the idea
+BIMLens shows as its 3D viewer, re-made Heron's way.
+
+- **The read.** `REPORT_MODEL_GEOMETRY` (READ, DRAFT) reads the shapes at coarse detail, within a triangle
+  limit: by default **what Revit's active 3D view shows** - its section box, hidden categories and
+  temporary hide respected, so the modeller decides how much is read - or the whole model. Metres, by the
+  fixed factor, so every release reads the same. Nothing in the model changes.
+- **The brain.** `brain/heron_model_view.py` checks every triangle names a point its element has - a
+  damaged read is refused whole, never drawn half right - and decides every colour: fixed ones for the
+  categories a modeller reads by colour (ducts blue, pipes green, sprinklers red), an even hue step for
+  the rest, the same colour for the same category every time. What the limit left out is said.
+- **The page.** `static/model3d.js` is Heron's own WebGL - no library, nothing from the internet, like the
+  Loads and Sprinkler panels' 3D views. Drag to turn, right-drag or Shift to pan, wheel to zoom, Fit.
+  **A click picks an element** - a second pass paints each element in its own colour code and the pixel
+  under the click names it - and shows its category and id with **Select in Revit** and **Copy ID**.
+  **Show in 3D** on a *Worth a look* row lights its elements up and fades the rest.
+- **Load 3D** - *active 3D view* or *whole model* - is the modeller's own press, under the lock every tool
+  call holds, never on a timer; `revit_model_dashboard` takes `view3d` for the chat. The shapes are held
+  apart from the rest of the panel and fetched only when they change - they can be megabytes. A click's
+  Select sends only an id the panel's own 3D read found. Not on the DEMO, which has no shapes.
+
+**Proved without Revit:** `tests/test_model_view.py` (the brain - damaged reads refused, colours stable
+and distinct); `tests/test_companion.py`'s Dashboard group (the routes behind the pairing, the shapes kept
+out of the state, Select by the 3D read's own ids); and the page driven in headless Chromium - drawn,
+turned, an element picked and highlighted. **Not run in Revit**: the fragment's proof is owed, in its own
+NEEDS-CHECKING group.
