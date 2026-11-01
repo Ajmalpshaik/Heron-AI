@@ -45,7 +45,7 @@ declared utterance and routing-table sentence in the library reaches the card it
 nobody declares** - *"which workset is active"*, *"what is the active workset"* - reached `SELECT_BY_WORKSET`
 (a read) before and reach this card after; with the host's `question=true` they reach `SELECT_BY_WORKSET`,
 never this card - and no card reports the active workset:
-[row 5b-1366](../fragment-issues/section-5b-rows-401-425.md), OPEN, for the owner. Since 2026-11-01 a read reports it - `REPORT_ACTIVE_WORKSET`, [Group KO](group-ko.md) - and declares those sentences; the row is FIXED.
+[row 5b-1370](../fragment-issues/section-5b-rows-401-425.md), OPEN, for the owner. Since 2026-11-01 a read reports it - `REPORT_ACTIVE_WORKSET`, [Group KO](group-ko.md) - and declares those sentences; the row is FIXED.
 
 **The model - a NEW scratch project in Revit 2024**, never a working model. Every run below is rolled back
 except KN1's arrangement and KN6's one run. The job file is

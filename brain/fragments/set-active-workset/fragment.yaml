@@ -143,13 +143,13 @@ compatibility-note: >
 # a read, never this card - but no card in the library reports the active
 # workset, so that read does not answer it. Rewording this card's identity and
 # purpose did not move them: its own utterances say "active workset". Recorded
-# for the owner (FRAGMENT-ISSUES 5b-1366), not repaired by declaring words
+# for the owner (FRAGMENT-ISSUES 5b-1370), not repaired by declaring words
 # nobody said on a card that does not answer them.
 #
 # REPAIRED 2026-11-01 by REPORT_ACTIVE_WORKSET (FRG-DOC-060), a read that
 # reports the active workset and declares "which workset is active", "what is
 # the active workset" and "am I on the right workset" - this card's own words
-# untouched (FRAGMENT-ISSUES 5b-1366, FIXED).
+# untouched (FRAGMENT-ISSUES 5b-1370, FIXED).
 #
 #   "make Mechanical the active workset"    -> here, worksetName Mechanical
 #   "set the active workset to Shared       -> here
@@ -157,7 +157,7 @@ compatibility-note: >
 #   "switch to the Architecture workset"    -> here
 #   "which workset is active"               -> REPORT_ACTIVE_WORKSET - a
 #                                              question, and this writes. The
-#                                              read declares it; 5b-1366
+#                                              read declares it; 5b-1370
 #   "put these on the MEP workset"          -> SET_ELEMENT_WORKSET - moves
 #                                              elements that already exist
 #   "turn off this workset in this view"    -> SET_VIEW_WORKSET_VISIBILITY - a

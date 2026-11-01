@@ -147,12 +147,12 @@ compatibility-note: >
 #                                                  floor, not a foundation
 #   "add a slab here"                            -> CREATE_FLOOR
 #   "make the slab"                              -> CREATE_FLOOR - declared there
-#                                                  2026-11-01 (5b-1362): this
+#                                                  2026-11-01 (5b-1367): this
 #                                                  card took it ranked before
 #   "make a slab under these rooms"              -> CREATE_FROM_ROOM_BOUNDARIES
 #   "make a slab under this block of rooms"      -> CREATE_FROM_ROOM_BOUNDARIES -
 #                                                  declared there 2026-11-01
-#                                                  (5b-1362): this card took it
+#                                                  (5b-1367): this card took it
 #                                                  ranked before
 #   "put a wall footing under these walls"       -> CREATE_WALL_FOUNDATION - the
 #                                                  strip under a wall

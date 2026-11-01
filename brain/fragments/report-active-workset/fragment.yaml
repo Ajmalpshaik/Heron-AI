@@ -13,7 +13,7 @@ semantic-identity: "which workset is active - the one new elements are placed on
 # Workset box on the status bar, and Collaborate > Active Workset. No card in
 # the library reported it (grep of brain/fragments for GetActiveWorksetId that
 # day: only COPY_ELEMENTS and SET_ACTIVE_WORKSET, both writes). FRAGMENT-ISSUES
-# row 5b-1366 recorded the first sentence reaching SET_ACTIVE_WORKSET, a write,
+# row 5b-1370 recorded the first sentence reaching SET_ACTIVE_WORKSET, a write,
 # when the host did not flag it as a question, and SELECT_BY_WORKSET, a read
 # that does not answer it, when it did.
 #

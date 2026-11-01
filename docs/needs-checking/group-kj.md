@@ -49,7 +49,7 @@ moves that are not this card's, recorded on it: *"make a sheet set for each valu
 1"*, unreached by its claimant before and after, flipped between two reads on a three-way tie; and
 *"material takeoff for these"* ranks this card first by words alone, still answered by
 `READ_ELEMENT_MATERIAL` by identity. **Found and not caused here:** *"how much concrete is in the walls"*,
-declared nowhere, reaches `PLACE_AREA_REINFORCEMENT` - a write - before this card and after it: [FRAGMENT-ISSUES row 5b-1364](../fragment-issues/section-5b-rows-401-425.md), open.
+declared nowhere, reaches `PLACE_AREA_REINFORCEMENT` - a write - before this card and after it: [FRAGMENT-ISSUES row 5b-1368](../fragment-issues/section-5b-rows-401-425.md), open.
 
 **The model - "test projject" in Revit 2024**, where `CREATE_SCHEDULE` was proved on 2026-09-13. Every
 run below is rolled back except KJ5's one run. The job file is

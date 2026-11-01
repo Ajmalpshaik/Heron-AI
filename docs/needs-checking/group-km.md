@@ -40,7 +40,7 @@ cards: every declared utterance and routing-table sentence in the library reache
 before. **Questions nobody declares** - *"what is the span direction of this slab"*, *"which way does
 this slab span"*, *"which floors have no span direction symbol"* - reached other writes before and reach
 this card after; with the host's `question=true` they reach a read, never this card. No card reads a
-floor's span direction or its symbols: [row 5b-1365](../fragment-issues/section-5b-rows-401-425.md), OPEN,
+floor's span direction or its symbols: [row 5b-1369](../fragment-issues/section-5b-rows-401-425.md), OPEN,
 for the owner. Since 2026-11-01 a read reports it - `REPORT_FLOOR_SPAN_DIRECTION`, [Group KP](group-kp.md) - and declares *"what is the span direction of this slab"* and *"which way does this floor span"*; the row is FIXED.
 
 **The model - a scratch project from the metric structural template in Revit 2026 or 2027**, where Group

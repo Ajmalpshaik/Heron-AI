@@ -12,14 +12,14 @@ semantic-identity: "which way these structural floors span - each floor's span d
 # this slab" and "which way does this floor span". No card in the library read
 # a floor's span direction (grep of brain/fragments for SpanDirectionAngle that
 # day: only SET_FLOOR_SPAN_DIRECTION and PLACE_SPAN_DIRECTION_SYMBOLS, both
-# writes). FRAGMENT-ISSUES row 5b-1365 recorded the first sentence reaching a
+# writes). FRAGMENT-ISSUES row 5b-1369 recorded the first sentence reaching a
 # write without the host's question flag, and a read that does not answer it
 # with the flag.
 #
 # A CARD OF ITS OWN, NOT READ_ELEMENT_PARAMETERS (FRG-PAR-001, PROVEN) with
 # parameterName "Span Direction". That card owns one-value-off-an-element
 # questions, but whether Revit hands FLOOR_PARAM_SPAN_DIRECTION to a lookup by
-# that name needs a real Revit to know (row 5b-1365), and it could not say why
+# that name needs a real Revit to know (row 5b-1369), and it could not say why
 # a floor has no span direction - a floor whose Structural box is clear - nor
 # which span direction symbols show it. This reads Revit's own angle and says
 # both.

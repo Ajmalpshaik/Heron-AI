@@ -8,7 +8,7 @@
 ## Group KP - which way a structural floor spans: `REPORT_FLOOR_SPAN_DIRECTION` (2026-11-01)
 
 Asked for in the modeller's words: *"what is the span direction of this slab"*, *"which way does this floor
-span"*. No card read a floor's span direction: [row 5b-1365](../fragment-issues/section-5b-rows-401-425.md)
+span"*. No card read a floor's span direction: [row 5b-1369](../fragment-issues/section-5b-rows-401-425.md)
 recorded the first sentence reaching a write without the host's question flag, and a read that does not
 answer it with the flag. The two writes beside it are [Group KL](group-kl.md) (`SET_FLOOR_SPAN_DIRECTION`)
 and [Group KM](group-km.md) (`PLACE_SPAN_DIRECTION_SYMBOLS`).

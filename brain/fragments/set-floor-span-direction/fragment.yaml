@@ -162,12 +162,12 @@ compatibility-note: >
 # one of these two after. With the host's question:true (D-128) they reach a
 # read instead - never either card - but a read that does not answer them: no
 # card in the library reports a floor's span direction. Recorded for the owner
-# (FRAGMENT-ISSUES 5b-1365), not repaired by declaring words nobody said.
+# (FRAGMENT-ISSUES 5b-1369), not repaired by declaring words nobody said.
 #
 # REPAIRED 2026-11-01 by REPORT_FLOOR_SPAN_DIRECTION (FRG-ELE-141), a read that
 # reports each floor's span direction and its symbols and declares "what is the
 # span direction of this slab" and "which way does this floor span" - this
-# card's own words untouched (FRAGMENT-ISSUES 5b-1365, FIXED).
+# card's own words untouched (FRAGMENT-ISSUES 5b-1369, FIXED).
 #
 #   "set the span direction of this slab   -> here, along "grid 1"
 #    to run along grid 1"

@@ -20,7 +20,7 @@ first for two and `CREATE_WALL_FOUNDATION` for the third.
 
 **Why a new card and not a widening.** `CREATE_FLOOR` is PROVEN and makes an architectural floor; its
 calls take no foundation flag, and widening it would change its job and stale its proof. Its `impl/` is
-untouched; its card gained one declared sentence (below, row 5b-1362).
+untouched; its card gained one declared sentence (below, row 5b-1367).
 
 **What is done and what is not.** It compiles for all eight releases, 2020 to 2027
 (`tools/check-fragments-compile.py`, 2026-11-01, a Linux container). Read off the shipped assemblies of
@@ -78,7 +78,7 @@ foundation"*, *"make a foundation slab"*, *"add a mat foundation"*, *"foundation
 foundation under the building"* and *"make a 300 thick slab"* - now reach this card ranked; before it they
 reached `CREATE_WALL_FOUNDATION`, `PLACE_AREA_REINFORCEMENT` or, for the last, `SET_COMPOUND_LAYER_WIDTH`.
 No routing table claims any of the six. **Two claimed sentences moved to this card and are CLOSED in the
-same change** ([row 5b-1362](../fragment-issues/section-5b-rows-401-425.md)): *"make a slab under this
+same change** ([row 5b-1367](../fragment-issues/section-5b-rows-401-425.md)): *"make a slab under this
 block of rooms"*, declared on `CREATE_FROM_ROOM_BOUNDARIES`, and *"make the slab"*, declared on
 `CREATE_FLOOR`; both PROVEN, both fingerprints unchanged. After that, every declared sentence in the
 library run through `lookup` on 2024 reaches what it reached before. `tools/check-routing.py` on a fresh
