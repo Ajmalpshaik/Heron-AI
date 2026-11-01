@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-074
-semantic-identity: "set the scale, detail, visual style, phase or view range on these views"
+semantic-identity: "set or change the scale, detail, visual style, phase or view range on these views"
 kind: action
 domain: revit.views
 capability: SET_VIEW_PROPERTIES
@@ -58,55 +58,66 @@ source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Sets scale, detail level, visual style, phase, phase filter and a plan's
+  Sets or changes the scale, detail level, visual style, phase, phase filter and a plan's
   view range across many views at once - the
   light version of what a view template does, for the case where a template is
   not wanted or does not exist yet.
 
-  **EACH PROPERTY IS SET ON ITS OWN, AND ONE REFUSAL DOES NOT STOP THE OTHERS.**
-  Not every view type carries every property: a schedule has no scale and no
-  visual style, and a view under a template refuses the properties that template
-  controls. Setting them as one block means a single unsupported property leaves
-  the other two unset on that view and nothing saying so.
-
-  **A view controlled by a template will refuse, and that is reported as a
-  reason rather than a failure.** It is the commonest thing to hit here and the
-  answer is not to try harder - it is REPORT_VIEW_TEMPLATE_CONTROL to see what
-  the template holds, and then either change the template or release the
-  property.
-
-  **Anything not given is not touched.** A fragment that wrote a default into
-  every property somebody left out would quietly restyle a whole drawing set.
-
-  **Every value is read back after writing.** A view property that refuses can
-  return without raising, and a count that assumed success would report twelve
-  views set where nine were.
-
-  **Changing the view scale changes every tag and dimension on the drawing**
-  (version 3, from SET_VIEW_SCALE, merged into this card). Annotation is sized
-  in paper units, so a view taken from 1:100 to 1:50 keeps its geometry and
-  halves the apparent size of everything annotated on it. On a view already on
-  a sheet that is a visible change to an issued drawing, not a display setting.
-
-  **A view already at the scale asked is left alone and not counted as
-  changed** (version 3), and each view's old scale comes back, so a batch of
-  view scales can be put back by a caller that kept it. The ids of the views
-  that refused anything come back too, and a view named twice is handled once.
-
-  **The phase and the phase filter change what the drawing shows, not the
-  building** (version 4, from SET_VIEW_PHASE) - what makes a view a
-  demolition plan or an existing plan. SET_ELEMENT_PHASE moves elements; this
-  moves nothing. An id that is not a phase, or not a phase filter, is refused
-  before anything is written, and each of the two is set and read back on its
-  own: a schedule has a phase and no phase filter, a drafting view neither.
-
-  **A plan's view range is read before it is changed** (version 4, from
-  SET_VIEW_RANGE) - top, cut plane and bottom, in millimetres from the level
-  each is measured from - and the old offsets come back so it can be put
-  back. The view range is the commonest reason MEP does not appear on a plan.
-  A section, an elevation and a 3D view have none, and are refused by name.
+  Each property is set on its own and read back; anything not given is not
+  touched; a view under a template that holds a property is refused for it,
+  with the reason. A view already as asked is not counted as changed, and
+  each view's old scale and view range come back so they can be put back.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+# THE RULES IN FULL, kept as comments so the purpose stays short enough
+# for the words route (2026-11-01: after four cards merged into this one the
+# purpose had grown to 500 words and a read outranked this card for its own
+# sentence "change the visual style of these views" - tests/test_read_view_scale.py
+# section c; the row 5b-1293 precedent):
+#
+# **EACH PROPERTY IS SET ON ITS OWN, AND ONE REFUSAL DOES NOT STOP THE OTHERS.**
+# Not every view type carries every property: a schedule has no scale and no
+# visual style, and a view under a template refuses the properties that template
+# controls. Setting them as one block means a single unsupported property leaves
+# the other two unset on that view and nothing saying so.
+#
+# **A view controlled by a template will refuse, and that is reported as a
+# reason rather than a failure.** It is the commonest thing to hit here and the
+# answer is not to try harder - it is REPORT_VIEW_TEMPLATE_CONTROL to see what
+# the template holds, and then either change the template or release the
+# property.
+#
+# **Anything not given is not touched.** A fragment that wrote a default into
+# every property somebody left out would quietly restyle a whole drawing set.
+#
+# **Every value is read back after writing.** A view property that refuses can
+# return without raising, and a count that assumed success would report twelve
+# views set where nine were.
+#
+# **Changing the view scale changes every tag and dimension on the drawing**
+# (version 3, from SET_VIEW_SCALE, merged into this card). Annotation is sized
+# in paper units, so a view taken from 1:100 to 1:50 keeps its geometry and
+# halves the apparent size of everything annotated on it. On a view already on
+# a sheet that is a visible change to an issued drawing, not a display setting.
+#
+# **A view already at the scale asked is left alone and not counted as
+# changed** (version 3), and each view's old scale comes back, so a batch of
+# view scales can be put back by a caller that kept it. The ids of the views
+# that refused anything come back too, and a view named twice is handled once.
+#
+# **The phase and the phase filter change what the drawing shows, not the
+# building** (version 4, from SET_VIEW_PHASE) - what makes a view a
+# demolition plan or an existing plan. SET_ELEMENT_PHASE moves elements; this
+# moves nothing. An id that is not a phase, or not a phase filter, is refused
+# before anything is written, and each of the two is set and read back on its
+# own: a schedule has a phase and no phase filter, a drafting view neither.
+#
+# **A plan's view range is read before it is changed** (version 4, from
+# SET_VIEW_RANGE) - top, cut plane and bottom, in millimetres from the level
+# each is measured from - and the old offsets come back so it can be put
+# back. The view range is the commonest reason MEP does not appear on a plan.
+# A section, an elevation and a 3D view have none, and are refused by name.
 
 contract:
   needs:
