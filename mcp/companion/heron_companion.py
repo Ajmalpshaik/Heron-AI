@@ -1332,7 +1332,7 @@ class DashboardPanel(object):
             view = self._view
             if view:
                 held["view3d"] = {k: view.get(k) for k in (
-                    "key", "scope", "legend", "drawn", "triangles", "leftOut", "noGeometry",
+                    "key", "scope", "legend", "drawn", "triangles", "leftOut", "noGeometry", "stopped",
                     "notRead", "capped", "said")}
         return json.loads(json.dumps(held))
 

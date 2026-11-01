@@ -149,7 +149,11 @@ def read(text):
             "triangles": sum(len(e["t"]) // 3 for e in elements),
             "elementsRead": _int(data.get("elementsRead")),
             "noGeometry": _int(data.get("noGeometry")), "leftOut": _int(data.get("leftOut")),
-            "notRead": _names(data.get("notRead")), "capped": _names(data.get("capped"))}
+            "notRead": _names(data.get("notRead")), "capped": _names(data.get("capped")),
+            # WHICH LIMIT STOPPED THE READ - "triangles", "time", or None when
+            # it read everything (REPORT_MODEL_GEOMETRY v2). Anything else is
+            # not believed.
+            "stopped": data.get("stopped") if data.get("stopped") in ("triangles", "time") else None}
 
 
 def colours(categories):
@@ -173,6 +177,7 @@ def build(data):
             "legend": legend, "elements": data["elements"],
             "triangles": data["triangles"], "drawn": len(data["elements"]),
             "noGeometry": data["noGeometry"], "leftOut": data["leftOut"],
+            "stopped": data.get("stopped"),
             "notRead": list(data["notRead"]), "capped": list(data["capped"]),
             "highlight": HIGHLIGHT, "dimmed": DIMMED, "said": summary(data)}
 
@@ -182,8 +187,12 @@ def summary(data):
     said = "3D view - %s: %d element(s), %d triangle(s)." % (
         data["scope"] or "the model", len(data["elements"]), data["triangles"])
     if data["leftOut"]:
-        said += (" %d element(s) were left out - the triangle limit was reached; read the "
-                 "active 3D view, or fewer categories, to see them." % data["leftOut"])
+        why = {"time": "the read stopped itself before Revit's time limit, largest elements "
+                       "first",
+               "triangles": "the triangle limit was reached, largest elements first"}.get(
+            data.get("stopped"), "a limit was reached")
+        said += (" %d element(s) were left out - %s; read the active 3D view with a section "
+                 "box, or fewer categories, to see them." % (data["leftOut"], why))
     if data["noGeometry"]:
         said += " %d had nothing to draw." % data["noGeometry"]
     if data["notRead"]:

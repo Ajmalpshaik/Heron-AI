@@ -2067,7 +2067,8 @@ function dash3dControls(D) {
   } else {
     const V = D.view3d;
     sec.append(el("p", "muted small", (V.scope || "") + " · " + num(V.drawn, 0) + " element(s), " + num(V.triangles, 0) +
-      " triangle(s)" + (V.leftOut ? " · " + num(V.leftOut, 0) + " left out by the triangle limit" : "") +
+      " triangle(s)" + (V.leftOut ? " · " + num(V.leftOut, 0) + " left out - " +
+        (V.stopped === "time" ? "the read stopped itself before Revit's time limit" : "the triangle limit") : "") +
       (V.noGeometry ? " · " + num(V.noGeometry, 0) + " with nothing to draw" : "")));
     ((V.notRead || []).concat(V.capped || [])).forEach(n => sec.append(el("p", "d-notread", n)));
     const legend = el("ul", "d-legend");

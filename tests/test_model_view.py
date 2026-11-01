@@ -105,6 +105,15 @@ def test_an_empty_read_draws_nothing_and_is_not_refused():
     assert "0 element(s), 0 triangle(s)" in got["said"]
 
 
+def test_which_limit_stopped_the_read_is_said():
+    timed = V.view(sample(stopped="time"))
+    assert timed["view"]["stopped"] == "time" and "stopped itself before Revit's time limit" in timed["said"]
+    budget = V.view(sample(stopped="triangles"))
+    assert "triangle limit was reached" in budget["said"]
+    odd = V.view(sample(stopped="whenever"))
+    assert odd["view"]["stopped"] is None and "a limit was reached" in odd["said"]
+
+
 def test_colours_are_stable_and_distinct():
     a = V.colours(["Walls", "Zebra Things", "Odd Category", "Ducts"])
     b = V.colours(["Walls", "Zebra Things", "Odd Category", "Ducts"])
