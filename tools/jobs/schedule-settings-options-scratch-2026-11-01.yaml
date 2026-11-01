@@ -13,7 +13,7 @@
 #
 # THE MODEL: A NEW PROJECT, NEVER 4355-* nor any project of Ajmal PS's. In
 # Revit 2020: File, New, Project, the default metric template, saved as
-# "Heron Schedules KF". MAKE THESE BY HAND FIRST - a setup step that changes
+# "Heron Schedules KF Options". MAKE THESE BY HAND FIRST - a setup step that changes
 # the model cannot be given values of its own:
 #
 #   1. Four ducts on Level 1, two sizes
@@ -53,10 +53,10 @@
 # NOT `--session` HERE: with two Revits connected to Heron, add
 # `--session <process id>` to both commands.
 
-model: Heron Schedules KF (a NEW project from Revit 2020's default metric template, schedules made by hand as above), Revit 2020
+model: Heron Schedules KF Options (a NEW project from Revit 2020's default metric template, schedules made by hand as above), Revit 2020
 
 defaults:
-  in: "Heron Schedules KF"
+  in: "Heron Schedules KF Options"
   write: true
   setup: [select-by-category-name, set-selection]
   set: {categoryName: "Schedule Graphics", inViewOnly: "HERON KF Sheet"}

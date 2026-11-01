@@ -12,7 +12,7 @@
 #
 # THE MODEL: A NEW PROJECT, NEVER 4355-* nor any project of Ajmal PS's. In
 # Revit 2020: File, New, Project, the default metric template, saved as
-# "Heron Schedules KF". MAKE THIS BY HAND FIRST:
+# "Heron Schedules KF Appearance". MAKE THIS BY HAND FIRST:
 #
 #   1. Draw four ducts on Level 1 - two of 400x200, two of 600x300, each of a
 #      different length, two of them on a second system type
@@ -52,10 +52,10 @@
 # NOT `--session` HERE: with two Revits connected to Heron, add
 # `--session <process id>` to both commands.
 
-model: Heron Schedules KF (a NEW project from Revit 2020's default metric template, made by hand as above), Revit 2020
+model: Heron Schedules KF Appearance (a NEW project from Revit 2020's default metric template, made by hand as above), Revit 2020
 
 defaults:
-  in: "Heron Schedules KF"
+  in: "Heron Schedules KF Appearance"
   setup:
     - select-by-category-name
     - set-selection

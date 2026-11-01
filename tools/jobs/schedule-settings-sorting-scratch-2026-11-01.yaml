@@ -19,7 +19,7 @@
 #
 # THE MODEL: A NEW PROJECT, NEVER 4355-* nor any project of Ajmal PS's. In
 # Revit 2020: File, New, Project, the default metric template (a mechanical
-# one if it is there), saved as "Heron Schedules KF". ARRANGE IT BY HAND FIRST:
+# one if it is there), saved as "Heron Schedules KF Sorting". ARRANGE IT BY HAND FIRST:
 #
 #   1. Four ducts: on Level 1 two of 400x200 (3000 mm and 5000 mm long), on
 #      Level 2 one of 400x200 (2000 mm) and one of 600x300 (4000 mm)
@@ -57,7 +57,7 @@
 # NOT `--session` HERE: with two Revits connected to Heron, add
 # `--session <process id>` to both commands.
 
-model: Heron Schedules KF (a NEW project from Revit 2020's default metric template, arranged by hand as above), Revit 2020
+model: Heron Schedules KF Sorting (a NEW project from Revit 2020's default metric template, arranged by hand as above), Revit 2020
 
 defaults:
   write: true
