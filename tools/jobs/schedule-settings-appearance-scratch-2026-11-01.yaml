@@ -1,7 +1,7 @@
 # The proof of SET_SCHEDULE_APPEARANCE version 4 (set-schedule-appearance,
 # FRG-VIEW-061): a column's own units, its multiple-values text and its cell
 # style. Written 2026-11-01 for FRAGMENT-ISSUES row 5b-1363 - NEEDS-CHECKING
-# Group KF. NOT RUN - written and read back with --dry-run only.
+# Group KK. NOT RUN - written and read back with --dry-run only.
 #
 #     python tools/batch-prove.py tools/jobs/schedule-settings-appearance-scratch-2026-11-01.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/schedule-settings-appearance-scratch-2026-11-01.yaml
@@ -21,7 +21,7 @@
 #      Format on Use project settings (millimetres, the template's default)
 #   3. A second duct schedule "Heron KF Duct Schedule 2" with Length only - it
 #      shares the body text type with the first, which the style case needs
-#   4. Sheet "KF01 - Heron KF Sheet" with BOTH schedules placed on it
+#   4. Sheet "KK01 - Heron KF Sheet" with BOTH schedules placed on it
 #   5. Save. Open the sheet before each run - the selection below is the two
 #      schedules on it, by category, in that view
 #
@@ -66,7 +66,7 @@ jobs:
     expect: appliedAppearance
     set:
       categoryName: Schedule Graphics
-      inViewOnly: "KF01 - Heron KF Sheet"
+      inViewOnly: "KK01 - Heron KF Sheet"
       fieldName: Length
       newHeading: ""
       columnWidthMm: 0
@@ -76,7 +76,7 @@ jobs:
       units: "metres, 2 decimal places, m"
     negative-set:
       categoryName: Schedule Graphics
-      inViewOnly: "KF01 - Heron KF Sheet"
+      inViewOnly: "KK01 - Heron KF Sheet"
       fieldName: Type
       newHeading: ""
       columnWidthMm: 0
@@ -85,7 +85,7 @@ jobs:
       hideOrShow: ""
       units: "metres, 2 decimal places, m"
     note: >
-      KF units. The column's own units, the request Ajmal PS could not make on
+      KK units. The column's own units, the request Ajmal PS could not make on
       2026-11-01. The negative names a text column, which has no units and
       must be refused with nothing changed.
 
@@ -94,7 +94,7 @@ jobs:
     expect: appliedAppearance
     set:
       categoryName: Schedule Graphics
-      inViewOnly: "KF01 - Heron KF Sheet"
+      inViewOnly: "KK01 - Heron KF Sheet"
       fieldName: Length
       newHeading: ""
       columnWidthMm: 0
@@ -104,7 +104,7 @@ jobs:
       cellStyle: "bold, colour red, size 3 mm"
     negative-set:
       categoryName: Schedule Graphics
-      inViewOnly: "KF01 - Heron KF Sheet"
+      inViewOnly: "KK01 - Heron KF Sheet"
       fieldName: Length
       newHeading: ""
       columnWidthMm: 0
@@ -121,7 +121,7 @@ jobs:
     expect: appliedAppearance
     set:
       categoryName: Schedule Graphics
-      inViewOnly: "KF01 - Heron KF Sheet"
+      inViewOnly: "KK01 - Heron KF Sheet"
       fieldName: System Type
       newHeading: ""
       columnWidthMm: 0
@@ -131,7 +131,7 @@ jobs:
       multipleValues: "custom: -"
     negative-set:
       categoryName: Schedule Graphics
-      inViewOnly: "KF01 - Heron KF Sheet"
+      inViewOnly: "KK01 - Heron KF Sheet"
       fieldName: System Type
       newHeading: ""
       columnWidthMm: 0

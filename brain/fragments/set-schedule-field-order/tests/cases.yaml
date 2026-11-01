@@ -1,6 +1,6 @@
 # D-30: the negative case is what catches "succeeded and did nothing".
 # The proof plan is tools/jobs/schedule-settings-fields-scratch-2026-11-01.yaml,
-# NEEDS-CHECKING Group KF. NEVER on a 4355-* job model: a scratch project from
+# NEEDS-CHECKING Group KK. NEVER on a 4355-* job model: a scratch project from
 # Revit 2020's default metric template, named in the run record.
 
 positive:

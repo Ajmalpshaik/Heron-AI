@@ -53,7 +53,7 @@ positive:
       word "leave" hands headingSideways the decision. A version 2 caller sees
       no difference
 
-  # VERSION 4 (row 5b-1363, Group KF).
+  # VERSION 4 (row 5b-1363, Group KK).
   - given: >
       a duct schedule whose Length column uses project settings (millimetres),
       fieldName "Length", units "metres, 2 decimal places, m"

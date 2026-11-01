@@ -24,7 +24,7 @@ capability: SET_SCHEDULE_FIELD_TOTALS
 # `alreadyTotalled` the ones already showing it - the names are version 1's,
 # kept so no caller's reading changes. Version 1's proof below no longer
 # describes the code and is kept as a record; the card is DRAFT until
-# NEEDS-CHECKING Group KF proves version 2 and the owner signs.
+# NEEDS-CHECKING Group KK proves version 2 and the owner signs.
 version: 2
 source: OFFICIAL
 risk: MODIFY

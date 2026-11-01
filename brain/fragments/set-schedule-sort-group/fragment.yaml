@@ -26,7 +26,7 @@ capability: SET_SCHEDULE_SORT_GROUP
 # title and count are still forced on with it. Every word is read before any
 # schedule is touched; a bad one refuses the whole call. Version 1's proof
 # below no longer describes the code and is kept as a record; the card is DRAFT
-# until NEEDS-CHECKING Group KF proves version 2 and the owner signs.
+# until NEEDS-CHECKING Group KK proves version 2 and the owner signs.
 #
 # ASSUMPTION THE PROOF SETTLES: what a NEW sort level holds for footer title,
 # footer count and blank line when they are left out. The reference does not

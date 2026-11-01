@@ -1,6 +1,6 @@
 # D-30: the negative case is what catches "grouped, and the wrong columns".
 # The proof plan is tools/jobs/schedule-settings-options-scratch-2026-11-01.yaml,
-# NEEDS-CHECKING Group KF. NEVER on a 4355-* job model: the scratch project
+# NEEDS-CHECKING Group KK. NEVER on a 4355-* job model: the scratch project
 # "Heron Schedules KF Options", made from Revit's default metric template.
 
 positive:

@@ -16,7 +16,7 @@
 // between the two is in the group, in the schedule's own column order.
 //
 // THE ROW AND COLUMN NUMBERS ARE AN ASSUMPTION THE PROOF SETTLES
-// (NEEDS-CHECKING Group KF). GroupHeaders(top, left, bottom, right, caption)
+// (NEEDS-CHECKING Group KK). GroupHeaders(top, left, bottom, right, caption)
 // takes table cell numbers, and Revit's reference does not say which
 // section's numbering they are. Taken here: the BODY section of the
 // schedule's table, where the column headings print. A column's number is the

@@ -25,7 +25,7 @@ capability: ADD_SCHEDULE_FIELDS
 # version 1 to the letter. `notPlaced` and `appliedOrder` (the order read back,
 # new columns marked) are new outputs; every version 1 output is unchanged.
 # Version 1's proof below no longer describes the code and is kept as a
-# record; the card is DRAFT until NEEDS-CHECKING Group KF proves version 2 and
+# record; the card is DRAFT until NEEDS-CHECKING Group KK proves version 2 and
 # the owner signs.
 version: 2
 source: OFFICIAL

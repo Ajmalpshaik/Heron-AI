@@ -10,7 +10,7 @@ kind: action
 domain: revit.schedules
 capability: SET_SCHEDULE_APPEARANCE
 # VERSION 4 (2026-11-01, FRAGMENT-ISSUES row 5b-1363, NEEDS-CHECKING Group
-# KF), on the owner's word in the brief of that day's session: Ajmal PS made a
+# KK), on the owner's word in the brief of that day's session: Ajmal PS made a
 # duct length schedule on his Revit 2020 job model through Heron - create,
 # group by size, Length totals and grand total all worked - and could not set
 # the Length column to metres, because no tool set a column's units. A grep of
@@ -59,7 +59,7 @@ capability: SET_SCHEDULE_APPEARANCE
 #   to have no unit type and is refused for units.
 #
 #   Version 3's proof below no longer describes the code and is kept as a
-#   record; the card is DRAFT until NEEDS-CHECKING Group KF proves version 4
+#   record; the card is DRAFT until NEEDS-CHECKING Group KK proves version 4
 #   and the owner signs.
 version: 4
 source: OFFICIAL

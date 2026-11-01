@@ -32,7 +32,7 @@ capability: CREATE_SCHEDULE
 # and "none" - so a version 1 caller is bound exactly as before and runs
 # version 1's path to the word. `madeAs` is new: a second read of what was
 # made. Version 1's proof below no longer describes the code and is kept as a
-# record; the card is DRAFT until NEEDS-CHECKING Group KF proves version 2 and
+# record; the card is DRAFT until NEEDS-CHECKING Group KK proves version 2 and
 # the owner signs.
 #
 # NOT HERE, ON PURPOSE: "Filter by sheet" and the embedded schedule are

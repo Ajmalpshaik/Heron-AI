@@ -20,7 +20,7 @@ positive:
 
   - given: >
       VERSION 2, Revit 2022 or later - "Heron KF Duct Schedule" with about 40
-      rows, sheet "KF01", 50 mm / 250 mm, splitInto "2", segment "all"
+      rows, sheet "KK01", 50 mm / 250 mm, splitInto "2", segment "all"
     expect: >
       two instances placed, placedAt reading "(split into 2 segments)" and
       "showing segment 1 (Revit's index 0)" for the first at 50 / 250 and

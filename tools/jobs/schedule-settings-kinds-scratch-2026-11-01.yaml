@@ -1,6 +1,6 @@
 # The proof of CREATE_SCHEDULE version 2 (create-schedule, FRG-VIEW-023) and
 # ADD_KEY_SCHEDULE_ROWS (add-key-schedule-rows, FRG-VIEW-158), written
-# 2026-11-01 for FRAGMENT-ISSUES row 5b-1363 - NEEDS-CHECKING Group KF. NOT
+# 2026-11-01 for FRAGMENT-ISSUES row 5b-1363 - NEEDS-CHECKING Group KK. NOT
 # RUN - written and read back with --dry-run only.
 #
 #     python tools/batch-prove.py tools/jobs/schedule-settings-kinds-scratch-2026-11-01.yaml --dry-run

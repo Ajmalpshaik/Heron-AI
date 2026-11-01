@@ -5,7 +5,7 @@
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
 // VERSION 2 (2026-11-01, FRAGMENT-ISSUES row 5b-1363, NEEDS-CHECKING Group
-// KF): the OTHER KINDS OF SCHEDULE on Revit's View > Schedules menu, by
+// KK): the OTHER KINDS OF SCHEDULE on Revit's View > Schedules menu, by
 // `kind` - a material takeoff, a note block, a revision schedule and a
 // keynote legend - and an area schedule of one AREA SCHEME, by `areaScheme`.
 // Left out, `kind` is "schedule", `areaScheme` and `noteBlockFamily` are

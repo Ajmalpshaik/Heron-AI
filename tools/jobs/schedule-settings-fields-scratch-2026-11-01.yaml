@@ -3,7 +3,7 @@
 # SET_SCHEDULE_FIELD_ORDER (set-schedule-field-order, FRG-VIEW-157, new) and
 # PLACE_SCHEDULE_ON_SHEET version 2 (place-schedule-on-sheet, FRG-VIEW-063,
 # split and segments). Written 2026-11-01 for FRAGMENT-ISSUES row 5b-1363 -
-# NEEDS-CHECKING Group KF. NOT RUN - written and read back with --dry-run only.
+# NEEDS-CHECKING Group KK. NOT RUN - written and read back with --dry-run only.
 #
 #     python tools/batch-prove.py tools/jobs/schedule-settings-fields-scratch-2026-11-01.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/schedule-settings-fields-scratch-2026-11-01.yaml
@@ -22,16 +22,16 @@
 #      so a schedule of them runs long enough to split
 #   2. A Duct Schedule named "Heron KF Duct Schedule" with the fields, in this
 #      order, Family and Type, Size, Length - and NOT Comments
-#   3. Two sheets: "KF01" with the schedule placed on it, and "KF02" left
+#   3. Two sheets: "KK01" with the schedule placed on it, and "KK02" left
 #      empty
 #   4. Save. Every run below starts from this
 #
 # EACH LEG HAS ITS OWN RECORD: batch-prove names a run record by fragment, so
 # one job per fragment here - three records, none overwriting another. The
-# other KF rows are commands of their own in docs/needs-checking/group-kf.md.
+# other KF rows are commands of their own in docs/needs-checking/group-kk.md.
 #
 # `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
-# Open the schedule's Fields tab and sheet KF02 afterwards: they must be as
+# Open the schedule's Fields tab and sheet KK02 afterwards: they must be as
 # steps 2 and 3 left them, rather than assuming the rollback held.
 #
 # WHAT EACH VERDICT MEANS HERE:
@@ -51,12 +51,12 @@
 #   set-schedule-field-order, negative: notPresent naming 'ZZZ NO SUCH COLUMN'
 #     on each schedule, reordered 0, appliedOrder empty
 #   place-schedule-on-sheet, ON REVIT 2020, positive: version 1's path with
-#     both new inputs "none" - placed 1 on KF02, placedAt about 100 mm, 200 mm,
+#     both new inputs "none" - placed 1 on KK02, placedAt about 100 mm, 200 mm,
 #     no "(split" in it
 #   place-schedule-on-sheet, ON REVIT 2020, negative: splitInto 2 - refused
-#     saying Revit 2020 and 2021 cannot split a schedule, placed EMPTY, KF02
+#     saying Revit 2020 and 2021 cannot split a schedule, placed EMPTY, KK02
 #     still empty. On Revit 2022 or later the split itself is row KF of its
-#     own in group-kf.md, run by hand on a 2022+ copy of this project
+#     own in group-kk.md, run by hand on a 2022+ copy of this project
 #
 # NOT `--session` HERE: with two Revits connected to Heron, add
 # `--session <process id>` to both commands.
@@ -75,12 +75,12 @@ jobs:
       - set-selection
     set:
       categoryName: Schedule Graphics
-      inViewOnly: KF01
+      inViewOnly: KK01
       fieldNames: Comments
       position: "2"
     negative-set:
       categoryName: Schedule Graphics
-      inViewOnly: KF01
+      inViewOnly: KK01
       fieldNames: Comments
       position: "after ZZZ NO SUCH COLUMN"
     note: >
@@ -95,11 +95,11 @@ jobs:
       - set-selection
     set:
       categoryName: Schedule Graphics
-      inViewOnly: KF01
+      inViewOnly: KK01
       order: "move Length to the front"
     negative-set:
       categoryName: Schedule Graphics
-      inViewOnly: KF01
+      inViewOnly: KK01
       order: "move ZZZ NO SUCH COLUMN to the front"
     note: >
       The new card's D-30 pair. The negative names a column that is not
@@ -115,13 +115,13 @@ jobs:
     negative-setup-set:
       nameContains: Heron KF Duct Schedule
     set:
-      sheetId: KF02
+      sheetId: KK02
       atXMm: "100"
       atYMm: "200"
       splitInto: "none"
       segment: "none"
     negative-set:
-      sheetId: KF02
+      sheetId: KK02
       atXMm: "100"
       atYMm: "200"
       splitInto: "2"

@@ -21,7 +21,7 @@ risk: MODIFY
 # IncludeLinkedFiles, IsFilteredBySheet or AddEmbeddedSchedule, nor of
 # ViewSchedule's TitleTextTypeId, HeaderTextTypeId, BodyTextTypeId,
 # HasStripedRows, UseStripedRowsOnSheets, SetStripedRowsColor or RowHeight -
-# NEEDS-CHECKING Group KF.
+# NEEDS-CHECKING Group KK.
 #
 # A NEW CARD, NOT A WIDENING. SET_SCHEDULE_APPEARANCE sets what one COLUMN
 # looks like; SET_SCHEDULE_SORT_GROUP the sorting and the grand total;

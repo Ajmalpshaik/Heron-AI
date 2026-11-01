@@ -14,7 +14,7 @@ source: OFFICIAL
 risk: MODIFY
 
 # WRITTEN 2026-11-01 FOR FRAGMENT-ISSUES ROW 5b-1363, Ajmal PS's check of
-# every schedule setting Heron could not reach (NEEDS-CHECKING Group KF). A
+# every schedule setting Heron could not reach (NEEDS-CHECKING Group KK). A
 # grep of every fragment's C# found no ViewSchedule.GroupHeaders,
 # UngroupHeaders, CanGroupHeaders or CanUngroupHeaders.
 #

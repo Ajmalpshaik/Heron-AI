@@ -1,7 +1,7 @@
 # The proof of SET_SCHEDULE_FIELD_TOTALS version 2 (set-schedule-field-totals,
 # FRG-VIEW-109) and SET_SCHEDULE_SORT_GROUP version 2 (set-schedule-sort-group,
 # FRG-VIEW-059), written 2026-11-01 for FRAGMENT-ISSUES row 5b-1363 -
-# NEEDS-CHECKING Group KF. NOT RUN - written and read back with --dry-run only.
+# NEEDS-CHECKING Group KK. NOT RUN - written and read back with --dry-run only.
 #
 #     python tools/batch-prove.py tools/jobs/schedule-settings-sorting-scratch-2026-11-01.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/schedule-settings-sorting-scratch-2026-11-01.yaml
@@ -15,7 +15,7 @@
 # ONE LEG PER FRAGMENT, ON PURPOSE. batch-prove writes each fragment's run
 # record to one path (brain/proof-drafts/runs/<slug>.json), so a second leg of
 # the same fragment would overwrite the first. The other version 2 cases are
-# the hand runs in Group KF.
+# the hand runs in Group KK.
 #
 # THE MODEL: A NEW PROJECT, NEVER 4355-* nor any project of Ajmal PS's. In
 # Revit 2020: File, New, Project, the default metric template (a mechanical

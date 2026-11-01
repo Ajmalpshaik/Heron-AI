@@ -46,7 +46,7 @@
 //   ViewSchedule.RowHeight, RowHeightOverride                       2024 on
 // On a release without one, that one setting is named in `notApplicable`.
 //
-// ASSUMPTIONS THE PROOF SETTLES (NEEDS-CHECKING Group KF), not claims:
+// ASSUMPTIONS THE PROOF SETTLES (NEEDS-CHECKING Group KK), not claims:
 //   - STRIPED ROW COLOUR. A colour alone is written to StripedRowPattern
 //     SecondRow, taken to be the coloured stripe; "first row #RRGGBB" and
 //     "second row #RRGGBB" name one. Both rows' colours are read back and

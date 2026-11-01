@@ -11,7 +11,7 @@ with him, on a scratch model.
 > it names win - re-run the lookup. Every API line below was read with
 > `dotnet run --project tools/api-surface -- --members <Type>` against the reference assemblies cached
 > for **2020 through 2027**, on 2026-11-01. **Nothing here has been run in Revit.** What only a Revit run
-> can settle is marked **NEEDS REAL REVIT**, and is in [NEEDS-CHECKING Group KF](../../needs-checking/group-kf.md).
+> can settle is marked **NEEDS REAL REVIT**, and is in [NEEDS-CHECKING Group KK](../../needs-checking/group-kk.md).
 
 ## 1. Where each setting lives in the Revit API, and since when
 
@@ -52,7 +52,7 @@ own, refuted by trying to build it"*) and is unchanged on 2025-2027. *Percentage
 confirm the forum claim for this one.** `ScheduleField.PercentageOf` and `PercentageBy` both have a setter
 on 2020-2027, and `ScheduleFieldType.Percentage` exists, so `AddField(ScheduleFieldType.Percentage)` and
 then `PercentageOf` might be accepted. Whether Revit takes it is **NEEDS REAL REVIT** - one rolled-back probe
-(Group KF's probe row). Nothing built until it has run. Whether `GetSchedulableFields()` leaves both out was
+(Group KK's probe row). Nothing built until it has run. Whether `GetSchedulableFields()` leaves both out was
 not checked here: it needs a model.
 
 **19. Conditional formatting.** A Revit limit on every release 2020-2027. No public type for it exists in
@@ -76,5 +76,5 @@ flipped it would change the modeller's screen, not the model.
 
 ## 3. What was built
 
-See the table at the top of the pull request and [NEEDS-CHECKING Group KF](../../needs-checking/group-kf.md),
+See the table at the top of the pull request and [NEEDS-CHECKING Group KK](../../needs-checking/group-kk.md),
 which hold the same list with the proof owed for each. All of it is DRAFT; nothing has run in Revit.
