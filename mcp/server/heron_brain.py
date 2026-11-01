@@ -2135,14 +2135,25 @@ def sprinkler_layout(layout_json, inputs, project=None, project_name=None):
             "view": LAYOUT.view(data, result)}
 
 
-def model_dashboard(dashboard_json):
+def model_dashboard_board(key):
+    """The `breakdowns` value REPORT_MODEL_DASHBOARD takes for a board, "" for
+    none. Raises ValueError, a sentence, for a board Heron does not have."""
+    try:
+        import heron_model_dashboard as DASH
+    except ImportError as exc:
+        raise BrainUnavailable("Heron's Model Dashboard could not be imported: %s." % exc)
+    return DASH.board_request(key)
+
+
+def model_dashboard(dashboard_json, project=None, board=None, project_name=None):
     """
     The Companion's Model Dashboard from REPORT_MODEL_DASHBOARD's
     dashboardJson - docs/40 s21.10.
 
     Returns {"dashboard", "said"}: the tiles, charts and worth-a-look rows the
     page draws, and one line for the chat; "dashboard" is None, and "said"
-    says why, when what Revit sent could not be read. It reads only. One audit
+    says why, when what Revit sent could not be read. With a `project` key the
+    read is kept - numbers only - and compared with the last. One audit
     line, `qa.model_dashboard`, says how it ended and carries counts only -
     never a name from the model.
     """
@@ -2152,7 +2163,8 @@ def model_dashboard(dashboard_json):
         raise BrainUnavailable("Heron's Model Dashboard could not be imported: %s. It needs "
                                "nothing beyond Python itself, so this is a broken install."
                                % exc)
-    got = DASH.dashboard(dashboard_json)
+    got = DASH.dashboard(dashboard_json, project_key=project, board_key=board,
+                         project_name=project_name)
     board = got.get("dashboard")
     _audit().record("qa.model_dashboard", board is not None,
                     fields={"status": "ok" if board is not None else "unreadable"},
@@ -2655,3 +2667,16 @@ def proof_status(folder):
         "model": str(proof.get("model") or "") or None,
         "by": str(proof.get("by") or "") or None,
     }
+
+
+def model_dashboard_demo():
+    """The Model Dashboard's DEMO - an invented model, for trying the panel with
+    no Revit (docs/40 s21.12). Never kept, never compared; the panel refuses
+    Select and Isolate on it."""
+    try:
+        import heron_model_dashboard as DASH
+    except ImportError as exc:
+        raise BrainUnavailable("Heron's Model Dashboard could not be imported: %s. It needs "
+                               "nothing beyond Python itself, so this is a broken install."
+                               % exc)
+    return DASH.demo()

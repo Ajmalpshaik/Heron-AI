@@ -1413,10 +1413,12 @@ def test_dashboard_panel():
     check(shown["document"] == "Tower MEP" and shown["tiles"] and shown["charts"]
           and shown["look"] and shown["states"] and shown["busy"] is False,
           "the panel shows the brain's tiles, charts, rows and colours as they came")
-    calls = []
+    calls, asked, boards_asked = [], [], []
 
-    def hook():
+    def hook(parameters, board):
         calls.append(panel.current()["busy"])
+        asked.append(parameters)
+        boards_asked.append(board)
         check(panel.refresh()["said"] == "Not read: %s." % hc.DashboardPanel.BUSY,
               "a second Refresh while one reads is told so and reads nothing")
         return {"ok": True, "said": "read again"}
@@ -1424,8 +1426,16 @@ def test_dashboard_panel():
     check(panel.refresh() == {"ok": True, "said": "read again"} and calls == [True],
           "Refresh calls the hook once, marked busy while it runs")
     check(panel.current()["busy"] is False, "busy is cleared after the read")
+    panel.refresh({"parameters": "Mark, Fire Rating"})
+    panel.open("Tower MEP", answer, ("Tower MEP", "", "11"), parameters="Mark, Fire Rating")
+    panel.refresh({})
+    check(asked == ["", "Mark, Fire Rating", "Mark, Fire Rating"],
+          "Refresh carries the parameters typed on the page, and keeps the last read's "
+          "when none are sent - found %r" % (asked,))
+    panel.refresh({"board": "rooms"})
+    check(boards_asked[-1] == "rooms", "Refresh carries the board picked on the page")
 
-    def broken():
+    def broken(_parameters, _board):
         raise RuntimeError("Revit closed")
     panel.refresh_hook = broken
     try:
@@ -1437,9 +1447,13 @@ def test_dashboard_panel():
     source = io.open(SOURCE, encoding="utf-8").read()
     i = source.index('if path == "/api/dashboard":')
     j = source.index('if path == "/api/dashboard/refresh":')
+    k = source.index('if path == "/api/dashboard/show":')
+    m = source.index('if path == "/api/dashboard/demo":')
     check(source.index("why = self._api_ok()", i) < source.index("DASHBOARD_PANEL.current()", i)
-          and source.index("why = self._api_ok()", j) < source.index("DASHBOARD_PANEL.refresh(", j),
-          "both Dashboard routes are behind _api_ok like every other route")
+          and source.index("why = self._api_ok()", j) < source.index("DASHBOARD_PANEL.refresh(", j)
+          and source.index("why = self._api_ok()", k) < source.index("DASHBOARD_PANEL.show(", k)
+          and source.index("why = self._api_ok()", m) < source.index("DASHBOARD_PANEL.demo(", m),
+          "every Dashboard route is behind _api_ok like every other route")
     server = io.open(SERVER, encoding="utf-8").read()
     check("DASHBOARD_PANEL.refresh_hook = _dashboard_refresh" in server,
           "the server sets the Dashboard's refresh_hook")
@@ -1447,12 +1461,72 @@ def test_dashboard_panel():
     refresh_src = refresh_src[:refresh_src.index(chr(10) + "def ", 10)]
     read_src = server[server.index("def _read_dashboard("):]
     read_src = read_src[:read_src.index(chr(10) + "def ", 10)]
+    show_src = server[server.index("def _dashboard_show("):]
+    show_src = show_src[:show_src.index(chr(10) + "def ", 10)]
+    check("with _revit_lock:" in show_src and "_moved_since(identity)" in show_src
+          and "revit_change" not in show_src and '"SET_SELECTION"' in show_src
+          and '"FILTER_ELEMENTS_BY_ID"' in show_src,
+          "Select, Isolate and Reset run under the lock, on the read's model only, and "
+          "never through revit_change")
+    check("DASHBOARD_PANEL.show_hook = _dashboard_show" in server
+          and "DASHBOARD_PANEL.demo_hook = _dashboard_demo" in server,
+          "the server sets the Dashboard's show_hook and demo_hook")
     check("with _revit_lock:" in refresh_src and "revit_change" not in read_src
           and '"REPORT_MODEL_DASHBOARD"' in read_src and "pinned.check(reply)" in read_src,
           "Refresh reads under the lock, through revit_read only, and the pin's refusal stands")
+    mine = dict((k, v) for k, v in tools.COMPANION_ACTIONS.items() if "dashboard" in k)
     check(tools.TOOLS.get("revit_model_dashboard") == (tools.ANALYZE, "run_fragment_read")
-          and not [k for k in tools.COMPANION_ACTIONS if "dashboard" in k],
-          "the chat tool reads only, and the page has no write action for it")
+          and sorted(mine) == ["companion_dashboard_isolate", "companion_dashboard_reset",
+                               "companion_dashboard_select"]
+          and all(risk == tools.EXECUTE for risk, _op in mine.values()),
+          "the chat tool reads only, and the page's three actions are on screen only, at EXECUTE")
+
+    # THE ROW BUTTONS (docs/40 s21.11): the page names a row, never ids.
+    shown = hc.DashboardPanel()
+    check(shown.show({"action": "select", "row": "rooms-unplaced"})["said"]
+          == "Nothing was sent to Revit: %s." % hc.DashboardPanel.GONE,
+          "with no chat connected, Select says so and sends nothing")
+    sent = []
+    shown.show_hook = lambda action, ids, identity: (sent.append((action, ids, identity))
+                                                    or {"ok": True, "said": "selected"})
+    check(shown.show({"action": "select", "row": "rooms-unplaced"})["ok"] is False and not sent,
+          "with nothing read, a row cannot be selected")
+    shown.open("Tower MEP", answer, ("Tower MEP", "", "11"))
+    got = shown.show({"action": "select", "row": "rooms-unplaced", "ids": ["999"]})
+    check(got == {"ok": True, "said": "selected"}
+          and sent == [("select", ["501", "502"], ["Tower MEP", "", "11"])],
+          "Select sends the ids the panel's own read found, never ids the page typed, "
+          "with the model the read came from")
+    check(shown.show({"action": "isolate", "row": "groups-unused"})["ok"] is False
+          and len(sent) == 1,
+          "a row with no ids sends nothing")
+    check(shown.show({"action": "delete", "row": "rooms-unplaced"})["ok"] is False
+          and len(sent) == 1,
+          "an action that is not select, isolate or reset is refused")
+    check(shown.show({"action": "reset"})["ok"] and sent[-1] == ("reset", [], ["Tower MEP", "", "11"]),
+          "Reset needs no row")
+    boarded = brain_seam.model_dashboard(DASH.sample(breakdowns=DASH.BREAKDOWNS), board="rooms")
+    shown.open("Tower MEP", boarded, ("Tower MEP", "", "11"), board="rooms")
+    check(shown.show({"action": "select", "bar": ["rooms-level", "Level 01"]})["ok"]
+          and sent[-1][1] == ["11", "12"],
+          "a board bar selects the ids the panel's own read found for it")
+    check(shown.show({"action": "select", "bar": ["rooms-level", "Level 09"]})["ok"] is False,
+          "a bar the panel does not hold sends nothing")
+
+    # THE DEMO (docs/40 s21.12): invented, made in brain/ through a hook, and
+    # nothing on it ever reaches Revit.
+    shown.demo_hook = brain_seam.model_dashboard_demo
+    check(shown.demo()["ok"] is False and shown.current()["document"] == "Tower MEP",
+          "the demo never replaces a read of the modeller's model")
+    demo = hc.DashboardPanel()
+    check(demo.demo()["ok"] is False, "with no chat connected there is no demo")
+    demo.demo_hook = brain_seam.model_dashboard_demo
+    demo.show_hook = shown.show_hook
+    before = len(sent)
+    check(demo.demo()["ok"] and demo.current()["demo"] is True,
+          "the empty panel opens the demo, marked as the demo")
+    check(demo.show({"action": "reset"})["ok"] is False and len(sent) == before,
+          "on the demo, not even Reset reaches Revit")
     page = io.open(PAGE_JS, encoding="utf-8").read()
     dash = page[page.index("// ---------------------------------------------------------------- dashboard"):
                 page.index("// ---------------------------------------------------------------- sprinkler")]

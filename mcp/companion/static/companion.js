@@ -1534,7 +1534,8 @@ async function loads_() {
 // made by Heron's brain (heron_model_dashboard); the page only draws them.
 // Refresh is the modeller's own press - the page never reads Revit by itself.
 // Model text goes on the page with textContent only. Nothing here writes to
-// Revit: Copy IDs puts the ids on the clipboard for Revit's Select by ID.
+// the model: Copy IDs puts the ids on the clipboard for Revit's Select by ID,
+// and Select / Isolate change only what is on screen (docs/40 s21.11).
 
 let dashShown = null;
 let dashBusy = false;
@@ -1542,7 +1543,7 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 
 function dashColour(c, fallback) { return HEX.test(String(c || "")) ? c : fallback; }
 
-async function dashRefresh(button, said) {
+async function dashRefresh(button, said, parameters, board) {
   if (dashBusy) return;
   dashBusy = true;
   button.disabled = true;
@@ -1553,7 +1554,8 @@ async function dashRefresh(button, said) {
       method: "POST",
       headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
       credentials: "same-origin",
-      body: "{}",
+      body: JSON.stringify(Object.assign({}, parameters == null ? {} : { parameters: parameters },
+                                         board == null ? {} : { board: board })),
     });
     const answer = await res.json();
     said.className = answer.ok ? "result ok" : "result failed";
@@ -1568,6 +1570,38 @@ async function dashRefresh(button, said) {
   await dashboard_();
   const after = $("d-said");
   if (after) { after.className = kept.cls; after.textContent = kept.text; }
+}
+
+// A row's Select in Revit / Isolate in view, or Reset isolate. On screen only:
+// the selection and the active view's Temporary Hide/Isolate - never the model.
+// The page sends the row's key, never ids: Heron uses the ids its own read found.
+async function dashShow(action, row, button, bar) {
+  if (dashBusy) return;
+  dashBusy = true;
+  const said = $("d-said");
+  document.querySelectorAll("#dashboard button").forEach(b => { b.disabled = true; });
+  if (said) { said.className = "result"; said.textContent = "Asking Revit…"; }
+  try {
+    const res = await fetch("/api/dashboard/show", {
+      method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
+      credentials: "same-origin",
+      body: JSON.stringify(bar ? { action: action, bar: bar } : { action: action, row: row }),
+    });
+    const answer = await res.json();
+    if (said) {
+      said.className = answer.ok ? "result ok" : "result failed";
+      said.textContent = answer.said || answer.error || (answer.ok ? "Done." : "Not done.");
+    }
+  } catch (e) {
+    if (said) {
+      said.className = "result failed";
+      said.textContent = "The page could not reach Heron. Nothing was sent to Revit.";
+    }
+  }
+  document.querySelectorAll("#dashboard button").forEach(b => { b.disabled = false; });
+  dashBusy = false;
+  if (button && said) said.scrollIntoView({ block: "nearest" });
 }
 
 async function copyIds(ids, button) {
@@ -1631,12 +1665,167 @@ function dashChart(c) {
   return box;
 }
 
+// The fill-rate: each parameter asked for, by category - filled, empty and
+// missing kept apart, as the brain sent them.
+function dashFill(F, colours) {
+  const sec = el("section", "d-fill");
+  sec.append(el("h3", "d-sub", "Parameters filled"));
+  (F.parameters || []).forEach(p => {
+    const box = el("figure", "d-chart");
+    box.append(el("figcaption", "d-chart-title",
+      p.parameter + " - " + num(p.populated, 0) + " filled · " + num(p.empty, 0) + " empty · " +
+      num(p.absent, 0) + " without it" +
+      (p.doubled ? " · " + num(p.doubled, 0) + " with two of that name - Heron will not guess which" : "")));
+    const table = el("table", "d-fill-table");
+    const head = el("tr");
+    ["Category", "", "Filled", "Empty", "Without it"].forEach(h => head.append(el("th", null, h)));
+    const thead = el("thead");
+    thead.append(head);
+    const body = el("tbody");
+    (p.rows || []).forEach(r => {
+      const tr = el("tr");
+      tr.style.borderLeft = "4px solid " + dashColour(colours[r.state], "#7a8796");
+      const track = el("span", "d-bar-track");
+      const fill = el("i", "d-bar-fill");
+      fill.style.width = Math.max(0, Math.min(100, Number(r.share) || 0)) + "%";
+      fill.style.background = dashColour(colours.ok, "#5aa469");
+      track.append(fill);
+      const bar = el("td");
+      bar.append(track);
+      tr.append(el("td", null, r.category), bar, el("td", "d-num", num(r.share, 0) + "%"),
+                el("td", "d-num", num(r.empty, 0)), el("td", "d-num", num(r.absent, 0)));
+      body.append(tr);
+    });
+    if (!(p.rows || []).length) {
+      const tr = el("tr");
+      const td = el("td", "muted", "No counted element was found with it or without it.");
+      td.colSpan = 5;
+      tr.append(td);
+      body.append(tr);
+    }
+    table.append(thead, body);
+    box.append(table);
+    sec.append(box);
+  });
+  return sec;
+}
+
+// What moved since the last read of this project - the brain compared them;
+// the page only lists the rows it sent.
+function dashSince(S) {
+  const sec = el("section", "d-since");
+  sec.append(el("h3", "d-sub", "Since the last read" + (S.when ? " (" + S.when + ")" : "")));
+  if (!(S.rows || []).length) {
+    sec.append(el("p", "muted small", "Nothing counted here has changed."));
+    return sec;
+  }
+  const table = el("table", "d-fill-table");
+  const head = el("tr");
+  ["", "Was", "Now", "Change"].forEach(h => head.append(el("th", null, h)));
+  const thead = el("thead");
+  thead.append(head);
+  const body = el("tbody");
+  S.rows.forEach(r => {
+    const tr = el("tr");
+    const change = Number(r.change) || 0;
+    tr.append(el("td", null, r.label), el("td", "d-num", num(r.was, 0)), el("td", "d-num", num(r.now, 0)),
+              el("td", "d-num", (change > 0 ? "+" : "") + num(change, 0)));
+    body.append(tr);
+  });
+  table.append(thead, body);
+  sec.append(table);
+  return sec;
+}
+
+// The CSV is made here, from what the brain sent - nothing is read from Revit
+// and nothing leaves this PC. A cell starting with = + - @ is prefixed with a
+// quote mark, so a spreadsheet shows model text and never runs it as a formula.
+function dashCsv(D) {
+  const cell = v => {
+    let t = v == null ? "" : String(v);
+    if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
+    return '"' + t.replace(/"/g, '""') + '"';
+  };
+  const lines = [["Section", "Item", "Count", "State", "Why", "In Revit", "Element ids"].map(cell).join(",")];
+  (D.tiles || []).forEach(t => lines.push(["Tile", t.label, t.value, t.state, t.note, "", ""].map(cell).join(",")));
+  (D.look || []).forEach(r => lines.push(["Worth a look", r.title, r.count, r.state, r.why, r.where,
+                                          (r.ids || []).join(";")].map(cell).join(",")));
+  ((D.fill && D.fill.parameters) || []).forEach(p => (p.rows || []).forEach(r =>
+    lines.push(["Parameters filled", p.parameter + " - " + r.category, r.populated, r.state,
+                r.empty + " empty, " + r.absent + " without it", "", (r.emptyIds || []).join(";")]
+               .map(cell).join(","))));
+  (D.charts || []).forEach(c => (c.bars || []).forEach(b =>
+    lines.push([c.title, b.label, b.value, "", "", "", ""].map(cell).join(","))));
+  const blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = el("a");
+  a.href = URL.createObjectURL(blob);
+  const name = String(D.document || "model").replace(/[^A-Za-z0-9 _.-]+/g, "_").slice(0, 60);
+  a.download = "Heron dashboard - " + name + " - " + String(D.at || "").replace(/:/g, "") + ".csv";
+  document.body.append(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+// A board's charts. A bar with ids is a button: it selects those elements in
+// Revit - the page names the chart and the bar, Heron uses its own ids.
+function dashBoard(B) {
+  const sec = el("section", "d-board");
+  sec.append(el("h3", "d-sub", B.title));
+  const grid = el("div", "d-charts");
+  (B.charts || []).forEach(c => {
+    const box = el("figure", "d-chart");
+    box.append(el("figcaption", "d-chart-title", c.title + (c.unit ? " (" + c.unit + ")" : "")));
+    if (!c.bars) {
+      box.append(el("p", "muted small", "Not read from the model - see the notes above."));
+      grid.append(box);
+      return;
+    }
+    if (!c.bars.length) box.append(el("p", "muted small", "None in this model."));
+    const most = Math.max(1, ...c.bars.map(b => Number(b.value) || 0));
+    const list = el("ol", "d-bars");
+    c.bars.forEach(b => {
+      const li = el("li", "d-bar");
+      const label = el((b.ids || []).length ? "button" : "span", "d-bar-label", b.label);
+      if ((b.ids || []).length) {
+        label.type = "button";
+        label.classList.add("d-bar-pick");
+        label.title = "Select these " + b.count + " element(s) in Revit - nothing in the model changes";
+        label.addEventListener("click", () => dashShow("select", null, label, [c.key, b.label]));
+      } else label.title = b.label;
+      const track = el("span", "d-bar-track");
+      const fill = el("i", "d-bar-fill");
+      fill.style.width = Math.max(1, Math.round(100 * (Number(b.value) || 0) / most)) + "%";
+      fill.style.background = dashColour(b.colour, "#4f7fd1");
+      track.append(fill);
+      li.append(label, track, el("span", "d-bar-value", num(b.value, c.unit ? 1 : 0)));
+      list.append(li);
+    });
+    box.append(list);
+    grid.append(box);
+  });
+  sec.append(grid);
+  return sec;
+}
+
+function dashFilter(text, state) {
+  const words = String(text || "").trim().toLowerCase();
+  document.querySelectorAll("#dashboard .d-bar, #dashboard .d-fill-table tbody tr").forEach(n => {
+    n.hidden = !!words && !n.textContent.toLowerCase().includes(words);
+  });
+  document.querySelectorAll("#dashboard .d-look-row").forEach(n => {
+    const byWords = !words || n.textContent.toLowerCase().includes(words);
+    const byState = !state || n.dataset.state === state;
+    n.hidden = !(byWords && byState);
+  });
+}
+
 function dashLook(D, colours) {
   const sec = el("section", "d-look");
   sec.append(el("h3", "d-sub", "Worth a look"));
   const list = el("ol", "d-look-list");
   (D.look || []).forEach(r => {
     const li = el("li", "d-look-row");
+    li.dataset.state = r.state || "";
     li.style.borderLeftColor = dashColour(colours[r.state], "#7a8796");
     const head = el("div", "d-look-head");
     head.append(el("span", "d-look-title", r.title),
@@ -1645,6 +1834,15 @@ function dashLook(D, colours) {
     if (r.where) li.append(el("p", "d-look-where", "In Revit: " + r.where));
     const tools = el("div", "d-look-tools");
     if ((r.ids || []).length) {
+      const sel = el("button", "btn-lite", "Select in Revit");
+      sel.type = "button";
+      sel.title = "Select these " + r.ids.length + " element(s) in Revit - nothing in the model changes";
+      sel.addEventListener("click", () => dashShow("select", r.key, sel));
+      const iso = el("button", "btn-lite", "Isolate in view");
+      iso.type = "button";
+      iso.title = "Revit's Temporary Isolate in the active view - nothing in the model changes";
+      iso.addEventListener("click", () => dashShow("isolate", r.key, iso));
+      tools.append(sel, iso);
       const copy = el("button", "btn-lite", "Copy " + r.ids.length + " ID(s)");
       copy.type = "button";
       copy.title = "Copy the element ids for Manage > Inquiry > Select by ID in Revit";
@@ -1674,6 +1872,8 @@ function renderDashboard(D) {
   if (!D) return;
   const colours = {};
   (D.states || []).forEach(s => { colours[s.key] = s.colour; });
+  if (D.demo) box.append(el("p", "d-notread", "DEMO - an invented model, for trying the dashboard. " +
+    "Nothing here is from your model, and Select and Isolate are off. Ask the chat for a model dashboard to read yours."));
   const meta = el("div", "l-meta");
   [["Model", D.document || (D.model && D.model.title) || "—"], ["Read from Revit", D.at || "—"]]
     .forEach(([k, v]) => {
@@ -1691,9 +1891,62 @@ function renderDashboard(D) {
   said.id = "d-said";
   said.setAttribute("role", "status");
   said.setAttribute("aria-live", "polite");
-  refresh.addEventListener("click", () => dashRefresh(refresh, said));
-  tools.append(refresh, said);
-  box.append(meta, tools, dashTiles(D, colours));
+  const params = el("input", "d-params");
+  params.type = "text";
+  params.value = D.parameters || "";
+  params.placeholder = "Parameters to check filled, e.g. Mark, Fire Rating";
+  params.setAttribute("aria-label", "Parameters to check filled, comma separated");
+  const pick = el("select", "d-states");
+  pick.setAttribute("aria-label", "Board");
+  const none = el("option", null, "No board");
+  none.value = "";
+  pick.append(none);
+  (D.boards || []).forEach(b => {
+    const o = el("option", null, "Board: " + b.title);
+    o.value = b.key;
+    if (b.key === D.board_key) o.selected = true;
+    pick.append(o);
+  });
+  pick.title = "A board adds its charts at the next Refresh";
+  params.addEventListener("keydown", e => { if (e.key === "Enter") dashRefresh(refresh, said, params.value, pick.value); });
+  refresh.addEventListener("click", () => dashRefresh(refresh, said, params.value, pick.value));
+  const reset = el("button", "btn-lite", "Reset isolate");
+  reset.type = "button";
+  reset.title = "End the Temporary Hide/Isolate in Revit's active view";
+  reset.addEventListener("click", () => dashShow("reset", null, reset));
+  const print = el("button", "btn-lite", "Print / PDF");
+  print.type = "button";
+  print.title = "Print the dashboard, or choose Save as PDF in the print window";
+  print.addEventListener("click", () => {
+    document.body.classList.add("printing-dashboard");
+    window.print();
+    document.body.classList.remove("printing-dashboard");
+  });
+  const csv = el("button", "btn-lite", "Download CSV");
+  csv.type = "button";
+  csv.title = "The rows worth a look and the parameters filled, as a spreadsheet file - made on this PC";
+  csv.addEventListener("click", () => dashCsv(D));
+  tools.append(params, pick, refresh, reset, print, csv, said);
+  // THE FILTER is the page's own: it hides rows and bars whose words do not
+  // match, on what the brain already sent - nothing is read from Revit.
+  const filterBox = el("div", "d-filter");
+  const filter = el("input", "d-params");
+  filter.type = "search";
+  filter.placeholder = "Filter the bars and rows - a category, a level, a word";
+  filter.setAttribute("aria-label", "Filter the bars and rows");
+  const states = el("select", "d-states");
+  states.setAttribute("aria-label", "Show rows");
+  [["", "Every row"], ["look", "Worth a look only"], ["info", "Counts only"], ["ok", "None found"],
+   ["not read", "Not read"]].forEach(([v, t]) => {
+    const o = el("option", null, t);
+    o.value = v;
+    states.append(o);
+  });
+  const apply = () => dashFilter(filter.value, states.value);
+  filter.addEventListener("input", apply);
+  states.addEventListener("change", apply);
+  filterBox.append(filter, states);
+  box.append(meta, tools, dashTiles(D, colours), filterBox);
   if ((D.notRead || []).length) {
     const nr = el("div", "d-notread");
     nr.append(el("strong", null, "Not read from the model: "));
@@ -1706,9 +1959,13 @@ function renderDashboard(D) {
     cut.append(el("span", null, D.capped.join(" · ")));
     box.append(cut);
   }
+  if (D.since) box.append(dashSince(D.since));
   const charts = el("div", "d-charts");
   (D.charts || []).forEach(c => charts.append(dashChart(c)));
-  box.append(charts, dashLook(D, colours));
+  box.append(charts);
+  if (D.board) box.append(dashBoard(D.board));
+  if (D.fill) box.append(dashFill(D.fill, colours));
+  box.append(dashLook(D, colours));
   const legend = el("ul", "d-legend");
   (D.states || []).forEach(s => {
     const li = el("li");
@@ -1729,7 +1986,6 @@ async function dashboard_() {
     const key = D ? D.at + "/" + (D.document || "") + "/" + (D.busy ? "b" : "") : "none";
     if (key === dashShown) return;
     dashShown = key;
-    $("dashboard").hidden = !D;
     renderDashboard(D);
   } catch (e) { /* the state poll reports a closed page */ }
 }
@@ -2588,6 +2844,19 @@ async function tableTool(button, path, body) {
   document.querySelectorAll(".c-tools button").forEach(b => { b.disabled = false; });
   changes();
 }
+
+$("d-demo").addEventListener("click", async () => {
+  try {
+    await fetch("/api/dashboard/demo", {
+      method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
+      credentials: "same-origin",
+      body: "{}",
+    });
+  } catch (e) { /* the state poll reports a closed page */ }
+  dashShown = null;
+  dashboard_();
+});
 
 if (SHOW_CHANGES) {
   $("c-load-filters").addEventListener("click", () => tableTool(null, "/api/changes/load", { kind: "filters" }));

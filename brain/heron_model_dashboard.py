@@ -32,12 +32,23 @@ WHAT WAS NOT READ IS SAID. A part the fragment could not read arrives as
 null, named in `notRead`, and is shown as not read - never as zero. A list
 cut at the fragment's limit is named in `capped`, and the page says so.
 
-Standard library only.
+SINCE THE LAST READ (phase 4). With a project key, each read keeps a small
+snapshot - numbers only, no ids and no element names - beside the
+project's other kept answers, and the next read says what moved: elements,
+warnings, sheets, rooms, the things worth a look, and the categories that
+grew or shrank most. A part not read in either read is not compared.
+
+Standard library only, and heron_designbasis for where a project's kept
+answers live - the folder the Loads panel keeps its runs beside.
 """
 
 from __future__ import annotations
 
+import io
 import json
+import os
+import re
+import time
 
 FORMAT = 1
 #: The fragment's own format this module reads.
@@ -195,6 +206,20 @@ def read(text):
             if not any(n.lower().startswith(part) for n in out["notRead"]):
                 out["notRead"].append("%s: not in what Revit sent" % part)
     out["capped"] = _names(data.get("capped"))
+    # THE FILL-RATE, only when parameters were asked for. null is "not asked
+    # or not read" - which of the two, notRead says - never zeros.
+    fill = data.get("fill")
+    if isinstance(fill, dict):
+        out["fill"] = {
+            "parameters": _names(fill.get("parameters")),
+            "rows": [{"category": _text(r.get("category")), "parameter": _text(r.get("parameter")),
+                      "populated": _int(r.get("populated")), "empty": _int(r.get("empty")),
+                      "absent": _int(r.get("absent")), "doubled": _int(r.get("doubled")),
+                      "emptyIds": _ids(r.get("emptyIds"))}
+                     for r in _rows(fill, "rows")]}
+    else:
+        out["fill"] = None
+    out["breakdowns"] = data.get("breakdowns") if isinstance(data.get("breakdowns"), list) else None
     return out
 
 
@@ -406,12 +431,67 @@ def look_at(data):
     return sorted(rows, key=lambda r: order[r["state"]])
 
 
-def build(data):
+def fill(data):
+    """
+    Each parameter asked for, category by category, in heron_modelqa's three
+    states - populated, empty, absent - with the share filled. EMPTY and
+    ABSENT ARE NEVER ONE NUMBER: empty is a value nobody typed; absent is a
+    parameter the category does not carry, a different afternoon's work.
+    Returns None when no parameter was asked for.
+    """
+    got = data.get("fill")
+    if not got:
+        return None
+    out = []
+    for name in got["parameters"]:
+        rows = []
+        for r in got["rows"]:
+            if r["parameter"].lower() != name.lower():
+                continue
+            # DOUBLED: two parameters answer to the name on the element (or
+            # none there and two on its type) - the fragment will not guess
+            # which, so neither does the panel. Worth a look, like empty.
+            total = r["populated"] + r["empty"] + r["absent"] + r["doubled"]
+            share = int(round(100.0 * r["populated"] / total)) if total else 0
+            rows.append(dict(r, total=total, share=share,
+                             state="look" if (r["empty"] or r["doubled"])
+                             else ("info" if r["absent"] else "ok")))
+        rows.sort(key=lambda r: (-r["empty"], r["category"]))
+        out.append({"parameter": name, "rows": rows,
+                    "populated": sum(r["populated"] for r in rows),
+                    "empty": sum(r["empty"] for r in rows),
+                    "absent": sum(r["absent"] for r in rows),
+                    "doubled": sum(r["doubled"] for r in rows)})
+    return {"parameters": out}
+
+
+def _fill_rows(board_fill):
+    """One worth-a-look row per parameter left empty, its ids for Select."""
+    rows = []
+    for p in (board_fill or {}).get("parameters") or []:
+        ids = [i for r in p["rows"] for i in r["emptyIds"]][:IDS_MAX]
+        cats = [r["category"] for r in p["rows"] if r["empty"]]
+        where = ", ".join(cats[:4]) + (" and %d more" % (len(cats) - 4) if len(cats) > 4 else "")
+        rows.append(_look("fill:" + p["parameter"], "'%s' empty" % p["parameter"], p["empty"],
+                          ("The parameter is there and nobody typed a value - in %s. Schedules "
+                           "and tags show it blank." % where) if cats else
+                          "No counted element has it blank.",
+                          "a schedule of those categories with '%s' as a field, filtered blank"
+                          % p["parameter"], ids=ids))
+    return rows
+
+
+def build(data, board_key=None):
     """The panel's whole content from read()'s result."""
+    board_fill = fill(data)
     rows = look_at(data)
+    if board_fill:
+        order = {"look": 0, "info": 1, "ok": 2, "not read": 3}
+        rows = sorted(_fill_rows(board_fill) + rows, key=lambda r: order[r["state"]])
     return {"format": FORMAT, "model": dict(data["model"]), "tiles": tiles(data),
             "charts": charts(data), "look": rows, "notRead": list(data["notRead"]),
-            "capped": list(data.get("capped") or []),
+            "capped": list(data.get("capped") or []), "fill": board_fill,
+            "board": board(board_key, data), "boards": boards(),
             "states": [{"key": k, "colour": c, "means": m} for k, c, m in STATES],
             "said": summary(data, rows)}
 
@@ -437,15 +517,337 @@ def summary(data, rows=None):
     return said + " The charts and lists are on the Companion page. Nothing was changed."
 
 
-def dashboard(text):
+def dashboard(text, project_key=None, board_key=None, project_name=None):
     """
     read() then build(), as the MCP server calls it. Returns {"dashboard",
     "said"}; "dashboard" is None, and "said" says why, when the text could
-    not be read.
+    not be read. With a project key the read is kept and compared with the
+    last one: the board's "since" says what moved.
     """
     try:
         data = read(text)
     except ValueError as why:
         return {"dashboard": None, "said": "No dashboard was made: %s" % why}
-    built = build(data)
+    built = build(data, board_key)
+    built["since"], note = (since(project_key, data, project_name) if project_key and
+                            not data["model"]["isFamily"] else (None, None))
+    if note:
+        built["notRead"] = built["notRead"] + [note]
     return {"dashboard": built, "said": built["said"]}
+
+
+# --------------------------------------------------- since the last read
+
+#: The headline numbers a snapshot keeps, each with the part it needs read.
+HEADLINES = (
+    ("elementTotal", "Model elements", "elements"),
+    ("warnings.total", "Warnings", "warnings"),
+    ("warnings.errors", "Warnings that are errors", "warnings"),
+    ("views.total", "Views", "views"),
+    ("views.notOnSheets", "Views not on a sheet", "views"),
+    ("sheets.total", "Sheets", "sheets"),
+    ("sheets.empty", "Empty sheets", "sheets"),
+    ("families.loaded", "Families", "families"),
+    ("families.unused", "Families never placed", "families"),
+    ("rooms.total", "Rooms", "rooms"),
+    ("rooms.unplaced", "Rooms not placed", "rooms"),
+    ("rooms.notEnclosed", "Rooms not enclosed", "rooms"),
+    ("spaces.unplaced", "Spaces not placed", "spaces"),
+    ("cad.imported", "CAD imported", "cad"),
+)
+#: Categories listed under "since", the biggest moves first.
+SINCE_CATEGORIES = 10
+
+
+def _dig(data, path):
+    got = data
+    for part in path.split("."):
+        got = got.get(part) if isinstance(got, dict) else None
+    return got
+
+
+def dashboard_snapshot(data, when=None, project_name=None):
+    """
+    What a read is kept as: numbers only - the headlines and each category's
+    count - with the parts not read named, so they are never compared, and
+    the project's display name beside the key it is filed under. Named
+    dashboard_snapshot because tools/check-reachable.py matches functions by
+    name, and a bare `snapshot` made heron_runtime's look reached.
+    """
+    return {"format": 1, "when": when or time.strftime("%Y-%m-%d %H:%M"),
+            "project": project_name or "",
+            "unread": list(data.get("unread") or []),
+            "numbers": {key: _dig(data, key) for key, _label, part in HEADLINES
+                        if part not in (data.get("unread") or [])},
+            "categories": {c["name"]: c["instances"] for c in data.get("categories") or []
+                           if c.get("name")}}
+
+
+def compare(was, now):
+    """
+    What moved between two snapshots: [{"label", "was", "now", "change"}],
+    headlines in their own order, then the categories that moved most. A
+    number missing from either side is left out - never read as zero.
+    """
+    rows = []
+    for key, label, _part in HEADLINES:
+        a, b = (was.get("numbers") or {}).get(key), (now.get("numbers") or {}).get(key)
+        if isinstance(a, int) and isinstance(b, int) and a != b:
+            rows.append({"label": label, "was": a, "now": b, "change": b - a})
+    if "categories" not in (was.get("unread") or []) + (now.get("unread") or []):
+        old, new = was.get("categories") or {}, now.get("categories") or {}
+        moved = []
+        for name in set(old) | set(new):
+            a, b = old.get(name, 0), new.get(name, 0)
+            if a != b:
+                moved.append({"label": name, "was": a, "now": b, "change": b - a})
+        moved.sort(key=lambda r: (-abs(r["change"]), r["label"]))
+        rows.extend(moved[:SINCE_CATEGORIES])
+    return rows
+
+
+def _snap_folder(project_key):
+    import heron_designbasis
+    scope = heron_designbasis._scope()
+    base = scope.knowledge_dir()
+    if base is None:
+        raise ValueError("No HERON_DATA, no Windows profile and no HERON_KNOWLEDGE, so there is "
+                         "nowhere to keep the dashboard's reads. Set HERON_KNOWLEDGE to a folder.")
+    if not project_key:
+        raise ValueError("No project key, so the dashboard's reads are not kept (D-33).")
+    return os.path.join(base, "projects", scope._safe_key(project_key) + ".dashboard")
+
+
+def keep(project_key, snap):
+    """Keep one snapshot; the path. Raises ValueError when there is nowhere to keep it."""
+    folder = _snap_folder(project_key)
+    if not os.path.isdir(folder):
+        os.makedirs(folder)
+    stamp = re.sub(r"[^0-9]", "", snap.get("when") or "") or time.strftime("%Y%m%d%H%M")
+    path, n = os.path.join(folder, stamp + ".json"), 1
+    while os.path.exists(path):
+        n += 1
+        path = os.path.join(folder, "%s-%d.json" % (stamp, n))
+    with io.open(path, "w", encoding="utf-8") as fh:
+        fh.write(json.dumps(snap))
+    return path
+
+
+def kept(project_key):
+    """This project's snapshots, newest first. [] when none, or nowhere to look."""
+    try:
+        folder = _snap_folder(project_key)
+    except ValueError:
+        return []
+    if not os.path.isdir(folder):
+        return []
+    out = []
+    for name in sorted(os.listdir(folder), reverse=True):
+        if not name.endswith(".json"):
+            continue
+        try:
+            with io.open(os.path.join(folder, name), encoding="utf-8") as fh:
+                got = json.loads(fh.read())
+        except (OSError, ValueError):
+            continue
+        if isinstance(got, dict) and got.get("format") == 1:
+            out.append(got)
+    return out
+
+
+def since(project_key, data, project_name=None):
+    """
+    Compare this read with the last one kept for the project, then keep this
+    one. Returns ({"when", "rows"} or None, a note or None). The note says why
+    nothing was kept - never a reason to refuse the dashboard.
+    """
+    now = dashboard_snapshot(data, project_name=project_name)
+    earlier = kept(project_key)
+    moved = {"when": earlier[0].get("when"), "rows": compare(earlier[0], now)} if earlier else None
+    try:
+        keep(project_key, now)
+    except (ValueError, OSError) as why:
+        return moved, "This read was not kept: %s" % why
+    return moved, None
+
+
+# ------------------------------------------------------------------- demo
+
+#: A made-up model for trying the panel with no Revit - for training. Every
+#: name and number is invented; no id in it belongs to any model, and the
+#: panel refuses Select and Isolate on it.
+DEMO = {
+    "format": 1,
+    "model": {"title": "DEMO - an invented office building", "isFamily": False,
+              "isWorkshared": True},
+    "elementTotal": 4210,
+    "categories": [{"name": n, "instances": c, "types": t} for n, c, t in (
+        ("Ducts", 1180, 6), ("Duct Fittings", 960, 14), ("Pipes", 720, 5),
+        ("Pipe Fittings", 610, 12), ("Air Terminals", 240, 4), ("Sprinklers", 210, 2),
+        ("Mechanical Equipment", 64, 9), ("Doors", 120, 7), ("Walls", 106, 11))],
+    "levels": [{"name": n, "elevationMm": e, "instances": c} for n, e, c in (
+        ("Ground Floor", 0, 1520), ("First Floor", 4200, 1370), ("Roof", 8400, 1290))],
+    "noLevel": 30,
+    "worksets": [{"name": "MEP", "open": True, "instances": 3950},
+                 {"name": "Architecture link", "open": True, "instances": 1},
+                 {"name": "Shared Levels and Grids", "open": False, "instances": 259}],
+    "warnings": {"total": 87, "errors": 2, "groups": [
+        {"text": "Duct is slightly off axis and may cause inaccuracies.", "severity": "warning",
+         "count": 52, "ids": []},
+        {"text": "There are identical instances in the same place.", "severity": "warning",
+         "count": 33, "ids": []},
+        {"text": "Elements have duplicate 'Mark' values.", "severity": "error", "count": 2,
+         "ids": []}]},
+    "views": {"total": 146, "templates": 12, "onSheets": 61, "notOnSheets": 85,
+              "withoutTemplate": 40, "byType": {"FloorPlan": 58, "CeilingPlan": 22,
+                                                "Section": 31, "ThreeD": 24, "Schedule": 11},
+              "notOnSheetsIds": []},
+    "sheets": {"total": 34, "empty": 3, "placeholders": 2, "emptyIds": []},
+    "families": {"loaded": 132, "inPlace": 2, "unused": 27, "types": 410,
+                 "unusedNames": ["Old Diffuser 600", "Spare Valve"]},
+    "groups": {"modelTypes": 4, "detailTypes": 6, "unusedTypes": 3},
+    "links": [{"name": "Architecture.rvt", "loaded": True, "pinned": False, "instances": 1}],
+    "cad": {"total": 4, "linked": 3, "imported": 1, "names": ["survey.dwg"]},
+    "rooms": {"total": 0, "placed": 0, "unplaced": 0, "notEnclosed": 0,
+              "unplacedIds": [], "notEnclosedIds": []},
+    "spaces": {"total": 48, "placed": 46, "unplaced": 1, "notEnclosed": 1,
+               "unplacedIds": [], "notEnclosedIds": []},
+    "notRead": [], "capped": [], "fill": None,
+}
+
+
+def demo():
+    """The panel's content for DEMO - invented, never kept, never compared."""
+    built = build(read(json.dumps(DEMO)))
+    built["demo"] = True
+    built["said"] = ("DEMO - an invented model, for trying the Model Dashboard with no Revit. "
+                     "Ask the chat for a model dashboard to read your own model.")
+    return {"dashboard": built, "said": built["said"]}
+
+
+# ----------------------------------------------------------------- boards
+
+#: THE BOARDS (phase 3) - each a named set of breakdowns the read is asked
+#: for: which categories, grouped by what, and what is summed. Categories are
+#: Revit's own built-in names and the special keys start with @, so a board
+#: means the same in every Revit language. Decided here; the page only offers
+#: the list and draws what comes back.
+#:   (key, title, [(breakdown key, chart title, categories, group by, sum)])
+BOARDS = (
+    ("rooms", "Rooms and areas", (
+        ("rooms-level", "Room area by level", "OST_Rooms", "@level", "@area"),
+        ("rooms-department", "Room area by department", "OST_Rooms", "ROOM_DEPARTMENT", "@area"),
+        ("rooms-name", "Room area by name", "OST_Rooms", "ROOM_NAME", "@area"))),
+    ("doors", "Doors", (
+        ("doors-fire", "Doors by fire rating", "OST_Doors", "FIRE_RATING", ""),
+        ("doors-type", "Doors by type", "OST_Doors", "@type", ""),
+        ("doors-level", "Doors by level", "OST_Doors", "@level", ""))),
+    ("walls", "Walls", (
+        ("walls-type", "Wall area by type", "OST_Walls", "@type", "@area"),
+        ("walls-level", "Wall area by level", "OST_Walls", "@level", "@area"),
+        ("walls-fire", "Walls by fire rating", "OST_Walls", "FIRE_RATING", ""))),
+    ("structure", "Structure", (
+        ("framing-material", "Framing volume by material", "OST_StructuralFraming",
+         "STRUCTURAL_MATERIAL_PARAM", "@volume"),
+        ("columns-type", "Columns by type", "OST_StructuralColumns", "@type", ""),
+        ("foundations-type", "Foundation volume by type", "OST_StructuralFoundation", "@type",
+         "@volume"))),
+    ("mep", "MEP systems", (
+        ("ducts-system", "Duct length by system", "OST_DuctCurves", "@system", "@length"),
+        ("pipes-system", "Pipe length by system", "OST_PipeCurves", "@system", "@length"),
+        ("ducts-size", "Duct length by size", "OST_DuctCurves", "@size", "@length"),
+        ("pipes-size", "Pipe length by size", "OST_PipeCurves", "@size", "@length"),
+        ("terminals-type", "Air terminals by type", "OST_DuctTerminal", "@type", ""),
+        ("equipment-type", "Mechanical equipment by type", "OST_MechanicalEquipment", "@type",
+         ""))),
+    ("fire", "Fire protection", (
+        ("sprinklers-type", "Sprinklers by type", "OST_Sprinklers", "@type", ""),
+        ("sprinklers-level", "Sprinklers by level", "OST_Sprinklers", "@level", ""),
+        ("fire-pipes-size", "Pipe length by size", "OST_PipeCurves", "@size", "@length"))),
+    ("phases", "Phases and design options", (
+        ("all-phase", "Elements by phase created", "*", "@phase", ""),
+        ("all-option", "Elements by design option", "*", "@designoption", ""))),
+)
+#: How many breakdowns one read may carry - the fragment's own limit.
+BREAKDOWNS_MAX = 8
+
+
+def boards():
+    """The boards the page offers: [{"key", "title"}]."""
+    return [{"key": key, "title": title} for key, title, _parts in BOARDS]
+
+
+def board_request(key):
+    """
+    The `breakdowns` value the read takes for one board - "key|categories|group
+    by|sum" joined with ";" - or "" for no board. Raises ValueError for a board
+    Heron does not have.
+    """
+    if not key:
+        return ""
+    for board_key, _title, parts in BOARDS:
+        if board_key == key:
+            return ";".join("|".join(part[:1] + part[2:]) for part in parts[:BREAKDOWNS_MAX])
+    raise ValueError("Heron has no board '%s'. The boards: %s."
+                     % (key, ", ".join(b for b, _t, _p in BOARDS)))
+
+
+def _read_breakdowns(data):
+    """The fragment's breakdowns, made safe. None when none were asked."""
+    got = data.get("breakdowns")
+    if not isinstance(got, list):
+        return None
+    out = []
+    for b in got:
+        if not isinstance(b, dict):
+            continue
+        rows = b.get("rows")
+        out.append({"key": _text(b.get("key")), "unit": _text(b.get("unit")) or None,
+                    "rows": None if rows is None else [
+                        {"value": _text(r.get("value")) or "(none)", "count": _int(r.get("count")),
+                         "sum": _num(r.get("sum")), "ids": _ids(r.get("ids"))}
+                        for r in rows if isinstance(r, dict)]})
+    return out
+
+
+def board(key, data):
+    """
+    One board's charts from the read: [{"key", "title", "unit", "bars"}]; a
+    breakdown the read could not make is a chart with "bars": None and its
+    reason in notRead. None when no board was asked.
+    """
+    got = _read_breakdowns(data)
+    if not key or got is None:
+        return None
+    titles = {}
+    for board_key, board_title, parts in BOARDS:
+        if board_key == key:
+            titles = dict((p[0], p[1]) for p in parts)
+            title = board_title
+            break
+    else:
+        return None
+    charts = []
+    for b in got:
+        if b["key"] not in titles:
+            continue
+        if b["rows"] is None:
+            charts.append({"key": b["key"], "title": titles[b["key"]], "unit": b["unit"],
+                           "bars": None})
+            continue
+        summed = b["unit"] is not None
+        rows = sorted(b["rows"], key=lambda r: -(r["sum"] or 0) if summed else -r["count"])
+        bars = []
+        for r in rows[:CHART_BARS]:
+            value = round(r["sum"], 1) if summed and r["sum"] is not None else r["count"]
+            bars.append({"label": r["value"], "value": value, "count": r["count"],
+                         "colour": BAR, "ids": r["ids"]})
+        rest = rows[CHART_BARS:]
+        if rest:
+            bars.append({"label": "Others (%d more)" % len(rest),
+                         "value": round(sum(r["sum"] or 0 for r in rest), 1) if summed
+                         else sum(r["count"] for r in rest),
+                         "count": sum(r["count"] for r in rest), "colour": BAR_OTHERS, "ids": []})
+        charts.append({"key": b["key"], "title": titles[b["key"]], "unit": b["unit"],
+                       "bars": bars})
+    return {"key": key, "title": title, "charts": charts}

@@ -9,7 +9,7 @@ semantic-identity: "the whole model at a glance - elements by category, level an
 kind: action
 domain: revit.qa
 capability: REPORT_MODEL_DASHBOARD
-version: 1
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -31,6 +31,23 @@ risk: READ
 # part with counts and capped id lists, which is what a panel needs. Widening
 # one of them to carry the other seven would change a PROVEN contract for a
 # job it was not proved on.
+#
+# VERSION 2 (2026-11-01, the owner's phase 2 of the dashboard): an optional
+# `parameters` - up to 12 parameter names - and a `fill` key in dashboardJson
+# saying, per category and per name, how many of the counted elements have it
+# populated, empty or absent (heron_modelqa's three states), plus doubled.
+# Still DRAFT and never proved, so no proof went stale. Left out, the answer
+# is version 1's plus "fill": null, so "format" stays 1. The modeller's words
+# for it are not on this card yet: none were given, and none are invented.
+#
+# VERSION 3 (2026-11-01, the owner's phase 3 - the Companion's boards): an
+# optional `breakdowns` - up to 8 "key|categories|groupBy|sum" - and a
+# `breakdowns` key in dashboardJson: for each, the elements of those built-in
+# categories grouped by a special key or a built-in parameter, counted, and
+# summed in metres, square metres or cubic metres where asked. The boards are
+# defined in brain/heron_model_dashboard.py's BOARDS, which writes the value;
+# this card reads whatever it is sent. Still DRAFT, no proof to go stale, and
+# "format" stays 1. No modeller's words were given for it, and none are added.
 purpose: >
   Reads the open project once and counts what it holds, part by part, for the
   Heron Companion's Model Dashboard: the placed model elements by category,
@@ -40,7 +57,11 @@ purpose: >
   placeholders; the loaded and in-place families and those with nothing
   placed; the model and detail group types and the unused ones; each Revit
   link file, loaded and pinned or not; the CAD files, linked or imported; and
-  the rooms and Spaces that are not placed or have no area.
+  the rooms and Spaces that are not placed or have no area. Given parameter
+  names, it also counts, per category, the elements where each one is filled
+  in, left empty, or not there at all. Given breakdowns, it groups the
+  elements of the categories each names for the Companion's boards, with a
+  total where one is asked.
 
   **Counts, never a verdict.** Nothing here calls a model clean, healthy or
   compliant, and there is no score. A part it could not read is said, never
@@ -91,16 +112,77 @@ purpose: >
 #                 names are the distinct file names
 #   rooms         {total, placed, unplaced, notEnclosed, unplacedIds,
 #   spaces         notEnclosedIds} - placed counts the not-enclosed ones too
+#   fill          VERSION 2. null when no parameter was asked for - or, with a
+#                 "fill:" line in notRead, when this part was refused (more
+#                 than 12 names) or could not be read. Otherwise
+#                 {parameters: [the names as typed, outer spaces trimmed,
+#                               each once],
+#                  rows: [{category, parameter, populated, empty, absent,
+#                          doubled, emptyIds}]}
+#                 - one row per category with an element counted and per
+#                 name, by category name then the names in the order typed.
+#                 populated + empty + absent + doubled is the category's
+#                 instances. doubled: two parameters answer to the name and
+#                 neither is guessed (D-54 s3). emptyIds are the empty ones
+#   breakdowns    VERSION 3. null when none was asked for - or, with a
+#                 "breakdowns:" line in notRead, when more than 8 were asked
+#                 or the document is a family. Otherwise one entry per
+#                 breakdown, in the order asked:
+#                 [{key, unit, rows: [{value, count, sum, noSum, ids}] | null}]
+#                 - unit "m", "m2" or "m3" (with the superscript), or null for a
+#                 count, or for a parameter sum no element held;
+#                 rows most elements first, at most 200 (a `capped` note when
+#                 cut); value as Revit shows it, "" where there is none (and
+#                 "(none)" for @system); sum in that unit, rounded to 0.001,
+#                 null when nothing in the row was summed - never 0; noSum the
+#                 elements counted but holding nothing to sum; ids at most 500
+#                 a row (a `capped` note). A breakdown refused or faulted has
+#                 rows null and a "breakdowns: <key> - <why>" line in notRead;
+#                 the others still read. A category the model has none of is
+#                 rows [] - read, and empty
 #   notRead       ["<part>: <why>"] - each part NOT read, named first: elements,
 #                 categories, levels, worksets, warnings, views, sheets,
-#                 families, groups, links, cad, rooms, spaces. That part's own
-#                 value is null - never zero
+#                 families, groups, links, cad, rooms, spaces, fill,
+#                 breakdowns. That part's own value is null - never zero
 #   capped        ["<path>: <how many>..."] - each list cut at 500, with its
 #                 full length. A count is never cut
 contract:
   needs:
     - name: doc
       type: Document
+    # VERSION 2. Parameter names, comma separated - "Mark, Type Mark, Fire
+    # Rating, Department". Capitals and extra spaces are forgiven; at most 12,
+    # more refuses the fill part naming the limit. Left out it is "none"
+    # (`absent: none`, HeronBindingNote.DeclaredAbsent), and an empty value is
+    # the same (EmptyMeansAbsent): nothing is counted and fill is null - the
+    # answer version 1 gave, plus that key. So a parameter called "None" cannot
+    # be asked for. "Mark" and "Type Mark" are read through ALL_MODEL_MARK and
+    # ALL_MODEL_TYPE_MARK, READ_ELEMENT_TABLE's rule, so they answer in a Revit
+    # of any language.
+    - name: parameters
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 3. Breakdowns for the Companion's boards, separated by ";" - at
+    # most 8, each "key|categories|groupBy|sum":
+    #   key         [a-z0-9-]+, echoed back
+    #   categories  built-in names, comma separated - "OST_Rooms",
+    #               "OST_DuctCurves" - or "*" for every element the dashboard
+    #               counts. A name Revit has not got refuses that one
+    #   groupBy     @level @type @family @workset @phase @designoption @system
+    #               @size, or a built-in parameter's name (ROOM_DEPARTMENT,
+    #               FIRE_RATING, STRUCTURAL_MATERIAL_PARAM ...)
+    #   sum         empty for a count, @length @area @volume, or a built-in
+    #               parameter holding a length, an area or a volume
+    # Left out it is "none" (`absent: none`), and empty is the same: nothing
+    # is grouped and breakdowns is null - version 2's answer plus that key.
+    # Written by brain/heron_model_dashboard.board_request, not typed by hand.
+    - name: breakdowns
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     # The whole dashboard, format 1. ACCOUNTING, not a result, for the reason
     # REPORT_SPACE_ENVELOPE's takeoffJson is: it is written whatever was found
@@ -147,7 +229,24 @@ compatibility-note: >
   RevitLinkInstance.GetLinkDocument; ImportInstance.IsLinked;
   SpatialElement.Area; Level.Elevation and ProjectElevation; View.IsTemplate,
   ViewTemplateId and ViewType; and the ElementId(BuiltInCategory)
-  constructor. No ElementId is read as a number - each is written with
+  constructor. Version 2 adds Element.Parameters and get_Parameter by
+  BuiltInParameter; Parameter.HasValue, StorageType, AsString, AsElementId,
+  Definition and Id; Definition.Name; and BuiltInParameter.ALL_MODEL_MARK and
+  ALL_MODEL_TYPE_MARK - all 2020 to 2027, read the same way. Version 3 adds
+  Element.CreatedPhaseId and DesignOption; Document.GetWorksetTable and
+  WorksetTable.GetWorkset(WorksetId); ElementType.FamilyName;
+  Parameter.AsValueString, AsDouble and AsInteger; and the built-in
+  parameters CURVE_ELEM_LENGTH, ROOM_AREA, ROOM_VOLUME, HOST_AREA_COMPUTED,
+  HOST_VOLUME_COMPUTED, RBS_CALCULATED_SIZE, RBS_DUCT_SYSTEM_TYPE_PARAM,
+  RBS_PIPING_SYSTEM_TYPE_PARAM and RBS_SYSTEM_CLASSIFICATION_PARAM - all 2020 to
+  2027. Built-in categories and parameters a breakdown names are parsed by
+  name at run time, so a release's own spelling is the one found (the 2026
+  classification rename included). What kind of number a parameter holds is
+  NOT one member on every release - Definition.GetDataType is 2022 to 2027,
+  Definition.ParameterType 2020 to 2022 - so it is read by reflection, the
+  newer first, as ADD_FAMILY_CONNECTOR reads it; neither is named in code.
+  Sums are internal feet, square feet and cubic feet times exact factors: no
+  units API on any release (D-20). No ElementId is read as a number - each is written with
   ToString() - and no units API is touched: feet become millimetres by
   * 304.8 at the edge (D-20).
 
@@ -168,7 +267,11 @@ compatibility-note: >
 #
 # THE JSON IS BOUNDED BY ITS CAPS. Each id or name list stops at 500 and the
 # warning kinds at 500, so the worst case is the warnings - 500 kinds of 500
-# ids each, a few megabytes. A typical project is tens of kilobytes. Asked
+# ids each, a few megabytes. A typical project is tens of kilobytes. Version
+# 2's fill adds a row per category and per name with up to 500 empty ids -
+# 12 names over 50 categories is 600 rows, and a parameter empty everywhere is
+# the case that fills them. Version 3's breakdowns add at most 8 x 200 rows of
+# up to 500 ids each - a board of 6 is typically a few hundred rows. Asked
 # through revit_read rather than the dashboard tool, the whole string is
 # printed into the chat; the tool keeps it for the page.
 
@@ -181,6 +284,17 @@ compatibility-note: >
 #     FIND_UNUSED_FAMILIES.
 #   * A room or Space with no area and a location may be not enclosed OR
 #     redundant - both read Area 0 here. Revit's warnings tell them apart.
+#   * fill (version 2) counts only the placed model elements - not types,
+#     views, sheets or annotation - and a parameter held on the type answers
+#     for every instance of it. A name given as "Mark" or "Type Mark" is read
+#     through the built-in; a shared parameter of that same name beside it is
+#     not looked at.
+#   * breakdowns (version 3) read the placed model elements the dashboard
+#     counts, except Rooms, Spaces and Areas named by a breakdown, which are
+#     read from their own category - every one placed, enclosed or not, so a
+#     room board can differ from the categories part's Rooms row, which
+#     counts only rooms with an extent. Areas of every area scheme are read
+#     together.
 #   * withoutTemplate follows FIND_VIEWS_WITHOUT_TEMPLATE's rule - sheets,
 #     schedules and legends left out - so it counts any other view with no
 #     template, a rendering or a report view among them.

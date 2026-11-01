@@ -860,3 +860,27 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
 #dashboard .d-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--faint); }
 #dashboard .d-legend li { display: inline-flex; gap: 6px; align-items: center; }
 #dashboard .d-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
+#dashboard .d-params { flex: 1 1 260px; min-width: 200px; padding: 6px 10px; border: 1px solid var(--line-strong); border-radius: 7px; background: var(--field); color: var(--ink); font: inherit; font-size: 13px; }
+#dashboard .d-fill { margin: 0 0 16px; display: grid; gap: 12px; }
+#dashboard .d-fill-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+#dashboard .d-fill-table th { text-align: left; color: var(--faint); font-weight: 600; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+#dashboard .d-fill-table td { padding: 4px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+#dashboard .d-fill-table td:nth-child(2) { width: 30%; }
+#dashboard .d-num { text-align: right; font-variant-numeric: tabular-nums; }
+#dashboard .d-filter { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 14px; }
+#dashboard .d-states { padding: 6px 8px; border: 1px solid var(--line-strong); border-radius: 7px; background: var(--field); color: var(--ink); font: inherit; font-size: 13px; }
+#dashboard [hidden] { display: none !important; }
+#dashboard .d-fill-table .d-bar-track { display: block; }
+#dashboard .d-fill-table th:nth-child(n+3) { text-align: right; }
+#dashboard .d-since { margin: 0 0 16px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; }
+#dashboard .d-since .d-fill-table td:nth-child(2) { width: auto; }
+/* Print / PDF: the Model Dashboard alone, without its buttons. */
+@media print {
+  body.printing-dashboard > *:not(main), body.printing-dashboard main > *:not(#dashboard) { display: none !important; }
+  #dashboard button, #dashboard input, #dashboard select, #dashboard .d-filter, #dashboard .d-look-tools { display: none !important; }
+  #dashboard { box-shadow: none; border: none; }
+  #dashboard .d-chart, #dashboard .d-look-row, #dashboard .d-tile { break-inside: avoid; }
+}
+#dashboard .d-board { margin: 0 0 16px; }
+#dashboard .d-bar-pick { background: none; border: none; padding: 0; font: inherit; text-align: left; color: var(--primary); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#dashboard .d-bar-pick:hover { text-decoration: underline; }

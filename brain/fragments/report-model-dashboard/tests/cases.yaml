@@ -52,6 +52,72 @@ positive:
       run with every workset open - by the elements on the closed one - and
       findings says nothing on a closed workset is loaded or counted
 
+  # VERSION 2 - the fill part. The first is the batch-prove leg (tools/jobs).
+  - given: >
+      version 2, parameters "Mark" on the same Snowdon copy, with one
+      mechanical equipment item's Mark typed "AHU-01" beforehand and another's
+      Mark cleared
+    expect: >
+      fill.parameters ["Mark"]; one row per category in categories, by name,
+      each with populated + empty + absent + doubled equal to that category's
+      instances; the Mechanical Equipment row counts AHU-01 as populated and
+      lists the cleared one's id in emptyIds; the populated count matches a
+      Mechanical Equipment schedule with Mark, filtered to Mark has a value
+
+  - given: >
+      version 2, parameters "  type MARK ,  mark  " - capitals and spaces
+      wrong on purpose
+    expect: >
+      fill.parameters ["type MARK", "mark"] in that order; the same counts as
+      "Type Mark, Mark"; Type Mark read from each element's TYPE (a type's
+      Type Mark filled once counts every instance of it as populated)
+
+  - given: >
+      version 2, parameters naming 13 parameters
+    expect: >
+      fill null; notRead has one "fill:" line saying 13 were given and at most
+      12 are read; every other part read as with none asked; sectionsNotRead 1
+
+  - given: version 2, parameters left out, then parameters ""
+    expect: >
+      both answers are version 1's, part for part, with "fill": null and NO
+      "fill:" line in notRead - not asking is not a part that failed
+
+  # VERSION 3 - breakdowns. The first is the batch-prove leg (tools/jobs).
+  - given: >
+      version 3, breakdowns "ducts-system|OST_DuctCurves|@system|@length" on
+      the Snowdon copy
+    expect: >
+      breakdowns has one entry, key "ducts-system", unit "m"; one row per
+      duct system type as the ducts' Properties show it (Supply Air, Return
+      Air, Exhaust Air ...), most ducts first; the rows' counts add up to the
+      categories part's Ducts instances; each row's sum, in metres, matches a
+      Duct schedule grouped by System Type with Length totalled, to the
+      millimetre; noSum 0 on every row - every duct has a length
+
+  - given: >
+      version 3, breakdowns "rooms-level|OST_Rooms|@level|@area" on a project
+      with rooms on two levels, one of them not enclosed
+    expect: >
+      unit "m2" (with the superscript); one row per level, the sums matching a
+      Room schedule's Area totals per level in square metres; the room that
+      is not enclosed is counted, adds 0 m2, and is in its level's ids; an
+      unplaced room is in no row
+
+  - given: >
+      version 3, breakdowns "doors-type|OST_Doors|@type|;doors-fire|OST_Doors|FIRE_RATING|"
+      on a project with doors
+    expect: >
+      two entries, unit null, sum null on every row; doors-type values read
+      "Family: Type" as the Properties palette shows them; doors-fire groups by
+      the Fire Rating text, the doors with none under "" - and both entries'
+      counts add up to the categories part's Doors instances
+
+  - given: version 3, breakdowns left out, then breakdowns ""
+    expect: >
+      both answers are version 2's, with "breakdowns": null and NO
+      "breakdowns:" line in notRead
+
 negative:
   # THE CASE THAT MATTERS - the batch-prove leg (tools/jobs).
   - given: >
@@ -62,6 +128,66 @@ negative:
       reads the family's title with isFamily true, every other part is null -
       never 0 or [] - and notRead names all thirteen parts as "not a project";
       not one of the project's numbers appears
+
+  # VERSION 2 - the batch-prove leg sends parameters "Mark" to both documents.
+  - given: version 2, parameters "Mark", the run sent to the family as above
+    expect: >
+      elementTotal 0 and sectionsNotRead 14 - the thirteen and "fill: not a
+      project"; fill null, never a table of zeros
+
+  # VERSION 2 - THE FILL CASE THAT MATTERS: a name no parameter has.
+  - given: >
+      version 2, parameters "Mark, Heron No Such Parameter" on the Snowdon copy
+    expect: >
+      every row for "Heron No Such Parameter" has populated 0, empty 0,
+      doubled 0 and absent equal to its category's instances, emptyIds [] -
+      ABSENT, never empty: an element without the parameter has nowhere to
+      type a value; the Mark rows are those of the positive, unchanged
+
+  - given: >
+      version 2, a shared parameter "Fire Rating" bound to Doors beside the
+      door family's own Fire Rating, parameters "Fire Rating"
+    expect: >
+      the doors that carry both count as doubled - never populated or empty -
+      and every door is in exactly one of the four counts (D-54 s3, 5b-203)
+
+  # VERSION 3 - THE BREAKDOWN CASES THAT MATTER: a category the model has
+  # none of is READ AND EMPTY; a name Revit has not got is NOT READ.
+  - given: >
+      version 3, breakdowns "ducts-system|OST_DuctCurves|@system|@length;
+      none-here|OST_Planting|@type|;bad-name|OST_NoSuchCategory|@type|" on the
+      Snowdon copy - check in Visibility/Graphics, or a schedule, that the host
+      model holds no planting first
+    expect: >
+      none-here comes back with rows [] - never null - and no notRead line;
+      bad-name comes back with rows null and one notRead line, "breakdowns:
+      bad-name - Revit has no built-in category named OST_NoSuchCategory";
+      ducts-system reads exactly as in the positive - one refused breakdown
+      stops nothing else
+
+  - given: >
+      version 3, breakdowns "ducts-flow|OST_DuctCurves|@system|RBS_DUCT_FLOW_PARAM"
+    expect: >
+      rows null and a notRead line saying the sum is not a length, an area or
+      a volume - airflow is never summed, and never in feet
+
+  - given: >
+      version 3, breakdowns "equipment-length|OST_MechanicalEquipment|@type|@length"
+    expect: >
+      unit "m"; every row's sum null - never 0 - and noSum equal to its count:
+      equipment has no length to add
+
+  - given: version 3, nine breakdowns
+    expect: >
+      breakdowns null, one "breakdowns:" line naming the limit of 8, every
+      other part read
+
+  - given: >
+      version 3, the job's breakdowns sent to the family document, with
+      parameters "Mark"
+    expect: >
+      elementTotal 0, sectionsNotRead 15 - the thirteen, "fill: not a
+      project" and "breakdowns: not a project"; breakdowns null
 
   - given: a project that is NOT workshared (Snowdon Towers, or Project2)
     expect: >
@@ -101,4 +227,11 @@ second_route: >
   groups.unusedTypes; SELECT_UNENCLOSED_ROOMS with rooms only must give
   rooms.unplaced and rooms.notEnclosed, and with spaces only the spaces'. A
   part that disagrees with its reader is a finding for FRAGMENT-ISSUES, never
-  a rounding.
+  a rounding. Version 2's fill: READ_ELEMENT_PARAMETERS on one category's
+  elements with the same name must give the same populated, empty (its blank)
+  and absent counts, for a text or number parameter whose exact name no
+  element carries twice - that reader takes the first of a doubled name and
+  reads an element parameter's display text, which this does not. Version 3's
+  breakdowns: a schedule of the same category, grouped by the same field with
+  the same total, must give the same counts and, in SI, the same sums - and
+  "*" rows must add up to elementTotal.

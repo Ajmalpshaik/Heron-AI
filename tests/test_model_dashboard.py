@@ -33,10 +33,17 @@ import copy
 import json
 import os
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 sys.path.insert(0, os.path.join(ROOT, "tests"))
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                          # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070) - the snapshot test sets HERON_KNOWLEDGE.
+scratch_audit.plant()
 
 import heron_model_dashboard as D                             # noqa: E402
 from test_takeoff import run_all                              # noqa: E402
@@ -206,6 +213,129 @@ def test_said_is_one_line_and_says_nothing_changed():
     assert "31 warnings (1 error)" in said
 
 
+FILL = {"parameters": ["Mark", "Fire Rating"], "rows": [
+    {"category": "Doors", "parameter": "Mark", "populated": 8, "empty": 2, "absent": 0,
+     "emptyIds": ["701", "702"]},
+    {"category": "Walls", "parameter": "Mark", "populated": 10, "empty": 0, "absent": 0,
+     "emptyIds": []},
+    {"category": "Doors", "parameter": "Fire Rating", "populated": 0, "empty": 0, "absent": 10,
+     "emptyIds": []}]}
+
+
+def test_no_parameters_asked_means_no_fill():
+    board = built()
+    assert board["fill"] is None
+    assert not [r for r in board["look"] if r["key"].startswith("fill:")]
+
+
+def test_fill_keeps_empty_and_absent_apart():
+    board = built(fill=FILL)
+    mark, fire = board["fill"]["parameters"]
+    assert (mark["populated"], mark["empty"], mark["absent"]) == (18, 2, 0)
+    assert mark["rows"][0]["category"] == "Doors" and mark["rows"][0]["share"] == 80
+    assert mark["rows"][0]["state"] == "look"
+    assert (fire["empty"], fire["absent"]) == (0, 10) and fire["rows"][0]["state"] == "info"
+    row_ = row(board, "fill:Mark")
+    assert row_["count"] == 2 and row_["ids"] == ["701", "702"] and row_["state"] == "look"
+    assert row(board, "fill:Fire Rating")["state"] == "ok"
+
+
+def test_two_parameters_of_one_name_are_worth_a_look():
+    fill = {"parameters": ["Fire Rating"], "rows": [
+        {"category": "Walls", "parameter": "Fire Rating", "populated": 5, "empty": 0,
+         "absent": 0, "doubled": 3, "emptyIds": []}]}
+    p = built(fill=fill)["fill"]["parameters"][0]
+    assert p["doubled"] == 3 and p["rows"][0]["total"] == 8 and p["rows"][0]["state"] == "look"
+
+
+def test_fill_not_read_is_null_not_zero():
+    board = built(fill=None, notRead=["fill: the parameters could not be read"])
+    assert board["fill"] is None
+    assert "fill: the parameters could not be read" in board["notRead"]
+
+
+def test_since_the_last_read_says_what_moved():
+    old = os.environ.get("HERON_KNOWLEDGE")
+    os.environ["HERON_KNOWLEDGE"] = tempfile.mkdtemp(prefix="heron-dash-")
+    try:
+        first = D.dashboard(sample(), project_key="proj-1")["dashboard"]
+        assert first["since"] is None
+        more = copy.deepcopy(SAMPLE)
+        more["elementTotal"] = 1300
+        more["categories"][0]["instances"] = 650
+        more["warnings"]["total"] = 25
+        second = D.dashboard(json.dumps(more), project_key="proj-1")["dashboard"]
+        moved = dict((r["label"], r["change"]) for r in second["since"]["rows"])
+        assert moved["Model elements"] == 50 and moved["Warnings"] == -6 and moved["Ducts"] == 50
+        assert "Sheets" not in moved
+        assert len(D.kept("proj-1")) == 2
+        assert D.dashboard(sample(), project_key="proj-2")["dashboard"]["since"] is None
+    finally:
+        if old is None:
+            os.environ.pop("HERON_KNOWLEDGE", None)
+        else:
+            os.environ["HERON_KNOWLEDGE"] = old
+
+
+def test_a_part_unread_is_never_compared():
+    was = D.dashboard_snapshot(D.read(sample()))
+    data = D.read(sample(sheets=None, notRead=["sheets: could not be read"]))
+    now = D.dashboard_snapshot(data)
+    assert "sheets.total" not in now["numbers"]
+    assert not [r for r in D.compare(was, now) if r["label"] in ("Sheets", "Empty sheets")]
+
+
+def test_a_snapshot_keeps_no_ids_or_names():
+    snap = json.dumps(D.dashboard_snapshot(D.read(sample())))
+    for text in ("501", "ARCH.rvt", "Old Diffuser", "site.dwg"):
+        assert text not in snap, text
+
+
+def test_nothing_kept_without_a_project():
+    assert D.dashboard(sample())["dashboard"]["since"] is None
+
+
+def test_the_demo_is_invented_and_names_no_element():
+    got = D.demo()
+    board = got["dashboard"]
+    assert board["demo"] is True and got["said"].startswith("DEMO")
+    assert all(not r["ids"] for r in board["look"])
+    assert board["since"] is None if "since" in board else True
+
+
+BREAKDOWNS = [
+    {"key": "rooms-level", "unit": "m²", "rows": [
+        {"value": "Level 01", "count": 20, "sum": 812.456, "ids": ["11", "12"]},
+        {"value": "Level 02", "count": 17, "sum": 990.0, "ids": ["13"]}]},
+    {"key": "rooms-department", "unit": "m²", "rows": None},
+    {"key": "rooms-name", "unit": "m²", "rows": [{"value": "", "count": 3, "sum": 0, "ids": []}]}]
+
+
+def test_board_request_is_language_proof_and_bounded():
+    req = D.board_request("rooms")
+    assert req.split(";")[0] == "rooms-level|OST_Rooms|@level|@area"
+    assert all(len(part.split("|")) == 4 for part in req.split(";"))
+    assert all(len(D.board_request(k).split(";")) <= D.BREAKDOWNS_MAX for k, _t, _p in D.BOARDS)
+    assert D.board_request("") == ""
+    try:
+        D.board_request("cost")
+        assert False, "an unknown board must be refused"
+    except ValueError as why:
+        assert "no board 'cost'" in str(why)
+
+
+def test_board_charts_from_breakdowns():
+    board = built(breakdowns=BREAKDOWNS)
+    assert board["board"] is None and [b["key"] for b in board["boards"]][0] == "rooms"
+    got = D.dashboard(sample(breakdowns=BREAKDOWNS), board_key="rooms")["dashboard"]["board"]
+    assert got["title"] == "Rooms and areas"
+    level = got["charts"][0]
+    assert level["unit"] == "m²" and [b["label"] for b in level["bars"]] == ["Level 02", "Level 01"]
+    assert level["bars"][1]["value"] == 812.5 and level["bars"][1]["ids"] == ["11", "12"]
+    assert got["charts"][1]["bars"] is None
+    assert got["charts"][2]["bars"][0]["label"] == "(none)"
+
+
 def test_imports_only_the_standard_library():
     allowed = set(getattr(sys, "stdlib_module_names", ())) or {"json"}
     tree = ast.parse(open(os.path.join(ROOT, "brain", "heron_model_dashboard.py")).read())
@@ -215,7 +345,9 @@ def test_imports_only_the_standard_library():
             names.update(alias.name.split(".")[0] for alias in node.names)
         elif isinstance(node, ast.ImportFrom):
             names.add((node.module or "").split(".")[0])
-    assert names <= allowed | {"__future__"}, names
+    # heron_designbasis: where a project's kept answers live - the Loads
+    # panel's runs use the same folder.
+    assert names <= allowed | {"__future__", "heron_designbasis"}, names
 
 
 if __name__ == "__main__":

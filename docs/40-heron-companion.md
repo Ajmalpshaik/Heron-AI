@@ -1152,3 +1152,63 @@ Dashboard group (the panel, its routes behind the pairing, Refresh under the loc
 and `tests/test_mcp_serves.py` (served with the SDK's Context; refused when the Companion is off).
 **Not run in Revit** - `REPORT_MODEL_DASHBOARD` is DRAFT, and its proof on a named model, with its
 negative case, is owed before the panel is relied on.
+
+### 21.11 Select in Revit and Isolate from the Model Dashboard (2026-11-01)
+
+**§18 question 7 asked again, and answered.** §21's table recorded *no Select-in-Revit button in V1*. The
+Model Dashboard's plan put the button in its phase 2 and asked the owner first; the owner answered
+*"DO IT UNITLE FINISH CONTINEWSLY"*, and then, asked plainly, **confirmed it in the owner's own words on
+2026-11-01: *"yes allow select button"*.** §18 question 7 now reads *yes, from the Model Dashboard* - the
+three buttons below, on screen only; taking them out would be one revert.
+
+Each *Worth a look* row with element ids gets **Select in Revit** and **Isolate in view**, and the panel
+gets **Reset isolate**. **On screen only - nothing in the model changes:**
+
+| Button | What runs | Declared |
+|---|---|---|
+| Select in Revit | `FILTER_ELEMENTS_BY_ID` with the row's ids (READ, PROVEN) through `revit_read`'s body, then `SET_SELECTION` on what it found (EXECUTE, PROVEN) through `revit_show`'s body | `companion_dashboard_select`, EXECUTE |
+| Isolate in view | `revit_isolate_temporary`'s body - Revit's Temporary Hide/Isolate in the active view ([group ES](needs-checking/group-es.md)) | `companion_dashboard_isolate`, EXECUTE |
+| Reset isolate | `revit_reset_temporary`'s body | `companion_dashboard_reset`, EXECUTE |
+
+**The page names a row, never ids.** `DashboardPanel.show` takes the row's key and sends the ids its own
+read found, so a page - or anything else that reaches the port - cannot hand Revit ids the read did not
+find. `_dashboard_show` runs under the lock every tool call holds and only on the model the dashboard was
+read from (`_moved_since`); otherwise it sends nothing and says *press Refresh*. One action at a time,
+shared with Refresh. A typed id the model no longer holds makes `FILTER_ELEMENTS_BY_ID` refuse the whole
+call, naming it, so nothing is selected rather than part of the row.
+
+**Proved without Revit:** `tests/test_companion.py`'s Dashboard group - the hook gets the panel's ids and
+identity, not the page's; a row with no ids, an unknown action and a gone chat send nothing; every route
+behind the pairing. **Not run in Revit** - with the panel's own read, owed in [group JT](needs-checking/group-jt.md).
+
+### 21.12 The Model Dashboard grows: parameters filled, a filter, since the last read, print, CSV and a demo (2026-11-01)
+
+The rest of the plan's phases 2 and 4 that need no new decision, built the same day on the owner's word
+(*"DO IT UNITLE FINISH CONTINEWSLY"*). Each idea came from the BIMLens study
+([work note](work-notes/plans/companion-model-dashboard-2026-11-01.md)) and is Heron's own.
+
+- **Parameters filled.** `revit_model_dashboard` takes `parameters` - *"Mark, Fire Rating"* - and the
+  panel has a box for them that Refresh sends. `REPORT_MODEL_DASHBOARD` counts, per category, how many
+  elements have each one **filled, empty, or not at all** - `heron_modelqa`'s three states, never merged:
+  empty is a value nobody typed, missing is a parameter the category does not carry. Each parameter left
+  empty becomes a *Worth a look* row whose ids Select and Isolate use.
+- **A filter** - words, and the row's state. The page's own: it hides rows and bars on what the brain
+  already sent, and reads nothing from Revit.
+- **Since the last read.** With a project key (D-113), each read is kept beside the project's other
+  answers - **numbers only**, no element ids or names - and the next read lists what moved: elements,
+  warnings, sheets, rooms, families, and the ten categories that moved most. A part not read in either
+  read is never compared; with nowhere to keep it, the panel says so and is shown all the same.
+- **Print / PDF and CSV.** Print shows the dashboard alone, without its buttons - Save as PDF is the
+  browser's. The CSV is made in the page from what the brain sent; a cell that starts like a formula
+  (`= + - @`) is prefixed, so a spreadsheet shows model text and never runs it.
+- **The demo.** The empty panel offers *Try the demo*: an invented model made in `brain/` through a hook
+  the server sets. It is marked DEMO, never kept or compared, never replaces a read of the modeller's
+  model, and nothing on it reaches Revit - not even Reset.
+
+**Not built, and why:** *the model has changed - Refresh* needs the add-in to watch for changes, which
+amends [D-09](decisions/D-09.md) a second time (D-108 allowed `Idling` for the selection and nothing
+else) - the owner's decision, asked in the work note. A whole-model 3D view is phase 6.
+
+**Proved without Revit:** `tests/test_model_dashboard.py` and `tests/test_companion.py`; the page driven
+in Chromium with sample data - the fill table, the filter, the CSV download and the print view.
+**Not run in Revit** - the fill-rate's run is owed in [group JT](needs-checking/group-jt.md).

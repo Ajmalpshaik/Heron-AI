@@ -43,17 +43,18 @@ breaks a rule.
 | 1 | *Worth a look*: errors, warnings, unplaced and unenclosed rooms and Spaces, empty sheets, unused families and group types, imported CAD, unloaded or unpinned links, closed worksets, elements with no level, views with no template or off sheets, in-place families | R | **built**, not run in Revit |
 | 1 | Copy IDs for Revit's Manage > Inquiry > Select by ID | R (the clipboard only) | **built** |
 | 1 | Refresh - the modeller's own press, never a timer | R | **built**, not run in Revit |
-| 2 | Click a bar or a row to select those elements in Revit; isolate; zoom to | S | planned - a `COMPANION_ACTIONS` row at EXECUTE, through `SET_SELECTION` / `ISOLATE_ELEMENTS`. docs/40 §18 question 7 said *no Select-in-Revit button in V1*; this asks it again |
-| 2 | Parameter fill-rate by category: populated / empty / absent, against the office's or client's list | R | planned - `heron_modelqa.parameters` already counts the three states; needs a read of the values |
+| 2 | Select a row's elements in Revit; isolate them in the active view; reset | S | **built** 2026-11-01 on the owner's *"do it until finish"* - [docs/40 §21.11](../../40-heron-companion.md); three `COMPANION_ACTIONS` rows at EXECUTE. Not run in Revit. Zoom to, and clicking a bar, still planned |
+| 2 | Parameter fill-rate by category: filled / empty / missing, for the parameters the modeller types | R | **built** - [docs/40 §21.12](../../40-heron-companion.md). Not run in Revit |
 | 2 | Duplicate Mark / Type Mark, inconsistent values ("Lvl 1" vs "Level 01") | R | planned - `FIND_DUPLICATE_VALUES` is PROVEN |
-| 2 | *The model has changed - Refresh*: the add-in marks the live file when the model changes after the read | R | planned - the live file, never a timed read (README rule 3) |
+| 2 | *The model has changed - Refresh*: the add-in marks the live file when the model changes after the read | R | **waiting on the owner** - watching for changes amends D-09 again (question 3 below) |
 | 2 | Rule checks, filters, ratio and element tables behind a bar; read options (categories, links, active view only) | R | planned - see the inventory below |
 | 3 | MEP: elements connected to nothing, open connectors, systems summary (counts, lengths) | R | planned - `CHECK_EQUIPMENT_CONNECTORS`, `CHECK_FIXTURE_CONNECTIVITY`, `MEASURE_RUN_QUANTITIES` are PROVEN |
 | 3 | Quantities by type: lengths, areas, volumes, counts; room areas by level and department | R | planned - `REPORT_MATERIAL_TAKEOFF`, `REPORT_ROOM_SPACE_DATA`, `REPORT_AREAS` are PROVEN |
 | 3 | Documentation: sheets with no title block or revision, schedules that are empty | R | planned - `REPORT_SHEET_TITLE_BLOCKS`, `LIST_REVISIONS` are PROVEN |
 | 3 | Links and coordinates: shared coordinates agree, elements outside the scope box | R | planned |
-| 4 | Report: the dashboard as an HTML / PDF sheet, the folder asked as the Loads report asks it | R | planned - the report route and `pick_folder` already exist |
-| 4 | Snapshots: keep today's numbers per project, compare two - added, removed, changed - and a weekly trend | R | planned - kept per project the way `heron_designbasis` keeps answers |
+| 4 | Report: Print / PDF of the dashboard alone; CSV made on the PC | R | **built** - docs/40 §21.12 |
+| 4 | Snapshots: each read kept per project, numbers only; *since the last read* | R | **built** - docs/40 §21.12. A weekly trend chart still planned |
+| 4 | A DEMO of an invented model, for training with no Revit | R | **built** - docs/40 §21.12 |
 | 4 | Submission readiness against a client's named standard | R | planned - needs the standard quoted (`heron_standards`); never "compliant" |
 | 5 | Fix from a row: fill a parameter, rename to the standard, move to the right workset | W | planned - only from PROVEN fragments, Keep or Discard while *Ask to Keep* is on ([D-126](../../DECISIONS.md)) |
 | 5 | Purge unused families from the list | W, destructive | planned - Article 7: the modeller's explicit yes for that exact job |
@@ -108,6 +109,9 @@ its own proof plan says how.
 
 ## Questions for the owner, one at a time, before phase 2
 
-1. Phase 2's Select-in-Revit button changes Revit's selection from the page (EXECUTE, not a model
-   change). docs/40 §18 question 7 kept it out of V1. Add it now?
+1. ~~Phase 2's Select-in-Revit button?~~ **Answered 2026-11-01: *"yes allow select button"*** (docs/40
+   §21.11).
 2. Which parameters should the fill-rate check by default - the office's own list, or one per client?
+   Today the box starts empty and keeps what was typed last.
+3. *The model has changed - Refresh* needs the add-in to watch for model changes (DocumentChanged), a
+   second amendment to D-09. Allow it?
