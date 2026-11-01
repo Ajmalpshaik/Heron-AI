@@ -17,7 +17,8 @@ risk: READ
 # sheets by a sheet parameter - "TCM_Project Browser 1", values such as
 # "01_IAB-ISSUED AS-BUILT" and "02_IFI-ISSUED FOR INFORMATION" - and keeps one
 # View/Sheet Set per value. This answers which sets no longer hold what their
-# value says; SYNC_SHEET_SETS_BY_PARAMETER is the change that puts them right.
+# value says; MANAGE_SHEET_SETS mode by-parameter is the change that puts
+# them right (SYNC_SHEET_SETS_BY_PARAMETER until 2026-11-01, merged into it).
 # Research: docs/work-notes/investigations/2026-11-01-export-setups.md,
 # section 6.
 #
@@ -89,12 +90,14 @@ compatibility-note: >
   manager, so this changes no application state. Members are compared by
   ElementId's own equality, never as numbers.
 
-# ROUTING - the same rows are in SYNC_SHEET_SETS_BY_PARAMETER, MANAGE_SHEET_SETS
-# and LIST_SHEET_SETS.
+# ROUTING - the same rows are in MANAGE_SHEET_SETS and LIST_SHEET_SETS.
 #
 #   "which sheet sets are out of date"   -> here. A QUESTION
 #   "make a sheet set for each value of TCM_Project Browser 1"
-#                                        -> SYNC_SHEET_SETS_BY_PARAMETER
+#                                        -> MANAGE_SHEET_SETS, mode
+#                                           by-parameter (merged in from
+#                                           SYNC_SHEET_SETS_BY_PARAMETER,
+#                                           2026-11-01)
 #   "list the view/sheet sets"           -> LIST_SHEET_SETS
 #   "save these sheets as a named set"   -> MANAGE_SHEET_SETS
 

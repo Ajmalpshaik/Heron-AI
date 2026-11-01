@@ -4,8 +4,9 @@
 
 positive:
   - given: >
-      the scratch project after SYNC_SHEET_SETS_BY_PARAMETER made its two
-      sets, and then A103's "HERON Browser 1" changed from 01_IAB to 02_IFI
+      the scratch project after MANAGE_SHEET_SETS mode by-parameter
+      (SYNC_SHEET_SETS_BY_PARAMETER until 2026-11-01) made its two sets, and
+      then A103's "HERON Browser 1" changed from 01_IAB to 02_IFI
     expect: >
       outOfStep 2 - '01_IAB-ISSUED AS-BUILT' OUT OF STEP with "extra A103"
       and '02_IFI-ISSUED FOR INFORMATION' with "missing A103" - inStep 0,
