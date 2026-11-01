@@ -34,18 +34,33 @@ risk: MODIFY
 # for a binder that can fill them; the length guard belongs to that input.
 #
 # AND NOT AS TYPED PAIRS EITHER - looked at again on 2026-11-01, in the review
-# of the merges, and left out for two reasons in the add-in, neither of them
-# this card's to change. (1) `target` is a request `Element`, and the binder
-# has no value for one left out (HeronBindingNote.AbsentValue binds only a
-# bool, a View or a view list), so a call naming pairs would still have to
-# name a target - "selected" with exactly one element selected - which means
-# nothing to a list of pairs. (2) A string of ids such as "1234:5678;
-# 2345:6789" read by the card would match ids typed by hand on a WRITE, and the
-# binder refuses exactly that: typed ids are matched only on a read, so what
-# each one is shows before anything changes (HeronBindingNote.TypedIdsOnAWrite,
-# FRAGMENT-ISSUES 5b-441). A card parsing them itself would go round that
-# rule. Both need a binder decision - an optional Element, and pairs handed on
-# from a read such as FILTER_ELEMENTS_BY_ID - recorded for the owner.
+# of the merges, and again the same day once the binder could bind an optional
+# `Element` to null (HeronBindingNote.AbsentValue). That removed one reason,
+# (1); the pairs are still not carried, for (2) to (4), none of them this
+# card's to change.
+#   (1) GONE: `target` could not be left out. It can now - an `Element`
+#       marked `optional: true` binds null - so a call naming pairs would no
+#       longer have to name a target as well.
+#   (2) TWO LISTS CANNOT ARRIVE APART. A run's chain carries ONE earlier
+#       fragment's outputs by name (RevitFragment.cs, Chain, checked against
+#       expect_from), and FILTER_ELEMENTS_BY_ID - the read typed ids must go
+#       through - leaves one list, `elements`. Run twice, the second list
+#       replaces the first; nothing in the library leaves two element lists
+#       under two names, and the selection fills only one (the selectable
+#       count). `first` and `second` would both be unbound, as they were on
+#       UNJOIN_GEOMETRY, which is why that card never ran.
+#   (3) A STRING OF IDS READ BY THE CARD - "1234:5678; 2345:6789" - would
+#       match ids typed by hand on a WRITE, which the binder refuses: typed ids
+#       are matched only on a read, so what each one is shows before anything
+#       changes (HeronBindingNote.TypedIdsOnAWrite, FRAGMENT-ISSUES 5b-441).
+#   (4) AND ONE LIST SPLIT INTO PAIRS HERE IS A GUESS. With `target` left out,
+#       pairing the set by position assumes an order nothing promises, and
+#       pairing everything with everything is the "much more destructive
+#       operation" UNJOIN_GEOMETRY's own purpose refused - a wrong answer
+#       that looks exactly like a right one.
+# So `target` stays required. Carrying the pairs needs a binder decision - a
+# read that leaves two matched element lists under two names, or the chain
+# keeping one list under a name the caller gives - recorded for the owner.
 #
 # Version 1's proof below no longer describes the code (impl/ changed) and is
 # kept as the record; DRAFT until version 2 is proved on a real model (D-30).

@@ -77,6 +77,13 @@ WHAT IT PROVES
       in its fragment.yaml's comments - never an impl/ - rather than taught to
       the reader, because each layout is also how prose or a log reads.
 
+  16. A LIVE CARD'S ROUTING ROW NAMING A RETIRED CAPABILITY FAILS THE RUN
+      (2026-11-01). Section 7 asked only whether some card declares the name,
+      and a DEPRECATED card still declares its own: after that day's merges
+      `"hatch this area" -> CREATE_FILLED_REGION` passed, pointing at a card
+      retrieval never offers. The successor is followed along `superseded-by`
+      to a live card; a retired card's own rows are its record and not read.
+
 WHAT IT DOES NOT PROVE
   Anything about the routing result itself. That part of the checker is a
   REPORT - it exits 0 whatever collisions it finds, because a collision is a
@@ -1107,6 +1114,100 @@ def main():
         check("if retired(doc):" in loop[-600:],
               "and report() skips a retired card's routing table before "
               "reading a claim off it")
+    print()
+
+    print("16. A LIVE CARD'S ROW NAMING A RETIRED CAPABILITY FAILS THE RUN (2026-11-01)")
+    # The gate in section 7 asked only whether SOME card declares the name,
+    # and a retired card still declares its own - so after the merges of
+    # 2026-11-01 `"hatch this area" -> CREATE_FILLED_REGION` passed, pointing
+    # at a card retrieval never offers. ASKED BEFORE IT IS CALLED: on the
+    # checker as it stood there is no retired_targets(), and the stand-in
+    # finds nothing - so the checks below fail rather than raise.
+    retired_in = getattr(CR, "retired_targets", None)
+    check(retired_in is not None,
+          "the checker lists the live rows that name a retired capability")
+    if retired_in is None:
+        retired_in = lambda folder=None: []                     # noqa: E731
+    lib = tempfile.mkdtemp(prefix="heron-routing-retired-")
+    try:
+        for folder, text in (
+                ("set-keeper", 'heron-status: DRAFT\ncapability: SET_KEEPER\n'
+                               '#   "mine"        -> here\n'),
+                # Merged into SET_MIDDLE, which was merged into SET_KEEPER:
+                # the successor is followed to the live end of the chain.
+                ("set-first", 'heron-status: DEPRECATED\ncapability: SET_FIRST\n'
+                              'risk: MODIFY\n# Merged.\ndeprecated:\n'
+                              '  date: "2026-11-01"\n'
+                              '  superseded-by: SET_MIDDLE\n'
+                              # Its OWN rows are the record, never read.
+                              '#   "old row"    -> SET_MIDDLE\n'),
+                ("set-middle", "heron-status: 'ARCHIVED'\ncapability: SET_MIDDLE\n"
+                               'deprecated:\n  superseded-by: SET_KEEPER\n'),
+                # Retired with no successor named.
+                ("set-orphan", 'heron-status: DEPRECATED\ncapability: SET_ORPHAN\n'),
+                ("read-live", 'heron-status: PROVEN\ncapability: READ_LIVE\n'
+                              '#   "a"          -> SET_FIRST\n'
+                              '#   "b"          -> SET_KEEPER\n'
+                              '#   "c"          -> `SET_MIDDLE`, the record\n'
+                              '#   "d"          -> SET_ORPHAN\n'
+                              '#   "e"          -> READ_TWICE\n'),
+                # A capability a live card ALSO declares is live.
+                ("read-twice-old", 'heron-status: DEPRECATED\ncapability: READ_TWICE\n'
+                                   'deprecated:\n  superseded-by: SET_KEEPER\n'),
+                ("read-twice", 'heron-status: DRAFT\ncapability: READ_TWICE\n')):
+            os.makedirs(os.path.join(lib, folder))
+            with io.open(os.path.join(lib, folder, "fragment.yaml"), "w",
+                         encoding="utf-8") as fh:
+                fh.write(text)
+        try:
+            got = retired_in(lib)
+        except BaseException as raised:          # noqa: BLE001 - that IS the check
+            got = "raised %s" % type(raised).__name__
+        check(got == [("read-live", 3, "SET_FIRST", "SET_KEEPER"),
+                      ("read-live", 5, "SET_MIDDLE", "SET_KEEPER"),
+                      ("read-live", 6, "SET_ORPHAN", None)],
+              "a live card's rows to SET_FIRST, SET_MIDDLE and SET_ORPHAN are "
+              "listed, by line, each with the live card its superseded-by "
+              "chain ends at (None for none); a row to a live card, to a name a "
+              "live card also declares, and a retired card's own row are not - "
+              "got %r" % (got,))
+        if isinstance(got, list):
+            said = io.StringIO()
+            try:
+                with contextlib.redirect_stdout(said):
+                    code = CR.targets_verdict([], {}, 7, got)
+            except BaseException as raised:      # noqa: BLE001 - that IS the check
+                code = "raised %s" % type(raised).__name__
+            check(code == 1 and "read-live/fragment.yaml:3" in said.getvalue()
+                  and "SET_KEEPER" in said.getvalue(),
+                  "and the verdict FAILS on them, naming the file, the line and "
+                  "the successor - got %r" % (code,))
+        # THROUGH main(), with no store, as CI runs it. Not called on a
+        # checker with no retired_targets(): its --targets would pass this
+        # library, which is the hole, and the check says so.
+        if getattr(CR, "retired_targets", None) is None:
+            code = "not called - the checker has no retired_targets()"
+        else:
+            was = CR.FRAGMENTS, CR.KNOWN_DANGLING
+            CR.FRAGMENTS, CR.KNOWN_DANGLING = lib, {}
+            try:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    code = CR.main(["--targets"])
+            except BaseException as raised:      # noqa: BLE001 - that IS the check
+                code = "raised %s" % type(raised).__name__
+            finally:
+                CR.FRAGMENTS, CR.KNOWN_DANGLING = was
+        check(code == 1, "and `--targets` exits 1 on a library whose every "
+              "name is declared but one points at a retired card - got %r"
+              % (code,))
+    finally:
+        shutil.rmtree(lib, ignore_errors=True)
+    if getattr(CR, "retired_targets", None) is not None:
+        here = CR.retired_targets()
+        check(here == [], "and no live card in this library names a retired "
+              "capability - got %r" % (here,))
+    check(getattr(CR, "KNOWN_DANGLING", None) == {},
+          "and KNOWN_DANGLING is still empty")
     print()
 
     if FAILURES:

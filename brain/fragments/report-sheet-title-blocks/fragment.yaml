@@ -134,7 +134,8 @@ compatibility-note: >
 # short_circuit at all: it falls through to the fused ranking, and
 # tools/check-risk-crossings.py measured where that lands. Each line
 # below was answered by a MODIFY before it was claimed here.
-#   -> CREATE_SHEET (MODIFY). This fragment's own identity already says
+#   answered CREATE_SHEET (MODIFY), merged into CREATE_SHEETS on 2026-11-01.
+#   This fragment's own identity already says
 # "and which have none", so the sentence was always its own.
 utterances:
   - which sheets are missing a titleblock

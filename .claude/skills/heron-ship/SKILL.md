@@ -120,7 +120,10 @@ HERON_KNOWLEDGE=$(mktemp -d) python tools/check-intrusion.py  # one fragment cro
 
 **`check-routing` fails a build on its own since 2026-10-09, and needs no store to do it.** A routing
 row whose `-> NAME` no fragment's `capability:` line declares exits **1** - the one part of that tool
-that is not a ranking, so the rest stays a report. `python tools/check-routing.py --targets` gives that
+that is not a ranking, so the rest stays a report. **Since 2026-11-01 so does a LIVE card's row whose
+`-> NAME` only a retired (DEPRECATED or ARCHIVED) card declares** - retrieval never offers that card;
+point the row at its `superseded-by`, which the failure names. A retired card's own rows are its record
+and are not read. `python tools/check-routing.py --targets` gives that
 verdict alone, from the files: run it after editing any `fragment.yaml` comment, because it is not one
 of the four and CI would otherwise be first to say. A row knowingly left dangling sits on
 `KNOWN_DANGLING` in the tool with its reason - the list is empty today; **repairing one means taking it

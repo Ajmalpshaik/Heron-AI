@@ -200,7 +200,9 @@ compatibility-note: >
 #                                                    (CREATE_LINE until 2026-11-01)
 #   "the lines are drawn twice on top of each other" -> FIND_OVERLAPPING_LINES
 #   "draw a grid line"                            -> CREATE_GRIDS - a datum
-#   "hatch this area"                             -> CREATE_FILLED_REGION
+#   "hatch this area"                             -> DRAW_FAMILY_FILLED_REGION
+#                                                    (CREATE_FILLED_REGION until
+#                                                    2026-11-01)
 #   "draw a room separation line across an opening" -> CREATE_ROOM_SEPARATION_LINES -
 #                                                    a line drawn here splits no room
 #

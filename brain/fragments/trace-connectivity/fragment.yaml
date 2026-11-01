@@ -189,3 +189,12 @@ utterances:
   - why is the flow not calculating
   - find the disconnected run
   - is there a break in this system
+  # ADDED 2026-11-01, row 5b-387. The routing table above claims both - "is
+  # this duct connected -> here - a READ", "what does this connect to ->
+  # here" - and a comment is not indexed, so ranking decided. Measured that
+  # day on a private store of this checkout: "is this duct connected" answered
+  # AUTO_SIZE_MEP, a write, on the trained backend (model2vec potion-base-8M),
+  # and "what does this connect to" answered REPORT_CONNECTORS on lexical.
+  # Declaring, not demoting (row 116).
+  - is this duct connected
+  - what does this connect to

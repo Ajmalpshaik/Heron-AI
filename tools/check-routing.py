@@ -502,9 +502,83 @@ def dangling_targets(folder=None):
     return read, found
 
 
-def targets_verdict(found, known, read=None):
-    """Print the rows that name no capability; 1 if any is new or a listed
-    one was repaired, else 0."""
+# A card's status and, on a retired one, the capability its `deprecated:`
+# block names as the one that does its job now. Read off the text, as
+# DECLARED is - no YAML parser, so the gate costs what the dangling one does.
+STATUS = re.compile(r"^heron-status:\s*['\"]?([A-Za-z_]+)", re.M)
+SUPERSEDED_BY = re.compile(r"^\s+superseded-by:\s*['\"]?([A-Z][A-Z0-9_]*)", re.M)
+
+
+def successor_of(name, retired_caps, live):
+    """The LIVE capability a retired one's job is done by now, following
+    `superseded-by` through every card it names - a card merged into one that
+    was itself merged later - or None when the chain ends in no live card, or
+    goes round in a circle."""
+    seen = set()
+    while name not in live:
+        if name in seen or name not in retired_caps:
+            return None
+        seen.add(name)
+        name = retired_caps[name]
+    return name
+
+
+def retired_targets(folder=None):
+    """[(fragment folder, line, NAME, successor)] for every routing row in a
+    LIVE card whose `-> NAME` only a RETIRED card declares - DEPRECATED or
+    ARCHIVED, heron_search.RETIRED_FRAGMENTS, imported and never copied.
+
+    WHY THIS FAILS THE RUN, LIKE A NAME NOBODY DECLARES (2026-11-01). About a
+    hundred merges retired 121 cards that day, and a row sending a sentence to
+    one of them still passed dangling_targets(): the retired card still
+    declares its capability, so the name was "declared". But retrieval offers
+    no retired card (heron_retrieve.OFFERABLE), so the row points a reader at
+    a tool Heron will never hand out. The repair is the same as for a dangling
+    row - name the capability that does the job, which is the retired card's
+    `superseded-by`, followed to a live card - and `successor` says it.
+
+    A RETIRED CARD'S OWN ROWS ARE NOT READ. They are the record of what that
+    card answered (Constitution Article 1), and the merge procedure leaves
+    them as they were. A capability a live card also declares is live.
+    """
+    import heron_search as SEARCH
+    folder = folder or FRAGMENTS
+    texts = {}
+    for name in sorted(os.listdir(folder)):
+        path = os.path.join(folder, name, "fragment.yaml")
+        if os.path.exists(path):
+            with open(path, encoding="utf-8") as fh:
+                texts[name] = fh.read()
+
+    def is_retired(text):
+        said = STATUS.search(text)
+        return bool(said) and said.group(1).upper() in SEARCH.RETIRED_FRAGMENTS
+
+    live, retired_caps = set(), {}
+    for text in texts.values():
+        gone = is_retired(text)
+        heir = SUPERSEDED_BY.search(text) if gone else None
+        for capability in DECLARED.findall(text):
+            if gone:
+                retired_caps[capability] = heir.group(1) if heir else None
+            else:
+                live.add(capability)
+    found = []
+    for name, text in sorted(texts.items()):
+        if is_retired(text):
+            continue
+        for line, target in routing_targets(text):
+            if target in retired_caps and target not in live:
+                found.append((name, line, target,
+                              successor_of(target, retired_caps, live)))
+    return found
+
+
+def targets_verdict(found, known, read=None, retired=None):
+    """Print the rows that name no capability, and the live rows that name a
+    retired one; 1 if any is new, a listed one was repaired, or any row
+    names a retired capability, else 0."""
+    retired = list(retired or [])
     listed = set(known)
     new = [f for f in found if (f[0], f[2]) not in listed]
     waiting = [f for f in found if (f[0], f[2]) in listed]
@@ -552,7 +626,26 @@ def targets_verdict(found, known, read=None):
         print()
         print("  Take it off KNOWN_DANGLING in tools/check-routing.py. Left there,")
         print("  it goes on excusing that row if it ever comes back.")
-    return 1 if new or repaired else 0
+    if retired:
+        print()
+        print("A LIVE CARD'S ROUTING ROW NAMES A RETIRED CAPABILITY (%d) - THIS"
+              % len(retired))
+        print("FAILS THE RUN:")
+        print()
+        for folder, line, target, heir in retired:
+            print("  %-64s -> %s, now %s" % (
+                where(folder, line), target,
+                heir or "NO LIVE SUCCESSOR - its superseded-by names no live card"))
+        print()
+        print("  Retrieval offers no DEPRECATED or ARCHIVED card, so the row sends")
+        print("  a reader to a tool Heron never hands out. Point it at the card")
+        print("  named after `now` - the retired card's `superseded-by`, followed")
+        print("  to a live card. A line that RECORDS what answered on a past date")
+        print("  is history: write it without the arrow (`answered NAME`), never")
+        print("  repoint it.")
+    elif not new and not repaired:
+        print("AND NO LIVE CARD'S ROUTING ROW NAMES A RETIRED CAPABILITY.")
+    return 1 if new or repaired or retired else 0
 
 
 def main(argv):
@@ -575,10 +668,11 @@ def main(argv):
     # it; and it prints last, so a failure is the final thing in a CI log and
     # not a screen above the report. Row 5b-388.
     read, found = dangling_targets()
+    gone = retired_targets()
     if "--targets" in argv:
-        return targets_verdict(found, KNOWN_DANGLING, read)
+        return targets_verdict(found, KNOWN_DANGLING, read, gone)
     code = report(revit)
-    return targets_verdict(found, KNOWN_DANGLING, read) or code
+    return targets_verdict(found, KNOWN_DANGLING, read, gone) or code
 
 
 def report(revit):

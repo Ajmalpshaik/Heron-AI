@@ -49,7 +49,8 @@ tests: tests/
 # short_circuit at all: it falls through to the fused ranking, and
 # tools/check-risk-crossings.py measured where that lands. Each line
 # below was answered by a MODIFY before it was claimed here.
-#   "which parameters are empty" -> REMOVE_PARAMETER_VALUE (MODIFY).
+#   "which parameters are empty" answered REMOVE_PARAMETER_VALUE (MODIFY),
+#   merged into WRITE_ELEMENT_PARAMETERS on 2026-11-01.
 # Asking which are blank would have emptied more of them.
 utterances:
   - which parameters are empty

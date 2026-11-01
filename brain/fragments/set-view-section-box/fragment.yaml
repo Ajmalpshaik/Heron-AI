@@ -170,6 +170,12 @@ compatibility-note: >
 utterances:
   - put a section box around this
   - box these up so I can see them
+  # ADDED 2026-11-01, row 5b-387. The routing table above claims it ("box
+  # these up" / "section box" -> here) and a comment is not indexed, so
+  # ranking decided: measured that day on a private store of this checkout it
+  # answered EXTRUDE_BETWEEN_PLANES, a family solid, on the trained backend
+  # (model2vec potion-base-8M) and REPORT_BOUNDING_BOX on lexical.
+  - box these up
   - section box around the clash
   - crop the 3d view to these
   - zoom the 3d view to these
