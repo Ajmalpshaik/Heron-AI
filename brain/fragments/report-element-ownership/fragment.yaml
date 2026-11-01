@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "whether these elements can be edited, or belong to somebody 
 kind: action
 domain: revit.qa
 capability: REPORT_ELEMENT_OWNERSHIP
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -39,6 +39,12 @@ purpose: >
   returned separately. Who to ask for a relinquish is the owner. Who to ask
   about an odd piece of modelling is the last person to change it. Collapsing
   them sends the question to the wrong desk.
+
+  **AN ELEMENT WHOSE STATUS CANNOT BE READ IS HELD, NEVER FREE AND NEVER
+  DROPPED** (version 2). It goes in `ownedByOthers` with owner "unknown", so
+  the editable and held lists always add up to what was handed in. This is
+  version 2; version 1's proof no longer describes the code and is kept as a
+  record, and the fragment is DRAFT until it is proved again.
 
 contract:
   needs:
@@ -106,6 +112,27 @@ compatibility-note: >
   around the loop, because an element deleted by another user since the last
   sync throws on that call alone and would otherwise lose the whole report.
 
+# VERSION 2 (2026-11-01) - READ_ELEMENT_OWNERSHIP WAS MERGED INTO THIS CARD on
+# the owner's instruction, and is DEPRECATED. The same check - which of these can
+# be edited on a workshared model, and who holds the rest - and this card already
+# gave more: owner, creator and last changed by. Its one rule this card lacked is
+# now here: an element whose checkout status cannot be read is HELD by an unknown
+# owner, not dropped from both lists. Its `workshared` is this card's
+# `notWorkshared` turned round; its owner names are `owners`. Its sentences moved
+# here, and so did its routing rows: "who owns this" and "why can I not change
+# this" are answered here, then SET_PIN_STATE when it is pinned rather than owned.
+# PINNED AND OWNED LOOK IDENTICAL TO A USER and have opposite fixes.
+#
+# ROUTING - repeated in LIST_WORKSETS and SET_ELEMENT_WORKSET.
+#
+#   "who owns this"                      -> here
+#   "why can I not edit this"            -> here FIRST, then SET_PIN_STATE
+#   "pin these" / "unpin"                -> SET_PIN_STATE
+#   "list the worksets"                  -> LIST_WORKSETS
+#   "put these on the MEP workset"       -> SET_ELEMENT_WORKSET
+#   "make my workset editable"           -> SET_WORKSHARING_OWNERSHIP - the
+#                                           PUBLISH change; this only reads
+
 utterances:
   - who owns these elements
   - can I edit these
@@ -118,3 +145,8 @@ utterances:
   # answering a question. This card answers it; the claiming table now points
   # here.
   - can I edit this
+  # MOVED 2026-11-01 from READ_ELEMENT_OWNERSHIP, merged into this card.
+  - who owns this
+  - is this owned by someone else
+  - why can I not change this
+  - is anyone else working on these

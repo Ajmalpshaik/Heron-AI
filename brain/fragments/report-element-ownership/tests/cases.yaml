@@ -33,6 +33,21 @@ negative:
       and a guard around the loop rather than around the call would lose the
       whole report over one stale element
 
+  - given: >
+      VERSION 2. An element whose checkout status Revit cannot read - deleted by
+      another user since the last sync, on a workshared model
+    expect: >
+      it is in `ownedByOthers`, with "unknown" as its owner when no name came
+      back - NEVER in neither list and never in `editable`. Version 1 dropped
+      it, so the two lists added up to fewer than the elements given. The sum
+      of `editable` and `ownedByOthers` equals the elements handed in, every
+      time, on a workshared model
+
+  - given: VERSION 2. The same element handed in twice
+    expect: >
+      it is counted once. A held count larger than the elements there are is
+      a report nobody can reconcile
+
   - given: an element reported as not owned, which a colleague borrows a moment later
     expect: >
       it appears editable, AND THAT IS THE STATED LIMIT rather than a defect.

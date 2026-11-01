@@ -40,7 +40,7 @@ purpose: >
   | What you are dimensioning | Use |
   |---|---|
   | Air terminals, fixtures, equipment — any family instance | **this fragment** |
-  | Ducts, pipes, conduit, cable tray | `DIMENSION_MEP_RUNS` — it walks the geometry, which is the only route that works for a run |
+  | Ducts, pipes, conduit, cable tray | `CREATE_DIMENSION` — it walks the geometry, which is the only route that works for a run |
 
   **MEASURED, AND THE MEASUREMENT'S FIRST CONCLUSION WAS TOO BROAD.** A family
   instance exposes built-in centre references, and stock content really does

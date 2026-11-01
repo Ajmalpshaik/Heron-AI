@@ -143,7 +143,7 @@ compatibility-note: >
 #                                           the size and draws nothing, which
 #                                           is what a question wants
 #   "list the rooms and their areas"     -> REPORT_ROOM_SPACE_DATA
-#   "dimension these ducts"              -> DIMENSION_MEP_RUNS
+#   "dimension these ducts"              -> CREATE_DIMENSION
 #   "dimension between these"            -> CREATE_DIMENSION, the general one
 #   "dimension the equipment"            -> DIMENSION_FAMILY_INSTANCES
 #   "what is the overall size of this    -> REPORT_BOUNDING_BOX

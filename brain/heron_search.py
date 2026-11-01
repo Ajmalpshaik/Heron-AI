@@ -66,6 +66,11 @@ import heron_rerank as RERANK                                 # noqa: E402
 # Only these may be executed off an exact identity match without asking.
 RUNNABLE_UNASKED = ("PROVEN", "PRODUCTION")
 
+# The statuses a card leaves the library by, read off docs/09's ladder rather
+# than typed: everything from DEPRECATED on. Such a card claims no exact
+# phrasing in the identity table - see index().
+RETIRED_FRAGMENTS = FRAG.STATUSES[FRAG.STATUSES.index("DEPRECATED"):]
+
 # FTS5's own syntax characters. A user typing "300x300 duct?" is asking a
 # question, not writing a query, and an unescaped ? or - is a syntax error
 # rather than a poor result - which would read to them as Heron being broken.
@@ -429,6 +434,17 @@ def index(store, force=False, source=SCOPE.ASK):
         store.execute(
             "INSERT OR REPLACE INTO rerank_said (id, said) VALUES (?, ?)",
             (row["id"], RERANK.passage_said(said)))
+
+        # A RETIRED CARD CLAIMS NO SENTENCE. A DEPRECATED or ARCHIVED card is
+        # kept so its record is never destroyed, not so it can answer - and
+        # its words are the ones its successor took over when the two were
+        # merged. Left in this table, each of them would clash with the
+        # successor's copy and turn the phrase `__ambiguous__`: the sentence
+        # the merge moved would reach NEITHER card by its exact words. The
+        # file's status is read, because the file is the authority.
+        if frag is not None and frag.status in RETIRED_FRAGMENTS:
+            indexed += 1
+            continue
 
         for phrase in [row["semantic_identity"]] + said:
             key = normalise(phrase)

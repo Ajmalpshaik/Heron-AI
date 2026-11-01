@@ -115,16 +115,28 @@ compatibility-note: >
 #                                          instances - correct, and a
 #                                          different question
 #   "count them by type"                -> GROUP_AND_COUNT
-#   "what is inside this family"        -> SELECT_SUBCOMPONENTS, the DOWN walk
+#   "what is inside this family"        -> here, since GROUP_BY_ASSEMBLY was
+#                                          merged in (2026-11-01). It claimed
+#                                          the sentence and this card's DOWN
+#                                          walk answers it; REPORT_FAMILY_FORMS
+#                                          already pointed it here
+#   "give me the nested parts to act on" -> SELECT_SUBCOMPONENTS, the DOWN walk
 #                                          alone, when the parts themselves are
 #                                          what the next step acts on
 #   "which elements are in this group"  -> SELECT_GROUP_MEMBERS. A group is
 #                                          not a nested family and behaves
 #                                          differently
 #   "what is in this assembly"          -> SELECT_GROUP_MEMBERS, which opens an
-#                                          assembly. GROUP_BY_ASSEMBLY walks
-#                                          nested families, as this card does,
-#                                          and never an assembly (row 5b-470)
+#                                          assembly. This card walks nested
+#                                          families and never an assembly
+#                                          (row 5b-470)
+#
+# GROUP_BY_ASSEMBLY WAS MERGED INTO THIS CARD on 2026-11-01, on the owner's
+# instruction, and is DEPRECATED. It walked UP only; this walks up AND down and
+# provides everything it did - its `rootOf` is this card's `roots`, its list of
+# roots is the keys of `assemblyParts`, its `partsOf` is `assemblyParts` (every
+# part, not only the parts handed in), its `cyclic` is `cycles`. No code here
+# changed, so this card's proof still describes it. Its sentences moved here.
 
 utterances:
   - how many units are these really
@@ -134,3 +146,13 @@ utterances:
   - which of these are nested inside something
   - is this counting the nested families twice
   - how many AHUs are there really
+  # MOVED 2026-11-01 from GROUP_BY_ASSEMBLY, merged into this card.
+  - how many air handling units are there
+  - how many actual units not instances
+  - the schedule count is too high
+  - count the whole pieces of kit
+  - roll the nested families up
+  - why does it count four when there is one
+  - which families are nested inside this one
+  - what is inside this family
+  - what parts make up this unit

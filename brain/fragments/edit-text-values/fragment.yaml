@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "change the text that is already there, rather than replacing
 kind: action
 domain: revit.parameters
 capability: EDIT_TEXT_VALUES
-version: 5
+version: 6
 source: OFFICIAL
 risk: MODIFY
 
@@ -56,6 +56,15 @@ purpose: >
   Such an element goes in `ambiguous`, untouched (D-54 s3, FRAGMENT-ISSUES
   5b-203). This is version 2; version 1's proof no longer describes the code and
   is kept as a record, and the fragment is DRAFT until it is proved again.
+
+  **RE-RUNNING IT MUST NOT STACK, AND A TYPE IS EDITED ONCE** (version 6, when
+  EDIT_PARAMETER_TEXT was merged in). A prefix or suffix already on the value
+  is not added again, so a second run leaves `AJ_M-01` rather than
+  `AJ_AJ_M-01`. A field that lives on the TYPE - Type Mark, Manufacturer,
+  Model - is written once however many of its instances are handed in, and
+  the types changed are named in `typesEdited`, because every other instance
+  of them changed too. Version 5's proof no longer describes the code and is
+  kept as a record; the fragment is DRAFT until it is proved again.
 
 # VERSION 4 (2026-10-17, FRAGMENT-ISSUES 5b-520) - A TEXT NOTE IS EDITED THROUGH
 # ITS FORMATTED TEXT. Kept out of the purpose on purpose: the purpose is
@@ -233,6 +242,13 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: string
+    - name: typesEdited
+      # Version 6. The types whose parameter this changed - each written ONCE
+      # however many of its instances were handed in. Every other instance of
+      # these types changed too, including ones nobody handed in, so the reach
+      # is named rather than found later.
+      role: result
+      type: IList<ElementId>
     - name: noteFormatting
       # Version 4. One line per text note it edited: paragraphs before and
       # after, each paragraph's list as READ BACK, and anything NOT KEPT. The
@@ -316,10 +332,11 @@ compatibility-note: >
 #                                       the same day: this fragment already
 #                                       does prefix, suffix and replace, on a
 #                                       parameter or on the name itself
-#   "add a prefix to the mark"           -> EDIT_PARAMETER_TEXT. A mark is
-#                                           a PARAMETER; this fragment is
-#                                           for text notes on a drawing
-#   "change SUP to SUPPLY in the         -> EDIT_PARAMETER_TEXT
+#   "add a prefix to the mark"           -> here, since EDIT_PARAMETER_TEXT
+#                                           was merged in (version 6,
+#                                           2026-11-01). The two rows that
+#                                           sent a mark there are here now
+#   "change SUP to SUPPLY in the         -> here
 #    parameter"
 #   "find and replace in the text notes" -> here, field Text (version 3)
 #   "change the wording of this note"    -> here, field Text, mode set
@@ -346,9 +363,20 @@ compatibility-note: >
 #   READ_ELEMENT_PARAMETERS parameterName=Text: a curly apostrophe or a soft
 #   line break inside the words to replace is shown there, and typed here as
 #   it is shown.
-#   "change part of the name"            -> EDIT_PARAMETER_TEXT for a
-#                                           parameter, RENAME_ELEMENTS for a
-#                                           name. Neither is a text note
+#   "change part of the name"            -> here for a parameter or the
+#                                           element's own name;
+#                                           RENAME_ELEMENTS for views, sheets
+#                                           and types by name
+#
+# EDIT_PARAMETER_TEXT WAS MERGED INTO THIS CARD on 2026-11-01, on the owner's
+# instruction, and is DEPRECATED. The same job - read the text already there,
+# add a prefix or suffix or replace part of it, write it back and read it back.
+# It brought three rules this card lacked, now in version 6: no stacking on a
+# re-run, one write per type with `typesEdited`, and a non-text instance
+# parameter giving way to a text one on the type. Two of its behaviours were
+# NOT taken, on purpose: it put a prefix on a BLANK value - this card leaves a
+# blank blank, because a prefix there invents data - and it took replace,
+# prefix and suffix in one call, which here are three calls of one mode each.
 
 utterances:
   - put a prefix on the mark
@@ -371,3 +399,10 @@ utterances:
   # lexical and trained backends: reaches here on both, where on main lexical
   # sent it to READ_ELEMENT_PARAMETERS.
   - turn this note into a numbered list
+  # MOVED 2026-11-01 from EDIT_PARAMETER_TEXT, merged into this card.
+  - add a prefix to the mark
+  - put AJ in front of every comment
+  - change SUP to SUPPLY in the parameter
+  - add a suffix to the type mark
+  - find and replace inside the comments
+  - edit the text in this parameter without retyping it

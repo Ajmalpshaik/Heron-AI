@@ -140,6 +140,48 @@ negative:
       in `unverified`, NOT in changed, and `noteFormatting` names the
       paragraph and what it reads back
 
+  # VERSION 6 - EDIT_PARAMETER_TEXT merged in. Each of these fails on version 5.
+  - given: >
+      mode prefix, text AJ_, field Mark, run TWICE on the same five elements -
+      the second run after the first was kept
+    expect: >
+      the second run changes nothing: all five `untouched`, each Mark reads
+      AJ_M-01 and never AJ_AJ_M-01. A re-run that stacks is the failure that
+      makes the second run worse than the first
+
+  - given: >
+      mode prefix, text AJ_, field Type Mark, five instances of ONE type handed
+      in, its Type Mark M-01
+    expect: >
+      the type's Type Mark reads AJ_M-01 - ONE prefix, not five - all five
+      instances in `changed`, and that one type's id in `typesEdited`. Every
+      other instance of the type, handed in or not, now reads AJ_M-01 too, and
+      `typesEdited` is what says so
+
+  - given: >
+      mode replace, text SUP, replacement SUPPLY, field Type Comments, three
+      instances of one type whose Type Comments is SUP
+    expect: >
+      SUPPLY - not SUPPLYPLYPLY. The replacement holds the text it replaces, so
+      a type written once per instance would grow on every pass
+
+  - given: >
+      mode prefix, a field whose INSTANCE parameter is a number and whose TYPE
+      carries a text parameter of the same name, two instances of one type
+    expect: >
+      the type's text value changed once, its id in `typesEdited`, both
+      instances in `changed` - and NOT counted as not text. Version 5 refused
+      both as a number
+
+  - given: the same, but the type's parameter of that name is a number too
+    expect: >
+      both in `readOnly` as not text, and when that is every element handed in,
+      the refusal that NOTHING WAS CHANGED because the field is not text
+
+  - given: mode replace SUP -> SUPPLY, a TYPE handed in together with two of its instances
+    expect: >
+      the type's value reads SUPPLY - written once, not twice
+
 second_route:
   - >
     open a schedule of that parameter in Revit before and after - the column is

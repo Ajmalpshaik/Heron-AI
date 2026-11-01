@@ -73,13 +73,13 @@ compatibility-note: >
   on 2026-10-14. RevitAPI.xml (2022) says both calls refuse a document with an
   open transaction.
 
-# ROUTING - the same rows are in SYNC_WITH_CENTRAL and READ_ELEMENT_OWNERSHIP.
+# ROUTING - the same rows are in SYNC_WITH_CENTRAL and REPORT_ELEMENT_OWNERSHIP.
 #
 #   "make my workset editable"             -> here, take
 #   "relinquish everything I own"          -> here, give - no sync
 #   "sync to central"                      -> SYNC_WITH_CENTRAL, which can
 #                                             relinquish as it syncs
-#   "who owns this"                        -> READ_ELEMENT_OWNERSHIP - a read
+#   "who owns this"                        -> REPORT_ELEMENT_OWNERSHIP - a read
 #   "which worksets are there"             -> LIST_WORKSETS - a read
 #
 # MEASURED 2026-10-14, scratch stores, lexical: "which worksets are editable"

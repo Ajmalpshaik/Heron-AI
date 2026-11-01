@@ -214,6 +214,37 @@ def main():
             SEARCH.index(store)
 
             print()
+            print("4b. A retired card claims no sentence")
+            # A DEPRECATED card is kept so its record survives, and its words
+            # moved to the card it was merged into. Left in the identity table
+            # they would clash with the successor's copy and make the phrase
+            # `__ambiguous__` - the moved sentence would then reach NEITHER card
+            # by its exact words. Asked of the real library, so it holds for
+            # every merge from now on, not only the first one.
+            retired_cards = [f for f in FRAG.load_all()[0].values()
+                             if f.status in SEARCH.RETIRED_FRAGMENTS]
+            retired_ids = set(f.id for f in retired_cards)
+            claimed = set(r["fragment_id"] for r in store.execute(
+                "SELECT fragment_id FROM identities").fetchall())
+            check(not (claimed & retired_ids),
+                  "no exact phrasing answers to a retired card (%d retired)"
+                  % len(retired_ids))
+            moved = 0
+            for card in retired_cards:
+                for said in card.utterances():
+                    fid, _status = SEARCH.short_circuit(store, said)
+                    if fid is None:
+                        continue
+                    moved += 1
+                    check(fid not in retired_ids,
+                          "%r reaches %s, not the retired %s"
+                          % (said, fid, card.id))
+            if retired_cards:
+                check(moved > 0,
+                      "and the sentences a merge moved reach their successor "
+                      "by identity (%d)" % moved)
+
+            print()
             print("5. Two fragments claiming one sentence is a MISS")
             store.execute(
                 "INSERT OR REPLACE INTO fragments (id, capability, "

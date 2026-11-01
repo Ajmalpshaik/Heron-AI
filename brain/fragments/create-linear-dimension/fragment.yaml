@@ -231,7 +231,7 @@ compatibility-note: >
 #                                       backend only - not declared, see below)
 #   "dimension the linked cut-outs to the grid" -> here, version 4: a
 #                                       reference inside a loaded link
-#   "dimension the duct spacing"     -> DIMENSION_MEP_RUNS - centrelines of
+#   "dimension the duct spacing"     -> CREATE_DIMENSION - centrelines of
 #                                       parallel MEP runs, and only that
 #   "dimension the grids"            -> DIMENSION_GRIDS_AND_LEVELS
 #   "dimension the rooms"            -> DIMENSION_ROOMS

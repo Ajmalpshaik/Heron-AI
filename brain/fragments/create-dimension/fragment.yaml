@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "dimension the spacing between these parallel runs, on this v
 kind: action
 domain: revit.annotation
 capability: CREATE_DIMENSION
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -30,6 +30,22 @@ purpose: >
   objects are included. Read the geometry the ordinary way and every element
   yields nothing, with no error - the dimension simply never gets made.
 
+  **AN AXIS MAY BE NAMED, AND IT READS BACK** (version 2, when
+  DIMENSION_MEP_RUNS was merged in). Left empty, the string is measured
+  across the runs at whatever angle they sit. `x` or `y` measures along that
+  axis of the model - the way to dimension between risers, vertical pipes seen
+  end-on in a plan, which have no direction across them on the view. The
+  dimension Revit made is read back: `dimensionedCount` is the references it
+  holds, and fewer than two will not survive a commit. `problem` says in one
+  sentence why nothing was drawn. This is version 2; version 1's proof no
+  longer describes the code and is kept as a record, and the fragment is DRAFT
+  until it is proved again.
+
+  | What you are dimensioning | Use |
+  |---|---|
+  | Ducts, pipes, conduit, cable tray | **this fragment** |
+  | Air terminals, fixtures, equipment - any family instance | `DIMENSION_FAMILY_INSTANCES` - built-in centre references, which a run does not have |
+
 contract:
   needs:
     - name: doc
@@ -39,6 +55,13 @@ contract:
       source: request
     - name: elements
       type: IList<Element>
+    # Leave out to measure across the runs, at any angle. x or y measures
+    # along that axis of the model - for risers seen end-on in a plan.
+    - name: axis
+      type: string
+      source: request
+      optional: true
+      absent: across
     - name: offsetMm
       type: double
       source: request
@@ -57,6 +80,17 @@ contract:
       # of what it was GIVEN and could not use, never a thing it found (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: dimensionedCount
+      # Version 2. The references the dimension Revit made actually holds, READ
+      # BACK - never through Dimension.Curve, which throws on a dimension this
+      # new. Zero when nothing was drawn.
+      role: result
+      type: int
+    - name: problem
+      # Version 2. The sentence saying what stopped it, empty when nothing did.
+      # The evidence it looked and could not, never a dimension it made (D-52).
+      role: accounting
+      type: string
 
 proof:
   date: '2026-09-09'
@@ -112,7 +146,11 @@ compatibility-note: >
 # ROUTING - repeated in MEASURE_ELEMENT_LENGTHS and TAG_ELEMENTS.
 #
 #   "add a dimension between these"  -> here
-#   "dimension the duct spacing"     -> DIMENSION_MEP_RUNS, which declares it
+#   "dimension the duct spacing"     -> here, since DIMENSION_MEP_RUNS was
+#                                       merged in (version 2, 2026-11-01)
+#   "dimension between these risers" -> here, axis x or y
+#   "dimension these air terminals"  -> DIMENSION_FAMILY_INSTANCES - built-in
+#                                       centre references, which a run has not
 #   "how far apart are they"         -> MEASURE_ELEMENT_LENGTHS reports it as a
 #                                       NUMBER and draws nothing. This fragment
 #                                       puts it on the drawing. Asking a
@@ -121,6 +159,23 @@ compatibility-note: >
 #   "tag these"                      -> TAG_ELEMENTS - a tag reads a parameter,
 #                                       a dimension measures a distance
 
+# VERSION 2 (2026-11-01) - DIMENSION_MEP_RUNS WAS MERGED INTO THIS CARD on the
+# owner's instruction, and is DEPRECATED. The same job - one dimension string
+# between the centrelines of MEP runs, reached through the non-visible geometry
+# with references computed. This card's geometry was kept: across the runs at
+# any angle, out-of-parallel and collinear runs refused. What that card had and
+# this one lacked is here now: an axis that can be named (x or y, which reaches
+# risers end-on in a plan), the read-back of the references the dimension holds,
+# a refusal by Revit caught rather than let out, and `problem` saying why. Its
+# `dimensionId` is this card's `created`, its `noReference` is `refused`, and
+# what it ordered along the axis Revit orders along the line itself.
+#
+# NOT CARRIED, ON PURPOSE: that card took any location curve - an arc, a flex
+# run - and, with an axis named, runs out of parallel. Here a run must be
+# straight (`notLinear` otherwise) and parallel to the first (`refused`
+# otherwise), axis or not: the gap between two runs that are not parallel
+# depends on where along them you look, and is not one number to draw.
+
 utterances:
   - add a dimension between these
   - dimension these ducts
@@ -128,3 +183,10 @@ utterances:
   - put a dimension between the two runs
   - dimension centre to centre
   - add dimensions to the drawing
+  # MOVED 2026-11-01 from DIMENSION_MEP_RUNS, merged into this card.
+  - dimension between the ducts
+  - how far apart are these pipes on the drawing
+  - put a dimension between the services
+  - dimension the duct spacing
+  - show the gap between the services
+  - dimension between the pipes

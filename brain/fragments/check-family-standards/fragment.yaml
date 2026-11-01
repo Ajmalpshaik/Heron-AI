@@ -287,7 +287,7 @@ compatibility-note: >
 #                                           not about whether they are built
 #                                           correctly
 #   "which families are nested inside this one"
-#                                        -> GROUP_BY_ASSEMBLY, which walks UP to
+#                                        -> REPORT_NESTED_FAMILIES, which walks UP to
 #                                           the host and DOWN to every nested
 #                                           part. That sentence resolved HERE
 #                                           until 2026-09-05, and this fragment

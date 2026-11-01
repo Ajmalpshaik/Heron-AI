@@ -162,7 +162,7 @@ compatibility-note: >
 #                                           parameter is not an element and
 #                                           has no Name to set; it is renamed
 #                                           through the family's own manager
-#   "put a prefix on the mark or the     -> EDIT_PARAMETER_TEXT. A name is
+#   "put a prefix on the mark or the     -> EDIT_TEXT_VALUES. A name is
 #    comments"                              not a parameter, and the two
 #                                           are written differently
 

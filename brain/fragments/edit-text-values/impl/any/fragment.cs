@@ -1,7 +1,14 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `field`, `mode`, `text` and
 // `replacement` are in scope, and leaves `changed`, `untouched`, `blank`,
-// `readOnly`, `absent`, `ambiguous`, `unverified`, `refused` and
-// `noteFormatting` behind.
+// `readOnly`, `absent`, `ambiguous`, `unverified`, `refused`,
+// `noteFormatting` and `typesEdited` behind.
+//
+// VERSION 6 (2026-11-01) - EDIT_PARAMETER_TEXT MERGED IN, AND ITS THREE RULES
+// WITH IT: a prefix or suffix already there is not added again, so a re-run
+// never stacks; a type's parameter is written ONCE however many of its
+// instances are handed in, and the types changed are named in `typesEdited`
+// because every other instance of them changed too; and a non-text instance
+// parameter gives way to a text one of the same name on the type.
 //
 // ASSUMES AN OPEN TRANSACTION. It does not start one - Golden Rule 16 wants
 // one user action to be one undo entry, and that belongs to the operation's
@@ -357,6 +364,13 @@ if (refused == null && how == "format")
 
 var handed = 0;
 var notText = 0;
+// VERSION 6 - ONE WRITE PER TYPE. A type's parameter is edited once however many
+// of its instances are handed in; each later instance lands where the first did.
+// `typesEdited` names the types whose value changed, because every instance of
+// them changed too - including the ones nobody handed in.
+var typesEdited = new List<ElementId>();
+var typeLanded = new Dictionary<ElementId, List<ElementId>>();
+var typeNotText = new HashSet<ElementId>();
 // Text notes a format left alone because a paragraph it named is not there.
 var pastEnd = 0;
 
@@ -416,8 +430,14 @@ Func<IList<Element>, string> namesOnHand = given =>
 
 Func<string, string> transform = current =>
 {
-    if (how == "prefix") return text + current;
-    if (how == "suffix") return current + text;
+    // VERSION 6 - A PREFIX OR SUFFIX ALREADY THERE IS NOT ADDED AGAIN, so a
+    // re-run leaves AJ_M-01 and never AJ_AJ_M-01 (EDIT_PARAMETER_TEXT's rule,
+    // merged in). Batch jobs get re-run - after an undo, after a filter is
+    // widened, after somebody is not sure it took.
+    if (how == "prefix")
+        return current.StartsWith(text, StringComparison.OrdinalIgnoreCase) ? current : text + current;
+    if (how == "suffix")
+        return current.EndsWith(text, StringComparison.OrdinalIgnoreCase) ? current : current + text;
     if (how == "set") return text;
     if (how == "replace")
     {
@@ -797,8 +817,11 @@ foreach (var element in elements)
             continue;
         }
 
-        string wantedNote = how == "prefix" ? find + wording
-            : how == "suffix" ? wording + find
+        // Version 6: a prefix or suffix the note already has is not added again.
+        string wantedNote = how == "prefix"
+                ? (wording.StartsWith(find, StringComparison.OrdinalIgnoreCase) ? wording : find + wording)
+            : how == "suffix"
+                ? (wording.EndsWith(find, StringComparison.OrdinalIgnoreCase) ? wording : wording + find)
             : how == "set" ? find
             : (find.Length == 0 ? wording : wording.Replace(find, putIn));
         if (wantedNote == wording) { untouched.Add(element.Id); continue; }
@@ -958,6 +981,16 @@ foreach (var element in elements)
         continue;
     }
 
+    // The type whose parameter this element's field resolved to, or null for an
+    // instance parameter or the element's own name. `land` records where the
+    // element landed and, for a type, where its later instances land too.
+    ElementId heldType = null;
+    Action<List<ElementId>> land = list =>
+    {
+        list.Add(element.Id);
+        if (heldType != null) typeLanded[heldType] = list;
+    };
+
     if (editingName)
     {
         try { current = element.Name; } catch { }
@@ -973,46 +1006,96 @@ foreach (var element in elements)
         if (element.GetParameters(field).Count > 1) { ambiguous.Add(element.Id); continue; }
 
         parameter = element.LookupParameter(field);
-        if (parameter == null)
+        // The type is asked second, never first: an instance parameter of the
+        // same name is the one the modeller edited. Version 6: an instance
+        // parameter that is NOT TEXT gives way to a text one of the same name on
+        // the type - where Type Mark, Manufacturer and Model live - as
+        // EDIT_PARAMETER_TEXT did; with no text one there, the instance's stands
+        // and is reported as not text.
+        if (parameter == null || parameter.StorageType != StorageType.String)
         {
-            // The type is asked second, never first: an instance parameter of
-            // the same name is the one the modeller edited.
             Element elementType = null;
             try { elementType = doc.GetElement(element.GetTypeId()); } catch { }
-            if (elementType != null && elementType.GetParameters(field).Count > 1)
+            int onType = 0;
+            if (elementType != null) { try { onType = elementType.GetParameters(field).Count; } catch { } }
+            // Ambiguous on the type only where the type would be the one
+            // edited: always when the instance has no such field, and - for a
+            // non-text instance field - only when one of the type's is text.
+            // Otherwise the instance's field stands, as in version 5.
+            if (onType > 1)
             {
-                ambiguous.Add(element.Id);
-                continue;
+                bool typeWouldBeUsed = parameter == null;
+                if (!typeWouldBeUsed)
+                {
+                    try
+                    {
+                        foreach (Parameter candidate in elementType.GetParameters(field))
+                            if (candidate.StorageType == StorageType.String) typeWouldBeUsed = true;
+                    }
+                    catch { }
+                }
+                if (typeWouldBeUsed) { ambiguous.Add(element.Id); continue; }
             }
-            if (elementType != null) parameter = elementType.LookupParameter(field);
+            else
+            {
+                Parameter typeParameter = null;
+                if (elementType != null) typeParameter = elementType.LookupParameter(field);
+                if (typeParameter != null
+                    && (parameter == null || typeParameter.StorageType == StorageType.String))
+                {
+                    parameter = typeParameter;
+                    heldType = elementType.Id;
+                }
+            }
         }
 
+        // A TYPE HANDED IN ITSELF, beside its own instances, shares their
+        // once-per-type record - or a replace whose new text holds the old
+        // would grow once for the type and once for its instances.
+        if (heldType == null && parameter != null && element is ElementType) heldType = element.Id;
+
         if (parameter == null) { absent.Add(element.Id); continue; }
+
+        // ONE WRITE PER TYPE (version 6). Forty instances of one type resolve
+        // to ONE parameter: editing it forty times would put the prefix on
+        // forty times, and a replace whose new text holds the old would grow
+        // on every pass. The first instance decides; the rest land with it.
+        if (heldType != null && typeLanded.ContainsKey(heldType))
+        {
+            typeLanded[heldType].Add(element.Id);
+            if (typeNotText.Contains(heldType)) notText++;
+            continue;
+        }
+
         // Counted apart from the other two ways into `readOnly`, and only so
         // that "was it text on ANY of them" can be answered below. A locked
         // text field is a real finding; a number is a wrong request.
         if (parameter.StorageType != StorageType.String)
         {
             notText++;
-            readOnly.Add(element.Id);
+            if (heldType != null) typeNotText.Add(heldType);
+            land(readOnly);
             continue;
         }
-        if (parameter.IsReadOnly) { readOnly.Add(element.Id); continue; }
-        try { current = parameter.AsString(); } catch { }
+        if (parameter.IsReadOnly) { land(readOnly); continue; }
+        // A value that cannot be read is not a blank one: it is refused, as
+        // EDIT_PARAMETER_TEXT did, never edited as if empty.
+        try { current = parameter.AsString(); }
+        catch { land(readOnly); continue; }
     }
 
     // A blank stays blank. (A note's wording being SET, the one exception,
     // was handled with the rest of the note above.)
     if (string.IsNullOrEmpty(current))
     {
-        blank.Add(element.Id);
+        land(blank);
         continue;
     }
     if (current == null) current = "";
-    if (how == "set") { absent.Add(element.Id); continue; }
+    if (how == "set") { land(absent); continue; }
 
     string wanted = transform(current);
-    if (wanted == current) { untouched.Add(element.Id); continue; }
+    if (wanted == current) { land(untouched); continue; }
 
     bool accepted = false;
     try
@@ -1020,9 +1103,9 @@ foreach (var element in elements)
         if (editingName) { element.Name = wanted; accepted = true; }
         else accepted = parameter.Set(wanted);
     }
-    catch { readOnly.Add(element.Id); continue; }
+    catch { land(readOnly); continue; }
 
-    if (!accepted) { readOnly.Add(element.Id); continue; }
+    if (!accepted) { land(readOnly); continue; }
 
     // READ BACK. A count of attempts is not a count of changes - which is the
     // failure this whole project is built around.
@@ -1034,9 +1117,13 @@ foreach (var element in elements)
     }
     catch { }
 
-    if (now == null) unverified.Add(element.Id);
-    else if (now == wanted) changed.Add(element.Id);
-    else unverified.Add(element.Id);
+    if (now == null) land(unverified);
+    else if (now == wanted)
+    {
+        land(changed);
+        if (heldType != null) typesEdited.Add(heldType);
+    }
+    else land(unverified);
 }
 
 // AFTER THE LOOP, AND ONLY BECAUSE NOTHING WAS WRITTEN ON EITHER PATH. Both

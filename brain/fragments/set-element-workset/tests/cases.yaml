@@ -12,7 +12,7 @@ negative:
   - given: a batch containing 11 elements owned by another user
     expect: >
       those 11 are in refused and the other 189 still move - the batch is not
-      abandoned. READ_ELEMENT_OWNERSHIP is what turns this into a sentence
+      abandoned. REPORT_ELEMENT_OWNERSHIP is what turns this into a sentence
       BEFORE the write rather than a list of casualties after it
 
   - given: a model that is NOT workshared

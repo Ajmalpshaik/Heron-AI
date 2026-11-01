@@ -449,4 +449,6 @@ questions:
     asked: "2026-08-27"
     question: "This element cannot be deleted or moved in a BIM 360 model that is already synchronised — find out why."
     kind: capability
-    answer: READ_ELEMENT_OWNERSHIP
+    # READ_ELEMENT_OWNERSHIP until 2026-11-01, when it was merged into this
+    # card and deprecated. The same answer: who holds it, and can I edit it.
+    answer: REPORT_ELEMENT_OWNERSHIP

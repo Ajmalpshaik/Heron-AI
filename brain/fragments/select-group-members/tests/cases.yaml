@@ -43,7 +43,7 @@ negative:
       with nested families inside it
     expect: >
       refused by name, containerKind empty, and nested families pointed at
-      GROUP_BY_ASSEMBLY. Not an empty member list, and not the pump's nested
+      REPORT_NESTED_FAMILIES. Not an empty member list, and not the pump's nested
       parts
 
   - given: a group whose member list names a deleted element

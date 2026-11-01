@@ -184,7 +184,7 @@ compatibility-note: >
 #   "dimension the rooms"                -> DIMENSION_ROOMS, which measures a
 #                                           room's overall size and cannot see
 #                                           an opening at all
-#   "dimension these ducts"              -> DIMENSION_MEP_RUNS
+#   "dimension these ducts"              -> CREATE_DIMENSION
 #   "dimension between these two"        -> CREATE_DIMENSION
 #   "dimension this opening from the level and the grid" -> CREATE_LINEAR_DIMENSION
 #                                           (5b-482) - ONE opening FAMILY in a

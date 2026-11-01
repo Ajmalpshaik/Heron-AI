@@ -82,13 +82,13 @@ compatibility-note: >
   from a live element, so nothing here builds one from an int and 2024's
   64-bit ids do not reach this code.
 
-# ROUTING - repeated in CREATE_LEVEL, DUPLICATE_VIEW and CREATE_3D_VIEW.
+# ROUTING - repeated in CREATE_LEVEL, DUPLICATE_VIEWS and CREATE_3D_VIEW.
 #
 #   "make the plan for this level"  -> here
 #   "add the ceiling plan"          -> here, with ceiling asked for
 #   "add 4 more floors"             -> CREATE_LEVEL then here, once per level.
 #                                      Levels alone give nothing to draw on
-#   "duplicate this view"           -> DUPLICATE_VIEW - copies a view that
+#   "duplicate this view"           -> DUPLICATE_VIEWS - copies a view that
 #                                      already exists
 #   "make a 3D view"                -> CREATE_3D_VIEW
 #   "make a section"                -> CREATE_SECTION_VIEW

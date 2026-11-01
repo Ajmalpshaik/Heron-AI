@@ -26,6 +26,14 @@
 // still not a view until the document says so. Resolving it costs one lookup
 // and keeps this fragment honest with the rest: what is counted is what
 // happened, never what was asked for.
+//
+// VERSION 2 (2026-11-01) - DUPLICATE_VIEW MERGED IN, AND ITS GUARD WITH IT.
+//
+// A VIEW TEMPLATE IS NOT DUPLICATED HERE. Copying a template is
+// DUPLICATE_VIEW_TEMPLATE's job - it is a different thing to make, with a
+// different name and none of a view's placement - so a template handed in is
+// reported in `notDuplicated` and never copied by accident. And a null in the
+// set is skipped rather than read for an id it has not got.
 
 var option = ViewDuplicateOption.WithDetailing;
 bool optionRecognised = true;
@@ -52,11 +60,13 @@ if (optionRecognised)
 {
     foreach (var element in elements)
     {
+        if (element == null) continue;
         var view = element as View;
 
-        // Not a view, or Revit says not this way. Both are reported by id
-        // rather than counted away, because the caller needs to know WHICH.
-        if (view == null || !view.CanViewBeDuplicated(option))
+        // Not a view, a view TEMPLATE (version 2, from DUPLICATE_VIEW), or
+        // Revit says not this way. Each is reported by id rather than counted
+        // away, because the caller needs to know WHICH.
+        if (view == null || view.IsTemplate || !view.CanViewBeDuplicated(option))
         {
             notDuplicated.Add(element.Id);
             continue;
@@ -92,5 +102,5 @@ else
     // Nothing is touched. Every view is reported as not duplicated, which is
     // exactly true, and the caller can tell this from a per-view refusal
     // because ALL of them are in the list and none was made.
-    foreach (var element in elements) notDuplicated.Add(element.Id);
+    foreach (var element in elements) if (element != null) notDuplicated.Add(element.Id);
 }

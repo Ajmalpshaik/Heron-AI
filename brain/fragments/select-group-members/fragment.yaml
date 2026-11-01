@@ -106,7 +106,7 @@ compatibility-note: >
   read with tools/api-surface on 2026-10-14. Member ids are resolved
   through `Document.GetElement` and compared as ElementIds, never as numbers.
 
-# ROUTING - repeated in GROUP_ELEMENTS, UNGROUP_ELEMENTS and GROUP_BY_ASSEMBLY.
+# ROUTING - repeated in GROUP_ELEMENTS, UNGROUP_ELEMENTS and REPORT_NESTED_FAMILIES.
 #
 #   "what is in this group"          -> here
 #   "select the elements inside this group" -> here
@@ -120,7 +120,7 @@ compatibility-note: >
 #                                       FAMILIES and never opens an assembly,
 #                                       and on 2026-10-14 the sentence reached
 #                                       CREATE_ASSEMBLY, a write (row 5b-470)
-#   "how many units are these really"-> GROUP_BY_ASSEMBLY / REPORT_NESTED_FAMILIES -
+#   "how many units are these really"-> REPORT_NESTED_FAMILIES -
 #                                       nested families, not assemblies (row 5b-469)
 #   "how many of these groups
 #    are there"                      -> COUNT_ELEMENTS over the group category

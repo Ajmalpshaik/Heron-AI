@@ -158,14 +158,14 @@ compatibility-note: >
 # (LIST_LEVELS and CREATE_LEVEL). Recorded, not changed here: FRAGMENT-ISSUES
 # 5b-180.
 
-# ROUTING - repeated in CREATE_DIMENSION, DIMENSION_MEP_RUNS and
+# ROUTING - repeated in CREATE_DIMENSION and
 # DIMENSION_ROOMS.
 #
 #   "dimension the grids"                 -> here
 #   "put the setting out dimensions on this plan" -> here
 #   "dimension between the levels"        -> here, in a section or elevation
 #   "grid to grid dimension"              -> here
-#   "dimension between the ducts"         -> DIMENSION_MEP_RUNS - a centreline
+#   "dimension between the ducts"         -> CREATE_DIMENSION - a centreline
 #                                            has to be dug out of the geometry
 #                                            with non-visible objects included,
 #                                            and the whole-element Reference

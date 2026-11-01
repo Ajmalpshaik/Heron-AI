@@ -87,7 +87,7 @@ compatibility-note: >
   off the reference assemblies at both ends rather than remembered. There is no
   legend creation method on any of them, which was checked the same way.
 
-# ROUTING - repeated in DUPLICATE_VIEW and CREATE_DRAFTING_VIEW.
+# ROUTING - repeated in DUPLICATE_VIEWS and CREATE_DRAFTING_VIEW.
 #
 #   "make another legend like this one" -> here
 #   "copy the legend"                   -> here
@@ -95,7 +95,7 @@ compatibility-note: >
 #                                          project has none, nothing in Revit's
 #                                          API can make the first - draw one by
 #                                          hand once
-#   "duplicate this view"               -> DUPLICATE_VIEW - any view, and it
+#   "duplicate this view"               -> DUPLICATE_VIEWS - any view, and it
 #                                          knows nothing about legends
 #   "make a detail view"                -> CREATE_DRAFTING_VIEW - the other view
 #                                          that shows no model

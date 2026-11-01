@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "make copies of these views, plain or with the detailing, or 
 kind: action
 domain: revit.views
 capability: DUPLICATE_VIEWS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -37,6 +37,11 @@ purpose: >
   The returned id is resolved back to a real view before it is counted. Every
   fragment here reports what HAPPENED rather than what was asked for, and an id
   that does not resolve is not a duplicated view.
+
+  A VIEW TEMPLATE IS NOT DUPLICATED HERE (version 2) - that is
+  DUPLICATE_VIEW_TEMPLATE's job - and is reported in notDuplicated. This is
+  version 2; version 1's proof no longer describes the code and is kept as a
+  record, and the fragment is DRAFT until it is proved again.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so
   duplicating forty views is one undo entry.
@@ -99,6 +104,30 @@ compatibility-note: >
   here. `ElementId` values are collected and resolved only, never converted to
   or from an integer, which keeps this clear of the 2024 change.
 
+# VERSION 2 (2026-11-01) - DUPLICATE_VIEW WAS MERGED INTO THIS CARD on the
+# owner's instruction, and is DEPRECATED. The same job - copy views one of
+# Revit's three ways, the way stated and never a default - and this card already
+# handed back the new ids for the next step. Its one guard this card lacked is
+# now here: a view template is refused, never copied. Its option arrives here as
+# the word Duplicate, WithDetailing or AsDependent. Its sentences and its routing
+# rows moved here.
+#
+# ROUTING - repeated in APPLY_VIEW_TEMPLATE, CREATE_PLAN_VIEW, CREATE_3D_VIEW,
+# PLACE_VIEW_ON_SHEET, CREATE_LEGEND_VIEW and CREATE_VIEW_TEMPLATE_FROM_VIEW.
+#
+#   "duplicate this view"            -> here
+#   "make a new 3d view"             -> CREATE_3D_VIEW. Duplicating an existing
+#                                       view and making one from scratch are
+#                                       different jobs and this does only the
+#                                       first
+#   "copy this view template"        -> DUPLICATE_VIEW_TEMPLATE
+#   "copy these to the other floors" -> COPY_ELEMENTS - elements, not views.
+#                                       "COPY" MEANS ELEMENTS OR VIEWS
+#                                       depending on the sentence
+#   "make another legend like this one" -> CREATE_LEGEND_VIEW. Revit can make
+#                                       no legend from nothing on any release,
+#                                       so copying one is the only route
+
 utterances:
   - duplicate these views
   - make a copy of this plan
@@ -106,3 +135,9 @@ utterances:
   - create dependent views
   - duplicate these views with detailing
   - i need another copy of these plans
+  # MOVED 2026-11-01 from DUPLICATE_VIEW, merged into this card.
+  - duplicate this view
+  - make a copy of this view
+  - duplicate this view with detailing
+  - make a dependent view
+  - copy this plan for coordination

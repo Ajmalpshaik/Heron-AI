@@ -18,7 +18,7 @@ purpose: >
   problem, rather than disturbing a view that is on a sheet.
 
   **Creating and duplicating are different jobs and the words are the same.**
-  `DUPLICATE_VIEW` copies an existing view with its settings; this makes a new
+  `DUPLICATE_VIEWS` copies an existing view with its settings; this makes a new
   one from the template type, carrying none. Somebody who says *"make me a 3D
   view like that one"* wants the first.
 
@@ -84,11 +84,11 @@ compatibility-note: >
   `View.Name` are unchanged 2020 to 2027, and the view family type arrives as
   an ElementId object taken from a live element.
 
-# ROUTING - repeated in DUPLICATE_VIEW and SET_VIEW_SECTION_BOX.
+# ROUTING - repeated in DUPLICATE_VIEWS and SET_VIEW_SECTION_BOX.
 #
 #   "make a new 3d view"          -> here
-#   "duplicate this view"         -> DUPLICATE_VIEW - keeps the settings
-#   "make one like that one"      -> DUPLICATE_VIEW, not here
+#   "duplicate this view"         -> DUPLICATE_VIEWS - keeps the settings
+#   "make one like that one"      -> DUPLICATE_VIEWS, not here
 #   "box it round the clash"      -> SET_VIEW_SECTION_BOX, on the view this made
 #
 # CREATE AND DUPLICATE ARE ASKED FOR IN ONE SENTENCE. A new view carries the

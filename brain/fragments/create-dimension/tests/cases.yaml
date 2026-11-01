@@ -34,5 +34,48 @@ negative:
       raised. That is why the refusals are counted and returned - this exact
       silence is what would otherwise read as success
 
+  # VERSION 2 - DIMENSION_MEP_RUNS merged in.
+  - given: three vertical pipe RISERS on a floor plan, axis empty
+    expect: >
+      nothing drawn, all three in `refused`, and `problem` saying they point at
+      the viewer and to name the axis. Version 1 refused them with no sentence
+
+  - given: the same three risers, axis x, offset 500 mm
+    expect: >
+      ONE dimension string along the model's X axis between their centrelines,
+      `dimensionedCount` 3, `problem` empty. What version 1 could not draw at
+      all
+
+  - given: three ducts running east-west, axis x - an axis ALONG the runs
+    expect: >
+      nothing drawn, and `problem` saying the axis runs along them. A dimension
+      measured along parallel runs has nothing to measure between them
+
+  - given: axis left OUT entirely, three parallel ducts on a plan
+    expect: >
+      it runs - bound as "across", the same as version 1 - and draws one string
+      across the ducts. Refused for a missing value would break every call
+      version 1 took
+
+  - given: axis y in a section looking north - the axis points out of the view
+    expect: >
+      nothing drawn, and `problem` saying the axis points out of this view - not
+      Revit's own exception text
+
+  - given: a dimension Revit makes holding fewer than two references
+    expect: >
+      it is DELETED again, `created` null, `dimensionedCount` 0 - never left in
+      the transaction while the runs are reported refused
+
+  - given: axis "diagonal"
+    expect: >
+      nothing looked at, nothing drawn, `problem` naming x, y or empty. A
+      guessed axis measures the wrong direction and still looks plausible
+
+  - given: two air terminals and nothing else
+    expect: >
+      both in `notLinear`, nothing drawn, and `problem` naming
+      DIMENSION_FAMILY_INSTANCES as the route for family instances
+
 second_route:
   - Revit's own Aligned Dimension tool snapped to the same two centrelines, compared for the value it reports

@@ -90,7 +90,7 @@ compatibility-note: >
 #                                        different fixes: a GROUP member
 #                                        (here), a PINNED element
 #                                        (SET_PIN_STATE), or one OWNED by
-#                                        somebody else (READ_ELEMENT_OWNERSHIP)
+#                                        somebody else (REPORT_ELEMENT_OWNERSHIP)
 #
 # ALL THREE PRESENT AS "IT WILL NOT MOVE". Ungrouping something pinned does
 # nothing; unpinning something owned does nothing. Guessing wastes the fix.

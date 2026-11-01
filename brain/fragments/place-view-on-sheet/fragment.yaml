@@ -174,7 +174,7 @@ compatibility-note: >
   2020 to 2022 cannot, and one path - a new viewport at the old box centre, the
   old one deleted - keeps every release the same run, read back the same way.
 
-# ROUTING - repeated in DUPLICATE_VIEW and CREATE_3D_VIEW.
+# ROUTING - repeated in DUPLICATE_VIEWS and CREATE_3D_VIEW.
 #
 #   "put this view on a sheet"      -> here
 #   "make a new sheet"              -> CREATE_SHEET. Creating the sheet and
@@ -186,7 +186,7 @@ compatibility-note: >
 #                                      answered by the fragment that puts
 #                                      things on them
 #   "which sheets are empty"        -> LIST_SHEETS
-#   "duplicate this view"           -> DUPLICATE_VIEW - and note a duplicate is
+#   "duplicate this view"           -> DUPLICATE_VIEWS - and note a duplicate is
 #                                      how you get a view that CAN go on a
 #                                      second sheet, since the original cannot
 #   "put the SCHEDULE on a sheet"   -> PLACE_SCHEDULE_ON_SHEET. A schedule goes

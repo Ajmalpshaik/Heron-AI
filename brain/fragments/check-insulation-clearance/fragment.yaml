@@ -181,7 +181,7 @@ compatibility-note: >
 #   "which runs still need insulating"   -> not a clearance question. This
 #                                           fragment REPORTS the bare count as a
 #                                           side effect and is not the way to ask
-#   "draw the dimension"                 -> DIMENSION_MEP_RUNS
+#   "draw the dimension"                 -> CREATE_DIMENSION
 #   "insulate these"                     -> SET_MEP_INSULATION, which PUTS THE
 #                                           LAGGING ON. This fragment only
 #                                           measures, and ranked first on that

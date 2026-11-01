@@ -37,6 +37,12 @@ negative:
   - given: an element that is not a view at all, e.g. a duct
     expect: its id in notDuplicated, no exception, other views unaffected
 
+  - given: VERSION 2. A view template handed in with two plans, option "Duplicate"
+    expect: >
+      the template's id in notDuplicated and no copy of it made; the two plans
+      duplicated. Copying a template is DUPLICATE_VIEW_TEMPLATE's job, and a
+      template copied here by accident is a second template nobody asked for
+
   - given: an empty element list
     expect: all outputs empty or zero, reported as nothing to do
 
