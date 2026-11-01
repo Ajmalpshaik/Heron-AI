@@ -1,0 +1,229 @@
+heron-agent: HERON-REVIT-SCH-026
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-155
+semantic-identity: "the schedule's own settings - title, headers, grid lines, text types, striped rows, row height, linked files, filter by sheet, embedded schedule"
+kind: action
+domain: revit.schedules
+capability: SET_SCHEDULE_OPTIONS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WRITTEN 2026-11-01 FOR FRAGMENT-ISSUES ROW 5b-1367. Ajmal PS made a duct
+# length schedule through Heron on his Revit 2020 job model and could not set
+# the Length column to metres; he then asked for a careful check of every
+# schedule setting Heron could not reach. A grep of every fragment's C# found
+# no use of ScheduleDefinition.ShowTitle, ShowHeaders, ShowGridLines,
+# IncludeLinkedFiles, IsFilteredBySheet or AddEmbeddedSchedule, nor of
+# ViewSchedule's TitleTextTypeId, HeaderTextTypeId, BodyTextTypeId,
+# HasStripedRows, UseStripedRowsOnSheets, SetStripedRowsColor or RowHeight -
+# NEEDS-CHECKING Group KK.
+#
+# A NEW CARD, NOT A WIDENING. SET_SCHEDULE_APPEARANCE sets what one COLUMN
+# looks like; SET_SCHEDULE_SORT_GROUP the sorting and the grand total;
+# SET_SCHEDULE_FILTERS which rows. Nothing set the switches that belong to the
+# whole schedule. Filter by sheet and the embedded schedule are here, not in
+# CREATE_SCHEDULE, because each is a setting of a schedule that already exists.
+#
+# FOUR SETTINGS ARE NOT ON EVERY RELEASE - striped rows on sheets and the
+# striped row colour arrived at 2021, filter by sheet at 2023, the row height
+# at 2024 - and are reached by name at run time, one implementation for all
+# eight releases. The
+# striped row colour's row and the row height's override are ASSUMPTIONS the
+# proof settles; the C# header says what each is.
+purpose: >
+  Sets a schedule's own settings - not a column's: Show Title, Show Headers
+  and Grid lines on sheets; which text type its Title, Header and Body text
+  use; Striped rows, striped rows on sheets and the stripe colour; the row
+  height (Revit 2024 and later); Include elements in links; Filter by sheet
+  (Revit 2023 and later); and an embedded schedule, added or removed. Only
+  what is named is changed, each is read back, and one setting the schedule
+  cannot take is named while the others are still set.
+
+  **A TEXT TYPE IS CHOSEN, NOT EDITED.** Bold, font and size belong to a text
+  type other schedules share; this changes which type THIS schedule uses, so
+  "make the schedule text bold" is served by choosing a bold text type and no
+  other drawing changes.
+
+  **FREEZE HEADERS IS NOT HERE.** It is a switch of the Revit session, not a
+  setting saved in the model.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # Every setting below is "yes" or "no", or a name or number - and left out
+    # it is "leave" (`absent: leave`): only what is named is changed. With
+    # nothing named at all the call is refused.
+    - name: showTitle
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    - name: showHeaders
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    - name: gridLinesOnSheets
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    # A text type's NAME as Revit lists it - "2.5mm Arial" - matched exactly,
+    # or ignoring case when only one answers. An unknown name is refused,
+    # listing the text types there are.
+    - name: titleTextType
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    - name: headerTextType
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    - name: bodyTextType
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    - name: stripedRows
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    # Revit 2021 and later.
+    - name: stripedRowsOnSheets
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    # Revit 2021 and later. "#DCEBFA", "220 235 250", or a few colour names;
+    # "first row ..." or "second row ..." names the stripe, and a colour alone
+    # is the second row - an ASSUMPTION the proof settles.
+    - name: stripedRowColour
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    # Revit 2024 and later. Millimetres, a number - "8" or "8 mm".
+    - name: rowHeightMm
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    - name: includeLinks
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    # Revit 2023 and later.
+    - name: filterBySheet
+      type: string
+      source: request
+      optional: true
+      absent: leave
+    # A category name the schedule can embed - "Mechanical Equipment" on a
+    # space schedule - or "none" to remove the one it has.
+    - name: embeddedSchedule
+      type: string
+      source: request
+      optional: true
+      absent: leave
+  provides:
+    - name: changed
+      # Settings written and read back as asked, every schedule counted. A
+      # setting already as asked is not counted.
+      role: result
+      type: int
+    - name: applied
+      # A second read of every setting asked, per schedule, "before -> after"
+      # or "(already)". ONE STRING joined with "; ", because a list reaches the
+      # chat cut to three entries of sixty characters.
+      role: result
+      type: string
+    - name: refused
+      # Why a setting was not set, in the user's words - a word that is not
+      # yes or no, a text type that is not there, Revit's own Can* answer, a
+      # read back that differs. The evidence it looked and said no (D-52).
+      role: accounting
+      type: IList<string>
+    - name: notApplicable
+      # A setting this Revit release has not got - striped rows on sheets and
+      # their colour before 2021, filter by sheet before 2023, row height
+      # before 2024. Never a thing it found (D-52).
+      role: accounting
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ScheduleDefinition.ShowTitle`,
+  `ShowHeaders`, `ShowGridLines`, `IncludeLinkedFiles`, `CanIncludeLinkedFiles`,
+  `HasEmbeddedSchedule`, `EmbeddedDefinition`, `CanHaveEmbeddedSchedule`,
+  `GetValidCategoriesForEmbeddedSchedule`, `IsValidCategoryForEmbeddedSchedule`,
+  `AddEmbeddedSchedule` and `RemoveEmbeddedSchedule`, and `ViewSchedule.
+  TitleTextTypeId`, `HeaderTextTypeId`, `BodyTextTypeId`, `IsValidTextTypeId`
+  and `HasStripedRows` are present with the same signatures 2020 through 2027.
+  `UseStripedRowsOnSheets`, `GetStripedRowsColor`, `SetStripedRowsColor` and
+  the `StripedRowPattern` enum (FirstRow, SecondRow) arrive at 2021;
+  `IsFilteredBySheet` and `IsValidCategoryForFilterBySheet` at 2023;
+  `RowHeight`, `RowHeightOverride` and `RowHeightOverrideOptions` (None, All,
+  ImageRows) at 2024. Those are reached by name at run time, one
+  implementation for every release, and a release without one names that setting in
+  `notApplicable`. Every member looked up with tools/api-surface --members on
+  all eight releases, 2026-11-01. Row height is mm / 304.8, plain arithmetic.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "hide the schedule title"            -> here, showTitle no
+#   "turn off the grid lines on the sheet" -> here, gridLinesOnSheets no
+#   "use the 3.5mm Arial text for the schedule header"
+#                                        -> here, headerTextType
+#   "make the schedule text bold"        -> here by choosing a BOLD text type
+#                                           for its body or header - the type
+#                                           itself is not edited. For ONE
+#                                           column's text, SET_SCHEDULE_APPEARANCE
+#                                           (version 4, its cell style)
+#   "stripe the schedule rows"           -> here, stripedRows yes
+#   "include elements in links"          -> here, includeLinks yes
+#   "filter the schedule by sheet"       -> here, filterBySheet yes (2023 on).
+#                                           A filter by a VALUE is
+#                                           SET_SCHEDULE_FILTERS
+#   "change the column heading" / "make the column wider" / units of a column
+#                                        -> SET_SCHEDULE_APPEARANCE. One
+#                                           column's formatting
+#   "sort by level" / "show the grand total"
+#                                        -> SET_SCHEDULE_SORT_GROUP
+#   "group the Width and Height headers under Size"
+#                                        -> GROUP_SCHEDULE_HEADERS
+#   "freeze the schedule headers"        -> NOT HERE AND NOWHERE IN THIS
+#                                           LIBRARY. ViewSchedule.IsHeaderFrozen
+#                                           is a static switch of the Revit
+#                                           session, not a setting saved in the
+#                                           model. Revit's route: Modify
+#                                           Schedule/Quantities, Freeze Header
+#   "what are the schedule's settings"   -> REPORT_SCHEDULE_DEFINITION
+
+utterances:
+  - hide the schedule title
+  - turn off the schedule headers
+  - turn off the grid lines on the sheet for this schedule
+  - use a different text type for the schedule header
+  - change the body text of the schedule
+  - stripe the schedule rows
+  - include elements in links in this schedule
+  - filter the schedule by sheet
+  - add an embedded schedule
+  - set the schedule row height

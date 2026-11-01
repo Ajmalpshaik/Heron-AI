@@ -1,0 +1,81 @@
+# The proof of SET_SCHEDULE_OPTIONS (set-schedule-options, FRG-VIEW-155) and
+# GROUP_SCHEDULE_HEADERS (group-schedule-headers, FRG-VIEW-156), written
+# 2026-11-01 for FRAGMENT-ISSUES row 5b-1367 - NEEDS-CHECKING Group KK.
+# NOT RUN - written and read back with --dry-run only.
+#
+#     python tools/batch-prove.py tools/jobs/schedule-settings-options-scratch-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/schedule-settings-options-scratch-2026-11-01.yaml
+#
+# WHY. Ajmal PS made a duct length schedule through Heron on his Revit 2020 job
+# model and could not set its Length column to metres, then asked for every
+# schedule setting Heron could not reach. These two tools are the schedule's
+# own switches (Appearance tab and the rest) and grouping column headings.
+#
+# THE MODEL: A NEW PROJECT, NEVER 4355-* nor any project of Ajmal PS's. In
+# Revit 2020: File, New, Project, the default metric template, saved as
+# "Heron Schedules KF Options". MAKE THESE BY HAND FIRST - a setup step that changes
+# the model cannot be given values of its own:
+#
+#   1. Four ducts on Level 1, two sizes
+#   2. View, Schedules, Schedule/Quantities, Ducts, named "HERON KF Duct
+#      Schedule", fields Family and Type, Width, Height, Length - in that
+#      order, none hidden, Show Title and Show Headers ticked, Grid lines on
+#   3. A second duct schedule, "HERON KF Other Schedule", the same fields
+#   4. A sheet "HERON KF Sheet" with HERON KF Duct Schedule placed on it
+#   5. Save, so every run below starts from the same schedules
+#
+# `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
+# Open the schedule's Properties afterwards: Appearance must be as step 2 made
+# it, rather than assuming the rollback held.
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: the expected result filled on the positive, zero on the negative
+#   - NEG NOT EMPTY: the negative changed something. A FAIL - each negative
+#     below asks for a value that must be refused
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   options, positive: changed 3, applied "'HERON KF Duct Schedule': Show
+#     Title yes -> no, Show Headers yes -> no, Grid lines on sheets yes -> no";
+#     HERON KF Other Schedule untouched
+#   options, negative: refused "Show Title takes yes or no, not 'maybe'";
+#     changed 0
+#   headers, positive: grouped 1, applied naming 'Width', 'Height' grouped
+#     under 'Size', the BODY ROW AND COLUMNS it used, and a read back finding
+#     'Size' above them. If it is refused "Revit says the headers ... cannot be
+#     grouped (asked at rows ...)", the row-number assumption is WRONG - record
+#     the numbers it names, do not sign
+#   headers, negative: notPresent naming 'ZZZ No Such Column'; grouped 0
+#
+# THE REST OF GROUP KF FOR THESE TWO IS BY HAND (text types, striped rows,
+# row height on 2024, links, filter by sheet on 2023, embedded schedule on a
+# space schedule, ungroup) - the group's rows say what to look for.
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Heron Schedules KF Options (a NEW project from Revit 2020's default metric template, schedules made by hand as above), Revit 2020
+
+defaults:
+  in: "Heron Schedules KF Options"
+  write: true
+  setup: [select-by-category-name, set-selection]
+  set: {categoryName: "Schedule Graphics", inViewOnly: "HERON KF Sheet"}
+  negative-set: {categoryName: "Schedule Graphics", inViewOnly: "HERON KF Sheet"}
+
+jobs:
+  - fragment: set-schedule-options
+    expect: changed
+    set: {categoryName: "Schedule Graphics", inViewOnly: "HERON KF Sheet", showTitle: "no", showHeaders: "no", gridLinesOnSheets: "no"}
+    negative-set: {categoryName: "Schedule Graphics", inViewOnly: "HERON KF Sheet", showTitle: "maybe"}
+    note: >
+      KF options. Three Appearance switches off on the schedule clicked on the
+      sheet. The negative gives a word that is not yes or no, and must change
+      nothing.
+
+  - fragment: group-schedule-headers
+    expect: grouped
+    set: {categoryName: "Schedule Graphics", inViewOnly: "HERON KF Sheet", fromColumn: "Width", toColumn: "Height", caption: "Size"}
+    negative-set: {categoryName: "Schedule Graphics", inViewOnly: "HERON KF Sheet", fromColumn: "ZZZ No Such Column", toColumn: "Height", caption: "Size"}
+    note: >
+      KF headers. Width and Height grouped under Size. The negative names a
+      column the schedule has not got, and must group nothing.

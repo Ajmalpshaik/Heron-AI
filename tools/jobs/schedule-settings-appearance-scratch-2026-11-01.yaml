@@ -1,0 +1,146 @@
+# The proof of SET_SCHEDULE_APPEARANCE version 5 (set-schedule-appearance,
+# FRG-VIEW-061): a column's own units, its multiple-values text and its cell
+# style. Written 2026-11-01 for FRAGMENT-ISSUES row 5b-1367 - NEEDS-CHECKING
+# Group KK. NOT RUN - written and read back with --dry-run only.
+#
+#     python tools/batch-prove.py tools/jobs/schedule-settings-appearance-scratch-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/schedule-settings-appearance-scratch-2026-11-01.yaml
+#
+# WHY. Ajmal PS made a duct length schedule on his Revit 2020 job model through
+# Heron and could not set its Length column to metres - no tool set a column's
+# units. This proves the version that does, on a scratch project only.
+#
+# THE MODEL: A NEW PROJECT, NEVER 4355-* nor any project of Ajmal PS's. In
+# Revit 2020: File, New, Project, the default metric template, saved as
+# "Heron Schedules KF Appearance". MAKE THIS BY HAND FIRST:
+#
+#   1. Draw four ducts on Level 1 - two of 400x200, two of 600x300, each of a
+#      different length, two of them on a second system type
+#   2. View, Schedules, Schedule/Quantities, Ducts: fields Type, Size, System
+#      Type, Length. Name it "Heron KF Duct Schedule". Leave Length's Field
+#      Format on Use project settings (millimetres, the template's default)
+#   3. A second duct schedule "Heron KF Duct Schedule 2" with Length only - it
+#      shares the body text type with the first, which the style case needs
+#   4. Sheet "KK01 - Heron KF Sheet" with BOTH schedules placed on it
+#   5. Save. Open the sheet before each run - the selection below is the two
+#      schedules on it, by category, in that view
+#
+# `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
+# Open the Formatting tab of Length afterwards: Use project settings must
+# still be ticked, rather than assuming the rollback held.
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: appliedAppearance filled on the positive, empty on the negative
+#   - NEG NOT EMPTY: the negative changed a column. A FAIL - each negative
+#     asks for something this card must refuse
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   units, positive: appliedAppearance on BOTH schedules reading "units
+#     project settings (Millimeters (mm), 0 decimal places) -> Meters (m),
+#     2 decimal places" - then, run kept by hand, the Field Format dialog
+#     reading Meters, 2 decimal places, symbol m, Use project settings unticked
+#   units, negative: refused "'Type' on 'Heron KF Duct Schedule' - units NOT
+#     SET: this column is not a number with units"; appliedAppearance empty
+#   style, positive: "style bold, colour 255 0 0, size 3 mm if feet (Revit's
+#     number ...)". KEPT BY HAND, the column's Font dialog reading 3 mm settles
+#     THE TEXT SIZE ASSUMPTION; any other size is recorded with Revit's number
+#   style, negative: refused naming 'glowing' and the style words; nothing set
+#   multiple values: only on Revit 2022 or later (a copy of the model saved up)
+#     - positive "multiple values custom '-'"; on 2020 the same leg is refused
+#     "it arrived at Revit 2022", which is that release's correct answer
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Heron Schedules KF Appearance (a NEW project from Revit 2020's default metric template, made by hand as above), Revit 2020
+
+defaults:
+  in: "Heron Schedules KF Appearance"
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: set-schedule-appearance
+    write: true
+    expect: appliedAppearance
+    set:
+      categoryName: Schedule Graphics
+      inViewOnly: "KK01 - Heron KF Sheet"
+      fieldName: Length
+      newHeading: ""
+      columnWidthMm: 0
+      alignment: ""
+      headingSideways: false
+      hideOrShow: ""
+      units: "metres, 2 decimal places, m"
+    negative-set:
+      categoryName: Schedule Graphics
+      inViewOnly: "KK01 - Heron KF Sheet"
+      fieldName: Type
+      newHeading: ""
+      columnWidthMm: 0
+      alignment: ""
+      headingSideways: false
+      hideOrShow: ""
+      units: "metres, 2 decimal places, m"
+    note: >
+      KK units. The column's own units, the request Ajmal PS could not make on
+      2026-11-01. The negative names a text column, which has no units and
+      must be refused with nothing changed.
+
+  - fragment: set-schedule-appearance
+    write: true
+    expect: appliedAppearance
+    set:
+      categoryName: Schedule Graphics
+      inViewOnly: "KK01 - Heron KF Sheet"
+      fieldName: Length
+      newHeading: ""
+      columnWidthMm: 0
+      alignment: ""
+      headingSideways: false
+      hideOrShow: ""
+      cellStyle: "bold, colour red, size 3 mm"
+    negative-set:
+      categoryName: Schedule Graphics
+      inViewOnly: "KK01 - Heron KF Sheet"
+      fieldName: Length
+      newHeading: ""
+      columnWidthMm: 0
+      alignment: ""
+      headingSideways: false
+      hideOrShow: ""
+      cellStyle: "glowing"
+    note: >
+      KF cell style. One column's own style override. The negative is a word
+      that is not a style, refused once with nothing written.
+
+  - fragment: set-schedule-appearance
+    write: true
+    expect: appliedAppearance
+    set:
+      categoryName: Schedule Graphics
+      inViewOnly: "KK01 - Heron KF Sheet"
+      fieldName: System Type
+      newHeading: ""
+      columnWidthMm: 0
+      alignment: ""
+      headingSideways: false
+      hideOrShow: ""
+      multipleValues: "custom: -"
+    negative-set:
+      categoryName: Schedule Graphics
+      inViewOnly: "KK01 - Heron KF Sheet"
+      fieldName: System Type
+      newHeading: ""
+      columnWidthMm: 0
+      alignment: ""
+      headingSideways: false
+      hideOrShow: ""
+      multipleValues: "sometimes"
+    note: >
+      KF multiple values - RUN ON REVIT 2022 OR LATER. On Revit 2020 the
+      positive is refused as arriving at 2022, which is correct there and
+      reads as NOT RUN for this case. The negative is a word that is not a
+      multiple-values choice.
