@@ -3948,7 +3948,7 @@ def _read_dashboard(companion_page, origin="chat", ctx=None, parameters="", boar
 
 
 @server.tool()
-def revit_model_dashboard(parameters: str = "", board: str = "",
+def revit_model_dashboard(parameters: str = "", board: str = "", view3d: bool = False,
                           ctx: _Context = None) -> str:
     """
     Open the Model Dashboard in the Heron Companion: element counts by
@@ -3959,7 +3959,8 @@ def revit_model_dashboard(parameters: str = "", board: str = "",
     overview" or "how is this model doing". `parameters`, comma separated,
     adds how many elements have each one filled, empty or missing - "Mark,
     Fire Rating". `board` adds one board's charts: rooms, doors, walls,
-    structure, mep, fire or phases. You are told one line; the charts and
+    structure, mep, fire or phases. `view3d` adds a 3D view of the active 3D
+    view's elements. You are told one line; the charts and
     lists are on the page, and its Refresh reads the model again. It counts
     what the model holds and never calls a model compliant.
     """
@@ -3972,6 +3973,9 @@ def revit_model_dashboard(parameters: str = "", board: str = "",
     ended, said = _read_dashboard(companion_page, ctx=ctx, parameters=parameters, board=board)
     if ended != "ok":
         return _ended(ended, said)
+    if view3d:
+        ended3d, said3d = _read_view3d(companion_page, ctx=ctx)
+        said = "%s\n%s" % (said, said3d if ended3d == "ok" else "The 3D view was not made: " + said3d)
     _ended("ok")
     _open_companion(companion_page)
     return said
@@ -4027,6 +4031,44 @@ def _dashboard_show(action, ids, identity=None):
     ok = out.get("ended") == "ok"
     _note(tool, started, time.time() - clock, reply=said, outcome=None if ok else "refused")
     return {"ok": ok, "said": said}
+
+
+def _read_view3d(companion_page, whole=False, origin="chat", ctx=None):
+    """
+    One read of the model's shapes for the Model Dashboard's 3D view (docs/40
+    s21.13): READ REPORT_MODEL_GEOMETRY through revit_read - the active 3D
+    view, or the whole model - check it in the brain, and hold it on the page.
+    Returns (ended, said), as _read_dashboard does.
+    """
+    out = {}
+    said = _through(revit_read, reply_out=out, origin=origin)(
+        "REPORT_MODEL_GEOMETRY", "wholeModel=true" if whole else "", "", ctx=ctx)
+    reply = out.get("reply")
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return out.get("ended"), said
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return "refused", wrong_model
+    try:
+        answer = brain.model_view((reply.get("provides") or {}).get("geometryJson") or "")
+    except brain.BrainUnavailable as why:
+        return "failed", str(why)
+    if answer.get("view") is None:
+        return "failed", answer["said"]
+    companion_page.DASHBOARD_PANEL.set_view(answer, _pin_identity())
+    return "ok", answer["said"]
+
+
+def _dashboard_load3d(whole=False):
+    """The 3D view's Load, pressed on the page: under the lock every tool
+    call holds, never on a timer. Returns {"ok", "said"}."""
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    companion_page = _companion_module()
+    with _revit_lock:
+        ended, said = _read_view3d(companion_page, whole=whole, origin="companion")
+    _note("companion_dashboard_3d", started, time.time() - clock, reply=said,
+          outcome=None if ended == "ok" else "refused")
+    return {"ok": ended == "ok", "said": said}
 
 
 def _dashboard_demo():
@@ -7397,6 +7439,7 @@ if __name__ == "__main__":
             companion_page.DASHBOARD_PANEL.refresh_hook = _dashboard_refresh
             companion_page.DASHBOARD_PANEL.show_hook = _dashboard_show
             companion_page.DASHBOARD_PANEL.demo_hook = _dashboard_demo
+            companion_page.DASHBOARD_PANEL.load3d_hook = _dashboard_load3d
             companion_page.keep(bound_pid=_companion_revit)
         except Exception as why:                         # noqa: BLE001 - never cost the chat
             sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)

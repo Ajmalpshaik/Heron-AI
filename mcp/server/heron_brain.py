@@ -2679,3 +2679,23 @@ def model_dashboard_demo():
                                "nothing beyond Python itself, so this is a broken install."
                                % exc)
     return DASH.demo()
+
+
+def model_view(geometry_json):
+    """
+    The Model Dashboard's 3D view from REPORT_MODEL_GEOMETRY's geometryJson -
+    docs/40 s21.13. Returns {"view", "said"}; "view" is None, and "said" says
+    why, when the geometry could not be used - a damaged read is refused
+    whole, never drawn half right. It reads only.
+    """
+    try:
+        import heron_model_view as VIEW
+    except ImportError as exc:
+        raise BrainUnavailable("Heron's 3D view could not be imported: %s. It needs nothing "
+                               "beyond Python itself, so this is a broken install." % exc)
+    got = VIEW.view(geometry_json)
+    _audit().record("qa.model_view", got.get("view") is not None,
+                    fields={"status": "ok" if got.get("view") is not None else "unreadable"},
+                    numbers={"drawn": got["view"]["drawn"], "left_out": got["view"]["leftOut"]}
+                    if got.get("view") else {})
+    return got
