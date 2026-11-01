@@ -1090,6 +1090,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jt.md`](needs-checking/group-jt.md)
 
+## Group JU - the model's 3D geometry as triangles for the Companion's 3D model view: `REPORT_MODEL_GEOMETRY` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-ju.md`](needs-checking/group-ju.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
