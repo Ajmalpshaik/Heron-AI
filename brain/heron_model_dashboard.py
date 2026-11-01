@@ -195,6 +195,18 @@ def read(text):
             if not any(n.lower().startswith(part) for n in out["notRead"]):
                 out["notRead"].append("%s: not in what Revit sent" % part)
     out["capped"] = _names(data.get("capped"))
+    # THE FILL-RATE, only when parameters were asked for. null is "not asked
+    # or not read" - which of the two, notRead says - never zeros.
+    fill = data.get("fill")
+    if isinstance(fill, dict):
+        out["fill"] = {
+            "parameters": _names(fill.get("parameters")),
+            "rows": [{"category": _text(r.get("category")), "parameter": _text(r.get("parameter")),
+                      "populated": _int(r.get("populated")), "empty": _int(r.get("empty")),
+                      "absent": _int(r.get("absent")), "emptyIds": _ids(r.get("emptyIds"))}
+                     for r in _rows(fill, "rows")]}
+    else:
+        out["fill"] = None
     return out
 
 
@@ -406,12 +418,61 @@ def look_at(data):
     return sorted(rows, key=lambda r: order[r["state"]])
 
 
+def fill(data):
+    """
+    Each parameter asked for, category by category, in heron_modelqa's three
+    states - populated, empty, absent - with the share filled. EMPTY and
+    ABSENT ARE NEVER ONE NUMBER: empty is a value nobody typed; absent is a
+    parameter the category does not carry, a different afternoon's work.
+    Returns None when no parameter was asked for.
+    """
+    got = data.get("fill")
+    if not got:
+        return None
+    out = []
+    for name in got["parameters"]:
+        rows = []
+        for r in got["rows"]:
+            if r["parameter"].lower() != name.lower():
+                continue
+            total = r["populated"] + r["empty"] + r["absent"]
+            share = int(round(100.0 * r["populated"] / total)) if total else 0
+            rows.append(dict(r, total=total, share=share,
+                             state="look" if r["empty"] else ("info" if r["absent"] else "ok")))
+        rows.sort(key=lambda r: (-r["empty"], r["category"]))
+        out.append({"parameter": name, "rows": rows,
+                    "populated": sum(r["populated"] for r in rows),
+                    "empty": sum(r["empty"] for r in rows),
+                    "absent": sum(r["absent"] for r in rows)})
+    return {"parameters": out}
+
+
+def _fill_rows(board_fill):
+    """One worth-a-look row per parameter left empty, its ids for Select."""
+    rows = []
+    for p in (board_fill or {}).get("parameters") or []:
+        ids = [i for r in p["rows"] for i in r["emptyIds"]][:IDS_MAX]
+        cats = [r["category"] for r in p["rows"] if r["empty"]]
+        where = ", ".join(cats[:4]) + (" and %d more" % (len(cats) - 4) if len(cats) > 4 else "")
+        rows.append(_look("fill:" + p["parameter"], "'%s' empty" % p["parameter"], p["empty"],
+                          ("The parameter is there and nobody typed a value - in %s. Schedules "
+                           "and tags show it blank." % where) if cats else
+                          "No counted element has it blank.",
+                          "a schedule of those categories with '%s' as a field, filtered blank"
+                          % p["parameter"], ids=ids))
+    return rows
+
+
 def build(data):
     """The panel's whole content from read()'s result."""
+    board_fill = fill(data)
     rows = look_at(data)
+    if board_fill:
+        order = {"look": 0, "info": 1, "ok": 2, "not read": 3}
+        rows = sorted(_fill_rows(board_fill) + rows, key=lambda r: order[r["state"]])
     return {"format": FORMAT, "model": dict(data["model"]), "tiles": tiles(data),
             "charts": charts(data), "look": rows, "notRead": list(data["notRead"]),
-            "capped": list(data.get("capped") or []),
+            "capped": list(data.get("capped") or []), "fill": board_fill,
             "states": [{"key": k, "colour": c, "means": m} for k, c, m in STATES],
             "said": summary(data, rows)}
 

@@ -1297,10 +1297,11 @@ class DashboardPanel(object):
         self.refresh_hook = None
         self.show_hook = None
 
-    def open(self, document, answer, identity=None):
+    def open(self, document, answer, identity=None, parameters=""):
         board = answer.get("dashboard") or {}
         with self._lock:
             self._held = {
+                "parameters": parameters or "", "fill": board.get("fill"),
                 "document": document, "at": time.strftime("%H:%M:%S"),
                 "identity": list(identity) if identity else None,
                 "model": board.get("model") or {}, "tiles": board.get("tiles") or [],
@@ -1316,16 +1317,21 @@ class DashboardPanel(object):
             held = dict(self._held, busy=self._busy)
         return json.loads(json.dumps(held))
 
-    def refresh(self):
+    def refresh(self, body=None):
+        """Read the model again. `body` may carry "parameters", the names to
+        count filled - typed on the page; left out, the last read's are kept."""
         hook = self.refresh_hook
         if hook is None:
             return {"ok": False, "said": "Not read: %s." % self.GONE}
         with self._lock:
             if self._busy:
                 return {"ok": False, "said": "Not read: %s." % self.BUSY}
+            wanted = (body or {}).get("parameters") if isinstance(body, dict) else None
+            if not isinstance(wanted, str):
+                wanted = (self._held or {}).get("parameters") or ""
             self._busy = True
         try:
-            got = hook() or {}
+            got = hook(wanted[:600]) or {}
         finally:
             with self._lock:
                 self._busy = False
@@ -1976,7 +1982,12 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             why = self._api_ok()
             if why:
                 return self._refuse(403, why)
-            return self._json(200, DASHBOARD_PANEL.refresh())
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 4096)
+                body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except (ValueError, UnicodeDecodeError):
+                return self._refuse(400, "unreadable")
+            return self._json(200, DASHBOARD_PANEL.refresh(body))
         if path == "/api/dashboard/show":
             why = self._api_ok()
             if why:

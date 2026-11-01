@@ -3904,7 +3904,7 @@ def revit_sprinkler_layout(spaces: str = "", inputs: str = "", ctx: _Context = N
     return answer["said"]
 
 
-def _read_dashboard(companion_page, origin="chat", ctx=None):
+def _read_dashboard(companion_page, origin="chat", ctx=None, parameters=""):
     """
     One read of the model for the Model Dashboard (docs/40 s21.10): READ
     REPORT_MODEL_DASHBOARD through revit_read - no transaction, the chat's
@@ -3913,8 +3913,10 @@ def _read_dashboard(companion_page, origin="chat", ctx=None):
     (row 5b-389), and the sentence to give.
     """
     out = {}
+    wanted = ", ".join(p.strip() for p in (parameters or "").replace(";", ",").split(",")
+                       if p.strip())
     said = _through(revit_read, reply_out=out, origin=origin)(
-        "REPORT_MODEL_DASHBOARD", "", "", ctx=ctx)
+        "REPORT_MODEL_DASHBOARD", ("parameters=" + wanted) if wanted else "", "", ctx=ctx)
     reply = out.get("reply")
     if not isinstance(reply, dict) or not reply.get("ok"):
         return out.get("ended"), said
@@ -3930,21 +3932,24 @@ def _read_dashboard(companion_page, origin="chat", ctx=None):
         return "failed", str(why)
     if answer.get("dashboard") is None:
         return "failed", answer["said"]
-    companion_page.DASHBOARD_PANEL.open(reply.get("document"), answer, _pin_identity())
+    companion_page.DASHBOARD_PANEL.open(reply.get("document"), answer, _pin_identity(),
+                                        parameters=wanted)
     return "ok", answer["said"]
 
 
 @server.tool()
-def revit_model_dashboard(ctx: _Context = None) -> str:
+def revit_model_dashboard(parameters: str = "", ctx: _Context = None) -> str:
     """
     Open the Model Dashboard in the Heron Companion: element counts by
     category, level and workset, warnings by kind, views, sheets, families,
     links, CAD and rooms - and the things worth a look, each with its element
     ids. Heron reads the model once (REPORT_MODEL_DASHBOARD, which changes
     nothing). Use when the user asks for a "model dashboard", "model
-    overview" or "how is this model doing". You are told one line; the
-    charts and lists are on the page, and its Refresh reads the model again.
-    It counts what the model holds and never calls a model compliant.
+    overview" or "how is this model doing". `parameters`, comma separated,
+    adds how many elements have each one filled, empty or missing - "Mark,
+    Fire Rating". You are told one line; the charts and lists are on the
+    page, and its Refresh reads the model again. It counts what the model
+    holds and never calls a model compliant.
     """
     companion_page = _companion_module()
     if not companion_page.enabled():
@@ -3952,7 +3957,7 @@ def revit_model_dashboard(ctx: _Context = None) -> str:
         return ("The Heron Companion is switched off in Revit, so the model was not read. "
                 "To turn it on, click the arrow under the Companion button on the "
                 "Heron tab.")
-    ended, said = _read_dashboard(companion_page, ctx=ctx)
+    ended, said = _read_dashboard(companion_page, ctx=ctx, parameters=parameters)
     if ended != "ok":
         return _ended(ended, said)
     _ended("ok")
@@ -4012,7 +4017,7 @@ def _dashboard_show(action, ids, identity=None):
     return {"ok": ok, "said": said}
 
 
-def _dashboard_refresh():
+def _dashboard_refresh(parameters=""):
     """
     The Model Dashboard's Refresh, pressed on the page: the same read as
     revit_model_dashboard, from the page's thread, under the lock every tool
@@ -4022,7 +4027,8 @@ def _dashboard_refresh():
     started, clock = time.strftime("%H:%M:%S"), time.time()
     companion_page = _companion_module()
     with _revit_lock:
-        ended, said = _read_dashboard(companion_page, origin="companion")
+        ended, said = _read_dashboard(companion_page, origin="companion",
+                                      parameters=parameters)
     _note("companion_dashboard", started, time.time() - clock, reply=said,
           outcome=None if ended == "ok" else "refused")
     return {"ok": ended == "ok", "said": said}

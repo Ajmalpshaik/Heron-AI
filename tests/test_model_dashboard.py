@@ -206,6 +206,39 @@ def test_said_is_one_line_and_says_nothing_changed():
     assert "31 warnings (1 error)" in said
 
 
+FILL = {"parameters": ["Mark", "Fire Rating"], "rows": [
+    {"category": "Doors", "parameter": "Mark", "populated": 8, "empty": 2, "absent": 0,
+     "emptyIds": ["701", "702"]},
+    {"category": "Walls", "parameter": "Mark", "populated": 10, "empty": 0, "absent": 0,
+     "emptyIds": []},
+    {"category": "Doors", "parameter": "Fire Rating", "populated": 0, "empty": 0, "absent": 10,
+     "emptyIds": []}]}
+
+
+def test_no_parameters_asked_means_no_fill():
+    board = built()
+    assert board["fill"] is None
+    assert not [r for r in board["look"] if r["key"].startswith("fill:")]
+
+
+def test_fill_keeps_empty_and_absent_apart():
+    board = built(fill=FILL)
+    mark, fire = board["fill"]["parameters"]
+    assert (mark["populated"], mark["empty"], mark["absent"]) == (18, 2, 0)
+    assert mark["rows"][0]["category"] == "Doors" and mark["rows"][0]["share"] == 80
+    assert mark["rows"][0]["state"] == "look"
+    assert (fire["empty"], fire["absent"]) == (0, 10) and fire["rows"][0]["state"] == "info"
+    row_ = row(board, "fill:Mark")
+    assert row_["count"] == 2 and row_["ids"] == ["701", "702"] and row_["state"] == "look"
+    assert row(board, "fill:Fire Rating")["state"] == "ok"
+
+
+def test_fill_not_read_is_null_not_zero():
+    board = built(fill=None, notRead=["fill: the parameters could not be read"])
+    assert board["fill"] is None
+    assert "fill: the parameters could not be read" in board["notRead"]
+
+
 def test_imports_only_the_standard_library():
     allowed = set(getattr(sys, "stdlib_module_names", ())) or {"json"}
     tree = ast.parse(open(os.path.join(ROOT, "brain", "heron_model_dashboard.py")).read())

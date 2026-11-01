@@ -1413,10 +1413,11 @@ def test_dashboard_panel():
     check(shown["document"] == "Tower MEP" and shown["tiles"] and shown["charts"]
           and shown["look"] and shown["states"] and shown["busy"] is False,
           "the panel shows the brain's tiles, charts, rows and colours as they came")
-    calls = []
+    calls, asked = [], []
 
-    def hook():
+    def hook(parameters):
         calls.append(panel.current()["busy"])
+        asked.append(parameters)
         check(panel.refresh()["said"] == "Not read: %s." % hc.DashboardPanel.BUSY,
               "a second Refresh while one reads is told so and reads nothing")
         return {"ok": True, "said": "read again"}
@@ -1424,8 +1425,14 @@ def test_dashboard_panel():
     check(panel.refresh() == {"ok": True, "said": "read again"} and calls == [True],
           "Refresh calls the hook once, marked busy while it runs")
     check(panel.current()["busy"] is False, "busy is cleared after the read")
+    panel.refresh({"parameters": "Mark, Fire Rating"})
+    panel.open("Tower MEP", answer, ("Tower MEP", "", "11"), parameters="Mark, Fire Rating")
+    panel.refresh({})
+    check(asked == ["", "Mark, Fire Rating", "Mark, Fire Rating"],
+          "Refresh carries the parameters typed on the page, and keeps the last read's "
+          "when none are sent - found %r" % (asked,))
 
-    def broken():
+    def broken(_parameters):
         raise RuntimeError("Revit closed")
     panel.refresh_hook = broken
     try:

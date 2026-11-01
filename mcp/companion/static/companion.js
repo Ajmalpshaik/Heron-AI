@@ -1543,7 +1543,7 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 
 function dashColour(c, fallback) { return HEX.test(String(c || "")) ? c : fallback; }
 
-async function dashRefresh(button, said) {
+async function dashRefresh(button, said, parameters) {
   if (dashBusy) return;
   dashBusy = true;
   button.disabled = true;
@@ -1554,7 +1554,7 @@ async function dashRefresh(button, said) {
       method: "POST",
       headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
       credentials: "same-origin",
-      body: "{}",
+      body: JSON.stringify(parameters == null ? {} : { parameters: parameters }),
     });
     const answer = await res.json();
     said.className = answer.ok ? "result ok" : "result failed";
@@ -1664,12 +1664,69 @@ function dashChart(c) {
   return box;
 }
 
+// The fill-rate: each parameter asked for, by category - filled, empty and
+// missing kept apart, as the brain sent them.
+function dashFill(F, colours) {
+  const sec = el("section", "d-fill");
+  sec.append(el("h3", "d-sub", "Parameters filled"));
+  (F.parameters || []).forEach(p => {
+    const box = el("figure", "d-chart");
+    box.append(el("figcaption", "d-chart-title",
+      p.parameter + " - " + num(p.populated, 0) + " filled · " + num(p.empty, 0) + " empty · " +
+      num(p.absent, 0) + " without it"));
+    const table = el("table", "d-fill-table");
+    const head = el("tr");
+    ["Category", "", "Filled", "Empty", "Without it"].forEach(h => head.append(el("th", null, h)));
+    const thead = el("thead");
+    thead.append(head);
+    const body = el("tbody");
+    (p.rows || []).forEach(r => {
+      const tr = el("tr");
+      tr.style.borderLeft = "4px solid " + dashColour(colours[r.state], "#7a8796");
+      const track = el("span", "d-bar-track");
+      const fill = el("i", "d-bar-fill");
+      fill.style.width = Math.max(0, Math.min(100, Number(r.share) || 0)) + "%";
+      fill.style.background = dashColour(colours.ok, "#5aa469");
+      track.append(fill);
+      const bar = el("td");
+      bar.append(track);
+      tr.append(el("td", null, r.category), bar, el("td", "d-num", num(r.share, 0) + "%"),
+                el("td", "d-num", num(r.empty, 0)), el("td", "d-num", num(r.absent, 0)));
+      body.append(tr);
+    });
+    if (!(p.rows || []).length) {
+      const tr = el("tr");
+      const td = el("td", "muted", "No counted element was found with it or without it.");
+      td.colSpan = 5;
+      tr.append(td);
+      body.append(tr);
+    }
+    table.append(thead, body);
+    box.append(table);
+    sec.append(box);
+  });
+  return sec;
+}
+
+function dashFilter(text, state) {
+  const words = String(text || "").trim().toLowerCase();
+  document.querySelectorAll("#dashboard .d-bar, #dashboard .d-fill-table tbody tr").forEach(n => {
+    n.hidden = !!words && !n.textContent.toLowerCase().includes(words);
+  });
+  document.querySelectorAll("#dashboard .d-look-row").forEach(n => {
+    const byWords = !words || n.textContent.toLowerCase().includes(words);
+    const byState = !state || n.dataset.state === state;
+    n.hidden = !(byWords && byState);
+  });
+}
+
 function dashLook(D, colours) {
   const sec = el("section", "d-look");
   sec.append(el("h3", "d-sub", "Worth a look"));
   const list = el("ol", "d-look-list");
   (D.look || []).forEach(r => {
     const li = el("li", "d-look-row");
+    li.dataset.state = r.state || "";
     li.style.borderLeftColor = dashColour(colours[r.state], "#7a8796");
     const head = el("div", "d-look-head");
     head.append(el("span", "d-look-title", r.title),
@@ -1733,13 +1790,38 @@ function renderDashboard(D) {
   said.id = "d-said";
   said.setAttribute("role", "status");
   said.setAttribute("aria-live", "polite");
-  refresh.addEventListener("click", () => dashRefresh(refresh, said));
+  const params = el("input", "d-params");
+  params.type = "text";
+  params.value = D.parameters || "";
+  params.placeholder = "Parameters to check filled, e.g. Mark, Fire Rating";
+  params.setAttribute("aria-label", "Parameters to check filled, comma separated");
+  params.addEventListener("keydown", e => { if (e.key === "Enter") dashRefresh(refresh, said, params.value); });
+  refresh.addEventListener("click", () => dashRefresh(refresh, said, params.value));
   const reset = el("button", "btn-lite", "Reset isolate");
   reset.type = "button";
   reset.title = "End the Temporary Hide/Isolate in Revit's active view";
   reset.addEventListener("click", () => dashShow("reset", null, reset));
-  tools.append(refresh, reset, said);
-  box.append(meta, tools, dashTiles(D, colours));
+  tools.append(params, refresh, reset, said);
+  // THE FILTER is the page's own: it hides rows and bars whose words do not
+  // match, on what the brain already sent - nothing is read from Revit.
+  const filterBox = el("div", "d-filter");
+  const filter = el("input", "d-params");
+  filter.type = "search";
+  filter.placeholder = "Filter the bars and rows - a category, a level, a word";
+  filter.setAttribute("aria-label", "Filter the bars and rows");
+  const states = el("select", "d-states");
+  states.setAttribute("aria-label", "Show rows");
+  [["", "Every row"], ["look", "Worth a look only"], ["info", "Counts only"], ["ok", "None found"],
+   ["not read", "Not read"]].forEach(([v, t]) => {
+    const o = el("option", null, t);
+    o.value = v;
+    states.append(o);
+  });
+  const apply = () => dashFilter(filter.value, states.value);
+  filter.addEventListener("input", apply);
+  states.addEventListener("change", apply);
+  filterBox.append(filter, states);
+  box.append(meta, tools, dashTiles(D, colours), filterBox);
   if ((D.notRead || []).length) {
     const nr = el("div", "d-notread");
     nr.append(el("strong", null, "Not read from the model: "));
@@ -1754,7 +1836,9 @@ function renderDashboard(D) {
   }
   const charts = el("div", "d-charts");
   (D.charts || []).forEach(c => charts.append(dashChart(c)));
-  box.append(charts, dashLook(D, colours));
+  box.append(charts);
+  if (D.fill) box.append(dashFill(D.fill, colours));
+  box.append(dashLook(D, colours));
   const legend = el("ul", "d-legend");
   (D.states || []).forEach(s => {
     const li = el("li");
