@@ -797,10 +797,11 @@ def need_notes(path):
     A TYPE HINT CANNOT CARRY A SYNTAX, AND THE CARD ALREADY DOES. how_to_type
     says how to write a `double` or a list; it has nothing to say about a
     `string` (NO_HINT_ON_PURPOSE), and for most strings that is right. For some
-    it is the whole job: CREATE_FAMILY_EXTRUSION's `profile` is "loops with `|`
-    between - circle CX,CY R, rect X1,Y1 X2,Y2 ... in the plane's two model
-    coordinates", and that sentence sits in the comment above the need, where
-    yaml.safe_load drops it. On 2026-10-09 a chat building a fire alarm panel
+    it is the whole job: CREATE_FAMILY_FORMS' `forms` is rows whose profile is
+    "loops with `|` between - circle CX,CY R, rect X1,Y1 X2,Y2 ... in the
+    plane's two model coordinates" (CREATE_FAMILY_EXTRUSION's `profile`, when
+    that was a card of its own), and that sentence sits in the comment above
+    the need, where yaml.safe_load drops it. On 2026-10-09 a chat building a fire alarm panel
     was told only `profile  string`, called the capability empty to find out,
     was refused, and then read brain/fragments/*/fragment.yaml to learn the
     syntax - the file-reading AGENTS.md forbids for a Revit job, about a minute

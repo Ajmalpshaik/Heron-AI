@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,31 @@ capability: LINK_FAMILY_FORM_PARAMETER
 version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO LINK_FAMILY_PARAMETER (link-family-parameter), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to LINK_FAMILY_PARAMETER. The proof below is the record of what this
+# card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: LINK_FAMILY_PARAMETER
+  why: >
+    The same button - Associate Family Parameter - on particular forms and
+    nested copies. LINK_FAMILY_PARAMETER is the one tool for it since its
+    version 3: forms= the ids the form tools or PLACE_NESTED_FAMILY gave back,
+    or selected, links each one alone - a form's Visible, a revolve's angles, an
+    extrusion's ends, one nested copy's instance fields, its other copies
+    untouched. Every rule of this card's is there: anything that is not a form
+    or a nested copy refuses the call; a TYPE parameter of a copy is refused
+    naming family= and type=, which that card now takes; a reporting parameter
+    is refused; every link is read back. Not carried: this card's refusal of a
+    form's Material, which existed only because SET_FAMILY_FORM_MATERIAL owned
+    it - that card was merged into the same tool.
 
 purpose: >
   LINKS a particular form's own fields to the family's parameters, in the

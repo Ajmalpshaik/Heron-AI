@@ -155,7 +155,7 @@ compatibility-note: >
 #
 #   "set the flow on these diffusers"              -> here
 #   "update the air terminal flow from this file"  -> here
-#   "how much air does each space get"             -> REPORT_SPACE_AIRFLOW, a read
+#   "how much air does each space get"             -> READ_SPACE_LOADS, a read
 #   "set the space's supply airflow"               -> IMPORT_PARAMETER_VALUES - a
 #                                                     space has one parameter by
 #                                                     that name

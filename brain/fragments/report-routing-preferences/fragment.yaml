@@ -140,9 +140,9 @@ compatibility-note: >
 #   "make a new system type"            -> CREATE_MEP_SYSTEM_TYPE - a WRITE, and
 #                                          what both these questions resolved to
 #                                          until 2026-09-05
-#   "draw a pipe"                       -> CREATE_PIPE. Check this FIRST when
+#   "draw a pipe"                       -> CREATE_DUCT_RUNS. Check this FIRST when
 #                                          drawing with a type you did not build
-#   "put a fitting in here"             -> PLACE_MEP_FITTING - one fitting, by
+#   "put a fitting in here"             -> FIT_MEP_JOINTS - one fitting, by
 #                                          hand, rather than the table that
 #                                          decides them automatically
 #   "the run is not connected"          -> FIND_DEAD_ENDS. A missing routing rule

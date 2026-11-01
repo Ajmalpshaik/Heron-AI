@@ -144,7 +144,7 @@ compatibility-note: >
 # on "a duct type cannot serve a piping system"; the pairing is checked before
 # Revit is asked, so a refusal from Create is now reported as Revit said it.
 
-# ROUTING - cross-referenced in CREATE_PIPE, CREATE_DUCT_RUNS and
+# ROUTING - cross-referenced in CREATE_DUCT_RUNS and
 # CONNECT_AIR_TERMINALS.
 #
 #   "run a flexible pipe to that sprinkler"  -> here
@@ -152,7 +152,8 @@ compatibility-note: >
 #   "make the flex drop to that diffuser"    -> here - with a flex DUCT type, on
 #                                               an air system
 #   "run flex to that diffuser"              -> here, the same
-#   "draw pipe between these points"         -> CREATE_PIPE, which makes RIGID pipe
+#   "draw pipe between these points"         -> CREATE_DUCT_RUNS, which makes RIGID
+#                                               pipe (CREATE_PIPE until 2026-11-01)
 #   "draw duct along these points"           -> CREATE_DUCT_RUNS, which makes
 #                                               RIGID duct
 #   "connect the terminal to the duct"       -> CONNECT_AIR_TERMINALS. This one

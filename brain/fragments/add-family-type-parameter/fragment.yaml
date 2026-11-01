@@ -112,7 +112,7 @@ compatibility-note: >
 #
 #   "let each type choose which motor it uses"    -> here
 #   "make the nested family swappable by type"    -> here
-#   "link the motor type's width to Motor Width"  -> LINK_NESTED_TYPE_PARAMETER -
+#   "link the motor type's width to Motor Width"  -> LINK_FAMILY_PARAMETER -
 #                                                    a nested TYPE's parameter
 #   "put the motor family into this air handler"  -> PLACE_NESTED_FAMILY
 

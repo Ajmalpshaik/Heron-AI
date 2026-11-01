@@ -118,7 +118,7 @@ compatibility-note: >
 # ROUTING - repeated in REPORT_FAMILY_TABLES_IN_PROJECT.
 #
 #   "open that family so we can fix it" -> here
-#   "what is in its lookup table"       -> REPORT_FAMILY_SIZE_TABLE, once it
+#   "what is in its lookup table"       -> REPORT_FAMILY_TABLES_IN_PROJECT, once it
 #                                          is in front
 #   "write the table back"              -> WRITE_FAMILY_SIZE_TABLE, same
 #   "read every family's table"         -> REPORT_FAMILY_TABLES_IN_PROJECT,

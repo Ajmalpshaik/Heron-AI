@@ -125,7 +125,7 @@ compatibility-note: >
 #    connected"                      -> CONNECT_OPEN_ENDS - that is MEP
 #                                       CONNECTORS on ducts and pipes, and it
 #                                       can do nothing for a wall
-#   "join these two ducts"           -> PLACE_MEP_FITTING
+#   "join these two ducts"           -> FIT_MEP_JOINTS
 #   "what is clashing"               -> FIND_CLASHES - it REPORTS an overlap.
 #                                       Joining is what makes two elements
 #                                       agree about which one cuts the other

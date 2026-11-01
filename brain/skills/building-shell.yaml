@@ -249,7 +249,9 @@ purpose: >
          X,Y,Z are the project's. A path that runs into itself is refused by
          name. The form is fixed, not parametric: to change it, make it
          again.
-      c. SET_FAMILY_FORM_MATERIAL (PROVEN) on the forms by the ids b gave
+      c. LINK_FAMILY_PARAMETER, links Material=<it>, on the forms by the ids b gave
+         (SET_FAMILY_FORM_MATERIAL, PROVEN, until it was merged in on 2026-11-01;
+         LINK_FAMILY_PARAMETER is DRAFT at its version 3)
          back, to a material the family holds or a family material
          parameter - read from the family, never guessed.
       d. The modeller saves the family: a click inside Revit first, so the
@@ -386,7 +388,7 @@ needs:
   - CREATE_FAMILY_DOCUMENT
   - ACTIVATE_DOCUMENT
   - CREATE_FAMILY_FREEFORM_SOLID
-  - SET_FAMILY_FORM_MATERIAL
+  - LINK_FAMILY_PARAMETER
   - PLACE_FAMILY_INSTANCES
   # A beam between two points - step 14; never the point-based placement.
   - PLACE_LINE_BASED_FAMILY

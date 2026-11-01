@@ -24,7 +24,7 @@ purpose: >
   when the table it names is not in the family, or the column it asks for is
   not in that table. The family then builds at the default size, Revit says
   nothing, and the first sign is a fitting the wrong size in a project weeks
-  later. Reading the table alone (REPORT_FAMILY_SIZE_TABLE) cannot see this:
+  later. Reading the table alone (REPORT_FAMILY_TABLES_IN_PROJECT) cannot see this:
   the table is fine, it is the formula's way to it that is broken.
 
   **THE TABLE NAME IS READ PER TYPE.** The first argument of size_lookup is a
@@ -135,13 +135,13 @@ compatibility-note: >
   read 6.350000), not on every release; and whether Revit's own match uses
   the same tolerance is not established.
 
-# ROUTING - repeated in REPORT_FAMILY_SIZE_TABLE and
-# REPORT_FAMILY_TABLES_IN_PROJECT. Each sentence below measured through the
+# ROUTING - repeated in REPORT_FAMILY_TABLES_IN_PROJECT (and in
+# REPORT_FAMILY_SIZE_TABLE until it was merged into that card). Each sentence below measured through the
 # host lookup on 2026-10-12.
 #
 #   "check the lookup tables in this family" -> here - formulas against
 #                                               tables, in the family in front
-#   "what is in this family's lookup table"  -> REPORT_FAMILY_SIZE_TABLE - the
+#   "what is in this family's lookup table"  -> REPORT_FAMILY_TABLES_IN_PROJECT - the
 #                                               rows, no verdict
 #   "check the lookup tables of all the families"
 #                                            -> REPORT_FAMILY_TABLES_IN_PROJECT,

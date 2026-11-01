@@ -67,10 +67,10 @@ flowchart TD
     S2["<b>2-4 · Parameters, the first type, formulas</b><br/>ADD_FAMILY_PARAMETERS · SET_FAMILY_TYPE_VALUES · SET_FAMILY_FORMULA"]
     S5["<b>5-6 · The skeleton</b><br/>CREATE_REFERENCE_PLANES · SET_FAMILY_PLANE_REFERENCE · LABEL_FAMILY_DIMENSION"]
     S7["<b>7 · The forms, one group of parts at a time</b><br/>CREATE_FAMILY_FORMS · EXTRUDE_BETWEEN_PLANES · revolve · blend · sweep"]
-    S8["<b>8-9 · Lock the faces, label round sizes</b><br/>LOCK_FORM_TO_PLANES · LINK_FAMILY_FORM_PARAMETER · LABEL_FAMILY_RADIUS"]
+    S8["<b>8-9 · Lock the faces, label round sizes</b><br/>LOCK_FORM_TO_PLANES · LINK_FAMILY_PARAMETER · LABEL_FAMILY_RADIUS"]
     S10["<b>10 · Voids, joins, arrays</b><br/>COMBINE_FAMILY_FORMS · ARRAY_FAMILY_FORMS"]
     S11["<b>11 · Connectors and nested parts</b><br/>ADD_FAMILY_CONNECTOR · SET_FAMILY_CONNECTOR_ROLES · LOAD_FAMILY · PLACE_NESTED_FAMILY"]
-    S12["<b>12 · Materials, subcategories, visibility</b><br/>SET_FAMILY_FORM_MATERIAL · SET_FAMILY_FORM_SUBCATEGORY · SET_FAMILY_FORM_VISIBILITY"]
+    S12["<b>12 · Materials, subcategories, visibility</b><br/>LINK_FAMILY_PARAMETER · SET_FAMILY_FORM_SUBCATEGORY · SET_FAMILY_FORM_VISIBILITY"]
     S13["<b>13 · Read it back, then look at it</b><br/>REPORT_FAMILY_FORMS · revit_view_image"]
     S14["<b>14-15 · Flex it, then a type catalog</b><br/>FLEX_FAMILY · REPORT_FAMILY_TYPE_CATALOG"]
     SV(["<b>The modeller saves it</b> · Ctrl+S"])
@@ -102,11 +102,11 @@ steps 0, 1, 7, 10, 11, 12 and 13 only - the dotted arrows. What the newer tools 
  2-4   parameters, first type, formulas  ADD_FAMILY_PARAMETERS, SET_FAMILY_TYPE_VALUES, SET_FAMILY_FORMULA
  5-6   the skeleton                   CREATE_REFERENCE_PLANES, SET_FAMILY_PLANE_REFERENCE, LABEL_FAMILY_DIMENSION
  7     the forms, group by group      CREATE_FAMILY_FORMS, EXTRUDE_BETWEEN_PLANES, revolve, blend, sweep
- 8-9   lock faces, label round sizes  LOCK_FORM_TO_PLANES, LINK_FAMILY_FORM_PARAMETER, LABEL_FAMILY_RADIUS
+ 8-9   lock faces, label round sizes  LOCK_FORM_TO_PLANES, LINK_FAMILY_PARAMETER, LABEL_FAMILY_RADIUS
  10    voids, joins, arrays           COMBINE_FAMILY_FORMS, ARRAY_FAMILY_FORMS
  11    connectors, nested parts       ADD_FAMILY_CONNECTOR, SET_FAMILY_CONNECTOR_ROLES, LOAD_FAMILY,
                                       PLACE_NESTED_FAMILY
- 12    materials and visibility       SET_FAMILY_FORM_MATERIAL, SET_FAMILY_FORM_SUBCATEGORY,
+ 12    materials and visibility       LINK_FAMILY_PARAMETER, SET_FAMILY_FORM_SUBCATEGORY,
                                       SET_FAMILY_FORM_VISIBILITY
  13    read back, then look           REPORT_FAMILY_FORMS, revit_view_image
  14-15 flex, then a type catalog      FLEX_FAMILY, REPORT_FAMILY_TYPE_CATALOG
@@ -667,7 +667,7 @@ by a forum user's trial, builds such a reference out of the line's stable repres
 a string Autodesk's own remarks say is not meant to be parsed. Heron does not build on an undocumented string;
 reference-line angles stay **NOT YET**, recorded in [row 5b-280](FRAGMENT-ISSUES.md). The documented route to a
 bend whose angle the types choose is a REVOLVE whose end angle is linked to an Angle parameter
-(`LINK_FAMILY_FORM_PARAMETER`). **SOURCED:** since 2019 users report errors at angles below 0 or above 180
+(`LINK_FAMILY_PARAMETER`). **SOURCED:** since 2019 users report errors at angles below 0 or above 180
 degrees with the line's end locked.
 
 **A nested work-plane-based family on a vertical plane (seen in Revit 2024, 2026-10-06).** Building Rejin's pipe support, nested work-plane-based parts placed by `PLACE_NESTED_FAMILY` on a VERTICAL reference plane still came in upright - the nested family's Z along the world's Z - not turned onto the plane. The orientations the support needed (a C-channel upright, reversed, turned or lying flat) were therefore built INSIDE the nested family as separate bodies, each with `Visible` driven by a Yes/No formula, and the host picks one. Whether this is Revit's rule or the fragment's choice of direction is **NEEDS-CHECKING CP4**. Two reading traps came with it: a formula-driven Yes/No reads `<blank>` in `REPORT_FAMILY_PARAMETERS` (row 5b-351; read it through a temporary Length `if(flag, 1 mm, 0 mm)`), and `REPORT_BOUNDING_BOX` counts the hidden bodies too (row 5b-352). **Never probe whether a family is loaded with a placement run, even without `--write`** - it left a real instance behind twice (row 5b-350).

@@ -305,7 +305,7 @@ row CC4.
 
 ### 4.3 What already exists and is reused
 
-`READ_SPACE_LOADS`, `REPORT_SPACE_AIRFLOW`, `REPORT_ROOM_SPACE_DATA` (PROVEN) for checks and read-backs;
+`READ_SPACE_LOADS` (which `REPORT_SPACE_AIRFLOW` was merged into on 2026-11-01), `REPORT_ROOM_SPACE_DATA` (PROVEN) for checks and read-backs;
 `CREATE_HVAC_ZONE` (PROVEN) when zones are missing; `SET_PARAMETER_VALUES_BY_ID` (DRAFT), the Companion's
 own writer, and `SET_AIR_TERMINAL_FLOW` (DRAFT) for the write-back. Nothing in Heron reads Revit's energy
 analytical model or exports gbXML, and this plan does not need either: gbXML goes through Autodesk's cloud
@@ -458,7 +458,7 @@ Each phase is a pull request on its own, merged on the owner's word, with the ga
 | **2** | The building runner in `brain/` - take-off + inputs → every Space, zone and block load; the QA gate | Tests with a hand-summed two-room building; the same office run against `heron_hvac` called room by room - identical to the watt |
 | **3** | The Companion "Loads" panel - inputs, results, QA, Recalculate, What-if | The page tests' pattern; then on his PC, one input changed and recalculated |
 | **4** | The report - HTML and PDF through Edge, and the take-off CSV | A report generated for the office; every number in it traced back by `heron_report.py`'s check |
-| **5** | Finalize - the write-back to Spaces, then `terminal_flows` → `SET_AIR_TERMINAL_FLOW` | On a rolled-back run: written, read back through `READ_SPACE_LOADS` and `REPORT_SPACE_AIRFLOW`, undone in one Ctrl+Z |
+| **5** | Finalize - the write-back to Spaces, then `terminal_flows` → `SET_AIR_TERMINAL_FLOW` | On a rolled-back run: written, read back through `READ_SPACE_LOADS` - loads and airflow - undone in one Ctrl+Z |
 | **6** | Later, each on his word: a 3D view of the faces calculated, heating with ground floors, a second method | - |
 
 **What would make the loads trustworthy, not just consistent:** one office from his building run in HAP or
@@ -661,7 +661,7 @@ take-off and pressed **Finalize to Revit**. What it did, read back by hand:
   Proved on Project2: FILTER_ELEMENTS_BY_CATEGORY (Air Terminals, Level 1) handed over six, and a one-row
   file set one terminal's flow and read it back through its connector. The read-back reads the take-off
   again and sets each written value beside what Revit now prints (`read_back`), allowing Revit's own
-  rounding; the diffusers through REPORT_SPACE_AIRFLOW on each level's Spaces.
+  rounding; the diffusers through READ_SPACE_LOADS on each level's Spaces.
 - **READ_SPACE_LOADS could not have read them back anyway** on this model: it reads the design and the
   calculated figures in one guard, and the calculated ones throw until Revit's own loads analysis has
   run. Recorded as [FRAGMENT-ISSUES row 5b-323](fragment-issues/section-5b-rows-301-325.md); Finalize no

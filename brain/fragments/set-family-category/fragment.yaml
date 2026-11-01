@@ -127,9 +127,9 @@ compatibility-note: >
 #   "add reference planes at 300 each side"   -> CREATE_REFERENCE_PLANES
 #   "label the width with the Width parameter"-> LABEL_FAMILY_DIMENSION
 #   "make a box between these planes"         -> EXTRUDE_BETWEEN_PLANES
-#   "extrude a circle 300 diameter 500 high"  -> CREATE_FAMILY_EXTRUSION -
+#   "extrude a circle 300 diameter 500 high"  -> CREATE_FAMILY_FORMS -
 #                                                any other shape, solid or void
-#   "make a revolve in the family"            -> CREATE_FAMILY_REVOLUTION
+#   "make a revolve in the family"            -> CREATE_FAMILY_FORMS
 #   "build all these forms in one go"         -> CREATE_FAMILY_FORMS - many
 #                                                extrusions and revolves, a
 #                                                row each, one undo
@@ -146,9 +146,9 @@ compatibility-note: >
 #   "label the neck diameter with Neck Diameter" -> LABEL_FAMILY_RADIUS
 #   "show this form only in fine"             -> SET_FAMILY_FORM_VISIBILITY
 #   "set the subcategory of these forms"      -> SET_FAMILY_FORM_SUBCATEGORY
-#   "link the body material to Body Material" -> SET_FAMILY_FORM_MATERIAL -
+#   "link the body material to Body Material" -> LINK_FAMILY_PARAMETER -
 #                                                one form, not every one
-#   "link the handle's visible to Show_Handle" -> LINK_FAMILY_FORM_PARAMETER -
+#   "link the handle's visible to Show_Handle" -> LINK_FAMILY_PARAMETER -
 #                                                a form's Visible, angles or
 #                                                extrusion ends, one form
 #   "make this plane the left reference"      -> SET_FAMILY_PLANE_REFERENCE -
@@ -162,7 +162,7 @@ compatibility-note: >
 #                                                array is usually lighter
 #   "put the motor family into this air handler" -> PLACE_NESTED_FAMILY
 #   "lock the motor's centre to the centre planes" -> LOCK_NESTED_FAMILY_TO_PLANES
-#   "link the motor type's width to Motor Width" -> LINK_NESTED_TYPE_PARAMETER -
+#   "link the motor type's width to Motor Width" -> LINK_FAMILY_PARAMETER -
 #                                                a nested TYPE's parameter
 #   "make this family work plane based"       -> SET_FAMILY_SETTINGS
 #   "add the shared parameter Equipment Tag to this family"

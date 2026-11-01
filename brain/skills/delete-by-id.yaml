@@ -16,17 +16,18 @@ purpose: >
   Takes one or more forms out of the family open in the Family Editor - a
   void no longer wanted, an extrusion built in the wrong place - by the ids
   the form tools gave back. Two capabilities do it, in this order, and the
-  second DELETES:
+  second DELETES (REPORT_FAMILY_FORMS took over step 1 from SELECT_FAMILY_FORMS
+  when that card was merged into it, 2026-11-01):
 
   0. REPORT_FAMILY_FORMS - the forms the family holds now, with their ids.
      Its count is the read-back for step 3.
-  1. SELECT_FAMILY_FORMS through revit_read, forms= the ids with commas
-     between. It reads only. One id that is not a form of this family
-     refuses the whole call, so the delete after it never reaches part of a
-     list.
+  1. REPORT_FAMILY_FORMS through revit_read, which= the ids with commas
+     between. It reads only, and hands the forms on as `elements`. One
+     id that is not a form of this family refuses the whole call and hands
+     nothing on, so the delete after it never reaches part of a list.
   2. ASK THE MODELLER FIRST, naming the forms: deleting needs a yes for that
      one operation (Constitution Article 7). Then DELETE_ELEMENTS through
-     revit_change with expect_from="select-family-forms where forms=<the
+     revit_change with expect_from="report-family-forms where which=<the
      same ids>" - it acts on what step 1 picked, never on what happens to be
      selected in the window, and it reports what Revit really removed: a
      form's sketch goes with it.
@@ -38,7 +39,8 @@ purpose: >
 
 # The words a modeller says when a form has to go. The owner's session's
 # own - "delete one form from the family by its id" (FRAGMENT-ISSUES 5b-399)
-# - is declared on SELECT_FAMILY_FORMS, the first step. These and the name
+# - is declared on REPORT_FAMILY_FORMS, the first step (on SELECT_FAMILY_FORMS
+# until that card was merged into it, 2026-11-01). These and the name
 # keep off "form" and "family" on purpose: a lookup names a method by the
 # words it shares with the request, and with them every question about a
 # family's forms - "how many forms are in this family" - was offered this
@@ -49,11 +51,14 @@ utterances:
   - delete the ones with these ids
 
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
-# REPORT_FAMILY_FORMS, the read-back in steps 0 and 3, is left off on
-# purpose, for the same reason as the words above: a lookup names a method
-# whose needs hold one of its answers.
+# REPORT_FAMILY_FORMS was left off until 2026-11-01, for the same reason as
+# the words above: a lookup names a method whose needs hold one of its
+# answers. It is step 1 now - SELECT_FAMILY_FORMS was merged into it - so it
+# is here, and a question about a family's forms that shares a word with this
+# method's name may be offered it beside the answer. A retired card provides
+# nothing a method may rely on (heron_capability.gaps).
 needs:
-  - SELECT_FAMILY_FORMS
+  - REPORT_FAMILY_FORMS
   - DELETE_ELEMENTS
 
 # What must be true BEFORE it runs, so it fails early with something

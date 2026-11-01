@@ -38,6 +38,50 @@ positive:
       FireProtectWet, and Fitting and Global are classifications like any
       other (version 2, row 5b-260)
 
+  # VERSION 3 (2026-11-01), from LINK_FAMILY_FORM_PARAMETER,
+  # SET_FAMILY_FORM_MATERIAL and LINK_NESTED_TYPE_PARAMETER. Each FAILS on
+  # version 2, which took a category alone and set no value.
+  - given: >
+      a new family from the metric Generic Model template with a Yes/No type
+      parameter "Show_Handle", and two solid extrusions made by
+      create-family-forms; forms = the SECOND form's id, links
+      "Visible=Show_Handle"
+    expect: >
+      changed 1, matched 1; linkReport reads Visible going from not linked to
+      "Show_Handle"; the FIRST form untouched - one form, not every extrusion
+
+  - given: >
+      two copies of a small nested family placed by PLACE_NESTED_FAMILY, a
+      Length type parameter "Bolt Length"; forms = the SECOND copy's id, links
+      "Thread Size=Bolt Length" (an instance length on the nut)
+    expect: >
+      changed 1; FLEX_FAMILY to another Bolt Length moves the second copy's
+      Thread Size and leaves the first copy's as it was
+
+  - given: >
+      the nested box from place-nested-family, type "300" with a Length type
+      parameter "Width"; this family's Length "Motor Width" holding 450;
+      family "Heron Nested Box", type "300", links "Width=Motor Width"
+    expect: >
+      changed 1; linkReport naming the nested type and Width not linked ->
+      "Motor Width" (reads 450); the nested box 450 wide in plan
+
+  - given: a material type parameter "Body Material"; forms = the first form's id, links "Material=Body Material"
+    expect: >
+      linked true, changed 1; Material going from <By Category> to linked to
+      "Body Material" - greyed in Properties, the associate button showing it
+
+  - given: the second form's id, links "Material=Default" (a material the template holds)
+    expect: linked false; the second form going from <By Category> to Default - SET, not linked
+
+  - given: the first form, linked to Body Material, links "Material=Default"
+    expect: >
+      changed 1, "(its link was removed first)", and the form's Material
+      reading Default with no link - a linked field cannot hold a value
+
+  - given: the second form's id, links "Material=by category"
+    expect: the form back to <By Category>, changed 1
+
 negative:
   - given: >
       the same family, category "Duct Connector", system "Supply Air", links
@@ -92,6 +136,38 @@ negative:
       both refused as read-only, nothing changed; only the Flow carries
       "as a connector's flow is unless its Flow Configuration is Preset"
       (version 2, row 5b-260)
+
+  # VERSION 3 (2026-11-01).
+  - given: category "Extrusion" AND forms = a form's id in the same call
+    expect: refused - the elements are named one way a call - and nothing changed
+
+  - given: forms = a form's id and the UniqueId of a reference plane, links "Visible=Show_Handle"
+    expect: >
+      refused - the plane is neither a form nor a nested part - and NEITHER
+      linked
+
+  - given: a nested copy's id, links a field that is a TYPE parameter of its family
+    expect: >
+      refused naming family= and type=, and listing what can be linked on that
+      copy alone; nothing changed
+
+  - given: forms = a VOID extrusion's id, links "Material=Default" or "Material=Body Material"
+    expect: refused - a void has no material to show - and nothing changed
+
+  - given: links "Material=Width", a LENGTH parameter
+    expect: refused naming both kinds, Length and Material, and nothing changed
+
+  - given: a family parameter and a material both called "Steel", links "Material=Steel"
+    expect: refused as not saying which is meant, and nothing changed
+
+  - given: links "Width=Overall_Width" where Overall_Width is a REPORTING parameter
+    expect: refused as a reporting parameter that cannot drive anything; version 2 left this to Revit
+
+  - given: forms = a form's id, links "Material=none"
+    expect: >
+      the Material UNLINKED and its value kept - "none" unlinks, it never puts
+      the material back to <By Category> (SET_FAMILY_FORM_MATERIAL's reading,
+      not carried)
 
 second_route:
   - >

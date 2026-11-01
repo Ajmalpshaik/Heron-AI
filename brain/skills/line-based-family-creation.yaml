@@ -53,7 +53,7 @@ purpose: >
   4. THE BODY RUNS THE FULL LENGTH by being locked to the start and end
      planes: EXTRUDE_BETWEEN_PLANES for a rectangular section, with the two
      length planes as its left and right; any other section drawn with
-     CREATE_FAMILY_EXTRUSION on the plane at the start and its far face locked
+     CREATE_FAMILY_FORMS (a kind=extrusion row) on the plane at the start and its far face locked
      to the end plane with LOCK_FORM_TO_PLANES - or CREATE_FAMILY_SWEEP along
      the line, its path ends on those planes.
   5. A PART THAT REPEATS ALONG THE LENGTH is one form and ARRAY_FAMILY_FORMS,
@@ -87,14 +87,14 @@ needs:
   - SET_FAMILY_PLANE_REFERENCE
   - LABEL_FAMILY_DIMENSION
   - EXTRUDE_BETWEEN_PLANES
-  - CREATE_FAMILY_EXTRUSION
+  - CREATE_FAMILY_FORMS
   - CREATE_FAMILY_SWEEP
   - LOCK_FORM_TO_PLANES
   - ARRAY_FAMILY_FORMS
-  - SET_FAMILY_FORM_MATERIAL
+  # SET_FAMILY_FORM_MATERIAL was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - DRAW_FAMILY_SYMBOLIC_LINES
   - REPORT_FAMILY_FORMS
-  - LINK_FAMILY_FORM_PARAMETER
+  # LINK_FAMILY_FORM_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - SET_FAMILY_FORM_SUBCATEGORY
   - SET_FAMILY_FORM_VISIBILITY
   - DRAW_FAMILY_FILLED_REGION
@@ -107,7 +107,7 @@ needs:
   # GUIDs, against the family, before ADD_FAMILY_SHARED_PARAMETERS writes.
   - REPORT_SHARED_PARAMETER_FILE
   - ADD_FAMILY_SHARED_PARAMETERS
-  - CREATE_FAMILY_REVOLUTION
+  # CREATE_FAMILY_REVOLUTION was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
   - CREATE_FAMILY_BLEND
   - CREATE_FAMILY_SWEPT_BLEND
   - LABEL_FAMILY_RADIUS
@@ -115,7 +115,7 @@ needs:
   - ADD_FAMILY_CONNECTOR
   - PLACE_NESTED_FAMILY
   - LOCK_NESTED_FAMILY_TO_PLANES
-  - LINK_NESTED_TYPE_PARAMETER
+  # LINK_NESTED_TYPE_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - ADD_FAMILY_TYPE_PARAMETER
   - LINK_FAMILY_PARAMETER
   - REPORT_FAMILY_TYPE_CATALOG

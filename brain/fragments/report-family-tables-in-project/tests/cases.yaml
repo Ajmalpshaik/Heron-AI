@@ -19,6 +19,25 @@ positive:
       the NEXT fragment answer about the wrong document, which reads as that
       fragment being broken
 
+  # VERSION 2 (2026-11-01), from REPORT_FAMILY_SIZE_TABLE. Each FAILS on
+  # version 1, which read no family in front and gave no rows.
+  - given: a parametric fitting family open for editing, in front, with a lookup table
+    expect: >
+      rowCount matching the row count in Family Types > Manage Lookup Tables,
+      and `rows` carrying EVERY row; columnHeaders the table's columns; no
+      family opened or closed. Count the dialog - a list abbreviated to three
+      reads as a three-row table
+
+  - given: a family in front holding more than one table, tableName left out
+    expect: >
+      the FIRST table read whole, and `tableNames` naming all of them so the
+      reader can see there were others
+
+  - given: a project in front, nameContains narrowing to ONE fitting family, tableName left out
+    expect: >
+      that family's first table read whole into rows and columnHeaders, as if
+      it were in front, and the family closed again afterwards
+
 negative:
   - given: nameContains "ZZZNOTAFAMILY"
     expect: >
@@ -36,6 +55,18 @@ negative:
       its name in `refused` with the reason. Never silently skipped -
       a skip is indistinguishable from a family with no table
 
+  # VERSION 2 (2026-11-01), from REPORT_FAMILY_SIZE_TABLE.
+  - given: a family in front with no lookup table at all
+    expect: >
+      its name in `noTable` and a finding saying it has no table - such a
+      family takes its dimensions from its own parameters, so a size that
+      will not appear is NOT a table problem, and "0 rows" alone would send
+      somebody to fix the wrong thing
+
+  - given: a family in front, tableName naming a table it does not have
+    expect: the tables it DOES have, listed, and rows empty. Never a silent fall back to the first
+
 second_route:
   - open one family by hand and compare its Manage Lookup Tables against the row count reported
   - open an exported CSV and check the header format matches what WRITE_FAMILY_SIZE_TABLE expects
+  - open the family and read Family Types > Manage Lookup Tables > Export, then open the CSV, against `rows` read with that family in front

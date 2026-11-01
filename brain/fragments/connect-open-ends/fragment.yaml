@@ -131,16 +131,16 @@ compatibility-note: >
 # missing and is not offered may be a case where the flag and the geometry
 # disagree. That is TRACE_CONNECTIVITY's ground, not this fragment's.
 
-# ROUTING - repeated in PLACE_MEP_FITTING, TRACE_CONNECTIVITY and FIND_DEAD_ENDS.
+# ROUTING - repeated in FIT_MEP_JOINTS, TRACE_CONNECTIVITY and FIND_DEAD_ENDS.
 #
 #   "they are touching but not connected" -> here
 #   "connect the open ends"               -> here
 #   "the system is split in two"          -> here, AFTER FIND_SYSTEM_ISLANDS
 #                                            says where the break is
-#   "join these two"                      -> PLACE_MEP_FITTING - it puts a
+#   "join these two"                      -> FIT_MEP_JOINTS - it puts a
 #                                            FITTING between two runs; this one
 #                                            joins ends already at one point
-#   "put an elbow here"                   -> PLACE_MEP_FITTING
+#   "put an elbow here"                   -> FIT_MEP_JOINTS
 #   "is this duct connected"              -> TRACE_CONNECTIVITY - a READ
 #   "the pressure drop reads zero"        -> REPORT_MEP_PRESSURE_DROP calls a
 #                                            system with an open end

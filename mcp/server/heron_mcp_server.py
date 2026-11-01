@@ -2802,8 +2802,11 @@ def _loads_finalize(takeoff, result, identity):
                 for level in levels:
                     _through(revit_read, origin="companion")(
                         "FILTER_ELEMENTS_BY_CATEGORY", "category=Spaces" + nl + "levelId=" + level)
+                    # READ_SPACE_LOADS, which REPORT_SPACE_AIRFLOW was merged
+                    # into on 2026-11-01: the diffusers' actual airflow against
+                    # the specified one, per Space (its version 2).
                     back_text.append(str(_through(revit_read, origin="companion")(
-                        "REPORT_SPACE_AIRFLOW", "",
+                        "READ_SPACE_LOADS", "",
                         "filter-elements-by-category where category=Spaces")))
     matched = sum(1 for b in back_rows if b["ok"])
     if back_rows:
@@ -5877,8 +5880,8 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> l
       views share the name, the answer lists each as "ViewType: Name" to type
       back.
     - `elements`: element ids, comma separated, as Heron's answers print them
-      - Revit's number, or a form's long id from CREATE_FAMILY_FORMS,
-      REPORT_FAMILY_FORMS or SELECT_FAMILY_FORMS; the two may be mixed. Heron
+      - Revit's number, or a form's long id from CREATE_FAMILY_FORMS or
+      REPORT_FAMILY_FORMS; the two may be mixed. Heron
       frames just those in a temporary isometric 3D view - a section box round
       them with a margin, model categories only, levels, grids and links left
       out of the box - and takes the view away again. In a project, floors,

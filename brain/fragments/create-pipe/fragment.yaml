@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,31 @@ capability: CREATE_PIPE
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_DUCT_RUNS (create-duct-runs), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to CREATE_DUCT_RUNS. The proof below is the record of what this
+# card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_DUCT_RUNS
+  why: >
+    The same drawing in the other domain: straight pipe between consecutive
+    points, a system type, a pipe type and a level, nothing connected.
+    CREATE_DUCT_RUNS draws straight duct or straight pipe since its version 2,
+    the type class deciding as it does for CREATE_FLEX_PIPE: a pipe type with a
+    piping system draws pipe, one run of points or every run of a layout, in one
+    undo. This card's pipeType is its ductType, its points a run in millimetres,
+    its created its elements. Two rules were opposite and the safer was kept:
+    all or nothing (Article 8), where this card kept the segments that worked
+    and counted the rest; and a size is optional per run and read back, so
+    Revit's snap to the segment's sizes fails the job by name rather than being
+    left to SET_MEP_SIZE.
 
 purpose: >
   Draws straight pipe between consecutive points - one segment per pair, so two

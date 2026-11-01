@@ -169,7 +169,7 @@ compatibility-note: >
 #                                       and is the right shape for that
 #   a family's forms by material     -> here - every form in a family is
 #                                       scanned (version 3)
-#   "select the forms with these ids" -> SELECT_FAMILY_FORMS
+#   "select the forms with these ids" -> REPORT_FAMILY_FORMS
 #   "make this one wall different"   -> DUPLICATE_TYPE first. Material lives on
 #                                       the type, so changing one instance
 #                                       without a new type changes them all

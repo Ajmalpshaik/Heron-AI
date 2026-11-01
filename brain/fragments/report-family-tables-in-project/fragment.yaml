@@ -1,15 +1,15 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-059
-semantic-identity: "read the lookup tables of every loaded family without opening any of them by hand"
+semantic-identity: "what sizes a family's lookup tables actually hold - the family in front read row by row, or every loaded family from the project without opening any by hand"
 kind: action
 domain: revit.families
 capability: REPORT_FAMILY_TABLES_IN_PROJECT
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -18,9 +18,22 @@ purpose: >
   them out as CSV, and closes it again - so a whole set of fittings can be
   checked in one pass instead of one family at a time by hand.
 
+  **OR THE FAMILY IN FRONT, ROW BY ROW (version 2, 2026-11-01).**
+  REPORT_FAMILY_SIZE_TABLE, which read the lookup table of the family open in
+  the Family Editor, was merged into this card and is DEPRECATED. With a
+  family in front this reads it directly: every table it holds named in
+  `tableNames`, and one table whole - every row in `rows`, the column headers,
+  Revit's own value strings - `tableName` picking it, empty reading the first,
+  and a name the family has not got refused with the ones it has, never a
+  silent fall back. `exportTo` writes that table as CSV. From a project, when
+  `nameContains` narrows to ONE family, its table is read whole the same way.
+  It answers "why does this fitting not appear at my size": a size missing
+  from the lookup table is silent - Revit inserts nothing, or the wrong
+  geometry, and says nothing either way.
+
   **IT EXISTS BECAUSE A SIZE TABLE IS ONLY REACHABLE FROM INSIDE THE FAMILY.**
-  REPORT_FAMILY_SIZE_TABLE reads the family in front, which means opening each
-  one, looking, and closing it. A pipe type references eight fitting families,
+  Reading the family in front means opening each one, looking, and closing
+  it. A pipe type references eight fitting families,
   and every one of them can carry the same stale table - so doing it by hand
   is eight rounds of the same work and the easiest place to stop early.
 
@@ -46,15 +59,39 @@ contract:
     - name: app
       type: Application
     # Narrows to families whose NAME contains this. Empty reads every loaded
-    # family, which on a real project is a long job.
+    # family, which on a real project is a long job. Version 2: optional - left
+    # out it binds "none", read as empty - and not read with a family in front.
     - name: nameContains
       type: string
       source: request
+      optional: true
+      absent: none
     # Folder to write one CSV per table into, named <family>__<table>.csv.
-    # Empty reads without writing anything.
+    # Empty reads without writing anything. Version 2: optional, "none" when
+    # left out.
     - name: exportFolder
       type: string
       source: request
+      optional: true
+      absent: none
+    # VERSION 2, from REPORT_FAMILY_SIZE_TABLE: which table is read whole,
+    # when a family holds more than one. Left out it binds "none", read as
+    # empty - the first. A name the family has not got is refused with the
+    # ones it has.
+    - name: tableName
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 2, from REPORT_FAMILY_SIZE_TABLE: a file path to write the table
+    # read whole to, as CSV. Left out it binds "none" and writes nothing. It
+    # changes NOTHING in the model - and the exported file is the only place
+    # Revit states the header format an import must use.
+    - name: exportTo
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: familiesRead
       role: result
@@ -91,6 +128,39 @@ contract:
       # thing found (D-52).
       role: accounting
       type: int
+    # VERSION 2 (2026-11-01), from REPORT_FAMILY_SIZE_TABLE: ONE table read
+    # whole - the family in front's, or the one family `nameContains`
+    # narrowed to from a project. Empty when no single family was read.
+    - name: tableNames
+      # Every table in that family, on one line - a family may hold several
+      # and reading the wrong one answers a different question.
+      role: result
+      type: string
+    - name: columnHeaders
+      role: result
+      type: string
+    - name: rows
+      # The whole table as text, one row per entry, joined - a list is cut to
+      # three entries before a reader sees it, and which sizes are present is
+      # a question no summary can answer.
+      role: result
+      type: string
+    - name: rowCount
+      role: result
+      type: int
+    - name: columnCount
+      role: result
+      type: int
+    - name: exportedTo
+      # Where that table's CSV was written, empty when none was asked for. A
+      # path, not a promise - set only after the export returned.
+      role: accounting
+      type: string
+    - name: notAFamily
+      # That the document in front is a project, so the loaded families were
+      # read rather than one in front. Never an empty table (D-52).
+      role: accounting
+      type: bool
     - name: findings
       type: IList<string>
 
@@ -129,7 +199,21 @@ compatibility-note: >
   on 2026-09-15. No number is read or converted here - the CSV carries its own
   units in its header - so the 2021 units move cannot reach it.
 
-# ROUTING - repeated in REPORT_FAMILY_SIZE_TABLE.
+# 2026-11-01 - REPORT_FAMILY_SIZE_TABLE WAS MERGED INTO THIS CARD (version 2)
+# on the owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same job: the lookup tables of a family, which sizes they
+# hold. This card was kept - it covered more (every loaded family, the CSVs,
+# the leftOpen guard), and CHECK_FAMILY_SIZE_TABLES' own C# names it. Its
+# outputs now, by the same names: tableNames, columnHeaders, rows, rowCount,
+# columnCount, exportedTo, notAFamily (true now for a project in front, which
+# is read, not refused), findings; its inputs tableName and exportTo, optional
+# here. A family with no table is in noTable, with its finding, as it said.
+#
+# NOTHING WAS OPPOSITE. Its "a project in front is not a family - open the
+# family" is no refusal here: a project in front reads every loaded family,
+# the job this card did.
+
+# ROUTING - the neighbours this must not be confused with.
 #
 #   "check every fitting family's sizes" -> here, from the project. NOT an
 #                                           utterance, measured (row 5b-387):
@@ -138,8 +222,15 @@ compatibility-note: >
 #                                           and the owner's "Tag the ducts
 #                                           again using this tag family" out of
 #                                           the top five, on lexical
-#   "read THIS family's table"           -> REPORT_FAMILY_SIZE_TABLE, with the
-#                                           family open in front
+#   "what sizes does this family know"   -> here
+#   "read THIS family's table"           -> here, with the family open in
+#                                           front (REPORT_FAMILY_SIZE_TABLE
+#                                           until 2026-11-01)
+#   "why does the fitting not appear at this size" -> a COMPOSITION, all
+#                                         reads: REPORT_ROUTING_PREFERENCES,
+#                                         then this card on the family it
+#                                         names, then REPORT_PIPE_SEGMENTS
+#   "what fitting will this type insert" -> REPORT_ROUTING_PREFERENCES
 #   "write a table back"                 -> WRITE_FAMILY_SIZE_TABLE
 #   "check the lookup tables in this family"
 #                                        -> CHECK_FAMILY_SIZE_TABLES - the
@@ -152,3 +243,14 @@ utterances:
   - export every family size table
   - which families have stale size tables
   - read all the fitting tables
+  # MOVED 2026-11-01 from REPORT_FAMILY_SIZE_TABLE, merged into this card.
+  - what is in this family's lookup table
+  - which sizes does this family know
+  - why does this fitting not appear at my size
+  - read the size table
+  - show me the lookup table rows
+  # And the one row of its routing table that was not an utterance -
+  # "what sizes does this family know" -> here. Measured 2026-11-01: left as
+  # a comment, the model backend sent it to FLEX_FAMILY, a write, once the
+  # retired card no longer answered it.
+  - what sizes does this family know

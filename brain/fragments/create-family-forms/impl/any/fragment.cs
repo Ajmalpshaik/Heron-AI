@@ -1,5 +1,16 @@
 // NOT STANDALONE. Assumes `doc` and `forms` are in scope; leaves `formIds`,
-// `formCount`, `built`, `notAFamily`, `refused` and `findings` behind.
+// `formId`, `formCount`, `built`, `notAFamily`, `refused` and `findings`
+// behind.
+//
+// VERSION 2 (2026-11-01) took in CREATE_FAMILY_EXTRUSION and
+// CREATE_FAMILY_REVOLUTION, which built one form a call and are DEPRECATED,
+// merged into this card - a list of one row is the single-form call. What
+// their read-back said that this one did not is said here now: an
+// extrusion's loops, how many are outlines and how many holes inside them,
+// by where they lie and never by their order; a revolve's angles and its
+// axis; the plane's facing and where it lies; and the part-turn warning. And
+// `formId`, the FIRST form's id, beside `formIds`, so every method step and
+// chain written for the single-form tools' `formId` binds unchanged.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one - so the
 // whole list is ONE entry in the Family Editor's undo list, and one Undo takes
@@ -41,6 +52,8 @@
 
 var findings = new List<string>();
 var formIds = "";
+// VERSION 2: the first form's id alone - the single-form tools' `formId`.
+var formId = "";
 var formCount = 0;
 var built = "";
 var notAFamily = false;
@@ -65,6 +78,7 @@ Func<XYZ, int> axisOf = n =>
     Math.Abs(n.X) > 0.9999 ? 0 : Math.Abs(n.Y) > 0.9999 ? 1 : Math.Abs(n.Z) > 0.9999 ? 2 : -1;
 Func<XYZ, int, double> along = (point, index) => index == 0 ? point.X : index == 1 ? point.Y : point.Z;
 var axisLetters = new[] { "X", "Y", "Z" };
+var facing = new[] { "facing left or right", "facing front or back", "horizontal" };
 // The two model coordinates a profile is written in, per axis the plane faces.
 var inPlane = new[] { new[] { 1, 2 }, new[] { 0, 2 }, new[] { 0, 1 } };
 
@@ -288,7 +302,7 @@ if (doc.IsFamilyDocument)
         datums.Add(Tuple.Create((Element)level, 2, level.Elevation, level.Name));
 }
 
-// ---- a material, read as SET_FAMILY_FORM_MATERIAL reads one ------------------
+// ---- a material, read as LINK_FAMILY_PARAMETER reads one --------------------
 
 var flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static;
 var revitAssembly = typeof(Document).Assembly;
@@ -747,6 +761,9 @@ if (refused == null)
     var fm = doc.FamilyManager;
     var made = new List<GenericForm>();
     var rowCurves = new List<List<Curve>>();
+    // Each row's loops as points in the plane's two coordinates, to say which
+    // lies inside which - CREATE_FAMILY_EXTRUSION's read-back (version 2).
+    var rowRings = new List<List<List<double[]>>>();
     var rowTurn = new List<Line>();
     var count = rowKind.Count;
     Func<int, string> whose = r => "Row " + (r + 1) + " (" + (rowSolid[r] ? "solid " : "void ") + rowKind[r] + " on \""
@@ -770,6 +787,7 @@ if (refused == null)
         };
 
         var curves = new List<Curve>();
+        var rings = new List<List<double[]>>();
         Line turnAbout = null;
         GenericForm form;
         try
@@ -785,6 +803,7 @@ if (refused == null)
             foreach (var loop in rowLoops[r])
             {
                 var array = new CurveArray();
+                var ring = new List<double[]>();
                 foreach (var s in loop)
                 {
                     var a = onPlane(s[1], s[2]);
@@ -792,8 +811,14 @@ if (refused == null)
                     Curve piece = s[0] == 0.0 ? (Curve)Line.CreateBound(a, b) : Arc.Create(a, b, onPlane(s[3], s[4]));
                     array.Append(piece);
                     curves.Add(piece);
+                    for (var k = 0; k < 16; k++)
+                    {
+                        var point = piece.Evaluate(k / 16.0, true);
+                        ring.Add(new[] { along(point, u), along(point, v) });
+                    }
                 }
                 outline.Append(array);
+                rings.Add(ring);
             }
 
             if (rowKind[r] == "extrusion")
@@ -822,6 +847,7 @@ if (refused == null)
         }
         made.Add(form);
         rowCurves.Add(curves);
+        rowRings.Add(rings);
         rowTurn.Add(turnAbout);
     }
 
@@ -1035,11 +1061,65 @@ if (refused == null)
                 s[4] ? "front/back" : null, s[5] ? "left/right" : null }.Where(w => w != null));
         }
 
+        // WHAT THE SINGLE-FORM TOOLS SAID OF THE SHAPE (version 2). An
+        // extrusion's loops by where they lie: inside an odd number of the
+        // others a hole, inside none or an even number an outline of its own,
+        // half in and half out named as crossing - never by its place in the
+        // list (5b-275). A revolve's angles and its axis.
+        var shapeWords = "";
+        if (rowKind[r] == "extrusion")
+        {
+            var rings = rowRings[r];
+            Func<double[], List<double[]>, bool> inside = (point, ring) =>
+            {
+                var odd = false;
+                for (int i = 0, j = ring.Count - 1; i < ring.Count; j = i++)
+                    if ((ring[i][1] > point[1]) != (ring[j][1] > point[1])
+                        && point[0] < (ring[j][0] - ring[i][0]) * (point[1] - ring[i][1])
+                            / (ring[j][1] - ring[i][1]) + ring[i][0])
+                        odd = !odd;
+                return odd;
+            };
+            var outlines = 0;
+            var holes = 0;
+            var crossing = 0;
+            for (var i = 0; i < rings.Count; i++)
+            {
+                var within = 0;
+                var crosses = false;
+                for (var j = 0; j < rings.Count; j++)
+                {
+                    if (j == i) continue;
+                    var inCount = rings[i].Count(point => inside(point, rings[j]));
+                    if (inCount == rings[i].Count) within++;
+                    else if (inCount > 0) crosses = true;
+                }
+                if (crosses) crossing++;
+                else if (within % 2 == 1) holes++;
+                else outlines++;
+            }
+            var loopParts = new List<string>();
+            if (outlines > 0) loopParts.Add(outlines + (outlines == 1 ? " outline" : holes == 0 ? " separate outlines" : " outlines"));
+            if (holes > 0) loopParts.Add(holes + (holes == 1 ? " hole" : " holes") + " inside " + (outlines == 1 ? "it" : "them"));
+            if (crossing > 0) loopParts.Add(crossing + " crossing another loop");
+            shapeWords = ", " + rings.Count + " loop(s)" + (rings.Count > 1 ? " (" + string.Join(", ", loopParts) + ")" : "")
+                + " from " + plain(rowFrom[r]) + " to " + plain(rowTo[r]) + " mm";
+        }
+        else
+        {
+            var ax = rowAxis[r];
+            shapeWords = ", " + rowLoops[r].Count + " loop(s) turned from " + plain(rowFrom[r]) + " to "
+                + plain(rowTo[r]) + " degrees about the axis " + plain(ax[0]) + "," + plain(ax[1]) + " to "
+                + plain(ax[2]) + "," + plain(ax[3]);
+        }
+
         lines.Add((r + 1) + " " + (rowSolid[r] ? "solid " : "void ") + rowKind[r] + " on \"" + rowPlane[r].Item4
-            + "\": " + reads + (rowSolid[r] ? ", " + volumeWords(volume) : "") + materialWords + showWords);
+            + "\" (" + facing[axis] + ", " + axisLetters[axis] + " " + mm(at) + " mm)" + shapeWords + ": " + reads
+            + (rowSolid[r] ? ", " + volumeWords(volume) : "") + materialWords + showWords);
     }
 
     formIds = string.Join(",", made.Select(f => f.UniqueId));
+    formId = made.Count > 0 ? made[0].UniqueId : "";
     formCount = made.Count;
     built = string.Join(" || ", lines);
 
@@ -1052,6 +1132,11 @@ if (refused == null)
     var withMaterial = Enumerable.Range(0, count).Count(r => rowParameter[r] != null || rowMaterial[r] != null
         || rowByCategory[r]);
     var withShows = rowShows.Count(s => s != null);
+    for (var r = 0; r < count; r++)
+        if (rowKind[r] == "revolve" && rowTo[r] - rowFrom[r] < 360.0 - 1e-9)
+            findings.Add("Row " + (r + 1) + " is a part-turn: which way it swept is Revit's rule for the plane's "
+                + "normal - LOOK at it, and if it went the wrong way, build it again with the angles moved by 180 "
+                + "degrees.");
     if (withMaterial > 0 || withShows > 0)
         findings.Add(withMaterial + " were given a material and " + withShows + " their visibility, each read back.");
     for (var r = 0; r < count; r++)
@@ -1063,7 +1148,7 @@ if (refused == null)
         findings.Add("A void CUTS NOTHING by being made. In a family built through the API it cuts a solid only once "
             + "the two are combined - COMBINE_FAMILY_FORMS, with the void's id and the solid's.");
     findings.Add("Each sketch is hosted on the plane named and moves with it. Nothing else ties a form to the "
-        + "family's planes or parameters yet - LOCK_FORM_TO_PLANES, LINK_FAMILY_FORM_PARAMETER and "
+        + "family's planes or parameters yet - LOCK_FORM_TO_PLANES, LINK_FAMILY_PARAMETER and "
         + "LABEL_FAMILY_RADIUS do, by these ids.");
 }
 

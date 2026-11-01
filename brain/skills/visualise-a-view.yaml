@@ -129,7 +129,7 @@ purpose: >
        shading colour and an appearance of its own. SET_ELEMENT_MATERIAL
        gives it to elements where their material lives; a layered wall or
        floor is SET_COMPOUND_LAYER_WIDTH's, a family's own forms
-       SET_FAMILY_FORM_MATERIAL's in the Family Editor.
+       LINK_FAMILY_PARAMETER's (links Material=<it>) in the Family Editor.
      - What each kind wants, as a visualiser starts: GLASS clear, high
        transparency, a little reflection; METALS glossy and reflective -
        brushed or satin for equipment casings, galvanised a little duller;
@@ -244,7 +244,7 @@ needs:
   - CREATE_STARTER_MATERIALS
   - SET_ELEMENT_MATERIAL
   - SET_COMPOUND_LAYER_WIDTH
-  - SET_FAMILY_FORM_MATERIAL
+  - LINK_FAMILY_PARAMETER
   # Step 3 - the light. SET_PROJECT_LOCATION is ADMIN, asked on its own.
   - REPORT_LOCATION
   - SET_PROJECT_LOCATION
