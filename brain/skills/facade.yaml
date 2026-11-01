@@ -63,8 +63,9 @@ purpose: >
         layout and a spacing in millimetres - and its Grid 1 and Grid 2
         mullions, never vertical and horizontal, because which way each grid
         runs is the face's. Every curtain system of that type changes, and
-        the answer says how many. DRAFT until NEEDS-CHECKING Group JP proves
-        them.
+        the answer says how many. Proved on Revit 2020 on 2026-11-01
+        (NEEDS-CHECKING Group JP): on a mass's upright faces Grid 1 ran
+        upright and Grid 2 level - read it off each answer, never assume it.
      3. A panel that differs: SELECT_IN_REGION on that panel, then
         CHANGE_ELEMENT_TYPE to a curtain panel type. SET_CURTAIN_PANEL_TYPE
         works on curtain WALLS only and refuses a curtain system; a panel on

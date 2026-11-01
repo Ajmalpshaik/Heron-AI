@@ -100,3 +100,19 @@ turned -10 degrees - placed at 0,0,0 on Level 1 (instance 351071). The type was 
 Still owed: JM1, JM3 to JM8 (top, all faces, a generic model host, the three ways to a host, Revit 2024, a
 second system on the same faces), JM10 and JM11. Which of U and V holds the upright lines is not recorded:
 the read back above was cut short by the command line after grid 7.
+
+### More results - Revit 2020, 2026-11-01, later the same day
+
+The same rig as above (*TEST MASS*, mass 351071, *Curtain System : 1500 x 3000mm*), every leg `validate --write`
+with `--in "TEST MASS"` and rolled back; the records name TEST MASS for every leg.
+
+| # | Result | What it read |
+|---|---|---|
+| JM3 | PASS | `faces=top`: `facesAsked` 3, `facesTaken` 3, *"3 face(s) asked, 1700 m2"* - the three blocks' plans, 640 + 640 + 420 |
+| JM4 | PASS | `faces=all`: `facesAsked` 18, `facesTaken` 18, *"5947.2 m2"* - 2547.2 upright + 1700 tops + 1700 undersides, the underside included as the card says |
+| JM8 | PASS - recorded | `--setup create-curtain-system`, then the same again on the same faces: `created` 1, `alreadyNear` 1, finding *"1 curtain system(s) already stand within the outline of Mass..."*, no refusal - **Revit made a second curtain system over the first** |
+| JM10 | PASS, two of four | *"No curtain system type called "Heron JM Not A Type" in this model. It has "Curtain System : 1500 x 3000mm". NOTHING WAS MADE."*; `faces=sloped`: *""sloped" is not a kind of face this knows - say vertical ..., top, or all ... NOTHING WAS MADE."* The two selection cases (the wall selected, nothing selected) NOT RUN |
+| JM11 | PASS | `heron_lookup` on the PC's backend: the three requests reach `CREATE_CURTAIN_SYSTEM` (identity); *"how many panels are on this curtain system"* (question), *"how much glass is in this facade"* and *"what is this facade made of"* reach `REPORT_CURTAIN_ELEMENTS`, a read |
+
+Still owed: JM1 (a kept run), JM5 (a generic model host - none in this model), JM6 (host by selection and by
+Mark), JM7 (Revit 2024), JM10's two selection cases.
