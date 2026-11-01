@@ -1152,3 +1152,30 @@ Dashboard group (the panel, its routes behind the pairing, Refresh under the loc
 and `tests/test_mcp_serves.py` (served with the SDK's Context; refused when the Companion is off).
 **Not run in Revit** - `REPORT_MODEL_DASHBOARD` is DRAFT, and its proof on a named model, with its
 negative case, is owed before the panel is relied on.
+
+### 21.11 Select in Revit and Isolate from the Model Dashboard (2026-11-01)
+
+**§18 question 7 asked again, and answered.** §21's table recorded *no Select-in-Revit button in V1*. The
+Model Dashboard's plan put the button in its phase 2 and asked the owner first; the owner answered
+*"DO IT UNITLE FINISH CONTINEWSLY"*. Built on that word - **the owner confirms it on the pull request**,
+and taking the three buttons out is one revert.
+
+Each *Worth a look* row with element ids gets **Select in Revit** and **Isolate in view**, and the panel
+gets **Reset isolate**. **On screen only - nothing in the model changes:**
+
+| Button | What runs | Declared |
+|---|---|---|
+| Select in Revit | `FILTER_ELEMENTS_BY_ID` with the row's ids (READ, PROVEN) through `revit_read`'s body, then `SET_SELECTION` on what it found (EXECUTE, PROVEN) through `revit_show`'s body | `companion_dashboard_select`, EXECUTE |
+| Isolate in view | `revit_isolate_temporary`'s body - Revit's Temporary Hide/Isolate in the active view ([group ES](needs-checking/group-es.md)) | `companion_dashboard_isolate`, EXECUTE |
+| Reset isolate | `revit_reset_temporary`'s body | `companion_dashboard_reset`, EXECUTE |
+
+**The page names a row, never ids.** `DashboardPanel.show` takes the row's key and sends the ids its own
+read found, so a page - or anything else that reaches the port - cannot hand Revit ids the read did not
+find. `_dashboard_show` runs under the lock every tool call holds and only on the model the dashboard was
+read from (`_moved_since`); otherwise it sends nothing and says *press Refresh*. One action at a time,
+shared with Refresh. A typed id the model no longer holds makes `FILTER_ELEMENTS_BY_ID` refuse the whole
+call, naming it, so nothing is selected rather than part of the row.
+
+**Proved without Revit:** `tests/test_companion.py`'s Dashboard group - the hook gets the panel's ids and
+identity, not the page's; a row with no ids, an unknown action and a gone chat send nothing; every route
+behind the pairing. **Not run in Revit** - with the panel's own read, owed in [group JT](needs-checking/group-jt.md).

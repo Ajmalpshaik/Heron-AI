@@ -397,6 +397,14 @@ COMPANION_ACTIONS = {
     # previewed layout through PLACE_FAMILY_INSTANCES, in revit_change's body.
     # Preview touches no model - the brain works on the rooms the panel holds.
     "companion_sprinkler_place": (MODIFY, "run_fragment_write"),
+    # The Model Dashboard's row buttons (docs/40 s21.11): what is on screen
+    # only, never the model. Select reads the row's ids with
+    # FILTER_ELEMENTS_BY_ID, then selects through revit_show's body - EXECUTE
+    # at its highest. Isolate and Reset are revit_isolate_temporary's and
+    # revit_reset_temporary's own bodies and operations.
+    "companion_dashboard_select":  (EXECUTE, "run_fragment_show"),
+    "companion_dashboard_isolate": (EXECUTE, "isolate_temporary"),
+    "companion_dashboard_reset":   (EXECUTE, "reset_temporary"),
 }
 
 

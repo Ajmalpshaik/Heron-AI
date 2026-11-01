@@ -1271,15 +1271,16 @@ class DashboardPanel(object):
     The Model Dashboard a chat opens with revit_model_dashboard (docs/40
     section 21.10) - one read of the model, the newest replacing the last.
 
-    IT HOLDS DATA AND CALLS ONE HOOK - NOTHING ELSE (README rule 4). Every
+    IT HOLDS DATA AND CALLS HOOKS - NOTHING ELSE (README rule 4). Every
     tile, bar, colour and line on it was made in brain/
     (heron_model_dashboard). Refresh is the modeller's own press: it calls
     refresh_hook, which READS the model again under the chat's lock and pin
     and puts the new read here - never a timer, so the page never asks Revit
     by itself (README rule 3). One refresh at a time; a second press while
-    one runs is told so and sends nothing. It writes nothing to Revit, so it
-    has no COMPANION_ACTIONS row. With no hook set, Refresh answers that the
-    chat is gone and does nothing.
+    one runs is told so and sends nothing. It writes nothing to the model; a
+    row's Select and Isolate change only what is on screen, declared at
+    EXECUTE in COMPANION_ACTIONS (docs/40 s21.11). With no hook set, each
+    answers that the chat is gone and does nothing.
     """
 
     GONE = LoadsPanel.GONE
@@ -1290,8 +1291,11 @@ class DashboardPanel(object):
         self._held = None
         self._busy = False
         #: Set by the MCP server. refresh_hook() -> {"ok", "said"}; it calls
-        #: open() itself when the read is good.
+        #: open() itself when the read is good. show_hook(action, ids,
+        #: identity) -> {"ok", "said"} - select, isolate or reset, on screen
+        #: only (docs/40 s21.11).
         self.refresh_hook = None
+        self.show_hook = None
 
     def open(self, document, answer, identity=None):
         board = answer.get("dashboard") or {}
@@ -1322,6 +1326,43 @@ class DashboardPanel(object):
             self._busy = True
         try:
             got = hook() or {}
+        finally:
+            with self._lock:
+                self._busy = False
+        return {"ok": bool(got.get("ok")), "said": got.get("said") or ""}
+
+
+    SHOWS = ("select", "isolate", "reset")
+
+    def show(self, body):
+        """
+        A row's Select in Revit or Isolate in view, or Reset isolate. The ids
+        must be ones THIS panel holds - a page cannot send Revit ids the read
+        did not find - and the model must be the one the read came from (the
+        hook checks it under the lock).
+        """
+        hook = self.show_hook
+        if hook is None:
+            return {"ok": False, "said": "Nothing was sent to Revit: %s." % self.GONE}
+        if not isinstance(body, dict) or body.get("action") not in self.SHOWS:
+            return {"ok": False, "said": "Nothing was sent to Revit: not a dashboard action."}
+        action = body["action"]
+        with self._lock:
+            if self._busy:
+                return {"ok": False, "said": "Nothing was sent to Revit: %s." % self.BUSY}
+            held = self._held
+            if action != "reset":
+                rows = [r for r in (held or {}).get("look") or [] if r.get("key") == body.get("row")]
+                if not rows or not rows[0].get("ids"):
+                    return {"ok": False, "said": "Nothing was sent to Revit: that row has no "
+                                                 "element ids on this dashboard."}
+                ids = list(rows[0]["ids"])
+            else:
+                ids = []
+            identity = list(held["identity"]) if held and held.get("identity") else None
+            self._busy = True
+        try:
+            got = hook(action, ids, identity) or {}
         finally:
             with self._lock:
                 self._busy = False
@@ -1936,6 +1977,16 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             if why:
                 return self._refuse(403, why)
             return self._json(200, DASHBOARD_PANEL.refresh())
+        if path == "/api/dashboard/show":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 4096)
+                body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except (ValueError, UnicodeDecodeError):
+                return self._refuse(400, "unreadable")
+            return self._json(200, DASHBOARD_PANEL.show(body))
         if path == "/api/changes/clear":
             why = self._api_ok()
             if why:

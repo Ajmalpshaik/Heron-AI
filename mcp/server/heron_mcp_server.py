@@ -3960,6 +3960,58 @@ def revit_model_dashboard(ctx: _Context = None) -> str:
     return said
 
 
+#: What a dashboard row's buttons may ask of Revit, each through a door that
+#: changes only what is on screen (docs/40 s21.11). Declared in
+#: heron_tools.COMPANION_ACTIONS at EXECUTE.
+DASHBOARD_SHOWS = ("select", "isolate", "reset")
+
+
+def _dashboard_show(action, ids, identity=None):
+    """
+    A dashboard row's Select in Revit, Isolate in view, or Reset isolate -
+    pressed on the page. Nothing in the model changes:
+
+      select   FILTER_ELEMENTS_BY_ID with the row's ids (READ, PROVEN), then
+               SET_SELECTION on what it found (EXECUTE, PROVEN), through
+               revit_read's and revit_show's own bodies
+      isolate  revit_isolate_temporary's body - Revit's Temporary
+               Hide/Isolate in the active view
+      reset    revit_reset_temporary's body
+
+    Under the lock every tool call holds, and only on the model the
+    dashboard was read from. Returns {"ok", "said"}.
+    """
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    tool = "companion_dashboard_" + action
+    ids = [str(i) for i in (ids or []) if str(i).isdigit()][:500]
+    if action not in DASHBOARD_SHOWS or (action != "reset" and not ids):
+        said = "Nothing was sent to Revit: the row has no element ids."
+        _note(tool, started, 0, reply=said, outcome="refused")
+        return {"ok": False, "said": said}
+    with _revit_lock:
+        if _moved_since(identity):
+            said = ("The dashboard was read from another model or another Revit, so nothing "
+                    "was sent. Press Refresh to read the model in front, then try again.")
+            _note(tool, started, 0, reply=said, outcome="refused")
+            return {"ok": False, "said": said}
+        out = {}
+        if action == "select":
+            said = _through(revit_read, reply_out=out, origin="companion")(
+                "FILTER_ELEMENTS_BY_ID", "elementIds=" + ", ".join(ids))
+            if out.get("ended") == "ok":
+                out = {}
+                said = _through(revit_show, reply_out=out, origin="companion")(
+                    "SET_SELECTION", "", "FILTER_ELEMENTS_BY_ID")
+        elif action == "isolate":
+            said = _through(revit_isolate_temporary, reply_out=out, origin="companion")(
+                ids=", ".join(ids))
+        else:
+            said = _through(revit_reset_temporary, reply_out=out, origin="companion")()
+    ok = out.get("ended") == "ok"
+    _note(tool, started, time.time() - clock, reply=said, outcome=None if ok else "refused")
+    return {"ok": ok, "said": said}
+
+
 def _dashboard_refresh():
     """
     The Model Dashboard's Refresh, pressed on the page: the same read as
@@ -7316,6 +7368,7 @@ if __name__ == "__main__":
             companion_page.LAYOUT_PANEL.preview_hook = _sprinkler_layout_preview
             companion_page.LAYOUT_PANEL.place_hook = _sprinkler_layout_place
             companion_page.DASHBOARD_PANEL.refresh_hook = _dashboard_refresh
+            companion_page.DASHBOARD_PANEL.show_hook = _dashboard_show
             companion_page.keep(bound_pid=_companion_revit)
         except Exception as why:                         # noqa: BLE001 - never cost the chat
             sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)

@@ -1534,7 +1534,8 @@ async function loads_() {
 // made by Heron's brain (heron_model_dashboard); the page only draws them.
 // Refresh is the modeller's own press - the page never reads Revit by itself.
 // Model text goes on the page with textContent only. Nothing here writes to
-// Revit: Copy IDs puts the ids on the clipboard for Revit's Select by ID.
+// the model: Copy IDs puts the ids on the clipboard for Revit's Select by ID,
+// and Select / Isolate change only what is on screen (docs/40 s21.11).
 
 let dashShown = null;
 let dashBusy = false;
@@ -1568,6 +1569,38 @@ async function dashRefresh(button, said) {
   await dashboard_();
   const after = $("d-said");
   if (after) { after.className = kept.cls; after.textContent = kept.text; }
+}
+
+// A row's Select in Revit / Isolate in view, or Reset isolate. On screen only:
+// the selection and the active view's Temporary Hide/Isolate - never the model.
+// The page sends the row's key, never ids: Heron uses the ids its own read found.
+async function dashShow(action, row, button) {
+  if (dashBusy) return;
+  dashBusy = true;
+  const said = $("d-said");
+  document.querySelectorAll("#dashboard button").forEach(b => { b.disabled = true; });
+  if (said) { said.className = "result"; said.textContent = "Asking Revit…"; }
+  try {
+    const res = await fetch("/api/dashboard/show", {
+      method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
+      credentials: "same-origin",
+      body: JSON.stringify({ action: action, row: row }),
+    });
+    const answer = await res.json();
+    if (said) {
+      said.className = answer.ok ? "result ok" : "result failed";
+      said.textContent = answer.said || answer.error || (answer.ok ? "Done." : "Not done.");
+    }
+  } catch (e) {
+    if (said) {
+      said.className = "result failed";
+      said.textContent = "The page could not reach Heron. Nothing was sent to Revit.";
+    }
+  }
+  document.querySelectorAll("#dashboard button").forEach(b => { b.disabled = false; });
+  dashBusy = false;
+  if (button && said) said.scrollIntoView({ block: "nearest" });
 }
 
 async function copyIds(ids, button) {
@@ -1645,6 +1678,15 @@ function dashLook(D, colours) {
     if (r.where) li.append(el("p", "d-look-where", "In Revit: " + r.where));
     const tools = el("div", "d-look-tools");
     if ((r.ids || []).length) {
+      const sel = el("button", "btn-lite", "Select in Revit");
+      sel.type = "button";
+      sel.title = "Select these " + r.ids.length + " element(s) in Revit - nothing in the model changes";
+      sel.addEventListener("click", () => dashShow("select", r.key, sel));
+      const iso = el("button", "btn-lite", "Isolate in view");
+      iso.type = "button";
+      iso.title = "Revit's Temporary Isolate in the active view - nothing in the model changes";
+      iso.addEventListener("click", () => dashShow("isolate", r.key, iso));
+      tools.append(sel, iso);
       const copy = el("button", "btn-lite", "Copy " + r.ids.length + " ID(s)");
       copy.type = "button";
       copy.title = "Copy the element ids for Manage > Inquiry > Select by ID in Revit";
@@ -1692,7 +1734,11 @@ function renderDashboard(D) {
   said.setAttribute("role", "status");
   said.setAttribute("aria-live", "polite");
   refresh.addEventListener("click", () => dashRefresh(refresh, said));
-  tools.append(refresh, said);
+  const reset = el("button", "btn-lite", "Reset isolate");
+  reset.type = "button";
+  reset.title = "End the Temporary Hide/Isolate in Revit's active view";
+  reset.addEventListener("click", () => dashShow("reset", null, reset));
+  tools.append(refresh, reset, said);
   box.append(meta, tools, dashTiles(D, colours));
   if ((D.notRead || []).length) {
     const nr = el("div", "d-notread");

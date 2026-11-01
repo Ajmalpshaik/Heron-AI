@@ -43,7 +43,7 @@ breaks a rule.
 | 1 | *Worth a look*: errors, warnings, unplaced and unenclosed rooms and Spaces, empty sheets, unused families and group types, imported CAD, unloaded or unpinned links, closed worksets, elements with no level, views with no template or off sheets, in-place families | R | **built**, not run in Revit |
 | 1 | Copy IDs for Revit's Manage > Inquiry > Select by ID | R (the clipboard only) | **built** |
 | 1 | Refresh - the modeller's own press, never a timer | R | **built**, not run in Revit |
-| 2 | Click a bar or a row to select those elements in Revit; isolate; zoom to | S | planned - a `COMPANION_ACTIONS` row at EXECUTE, through `SET_SELECTION` / `ISOLATE_ELEMENTS`. docs/40 §18 question 7 said *no Select-in-Revit button in V1*; this asks it again |
+| 2 | Select a row's elements in Revit; isolate them in the active view; reset | S | **built** 2026-11-01 on the owner's *"do it until finish"* - [docs/40 §21.11](../../40-heron-companion.md); three `COMPANION_ACTIONS` rows at EXECUTE. Not run in Revit. Zoom to, and clicking a bar, still planned |
 | 2 | Parameter fill-rate by category: populated / empty / absent, against the office's or client's list | R | planned - `heron_modelqa.parameters` already counts the three states; needs a read of the values |
 | 2 | Duplicate Mark / Type Mark, inconsistent values ("Lvl 1" vs "Level 01") | R | planned - `FIND_DUPLICATE_VALUES` is PROVEN |
 | 2 | *The model has changed - Refresh*: the add-in marks the live file when the model changes after the read | R | planned - the live file, never a timed read (README rule 3) |
@@ -108,6 +108,6 @@ its own proof plan says how.
 
 ## Questions for the owner, one at a time, before phase 2
 
-1. Phase 2's Select-in-Revit button changes Revit's selection from the page (EXECUTE, not a model
-   change). docs/40 §18 question 7 kept it out of V1. Add it now?
+1. ~~Phase 2's Select-in-Revit button?~~ Built on *"do it until finish"* (docs/40 §21.11); confirm on
+   the pull request.
 2. Which parameters should the fill-rate check by default - the office's own list, or one per client?
