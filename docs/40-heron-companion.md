@@ -1113,3 +1113,42 @@ again when their fragments are PROVEN - [group FE](needs-checking/group-fe.md) f
 page *"shows the model, the view and the selection ... and changes nothing"*. The Selected card is off
 since §21.6, and the page's Apply, Finalize and Place change the model under the same switches as a chat.
 Until the reply is fixed, describe the page from this section, not from that reply.
+
+### 21.10 The Model Dashboard panel (2026-11-01)
+
+A fifth kind of content, on the owner's word - *"Check always this as a referance and buld the conpnaiban
+app with this and what are the ideas you have you can add that aslo okkey"* - with
+[BIMLens](https://github.com/IbrahimFahdah/BIMLens) as the reference for ideas. **Studied, never
+imported:** its repository holds a README only, with no code and no licence, so nothing of its code,
+name, wording or look is in Heron ([D-25](decisions/D-25.md)). One part of how it works is refused - its
+page is served from the internet and calls the PC; this page stays served from the PC (README rule 1).
+Every idea, phased, is in the work note
+[`companion-model-dashboard-2026-11-01`](work-notes/plans/companion-model-dashboard-2026-11-01.md).
+
+**What it shows.** `revit_model_dashboard` (ANALYZE, through `run_fragment_read`) reads the model once
+with `REPORT_MODEL_DASHBOARD` - one pass, one JSON string, no transaction - and `brain/heron_model_dashboard.py`
+makes everything on the panel:
+
+- **Tiles** - model elements, worksets, warnings, views, sheets, families, Revit links, CAD files, rooms.
+- **Bars** - elements by category, by level and by workset; warnings by kind, an error's bar in the error
+  colour; views by type. Past twelve bars the rest fold into *Others*.
+- **Worth a look** - error warnings, warnings, rooms and Spaces not placed or not enclosed, empty sheets,
+  families and group types never placed, CAD imported rather than linked, Revit links not loaded or not
+  pinned, closed worksets, elements on no level, then the plain counts: views with no template, views
+  off every sheet, in-place families. Each row says why it costs time and where Revit shows it, and
+  **Copy IDs** puts its element ids on the clipboard, semicolon-separated, for Manage > Inquiry > Select
+  by ID - the page changes nothing in Revit, not even the selection.
+- **Refresh** - the modeller's press reads the model again (`_dashboard_refresh`, under the lock every
+  tool call holds, the pin's refusal standing). Never on a timer (README rule 3); one read at a time.
+
+**It keeps this page's rules.** The panel holds data and calls one hook; every number, colour and line is
+made in `brain/`; model text reaches the page through `textContent`. It writes nothing, so it has no
+`COMPANION_ACTIONS` row. **A count, never a verdict** - `heron_modelqa`'s rule: no row calls a model
+compliant, clean or healthy, and there is no score. A part the read could not reach is shown as *not
+read*, never as zero.
+
+**Proved without Revit:** `tests/test_model_dashboard.py` (the brain), `tests/test_companion.py`'s
+Dashboard group (the panel, its routes behind the pairing, Refresh under the lock and never on a timer),
+and `tests/test_mcp_serves.py` (served with the SDK's Context; refused when the Companion is off).
+**Not run in Revit** - `REPORT_MODEL_DASHBOARD` is DRAFT, and its proof on a named model, with its
+negative case, is owed before the panel is relied on.

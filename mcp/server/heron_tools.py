@@ -365,6 +365,12 @@ TOOLS = {
     # nothing. Placing is the page's companion_sprinkler_place below.
     "revit_sprinkler_layout":   (ANALYZE, "run_fragment_read"),
 
+    # The Model Dashboard (docs/40 s21.10). The same level: it reads the
+    # model once with REPORT_MODEL_DASHBOARD, makes the tiles, charts and
+    # worth-a-look rows in the brain, and changes nothing. The page's Refresh
+    # is the same read, so it has no COMPANION_ACTIONS row.
+    "revit_model_dashboard":    (ANALYZE, "run_fragment_read"),
+
     # Puts a settings capability's CURRENT values on the Companion page as an
     # editable table, sending nothing to Revit. READ, no operation. The
     # page's Apply is companion_apply below, at MODIFY - never this tool.

@@ -2135,6 +2135,32 @@ def sprinkler_layout(layout_json, inputs, project=None, project_name=None):
             "view": LAYOUT.view(data, result)}
 
 
+def model_dashboard(dashboard_json):
+    """
+    The Companion's Model Dashboard from REPORT_MODEL_DASHBOARD's
+    dashboardJson - docs/40 s21.10.
+
+    Returns {"dashboard", "said"}: the tiles, charts and worth-a-look rows the
+    page draws, and one line for the chat; "dashboard" is None, and "said"
+    says why, when what Revit sent could not be read. It reads only. One audit
+    line, `qa.model_dashboard`, says how it ended and carries counts only -
+    never a name from the model.
+    """
+    try:
+        import heron_model_dashboard as DASH
+    except ImportError as exc:
+        raise BrainUnavailable("Heron's Model Dashboard could not be imported: %s. It needs "
+                               "nothing beyond Python itself, so this is a broken install."
+                               % exc)
+    got = DASH.dashboard(dashboard_json)
+    board = got.get("dashboard")
+    _audit().record("qa.model_dashboard", board is not None,
+                    fields={"status": "ok" if board is not None else "unreadable"},
+                    numbers={"look": len([r for r in board["look"] if r["state"] == "look"]),
+                             "not_read": len(board["notRead"])} if board else {})
+    return got
+
+
 def sprinkler_report(network, result, model_path=None, project=None, project_name=None,
                      folder=None):
     """

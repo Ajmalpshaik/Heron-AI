@@ -550,7 +550,8 @@ async def exercise(server):
 # and docs/04 section 7.1 names the same tools. revit_show joined them with
 # the show door: it sends a fragment, and a fragment can be slow.
 WAITS_ON_REVIT = ("revit_change", "revit_read", "revit_show", "revit_building_loads",
-                  "revit_sprinkler_hydraulics", "revit_sprinkler_layout")
+                  "revit_sprinkler_hydraulics", "revit_sprinkler_layout",
+                  "revit_model_dashboard")
 
 
 def exercise_waiting(module):
@@ -1606,7 +1607,8 @@ async def exercise_single_purpose(module, server, newest):
         companion_tools = (("revit_edit_table", {"parameters": "Mark"}),
                            ("revit_building_loads", {}),
                            ("revit_sprinkler_hydraulics", {}),
-                           ("revit_sprinkler_layout", {}))
+                           ("revit_sprinkler_layout", {}),
+                           ("revit_model_dashboard", {}))
         config = os.path.join(os.environ["HERON_KNOWLEDGE"], "heron.config")
         had_config = os.environ.get("HERON_CONFIG")
         os.environ["HERON_CONFIG"] = config

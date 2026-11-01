@@ -96,6 +96,13 @@ compatibility-note: >
 #                                   audit, and one Revit raises no warning for
 #   "is the model clean"                 -> here. Revit's own warnings are
 #                                           the first answer to that
+#   "model health summary"               -> REPORT_MODEL_DASHBOARD - every part
+#                                           of the model counted at once, the
+#                                           warnings among them, for the
+#                                           Companion's Model Dashboard. This
+#                                           card keeps "is the model healthy"
+#                                           and hands back the elements
+#                                           (2026-11-01)
 
 utterances:
   - how many warnings

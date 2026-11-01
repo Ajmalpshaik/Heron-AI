@@ -1393,6 +1393,75 @@ def test_layout_panel():
     print()
 
 
+def test_dashboard_panel():
+    """The Model Dashboard (docs/40 s21.10): data and one hook only, its routes behind
+    the pairing, Refresh only when pressed and one at a time, and nothing on it
+    writes to Revit."""
+    print()
+    print("The Model Dashboard: data and one hook only, read when pressed, writes nothing")
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    sys.path.insert(0, os.path.join(ROOT, "tests"))
+    import heron_brain as brain_seam
+    import test_model_dashboard as DASH
+    panel = hc.DashboardPanel()
+    check(panel.current() is None, "with nothing read, the panel holds nothing")
+    check(panel.refresh() == {"ok": False, "said": "Not read: %s." % hc.DashboardPanel.GONE},
+          "with no chat connected, Refresh says so and reads nothing")
+    answer = brain_seam.model_dashboard(DASH.sample())
+    panel.open("Tower MEP", answer, ("Tower MEP", "", "11"))
+    shown = panel.current()
+    check(shown["document"] == "Tower MEP" and shown["tiles"] and shown["charts"]
+          and shown["look"] and shown["states"] and shown["busy"] is False,
+          "the panel shows the brain's tiles, charts, rows and colours as they came")
+    calls = []
+
+    def hook():
+        calls.append(panel.current()["busy"])
+        check(panel.refresh()["said"] == "Not read: %s." % hc.DashboardPanel.BUSY,
+              "a second Refresh while one reads is told so and reads nothing")
+        return {"ok": True, "said": "read again"}
+    panel.refresh_hook = hook
+    check(panel.refresh() == {"ok": True, "said": "read again"} and calls == [True],
+          "Refresh calls the hook once, marked busy while it runs")
+    check(panel.current()["busy"] is False, "busy is cleared after the read")
+
+    def broken():
+        raise RuntimeError("Revit closed")
+    panel.refresh_hook = broken
+    try:
+        panel.refresh()
+    except RuntimeError:
+        pass
+    check(panel.current()["busy"] is False, "busy is cleared even when the read raises")
+
+    source = io.open(SOURCE, encoding="utf-8").read()
+    i = source.index('if path == "/api/dashboard":')
+    j = source.index('if path == "/api/dashboard/refresh":')
+    check(source.index("why = self._api_ok()", i) < source.index("DASHBOARD_PANEL.current()", i)
+          and source.index("why = self._api_ok()", j) < source.index("DASHBOARD_PANEL.refresh(", j),
+          "both Dashboard routes are behind _api_ok like every other route")
+    server = io.open(SERVER, encoding="utf-8").read()
+    check("DASHBOARD_PANEL.refresh_hook = _dashboard_refresh" in server,
+          "the server sets the Dashboard's refresh_hook")
+    refresh_src = server[server.index("def _dashboard_refresh("):]
+    refresh_src = refresh_src[:refresh_src.index(chr(10) + "def ", 10)]
+    read_src = server[server.index("def _read_dashboard("):]
+    read_src = read_src[:read_src.index(chr(10) + "def ", 10)]
+    check("with _revit_lock:" in refresh_src and "revit_change" not in read_src
+          and '"REPORT_MODEL_DASHBOARD"' in read_src and "pinned.check(reply)" in read_src,
+          "Refresh reads under the lock, through revit_read only, and the pin's refusal stands")
+    check(tools.TOOLS.get("revit_model_dashboard") == (tools.ANALYZE, "run_fragment_read")
+          and not [k for k in tools.COMPANION_ACTIONS if "dashboard" in k],
+          "the chat tool reads only, and the page has no write action for it")
+    page = io.open(PAGE_JS, encoding="utf-8").read()
+    dash = page[page.index("// ---------------------------------------------------------------- dashboard"):
+                page.index("// ---------------------------------------------------------------- sprinkler")]
+    check('"/api/dashboard/refresh"' in dash and "setInterval" not in dash
+          and "innerHTML" not in dash and "setTimeout(dashRefresh" not in dash,
+          "the page reads again only on Refresh, never on a timer, and puts text in as text")
+    print()
+
+
 def test_sprinkler_panel():
     """The Sprinkler panel (docs/46): data and hooks only, every route behind the
     pairing, its own 3D view, and nothing on it writes to Revit."""
@@ -1532,6 +1601,10 @@ def main():
         test_sprinkler_panel()
     except Exception as why:                    # noqa: BLE001 - reported, not hidden
         check(False, "the Sprinkler panel checks ran to the end (they raised %r)" % (why,))
+    try:
+        test_dashboard_panel()
+    except Exception as why:                    # noqa: BLE001 - reported, not hidden
+        check(False, "the Model Dashboard checks ran to the end (they raised %r)" % (why,))
     try:
         test_layout_panel()
     except Exception as why:                    # noqa: BLE001 - reported, not hidden
