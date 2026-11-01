@@ -2,6 +2,19 @@
 // `findings`, `unusedFilters`, `filterCount`, `filterSettings`, `disabled`,
 // `hidden`, `blankOverride`, `nothingToActOn` and `templateOwned` behind.
 //
+// VERSION 4 (2026-11-01) - A FILTER A VIEW TEMPLATE CARRIES IS IN USE. Until
+// now the "used in" sweep read real views only, so a filter carried by a view
+// template - and drawn on every view that follows it - read "ON NO VIEW.
+// Either a leftover", which invites a delete that changes those drawings.
+// FIND_PURGEABLE_ELEMENTS already counts such a filter as used, and the safer
+// rule is kept here: every template is read too, and a filter one carries is
+// IN USE, never in `unusedFilters`, named with the template and how many
+// views follow it - a template no view follows and no view type names as
+// the default for new views is said to be one, and the filter is still kept
+// out of the unused list (FIND_PURGEABLE_ELEMENTS lists those as "used ONLY
+// by templates that are themselves unused"). "Which filters are unused" is
+// that card's question; this one says what is where.
+//
 // VERSION 3 (2026-11-01) - AUDIT_VIEW_FILTERS MERGED IN, on the owner's
 // instruction ("make sure there is no duplicate tools"). For each view named,
 // what that card had that this lacked:
@@ -84,15 +97,48 @@ var filters = new FilteredElementCollector(doc).OfClass(typeof(FilterElement))
 
 var filterCount = filters.Count;
 
-// Real views only - templates hold filters but are not where a drawing is, and
-// sheets and schedules have none.
+// Real views - where a drawing is. Sheets and schedules have no filters.
+// TEMPLATES ARE KEPT APART (version 4): a filter a template carries is drawn
+// on every view that follows it, so it is IN USE - see the header.
 var views = new List<View>();
+var templates = new List<View>();
 foreach (var view in new FilteredElementCollector(doc).OfClass(typeof(View)).Cast<View>())
 {
-    if (view == null || view.IsTemplate) continue;
+    if (view == null) continue;
+    if (view.IsTemplate) { templates.Add(view); continue; }
     if (view.ViewType == ViewType.Schedule || view.ViewType == ViewType.DrawingSheet) continue;
     views.Add(view);
 }
+
+// How many views follow each template, and which templates a view type names
+// as the default for new views - the two ways FIND_PURGEABLE_ELEMENTS counts a
+// template as in use.
+var followers = new Dictionary<ElementId, int>();
+foreach (var view in views)
+{
+    try
+    {
+        var templateId = view.ViewTemplateId;
+        if (templateId == null || templateId == ElementId.InvalidElementId) continue;
+        int count;
+        followers.TryGetValue(templateId, out count);
+        followers[templateId] = count + 1;
+    }
+    catch { }
+}
+var defaultTemplates = new HashSet<ElementId>();
+foreach (var candidate in new FilteredElementCollector(doc).OfClass(typeof(ViewFamilyType)))
+{
+    var viewType = candidate as ViewFamilyType;
+    if (viewType == null) continue;
+    try
+    {
+        var defaultId = viewType.DefaultTemplateId;
+        if (defaultId != null && defaultId != ElementId.InvalidElementId) defaultTemplates.Add(defaultId);
+    }
+    catch { }
+}
+var byTemplateOnly = 0;
 
 foreach (var filter in filters)
 {
@@ -110,24 +156,58 @@ foreach (var filter in filters)
         catch { }
     }
 
-    if (usedIn.Count == 0)
+    // THE TEMPLATES THAT CARRY IT (version 4), each with how many views
+    // follow it. One guard per template, as per view.
+    var viaTemplates = new List<string>();
+    foreach (var template in templates)
+    {
+        var carries = false;
+        try { carries = template.IsFilterApplied(filter.Id); }
+        catch { }
+        if (!carries) continue;
+        int following;
+        followers.TryGetValue(template.Id, out following);
+        viaTemplates.Add(following > 0
+            ? string.Format("view template '{0}' ({1} view(s) follow it)", template.Name, following)
+            : defaultTemplates.Contains(template.Id)
+                ? string.Format("view template '{0}' (no view follows it yet; a view type makes it the "
+                    + "default for new views)", template.Name)
+                : string.Format("view template '{0}' (NO view follows it - FIND_PURGEABLE_ELEMENTS lists "
+                    + "this filter as used only by unused templates)", template.Name));
+    }
+    var templateText = viaTemplates.Count == 0 ? ""
+        : "; and through " + (viaTemplates.Count > 6
+            ? string.Join(", ", viaTemplates.Take(6)) + string.Format(" and {0} more template(s)", viaTemplates.Count - 6)
+            : string.Join(", ", viaTemplates));
+
+    if (usedIn.Count == 0 && viaTemplates.Count == 0)
     {
         unusedFilters.Add(filter.Id);
-        findings.Add(string.Format("'{0}'  - {1}  - ON NO VIEW. Either a leftover, or made and never "
-            + "applied", filter.Name, kind));
+        findings.Add(string.Format("'{0}'  - {1}  - ON NO VIEW AND IN NO VIEW TEMPLATE. Either a leftover, "
+            + "or made and never applied", filter.Name, kind));
+    }
+    else if (usedIn.Count == 0)
+    {
+        // IN USE THROUGH A TEMPLATE - never "on no view" (version 4).
+        byTemplateOnly++;
+        findings.Add(string.Format("'{0}'  - {1}  - IN USE through a view template, on no view of its "
+            + "own{2}. Deleting it changes every view that follows those templates", filter.Name, kind,
+            templateText));
     }
     else
     {
-        findings.Add(string.Format("'{0}'  - {1}  - used in {2} view(s): {3}",
+        findings.Add(string.Format("'{0}'  - {1}  - used in {2} view(s): {3}{4}",
             filter.Name, kind, usedIn.Count,
             usedIn.Count > 12
                 ? string.Join(", ", usedIn.Take(12)) + string.Format(" and {0} more", usedIn.Count - 12)
-                : string.Join(", ", usedIn)));
+                : string.Join(", ", usedIn), templateText));
     }
 }
 
-findings.Insert(0, string.Format("{0} filter(s) in this project, checked against {1} view(s). {2} are "
-    + "on no view at all", filterCount, views.Count, unusedFilters.Count));
+findings.Insert(0, string.Format("{0} filter(s) in this project, checked against {1} view(s) and {2} view "
+    + "template(s). {3} are on no view and in no template; {4} more are on no view of their own and IN "
+    + "USE through a template", filterCount, views.Count, templates.Count, unusedFilters.Count,
+    byTemplateOnly));
 
 // ---- the Filters tab of the views named ------------------------------------
 

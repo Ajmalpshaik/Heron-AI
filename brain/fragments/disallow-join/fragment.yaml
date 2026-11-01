@@ -127,7 +127,7 @@ compatibility-note: >
 #                                           joining between elements, NOT the
 #                                           end cleanup of a wall
 #   "unjoin these"                       -> JOIN_GEOMETRY, join false
-#   "the wrong one is cutting"           -> SWITCH_JOIN_ORDER
+#   "the wrong one is cutting"           -> JOIN_GEOMETRY, join switch
 #   "put these walls on another level"   -> SET_ELEMENT_LEVEL
 #   "is the model clean"                 -> READ_MODEL_WARNINGS, which is
 #                                           Revit's own list

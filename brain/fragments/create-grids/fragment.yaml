@@ -9,7 +9,7 @@ semantic-identity: "set out a whole grid from bay spacings"
 kind: action
 domain: revit.elements
 capability: CREATE_GRIDS
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -43,10 +43,40 @@ risk: MODIFY
 # CREATE_RADIAL_GRIDS WAS JUDGED ON THE SAME RULE AND KEPT APART: it names no
 # grid (Revit numbers them), so the name rule does not bear on it, and its
 # inputs - a centre, radii, spoke angles and a sweep - share nothing with a
-# straight grid's.
+# straight grid's. (Reversed the same day - version 3, below.)
 #
 # Version 1's proof below no longer describes the code (impl/ changed) and is
 # kept as the record; DRAFT until version 2 is proved on a real model (D-30).
+#
+# VERSION 3 (2026-11-01) - CREATE_RADIAL_GRIDS WAS MERGED INTO THIS CARD on
+# the owner's instruction ("make sure there is no duplicate tools"; "check
+# once more"), and is DEPRECATED. The same job - setting-out grids - and, as
+# with CREATE_GRID, the difference was the input: a THIRD one, ARCS AND SPOKES
+# ABOUT ONE CENTRE (`centreMm`, `radiiMm`, `spokeAnglesDegrees`, with the
+# arcs' sweep `startDegrees` and `endDegrees`). All of its rules came with it:
+# a full circle drawn just short of closed (a grid cannot be a closed
+# circle); a spoke outside the arcs' sweep drawn and SAID; refused before
+# anything is made - a centre that is not two or three numbers, a value that
+# is not a number, neither radius nor spoke, a radius of 0 or less, spokes
+# with no radius. Its outputs: made -> the count of `created`; gridIds ->
+# `created` (the grids themselves); gridNames -> `namedAs`; refused and
+# findings -> `refused`, which after a run says what was made.
+#
+# HOW RADIAL GRIDS ARE NAMED: BY REVIT, as they were on that card. Revit gives
+# each new grid the next free name after the last grid made, so one can never
+# take a name already held and the taken-name refusal has nothing to refuse;
+# `gridNames` (which names the `gridLines` grids) is refused with a radial
+# grid. The names are read back into `namedAs`.
+#
+# NOT CARRIED, AND WHY - THE OPPOSITE RULE: CREATE_RADIAL_GRIDS caught a grid
+# Revit refused and KEPT THE REST, a partial setting-out under one undo
+# entry. Here a grid Revit will not make undoes the whole call (Article 8),
+# the safer rule. And its sweep: two required numbers there, two optional
+# words here (left out "none") - so a straight grid need not send them - and
+# a radial grid with no sweep is REFUSED rather than given one: 0 and 360 is
+# typed for a full circle, never assumed.
+#
+# DRAFT until version 3 is proved on a real model (D-30).
 
 purpose: >
   Sets out a whole column grid from a start point and a list of bay dimensions -
@@ -74,6 +104,9 @@ purpose: >
   ends differ in height refused. **A name already taken is refused before any
   grid is made**, ignoring capitals, and a grid Revit will not make undoes the
   whole call.
+
+  **VERSION 3 ALSO SETS OUT A RADIAL GRID** - arcs about one centre over a
+  sweep, and spokes out from it - named by Revit and read back.
 
   **The bay dimensions are MILLIMETRES, divided by 304.8 (D-71).** The start
   point is internal FEET, converted from millimetres by the add-in (D-67).
@@ -127,6 +160,41 @@ contract:
     # own names. Refused with bay spacings, whose names run from firstLetter
     # and firstNumber.
     - name: gridNames
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 3, from CREATE_RADIAL_GRIDS - a RADIAL grid. Each left out
+    # ("none") unless a radial grid is asked; given with gridLines or bay
+    # spacings, refused. The centre, "x,y" or "x,y,z" in millimetres.
+    - name: centreMm
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # Radii in millimetres, commas between - "6000, 12000"; an arc grid at
+    # each, over the sweep.
+    - name: radiiMm
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # Spoke angles in degrees, commas between - "0, 30, 60, 90"; a straight
+    # grid from the centre to the largest radius at each.
+    - name: spokeAnglesDegrees
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # The arcs' sweep, degrees anticlockwise from east, as Revit measures -
+    # one number each. ASKED, never assumed: a radial grid with none is
+    # refused. 0 and 360 is a full circle.
+    - name: startDegrees
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: endDegrees
       type: string
       source: request
       optional: true
@@ -217,7 +285,10 @@ compatibility-note: >
 
 # ROUTING (2026-10-12, the gap fill)
 #
-#   "set out a radial grid"                 -> CREATE_RADIAL_GRIDS
+#   "set out a radial grid"                 -> here since version 3, centreMm,
+#                                              radiiMm, spokeAnglesDegrees (was
+#                                              CREATE_RADIAL_GRIDS)
+#   "arc grids at 6 and 12 m with spokes every 30 degrees" -> here, the same
 utterances:
   - make a grid series across the building
   - set out the grid at 6000 bays
@@ -231,3 +302,10 @@ utterances:
   - I need a new grid line
   # ...and its semantic identity, which nothing else declares:
   - add a column grid line between these two points
+  # MOVED 2026-11-01 from CREATE_RADIAL_GRIDS, merged into this card.
+  - set out a radial grid about this centre
+  - make arc grids at 6 m and 12 m with spokes every 30 degrees
+  - set out the radial setting-out for the round building
+  - create spoke grids from the centre at 0 30 60 and 90 degrees
+  # ...and its semantic identity, which nothing else declares:
+  - set out a radial grid of arcs and spokes about one centre

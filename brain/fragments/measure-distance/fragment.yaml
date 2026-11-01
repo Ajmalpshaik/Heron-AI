@@ -35,7 +35,7 @@ purpose: >
   the two definitions agree, and the report still names which was used.
 
   **Touching or overlapping elements report zero**, which is a real answer and
-  not a failure. SELECT_TOUCHING is what says whether they overlap.
+  not a failure. FIND_CLASHES is what says whether they overlap.
 
   **Millimetres out, by multiplying by 304.8.** Internal feet are not what
   anybody asked, and stating the unit in the answer is what stops a number being
@@ -75,7 +75,7 @@ compatibility-note: >
   arithmetic - no units API, which is what changed shape at 2021.
 
 # ROUTING - repeated in FIND_NEAREST_ELEMENTS, CHECK_MINIMUM_CLEARANCE and
-# SELECT_TOUCHING.
+# FIND_CLASHES.
 #
 #   "how far apart are these two"    -> here
 #   "what is the gap between these"  -> here
@@ -85,7 +85,7 @@ compatibility-note: >
 #                                       compare against
 #   "what is nearest to this"        -> FIND_NEAREST_ELEMENTS. That searches;
 #                                       this measures two things already known
-#   "are they touching"              -> SELECT_TOUCHING. This reports zero for
+#   "are they touching"              -> FIND_CLASHES. This reports zero for
 #                                       touching AND for overlapping, and
 #                                       cannot tell them apart
 #   "how far is the nearest thing"       -> PROBE_AROUND_ELEMENTS, which

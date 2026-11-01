@@ -79,7 +79,7 @@ Pure arithmetic over what it is handed: no Revit, no network, no file, nothing
 beyond Python itself and the HVAC engine whose answer machinery it shares -
 reading inputs, refusing, offering a cited figure, rendering - so every MEP
 design answer has one shape. What puts a result INTO the model is a fragment -
-PLACE_FAMILY_INSTANCES, SET_MEP_SIZE, CHECK_OBSTRUCTIONS - and an answer names
+PLACE_FAMILY_INSTANCES, SET_MEP_SIZE, PROBE_AROUND_ELEMENTS - and an answer names
 which. A project's governing standards are asked once and kept for it (D-111),
 by the caller; this file reads no store.
 
@@ -2681,7 +2681,7 @@ def calc_sprinkler_layout(a):
                             "sprinkler lands at the level's own elevation")
         else:
             a.into_revit("PLACE_FAMILY_INSTANCES at these points, on the level they are "
-                         "measured from; then CHECK_OBSTRUCTIONS on the same points for the "
+                         "measured from; then PROBE_AROUND_ELEMENTS on the same points for the "
                          "beams and ducts a grid cannot see")
     else:
         a.table("Sprinkler points from the room corner (mm)", ("#", "x", "y"),
@@ -2846,9 +2846,9 @@ def calc_sprinkler_spacing(a):
            "either way, or twice the distance to the wall for an end sprinkler; L: the same "
            "between branch lines; area = S x L - NFPA 13's protection area of coverage")
     a.uses("walls found by casting a line from each sprinkler along and across its branch; "
-           "an obstruction is not a wall here - CHECK_OBSTRUCTIONS finds those")
+           "an obstruction is not a wall here - PROBE_AROUND_ELEMENTS finds those")
     a.cite(_spacing_source(family))
-    a.into_revit("REPORT_COVERAGE and CHECK_OBSTRUCTIONS read the same sprinklers in Revit; "
+    a.into_revit("REPORT_COVERAGE and PROBE_AROUND_ELEMENTS read the same sprinklers in Revit; "
                  "a sprinkler that fails is moved with the move fragments, after the modeller "
                  "says where")
 
@@ -3071,7 +3071,7 @@ def calc_sprinkler_layout_room(a):
     a.cite(_spacing_source(family))
     a.into_revit("PLACE_FAMILY_INSTANCES at these points on the room's level - a level-based "
                  "sprinkler type, at the height asked; then the heads are read back and "
-                 "`sprinkler_spacing` runs on what is really there. CHECK_OBSTRUCTIONS for the "
+                 "`sprinkler_spacing` runs on what is really there. PROBE_AROUND_ELEMENTS for the "
                  "beams and ducts a grid cannot see")
 
 
@@ -3404,7 +3404,7 @@ def calc_obstruction(a):
         a.cite(rule["source"])
     _check_standard(a, held["sprinkler_standard"], "the tables used are", "nfpa")
     a.cite(beam["source"])
-    a.into_revit("CHECK_OBSTRUCTIONS finds which sprinklers have a beam or duct within a "
+    a.into_revit("PROBE_AROUND_ELEMENTS finds which sprinklers have a beam or duct within a "
                  "distance; CHECK_VERTICAL_CLEARANCE measures the gap between services")
 
 
