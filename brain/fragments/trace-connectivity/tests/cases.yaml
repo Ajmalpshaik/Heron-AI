@@ -18,7 +18,45 @@ positive:
       reported a short run and a clean zero here would be repeating the exact
       mistake that made this fragment necessary
 
+  # VERSION 2 (2026-11-01), from FIND_SYSTEM_ISLANDS. Each FAILS on version
+  # 1, which could not be asked without a start element.
+  - given: start left out, one properly connected supply system with its AHU
+    expect: >
+      islandCount 1, sourceless empty, islandSizes holding the whole set. Check
+      the count against Revit's own Select Connected, not against this run twice
+
+  - given: start left out, a supply and a return system passed together
+    expect: TWO islands, neither sourceless - two networks is normal and not a fault
+
+  - given: >
+      start left out, on a Revit 2024 model, a domestic water network whose only
+      equipment is a water heater in the PLUMBING EQUIPMENT category
+    expect: ONE island, NOT sourceless
+
 negative:
+  # VERSION 2, from FIND_SYSTEM_ISLANDS.
+  - given: start left out, a system with A BRANCH THAT WAS COPIED AND NEVER REJOINED
+    expect: >
+      TWO islands, the branch SOURCELESS, with both sizes - nothing on screen
+      shows the break
+
+  - given: start left out, a sourceless island of two elements and another of ninety
+    expect: both listed with their sizes; only the sizes tell a leftover from a main that lost the plant
+
+  - given: >
+      start left out, TWO DUCTS THAT TOUCH PERFECTLY BUT ARE JOINED TO NOTHING,
+      tolerance 5
+    expect: >
+      islandCount TWO - Revit's own joins - AND joinedByGeometry counting the
+      touching ends, the two reported SEPARATELY. A version that merged them
+      into one island would hide the break Revit's flow calculation sees
+
+  - given: start left out, an element whose neighbour is NOT in the passed set
+    expect: the partition stops there - an island is a partition OF THE SET
+
+  - given: start left out, a wall in the set
+    expect: its own island of one, no throw, and the rest of the report kept
+
   - given: a single duct with nothing attached to it
     expect: >
       reached = just that duct, openEnds = 2, joinedByGeometry = 0. Reported as

@@ -1,15 +1,21 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-119
-semantic-identity: "draw the lines of a profile, detail item, annotation or title block family in its view, locked to the planes they lie on"
+semantic-identity: "draw lines from a typed shape - a 2D family's lines in its view, locked to the planes they lie on, or a project's detail lines in a view or model lines on a plane"
 kind: action
 domain: revit.families
 capability: DRAW_FAMILY_DETAIL_LINES
-version: 1
+# VERSION 2 (2026-11-01) - CREATE_LINE WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools", every conflict
+# to keep the safer rule), and is DEPRECATED: a PROJECT's detail lines in a
+# view and model lines on a plane, from the same millimetre shape language.
+# Version 1's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -36,6 +42,15 @@ purpose: >
   **ON A SUBCATEGORY** of the family's category for its line weight, made when
   new, or "none" for the category itself.
 
+  **AND IN A PROJECT (version 2, 2026-11-01)** - CREATE_LINE was merged into
+  this card and is DEPRECATED. `lineKind` says DETAIL lines, drawn in the view
+  named and printed with it alone, or MODEL lines, real lines in the model on
+  the plane `planeMm` along the view's direction - with no view, a horizontal
+  plane at that height. There is no safe default, so in a project it is asked
+  for; a 3D view holds no detail lines. The style is one of the project's line
+  styles or "none". All or nothing in millimetres: a piece shorter than
+  Revit's shortest line refuses the call.
+
   **A 3D MODEL FAMILY IS REFUSED** - its 2D symbol is DRAW_FAMILY_SYMBOLIC_LINES.
   READ BACK, ALL OR NOTHING: every line's ends, its style and every lock are
   read again. Their ids come back.
@@ -46,34 +61,69 @@ contract:
   needs:
     - name: doc
       type: Document
-    # The family's view, as the Project Browser names it - "Ref. Level".
+    # The family's view, as the Project Browser names it - "Ref. Level". In a
+    # project (version 2) the view a detail line is drawn in, or whose two
+    # coordinates a model line is written in. Left out ("none"): model lines
+    # on a horizontal plane, X,Y; refused for detail lines and in a family.
     - name: view
       type: string
       source: request
+      optional: true
+      absent: none
     # Closed loops and open "path ..." pieces, `|` between. Millimetres.
     - name: shapes
       type: string
       source: request
-    # A subcategory of the family's category, made when new, or "none".
+    # A subcategory of the family's category, made when new, or "none". In a
+    # project (version 2), one of the project's line styles - never made
+    # there, CREATE_LINE_STYLE makes one - or "none" for Revit's default.
     - name: subcategory
       type: string
       source: request
     # True to lock every straight line to the named reference plane it lies
-    # along.
+    # along. A family's only: refused true in a project.
     - name: lockToPlanes
       type: bool
       source: request
+    # VERSION 2, from CREATE_LINE (its asDetail): "detail" - lines in one
+    # view, printed with it - or "model" - real lines in the model, in every
+    # view that sees them. Left out ("auto"): detail in a family, version 1
+    # exactly; REFUSED in a project and asked which, because there is no safe
+    # default. "model" is refused in a family.
+    - name: lineKind
+      type: string
+      source: request
+      optional: true
+      absent: auto
+    # VERSION 2. A project's model lines' plane, in millimetres along the
+    # view's direction from the project's origin - on a plan or with no view,
+    # their height. Asked for, never assumed; refused for detail lines. Left
+    # out ("none"): refused for model lines.
+    - name: planeMm
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: lineIds
       # The new lines' unique ids, commas between.
       role: result
       type: string
+    - name: created
+      # VERSION 2, CREATE_LINE's own: the lines drawn, as elements, for the
+      # next step that takes them - FILLET_LINES, FIND_OVERLAPPING_LINES. The
+      # same lines as lineIds.
+      role: result
+      type: IList<Element>
     - name: drawn
       # How many lines, where, how long in all, their style and their locks -
       # read back.
       role: result
       type: string
     - name: notAFamily
+      # True when the document in front is a project. Since version 2 a
+      # project's lines are drawn too, so this no longer means refused -
+      # refused says that.
       role: accounting
       type: bool
     - name: refused
@@ -132,14 +182,46 @@ compatibility-note: >
   reference assemblies and XML remarks, read 2026-10-01). That a profile
   family's lines are detail lines drawn this way is from a published Revit
   API answer read 2026-10-01, and is NEEDS-CHECKING BV11, not a promise.
+  Version 2 adds the calls CREATE_LINE made, unchanged 2020 to 2027:
+  `Document.Create.NewDetailCurve(View, Curve)`, `NewModelCurve(Curve,
+  SketchPlane)`, `Plane.CreateByNormalAndOrigin` and `SketchPlane.Create`,
+  with `Categories.get_Item(BuiltInCategory.OST_Lines)` for a project's line
+  styles. Built on all eight releases on 2026-11-01.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "draw the profile in this profile family"     -> here
 #   "draw the lines of this detail item family"   -> here
 #   "draw the valve symbol in plan"               -> DRAW_FAMILY_SYMBOLIC_LINES -
 #                                                    a 3D family's 2D symbol
-#   "draw a line between these points"            -> CREATE_LINE - a project's view
+#   "draw a line between these points"            -> here since version 2 -
+#                                                    a project's detail or model
+#                                                    lines, lineKind said
+#                                                    (CREATE_LINE until 2026-11-01)
+#   "the lines are drawn twice on top of each other" -> FIND_OVERLAPPING_LINES
+#   "draw a grid line"                            -> CREATE_GRIDS - a datum
+#   "hatch this area"                             -> DRAW_FAMILY_FILLED_REGION
+#                                                    (CREATE_FILLED_REGION until
+#                                                    2026-11-01)
+#   "draw a room separation line across an opening" -> CREATE_ROOM_SEPARATION_LINES -
+#                                                    a line drawn here splits no room
+#
+# VERSION 2 - WHERE CREATE_LINE'S INPUTS AND OUTPUTS ARE NOW:
+#   pointPairs (feet)   shapes, millimetres - "path X,Y; X,Y" per line, `|`
+#                       between; in the view's two coordinates, or X,Y on a
+#                       horizontal plane with no view
+#   asDetail            lineKind detail or model - asked for in a project
+#   view                view, by name; left out only for model lines
+#   (a point's Z)       planeMm - one plane per call; lines at several heights
+#                       are one call each
+#   created             created, the same elements; lineIds their ids
+#   tooShort            NOT CARRIED - see below
+#   refused             refused, one sentence
+# NOT CARRIED, AN OPPOSITE RULE: CREATE_LINE skipped a pair shorter than Revit's
+# shortest line, counted it in tooShort, and drew the rest. This card refuses
+# the whole call and names the piece - all or nothing, the safer rule kept on
+# the owner's instruction. A line leaning through space was never drawn by
+# CREATE_LINE (it threw); here every line lies on one plane.
 #   "what colour are the lines in this family"    -> LIST_CATEGORIES - a question goes to the read
 
 utterances:
@@ -147,3 +229,11 @@ utterances:
   - draw the lines of this detail item family
   - draw the outline of the handrail profile and lock it to the planes
   - draw lines in this annotation symbol family
+  # MOVED 2026-11-01 from CREATE_LINE, merged into this card.
+  - draw a detail line here
+  - draw a line between these points
+  - put a setting out line on this plan
+  - add a model line
+  - draw some reference lines
+  # ...and CREATE_LINE's semantic identity, which nothing else declares:
+  - draw plain model or detail lines between points

@@ -1,15 +1,22 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-009
-semantic-identity: "change the text that is already there, rather than replacing it"
+# THE IDENTITY NAMES THE RENAME (2026-11-01, the review of the merges). Until
+# then it read "change the text that is already there, rather than replacing
+# it" - no rename in it - while version 7 had taken RENAME_ELEMENTS' whole job.
+# Row 5b-510's lesson: the re-ranker reads a card's identity alone, and that
+# card's identity was widened to name plans, views and sheets so a view rename
+# reached it by ranking. The merge dropped that half of the fix. The old
+# identity is still declared below, word for word, so it answers as before.
+semantic-identity: "change the text that is already there rather than replacing it - a prefix, a suffix or a find and replace in a parameter, a text note or a name, renaming plans and other views, sheets, schedules, templates and types"
 kind: action
 domain: revit.parameters
 capability: EDIT_TEXT_VALUES
-version: 5
+version: 8
 source: OFFICIAL
 risk: MODIFY
 
@@ -17,7 +24,9 @@ purpose: >
   Transforms text that is already on each element - add a prefix, add a suffix,
   or replace part of it - instead of overwriting it with one flat value. A
   text note's own wording is one more field: find and replace across text
-  notes, or set a note's whole wording.
+  notes, or set a note's whole wording. So is an element's own NAME: plans and
+  other views, sheets, schedules, templates and types are renamed here, by
+  replacing part of the name.
 
   **A TEXT NOTE'S WORDING IS FIELD "Text"** (version 3, 2026-10-12, the gap
   fill). It is no parameter - it is the note's own text - so it is read and
@@ -56,6 +65,32 @@ purpose: >
   Such an element goes in `ambiguous`, untouched (D-54 s3, FRAGMENT-ISSUES
   5b-203). This is version 2; version 1's proof no longer describes the code and
   is kept as a record, and the fragment is DRAFT until it is proved again.
+
+  **RE-RUNNING IT MUST NOT STACK, AND A TYPE IS EDITED ONCE** (version 6, when
+  EDIT_PARAMETER_TEXT was merged in). A prefix or suffix already on the value
+  is not added again, so a second run leaves `AJ_M-01` rather than
+  `AJ_AJ_M-01`. A field that lives on the TYPE - Type Mark, Manufacturer,
+  Model - is written once however many of its instances are handed in, and
+  the types changed are named in `typesEdited`, because every other instance
+  of them changed too. Version 5's proof no longer describes the code and is
+  kept as a record; the fragment is DRAFT until it is proved again.
+
+  **A RENAME IS CHECKED WHOLE BEFORE ONE NAME IS WRITTEN** (version 7, when
+  RENAME_ELEMENTS was merged in). With field Name - a view, a sheet, a
+  schedule, a template or a type renamed by replacing part of its name - every
+  new name is worked out first and checked against the others in the batch and
+  against the names already in the model. Two the same, or one already taken,
+  and NOTHING is renamed: `collisions` says which, because a batch half renamed
+  carries two conventions. Renaming a TYPE renames it everywhere it is used.
+  `notMatched` names the elements a replace found nothing to replace in.
+
+  **FIELD "Family" RENAMES THE LOADED FAMILY** (version 8, when RENAME_FAMILY
+  was merged in) - the component itself, one level above the type name, from
+  an instance, a type or the family handed in. Every type in it and every
+  instance follows, across the model, and the answer counts them. One family
+  per call, never an in-place one; mode set gives the whole new name, and
+  prefix, suffix and replace work as on any field. A name another family holds
+  is refused before anything is renamed. The .rfa on disk keeps its own name.
 
 # VERSION 4 (2026-10-17, FRAGMENT-ISSUES 5b-520) - A TEXT NOTE IS EDITED THROUGH
 # ITS FORMATTED TEXT. Kept out of the purpose on purpose: the purpose is
@@ -156,10 +191,12 @@ contract:
     # `elements`, which nobody types, and is never printed.
     - name: elements
       type: IList<Element>
-    # A parameter's name, Name for the element's own name, or Text for what a
-    # text note says. The text notes of one view: run SELECT_VISIBLE_IN_VIEW
-    # with view=<the view> and categories=Text Notes first, then this with
-    # expect_from="select-visible-in-view". Read the wording first with
+    # A parameter's name, Name for the element's own name, Text for what a
+    # text note says, or Family for the loaded family behind what is handed
+    # in (version 8) - one family, renamed everywhere. The text notes of one view: run
+    # FILTER_ELEMENTS_BY_CATEGORY with category=Text Notes and
+    # inViewOnly=<the view> first, then this with
+    # expect_from="filter-elements-by-category". Read the wording first with
     # READ_ELEMENT_PARAMETERS parameterName=Text, and type the words to
     # replace exactly as it shows them.
     - name: field
@@ -169,7 +206,8 @@ contract:
       type: string
       source: request
     # replace: the words to look for. prefix or suffix: the words to add. set
-    # (text notes only): the note's whole new wording. format (text notes
+    # (text notes, and field Family since version 8): the note's whole new
+    # wording, or the family's whole new name. format (text notes
     # only): what to set, joined with ';', each with its paragraphs - numbers
     # 2-4; bold 1 - and no word is changed. In a note's words \r ends a
     # paragraph, \v is a Shift+Enter line break and \\ is one backslash - the
@@ -231,6 +269,37 @@ contract:
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
       # "did this come back empty" (D-52).
+      role: accounting
+      type: string
+    - name: typesEdited
+      # Version 6. The types whose parameter this changed - each written ONCE
+      # however many of its instances were handed in. Every other instance of
+      # these types changed too, including ones nobody handed in, so the reach
+      # is named rather than found later.
+      role: result
+      type: IList<ElementId>
+    - name: collisions
+      # Version 7, from RENAME_ELEMENTS. For field Name, every new name that
+      # clashes - with another new name in the batch, with a name another
+      # element of the same kind already holds, or a name a replace would
+      # leave empty - each with the ids. CHECKED BEFORE ANY WRITE: one clash
+      # and nothing is renamed, said in `refused`. Turned down, never an edit
+      # made (D-52).
+      role: accounting
+      type: IList<string>
+    - name: notMatched
+      # Version 7, from RENAME_ELEMENTS. For mode replace, the elements whose
+      # text did not contain the words to replace - the same ids as
+      # `untouched`, in the word RENAME_ELEMENTS used. Usually the clue that
+      # the search text was wrong. Never an edit made (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: familyRename
+      # Version 8, from RENAME_FAMILY. For field Family, one sentence: the old
+      # name, the new one as READ BACK, how many types followed (named in
+      # `typesEdited`), and that the .rfa on disk keeps its own name - or why
+      # nothing was renamed. A sentence about the edit, never a thing it found
+      # (D-52).
       role: accounting
       type: string
     - name: noteFormatting
@@ -316,10 +385,11 @@ compatibility-note: >
 #                                       the same day: this fragment already
 #                                       does prefix, suffix and replace, on a
 #                                       parameter or on the name itself
-#   "add a prefix to the mark"           -> EDIT_PARAMETER_TEXT. A mark is
-#                                           a PARAMETER; this fragment is
-#                                           for text notes on a drawing
-#   "change SUP to SUPPLY in the         -> EDIT_PARAMETER_TEXT
+#   "add a prefix to the mark"           -> here, since EDIT_PARAMETER_TEXT
+#                                           was merged in (version 6,
+#                                           2026-11-01). The two rows that
+#                                           sent a mark there are here now
+#   "change SUP to SUPPLY in the         -> here
 #    parameter"
 #   "find and replace in the text notes" -> here, field Text (version 3)
 #   "change the wording of this note"    -> here, field Text, mode set
@@ -337,18 +407,106 @@ compatibility-note: >
 #                                           here (measured 2026-10-21, row
 #                                           5b-1300)
 #
-#   THE TEXT NOTES OF ONE VIEW, as a chain: SELECT_VISIBLE_IN_VIEW (PROVEN)
-#   with view=<the view> and categories=Text Notes, then this with
-#   expect_from select-visible-in-view. Measured 2026-10-17 on the scratch copy
-#   "Heron note scratch": it handed 109 notes on in the drafting view "Spread
-#   Footing". SELECT_BY_CATEGORY_NAME categoryName=Text Notes inViewOnly=<the
-#   view> collects the same 109, and is DRAFT. Read the wording first with
+#   THE TEXT NOTES OF ONE VIEW, as a chain: FILTER_ELEMENTS_BY_CATEGORY with
+#   category=Text Notes and inViewOnly=<the view> - version 5, DRAFT - then
+#   this with expect_from filter-elements-by-category. Measured 2026-10-17 on
+#   the scratch copy "Heron note scratch": SELECT_VISIBLE_IN_VIEW (PROVEN then)
+#   handed 109 notes on in the drafting view "Spread Footing", and
+#   SELECT_BY_CATEGORY_NAME categoryName=Text Notes inViewOnly=<the view>
+#   collected the same 109; both were merged into FILTER_ELEMENTS_BY_CATEGORY
+#   on 2026-11-01. Read the wording first with
 #   READ_ELEMENT_PARAMETERS parameterName=Text: a curly apostrophe or a soft
 #   line break inside the words to replace is shown there, and typed here as
 #   it is shown.
-#   "change part of the name"            -> EDIT_PARAMETER_TEXT for a
-#                                           parameter, RENAME_ELEMENTS for a
-#                                           name. Neither is a text note
+#   "change part of the name"            -> here, field Name - for a
+#                                           parameter or the element's own
+#                                           name, views, sheets and types
+#                                           included (RENAME_ELEMENTS merged
+#                                           in, version 7)
+#   "rename these" / "rename these views" / "change SUP to SUPPLY on these"
+#                                        -> here, field Name, mode replace.
+#                                           A view, sheet, schedule or view
+#                                           template is an element, and its
+#                                           name is the Name this edits. A plan
+#                                           or section comes from FIND_VIEWS by
+#                                           its name, a sheet from FIND_SHEETS,
+#                                           a template from
+#                                           SELECT_VIEW_TEMPLATES, any of them
+#                                           from the selection
+#   "duplicate this type"                -> DUPLICATE_TYPE - a COPY under a
+#                                           new name. Renaming a type here
+#                                           changes it EVERYWHERE it is used
+#   "rename the family", "rename this
+#    component", "change the family name" -> here, field Family (version 8,
+#                                           RENAME_FAMILY merged in) - the
+#                                           loaded component, one level above
+#                                           the type name field Name edits
+#   "check the families are named to our standard" -> CHECK_FAMILY_STANDARDS
+#                                         - a READ. A question about whether the
+#                                           names are right must not be answered
+#                                           by something that renames
+#   "which elements use this family"     -> SELECT_BY_PARAMETER_VALUE, Family.
+#                                           This renames it
+#   "rename the family type"             -> SET_FAMILY_TYPE_VALUES - a TYPE
+#                                           inside the family open in the
+#                                           Family Editor
+#   "rename this workset"                -> RENAME_WORKSET - a workset is not
+#                                           an element
+#   "rename the family parameter CC 1    -> ADD_FAMILY_PARAMETERS with
+#    to 2" (in the Family Editor)           renameExisting true
+#   "number them in order"               -> RENUMBER_SEQUENTIAL
+#
+# THE NAME IS NOT THE MARK AND NOT THE TYPE NAME, and a modeller says "name"
+# for all three (RENAME_ELEMENTS' warning, kept). Ask which before renaming a
+# type: it reaches every instance in the model, including ones nobody selected.
+#
+# EDIT_PARAMETER_TEXT WAS MERGED INTO THIS CARD on 2026-11-01, on the owner's
+# instruction, and is DEPRECATED. The same job - read the text already there,
+# add a prefix or suffix or replace part of it, write it back and read it back.
+# It brought three rules this card lacked, now in version 6: no stacking on a
+# re-run, one write per type with `typesEdited`, and a non-text instance
+# parameter giving way to a text one on the type. Two of its behaviours were
+# NOT taken, on purpose: it put a prefix on a BLANK value - this card leaves a
+# blank blank, because a prefix there invents data - and it took replace,
+# prefix and suffix in one call, which here are three calls of one mode each.
+#
+# RENAME_ELEMENTS WAS MERGED INTO THIS CARD on 2026-11-01, on the owner's
+# instruction ("make sure there is no duplicate tools"), and is DEPRECATED. The
+# same job as field Name, mode replace: find and replace part of an element's
+# name, read back. Where each of its outputs is now:
+#   renamed      the count of `changed` (a list of ids here)
+#   notMatched   `notMatched` - and `untouched`, the same ids for a replace
+#   refused      `refused` (one sentence here, not a list of ids) and
+#                `readOnly` for a name Revit would not take or that cannot be
+#                read
+#   collisions   `collisions`, checked before any write as it was - and WIDER:
+#                RENAME_ELEMENTS checked the new names against each other only
+#                (its purpose said "and with a name already in use", its code
+#                did not); version 7 checks them against the model too, and a
+#                swap or an emptied name is a clash. All or nothing, the safer
+#                rule
+# Not carried, as opposite rules: an empty name was `notMatched` there and is
+# `blank` here (left alone either way). Its `find`/`replaceWith` are this
+# card's `text`/`replacement`.
+#
+# RENAME_FAMILY WAS MERGED INTO THIS CARD on 2026-11-01, on the owner's
+# instruction ("make sure there is no duplicate tools", then "ok go ahead merge
+# all"), and is DEPRECATED. The same job - a name read, changed and read back -
+# one level up: field "Family" (version 8). It goes up from an instance or a
+# type to the loaded family; more than one family is refused naming them; an
+# in-place family is refused; the types that follow are counted. Where each of
+# its outputs is now:
+#   renamed      `changed` holds the family's id; the name Revit settled on is
+#                in `familyRename`
+#   findings     `familyRename` (the old and new names, the types that went
+#                with it, the .rfa on disk) and `refused`
+#   notFamilies  `absent` - handed in and belonging to no loadable family
+# Its `newName` is this card's `text` with mode set; prefix, suffix and replace
+# reach a family name too. ONE RULE IS NEW, AND SAFER: a name another family
+# holds is refused BEFORE the rename, with this card's collision check (capitals
+# ignored, an empty name refused) - RENAME_FAMILY tried and reported Revit's
+# refusal after. Nothing of that card is left out. "set" stays refused on a
+# parameter: one value on a parameter is WRITE_ELEMENT_PARAMETERS.
 
 utterances:
   - put a prefix on the mark
@@ -371,3 +529,32 @@ utterances:
   # lexical and trained backends: reaches here on both, where on main lexical
   # sent it to READ_ELEMENT_PARAMETERS.
   - turn this note into a numbered list
+  # MOVED 2026-11-01 from EDIT_PARAMETER_TEXT, merged into this card.
+  - add a prefix to the mark
+  - put AJ in front of every comment
+  - change SUP to SUPPLY in the parameter
+  - add a suffix to the type mark
+  - find and replace inside the comments
+  - edit the text in this parameter without retyping it
+  # MOVED 2026-11-01 from RENAME_ELEMENTS, merged into this card.
+  - rename these
+  - change the name of these
+  - find and replace in the names
+  - change SUP to SUPPLY on these
+  - fix the naming on these
+  - rename this view
+  - rename the view
+  - rename these views
+  # ...and its semantic identity, which nothing else declares (ADDED 2026-11-01
+  # with the review of the merge, as JOIN_GEOMETRY and ROTATE_ELEMENTS carried
+  # the identity of the card merged into each; this merge had not):
+  - rename these elements by replacing part of their names - plans and other views, sheets, schedules, templates and types are elements too
+  # This card's own identity until 2026-11-01, kept declared so it still
+  # answers by identity now the identity names the rename too:
+  - change the text that is already there, rather than replacing it
+  # MOVED 2026-11-01 from RENAME_FAMILY, merged into this card.
+  - rename the family
+  - rename this component
+  - change the family name
+  - the family name does not match our standard
+  - rename the family these came from

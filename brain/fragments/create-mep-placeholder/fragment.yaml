@@ -139,8 +139,8 @@ compatibility-note: >
 #
 #   "draw a duct placeholder from here to here" -> here
 #   "rough in the pipe route as placeholders"   -> here
-#   "draw a duct from here to there"            -> CREATE_DUCT - real duct
-#   "run a pipe from here to there"             -> CREATE_PIPE - real pipe
+#   "draw a duct from here to there"            -> CREATE_DUCT_RUNS - real duct
+#   "run a pipe from here to there"             -> CREATE_DUCT_RUNS - real pipe
 #   "convert these placeholders to real ducts"  -> CONVERT_MEP_PLACEHOLDERS
 #   "turn the pipe placeholders into pipes"     -> CONVERT_MEP_PLACEHOLDERS
 utterances:

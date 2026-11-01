@@ -11,7 +11,7 @@ semantic-identity: "the project's phase filters by exact name, and how each one 
 # Built 2026-10-31 beside CREATE_PHASE_FILTER, for Ajmal PS's "As-Built"
 # filter. Nothing read the phase filters (grep of brain/fragments that day):
 # REPORT_PHASES lists PHASES, REPORT_VIEW_FILTERS lists VIEW filters, and
-# SET_VIEW_PHASE takes a phase filter's exact name with nowhere to get it.
+# SET_VIEW_PROPERTIES takes a phase filter's exact name with nowhere to get it.
 #
 # A NEW READ, NOT A WIDENING OF REPORT_PHASES (FRG-DOC-007, PROVEN). A phase
 # and a phase filter are different elements with different jobs, and a change

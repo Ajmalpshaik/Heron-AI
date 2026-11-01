@@ -119,6 +119,26 @@ def main():
                   "a capability nobody provides is REPORTED as a gap - the "
                   "absence IS the finding, with no second list to keep in step")
 
+            # A RETIRED CARD PROVIDES NOTHING. When a card is merged into
+            # another and DEPRECATED, a method still naming its capability
+            # must show as a gap - not stay green while it quietly runs the
+            # retired card (found 2026-11-01).
+            store.execute(
+                "INSERT OR REPLACE INTO fragments (id, capability, "
+                "semantic_identity, kind, status, domain, risk, folder, revit) "
+                "VALUES ('FRG-QA-998','ONLY_A_RETIRED_CARD_DOES_THIS',"
+                "'a job only a retired card does','action','DEPRECATED','test',"
+                "'READ','x','2024')")
+            store.db.commit()
+            CAP.want(store, "ONLY_A_RETIRED_CARD_DOES_THIS",
+                     "asked for by this test, provided only by a DEPRECATED card")
+            retired_only = dict(CAP.gaps(store))
+            check("ONLY_A_RETIRED_CARD_DOES_THIS" in retired_only,
+                  "a capability only a DEPRECATED card provides is a GAP - a "
+                  "method needing it must be repointed to the card it merged into")
+            store.execute("DELETE FROM fragments WHERE id = 'FRG-QA-998'")
+            store.db.commit()
+
             for skill in covered:
                 for capability in skill.needs():
                     provider = CAP.best_provider(store, capability)

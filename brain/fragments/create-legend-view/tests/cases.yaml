@@ -17,7 +17,7 @@ negative:
 
   - given: a floor plan handed in as the source
     expect: >
-      refused by view type, and DUPLICATE_VIEW named. This one is only about
+      refused by view type, and DUPLICATE_VIEWS named. This one is only about
       legends
 
   - given: a new name already used by another view

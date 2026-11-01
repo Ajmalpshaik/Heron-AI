@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,28 @@ capability: CREATE_FLEX_DUCT
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_FLEX_PIPE (create-flex-pipe), on the owner's instruction
+# in conversation: "now merge the other duplicates also". Constitution Article 1:
+# kept, never deleted, so its record and its proof stay readable and it can be
+# brought back. Nothing offers it now - retrieval leaves DEPRECATED out, and
+# its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to CREATE_FLEX_PIPE. The proof below is the
+# record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  # CREATE_FLEX_PIPE was itself merged into CREATE_DUCT_RUNS later on
+  # 2026-11-01, so the tool that does this job now is CREATE_DUCT_RUNS.
+  superseded-by: CREATE_DUCT_RUNS
+  why: >
+    The same job: one flexible run along the points given, no route guessed, a
+    length limit enforced before anything is made, nothing connected.
+    CREATE_FLEX_PIPE keeps its name on the owner's choice and its version 2
+    makes flexible duct too - a flex duct type makes a FlexDuct on a duct system
+    - and checks the type and the system go together, by name, before Revit is
+    asked. This card's flexDuctType is its flexPipeType; created and lengthMm
+    are the same, and lengthMm is 0 whenever nothing was made.
 
 purpose: >
   Creates ONE flexible duct along the points given. Rigid duct and direct tapping
@@ -124,7 +146,7 @@ compatibility-note: >
 #   "connect the terminal to the duct" -> CONNECT_AIR_TERMINALS. This one makes
 #                                         the flex and does NOT join it up
 #   "is it actually connected"         -> TRACE_CONNECTIVITY
-#   "make the flex drop to that sprinkler" -> CREATE_FLEX_PIPE - flexible PIPE,
+#   "make the flex drop to that sprinkler" -> CREATE_DUCT_RUNS - flexible PIPE,
 #                                         on a piping system (2026-10-14)
 
 utterances:

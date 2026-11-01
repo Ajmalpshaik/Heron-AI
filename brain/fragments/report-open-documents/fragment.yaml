@@ -48,8 +48,8 @@ purpose: >
   `Project1` can be open at once, and then *"switch to Project1"* names nothing.
   Revit's own tab bar has the same problem and solves it by making you look. So
   the full **path** is reported beside every title, and it is the path
-  SWITCH_ACTIVE_PROJECT matches on first - a title match is the convenience, a
-  path match is the answer.
+  ACTIVATE_DOCUMENT takes to bring one to the front - a title is the
+  convenience, the path is the answer.
 
   **A FAMILY BEING EDITED IS NOT A PROJECT.** Each one is listed apart, on
   one line in `familyList`, and one with no file is said to be NEVER SAVED:
@@ -145,7 +145,7 @@ compatibility-note: >
   `File.GetLastWriteTime` on `PathName`, the same on all four runtimes. The
   time is the PC's local time, compared with the PC's own clock.
 
-# ROUTING - cross-referenced in SWITCH_ACTIVE_PROJECT and LIST_LINKED_MODELS.
+# ROUTING - cross-referenced in ACTIVATE_DOCUMENT and LIST_LINKED_MODELS.
 #
 #   "what projects are open"           -> here
 #   "which models do I have open"      -> here
@@ -154,7 +154,7 @@ compatibility-note: >
 #                                         links and does not describe them
 #   "what file is this"                -> READ_MODEL_FILE_INFO, which is about
 #                                         the ONE active model in depth
-#   "switch to the other project"      -> SWITCH_ACTIVE_PROJECT, which needs
+#   "switch to the other project"      -> ACTIVATE_DOCUMENT, which needs
 #                                         what this returns
 #   "which families are open"          -> here (version 2)
 #   "what family windows are open"     -> here (version 2)

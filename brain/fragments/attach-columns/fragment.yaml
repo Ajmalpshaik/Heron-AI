@@ -161,7 +161,7 @@ compatibility-note: >
 # ATTACH_WALLS IS 2025 ON. On 2020 to 2024 its wall sentences rank this card
 # first (they ranked cards that do not attach walls before it existed);
 # handed walls, this changes nothing and says none of them is a column.
-#   "put a column at each grid intersection"  -> PLACE_STRUCTURAL_FAMILY
+#   "put a column at each grid intersection"  -> PLACE_FAMILY_INSTANCES
 #   "place column rebar in these concrete
 #    columns"                                 -> PLACE_COLUMN_REBAR
 

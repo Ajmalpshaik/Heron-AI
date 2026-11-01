@@ -36,7 +36,7 @@ positive:
       outside, as measured 2026-10-13 on Revit 2020.2 - and one finding reads
       "Revit added 2 railings of type '<the model's default stair railing
       type>' with the stair" ('1100mm' on Project1). The same 2 ids are what
-      SELECT_BY_CATEGORY_NAME categoryName=Railings finds afterwards, each
+      FILTER_ELEMENTS_BY_CATEGORY category=Railings finds afterwards, each
       hosted by the stair in Properties. A straight stair also names 2, one
       each side
 

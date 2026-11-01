@@ -24,8 +24,11 @@ risk: MODIFY
 #
 # Revit numbers the grids; the names are read back and returned.
 #
-# CREATE_GRIDS (PROVEN) sets out straight grids from bay spacings, and
-# CREATE_GRID draws one; neither makes an arc.
+# CREATE_GRIDS sets out straight grids from bay spacings or between points
+# given; it makes no arc. Judged 2026-11-01, when CREATE_GRID was merged into
+# it, and kept apart: this card names no grid, so the taken-name rule does not
+# bear on it, and a centre, radii, spokes and a sweep share no input with a
+# straight grid.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 purpose: >

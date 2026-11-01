@@ -111,7 +111,7 @@ compatibility-note: >
 #                                                insulated
 #   "delete these"                            -> DELETE_ELEMENTS - the
 #                                                elements themselves
-#   "will the insulation fit"                 -> CHECK_INSULATION_CLEARANCE
+#   "will the insulation fit"                 -> CHECK_MINIMUM_CLEARANCE
 #   "remove the lining from this duct"        -> SET_DUCT_LINING, at a
 #                                                thickness of 0 - lining is
 #                                                never removed here; this

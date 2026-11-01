@@ -189,7 +189,7 @@ compatibility-note: >
 #   "delete an area scheme"               -> nothing in Heron. It deletes the
 #                                            scheme's area plans and areas too
 #                                            (Article 7); done in the dialog
-#   "rename these views" / "find and replace in the names" -> RENAME_ELEMENTS,
+#   "rename these views" / "find and replace in the names" -> EDIT_TEXT_VALUES field Name,
 #                                            which renames what is selected or
 #                                            handed to it. An area scheme can be
 #                                            neither, which is why its rename is

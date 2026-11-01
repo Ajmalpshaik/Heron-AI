@@ -188,6 +188,6 @@ compatibility-note: >
 #    to run along grid 1"                     turns the span; any symbol
 #                                             already drawn turns with it
 #   "change the floor span to 90 degrees"  -> SET_FLOOR_SPAN_DIRECTION
-#   "put tags on these"                    -> TAG_ELEMENTS
+#   "put tags on these"                    -> TAG_ELEMENTS_IN_VIEW
 utterances:
   - add span direction symbols to these slabs in this plan

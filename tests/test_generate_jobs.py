@@ -647,13 +647,16 @@ def test_a_panel_is_named_by_its_own_panel_name():
     check("PANEL NAME" in hint, "the hint names the parameter: %r" % hint)
     check("blank" in hint, "and says blank leaves the circuit unassigned")
 
-    # A ROLL-CALL, like the curve-list one: a fragment that starts naming a
-    # panel by its Panel Name joins it by name. edit-electrical-circuit joined
-    # 2026-11-01 - its `panel` is the one Select Panel moves the circuits to
-    # (Group JV).
+    # THE FACT MOVED ON 2026-11-01: create-electrical-circuit was merged into
+    # create-mep-system, whose version 2 asks for the same `panel` by its Panel
+    # Name, so both the retired card and its keeper ask for one. A ROLL-CALL,
+    # like the curve-list one: a fragment that starts naming a panel by its
+    # Panel Name joins it by name. edit-electrical-circuit joined 2026-11-01 -
+    # its `panel` is the one Select Panel moves the circuits to (Group JV).
     freed = unblocked_by("FamilyInstance")
-    check(freed == ["create-electrical-circuit", "edit-electrical-circuit"],
-          "it frees the two circuit fragments and nothing else: %s" % (freed or "nothing"))
+    check(freed == ["create-electrical-circuit", "create-mep-system",
+                    "edit-electrical-circuit"],
+          "it frees the circuit fragments' panel and nothing else: %s" % (freed or "nothing"))
 
 
 def test_an_arc_was_left_unwritten_and_the_reason_still_holds():

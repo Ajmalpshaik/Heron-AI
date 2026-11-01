@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 15
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,28 @@ capability: CREATE_SHEET
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_SHEETS (create-sheets), on the owner's instruction
+# in conversation: "now merge the other duplicates also". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable
+# and it can be brought back. Nothing offers it now - retrieval leaves
+# DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to CREATE_SHEETS. The proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_SHEETS
+  why: >
+    The same job: a numbered, named sheet on a title block, the number checked
+    for a clash before anything is made. CREATE_SHEETS makes one or many and
+    reads the number and the name back apart. Its version 2 took every rule of
+    this card's it lacked: the clash check ignores capitals and names the sheet
+    holding the number, an empty number is refused, Revit's own words are passed
+    on when ViewSheet.Create throws, and the title block is matched as Family:
+    Type. One rule was opposite and the safer was kept: a sheet with no title
+    block is made there only when the caller says none outright, flagged
+    noTitleblock, where this card made one whenever no title block came.
 
 purpose: >
   Creates one sheet, numbered and named, with a titleblock.
@@ -100,7 +122,7 @@ compatibility-note: >
 #   "list the sheets"           -> LIST_SHEETS - a QUESTION
 #   "put this view on a sheet"  -> PLACE_VIEW_ON_SHEET, which needs a sheet to
 #                                  exist first and does not make one
-#   "renumber the sheets"       -> RENAME_ELEMENTS on the number parameter;
+#   "renumber the sheets"       -> EDIT_TEXT_VALUES on the number parameter;
 #                                  nothing here changes an existing sheet
 
 #   "make a sheet list schedule"       -> CREATE_SHEET_LIST - the index OF the

@@ -207,18 +207,18 @@ compatibility-note: >
 #                                       fragment paints what is there NOW and
 #                                       does not follow new elements
 #   "put the colours back"           -> RESET_GRAPHIC_OVERRIDES
-#   "save these as a set"            -> CREATE_SELECTION_FILTER
+#   "save these as a set"            -> UPDATE_SAVED_SET, mode "create"
 #   "do the grayout"                 -> HIGHLIGHT_VS_REST
 #   "colour the rooms by name"       -> APPLY_COLOR_FILL_SCHEME - the view's
 #                                     colour SCHEME, which follows a renamed
 #                                     room, with Revit's own legend
 
 #   "make a filter for every different system type" ->
-#                                        CREATE_VIEW_FILTERS_BY_VALUE - real
+#                                        CREATE_VIEW_FILTER - real
 #                                        filters that catch work modelled
 #                                        tomorrow. These are OVERRIDES, and an
 #                                        element drawn later gets nothing
-#   "the colours are not showing on      -> AUDIT_VIEW_FILTERS when a
+#   "the colours are not showing on      -> REPORT_VIEW_FILTERS when a
 #    this drawing"                          filter is already applied and
 #                                           nothing is drawing; here when
 #                                           nothing has been coloured yet

@@ -214,7 +214,7 @@ compatibility-note: >
   `ConnectorElement.CoordinateSystem` and `.Origin`, all already used by
   version 4, on every release.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "put a supply air connector on the neck"     -> here
 #   "link the connector flow to a parameter"     -> LINK_FAMILY_PARAMETER - a

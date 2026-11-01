@@ -28,7 +28,7 @@ purpose: >
   different material takeoffs and a different section. So the direction is
   reported for every pair, not just the fact of the join.
 
-  **It reports and changes nothing.** UNJOIN_GEOMETRY separates a pair and
+  **It reports and changes nothing.** JOIN_GEOMETRY separates a pair and
   SWITCH_JOIN_ORDER turns one round; both are hard to undo across a model, and
   the honest first step is to look.
 
@@ -86,7 +86,7 @@ compatibility-note: >
   ends. Ids are resolved to elements and reported by name and id, never read as
   numbers.
 
-# ROUTING - repeated in JOIN_GEOMETRY, UNJOIN_GEOMETRY and SWITCH_JOIN_ORDER.
+# ROUTING - repeated in JOIN_GEOMETRY and SWITCH_JOIN_ORDER.
 #
 #   "what is this joined to"         -> here
 #   "why are my quantities short"    -> here. A joined element gives its
@@ -95,7 +95,7 @@ compatibility-note: >
 #   "which one is cutting which"     -> here - the direction, which is the half
 #                                       that decides the volumes
 #   "join these"                     -> JOIN_GEOMETRY
-#   "unjoin these two walls"         -> UNJOIN_GEOMETRY
+#   "unjoin these two walls"         -> JOIN_GEOMETRY, join false
 #   "the wrong one is cutting"       -> SWITCH_JOIN_ORDER - turn the join
 #                                       round rather than lose it
 

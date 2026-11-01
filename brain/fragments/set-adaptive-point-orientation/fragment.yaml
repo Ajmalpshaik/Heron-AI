@@ -129,7 +129,7 @@ compatibility-note: >
   2026-10-28). The remarks on the two orientation calls - placement points
   only - were read in the 2024 RevitAPI.xml only.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table. The
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table. The
 # rows naming the other two adaptive tools are in their cards as well.
 #
 #   "set the adaptive points orientation to host and loop system" -> here

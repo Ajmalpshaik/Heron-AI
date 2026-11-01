@@ -292,7 +292,9 @@ compatibility-note: >
 #    wall type"                             of the TYPE, every wall of it
 #   "make a floor from these points"     -> CREATE_FLOOR, which takes ONE typed
 #                                           loop and cuts no openings
-#   "make a ceiling from these points"   -> CREATE_CEILING, the same
+#   "make a ceiling from these points"   -> CREATE_FLOOR with a ceiling type,
+#                                           the same (CREATE_CEILING until
+#                                           2026-11-01)
 #   "what shape is this room"            -> READ_ROOM_GEOMETRY, which hands
 #                                           back the outline and the holes
 #                                           separately

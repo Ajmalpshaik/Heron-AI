@@ -39,8 +39,8 @@ positive:
       wording is no parameter
 
   - given: >
-      the text notes of one view, collected with SELECT_VISIBLE_IN_VIEW
-      categories=Text Notes, reading "Text"
+      the text notes of one view, collected with FILTER_ELEMENTS_BY_CATEGORY
+      category=Text Notes inViewOnly=<the view>, reading "Text"
     expect: >
       every note in values and one line each in `noteWording`; a note in no
       list says "no list"

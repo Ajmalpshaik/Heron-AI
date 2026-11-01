@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,34 @@ capability: PLACE_NESTED_FAMILY
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO PLACE_FAMILY_INSTANCES (place-family-instances), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to PLACE_FAMILY_INSTANCES. The proof below is the record of what this
+# card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: PLACE_FAMILY_INSTANCES
+  why: >
+    The same job: one type of a loaded family placed at a point, read back.
+    PLACE_FAMILY_INSTANCES places it since its version 5 in the family being
+    edited too - a nested component, through the family's own creation object
+    - with this card's rules moved whole: a Work Plane-Based one on the
+    reference plane or level named (workPlane, this card's host; left out, the
+    level), every point ON that plane or the call refused; a level-based one
+    on the level at its own height, from Revit 2024 by reflection and on an
+    earlier release refused saying to make it Work Plane-Based; any other kind
+    refused by name; non-structural; the type and the point read back to half
+    a millimetre, a null or a refusal from Revit rolling the call back. Its
+    instanceId is the first one's id there and readBack this card's placed
+    sentence, so LOCK_NESTED_FAMILY_TO_PLANES and LINK_FAMILY_PARAMETER bind
+    unchanged. Its host "none" placed nothing for either kind, so it is not
+    carried as an input. Nothing was opposite.
 
 purpose: >
   PLACES A NESTED COMPONENT - one type of a family already loaded into the

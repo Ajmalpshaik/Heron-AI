@@ -109,7 +109,7 @@ compatibility-note: >
   so it is guarded per element rather than assumed to be answerable, which is
   the difference between a report and a crash on a mixed selection.
 #   "what is attached to this element"   -> here
-#   "put these walls on another level"   -> SET_WALL_CONSTRAINTS, which
+#   "put these walls on another level"   -> SET_ELEMENT_LEVEL, which
 #                                           changes what a wall is attached
 #                                           TO without moving it
 

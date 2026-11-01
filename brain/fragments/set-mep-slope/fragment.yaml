@@ -168,7 +168,7 @@ compatibility-note: >
 # then, do not re-slope a run with takeoffs on it without looking at each one
 # afterwards. NEEDS-CHECKING AJ3.
 
-# ROUTING - repeated in MEASURE_MEP_SLOPE and ALIGN_MEP_ELEVATION.
+# ROUTING - repeated in MEASURE_MEP_SLOPE and ALIGN_ELEMENTS.
 #
 #   "give it a fall of 1 in 100"     -> here
 #   "slope these drains"             -> here
@@ -180,7 +180,7 @@ compatibility-note: >
 #                                       calculation, a READ. That sentence
 #                                       resolved HERE, to a fragment that
 #                                       CHANGES THE SLOPE, until 2026-09-05
-#   "level these up"                 -> ALIGN_MEP_ELEVATION - one flat height,
+#   "level these up"                 -> ALIGN_ELEMENTS - one flat height,
 #                                       the opposite instruction to a fall
 #   "raise the ducts 200"            -> MOVE_ELEMENTS - moves both ends together
 

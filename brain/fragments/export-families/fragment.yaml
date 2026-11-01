@@ -89,12 +89,12 @@ compatibility-note: >
 #   "get that family out of this model"  -> here
 #   "save all the families to a folder"  -> here
 #   "load this family in"                -> LOAD_FAMILY, the way in
-#   "which families are unused"          -> FIND_UNUSED_FAMILIES, worth running
+#   "which families are unused"          -> FIND_PURGEABLE_ELEMENTS, worth running
 #                                           first when the point is a clean
 #                                           library
-#   "find all the VCDs"                  -> SELECT_BY_FAMILY
+#   "find all the VCDs"                  -> SELECT_BY_PARAMETER_VALUE
 #   "export the model to IFC"            -> EXPORT_MODEL_TO_IFC
-#   "rename this family"                 -> RENAME_FAMILY
+#   "rename this family"                 -> EDIT_TEXT_VALUES, field Family (RENAME_FAMILY until 2026-11-01)
 
 utterances:
   - get the families out of this model

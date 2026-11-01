@@ -42,7 +42,7 @@ purpose: >
      the PATH sweeps the section along it - it turns and stretches with the
      two points. A point "on <line id> at 0.5" slides along a line: a
      mid-point bracing, an inset.
-  5. SET_FAMILY_FORM_MATERIAL; ADD_FAMILY_PARAMETERS for what the types
+  5. LINK_FAMILY_PARAMETER, links Material=<it>; ADD_FAMILY_PARAMETERS for what the types
      choose.
      CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
      classificationCodes line lists the OmniClass Numbers (Classification
@@ -84,7 +84,7 @@ needs:
   - SET_ADAPTIVE_POINT_ORIENTATION
   - DRAW_FAMILY_POINT_CURVES
   - CREATE_CONCEPTUAL_FORM
-  - SET_FAMILY_FORM_MATERIAL
+  - LINK_FAMILY_PARAMETER
   - ADD_FAMILY_PARAMETERS
   - REPORT_FAMILY_FORMS
   - LOAD_FAMILY

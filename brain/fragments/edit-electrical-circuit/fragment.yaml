@@ -137,10 +137,10 @@ compatibility-note: >
 #   "take this socket off its circuit"         -> here, edit remove
 #   "move these circuits to panel DB-2"        -> here, edit select panel
 #   "disconnect this circuit from its panel"   -> here, edit disconnect
-#   "put these devices on one circuit"         -> CREATE_ELECTRICAL_CIRCUIT -
+#   "put these devices on one circuit"         -> CREATE_MEP_SYSTEM -
 #                                                 a NEW circuit
-#   "put these lights on a circuit"            -> CREATE_ELECTRICAL_CIRCUIT
-#   "circuit these sockets"                    -> CREATE_ELECTRICAL_CIRCUIT. This
+#   "put these lights on a circuit"            -> CREATE_MEP_SYSTEM
+#   "circuit these sockets"                    -> CREATE_MEP_SYSTEM. This
 #                                                 card took it, ranked, when it
 #                                                 was written - pulled by "take
 #                                                 this socket off its circuit" -

@@ -68,6 +68,36 @@ negative:
       not counted in sheetsRead and not listed in sheetsWithNoDate - it is not
       a sheet, the rule LIST_SHEETS keeps
 
+  # VERSION 2 (2026-11-01, EXTRACT_DATES_FROM_TEXT merged in). Each of these
+  # FAILS on version 1, which has neither input.
+  - given: >
+      VERSION 2. "Heron Sheet Dates", onlySheetsGiven on, S-01 and S-03 handed
+      in (selected in the Project Browser)
+    expect: >
+      sheetsRead 2, uniqueDateCount 3 - 22-JUL-2025 and 09-SEP-2026 from S-01,
+      15-MAY-2026 from S-03 - and each row names only S-01 or S-03: S-02's notes
+      are NOT read, and the summary says how many notes on other sheets were
+      not. datesFound has the same three dates, each with those sheets' ids
+
+  - given: >
+      VERSION 2. onlySheetsGiven on and NOTHING handed in
+    expect: >
+      sheetsRead 0, uniqueDateCount 0, and the summary saying no sheet was
+      handed in and nothing was read. NOT every sheet - an empty list is what
+      the binder hands in when nothing is given, so it can never mean "all"
+
+  - given: >
+      VERSION 2. onlySheetsGiven on, S-01 handed in with a floor plan VIEW and
+      a duct
+    expect: >
+      the plan's and the duct's ids in notASheet, never read; S-01 read
+
+  - given: >
+      VERSION 2. onlySheetsGiven left out, S-01 selected
+    expect: >
+      every sheet read, exactly the answer with nothing selected. The switch
+      is off unless said, and the selection is ignored when it is off
+
 second_route:
   - >
     EXTRACT_DATES_FROM_TEXT, PROVEN, on the same project with ALL its sheets

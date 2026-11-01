@@ -54,7 +54,7 @@ purpose: >
   and adds it to every sheet where that date is typed - one call, one Undo. A
   revision already holding that date and the same description is reused,
   never made twice. Only text typed on the sheet itself is read, exactly as
-  LIST_DATES_ON_SHEETS reads it; a numeric month is refused.
+  FIND_DATES_IN_VIEWS reads it with sheetsOnly; a numeric month is refused.
 
   **ADDED, NEVER REPLACED.** A sheet keeps every revision it already lists.
 
@@ -87,7 +87,7 @@ contract:
       type: string
       source: request
     # How each date is written in the revision. Blank writes DD-MMM-YYYY, the
-    # spelling LIST_DATES_ON_SHEETS prints (07-APR-2025). D or DD day, M or MM
+    # spelling FIND_DATES_IN_VIEWS prints (07-APR-2025). D or DD day, M or MM
     # month number, MMM / Mmm / mmm or MMMM month name in that case, YY or
     # YYYY year; anything that is not a letter is kept as typed.
     - name: dateFormat
@@ -263,16 +263,18 @@ compatibility-note: >
 
   No ElementId is read as a number, so 2024's 64-bit ids do not reach this.
 
-# ROUTING - the revisions-from-dates row is repeated in LIST_DATES_ON_SHEETS,
+# ROUTING - the revisions-from-dates row is repeated in FIND_DATES_IN_VIEWS
+# (LIST_DATES_ON_SHEETS until it was merged there, 2026-11-01),
 # CREATE_REVISION and SET_SHEET_REVISIONS. Each sentence on one line, so
 # tools/check-routing.py reads the claim.
 #
 #   "create revisions for the dates on the sheets" -> here - every date, its own
 #                                                     revision, onto its sheets
-#   "take the dates in that text from all sheets"  -> LIST_DATES_ON_SHEETS -
-#                                                     reads them, changes
-#                                                     nothing. Run it first to
-#                                                     see what this will make
+#   "take the dates in that text from all sheets"  -> FIND_DATES_IN_VIEWS,
+#                                                     sheetsOnly on - reads
+#                                                     them, changes nothing.
+#                                                     Run it first to see what
+#                                                     this will make
 #   "create a revision"                            -> CREATE_REVISION - one, from
 #                                                     typed values
 #   "put that revision on these sheets"            -> SET_SHEET_REVISIONS - a

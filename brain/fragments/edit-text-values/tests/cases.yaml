@@ -66,6 +66,23 @@ positive:
       A paragraph Revit renumbers with its list but that was not named is said
       by number in `noteFormatting` and puts the note in `unverified`
 
+  # VERSION 8 - RENAME_FAMILY merged in, field Family. NOT RUN. Each fails on
+  # version 7, which read "Family" as a parameter - the built-in one holds an
+  # element id, so it was refused as not text - and refused mode set on it.
+  - given: >
+      VERSION 8. One air terminal instance handed in, field Family, mode set,
+      text the project standard's name - RENAME_FAMILY's own first case
+    expect: >
+      `changed` holds the family's id, `typesEdited` its types, and
+      `familyRename` "'<old>' is now '<new>'. Its N type(s) and EVERY instance
+      of them changed with it" - N matching what the project browser shows
+      under that family. LOOKED AT in the browser: the new name, the same
+      types beneath it, every instance following
+
+  - given: VERSION 8. The same family, field Family, mode prefix, text "AJ_", run twice
+    expect: >
+      the first run "AJ_<old>", the second `untouched` - never "AJ_AJ_<old>"
+
 negative:
   - given: >
       VERSION 5, mode "format". The same four-paragraph note, text "numbers
@@ -139,6 +156,114 @@ negative:
     expect: >
       in `unverified`, NOT in changed, and `noteFormatting` names the
       paragraph and what it reads back
+
+  # VERSION 6 - EDIT_PARAMETER_TEXT merged in. Each of these fails on version 5.
+  - given: >
+      mode prefix, text AJ_, field Mark, run TWICE on the same five elements -
+      the second run after the first was kept
+    expect: >
+      the second run changes nothing: all five `untouched`, each Mark reads
+      AJ_M-01 and never AJ_AJ_M-01. A re-run that stacks is the failure that
+      makes the second run worse than the first
+
+  - given: >
+      mode prefix, text AJ_, field Type Mark, five instances of ONE type handed
+      in, its Type Mark M-01
+    expect: >
+      the type's Type Mark reads AJ_M-01 - ONE prefix, not five - all five
+      instances in `changed`, and that one type's id in `typesEdited`. Every
+      other instance of the type, handed in or not, now reads AJ_M-01 too, and
+      `typesEdited` is what says so
+
+  - given: >
+      mode replace, text SUP, replacement SUPPLY, field Type Comments, three
+      instances of one type whose Type Comments is SUP
+    expect: >
+      SUPPLY - not SUPPLYPLYPLY. The replacement holds the text it replaces, so
+      a type written once per instance would grow on every pass
+
+  - given: >
+      mode prefix, a field whose INSTANCE parameter is a number and whose TYPE
+      carries a text parameter of the same name, two instances of one type
+    expect: >
+      the type's text value changed once, its id in `typesEdited`, both
+      instances in `changed` - and NOT counted as not text. Version 5 refused
+      both as a number
+
+  - given: the same, but the type's parameter of that name is a number too
+    expect: >
+      both in `readOnly` as not text, and when that is every element handed in,
+      the refusal that NOTHING WAS CHANGED because the field is not text
+
+  - given: mode replace SUP -> SUPPLY, a TYPE handed in together with two of its instances
+    expect: >
+      the type's value reads SUPPLY - written once, not twice
+
+  # VERSION 7 - RENAME_ELEMENTS merged in. Each of these fails on version 6.
+  - given: >
+      field Name, mode replace, elements named "AHU-1-SUP" and "AHU-1-RET",
+      run with text "-SUP" so the first would become "AHU-1" - and a third
+      element of the same kind already named "AHU-1"
+    expect: >
+      REFUSED - `collisions` names "AHU-1" and the id already holding it,
+      NOTHING WAS RENAMED, `changed` empty, every name as it was. Version 6
+      renamed one at a time with no check: Revit threw on a type or view, or
+      quietly took a duplicate instance name
+
+  - given: >
+      field Name, mode replace, text "-SUP", replacement "", twelve views of
+      which two, "L1-SUP" and "L1", would land on "L1" - L1 listed SECOND in the
+      batch
+    expect: >
+      REFUSED before the first write, `collisions` names "L1", all twelve
+      views keep their names. Version 6 wrote the first eleven and refused the
+      clash at Revit's throw - a batch half renamed
+
+  - given: >
+      field Name, mode replace, two views named "A" and "B", text and
+      replacement swapping them in one run (each would take the other's name)
+    expect: >
+      REFUSED - a swap clashes, because the second still holds its old name
+      when the first write lands. Two runs through a name nobody holds do it
+
+  - given: field Name, mode replace, text "SUP", replacement "", an element named exactly "SUP"
+    expect: >
+      REFUSED, `collisions` says it would be left with NO name, nothing renamed
+
+  - given: field Name, mode replace, 40 elements of which only 4 contain the text
+    expect: >
+      `changed` holds 4 and `notMatched` the other 36 - the same ids as
+      `untouched`. Version 6 had no `notMatched`
+
+  # VERSION 8 - field Family's refusals, nothing renamed in any of them.
+  - given: >
+      VERSION 8. Instances of THREE different families, field Family, mode
+      set, one new name
+    expect: >
+      REFUSED "covers 3 different families", the three named; nothing renamed
+
+  - given: >
+      VERSION 8. One instance, field Family, mode set, text a name another
+      loaded family already has (in other capitals)
+    expect: >
+      REFUSED BEFORE THE RENAME, `collisions` naming the other family's id -
+      RENAME_FAMILY tried first and reported Revit's refusal after
+
+  - given: VERSION 8. An IN-PLACE family's instance, field Family, mode set
+    expect: refused "is an in-place family" before anything is attempted
+
+  - given: VERSION 8. Walls and ducts handed in, field Family, mode set
+    expect: >
+      REFUSED "nothing handed in belongs to a loaded family" - system
+      families have none; their TYPE names are field Name's
+
+  - given: VERSION 8. A mark parameter, mode set
+    expect: >
+      still REFUSED - "set" is for field Text and field Family only; one
+      value on a parameter is WRITE_ELEMENT_PARAMETERS
+
+  - given: VERSION 8. The family renamed, then reloaded from its .rfa
+    expect: the OLD name back - nothing here touches the file on disk
 
 second_route:
   - >

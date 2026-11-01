@@ -1,15 +1,15 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-011
-semantic-identity: "the heating and cooling load and the airflow on these spaces"
+semantic-identity: "the heating and cooling load and the airflow on these spaces - typed, calculated and actual, and which have no design figure"
 kind: filter
 domain: revit.mep
 capability: READ_SPACE_LOADS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -28,6 +28,17 @@ purpose: >
   means the analysis has never been run, or the space is unbounded and has no
   volume to load. Reporting `0 W` as a result would put a real number-shaped
   answer in front of somebody sizing equipment from it.
+
+  **Typed, calculated and actual airflow, apart (version 2, 2026-11-01).**
+  REPORT_SPACE_AIRFLOW was merged into this card and is DEPRECATED. Each space
+  now also gives its SPECIFIED supply, return and exhaust airflow - what was
+  typed - and its ACTUAL supply, return and exhaust, the sum Revit gives of
+  what the space's terminals carry, in litres per second. `noDesignFigure`
+  names the spaces with no typed airflow of any kind: zero against zero reads
+  as balanced, and those are the rooms nobody has designed yet. A calculated
+  supply is reported as calculated, in `calculatedSupplyLs`, and is never
+  counted as the design target. `unplaced` names a space with no area - in
+  the schedule, not in the model - and nothing is read from it.
 
   **It reads Spaces, not Rooms.** A Room carries no load - loads are the MEP
   half, and a model with rooms and no spaces answers nothing here. PLACE_ROOMS
@@ -75,6 +86,48 @@ contract:
       # it past every check and left it READY TO SIGN. Proving the fragment
       # works needs a model whose spaces have been analysed; Snowdon's have not.
       role: accounting
+      type: IList<ElementId>
+    # VERSION 2 (2026-11-01), from REPORT_SPACE_AIRFLOW. Every airflow in
+    # litres per second, keyed by the space - the exact ft3 to L conversion.
+    - name: specifiedSupplyLs
+      # The TYPED design supply airflow - Specified Supply Airflow. Never a
+      # calculated figure.
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: calculatedSupplyLs
+      # The supply airflow the heating and cooling analysis gave. Reported
+      # apart, never as the design target.
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: specifiedReturnLs
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: specifiedExhaustLs
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: actualSupplyLs
+      # What the terminals connected to the space carry - Revit's own Actual
+      # Supply Airflow, read, never recomputed.
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: actualReturnLs
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: actualExhaustLs
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: noDesignFigure
+      # Spaces with no TYPED airflow of any kind - supply, return and exhaust
+      # all zero. A space nobody has designed reads as balanced because zero
+      # matches zero; this is the list a coordinator acts on. A result, as
+      # REPORT_SPACE_AIRFLOW declared it.
+      role: result
+      type: IList<ElementId>
+    - name: unplaced
+      # Spaces with no area - in the schedule, not in the model. Named, and
+      # nothing read from them. A fault in the model, so a result, as
+      # REPORT_SPACE_AIRFLOW declared it.
+      role: result
       type: IList<ElementId>
 
 proof:
@@ -131,9 +184,29 @@ compatibility-note: >
 # what Revit shows on screen for the same space. It is written into the test
 # cases as the first negative, not asserted here as if it were settled.
 
-# ROUTING - repeated in PLACE_ROOMS and READ_ROOM_GEOMETRY.
+# 2026-11-01 - REPORT_SPACE_AIRFLOW WAS MERGED INTO THIS CARD (version 2) on
+# the owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same reading: an MEP Space's airflow, design against what is
+# there. Where its outputs are now, in L/s here where it kept Revit's internal
+# ft3/s: designSupply -> specifiedSupplyLs, designReturn -> specifiedReturnLs,
+# designExhaust -> specifiedExhaustLs, actualSupply -> actualSupplyLs,
+# actualReturn -> actualReturnLs, actualExhaust -> actualExhaustLs;
+# noDesignFigure and unplaced by the same names. Added in version 2:
+# calculatedSupplyLs, beside the typed figure rather than in place of it.
+#
+# THE CONFLICT, AND THE SAFER RULE KEPT: this card's `airflowLs` takes the
+# calculated supply where nothing was typed; REPORT_SPACE_AIRFLOW's design
+# figure was the typed one only. Both stand, apart: `airflowLs` as version 1
+# gave it, saying "entered" or "calculated" in the finding, and the design
+# target - `specifiedSupplyLs`, `noDesignFigure` - from typed figures alone,
+# so a calculated figure is never counted as the target silently. Its Rooms
+# were skipped with no row; here they are named in notSpaces, as before.
+
+# ROUTING - repeated in PLACE_ROOMS, READ_ROOM_GEOMETRY and CREATE_HVAC_ZONE.
 #
 #   "what is the heating load"       -> here
+#   "which spaces have no design airflow" -> here, noDesignFigure
+#   "is the supply air balanced"     -> here - specified against actual
 #   "what is the cooling load"       -> here
 #   "how much air does this space need" -> here
 #   "what is the total airflow"      -> here
@@ -150,3 +223,11 @@ utterances:
   - what is the total airflow
   - what are the loads on these spaces
   - show me the design airflow
+  # MOVED 2026-11-01 from REPORT_SPACE_AIRFLOW, merged into this card.
+  - list the spaces and their airflow
+  - which spaces have no design airflow
+  - is the supply air balanced
+  - design versus actual flow
+  - how much air is going into each space
+  - check the space airflows
+  - do the diffuser flows add up to the space airflow

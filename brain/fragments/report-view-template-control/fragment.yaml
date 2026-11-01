@@ -108,14 +108,14 @@ compatibility-note: >
   display name Revit shows in Properties.
 
 # ROUTING - the same rows are in REMOVE_VIEW_TEMPLATE,
-# SET_VIEW_TEMPLATE_CONTROL and FIND_VIEWS_WITHOUT_TEMPLATE.
+# SET_VIEW_TEMPLATE_CONTROL and FIND_VIEWS.
 #
 #   "why is the scale greyed out"      -> here. It names the template and the
 #                                         setting it is holding
 #   "which template is on this view"   -> here
 #   "what does this template control"  -> here, with the template itself passed
 #                                         in as the view
-#   "which views have no template"     -> FIND_VIEWS_WITHOUT_TEMPLATE - that is
+#   "which views have no template"     -> FIND_VIEWS, withoutTemplate true - that is
 #                                         a sweep of the project looking for
 #                                         drawings nobody is holding to a
 #                                         standard. This one answers about views
@@ -129,7 +129,7 @@ compatibility-note: >
 #   "nothing shows in this view"       -> DIAGNOSE_VISIBILITY. A template can be
 #                                         the reason, but so can six other
 #                                         things, and that fragment walks them
-#   "what scale is this plan at"       -> READ_VIEW_SCALE, which declares it
+#   "what scale is this plan at"       -> REPORT_VIEW_SETTINGS, which declares it
 #                                         (row 146, 2026-10-09). It reached
 #                                         HERE on spelling. That one reads
 #                                         the scale and says whether the

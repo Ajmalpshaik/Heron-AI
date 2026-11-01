@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,31 @@ capability: MOVE_ELEMENTS_TO_POINT
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO MOVE_ELEMENTS (move-elements), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools". Constitution Article 1: kept, never deleted, so its record and its
+# proof stay readable and it can be brought back. Nothing offers it now -
+# retrieval leaves DEPRECATED out, and its sentences claim nothing in the
+# identity table (heron_search RETIRED_FRAGMENTS). Its sentences moved to
+# MOVE_ELEMENTS. A proof below is the record of what this card's code did, not
+# a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: MOVE_ELEMENTS
+  why: >
+    The same job: elements moved and checked that they arrived.
+    MOVE_ELEMENTS moves by an offset and, since its version 2, to a point
+    (`toPoint`, millimetres), each element's offset worked out from its own
+    location point inside the one call, with this card's rules: an element
+    positioned by a curve counted in `noLocationPoint`, never moved; one
+    that does not arrive in `notAtPoint`; an element already there counted
+    as moved. Two rules made safer: the document is regenerated before
+    anything is read back, and several elements to one point are refused
+    unless the caller says `stackOnOnePoint`. Nothing of this card is left
+    out.
+
 
 purpose: >
   Moves each element so that its own location point lands ON the coordinate given.

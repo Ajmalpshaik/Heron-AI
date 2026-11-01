@@ -1,5 +1,109 @@
-// NOT STANDALONE. Assumes `doc`, `view`, `elements` and `offsetMm` are in
-// scope; leaves `created`, `refused` and `notLinear` behind.
+// NOT STANDALONE. Assumes `doc`, `view`, `elements`, `axis` and `offsetMm` are
+// in scope; leaves `created`, `refused`, `notLinear`, `noReference`,
+// `dimensionedCount` and `problem` behind.
+//
+// VERSION 5 (2026-11-01) - THE GRID AND LEVEL ROUTE IS TAKEN OUT AGAIN.
+// Grids and levels were dimensioned by this card (version 4, below) AND by
+// CREATE_LINEAR_DIMENSION, two tools for one job. On the owner's instruction
+// ("make sure there is no duplicate tools", "in every conflict keep the safer
+// rule") the job is CREATE_LINEAR_DIMENSION's alone - "grid A | grid B", or
+// "level Level 1 | level Level 2" in a section - and its version 5 carries
+// version 4's rules: a datum the view does not show found and named before
+// anything is drawn, an arc grid and grids out of parallel refused, levels
+// refused in a plan, a level placed by ProjectElevation, grids with levels
+// refused. This card keeps runs and family instances. A grid or a level
+// handed in here is never dimensioned and never silently left out: the whole
+// set is refused - nothing drawn, every id in `refused` - and `problem`
+// names CREATE_LINEAR_DIMENSION. `notVisibleInView` is gone with the route;
+// the version 4 text below is the record of what it did.
+//
+// VERSION 4 (2026-11-01) - DIMENSION_GRIDS_AND_LEVELS MERGED IN, AND WHAT IT
+// HAD THAT THIS LACKED:
+//
+//   GRIDS AND LEVELS, A THIRD ROUTE. A grid, a level and a reference plane are
+//   the three things Revit lets a dimension reference AS THE WHOLE ELEMENT -
+//   new Reference(grid) - with no geometry read; the centreline walk returns
+//   nothing for a grid. Grids are measured across the plan (the view normal
+//   crossed with the grid direction), levels up the elevation, each level
+//   placed by its ProjectElevation and never its Elevation (FRAGMENT-ISSUES
+//   5b-179: Elevation is off by the Elevation Base in model coordinates).
+//   Reference planes are left out on purpose and go to notLinear.
+//
+//   `notVisibleInView` - a datum the view is not showing is set aside BEFORE
+//   anything is drawn: Revit throws when asked to dimension to it, and that
+//   throw takes the whole string down. Said in `problem` whatever else
+//   happens.
+//
+//   An arc grid, or a grid out of parallel, is refused by id. Levels in a
+//   plan are refused - the plan looks straight down the axis the string
+//   would measure. Grids and levels are never one string.
+//
+//   THE SAFER RULE IN EACH CONFLICT IS KEPT. That card dimensioned the grids
+//   and set a wall or a duct handed in with them aside; here any two kinds
+//   handed in together - runs, family instances, grids, levels - are refused
+//   whole, naming each, nothing drawn. That card let Revit's refusal out to
+//   abort the caller's transaction and left a dimension holding fewer than
+//   two references in it; here both are this card's rules on the datum route
+//   too. A named axis is refused for datums: their direction is worked out
+//   from them.
+//
+// VERSION 3 (2026-11-01) - DIMENSION_FAMILY_INSTANCES MERGED IN, AND WHAT IT
+// HAD THAT THIS LACKED:
+//
+//   THE FAMILY-INSTANCE ROUTE, BESIDE THE CENTRELINE WALK. An air terminal, a
+//   fixture, a piece of equipment has no centreline; it publishes BUILT-IN
+//   CENTRE REFERENCES - CenterLeftRight, CenterFrontBack - and a strong
+//   reference on its body. Along `x` the CenterLeftRight is asked for first,
+//   along `y` the CenterFrontBack, then the strong reference: centre
+//   references are what make a dimension HOLD when the element later moves.
+//   The instances are sorted along the axis first, so the string reads
+//   left-to-right or bottom-to-top as a drafter would draw it, and it sits
+//   `offsetMm` square to the axis. An axis MUST be named for them - x or y -
+//   because "across" is worked out from runs, and an instance has no run
+//   direction; guessing one would measure the wrong way and look plausible.
+//
+//   `noReference` - instances that publish no centre and no strong reference,
+//   duct fittings and accessories among them (all four come back empty).
+//   Reported by id; fewer than two left draws nothing.
+//
+//   A ROOM CANNOT BE DIMENSIONED HERE. A room's boundary is not a family
+//   instance and offers none of these references; dimensioning the nearest
+//   thing this CAN reach - the fixtures inside it - would put a real string
+//   on a drawing nobody asked for. A room, space or area handed in goes to
+//   `notLinear` and `problem` says so, naming DIMENSION_ROOMS, which puts room
+//   sizes on the plan, and MEASURE_ROOM_DIMENSIONS, which reads them.
+//
+//   ONE STRING, ONE KIND. Runs and family instances handed in together are
+//   REFUSED, nothing drawn, and `problem` says how many of each: a duct's
+//   centreline and a diffuser's centre plane in one string has not been
+//   measured on any release, and drawing half the set while dropping the rest
+//   reads as a finished dimension. Hand each kind in on its own.
+//
+//   THE SAFER RULES OF THIS CARD APPLY TO BOTH ROUTES: a dimension Revit makes
+//   holding fewer than two references is deleted again, never left in the
+//   caller's transaction; an axis pointing straight out of the view is
+//   refused; Revit's own refusal is caught and said.
+//
+// VERSION 2 (2026-11-01) - DIMENSION_MEP_RUNS MERGED IN, AND WHAT IT HAD:
+//
+//   AN AXIS MAY BE NAMED. Empty measures ACROSS the runs, worked out from them
+//   as version 1 did - right at any angle. `x` or `y` measures along that axis
+//   of the model, which is what reaches RISERS: vertical pipes seen end-on in
+//   a plan have no direction across them in the view, and version 1 refused
+//   them; along a named axis their centrelines dimension like any other.
+//
+//   IT READS BACK. `dimensionedCount` is the references the dimension Revit
+//   made actually holds - never `Dimension.Curve`, which throws "The input
+//   curve is not bound" on a dimension this new. Fewer than two will not
+//   survive a commit, and `problem` says so.
+//
+//   A REFUSAL BY REVIT IS CAUGHT. NewDimension throwing is one dimension's
+//   problem and is said in `problem`; let out of here, it would abort the
+//   caller's transaction and every change made before it (Golden Rule 16).
+//
+//   `problem` SAYS WHY NOTHING WAS DRAWN, in one sentence. (Version 2 named
+//   DIMENSION_FAMILY_INSTANCES there for air terminals, fixtures and
+//   equipment; version 3 dimensions them itself.)
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -36,7 +140,266 @@ var offset = offsetMm / 304.8;
 ElementId created = null;
 var refused = new List<ElementId>();
 var notLinear = new List<ElementId>();
+var noReference = new List<ElementId>();
+int dimensionedCount = 0;
+string problem = "";
 
+// Left out (bound as "across") or empty is across the runs; x and y are the
+// model's own axes.
+var wantedAxis = (axis ?? "").Trim().ToLowerInvariant();
+if (wantedAxis == "across") wantedAxis = "";
+XYZ namedAxis = null;
+if (wantedAxis == "x") namedAxis = XYZ.BasisX;
+else if (wantedAxis == "y") namedAxis = XYZ.BasisY;
+else if (wantedAxis.Length > 0)
+    problem = "axis must be x, y or left empty to measure across the runs - guessing one would "
+            + "measure the wrong direction and the drawing would still look plausible, so NOTHING "
+            + "WAS DRAWN";
+
+// VERSION 3. SORT WHAT WAS HANDED IN BY KIND, before any geometry is read: a
+// straight run (a location LINE) takes the centreline walk; a family
+// instance without one takes the built-in centre references; a room, space or
+// area is refused; anything else is not linear.
+var runElements = new List<Element>();
+var instances = new List<FamilyInstance>();
+int roomsHanded = 0;
+
+// VERSION 5. Grids and levels handed in - CREATE_LINEAR_DIMENSION's job.
+var datumsHanded = new List<ElementId>();
+
+foreach (var element in elements)
+{
+    if (problem.Length > 0) break;
+    if (element == null) continue;
+
+    // A ROOM IS NEVER DIMENSIONED HERE - its boundary offers no reference
+    // this can hold, and the fixtures inside it are not what was asked for.
+    if (element is SpatialElement)
+    {
+        notLinear.Add(element.Id);
+        roomsHanded++;
+        continue;
+    }
+
+    // VERSION 5. A grid or a level is tested FIRST, before any location, and
+    // set aside for the refusal below - CREATE_LINEAR_DIMENSION draws it.
+    if (element is Grid || element is Level)
+    {
+        datumsHanded.Add(element.Id);
+        continue;
+    }
+
+    // A quick structural test before touching geometry. A straight location
+    // curve is a run - a duct, pipe, conduit or cable tray.
+    var location = element.Location as LocationCurve;
+    if (location != null && location.Curve is Line) { runElements.Add(element); continue; }
+
+    var instance = element as FamilyInstance;
+    if (instance != null) { instances.Add(instance); continue; }
+
+    notLinear.Add(element.Id);
+}
+
+// The room sentence, said whatever else happens: rooms handed in are never
+// silently left out of a string that was drawn.
+string roomSentence = roomsHanded == 0 ? "" :
+    roomsHanded + " room(s), space(s) or area(s) were handed in and CANNOT BE DIMENSIONED HERE - "
+    + "a room's boundary offers none of the references this draws to, and dimensioning the "
+    + "fixtures inside it would put a string nobody asked for on the drawing. DIMENSION_ROOMS "
+    + "puts room sizes on the plan; MEASURE_ROOM_DIMENSIONS reads them";
+
+// ONE STRING, ONE KIND - runs or family instances. Version 3 refused runs
+// with instances, whole, naming each - the safer of the two cards' rules (the
+// owner: "in every conflict keep the safer rule"): a string drawn through part
+// of what was handed in reads as the whole job done.
+var kindsHanded = new List<string>();
+if (runElements.Count > 0) kindsHanded.Add(runElements.Count + " run(s)");
+if (instances.Count > 0) kindsHanded.Add(instances.Count + " family instance(s)");
+bool mixed = kindsHanded.Count > 1;
+
+if (problem.Length > 0)
+{
+    // An axis that is not one: nothing was looked at, nothing is drawn.
+}
+else if (datumsHanded.Count > 0)
+{
+    // VERSION 5. A GRID OR A LEVEL IS CREATE_LINEAR_DIMENSION'S. The whole
+    // set is refused, never the datums dropped and the rest drawn: a string
+    // through part of what was handed in reads as the job done.
+    foreach (var run in runElements) refused.Add(run.Id);
+    foreach (var instance in instances) refused.Add(instance.Id);
+    refused.AddRange(datumsHanded);
+    problem = datumsHanded.Count + " grid(s) or level(s) were handed in. Grids and levels are dimensioned by "
+            + "CREATE_LINEAR_DIMENSION - \"grid A | grid B\", or \"level Level 1 | level Level 2\" in a "
+            + "section - which checks each is shown in this view first; this draws run centrelines and the "
+            + "centre references of family instances. NOTHING WAS DRAWN";
+}
+else if (mixed)
+{
+    // ONE STRING, ONE KIND (version 3). Refused whole, nothing drawn.
+    foreach (var run in runElements) refused.Add(run.Id);
+    foreach (var instance in instances) refused.Add(instance.Id);
+    problem = string.Join(", ", kindsHanded) + " were handed in together. One dimension "
+            + "string is drawn through one kind - run centrelines, or the centre references of "
+            + "family instances - and a string mixing them has not been measured, so NOTHING WAS "
+            + "DRAWN. Dimension each kind in its own call";
+}
+else if (instances.Count > 0)
+{
+    // ---- THE FAMILY-INSTANCE ROUTE (version 3, from DIMENSION_FAMILY_INSTANCES)
+    //
+    // A ZERO HERE MEANS "USE THE OTHER ROUTE", NEVER "IMPOSSIBLE". Duct fittings
+    // and accessories publish no references at all, and the first conclusion
+    // drawn from that was "MEP cannot be dimensioned" - true of THIS route,
+    // not of MEP: ducts and pipes dimension by their centrelines.
+    if (namedAxis == null)
+    {
+        foreach (var instance in instances) refused.Add(instance.Id);
+        problem = "family instances are dimensioned along an axis - name x for the horizontal "
+                + "spacing in plan or y for the vertical. Across is worked out from runs, and an "
+                + "instance has none; guessing one would measure the wrong direction. NOTHING "
+                + "WAS DRAWN";
+    }
+    else if (Math.Abs(namedAxis.DotProduct(view.ViewDirection)) > 0.999)
+    {
+        foreach (var instance in instances) refused.Add(instance.Id);
+        problem = string.Format("the axis named, {0}, points straight out of this view, so a "
+                + "dimension along it cannot be drawn here. Name the other axis. NOTHING WAS "
+                + "DRAWN", wantedAxis);
+    }
+    else
+    {
+        // The reference types worth asking for, in the order that produces the
+        // dimension a drafter would place. Centre references are what makes a
+        // dimension HOLD when the element later moves; a strong reference on
+        // the body does not.
+        var wantedTypes = wantedAxis == "x"
+            ? new[] { FamilyInstanceReferenceType.CenterLeftRight,
+                      FamilyInstanceReferenceType.StrongReference }
+            : new[] { FamilyInstanceReferenceType.CenterFrontBack,
+                      FamilyInstanceReferenceType.StrongReference };
+
+        // Sorted along the axis first, so the chain reads left-to-right or
+        // bottom-to-top the way somebody would draw it by hand.
+        var ordered = new List<FamilyInstance>(instances);
+        ordered.Sort(delegate (FamilyInstance a, FamilyInstance b)
+        {
+            var pa = a.Location as LocationPoint;
+            var pb = b.Location as LocationPoint;
+            if (pa == null || pb == null) return 0;
+            double va = wantedAxis == "x" ? pa.Point.X : pa.Point.Y;
+            double vb = wantedAxis == "x" ? pb.Point.X : pb.Point.Y;
+            return va.CompareTo(vb);
+        });
+
+        var array = new ReferenceArray();
+        var held = new List<ElementId>();
+        XYZ firstPoint = null;
+        XYZ lastPoint = null;
+
+        foreach (var instance in ordered)
+        {
+            Reference picked = null;
+            foreach (var type in wantedTypes)
+            {
+                IList<Reference> found = null;
+                try { found = instance.GetReferences(type); } catch { }
+                if (found != null && found.Count > 0) { picked = found[0]; break; }
+            }
+
+            if (picked == null)
+            {
+                // No usable reference. Reported by id rather than dropped: a
+                // short string with no explanation reads as this choosing, when
+                // the content had nothing to hold on to.
+                noReference.Add(instance.Id);
+                continue;
+            }
+
+            array.Append(picked);
+            held.Add(instance.Id);
+            var point = instance.Location as LocationPoint;
+            if (point != null)
+            {
+                if (firstPoint == null) firstPoint = point.Point;
+                lastPoint = point.Point;
+            }
+        }
+
+        if (array.Size < 2)
+        {
+            refused.AddRange(held);
+            problem = "fewer than two of these expose a reference a dimension can hold on to, so "
+                    + "nothing was drawn - a one-reference dimension is degenerate and Revit drops "
+                    + "it at commit. If these are duct fittings or accessories, they publish none; "
+                    + "ducts and pipes handed in on their own dimension by their centrelines";
+        }
+        else if (firstPoint == null || lastPoint == null)
+        {
+            refused.AddRange(held);
+            problem = "these have no readable location, so there is no line to put the dimension "
+                    + "on. NOTHING WAS DRAWN";
+        }
+        else
+        {
+            // `offsetMm` square to the axis, in plan. Millimetres to Revit's
+            // internal feet by plain arithmetic (D-20).
+            Line line = wantedAxis == "x"
+                ? Line.CreateBound(
+                      new XYZ(firstPoint.X, firstPoint.Y + offset, firstPoint.Z),
+                      new XYZ(lastPoint.X, firstPoint.Y + offset, firstPoint.Z))
+                : Line.CreateBound(
+                      new XYZ(firstPoint.X + offset, firstPoint.Y, firstPoint.Z),
+                      new XYZ(firstPoint.X + offset, lastPoint.Y, firstPoint.Z));
+
+            Dimension made = null;
+            try
+            {
+                made = doc.Create.NewDimension(view, line, array);
+            }
+            catch (Exception ex)
+            {
+                problem = "Revit refused the dimension: " + ex.Message + ". NOTHING WAS DRAWN";
+            }
+
+            // THE READ-BACK, and NOT via Dimension.Curve - that throws "The
+            // input curve is not bound" on a dimension this new.
+            if (made != null)
+            {
+                created = made.Id;
+                try { dimensionedCount = made.References == null ? 0 : made.References.Size; }
+                catch { dimensionedCount = 0; }
+                if (dimensionedCount < 2)
+                {
+                    // THIS CARD'S SAFER RULE, now on this route too: taken out
+                    // again rather than left in the caller's transaction.
+                    try { doc.Delete(made.Id); } catch { }
+                    created = null;
+                    dimensionedCount = 0;
+                    problem = "Revit made a dimension holding fewer than two references, which "
+                            + "will not survive a commit, so it was taken out again. NOTHING WAS "
+                            + "DRAWN";
+                }
+                else if (dimensionedCount < array.Size)
+                {
+                    problem = string.Format("the dimension holds {0} of the {1} references asked "
+                            + "for - Revit dropped {2}. Check which instances it measures before "
+                            + "relying on it", dimensionedCount, array.Size,
+                            array.Size - dimensionedCount);
+                }
+            }
+            else if (problem.Length == 0)
+            {
+                problem = "no dimension was created, and Revit reported no reason";
+            }
+
+            if (dimensionedCount < 2) refused.AddRange(held);
+        }
+    }
+}
+else
+{
+// ---- THE CENTRELINE WALK, versions 1 and 2 ---------------------------------
 var options = new Options();
 options.ComputeReferences = true;
 options.IncludeNonVisibleObjects = true;
@@ -58,16 +421,8 @@ var accepted = new List<ElementId>();
 // the first run's direction is known, and it has to apply to all of them.
 var centrelines = new List<KeyValuePair<ElementId, Line>>();
 
-foreach (var element in elements)
+foreach (var element in runElements)
 {
-    if (element == null) continue;
-
-    // A quick structural test before touching geometry. An element with no
-    // location curve has no centreline to dimension and is a different job -
-    // an air terminal, a piece of equipment - not a failure of this one.
-    var location = element.Location as LocationCurve;
-    if (location == null || !(location.Curve is Line)) { notLinear.Add(element.Id); continue; }
-
     var geometry = element.get_Geometry(options);
     if (geometry == null) { refused.Add(element.Id); continue; }
 
@@ -119,15 +474,39 @@ foreach (var entry in centrelines)
 // dimension, it is not a dimension.
 if (references.Count >= 2 && runDirection != null)
 {
-    var across = view.ViewDirection.CrossProduct(runDirection);
+    // ACROSS THE RUNS, unless an axis was named. The view's own normal crossed
+    // with the run direction is the only direction that is both across the
+    // runs and drawable on this sheet.
+    var across = namedAxis ?? view.ViewDirection.CrossProduct(runDirection);
 
     // Zero length means the runs point straight at the viewer - ducts seen
-    // end-on in a section. There is no direction across them that can be drawn
-    // on this view, so the whole string is refused rather than drawn along an
-    // arbitrary axis.
+    // end-on in a section, risers in a plan. There is no direction across
+    // them that can be drawn on this view, so the whole string is refused
+    // rather than drawn along an arbitrary axis - unless an axis was named.
     if (across.GetLength() < 1e-9)
     {
         refused.AddRange(accepted);
+        problem = "these runs point straight at the viewer - risers in a plan, or ducts seen end-on "
+                + "- so there is no direction across them on this view. Name the axis, x or y, to "
+                + "dimension them along it. NOTHING WAS DRAWN";
+    }
+    else if (namedAxis != null && Math.Abs(namedAxis.DotProduct(view.ViewDirection)) > 0.999)
+    {
+        // The axis named points straight out of this view - y in a section
+        // looking north. A dimension line along it cannot be drawn on the view.
+        refused.AddRange(accepted);
+        problem = string.Format("the axis named, {0}, points straight out of this view, so a "
+                + "dimension along it cannot be drawn here. Name the other axis, or leave it out. "
+                + "NOTHING WAS DRAWN", wantedAxis);
+    }
+    else if (namedAxis != null && Math.Abs(namedAxis.DotProduct(runDirection)) > 0.999)
+    {
+        // The axis named runs ALONG the runs. A dimension measured along
+        // parallel lines has nothing to measure between them.
+        refused.AddRange(accepted);
+        problem = string.Format("the axis named, {0}, runs along these runs rather than across them, "
+                + "and a dimension along parallel runs has nothing to measure between them. Name the "
+                + "other axis, or leave it out. NOTHING WAS DRAWN", wantedAxis);
     }
     else
     {
@@ -142,10 +521,19 @@ if (references.Count >= 2 && runDirection != null)
             highest = Math.Max(highest, positions[i]);
         }
 
-        // The string sits offset ALONG the runs, clear of the elements it
-        // measures, and spans from the outermost reference to the outermost
-        // reference so every witness line has something to land on.
-        var basePoint = anchors[0] - across * anchors[0].DotProduct(across) + runDirection * offset;
+        // The string sits OFFSET clear of the elements it measures: along the
+        // runs when measuring across them, and square to the named axis in the
+        // view's plane when one was named - for risers, the run direction is
+        // the view's own and an offset along it would not move the line on
+        // the drawing. It spans from the outermost reference to the outermost
+        // so every witness line has something to land on.
+        var aside = runDirection;
+        if (namedAxis != null)
+        {
+            var square = view.ViewDirection.CrossProduct(across);
+            if (square.GetLength() > 1e-9) aside = square.Normalize();
+        }
+        var basePoint = anchors[0] - across * anchors[0].DotProduct(across) + aside * offset;
 
         var from = basePoint + across * lowest;
         var to = basePoint + across * highest;
@@ -157,14 +545,56 @@ if (references.Count >= 2 && runDirection != null)
             var array = new ReferenceArray();
             foreach (var reference in references) array.Append(reference);
 
-            var dimension = doc.Create.NewDimension(view, dimensionLine, array);
-            if (dimension != null) created = dimension.Id;
+            Dimension dimension = null;
+            try
+            {
+                dimension = doc.Create.NewDimension(view, dimensionLine, array);
+            }
+            catch (Exception ex)
+            {
+                problem = "Revit refused the dimension: " + ex.Message + ". NOTHING WAS DRAWN";
+            }
+
+            // THE READ-BACK, and NOT via Dimension.Curve - that throws "The
+            // input curve is not bound" on a dimension this new.
+            if (dimension != null)
+            {
+                created = dimension.Id;
+                try { dimensionedCount = dimension.References == null ? 0 : dimension.References.Size; }
+                catch { dimensionedCount = 0; }
+                if (dimensionedCount < 2)
+                {
+                    // Degenerate, and it would not survive the commit. Taken
+                    // out again rather than left in the caller's transaction
+                    // while every run is reported refused - two answers that
+                    // contradict each other.
+                    try { doc.Delete(dimension.Id); } catch { }
+                    created = null;
+                    dimensionedCount = 0;
+                    problem = "Revit made a dimension holding fewer than two references, which will "
+                            + "not survive a commit, so it was taken out again. NOTHING WAS DRAWN";
+                }
+                else if (dimensionedCount < references.Count)
+                {
+                    problem = string.Format("the dimension holds {0} of the {1} centrelines asked for - "
+                            + "Revit dropped {2}. Check which runs it measures before relying on it",
+                            dimensionedCount, references.Count, references.Count - dimensionedCount);
+                }
+            }
+            else if (problem.Length == 0)
+            {
+                problem = "no dimension was created, and Revit reported no reason";
+            }
+
+            if (dimensionedCount < 2) refused.AddRange(accepted);
         }
         else
         {
             // Every run sits on the same line across - they are collinear, so
             // the gap being dimensioned is zero and there is nothing to draw.
             refused.AddRange(accepted);
+            problem = "every run sits on one line across, so the gap to dimension is zero. NOTHING "
+                    + "WAS DRAWN";
         }
     }
 }
@@ -173,4 +603,28 @@ else
     // Fewer than two usable references. One reference is not a short
     // dimension, it is not a dimension.
     refused.AddRange(accepted);
+    if (runElements.Count == 0 && notLinear.Count == roomsHanded && roomsHanded > 0)
+    {
+        // Only rooms were handed in: the sentence below is the whole answer.
+        problem = "NOTHING WAS DRAWN";
+    }
+    else if (runElements.Count == 0)
+    {
+        problem = "nothing handed in is a straight run - a duct, pipe, conduit or cable tray - or a "
+                + "family instance - an air terminal, fixture or piece of equipment - so there is "
+                + "nothing here to dimension (grids and levels are CREATE_LINEAR_DIMENSION's). NOTHING "
+                + "WAS DRAWN";
+    }
+    else
+    {
+        problem = "fewer than two of these gave up a centreline parallel to the first, so nothing "
+                + "was drawn - a one-reference dimension is degenerate and Revit drops it at "
+                + "commit. If these are air terminals or equipment, hand them in on their own with "
+                + "an axis, x or y";
+    }
 }
+}
+
+// A ROOM HANDED IN IS SAID WHATEVER ELSE HAPPENED (version 3).
+if (roomSentence.Length > 0)
+    problem = problem.Length == 0 ? roomSentence : problem + ". " + roomSentence;

@@ -214,7 +214,7 @@ compatibility-note: >
   `XYZ.CrossProduct` and `DotProduct` are the same 2020 to 2027.
   NEEDS-CHECKING Group IQ.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "add text to the family"                     -> here, 3D model text
 #   "write a label on the panel"                 -> here, inside a family; in a
@@ -224,7 +224,7 @@ compatibility-note: >
 #                                                   project view
 #   "draw the valve symbol in plan"              -> DRAW_FAMILY_SYMBOLIC_LINES -
 #                                                   2D lines, no 3D body
-#   "set the material of the lettering"          -> SET_FAMILY_FORM_MATERIAL is
+#   "set the material of the lettering"          -> LINK_FAMILY_PARAMETER is
 #                                                   for FORMS; model text takes
 #                                                   material= here, as it is placed
 #   "change the label text height to 5 mm"       -> SET_TEXT_TYPE - a label's or

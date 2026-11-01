@@ -132,9 +132,9 @@ compatibility-note: >
 #                                                instance along a line
 #   "add the bracing"                         -> PLACE_LINE_BASED_FAMILY
 #   "put secondary beams in this bay"         -> CREATE_BEAM_SYSTEM
-#   "make the roof on this level"             -> CREATE_ROOF - the roof, not
+#   "make the roof on this level"             -> CREATE_FLOOR - the roof, not
 #                                                what holds it up
-#   "create a grid line"                      -> CREATE_GRID
+#   "create a grid line"                      -> CREATE_GRIDS
 
 utterances:
   - place a Howe truss between these two points on Level 2

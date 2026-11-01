@@ -104,7 +104,7 @@ compatibility-note: >
 #                                              and this one only reads
 #   "list the worksets"                     -> LIST_WORKSETS - every workset,
 #                                              and what a closed one hides
-#   "which workset is this on"              -> READ_ELEMENT_OWNERSHIP - an
+#   "which workset is this on"              -> REPORT_ELEMENT_OWNERSHIP - an
 #                                              ELEMENT's workset, not the
 #                                              active one
 #   "what is on the linked models workset"  -> SELECT_BY_WORKSET

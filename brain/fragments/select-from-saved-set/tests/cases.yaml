@@ -1,6 +1,6 @@
 positive:
   - given: >
-      a set of 12 saved by CREATE_SELECTION_FILTER, read back by the same name
+      a set of 12 saved by UPDATE_SAVED_SET mode "create", read back by the same name
     expect: >
       the same 12, and the report calling it a saved list. Run it in a
       different view and get the SAME 12 - that invariance is what makes it a

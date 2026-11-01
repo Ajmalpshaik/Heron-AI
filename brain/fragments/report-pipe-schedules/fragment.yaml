@@ -26,7 +26,7 @@ purpose: >
   can list or remove is a gap, and this closes it.
 
   **NOTHING ELSE IN THE LIBRARY CAN REACH ONE.** A PipeScheduleType is an
-  ElementType with NO CATEGORY, so SELECT_BY_CATEGORY_NAME and SELECT_TYPES
+  ElementType with NO CATEGORY, so FILTER_ELEMENTS_BY_CATEGORY and SELECT_TYPES
   both refuse it - correctly, since they are told to name a category and there
   is none. It never appears in a view either, so it cannot be clicked. Naming
   it here is the only route to one.

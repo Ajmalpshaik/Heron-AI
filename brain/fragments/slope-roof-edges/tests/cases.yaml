@@ -3,7 +3,8 @@
 #
 # THE ROOF IS BUILT, NOT FOUND. A model with no roof proves nothing, so each
 # leg makes its own: CREATE_ROOF on the top level, then
-# select-by-category-name (Roofs, in a view that shows them) and set-selection,
+# filter-elements-by-category (category Roofs, inViewOnly a view that shows
+# them) and set-selection,
 # then this on the selection - all inside the one transaction group `validate`
 # rolls back, so nothing is kept. BEFORE THE FIRST RUN, count the roofs already
 # in the model: the selection step takes EVERY roof in that view, and a

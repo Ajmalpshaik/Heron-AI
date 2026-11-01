@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: SET_VIEW_CROP_TO_SHAPE
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO SET_VIEW_CROP (set-view-crop), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools". Constitution Article 1: kept, never deleted, so its record and its
+# proof stay readable and it can be brought back. Nothing offers it now -
+# retrieval leaves DEPRECATED out, and its sentences claim nothing in the
+# identity table (heron_search RETIRED_FRAGMENTS). Its sentences moved to
+# SET_VIEW_CROP. Its boundary and joinTolerance (millimetres) are boundary and
+# joinToleranceMm there; its doc input is not needed. Nothing it did was left
+# behind. The proof below is the record of what this card's code did, not a
+# claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: SET_VIEW_CROP
+  why: >
+    The same job: set one view's crop. SET_VIEW_CROP version 2 takes a closed
+    loop in boundary for a SHAPED crop with this card's rules - the curves
+    chained head to tail, a gap within joinToleranceMm bridged and the worst
+    gap reported (worstGap), a gap past it refused in millimetres, a sheet
+    refused before the crop is switched on, the crop switched on before
+    CanHaveShape is asked and made visible after, Revit's three silent
+    requirements named - beside the rectangle round elements it already set.
 
 purpose: >
   Gives one view a NON-RECTANGULAR crop - an L round a wing, a stepped boundary

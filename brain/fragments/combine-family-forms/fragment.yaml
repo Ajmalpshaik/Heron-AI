@@ -133,7 +133,7 @@ compatibility-note: >
   Revit cannot cast is replaced by (5b-1001) compile on every release too
   (the same tool, 2026-10-17); measured on Revit 2024 only.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "cut the solid with the void"                -> here
 #   "join these solids in the family"            -> here

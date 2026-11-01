@@ -21,7 +21,7 @@ How does Heron's search do on the questions the owner ACTUALLY asked?
         --backend lexical --backend model+rerank --shortlists --out main.json
     python tools/score-routing.py --sentences s.yaml \\
         --backend lexical --backend model+rerank --compare main.json
-    python tools/score-routing.py --identities ids.txt --card RENAME_ELEMENTS \\
+    python tools/score-routing.py --identities ids.txt --card EDIT_TEXT_VALUES \\
         --from main.json                        # re-score identities offline
 
 WHAT IS DIFFERENT ABOUT THIS ONE
@@ -1198,7 +1198,7 @@ def load_sentences(path):
 
         groups:
           - group: the three
-            expect: want RENAME_ELEMENTS     # for every sentence below
+            expect: want EDIT_TEXT_VALUES    # for every sentence below
             sentences:
               - rename this view
               - say: which views have SUP in the name

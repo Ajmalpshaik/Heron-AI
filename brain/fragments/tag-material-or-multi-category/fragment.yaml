@@ -151,11 +151,11 @@ compatibility-note: >
 #   "tag the materials of this floor"       -> here, a Material Tags type
 #   "multi-category tag these elements"     -> here, a Multi-Category Tags type
 #   "tag these with the multi-category tag" -> here, a Multi-Category Tags type
-#   "put tags on these"                     -> TAG_ELEMENTS - one tag type named,
+#   "put tags on these"                     -> TAG_ELEMENTS_IN_VIEW - one tag type named,
 #                                              of the element's own category
 #   "tag everything in this view"           -> TAG_ELEMENTS_IN_VIEW - each
 #                                              category its own tag family
-#   "tag the rooms"                         -> TAG_ROOMS
+#   "tag the rooms"                         -> TAG_ELEMENTS_IN_VIEW
 #   "tag all the areas in this area plan"   -> TAG_AREAS
 #
 # WHAT MOVED. No declared utterance changed the card it reaches. ONE ROUTING-

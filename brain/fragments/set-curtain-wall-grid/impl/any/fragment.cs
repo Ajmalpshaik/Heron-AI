@@ -1,10 +1,33 @@
-// NOT STANDALONE. Assumes `doc`, `curtainWallType` and `grid` are in scope;
-// leaves `applied`, `alreadyAsAsked`, `differs`, `wallsOfType`,
+// NOT STANDALONE. Assumes `doc`, `curtainWallType`, `grid` and `mullions` are
+// in scope; leaves `applied`, `alreadyAsAsked`, `differs`, `wallsOfType`,
 // `systemsOfType`, `readBack`, `measured`, `refused` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). Revit keeps lengths in feet;
 // the modeller's spacing is MILLIMETRES (D-71), turned into feet once, at the
 // write, and back once, at the read.
+//
+// ===========================================================================
+// VERSION 4 (2026-11-01): SET_CURTAIN_WALL_MULLIONS MERGED IN - THE TYPE'S
+// MULLIONS AS WELL AS ITS GRID, IN ONE CALL.
+// ===========================================================================
+//
+// `mullions` is SET_CURTAIN_WALL_MULLIONS version 2's table, word for word:
+// "vertical interior=Rectangular Mullion: 50 x 150mm; horizontal border 2=none"
+// - six positions on a wall type, Interior, Border 1 and Border 2 each way, or
+// grid 1 / grid 2 interior, border 1, border 2 on a curtain system type, by
+// Revit's own ids (AUTO_MULLION_*). A mullion type is named, and the name has
+// to mean exactly one in the model; "none" takes the mullions off a position
+// and is the only word that does; a blank is refused; nothing is loaded - a
+// family not in the model is refused with the ones that are. `grid` and
+// `mullions` may each be left out, never both. Every refusal of either table is
+// made before the first write of either, and a write Revit will not take - grid
+// or mullion - undoes the whole call.
+//
+// ONE RULE CHANGED IN THE MERGE, THE SAFER KEPT: a mullion position Revit keeps
+// read-only on a WALL type was refused "it may be held by another user in a
+// shared model" - the guess this card stopped making for the grid on
+// 2026-10-06 (FRAGMENT-ISSUES 5b-328). It now gets `readOnlyBecause`: who holds
+// the type is asked of Revit, and said only when Revit says it.
 //
 // ===========================================================================
 // VERSION 3 (2026-10-29): A CURTAIN SYSTEM TYPE AS WELL AS A CURTAIN WALL TYPE.
@@ -295,6 +318,83 @@ Func<string> idsCarried = () =>
         notCarried.Count == 0 ? "none" : string.Join(", ", notCarried));
 };
 
+// ---------------------------------------------------------------------------
+// VERSION 4 - THE MULLIONS, from SET_CURTAIN_WALL_MULLIONS. Six positions, in
+// the order every mullion array below uses: a wall type's three vertical then
+// three horizontal, or a curtain system type's three of Grid 1 then three of
+// Grid 2. Each name is worn by two positions in Type Properties, so each is
+// reached by Revit's own id, never looked up by the name the palette shows.
+// A curtain system type's ids are an ASSUMPTION the proof settles, exactly as
+// its grid ids are: a type without them is refused, and a position written by
+// them that does not read back as asked throws - nothing is kept.
+// ---------------------------------------------------------------------------
+var positionWords = isSystem
+    ? new[]
+    {
+        "grid 1 interior", "grid 1 border 1", "grid 1 border 2",
+        "grid 2 interior", "grid 2 border 1", "grid 2 border 2",
+    }
+    : new[]
+    {
+        "vertical interior", "vertical border 1", "vertical border 2",
+        "horizontal interior", "horizontal border 1", "horizontal border 2",
+    };
+var positionIds = isSystem
+    ? new[]
+    {
+        BuiltInParameter.AUTO_MULLION_INTERIOR_GRID1, BuiltInParameter.AUTO_MULLION_BORDER1_GRID1,
+        BuiltInParameter.AUTO_MULLION_BORDER2_GRID1, BuiltInParameter.AUTO_MULLION_INTERIOR_GRID2,
+        BuiltInParameter.AUTO_MULLION_BORDER1_GRID2, BuiltInParameter.AUTO_MULLION_BORDER2_GRID2,
+    }
+    : new[]
+    {
+        BuiltInParameter.AUTO_MULLION_INTERIOR_VERT, BuiltInParameter.AUTO_MULLION_BORDER1_VERT,
+        BuiltInParameter.AUTO_MULLION_BORDER2_VERT, BuiltInParameter.AUTO_MULLION_INTERIOR_HORIZ,
+        BuiltInParameter.AUTO_MULLION_BORDER1_HORIZ, BuiltInParameter.AUTO_MULLION_BORDER2_HORIZ,
+    };
+
+// WHICH MULLION IDS A CURTAIN SYSTEM TYPE CARRIES - read off the type, as the
+// grid ids are.
+var mullionProbeIds = new[]
+{
+    BuiltInParameter.AUTO_MULLION_INTERIOR_GRID1, BuiltInParameter.AUTO_MULLION_BORDER1_GRID1,
+    BuiltInParameter.AUTO_MULLION_BORDER2_GRID1, BuiltInParameter.AUTO_MULLION_INTERIOR_GRID2,
+    BuiltInParameter.AUTO_MULLION_BORDER1_GRID2, BuiltInParameter.AUTO_MULLION_BORDER2_GRID2,
+    BuiltInParameter.AUTO_MULLION_INTERIOR_VERT, BuiltInParameter.AUTO_MULLION_INTERIOR_HORIZ,
+};
+Func<string> mullionIdsCarried = () =>
+{
+    var carried = new List<string>();
+    var notCarried = new List<string>();
+    foreach (var id in mullionProbeIds)
+    {
+        Parameter found = null;
+        try { found = chosen.get_Parameter(id); } catch (Exception) { found = null; }
+        (found != null ? carried : notCarried).Add(id.ToString());
+    }
+    return string.Format("Of Revit's mullion ids, '{0}' carries: {1}; not: {2}", label,
+        carried.Count == 0 ? "none" : string.Join(", ", carried),
+        notCarried.Count == 0 ? "none" : string.Join(", ", notCarried));
+};
+
+// What a position holds, in words: the mullion type, or none.
+Func<ElementId, string> nameOf = id =>
+{
+    if (id == null) return "(not read)";
+    if (id == ElementId.InvalidElementId) return "none";
+    var type = doc.GetElement(id) as ElementType;
+    return type == null ? "(a type no longer in the model)" : "'" + fullName(type) + "'";
+};
+
+var askedId = new ElementId[6];
+var askedName = new string[6];
+var positionParameter = new Parameter[6];
+var gridAsked = grid != null && grid.Count > 0;
+var mullionsAsked = mullions != null && mullions.Count > 0;
+// What the findings call the change: this grid, these mullions, or both.
+var whatChanges = gridAsked && mullionsAsked ? "this grid and these mullions"
+    : mullionsAsked ? "these mullions" : "this grid";
+
 // WHY REVIT KEEPS A SETTING READ-ONLY, as far as Revit itself says - never a
 // guess (5b-328). Whether another user holds the type is asked of Revit, and
 // only in a shared model. `when` is the state it was asked in, or "".
@@ -373,22 +473,29 @@ else if (!isSystem && asWall.Kind != WallKind.Curtain)
         : asWall.Kind == WallKind.Stacked ? "a stacked wall type"
         : "a wall type Revit does not class as a curtain wall";
     refused = string.Format(
-        "'{0}' is {1}, not a curtain wall type - it has no grid to lay out. Name a curtain wall "
-        + "type, 'Curtain Wall: Storefront' for one. Nothing was changed", label, kind);
+        "'{0}' is {1}, not a curtain wall type - it has no grid to lay out and no mullions to set. "
+        + "Name a curtain wall type, 'Curtain Wall: Storefront' for one. Nothing was changed", label, kind);
 }
-else if (grid == null || grid.Count == 0)
+else if (!gridAsked && !mullionsAsked)
 {
+    // VERSION 4: either table may be left out, never both.
     refused = isSystem
         ? "Nothing was named to change. Name each setting and what it becomes - "
-            + "'grid 1 layout=fixed distance; grid 1 spacing=1500'. Nothing was changed"
+            + "'grid 1 layout=fixed distance; grid 1 spacing=1500' - or each mullion position and its "
+            + "mullion type - 'grid 1 interior=Rectangular Mullion: 50 x 150mm; grid 2 border 2=none'. "
+            + "Nothing was changed"
         : "Nothing was named to change. Name each setting and what it becomes - "
-            + "'vertical layout=fixed distance; vertical spacing=1500'. Nothing was changed";
+            + "'vertical layout=fixed distance; vertical spacing=1500' - or each mullion position and its "
+            + "mullion type - 'vertical interior=Rectangular Mullion: 50 x 150mm; horizontal border 2=none'. "
+            + "Nothing was changed";
 }
 else
 {
-    // THE REQUEST, READ WHOLE BEFORE ANYTHING IS TOUCHED.
+    // THE REQUEST, READ WHOLE BEFORE ANYTHING IS TOUCHED. With no grid table
+    // (version 4, mullions alone) nothing is asked of the grid, and its
+    // settings below are still read, so the answer shows them as they stand.
     var seen = new List<string>();
-    foreach (var pair in grid)
+    foreach (var pair in grid ?? new Dictionary<string, string>())
     {
         var key = plain(pair.Key);
         var value = (pair.Value ?? "").Trim();
@@ -551,6 +658,139 @@ else
                     "A {0} layout of {1} needs a spacing, and '{2}' holds none. Give one - '{0} "
                     + "spacing=1500'. Nothing was changed", directions[d], layoutShown[askedLayout[d]], label);
         }
+    }
+
+    // VERSION 4 - THE MULLION TABLE, READ WHOLE BEFORE ANYTHING IS TOUCHED,
+    // after the grid's and with the same rule: one refusal refuses the whole
+    // request, grid and mullions alike, and nothing is written.
+    if (refused.Length == 0 && mullionsAsked)
+    {
+        // EVERY MULLION TYPE IN THE MODEL, walked as element types and tested
+        // as .NET types - the add-in's own way of finding a type by class.
+        var known = new List<MullionType>();
+        foreach (var element in new FilteredElementCollector(doc).WhereElementIsElementType())
+        {
+            var candidate = element as MullionType;
+            if (candidate != null) known.Add(candidate);
+        }
+
+        var spellings = known.Select(t => fullName(t)).Distinct().OrderBy(n => n, StringComparer.Ordinal).ToList();
+
+        var named = new List<string>();
+        foreach (var pair in mullions)
+        {
+            var key = plain(pair.Key);
+            var value = (pair.Value ?? "").Trim();
+
+            if (named.Contains(key))
+            {
+                refused = string.Format(
+                    "'{0}' is named twice, and only one of the two could be kept. Say it once. "
+                    + "Nothing was changed", key);
+                break;
+            }
+            named.Add(key);
+
+            var at = Array.IndexOf(positionWords, key);
+            if (at < 0 && isSystem && (key.StartsWith("vertical") || key.StartsWith("horizontal")))
+            {
+                refused = string.Format(
+                    "'{0}' is a curtain WALL type's position, and '{1}' is a curtain system type. Its mullions "
+                    + "are Grid 1 Mullions and Grid 2 Mullions, and which way each grid runs is set by the face "
+                    + "it lies on, not by the type - so this does not call either vertical or horizontal. Name "
+                    + "one or more of: {2}. Nothing was changed", pair.Key, label, string.Join(", ", positionWords));
+                break;
+            }
+            if (at < 0)
+            {
+                refused = string.Format(
+                    "'{0}' is not a mullion position. Name one or more of: {1}. Nothing was changed",
+                    pair.Key, string.Join(", ", positionWords));
+                break;
+            }
+
+            // A BLANK IS REFUSED rather than read as none.
+            if (value.Length == 0)
+            {
+                refused = string.Format(
+                    "'{0}' was given no mullion type. Name one, or say none to take the mullions off "
+                    + "that position. Nothing was changed", positionWords[at]);
+                break;
+            }
+
+            // "none" TAKES THE MULLIONS OFF - Revit's empty reference - and it
+            // is the only word that does.
+            if (string.Equals(value, "none", StringComparison.OrdinalIgnoreCase))
+            {
+                askedId[at] = ElementId.InvalidElementId;
+                askedName[at] = "none";
+                continue;
+            }
+
+            // A NAME RESOLVES TO EXACTLY ONE MULLION TYPE, by the add-in's rule
+            // (D-54): the bare type name, or "Family: Type" with or without a
+            // space before the colon, compared exactly, capitals included.
+            var hits = new List<MullionType>();
+            foreach (var candidate in known)
+            {
+                string name = "", family = "";
+                try { name = candidate.Name; family = candidate.FamilyName; } catch { continue; }
+                if (string.Equals(name, value, StringComparison.Ordinal)
+                    || (!string.IsNullOrEmpty(family)
+                        && (string.Equals(family + ": " + name, value, StringComparison.Ordinal)
+                            || string.Equals(family + " : " + name, value, StringComparison.Ordinal))))
+                    hits.Add(candidate);
+            }
+
+            // NOTHING IS LOADED. A mullion family not in the model is refused
+            // with the ones that are - loading one is the modeller's call.
+            if (hits.Count == 0)
+            {
+                refused = known.Count == 0
+                    ? string.Format(
+                        "This model has no mullion types at all, so '{0}' cannot be put on {1}. Load a "
+                        + "mullion family first - Insert > Load Family; Heron does not load families. "
+                        + "Nothing was changed", value, positionWords[at])
+                    : string.Format(
+                        "No mullion type called '{0}' in this model - capitals count. The mullion types it "
+                        + "has are: {1}. A mullion family that is not in the model has to be loaded first "
+                        + "- Insert > Load Family; Heron does not load families. Nothing was changed",
+                        value, string.Join(", ", spellings));
+                break;
+            }
+
+            if (hits.Count > 1)
+            {
+                refused = string.Format(
+                    "{0} mullion types are called '{1}', so the name does not say which is meant. Say "
+                    + "which: {2}. Nothing was changed", hits.Count, value,
+                    string.Join(", or ", hits.Select(t => fullName(t)).Distinct()));
+                break;
+            }
+
+            askedId[at] = hits[0].Id;
+            askedName[at] = "'" + fullName(hits[0]) + "'";
+        }
+    }
+
+    // THE TYPE'S OWN MULLION POSITIONS, BY ID - read whether or not any is
+    // asked, so the answer shows all six - and whether each asked-for one can
+    // be written at all.
+    for (var p = 0; p < 6 && refused.Length == 0; p++)
+    {
+        positionParameter[p] = chosen.get_Parameter(positionIds[p]);
+        if (askedId[p] == null) continue;
+
+        var slot = positionParameter[p];
+        if (slot == null)
+            refused = string.Format("'{0}' has no {1} mullion setting - Revit gives this type none "
+                + "to set. {2}Nothing was changed", label, positionWords[p],
+                isSystem ? mullionIdsCarried() + ". " : "");
+        else if (slot.StorageType != StorageType.ElementId)
+            refused = string.Format("'{0}' keeps its {1} mullion in a form this does not write. "
+                + "Nothing was changed", label, positionWords[p]);
+        else if (slot.IsReadOnly)
+            refused = readOnlyBecause(positionWords[p] + " mullion", "") + ". Nothing was changed";
     }
 }
 
@@ -835,10 +1075,44 @@ if (refused.Length == 0)
         }
     }
 
+    // VERSION 4 - THE MULLION WRITE, after the grid's. Only what was asked,
+    // and only where it differs from what the position already holds.
+    var mullionBefore = new ElementId[6];
+    for (var p = 0; p < 6; p++)
+    {
+        var slot = positionParameter[p];
+        mullionBefore[p] = slot != null && slot.StorageType == StorageType.ElementId
+            ? slot.AsElementId() : null;
+    }
+    var wroteMullion = new bool[6];
+    for (var p = 0; p < 6; p++)
+    {
+        if (askedId[p] == null) continue;
+        if (mullionBefore[p] != null && mullionBefore[p].Equals(askedId[p])) continue;
+
+        bool took;
+        try
+        {
+            took = positionParameter[p].Set(askedId[p]);
+        }
+        catch (Exception notTaken)
+        {
+            throw new InvalidOperationException(string.Format(
+                "Revit would not put {0} on the {1} mullions of '{2}' - {3}. Nothing this call did "
+                + "is kept", askedName[p], positionWords[p], label, notTaken.Message));
+        }
+        if (!took)
+            throw new InvalidOperationException(string.Format(
+                "Revit refused {0} on the {1} mullions of '{2}'. Nothing this call did is kept",
+                askedName[p], positionWords[p], label));
+        wroteMullion[p] = true;
+    }
+
     // THE REBUILD IS NOT SWALLOWED. Revit's reference for Regenerate says a
     // failure there leaves a model that must not be read again, and the
-    // transaction has to be abandoned - so it is thrown straight back.
-    if (wroteLayout[0] || wroteLayout[1] || wroteSpacing[0] || wroteSpacing[1])
+    // transaction has to be abandoned - so it is thrown straight back. One
+    // rebuild for the grid and the mullions together.
+    if (wroteLayout[0] || wroteLayout[1] || wroteSpacing[0] || wroteSpacing[1] || wroteMullion.Any(w => w))
     {
         try
         {
@@ -847,8 +1121,8 @@ if (refused.Length == 0)
         catch (Exception notRebuilt)
         {
             throw new InvalidOperationException(string.Format(
-                "Revit could not rebuild the {0} of '{1}' with this grid - {2}. Nothing this call "
-                + "did is kept", manyUsers, label, notRebuilt.Message));
+                "Revit could not rebuild the {0} of '{1}' with {2} - {3}. Nothing this call "
+                + "did is kept", manyUsers, label, whatChanges, notRebuilt.Message));
         }
     }
 
@@ -955,22 +1229,92 @@ if (refused.Length == 0)
             }
         }
     }
-    readBack = string.Join(" | ", described) + " | " + carriers + (isSystem ? " | " + idsCarried() : "");
+    // VERSION 4 - THE SIX MULLION POSITIONS, READ BACK off the type afresh,
+    // asked or not, beside what each held before.
+    for (var p = 0; p < 6; p++)
+    {
+        var slot = chosen.get_Parameter(positionIds[p]);
+        var now = slot != null && slot.StorageType == StorageType.ElementId
+            ? slot.AsElementId() : null;
+
+        described.Add(string.Format("{0} mullions: {1}{2}", positionWords[p], nameOf(now),
+            askedId[p] == null
+                ? " - not asked, left as it was"
+                : string.Format(", was {0} - asked for {1}", nameOf(mullionBefore[p]), askedName[p])));
+
+        if (askedId[p] == null) continue;
+
+        // A CURTAIN SYSTEM TYPE'S MULLION IDS ARE THE ASSUMPTION (see the top).
+        // A position written by them that Revit does not then hold means the
+        // id is not the one Type Properties shows - nothing this call did is kept.
+        if (isSystem && wroteMullion[p] && (now == null || !now.Equals(askedId[p])))
+            throw new InvalidOperationException(string.Format(
+                "'{0}' was given {1} for its {2} mullions by {3} and holds {4} after the rebuild - that "
+                + "id may not be the setting Type Properties shows under {5}, so nothing this call did "
+                + "is kept. {6}", label, askedName[p], positionWords[p], positionIds[p], nameOf(now),
+                p < 3 ? "Grid 1 Mullions" : "Grid 2 Mullions", mullionIdsCarried()));
+
+        if (now != null && now.Equals(askedId[p]))
+        {
+            if (wroteMullion[p]) applied++; else alreadyAsAsked++;
+            held.Add(positionWords[p] + " mullions " + askedName[p]);
+        }
+        else
+        {
+            differs.Add(string.Format("{0} mullions: asked for {1}, and Revit holds {2}",
+                positionWords[p], askedName[p], nameOf(now)));
+        }
+    }
+    readBack = string.Join(" | ", described) + " | " + carriers
+        + (isSystem ? " | " + idsCarried() + " | " + mullionIdsCarried() : "");
 
     // WHAT IT MADE, MEASURED ON A PLACED ONE - read off Revit, never worked out
     // from the spacing.
+    var bare = new List<string>();
     if (sample == null)
     {
         measured = isSystem
             ? "No curtain system of this type is placed in the model, so nothing was measured. The next "
-                + "curtain system made with it shows this grid"
+                + "curtain system made with it shows " + whatChanges
             : "No wall of this type is placed in the model, so nothing was measured. The next "
-                + "wall drawn with it shows this grid";
+                + "wall drawn with it shows " + whatChanges;
     }
     else
     {
         var linesAfter = countLines(gridsOf(sample));
         var unreadable = linesAfter[3, 0] + linesAfter[3, 1];
+
+        // VERSION 4, from SET_CURTAIN_WALL_MULLIONS: AN INTERIOR MULLION TYPE
+        // ON A DIRECTION WITH NO GRID LINES SHOWS NOWHERE. Not a failure - the
+        // type holds it - but the modeller should not have to work out why
+        // nothing appeared. Counted AFTER this call's own grid write, so a grid
+        // and its interior mullions asked together are judged together. On a
+        // curtain system, which of Grid 1 and Grid 2 is Revit's U set is not
+        // known, so it is said only when no face has a grid line at all.
+        Func<int, bool> interiorAsked = p => askedId[p] != null && askedId[p] != ElementId.InvalidElementId;
+        if (isSystem)
+        {
+            var allLines = 0;
+            for (var way = 0; way < 4; way++) allLines += linesAfter[way, 0] + linesAfter[way, 1];
+            if (allLines == 0 && (interiorAsked(0) || interiorAsked(3)))
+                bare.Add(string.Format(
+                    "Curtain system {0} has no grid line on any face, so an interior mullion type shows on "
+                    + "none of it - the type holds it all the same. A grid 1 or grid 2 layout here lays "
+                    + "the lines out", sample.Id));
+        }
+        else
+        {
+            if (interiorAsked(0) && linesAfter[0, 0] + linesAfter[0, 1] == 0)
+                bare.Add(string.Format(
+                    "The vertical grid puts no lines on wall {0}, so its interior mullion type shows on none "
+                    + "of it - the type holds it all the same. A vertical layout here lays the lines out",
+                    sample.Id));
+            if (interiorAsked(3) && linesAfter[1, 0] + linesAfter[1, 1] == 0)
+                bare.Add(string.Format(
+                    "The horizontal grid puts no lines on wall {0}, so its interior mullion type shows on "
+                    + "none of it - the type holds it all the same. A horizontal layout here lays the lines "
+                    + "out", sample.Id));
+        }
         if (isSystem)
         {
             var facesAfter = linesByFace(gridsOf(sample));
@@ -1011,14 +1355,15 @@ if (refused.Length == 0)
     if (applied == 0 && differs.Count == 0)
     {
         findings.Add(string.Format(
-            "Nothing on '{0}' needed changing - every setting asked for was already so. It is used "
+            "Nothing on '{0}' needed changing - every setting and mullion position asked for was already "
+            + "so. It is used "
             + "by {1} {2}(s) in this model", label, usersOfType, oneUser));
     }
     else if (isSystem)
     {
         findings.Add(usersOfType == 0
             ? string.Format("'{0}' is used by no curtain system in this model, so nothing placed changed. "
-                + "The next curtain system made with it takes this grid", label)
+                + "The next curtain system made with it takes {1}", label, whatChanges)
             : string.Format("'{0}' is used by {1} curtain system{2} in this model - {3} with the type. "
                 + "For one curtain system alone, put it on a copy of the type first - DUPLICATE_TYPE, "
                 + "then CHANGE_ELEMENT_TYPE; neither has been run on a curtain system yet",
@@ -1029,7 +1374,7 @@ if (refused.Length == 0)
     {
         findings.Add(wallsOfType == 0
             ? string.Format("'{0}' is used by no wall in this model, so nothing placed changed. The "
-                + "next wall drawn with it takes this grid", label)
+                + "next wall drawn with it takes {1}", label, whatChanges)
             : string.Format("'{0}' is used by {1} wall{2} in this model - {3} with the type. For "
                 + "one wall alone, DUPLICATE_TYPE first and put that wall on the copy",
                 label, wallsOfType, wallsOfType == 1 ? "" : "s",
@@ -1041,6 +1386,7 @@ if (refused.Length == 0)
             applied, alreadyAsAsked)
         : string.Format("{0} setting(s) are NOT what was asked - see differs. {1} changed as asked",
             differs.Count, applied));
+    foreach (var line in bare) findings.Add(line);
 }
 else
 {

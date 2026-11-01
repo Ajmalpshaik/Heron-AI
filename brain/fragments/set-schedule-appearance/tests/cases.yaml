@@ -96,6 +96,53 @@ negative:
       every heading exactly as it was. False never meant horizontal and must not
       start meaning it for a caller who has not asked
 
+  # VERSION 4 (2026-11-01, SET_SCHEDULE_FIELD_TOTALS merged in). Each FAILS on
+  # version 3, which has no totals and takes the first column a name fits.
+  - given: >
+      VERSION 4. An air terminal schedule grouped by room with footers and the
+      grand total on, fieldName "Flow", calculateTotals on, every style input
+      left out
+    expect: >
+      totalled 1, appliedTotals saying 'Flow' now calculates totals and
+      prints in each Room footer and in the grand total - and the heading,
+      width and alignment UNCHANGED. Look at the schedule: a total flow per
+      room and at the bottom
+
+  - given: VERSION 4. The same, run a second time
+    expect: >
+      totalled 0 and 'Flow' in alreadyTotalled - the read-back. Nothing
+      changed
+
+  - given: VERSION 4. fieldName "Type", calculateTotals on
+    expect: >
+      'Type' in cannotTotal - text cannot be added up, asked of Revit FIRST -
+      and nothing set
+
+  - given: VERSION 4. A column showing its maximum, calculateTotals on
+    expect: >
+      switched to totals, and replacedCalculation naming the maximum it
+      showed - one calculation per column, so what went is said
+
+  - given: VERSION 4. A schedule with no footer and the grand total off
+    expect: appliedTotals saying the total PRINTS NOWHERE YET
+
+  - given: VERSION 4. A hidden column, calculateTotals on
+    expect: totals switched on, and appliedTotals saying the column is hidden so its total prints nowhere
+
+  - given: >
+      VERSION 4. A heading renamed to another column's FIELD name - "Size"
+      over the Mark column while a Size column exists - and fieldName "Size"
+      with newHeading "DUCT SIZE"
+    expect: >
+      NEITHER column touched, and 'Size' in ambiguous. Version 3 renamed
+      whichever came first
+
+  - given: VERSION 4. The schedule selected AND its placement on a sheet, columnWidthMm 30
+    expect: changed counts the column ONCE - one schedule, handed in twice
+
+  - given: VERSION 4. Nothing handed in
+    expect: refused saying no schedule was handed in - never changed 0 and silence
+
 second_route:
   - >
     Revit's own schedule Properties - Formatting tab for heading, alignment and

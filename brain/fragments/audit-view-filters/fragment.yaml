@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -20,6 +20,30 @@ capability: AUDIT_VIEW_FILTERS
 version: 2
 source: OFFICIAL
 risk: ANALYZE
+
+# DEPRECATED 2026-11-01 - MERGED INTO REPORT_VIEW_FILTERS (report-view-
+# filters), on the owner's instruction in conversation: "make sure there is no
+# duplicate tools". Constitution Article 1: kept, never deleted, so its record
+# and its proof stay readable and it can be brought back. Nothing offers it
+# now - retrieval leaves DEPRECATED out, and its sentences claim nothing in
+# the identity table (heron_search RETIRED_FRAGMENTS). Its sentences moved to
+# REPORT_VIEW_FILTERS. Its view input became viewName there, which takes the
+# view as the Project Browser names it, several, or *. Its everyFilter switch
+# is not needed: naming a view there always lists its filters in full. Its
+# compile-time #if for the Enable Filter check is replaced by the by-name call
+# REPORT_VIEW_FILTERS already used. The proof below is the record of what this
+# card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: REPORT_VIEW_FILTERS
+  why: >
+    The same job: read the view filters and say what they do on the views
+    named. REPORT_VIEW_FILTERS version 3 took everything this card had that it
+    lacked - each filter in priority order, its rule text, its categories and
+    the count it catches in that view, the four do-nothing verdicts (disabled,
+    hidden, blankOverride, nothingToActOn) by id, the template-owned verdict
+    with the template named, and a view that takes no override said to be one.
 
 purpose: >
   Reads every filter applied to a view and reports the separate states that all

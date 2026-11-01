@@ -32,6 +32,27 @@ positive:
       written = 0 and all 15 in `alreadyThat`. Nothing is written a second
       time, and the model is exactly as the first run left it
 
+  # VERSION 6 - REMOVE_PARAMETER_VALUE merged in: clear=true. Each fails on
+  # version 5, which has no clear and writes an empty string as text.
+  - given: forty elements with a Mark value, clear true, value empty
+    expect: >
+      cleared 40, forty blanks - CHECKED in a schedule, because a blank cell and
+      a "0" cell look different there and that is the whole difference made
+
+  - given: a LENGTH parameter with a value (an editable instance one), clear true, value empty
+    expect: >
+      cleared, read back empty. Version 5 sent an empty value to SetValueString,
+      which refused it - an empty string cannot clear a number
+
+  - given: Comments on four walls, clear true
+    expect: >
+      cleared 4. Revit refuses ClearValue on that text built-in ("Cannot call
+      Clear..." - measured 2026-09-13), and the empty string is the fallback,
+      read back
+
+  - given: an element whose parameter is already empty, clear true
+    expect: in `alreadyEmpty`, not counted as cleared
+
 negative:
   - given: 4 elements that do not have the named parameter at all
     expect: >
@@ -102,6 +123,25 @@ negative:
     expect: >
       written = 37, `snapped` carries exactly the 3 ids, and ONE regeneration
       ran - not 40. Verify the count by timing if nothing else exposes it
+
+  # VERSION 6 - clear.
+  - given: Area or Volume named, clear true
+    expect: >
+      in `readOnly` and a finding saying READ-ONLY - THE FIRST CASE TO RUN.
+      Revit computes them, and "40 cleared" when none was is what nobody checks
+
+  - given: a parameter that lives on the TYPE, instances handed in, clear true
+    expect: >
+      every instance in `refused`, cleared 0, and the finding that clearing it
+      would empty every other instance of the type - the type's value unchanged
+
+  - given: clear true AND value "X"
+    expect: >
+      REFUSED before anything is touched - every element in `refused`, the
+      finding "two opposite asks", NOTHING WAS CHANGED
+
+  - given: an element deleted between the query and the call, clear true or a write
+    expect: counted in a finding and passed over, the rest of the batch done - no throw
 
 second_route:
   - a Revit schedule of the same parameter, read after the write

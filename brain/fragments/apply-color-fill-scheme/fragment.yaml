@@ -318,11 +318,11 @@ compatibility-note: >
   Millimetres on the sheet become model feet by the view's scale over 304.8,
   and a legend point in millimetres by 304.8 (D-20, D-71).
 
-# ROUTING - repeated in COLOR_BY_PARAMETER and CREATE_LEGEND_VIEW.
+# ROUTING - repeated in COLOR_BY_PARAMETER and DUPLICATE_VIEWS.
 #
 #   "add a colour fill legend"        -> here. The LEGEND VIEW is a different
 #                                        thing: a view of symbols placed on
-#                                        sheets, CREATE_LEGEND_VIEW
+#                                        sheets, DUPLICATE_VIEWS
 #   "colour the rooms by name"        -> here. Rooms, spaces, zones, areas are
 #                                        what a colour SCHEME is for
 #   "colour fill the spaces"          -> here
@@ -346,7 +346,7 @@ compatibility-note: >
 #                                        elements handed in, the co-ordination
 #                                        picture, with its legend in the reply
 #   "make these red"                  -> OVERRIDE_GRAPHICS_IN_VIEW
-#   "make a legend view"              -> CREATE_LEGEND_VIEW
+#   "make a legend view"              -> DUPLICATE_VIEWS
 utterances:
   - add a colour fill legend
   - colour the rooms by name

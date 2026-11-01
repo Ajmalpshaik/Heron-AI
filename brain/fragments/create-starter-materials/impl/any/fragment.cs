@@ -1,6 +1,29 @@
-// NOT STANDALONE. Assumes `doc`, `namePrefix`, `starterPick` and
-// `libraryLooks` are in scope; leaves `createdMaterialIds`, `starterReport`,
-// `alreadyThere`, `refused` and `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `namePrefix`, `starterPick`, `libraryLooks`,
+// `materialNames`, `colours` and `transparencies` are in scope; leaves
+// `createdMaterialIds`, `starterReport`, `alreadyThere`, `refused` and
+// `findings` behind.
+//
+// VERSION 4 (2026-11-01) - CREATE_MATERIAL MERGED IN. ANY MATERIALS BESIDE
+// THE STARTER SET: `materialNames` (comma separated, each made with exactly
+// that name - the office prefix is NOT put on them, since a family's forms
+// and LINK_FAMILY_PARAMETER name them as given), `colours` ("R,G,B; R,G,B",
+// each 0 to 255, in name order) and `transparencies` (whole percentages, in
+// name order) - each CLAMPED to 0..100 and the clamp REPORTED, CREATE_MATERIAL's
+// rule. A material made this way carries what CREATE_MATERIAL gave it: a name,
+// a shading colour and a transparency, NO appearance asset - so it draws flat
+// in Realistic, which the answer says, and SET_MATERIAL_APPEARANCE gives it a
+// look. A name already in use is left as it is and reported, never
+// duplicated - both cards' rule. With names given and `starterPick` left out
+// ("auto") none of the twelve is made; "auto" with no names is all twelve, as
+// before.
+//
+// THE OPPOSITE RULE, AND THE SAFER ONE KEPT (Constitution Article 8): CREATE_
+// MATERIAL kept the rest when Revit refused one name, and skipped a blank
+// name; here a name Revit refuses fails the call and NOTHING is kept, and a
+// blank name, a name with a character Revit refuses, a colour that is not
+// one or a transparency that is not a whole number refuses the call before
+// anything is made. Every material made is read back - name, shading colour,
+// transparency - and one that does not read as made fails the call.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). Each appearance is edited in
 // an edit scope of its own, which commits into that transaction.
@@ -71,13 +94,65 @@ var findings = new List<string>();
         Tuple.Create("Pipe Copper",          "Metal",    new Color(184, 115, 51),  0,  new[] { 65.0, 60.0, 90.0, 0.0, 0.0 }, true),
     };
 
+    // ---- 0. VERSION 4, CREATE_MATERIAL'S HALF: any names, colours and
+    // transparencies, read and checked BEFORE anything is made.
+    var custom = new List<Tuple<string, Color, int>>();
+    var customNames = (materialNames ?? new List<string>()).Select(each => (each ?? "").Trim()).ToList();
+    if (customNames.Count == 1 && string.Equals(customNames[0], "none", StringComparison.OrdinalIgnoreCase)) customNames.Clear();
+    Func<string, string> notNone = text =>
+    {
+        var t = (text ?? "").Trim();
+        return string.Equals(t, "none", StringComparison.OrdinalIgnoreCase) ? "" : t;
+    };
+    var customColours = new List<Color>();
+    foreach (var piece in notNone(colours).Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+    {
+        var channels = piece.Split(',').Select(each => each.Trim()).Where(each => each.Length > 0).ToList();
+        var values = new int[3];
+        var ok = channels.Count == 3;
+        for (var i = 0; ok && i < 3; i++)
+            ok = int.TryParse(channels[i], System.Globalization.NumberStyles.Integer,
+                    System.Globalization.CultureInfo.InvariantCulture, out values[i]) && values[i] >= 0 && values[i] <= 255;
+        if (!ok) { problems.Add("'" + piece.Trim() + "' is not a colour - three numbers from 0 to 255, comma separated, a semicolon between colours: \"255,0,0; 0,0,255\""); continue; }
+        customColours.Add(new Color((byte)values[0], (byte)values[1], (byte)values[2]));
+    }
+    var customClear = new List<int>();
+    foreach (var piece in notNone(transparencies).Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries))
+    {
+        int whole;
+        if (!int.TryParse(piece.Trim(), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out whole))
+        { problems.Add("'" + piece.Trim() + "' is not a whole number - transparencies are percentages, comma separated: \"0, 80\""); continue; }
+        customClear.Add(whole);
+    }
+    if (customNames.Count == 0 && (customColours.Count > 0 || customClear.Count > 0))
+        problems.Add("colours or transparencies were given with no material names to give them to");
+    for (var i = 0; i < customNames.Count; i++)
+    {
+        var name = customNames[i];
+        if (name.Length == 0) { problems.Add("material name " + (i + 1) + " is blank"); continue; }
+        if (name.IndexOfAny("{}[]|;<>:?\\`~".ToCharArray()) >= 0)
+        { problems.Add("'" + name + "' holds a character Revit refuses in a name ({}[]|;<>:?\\`~)"); continue; }
+        var asked = i < customClear.Count ? customClear[i] : 0;
+        var clamped = Math.Max(0, Math.Min(100, asked));
+        if (i < customClear.Count && clamped != asked)
+            findings.Add(string.Format("'{0}': transparency {1} is outside 0 to 100 and was set to {2}", name, asked, clamped));
+        custom.Add(Tuple.Create(name, i < customColours.Count ? customColours[i] : null, i < customClear.Count ? clamped : -1));
+    }
+    if (customColours.Count > customNames.Count || customClear.Count > customNames.Count)
+        findings.Add(string.Format("{0} name(s), {1} colour(s) and {2} transparency value(s) were given - the ones beyond "
+            + "the last name were not used", customNames.Count, customColours.Count, customClear.Count));
+
     // ---- 1. The prefix and which of the twelve.
     var prefix = namePrefix ?? "";
     if (prefix.IndexOfAny("{}[]|;<>:?\\`~".ToCharArray()) >= 0)
         problems.Add("the prefix '" + prefix + "' holds a character Revit refuses in a name ({}[]|;<>:?\\`~)");
     var picked = new List<Tuple<string, string, Color, int, double[], bool>>();
     var pickText = (starterPick ?? "").Trim();
-    if (squash(pickText) == "" || squash(pickText) == "all") picked.AddRange(starters);
+    // VERSION 4: "auto" - left out - is all twelve with no names given, and
+    // none of them when names are; "none" is none of them.
+    if (squash(pickText) == "auto" && custom.Count == 0 && customNames.Count == 0) picked.AddRange(starters);
+    else if (squash(pickText) == "auto" || squash(pickText) == "none") { }
+    else if (squash(pickText) == "" || squash(pickText) == "all") picked.AddRange(starters);
     else
         foreach (var token in pickText.Split(new[] { ';', ',', '\n' }, StringSplitOptions.RemoveEmptyEntries))
         {
@@ -253,10 +328,52 @@ var findings = new List<string>();
                 starter.Item4 > 0 ? " at " + starter.Item4 + "% transparency" : "", route, asset.Name));
         }
 
+        // ---- 3b. VERSION 4, CREATE_MATERIAL'S HALF - each with its name, its
+        // shading colour and its transparency, no appearance asset. A name
+        // already in use, or asked for twice, is left as it is and reported.
+        var customMade = new List<Tuple<ElementId, Tuple<string, Color, int>>>();
+        foreach (var wanted in custom)
+        {
+            var name = wanted.Item1;
+            var existing = new FilteredElementCollector(doc).OfClass(typeof(Material)).Cast<Material>()
+                .FirstOrDefault(each => string.Equals(each.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (existing != null)
+            {
+                alreadyThere.Add(existing.Name);
+                lines.Add(existing.Name + ": already in this " + (doc.IsFamilyDocument ? "family" : "project") + " - left as it is");
+                continue;
+            }
+            Material material;
+            try { material = doc.GetElement(Material.Create(doc, name)) as Material; }
+            catch (Exception failure)
+            {
+                throw new InvalidOperationException("Revit refused the material '" + name + "': " + failure.Message
+                    + ". Nothing was kept", failure);
+            }
+            if (material == null) throw new InvalidOperationException("Revit did not make the material '" + name + "'. Nothing was kept");
+            if (wanted.Item2 != null) material.Color = wanted.Item2;
+            if (wanted.Item3 >= 0) material.Transparency = wanted.Item3;
+            createdMaterialIds.Add(material.Id);
+            customMade.Add(Tuple.Create(material.Id, wanted));
+            lines.Add(string.Format("{0}: made - shading {1}{2}, NO appearance asset", name,
+                wanted.Item2 == null ? "Revit's default" : colourText(wanted.Item2),
+                wanted.Item3 > 0 ? " at " + wanted.Item3 + "% transparency" : ""));
+        }
+
         // ---- 4. Read back.
         doc.Regenerate();
+        foreach (var one in customMade)
+        {
+            var material = doc.GetElement(one.Item1) as Material;
+            if (material == null || material.Name != one.Item2.Item1) { wrong.Add("'" + one.Item2.Item1 + "' is gone, or lost its name"); continue; }
+            if (one.Item2.Item2 != null && colourText(material.Color) != colourText(one.Item2.Item2))
+                wrong.Add("'" + material.Name + "' shades " + colourText(material.Color));
+            if (one.Item2.Item3 >= 0 && material.Transparency != one.Item2.Item3)
+                wrong.Add("'" + material.Name + "' reads transparency " + material.Transparency);
+        }
         foreach (var id in createdMaterialIds)
         {
+            if (customMade.Any(one => one.Item1 == id)) continue;
             var material = doc.GetElement(id) as Material;
             var starter = material == null ? null : picked.FirstOrDefault(each => prefix + each.Item1 == material.Name);
             if (material == null || starter == null) { wrong.Add("a material made here is gone, or lost its name"); continue; }
@@ -276,7 +393,11 @@ var findings = new List<string>();
 
         starterReport = string.Join("  ||  ", lines);
         findings.Add(string.Format("{0} starter material(s) made, {1} already there and left as they are",
-            createdMaterialIds.Count, alreadyThere.Count));
+            createdMaterialIds.Count - customMade.Count, alreadyThere.Count));
+        if (customMade.Count > 0)
+            findings.Add(string.Format("{0} material(s) made by name, with a SHADING COLOUR and transparency only - no "
+                + "appearance asset, no cut or surface pattern - so they schedule and colour correctly, draw flat in "
+                + "Realistic and are not ready for a render; SET_MATERIAL_APPEARANCE gives them a look", customMade.Count));
         findings.Add("Shaded views draw each shading colour; Realistic views and renderings draw its appearance. The values are "
             + "Heron's starter values, not a standard - SET_MATERIAL_PROPERTIES and SET_MATERIAL_APPEARANCE change them");
         findings.Add("Nothing uses them yet - SET_ELEMENT_MATERIAL gives elements a material, SET_COMPOUND_LAYER_WIDTH a wall or floor layer");

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: SELECT_FAMILY_FORMS
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO REPORT_FAMILY_FORMS (report-family-forms), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to REPORT_FAMILY_FORMS. The proof below is the record of what this
+# card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: REPORT_FAMILY_FORMS
+  why: >
+    The same job: the forms of the family in the Family Editor, by the ids the
+    form tools gave back or by kind and side, read the same way.
+    REPORT_FAMILY_FORMS reads them with their extents and settings, and its
+    version 4 took everything this card did that it lacked: the forms are handed
+    on as elements, in the order named, for SET_SELECTION and DELETE_ELEMENTS;
+    one id that is not a form refuses the call and hands nothing on; refused
+    says why; freeform is a kind. One rule was opposite and the safer kept for
+    what is handed on: this card refused a call naming no form, that card read
+    every form - now a call naming none reads every form and hands NONE on, so a
+    delete can never reach forms nobody named.
 
 purpose: >
   Picks out the solids and voids being modelled in the Family Editor - by the

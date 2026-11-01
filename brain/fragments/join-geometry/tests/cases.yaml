@@ -22,7 +22,25 @@ negative:
       Refusing to join is a normal outcome here, not an error
 
   - given: the target element also present inside `elements`
-    expect: nothing joined to itself, and no complaint about it
+    expect: >
+      nothing joined to itself. VERSION 2: its id named in `refused` - the
+      same element on both sides is refused by id, not skipped. (Version 1
+      said "no complaint about it"; the merge with UNJOIN_GEOMETRY kept the
+      safer rule, so this case FAILS on version 1.)
+
+  # VERSION 2 (2026-11-01) - UNJOIN_GEOMETRY merged in. NOT RUN.
+  - given: a wall and a column joined, the column the target, join false
+    expect: >
+      changed 1, the column whole again in plan, and a finding saying
+      QUANTITIES HAVE MOVED. Schedule the two for volume before and after -
+      the numbers differ. Version 1 said nothing about quantities, so this
+      FAILS on it
+
+  - given: four elements and one target, three of them joined to it, join false
+    expect: changed 3, alreadyRight 1 - the one never joined counted as already apart, not as unjoined
+
+  - given: the same set run with join false a second time
+    expect: changed 0, all four in alreadyRight, and NO quantities warning - nothing moved
 
   - given: a wall and a duct handed in together
     expect: >

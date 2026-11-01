@@ -1,6 +1,7 @@
-// NOT STANDALONE. Assumes `doc` is in scope, and leaves `uniqueDateCount`,
-// `dateList`, `sheetsWithDateCount`, `sheetsRead`, `notesOnSheets`,
-// `notesInViewsNotRead`, `sheetsWithNoDate` and `summary` behind.
+// NOT STANDALONE. Assumes `doc`, `elements` and `onlySheetsGiven` are in
+// scope, and leaves `uniqueDateCount`, `dateList`, `sheetsWithDateCount`,
+// `sheetsRead`, `notesOnSheets`, `notesInViewsNotRead`, `sheetsWithNoDate`,
+// `summary`, `datesFound` and `notASheet` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -44,6 +45,24 @@
 //
 // NO ElementId IS EVER READ AS A NUMBER. Ids are dictionary keys and compared
 // to InvalidElementId, which reads the same 2020 to 2027.
+//
+// VERSION 2 (2026-11-01) - EXTRACT_DATES_FROM_TEXT MERGED IN.
+//
+// THE SHEETS HANDED IN, OR EVERY SHEET - SAID BY A SWITCH, NEVER GUESSED.
+// `onlySheetsGiven` on reads only the sheets in `elements` - the sheets of one
+// issue, picked in the Project Browser - and off, or left out, reads every
+// sheet, as version 1 did. It is NEVER inferred from an empty `elements`:
+// the binder hands an absent list in EMPTY (HeronBindingNote.EmptyWhenAbsent),
+// so "nothing handed in" and "read them all" would be one value, and a job
+// meant for one issue's sheets would quietly read the whole set. With the
+// switch on and nothing handed in, nothing is read and the summary says so.
+//
+// Something handed in that is not a sheet - a view, a duct, a sheet view
+// template - is named in `notASheet`, never read. A note on a sheet that was
+// NOT handed in is counted apart, and the summary says how many.
+//
+// `datesFound` is each date with the ids of the sheets carrying it, the
+// answer SET_SHEET_REVISIONS reads. `dateList` stays the readable one.
 
 var uniqueDateCount = 0;
 var dateList = "";
@@ -53,6 +72,8 @@ var notesOnSheets = 0;
 var notesInViewsNotRead = 0;
 var sheetsWithNoDate = "";
 var summary = "";
+var datesFound = new Dictionary<string, IList<ElementId>>();
+var notASheet = new List<ElementId>();
 
 var months = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 string[] names = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" };
@@ -112,7 +133,29 @@ foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(ViewShe
     if (sheet == null || sheet.IsTemplate) continue;
     sheetsById[sheet.Id] = sheet;
 }
+
+// VERSION 2: ONLY THE SHEETS HANDED IN, when the switch says so. Every sheet
+// in the model stays known, so a note on a sheet not handed in is told apart
+// from a note typed in a view.
+var sheetsInModel = new HashSet<ElementId>(sheetsById.Keys);
+if (onlySheetsGiven)
+{
+    var given = new Dictionary<ElementId, ViewSheet>();
+    foreach (var element in elements ?? new List<Element>())
+    {
+        if (element == null) continue;
+        var sheet = element as ViewSheet;
+        if (sheet == null || sheet.IsTemplate || !sheetsById.ContainsKey(sheet.Id))
+        {
+            if (!notASheet.Contains(element.Id)) notASheet.Add(element.Id);
+            continue;
+        }
+        given[sheet.Id] = sheet;
+    }
+    sheetsById = given;
+}
 sheetsRead = sheetsById.Count;
+var notesOnOtherSheets = 0;
 
 var sheetsOfDate = new Dictionary<string, List<ElementId>>();
 var notesOfDate = new Dictionary<string, int>();
@@ -126,6 +169,12 @@ foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(TextNot
 
     var ownerId = note.OwnerViewId;
     ViewSheet owner;
+    if (ownerId != null && sheetsInModel.Contains(ownerId) && !sheetsById.ContainsKey(ownerId))
+    {
+        // On a sheet, but not one handed in (VERSION 2, onlySheetsGiven on).
+        notesOnOtherSheets++;
+        continue;
+    }
     if (ownerId == null || ownerId == ElementId.InvalidElementId
         || !sheetsById.TryGetValue(ownerId, out owner))
     {
@@ -189,6 +238,9 @@ foreach (var date in dates)
 
     rows.Add(string.Format("{0} - {1} note(s) on {2} sheet(s): {3}",
         date, notesOfDate[date], where.Count, string.Join(", ", numbers.ToArray())));
+
+    // VERSION 2: the same answer by id, oldest date first, sheets in number order.
+    datesFound[date] = new List<ElementId>(where);
 }
 // ONE LINE, "  ||  " between dates - LIST_MATERIALS' separator. Every date is
 // in it; nothing is capped.
@@ -218,9 +270,22 @@ string notRead =
     + " (READ_ELEMENT_PARAMETERS reads those);"
     + " and a date with a NUMERIC month such as 09-09-2026, refused because 03-04-2026 is"
     + " 3 April in one country and 4 March in another."
-    + (notesUnreadable > 0 ? " " + notesUnreadable + " note(s) on sheets could not be read and were skipped." : "");
+    + (notesUnreadable > 0 ? " " + notesUnreadable + " note(s) on sheets could not be read and were skipped." : "")
+    + (onlySheetsGiven
+          ? " Only the " + sheetsRead + " sheet(s) handed in were read"
+            + (notesOnOtherSheets > 0 ? ", and " + notesOnOtherSheets + " note(s) on other sheets were not" : "")
+            + (notASheet.Count > 0 ? "; " + notASheet.Count + " thing(s) handed in are not sheets (notASheet)" : "")
+            + "."
+          : "");
 
-if (sheetsRead == 0)
+if (onlySheetsGiven && sheetsRead == 0)
+{
+    summary = "Only the sheets handed in were to be read, and "
+        + (notASheet.Count > 0 ? "nothing handed in is a sheet" : "no sheet was handed in")
+        + " - so nothing was read. Select the sheets, or leave onlySheetsGiven off to read "
+        + "every sheet." + notRead;
+}
+else if (sheetsRead == 0)
 {
     summary = "This model has no sheets, so there is no text on a sheet to read." + notRead;
 }

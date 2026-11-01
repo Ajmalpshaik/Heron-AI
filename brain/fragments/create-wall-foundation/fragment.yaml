@@ -116,7 +116,7 @@ compatibility-note: >
 #   "wall foundation under all the structural
 #    walls on Level 0"                         -> here, the walls handed on by
 #                                                 a filter chain
-#   "place the pad footings"                   -> PLACE_STRUCTURAL_FAMILY - an
+#   "place the pad footings"                   -> PLACE_FAMILY_INSTANCES - an
 #                                                 isolated footing family at
 #                                                 points, not under a wall
 #   "reinforce these footings with a bottom

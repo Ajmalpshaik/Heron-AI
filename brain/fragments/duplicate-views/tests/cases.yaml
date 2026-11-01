@@ -18,7 +18,56 @@ positive:
       Change the parent's crop and the dependent follows - that is the whole
       difference and it is only visible in the model
 
+  - given: VERSION 3, from CREATE_LEGEND_VIEW. One legend, duplicateOption "WithDetailing", newName "HERON TEST LEGEND"
+    expect: >
+      duplicated 1, newNames ["HERON TEST LEGEND"] read back, and a finding
+      that the legend is on no sheet yet and can sit on many. LOOK in the
+      Project Browser under Legends - the copy carries the source's components.
+      FAILS on version 2, which had no newName
+
+  - given: VERSION 3, from DUPLICATE_VIEW_TEMPLATE. templateName "Mechanical Plan", nothing else handed in
+    expect: >
+      templateCopyIds 1 id, copyName whatever suffix Revit chose ('Mechanical
+      Plan1') READ BACK, the copy a template carrying the source's scale and
+      detail level (Manage > View Templates), the source unchanged, and a
+      finding that the copy is renamed by RENAME_ELEMENTS after the commit.
+      FAILS on version 2, which could not copy a template at all
+
+  - given: VERSION 3. A view template and two plans, duplicateOption "Duplicate", copyTemplates true
+    expect: >
+      the two plans duplicated AND the template copied through CopyElements,
+      its id in templateCopyIds. FAILS on version 2, which refused the template
+
 negative:
+  - given: VERSION 3. A project with NO legend, nothing handed in
+    expect: >
+      nothing made, and a finding that Revit's API cannot create the FIRST
+      legend on any release - one drawn by hand once unblocks every copy. FAILS
+      on version 2, which said nothing
+
+  - given: VERSION 3. One plan, newName already the name of another view
+    expect: >
+      the copy made, and the name REFUSED in findings with the name Revit gave
+      it - never reported under the name that was refused
+
+  - given: VERSION 3. Three plans, newName "X"
+    expect: >
+      three copies under Revit's names, and a finding that one name cannot go
+      on three views - RENAME_ELEMENTS named
+
+  - given: VERSION 3. templateName "NoSuchTemplateAnywhere"
+    expect: refused, every template in the model listed, nothing created
+
+  - given: VERSION 3. A view template handed in, copyTemplates left out
+    expect: >
+      the template in notDuplicated, NOTHING copied, and a finding saying to
+      name it in templateName or set copyTemplates - the plain path still never
+      copies a template (version 2's guard)
+
+  - given: VERSION 3. Two plans, duplicateOption left out
+    expect: >
+      duplicated 0, both in notDuplicated - "none" is no way at all, never a
+      default
   - given: >
       a view Revit will not duplicate the requested way - a legend or a schedule
       asked for AsDependent
@@ -36,6 +85,12 @@ negative:
 
   - given: an element that is not a view at all, e.g. a duct
     expect: its id in notDuplicated, no exception, other views unaffected
+
+  - given: VERSION 2. A view template handed in with two plans, option "Duplicate"
+    expect: >
+      the template's id in notDuplicated and no copy of it made; the two plans
+      duplicated. Copying a template is DUPLICATE_VIEW_TEMPLATE's job, and a
+      template copied here by accident is a second template nobody asked for
 
   - given: an empty element list
     expect: all outputs empty or zero, reported as nothing to do

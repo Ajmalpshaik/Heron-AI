@@ -31,6 +31,20 @@
 // The OWNER is who to ask for a relinquish. The LAST CHANGER is who to ask
 // about an odd piece of modelling. The CREATOR is who to ask about intent.
 // Collapsing them sends the question to the wrong desk.
+//
+// VERSION 2 (2026-11-01) - READ_ELEMENT_OWNERSHIP MERGED IN, AND ITS TWO RULES
+// WITH IT.
+//
+// AN ELEMENT WHOSE CHECKOUT STATUS CANNOT BE READ IS HELD, NOT FREE, AND IS
+// NEVER DROPPED. Version 1 put such an element in neither list, so a set of
+// 200 could come back 189 editable and 0 held with 11 gone unsaid. Revit
+// cannot answer for an element another user deleted since the last sync, or on
+// a stale central - and "somebody may have this and I cannot say who" leads to
+// the opposite action from "nobody has this". So it goes in `ownedByOthers`,
+// the safe direction, with "unknown" as its owner when no name came back.
+//
+// AN ELEMENT HANDED IN TWICE IS ANSWERED ONCE, so a count of held elements is
+// never more than the elements there are.
 
 var owners = new Dictionary<ElementId, string>();
 var creators = new Dictionary<ElementId, string>();
@@ -39,11 +53,13 @@ var ownedByOthers = new List<ElementId>();
 var editable = new List<ElementId>();
 
 bool notWorkshared = !doc.IsWorkshared;
+var answered = new HashSet<ElementId>();
 
 foreach (var element in elements)
 {
     if (element == null) continue;
     var id = element.Id;
+    if (!answered.Add(id)) continue;
 
     if (notWorkshared)
     {
@@ -71,8 +87,22 @@ foreach (var element in elements)
     }
     catch { }
 
-    if (!statusKnown) continue;
+    // Cannot be read is not free: held, by whoever the tooltip named or by an
+    // unknown owner (version 2, from READ_ELEMENT_OWNERSHIP).
+    if (!statusKnown)
+    {
+        ownedByOthers.Add(id);
+        if (!owners.ContainsKey(id)) owners[id] = "unknown";
+        continue;
+    }
 
-    if (status == CheckoutStatus.OwnedByOtherUser) ownedByOthers.Add(id);
+    if (status == CheckoutStatus.OwnedByOtherUser)
+    {
+        ownedByOthers.Add(id);
+        // Held with no name to go with it - a stale central, a user since
+        // gone. Said as unknown rather than left blank, as version 1 of
+        // READ_ELEMENT_OWNERSHIP did.
+        if (!owners.ContainsKey(id)) owners[id] = "unknown";
+    }
     else editable.Add(id);
 }

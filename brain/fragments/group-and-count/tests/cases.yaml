@@ -11,5 +11,33 @@ negative:
       an empty table, not a single row with a blank size. A blank row is how a
       data problem gets reported as if it were a size
 
+  # VERSION 2 - SUM_BY_GROUP merged in. Each fails on version 1, which has
+  # no quantities, totals, missing or incomplete.
+  - given: >
+      12 ducts across three sizes from MEASURE_RUN_QUANTITIES (values = size,
+      quantities = length), handed on together
+    expect: >
+      three groups largest first, counts adding to 12, and each total matching
+      the sum of those lengths in a Revit schedule of the same elements;
+      incomplete false and every `missing` 0
+
+  - given: a set where three elements have a size but NO quantity
+    expect: >
+      the three counted in `counts` AND in `missing`, adding nothing, and
+      `incomplete` true - not dropped and not zero
+
+  - given: an element in `quantities` that is NOT in `values`
+    expect: it is added to no group
+
+  - given: values handed on and NO quantities at all
+    expect: >
+      `groups` and `counts` as version 1, `totals` and `missing` empty,
+      `incomplete` false - a count, said as one
+
+  - given: values handed on with quantities handed on EMPTY
+    expect: >
+      every element in `missing` and `incomplete` true - a measure that found
+      nothing is not a takeoff of zero
+
 second_route:
   - a Revit schedule grouped by the same parameter

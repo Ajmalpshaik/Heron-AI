@@ -123,7 +123,7 @@ compatibility-note: >
 #
 #   "make a 45 degree hatch"                  -> here
 #   "make a 600 mm tile pattern"              -> here, target model, crosshatch
-#   "fill this area with a hatch"             -> CREATE_FILLED_REGION, which
+#   "fill this area with a hatch"             -> DRAW_FAMILY_FILLED_REGION, which
 #                                                uses a filled region type
 #   "make a dash dot line pattern"            -> CREATE_LINE_PATTERN
 

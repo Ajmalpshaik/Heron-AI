@@ -468,7 +468,29 @@ def run(work, tfm):
         ("da3-project", places["office-ten"], True),
         ("da5", places["office-pump"], False),
         ("da6-negative", places["office-row7"], False),
-    ] + [("da4-%d" % (i + 1), row, False) for i, row in enumerate(singles)]
+    ] + [("da4-%d" % (i + 1), row, False) for i, row in enumerate(singles)] + [
+        # VERSION 3 (2026-11-01): the kinds CREATE_FAMILY_BLEND,
+        # CREATE_FAMILY_SWEEP and CREATE_FAMILY_SWEPT_BLEND brought in - their
+        # own cards' cases, one row each.
+        ("v3-kinds", "kind=blend workPlane=Ref. Level baseProfile=rect -300,-200 300,200 "
+         "topProfile=circle 0,0 125 topMm=300 solid=true "
+         "kind=sweep workPlane=Ref. Level path=0,0; 1000,0; arc 1300,300 1000,600 "
+         "profile=circle 0,0 25 | circle 0,0 20 solid=true "
+         "kind=swept blend workPlane=Ref. Level path=0,0; arc 424.26,175.74 600,600 "
+         "bottomProfile=rect -150,-100 150,100 topProfile=circle 0,0 100 solid=true", False),
+        ("v3-blend-hole", "kind=blend workPlane=Ref. Level baseProfile=rect -300,-200 300,200 | circle 0,0 50 "
+         "topProfile=circle 0,0 125 topMm=300 solid=true", False),
+        ("v3-blend-flat", "kind=blend workPlane=Ref. Level baseProfile=rect -300,-200 300,200 "
+         "topProfile=circle 0,0 125 topMm=0 solid=true", False),
+        ("v3-sweep-point", "kind=sweep workPlane=Ref. Level path=0,0 profile=circle 0,0 25 solid=true", False),
+        ("v3-sweep-flat-arc", "kind=sweep workPlane=Ref. Level path=0,0; 1000,0; arc 2000,0 3000,0 "
+         "profile=circle 0,0 25 solid=true", False),
+        ("v3-swept-two", "kind=swept blend workPlane=Ref. Level path=0,0; 600,0; 600,600 "
+         "bottomProfile=circle 0,0 100 topProfile=circle 0,0 50 solid=true", False),
+        ("v3-sweep-stray", "kind=sweep workPlane=Ref. Level path=0,0; 1000,0 profile=circle 0,0 25 "
+         "startMm=0 solid=true", False),
+        ("v3-loft", "kind=loft workPlane=Ref. Level profile=circle 0,0 25 solid=true", False),
+    ]
     laptop_cases = [
         ("da8-positive", places["laptop-ten"], False),
         ("da8-elsewhere", places["laptop-elsewhere"], False),
@@ -506,9 +528,13 @@ def run(work, tfm):
           "row 3, 0.5 mm deep, refused naming its depth and the least that builds")
     refusal = said["da3-blend"]["refused"] or ""
     print("    blend:    %s" % refusal)
-    check(rows_named(refusal) == [10] and 'kind is "blend"' in refusal
-          and "an extrusion or a revolve" in refusal,
-          "the blend row refused by number - a row is an extrusion or a revolve")
+    # THE FACT CHANGED 2026-11-01: version 3 took in CREATE_FAMILY_BLEND, so
+    # kind=blend is a kind now. Row 10 is still refused, by number, and for
+    # what it is - a blend row written with a revolve's fields and none of a
+    # blend's - where version 2 refused the kind itself.
+    check(rows_named(refusal) == [10] and "Row 10 (a blend) has no baseProfile, topProfile, topMm" in refusal
+          and "another kind's fields" in refusal,
+          "the blend row refused by number - it gives a revolve's fields and none of a blend's")
     refusal = said["da3-outside"]["refused"] or ""
     print("    outside:  %s" % refusal)
     check("is not in the temporary folder, %s" % office in refusal and "nor in" not in refusal,
@@ -553,6 +579,28 @@ def run(work, tfm):
     check(said["da6-negative"]["refused"] == said["da1-negative"]["refused"]
           and said["da6-negative"]["rows"] == said["da1-negative"]["rows"],
           "the file is refused exactly as DA1's negative value is")
+
+    print("\nVERSION 3 - blends, sweeps and swept blends (2026-11-01)")
+    answer = said["v3-kinds"]
+    check(clean("v3-kinds") and [r["kind"] for r in answer["rows"]] == ["blend", "sweep", "swept blend"],
+          "a blend, a sweep and a swept blend row each read clean, in order - %s" % answer.get("refused"))
+    if clean("v3-kinds") and len(answer["rows"]) == 3:
+        blend, sweep, swept = answer["rows"]
+        check(blend["end"] == 300 and len(blend["loops"]) == 1 and len(blend["loops"][0]) == 4,
+              "the blend's top is 300 mm and its base one loop of four sides")
+        check(len(sweep["loops"]) == 2, "the sweep's profile is two loops - a tube")
+        check(len(swept["loops"]) == 1 and len(swept["loops"][0]) == 4,
+              "the swept blend's bottom profile is one loop of four sides")
+    for label, words in [("v3-blend-hole", "has more than one loop"),
+                         ("v3-blend-flat", "a blend needs a height"),
+                         ("v3-sweep-point", "has one point and no length"),
+                         ("v3-sweep-flat-arc", "is not an arc"),
+                         ("v3-swept-two", "path is ONE piece"),
+                         ("v3-sweep-stray", "another kind's fields"),
+                         ("v3-loft", "a blend, a sweep or a swept blend")]:
+        refusal = said[label]["refused"] or ""
+        check(rows_named(refusal) == [1] and words in refusal and said[label]["rows"] == [],
+              "%s refused naming row 1 - %r - and nothing read as a row" % (label, words))
 
     print("\nDA8 - the laptop's GUID-named temporary folder")
     check(clean("da8-positive") and said["da8-positive"]["rows"] == ten,

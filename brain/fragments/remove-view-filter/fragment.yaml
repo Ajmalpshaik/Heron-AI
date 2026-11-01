@@ -16,7 +16,7 @@ risk: MODIFY
 purpose: >
   Takes a filter off a view - or, when asked, deletes it from the project
   entirely. The other end of `APPLY_VIEW_FILTER` and of
-  `CREATE_VIEW_FILTERS_BY_VALUE`, both of which only ever add.
+  `CREATE_VIEW_FILTER`, both of which only ever add.
 
   **THE TWO ARE COMPLETELY DIFFERENT IN REACH AND THE FRAGMENT WILL NOT BLUR
   THEM.** Taking a filter off ONE view leaves it in the project and on every
@@ -100,7 +100,7 @@ compatibility-note: >
   ordering this does not need.
 
 # ROUTING - repeated in APPLY_VIEW_FILTER, REPORT_VIEW_FILTERS and
-# CREATE_VIEW_FILTERS_BY_VALUE.
+# CREATE_VIEW_FILTER.
 #
 #   "take that filter off the view"      -> here
 #   "remove the filters from this plan"  -> here

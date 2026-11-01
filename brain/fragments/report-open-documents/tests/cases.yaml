@@ -98,7 +98,7 @@ negative:
   - given: any run at all
     expect: >
       NOTHING OPENED, NOTHING CLOSED, NO TRANSACTION. This reports. Acting on
-      what it returns is SWITCH_ACTIVE_PROJECT's job
+      what it returns is ACTIVATE_DOCUMENT's job
 
 second_route:
   - >

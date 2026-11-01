@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 15
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: CREATE_SHEET_LIST
 version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_SCHEDULE (create-schedule), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable
+# and it can be brought back. Nothing offers it now - retrieval leaves
+# DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to CREATE_SCHEDULE. The proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_SCHEDULE
+  why: >
+    The same job: make a schedule view in the project. CREATE_SCHEDULE
+    version 2 makes this card's two lists by its listKind - sheets, a sheet
+    list through CreateSheetList, and views, a view list through
+    CreateViewList - with every rule of this card's: fields by the name
+    Revit shows, ignoring capitals, a field it cannot carry named with the
+    names it can, sortByField with a sort on a field that is not a column
+    said, an unknown kind refused with nothing created, a name already used
+    leaving Revit's name in place and said, the empty-columns warning, and
+    fieldsAdded. One rule was opposite and the safer was kept: a blank
+    listKind made a sheet list here; there blank or left out is a category
+    schedule, that card's proved job, and "sheets" makes the sheet list.
 
 purpose: >
   Creates a Sheet List - the drawing index that goes on the cover sheet, listing
@@ -33,7 +57,7 @@ purpose: >
   **A SHEET THAT DOES NOT EXIST YET CAN STILL BE ON THE INDEX.** Revit calls it
   a placeholder sheet - a number and a name with no titleblock and no views -
   and it appears on a sheet list like any other. That is how a drawing register
-  is set up before the drawings are. CREATE_SHEET makes them; this lists them.
+  is set up before the drawings are. CREATE_SHEETS makes them; this lists them.
 
   **A VIEW LIST IS THE SAME JOB, ONE CALL OVER.** `listKind` = `views` makes
   Revit's View List through `ViewSchedule.CreateViewList` - a schedule of the
@@ -127,8 +151,8 @@ compatibility-note: >
   parameter id, which is what keeps one implementation working across the
   release where parameter identity changed.
 
-# ROUTING - repeated in CREATE_SCHEDULE, CREATE_KEY_SCHEDULE, LIST_SHEETS and
-# CREATE_SHEET.
+# ROUTING - repeated in CREATE_SCHEDULE, CREATE_KEY_SCHEDULE, FIND_SHEETS and
+# CREATE_SHEETS.
 #
 #   "make a sheet list schedule"      -> here
 #   "I need a drawing index"          -> here
@@ -146,8 +170,8 @@ compatibility-note: >
 #                                        elements; sheets are not model elements
 #                                        and the category route cannot make this
 #   "make a room finish schedule I can type into" -> CREATE_KEY_SCHEDULE
-#   "what sheets are in this model"   -> LIST_SHEETS - a READ, no view made
-#   "make me a new sheet"             -> CREATE_SHEET
+#   "what sheets are in this model"   -> FIND_SHEETS - a READ, no view made
+#   "make me a new sheet"             -> CREATE_SHEETS
 #   "put the schedule on the sheet"   -> PLACE_SCHEDULE_ON_SHEET. NOT HERE.
 #                                        That sentence resolved to this
 #                                        fragment until 2026-09-04, and this

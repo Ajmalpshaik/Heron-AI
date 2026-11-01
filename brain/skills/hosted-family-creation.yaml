@@ -36,7 +36,8 @@ purpose: >
   1. READ THE THING, as FAMILY-CREATION step 0 - and which SIDE of the host
      the body sits on: in front of the wall's face, below the ceiling, on top
      of the floor or roof - and what is cut OUT of the host.
-  2. SET_FAMILY_CATEGORY when the template's category is not the one wanted -
+  2. SET_FAMILY_SETTINGS "Category=<name>" when the template's category is
+     not the one wanted -
      a face-based Generic Model made a Lighting Fixture or an Air Terminal is
      the usual route where a category has no face-based template of its own.
      CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
@@ -52,7 +53,8 @@ purpose: >
   4. THE FORMS on the host's side, each locked to its planes - FAMILY-CREATION
      steps 7 and 8.
   5. WHAT IS CUT OUT OF THE HOST. In a wall- or ceiling-based family,
-     CREATE_FAMILY_HOST_OPENING cuts an opening of a FIXED size in the
+     CREATE_OPENING with `shape` (CREATE_FAMILY_HOST_OPENING until it was
+     merged into it, 2026-11-01) cuts an opening of a FIXED size in the
      template's wall or ceiling, and every placement cuts it in its own host.
      A cut that must resize with a parameter is a VOID form locked to planes.
      A floor- or roof-based family has no opening call; its cut is a void.
@@ -114,33 +116,34 @@ needs:
   # Step 0's units check, as FAMILY-CREATION's.
   - REPORT_PROJECT_UNITS
   - SET_PROJECT_UNITS
-  - SET_FAMILY_CATEGORY
+  # SET_FAMILY_CATEGORY was listed here until 2026-11-01, when it was merged into SET_FAMILY_SETTINGS.
   - ADD_FAMILY_PARAMETERS
   # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
-  # GUIDs, against the family, before ADD_FAMILY_SHARED_PARAMETERS writes.
+  # GUIDs, against the family, before ADD_FAMILY_PARAMETERS' shared kind writes.
   - REPORT_SHARED_PARAMETER_FILE
-  - ADD_FAMILY_SHARED_PARAMETERS
+  # ADD_FAMILY_SHARED_PARAMETERS was listed here until 2026-11-01, when it was merged into ADD_FAMILY_PARAMETERS.
   - SET_FAMILY_TYPE_VALUES
   - SET_FAMILY_FORMULA
   - CREATE_REFERENCE_PLANES
   - SET_FAMILY_PLANE_REFERENCE
   - LABEL_FAMILY_DIMENSION
   - EXTRUDE_BETWEEN_PLANES
-  - CREATE_FAMILY_EXTRUSION
+  - CREATE_FAMILY_FORMS
   - LOCK_FORM_TO_PLANES
-  - CREATE_FAMILY_HOST_OPENING
+  # CREATE_FAMILY_HOST_OPENING was listed here until 2026-11-01, when it was merged into CREATE_OPENING.
+  - CREATE_OPENING
   - SET_FAMILY_SETTINGS
   - ADD_FAMILY_CONNECTOR
   - ADD_FAMILY_FLIP_CONTROL
   - SET_FAMILY_FORM_VISIBILITY
   - DRAW_FAMILY_SYMBOLIC_LINES
   - REPORT_FAMILY_FORMS
-  - CREATE_FAMILY_BLEND
-  - CREATE_FAMILY_REVOLUTION
-  - CREATE_FAMILY_SWEEP
-  - CREATE_FAMILY_SWEPT_BLEND
-  - LINK_FAMILY_FORM_PARAMETER
-  - SET_FAMILY_FORM_MATERIAL
+  # CREATE_FAMILY_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # CREATE_FAMILY_REVOLUTION was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # CREATE_FAMILY_SWEEP was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # CREATE_FAMILY_SWEPT_BLEND was listed here until 2026-11-01, when it was merged into CREATE_FAMILY_FORMS.
+  # LINK_FAMILY_FORM_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
+  # SET_FAMILY_FORM_MATERIAL was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - SET_FAMILY_FORM_SUBCATEGORY
   - DRAW_FAMILY_FILLED_REGION
   - LOAD_FAMILY
@@ -148,9 +151,10 @@ needs:
   - LABEL_FAMILY_RADIUS
   - COMBINE_FAMILY_FORMS
   - ARRAY_FAMILY_FORMS
-  - PLACE_NESTED_FAMILY
+  # PLACE_NESTED_FAMILY was listed here until 2026-11-01, when it was merged into PLACE_FAMILY_INSTANCES.
+  - PLACE_FAMILY_INSTANCES
   - LOCK_NESTED_FAMILY_TO_PLANES
-  - LINK_NESTED_TYPE_PARAMETER
+  # LINK_NESTED_TYPE_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - ADD_FAMILY_TYPE_PARAMETER
   - LINK_FAMILY_PARAMETER
   - REPORT_FAMILY_TYPE_CATALOG

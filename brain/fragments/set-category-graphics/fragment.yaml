@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -16,7 +16,16 @@ capability: SET_CATEGORY_GRAPHICS
 # sentence; one that kept part of it is in the new `notKept`, each setting
 # named. The inputs and the other outputs mean what they meant. The proof below
 # is version 2's, signed by Ajmal PS on 2026-10-13 (Group DV, DV6).
-version: 2
+#
+# Version 3 (2026-11-01): SET_CATEGORY_SOLID_FILL was merged into this card on
+# the owner's instruction, and is DEPRECATED. Its job is one optional switch
+# here, `solidFill`, off unless asked: on, the model's solid fill is stamped on
+# the surface and, where the category is cut, the cut (`notCuttable` names the
+# rest), `solidPattern` names the fill, and a model with none is refused with
+# nothing written. Off, everything is exactly version 2. Version 2's proof
+# below no longer describes the code and is kept as the record; the card is
+# DRAFT until it is proved again.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 # A settings change: after it runs from the chat, the Companion page offers its values
@@ -37,6 +46,15 @@ purpose: >
 
   Pass an empty settings object to clear a category's override - the same trick
   the per-element reset uses, and the reason there is no separate clear here.
+
+  **A solid colour wash, when it is asked for** (version 3, `solidFill`). A
+  surface colour on its own tints the pattern a material already carries, and
+  where it carries none the colour is stored and prints nothing. With the
+  switch on, Revit's solid fill is stamped onto the surface - and onto the cut
+  where the category is ever cut - so the category reads as a colour on paper.
+  Off, nothing is stamped, so a grey background never becomes solid blocks. On
+  with an empty settings object, the fill alone is stamped: the switch is the
+  ask. A model with no solid fill is refused and nothing is written.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -59,6 +77,16 @@ contract:
     - name: overrides
       type: OverrideGraphicSettings
       source: request
+    # Version 3, from SET_CATEGORY_SOLID_FILL. true stamps Revit's solid fill
+    # on the surface, and on the cut where the category is ever cut, so the
+    # colours read as a wash on paper. Not given means off - version 2's
+    # behaviour exactly: a surface colour ALONE never stamps a fill. On with
+    # an empty `overrides` stamps the fill alone, because the switch is an
+    # explicit ask.
+    - name: solidFill
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: overridden
       # Categories whose read-back holds every setting asked for. Not the
@@ -83,6 +111,22 @@ contract:
       # "did this come back empty" (D-52). A category name alone is a view
       # template that refused the Set; "Revit took the override and stored
       # nothing for Rooms" is a Set that raised nothing and read back empty.
+      # With `solidFill` on in a model with no solid fill, one sentence saying
+      # so, and nothing written on any category.
+      role: accounting
+      type: IList<string>
+    - name: solidPattern
+      # Version 3. WHICH solid fill was stamped, by name - "<Solid fill>" - or
+      # "none found", when the model has none and nothing was written. Empty
+      # when `solidFill` was off. The evidence the wash will paint, which
+      # "overridden 1" cannot say alone (D-52).
+      role: accounting
+      type: string
+    - name: notCuttable
+      # Version 3, with `solidFill` on. Categories whose CUT half was left
+      # alone because Revit never cuts them. NOT a refusal and NOT a skip -
+      # they ARE overridden and DO count in `overridden` when the surface half
+      # reads back. A note on what landed (D-52).
       role: accounting
       type: IList<string>
 
@@ -129,18 +173,31 @@ compatibility-note: >
   read-back (version 2) calls `View.GetCategoryOverrides` and the
   OverrideGraphicSettings getters of the foreground/background pattern names
   Revit 2019 introduced, so 2020 is past that rename too;
-  tools/check-api-surface.py finds every one on 2020 to 2027.
+  tools/check-api-surface.py finds every one on 2020 to 2027. Version 3's
+  solid fill uses what SET_CATEGORY_SOLID_FILL used on the same span:
+  `FillPattern.IsSolidFill`, `Category.IsCuttable`, the OverrideGraphicSettings
+  copy constructor and the `SetSurfaceForegroundPatternId`,
+  `SetCutForegroundPatternId` and `...Visible` setters, all unchanged 2020 to
+  2027, and `Element.Document` for the view's own model.
 
 # ROUTING - repeated in CREATE_VIEW_FILTER and OVERRIDE_GRAPHICS_IN_VIEW.
 #
 #   "grey the architecture back" -> here - a whole CATEGORY, no test involved
+#   "wash the walls light grey so it prints"
+#                                -> here, with `solidFill` true (version 3).
+#                                   SET_CATEGORY_SOLID_FILL answered it until
+#                                   it was merged into this card on 2026-11-01.
+#                                   The line between the two was ONE QUESTION
+#                                   - must the category READ as a colour, or
+#                                   only be tinted where it already hatches -
+#                                   and it is now this card's switch
 #   "turn the ceilings off"      -> SET_CATEGORY_VISIBILITY
 #   "colour by system"           -> CREATE_VIEW_FILTER - it tests a PARAMETER,
 #                                   so work drawn next week is coloured too
 #   "make these red"             -> OVERRIDE_GRAPHICS_IN_VIEW - stuck to the ids
 #                                   you found, blind to anything added after
 #
-# ROWS ADDED 2026-09-06. The same rows are in SET_LINK_GRAPHICS and
+# ROWS ADDED 2026-09-06. The same rows are in OVERRIDE_GRAPHICS_IN_VIEW and
 # RESET_VIEW_GRAPHICS.
 #
 #   "grey the architecture back"  -> HERE, and it is declared here. TWO TABLES
@@ -150,7 +207,7 @@ compatibility-note: >
 #                                   this model or in a LINK - and that is the
 #                                   whole difference
 #   "grey the architecture back, and it is a LINK"
-#                                -> SET_LINK_GRAPHICS. THIS FRAGMENT REACHES
+#                                -> OVERRIDE_GRAPHICS_IN_VIEW. THIS FRAGMENT REACHES
 #                                   INSIDE A LINK NOT AT ALL: on a linked job it
 #                                   greys nothing, reports success, and leaves
 #                                   the view untouched, because the host
@@ -176,9 +233,27 @@ compatibility-note: >
 #   "put the categories back to normal in this view" -> here, with an EMPTY
 #                                        settings object. There is no separate
 #                                        clear because that IS the clear
-#   "everything in these categories"     -> SELECT_BY_CATEGORIES, which
+#   "everything in these categories"     -> FILTER_ELEMENTS_BY_CATEGORY, which
 #                                           collects them. This one changes
 #                                           how a category draws
+
+# VERSION 3 (2026-11-01) - SET_CATEGORY_SOLID_FILL WAS MERGED INTO THIS CARD
+# on the owner's instruction, and is DEPRECATED. It was this card with the
+# fill patterns filled in - the same settings object, the same read-back - so
+# its job is the `solidFill` switch here, and its outputs `solidPattern` and
+# `notCuttable` came with it. The safer of each rule was kept: a surface
+# colour alone NEVER stamps a fill (BUILDERS_WORK_LAYOUT's first step greys
+# the architecture with one and must not paint it solid), so the switch is off
+# unless asked; a model with no solid fill writes nothing. Its routing rows now
+# read here: "wash the walls light grey so it prints" -> here with the switch,
+# "colour these by system" -> COLOR_BY_PARAMETER, "put this view back to
+# normal" -> RESET_VIEW_GRAPHICS. Its TRAP note stands for the switch: another
+# tool saw a category override drop the SURFACE fill on ducts, pipes, air
+# terminals, sprinklers, cable tray and conduit (NEEDS-CHECKING AJ7) - the
+# read-back puts any such category in `notKept` or `refused`, never counted.
+# And its insulation note: by CATEGORY the owner's insulation rule has no
+# single answer, so name the insulation categories in the same call to wash
+# them the colour of their runs.
 
 utterances:
   - grey the whole background
@@ -188,3 +263,11 @@ utterances:
   - flatten everything except the services
   - grey the architecture back
   - put the categories back to normal in this view
+  # MOVED 2026-11-01 from SET_CATEGORY_SOLID_FILL, merged into this card - each
+  # one asks for `solidFill` true.
+  - wash the category in a solid colour
+  - make the walls solid grey so it prints
+  - solid fill the whole category
+  - the colour is set but nothing shows on paper
+  - give this category a colour wash
+  - fill the category solid, not just the lines

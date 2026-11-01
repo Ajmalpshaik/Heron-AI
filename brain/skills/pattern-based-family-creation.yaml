@@ -44,7 +44,7 @@ purpose: >
      each cell.
   3. CREATE_CONCEPTUAL_FORM on that closed profile: no depth is a flat SURFACE
      (the glass); a depth is a panel that THICK along its normal.
-  4. SET_FAMILY_FORM_MATERIAL on the form - a family material parameter when
+  4. LINK_FAMILY_PARAMETER, links Material=<it>, on the form - a family material parameter when
      the types must choose it.
      CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
      classificationCodes line lists the OmniClass Numbers (Classification
@@ -85,7 +85,7 @@ needs:
   - DRAW_FAMILY_POINT_CURVES
   - CREATE_CONCEPTUAL_FORM
   - ADD_FAMILY_PARAMETERS
-  - SET_FAMILY_FORM_MATERIAL
+  - LINK_FAMILY_PARAMETER
   - REPORT_FAMILY_FORMS
   - DIVIDE_FAMILY_SURFACE
   # Step 5's surface, changed after it is divided - its grid rotated, offset,

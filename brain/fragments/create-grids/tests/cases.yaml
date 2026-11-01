@@ -22,9 +22,13 @@ negative:
 
   - given: a project that already has a grid called "B"
     expect: >
-      that one grid left with Revit's own name and REPORTED, with the rest of
-      the run completing. Revit refuses a duplicate by throwing, and losing a
-      whole setting-out to one clash in the middle is the worse outcome
+      VERSION 2: REFUSED BEFORE ANY GRID IS MADE, `refused` naming "B" and
+      the grid that holds it, and the Grids count unchanged. (Version 1 made
+      the grid anyway, left it with Revit's own name and reported it; the
+      merge with CREATE_GRID kept the safer rule, so this case FAILS on
+      version 1)
+  - given: VERSION 2, a project with a grid "b" and firstLetter "A" across two gaps
+    expect: refused - names are compared ignoring capitals, as Revit compares them
 
   - given: empty spacings in both directions
     expect: refused before anything is created
@@ -33,6 +37,33 @@ negative:
     expect: >
       that direction set out, the other left alone, and the overhang still
       sensible rather than zero-length lines
+
+  # VERSION 2 (2026-11-01) - CREATE_GRID merged in. Each FAILS on version 1,
+  # which had no `gridLines`. NOT RUN.
+  - given: >
+      gridLines "0,0,0; 30000,0,0" and gridNames "13", the other inputs left
+      out
+    expect: one grid named 13, 30 m long, seen on every plan at that place
+  - given: gridLines "0,0,0; 30000,0,0.5" - half a millimetre apart in height
+    expect: >
+      still created, both ends forced onto one height. Refusing a millionth of
+      a foot would be correct and useless
+  - given: gridLines "0,0,0; 30000,0,500"
+    expect: >
+      REFUSED, naming 500 mm and saying a grid is a vertical plane; nothing
+      created - Revit's own exception names a curve, not a height
+  - given: gridLines "0,0,0; 0,0,0"
+    expect: refused - there is no direction for the grid to run in
+  - given: gridLines "0,0,0; 30000,0,0" and gridNames "5" in a project with grid 5
+    expect: refused before creation; the Grids count unchanged
+  - given: gridLines and spacingsAcross "6000" together
+    expect: refused - one or the other - nothing created
+  - given: VERSION 2, spacingsAcross "6000, 0, 6000"
+    expect: refused - a gap of 0 puts two grids on one line - nothing created
+  - given: VERSION 2, spacingsAcross "6000, 6000" with spacingsUp blank or left out
+    expect: >
+      three lettered grids and NO numbered grid. Version 1 put a numbered grid
+      on the origin here (it read the list as one position)
 
 second_route:
   - Dimension between two adjacent grids in the model and compare against the spacing that was asked for

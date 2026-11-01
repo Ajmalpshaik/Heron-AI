@@ -148,7 +148,7 @@ compatibility-note: >
 #                                             counts lining as well; run it
 #                                             first to see what is lined
 #   "check the clearance with the
-#    insulation on"                        -> CHECK_INSULATION_CLEARANCE -
+#    insulation on"                        -> CHECK_MINIMUM_CLEARANCE -
 #                                             lining sits inside the duct
 #                                             and is not counted there
 

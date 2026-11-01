@@ -46,7 +46,57 @@ confirmed:
   said: "all ok"
 
 # {n, was, now, date, said} - one entry per answer the owner corrects, in order.
-corrections: []
+corrections:
+  - n: 79
+    was: READ_ELEMENT_OWNERSHIP
+    now: REPORT_ELEMENT_OWNERSHIP
+    date: "2026-11-01"
+    said: "merge the 5 real duplicates ... make anothere tools with this a+b+c+d; record them (the answer-key moves) as my corrections"
+  - n: 77
+    was: TAG_ELEMENTS
+    now: TAG_ELEMENTS_IN_VIEW
+    date: "2026-11-01"
+    said: "now merge the other duplicates also; record them (the answer-key moves) as my corrections"
+  - n: 78
+    was: TAG_ELEMENTS
+    now: TAG_ELEMENTS_IN_VIEW
+    date: "2026-11-01"
+    said: "now merge the other duplicates also; record them (the answer-key moves) as my corrections"
+  - n: 21
+    was: SELECT_BY_FAMILY
+    now: SELECT_BY_PARAMETER_VALUE
+    date: "2026-11-01"
+    said: "make sure there is no duplicate tools; record them (the answer-key moves) as my corrections"
+  - n: 32
+    was: SELECT_BY_FAMILY
+    now: SELECT_BY_PARAMETER_VALUE
+    date: "2026-11-01"
+    said: "make sure there is no duplicate tools; record them (the answer-key moves) as my corrections"
+  - n: 64
+    was: MOVE_ELEMENTS_TO_POINT
+    now: MOVE_ELEMENTS
+    date: "2026-11-01"
+    said: "make sure there is no duplicate tools; record them (the answer-key moves) as my corrections"
+  - n: 68
+    was: MOVE_ELEMENTS_TO_POINT
+    now: MOVE_ELEMENTS
+    date: "2026-11-01"
+    said: "make sure there is no duplicate tools; record them (the answer-key moves) as my corrections"
+  - n: 76
+    was: SELECT_BY_FAMILY
+    now: SELECT_BY_PARAMETER_VALUE
+    date: "2026-11-01"
+    said: "make sure there is no duplicate tools; record them (the answer-key moves) as my corrections"
+  - n: 45
+    was: DIMENSION_WALL_OPENINGS
+    now: DIMENSION_ELEMENT_FACES
+    date: "2026-11-01"
+    said: "ok go ahead merge all; record them (the answer-key moves) as my corrections"
+  - n: 52
+    was: ZOOM_TO_ELEMENTS
+    now: SET_SELECTION
+    date: "2026-11-01"
+    said: "ok go ahead merge all; record them (the answer-key moves) as my corrections"
 
 questions:
   - n: 1
@@ -153,7 +203,8 @@ questions:
     asked: "2026-08-19"
     question: "Select any one air terminal of this family so I can check it."
     kind: capability
-    answer: SELECT_BY_FAMILY
+    # SELECT_BY_FAMILY until 2026-11-01, when it was merged into this card - see corrections.
+    answer: SELECT_BY_PARAMETER_VALUE
   - n: 22
     asked: "2026-08-19"
     question: "Change the Description of this family to \"Supply Air Grille - Rectangular\"."
@@ -179,7 +230,7 @@ questions:
     question: "Fill each element's drawing-number parameter with the number of the sheet whose floor plan shows it."
     kind: gap
     answer: null
-    note: "pieces exist (FIND_VIEWS_SHOWING_ELEMENT, then IMPORT_PARAMETER_VALUES), nothing does the whole job"
+    note: "pieces exist (FIND_VIEWS_SHOWING_ELEMENT, then SET_PARAMETER_VALUES_BY_ID - IMPORT_PARAMETER_VALUES until it was merged in, 2026-11-01), nothing does the whole job"
   - n: 27
     asked: "2026-08-19"
     question: "Create a schedule for the duct accessories like the air terminal one."
@@ -209,7 +260,8 @@ questions:
     asked: "2026-08-19"
     question: "Select all the instances of this louvre family in the model."
     kind: capability
-    answer: SELECT_BY_FAMILY
+    # SELECT_BY_FAMILY until 2026-11-01, when it was merged into this card - see corrections.
+    answer: SELECT_BY_PARAMETER_VALUE
   - n: 33
     asked: "2026-08-20"
     question: "Create 10 sheets named after the project, numbered 01 to 10."
@@ -274,7 +326,8 @@ questions:
     asked: "2026-08-23"
     question: "When you dimension a wall that has a door, include the door, and give one overall dimension for the wall."
     kind: capability
-    answer: DIMENSION_WALL_OPENINGS
+    # DIMENSION_WALL_OPENINGS until 2026-11-01, when it was merged into this card - see corrections.
+    answer: DIMENSION_ELEMENT_FACES
   - n: 46
     asked: "2026-08-23"
     question: "There are lots of generic models — list their family names."
@@ -309,7 +362,8 @@ questions:
     asked: "2026-08-23"
     question: "Zoom to that VCD."
     kind: capability
-    answer: ZOOM_TO_ELEMENTS
+    # ZOOM_TO_ELEMENTS until 2026-11-01, when it was merged into this card - see corrections.
+    answer: SET_SELECTION
   - n: 53
     asked: "2026-08-23"
     question: "Are there any clashes between the model's own elements, not with linked models?"
@@ -371,7 +425,8 @@ questions:
     asked: "2026-08-25"
     question: "Move the FCU from the centre of the room to the door side — the door side is the return side."
     kind: capability
-    answer: MOVE_ELEMENTS_TO_POINT
+    # MOVE_ELEMENTS_TO_POINT until 2026-11-01, when it was merged into this card - see corrections.
+    answer: MOVE_ELEMENTS
   - n: 65
     asked: "2026-08-25"
     question: "Add the diffusers at 2100 in a 2 x 4 grid — 8 diffusers, 4 supply and 4 return."
@@ -392,7 +447,8 @@ questions:
     asked: "2026-08-25"
     question: "Centre the FCU between the left and right walls."
     kind: capability
-    answer: MOVE_ELEMENTS_TO_POINT
+    # MOVE_ELEMENTS_TO_POINT until 2026-11-01, when it was merged into this card - see corrections.
+    answer: MOVE_ELEMENTS
   - n: 69
     asked: "2026-08-25"
     question: "Create a 600x600 type in both the supply and the return diffuser families."
@@ -434,19 +490,24 @@ questions:
     asked: "2026-08-26"
     question: "Find the VCDs."
     kind: capability
-    answer: SELECT_BY_FAMILY
+    # SELECT_BY_FAMILY until 2026-11-01, when it was merged into this card - see corrections.
+    answer: SELECT_BY_PARAMETER_VALUE
   - n: 77
     asked: "2026-08-26"
     question: "Tag all the ducts in the active view."
     kind: capability
-    answer: TAG_ELEMENTS
+    # TAG_ELEMENTS until 2026-11-01, when it was merged into this card - see corrections.
+    answer: TAG_ELEMENTS_IN_VIEW
   - n: 78
     asked: "2026-08-26"
     question: "Tag the ducts again using this tag family."
     kind: capability
-    answer: TAG_ELEMENTS
+    # TAG_ELEMENTS until 2026-11-01, when it was merged into this card - see corrections.
+    answer: TAG_ELEMENTS_IN_VIEW
   - n: 79
     asked: "2026-08-27"
     question: "This element cannot be deleted or moved in a BIM 360 model that is already synchronised — find out why."
     kind: capability
-    answer: READ_ELEMENT_OWNERSHIP
+    # READ_ELEMENT_OWNERSHIP until 2026-11-01, when it was merged into this
+    # card and deprecated. The same answer: who holds it, and can I edit it.
+    answer: REPORT_ELEMENT_OWNERSHIP

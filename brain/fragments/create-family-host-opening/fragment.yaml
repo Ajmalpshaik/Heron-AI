@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: CREATE_FAMILY_HOST_OPENING
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_OPENING (create-opening), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to CREATE_OPENING. The proof below is the record of what this
+# card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_OPENING
+  why: >
+    The same cut: an opening through a wall or a ceiling from one closed
+    boundary. CREATE_OPENING cuts it since its version 3 in a wall-based or
+    ceiling-based family too - `shape`, this card's own one closed loop in
+    millimetres in the template's wall or ceiling, with host and boundary left
+    out and the template's one wall or ceiling found, never guessed between
+    two; a floor- or roof-based family refused by name; the size fixed as
+    drawn and said so; the host and the extent read back to a millimetre, all
+    or nothing, a Revit refusal rolling the call back; openingId and built as
+    here. notAFamily is no output there, because a project is that card's own
+    case. Nothing was opposite.
 
 purpose: >
   Cuts an OPENING in the host of a wall-based or ceiling-based family open in

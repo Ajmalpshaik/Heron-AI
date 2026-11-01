@@ -63,7 +63,7 @@ compatibility-note: >
 #
 #   "the screen has not updated"    -> here
 #   "open that view"                -> OPEN_VIEW
-#   "take me to these elements"     -> ZOOM_TO_ELEMENTS
+#   "take me to these elements"     -> SET_SELECTION, show
 #   "why can't I see this"          -> DIAGNOSE_VISIBILITY - a stale screen and a
 #                                      hidden element look identical and are not
 

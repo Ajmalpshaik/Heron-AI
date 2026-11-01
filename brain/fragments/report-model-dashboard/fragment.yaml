@@ -310,10 +310,10 @@ compatibility-note: >
 #                                            it; Revit's warnings are the first
 #                                            answer to that
 #   "list the warnings"                   -> READ_MODEL_WARNINGS
-#   "which views are not on a sheet"      -> FIND_UNPLACED_VIEWS
+#   "which views are not on a sheet"      -> FIND_VIEWS
 #   "list the worksets"                   -> LIST_WORKSETS
 #   "list the linked models"              -> LIST_LINKED_MODELS
-#   "which families are unused"           -> FIND_UNUSED_FAMILIES
+#   "which families are unused"           -> FIND_PURGEABLE_ELEMENTS
 #   "which rooms are not enclosed"        -> SELECT_UNENCLOSED_ROOMS
 #   "check the model naming conventions"  -> CHECK_MODEL_STANDARDS - rules the
 #                                            project supplies; this has none

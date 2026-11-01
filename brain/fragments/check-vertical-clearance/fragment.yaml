@@ -108,7 +108,7 @@ compatibility-note: >
   while the code and its own proof - 1 in, 0.0033 feet used - said
   millimetres.)
 
-# ROUTING - repeated in CHECK_MINIMUM_CLEARANCE, ALIGN_MEP_ELEVATION and
+# ROUTING - repeated in CHECK_MINIMUM_CLEARANCE, ALIGN_ELEMENTS and
 # MEASURE_CEILING_HEIGHT.
 #
 #   "how much room is there between the duct and the pipe above it" -> here
@@ -118,7 +118,7 @@ compatibility-note: >
 #                                          straight-line gap in ANY direction.
 #                                          Two services 200 mm apart diagonally
 #                                          pass there and may have 40 mm here
-#   "put all these at the same height"   -> ALIGN_MEP_ELEVATION - the FIX once
+#   "put all these at the same height"   -> ALIGN_ELEMENTS, by an edge - the FIX once
 #                                          this has found the problem
 #   "how high is the ceiling"            -> MEASURE_CEILING_HEIGHT - how much
 #                                          void there is to work in at all

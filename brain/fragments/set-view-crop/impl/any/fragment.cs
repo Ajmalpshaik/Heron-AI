@@ -1,5 +1,37 @@
-// NOT STANDALONE. Assumes `view`, `elements` and `marginMm` are in scope;
-// leaves `applied`, `enclosed`, `noGeometry` and `viewRefused` behind.
+// NOT STANDALONE. Assumes `view`, `elements`, `marginMm`, `boundary` and
+// `joinToleranceMm` are in scope; leaves `applied`, `enclosed`, `noGeometry`,
+// `viewRefused`, `worstGap` and `refused` behind.
+//
+// VERSION 2 (2026-11-01) - SET_VIEW_CROP_TO_SHAPE MERGED IN, on the owner's
+// instruction ("make sure there is no duplicate tools"). A crop is a crop: a
+// rectangle round elements, or - with `boundary` - a SHAPED one from a closed
+// loop of curves, an L round a wing, a stepped match line, a room's outline.
+// The crop BOX can only ever be a rectangle; a shape goes through the view's
+// crop-region shape manager, a different mechanism, and this does both:
+//
+//   REVIT SILENTLY REQUIRES THREE THINGS OF THE LOOP AND GIVES THE SAME
+//   UNHELPFUL ERROR FOR ALL THREE: closed end to end, flat in the view's own
+//   plane, and not crossing itself. The curves are CHAINED head to tail here,
+//   because lines drawn by eye arrive in drawing order and almost never close;
+//   a gap within `joinToleranceMm` is bridged and the WORST GAP BRIDGED IS
+//   REPORTED, so a shape that was never really closed does not pass as one
+//   that was. A gap past it is refused with the distance in millimetres.
+//
+//   THE CROP IS SWITCHED ON BEFORE CanHaveShape IS ASKED - it reads false on a
+//   view whose crop is merely off, the ordinary state of most views - and its
+//   visibility on afterwards, because a shaped crop on a view with cropping
+//   off changes nothing anybody can see.
+//
+//   A SHEET IS REFUSED BEFORE THE CROP IS SWITCHED ON - forcing CropBoxActive
+//   onto a sheet flips CanHaveShape true and SetCropShape then reports success
+//   while nothing changes (measured 2026-09-17). A template is refused too.
+//
+//   ONE VIEW. A shape that fits one view rarely fits another.
+//
+// `refused` says, in words, why nothing was done on either road, and a
+// repaired shape's bridged gap. With no `boundary` the rectangle road runs
+// exactly as version 1, and a call that gives neither elements nor a loop is
+// refused.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
@@ -28,8 +60,14 @@ var applied = false;
 var enclosed = 0;
 var noGeometry = new List<ElementId>();
 var viewRefused = false;
+var worstGap = 0.0;
+var refused = new List<string>();
 
 const double MillimetresPerFoot = 304.8;
+
+// VERSION 2: a loop of curves asks for a SHAPED crop. Left out it binds empty,
+// and the rectangle road below is version 1's.
+var shapeAsked = boundary != null && boundary.Count > 0;
 
 // A schedule or a legend has no crop region to set. `CanBePrinted` is the
 // property that separates a drawable view from one that is not, and a template
@@ -56,6 +94,142 @@ const double MillimetresPerFoot = 304.8;
 if (view == null || view is ViewSheet || view.IsTemplate || !view.CanBePrinted)
 {
     viewRefused = true;
+    refused.Add(view == null ? "no view was given"
+        : view is ViewSheet ? string.Format("'{0}' is a SHEET - crop the VIEW placed on it, not the sheet", view.Name)
+        : view.IsTemplate ? string.Format("'{0}' is a view TEMPLATE - a crop is set on a real view, and cropping a "
+            + "template would reach every view using it", view.Name)
+        : string.Format("'{0}' ({1}) has no crop region to set", view.Name, view.ViewType));
+}
+else if (shapeAsked)
+{
+    // ---- VERSION 2: A SHAPED CROP (from SET_VIEW_CROP_TO_SHAPE) ----
+    // MILLIMETRES IN, FEET INSIDE (D-71).
+    double toleranceMm;
+    if (!double.TryParse((joinToleranceMm ?? "").Trim(), System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out toleranceMm) || toleranceMm < 0)
+        toleranceMm = -1;
+    var joinTolerance = toleranceMm / MillimetresPerFoot;
+
+    if (toleranceMm < 0)
+    {
+        viewRefused = true;
+        refused.Add(string.Format("\"{0}\" is not a join tolerance - millimetres, such as 1", joinToleranceMm));
+    }
+    else if (boundary.Count < 3)
+    {
+        viewRefused = true;
+        refused.Add("a crop shape needs at least three curves forming a closed loop");
+    }
+    else
+    {
+        // SWITCH THE CROP ON BEFORE ASKING WHETHER IT CAN BE SHAPED - see the
+        // header. The lines further down set the same two parameters AFTER
+        // SetCropShape has succeeded, so they can never rescue a view the
+        // guard below has turned away.
+        view.CropBoxActive = true;
+        view.CropBoxVisible = true;
+
+        var manager = view.GetCropRegionShapeManager();
+        if (manager == null || !manager.CanHaveShape)
+        {
+            viewRefused = true;
+            refused.Add(string.Format("'{0}' ({1}) cannot take a shaped crop at all", view.Name, view.ViewType));
+        }
+        else
+        {
+            // Chain the curves head to tail. The order they arrive in is
+            // drawing order, which is not loop order.
+            var remaining = new List<Curve>(boundary);
+            var chain = new List<Curve>();
+            chain.Add(remaining[0]);
+            remaining.RemoveAt(0);
+            var tail = chain[0].GetEndPoint(1);
+            var broken = false;
+
+            while (remaining.Count > 0)
+            {
+                var bestIndex = -1;
+                var bestDistance = double.MaxValue;
+                var bestReversed = false;
+                for (var i = 0; i < remaining.Count; i++)
+                {
+                    var toStart = tail.DistanceTo(remaining[i].GetEndPoint(0));
+                    var toEnd = tail.DistanceTo(remaining[i].GetEndPoint(1));
+                    if (toStart < bestDistance) { bestDistance = toStart; bestIndex = i; bestReversed = false; }
+                    if (toEnd < bestDistance) { bestDistance = toEnd; bestIndex = i; bestReversed = true; }
+                }
+                if (bestIndex < 0 || bestDistance > joinTolerance)
+                {
+                    refused.Add(string.Format("the boundary does not close - the nearest unused curve is {0:0.#} mm "
+                        + "away, past the {1:0.#} mm allowed. Lines drawn by eye almost never meet",
+                        bestDistance * MillimetresPerFoot, toleranceMm));
+                    broken = true;
+                    break;
+                }
+                if (bestDistance > worstGap) worstGap = bestDistance;
+                var next = remaining[bestIndex];
+                remaining.RemoveAt(bestIndex);
+                var ordered = bestReversed ? next.CreateReversed() : next;
+                chain.Add(ordered);
+                tail = ordered.GetEndPoint(1);
+            }
+
+            if (broken) viewRefused = true;
+            else
+            {
+                var closingGap = tail.DistanceTo(chain[0].GetEndPoint(0));
+                if (closingGap > worstGap) worstGap = closingGap;
+                if (closingGap > joinTolerance)
+                {
+                    viewRefused = true;
+                    refused.Add(string.Format("the loop's two ends are {0:0.#} mm apart, past the {1:0.#} mm allowed - "
+                        + "it is an open shape, not a crop boundary", closingGap * MillimetresPerFoot, toleranceMm));
+                }
+                else
+                {
+                    try
+                    {
+                        var loop = CurveLoop.Create(chain);
+                        if (!manager.IsCropRegionShapeValid(loop))
+                        {
+                            viewRefused = true;
+                            refused.Add("Revit rejects this loop as a crop shape. It is closed, so the cause is one "
+                                + "of the other two: the curves are not all in the view's own plane, or the shape "
+                                + "crosses itself");
+                        }
+                        else
+                        {
+                            manager.SetCropShape(loop);
+
+                            // A shaped crop on a view with cropping off changes
+                            // nothing anybody can see.
+                            var cropOn = view.get_Parameter(BuiltInParameter.VIEWER_CROP_REGION);
+                            var cropVisible = view.get_Parameter(BuiltInParameter.VIEWER_CROP_REGION_VISIBLE);
+                            if (cropOn != null && !cropOn.IsReadOnly) cropOn.Set(1);
+                            if (cropVisible != null && !cropVisible.IsReadOnly) cropVisible.Set(1);
+                            applied = true;
+
+                            if (worstGap > 0)
+                                refused.Add(string.Format("the shape was repaired - the worst gap bridged was {0:0.##} "
+                                    + "mm. Check the crop against what was drawn if that sounds larger than a "
+                                    + "rounding error", worstGap * MillimetresPerFoot));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        viewRefused = true;
+                        refused.Add(string.Format("Revit refused the loop - {0}", ex.Message));
+                    }
+                }
+            }
+        }
+    }
+}
+else if (elements == null || elements.Count == 0)
+{
+    // VERSION 2: neither road was asked for.
+    viewRefused = true;
+    refused.Add("nothing to crop to - hand in the elements to crop round, or a closed loop of curves in boundary");
 }
 else
 {
@@ -109,6 +283,7 @@ else
         // Nothing measurable. The existing crop is LEFT ALONE rather than
         // replaced with a degenerate region, which would show an empty drawing.
         viewRefused = true;
+        refused.Add("none of the elements has a box to crop round, so the crop was left as it was");
     }
     else
     {
@@ -167,7 +342,7 @@ else
         // A SHAPED CROP OUTRANKS THE BOX, AND SETTING THE BOX UNDER ONE DOES
         // NOTHING AT ALL.
         //
-        // If SET_VIEW_CROP_TO_SHAPE has given this view a non-rectangular crop,
+        // If a shaped crop is on this view - version 2's boundary road, or SET_VIEW_CROP_TO_SHAPE before it -
         // Revit follows the SHAPE and the rectangle written below is simply
         // ignored - silently. The view keeps the old outline at the old size, so
         // every margin asked for lands nowhere, while CropBoxActive still reads

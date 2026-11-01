@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,32 @@ capability: ADD_TOPOSOLID_SUBDIVISION
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO EDIT_TOPOSOLID (edit-toposolid), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools", then "ok go ahead merge all". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to EDIT_TOPOSOLID. A proof below is
+# the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: EDIT_TOPOSOLID
+  why: >
+    The same tool: a toposolid's own edits, on the toposolids handed in,
+    one at a time, read back. EDIT_TOPOSOLID since its version 3 has mode
+    "subdivide" - this card's outline in millimetres, closed automatically,
+    Toposolid.CreateSubDivision on each toposolid, its subdivisions listed
+    before and after and only a new one counted, the new ids in
+    `resultIds`, a bad point named and fewer than three refused. NOT
+    CARRIED, as the less safe of two rules: this card drew the outline at
+    the level's Elevation, measured from the level type's Elevation Base
+    and on a survey-datum model not the terrain's height; the keeper draws
+    it on the toposolid's own sketch plane, the rule its split always used.
+    Whether Revit minds the loop's height is not measured - NEEDS REAL
+    REVIT. Nothing else of this card is left out.
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: CREATE_ELECTRICAL_CIRCUIT
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_MEP_SYSTEM (create-mep-system), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to CREATE_MEP_SYSTEM. The proof below, where there is one, is the record
+# of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_MEP_SYSTEM
+  why: >
+    The electrical case of the same job: make one system from the elements
+    handed in. CREATE_MEP_SYSTEM makes a circuit since its version 2 when
+    `circuitType` - this card's systemType word, power, data, fire alarm and
+    the rest, refused when unknown - is given instead of a system type, on
+    the `panel` named, with the circuit number, the members and the panel it
+    landed on read back (circuitNumber, panelName, memberIds), a shortfall
+    said, and a refused panel leaving it UNASSIGNED with `refused` saying so.
+    Nothing was opposite; asked both ways at once, CREATE_MEP_SYSTEM makes
+    nothing rather than ignore one input.
 
 purpose: >
   Creates ONE electrical circuit from the devices given, and optionally assigns it
@@ -139,8 +162,6 @@ compatibility-note: >
 #   "what circuits are on panel DB-1"  -> REPORT_PANEL_CIRCUITS (2026-10-12)
 #   "draw wires between these sockets" -> CREATE_WIRES - drawn wiring, not the
 #                                         circuit
-#   "add these lights to circuit 3"    -> EDIT_ELECTRICAL_CIRCUIT (2026-11-01) -
-#                                         a circuit that already exists
 
 utterances:
   - put these devices on one circuit
@@ -152,9 +173,3 @@ utterances:
   # the same words, asking for the change - then tied with it and landed on
   # that read. Declared here so the command reaches the tool that makes it.
   - put these lights on a circuit
-  # ADDED 2026-11-01, FRAGMENT-ISSUES row 5b-1356: EDIT_ELECTRICAL_CIRCUIT
-  # (DRAFT) declares "take this socket off its circuit", and this sentence -
-  # claimed in the ROUTING table above - then reached that edit on a coin toss.
-  # Declared here so the command reaches the tool that makes a new circuit.
-  # Outside impl/, so the proof's fingerprint is unchanged.
-  - circuit these sockets

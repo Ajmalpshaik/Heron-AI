@@ -34,8 +34,34 @@ negative:
       refused - this Revit has no call to draw a filled region in a 3D model
       family, it arrived in 2023 - and nothing drawn
 
-  - given: a project in front
-    expect: notAFamily true and nothing drawn
+  - given: a project in front, workPlane naming no view in it
+    expect: >
+      notAFamily true and nothing drawn, the project's views listed. Version 1
+      refused every project here; since version 2 a project is drawn in when
+      its view is named (the cases below)
+
+  # VERSION 2 - from CREATE_FILLED_REGION. Each FAILS on version 1, which
+  # refused a project.
+  - given: >
+      VERSION 2. a project, workPlane "1 - Mech" (a floor plan),
+      shapes "0,0; 2000,0; 2000,1500; 0,1500", regionType one of the project's filled region types by name
+    expect: >
+      a filled region drawn in that plan - LOOKED AT there and nowhere else -
+      read back with its loop, and a finding that it is ANNOTATION: in no
+      other view, not in the model, in no schedule
+
+  - given: VERSION 2. a project, workPlane "{3D}"
+    expect: >
+      refused - "takes no annotation", the kinds that do named - and nothing
+      drawn. Revit's own error here names nothing
+
+  - given: VERSION 2. a project, a section cut at an angle off the grid, "rect 0,0 1000,500"
+    expect: >
+      a region in that section, its corners along the section's right and up,
+      and a finding saying how the shape was read
+
+  - given: VERSION 2. a project on Revit 2024, regionType "masking", a plan
+    expect: a masking region in that plan, read back as masking
 
 second_route:
   - >

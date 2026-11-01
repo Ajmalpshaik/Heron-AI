@@ -112,7 +112,7 @@ compatibility-note: >
 #                                          a whole category switched off, not
 #                                          these elements hidden
 
-# ROUTING - repeated in ZOOM_TO_ELEMENTS.
+# ROUTING - repeated in SET_SELECTION.
 #
 #   "show them again"                     -> here. UNHIDES them. This is the
 #                                            answer when a VIEW SETTING is
@@ -121,9 +121,10 @@ compatibility-note: >
 #                                            they cannot be seen. Hidden by the
 #                                            view is here. Off the screen - on
 #                                            another level, in another view -
-#                                            is ZOOM_TO_ELEMENTS, which moves
+#                                            is SET_SELECTION with show (ZOOM_TO_
+#                                            ELEMENTS until 2026-11-01), which moves
 #                                            the camera and unhides nothing
-#   "where is it"                         -> ZOOM_TO_ELEMENTS
+#   "where is it"                         -> SET_SELECTION, show and keepSelection
 #
 # THE NAME OF THIS FRAGMENT IS A TRAP AND IT IS WORTH SAYING SO. `SHOW_ELEMENTS`
 # reads like "put them on the screen" and means "undo a hide". The two jobs were

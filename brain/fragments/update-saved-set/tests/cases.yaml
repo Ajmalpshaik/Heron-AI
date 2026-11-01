@@ -18,6 +18,19 @@ positive:
     expect: >
       `deleted` true and the set gone from Revit's own list
 
+  # VERSION 2, added 2026-11-01 with the merge of CREATE_SELECTION_FILTER.
+  # NONE OF THESE HAS BEEN RUN. Each FAILS on version 1, which refused every
+  # mode but add, remove, replace and delete.
+  - given: mode "create", setName "Plant Room MEP", twelve hand-picked elements
+    expect: >
+      the set in Revit's own Manage - Selection Sets list under that name,
+      `setSize` 12 read back, `filterId` its id, and `findings` saying it is
+      applied to NO view. Close and reopen the model: it is still there
+
+  - given: mode "create" with an empty element list and a new name
+    expect: >
+      an empty set made, `setSize` 0 - a legitimate thing to make, not a failure
+
 negative:
   - given: mode "add" with elements ALREADY in the set
     expect: >
@@ -42,6 +55,23 @@ negative:
     expect: >
       `refused` saying so, and nothing written. Guessing which of add and
       replace was meant is the difference between 25 elements and 5
+
+  # VERSION 2, added 2026-11-01. NONE OF THESE HAS BEEN RUN.
+  - given: mode "create" with the name of a saved set that already exists
+    expect: >
+      REFUSED, nothing written, the existing set's contents unchanged, and the
+      refusal naming mode "replace". THE SAFER RULE - CREATE_SELECTION_FILTER
+      replaced the set's contents here
+
+  - given: mode "create" with the name of a rule-based VIEW filter
+    expect: >
+      refused by name - "A view filter called ... already exists" - nothing
+      written, never Revit's own "name is already in use"
+
+  - given: mode "add" to a set that does not exist
+    expect: >
+      still refused, and the refusal now names mode "create" - not
+      CREATE_SELECTION_FILTER
 
 second_route:
   - >

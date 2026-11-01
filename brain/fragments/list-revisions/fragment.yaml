@@ -162,14 +162,14 @@ compatibility-note: >
   No ElementId is built from an int, so 2024's 64-bit ids do not reach this
   code.
 
-# ROUTING - repeated in CREATE_REVISION, ADD_REVISION_CLOUD and LIST_SHEETS.
+# ROUTING - repeated in CREATE_REVISION, ADD_REVISION_CLOUD and FIND_SHEETS.
 #
 #   "which sheets have this revision"  -> here
 #   "list the revisions"               -> here
 #   "what goes out with this issue"    -> here
 #   "add a revision"                   -> CREATE_REVISION
 #   "put a revision cloud around this" -> ADD_REVISION_CLOUD
-#   "list the sheets"                  -> LIST_SHEETS - all of them, with no
+#   "list the sheets"                  -> FIND_SHEETS - all of them, with no
 #                                         revision involved
 #   "show me the sheet issues and revisions table"
 #                                      -> here - every column, the numbering
@@ -185,7 +185,9 @@ compatibility-note: >
 #   "set the cloud arc length"         -> SET_REVISION_SETTINGS
 #   "make an alphabetic sequence"      -> CREATE_REVISION_NUMBERING_SEQUENCE
 #   "rename the numbering"             -> EDIT_REVISION_NUMBERING_SEQUENCE
-#   "sheets on revision 15"            -> FIND_SHEETS_BY_REVISION_OR_NUMBER -
+#   "sheets on revision 15"            -> FIND_SHEETS, revisionSequence (version
+#                                         3, which FIND_SHEETS_BY_REVISION_OR_
+#                                         NUMBER was merged into on 2026-11-01) -
 #                                         the sheets of ONE revision, picked
 #                                         for the next step (a sheet set, a
 #                                         PDF); this answers the question for

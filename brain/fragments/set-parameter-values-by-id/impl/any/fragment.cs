@@ -1,6 +1,10 @@
-// NOT STANDALONE. Assumes `doc`, `rows`, `keepFace` and `renameViews` are in
-// scope, and leaves `written`, `resultJson`, `stale`, `refused` and `findings`
-// behind. `keepFace` is version 3's and the card reads it as "none" when it is
+// NOT STANDALONE. Assumes `doc`, `rows`, `keepFace`, `renameViews`, `csvPath`
+// and `blankCells` are in scope, and leaves `written`, `resultJson`,
+// `stale`, `refused`, `findings`, `rowsMatched`, `rowsUnmatched`,
+// `blankCellsSkipped`, `cellsCleared`, `valuesRejected` and `rowFindings`
+// behind. VERSION 7: `csvPath` and `blankCells` are
+// IMPORT_PARAMETER_VALUES', merged in - see "a CSV file" below; `rows` left
+// out reads "none", no rows, for a run from a file. `keepFace` is version 3's and the card reads it as "none" when it is
 // left out - see "keep a face" below. `renameViews` is version 5's, "none"
 // when left out - see "a level's name" below.
 //
@@ -1017,6 +1021,197 @@ var faceKeeper = new[] { keepFace }.Select(asked =>
     };
 }).First();
 
+// ------------------------------------------------------------- a CSV file
+// VERSION 7 (2026-11-01) - IMPORT_PARAMETER_VALUES MERGED IN. `csvPath` names
+// a CSV whose FIRST column is the element's id - as Revit prints it, the way
+// EXPORT_PARAMETERS_TO_CSV writes its ElementId column - and whose other
+// columns are parameter names, one value per cell. Each cell becomes an id row
+// of its own, `id|uniqueId|parameter|was|new`, with `was` the value the model
+// holds as the file is read - so every rule of the id rows holds for the file:
+// all or nothing, each parameter found once and writable, a level's name
+// refused unless renameViews says, read back after one regeneration.
+//
+// ROWS ARE MATCHED BY ID AS TEXT and no ElementId is ever built from a number
+// - the cell is compared with element.Id.ToString(), IMPORT_PARAMETER_VALUES'
+// rule. A column called UniqueId, where the file has one, must name the same
+// element as the id, or that row stops the run: the check that catches a file
+// from another model whose ids happen to be in use here.
+//
+// IT NEVER WIDENS PAST THE ROWS. IMPORT_PARAMETER_VALUES was scoped to the
+// elements handed in, so a stale file could not write anywhere. This card
+// takes NO elements and no selection at all - a selection made after the
+// table was read would be written onto (the Companion's rule, held by
+// tests/test_companion.py) - so the rows alone name the elements, nothing
+// outside them is touched, and every id must name one element of this model
+// or NOTHING is written, where the import skipped that row and wrote the
+// rest. All or nothing is the safer of the two rules.
+//
+// A BLANK CELL IS ASKED, NEVER GUESSED: `blankCells` skip leaves it as it is
+// and counts it in `blankCellsSkipped`; clear empties a TEXT parameter and
+// counts it in `cellsCleared`, and a blank for a number, a tick box or a
+// reference stops the run - WRITE_ELEMENT_PARAMETERS clear=true is Revit's own
+// clear for those. Neither word, and a CSV is refused before anything is read.
+//
+// A PARAMETER ON THE TYPE, REACHED FROM AN INSTANCE'S ROW, IS REFUSED - the
+// import's includeTypeParameters is not carried. A type is shared, so a row
+// for one instance would change every other one; name the TYPE's id in the
+// row to write the type, and every instance of it changes, said in the row.
+var csvMode = !string.IsNullOrEmpty((csvPath ?? "").Trim())
+    && !(csvPath ?? "").Trim().Equals("none", StringComparison.OrdinalIgnoreCase);
+var rowsGiven = rows != null && rows.Trim().Length > 0
+    && !rows.Trim().Equals("none", StringComparison.OrdinalIgnoreCase);
+if (!rowsGiven) rows = "";
+var rowsMatched = 0;
+var rowsUnmatched = 0;
+var blankCellsSkipped = 0;
+var cellsCleared = 0;
+var valuesRejected = 0;
+var rowFindings = "";
+var csvStale = new List<string>();
+
+if (csvMode)
+{
+    var blankHow = (blankCells ?? "").Trim().ToLowerInvariant();
+    string csvText = null;
+    if (rowsGiven)
+        csvStale.Add("csv: rows and csvPath were both given - one source of rows per run");
+    else if (blankHow != "skip" && blankHow != "clear")
+        csvStale.Add("csv: blankCells must be skip or clear - there is no default, because one of the two "
+            + "deletes what somebody typed");
+    else
+    {
+        try { csvText = System.IO.File.ReadAllText(csvPath.Trim()); }
+        catch (Exception ex) { csvStale.Add("csv: '" + csvPath.Trim() + "' could not be read - " + ex.Message); }
+    }
+
+    // RFC 4180, the shape a spreadsheet saves: commas, quoted cells, a doubled
+    // quote inside one. Built from character codes - no backslash in this file.
+    var table = new List<List<string>>();
+    if (csvText != null)
+    {
+        var quoteMark = (char)34;
+        var lineFeed = (char)10;
+        var carriage = (char)13;
+        var cellsNow = new List<string>();
+        var cellText = new System.Text.StringBuilder();
+        var quoted = false;
+        var body = csvText.TrimStart((char)0xFEFF);
+        for (var at = 0; at < body.Length; at++)
+        {
+            var c = body[at];
+            if (quoted)
+            {
+                if (c == quoteMark)
+                {
+                    if (at + 1 < body.Length && body[at + 1] == quoteMark) { cellText.Append(quoteMark); at++; }
+                    else quoted = false;
+                }
+                else cellText.Append(c);
+            }
+            else if (c == quoteMark) quoted = true;
+            else if (c == ',') { cellsNow.Add(cellText.ToString()); cellText.Length = 0; }
+            else if (c == carriage) { }
+            else if (c == lineFeed)
+            {
+                cellsNow.Add(cellText.ToString());
+                cellText.Length = 0;
+                if (cellsNow.Any(x => x.Trim().Length > 0)) table.Add(cellsNow);
+                cellsNow = new List<string>();
+            }
+            else cellText.Append(c);
+        }
+        cellsNow.Add(cellText.ToString());
+        if (cellsNow.Any(x => x.Trim().Length > 0)) table.Add(cellsNow);
+        if (table.Count < 2 || table[0].Count < 2)
+            csvStale.Add("csv: the file needs a header - the id column, then parameter names - and at least one row");
+    }
+
+    if (csvText != null && csvStale.Count == 0)
+    {
+        var heading = table[0].Select(h => h.Trim()).ToList();
+        var uniqueColumn = heading.FindIndex(h => h.Equals("UniqueId", StringComparison.OrdinalIgnoreCase));
+        var wantedIds = new HashSet<string>();
+        for (var r = 1; r < table.Count; r++) wantedIds.Add(table[r][0].Trim());
+
+        // The elements the ids name, in this model. Matched as text; nothing
+        // is built from it.
+        var byId = new Dictionary<string, Element>();
+        Action<Element> consider = candidate =>
+        {
+            if (candidate == null) return;
+            var text = candidate.Id.ToString();
+            if (wantedIds.Contains(text) && !byId.ContainsKey(text)) byId[text] = candidate;
+        };
+        foreach (var candidate in new FilteredElementCollector(doc).WhereElementIsNotElementType()) consider(candidate);
+        foreach (var candidate in new FilteredElementCollector(doc).WhereElementIsElementType()) consider(candidate);
+
+        var built = new List<string>();
+        var seenCells = new HashSet<string>();
+        for (var r = 1; r < table.Count; r++)
+        {
+            var line = table[r];
+            var rowId = line[0].Trim();
+            Element target;
+            if (!byId.TryGetValue(rowId, out target))
+            {
+                rowsUnmatched++;
+                csvStale.Add(rowId + ": names no element in this model - the wrong model's file, most likely");
+                continue;
+            }
+            if (uniqueColumn > 0 && uniqueColumn < line.Count && line[uniqueColumn].Trim().Length > 0
+                && line[uniqueColumn].Trim() != target.UniqueId)
+            {
+                rowsUnmatched++;
+                csvStale.Add(rowId + ": its UniqueId in the file is not this element's - a file from another model");
+                continue;
+            }
+            rowsMatched++;
+            for (var col = 1; col < heading.Count; col++)
+            {
+                if (col == uniqueColumn || heading[col].Length == 0) continue;
+                var parameterName = heading[col];
+                var cell = col < line.Count ? line[col] : "";
+                if (!seenCells.Add(rowId + "|" + parameterName))
+                {
+                    csvStale.Add(rowId + ": " + parameterName + " is given twice in the file");
+                    continue;
+                }
+                var matches = parametersCalled(target, parameterName);
+                if (matches.Count == 0)
+                {
+                    Element itsType = null;
+                    try { itsType = doc.GetElement(target.GetTypeId()); } catch { itsType = null; }
+                    csvStale.Add(rowId + ": " + (itsType != null && parametersCalled(itsType, parameterName).Count > 0
+                        ? parameterName + " is on its TYPE (id " + itsType.Id + ") - a row for one instance would "
+                          + "change every other one; name the type's id in the row to write the type"
+                        : "has no parameter called " + parameterName));
+                    continue;
+                }
+                var p = theOne(target, parameterName);
+                if (cell.Trim().Length == 0)
+                {
+                    if (blankHow == "skip") { blankCellsSkipped++; continue; }
+                    if (p != null && p.StorageType != StorageType.String)
+                    {
+                        csvStale.Add(rowId + ": a blank cannot clear " + parameterName + ", which is not text - "
+                            + "WRITE_ELEMENT_PARAMETERS clear=true is Revit's own clear");
+                        continue;
+                    }
+                    cellsCleared++;
+                    cell = "";
+                }
+                var was = p == null ? "" : (readValue(p) ?? "");
+                var wasRaw = p == null ? "" : (storedValue(p) ?? "");
+                built.Add(string.Join("|", new[] { rowId, target.UniqueId, parameterName, was, cell, wasRaw }
+                    .Select(x => Uri.EscapeDataString(x ?? "")).ToArray()));
+            }
+        }
+        rows = string.Join(";", built.ToArray());
+        if (built.Count == 0 && csvStale.Count == 0)
+            findings.Add("The file named elements but no cell to write - every blank was skipped.");
+    }
+}
+
 // ------------------------------------------------------------- which way
 // BY KEY when the first row is key=... - an id row starts with an element id,
 // so nothing a version 1 caller sends can land there by accident. One
@@ -1028,6 +1223,18 @@ var keyed = (rows ?? "").Split(';').Where(r => r.Trim().Length > 0).Take(1)
 // ------------------------------------------------------------------ parse
 var plan = new List<Tuple<Element, string, string>>();   // element, parameter, new value
 var staleJson = new List<string>();
+
+// Version 7: what stopped a CSV before any row was built - each a stale row,
+// so nothing is written, by the id rows' own rule.
+foreach (var csvWhy in csvStale)
+{
+    stale.Add(csvWhy);
+    staleJson.Add("{" + esc("id") + ": null, " + esc("name") + ": " + esc("csv")
+                  + ", " + esc("why") + ": " + esc(csvWhy) + "}");
+}
+if (csvStale.Count > 0)
+    findings.Add(string.Format("Nothing was written from '{0}': {1} row(s) or cell(s) of the file cannot be "
+        + "used - stale says each and why. The file is all or nothing.", (csvPath ?? "").Trim(), csvStale.Count));
 
 // A keepFace that cannot be used stops the run once, as its own stale row.
 if (!keyed && faceKeeper != null && faceKeeper.Problem != null)
@@ -1120,10 +1327,10 @@ if (stale.Count > 0)
     // in Revit. Left out, faceRows is 0 and this is version 2's sentence.
     var faceRows = faceKeeper == null ? 0 : faceKeeper.Rows();
     if (faceRows > 0) findings.Add(faceKeeper.Stopped());
-    if (stale.Count > faceRows)
+    if (stale.Count > faceRows + csvStale.Count)
     findings.Add(string.Format(
         "Nothing was written: {0} row(s) no longer match what the table showed. " +
-        "Refresh the table, look at them, and apply again.", stale.Count - faceRows));
+        "Refresh the table, look at them, and apply again.", stale.Count - faceRows - csvStale.Count));
 }
 else if (plan.Count == 0)
 {
@@ -1189,9 +1396,26 @@ else
         var again = theOne(step.Item1, step.Item2);
         var now = again == null ? null : readValue(again);
         var nowRaw = again == null ? null : storedValue(again);
-        written++;
-        if (askedIds[at] != null && (again == null || !askedIds[at].Equals(again.AsElementId())))
+        // VERSION 7, IMPORT_PARAMETER_VALUES' rule: what reads back different
+        // is not counted as written. Text exactly, a tick box by the 1 or 0
+        // Revit holds, a reference by its id. A number is Revit's own parse
+        // in the project's units, so its read-back is in `resultJson` as it is.
+        var differs = false;
+        if (again == null) differs = true;
+        else if (askedIds[at] != null) differs = !askedIds[at].Equals(again.AsElementId());
+        else if (isYesNo(again))
+        {
+            var said = same(step.Item3).ToLowerInvariant();
+            var meant = Array.IndexOf(ticked, said) >= 0 ? 1 : 0;
+            differs = again.AsInteger() != meant;
+        }
+        else if (again.StorageType == StorageType.String) differs = (again.AsString() ?? "") != (step.Item3 ?? "");
+        if (differs)
+        {
+            valuesRejected++;
             findings.Add(step.Item1.Id + ": " + step.Item2 + " reads back '" + now + "', not '" + step.Item3 + "'");
+        }
+        else written++;
         readBack.Add("{" + esc("id") + ": " + esc(step.Item1.Id.ToString()) + ", "
                      + esc("name") + ": " + esc(step.Item2) + ", "
                      + esc("value") + ": " + esc(now) + ", "
@@ -1655,3 +1879,8 @@ if (faceKeeper != null)
     // `faceKeeper (null)` - the same line as when keepFace is left out.
     faceKeeper = null;
 }
+
+// VERSION 7 - IMPORT_PARAMETER_VALUES' one string of every row's finding,
+// shown whole where a list is cut to three items.
+if (stale.Count > 0) cellsCleared = 0;
+rowFindings = string.Join(" | ", stale.Concat(refused).ToArray());

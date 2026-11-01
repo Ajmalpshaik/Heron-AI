@@ -1782,8 +1782,8 @@ def revit_change(capability: str = "", values: str = "",
     # WHAT THIS DESCRIPTION SAID AT LENGTH UNTIL 2026-10-17, and where the host
     # hears it now - every chat paid for it before its first call
     # (tests/test_tool_sizes.py, docs/04 s8.8):
-    #   - expect_from's `where k=v` form - expect_from="select-by-categories
-    #     where categories=Pipes" checks what the fragment ran with too - and why
+    #   - expect_from's `where k=v` form - expect_from="filter-elements-by-category
+    #     where category=Pipes" checks what the fragment ran with too - and why
     #     empty is the safe default: without it a later call could act on
     #     elements collected by something nobody remembers running. Said by
     #     _contract_lines, under any capability that takes a value from the
@@ -2802,8 +2802,11 @@ def _loads_finalize(takeoff, result, identity):
                 for level in levels:
                     _through(revit_read, origin="companion")(
                         "FILTER_ELEMENTS_BY_CATEGORY", "category=Spaces" + nl + "levelId=" + level)
+                    # READ_SPACE_LOADS, which REPORT_SPACE_AIRFLOW was merged
+                    # into on 2026-11-01: the diffusers' actual airflow against
+                    # the specified one, per Space (its version 2).
                     back_text.append(str(_through(revit_read, origin="companion")(
-                        "REPORT_SPACE_AIRFLOW", "",
+                        "READ_SPACE_LOADS", "",
                         "filter-elements-by-category where category=Spaces")))
     matched = sum(1 for b in back_rows if b["ok"])
     if back_rows:
@@ -3181,7 +3184,7 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     #     with `capability` empty run a phrasing a PROVEN capability declares,
     #     every value given, in this call; anything else sends nothing and
     #     hands back the candidates (_by_words).
-    #   - `values` is one "name=value" per line, e.g. alsoSelect=true.
+    #   - `values` is one "name=value" per line, e.g. show=true.
     #   - `expect_from` names the fragment whose result this acts on, and the
     #     carried elements are checked to be THAT fragment's, as revit_change
     #     checks them.
@@ -4046,7 +4049,8 @@ def _dashboard_colour(parameter, clear=False, identity=None):
     pressed on the page, after its own confirm. A CHANGE to the active view's
     graphics, never to an element's data:
 
-      SELECT_VISIBLE_IN_VIEW on the active view (READ, PROVEN), then
+      FILTER_ELEMENTS_BY_CATEGORY with inViewOnly on the active view (READ;
+      SELECT_VISIBLE_IN_VIEW, PROVEN, was merged into it on 2026-11-01), then
       COLOR_BY_PARAMETER - every distinct value of `parameter` its own colour,
       stable from run to run - or RESET_GRAPHIC_OVERRIDES (both MODIFY, PROVEN),
       through revit_change's own body: the gate, the Changes switch, the pin,
@@ -4090,18 +4094,18 @@ def _dashboard_colour(parameter, clear=False, identity=None):
             return {"ok": False, "said": said}
         out = {}
         said = _through(revit_read, reply_out=out, origin="companion")(
-            "SELECT_VISIBLE_IN_VIEW", "view=%s" % view)
+            "FILTER_ELEMENTS_BY_CATEGORY", "inViewOnly=%s" % view)
         if out.get("ended") == "ok":
             out = {}
             if clear:
                 said = _through(revit_change, reply_out=out, origin="companion")(
-                    "RESET_GRAPHIC_OVERRIDES", "view=%s" % view, "SELECT_VISIBLE_IN_VIEW")
+                    "RESET_GRAPHIC_OVERRIDES", "view=%s" % view, "filter-elements-by-category")
             else:
                 said = _through(revit_change, reply_out=out, origin="companion")(
                     "COLOR_BY_PARAMETER", NEWLINE.join(("view=%s" % view,
                                                         "parameterName=%s" % parameter,
                                                         "colourBand=vivid")),
-                    "SELECT_VISIBLE_IN_VIEW")
+                    "filter-elements-by-category")
     ok = out.get("ended") == "ok"
     _note(tool, started, time.time() - clock, reply=said, outcome=None if ok else "refused")
     return {"ok": ok, "said": said}
@@ -4638,7 +4642,7 @@ def _contract_lines(capability, separator=True, notes=True):
     # under a capability that takes a value from the fragment before it, so
     # it is said there, once.
     expect = (['  To act on what an earlier fragment left, name it: '
-               'expect_from="select-by-categories where categories=Pipes" - Heron '
+               'expect_from="filter-elements-by-category where category=Pipes" - Heron '
                'checks that fragment left the values - and, with `where`, what it '
                'ran with - before binding anything. Left empty, the call starts '
                'clean, the safe default.'] if chained else [])
@@ -6142,8 +6146,8 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> l
       views share the name, the answer lists each as "ViewType: Name" to type
       back.
     - `elements`: element ids, comma separated, as Heron's answers print them
-      - Revit's number, or a form's long id from CREATE_FAMILY_FORMS,
-      REPORT_FAMILY_FORMS or SELECT_FAMILY_FORMS; the two may be mixed. Heron
+      - Revit's number, or a form's long id from CREATE_FAMILY_FORMS or
+      REPORT_FAMILY_FORMS; the two may be mixed. Heron
       frames just those in a temporary isometric 3D view - a section box round
       them with a margin, model categories only, levels, grids and links left
       out of the box - and takes the view away again. In a project, floors,

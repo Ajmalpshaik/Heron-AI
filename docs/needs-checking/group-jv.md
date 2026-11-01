@@ -70,4 +70,4 @@ back. ~~**JV12** - declare each on the card that answers it.~~ **DONE 2026-11-01
 `CREATE_ELECTRICAL_CIRCUIT`, *"what is on circuit 3"* on `SELECT_BY_ELECTRICAL_CIRCUIT`, and this card
 named in the routing tables of both and of `REPORT_PANEL_CIRCUITS`. Each sentence now reaches its card
 by identity (scratch store, `model` backend). All three cards are PROVEN; the edit is outside `impl/`, so
-no fingerprint moved.
+no fingerprint moved. **On merging main the same day** `CREATE_ELECTRICAL_CIRCUIT` had been merged into `CREATE_MEP_SYSTEM` and retired, so *"circuit these sockets"* and this card's routing row moved to `CREATE_MEP_SYSTEM` (DRAFT); a retired card claims nothing.

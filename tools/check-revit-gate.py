@@ -180,7 +180,9 @@ def _document_names_used(code):
         if not re.search(r"\b%s\b" % name, body):
             continue
         # A LOCAL IS NOT AN UNDECLARED NEED, and this cost the check its last
-        # false positive. `zoom-to-elements` declares `uidoc` and then writes
+        # false positive. `zoom-to-elements` declared `uidoc` and then wrote
+        # the line below, and `set-selection` does since it was merged in
+        # (2026-11-01) - each declares `uidoc` and then writes
         #     var doc = uidoc.Document;
         # which is correct code deriving one from the other. Reported as an
         # undeclared need it would have sent somebody to edit a working

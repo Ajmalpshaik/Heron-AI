@@ -156,7 +156,7 @@ compatibility-note: >
 #                                                  ranked before
 #   "put a wall footing under these walls"       -> CREATE_WALL_FOUNDATION - the
 #                                                  strip under a wall
-#   "place the pad footings"                     -> PLACE_STRUCTURAL_FAMILY - an
+#   "place the pad footings"                     -> PLACE_FAMILY_INSTANCES - an
 #                                                  isolated footing family at
 #                                                  points
 #   "reinforce this slab"                        -> PLACE_AREA_REINFORCEMENT

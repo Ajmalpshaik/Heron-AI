@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -26,6 +26,34 @@ source: OFFICIAL
 # Admin switch too. ADD_PROJECT_PARAMETER, which also writes that file, is ADMIN.
 # The owner kept it so, 2026-10-12: "keep it ADMIN" (NEEDS-CHECKING DF9).
 risk: ADMIN
+
+# DEPRECATED 2026-11-01 - MERGED INTO ADD_FAMILY_PARAMETERS (add-family-parameters), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to ADD_FAMILY_PARAMETERS. The proof below is the record of what this
+# card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: ADD_FAMILY_PARAMETERS
+  why: >
+    The same job: parameters added to the family being edited, read back all
+    or nothing. ADD_FAMILY_PARAMETERS runs this card's version 4 code
+    unchanged since its own version 4, as the SHARED kind - kind shared, or
+    replaceExisting or createMissing true: the office's shared parameter file
+    the only source and only read unless createMissing writes a definition
+    ("Group: Name [Data type]", read back by Revit and in the file's text on
+    disk, every refusal before the file is written); replaceExisting turning
+    family parameters into shared ones in place with every label, formula,
+    association and value kept; the same inputs and outputs by the same names.
+    Its risk went with it: the keeper is ADMIN (D-106) for every call now, a
+    plain family parameter included, which the owner accepted. The safer rule
+    kept where they differed is this card's: a name already in the family as a
+    different parameter refuses the whole call - the keeper used to leave it
+    alone, say so and add the rest.
 
 purpose: >
   Adds SHARED parameters to the family open in the Family Editor - Family

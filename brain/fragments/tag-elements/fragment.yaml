@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -15,6 +15,32 @@ capability: TAG_ELEMENTS
 version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO TAG_ELEMENTS_IN_VIEW (tag-elements-in-view),
+# on the owner's instruction in conversation: "now merge the other duplicates
+# also". Constitution Article 1: kept, never deleted, so its record and its
+# proof stay readable and it can be brought back. Nothing offers it now -
+# retrieval leaves DEPRECATED out, and its sentences claim nothing in the
+# identity table (heron_search RETIRED_FRAGMENTS). Its sentences moved to
+# TAG_ELEMENTS_IN_VIEW. The proof below is the record of what this card's code
+# did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: TAG_ELEMENTS_IN_VIEW
+  why: >
+    The same job: one tag per element in one view, never a second stacked on
+    an element already tagged, an element with no location tagged at the
+    centre of its extent. TAG_ELEMENTS_IN_VIEW also chooses the tag family per
+    category from the project's default, reads every tag's type back and
+    corrects it, skips risers and refuses rooms to TAG_ROOMS. Its version 6
+    took what this card had that it lacked: one EXACT tag type on every
+    element whatever its category (tagTypeId, a Multi-Category tag included),
+    an element skipped only when it already has a tag of that type in the view,
+    and the skipped ids. It reads the view's tags itself, so this card's
+    alreadyTagged list is not needed; addLeader is its leader, none or
+    straight. Not carried: tagging a room as an independent tag - the safer
+    rule, rooms go to TAG_ROOMS.
 
 purpose: >
   Places one tag per element in one view. Tagging is most of what turns a

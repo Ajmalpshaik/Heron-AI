@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -13,6 +13,32 @@ version: 1
 source: OFFICIAL
 risk: MODIFY
 
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_DIMENSION (create-dimension), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable
+# and it can be brought back. Nothing offers it now - retrieval leaves
+# DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to CREATE_DIMENSION. The proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_DIMENSION
+  why: >
+    The same job: one dimension string through a set, read back without
+    Dimension.Curve. CREATE_DIMENSION version 3 took this card's route
+    beside its centreline walk: family instances along a named axis by their
+    built-in centre references (x asks CenterLeftRight first, y
+    CenterFrontBack, then the strong reference), sorted along the axis,
+    offset square to it; noReference for an instance publishing none; and
+    "cannot dimension a room" said in its problem, naming DIMENSION_ROOMS.
+    Where the rules differed the safer was kept: a dimension holding fewer
+    than two references is deleted again rather than left in the
+    transaction, an axis pointing out of the view is refused, and a set
+    mixing runs and family instances is refused whole rather than half-done.
+    Not carried, as opposite: dimensionId as InvalidElementId when nothing
+    is drawn - created is null there.
+
 purpose: >
   Draws ONE aligned dimension string through a set of family instances - air
   terminals, fixtures, equipment - along a chosen axis, so the spacing reads on
@@ -24,7 +50,7 @@ purpose: >
   | What you meant | What happens |
   |---|---|
   | "dimension the rooms", "put the room sizes on the plan" | **nothing here does that yet** - not this fragment |
-  | "how big is room 4", "what are the room sizes" - to know | `MEASURE_ROOM_DIMENSIONS`, read-only |
+  | "how big is room 4", "what are the room sizes" - to know | `REPORT_ROOM_SPACE_DATA`, read-only |
 
   A room's boundary is not a family instance and offers none of the references
   this works from. Dimensioning the nearest thing it CAN reach - the fixtures
@@ -40,7 +66,7 @@ purpose: >
   | What you are dimensioning | Use |
   |---|---|
   | Air terminals, fixtures, equipment — any family instance | **this fragment** |
-  | Ducts, pipes, conduit, cable tray | `DIMENSION_MEP_RUNS` — it walks the geometry, which is the only route that works for a run |
+  | Ducts, pipes, conduit, cable tray | `CREATE_DIMENSION` — it walks the geometry, which is the only route that works for a run |
 
   **MEASURED, AND THE MEASUREMENT'S FIRST CONCLUSION WAS TOO BROAD.** A family
   instance exposes built-in centre references, and stock content really does

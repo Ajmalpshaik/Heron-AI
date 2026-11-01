@@ -188,16 +188,17 @@ compatibility-note: >
   obsolete at 2021 and gone at 2022), so the millimetre conversion is
   `#if REVIT2020`.
 
-# ROUTING - the same rows are in SET_MATERIAL_PROPERTIES, SET_MATERIAL_COLOUR,
-# CREATE_STARTER_MATERIALS and REPORT_MATERIAL_TEXTURES.
+# ROUTING - the same rows are in SET_MATERIAL_PROPERTIES,
+# CREATE_STARTER_MATERIALS and LIST_MATERIALS.
 #
 #   "make the glass look like glass when rendered" -> here
 #   "give these materials a render appearance"     -> here
 #   "copy the appearance of steel to these"        -> here, appearance "from <material>"
 #   "the family is grey in realistic view"         -> here, matchShading
-#   "set the material colour"                      -> SET_MATERIAL_COLOUR - the shading colour
+#   "set the material colour"                      -> SET_MATERIAL_PROPERTIES - the shading colour
 #   "fill in the identity tab"                     -> SET_MATERIAL_PROPERTIES - every other tab
-#   "which material textures are missing"          -> REPORT_MATERIAL_TEXTURES
+#   "which material textures are missing"          -> LIST_MATERIALS, onlyMissing
+#                                                     (REPORT_MATERIAL_TEXTURES until 2026-11-01)
 #   "add a starter set of materials"               -> CREATE_STARTER_MATERIALS
 utterances:
   - give these materials a render appearance

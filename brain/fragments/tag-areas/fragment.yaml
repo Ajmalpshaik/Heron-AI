@@ -159,11 +159,11 @@ compatibility-note: >
 #                                            CATEGORY with category=Areas and
 #                                            the plan's level
 #   "put area tags on these areas"        -> here, on the selection
-#   "place areas in the gross area plan   -> PLACE_AREAS - makes areas, tags none
-#    at these points"
-#   "tag the rooms"                       -> TAG_ROOMS - room, space and zone
+#   "place areas in the gross area plan   -> PLACE_ROOMS, placeKind area -
+#    at these points"                        makes areas, tags none
+#   "tag the rooms"                       -> TAG_ELEMENTS_IN_VIEW - room, space and zone
 #                                            tags, in a floor or ceiling plan
-#   "put tags on these"                   -> TAG_ELEMENTS
+#   "put tags on these"                   -> TAG_ELEMENTS_IN_VIEW
 utterances:
   - tag all the areas in this area plan
   - put area tags on these areas

@@ -130,7 +130,7 @@ compatibility-note: >
 #    other views"                              inside ONE project, view to view
 #   "put that filter on this view"          -> APPLY_VIEW_FILTER, for a filter
 #                                              that is already in the project
-#   "make a filter for this value"          -> CREATE_VIEW_FILTERS_BY_VALUE
+#   "make a filter for this value"          -> CREATE_VIEW_FILTER
 #   "which filters are on this view"        -> REPORT_VIEW_FILTERS
 #   "bring the schedules over"              -> TRANSFER_VIEWS_BETWEEN_DOCUMENTS
 

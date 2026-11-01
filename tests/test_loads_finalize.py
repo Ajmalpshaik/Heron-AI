@@ -83,7 +83,10 @@ class StandIn(object):
             "FILTER_ELEMENTS_BY_CATEGORY": {"ok": True,
                                             "provides": {"elements": "2 item(s) [a, b]"}},
             "SET_AIR_TERMINAL_FLOW": {"ok": True, "provides": flows},
-            "REPORT_SPACE_AIRFLOW": {"ok": True, "provides": {}},
+            # The read-back of the diffusers' airflow per Space. The server
+            # asked REPORT_SPACE_AIRFLOW until it was merged into
+            # READ_SPACE_LOADS on 2026-11-01.
+            "READ_SPACE_LOADS": {"ok": True, "provides": {}},
             "CREATE_SCHEDULE": {"ok": True, "provides": {"created": "1 item(s) [id 9]"}},
         }
         server._through = self.through

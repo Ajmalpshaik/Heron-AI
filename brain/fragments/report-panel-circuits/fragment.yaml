@@ -284,7 +284,7 @@ compatibility-note: >
 #   "show me the panel schedule as a list"    -> here
 #   "which circuits are on no panel"          -> here
 #   "what devices are on circuit 3"           -> SELECT_BY_ELECTRICAL_CIRCUIT
-#   "circuit these sockets"                   -> CREATE_ELECTRICAL_CIRCUIT
+#   "circuit these sockets"                   -> CREATE_MEP_SYSTEM
 #   "move these circuits to panel DB-2"       -> EDIT_ELECTRICAL_CIRCUIT - moves a
 #                                                circuit; this card only reads where
 #                                                it is (2026-11-01)

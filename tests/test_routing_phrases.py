@@ -134,28 +134,43 @@ CHANGES = [
     # these back on private stores - the read took the first two from the
     # write on the model and the first, third, fourth and fifth on spelling
     # (where this suite cannot run; tests/test_read_view_scale.py asks them
-    # there).
-    ("update the view scale", "SET_VIEW_SCALE",
+    # there). 2026-11-01: SET_VIEW_SCALE was merged into SET_VIEW_PROPERTIES
+    # on the owner's instruction and DEPRECATED, so the write these reach is
+    # SET_VIEW_PROPERTIES now - a retired card is offered for nothing.
+    ("update the view scale", "SET_VIEW_PROPERTIES",
      "146: a first draft of READ_VIEW_SCALE answered it on both backends"),
-    ("set the scale of these views", "SET_VIEW_SCALE",
+    ("set the scale of these views", "SET_VIEW_PROPERTIES",
      "146: a first draft of READ_VIEW_SCALE answered it on the model"),
-    ("set the view scale", "SET_VIEW_SCALE",
+    ("set the view scale", "SET_VIEW_PROPERTIES",
      "146: a first draft of READ_VIEW_SCALE answered it on spelling"),
-    ("set view scale", "SET_VIEW_SCALE",
+    ("set view scale", "SET_VIEW_PROPERTIES",
      "146: a first draft of READ_VIEW_SCALE answered it on spelling"),
-    ("adjust the view scale", "SET_VIEW_SCALE",
+    ("adjust the view scale", "SET_VIEW_PROPERTIES",
      "146: a first draft of READ_VIEW_SCALE answered it on spelling"),
     # Row 146, 2026-10-09: the first draft of LIST_VIEWS_ON_SHEET named the
     # write and said "placed" in its purpose and "on sheet a-101" in its
     # utterances, and the read took these from the write on the model.
-    ("place these views on sheet A-101", "PLACE_VIEWS_ON_SHEET",
+    #
+    # THE EXPECTED CARD CHANGED ON 2026-11-01, AND ONLY BECAUSE THE FACT DID:
+    # PLACE_VIEWS_ON_SHEET was merged into PLACE_VIEW_ON_SHEET on the owner's
+    # instruction and is DEPRECATED, so nothing offers it. What row 146 held -
+    # that the write which places views answers these, and the read does not -
+    # is held here unchanged, against the card that does that job now.
+    ("place these views on sheet A-101", "PLACE_VIEW_ON_SHEET",
      "146: a first draft of LIST_VIEWS_ON_SHEET answered it"),
-    ("place the views on this sheet", "PLACE_VIEWS_ON_SHEET",
+    ("place the views on this sheet", "PLACE_VIEW_ON_SHEET",
      "146: a first draft of LIST_VIEWS_ON_SHEET answered it"),
     # And a later draft declared "list the viewports on this sheet", and the
     # read took this one - claimed in ALIGN_VIEWPORTS_ACROSS_SHEETS' routing
     # table, never declared - on the model.
-    ("line the viewports up", "ALIGN_VIEWPORTS_ACROSS_SHEETS",
+    #
+    # THE EXPECTED CARD CHANGED ON 2026-11-01, AND ONLY BECAUSE THE FACT DID:
+    # ALIGN_VIEWPORTS_ACROSS_SHEETS was merged into CENTER_VIEWPORTS_ON_SHEETS
+    # (its masterSheetNumber) on the owner's instruction and is DEPRECATED, so
+    # nothing offers it. What row 146 held - that the write which lines the
+    # viewports up answers this, and the read does not - is held here
+    # unchanged, against the card that does that job now.
+    ("line the viewports up", "CENTER_VIEWPORTS_ON_SHEETS",
      "146: a later draft of LIST_VIEWS_ON_SHEET answered it"),
     # 5b-467, 2026-10-14: words and nearness both had COPY_ELEMENTS first, and
     # the re-ranker, reading an identity that said only "at an offset", put the
@@ -193,17 +208,22 @@ CHANGES = [
     # this suite refuses. The fifth is the card's own find-and-replace job; the
     # last went to SET_VIEW_FILTER_CATEGORIES once #539 merged (main be29fde4).
     # NOT HERE: "rename the selected views", which that card still takes.
-    ("rename the plan", "RENAME_ELEMENTS",
+    # THE EXPECTED CARD CHANGED ON 2026-11-01, AND ONLY BECAUSE THE FACT DID:
+    # RENAME_ELEMENTS was merged into EDIT_TEXT_VALUES (field Name) on the
+    # owner's instruction and is DEPRECATED, so nothing offers it. What 5b-510
+    # held - that a view, sheet or schedule rename reaches the tool that renames
+    # it, by ranking - is held here against the card that does that job now.
+    ("rename the plan", "EDIT_TEXT_VALUES",
      "5b-510: answered RENAME_FAMILY with the re-ranker"),
-    ("rename this floor plan", "RENAME_ELEMENTS",
+    ("rename this floor plan", "EDIT_TEXT_VALUES",
      "5b-510: answered SYNC_SPACES_WITH_LINKED_ROOMS with the re-ranker"),
-    ("rename these sheets", "RENAME_ELEMENTS",
+    ("rename these sheets", "EDIT_TEXT_VALUES",
      "5b-510: answered EDIT_REVISION_NUMBERING_SEQUENCE with the re-ranker"),
-    ("rename the schedule", "RENAME_ELEMENTS",
+    ("rename the schedule", "EDIT_TEXT_VALUES",
      "5b-510: answered EDIT_REVISION_NUMBERING_SEQUENCE with the re-ranker"),
-    ("rename the selected elements", "RENAME_ELEMENTS",
+    ("rename the selected elements", "EDIT_TEXT_VALUES",
      "5b-510: answered RENAME_FAMILY with the re-ranker"),
-    ("rename the views to match the new naming", "RENAME_ELEMENTS",
+    ("rename the views to match the new naming", "EDIT_TEXT_VALUES",
      "5b-510: answered SET_VIEW_FILTER_CATEGORIES with the re-ranker after #539"),
 ]
 
@@ -290,19 +310,23 @@ NO_TOOL = []
 DECLARED = [
     ("how high is this off the floor", "READ_ELEMENT_LEVEL",
      "146: answered SET_ROOM_LIMITS on the model, MOVE_TO_RAY_HIT on spelling"),
-    ("find the fire dampers", "SELECT_BY_FAMILY",
+    # SELECT_BY_FAMILY was merged into SELECT_BY_PARAMETER_VALUE on 2026-11-01.
+    ("find the fire dampers", "SELECT_BY_PARAMETER_VALUE",
      "146: answered PLACE_ACCESSORY_ON_RUN on spelling"),
-    ("what levels are in this model", "LIST_LEVELS",
+    # LIST_LEVELS was merged into REPORT_LEVEL_ELEVATIONS on 2026-11-01.
+    ("what levels are in this model", "REPORT_LEVEL_ELEVATIONS",
      "146: answered CREATE_LEVELS on spelling"),
     ("what is the insulation thickness", "READ_ELEMENT_PARAMETERS",
      "146: answered SET_MEP_INSULATION on both"),
     ("what is the sill height of these windows", "READ_ELEMENT_PARAMETERS",
      "5b-321: answered PLACE_HOSTED_FAMILY on the model"),
     # 146's last READ gap: nothing read a view's scale until READ_VIEW_SCALE
-    # (2026-10-09), so the question could only land on the write.
-    ("what is the scale of this view", "READ_VIEW_SCALE",
+    # (2026-10-09), so the question could only land on the write. Since
+    # 2026-11-01 READ_VIEW_SCALE is merged into REPORT_VIEW_SETTINGS, which
+    # declares both sentences now - the read that answers them moved.
+    ("what is the scale of this view", "REPORT_VIEW_SETTINGS",
      "146: answered SET_VIEW_SCALE on both"),
-    ("what scale is this plan at", "READ_VIEW_SCALE",
+    ("what scale is this plan at", "REPORT_VIEW_SETTINGS",
      "146: answered CREATE_CALLOUT on the model"),
     # Row 146's gap, not a mis-route: LIST_SHEETS only COUNTS a sheet's views,
     # so no READ named them until LIST_VIEWS_ON_SHEET was written (2026-10-09).
@@ -460,6 +484,13 @@ def main():
         print("\n8. A QUESTION THAT REACHED A WRITE IS DECLARED ON THE READ THAT ANSWERS IT")
         owners = {}
         for frag in on_disk.values():
+            # A RETIRED CARD DECLARES NOTHING, as the identity table it mirrors
+            # holds (heron_search.RETIRED_FRAGMENTS, test_search 4b): its
+            # sentences stay on it as the record and moved to its successor.
+            # Without this, every sentence moved by a merge read as declared
+            # twice (2026-11-01, SELECT_BY_FAMILY and LIST_LEVELS merged).
+            if frag.status in SEARCH.RETIRED_FRAGMENTS:
+                continue
             for said in [frag.data.get("semantic-identity") or ""] + frag.utterances():
                 owners.setdefault(SEARCH.normalise(said), set()).add(frag.data.get("capability"))
         risk_of = dict((frag.data.get("capability"), (frag.data.get("risk") or "").upper())

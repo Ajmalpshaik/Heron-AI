@@ -39,17 +39,18 @@ revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
-# ROUTING - repeated in REMOVE_PARAMETER_VALUE and WRITE_ELEMENT_PARAMETERS.
+# ROUTING - repeated in WRITE_ELEMENT_PARAMETERS.
 #
 #   "which ones are blank"               -> here - a READ
-#   "clear the value out of this parameter" -> REMOVE_PARAMETER_VALUE - the
+#   "clear the value out of this parameter" -> WRITE_ELEMENT_PARAMETERS clear=true - the
 #                                        WRITE; this one only finds the blanks
 # CLAIMED ON 2026-09-17 SO THE IDENTITY ROUTE ANSWERS THESE, and it is
 # not a rank being bought. An undeclared sentence never reaches
 # short_circuit at all: it falls through to the fused ranking, and
 # tools/check-risk-crossings.py measured where that lands. Each line
 # below was answered by a MODIFY before it was claimed here.
-#   "which parameters are empty" -> REMOVE_PARAMETER_VALUE (MODIFY).
+#   "which parameters are empty" answered REMOVE_PARAMETER_VALUE (MODIFY),
+#   merged into WRITE_ELEMENT_PARAMETERS on 2026-11-01.
 # Asking which are blank would have emptied more of them.
 utterances:
   - which parameters are empty

@@ -21,5 +21,78 @@ negative:
       refused - a dimension is drawn in a plan, section, elevation or detail;
       nothing drawn
 
+  # VERSION 2 (2026-11-01, DIMENSION_WALL_OPENINGS merged in). Each FAILS on
+  # version 1, which has no withOverall, side, segmentsDisagree, notAWall or
+  # noOpeningFaces, and reads a room's own geometry.
+  - given: >
+      VERSION 2. A wall with one 762 mm door in it, in a plan, direction along,
+      offsetMm 500
+    expect: >
+      one running string end - jamb - jamb - end, the middle segment reading
+      762 - measure the door in Revit and compare. The jambs are the WALL's
+      faces, never the door's own references
+
+  - given: VERSION 2. The same wall, withOverall true, offsetMm 500
+    expect: >
+      two strings in `created` - the running one 500 mm out and an overall
+      1000 mm out reading the whole wall - and `segmentsDisagree` empty
+
+  - given: VERSION 2. withOverall true with offsetMm 0
+    expect: >
+      the running string only, and the wall's line saying no overall was drawn
+      because at 0 it would sit on top of the running string
+
+  - given: >
+      VERSION 2. A wall with a join notch leaving an extra face along the run,
+      withOverall false
+    expect: >
+      the wall's id in `segmentsDisagree` if the segments do not add up to the
+      span between its first and last face. DIMENSION_WALL_OPENINGS checked
+      only with the overall drawn
+
+  - given: VERSION 2. Two rooms handed in, direction along, side=outside
+    expect: >
+      each room's bounding walls strung once, on the side away from the rooms;
+      `sideUsed` one line per wall saying "above the wall ... a room on one
+      side only"
+
+  - given: >
+      VERSION 2. side=outside on an outside wall drawn left to right with
+      rooms below it on the plan (the futuristic house's stone wall, y 19850)
+    expect: >
+      both strings ABOVE the wall, away from the rooms. side=right on the same
+      wall puts them below it - DIMENSION_WALL_OPENINGS's blank side
+
+  - given: >
+      VERSION 2. side=outside on the courtyard walls of a U-shaped plan with no
+      rooms placed, the walls an Exterior wall type
+    expect: >
+      each string on the courtyard side - the wall's exterior face - and
+      `sideUsed` saying so
+
+  - given: VERSION 2. side=outsid (misspelt)
+    expect: >
+      refused, naming the four it knows, `created` empty, NOTHING drawn
+
+  - given: VERSION 2. side=outside with direction across
+    expect: refused whole, nothing drawn - a side is for a wall strung along its run
+
+  - given: VERSION 2. side=outside in an elevation
+    expect: refused whole, nothing drawn - beside the wall points into the view
+
+  - given: VERSION 2. A duct and a floor handed in with walls, side=right
+    expect: the duct and the floor in `notAWall`, the walls still strung
+
+  - given: VERSION 2. A curved wall, direction along
+    expect: >
+      its id in `noOpeningFaces` and `noFaces`, no dimension. Version 1 strung
+      it along the view's horizontal
+
+  - given: VERSION 2. side left out, direction along, on a wall
+    expect: >
+      the string exactly where version 1 put it - offsetMm square to the wall
+      in the view. Leaving side out must not move anything
+
 second_route:
   - Revit's Aligned Dimension, Tab through the layer faces, in the same view
+  - for openings, measure the door in Revit against the middle segment, and the overall against the wall on the plan

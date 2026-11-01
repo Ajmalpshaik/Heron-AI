@@ -44,13 +44,84 @@ positive:
       and FLEX_FAMILY, Pipe CC 1 to 2 set to 450 mm, still moves the labelled
       plane - the label drives under its new name
 
-negative:
+  # VERSION 4 (2026-11-01), from ADD_FAMILY_SHARED_PARAMETERS - its own cases,
+  # each run with kind "shared" (or kind empty with replaceExisting or
+  # createMissing), the rest of the call as written. Each FAILS on version 3,
+  # which refused kind shared as a kind it did not add, and had no
+  # replaceExisting or createMissing. Run with the Admin switch on: this card is
+  # ADMIN now.
   - given: >
-      parameterNames "Width" where the family already has an INSTANCE Width,
-      asked for as type
+      a family open in the Family Editor, and Revit's shared parameter file set
+      to one holding "Heron Test Tag" (Text); parameterNames "Heron Test Tag",
+      instance false, parameterGroup "Identity Data"
     expect: >
-      left alone and SAID - the finding naming it as a different parameter
-      under a familiar name. Not silently reported as done
+      added 1, reading the parameter, Text, type, and the file's GUID; Family
+      Types showing it with the shared marker; a tag in a test project reading
+      it once the family is loaded
+
+  - given: the same call again
+    expect: added empty, alreadyThere 1
+
+  - given: >
+      replaceExisting true (version 2): a family with a type Length family
+      parameter "Width" labelling one dimension, a type Length "Half Width"
+      with the formula "Width / 2", two types holding Width 600 and 900, and
+      the shared parameter file holding "Heron Unit Width" (Length);
+      parameterNames "Width=Heron Unit Width", instance false, parameterGroup
+      empty
+    expect: >
+      replaced 1, "Width -> Heron Unit Width", Length, type, under the heading
+      Width had, the file's GUID; no family parameter called Width left; the
+      dimension labelled Heron Unit Width; formulasReadBack "Half Width = Heron
+      Unit Width / 2"; keptLinks naming 1 labelled dimension and both types'
+      values unchanged
+
+  - given: >
+      createMissing true (version 3): a family open in the Family Editor, and
+      Revit's shared parameter file set to a SCRATCH COPY holding no
+      "Refrigerant" group; parameterNames "Refrigerant: Heron Gas Pipe
+      Diameter [Pipe Size], Refrigerant: Heron Liquid Pipe Diameter [Pipe
+      Size]", instance false, parameterGroup "Mechanical"
+    expect: >
+      created 2, each with Pipe Size, group Refrigerant, a GUID and the file's
+      own word for the data type; added 2 with those same GUIDs; findings
+      naming the group made and that Undo does not reach the file; Manage >
+      Shared Parameters on the scratch copy showing both under Refrigerant
+
+  - given: >
+      createMissing and replaceExisting true: a family with type Length family
+      parameters "Gas Pipe Diameter" (12.7 mm) and "Liquid Pipe Diameter"
+      (6.35 mm), each driving a pipe connector's diameter, and the scratch file
+      without either name; parameterNames "Gas Pipe Diameter=Refrigerant: Gas
+      Pipe Diameter [Length]; Liquid Pipe Diameter=Refrigerant: Liquid Pipe
+      Diameter [Length]" - Length, as the family parameters hold; [Pipe Size]
+      is refused as another kind, before the file is written - parameterGroup
+      empty
+    expect: >
+      created 2, replaced 2 under the SAME names - or, if Revit refuses a
+      shared parameter of the same name in place, a throw naming what the file
+      now keeps and the family rolled back (DE6's question, answered here);
+      the connector sizes and both values kept
+
+  - given: the first createMissing call again
+    expect: >
+      created empty; "already in the shared parameter file" for each, nothing
+      written; alreadyThere 2
+
+negative:
+  # VERSION 4 (2026-11-01): THE FACT CHANGED. Until the merge this was left
+  # alone and SAID while the rest were added; the safer rule of
+  # ADD_FAMILY_SHARED_PARAMETERS is kept now, for every kind. FAILS on version 3.
+  - given: >
+      parameterNames "Height, Width" where the family already has an INSTANCE
+      Width, asked for as type lengths
+    expect: >
+      the WHOLE call refused naming Width as a different parameter under a
+      familiar name - and Height NOT added either; Family Types unchanged
+  - given: parameterNames "Width" where the family already has a TYPE length Width, asked for as a type length
+    expect: alreadyThere naming Width, nothing added, no refusal - the same parameter, a re-run
+  - given: parameterNames "Heron Test Tag", kind Text, where the family already has a SHARED "Heron Test Tag"
+    expect: refused - a shared parameter is not the family parameter asked for - nothing added
 
   - given: kind "Lenght" (misspelt)
     expect: >
@@ -133,6 +204,74 @@ negative:
   - given: switchExisting and renameExisting both true
     expect: refused as two jobs, nothing changed
 
+  # VERSION 4, ADD_FAMILY_SHARED_PARAMETERS' negatives, with kind "shared".
+  - given: parameterNames "Not In The File"
+    expect: refused, naming the file and the close names, and nothing added
+
+  - given: no shared parameter file set in Revit
+    expect: refused - set the office's file in Manage > Shared Parameters - nothing added
+
+  - given: the family already has a family (not shared) parameter "Heron Test Tag"
+    expect: refused - two under one name - and nothing added
+
+  - given: a project in front
+    expect: notAFamily true, pointing to ADD_PROJECT_PARAMETER
+
+  - given: >
+      replaceExisting true, the same family and file, parameterNames "Width=Heron
+      Test Tag" - a Text shared parameter for a Length
+    expect: refused naming both kinds; replaced empty; Width still a family parameter
+
+  - given: >
+      replaceExisting true, "Heron Unit Width" already added beside Width and
+      Width given the formula "Heron Unit Width" - the two-per-size workaround
+    expect: >
+      refused, naming the formula on Width and that Heron Unit Width is already
+      in the family; replaced empty; nothing changed
+
+  - given: replaceExisting true, "Width=Not In The File"
+    expect: refused, naming the file and the close names; replaced empty
+
+  - given: >
+      createMissing true, the scratch file holding "Heron Test Tag" as Text;
+      parameterNames "Identity Data: Heron Test Tag [Length]"
+    expect: >
+      refused - already in the file holding Text, not Length, never changed;
+      created empty; the scratch file's bytes the same before and after
+
+  - given: >
+      createMissing true, "Heron New Thing [Length]" and "Refrigerant: Heron New
+      Thing []"
+    expect: refused twice - no group, no data type - neither chosen; nothing written to the file
+
+  - given: >
+      createMissing true, "Refrigerant: Heron Gas Pipe Diameter [Pipe Sise]"
+    expect: >
+      refused - not a data type this Revit offers - with Pipe Size among the
+      close ones; the file not written
+
+  - given: >
+      createMissing true, "Refrigerant: Heron Test Tag2 [Text]" while the
+      family already has a family parameter "Heron Test Tag2"
+    expect: >
+      refused - two under one name, pointing to replaceExisting - and the
+      scratch file NOT written: the family's own checks come before the file
+
+  - given: >
+      createMissing absent, "Refrigerant: Heron Gas Pipe Diameter [Pipe Size]"
+    expect: refused - createMissing is not on - nothing written
+
+  - given: createMissing true, the scratch file marked read-only
+    expect: refused - read-only - nothing written, nothing added
+  - given: kind shared with switchExisting true
+    expect: refused as two jobs, nothing changed and the shared parameter file not written
+  - given: kind Length with replaceExisting true
+    expect: refused - a shared parameter's kind comes from the file - nothing changed
+  - given: kind Length, any names, with the Admin switch OFF
+    expect: >
+      refused by the switch before Revit is asked - this card is ADMIN since
+      version 4, a plain family parameter included (the owner accepted that)
+
 second_route:
   - >
       Family Types, New Parameter by hand for one of the same names, and its
@@ -146,3 +285,17 @@ second_route:
       For renaming: Family Types by hand, the formula column of the parameter
       that read the old name, compared with formulasReadBack; and FLEX_FAMILY
       driving the renamed label
+  - >
+      Family Types in the Family Editor: the parameter listed as shared; Manage
+      > Shared Parameters shows the same name in the office's file
+
+  - >
+      After a replace, Family Types in the Family Editor: Heron Unit Width listed
+      with the shared marker where Width was, its values per type the same, and
+      the dimension's label reading Heron Unit Width
+
+  - >
+      After creating, the scratch shared parameter file opened in Notepad: a
+      GROUP line Refrigerant and a PARAM line for each new name carrying the
+      GUID `created` reported and that group's id; Manage > Shared Parameters
+      listing them under Refrigerant as Pipe Size

@@ -91,6 +91,25 @@ negative:
   - given: version 3 - toWorkset names a workset that is CLOSED in this session
     expect: refused, nothing copied, and the active workset unchanged
 
+  # VERSION 4 (2026-11-01) - ARRAY_ELEMENTS merged in. Each FAILS on version
+  # 3, which had no `count` or `spacingMm`. NOT RUN.
+  - given: one diffuser, offset "1,0,0" along the corridor, spacingMm 3000, count 8
+    expect: >
+      copies holds 7 ids and copiesEach is 7 - eight diffusers in all, the
+      original included. MEASURED between two of them in Revit at 3000 mm
+  - given: offset as the vector between two points 12 m apart, spacingMm 3000, count 3
+    expect: the pitch still 3000 - the direction is normalised - never 36 m
+  - given: count 1
+    expect: refused, nothing copied - a count of one is an array of nothing
+  - given: a duct and its fitting together, count 3, spacingMm 2000
+    expect: >
+      two copies of the pair, each copy CONNECTED to its fitting - the set is
+      copied together at every step. ARRAY_ELEMENTS copied them one by one
+  - given: count 3 with toLevels named
+    expect: refused - a run is copied by the offset only - nothing copied
+  - given: count and spacingMm left out, an offset of 3000,0,0
+    expect: one copy 3 m over - version 3 exactly, copiesEach 1
+
 second_route:
   - a count of that category before and after, differing by exactly the number copied
   - version 3 - select the copies and read each one's Workset in the Properties palette, or

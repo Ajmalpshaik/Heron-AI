@@ -94,7 +94,8 @@ compatibility-note: >
 
 # ROUTING - the same rows are in the fragments named here.
 #
-#   "make a ceiling over this area" -> CREATE_CEILING - there has to be one
+#   "make a ceiling over this area" -> CREATE_FLOOR with a ceiling type
+#                                      (CREATE_CEILING until 2026-11-01) - there has to be one
 #                                      before there is a grid to read
 
 #   "are the diffusers in the ceiling"   -> CHECK_CEILING_COORDINATION - it

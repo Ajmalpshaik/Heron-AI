@@ -160,7 +160,7 @@ compatibility-note: >
 #   "how long are the ducts"            -> MEASURE_RUN_QUANTITIES, which also
 #                                          hands back Revit's own surface area
 #                                          for a takeoff that needs no gauge
-#   "total it by size"                  -> SUM_BY_GROUP, fed by
+#   "total it by size"                  -> GROUP_AND_COUNT, fed by
 #                                          READ_ELEMENT_PARAMETERS for the size
 #   "what size should this duct be"     -> AUTO_SIZE_MEP. That decides the
 #                                          size from the airflow; this decides

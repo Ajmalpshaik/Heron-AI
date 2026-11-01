@@ -10,6 +10,25 @@ positive:
       the active one - and the open-family count rises by ONE, which shows the
       windowless copy was closed rather than left beside it
 
+  # VERSION 3, added 2026-11-01 with the merge of CREATE_PROJECT_DOCUMENT.
+  # NONE OF THESE HAS BEEN RUN. Each FAILS on version 2, which refused every
+  # project template.
+  - given: >
+      a full .rte path that exists, a savePath ending .rvt in a scratch folder,
+      --in naming a document that is NOT in front
+    expect: >
+      a PROJECT saved at exactly savePath, open in a window and in front -
+      REPORT_OPEN_DOCUMENTS lists its title as the active one - and
+      templateUsed the .rte given
+
+  - given: >
+      templatePath a project template's NAME with no extension - one that is
+      in the folder of this Revit's default project template - and a savePath
+      ending .rvt
+    expect: >
+      templateUsed the full .rte path in that folder, and a project made. The
+      family template folder is NOT searched for it
+
 negative:
   - given: a savePath that already exists
     expect: >
@@ -40,6 +59,21 @@ negative:
       saved, NOT opened, openNext naming the path - Revit opens no window while
       the active document is modifiable. ACTIVATE_DOCUMENT with that path then
       opens it
+
+  # VERSION 3, added 2026-11-01. NONE OF THESE HAS BEEN RUN.
+  - given: a .rte template with a savePath ending .rfa
+    expect: >
+      refused - "does not end .rvt, and a project is saved as .rvt" - nothing
+      created. The template's extension decides; nothing is turned into the
+      other kind
+
+  - given: a .rft template with a savePath ending .rvt
+    expect: refused - "does not end .rfa" - nothing created
+
+  - given: a project's savePath that already exists
+    expect: >
+      refused by name, NOTHING created, the file's time stamp unchanged - the
+      same never-overwrite rule as a family
 
 second_route:
   - >

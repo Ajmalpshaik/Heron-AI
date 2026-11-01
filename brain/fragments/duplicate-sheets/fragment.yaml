@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,31 @@ capability: DUPLICATE_SHEETS
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_SHEETS (create-sheets), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable
+# and it can be brought back. Nothing offers it now - retrieval leaves
+# DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to CREATE_SHEETS. The proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_SHEETS
+  why: >
+    The same job: new sheets in the drawing register, every number checked
+    before a sheet exists so no orphan is left under a number Revit picked.
+    CREATE_SHEETS version 3 makes copies of the sheets handed in, as this
+    card did: each on its source's own title block, numbered source plus
+    numberSuffix, named namePrefix plus the source's name, a placeholder or
+    a sheet with no title block not copied, clashes in the same batch
+    caught, collidedNumbers in its numberTaken and notDuplicated under the
+    same name. Neither card copies the views on a sheet. Where the rules
+    differed the safer was kept: no suffix refuses the copy outright rather
+    than clashing, copying runs only when no numbers are given, and a copy
+    whose number did not take is reported in created and refused because it
+    exists.
 
 purpose: >
   Creates a new sheet for each one handed in - same title block, number made by
@@ -41,7 +66,7 @@ purpose: >
 
   IT MAKES EMPTY SHEETS, ON PURPOSE. The version this came from also duplicated
   every placed view and re-placed it at the same spot. That is two jobs, and
-  Heron already has both halves - DUPLICATE_VIEWS and PLACE_VIEWS_ON_SHEET. A
+  Heron already has both halves - DUPLICATE_VIEWS and PLACE_VIEW_ON_SHEET. A
   skill composes the three; welding them together here would make the sheet job
   impossible to use on its own and would hide two read-backs inside a third.
 

@@ -52,7 +52,7 @@ purpose: >
      counts in the gross floor area is step 5's question.
   3. THE MASSES - one loaded mass family per block, built by the
      MASS-FAMILY-CREATION method, then LOAD_FAMILY (PROVEN) into the project
-     and PLACE_FAMILY_INSTANCES (PROVEN) at each block's insertion point on
+     and PLACE_FAMILY_INSTANCES (DRAFT, version 4 - version 3 was PROVEN; merged 2026-11-01, and until it is proved on a real model a kept change from it is refused, D-117) at each block's insertion point on
      the ground level. Masses already in the model - in-place or loaded -
      are used as they are.
   4. REPORT_MASSES (DRAFT) - every mass with its base, top and height. Check
@@ -73,7 +73,7 @@ purpose: >
   7. JOIN WHERE BLOCKS MEET: REPORT_MASSES names every pair of masses that
      overlap and are NOT joined, with the volume they share - both count it
      in volume and floor area until they are joined (Autodesk Help, joining
-     mass instances). JOIN_GEOMETRY (PROVEN) joins each pair named, then
+     mass instances). JOIN_GEOMETRY (DRAFT, version 2 - version 1 was PROVEN; merged 2026-11-01, and until it is proved on a real model a kept change from it is refused, D-117) joins each pair named, then
      REPORT_MASSES again: the finding gone and the total smaller.
   8. THE NUMBERS: REPORT_MASSES (DRAFT) with siteArea - the m2 from step 1,
      or "property lines" - gives gross floor area by level and by Usage, the
@@ -84,7 +84,9 @@ purpose: >
      the Mass Floor category with Mass : Family and Type, Level, Usage,
      Floor Area, Floor Perimeter, Exterior Surface Area and Floor Volume;
      SET_SCHEDULE_SORT_GROUP (PROVEN) by Usage then Level, and
-     SET_SCHEDULE_FIELD_TOTALS (PROVEN) on Floor Area. That a Mass Floor
+     SET_SCHEDULE_APPEARANCE with calculateTotals on Floor Area (DRAFT,
+     version 4 - SET_SCHEDULE_FIELD_TOTALS, PROVEN, was merged into it on
+     2026-11-01). That a Mass Floor
      schedule is made this way is owed in NEEDS-CHECKING Group JO.
   10. REVISE AND READ AGAIN: a block changed in its family is reloaded with
      LOAD_FAMILY reload=true; the mass floors follow the new shape. Run
@@ -97,16 +99,21 @@ purpose: >
         modeller says otherwise. A glazed block is CREATE_CURTAIN_SYSTEM
         (PROVEN, Group JM) with a curtain system type instead - its upright
         faces, or "top" for a glazed roof - and its grid and mullions are
-        SET_CURTAIN_WALL_GRID and SET_CURTAIN_WALL_MULLIONS (PROVEN, Group
-        JP) on that curtain system type, Grid 1 and Grid 2. Both stay tied to the faces; after the
+        SET_CURTAIN_WALL_GRID on that curtain system type, Grid 1 and Grid 2
+        (Group JP proved the grid and the mullion setters on 2026-11-01; the
+        mullions were merged into the grid setter that day, version 4, DRAFT
+        until proved again, D-117). Both stay tied to the faces; after the
         mass changes, Update to Face by hand.
      b. SLABS: REPORT_MASSES with withOutlines gives each mass floor's
-        outline in the writing CREATE_FLOOR (PROVEN, version 2) takes - one
+        outline in the writing CREATE_FLOOR (version 2 PROVEN; DRAFT at
+        version 3 since 2026-11-01, so a kept change is refused until it is
+        proved again, D-117) takes - one
         CREATE_FLOOR per outline, on its level. A slab made this way does
         NOT follow the mass; say so. An outline with a hole - a courtyard,
         an atrium - is the outside edge only: CREATE_OPENING (PROVEN) cuts
         the hole after, from the inner edge the modeller confirms.
-     c. ROOF: CREATE_ROOF (PROVEN) on the top outline, or Roof by Face by
+     c. ROOF: CREATE_FLOOR with a roof type on the top outline (CREATE_ROOF,
+        PROVEN, until it was merged in on 2026-11-01), or Roof by Face by
         hand - no API makes one.
      d. HIDE THE MASSES, never delete them while walls hang on their faces:
         SET_CATEGORY_VISIBILITY (PROVEN) turns Mass off in the views that
@@ -136,12 +143,13 @@ needs:
   - JOIN_GEOMETRY
   - CREATE_SCHEDULE
   - SET_SCHEDULE_SORT_GROUP
-  - SET_SCHEDULE_FIELD_TOTALS
+  # SET_SCHEDULE_APPEARANCE since 2026-11-01: SET_SCHEDULE_FIELD_TOTALS was
+  # merged into it as its calculateTotals switch.
+  - SET_SCHEDULE_APPEARANCE
   - CREATE_WALLS_BY_FACE
   - CREATE_CURTAIN_SYSTEM
   - CREATE_FLOOR
   - CREATE_OPENING
-  - CREATE_ROOF
   - SET_CATEGORY_VISIBILITY
 
 preconditions:

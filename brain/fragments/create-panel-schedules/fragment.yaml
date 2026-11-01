@@ -108,7 +108,9 @@ compatibility-note: >
 #   "what is on panel DB-1"                 -> REPORT_PANEL_CIRCUITS - a READ of
 #                                              the circuits, no view made
 #   "show me the panel schedule as a list"  -> REPORT_PANEL_CIRCUITS
-#   "put the panel schedule on a sheet"     -> PLACE_SCHEDULE_ON_SHEET, after this
+#   "put the panel schedule on a sheet"     -> PLACE_VIEW_ON_SHEET, after this
+#                                              (PLACE_SCHEDULE_ON_SHEET until it
+#                                              was merged there, 2026-11-01)
 #
 # MEASURED 2026-10-14, scratch store, lexical hybrid, 2024 wall: "show me the
 # panel schedule", "show the panel schedule for DB-1" and "what does the panel

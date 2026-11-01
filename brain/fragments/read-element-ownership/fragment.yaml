@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-WRK-014
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,25 @@ capability: READ_ELEMENT_OWNERSHIP
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO REPORT_ELEMENT_OWNERSHIP (report-element-ownership), on the owner's instruction
+# in conversation: "merge the 5 real duplicates". Constitution Article 1: kept,
+# never deleted, so its record and its proof stay readable and it can be
+# brought back. Nothing offers it now - retrieval leaves DEPRECATED out, and
+# its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to REPORT_ELEMENT_OWNERSHIP. The proof below is the
+# record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: REPORT_ELEMENT_OWNERSHIP
+  why: >
+    The same check: which of these can be edited on a workshared model, and who
+    holds the rest. REPORT_ELEMENT_OWNERSHIP already gave more - owner, creator
+    and last changed by - and its version 2 took the one rule this card had that
+    it lacked: an element whose checkout status cannot be read is held by an
+    unknown owner, never dropped. workshared is its notWorkshared turned round,
+    ownedByOthers with names is its ownedByOthers plus owners.
 
 purpose: >
   On a workshared model, which of these elements are free to edit and which
