@@ -1977,12 +1977,29 @@ function renderDashboard(D) {
   box.append(legend);
 }
 
+// THE MODEL HAS CHANGED (D-147): the add-in counts every committed change to
+// the model in front and writes the count to its live file; the panel kept the
+// count at its read. Higher now, same model - the note shows. Nothing is read
+// from Revit for it, and nothing is refreshed by itself.
+let dashLast = null;
+
+function dashChanged(state) {
+  const note = $("d-changed");
+  if (!note) return;
+  const r = state && state.revit;
+  const now = r && typeof r.changes === "number" ? r.changes : null;
+  const was = dashLast && typeof dashLast.changes_at_read === "number" ? dashLast.changes_at_read : null;
+  const same = r && r.document && dashLast && (r.document.title || "") === (dashLast.document || "");
+  note.hidden = !(now != null && was != null && same && now > was && !dashLast.demo);
+}
+
 async function dashboard_() {
   if (dashBusy) return;
   try {
     const res = await fetch("/api/dashboard", { headers: HEADER, credentials: "same-origin" });
     if (!res.ok) return;
     const D = (await res.json()).dashboard;
+    dashLast = D;
     const key = D ? D.at + "/" + (D.document || "") + "/" + (D.busy ? "b" : "") : "none";
     if (key === dashShown) return;
     dashShown = key;
@@ -2759,6 +2776,7 @@ async function poll() {
     failures = 0;
     document.body.classList.remove("closed");
     show(body.state);
+    dashChanged(body.state);
     activity();
     if (SHOW_CHANGES) changes();
     dashboard_();

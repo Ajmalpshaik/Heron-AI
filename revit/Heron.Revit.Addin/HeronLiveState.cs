@@ -109,6 +109,17 @@ namespace Heron.Revit.Addin
         // What was last written, so an unchanged selection writes nothing.
         private static string _lastWritten;
 
+        // HOW MANY TIMES EACH MODEL HAS CHANGED since Revit started, keyed by
+        // its title and path (D-147). Bumped on DocumentChanged - a count and
+        // nothing else: no element is read and no file is written in the
+        // event. Idling's fingerprint carries the count for the model in
+        // front, so the once-a-second check writes it, and the Companion's
+        // Model Dashboard compares it with the count at its last read to say
+        // "the model has changed - press Refresh". Never reset while Revit
+        // runs, so the two numbers always compare within one session.
+        private static readonly Dictionary<string, int> ChangeCounts =
+            new Dictionary<string, int>(StringComparer.Ordinal);
+
         // A cheap fingerprint of what Idling last looked at - the model, the
         // view and the selected ids, hashed, without opening one element. The
         // file's full text, which reads every selected element's category, is
@@ -142,6 +153,8 @@ namespace Heron.Revit.Addin
                 // front. Without this the file would go on naming the last
                 // model closed until the next Idling check.
                 application.ControlledApplication.DocumentClosed += OnDocumentClosed;
+                // D-147: counted, never read - see ChangeCounts.
+                application.ControlledApplication.DocumentChanged += OnDocumentChanged;
 
                 // A file left by a Revit that crashed with this same process
                 // id is not this session's.
@@ -160,6 +173,7 @@ namespace Heron.Revit.Addin
             {
                 application.Idling -= OnIdling;
                 application.ControlledApplication.DocumentClosed -= OnDocumentClosed;
+                application.ControlledApplication.DocumentChanged -= OnDocumentChanged;
             }
             catch (Exception ex)
             {
@@ -204,6 +218,46 @@ namespace Heron.Revit.Addin
             Autodesk.Revit.DB.Events.DocumentClosedEventArgs e)
         {
             Write(_uiApp);
+        }
+
+        private static void OnDocumentChanged(object sender,
+            Autodesk.Revit.DB.Events.DocumentChangedEventArgs e)
+        {
+            // Revit's own thread, after every committed change. Nothing may
+            // escape it, and nothing slow may happen in it.
+            try
+            {
+                var doc = e.GetDocument();
+                if (doc == null) return;
+                var key = ChangeKey(doc);
+                lock (Gate)
+                {
+                    int seen;
+                    ChangeCounts[key] = ChangeCounts.TryGetValue(key, out seen) ? seen + 1 : 1;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message != _lastFault)
+                {
+                    _lastFault = ex.Message;
+                    HeronApplication.Log("A model change could not be counted: " + ex.Message);
+                }
+            }
+        }
+
+        private static string ChangeKey(Document doc)
+        {
+            return (doc.Title ?? "") + "|" + (doc.PathName ?? "");
+        }
+
+        private static int ChangeCount(Document doc)
+        {
+            lock (Gate)
+            {
+                int seen;
+                return ChangeCounts.TryGetValue(ChangeKey(doc), out seen) ? seen : 0;
+            }
         }
 
         private static void OnIdling(object sender, Autodesk.Revit.UI.Events.IdlingEventArgs e)
@@ -269,6 +323,7 @@ namespace Heron.Revit.Addin
             // THE NAME TOO: a view renamed while it stays active raises no
             // ViewActivated, and the id alone would never see it (Codex review).
             return doc.Title + "|" + doc.PathName + "|" + (view == null ? "" : view.Id + "|" + view.Name)
+                 + "|" + ChangeCount(doc).ToString(CultureInfo.InvariantCulture)
                  + "|" + count.ToString(CultureInfo.InvariantCulture)
                  + "|" + hash.ToString(CultureInfo.InvariantCulture);
         }
@@ -353,6 +408,7 @@ namespace Heron.Revit.Addin
             var doc = uiDoc == null ? null : uiDoc.Document;
 
             string document = null, path = null, viewName = null, viewType = null, viewId = null;
+            var changes = -1;
             var count = 0;
             var counted = 0;
             var capped = false;
@@ -363,6 +419,7 @@ namespace Heron.Revit.Addin
             {
                 document = doc.Title;
                 path = string.IsNullOrEmpty(doc.PathName) ? null : doc.PathName;
+                changes = ChangeCount(doc);
 
                 var view = doc.ActiveView;
                 if (view != null)
@@ -415,6 +472,9 @@ namespace Heron.Revit.Addin
                     ? "\"view\": null"
                     : "\"view\": " + Json.Obj(Json.Str("name", viewName), Json.Str("type", viewType),
                                               "\"id\": " + viewId),
+                // D-147: how many times the model in front has changed since
+                // Revit started - null with no model.
+                changes < 0 ? "\"changes\": null" : Json.Num("changes", changes),
                 selection);
         }
     }

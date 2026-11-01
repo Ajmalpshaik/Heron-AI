@@ -119,6 +119,19 @@ def test_live_files(tmp):
     check(isinstance(got["revit"].get("updatedSecondsAgo"), int),
           "and it says how long ago Revit last wrote")
 
+    # D-147: the model's change count, read from the same file and nothing else.
+    check(hc.live_changes(100, live, bridges) is None,
+          "a live file from an add-in before D-147 carries no count - None, never 0")
+    for bad in (True, -1, "7", 2.5):
+        write(os.path.join(live, "pid-100.json"), dict(live_record(100), changes=bad))
+        check(hc.live_changes(100, live, bridges) is None,
+              "a count that is not a whole number of changes (%r) is not believed" % (bad,))
+    write(os.path.join(live, "pid-100.json"), dict(live_record(100), changes=7))
+    check(hc.live_changes(100, live, bridges) == 7 and hc.live_changes(None, live, bridges) is None
+          and hc.live_changes(999, live, bridges) is None,
+          "the count of the Revit asked about, and None for no Revit or another one")
+    write(os.path.join(live, "pid-100.json"), live_record(100))
+
     write(os.path.join(live, "pid-200.json"), live_record(200, "Tower A"))
     write(os.path.join(bridges, "200.json"), {"pid": 200})
     got = hc.state(None, live, bridges)
@@ -282,6 +295,20 @@ def test_addin_side():
           "nothing is written unless the bridge is connected")
     check("Transaction" not in text, "it opens no transaction")
     check("System.Net" not in text, "and touches no network")
+    # D-147: the model's changes are COUNTED on DocumentChanged - nothing read,
+    # nothing written in the event - and the count rides Idling's fingerprint.
+    changed = text[text.index("private static void OnDocumentChanged("):]
+    changed = changed[:changed.index("private static string ChangeKey(")]
+    check("DocumentChanged += OnDocumentChanged;" in text
+          and "DocumentChanged -= OnDocumentChanged;" in text,
+          "DocumentChanged is subscribed at startup and unsubscribed at shutdown (D-147 amends D-09)")
+    check("GetElement" not in changed and "Write(" not in changed and "WriteAllText" not in changed
+          and "GetAddedElementIds" not in changed and "GetModifiedElementIds" not in changed,
+          "and the event only counts: no element is read and no file is written in it")
+    fingerprint = text[text.index("private static string Fingerprint("):]
+    fingerprint = fingerprint[:fingerprint.index("private static void Remember(")]
+    check("ChangeCount(doc)" in fingerprint and 'Json.Num("changes", changes)' in text,
+          "the count is in Idling's fingerprint, so the throttled check writes it to the live file")
 
 
 def test_switch(tmp):
@@ -1505,6 +1532,23 @@ def test_dashboard_panel():
           "an action that is not select, isolate or reset is refused")
     check(shown.show({"action": "reset"})["ok"] and sent[-1] == ("reset", [], ["Tower MEP", "", "11"]),
           "Reset needs no row")
+
+    # THE MODEL HAS CHANGED (D-147): the panel keeps the count at its read; the
+    # page compares it with the live file's; the server records it after a read.
+    counted = hc.DashboardPanel()
+    counted.open("Tower MEP", answer, ("Tower MEP", "", "11"), changes=12)
+    check(counted.current()["changes_at_read"] == 12, "the panel keeps the change count at its read")
+    counted.open("Tower MEP", answer, ("Tower MEP", "", "11"), changes="12")
+    check(counted.current()["changes_at_read"] is None, "and believes only a whole number")
+    read_body = server[server.index("def _read_dashboard("):]
+    read_body = read_body[:read_body.index(chr(10) + "def ", 10)]
+    check("companion_page.live_changes(binding.pid)" in read_body and "changes=changes" in read_body,
+          "the server records the live count right after a good read")
+    page_js = io.open(PAGE_JS, encoding="utf-8").read()
+    check("function dashChanged(state)" in page_js and "dashChanged(body.state);" in page_js
+          and "now > was" in page_js,
+          "the page shows the note when the live count is higher than at the read - on the "
+          "state poll it already makes, reading nothing from Revit")
     boarded = brain_seam.model_dashboard(DASH.sample(breakdowns=DASH.BREAKDOWNS), board="rooms")
     shown.open("Tower MEP", boarded, ("Tower MEP", "", "11"), board="rooms")
     check(shown.show({"action": "select", "bar": ["rooms-level", "Level 01"]})["ok"]

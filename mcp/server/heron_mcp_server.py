@@ -3943,8 +3943,14 @@ def _read_dashboard(companion_page, origin="chat", ctx=None, parameters="", boar
         return "failed", str(why)
     if answer.get("dashboard") is None:
         return "failed", answer["said"]
+    # D-147: the model's change count as the add-in's live file has it now,
+    # so the page can say when the model has changed since this read.
+    try:
+        changes = companion_page.live_changes(binding.pid)
+    except Exception:                                # noqa: BLE001 - only a note is lost
+        changes = None
     companion_page.DASHBOARD_PANEL.open(reply.get("document"), answer, _pin_identity(),
-                                        parameters=wanted, board=board)
+                                        parameters=wanted, board=board, changes=changes)
     return "ok", answer["said"]
 
 

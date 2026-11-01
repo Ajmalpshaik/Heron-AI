@@ -1299,10 +1299,14 @@ class DashboardPanel(object):
         #: demo_hook() -> brain answer for the invented DEMO model.
         self.demo_hook = None
 
-    def open(self, document, answer, identity=None, parameters="", board=""):
+    def open(self, document, answer, identity=None, parameters="", board="", changes=None):
         built = answer.get("dashboard") or {}
         with self._lock:
             self._held = {
+                # D-147: the add-in's change count for this model when it was
+                # read; the page says "the model has changed" once the live
+                # file's count is higher. None when the add-in sent none.
+                "changes_at_read": changes if isinstance(changes, int) else None,
                 "parameters": parameters or "", "board_key": board or "",
                 "board": built.get("board"), "boards": built.get("boards") or [],
                 "fill": built.get("fill"),
@@ -1520,6 +1524,19 @@ def read_live(folder=None, discovery_dir=None, is_alive=None):
         record["updatedSecondsAgo"] = max(0, int(time.time() - modified))
         out[pid] = record
     return out
+
+
+def live_changes(pid, folder=None, discovery_dir=None, is_alive=None):
+    """
+    How many times the model in front of Revit `pid` has changed since that
+    Revit started - the add-in's DocumentChanged count in its live file
+    (D-147) - or None when the file, the model or the count is not there.
+    """
+    if pid is None:
+        return None
+    record = read_live(folder, discovery_dir, is_alive).get(pid) or {}
+    got = record.get("changes")
+    return got if isinstance(got, int) and not isinstance(got, bool) and got >= 0 else None
 
 
 def state(bound_pid, folder=None, discovery_dir=None, is_alive=None):

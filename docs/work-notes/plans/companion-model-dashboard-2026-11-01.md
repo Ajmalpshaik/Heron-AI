@@ -46,7 +46,7 @@ breaks a rule.
 | 2 | Select a row's elements in Revit; isolate them in the active view; reset | S | **built** 2026-11-01 on the owner's *"do it until finish"* - [docs/40 §21.11](../../40-heron-companion.md); three `COMPANION_ACTIONS` rows at EXECUTE. Not run in Revit. Zoom to, and clicking a bar, still planned |
 | 2 | Parameter fill-rate by category: filled / empty / missing, for the parameters the modeller types | R | **built** - [docs/40 §21.12](../../40-heron-companion.md). Not run in Revit |
 | 2 | Duplicate Mark / Type Mark, inconsistent values ("Lvl 1" vs "Level 01") | R | planned - `FIND_DUPLICATE_VALUES` is PROVEN |
-| 2 | *The model has changed - Refresh*: the add-in marks the live file when the model changes after the read | R | **waiting on the owner** - watching for changes amends D-09 again (question 3 below) |
+| 2 | *The model has changed - Refresh*: the add-in counts the model's changes in the live file | R | **built** on the owner's *"Yes, add it"* - [D-147](../../decisions/D-147.md), [docs/40 §21.15](../../40-heron-companion.md). Not run in Revit |
 | 2 | Rule checks, filters, ratio and element tables behind a bar; read options (categories, links, active view only) | R | planned - see the inventory below |
 | 3 | MEP: elements connected to nothing, open connectors, systems summary (counts, lengths) | R | planned - `CHECK_EQUIPMENT_CONNECTORS`, `CHECK_FIXTURE_CONNECTIVITY`, `MEASURE_RUN_QUANTITIES` are PROVEN |
 | 3 | Quantities by type: lengths, areas, volumes, counts; room areas by level and department | R | planned - `REPORT_MATERIAL_TAKEOFF`, `REPORT_ROOM_SPACE_DATA`, `REPORT_AREAS` are PROVEN |
@@ -113,5 +113,4 @@ its own proof plan says how.
    §21.11).
 2. Which parameters should the fill-rate check by default - the office's own list, or one per client?
    Today the box starts empty and keeps what was typed last.
-3. *The model has changed - Refresh* needs the add-in to watch for model changes (DocumentChanged), a
-   second amendment to D-09. Allow it?
+3. ~~*The model has changed - Refresh*?~~ **Answered 2026-11-01: *"Yes, add it"*** - D-147.
