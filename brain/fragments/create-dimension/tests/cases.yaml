@@ -137,6 +137,12 @@ negative:
       DIMENSION_FAMILY_INSTANCES had no such check and handed Revit a line it
       could not draw
 
+  # VERSION 5 (2026-11-01): THE GRID AND LEVEL ROUTE WAS GIVEN TO
+  # CREATE_LINEAR_DIMENSION ALONE. Each case below now runs there, with the
+  # datums named ("grid 1 | grid 2 | ..."), and is in that card's cases. Kept
+  # here as the record of version 4; on this card, from version 5, every one
+  # of them is refused whole - see the version 5 cases after them.
+  #
   # VERSION 4 (2026-11-01, DIMENSION_GRIDS_AND_LEVELS merged in). Each FAILS on
   # version 3, which puts a grid or a level in notLinear and draws nothing.
   - given: >
@@ -205,6 +211,21 @@ negative:
     expect: >
       the two grids dimensioned and the reference plane in `notLinear` - left
       out on purpose, usually invisible on the sheet
+
+  # VERSION 5 (2026-11-01) - grids and levels are CREATE_LINEAR_DIMENSION's.
+  # Each FAILS on version 4, which dimensions them. NOT RUN.
+  - given: VERSION 5. A floor plan showing grids 1 to 6, all six handed in, axis left out
+    expect: >
+      NOTHING drawn, `created` null, all six in `refused`, and `problem`
+      naming CREATE_LINEAR_DIMENSION and "grid A | grid B"
+  - given: VERSION 5. Three parallel ducts and two grids handed in together
+    expect: >
+      NOTHING drawn, all five in `refused` - the ducts are not drawn with the
+      grids dropped - and `problem` naming CREATE_LINEAR_DIMENSION
+  - given: VERSION 5. Three parallel ducts alone, after this version
+    expect: one string across them, `dimensionedCount` 3 - the runs route unchanged
+  - given: VERSION 5. Three diffusers alone, axis x, after this version
+    expect: one string, `dimensionedCount` 3 - the family-instance route unchanged
 
 second_route:
   - Revit's own Aligned Dimension tool snapped to the same two centrelines, compared for the value it reports

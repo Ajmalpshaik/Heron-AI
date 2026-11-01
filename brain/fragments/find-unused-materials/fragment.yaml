@@ -151,7 +151,7 @@ compatibility-note: >
 #                                            question, and the one to ask
 #                                            before deleting anything this
 #                                            reports
-#   "make a new material"                 -> CREATE_MATERIAL
+#   "make a new material"                 -> CREATE_STARTER_MATERIALS
 #
 # THE ANSWER HERE IS ONLY AS GOOD AS THE PAINT READ. A version of this that
 # reads geometry materials and not painted ones reports a used finish as

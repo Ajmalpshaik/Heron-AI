@@ -211,7 +211,7 @@ compatibility-note: >
 #
 #   "change the material on these"   -> REPLACE_MATERIAL
 #   "make a floor slab over this area" -> CREATE_FLOOR
-#   "make a new material"            -> CREATE_MATERIAL
+#   "make a new material"            -> CREATE_STARTER_MATERIALS
 
 
 # ROUTING (2026-10-12, the gap fill)

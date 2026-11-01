@@ -177,7 +177,7 @@ compatibility-note: >
 # checker read the continuation marker as part of the sentence - so the claim
 # it extracted could never be matched by any utterance, and reported unreached
 # for ever. A claimed sentence goes on ONE line.
-#   "make a new material"            -> CREATE_MATERIAL - both materials have
+#   "make a new material"            -> CREATE_STARTER_MATERIALS - both materials have
 #                                       to exist before one can replace the
 #                                       other
 #   "which materials is nobody

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,33 @@ capability: CREATE_MATERIAL
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_STARTER_MATERIALS (create-starter-materials), on the owner's
+# instruction in conversation: "make sure there is no duplicate tools", then
+# "ok go ahead merge all" and "in every conflict keep the safer rule".
+# Constitution Article 1: kept, never deleted, so its record and its proof
+# stay readable and it can be brought back. Nothing offers it now - retrieval
+# leaves DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to CREATE_STARTER_MATERIALS. The
+# proof below is the record of what this card's code did, not a claim about
+# today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_STARTER_MATERIALS
+  why: >
+    The same job - materials made by name in this document, a name already in
+    use left as it is and reported. CREATE_STARTER_MATERIALS version 4 makes
+    any materials beside its starter set: materialNames, each with exactly
+    that name (the office prefix is not put on), colours in name order,
+    transparencies in name order clamped to 0..100 with the clamp reported,
+    a shading colour only and no appearance asset, said so - in a family too.
+    The safer rule is kept where the two differed (Article 8, all or
+    nothing): a name Revit refuses fails the call and nothing is kept, and a
+    blank or unusable name refuses it before anything is made, where this
+    card kept the rest. On 2026-10-20 the owner had chosen to leave this card
+    as it was; his 2026-11-01 merge all supersedes that. Nothing else of this
+    card is left out.
 
 purpose: >
   Creates materials with a name, a colour and a transparency. The thing

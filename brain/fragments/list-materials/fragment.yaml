@@ -1188,7 +1188,7 @@ compatibility-note: >
 #                                            material's name - found here
 #   "set the material colour"             -> SET_MATERIAL_PROPERTIES, Shading Colour, by name
 #   "make this extrusion steel"           -> LINK_FAMILY_PARAMETER, by name
-#   "make a new material"                 -> CREATE_MATERIAL
+#   "make a new material"                 -> CREATE_STARTER_MATERIALS
 #   "bring the materials over from the
 #    template"                            -> TRANSFER_MATERIALS_BETWEEN_DOCUMENTS,
 #                                            the write row 5b-376's question was

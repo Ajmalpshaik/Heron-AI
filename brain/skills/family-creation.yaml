@@ -366,15 +366,18 @@ purpose: >
       two model coordinates, its height, depth and material on the row, so
       it stays editable text; never letters built of forms in step 7. A
       fixed family's materials are set outright:
-      CREATE_MATERIAL for each colour - the shading colour only, nothing a
-      render uses, with a transparencies value for glass or a vial
-      (2026-10-14, Revit 2020) - then LINK_FAMILY_PARAMETER (links Material=<it>) once per
+      CREATE_STARTER_MATERIALS with materialNames, colours and transparencies
+      for each colour (CREATE_MATERIAL's job since 2026-11-01, DRAFT until
+      proved again; none of the starter set is made beside names) - the
+      shading colour only, nothing a render uses, with a transparencies value
+      for glass or a vial (2026-10-14, Revit 2020) - then
+      LINK_FAMILY_PARAMETER (links Material=<it>) once per
       material, naming
       every form id that takes it. Made before step 7, the materials can be
       named on CREATE_FAMILY_FORMS's rows instead. A FAMILY THAT WILL BE
       RENDERED, or shown in a Realistic view, gives each material an
       appearance too: SET_MATERIAL_APPEARANCE with materialsNamed the names
-      CREATE_MATERIAL made (';' between, or the prefix and *) and
+      CREATE_STARTER_MATERIALS made (';' between, or the prefix and *) and
       matchShading true - a shading colour alone draws flat dark grey there
       (2026-10-20, Revit 2020, row 5b-1263). A better look than its own
       colour - glass, a metal, a texture - is SET_MATERIAL_APPEARANCE's
@@ -523,7 +526,7 @@ needs:
   # Step 12's lettering.
   - ADD_FAMILY_MODEL_TEXT
   # A fixed family's colours, before LINK_FAMILY_PARAMETER sets them - see step 12.
-  - CREATE_MATERIAL
+  - CREATE_STARTER_MATERIALS
   # Step 12's appearance for a family that will be rendered (row 5b-1263).
   - SET_MATERIAL_APPEARANCE
   - REPORT_FAMILY_FORMS

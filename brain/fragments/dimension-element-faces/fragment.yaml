@@ -28,9 +28,9 @@ risk: MODIFY
 # The plan string along a wall through its jambs is this card's `along` -
 # since 2026-11-01, when DIMENSION_WALL_OPENINGS was merged in (version 2);
 # CREATE_DIMENSION strings family instances (refused here) - since
-# 2026-11-01, when DIMENSION_FAMILY_INSTANCES was merged into it - and grids
-# and levels; CREATE_LINEAR_DIMENSION takes named references - grids, levels,
-# planes.
+# 2026-11-01, when DIMENSION_FAMILY_INSTANCES was merged into it;
+# CREATE_LINEAR_DIMENSION takes named references - grids, levels, planes -
+# and since its version 5 (2026-11-01) is the one card for grids and levels.
 #
 # Whether Revit hands a compound wall's layers as separate faces is what the
 # proof measures; a wall read as one piece gives its two outer faces only,

@@ -68,5 +68,36 @@ negative:
       the whole call undone, naming the phase each came out in. NEEDS REAL
       REVIT: which phase that is has not been seen
 
+  # VERSION 3 (2026-11-01) - PLACE_AREAS merged in. Each FAILS on version 2,
+  # which has no area kind and refuses placeKind "area" asking rooms or
+  # spaces. NOT RUN. Arranged as PLACE_AREAS' proof was: CREATE_AREA_PLAN,
+  # then CREATE_ROOM_SEPARATION_LINES with lineKind area round the walls.
+  - given: >
+      placeKind area, areaPlanName "Area Plan GIA" with two enclosed regions,
+      points inside each "x,y" (two numbers), names "Office, Store", numbers
+      "A1, A2", no level and no phase named
+    expect: >
+      created 2, each with a size read back (unbounded empty), named Office
+      and Store and numbered A1 and A2 in that order - read in Properties
+  - given: placeKind area, one point outside every area boundary
+    expect: created 1 and the same id in `unbounded` - placed with no size
+  - given: placeKind area, areaPlanName of a FLOOR plan, not an area plan
+    expect: refused - no area plan of that name - nothing placed
+  - given: placeKind area with no areaPlanName
+    expect: refused, asking for the area plan - nothing placed
+  - given: placeKind area and no points
+    expect: refused - areas are placed at points - nothing placed
+  - given: areaPlanName given and placeKind left empty
+    expect: refused, asking rooms, spaces or areas - the kind is never inferred
+  - given: placeKind area, two points, three names
+    expect: refused - more names than points - nothing placed
+  - given: placeKind area with a level named that is not the area plan's
+    expect: refused, naming the area plan - nothing placed
+  - given: placeKind room, a phase named, points, and names "Office"
+    expect: refused - names go on areas here - nothing placed
+  - given: placeKind room with no phase named, after this version
+    expect: refused - the phase is still required for rooms and spaces
+
 second_route:
   - Revit's own Architecture > Room > Place Rooms Automatically, or Analyze > Space, on the same level, with the counts compared
+  - for areas, the area plan with each area's tag and Properties read, as PLACE_AREAS' second route
