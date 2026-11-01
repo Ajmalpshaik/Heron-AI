@@ -1735,6 +1735,35 @@ function dashSince(S) {
   return sec;
 }
 
+// The CSV is made here, from what the brain sent - nothing is read from Revit
+// and nothing leaves this PC. A cell starting with = + - @ is prefixed with a
+// quote mark, so a spreadsheet shows model text and never runs it as a formula.
+function dashCsv(D) {
+  const cell = v => {
+    let t = v == null ? "" : String(v);
+    if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
+    return '"' + t.replace(/"/g, '""') + '"';
+  };
+  const lines = [["Section", "Item", "Count", "State", "Why", "In Revit", "Element ids"].map(cell).join(",")];
+  (D.tiles || []).forEach(t => lines.push(["Tile", t.label, t.value, t.state, t.note, "", ""].map(cell).join(",")));
+  (D.look || []).forEach(r => lines.push(["Worth a look", r.title, r.count, r.state, r.why, r.where,
+                                          (r.ids || []).join(";")].map(cell).join(",")));
+  ((D.fill && D.fill.parameters) || []).forEach(p => (p.rows || []).forEach(r =>
+    lines.push(["Parameters filled", p.parameter + " - " + r.category, r.populated, r.state,
+                r.empty + " empty, " + r.absent + " without it", "", (r.emptyIds || []).join(";")]
+               .map(cell).join(","))));
+  (D.charts || []).forEach(c => (c.bars || []).forEach(b =>
+    lines.push([c.title, b.label, b.value, "", "", "", ""].map(cell).join(","))));
+  const blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = el("a");
+  a.href = URL.createObjectURL(blob);
+  const name = String(D.document || "model").replace(/[^A-Za-z0-9 _.-]+/g, "_").slice(0, 60);
+  a.download = "Heron dashboard - " + name + " - " + String(D.at || "").replace(/:/g, "") + ".csv";
+  document.body.append(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
 function dashFilter(text, state) {
   const words = String(text || "").trim().toLowerCase();
   document.querySelectorAll("#dashboard .d-bar, #dashboard .d-fill-table tbody tr").forEach(n => {
@@ -1828,7 +1857,19 @@ function renderDashboard(D) {
   reset.type = "button";
   reset.title = "End the Temporary Hide/Isolate in Revit's active view";
   reset.addEventListener("click", () => dashShow("reset", null, reset));
-  tools.append(params, refresh, reset, said);
+  const print = el("button", "btn-lite", "Print / PDF");
+  print.type = "button";
+  print.title = "Print the dashboard, or choose Save as PDF in the print window";
+  print.addEventListener("click", () => {
+    document.body.classList.add("printing-dashboard");
+    window.print();
+    document.body.classList.remove("printing-dashboard");
+  });
+  const csv = el("button", "btn-lite", "Download CSV");
+  csv.type = "button";
+  csv.title = "The rows worth a look and the parameters filled, as a spreadsheet file - made on this PC";
+  csv.addEventListener("click", () => dashCsv(D));
+  tools.append(params, refresh, reset, print, csv, said);
   // THE FILTER is the page's own: it hides rows and bars whose words do not
   // match, on what the brain already sent - nothing is read from Revit.
   const filterBox = el("div", "d-filter");
