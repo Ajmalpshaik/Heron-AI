@@ -1,0 +1,139 @@
+heron-agent: HERON-REVIT-EXP-018
+heron-step: 16
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-057
+semantic-identity: "create, copy, rename or delete a DWG, DGN, PDF or print export setup by name"
+kind: action
+domain: revit.export
+capability: MANAGE_EXPORT_SETUPS
+version: 1
+source: OFFICIAL
+# MODIFY, NOT PUBLISH. A setup is an element in the model and changing one
+# writes no file; the export itself is EXPORT_VIEWS_TO_DWG's, at PUBLISH.
+risk: MODIFY
+
+# WRITTEN 2026-11-01 FOR FRAGMENT-ISSUES ROW 5b-1360: Ajmal PS asked to rename
+# the DWG/DXF export setup "Setup 1" to "Tags Export" on his Revit 2020 job
+# model 4355-BHVD-3D-50S20-BL001A, and had to do it by hand. The shape is
+# MANAGE_SHEET_SETS': one card, a `mode`, a name that does not exist refused
+# naming it. Research: docs/work-notes/investigations/2026-11-01-export-setups.md.
+#
+# A NEW CARD, NOT A WIDENING. MANAGE_SHEET_SETS and SET_PRINT_SETTINGS are
+# PROVEN - a change under either's impl/ makes its proof stale - and neither
+# is about an export setup. Print settings are here for duplicate, rename and
+# delete only: making one is SET_PRINT_SETTINGS' save-as, and stays there.
+purpose: >
+  Creates, copies, renames or deletes a saved export setup by name - the
+  DWG/DXF export setups, the DGN export setups, the PDF export setups (Revit
+  2022 and later) and the print settings. Copying keeps every option of the
+  setup it starts from under the new name.
+
+  **A NAME THAT IS NOT THERE IS REFUSED, NAMING IT AND THE ONES THAT ARE.**
+  So is a new name already in use for that kind, and a name found under two
+  kinds when the kind was not said.
+
+  **DELETING A SETUP IS DESTRUCTIVE.** It is asked for by name, one setup at
+  a time, and needs the modeller's yes for that setup first (Article 7).
+
+  **PRINT SETTINGS GO THROUGH THE PRINT MANAGER**, which is application state
+  and not undone by Undo, so the current print setting is put back afterwards
+  and the reply says which it is.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The setup acted on - for create, the name of the new one.
+    - name: setupName
+      type: string
+      source: request
+    # "create" | "duplicate" | "rename" | "delete". "copy" reads as duplicate.
+    - name: mode
+      type: string
+      source: request
+    # The name a copy or a rename ends up with. Not used by create or delete.
+    - name: newName
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # "dwg" (DWG and DXF are one setup), "dgn", "pdf", "print" - or left out,
+    # and the name is looked for under every kind. Create needs it said.
+    - name: kind
+      type: string
+      source: request
+      optional: true
+      absent: any
+  provides:
+    - name: done
+      role: result
+      type: bool
+    - name: kindUsed
+      # The kind the setup was found or made under, in the dialog's words:
+      # "DWG/DXF", "DGN", "PDF", "print". Empty when nothing was found.
+      role: result
+      type: string
+    - name: nowCalled
+      # The name the setup has after the call - the new one for create,
+      # duplicate and rename; empty for delete and whenever nothing was done.
+      role: result
+      type: string
+    - name: setupsNow
+      # Every setup of that kind after the call, read back from Revit rather
+      # than assumed, "; " between them.
+      role: result
+      type: string
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and said
+      # no. Never a thing it FOUND (D-52).
+      role: accounting
+      type: string
+    - name: note
+      # Something worth knowing that is not the answer: the deleted setup was
+      # the active one, a copy's layer rows differ from its source's, or which
+      # print setting is current afterwards. Never a finding.
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ExportDWGSettings` and `ExportDGNSettings` - `ListNames`, `FindByName`,
+  `GetActivePredefinedSettings`, `Create(doc, name)`, `Create(doc, name,
+  options)`, `Get/SetDWGExportOptions`, `Get/SetDXFExportOptions`,
+  `Get/SetDGNExportOptions` - `Element.Name { get; set; }`,
+  `Document.Delete(ElementId)`, `PrintSetup.CurrentPrintSetting`, `SaveAs`,
+  `Rename`, `Delete` and `InSession` are the same 2020 through 2027
+  (tools/api-surface --members, 2026-11-01). `ExportPDFSettings` -
+  `ListNames`, `FindByName`, `IsValidName`, `Create`, `GetOptions` - is 2022
+  on: on 2020 and 2021 a PDF setup is refused as needing 2022, and that code
+  is compiled out. No ElementId is read as a number.
+
+# ROUTING - the same rows are in LIST_EXPORT_SETUPS and
+# SET_EXPORT_SETUP_OPTIONS.
+#
+#   "rename the DWG export setup Setup 1 to Tags Export" -> here, rename
+#   "copy Setup 1 as MEP Export"         -> here, duplicate
+#   "delete the export setup Old"        -> here, delete - after a yes
+#   "list the export setups"             -> LIST_EXPORT_SETUPS. A QUESTION
+#   "set Setup 1 to export in millimetres"
+#                                        -> SET_EXPORT_SETUP_OPTIONS
+#   "save this as a print setting"       -> SET_PRINT_SETTINGS, which makes
+#                                           a print setting from the paper
+#                                           size it sets
+#   "rename the sheet set"               -> MANAGE_SHEET_SETS. A sheet set is
+#                                           WHAT is exported; a setup is HOW
+#   "export the views to dwg"            -> EXPORT_VIEWS_TO_DWG. A PUBLISH
+
+utterances:
+  - rename the dwg export setup Setup 1 to Tags Export
+  - copy Setup 1 as MEP Export
+  - make a new dwg export setup
+  - delete the export setup

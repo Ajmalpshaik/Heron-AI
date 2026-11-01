@@ -1,0 +1,103 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-035
+semantic-identity: "which View/Sheet Sets are out of step with the sheet parameter value they are named for"
+kind: action
+domain: revit.sheets
+capability: CHECK_SHEET_SETS_BY_PARAMETER
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WRITTEN 2026-11-01 FOR FRAGMENT-ISSUES ROW 5b-1361. Ajmal PS groups his
+# sheets by a sheet parameter - "TCM_Project Browser 1", values such as
+# "01_IAB-ISSUED AS-BUILT" and "02_IFI-ISSUED FOR INFORMATION" - and keeps one
+# View/Sheet Set per value. This answers which sets no longer hold what their
+# value says; SYNC_SHEET_SETS_BY_PARAMETER is the change that puts them right.
+# Research: docs/work-notes/investigations/2026-11-01-export-setups.md,
+# section 6.
+#
+# A NEW CARD, NOT A WIDENING. LIST_SHEET_SETS is PROVEN and reads every set
+# with no parameter in mind; it already flags the EMPTY and the SAME sets, so
+# those are not repeated here.
+purpose: >
+  Answers, for one sheet parameter, which View/Sheet Sets are out of step with
+  it - the sheets that carry a value and are not in the set named for that
+  value, the sheets and views in that set that no longer carry it, and the
+  values that have no set at all. A set is named for a value as the value
+  itself, or with a prefix put in front. A question, read and never changed;
+  it opens no transaction.
+
+  **A PARAMETER NO SHEET HAS IS REFUSED, NAMING IT.** Empty and duplicate sets
+  are LIST_SHEET_SETS' answer, not this one's.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The parameter's name exactly as the sheet's Properties show it, e.g.
+    # "TCM_Project Browser 1".
+    - name: parameterName
+      type: string
+      source: request
+    # Put in front of each value to make the set's name, or left out.
+    - name: setPrefix
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: report
+      # ONE string, " || " between values: "<value> -> set '<name>': in step,
+      # N sheets" or "... OUT OF STEP: missing A101, A102; extra M201" or
+      # "... NO SET". Sorted by value.
+      role: result
+      type: string
+    - name: inStep
+      role: result
+      type: int
+    - name: outOfStep
+      # Sets that exist and hold something other than their value's sheets.
+      role: result
+      type: int
+    - name: missingSets
+      # Values with no set of their name, "; " between them.
+      role: result
+      type: string
+    - name: findings
+      type: IList<string>
+    - name: refused
+      # Why it declined - a parameter no sheet carries, naming it. Never a
+      # thing it FOUND (D-52).
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ViewSheetSet.Name`, `ViewSheetSet.Views` (a `ViewSet`), `ViewSheet`,
+  `ViewSheet.SheetNumber`, `Element.LookupParameter`, `Parameter.AsString`
+  and `AsValueString` are the same 2020 through 2027 (tools/api-surface
+  --members, 2026-11-01). 2023's `IsAutomatic` and `OrderedViewList` order a
+  set and are not read. Sets are read as elements, never through the print
+  manager, so this changes no application state. Members are compared by
+  ElementId's own equality, never as numbers.
+
+# ROUTING - the same rows are in SYNC_SHEET_SETS_BY_PARAMETER, MANAGE_SHEET_SETS
+# and LIST_SHEET_SETS.
+#
+#   "which sheet sets are out of date"   -> here. A QUESTION
+#   "make a sheet set for each value of TCM_Project Browser 1"
+#                                        -> SYNC_SHEET_SETS_BY_PARAMETER
+#   "list the view/sheet sets"           -> LIST_SHEET_SETS
+#   "save these sheets as a named set"   -> MANAGE_SHEET_SETS
+
+utterances:
+  - which sheet sets are out of date
+  - check the sheet sets against the sheet parameter

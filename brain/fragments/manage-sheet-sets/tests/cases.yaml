@@ -42,6 +42,19 @@ positive:
       `printRange` saying it was put back to Current window, and File - Print
       showing Current window again - after the run, and after the rollback
 
+  # Version 3 (2026-11-01, row 5b-1361). The proof plan is
+  # tools/jobs/manage-sheet-sets-v3-duplicate-scratch-2026-11-01.yaml,
+  # NEEDS-CHECKING Group KA rows KA15 and KA16.
+  - given: mode "duplicate", a saved set's name and a new name, nothing selected
+    expect: >
+      `done` true, `memberCount` the original's count, and File - Print -
+      Settings listing both sets with the same sheets and views ticked - the
+      original unchanged
+
+  - given: mode "copy"
+    expect: >
+      the same as "duplicate"
+
 negative:
   - given: the print range left as it was
     expect: >
@@ -89,6 +102,20 @@ negative:
     expect: >
       `refused` naming it, nothing changed, and no new set made under that
       name - add never creates
+
+  # Version 3.
+  - given: mode "duplicate" and a set name that does not exist
+    expect: >
+      `refused` naming it, `done` false, and no set under the new name
+
+  - given: mode "duplicate" and a new name a set already has
+    expect: >
+      `refused` saying that set already exists, nothing copied, and both
+      sets exactly as they were
+
+  - given: mode "duplicate" with no new name
+    expect: >
+      `refused` saying no name was given for the copy
 
 second_route:
   - >

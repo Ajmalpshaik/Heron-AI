@@ -1,0 +1,68 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# The proof plan is tools/jobs/export-setups-scratch-2026-11-01.yaml,
+# NEEDS-CHECKING Group KA. NEVER on a 4355-* job model: a scratch copy of a
+# Revit sample, named in the run record.
+
+positive:
+  - given: >
+      setupName "HERON DWG B", a DWG/DXF setup as Revit made it, and options
+      "units=mm; fileVersion=2013; coordinates=shared; externalReferences=yes"
+    expect: >
+      done true, kindUsed "DWG", `changed` naming each option with its before
+      and after, notKept empty - and Modify DWG/DXF Export Setups showing
+      HERON DWG B in millimetres, AutoCAD 2013, Shared coordinates, with
+      "Export views on sheets and links as external references" ticked
+
+  - given: setupName "HERON DWG B" and "layer:Ducts=M-HVAC-DUCT"
+    expect: >
+      the Layers tab of that setup showing M-HVAC-DUCT against Ducts, and
+      LIST_EXPORT_SETUPS with that setup's name reading the same in layerTable
+
+  - given: setupName "HERON DWG B" and "layerStandard=<a standard's name>"
+    expect: >
+      what Revit reads back for the standard, and whether the layer table was
+      reloaded from it - NEEDS-CHECKING KA4 is the question
+
+  - given: a Revit 2022 or later scratch project, a PDF setup, and "combine=yes; colors=grayscale; zoom=fit"
+    expect: >
+      done true, and File - Export - PDF showing that setup combined, grey
+      scale, fit to page
+
+negative:
+  - given: setupName "ZZZ NO SUCH SETUP" and "units=mm"
+    expect: >
+      `refused` saying no export setup called 'ZZZ NO SUCH SETUP' and naming
+      the setups that ARE there, done false, and HERON DWG B still in the
+      units it had - nothing changed anywhere
+
+  - given: setupName "HERON DWG B" and "units=mm; colour=purple"
+    expect: >
+      `refused` naming colour's bad value and the values it takes, saying
+      nothing was changed - and HERON DWG B NOT in millimetres afterwards.
+      All or nothing: the good half of the call is not saved
+
+  - given: setupName "HERON DWG B" and "flavour=strong"
+    expect: >
+      `refused` saying flavour is not an option and listing the options a DWG
+      setup takes
+
+  - given: setupName "HERON DWG B" and "layer:No Such Category=X"
+    expect: >
+      `refused` saying the layer table has no such row, nothing changed
+
+  - given: every option asked already set that way
+    expect: >
+      `refused` saying nothing was changed, the options in unchangedOptions
+
+  - given: kind dxf and "externalReferences=yes"
+    expect: >
+      `refused` - DXF has no such option; nothing changed
+
+second_route:
+  - >
+    Modify DWG/DXF Export Setups in Revit, read by a person: the General tab
+    for units, coordinates, file version and external references, the
+    Layers tab for a layer row
+  - >
+    LIST_EXPORT_SETUPS on the same model before and after, through a
+    different card's read of the same options
