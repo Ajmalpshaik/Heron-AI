@@ -1,0 +1,62 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this read, "answered with a list it was not asked for": a narrowed read
+# that still returns every conduit standard, or round sizes under rectangular.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for REPORT_DUCT_CONDUIT_SIZES): a scratch project new
+# from Revit's metric Systems (or Mechanical) template, saved under
+# %TEMP%\heron-work, never a working model. Before the run, open Manage > MEP
+# Settings > Mechanical Settings > Duct Settings > Round, Rectangular and Oval,
+# and Electrical Settings > Conduit Settings > Size and Cable Tray Settings >
+# Size, and write down every size each list shows - the second route.
+#
+# The negative leg is a DIFFERENT VALUE, not an empty one: a conduit standard
+# name no standard in the model has. It must come back with no conduit list
+# and say so, never every standard under a filter that matched nothing.
+
+positive:
+  - given: show "round"
+    expect: >
+      tables 1; sizeCount the number of rows Duct Settings > Round shows;
+      report "Round duct sizes (n): 100, 125, ... mm" holding every one of
+      them smallest first, and no Rectangular, Oval, Conduit or Cable tray
+      section
+
+  - given: show and standard left out
+    expect: >
+      every list: three duct shapes, one line per conduit standard the
+      Conduit Settings > Size dropdown lists, and the cable tray sizes;
+      tables is 4 plus the number of conduit standards; each conduit size
+      with its ID, OD and bend radius as the dialog shows them
+
+  - given: show "conduit", standard the exact name of one standard the template has
+    expect: >
+      tables 1; names that one standard, quoted; report that standard's sizes
+      only
+
+negative:
+  - given: >
+      show "conduit", standard "ZZNOTASTANDARD" - a name no standard in the
+      model has
+    expect: >
+      tables 0, sizeCount 0, names empty; findings "No conduit standard has a
+      name containing \"ZZNOTASTANDARD\". The standards in this model: ..."
+      naming every standard - a conduit list here is the defect. THE FIRST
+      CASE TO RUN
+
+  - given: show "segments" - not one of the lists
+    expect: >
+      findings name "segments" as not one of the size lists and point at
+      REPORT_PIPE_SEGMENTS; tables 0 and report empty - nothing guessed
+
+  - given: any run at all
+    expect: >
+      NOTHING IN THE MODEL CHANGES - no transaction opened; Mechanical
+      Settings and Electrical Settings the same before and after
+
+second_route:
+  - >
+    Revit's own Manage > MEP Settings > Mechanical Settings > Duct Settings >
+    Round, Rectangular and Oval, and Electrical Settings > Conduit Settings >
+    Size (each standard) and Cable Tray Settings > Size: every size in
+    `report` is a row the dialog shows, and no row of the dialog is missing
