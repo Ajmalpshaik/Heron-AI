@@ -155,7 +155,7 @@ utterances:
   - group them and count
   - what sizes are these pipes
   - how many pipes of each size
-  # NOT DECLARED (FRAGMENT-ISSUES 5b-1367): "what is the biggest pipe size",
+  # NOT DECLARED (FRAGMENT-ISSUES 5b-1371): "what is the biggest pipe size",
   # which reaches AUTO_SIZE_PIPE or SET_MEP_SIZE - writes - on all four
   # backends on main. Declared here, it took the owner's own request #59,
   # "Size the pipes.", from AUTO_SIZE_PIPE on lexical and the trained model,

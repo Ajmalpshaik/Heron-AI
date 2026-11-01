@@ -399,7 +399,7 @@ utterances:
   - does this note have bullets
   - tell me if this text note has a numbered list
   - is the first line of this note bold
-  # ADDED 2026-11-01, FRAGMENT-ISSUES 5b-1367 - ONE VALUE OFF AN ELEMENT, the
+  # ADDED 2026-11-01, FRAGMENT-ISSUES 5b-1371 - ONE VALUE OFF AN ELEMENT, the
   # judgement above, for a QUESTION measured on main reaching SET_MEP_SIZE on
   # lexical and SET_MEP_SYSTEM_TYPE on the trained model, both writes. The
   # parameter is Diameter. This card's identity was tried naming size,
