@@ -72,7 +72,7 @@ tests: tests/
 utterances:
   # THE FIRST EIGHT ARE WHAT THE RE-RANKER READS (D-134), so the order below is
   # measured, not tidy. "group them and count" was third until 2026-11-01 and
-  # moved last to let a pipe-size sentence in (FRAGMENT-ISSUES 5b-1356); it is
+  # moved last to let a pipe-size sentence in (FRAGMENT-ISSUES 5b-1357); it is
   # declared whole, so it still answers by its own phrase.
   - what sizes are they
   - break it down by size
@@ -91,7 +91,7 @@ utterances:
   # REPORT_VIEWPORT_TYPES. Keep it inside the eight: pushed out, four held-out
   # door-by-type questions left this card on the re-ranker.
   - how many doors of each type
-  # ADDED 2026-11-01 (FRAGMENT-ISSUES 5b-1356), the pipe twin of the duct pair
+  # ADDED 2026-11-01 (FRAGMENT-ISSUES 5b-1357), the pipe twin of the duct pair
   # above: "what sizes are these pipes" reached AUTO_SIZE_PIPE or SET_MEP_SIZE -
   # writes - on every backend, because "size these pipes" (a verb) and "what
   # sizes are these pipes" (a noun) look alike to both routes. The breakdown
