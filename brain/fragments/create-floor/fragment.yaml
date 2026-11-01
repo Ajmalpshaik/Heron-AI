@@ -149,6 +149,11 @@ compatibility-note: >
 #   "make a slab under these rooms"      -> CREATE_FROM_ROOM_BOUNDARIES. This
 #                                           one takes one typed loop and cuts
 #                                           no openings
+#   "make the slab"                      -> here (declared 2026-11-01, 5b-1362)
+#   "add a foundation slab on Level 0
+#    from these corners"                 -> CREATE_FOUNDATION_SLAB - the same
+#                                           boundary writing, a Foundation Slab
+#                                           type, Structural Foundations
 
 
 # ROUTING (2026-10-13, the gap fill)
@@ -161,3 +166,8 @@ utterances:
   - draw the slab for this area
   - model the floor
   - draw a slab with an arc edge
+  # ADDED 2026-11-01 (row 5b-1362): claimed for this card in CREATE_ROOF's
+  # routing table, and reached PLACE_AREA_REINFORCEMENT ranked - then
+  # CREATE_FOUNDATION_SLAB once that card came, on 2024 and 2020. Declared so
+  # it reaches here by identity. Outside impl/, so the proof is not stale.
+  - make the slab
