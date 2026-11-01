@@ -1,0 +1,133 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-134
+semantic-identity: "put a wall foundation under these walls - Structure > Foundation > Wall"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "put a wall footing under these
+# walls", "add a strip foundation under the external walls" and "wall
+# foundation under all the structural walls on Level 0" - Revit's Structure >
+# Foundation > Wall. Nothing in Heron made one. Checked that day with
+# brain/heron_retrieve.py on each sentence, Revit 2024: PLACE_FOOTING_REBAR,
+# PLACE_WALL_SWEEPS, CREATE_FROM_ROOM_BOUNDARIES, PLACE_AREA_REINFORCEMENT,
+# SET_WALL_CONSTRAINTS, CREATE_WALL and CHECK_STRUCTURAL_SUPPORTS came back
+# first, and none of them makes a wall foundation. PLACE_STRUCTURAL_FAMILY
+# places a point-based footing family at points - an isolated (pad) footing -
+# and a wall foundation is not a family: it is a system element hosted by the
+# wall, made by WallFoundation.Create.
+#
+# A NEW CAPABILITY, NOT A WIDENING. PLACE_STRUCTURAL_FAMILY is PROVEN and
+# point-based; a wall foundation has no point and no family symbol, so widening
+# it would change its job and make its proof stale. Nothing here touches it.
+#
+# THE TYPE IS NEVER GUESSED (D-33). Left out, nothing is made and the model's
+# wall foundation types are named - even when the model holds only one, since
+# which footing goes under a wall is a design decision. The add-in has no
+# resolver row for WallFoundationType, so the type arrives as text and is
+# matched here by its whole name or as "Family: Type", as SET_DUCT_LINING
+# matches its lining type.
+#
+# ONE PER WALL. A wall that already carries a wall foundation is skipped and
+# named, never given a second. Whatever Revit refuses to host - a curtain or a
+# stacked wall, a wall another person owns - is named with Revit's own words and
+# its wall kind; whether Revit takes a curtain or a stacked wall is NOT KNOWN
+# here and is what Group JZ measures, rather than refused on a guess.
+#
+# RISK MODIFY. It adds elements and deletes nothing, so Article 7's
+# confirmation does not arise.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: CREATE_WALL_FOUNDATION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Puts a wall foundation - a continuous strip footing, Revit's Structure >
+  Foundation > Wall - of a named type under each selected wall. A wall that
+  already has one is skipped and named, never doubled; a wall Revit will not
+  host one on is named with Revit's reason. Says per wall what was made or
+  skipped and why. With no type named, nothing is made and the model's wall
+  foundation types are listed.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The walls - a selection, or what a filter chain hands on ("all the
+    # structural walls on Level 0"). Anything that is not a wall is named and
+    # left.
+    - name: elements
+      type: IList<Element>
+    # A Wall Foundation type, by its name or as "Family: Type". Left out it
+    # arrives as "list": nothing is made and the model's types are named, so
+    # the modeller can choose one. Never the model's first or only type.
+    - name: foundationType
+      type: string
+      source: request
+      optional: true
+      absent: list
+  provides:
+    - name: created
+      # The wall foundations made, read back after a regenerate: still in the
+      # model, hosted by the wall asked, of the type asked.
+      role: result
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, a line per wall: made, already had one, or refused and why.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was made, in the modeller's words - evidence it looked and
+      # said no, never a thing it found (D-52). Null when anything was made.
+      # ONE STRING, because a list reaches the reply cut to sixty characters
+      # an item.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. WallFoundation.Create(Document,
+  ElementId typeId, ElementId wallId), WallFoundation.WallId,
+  WallFoundationType, WallType.Kind and every value of WallKind,
+  Wall.IsStackedWallMember, Wall.WallType, Element.LevelId,
+  ElementType.FamilyName, Document.Regenerate and SubTransaction's Start,
+  Commit and RollBack are present and unchanged 2020 through 2027 - read with
+  tools/api-surface --members on 2026-11-01. Ids are carried and compared as
+  ElementId, never read as numbers. Nothing here is a length, so no unit is
+  converted.
+
+# ROUTING (2026-11-01).
+#
+#   "put a wall footing under these walls"     -> here
+#   "add a strip foundation under the
+#    external walls"                           -> here
+#   "wall foundation under all the structural
+#    walls on Level 0"                         -> here, the walls handed on by
+#                                                 a filter chain
+#   "place the pad footings"                   -> PLACE_STRUCTURAL_FAMILY - an
+#                                                 isolated footing family at
+#                                                 points, not under a wall
+#   "reinforce these footings with a bottom
+#    and top mesh"                             -> PLACE_FOOTING_REBAR - isolated
+#                                                 footings only: it names a
+#                                                 wall foundation and skips it,
+#                                                 so nothing reinforces the
+#                                                 ones made here yet
+#   "build a wall between these points"        -> CREATE_WALL
+
+utterances:
+  - put a wall footing under these walls
+  - add a strip foundation under the external walls
+  - wall foundation under all the structural walls on Level 0
