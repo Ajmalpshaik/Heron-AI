@@ -1,15 +1,15 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-062
-semantic-identity: "make a duct or pipe system from this equipment and the terminals or fixtures it serves"
+semantic-identity: "make a duct, pipe or electrical system from these elements - a system from the equipment and what it serves, or a circuit from these devices on the panel named"
 kind: action
 domain: revit.mep
 capability: CREATE_MEP_SYSTEM
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -30,10 +30,35 @@ risk: MODIFY
 # second run finds every connector already on a system and makes nothing.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+#
+# VERSION 2 (2026-11-01) - CREATE_ELECTRICAL_CIRCUIT WAS MERGED INTO THIS CARD
+# on the owner's instruction ("make sure there is no duplicate tools", "in every
+# conflict keep the safer rule"), and is DEPRECATED. Its `elements` are this
+# card's; its `systemType` word (power, data, fire alarm...) is `circuitType`
+# here, because this card's `systemType` is a duct or pipe system type and an
+# electrical system has no type element; its `panel` is `panel`; its created,
+# memberIds, refused and findings are this card's, and its circuitNumber and
+# panelName are here under the same names. A device Revit left off the circuit
+# is now named in `skipped` as well as counted.
+#
+# THE CONFLICT, AND HOW IT WAS SETTLED: this card's `refused` meant NOTHING WAS
+# MADE; CREATE_ELECTRICAL_CIRCUIT's also carried "the circuit exists and is
+# UNASSIGNED" when Revit refused the panel. KEPT, the louder: for a circuit
+# whose panel was refused, `refused` says so though the circuit exists - an
+# unassigned circuit read as a clean success is the outcome both cards were
+# written against. Asked both ways at once - a circuit word and a system type,
+# a panel for a duct system, a base equipment for a circuit - nothing is made
+# rather than one input ignored.
 purpose: >
-  Creates one mechanical duct system or one piping system from the elements
-  handed in - the equipment and the terminals or fixtures it serves, as Create
-  System does in the ribbon. The system type chosen decides which kind.
+  Creates one mechanical duct system, one piping system or one electrical
+  circuit from the elements handed in - the equipment and the terminals or
+  fixtures it serves, as Create System does in the ribbon, or the devices on
+  one circuit. The system type chosen decides duct or pipe.
+
+  Version 2 (2026-11-01): `circuitType` - power, data, fire alarm and the
+  rest - makes one electrical circuit from the devices instead, on the
+  `panel` named, and reads back its number and the panel it landed on. DRAFT
+  until version 2 is proved.
 
 contract:
   needs:
@@ -44,19 +69,50 @@ contract:
       type: IList<Element>
     # A duct system type or a pipe system type by its Project Browser name -
     # Supply Air, Domestic Cold Water. Which kind it is decides the system.
+    # Version 2: OPTIONAL, left out for a circuit - absent binds null
+    # (HeronBindingNote.AbsentValue). Left out with no circuitType either,
+    # nothing is made and `refused` says so.
     - name: systemType
       type: MEPSystemType
       source: request
-    # Optional. Empty lets Revit number it, as the ribbon does.
+      optional: true
+    # Optional. Empty lets Revit number it, as the ribbon does. Version 2:
+    # may be left out - `auto`, read as empty. Refused for a circuit.
     - name: systemName
       type: string
       source: request
+      optional: true
+      absent: auto
     # Optional. The base equipment's Mark or element id, among the elements
     # handed in. Empty takes the one Mechanical Equipment instance among them.
+    # Version 2: may be left out - `auto`, read as empty. Refused for a circuit,
+    # whose base is its panel.
     - name: baseEquipment
       type: string
       source: request
+      optional: true
+      absent: auto
+    # VERSION 2, CREATE_ELECTRICAL_CIRCUIT's `systemType` word: power, data,
+    # fire alarm, security, telephone, nurse call, controls or communication.
+    # Given, a circuit is made from the devices and systemType is left out.
+    # Left out it is `none` - a duct or pipe system, as version 1. Any other
+    # word is refused by name, never read as power.
+    - name: circuitType
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 2, CREATE_ELECTRICAL_CIRCUIT's `panel`: RESOLVED by its Panel
+    # Name, never an id. Left out (`none`) or blank, the circuit is made
+    # unassigned and that is said. Refused for a duct or pipe system.
+    - name: panel
+      type: FamilyInstance
+      source: request
+      optional: true
+      absent: none
   provides:
+    # A MechanicalSystem, a PipingSystem or - version 2 - an ElectricalSystem;
+    # all three are MEPSystems.
     - name: created
       role: result
       type: MEPSystem
@@ -79,12 +135,25 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: refused
-      # Why NOTHING WAS MADE, as one sentence; null when something was made.
-      # One string because a list reaches the chat cut short (D-52).
+      # Why NOTHING WAS MADE, as one sentence; null when something was made -
+      # or, for a circuit (version 2), that it exists UNASSIGNED because Revit
+      # refused the panel. One string because a list reaches the chat cut
+      # short (D-52).
       role: accounting
       type: string
     - name: findings
       type: IList<string>
+    # VERSION 2 - CREATE_ELECTRICAL_CIRCUIT's two answers. Empty for a duct or
+    # pipe system.
+    - name: circuitNumber
+      # Read off the circuit after it was made.
+      role: result
+      type: string
+    - name: panelName
+      # Which panel it landed on, read back off the circuit - empty when it is
+      # unassigned, which the findings say aloud.
+      role: result
+      type: string
 
 proof:
   date: '2026-10-18'
@@ -135,6 +204,12 @@ compatibility-note: >
   eight releases on 2026-10-12. Categories are compared by ElementId built
   from the BuiltInCategory, so 2024's 64-bit ids do not reach it.
 
+  Version 2, from CREATE_ELECTRICAL_CIRCUIT: `ElectricalSystem.Create(Document,
+  IList<ElementId>, ElectricalSystemType)`, `.SelectPanel`, `.PanelName`,
+  `.CircuitNumber`, `.Elements` and the `ElectricalSystemType` members used are
+  unchanged 2020 to 2027. `Create` takes `IList<ElementId>`, not
+  `ICollection<ElementId>`.
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "make a supply air system from these"   -> here
@@ -146,8 +221,16 @@ compatibility-note: >
 #   "change these ducts to return air"      -> SET_MEP_SYSTEM_TYPE
 #   "what system is this on"                -> READ_MEP_SYSTEM
 #   "select everything on this system"      -> SELECT_BY_MEP_SYSTEM
-#   "circuit these sockets"                 -> CREATE_ELECTRICAL_CIRCUIT - an
-#                                              electrical system is a circuit
+#   "circuit these sockets"                 -> here, with circuitType power
+#                                              (CREATE_ELECTRICAL_CIRCUIT until
+#                                              2026-11-01)
+#   "assign them to panel DB-1"             -> here, with the panel given
+#   "draw the cable tray"                   -> CREATE_DUCT_RUNS - CONTAINMENT,
+#                                              not a circuit
+#   "what is on circuit 3"                  -> SELECT_BY_ELECTRICAL_CIRCUIT
+#   "what circuits are on panel DB-1"       -> REPORT_PANEL_CIRCUITS
+#   "draw wires between these sockets"      -> CREATE_WIRES - drawn wiring, not
+#                                              the circuit
 
 utterances:
   - make a duct system from these diffusers and the fan coil unit
@@ -155,3 +238,9 @@ utterances:
   - create a piping system for this pump and the fixtures
   - put these terminals on one system with the FCU as base equipment
   - put these diffusers on the FCU's system
+  # MOVED 2026-11-01 from CREATE_ELECTRICAL_CIRCUIT, merged into this card.
+  - put these devices on one circuit
+  - circuit these sockets to the panel
+  - create a power circuit from this selection
+  - make a fire alarm circuit
+  - put these lights on a circuit

@@ -20,7 +20,7 @@ purpose: >
   cable is this"*.
 
   **NOTHING ELSE IN THIS LIBRARY DECIDES AN ORDER, AND TWO FRAGMENTS ALREADY
-  DEPEND ON ONE.** CREATE_ELECTRICAL_RUN consumes points that are already
+  DEPEND ON ONE.** CREATE_DUCT_RUNS consumes points that are already
   sequenced and RENUMBER_SEQUENTIAL states outright that it does not choose the
   order. Both currently need a human to supply the sequence they eat. This
   computes it.
@@ -167,7 +167,7 @@ compatibility-note: >
   multiplying by 304.8 (D-20). No units API is touched, so nothing here meets
   the 2021 move to ForgeTypeId.
 
-# ROUTING - repeated in CREATE_ELECTRICAL_RUN, RENUMBER_SEQUENTIAL and
+# ROUTING - repeated in CREATE_DUCT_RUNS, RENUMBER_SEQUENTIAL and
 # MEASURE_RUN_QUANTITIES.
 #
 #   "what order do I connect these in"    -> here
@@ -177,7 +177,7 @@ compatibility-note: >
 #   "chain these off that unit"           -> here with mode chain
 #   "draw the run"                        -> NOT here. This computes an order
 #                                            and draws nothing. The drawing is
-#                                            CREATE_ELECTRICAL_RUN, and it
+#                                            CREATE_DUCT_RUNS, and it
 #                                            consumes a sequence rather than
 #                                            computing one - so the two COMPOSE,
 #                                            this one first

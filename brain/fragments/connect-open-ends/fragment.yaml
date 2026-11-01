@@ -135,7 +135,7 @@ compatibility-note: >
 #
 #   "they are touching but not connected" -> here
 #   "connect the open ends"               -> here
-#   "the system is split in two"          -> here, AFTER FIND_SYSTEM_ISLANDS
+#   "the system is split in two"          -> here, AFTER TRACE_CONNECTIVITY
 #                                            says where the break is
 #   "join these two"                      -> FIT_MEP_JOINTS - it puts a
 #                                            FITTING between two runs; this one

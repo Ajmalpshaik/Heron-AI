@@ -126,6 +126,24 @@ namespace Heron.BindingNote.TestHost
                   "an optional string is still refused - row 5b-227's other two");
             Check(HeronBindingNote.AbsentValue("double", "true") == null,
                   "an optional number is still refused - no number means 'not asked'");
+            // 2026-11-01: ONE ELEMENT OR ONE DUCT-OR-PIPE SYSTEM TYPE MARKED
+            // OPTIONAL BINDS NULL - TRACE_CONNECTIVITY with no start, ALIGN_ELEMENTS
+            // with a typed height and no reference, CREATE_DUCT_RUNS drawing cable
+            // tray, CREATE_MEP_SYSTEM making a circuit. Only when marked.
+            Check(HeronBindingNote.AbsentValue("Element", "true") == "null",
+                  "an absent Element marked optional binds null");
+            Check(HeronBindingNote.AbsentValue(" Element ", " True ") == "null",
+                  "however the card spells it");
+            Check(HeronBindingNote.AbsentValue("Element", null) == null,
+                  "an Element NOT marked optional is still refused - it is the caller's to name");
+            Check(HeronBindingNote.AbsentValue("MEPSystemType", "true") == "null",
+                  "an absent MEPSystemType marked optional binds null");
+            Check(HeronBindingNote.AbsentValue("MEPSystemType", "false") == null,
+                  "and one marked optional: false is still refused");
+            Check(HeronBindingNote.AbsentValue("MechanicalSystemType", "true") == null,
+                  "a narrower system type is not one of the two spellings, so still refused");
+            Check(HeronBindingNote.AbsentValue("FamilyInstance", "true") == null,
+                  "and neither is a family instance - its blank is the resolver's own");
 
             // FRAGMENT-ISSUES row 5b-1320, the other half: A VALUE LEFT EMPTY
             // IS A VALUE LEFT OUT, when the card says it may be. inViewOnly=

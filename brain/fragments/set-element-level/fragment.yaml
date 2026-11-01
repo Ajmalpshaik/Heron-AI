@@ -43,7 +43,7 @@ purpose: >
 
   **Reassigning and moving are opposite intentions said the same way.** *"Put
   these on Level 2"* can mean re-label them or physically raise them.
-  `MOVE_ELEMENTS` and `ALIGN_MEP_ELEVATION` are the ones that move; this one
+  `MOVE_ELEMENTS` and `ALIGN_ELEMENTS` are the ones that move; this one
   deliberately does not.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
@@ -181,7 +181,7 @@ compatibility-note: >
 #   "what level is this on"          -> READ_ELEMENT_LEVEL
 #   "put these on Level 2"           -> ASK WHICH. Re-label without moving is
 #                                       here; physically raise them is
-#                                       MOVE_ELEMENTS or ALIGN_MEP_ELEVATION
+#                                       MOVE_ELEMENTS or ALIGN_ELEMENTS
 #   "move them up 200"               -> MOVE_ELEMENTS
 #   "they are on the wrong level"    -> here, almost always - the geometry is
 #                                       right and the data is wrong

@@ -103,7 +103,7 @@ compatibility-note: >
 #   "place these families"               -> PLACE_FAMILY_INSTANCES, which puts
 #                                           one at a point and joins nothing
 #   "is this run still connected"        -> TRACE_CONNECTIVITY
-#   "is there a break in this system"    -> FIND_SYSTEM_ISLANDS. This one
+#   "is there a break in this system"    -> TRACE_CONNECTIVITY. This one
 #                                           makes a break deliberately and
 #                                           closes it again
 #   "can i get at that valve"            -> CHECK_VALVE_ACCESSIBILITY, once

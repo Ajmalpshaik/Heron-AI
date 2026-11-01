@@ -147,9 +147,9 @@ compatibility-note: >
 #                                      runs is not a new run
 #   "they are touching but not
 #    connected"                     -> CONNECT_OPEN_ENDS
-#   "draw a cable tray"              -> CREATE_ELECTRICAL_RUN
-#   "draw a conduit"                 -> CREATE_ELECTRICAL_RUN
-#   "run a flexible pipe to that sprinkler" -> CREATE_FLEX_PIPE - FLEXIBLE pipe,
+#   "draw a cable tray"              -> CREATE_DUCT_RUNS
+#   "draw a conduit"                 -> CREATE_DUCT_RUNS
+#   "run a flexible pipe to that sprinkler" -> CREATE_DUCT_RUNS - FLEXIBLE pipe,
 #                                      the drop to a head (2026-10-14)
 
 utterances:

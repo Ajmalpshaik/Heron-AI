@@ -141,9 +141,9 @@ compatibility-note: >
 #                                       since 2026-11-01 (CREATE_PIPE until
 #                                       then), a size optional and read back
 #   "draw a duct from here to there" -> CREATE_DUCT_RUNS
-#   "draw a cable tray"              -> CREATE_ELECTRICAL_RUN - it sets no
-#                                       size either; this is where every
-#                                       kind of run gets one
+#   "draw a cable tray"              -> CREATE_DUCT_RUNS, with a tray type -
+#                                       a size optional and read back there;
+#                                       this resizes a run that exists
 #   "size the ducts from the flow"   -> AUTO_SIZE_MEP - it works the size
 #                                       out from the air. This one applies a
 #                                       size you have already decided

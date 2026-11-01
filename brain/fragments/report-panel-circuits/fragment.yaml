@@ -284,7 +284,7 @@ compatibility-note: >
 #   "show me the panel schedule as a list"    -> here
 #   "which circuits are on no panel"          -> here
 #   "what devices are on circuit 3"           -> SELECT_BY_ELECTRICAL_CIRCUIT
-#   "circuit these sockets"                   -> CREATE_ELECTRICAL_CIRCUIT
+#   "circuit these sockets"                   -> CREATE_MEP_SYSTEM
 #   "what is the load on these connectors"    -> REPORT_CONNECTOR_LOADS
 #   "make the panel schedules"                -> CREATE_PANEL_SCHEDULES - the schedule
 #                                                VIEW a sheet carries; this card only
