@@ -109,8 +109,8 @@ its own proof plan says how.
 
 ## Questions for the owner, one at a time, before phase 2
 
-1. ~~Phase 2's Select-in-Revit button?~~ Built on *"do it until finish"* (docs/40 §21.11); confirm on
-   the pull request.
+1. ~~Phase 2's Select-in-Revit button?~~ **Answered 2026-11-01: *"yes allow select button"*** (docs/40
+   §21.11).
 2. Which parameters should the fill-rate check by default - the office's own list, or one per client?
    Today the box starts empty and keeps what was typed last.
 3. *The model has changed - Refresh* needs the add-in to watch for model changes (DocumentChanged), a
