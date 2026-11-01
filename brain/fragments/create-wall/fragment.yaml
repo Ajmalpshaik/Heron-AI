@@ -22,7 +22,7 @@ purpose: >
   straight, or along an arc where one is written. The plain "put a wall here" -
   the thing rooms are bounded by and MEP has to pass through.
 
-  **Written as a run of points, like CREATE_DUCT and CREATE_PIPE.** Two points
+  **Written as a run of points, like CREATE_DUCT_RUNS and CREATE_PIPE.** Two points
   is the single-wall case. A room needs four walls and a corridor needs two, so
   making the run the general form saves the caller a loop and keeps the whole
   library one shape.

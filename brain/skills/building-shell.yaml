@@ -60,7 +60,10 @@ purpose: >
      saved" means the save did not reach the disk: say so and ask again.
      On 2026-10-19 a 40-floor tower's .rvt stayed at 10:42 for 25 minutes
      while 124 changes went in, Ctrl+S pressed twice into the chat.
-  1. CREATE_LEVELS (PROVEN) first, every level the building will have. A wall,
+  1. CREATE_LEVELS (DRAFT, version 2 - version 1 was PROVEN; CREATE_LEVEL was
+     merged into it on 2026-11-01, and until version 2 is proved a kept change
+     from it is refused, D-117) first, every level the building will have. A
+     name already taken is refused before any level is made. A wall,
      a slab and a roof each belong to a level, and a level added afterwards
      leaves what was already built on the wrong one. Count them before going
      on.
@@ -91,11 +94,15 @@ purpose: >
      and an unused one is used nowhere. It is still the template's type
      underneath: what makes it different - its material, its layers - is
      set afterwards, as step 15 does.
-  4. SET_WALL_CONSTRAINTS (PROVEN) on those walls, tying each top to the level
-     above, with allowUnconnectedToBecomeBound set - a wall drawn at a typed
-     height does not follow when the level above is moved, and one tied to it
-     does. Because step 3 drew it to that height, nothing moves when it is
-     tied.
+  4. SET_ELEMENT_LEVEL (DRAFT, version 2 - SET_WALL_CONSTRAINTS, PROVEN, was
+     merged into it on 2026-11-01, and until version 2 is proved a kept change
+     from it is refused, D-117) on those walls, one call per storey:
+     newLevel= the walls' own level, so their bases stay as they are,
+     topLevelId= the level above, and allowUnconnectedToBecomeBound=true -
+     tying each top to the level above. A wall drawn at a typed height does
+     not follow when the level above is moved, and one tied to it does.
+     Because step 3 drew it to that height, nothing moves when it is tied:
+     heightChanged must be empty and unconnectedTop too.
   5. CREATE_FLOOR (PROVEN, version 2 - as CREATE_WALL in step 3; an arc has
      run through the pre-2022 call only, and the 2022-and-later one is still
      owed in Group HM), one slab per floor, drawn to the OUTSIDE faces of the
@@ -308,8 +315,10 @@ purpose: >
       windows and ceilings on each level against the plan's own numbers -
       and the families and beams steps 13 and 14 placed - and
       the railings with SELECT_BY_CATEGORY_NAME as in step 8;
-      MEASURE_ELEMENT_LENGTHS (PROVEN) for the total length of wall against
-      the plan's; READ_MODEL_WARNINGS (PROVEN) for anything the shell added. A
+      MEASURE_RUN_QUANTITIES (DRAFT, version 2 - MEASURE_ELEMENT_LENGTHS was
+      merged into it on 2026-11-01; a read, so nothing is kept) for the total
+      length of wall against the plan's - its totalMm, with lengthUnknown
+      naming anything it could not measure; READ_MODEL_WARNINGS (PROVEN) for anything the shell added. A
       door counted is not a door in its wall: the wall it went into is smaller
       by the opening, and that is the check that it is hosted.
 
@@ -338,7 +347,9 @@ needs:
   # A new project's own type name, by renaming an unused one - see step 3.
   - SELECT_TYPES
   - RENAME_ELEMENTS
-  - SET_WALL_CONSTRAINTS
+  # Ties each wall's top to the level above - step 4 (SET_WALL_CONSTRAINTS
+  # until it was merged into this one, 2026-11-01).
+  - SET_ELEMENT_LEVEL
   - CREATE_FLOOR
   # A typical storey drawn once, then copied onto the levels - see step 5.
   - SELECT_BY_LEVEL
@@ -386,7 +397,8 @@ needs:
   # The count. Never skipped.
   - FILTER_ELEMENTS_BY_CATEGORY
   - COUNT_ELEMENTS
-  - MEASURE_ELEMENT_LENGTHS
+  # The wall total, totalMm (MEASURE_ELEMENT_LENGTHS until 2026-11-01).
+  - MEASURE_RUN_QUANTITIES
   - READ_MODEL_WARNINGS
 
 # What must be true BEFORE it runs, so it fails early with something

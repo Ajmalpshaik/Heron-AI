@@ -14,9 +14,10 @@ source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Draws many straight duct runs in ONE call and ONE undo step - every main and
-  every branch of a layout, each run at its own size. The same drawing as
-  CREATE_DUCT, which takes one run per call, without the one-call-per-run.
+  Draws straight duct - one run from here to there, or every main and every
+  branch of a layout - in ONE call and ONE undo step, each run at its own size.
+  Since 2026-11-01 it is the one straight-duct tool: CREATE_DUCT, which drew one
+  run per call, was merged into it.
 
   **It exists because drawing was the slow half once the fittings were not.**
   On 2026-09-23 a five-room supply layout took twenty-five CREATE_DUCT calls
@@ -29,6 +30,10 @@ purpose: >
   points in millimetres, x,y,z each, separated by ; . Consecutive points make
   one segment each. No size means the duct type's own:
   `850x195: 3075,-2100,3122.5; 3075,-1100,3122.5 | 300x300: 3075,-1100,3122.5; 3075,8100,3122.5`
+
+  **One run is just its points**, with no size and no bar - two points give one
+  duct, five give four, at the duct type's own size:
+  `0,40000,2500; 3000,40000,2500`
 
   **It guesses no route.** Every point is given and used in order. Deciding
   where ducts go - reading the connectors, leaving room for an elbow or a
@@ -48,7 +53,7 @@ contract:
   needs:
     - name: doc
       type: Document
-    # RESOLVED OBJECTS, never ids - the same reason as CREATE_DUCT (D-05).
+    # RESOLVED OBJECTS, never ids - the 2024 ElementId trap (D-05).
     - name: systemType
       type: MechanicalSystemType
       source: request
@@ -90,21 +95,58 @@ tests: tests/
 
 compatibility-note: >
   `Duct.Create(Document, ElementId, ElementId, ElementId, XYZ, XYZ)`, as
-  CREATE_DUCT uses it, and the `RBS_CURVE_WIDTH_PARAM`, `RBS_CURVE_HEIGHT_PARAM`
-  and `RBS_CURVE_DIAMETER_PARAM` parameters, as SET_MEP_SIZE uses them - all
+  CREATE_DUCT used it until it was merged in, and the `RBS_CURVE_WIDTH_PARAM`,
+  `RBS_CURVE_HEIGHT_PARAM` and `RBS_CURVE_DIAMETER_PARAM` parameters, as SET_MEP_SIZE uses them - all
   unchanged 2020 to 2027. The numbers are read with the invariant culture, so a
   PC set to a comma decimal separator reads 3122.5 as the caller meant it.
 
   Millimetres to feet is arithmetic - divide by 304.8, per D-20.
 
-# ROUTING - the neighbours this must not be confused with.
+# 2026-11-01 - CREATE_DUCT WAS MERGED INTO THIS CARD on the owner's
+# instruction ("now merge the other duplicates also"), and is DEPRECATED. The
+# same drawing: straight duct between consecutive points, a system type, a duct
+# type and a level, nothing connected. CREATE_DUCT WAS THE ONLY PROVEN
+# STRAIGHT-DUCT TOOL - signed on 2026-09-13 on Revit 2024 - and this card is
+# DRAFT, never proved (NEEDS-CHECKING Group AL), so until AL1 and AL2 are run
+# a straight duct from here is kept only through D-117's try-once. CARD ONLY: the
+# code already took everything CREATE_DUCT did. One run is the `runs` text with
+# no size and no bar - the same points in millimetres that CREATE_DUCT took as
+# a list; its `created` is this card's `elements`. Its `tooShort` and `refused`
+# counts are, here, a refusal that names each one.
+#
+# THE CONFLICT, AND THE SAFER RULE KEPT: CREATE_DUCT kept the segments that
+# worked and COUNTED the ones Revit refused, so a run that failed at segment
+# nine left eight. This card is all or nothing (Article 8) - any segment too
+# short, refused by Revit or snapped to another size undoes the whole job and
+# names each problem. Half a layout that looks drawn is worse than none, so the
+# keep-the-rest rule is NOT carried.
+
+# ROUTING - the neighbours this must not be confused with. Repeated in
+# SPLIT_MEP_RUN, PLACE_MEP_FITTING, CREATE_PIPE and CREATE_ELECTRICAL_RUN.
 #
 #   "draw all the ducts"            -> here
 #   "draw the mains and the branches" -> here
-#   "draw a duct from here to there" -> CREATE_DUCT - one run
+#   "draw a duct from here to there" -> here - one run, its points alone
+#   "add a duct"                    -> here
 #   "change these ducts to 400x250" -> SET_MEP_SIZE - existing ducts
 #   "put the fittings in"           -> FIT_MEP_JOINTS, which follows this
 #   "connect the open ends"         -> CONNECT_OPEN_ENDS, which follows that
+#   "split this duct"               -> SPLIT_MEP_RUN - the run already exists
+#   "join these two"                -> PLACE_MEP_FITTING. Connecting two
+#                                      existing runs is not drawing a new one
+#   "connect these two ducts"       -> PLACE_MEP_FITTING
+#   "put an elbow here"             -> PLACE_MEP_FITTING - the fitting is
+#                                      CHOSEN from the geometry, not named
+#   "add a dimension between these" -> CREATE_DIMENSION
+#   "run a pipe from here to there" -> CREATE_PIPE - the same job, other
+#                                      domain
+#   "put a drain line in"           -> CREATE_PIPE
+#   "give it a fall of 1 in 100"    -> SET_MEP_SLOPE - drawn flat, then sloped
+#   "they are touching but not connected" -> CONNECT_OPEN_ENDS
+#   "draw a cable tray"             -> CREATE_ELECTRICAL_RUN
+#   "draw a conduit"                -> CREATE_ELECTRICAL_RUN
+#   "run flex to that diffuser"     -> CREATE_FLEX_PIPE - FLEXIBLE duct or
+#                                      pipe; this makes rigid duct
 
 utterances:
   - draw all the ducts
@@ -112,3 +154,11 @@ utterances:
   - draw the mains and the branches
   - make all the ducts at one time
   - draw the whole duct layout
+  # MOVED 2026-11-01 from CREATE_DUCT, merged into this card.
+  - draw straight duct segments along these points
+  - draw a duct from here to there
+  - run a duct across the room
+  - add a duct between these points
+  - draw the duct run
+  - put a supply duct in
+  - add a duct

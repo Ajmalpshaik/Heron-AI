@@ -127,7 +127,7 @@ compatibility-note: >
 #                                          carries this same row
 #   "how much material is in it"        -> MEASURE_ELEMENT_VOLUME - solid volume
 #                                          and surface area, not extent
-#   "how long is this duct run"         -> MEASURE_ELEMENT_LENGTHS
+#   "how long is this duct run"         -> MEASURE_RUN_QUANTITIES
 #   "set the section box round these"   -> SET_VIEW_SECTION_BOX - which CHANGES
 #                                          a view, and is what this question used
 #                                          to reach

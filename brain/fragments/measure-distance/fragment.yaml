@@ -100,6 +100,9 @@ compatibility-note: >
 #                                       a card elsewhere changed status
 
 utterances:
+  # MOVED 2026-11-01 from MEASURE_ELEMENT_LENGTHS (merged into MEASURE_RUN_QUANTITIES,
+  # which measures lengths, not the gap between two elements - this card does).
+  - how far apart are they
   - how far apart are these two
   - what is the gap between these
   - measure the distance between these two elements

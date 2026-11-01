@@ -23,7 +23,7 @@ purpose: >
   modeller cannot read.
 
   **The name is checked for a clash first**, for the same reason CREATE_SHEETS
-  and CREATE_LEVEL check theirs: Revit refuses a duplicate by throwing, and a
+  and CREATE_LEVELS check theirs: Revit refuses a duplicate by throwing, and a
   throw after creation leaves a grid in the model carrying whatever default name
   Revit picked, in the middle of a setting-out somebody is relying on.
 
@@ -88,7 +88,7 @@ compatibility-note: >
 #                                  an imaginary spacing for placing diffusers -
 #                                  and not the building's setting-out datum.
 #                                  One word, two jobs
-#   "add a level"               -> CREATE_LEVEL
+#   "add a level"               -> CREATE_LEVELS
 
 #   "draw a detail line here"          -> CREATE_LINE - a line is not a datum:
 #                                        no bubble, no name, no view extents

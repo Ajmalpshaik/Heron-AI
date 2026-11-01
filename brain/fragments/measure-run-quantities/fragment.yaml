@@ -1,21 +1,32 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-012
-semantic-identity: "how long each duct or pipe is, and how much metal is in it"
+semantic-identity: "how long each of these is and the total length - ducts, pipes, walls, beams - and how much metal is in a duct or pipe"
 kind: action
 domain: revit.mep
 capability: MEASURE_RUN_QUANTITIES
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
 purpose: >
-  Reads the two numbers a takeoff of MEP runs is built from - each element's
-  length, and its surface area - and says which elements had neither.
+  Reads the two numbers a takeoff is built from - each element's length, and
+  for a duct or pipe its surface area - and says which elements had neither.
+  Any element with a length: ducts, pipes, cable tray and conduit, walls,
+  beams, lines.
+
+  **THE LENGTHS IN MILLIMETRES AND THE TOTAL** (version 2, when
+  MEASURE_ELEMENT_LENGTHS was merged in): `lengthsMm` for each element and
+  `totalMm` for them all - "how many metres of duct is there", "what is the
+  total length of wall". An element handed in twice is measured once, so the
+  total and the list always agree. A length of zero is named in
+  `lengthUnknown`, never added as nothing. This is version 2; version 1's proof
+  no longer describes the code and is kept as a record, and the fragment is
+  DRAFT until it is proved again.
 
   **THE SURFACE AREA IS REVIT'S OWN, NOT ONE DERIVED HERE.** Revit already
   computes perimeter times length for a duct or pipe and keeps it on the
@@ -48,15 +59,21 @@ purpose: >
   always the same number: a duct's curve is its centreline, and what Revit
   schedules is what a quantity surveyor is billed against. Reading the curve
   instead would produce a defensible figure that disagrees with the model's own
-  schedule, which is worse than a wrong one because both sides look right.
+  schedule, which is worse than a wrong one because both sides look right. The
+  curve is read only for an element that carries no length parameter at all -
+  a beam, a line (version 2).
 
 contract:
   needs:
     - name: elements
       type: IList<Element>
+    # Length or area. Left out, length (version 2 declares it, so a caller of
+    # MEASURE_ELEMENT_LENGTHS, which took the elements alone, runs unchanged).
     - name: measure
       type: string
       source: request
+      optional: true
+      absent: length
   provides:
     - name: quantities
       role: result
@@ -83,6 +100,15 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: string
+    # Version 2, from MEASURE_ELEMENT_LENGTHS. Each length in MILLIMETRES -
+    # beside `lengths`, which stays in internal feet for SUM_BY_GROUP's chain.
+    - name: lengthsMm
+      role: result
+      type: IDictionary<ElementId, double>
+    # Version 2. The sum of `lengthsMm`, each element once.
+    - name: totalMm
+      role: result
+      type: double
 
 proof:
   date: '2026-09-09'
@@ -122,10 +148,48 @@ compatibility-note: >
   `RBS_CURVE_SURFACE_AREA` are present 2020 to 2027, and the values are taken
   with `AsDouble()` - Revit's internal feet and square feet - rather than
   through any units API, which is what keeps this clear of the 2021 units move.
-  D-20 keeps the millimetre conversion at the edge where the user is.
-# ROUTING - the same rows are in the fragments named here.
+  D-20 keeps the millimetre conversion at the edge where the user is; the
+  version 2 millimetre outputs are the feet times 304.8, plain arithmetic. `LocationCurve` and `Curve.Length`, the fallback, are unchanged
+  2020 to 2027.
+# VERSION 2 (2026-11-01) - MEASURE_ELEMENT_LENGTHS WAS MERGED INTO THIS CARD
+# on the owner's instruction ("now merge the other duplicates also"), and is
+# DEPRECATED. The same reading - how long each element is - and this card
+# already gave the surface area beside it, `quantities` for SUM_BY_GROUP, and a
+# measure refused rather than guessed. What MEASURE_ELEMENT_LENGTHS had is here
+# now: `totalMm` with an element handed in twice measured once; millimetre
+# lengths, `lengthsMm`; the location curve for an element with no length
+# parameter; a zero length named, not counted; and any element with a length,
+# walls and beams among them. Its `noLength` is this card's `lengthUnknown`.
+#
+# THE CONFLICT, AND THE SAFER RULE KEPT: MEASURE_ELEMENT_LENGTHS asked the
+# location curve FIRST and the parameter after; this card asks the parameter
+# first, because it is the number Revit schedules and a quantity surveyor bills.
+# The curve is the fallback only. NOT CHANGED: `quantities`, `lengths` and
+# `areas` stay in internal feet and square feet - SUM_BY_GROUP's chain reads
+# them so - and the millimetres are new outputs beside them.
+#
+# NOT ANSWERED BY EITHER CARD, recorded rather than reworded: "how far apart are
+# they" was MEASURE_ELEMENT_LENGTHS' sentence and moved here with the rest, and
+# neither card measures a distance BETWEEN two elements - each measures how
+# long each element is.
+
+# ROUTING - the same rows are in the fragments named here, and in COUNT_ELEMENTS,
+# GROUP_AND_COUNT and CREATE_DIMENSION.
 #
 #   "how long are the ducts"             -> here
+#   "how many metres of duct" / "how long" -> here
+#   "what is the total length of wall"   -> here, totalMm
+#   "how many ducts"                     -> COUNT_ELEMENTS
+#   "what sizes are the ducts"           -> READ_ELEMENT_PARAMETERS, grouped
+#   "how much 300x300 duct is there"     -> a COMPOSITION:
+#                                           READ_ELEMENT_PARAMETERS for the
+#                                           size, this card for the lengths,
+#                                           SUM_BY_GROUP keyed on size.
+#                                           GROUP_AND_COUNT only counts, and
+#                                           "how much" is a length
+#   "dimension these ducts"              -> CREATE_DIMENSION - a distance put
+#                                           ON THE DRAWING. Asking a question
+#                                           must not annotate the model
 #   "sheet metal area"                   -> here for the STRAIGHT runs -
 #                                           Revit's own perimeter x length
 #   "how much metal is in the bends"     -> MEASURE_FITTING_AREA, which
@@ -144,3 +208,14 @@ utterances:
   - how many square metres of ductwork
   - measure the runs
   - sheet metal area
+  # MOVED 2026-11-01 from MEASURE_ELEMENT_LENGTHS, merged into this card.
+  - how long is each of these, and how much is there altogether
+  - how many metres of duct is there
+  - what is the total length
+  - how long are these
+  - measure these
+  - total length of pipe
+  - how much ductwork is in this
+  # The identity this card had until 2026-11-01, kept as a sentence so it is
+  # still answered by its exact words now the identity is wider than MEP runs.
+  - how long each duct or pipe is, and how much metal is in it

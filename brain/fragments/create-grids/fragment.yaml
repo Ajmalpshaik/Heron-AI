@@ -19,9 +19,8 @@ purpose: >
   setting-out job as it is actually described: *"6000, 6000, 7500, 6000 across;
   8000, 8000 up"*.
 
-  **IT EXISTS BESIDE `CREATE_GRID` FOR THE SAME REASON `CREATE_LEVELS` EXISTS
-  BESIDE `CREATE_LEVEL`.** That one takes two explicit points, which is right
-  when the line is already known. For a bay layout it means working out every
+  **IT EXISTS BESIDE `CREATE_GRID`, AND THE REASON IS THE INPUT.** That one
+  takes two explicit points, which is right when the line is already known. For a bay layout it means working out every
   coordinate by hand first, and for twelve grids in two directions that is where
   the mistakes come from. Here the bay dimensions are the input, which is how a
   drawing states one.

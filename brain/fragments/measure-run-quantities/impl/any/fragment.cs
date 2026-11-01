@@ -1,6 +1,31 @@
 // NOT STANDALONE. Assumes `elements` and `measure` are in scope, and leaves
-// `quantities`, `lengths`, `areas`, `areaUnknown`, `lengthUnknown` and
-// `refused` behind.
+// `quantities`, `lengths`, `areas`, `areaUnknown`, `lengthUnknown`, `refused`,
+// `lengthsMm` and `totalMm` behind.
+//
+// VERSION 2 (2026-11-01) - MEASURE_ELEMENT_LENGTHS MERGED IN, AND WHAT IT HAD:
+//
+//   MILLIMETRES BESIDE THE FEET. `lengthsMm` is every length in millimetres and
+//   `totalMm` their sum - the takeoff answer a person reads. `quantities`,
+//   `lengths` and `areas` stay in Revit's internal feet and square feet,
+//   exactly as version 1 handed them on, because SUM_BY_GROUP totals
+//   `quantities` in whatever unit it arrives in, and an existing output never
+//   changes its unit under a caller.
+//
+//   ANY ELEMENT WITH A LENGTH, not only a duct or a pipe - a wall, a beam, a
+//   line. The parameter Revit schedules, CURVE_ELEM_LENGTH, is still asked
+//   FIRST, for the reason below; an element with no such parameter is measured
+//   along its LOCATION CURVE instead, which is how a beam or a model line has
+//   a length at all. MEASURE_ELEMENT_LENGTHS asked the curve first - the
+//   conflict is settled for the schedule, the safer of the two: it is the
+//   number a quantity surveyor is billed against.
+//
+//   A ZERO LENGTH IS UNKNOWN, NOT ZERO. A degenerate element with a length of
+//   0 is something to look at, so it goes in `lengthUnknown` rather than into
+//   the total, where it would disappear.
+//
+//   AN ELEMENT HANDED IN TWICE IS MEASURED ONCE. A duplicate would otherwise
+//   count twice into `totalMm` while each dictionary kept one entry - the two
+//   would disagree, and the total is the number nobody re-checks.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -17,12 +42,13 @@
 // conversion at the edge where the user is, and doing it here would make this
 // the second place that knows about units.
 //
-// LENGTH COMES FROM THE PARAMETER, NOT THE LOCATION CURVE.
+// LENGTH COMES FROM THE PARAMETER, NOT THE LOCATION CURVE - WHERE THERE IS ONE.
 //
 // They are not reliably the same number - a duct's curve is its centreline.
 // Measuring the curve gives a defensible figure that disagrees with the model's
 // own schedule, and that is worse than a plainly wrong one: both sides look
-// right and nobody can say which to bill.
+// right and nobody can say which to bill. The curve is the FALLBACK, for an
+// element that carries no length parameter at all (version 2).
 //
 // A MISSING AREA IS NOT ZERO.
 //
@@ -135,6 +161,13 @@ var lengths = new Dictionary<ElementId, double>();
 var areas = new Dictionary<ElementId, double>();
 var areaUnknown = new List<ElementId>();
 var lengthUnknown = new List<ElementId>();
+var lengthsMm = new Dictionary<ElementId, double>();
+var totalMm = 0.0;
+
+// D-20: feet to millimetres is arithmetic, never UnitUtils.
+const double MillimetresPerFoot = 304.8;
+
+var answered = new HashSet<ElementId>();
 
 foreach (var element in elements)
 {
@@ -143,13 +176,48 @@ foreach (var element in elements)
     if (refused != null) break;
     if (element == null) continue;
 
+    // Measured once, however many times it was handed in (version 2).
+    if (!answered.Add(element.Id)) continue;
+
+    // THE SCHEDULE'S NUMBER FIRST, THE CURVE ONLY WHERE THERE IS NONE.
+    double lengthFt = 0.0;
+    var lengthFound = false;
+
     Parameter lengthParameter = null;
     try { lengthParameter = element.get_Parameter(BuiltInParameter.CURVE_ELEM_LENGTH); } catch { }
 
-    if (lengthParameter != null && lengthParameter.HasValue)
+    if (lengthParameter != null && lengthParameter.HasValue
+        && lengthParameter.StorageType == StorageType.Double)
     {
-        lengths[element.Id] = lengthParameter.AsDouble();
-        if (!wantArea) quantities[element.Id] = lengthParameter.AsDouble();
+        lengthFt = lengthParameter.AsDouble();
+        lengthFound = true;
+    }
+    else
+    {
+        // Version 2, from MEASURE_ELEMENT_LENGTHS: a beam, a model line - an
+        // element with a location curve and no length parameter.
+        try
+        {
+            var placement = element.Location as LocationCurve;
+            if (placement != null && placement.Curve != null)
+            {
+                lengthFt = placement.Curve.Length;
+                lengthFound = true;
+            }
+        }
+        catch { }
+    }
+
+    // A length of nothing is a degenerate element, not a measurement
+    // (version 2): named, never added to the total as 0.
+    if (lengthFound && lengthFt > 0.0)
+    {
+        lengths[element.Id] = lengthFt;
+        if (!wantArea) quantities[element.Id] = lengthFt;
+
+        var millimetres = lengthFt * MillimetresPerFoot;
+        lengthsMm[element.Id] = millimetres;
+        totalMm += millimetres;
     }
     else
         lengthUnknown.Add(element.Id);

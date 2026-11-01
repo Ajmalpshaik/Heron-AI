@@ -113,7 +113,7 @@ compatibility-note: >
   because `UnitUtils` was rewritten in 2021 and the 2020 call does not exist on
   2022.
 
-# ROUTING - repeated in READ_ELEMENT_LEVEL, SET_ELEMENT_LEVEL and CREATE_LEVEL.
+# ROUTING - repeated in READ_ELEMENT_LEVEL, SET_ELEMENT_LEVEL and CREATE_LEVELS.
 #
 #   "list the levels"           -> here - the levels THEMSELVES
 #   "how many levels"           -> here
@@ -122,7 +122,8 @@ compatibility-note: >
 #                                  ELEMENT, which is a different question with
 #                                  the same words in it
 #   "move these to level 3"     -> SET_ELEMENT_LEVEL
-#   "add a level"               -> CREATE_LEVEL
+#   "add a level"               -> CREATE_LEVELS - one level or many; CREATE_LEVEL
+#                                  was merged into it on 2026-11-01
 #   "sort the schedule by level"-> SET_SCHEDULE_SORT_GROUP. NOT HERE. That
 #                                  sentence resolved to this fragment until
 #                                  2026-09-04 - a question about the ORDER OF

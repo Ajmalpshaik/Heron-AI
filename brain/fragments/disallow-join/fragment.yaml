@@ -128,7 +128,7 @@ compatibility-note: >
 #                                           end cleanup of a wall
 #   "unjoin these"                       -> UNJOIN_GEOMETRY
 #   "the wrong one is cutting"           -> SWITCH_JOIN_ORDER
-#   "put these walls on another level"   -> SET_WALL_CONSTRAINTS
+#   "put these walls on another level"   -> SET_ELEMENT_LEVEL
 #   "is the model clean"                 -> READ_MODEL_WARNINGS, which is
 #                                           Revit's own list
 

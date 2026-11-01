@@ -18,7 +18,8 @@ purpose: >
   points give one pipe and five points give four. The plain "run a pipe from
   here to there", not a system build.
 
-  **Written to the same shape as CREATE_DUCT on purpose.** The earlier library
+  **Written to the same shape as straight duct on purpose** (CREATE_DUCT, merged
+  into CREATE_DUCT_RUNS on 2026-11-01). The earlier library
   drew ONE pipe between two points and drew duct as a run; the same job in two
   different shapes is how a composition that works for duct fails for pipe. Two
   points is the single-segment case, so nothing is lost by making the run the
@@ -43,7 +44,7 @@ contract:
   needs:
     - name: doc
       type: Document
-    # RESOLVED OBJECTS, never ids - same reason as CREATE_DUCT. A fragment
+    # RESOLVED OBJECTS, never ids - same reason as CREATE_DUCT_RUNS. A fragment
     # taking an integer id would have to build an ElementId from it, and that
     # constructor is what breaks at Revit 2024 (D-05). Taking the object makes
     # the trap unreachable.
@@ -107,12 +108,12 @@ compatibility-note: >
   fragment touches no units API and constructs no ElementId, which are the two
   things that moved across the range.
 
-# ROUTING - repeated in CREATE_DUCT, SET_MEP_SIZE and CONNECT_OPEN_ENDS.
+# ROUTING - repeated in CREATE_DUCT_RUNS, SET_MEP_SIZE and CONNECT_OPEN_ENDS.
 #
 #   "run a pipe from here to there" -> here
 #   "draw the pipe"                 -> here
 #   "add a drain line"              -> here - it is still a pipe
-#   "draw a duct from here"         -> CREATE_DUCT. Same job, other domain
+#   "draw a duct from here"         -> CREATE_DUCT_RUNS. Same job, other domain
 #   "make it 100 mm"                -> SET_MEP_SIZE - the pipe already exists,
 #                                      and that is where Revit's SNAP to the
 #                                      nearest allowed size is caught
