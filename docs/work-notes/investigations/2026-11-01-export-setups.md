@@ -190,9 +190,14 @@ EXPORT_VIEWS_TO_DWG takes views, and EXPORT_SHEETS_TO_PDF takes elements - **nei
 |---|---|---|
 | Create, rename, delete one set; add or remove sheets **and views** | MANAGE_SHEET_SETS (PROVEN) - `add` and `remove` already take any non-template view, not only sheets | Unchanged in code. Its `elements` is marked **optional**, so rename and delete run with nothing selected - an element list nothing filled binds empty, and every mode that reads it already refuses an empty list. The card's contract only: the proof's fingerprint covers `impl/` and still matches |
 | List sets, flag empty ones and identical pairs | LIST_SHEET_SETS (PROVEN) | Unchanged |
-| **One set per parameter value, in one call; bring existing ones back in step** | Nothing - one MANAGE_SHEET_SETS call and one selection per value | **SYNC_SHEET_SETS_BY_PARAMETER** (FRG-SHT-034, MODIFY, DRAFT): every non-template sheet and view carrying the parameter, grouped by value; a missing set is saved; an existing one is left alone unless `updateExisting`, then made to hold exactly its value's members; the print range, current set and In-Session members put back |
+| **One set per parameter value, in one call; bring existing ones back in step** | Nothing - one MANAGE_SHEET_SETS call and one selection per value | **SYNC_SHEET_SETS_BY_PARAMETER** (FRG-SHT-034, MODIFY, DRAFT): every non-template sheet and view carrying the parameter, grouped by value; a missing set is saved; an existing one is left alone unless `updateExisting`, then made to hold exactly its value's members; the print range, current set and In-Session members put back. **Merged later the same day into `MANAGE_SHEET_SETS` version 4, mode `by-parameter`, and DEPRECATED** - see below |
 | **Find sets out of step with their value** | Nothing | **CHECK_SHEET_SETS_BY_PARAMETER** (FRG-SHT-035, READ, DRAFT): per value, the set named for it - in step, missing members, extra members - and values with no set. Read as elements, never through the print manager |
 | Duplicate a set | Nothing | **Built later the same day, DRAFT:** `MANAGE_SHEET_SETS` version 3, mode `duplicate` (make current, `SaveAs`). It made the PROVEN card's proof stale, so the card is DRAFT again - on Ajmal PS's yes. Row 5b-1361, NEEDS-CHECKING KA15 and KA16 |
 | Export a set's sheets to DWG or PDF by the set's name | Nothing | **Not built** - see above |
 
-What only a Revit run settles is NEEDS-CHECKING Group KA, rows KA11 to KA14.
+**Merged later the same day.** `SYNC_SHEET_SETS_BY_PARAMETER` is DEPRECATED: it is `MANAGE_SHEET_SETS`
+version 4's mode `by-parameter` now, with the same inputs, refusals and outputs (its `unchanged` is
+`setsUnchanged`), and its In-Session switch and restore taken for every mode that writes - the safer
+rule. The table row above is the record of what was built first. FRAGMENT-ISSUES row 5b-1379.
+
+What only a Revit run settles is NEEDS-CHECKING Group KA, rows KA11 to KA17.
