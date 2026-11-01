@@ -1,0 +1,179 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-162
+semantic-identity: "put a span direction symbol on each of these structural floors in this plan - Revit's Span Direction symbol"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "add span direction symbols to
+# these slabs in this plan" - Revit's Annotate > Symbol > Span Direction.
+# Checked that day with brain/heron_retrieve.py on a scratch store, Revit 2024:
+# the sentence reached PLACE_AREA_REINFORCEMENT, which places rebar and no
+# symbol. Nothing in the library drew a span direction symbol.
+#
+# WHY A CARD OF ITS OWN. SET_FLOOR_SPAN_DIRECTION turns the span; this draws
+# the symbol that shows it, in one plan. Different values (a plan and a symbol
+# type here, an angle or a datum there), a different change (an annotation in
+# one view, not the floor), and different releases - see below.
+#
+# REVIT 2025 AND LATER ONLY, AND THAT IS THE API'S LIMIT. SpanDirectionSymbol
+# and its Create and GetDefaultPlacementPoint are absent from the 2020 to 2024
+# reference assemblies and present in 2025, 2026 and 2027 (tools/api-surface
+# --members, 2026-11-01; RevitAPI.xml marks both "2025"). Before 2025 the API
+# can read a floor's span direction symbols but cannot place one.
+#
+# A NON-STRUCTURAL FLOOR HAS NO SPAN DIRECTION TO SHOW. Revit's documentation
+# of Floor.SpanDirectionAngle, every release: "An exception will be thrown if
+# the floor is non structural." Such a floor is named and given no symbol.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33):
+#   view        the plan, as the Project Browser names it - a floor plan or a
+#               structural plan. Revit's own failure text: "Span Direction
+#               Symbol can only be placed in a Floor Plan View". Any other view
+#               is refused by name, nothing placed
+#   elements    the floors - the selection
+#   symbolType  the span direction symbol type, "One Way Slab" or with its
+#               family "M_Span Direction: One Way Slab". Left out, or a name no
+#               span direction type has: NOTHING IS PLACED and the loaded types
+#               come back in `typesLoaded`. One-way and two-way are different
+#               types and draw different spans, so one is never chosen for you
+#
+# NAMED AND LEFT, EACH WITH ITS REASON: not a floor, not structural, already
+# showing a span direction symbol in this plan, on another level than the
+# plan's, refused by Revit or of another model. Every symbol is read back - its
+# type, its view and that the floor now lists it - and a wrong one removed
+# inside the same undo. Each floor's span direction is read and reported, so
+# the arrow drawn can be checked against it.
+#
+# RISK MODIFY. It adds span direction symbols and deletes nothing it did not
+# just make.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.annotation
+capability: PLACE_SPAN_DIRECTION_SYMBOLS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places one span direction symbol on each structural floor handed in, in one
+  floor or structural plan, of the span direction symbol type the modeller
+  names - Revit's Annotate > Symbol > Span Direction - and says what it placed,
+  each floor's span read back, and why it left every other floor: not
+  structural, another level, or already showing one in that plan.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The plan the symbols go in, BY NAME - a floor plan or a structural plan.
+    # Its level decides which floors get one; any other view is refused.
+    - name: view
+      type: View
+      source: request
+    # The floors, from the selection.
+    - name: elements
+      type: IList<Element>
+    # The span direction symbol type, by its Project Browser name. Left out,
+    # nothing is placed and the loaded span direction types are listed.
+    - name: symbolType
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: placed
+      role: result
+      type: int
+    - name: newSymbols
+      # The span direction symbols this placed, each read back carrying the
+      # type asked for, in this plan, and listed by its own floor.
+      role: result
+      type: IList<ElementId>
+    - name: alreadyHere
+      # Floors already showing a span direction symbol in this plan, so there
+      # was nothing to do. Evidence it looked, never a symbol it placed (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notFloors
+      # Handed in and not a floor - a wall, a roof - and left alone (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notStructural
+      # Floors with the Structural box clear - no span direction to show (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: otherLevel
+      # Floors on another level than the plan's (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notPlaced
+      # Floors Revit would not give a symbol, or whose symbol read back wrong
+      # (that symbol removed again), and floors of another model (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: typesLoaded
+      # The span direction symbol types the model has - what to name.
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING, floor by floor: the symbol placed and the span read back,
+      # or why it was left (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was placed at all, in plain words. Empty when it ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2025", "2026", "2027"]
+runtime: [net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  THIS CARD DELIBERATELY CLAIMS ONLY THREE RELEASES, and the list is evidence
+  rather than caution. SpanDirectionSymbol.Create(Document, ElementId viewId,
+  LinkElementId elemIdToTag, XYZ headPosistion, ElementId symbolId) and
+  SpanDirectionSymbol.GetDefaultPlacementPoint(Document, LinkElementId) are
+  absent from the 2020 to 2024 reference assemblies and present, with those
+  signatures, in 2025, 2026 and 2027 - tools/api-surface --members on
+  2026-11-01. The floor goes in as a LinkElementId, not the ElementId the
+  request for this card first assumed. Floor.GetSpanDirectionSymbolIds,
+  Floor.SpanDirectionAngle, LinkElementId(ElementId), Element.OwnerViewId,
+  View.GetPrimaryViewId, GetDependentViewIds, GetCategoryHidden,
+  FamilySymbol.IsActive and Activate, Element.ChangeTypeId and
+  BuiltInCategory.OST_SpanDirectionSymbol are unchanged 2020 to 2027. No
+  ElementId is built from a number or read as one.
+
+# ROUTING (2026-11-01) - the same rows are in SET_FLOOR_SPAN_DIRECTION.
+#
+# MEASURED 2026-11-01 through heron_retrieve.find on two scratch stores, one
+# built from the tree before these two cards and one after, no Revit filter,
+# `model` backend: every declared utterance and every routing-table sentence in
+# the library reaches the card it reached before. On the keyword route alone
+# "set out the structural grid" (CREATE_GRIDS' own) now ranks SET_FLOOR_SPAN_DIRECTION
+# first; the host answers it by identity, so CREATE_GRIDS keeps it.
+#
+# A QUESTION RANKS HERE, AND THIS WRITES. "what is the span direction of this
+# slab" and its like, declared nowhere, reached other writes before these cards
+# (PLACE_AREA_REINFORCEMENT, CREATE_PARTS, CREATE_FOUNDATION_SLAB) and reach
+# one of these two after. With the host's question:true (D-128) they reach a
+# read instead - never either card - but a read that does not answer them: no
+# card in the library reports a floor's span direction. Recorded for the owner
+# (FRAGMENT-ISSUES 5b-1365), not repaired by declaring words nobody said.
+#
+#   "add span direction symbols to these   -> here, on the selection
+#    slabs in this plan"
+#   "set the span direction of this slab   -> SET_FLOOR_SPAN_DIRECTION -
+#    to run along grid 1"                     turns the span; any symbol
+#                                             already drawn turns with it
+#   "change the floor span to 90 degrees"  -> SET_FLOOR_SPAN_DIRECTION
+#   "put tags on these"                    -> TAG_ELEMENTS
+utterances:
+  - add span direction symbols to these slabs in this plan

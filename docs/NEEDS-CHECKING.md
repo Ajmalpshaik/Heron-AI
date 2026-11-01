@@ -1154,6 +1154,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-kj.md`](needs-checking/group-kj.md)
 
+## Group KL - the span direction of structural floors: `SET_FLOOR_SPAN_DIRECTION` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kl.md`](needs-checking/group-kl.md)
+
+## Group KM - span direction symbols in a plan, Revit 2025 and later: `PLACE_SPAN_DIRECTION_SYMBOLS` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-km.md`](needs-checking/group-km.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
