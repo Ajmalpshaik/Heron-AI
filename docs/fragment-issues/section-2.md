@@ -19,4 +19,23 @@ exactly that.
 | `edit-revision` | *"Nothing changed on revision 1"* | Why. The values passed differed from what was there |
 | `remove-view-template` | *"'L2' — Revit refused to detach 'Mechanical Plan': A managed …"* (message truncated in the record) | Read the full message. It may be the workshared model, or a template that is in use |
 
+### Since then — all three PROVEN, noted 2026-11-01
+
+*"They stay `DRAFT`"* was true when it was written and is not now. Each was later proved with a
+positive and a negative case; each proof is in the fragment's own `fragment.yaml`, under `proof:`.
+
+| Fragment | Proved | Model |
+|---|---|---|
+| `remove-view-template` | 2026-09-09 | Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32940 |
+| `edit-revision` | 2026-10-17 | Project1 (3,247 elements), Revit 2020, session 51568 |
+| `delete-revision` | 2026-10-18 | Project2 (3,035 elements), Revit 2020, session 13520 |
+
+`edit-revision` is at version 3 and `delete-revision` at version 2 now, so the fragment that was
+proved is not always the one that was refused here. Read the fragment's own history before reading
+the refusal above as still true. The rows stay as they were seen, because this register is
+append-only.
+
+Found because an outside review of the repository read this section as current and asked for code
+fixes to all three.
+
 ---
