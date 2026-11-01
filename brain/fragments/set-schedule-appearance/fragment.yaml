@@ -510,6 +510,16 @@ compatibility-note: >
 # sentences moved here; it keeps hideOnly in its code, which is PROVEN and
 # not edited.
 
+# JUDGED 2026-11-01 (a duplicate sweep's look-alike, on the owner's rule "if one
+# tool can safely do both, merge") AGAINST REMOVE_SCHEDULE_FIELDS (hiding a column) AND KEPT APART -
+# the next sweep should not reopen it unless one of these stops being true:
+#   - REMOVE_SCHEDULE_FIELDS KEEPS hideOnly, recorded there: it is that card's
+#     safe alternative to removing a field a sort or filter needs ("or hide it
+#     instead"), and its proof runs with it. The SENTENCES are this card's
+#     alone - hiding here can never remove a field.
+#   - A DIFFERENT JOB: this sets how columns look (width, heading, alignment,
+#     totals, hidden or shown); that takes fields out of the definition.
+
 utterances:
   # "RENAME THE COLUMN HEADING" IS NINTH, PAST WHAT THE RE-RANKER READS (D-134,
   # FRAGMENT-ISSUES 5b-1293, 2026-10-29). First, it put "rename" beside

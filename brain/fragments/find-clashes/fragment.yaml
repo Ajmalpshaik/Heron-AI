@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,32 @@ semantic-identity: "which of these actually intersect those"
 kind: action
 domain: revit.qa
 capability: FIND_CLASHES
-version: 3
+# VERSION 4 (2026-11-01) - SELECT_TOUCHING WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools"; "merge means
+# ... all area need to be covered"), and is DEPRECATED. Its job - ONE element
+# against the model, "what is clashing with this", "what runs through this
+# wall" - was already half here: includeHost and `categories` search this
+# model for what each element passes through. What it had that this lacked:
+#   - NO SECOND SET TO TYPE. `against` may be left out (absent "none", an
+#     empty set), and with no `against` and no link asked for THIS MODEL is
+#     searched, as includeHost asks. Version 3 answered that call "NOTHING WAS
+#     LOOKED IN".
+#   - THE HITS HANDED ON AS `elements`, so SET_SELECTION or ISOLATE_ELEMENTS
+#     can act on what is touching - this model's own elements only, never a
+#     linked one (FRAGMENT-ISSUES row 75), each once, the handed-in elements
+#     never among them (never "touching itself").
+#   - "OVERLAPPING IS NOT MEETING" said when nothing overlaps: a duct joined at
+#     a connector shares no volume, and TRACE_CONNECTIVITY answers "what is
+#     connected to this".
+# Where each of SELECT_TOUCHING's outputs is now: elements -> elements;
+# findings -> findings and passedThrough; linksSearched and linkedMatches the
+# same (up to 50 a link here, where it named 20). Its `target` is the one
+# element handed in as `elements`; its `categories` list is `categories` -
+# names, or `all` (left out, the building list; SELECT_TOUCHING's list could
+# not be left blank either - the binder refuses a blank category list).
+# NOT CARRIED: nothing. The proof below is version 3's and no longer
+# describes the code; DRAFT until version 4 is proved on a real model (D-30).
+version: 4
 source: OFFICIAL
 risk: READ
 
@@ -18,7 +43,7 @@ purpose: >
   members of another. Ducts against beams, pipes against structure, services
   against each other.
 
-  **This is NOT `CHECK_OBSTRUCTIONS`, and the two get asked for in the same
+  **This is NOT `PROBE_AROUND_ELEMENTS`, and the two get asked for in the same
   words.** That one casts a ray from a POINT and asks what is within a distance
   of it — the sprinkler-under-a-beam question, answered before anything is
   modelled. This one takes two sets of REAL ELEMENTS and asks whose solids
@@ -81,8 +106,13 @@ contract:
     - name: elements
       type: IList<Element>
     - name: against
+      # VERSION 4: MAY BE LEFT OUT - "none", an empty set. With no `against`
+      # and includeLinks not set, THIS MODEL is searched (as includeHost),
+      # which is SELECT_TOUCHING's one-element-against-the-model job.
       type: ICollection<ElementId>
       source: request
+      optional: true
+      absent: none
     - name: includeLinks
       # D-59. THE MODELLER DECIDES, JOB BY JOB, and absent means host only -
       # which is what this fragment did before and what its proof measured.
@@ -183,6 +213,13 @@ contract:
       # element, its value, by how much, and what it passes through.
       role: accounting
       type: IList<string>
+    - name: elements
+      # VERSION 4, from SELECT_TOUCHING. THIS MODEL's elements that overlap
+      # the ones handed in - from `against` and from this model's search -
+      # each once, the handed-in ones never among them. Handed on so SELECT
+      # or ISOLATE can act on them. Never a linked element (row 75).
+      role: result
+      type: IList<Element>
 
 proof:
   date: '2026-10-21'
@@ -284,14 +321,15 @@ compatibility-note: >
 # Revit's reason, and an empty `against` counts nothing clear. The fragment is
 # DRAFT, so no proof moved. FRAGMENT-ISSUES 5b-176; NEEDS-CHECKING AJ6.
 
-# ROUTING - repeated in CHECK_OBSTRUCTIONS, and this pair is the sharpest
+# ROUTING - repeated in PROBE_AROUND_ELEMENTS (CHECK_OBSTRUCTIONS' table until
+# it was merged into that card on 2026-11-01), and this pair is the sharpest
 # collision in the library because both are the word "clash".
 #
-#   "is there a beam above this head"   -> CHECK_OBSTRUCTIONS - a ray from a
+#   "is there a beam above this head"   -> PROBE_AROUND_ELEMENTS - a ray from a
 #                                          POINT, before anything is modelled
 #   "which ducts clash with the beams"  -> here - two sets of real elements
 #   "find the clashes"                  -> here
-#   "is anything blocking these"        -> CHECK_OBSTRUCTIONS
+#   "is anything blocking these"        -> PROBE_AROUND_ELEMENTS
 #   "list the linked models"            -> LIST_LINKED_MODELS - worth
 #                                          running FIRST, because a clash
 #                                          check can only see what is
@@ -319,8 +357,18 @@ compatibility-note: >
 #   "are the sleeves big enough for the pipes" -> CHECK_SLEEVE_SIZE - the
 #                                        hole against what goes THROUGH it,
 #                                        not against what it goes through
-#   "what is touching this beam"     -> SELECT_TOUCHING - ONE element
-#                                        against the model
+#   "what is touching this beam"     -> here since version 4 - ONE element
+#                                        against the model, no `against`
+#                                        typed; the hits handed on as
+#                                        `elements` (was SELECT_TOUCHING)
+#   "what is clashing with this"     -> here, version 4 - the same
+#   "what runs through this wall"    -> here, version 4 - the same
+#   "what is connected to this duct" -> TRACE_CONNECTIVITY. A clean connection
+#                                        has NO volumetric overlap, so this
+#                                        returns nothing for it - a correct
+#                                        answer to a different question
+#   "what is in this area"           -> SELECT_IN_REGION - a volume, not an
+#                                        element, as the target
 utterances:
   - which ducts clash with the beams
   - find the clashes
@@ -341,3 +389,13 @@ utterances:
   - check the cut-out wall width against the walls
   - what does each opening cut through in the links
   - check all the cut-out wall width
+  # MOVED 2026-11-01 from SELECT_TOUCHING, merged into this card.
+  - what is clashing with this
+  - what is touching this element
+  - what runs through this wall
+  - find everything overlapping this
+  - what is in the same place as this
+  - what is touching this beam
+  - what penetrates this wall
+  # ...and its semantic identity, which nothing else declares:
+  - what is physically overlapping this one element

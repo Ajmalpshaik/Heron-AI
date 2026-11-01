@@ -65,5 +65,40 @@ negative:
       three lettered grids and NO numbered grid. Version 1 put a numbered grid
       on the origin here (it read the list as one position)
 
+  # VERSION 3 (2026-11-01) - CREATE_RADIAL_GRIDS merged in. Each FAILS on
+  # version 2, which had no radial input. NOT RUN.
+  - given: >
+      centreMm "0,0", radiiMm "6000, 12000", spokeAnglesDegrees "0, 30, 60,
+      90", startDegrees 0, endDegrees 90, everything else left out
+    expect: >
+      6 grids created - two quarter-circle arcs and four spokes 12 m long -
+      and namedAs as Revit numbered them, read back; one Ctrl+Z removes all six
+  - given: the same with startDegrees 0 and endDegrees 360
+    expect: two arcs drawn just short of a closed circle - a grid cannot be closed
+  - given: the same with a spoke at 180 degrees and the sweep 0 to 90
+    expect: >
+      the 180 spoke drawn, and `refused` saying it lies outside the arcs'
+      sweep - never dropped
+  - given: radiiMm empty, spokeAnglesDegrees "0, 90", centreMm "0,0", sweep 0 to 90
+    expect: refused - spokes need a radius to run to - and no grid made
+  - given: radiiMm "0", centreMm "0,0", sweep 0 to 90
+    expect: refused before anything is made
+  - given: centreMm "0,0", radiiMm "6000", the sweep left out
+    expect: >
+      refused - the sweep is asked, never assumed - nothing made. (On
+      CREATE_RADIAL_GRIDS it could not be left out at all.)
+  - given: centreMm "0,0", radiiMm "6000", sweep 0 to 90, and spacingsAcross "6000"
+    expect: refused - one input at a time - nothing made
+  - given: a radial grid with gridNames "R1"
+    expect: refused - radial grids are named by Revit - nothing made
+  - given: >
+      a radial grid one of whose arcs Revit refuses (a radius too small for
+      Revit's shortest curve, beside a good one)
+    expect: >
+      NOTHING kept - refused before anything is made where the curve itself
+      cannot be built, or the call throws and the whole change rolls back
+      where Revit refuses the grid. CREATE_RADIAL_GRIDS kept the others; not
+      carried, on purpose
+
 second_route:
   - Dimension between two adjacent grids in the model and compare against the spacing that was asked for

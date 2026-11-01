@@ -119,7 +119,7 @@ compatibility-note: >
 #                                           from REPORT_ROOM_SPACE_DATA and the
 #                                           arithmetic belongs to whoever is
 #                                           designing
-#   "is anything in the way"             -> CHECK_OBSTRUCTIONS, for a layout
+#   "is anything in the way"             -> PROBE_AROUND_ELEMENTS, for a layout
 #                                           that has to be buildable as well as
 #                                           complete
 #   "how far apart are these"            -> MEASURE_DISTANCE, between two named

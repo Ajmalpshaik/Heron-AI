@@ -47,11 +47,15 @@ needs:
   - FILTER_ELEMENTS_BY_CATEGORY
   - READ_ROOM_GEOMETRY
   - PLACE_FAMILY_INSTANCES
-  - CHECK_OBSTRUCTIONS
+  # PROBE_AROUND_ELEMENTS took CHECK_OBSTRUCTIONS' job on 2026-11-01 (merged
+  # into it): the head points as `points`, blocked or clear within a distance.
+  # It reads linked models only with includeLinks set (D-59) - the beams are
+  # often in the structural link, so ask.
+  - PROBE_AROUND_ELEMENTS
   # "check my sprinkler spacing" IS A COVERAGE QUESTION AND NOTHING HERE ANSWERED
   # IT. FRG-DOC-024 reports the area each head serves at a stated radius, the
   # total, and how far each is from its nearest neighbour - the last of those is
-  # spacing. CHECK_OBSTRUCTIONS finds the beam; it does not measure the spread.
+  # spacing. PROBE_AROUND_ELEMENTS finds the beam; it does not measure the spread.
   - REPORT_COVERAGE
 
 # What must be true BEFORE it runs, so it fails early with something

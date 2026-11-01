@@ -18,7 +18,18 @@ capability: REPORT_VIEW_FILTERS
 # `disabled`, `hidden`, `blankOverride`, `nothingToActOn` - with the
 # template-owned verdict, `templateOwned`. The proof below is version 2's and
 # no longer describes the code; the card is DRAFT until version 3 is proved.
-version: 3
+#
+# VERSION 4 (2026-11-01) - A SAFETY FIX, on the owner's instruction ("in
+# every conflict keep the safer rule"). The "used in" sweep read real views
+# only, so a filter carried ONLY by a view template that views follow read
+# "ON NO VIEW. Either a leftover" - inviting a delete that changes every
+# drawing following that template. FIND_PURGEABLE_ELEMENTS counts that filter
+# as in use, and that rule is taken here: every view template is read too, a
+# filter one carries is IN USE and never in `unusedFilters`, and its finding
+# names the template and how many views follow it (a template no view follows
+# is said to be one - the filter is still kept out of the unused list). "Which
+# filters are unused" is FIND_PURGEABLE_ELEMENTS' question; it routes there.
+version: 4
 source: OFFICIAL
 risk: READ
 
@@ -80,6 +91,9 @@ contract:
     - name: findings
       type: IList<string>
     - name: unusedFilters
+      # On no view AND in no view template (version 4). A filter only a
+      # template carries is IN USE - a finding names the template and how
+      # many views follow it - and is never listed here.
       role: result
       type: IList<ElementId>
     - name: filterCount
@@ -379,6 +393,12 @@ compatibility-note: >
 #   "read the filter settings back"  -> here, with viewName
 #   "which views use this filter"    -> here
 #   "what filters already exist"     -> here, before making a near-duplicate
+#   "which filters are unused"       -> FIND_PURGEABLE_ELEMENTS - the unused
+#                                       question, with templates no view
+#                                       follows as their own list. This card
+#                                       says what is where, and since version 4
+#                                       counts a filter a template carries as
+#                                       in use
 #   "put that filter on this view"   -> APPLY_VIEW_FILTER - a WRITE, and it must
 #                                       not answer a question about a drawing
 #   "make a filter for supply air"   -> CREATE_VIEW_FILTER

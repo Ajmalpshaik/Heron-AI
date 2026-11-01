@@ -42,6 +42,30 @@ negative:
   - given: the same set run with join false a second time
     expect: changed 0, all four in alreadyRight, and NO quantities warning - nothing moved
 
+  # VERSION 3 (2026-11-01) - SWITCH_JOIN_ORDER merged in. Each FAILS on
+  # version 2, whose `join` was a bool and had no switch. NOT RUN.
+  - given: >
+      a wall and a column joined, the wall cutting the column; the wall the
+      target, the column handed in, join switch
+    expect: >
+      changed 1, a finding "Turned: <column id> now cuts, where <wall id> did
+      before", and THE OVERLAP HAS MOVED. REPORT_JOINED_ELEMENTS afterwards
+      reads the opposite of what it read before; a section shows it
+  - given: the same pair, join switch a second time
+    expect: the direction back where it started - a switch is its own inverse
+  - given: >
+      a column and a wall that are NOT joined, join switch
+    expect: >
+      REFUSED, NOT joined first: `refused` names the column "not joined to the
+      target", changed 0, AreElementsJoined still false afterwards, and no
+      overlap warning. SWITCH_JOIN_ORDER's first case
+  - given: join "sideways"
+    expect: >
+      refused before anything changes - "say true (join), false (unjoin) or
+      switch" - nothing joined, unjoined or turned
+  - given: join "True", as version 2's proof typed it
+    expect: read as join, exactly as version 2's bool did
+
   - given: a wall and a duct handed in together
     expect: >
       whatever Revit really does, reported. This fragment joins GEOMETRY - it is

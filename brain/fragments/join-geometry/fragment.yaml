@@ -9,7 +9,7 @@ semantic-identity: "join these walls and floors together so they cut each other"
 kind: action
 domain: revit.elements
 capability: JOIN_GEOMETRY
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -64,6 +64,32 @@ risk: MODIFY
 #
 # Version 1's proof below no longer describes the code (impl/ changed) and is
 # kept as the record; DRAFT until version 2 is proved on a real model (D-30).
+#
+# VERSION 3 (2026-11-01) - SWITCH_JOIN_ORDER WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools"; "in every
+# conflict keep the safer rule"), and is DEPRECATED. A third mode beside join
+# and unjoin, on the same target-and-elements shape: `join` switch turns the
+# join between the target and each element round, so the one that was giving
+# up its overlap keeps it. What SWITCH_JOIN_ORDER had, all carried: a pair
+# that is NOT joined refused, never joined first (`refused`); the direction
+# read before and after, a call that left it unchanged named in `wouldNot`
+# and never counted; each turned pair saying which now cuts; and "THE
+# OVERLAP HAS MOVED from one takeoff to the other". Its `switched` is
+# `changed` with join switch.
+#
+# `join` IS A WORD SINCE VERSION 3 - true or join, false or unjoin, or switch.
+# true and false read as version 2's bool did; anything else is refused
+# before anything changes.
+#
+# NOT CARRIED, AND WHY: SWITCH_JOIN_ORDER's two matched lists `first` and
+# `second`, and its different-lengths refusal - the same reason as
+# UNJOIN_GEOMETRY's, above, and worse. Both were `IList<Element>` with
+# `binds: elements`, so BOTH bound the chain's one `elements`: every pair was
+# an element with ITSELF, never joined, so every pair read "not joined" and
+# nothing was ever switched; with nothing in the chain, the add-in refused the
+# two as one selection that cannot say which is which (RevitFragment.cs, the
+# selectable count). That card - DRAFT, never run - could not have switched
+# a pair. Here each element is paired with `target`.
 
 purpose: >
   Joins - or unjoins - the geometry of many elements with one target, so they
@@ -99,6 +125,8 @@ purpose: >
   target handed in among the elements - and says that quantities have moved
   whenever a pair was joined or unjoined.
 
+  Version 3 adds join switch, which reverses an existing join.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -110,10 +138,14 @@ contract:
     - name: target
       type: Element
       source: request
-    # true joins, false unjoins. Asked for, because they are opposite
-    # instructions and a default would be a guess about intent.
+    # true (or join) joins, false (or unjoin) unjoins, and - VERSION 3, from
+    # SWITCH_JOIN_ORDER - switch turns an existing join round. Asked for,
+    # because they are opposite instructions and a default would be a guess
+    # about intent. A WORD since version 3, where version 2 took a bool: true
+    # and false read exactly as they did; anything else is refused before
+    # anything changes.
     - name: join
-      type: bool
+      type: string
       source: request
   provides:
     - name: changed
@@ -133,8 +165,10 @@ contract:
       type: IList<string>
     - name: refused
       # VERSION 2, from UNJOIN_GEOMETRY. Pairs refused before Revit was asked:
-      # the target itself among the elements, by id, and a missing element.
-      # Why it declined, never a pair it changed (D-52).
+      # the target itself among the elements, by id, and a missing element -
+      # and, with join switch (version 3), a pair that is NOT joined, refused
+      # rather than joined first. Why it declined, never a pair it changed
+      # (D-52).
       role: accounting
       type: IList<string>
     - name: findings
@@ -177,8 +211,8 @@ compatibility-note: >
   the reference assemblies at both ends rather than remembered. ElementIds are
   compared as ElementIds and never read as numbers.
 
-# ROUTING - repeated in FIND_CLASHES, CONNECT_OPEN_ENDS, REPORT_JOINED_ELEMENTS
-# and SWITCH_JOIN_ORDER.
+# ROUTING - repeated in FIND_CLASHES, CONNECT_OPEN_ENDS and
+# REPORT_JOINED_ELEMENTS (and SWITCH_JOIN_ORDER's, retired into this card).
 #
 #   "join these walls together"      -> here
 #   "the wall and the slab are not
@@ -191,10 +225,17 @@ compatibility-note: >
 #   "what is this joined to"         -> REPORT_JOINED_ELEMENTS - read first,
 #                                       because a join nobody knew about is
 #                                       what makes a takeoff wrong
-#   "the wrong one is cutting"       -> SWITCH_JOIN_ORDER. The join is right
-#                                       and its direction is not - unjoining
-#                                       there loses the join as well as fixing
-#                                       nothing
+#   "the wrong one is cutting"       -> here since version 3, join switch
+#                                       (was SWITCH_JOIN_ORDER). The join is
+#                                       right and its direction is not -
+#                                       unjoining there loses the join as well
+#                                       as fixing nothing
+#   "the wall has eaten the column"  -> here, join switch - NOT unjoin
+#   "which one is cutting"           -> REPORT_JOINED_ELEMENTS - the read to do
+#                                       first, and the one that shows a switch
+#                                       worked
+#   "stop them joining at all"       -> DISALLOW_JOIN, which turns the end
+#                                       cleanup off rather than reversing it
 #   "they are touching but not
 #    connected"                      -> CONNECT_OPEN_ENDS - that is MEP
 #                                       CONNECTORS on ducts and pipes, and it
@@ -227,3 +268,11 @@ utterances:
   - unjoin geometry
   # ...and its semantic identity, which nothing else declares:
   - stop these two elements cutting into each other
+  # MOVED 2026-11-01 from SWITCH_JOIN_ORDER, merged into this card.
+  - the wrong one is cutting
+  - swap which element cuts
+  - the wall has eaten the column
+  - turn this join round
+  - switch the join order
+  # ...and its semantic identity, which nothing else declares:
+  - turn this join round so the other one does the cutting

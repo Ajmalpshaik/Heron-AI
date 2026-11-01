@@ -1,6 +1,37 @@
 // NOT STANDALONE. Assumes `doc`, `origin`, `spacingsAcross`, `spacingsUp`,
-// `firstLetter`, `firstNumber`, `gridLines` and `gridNames` are in scope;
-// leaves `created`, `namedAs` and `refused` behind.
+// `firstLetter`, `firstNumber`, `gridLines`, `gridNames`, `centreMm`,
+// `radiiMm`, `spokeAnglesDegrees`, `startDegrees` and `endDegrees` are in
+// scope; leaves `created`, `namedAs` and `refused` behind.
+//
+// VERSION 3 (2026-11-01) - CREATE_RADIAL_GRIDS MERGED IN, on the owner's
+// instruction ("make sure there is no duplicate tools"; "in every conflict
+// keep the safer rule"). The difference was the input, as it was for
+// CREATE_GRID: a THIRD INPUT beside point pairs and bay gaps -
+//
+//   ARCS AND SPOKES ABOUT ONE CENTRE. `centreMm` ("x,y" or "x,y,z" mm),
+//   `radiiMm` (an arc grid at each radius, from startDegrees to endDegrees)
+//   and `spokeAnglesDegrees` (a straight grid out from the centre to the
+//   largest radius at each angle) - degrees anticlockwise from east, as Revit
+//   measures. A full circle is drawn just short of closed: a grid cannot be a
+//   closed circle. A spoke outside the arcs' sweep is drawn and SAID, never
+//   dropped. Refused before anything is made, as CREATE_RADIAL_GRIDS refused:
+//   a centre that is not two or three numbers; a radius or angle that is not
+//   a number; neither a radius nor a spoke; a radius of 0 or less; spokes with
+//   no radius to run to. And, new here: no sweep given for the arcs (the
+//   sweep is asked, never assumed - 0 and 360 for a full circle), and a
+//   radial grid asked together with point pairs or bay gaps.
+//
+//   HOW THEY ARE NAMED: BY REVIT. Grid.Create gives each new grid the next
+//   free name after the last one made, as Revit's own Grid tool does, so a
+//   radial grid can never take a name already held - the taken-name rule has
+//   nothing to refuse there - and `gridNames` is refused with a radial grid
+//   (it names the `gridLines` grids). The names Revit gave are READ BACK into
+//   `namedAs`.
+//
+//   ALL OR NOTHING, as for every grid this card makes: an arc or spoke Revit
+//   will not create undoes the whole call. NOT CARRIED, on purpose:
+//   CREATE_RADIAL_GRIDS caught a grid Revit refused, reported it, and KEPT
+//   THE REST - a partial setting-out under one undo entry (Article 8).
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). Spacings and `gridLines` are
 // MILLIMETRES, converted below; `origin` is internal FEET, converted by the
 // add-in.
@@ -136,7 +167,102 @@ var acrossPositions = positionsFrom(across);
 var upPositions = positionsFrom(up);
 var badGap = (!noGaps(across) && across.Any(gap => gap <= 0)) || (!noGaps(up) && up.Any(gap => gap <= 0));
 
-if (byLines && (acrossPositions.Count > 0 || upPositions.Count > 0))
+// VERSION 3, CREATE_RADIAL_GRIDS' INPUT - arcs and spokes about one centre,
+// each a curve with no name asked (Revit names them).
+var radial = new List<Tuple<Curve, string>>();
+var radialNotes = new List<string>();
+var byRadial = !notAsked(centreMm) || !notAsked(radiiMm) || !notAsked(spokeAnglesDegrees);
+var arcCount = 0;
+var spokeCount = 0;
+Func<string, List<double>> numbersIn = text =>
+{
+    var list = new List<double>();
+    if (notAsked(text)) return list;
+    foreach (var part in text.Split(','))
+    {
+        if (part.Trim() == "") continue;
+        double value;
+        if (!double.TryParse(part.Trim(), System.Globalization.NumberStyles.Float, culture, out value)
+            || double.IsNaN(value) || double.IsInfinity(value)) return null;
+        list.Add(value);
+    }
+    return list;
+};
+
+if (byRadial && (byLines || acrossPositions.Count > 0 || upPositions.Count > 0))
+{
+    refused.Add("a radial grid (centreMm, radiiMm, spokeAnglesDegrees) AND grid lines or bay spacings were "
+        + "given - ask for one at a time. Nothing was created");
+}
+else if (byRadial)
+{
+    var centreParts = numbersIn(centreMm);
+    var radii = numbersIn(radiiMm);
+    var spokes = numbersIn(spokeAnglesDegrees);
+    var sweepFrom = numbersIn(startDegrees);
+    var sweepTo = numbersIn(endDegrees);
+    if (namesGiven)
+        refused.Add("gridNames names the grids drawn between points (gridLines). Radial grids are named by "
+            + "Revit - the next free name after the last grid made - and read back. Nothing was created");
+    else if (centreParts == null || (centreParts.Count != 2 && centreParts.Count != 3))
+        refused.Add("\"" + centreMm + "\" is not a centre - two or three numbers in millimetres, \"30000,0\". "
+            + "Nothing was created");
+    else if (radii == null || spokes == null)
+        refused.Add("the radii and the spoke angles are numbers separated by commas. Nothing was created");
+    else if (radii.Count == 0 && spokes.Count == 0)
+        refused.Add("neither a radius nor a spoke angle was given. Nothing was created");
+    else if (radii.Any(r => r <= 0))
+        refused.Add("every radius must be more than 0 mm. Nothing was created");
+    else if (spokes.Count > 0 && radii.Count == 0)
+        refused.Add("spokes run from the centre to the largest radius, and no radius was given. Nothing was "
+            + "created");
+    else if (sweepFrom == null || sweepTo == null || sweepFrom.Count != 1 || sweepTo.Count != 1)
+        refused.Add("the arcs' sweep was not given - startDegrees and endDegrees, one number each, degrees "
+            + "anticlockwise from east (0 and 360 for a full circle). It is asked, never assumed. Nothing was "
+            + "created");
+    else
+    {
+        var centre = new XYZ(centreParts[0] / MillimetresPerFoot, centreParts[1] / MillimetresPerFoot,
+            centreParts.Count == 3 ? centreParts[2] / MillimetresPerFoot : 0);
+        var startAt = sweepFrom[0];
+        var endAt = sweepTo[0];
+        var start = startAt * Math.PI / 180.0;
+        var finish = endAt * Math.PI / 180.0;
+        if (finish <= start) finish += 2 * Math.PI;
+        // A GRID CANNOT BE A CLOSED CIRCLE - a full sweep is drawn just short.
+        if (finish - start >= 2 * Math.PI - 1e-6) finish = start + 2 * Math.PI - 1e-3;
+        try
+        {
+            foreach (var radius in radii)
+            {
+                radial.Add(Tuple.Create((Curve)Arc.Create(centre, radius / MillimetresPerFoot, start, finish,
+                    XYZ.BasisX, XYZ.BasisY), "the arc at " + radius.ToString(culture) + " mm"));
+                arcCount++;
+            }
+            var outer = radii.Max() / MillimetresPerFoot;
+            var sweepEnd = endAt <= startAt ? endAt + 360 : endAt;
+            foreach (var angle in spokes)
+            {
+                var a = angle * Math.PI / 180.0;
+                var tip = centre + new XYZ(Math.Cos(a), Math.Sin(a), 0) * outer;
+                radial.Add(Tuple.Create((Curve)Line.CreateBound(centre, tip),
+                    "the spoke at " + angle.ToString(culture) + " degrees"));
+                spokeCount++;
+                // A SPOKE OUTSIDE THE ARCS' SWEEP IS DRAWN AND SAID.
+                var normal = ((angle - startAt) % 360 + 360) % 360;
+                if (normal > (sweepEnd - startAt) + 1e-9)
+                    radialNotes.Add("the spoke at " + angle.ToString(culture) + " degrees lies outside the arcs' "
+                        + "sweep - drawn as asked");
+            }
+        }
+        catch (Exception ex)
+        {
+            radial.Clear();
+            refused.Add("Revit would not make that curve - " + ex.Message + ". Nothing was created");
+        }
+    }
+}
+else if (byLines && (acrossPositions.Count > 0 || upPositions.Count > 0))
 {
     refused.Add("grid lines between points AND bay spacings were both given - ask for one or the other. "
         + "Nothing was created");
@@ -285,12 +411,46 @@ if (refused.Count == 0)
             declined.Add(string.Format("'{0}' did not take - the grid reads '{1}'", item.Item3, grid.Name));
     }
 
+    // VERSION 3: the radial grids - named by Revit, read back.
+    foreach (var item in radial)
+    {
+        Grid grid = null;
+        try
+        {
+            grid = item.Item1 is Arc ? Grid.Create(doc, (Arc)item.Item1) : Grid.Create(doc, (Line)item.Item1);
+        }
+        catch (Exception ex)
+        {
+            declined.Add(string.Format("{0} could not be created - {1}", item.Item2, ex.Message));
+            continue;
+        }
+        if (grid == null)
+        {
+            declined.Add(string.Format("Revit declined to create {0}", item.Item2));
+            continue;
+        }
+        created.Add(grid);
+    }
+    if (radial.Count > 0)
+    {
+        doc.Regenerate();
+        // A radial call makes nothing else, so every grid created is one of these.
+        foreach (var element in created) namedAs.Add(element.Name);
+    }
+
     if (declined.Count > 0)
         throw new InvalidOperationException(string.Format(
             "{0} grid(s) could not be made as asked: {1}. Nothing this call did is kept - one request, "
             + "one change, whole or not at all", declined.Count, string.Join("; ", declined.Distinct())));
 
-    if (byLines)
+    if (byRadial)
+    {
+        refused.Add(string.Format("{0} arc grid(s) and {1} spoke grid(s) about the centre, named by Revit - "
+            + "the next free name after the last grid made - and read back: {2}", arcCount, spokeCount,
+            string.Join(", ", namedAs)));
+        refused.AddRange(radialNotes);
+    }
+    else if (byLines)
         refused.Add(string.Format("{0} grid line(s) drawn between the points given, each one level",
             created.Count));
     else

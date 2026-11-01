@@ -170,6 +170,24 @@ compatibility-note: >
 #                                            the SORT, and this fragment
 #                                            refuses rather than assume so
 
+# JUDGED 2026-11-01 (a duplicate sweep's look-alike, on the owner's rule "if one
+# tool can safely do both, merge") AGAINST SET_SCHEDULE_APPEARANCE (hiding a column) AND KEPT APART -
+# the next sweep should not reopen it unless one of these stops being true:
+#   - hideOnly STAYS, AND THAT IS THE SAFER RULE. Hiding is coded on both
+#     cards, but here it is the in-call ALTERNATIVE to removing: a removal
+#     refused because a sort or a filter uses the field says "or hide it
+#     instead and it keeps working", and the proving job
+#     (tools/jobs/reprove-refusals.yaml) proves this card with hideOnly true
+#     because a proof should not need the stronger of two operations. Taking
+#     hideOnly out would leave this card able only to remove - strictly more
+#     destructive - and stale a PROVEN proof for no behaviour a modeller gains.
+#   - THE DOUBLE SENTENCE CLAIM WAS THE DEFECT, and it is settled: every "hide
+#     a column" sentence is SET_SCHEDULE_APPEARANCE's (hideOrShow hide), the
+#     card that can never remove a field. hideOnly is reached only by a caller
+#     who came here to remove and chose to hide.
+#   - A DIFFERENT JOB: this takes fields out of the definition (and, said yes
+#     to, the rules on them); that sets how a column looks.
+
 utterances:
   - remove a column from the schedule
   - take the level column out of the schedule
