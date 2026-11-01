@@ -95,6 +95,16 @@ def test_counts_and_what_was_left_out():
     assert view["legend"][0] == {"name": "Ducts", "colour": V.KNOWN["Ducts"], "count": 2}
 
 
+def test_an_empty_read_draws_nothing_and_is_not_refused():
+    # The fragment's own negative: a section box clear of the building.
+    got = V.view(json.dumps({"format": 1, "scope": "active 3D view 'Heron empty box'",
+                             "units": "m", "offset": [0, 0, 0], "categories": [],
+                             "elements": [], "triangles": 0, "elementsRead": 0,
+                             "noGeometry": 0, "leftOut": 0, "notRead": [], "capped": []}))
+    assert got["view"] is not None and got["view"]["drawn"] == 0 and got["view"]["legend"] == []
+    assert "0 element(s), 0 triangle(s)" in got["said"]
+
+
 def test_colours_are_stable_and_distinct():
     a = V.colours(["Walls", "Zebra Things", "Odd Category", "Ducts"])
     b = V.colours(["Walls", "Zebra Things", "Odd Category", "Ducts"])

@@ -1238,5 +1238,16 @@ BIMLens shows as its 3D viewer, re-made Heron's way.
 **Proved without Revit:** `tests/test_model_view.py` (the brain - damaged reads refused, colours stable
 and distinct); `tests/test_companion.py`'s Dashboard group (the routes behind the pairing, the shapes kept
 out of the state, Select by the 3D read's own ids); and the page driven in headless Chromium - drawn,
-turned, an element picked and highlighted. **Not run in Revit**: the fragment's proof is owed, in its own
-NEEDS-CHECKING group.
+turned, an element picked and highlighted. **Not run in Revit**: the fragment's proof is owed in
+[group JU](needs-checking/group-ju.md).
+
+**Recorded for the owner, not decided here** (from the fragment's author):
+- **How big a read is.** About 5 MB at the default limit of 150,000 triangles, estimated near 17 MB at the
+  500,000 ceiling. Through the dashboard it stays on the page; asked through `revit_read` directly, all of
+  it is printed into the chat - the card says so.
+- **Revit's 60-second stop.** The read takes the largest elements first and stops at the triangle limit,
+  but it does not watch the clock: a whole-model read that meets `revit.operationTimeoutSeconds` is rolled
+  back and returns nothing. Stopping itself near 40 s and handing back what it has drawn is a widening
+  for after the first proof.
+- **The active-view scope uses the view's own detail level**, because Revit refuses `Options.View` and
+  `Options.DetailLevel` together; pipes and ducts that come back as lines are read again at Fine (JU6).
