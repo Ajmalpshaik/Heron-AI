@@ -1,0 +1,56 @@
+# NEEDS-CHECKING Group KC - CREATE_TRUSS, built 2026-11-01 in a cloud session
+# with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/create-truss-kc-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-truss-kc-2026-11-01.yaml
+#
+# THE MODEL: KC Structure, a scratch copy of Revit 2020's
+# rst_advanced_sample_project.rvt in %TEMP%\heron-work\truss-kc, open and in
+# front in Revit 2020 - never the library file and never a working model.
+# Which truss types it holds, and what its levels are called, are NOT KNOWN
+# here and are not guessed.
+#
+# THE LEVEL AND THE TYPE BELOW ARE NOT KNOWN YET. KC1 in
+# docs/needs-checking/group-kc.md reads them: a level, and a truss type off
+# Revit's Type Selector under Structure > Truss. If the copy holds no truss
+# type, KC1 loads one from Revit's own library into the scratch copy and saves
+# it before anything runs. Both go in place of the marked values. Until then no
+# level or type answers to them and the run should stop there - expected, NOT
+# RUN.
+#
+# THE LINE: 12 m along X, set 200 m east of the origin so it sits clear of the
+# building. KC1 confirms nothing stands there in plan, or moves it in both legs
+# alike. Millimetres (D-71); the height is the level's.
+#
+# THE NEGATIVE IS THE SAME LEVEL AND TYPE ALONG A VERTICAL LINE at the same
+# place: it must be refused BY NAME as vertical, and nothing made - neither a
+# truss nor the sketch plane made for it.
+#
+# No type named, "Howe" for a type, a rising line and the same line twice are
+# rows KC3 to KC5, run with `validate --write`. Every write here is ROLLED
+# BACK.
+
+model: KC Structure (scratch copy of Revit 2020's rst_advanced_sample_project), Revit 2020
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: create-truss
+    expect: created
+    set:
+      level:     "THE LEVEL KC1 READ"
+      trussType: "THE TRUSS TYPE KC1 READ"
+      curves:    "200000,0,0; 212000,0,0"
+    negative-set:
+      level:     "THE LEVEL KC1 READ"
+      trussType: "THE TRUSS TYPE KC1 READ"
+      curves:    "200000,0,0; 200000,0,3000"
+    note: >
+      KC2. Positive - created one id; report "Line 1 (from 200000,0 to
+      212000,0): truss made (<id>), type "<type>", 12000 mm long, on
+      "<level>", <n> member(s)". Negative - THE FIRST CASE TO RUN: the
+      vertical line, so created none, the report naming Line 1 VERTICAL and
+      refused "None of the 1 line(s) could take a truss"; no truss added
+      anywhere.

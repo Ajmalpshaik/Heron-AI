@@ -1,0 +1,142 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-136
+semantic-identity: "place a truss of a named type along each of these lines on a level - Structure > Truss"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "place a Howe truss between
+# these two points on Level 2", "add a truss along grid C from A to F" and "put
+# a roof truss of type Pratt 12m here" - Revit's Structure > Truss. Nothing in
+# Heron made one. Checked that day with brain/heron_retrieve.py on each
+# sentence, Revit 2024: CREATE_WALL, DIMENSION_GRIDS_AND_LEVELS and CREATE_ROOF
+# came back first, with PLACE_ADAPTIVE_COMPONENTS, PLACE_STRUCTURAL_FAMILY,
+# CREATE_GRID, ADD_DATUM_LEADERS, CREATE_EDGE_SWEEPS and PLACE_HOSTED_FAMILY
+# behind them. None makes a truss.
+#
+# A NEW CAPABILITY, NOT A WIDENING. PLACE_LINE_BASED_FAMILY is PROVEN and lays
+# a beam or a brace along a line with NewFamilyInstance and a StructuralType; a
+# truss is not a family instance - it is made by Truss.Create on a sketch plane
+# and owns the chord and web members it generates - so widening that card would
+# change its job and make its proof stale. Nothing here touches it. Its line
+# input is copied: the same `curves`, written the same way. CREATE_BEAM_SYSTEM
+# fills an area with beams; a truss is one element along one line.
+#
+# THE TYPE IS NEVER GUESSED (D-33). Left out, nothing is made and the model's
+# truss types are named - even when the model holds only one. "Howe" and
+# "Pratt 12m" are what the modeller calls a truss; whether the model has a
+# type of that name is what the list answers. The type arrives as text and is
+# matched by its whole name or as "Family: Type", as CREATE_WALL_FOUNDATION
+# and CREATE_FOUNDATION_SLAB match theirs.
+#
+# THE LINES ARE GIVEN, NOT READ. "along grid C from A to F" is the modeller's
+# way of saying where; this card takes the two ends in millimetres and reads no
+# grid. Whoever calls it supplies the line.
+#
+# RISK MODIFY. It adds trusses and a sketch plane and deletes nothing, so
+# Article 7's confirmation does not arise.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: CREATE_TRUSS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places a structural truss - Revit's Structure > Truss - of a named truss type
+  along each straight line given, laid on one level. A vertical or zero-length
+  line is refused by name; with no truss type named nothing is made and the
+  model's truss types are listed. Says per truss its type, length and level,
+  and per line what was skipped and why.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: level
+      type: Level
+      source: request
+    # A truss type, by its name or as "Family: Type". Left out it arrives as
+    # "list": nothing is made and the model's truss types are named, so the
+    # modeller can choose one. Never the model's first or only type.
+    - name: trussType
+      type: string
+      source: request
+      optional: true
+      absent: list
+    # PLACE_LINE_BASED_FAMILY's writing, copied: millimetres, the two ends of
+    # one line with a semicolon between and a pipe between lines -
+    # "0,0,0; 12000,0,0 | 0,6000,0; 12000,6000,0". The heights typed are not
+    # used - the level gives the height - but the two ends of one line must
+    # agree, or the line is refused as rising.
+    - name: curves
+      type: IList<Curve>
+      source: request
+  provides:
+    - name: created
+      # The trusses made, each read back after a regenerate - still in the
+      # model, of the type asked - before it was kept.
+      role: result
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, a line per line given: the truss made with its type,
+      # length and level, or skipped and why.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was made, in the modeller's words - evidence it looked and
+      # said no, never a thing it found (D-52). Null when anything was made.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Truss.Create(Document, ElementId
+  trussTypeId, ElementId sketchPlaneId, Curve curve), Truss.Members,
+  TrussType (a FamilySymbol: IsActive, Activate, FamilyName),
+  SketchPlane.Create(Document, ElementId), SketchPlane.GetPlane, Plane.Normal
+  and Origin, Level.ProjectElevation, Line.CreateBound, Curve.GetEndPoint,
+  IsBound and Length, LocationCurve.Curve, Element.Location, LevelId and
+  GetTypeId, FilteredElementCollector.OfClass and OfCategory,
+  BuiltInCategory.OST_Truss, Application.ShortCurveTolerance,
+  Document.Regenerate and SubTransaction's Start, Commit and RollBack are
+  present and unchanged 2020 through 2027 - read with tools/api-surface
+  --members on 2026-11-01. RevitAPI.xml 2020 and 2027 give Truss.Create's curve
+  the same words - "must be a line, must not be a vertical line, and must be
+  within the sketch plane" - and both list TrussType among the classes
+  ElementClassFilter does not support, so the types are collected as family
+  types in OST_Truss. Ids are carried and compared as ElementId, never read
+  as numbers. Millimetres become feet by / 304.8 at the edge (D-20).
+
+# ROUTING (2026-11-01).
+#
+#   "place a Howe truss between these two
+#    points on Level 2"                       -> here. With no type of that
+#                                                name nothing is made and the
+#                                                truss types are listed
+#   "add a truss along grid C from A to F"    -> here, the ends supplied by the
+#                                                caller - no grid is read here
+#   "put a roof truss of type Pratt 12m here" -> here
+#   "place a beam between two points"         -> PLACE_LINE_BASED_FAMILY - a
+#                                                beam or a brace, a family
+#                                                instance along a line
+#   "add the bracing"                         -> PLACE_LINE_BASED_FAMILY
+#   "put secondary beams in this bay"         -> CREATE_BEAM_SYSTEM
+#   "make the roof on this level"             -> CREATE_ROOF - the roof, not
+#                                                what holds it up
+#   "create a grid line"                      -> CREATE_GRID
+
+utterances:
+  - place a Howe truss between these two points on Level 2
+  - add a truss along grid C from A to F
+  - put a roof truss of type Pratt 12m here

@@ -615,9 +615,11 @@ def test_a_line_is_two_points_and_curves_are_pairs_of_them():
     # A ROLL-CALL, like the second-set one above: a fragment that starts asking
     # for a curve list joins it by name. place-path-reinforcement joined
     # 2026-10-19 - its `path` is the run the bars are laid across (row 5b-1257).
+    # create-truss joined 2026-11-01 - its `curves` are the lines each truss is
+    # laid along, written as place-line-based-family's (NEEDS-CHECKING Group KC).
     freed = unblocked_by("IList<Curve>")
-    check(freed == ["place-line-based-family", "place-path-reinforcement"],
-          "a curve list frees the line-based family and the path reinforcement: %s"
+    check(freed == ["create-truss", "place-line-based-family", "place-path-reinforcement"],
+          "a curve list frees the truss, the line-based family and the path reinforcement: %s"
           % (freed or "nothing"))
 
 
