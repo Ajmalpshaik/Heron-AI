@@ -1,0 +1,58 @@
+# NEEDS-CHECKING Group KF - PLACE_FABRIC_SHEET, built 2026-11-01 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/place-fabric-sheet-kf-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/place-fabric-sheet-kf-2026-11-01.yaml
+#
+# THE MODEL is Group HY's scratch project (docs/needs-checking/group-hy.md) -
+# a new project from Revit's metric STRUCTURAL template in
+# %TEMP%\heron-work\rebar-hy, holding S1 (a 200 mm structural concrete floor),
+# W1 (a 200 mm structural concrete wall) and N2 (an architectural,
+# non-structural floor) on Level 1. Never a working model.
+#
+# THE SHEET TYPE AND THE POINT BELOW ARE NOT KNOWN YET. KF1 in
+# docs/needs-checking/group-kf.md reads them: this card run with
+# fabricSheetType left out places nothing and lists the loaded fabric sheet
+# types, and S1's extents give a point well inside it. Whether the metric
+# structural template loads any fabric sheet type is NOT KNOWN here and is
+# not guessed; if none is, KF1 makes one by hand in the scratch copy and saves
+# it. Each goes in place of its marked value in both places. Until then no
+# type answers to the name and the run is refused naming the loaded types -
+# expected, NOT RUN.
+#
+# THE NEGATIVE IS THE COLUMNS, NOT THE FLOORS: the same view, the same type
+# and point - a column is not a fabric host, so nothing is placed. The
+# positive's floors include N2, which must be named and skipped as not
+# structural while S1 takes the sheet. The second run, N2 alone, no type
+# named, a point outside S1 and a wall with no height are rows KF3 to KF5,
+# run with `validate --write`. Every write here is ROLLED BACK.
+
+model: rebar-hy scratch project (metric structural template), Revit 2020
+
+defaults:
+  write: true
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: place-fabric-sheet
+    expect: placed
+    setup-set:
+      categoryName: Floors
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categoryName: Structural Columns
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      fabricSheetType: "THE TYPE KF1 READ"
+      pointMm: "THE POINT INSIDE S1 KF1 READ"
+    negative-set:
+      fabricSheetType: "THE TYPE KF1 READ"
+      pointMm: "THE POINT INSIDE S1 KF1 READ"
+    note: >
+      KF2. Positive - placed 1 in S1, centred on the point, major direction
+      0 deg from the model's x axis; N2 skipped by name as not structural;
+      readBackWrong empty. Negative - THE FIRST CASE TO RUN: the columns
+      instead of the floors, so placed 0, every column skipped as "not a
+      floor, a wall, a foundation slab or a Part" and "Nothing was placed".
