@@ -1,0 +1,68 @@
+# NEEDS-CHECKING Group JY - SET_DUCT_LINING, built 2026-11-01 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/set-duct-lining-jy-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-duct-lining-jy-2026-11-01.yaml
+#
+# THE MODEL: Snowdon-scratch_ajmal.al, open and in front in Revit 2024 - the
+# owner's scratch copy of the sample HVAC model REMOVE_TAGS was proved on.
+# Whether its ducts carry lining, and which Duct Lining types it holds, are NOT
+# KNOWN here and are not guessed.
+#
+# THE ROOM AND THE LINING TYPE BELOW ARE NOT KNOWN YET EITHER. JY1 in
+# docs/needs-checking/group-jy.md reads, with SELECT_BY_INSULATION, which ducts
+# are bare and finds a room holding a FEW - under twenty - and reads the
+# model's Duct Lining types off Revit's Add Lining box; both go in place of the
+# marked values. Until then no room answers to it and the setup should stop
+# there, before the lining runs - expected, NOT RUN. If the model has no Duct
+# Lining type, JY1 says so and the job is not run here.
+#
+# THE ARRANGEMENT, RE-MADE BEFORE EACH PHASE: the ducts of that room with
+# neither insulation nor lining (countLiningAsInsulated true, wantInsulated
+# false), then selected. A rolled-back write clears Revit's selection, which is
+# why it is a chain and not a hand selection.
+#
+# THE NEGATIVE IS A DIFFERENT VALUE ON THE SAME DUCTS: thickness 0 - remove -
+# on ducts with no lining, which must come back with nothing added and nothing
+# removed, while every lined duct in the model keeps its lining.
+#
+# Fittings, editing a lined duct in place, removing lining, pipes and
+# insulation picked directly are rows JY3 to JY8 of the group, run with
+# `validate --write` on selections made by hand. Every write here is ROLLED
+# BACK.
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: set-duct-lining
+    expect: added
+    setup:
+      - select-by-insulation
+      - filter-elements-in-room
+      - set-selection
+    setup-set:
+      categories: Ducts
+      wantInsulated: "false"
+      countLiningAsInsulated: "true"
+      room: "THE ROOM JY1 READ"
+    negative-setup-set:
+      categories: Ducts
+      wantInsulated: "false"
+      countLiningAsInsulated: "true"
+      room: "THE ROOM JY1 READ"
+    set:
+      thicknessMm: 25
+      liningType: "THE LINING TYPE JY1 READ"
+    negative-set:
+      thicknessMm: 0
+      liningType: keep
+    note: >
+      JY2. Positive - added equal to the bare ducts of that room, report a
+      line per duct "lining added, 25 mm of <type>". Negative - THE FIRST
+      CASE TO RUN: the same bare ducts at thickness 0, so added 0, removed 0,
+      refused "None of the N duct, fitting or accessory element(s) selected
+      had lining on it", each named as having none; no lined duct in the
+      model touched.

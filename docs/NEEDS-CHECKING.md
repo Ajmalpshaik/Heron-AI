@@ -1106,6 +1106,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-jx.md`](needs-checking/group-jx.md)
 
+## Group JY - lining added to, changed on and taken off ducts and their fittings: `SET_DUCT_LINING` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-jy.md`](needs-checking/group-jy.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

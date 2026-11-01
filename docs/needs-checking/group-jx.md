@@ -68,7 +68,9 @@ the insulation"* and *"remove the pipe insulation"* reach this card ranked; with
 declared now reach this card ranked and would do the wrong thing here**, recorded rather than answered by
 inventing utterances: *"remove the lining from this duct"* (before: `SELECT_BY_INSULATION`) - this card
 never removes lining, so on a lined duct it removes nothing, but on a duct with both it would take the
-insulation; and *"remove these fittings"* (before: `MEASURE_FITTING_AREA`) - it would take the fittings'
+insulation (**CLOSED 2026-11-01**: the modeller said it, and it is declared on `SET_DUCT_LINING`,
+[Group JY](group-jy.md), which reaches it by identity; *"remove the lining"* and *"remove lining from these
+fittings"* reach that card ranked, no longer this one); and *"remove these fittings"* (before: `MEASURE_FITTING_AREA`) - it would take the fittings'
 insulation, not the fittings. A DRAFT is refused by `revit_change` ([D-117](../DECISIONS.md)), and either
 would be asked in Revit's Delete box first. `DELETE_ELEMENTS` and `SET_MEP_INSULATION` are PROVEN; the
 edit to each is outside `impl/`, so no fingerprint moved.

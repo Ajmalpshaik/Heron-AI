@@ -1,0 +1,159 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-073
+semantic-identity: "add, change or remove the internal lining of these ducts, duct fittings and accessories - Add / Edit / Remove Lining"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "add 25 mm lining to these
+# ducts", "line this supply duct and its fittings", "remove the lining from
+# this duct" and "change the lining thickness to 50". Nothing in Heron put
+# lining on, changed it or took it off - lining was only READ, by
+# SELECT_BY_INSULATION and CHECK_INSULATION_CLEARANCE. Checked that day with
+# brain/heron_retrieve.py on each sentence, Revit 2024: SET_MEP_INSULATION,
+# SELECT_BY_INSULATION, CHECK_INSULATION_CLEARANCE, CREATE_DUCT and
+# FIT_MEP_JOINTS came back first, and none of them touches lining.
+#
+# ONE JOB, ONE FRAGMENT. Revit's Add, Edit and Remove Lining set one value of a
+# duct - its lining thickness - and the modeller asks for that value: 25, 50,
+# or none. So one card: a thickness above 0 lines an unlined host or changes a
+# lined one in place, and 0 takes the lining off. The insulation pair is two
+# cards (SET_MEP_INSULATION, REMOVE_MEP_INSULATION) because SET is PROVEN,
+# insulation-only and replaces by delete-and-create; widening it to lining
+# would change its job and make its proof stale, and nothing here touches it.
+#
+# A NEW CAPABILITY, NOT A WIDENING. SET_MEP_INSULATION (PROVEN) and
+# REMOVE_MEP_INSULATION (DRAFT) act on insulation only and each says so; a
+# lining handed to the remove is named and left. This is the lining job they
+# both point at.
+#
+# RISK MODIFY. A thickness of 0 deletes lining elements; ARTICLE 7'S
+# CONFIRMATION IS REVIT'S (D-142) - anything a kept change deletes is asked in
+# Revit in a box of its own - so this card takes no `confirm`, as
+# REMOVE_MEP_INSULATION takes none.
+#
+# ONLY LINING, NEVER INSULATION, NEVER THE HOST. Each host runs in a
+# SubTransaction and is put back if Revit refuses it, or if a remove would take
+# anything but its lining and the tags on it. Pipes have no lining in Revit and
+# are refused by name; so are flex duct and anything that is not a duct, duct
+# fitting or duct accessory.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: SET_DUCT_LINING
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Adds internal lining to the selected ducts, duct fittings and duct
+  accessories at a stated thickness, as Revit's Add Lining does; changes the
+  thickness or type of lining already on them, as Edit Lining does; or, at a
+  thickness of 0, takes the lining off, as Remove Lining does. Says per element
+  what was added, changed or removed and what was skipped and why. Insulation
+  and the ducts themselves are never touched, and pipes are refused - a pipe has
+  no lining in Revit.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The selection: ducts, duct fittings and duct accessories - or the lining
+    # itself, Tab-selected, which is taken as its host's.
+    - name: elements
+      type: IList<Element>
+    # The lining thickness in millimetres. 0 removes the lining.
+    - name: thicknessMm
+      type: double
+      source: request
+    # A Duct Lining type, by its name or as "Family: Type". Left out ("keep"):
+    # a lined element keeps its own type, and an unlined one takes the model's
+    # lining type only when the model has exactly one - with several it is
+    # refused and the types named.
+    - name: liningType
+      type: string
+      source: request
+      optional: true
+      absent: keep
+  provides:
+    - name: added
+      # Hosts that read back lined, at the thickness asked, that had none.
+      role: result
+      type: int
+    - name: changed
+      # Lined hosts whose lining reads back at the new thickness or type.
+      role: result
+      type: int
+    - name: removed
+      # Lining elements that read back gone - never what was asked.
+      role: result
+      type: int
+    - name: unchanged
+      # Hosts already lined exactly as asked, and left as they were.
+      role: accounting
+      type: int
+    - name: report
+      # ONE STRING, a line per host: added, changed from what to what,
+      # removed, already as asked, or had no lining to remove.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was done, in the modeller's words - evidence it looked and
+      # said no, never a thing it found (D-52). Null when anything was done.
+      # ONE STRING, because a list reaches the reply cut to sixty characters
+      # an item.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. DuctLining.Create(Document, ElementId,
+  ElementId, double), DuctLiningType, InsulationLiningBase.GetLiningIds,
+  HostElementId, Thickness (get and set) and IsValidThickness,
+  Element.GetTypeId and ChangeTypeId, ElementType.FamilyName,
+  Document.Delete(ICollection<ElementId>), Element.GetDependentElements,
+  SubTransaction's Start, Commit and RollBack, and ElementId(BuiltInCategory)
+  are present and unchanged 2020 through 2027 - read with tools/api-surface
+  --members on 2026-11-01. Millimetres to feet is arithmetic, not UnitUtils
+  (D-20); categories are compared as ElementIds built from the
+  BuiltInCategory, and ids are carried as ElementId, never read as numbers.
+
+# ROUTING (2026-11-01).
+#
+#   "add 25 mm lining to these ducts"      -> here
+#   "line this supply duct and its
+#    fittings"                             -> here
+#   "remove the lining from this duct"     -> here, at a thickness of 0 -
+#                                             REMOVE_MEP_INSULATION reached
+#                                             it before this card existed,
+#                                             and takes insulation, never
+#                                             lining (Group JX, row 5b-1358)
+#   "change the lining thickness to 50"    -> here
+#   "insulate these" / "change the
+#    insulation thickness"                 -> SET_MEP_INSULATION - the
+#                                             outside layer, not the lining
+#   "remove the insulation from these
+#    ducts"                                -> REMOVE_MEP_INSULATION
+#   "show me what is already insulated"    -> SELECT_BY_INSULATION - with
+#                                             countLiningAsInsulated it
+#                                             counts lining as well; run it
+#                                             first to see what is lined
+#   "check the clearance with the
+#    insulation on"                        -> CHECK_INSULATION_CLEARANCE -
+#                                             lining sits inside the duct
+#                                             and is not counted there
+
+utterances:
+  - add 25 mm lining to these ducts
+  - line this supply duct and its fittings
+  - remove the lining from this duct
+  - change the lining thickness to 50

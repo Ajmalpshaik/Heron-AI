@@ -112,6 +112,12 @@ compatibility-note: >
 #   "delete these"                            -> DELETE_ELEMENTS - the
 #                                                elements themselves
 #   "will the insulation fit"                 -> CHECK_INSULATION_CLEARANCE
+#   "remove the lining from this duct"        -> SET_DUCT_LINING, at a
+#                                                thickness of 0 - lining is
+#                                                never removed here; this
+#                                                card reached it ranked until
+#                                                that one declared it
+#                                                (2026-11-01, Group JY)
 
 utterances:
   - remove the insulation from these ducts
