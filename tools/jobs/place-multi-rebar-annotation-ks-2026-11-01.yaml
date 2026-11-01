@@ -1,0 +1,54 @@
+# NEEDS-CHECKING Group KS - PLACE_MULTI_REBAR_ANNOTATION, built 2026-11-01 in
+# a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/place-multi-rebar-annotation-ks-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/place-multi-rebar-annotation-ks-2026-11-01.yaml
+#
+# THE MODEL is Group HY's scratch project (docs/needs-checking/group-hy.md) -
+# a new project from Revit's metric STRUCTURAL template in
+# %TEMP%\heron-work\rebar-hy - AFTER HY6 IS KEPT, so column C1 holds two sets
+# of main bars and one set of ties, drawn in "FloorPlan: Level 1". Never a
+# working model.
+#
+# THE MULTI-REBAR ANNOTATION TYPE BELOW IS NOT KNOWN YET. KS1 in
+# docs/needs-checking/group-ks.md reads it: this card run with annotationType
+# left out places nothing and lists the model's multi-rebar annotation types.
+# Whether the metric structural template has one is NOT KNOWN here and is not
+# guessed. The type goes in place of the marked value in both places. Until
+# then no type answers to it and the run is refused naming the loaded types -
+# expected, NOT RUN.
+#
+# THE NEGATIVE IS THE COLUMNS THEMSELVES, NOT THEIR BARS: the same view, the
+# same type - a column is not rebar, so nothing is placed. A second run, the
+# type left out, a name nobody has, Linear and an unlocked 3D view are rows
+# KS3 to KS5, run with `validate --write`. Every write here is ROLLED BACK.
+
+model: rebar-hy scratch project (metric structural template) after HY6 kept, Revit 2020
+
+defaults:
+  write: true
+  setup:
+    - filter-elements-by-category
+    - set-selection
+
+jobs:
+  - fragment: place-multi-rebar-annotation
+    expect: placed
+    setup-set:
+      categoryName: Structural Rebar
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categoryName: Structural Columns
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      view: "Level 1"
+      annotationType: "THE TYPE KS1 READ"
+    negative-set:
+      view: "Level 1"
+      annotationType: "THE TYPE KS1 READ"
+    note: >
+      KS2. Positive - placed 1, one Aligned multi-rebar annotation across C1's
+      main bar sets, annotationId, dimensionId and tagId real ids, both main
+      bar sets in dimensioned; where the tie set goes is recorded, not
+      assumed. Negative - THE FIRST CASE TO RUN: the columns instead of their
+      bars, so placed 0 and every column in notRebar.

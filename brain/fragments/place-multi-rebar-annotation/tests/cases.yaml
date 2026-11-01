@@ -1,0 +1,90 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that annotates, "annotated something nobody asked for": a
+# multi-rebar annotation across a column, of a type nobody named, or a second
+# one stacked on bars already annotated.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE. Group HY's scratch project
+# (docs/needs-checking/group-hy.md) - a new project from Revit's metric
+# STRUCTURAL template in %TEMP%\heron-work\rebar-hy - AFTER HY6 IS KEPT, so
+# column C1 holds two sets of 2 main bars and one set of ties, and they show in
+# "FloorPlan: Level 1" (Group KE's KE0 reads the same). The main bars run up
+# the column, so the plan cuts them as points; the ties lie in the plan. WHICH
+# MULTI-REBAR ANNOTATION TYPE THE TEMPLATE HAS, IF ANY, IS NOT KNOWN HERE -
+# Group KS's KS1 reads it with this card, annotationType left out.
+#
+# The bars are collected by FILTER_ELEMENTS_BY_CATEGORY with Structural Rebar
+# in "FloorPlan: Level 1" and SET_SELECTION, as Group KE does. The negative leg
+# is the SAME call with Structural Columns: a different set, not an empty one
+# (fragment-proving, rules 3 and 5). Where the model differs, the job file
+# changes - never the card. EVERY RUN ROLLED BACK.
+
+positive:
+  - given: >
+      the Structural Rebar in "FloorPlan: Level 1" - C1's two main bar sets
+      and its tie set - from FILTER_ELEMENTS_BY_CATEGORY and SET_SELECTION,
+      view "Level 1", annotationType the type KS1 read, style and direction
+      left out
+    expect: >
+      placed 1; annotationId, dimensionId and tagId real ids (tagId invalid
+      only if KS1 showed the type with no tag family); both main bar sets in
+      dimensioned; refused empty; findings "1 multi-rebar annotation(s) placed
+      in "Level 1" as ..., Aligned: ...". WHERE THE TIE SET GOES IS NOT KNOWN
+      from the assemblies - in notAligned with Revit's check named is what the
+      card expects; record what came back. Every bar handed in named in
+      exactly one list. Look at the plan - one dimension across C1's main bar
+      points, beside the column, and the tag beyond it
+
+  - given: the same call again, after the first run was KEPT
+    expect: >
+      placed 0; both main bar sets in alreadyAnnotated; refused "None of the
+      ... element(s) handed in is a bar drawn in "Level 1" and not yet
+      annotated there ..." - no second annotation stacked on the first
+
+  - given: the positive's bars with style linear, direction left out
+    expect: >
+      placed 1; the dimension line on the plan's horizontal or vertical,
+      whichever is nearer the main bars' spread
+
+negative:
+  - given: >
+      the Structural Columns in "FloorPlan: Level 1" instead of their bars -
+      FILTER_ELEMENTS_BY_CATEGORY with Structural Columns - with the same view
+      and the same annotationType
+    expect: >
+      placed 0, annotationId invalid, every column in notRebar; refused "None
+      of the ... element(s) handed in is a bar drawn in "Level 1" ...". No
+      annotation of any kind placed. This is the leg D-30 exists for: a
+      fragment that annotated whatever it was handed shows here. THE FIRST
+      CASE TO RUN
+
+  - given: the positive's bars with annotationType left out
+    expect: >
+      placed 0; refused "No multi-rebar annotation type was named, and one is
+      never chosen for you ..."; typesLoaded lists the model's multi-rebar
+      annotation types, each with its reference category - even when only one
+      is loaded
+
+  - given: the positive's bars with annotationType "KS no such type"
+    expect: >
+      placed 0; refused "No multi-rebar annotation type is called 'KS no such
+      type' ..."; typesLoaded as above
+
+  - given: the positive's bars with view the default 3D view, not locked
+    expect: >
+      placed 0; refused "\"{3D}\" is a 3D view that is not locked ... Nothing
+      was placed." - the view named, nothing placed
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      the annotation is one undo entry
+
+second_route:
+  - >
+    After a KEPT run, select the new annotation in Revit: Properties names its
+    type, and the Multi-Rebar Annotation's dimension and tag highlight with it.
+    Revit's own display, not another Heron read
+  - >
+    Revit's own Annotate > Multi-Rebar > Aligned by hand across C1's main bars
+    in a saved copy, then this card on the same bars: both in
+    alreadyAnnotated, placed 0
