@@ -137,7 +137,77 @@ negative:
       DIMENSION_FAMILY_INSTANCES had no such check and handed Revit a line it
       could not draw
 
+  # VERSION 4 (2026-11-01, DIMENSION_GRIDS_AND_LEVELS merged in). Each FAILS on
+  # version 3, which puts a grid or a level in notLinear and draws nothing.
+  - given: >
+      VERSION 4. A floor plan showing grids 1 to 6, all parallel, all six
+      handed in, axis left out, offsetMm 2000
+    expect: >
+      `created` is one dimension, `dimensionedCount` 6, `problem` empty, the
+      string 2000 mm clear of the grid ends. Read the segments in Revit
+      against the grid spacing
+
+  - given: >
+      VERSION 4. A section showing Level 00, 01 and 02, all three handed in,
+      axis left out
+    expect: >
+      one string up the elevation, `dimensionedCount` 3, reading floor to
+      floor
+
+  - given: >
+      VERSION 4. The same section on a model whose level type's Elevation Base
+      is the SURVEY POINT, the survey point well away from the project origin
+      vertically (read both elevations off one level first -
+      REPORT_LEVEL_ELEVATIONS gives both)
+    expect: >
+      the same string, beside the levels it measures, with the same floor to
+      floor values. A line built from Elevation sits off by the survey offset
+      (row 5b-179)
+
+  - given: VERSION 4. Six grids handed in, one of them not shown in this view
+    expect: >
+      the five dimensioned, the sixth in `notVisibleInView`, and `problem`
+      saying it was left out. Version 3 drew nothing; the retired card's
+      throw-on-hidden is what the check prevents
+
+  - given: VERSION 4. Three grids and two levels handed in together
+    expect: >
+      NOTHING drawn, all five in `refused`, and `problem` naming "3 grid(s),
+      2 level(s)" and saying they are measured at right angles
+
+  - given: >
+      VERSION 4. Three grids handed in together with two walls - the retired
+      card dimensioned the grids and set the walls aside
+    expect: >
+      NOTHING drawn (the safer rule), all five in `refused`, `problem` naming
+      "2 run(s), 3 grid(s)" and saying to dimension each kind in its own call
+
+  - given: VERSION 4. Two levels handed in while the view is a floor plan
+    expect: >
+      nothing drawn, both in `refused`, `problem` naming a section or an
+      elevation as where floor to floor heights go
+
+  - given: VERSION 4. An arc grid among five straight ones
+    expect: the five dimensioned, the arc in `refused`
+
+  - given: VERSION 4. One grid on its own
+    expect: nothing drawn, `problem` saying one reference is not a dimension
+
+  - given: VERSION 4. Two grids drawn on top of each other
+    expect: nothing drawn, `problem` saying the string would measure zero
+
+  - given: VERSION 4. Three grids with axis x
+    expect: >
+      nothing drawn, all three in `refused`, `problem` saying to leave axis
+      out - a datum string is measured across the datums
+
+  - given: VERSION 4. A reference plane and two grids
+    expect: >
+      the two grids dimensioned and the reference plane in `notLinear` - left
+      out on purpose, usually invisible on the sheet
+
 second_route:
   - Revit's own Aligned Dimension tool snapped to the same two centrelines, compared for the value it reports
   - for family instances, read the dimension's segment values against a tape on the model, and move one instance to confirm the dimension follows
   - do NOT verify with Dimension.Curve - it throws on a dimension this new
+  - for grids and levels, the Aligned Dimension tool picking each grid or level by hand; picking a grid then a level gives a string along one axis only, which is what the mixing rule refuses

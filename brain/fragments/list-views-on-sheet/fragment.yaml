@@ -307,7 +307,7 @@ compatibility-note: >
 #   "put the schedule on the sheet"      -> PLACE_VIEW_ON_SHEET, version 4 (PLACE_
 #                                           SCHEDULE_ON_SHEET until it was merged
 #                                           there, 2026-11-01). A CHANGE
-#   "which views are not on a sheet"     -> FIND_UNPLACED_VIEWS
+#   "which views are not on a sheet"     -> FIND_VIEWS, placement unplaced
 #   "which sheet is this view on"        -> here, SINCE VERSION 2 (row
 #                                           5b-560): viewName names the view and
 #                                           every sheet it is on comes back. It

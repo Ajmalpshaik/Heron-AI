@@ -3184,7 +3184,7 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     #     with `capability` empty run a phrasing a PROVEN capability declares,
     #     every value given, in this call; anything else sends nothing and
     #     hands back the candidates (_by_words).
-    #   - `values` is one "name=value" per line, e.g. alsoSelect=true.
+    #   - `values` is one "name=value" per line, e.g. show=true.
     #   - `expect_from` names the fragment whose result this acts on, and the
     #     carried elements are checked to be THAT fragment's, as revit_change
     #     checks them.

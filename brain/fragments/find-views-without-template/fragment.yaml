@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: FIND_VIEWS_WITHOUT_TEMPLATE
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO FIND_VIEWS (find-views), on the owner's
+# instruction in conversation: "make sure there is no duplicate tools", then
+# "ok go ahead merge all". Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to FIND_VIEWS. The proof below is the record of what this
+# card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: FIND_VIEWS
+  why: >
+    The same job - which views, narrowed by whether a view template holds
+    them. FIND_VIEWS version 2 takes withoutTemplate true: sheets, schedules
+    and legends left out, the views on sheets first, each named in findings
+    with its sheet number, the working views on no sheet counted and not
+    listed; onSheets. Where the rules differed the safer was kept: a view is
+    on a sheet by viewports, schedule placements and each sheet's own list
+    together, and the browser and internal views this card listed as
+    untemplated are set aside as FIND_VIEWS always did. Not carried, as
+    opposite: the answer in collector order - it is in name order, views on
+    sheets first.
 
 purpose: >
   Finds views with no view template, and says which of them are on a sheet.

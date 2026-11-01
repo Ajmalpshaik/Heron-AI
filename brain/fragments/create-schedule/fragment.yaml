@@ -202,7 +202,7 @@ compatibility-note: >
 #                                     SET_SCHEDULE_FILTERS Sheet Number has
 #                                     value. A view list shows every view until
 #                                     it is filtered
-#   "which views are not on a sheet" -> FIND_UNPLACED_VIEWS - a READ, no
+#   "which views are not on a sheet" -> FIND_VIEWS, placement unplaced - a READ, no
 #                                     schedule made
 #   "what sheets are in this model"  -> FIND_SHEETS - a READ, no view made
 #   "make me a new sheet"            -> CREATE_SHEETS

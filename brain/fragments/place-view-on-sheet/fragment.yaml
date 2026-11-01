@@ -35,7 +35,7 @@ purpose: >
   a record; the card is DRAFT until it is proved again.
 
   **The views may be handed on** (version 3): with none named, the views
-  FIND_UNPLACED_VIEWS found, or the ones selected, are placed; anything handed
+  FIND_VIEWS found unplaced, or the ones selected, are placed; anything handed
   on that is not a view is refused by id. Views named always win.
 
   **Version 2: replace one view with another on its sheets.** Name an
@@ -109,7 +109,7 @@ contract:
       optional: true
     - name: elements
       # Version 3 review fix, from PLACE_VIEWS_ON_SHEET: views HANDED ON -
-      # FIND_UNPLACED_VIEWS' answer, or the views selected - read ONLY when
+      # FIND_VIEWS' answer, placement unplaced, or the views selected - read ONLY when
       # `views` names none, so a selection never adds a view nobody named. An
       # element that is not a view is refused by id, never placed. Nothing
       # filling it binds empty (HeronBindingNote.EmptyWhenAbsent).
@@ -280,7 +280,7 @@ compatibility-note: >
 #                                      schedule of every sheet, which is what
 #                                      "put the schedule on the sheet" once
 #                                      returned
-#   "which schedules are there"     -> FIND_SCHEDULES
+#   "which schedules are there"     -> FIND_VIEWS, viewType Schedule
 #   "export it instead"             -> EXPORT_SCHEDULE_TO_CSV
 #
 # "A VIEW CAN ONLY BE ON ONE SHEET" IS THE RULE BEHIND HALF THE REFUSALS HERE,
@@ -328,7 +328,7 @@ compatibility-note: >
 #   "put this view on a sheet"         -> here - at the point given, or the middle
 #   "put these views on a sheet"       -> here - laid out on a grid, and the
 #                                         distinct positions counted
-#   "which views are not on a sheet"   -> FIND_UNPLACED_VIEWS, the read that
+#   "which views are not on a sheet"   -> FIND_VIEWS, placement unplaced, the read that
 #                                         comes before this write
 
 # VERSION 4 (2026-11-01) - PLACE_SCHEDULE_ON_SHEET WAS MERGED INTO THIS CARD
@@ -362,7 +362,7 @@ compatibility-note: >
 #   "what views are on this sheet"     -> LIST_VIEWS_ON_SHEET. A QUESTION, and it
 #                                         must never reach a change that takes a
 #                                         view off a sheet
-#   "which views are not on a sheet"   -> FIND_UNPLACED_VIEWS, the same
+#   "which views are not on a sheet"   -> FIND_VIEWS, placement unplaced, the same
 #   "which sheets is this legend on"   -> LIST_VIEWS_ON_SHEET version 2, viewName =
 #                                         the legend - the question to ask BEFORE
 #                                         this job, and never answered by it

@@ -223,7 +223,7 @@ compatibility-note: >
 #                                            the elements
 #   "what warnings is this model carrying"-> READ_MODEL_WARNINGS
 #   "why is the model so heavy"           -> REPORT_GEOMETRY_COMPLEXITY
-#   "which views have no template"        -> FIND_VIEWS_WITHOUT_TEMPLATE
+#   "which views have no template"        -> FIND_VIEWS, withoutTemplate true
 #   "fix the names this found"            -> EDIT_TEXT_VALUES
 #   "do the type names follow our naming standard"
 #                                         -> here, version 2, with type=

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,36 @@ capability: DIMENSION_GRIDS_AND_LEVELS
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_DIMENSION (create-dimension), on
+# the owner's instruction in conversation: "make sure there is no duplicate
+# tools", then "ok go ahead merge all". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to CREATE_DIMENSION. The proof below
+# is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_DIMENSION
+  why: >
+    The same job - one dimension string through a set on a view.
+    CREATE_DIMENSION version 4 took this card's route beside its centreline
+    walk and its family-instance route: a grid or a level referenced as the
+    whole element, grids measured across the plan and levels up the elevation,
+    a level placed by ProjectElevation (row 5b-179); notVisibleInView checked
+    against the view before anything is drawn; an arc grid and a grid out of
+    parallel refused by id; levels refused in a plan; grids and levels never
+    one string; one datum, or datums at one position, drawing nothing with the
+    reason; reference planes left out on purpose. Where the rules differed the
+    safer was kept: a set mixing grids with runs or family instances is
+    refused whole, naming each kind, where this card dimensioned the grids and
+    set the rest aside; Revit's refusal is caught rather than let out to abort
+    the caller's transaction; a dimension holding fewer than two references is
+    taken out again. notADatum is CREATE_DIMENSION's notLinear, findings its
+    problem. Not carried, as opposite: dimensioning the grids out of a set
+    that also held other dimensionable kinds.
 
 purpose: >
   Draws one dimension string across two or more Grids, or across two or more

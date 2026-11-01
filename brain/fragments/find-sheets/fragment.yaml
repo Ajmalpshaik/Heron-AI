@@ -39,9 +39,9 @@ purpose: >
   | What you meant | Use |
   |---|---|
   | The sheets — to place views on, renumber, export | **this fragment** |
-  | The schedule that lists them — to add a column, export to CSV | `FIND_SCHEDULES` |
+  | The schedule that lists them — to add a column, export to CSV | `FIND_VIEWS`, viewType Schedule |
 
-  `FIND_SCHEDULES` carries the same table, identically. An action that excludes them
+  `FIND_VIEWS` carries the same table, identically. An action that excludes them
   does so visibly; a filter that had already removed them would leave a
   renumbering job reporting success over an incomplete set, which is this
   repository's defining failure and the reason FIND_VIEWS counts what it skips.

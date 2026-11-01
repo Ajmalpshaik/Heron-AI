@@ -158,7 +158,7 @@ compatibility-note: >
   `FilteredElementCollector` are unchanged 2020 to 2027 - checked by compiling
   this fragment against the reference assemblies for all eight.
 
-# ROUTING - cross-referenced in FIND_VIEWS, ACTIVATE_DOCUMENT and ZOOM_TO_ELEMENTS.
+# ROUTING - cross-referenced in FIND_VIEWS, ACTIVATE_DOCUMENT and SET_SELECTION.
 #
 #   "open the Level 2 ceiling plan"    -> here
 #   "go to the section"                -> here
@@ -175,7 +175,9 @@ compatibility-note: >
 #                                         name
 #   "switch to the other project"      -> ACTIVATE_DOCUMENT. This one moves
 #                                         inside the project already active
-#   "take me to these elements"        -> ZOOM_TO_ELEMENTS, which lets Revit pick
+#   "take me to these elements"        -> SET_SELECTION with show (ZOOM_TO_
+#                                         ELEMENTS until it was merged there,
+#                                         2026-11-01), which lets Revit pick
 #                                         a view that can SEE them rather than
 #                                         opening one you named
 #   "make a new plan view"             -> CREATE_PLAN_VIEW. This one never creates
