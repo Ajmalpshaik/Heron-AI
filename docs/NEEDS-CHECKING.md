@@ -1166,6 +1166,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-kn.md`](needs-checking/group-kn.md)
 
+## Group KO - which workset is active: `REPORT_ACTIVE_WORKSET` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-ko.md`](needs-checking/group-ko.md)
+
+## Group KP - which way a structural floor spans: `REPORT_FLOOR_SPAN_DIRECTION` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kp.md`](needs-checking/group-kp.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

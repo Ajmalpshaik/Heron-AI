@@ -146,13 +146,18 @@ compatibility-note: >
 # for the owner (FRAGMENT-ISSUES 5b-1366), not repaired by declaring words
 # nobody said on a card that does not answer them.
 #
+# REPAIRED 2026-11-01 by REPORT_ACTIVE_WORKSET (FRG-DOC-060), a read that
+# reports the active workset and declares "which workset is active", "what is
+# the active workset" and "am I on the right workset" - this card's own words
+# untouched (FRAGMENT-ISSUES 5b-1366, FIXED).
+#
 #   "make Mechanical the active workset"    -> here, worksetName Mechanical
 #   "set the active workset to Shared       -> here
 #    Levels and Grids"
 #   "switch to the Architecture workset"    -> here
-#   "which workset is active"               -> NOT HERE - a question, and this
-#                                              writes. No card reports it yet;
-#                                              5b-1366
+#   "which workset is active"               -> REPORT_ACTIVE_WORKSET - a
+#                                              question, and this writes. The
+#                                              read declares it; 5b-1366
 #   "put these on the MEP workset"          -> SET_ELEMENT_WORKSET - moves
 #                                              elements that already exist
 #   "turn off this workset in this view"    -> SET_VIEW_WORKSET_VISIBILITY - a

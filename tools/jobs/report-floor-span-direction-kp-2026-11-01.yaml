@@ -1,0 +1,42 @@
+# NEEDS-CHECKING Group KP - REPORT_FLOOR_SPAN_DIRECTION, built 2026-11-01 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/report-floor-span-direction-kp-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-floor-span-direction-kp-2026-11-01.yaml
+#
+# THE MODEL is Group HY's scratch project, the one Group KL proves
+# SET_FLOOR_SPAN_DIRECTION on - never a working model: a new project from the
+# metric structural template with S1 (structural floor), W1 (structural wall)
+# and N2 (architectural floor, Structural clear) on Level 1, and KL1's grid 1
+# kept. KP1 adds one span direction symbol on S1 in "FloorPlan: Level 1", by
+# hand, and keeps it.
+#
+# THE ARRANGEMENT: the floors of "FloorPlan: Level 1" (S1 and N2) for the
+# positive, the walls of the same plan (W1) for the negative - a different
+# selection, not an empty one (fragment-proving, rules 3 and 5). N2 alone, the
+# floor that is not structural, is KP3's hand-made selection.
+#
+# READ ONLY: nothing to roll back, and the model must be the same afterwards.
+
+model: "rebar-hy scratch project (metric structural template) with KL1's grid 1 and KP1's span direction symbol on S1 kept, Revit 2020"
+
+defaults:
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: report-floor-span-direction
+    expect: read
+    setup-set:
+      categoryName: Floors
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categoryName: Walls
+      inViewOnly: "FloorPlan: Level 1"
+    note: >
+      KP2. Negative - THE FIRST CASE TO RUN: the walls instead of the floors,
+      so read 0, spans and symbolIds empty, W1 in notFloors. Positive - read 1
+      (S1), spans S1 at the angle its symbol shows, symbolIds S1's one symbol
+      with its type and "Level 1" in the report, N2 in notStructural. Record
+      how Revit writes the Span Direction parameter.

@@ -164,9 +164,17 @@ compatibility-note: >
 # card in the library reports a floor's span direction. Recorded for the owner
 # (FRAGMENT-ISSUES 5b-1365), not repaired by declaring words nobody said.
 #
+# REPAIRED 2026-11-01 by REPORT_FLOOR_SPAN_DIRECTION (FRG-ELE-141), a read that
+# reports each floor's span direction and its symbols and declares "what is the
+# span direction of this slab" and "which way does this floor span" - this
+# card's own words untouched (FRAGMENT-ISSUES 5b-1365, FIXED).
+#
 #   "set the span direction of this slab   -> here, along "grid 1"
 #    to run along grid 1"
 #   "change the floor span to 90 degrees"  -> here, angleDegrees 90
+#   "what is the span direction of this    -> REPORT_FLOOR_SPAN_DIRECTION -
+#    slab"                                    a question, and this writes
+#   "which way does this floor span"       -> REPORT_FLOOR_SPAN_DIRECTION
 #   "add span direction symbols to these   -> PLACE_SPAN_DIRECTION_SYMBOLS -
 #    slabs in this plan"                      draws the symbol, turns nothing
 #   "rotate these floors 90 degrees"       -> ROTATE_ELEMENTS - turns the floor

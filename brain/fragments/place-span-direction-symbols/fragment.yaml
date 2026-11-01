@@ -168,8 +168,22 @@ compatibility-note: >
 # card in the library reports a floor's span direction. Recorded for the owner
 # (FRAGMENT-ISSUES 5b-1365), not repaired by declaring words nobody said.
 #
+# REPAIRED 2026-11-01 by REPORT_FLOOR_SPAN_DIRECTION (FRG-ELE-141), a read that
+# reports each floor's span direction and its symbols and declares "what is the
+# span direction of this slab" and "which way does this floor span" - this
+# card's own words untouched (FRAGMENT-ISSUES 5b-1365, FIXED).
+#
 #   "add span direction symbols to these   -> here, on the selection
 #    slabs in this plan"
+#   "what is the span direction of this    -> REPORT_FLOOR_SPAN_DIRECTION -
+#    slab"                                    a question, and this writes
+#   "which way does this floor span"       -> REPORT_FLOOR_SPAN_DIRECTION
+#   "add span direction symbols to these   -> behind a 2020 or 2024 wall,
+#    slabs in this plan" (Revit 2020-2024)    where this card is not offered,
+#                                             REPORT_FLOOR_SPAN_DIRECTION
+#                                             ranks first (SET_FLOOR_SPAN_
+#                                             DIRECTION did, before it) -
+#                                             nothing can place one there
 #   "set the span direction of this slab   -> SET_FLOOR_SPAN_DIRECTION -
 #    to run along grid 1"                     turns the span; any symbol
 #                                             already drawn turns with it
