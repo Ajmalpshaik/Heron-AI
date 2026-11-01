@@ -115,6 +115,12 @@ compatibility-note: >
 #                                         shows, paint included
 #   "what material is this"            -> READ_ELEMENT_MATERIAL - what each element is
 #                                         made of, with the volume of each
+# ROUTING (2026-11-01) - repeated in CREATE_MATERIAL_TAKEOFF.
+#   "make a wall material takeoff with material name, area and volume"
+#                                      -> CREATE_MATERIAL_TAKEOFF - a schedule VIEW
+#                                         of the same numbers, made in the model;
+#                                         this answers in the reply and makes
+#                                         nothing
 
 utterances:
   - how much of each material is there

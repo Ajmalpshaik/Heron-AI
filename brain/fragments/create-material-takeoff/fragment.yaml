@@ -1,0 +1,171 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-161
+semantic-identity: "make a Material Takeoff schedule view of one category with the columns named"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "make a wall material takeoff
+# with material name, area and volume", "create a material takeoff schedule
+# for floors" and "material takeoff of all the concrete" - Revit's View >
+# Schedules > Material Takeoff. Checked that day with brain/heron_retrieve.py
+# on a scratch store, Revit 2024: the three reached READ_ELEMENT_MATERIAL,
+# CREATE_PARTS and READ_ELEMENT_MATERIAL. Nothing in the library made a
+# material takeoff VIEW: CREATE_SCHEDULE calls ViewSchedule.CreateSchedule,
+# which has no material rows; REPORT_MATERIAL_TAKEOFF reads the same numbers
+# into the reply and makes nothing; ADD_SCHEDULE_FIELDS adds columns to a
+# schedule that already exists.
+#
+# WHY A NEW CARD AND NOT A WIDENING OF CREATE_SCHEDULE. CREATE_SCHEDULE is
+# PROVEN, and any change under its impl/ would make its proof stale. And the
+# creation call, the list of allowed categories and the fields are all
+# different: a takeoff has one row per material per element, and its Material:
+# fields exist on no ordinary schedule.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33):
+#   category     the category, as Revit names it - "Walls", "Floors". Only a
+#                category Revit allows a takeoff of is taken. Left out, or
+#                any other name: NOTHING IS MADE and the allowed ones come
+#                back in `validCategories`. "Multi-Category" only when named
+#   fieldNames   the columns, as the Fields tab names them. A name with no
+#                field, or one Revit would not add, is in `missingFields`
+#                with the material fields in `fieldsAvailable`; not one
+#                added and nothing is kept
+#   scheduleName the takeoff's name. Left out: Revit's own default name. A
+#                name already used by a schedule is refused, nothing made
+#
+# "Of all the concrete" is a FILTER on Material: Name - SET_SCHEDULE_FILTERS,
+# on the takeoff this makes. It is never read here as a category.
+#
+# RISK MODIFY. It adds one schedule view, and deletes nothing but a takeoff it
+# has just made and refused to keep.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.schedules
+capability: CREATE_MATERIAL_TAKEOFF
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates Revit's Material Takeoff (View > Schedules) for one named category,
+  with the columns asked for - the material's name, area and volume, say -
+  under the name asked for or Revit's default. A view in the Project Browser
+  that lists each layer and paint of every element, updates as the model
+  changes and goes on a sheet. It says which columns it added and which it
+  could not; with no category, or one Revit allows none for, it makes nothing
+  and lists those Revit allows.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The category, BY THE NAME REVIT SHOWS, matched only against the
+    # categories Revit allows a material takeoff of. Left out it reads as
+    # "none": nothing is made and those categories are listed.
+    - name: category
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # The columns, by the names in the Fields tab. Never chosen for you.
+    - name: fieldNames
+      type: IList<string>
+      source: request
+    # Left out it reads as "none": Revit's own default name is kept.
+    - name: scheduleName
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: created
+      role: result
+      type: ElementId
+    - name: scheduleCalled
+      # The name the takeoff has in the Project Browser - asked for, or
+      # Revit's default.
+      role: result
+      type: string
+    - name: addedFields
+      # The fields added, by the name Revit shows, in the order asked.
+      role: result
+      type: IList<string>
+    - name: missingFields
+      # Field names asked for that this takeoff does not have, or that Revit
+      # would not add. What it was GIVEN and could not use (D-52).
+      role: accounting
+      type: IList<string>
+    - name: fieldsAvailable
+      # The material fields the takeoff offers, filled only when a field was
+      # missing - what to name instead (D-52).
+      role: accounting
+      type: IList<string>
+    - name: validCategories
+      # The categories Revit allows a material takeoff of, filled only when
+      # the category was left out or refused - what to name (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why nothing was made or kept, in plain words. Empty when it ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. ViewSchedule.CreateMaterialTakeoff
+  (Document, ElementId), GetValidCategoriesForMaterialTakeoff,
+  IsValidCategoryForMaterialTakeoff, ScheduleDefinition.IsMaterialTakeoff,
+  CategoryId, GetSchedulableFields and AddField(SchedulableField),
+  SchedulableField.GetName and FieldType, ScheduleFieldType.Material and
+  MaterialQuantity, Category.GetCategory(Document, ElementId) and
+  Document.Delete(ElementId) carry the same signatures 2020 through 2027 -
+  read with tools/api-surface --members on 2026-11-01. No ElementId is built
+  from a number or read as one; the category's id comes from Revit's own list.
+
+# ROUTING (2026-11-01) - repeated in CREATE_SCHEDULE and REPORT_MATERIAL_TAKEOFF.
+# Measured that day through heron_retrieve.find, Revit 2024, on two scratch
+# stores, one built from the tree before this card and one after, over every
+# declared utterance and every routing-table sentence in the library: NONE
+# changed the card it reaches. What moved here was declared nowhere: this
+# card's own three sentences (from READ_ELEMENT_MATERIAL and CREATE_PARTS),
+# and three asked as requests to MAKE something - "make a material takeoff
+# schedule" (from REPORT_MATERIAL_TAKEOFF), "make a material schedule" (from
+# READ_ELEMENT_MATERIAL) and "create a material takeoff" (from
+# CREATE_MATERIAL). The questions stayed where they were: "how much concrete is
+# there" and "how much of each material is in the walls" on
+# READ_ELEMENT_MATERIAL, "give me a material takeoff", "quantities by material"
+# and "a finishes schedule for these" on REPORT_MATERIAL_TAKEOFF, "make a
+# schedule" on CREATE_SCHEDULE. No question reaches this card.
+#
+# TWO THINGS MOVED THAT ARE NOT THIS CARD'S, recorded rather than repaired.
+# "make a sheet set for each value of TCM_Project Browser 1", which
+# SYNC_SHEET_SETS_BY_PARAMETER claims and reached neither before nor after,
+# went from CHECK_SHEET_SETS_BY_PARAMETER to REPORT_BROWSER_ORGANIZATION - a
+# three-way tie (0.0307, 0.0307, 0.0306, the claimant third) that one more
+# card in the word counts tips; this card is not among the candidates. And by
+# WORDS ALONE "material takeoff for these", READ_ELEMENT_MATERIAL's own
+# sentence, ranks this card first where REPORT_MATERIAL_TAKEOFF ranked first
+# before; it is still answered by READ_ELEMENT_MATERIAL, by identity.
+#
+#   "make a wall material takeoff with material name, area and volume" -> here
+#   "create a material takeoff schedule for floors" -> here
+#   "material takeoff of all the concrete"  -> here, then SET_SCHEDULE_FILTERS
+#                                              on Material: Name
+#   "make a schedule"                       -> CREATE_SCHEDULE - a schedule of
+#                                              elements, no material rows
+#   "give me a material takeoff"            -> REPORT_MATERIAL_TAKEOFF - the
+#                                              numbers in the reply, nothing made
+utterances:
+  - make a wall material takeoff with material name, area and volume
+  - create a material takeoff schedule for floors
+  - material takeoff of all the concrete

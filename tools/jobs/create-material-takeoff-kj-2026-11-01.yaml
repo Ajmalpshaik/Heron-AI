@@ -1,0 +1,48 @@
+# NEEDS-CHECKING Group KJ - CREATE_MATERIAL_TAKEOFF, built 2026-11-01 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/create-material-takeoff-kj-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-material-takeoff-kj-2026-11-01.yaml
+#
+# THE MODEL is "test projject" in Revit 2024 - where CREATE_SCHEDULE was proved
+# on 2026-09-13. Never a working model. KJ1 confirms it has at least one Basic
+# Wall (a compound structure, so it carries materials) drawn in the host model,
+# not in a link, and no schedule called "HERON TEST TAKEOFF".
+#
+# THE ARRANGEMENT: every value is typed - category, fields and name - so
+# nothing is selected and `setup: []`. The negative is the SAME call with
+# category=Grids: a category Revit allows no material takeoff of, so a
+# different value, not an empty one (fragment-proving, rules 3 and 5).
+#
+# THE FIELD NAMES ARE REVIT'S AS THE FIELDS TAB SHOWS THEM. "Material: Name",
+# "Material: Area" and "Material: Volume" are the English spelling and are not
+# confirmed for this model: if KJ3's positive puts any of them in
+# missingFields, take the spelling from `fieldsAvailable` and write it below -
+# never into the card.
+
+model: "test projject, Revit 2024 - with one Basic Wall in the host model (KJ1)"
+
+defaults:
+  in: "test projject"
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: create-material-takeoff
+    expect: created
+    setup: []
+    set:
+      category: Walls
+      fieldNames: "Material: Name,Material: Area,Material: Volume"
+      scheduleName: "HERON TEST TAKEOFF"
+    negative-set:
+      category: Grids
+      fieldNames: "Material: Name,Material: Area,Material: Volume"
+      scheduleName: "HERON TEST TAKEOFF 2"
+    note: >
+      KJ3. Negative - THE FIRST CASE TO RUN: Grids, so created empty, refused
+      "\"Grids\" is not a category Revit allows a material takeoff of ...
+      Nothing was made.", validCategories listing Walls, Floors and the rest.
+      Positive - created one id, scheduleCalled "HERON TEST TAKEOFF",
+      addedFields the three names, missingFields empty, findings "Material
+      takeoff "HERON TEST TAKEOFF" of Walls made, with 3 field(s) ...".

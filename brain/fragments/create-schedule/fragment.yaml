@@ -131,6 +131,11 @@ compatibility-note: >
 #   "create a view list"               -> CREATE_SHEET_LIST, listKind=views.
 #                                        Views are not model elements either;
 #                                        it is ViewSchedule.CreateViewList
+# ROUTING (2026-11-01) - repeated in CREATE_MATERIAL_TAKEOFF.
+#   "create a material takeoff schedule for floors" -> CREATE_MATERIAL_TAKEOFF -
+#                                        Revit's Material Takeoff, one row per
+#                                        material per element, which a schedule
+#                                        made here never has
 utterances:
   - make a schedule
   - create a schedule of the ducts
