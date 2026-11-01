@@ -46,7 +46,12 @@ confirmed:
   said: "all ok"
 
 # {n, was, now, date, said} - one entry per answer the owner corrects, in order.
-corrections: []
+corrections:
+  - n: 79
+    was: READ_ELEMENT_OWNERSHIP
+    now: REPORT_ELEMENT_OWNERSHIP
+    date: "2026-11-01"
+    said: "merge the 5 real duplicates ... make anothere tools with this a+b+c+d; record them (the answer-key moves) as my corrections"
 
 questions:
   - n: 1
