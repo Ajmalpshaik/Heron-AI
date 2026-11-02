@@ -25,8 +25,8 @@ semantic-identity: "set a view's work plane to a named level, reference plane or
 # SET_FAMILY_SETTINGS sets the family's Work Plane-Based tick, a family
 # setting, not a view's plane. The family form cards make a sketch plane of
 # their own for one form and leave the view's alone. The QUESTION - "which
-# work plane is this view on" - is REPORT_VIEW_SETTINGS', which reads it
-# since 2026-11-02 (D-86): a write never answers it.
+# work plane is this view on" - is REPORT_VIEW_WORK_PLANE's, a read of its
+# own since 2026-11-02 (D-86): a write never answers it.
 #
 # THE PLANE IS NEVER GUESSED (D-33). A level, a named reference plane or a
 # grid by its name; with none named, or a name nothing has, nothing changes
@@ -132,7 +132,7 @@ compatibility-note: >
   is SHOWN, on any release, so the display is not read back - the reply says
   so. Not seen in Revit.
 
-# ROUTING (2026-11-02) - the same rows are in REPORT_VIEW_SETTINGS and
+# ROUTING (2026-11-02) - the same rows are in REPORT_VIEW_WORK_PLANE and
 # CREATE_PROJECT_REFERENCE_PLANES.
 #
 #   "set the work plane to Level 2"     -> here, plane Level 2, the view in
@@ -143,8 +143,11 @@ compatibility-note: >
 #   "show the work plane in this view"  -> here, display show
 #   "hide the work plane"               -> here, display hide
 #   "which work plane is this view on", "what is the work plane of this view"
-#                                       -> REPORT_VIEW_SETTINGS, a read. A
-#                                          question, and this writes (D-86)
+#                                       -> REPORT_VIEW_WORK_PLANE, a read.
+#                                          A question, and this writes (D-86).
+#                                          The keyword route alone ranks this
+#                                          card first on both; `find` answers
+#                                          the read by identity, flag or not
 #   "draw a reference plane along grid B in this plan"
 #                                       -> CREATE_PROJECT_REFERENCE_PLANES,
 #                                          which draws the plane this card

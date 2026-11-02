@@ -161,7 +161,7 @@ compatibility-note: >
 #                                     plane; this card draws planes and sets
 #                                     none
 #   "which work plane is this view on"
-#                                  -> REPORT_VIEW_SETTINGS, a read (since
+#                                  -> REPORT_VIEW_WORK_PLANE, a read (since
 #                                     2026-11-02). Before, these reached this
 #                                     card by ranking, the question too
 #                                     without the host's question flag

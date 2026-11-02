@@ -1266,7 +1266,7 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ll.md`](needs-checking/group-ll.md)
 
-## Group LM - a view's work plane set to a named level, reference plane or grid, shown or hidden, and read: `SET_VIEW_WORK_PLANE`, `REPORT_VIEW_SETTINGS` widened (2026-11-02)
+## Group LM - a view's work plane set to a named level, reference plane or grid, shown or hidden, and read: `SET_VIEW_WORK_PLANE`, `REPORT_VIEW_WORK_PLANE` (2026-11-02)
 
 **Its own file:** [`needs-checking/group-lm.md`](needs-checking/group-lm.md)
 
