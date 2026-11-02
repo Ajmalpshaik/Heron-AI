@@ -128,6 +128,10 @@ compatibility-note: >
 #   "extend this until it hits that one"    -> TRIM_EXTEND_ELEMENTS, declared
 #                                              there since row 5b-1419 - ranking
 #                                              alone moved it here
+#   "set the justification of these beams"  -> SET_FRAMING_JUSTIFICATION -
+#                                              where the member sits on its
+#                                              line, not its length (added
+#                                              2026-11-02, row 5b-1444)
 
 utterances:
   - set the beam end extension to 150 mm

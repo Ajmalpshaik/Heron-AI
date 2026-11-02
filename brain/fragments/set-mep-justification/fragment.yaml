@@ -87,6 +87,11 @@ compatibility-note: >
 #   "line these up on their tops"    -> here
 #   "keep the top flat through the reducer" -> here
 #   "set the justification"          -> here
+#   "set the justification of these beams" -> SET_FRAMING_JUSTIFICATION -
+#                                       beams and braces, never ducts or
+#                                       pipes. Added 2026-11-02 with that card
+#                                       (row 5b-1444): a bare "set the
+#                                       justification" names neither, so ask
 #   "put these all at 2800"          -> ALIGN_ELEMENTS - whole runs moved
 #                                       to a level. This decides where the pipe
 #                                       sits INSIDE its own size, which is a

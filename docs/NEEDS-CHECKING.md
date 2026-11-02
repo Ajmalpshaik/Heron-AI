@@ -1366,6 +1366,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-mk.md`](needs-checking/group-mk.md)
 
+## Group ML - Modify > Justification, Annotate > Tread Number and Manage > Project Parameters > Remove - set and read where beams and braces sit on their line, place tread or riser numbers on a stair run, and remove a project parameter: `SET_FRAMING_JUSTIFICATION`, `REPORT_FRAMING_JUSTIFICATION`, `PLACE_STAIR_TREAD_NUMBERS`, `REMOVE_PROJECT_PARAMETER` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-ml.md`](needs-checking/group-ml.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

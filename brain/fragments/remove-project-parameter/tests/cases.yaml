@@ -1,0 +1,61 @@
+# REMOVE_PROJECT_PARAMETER - built 2026-11-02 in a cloud session with no
+# Revit. NOT RUN. Risk ADMIN: proved by name with `validate ... --allow-publish
+# --write` and the owner's Admin and Changes switches on (D-106); no batch
+# sends it. D-30: the negative case is what catches "succeeded and did
+# nothing" - and, for a delete, "removed a parameter nobody confirmed".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING Group ML): a scratch
+# project "params-ml", new from Revit's metric ARCHITECTURAL template, saved
+# under %TEMP%\heron-work, never a working model. Four basic walls on Level 1.
+# With ADD_PROJECT_PARAMETER, or Manage > Project Parameters > Add, two text
+# INSTANCE parameters on Walls: "HERON_ML_TEMP" (shared, from a scratch shared
+# parameter file under %TEMP%\heron-work) and "HERON_ML_KEEP" (not shared).
+# "a" typed into HERON_ML_TEMP on two walls and into HERON_ML_KEEP on three.
+# A wall schedule "ML Walls" with a HERON_ML_KEEP column. Saved.
+
+positive:
+  - given: params-ml, parameterName "HERON_ML_KEEP", confirm "HERON_ML_KEEP" - the job's positive
+    expect: >
+      removed true; valuesLost 3; alsoAffected "schedule \"ML Walls\" shows it
+      in a column"; report "Removed \"HERON_ML_KEEP\" (not shared, an instance
+      parameter, on Walls): 3 element(s) hold a value in it; ... - deleted from
+      the project with its binding ... Read back: no longer a project
+      parameter." Manage > Project Parameters no longer lists it; the schedule
+      has lost the column. RECORD what Revit did to the column
+
+  - given: params-ml, parameterName "HERON_ML_TEMP", confirm "HERON_ML_TEMP"
+    expect: >
+      removed true; valuesLost 2; report "... (shared, GUID ...) ... its binding
+      removed; the shared parameter's definition stays in the project";
+      Project Parameters no longer lists it. RECORD whether a schedule can
+      still offer the shared parameter as a field
+
+negative:
+  - given: params-ml, parameterName "HERON_ML_KEEP", confirm "HERON_ML_TEMP" - the job's negative
+    expect: >
+      removed false; valuesLost 3; refused "Removing \"HERON_ML_KEEP\" (...):
+      3 element(s) hold a value in it; schedule \"ML Walls\" shows it in a
+      column - and every one of those values would be lost. It is removed only
+      with confirm repeating its name exactly ... NOTHING WAS REMOVED."; both
+      parameters still in Project Parameters with every value. THE FIRST CASE
+      TO RUN
+
+  - given: params-ml, parameterName "heron_ml_keep", confirm "heron_ml_keep"
+    expect: >
+      removed false; refused "No project parameter is named exactly
+      \"heron_ml_keep\" - \"HERON_ML_KEEP\" (...) differs only in capitals"
+
+  - given: params-ml, parameterName "No Such Parameter", confirm the same
+    expect: >
+      refused "No project parameter is named ... The project parameters here
+      are \"HERON_ML_KEEP\", \"HERON_ML_TEMP\" ..."
+
+  - given: a family open in the Family Editor, any name
+    expect: refused "This is a family ... DELETE_FAMILY_PARAMETERS'. NOTHING WAS REMOVED."
+
+second_route:
+  - >
+    Revit itself: Manage > Project Parameters, select HERON_ML_KEEP, Remove -
+    Revit's own warning, then the same list and the same schedule
+  - one Ctrl+Z takes the removal back, with every value (Golden Rule 16)
+  - READ_ELEMENT_PARAMETERS with parameterName "HERON_ML_KEEP" on the walls, before (3 values) and after (absent on all four)
