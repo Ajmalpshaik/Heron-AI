@@ -13,22 +13,22 @@ version: 1
 source: OFFICIAL
 risk: MODIFY
 
-# DEPRECATED 2026-11-01 - MERGED INTO CREATE_DUCT_RUNS (create-duct-runs), on the owner's instruction
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_MEP_RUNS (create-mep-runs), on the owner's instruction
 # in conversation: "make sure there is no duplicate tools", every conflict to
 # keep the safer rule. Constitution Article 1: kept, never deleted, so its
 # record and its proof stay readable and it can be brought back. Nothing
 # offers it now - retrieval leaves DEPRECATED out, and its sentences claim
 # nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
-# sentences moved to CREATE_DUCT_RUNS. The proof below is the record of what this
+# sentences moved to CREATE_MEP_RUNS. The proof below is the record of what this
 # card's code did, not a claim about today.
 deprecated:
   date: '2026-11-01'
   by: Ajmal PS
-  superseded-by: CREATE_DUCT_RUNS
+  superseded-by: CREATE_MEP_RUNS
   why: >
     The same drawing in the other domain: straight pipe between consecutive
     points, a system type, a pipe type and a level, nothing connected.
-    CREATE_DUCT_RUNS draws straight duct or straight pipe since its version 2,
+    CREATE_MEP_RUNS draws straight duct or straight pipe since its version 2,
     the type class deciding as it does for CREATE_FLEX_PIPE: a pipe type with a
     piping system draws pipe, one run of points or every run of a layout, in one
     undo. This card's pipeType is its ductType, its points a run in millimetres,
@@ -44,7 +44,7 @@ purpose: >
   here to there", not a system build.
 
   **Written to the same shape as straight duct on purpose** (CREATE_DUCT, merged
-  into CREATE_DUCT_RUNS on 2026-11-01). The earlier library
+  into CREATE_MEP_RUNS on 2026-11-01). The earlier library
   drew ONE pipe between two points and drew duct as a run; the same job in two
   different shapes is how a composition that works for duct fails for pipe. Two
   points is the single-segment case, so nothing is lost by making the run the
@@ -69,7 +69,7 @@ contract:
   needs:
     - name: doc
       type: Document
-    # RESOLVED OBJECTS, never ids - same reason as CREATE_DUCT_RUNS. A fragment
+    # RESOLVED OBJECTS, never ids - same reason as CREATE_MEP_RUNS. A fragment
     # taking an integer id would have to build an ElementId from it, and that
     # constructor is what breaks at Revit 2024 (D-05). Taking the object makes
     # the trap unreachable.
@@ -133,12 +133,12 @@ compatibility-note: >
   fragment touches no units API and constructs no ElementId, which are the two
   things that moved across the range.
 
-# ROUTING - repeated in CREATE_DUCT_RUNS, SET_MEP_SIZE and CONNECT_OPEN_ENDS.
+# ROUTING - repeated in CREATE_MEP_RUNS, SET_MEP_SIZE and CONNECT_OPEN_ENDS.
 #
 #   "run a pipe from here to there" -> here
 #   "draw the pipe"                 -> here
 #   "add a drain line"              -> here - it is still a pipe
-#   "draw a duct from here"         -> CREATE_DUCT_RUNS. Same job, other domain
+#   "draw a duct from here"         -> CREATE_MEP_RUNS. Same job, other domain
 #   "make it 100 mm"                -> SET_MEP_SIZE - the pipe already exists,
 #                                      and that is where Revit's SNAP to the
 #                                      nearest allowed size is caught
@@ -147,9 +147,9 @@ compatibility-note: >
 #                                      runs is not a new run
 #   "they are touching but not
 #    connected"                     -> CONNECT_OPEN_ENDS
-#   "draw a cable tray"              -> CREATE_DUCT_RUNS
-#   "draw a conduit"                 -> CREATE_DUCT_RUNS
-#   "run a flexible pipe to that sprinkler" -> CREATE_DUCT_RUNS - FLEXIBLE pipe,
+#   "draw a cable tray"              -> CREATE_MEP_RUNS
+#   "draw a conduit"                 -> CREATE_MEP_RUNS
+#   "run a flexible pipe to that sprinkler" -> CREATE_MEP_RUNS - FLEXIBLE pipe,
 #                                      the drop to a head (2026-10-14)
 
 utterances:

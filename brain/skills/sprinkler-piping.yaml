@@ -53,5 +53,5 @@ note: >
   `ducts` - draws the riser and the arm and joins them at the head, and
   FIT_MEP_JOINTS - handed its `runs` - makes the elbow and the tap
   (CREATE_FIXTURE_BRANCHES did the branch until 2026-11-01). FLEXIBLE drops
-  are CREATE_DUCT_RUNS with a flex pipe type, a different job: rigid here
+  are CREATE_MEP_RUNS with a flex pipe type, a different job: rigid here
   unless the owner says flex. NEEDS-CHECKING Group EC.

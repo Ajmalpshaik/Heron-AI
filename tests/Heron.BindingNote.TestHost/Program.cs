@@ -143,7 +143,7 @@ namespace Heron.BindingNote.TestHost
                   "an optional number is still refused - no number means 'not asked'");
             // 2026-11-01: ONE ELEMENT OR ONE DUCT-OR-PIPE SYSTEM TYPE MARKED
             // OPTIONAL BINDS NULL - TRACE_CONNECTIVITY with no start, ALIGN_ELEMENTS
-            // with a typed height and no reference, CREATE_DUCT_RUNS drawing cable
+            // with a typed height and no reference, CREATE_MEP_RUNS drawing cable
             // tray, CREATE_MEP_SYSTEM making a circuit. Only when marked.
             Check(HeronBindingNote.AbsentValue("Element", "true") == "null",
                   "an absent Element marked optional binds null");

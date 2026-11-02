@@ -30,7 +30,7 @@ purpose: >
   whether an element's BOUNDING BOX overlaps the volume. The exact test asks
   whether its real geometry does. They were two files in the earlier library and
   they answer one question at two accuracies, which is a flag rather than a
-  second fragment - the same call CREATE_DUCT_RUNS makes about tray and
+  second fragment - the same call CREATE_MEP_RUNS makes about tray and
   conduit.
 
   **The difference is not academic and the report always names which ran.** A

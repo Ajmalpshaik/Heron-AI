@@ -256,7 +256,7 @@ compatibility-note: >
 #                                          `runs` (CREATE_FIXTURE_BRANCHES until
 #                                          2026-11-01)
 #   "draw the drops from the sprinklers to the branch line" -> here
-#   "make the flex drop to that diffuser" -> CREATE_DUCT_RUNS - it makes flex
+#   "make the flex drop to that diffuser" -> CREATE_MEP_RUNS - it makes flex
 #                                          and does NOT join it up
 #   "is every sprinkler actually piped" -> CHECK_FIXTURE_CONNECTIVITY
 

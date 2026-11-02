@@ -576,7 +576,7 @@ utterances:
   # ADDED 2026-11-01 WITH THE MERGE. Three routing tables send "all the ducts"
   # here - SELECT_BY_FAMILY's, and the two merged cards' - and a comment is not
   # indexed (row 5b-387's lesson). SELECT_BY_CATEGORIES answered it by ranking;
-  # with that card retired, lexical sent it to CREATE_DUCT_RUNS, a write.
+  # with that card retired, lexical sent it to CREATE_MEP_RUNS, a write.
   - all the ducts
   # MOVED 2026-11-01 from SELECT_BY_LEVEL, merged into this card.
   - what is on level 2
