@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -274,40 +274,50 @@ contract:
 # proves version 3 (D-30). The version 2 code it ran is still the path every
 # call that leaves toWorkset out takes.
 proof:
-  date: '2026-10-18'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project2 (3,035 elements), Revit 2020, session 13520
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned centreText ,
-    copiedTo , copies 5 item(s) [345687, 345688, 345689, ...], copyOnWorkset Func`2, levelsText
-    , notCopied 0, onWorksets , putOnWorksets Action`3, readBackWorksets Action, refused (null),
-    source 5 item(s) [345432, 345433, 345434, ...], turn 0, turnProblem (null), turnText ,
-    worksetActive WorksetId, worksetCategory Func`2, worksetFollowers 0 item(s), worksetMarks
-    Func`2, worksetMode (null), worksetName Func`2, worksetNamed WorksetId, worksetNames 0
-    entry(ies), worksetPool (null), worksetProblem (null), worksetText , worksetUnmatched
-    0 item(s), worksetWanted 0 entry(ies). inputs came elements from the selection (5); offset
-    as given; toLevels as given; turnDegrees as given; turnCentreMm as given; toWorkset as
-    given. on Project2
-  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: Level 1, offset=0,0,0,
+    filter-elements-by-category, set-selection with this phase's own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    byPitch false, bySweep false, centreText , copiedTo , copies 10 item(s) [1020206, 1020207,
+    1020208, ...], copiesEach 1, copyOnWorkset Func`2, count 2, levelsText , notCopied 0,
+    onWorksets , pitchMm 0, pitchText none, putOnWorksets Action`3, readBackWorksets Action,
+    refused (null), runProblem (null), source 10 item(s) [404243, 411658, 411660, ...], stepDegrees
+    0, sweep 0, sweepCentre (null), sweepProblem (null), sweepText none, turn 0, turnProblem
+    (null), turnText , worksetActive WorksetId, worksetCategory Func`2, worksetFollowers 0
+    item(s), worksetMarks Func`2, worksetMode (null), worksetName Func`2, worksetNamed WorksetId,
+    worksetNames 0 entry(ies), worksetPool (null), worksetProblem (null), worksetText active,
+    worksetUnmatched 0 item(s), worksetWanted 0 entry(ies). inputs came elements from the
+    selection (10); offset as given; toLevels as given; turnDegrees as given; turnCentreMm
+    as given; toWorkset given empty - "active", the card's own default (optional); count not
+    given - "2", the card's own default (optional); spacingMm not given - "none", the card's
+    own default (optional); sweepDegrees not given - "none", the card's own default (optional).
+    on P1102 MEP
+  negative_case: 'run with category=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP TYP, offset=0,0,0,
     toLevels=Level 99, toWorkset=, turnCentreMm=, turnDegrees= instead - chosen because it
     should not contain what this fragment reports - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned centreText ,
-    copiedTo , copies 0 item(s), copyOnWorkset Func`2, levelsText Level 99, notCopied 0, onWorksets
-    , putOnWorksets Action`3, readBackWorksets Action, refused This model has no level named
-    "Level 99". Its levels, lowest first: Level 1, Level 2, Level 3. Nothing was copied.,
-    source 5 item(s) [345432, 345433, 345434, ...], turn 0, turnProblem (null), turnText ,
-    worksetActive WorksetId, worksetCategory Func`2, worksetFollowers 0 item(s), worksetMarks
-    Func`2, worksetMode (null), worksetName Func`2, worksetNamed WorksetId, worksetNames 0
-    entry(ies), worksetPool (null), worksetProblem (null), worksetText , worksetUnmatched
-    0 item(s), worksetWanted 0 entry(ies). inputs came elements from the selection (5); offset
-    as given; toLevels as given; turnDegrees as given; turnCentreMm as given; toWorkset as
-    given. on Project2'
+    filter-elements-by-category, set-selection with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    byPitch false, bySweep false, centreText , copiedTo , copies 0 item(s), copiesEach 0,
+    copyOnWorkset Func`2, count 2, levelsText Level 99, notCopied 0, onWorksets , pitchMm
+    0, pitchText none, putOnWorksets Action`3, readBackWorksets Action, refused This model
+    has no level named "Level 99". Its levels, lowest first: Level 1, Level 2, Level 3, Roof
+    Level. Nothing was copied., runProblem (null), source 10 item(s) [404243, 411658, 411660,
+    ...], stepDegrees 0, sweep 0, sweepCentre (null), sweepProblem (null), sweepText none,
+    turn 0, turnProblem (null), turnText , worksetActive WorksetId, worksetCategory Func`2,
+    worksetFollowers 0 item(s), worksetMarks Func`2, worksetMode (null), worksetName Func`2,
+    worksetNamed WorksetId, worksetNames 0 entry(ies), worksetPool (null), worksetProblem
+    (null), worksetText active, worksetUnmatched 0 item(s), worksetWanted 0 entry(ies). inputs
+    came elements from the selection (10); offset as given; toLevels as given; turnDegrees
+    as given; turnCentreMm as given; toWorkset given empty - "active", the card''s own default
+    (optional); count not given - "2", the card''s own default (optional); spacingMm not given
+    - "none", the card''s own default (optional); sweepDegrees not given - "none", the card''s
+    own default (optional). on P1102 MEP'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: dda6816d621240de
+  fingerprint: 6b974fc7d925b9fc
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

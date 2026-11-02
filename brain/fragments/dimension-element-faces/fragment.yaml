@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -139,39 +139,47 @@ contract:
 # fingerprint no longer describes the code and the card is DRAFT until
 # version 2 is proved on a real model (D-30).
 proof:
-  date: '2026-10-18'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project2 (3,035 elements), Revit 2020, session 13520
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
     filter-elements-by-category with this phase''s own values - run inside a transaction,
     and Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
-    created 5 item(s) [345642, 345643, 345644, ...], findings 6 item(s) [5 dimension string(s)
-    drawn across in "Level 1" and read bac..., 345432 (Walls): 2 references, 200 mm, 345433
-    (Walls): 2 references, 200 mm, ...], lines 5 item(s) [345432 (Walls): 2 references, 200
-    mm, 345433 (Walls): 2 references, 200 mm, 345434 (Walls): 2 references, 200 mm, ...],
-    measured 345432 (Walls): 2 references, 200 mm | 345433 (Walls): 2 references, 200 mm |
-    345434 (Walls): 2 references, 200 mm | 345435 (Walls): 2 references, 200 mm | 345436 (Walls):
-    2 references, 200 mm, noFaces 0 item(s), offsetMm 0, options Options, refusal (null),
-    tolerance 0.00164041994750656, way across. inputs came view as given; elements from filter-elements-by-category
-    (5); direction as given; offsetMm as given. on Project2'
-  negative_case: 'run with categoryName=Text Notes, direction=across, inViewOnly=FloorPlan:
-    Level 1, offsetMm=0, view=Heron 3D arranged with category=Walls, levelId=Level 1 instead
-    - chosen because it should not contain what this fragment reports - the arrangement was
-    re-made first by running filter-elements-by-category with this phase''s own values - run
-    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned MmPerFoot 304.8, created 0 item(s), findings 1 item(s) ["Heron 3D" is not a plan,
-    section, elevation or detail view ...], lines 1 item(s) ["Heron 3D" is not a plan, section,
-    elevation or detail view ...], measured "Heron 3D" is not a plan, section, elevation or
-    detail view - a dimension is drawn in one of those. NOTHING WAS DRAWN., noFaces 0 item(s),
-    offsetMm 0, options Options, refusal "Heron 3D" is not a plan, section, elevation or detail
-    view - a dimension is drawn in one of those. NOTHING WAS DRAWN., tolerance 0.00164041994750656,
-    way across. inputs came view as given; elements from filter-elements-by-category (5);
-    direction as given; offsetMm as given. on Project2'
+    buildingMiddle Func`2, centreOf Func`2, created 1 item(s) [1020266], findings 3 item(s)
+    [1 dimension string(s) drawn across in "Callout of Level 1 HV..., 573595 (Walls): 2 references,
+    115 mm, 573610: 1 face(s) facing that way - a string needs two.], inARoom Func`2, lines
+    2 item(s) [573595 (Walls): 2 references, 115 mm, 573610: 1 face(s) facing that way - a
+    string needs two.], measured 573595 (Walls): 2 references, 115 mm | 573610: 1 face(s)
+    facing that way - a string needs two., middleFor 0 entry(ies), noFaces 1 item(s) [573610],
+    noOpeningFaces 0 item(s), notAWall 0 item(s), offsetMm 0, options Options, planWords Func`2,
+    refusal (null), seen HashSet`1, segmentsDisagree 0 item(s), sideMode , sideNamed false,
+    sideUsed 0 item(s), targets 2 item(s) [Lamelle 11.5, Standard], tolerance 0.00164041994750656,
+    viewPhase (null), wallSide Func`3, way across, withOverall false. inputs came view as
+    given; elements from filter-elements-by-category (2); direction as given; offsetMm as
+    given; withOverall not given - false (optional); side not given - "keep", the card''s
+    own default (optional). on P1102 MEP'
+  negative_case: run with category=Walls, direction=across, inViewOnly=Callout of Level 1
+    HVAC WSHP TYP, offsetMm=0, view=3D Duct & Equipment instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    filter-elements-by-category with this phase's own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
+    buildingMiddle Func`2, centreOf Func`2, created 0 item(s), findings 1 item(s) ["3D Duct
+    & Equipment" is not a plan, section, elevation or d...], inARoom Func`2, lines 1 item(s)
+    ["3D Duct & Equipment" is not a plan, section, elevation or d...], measured "3D Duct &
+    Equipment" is not a plan, section, elevation or detail view - a dimension is drawn in
+    one of those. NOTHING WAS DRAWN., middleFor 0 entry(ies), noFaces 0 item(s), noOpeningFaces
+    0 item(s), notAWall 0 item(s), offsetMm 0, options Options, planWords Func`2, refusal
+    "3D Duct & Equipment" is not a plan, section, elevation or detail view - a dimension is
+    drawn in one of those. NOTHING WAS DRAWN., seen HashSet`1, segmentsDisagree 0 item(s),
+    sideMode , sideNamed false, sideUsed 0 item(s), targets 0 item(s), tolerance 0.00164041994750656,
+    viewPhase (null), wallSide Func`3, way across, withOverall false. inputs came view as
+    given; elements from filter-elements-by-category (2); direction as given; offsetMm as
+    given; withOverall not given - false (optional); side not given - "keep", the card's own
+    default (optional). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: c55cd672a5a779a5
-
+  fingerprint: d5449cc7001f51bf
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

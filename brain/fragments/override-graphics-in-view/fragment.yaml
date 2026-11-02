@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -103,25 +103,29 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project2 (3,035 elements), Revit 2020, session 13520
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned overridden 5,
-    skipped 0 item(s), wrapsFollowed 0. inputs came view as given; elements from the selection
-    (5); overrides as given. on Project2
-  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: Level 1, overrides=halftone=true;
-    transparency=50, view=Heron Wall Schedule instead - chosen because it should not contain
-    what this fragment reports - the arrangement was re-made first by running select-by-category-name,
-    set-selection with this phase''s own values - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned overridden 0, skipped 5 item(s)
-    [345432, 345433, 345434, ...], wrapsFollowed 0. inputs came view as given; elements from
-    the selection (5); overrides as given. on Project2'
+    filter-elements-by-category, set-selection with this phase's own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    appliedTo 0 item(s), linksOnly false, notALink 0, overridden 10, refused 0 item(s), skipped
+    0 item(s), viewProblem , wrapsFollowed 0. inputs came view as given; elements from the
+    selection (10); overrides as given; linksOnly not given - false (optional). on P1102 MEP
+  negative_case: run with category=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP TYP, overrides=halftone=true;
+    transparency=50, view=Space Schedule instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running filter-elements-by-category,
+    set-selection with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned appliedTo 0 item(s), linksOnly
+    false, notALink 0, overridden 0, refused 1 item(s) ['Space Schedule' (Schedule) does not
+    accept graphic override...], skipped 10 item(s) [404243, 411658, 411660, ...], viewProblem
+    'Space Schedule' (Schedule) does not accept graphic overrides at all, so nothing was changed,
+    wrapsFollowed 0. inputs came view as given; elements from the selection (10); overrides
+    as given; linksOnly not given - false (optional). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: b07412335fdc5b6e
+  fingerprint: 64c722c108c25062
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

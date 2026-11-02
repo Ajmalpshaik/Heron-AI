@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -149,24 +149,30 @@ contract:
       type: bool
 
 proof:
-  date: '2026-09-07'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Snowdon Towers Sample HVAC (9,628 elements), Revit 2024, session 42676
-  positive_case: 16 spaces selected in Snowdon Towers Sample HVAC (Residential Lobby 106,
-    Two Story Studio Unit 204, and others) - run as it would normally be run. returned areas
-    16 entry(ies), identities 16 entry(ies), notSpatial 0 item(s), unenclosed 0 item(s), unplaced
-    0 item(s), volumeNotComputed 0 item(s), volumes 16 entry(ies). inputs came elements from
-    the selection (16). on Snowdon Towers Sample HVAC
-  negative_case: 28 duct taps selected in Snowdon Towers Sample HVAC - none of which is what
-    this fragment reports, so the answer had to be empty. returned areas 0 entry(ies), identities
-    0 entry(ies), notSpatial 28 item(s) [1383647, 1383653, 1384651, ...], unenclosed 0 item(s),
-    unplaced 0 item(s), volumeNotComputed 0 item(s), volumes 0 entry(ies). inputs came elements
-    from the selection (28). on Snowdon Towers Sample HVAC
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase's own values. returned areas
+    2 entry(ies), boundaryOptions SpatialElementBoundaryOptions, identities 2 entry(ies),
+    irregular 2 entry(ies), lengths 2 entry(ies), measure Func`3, notSpatial 0 item(s), roomsSeen
+    0, roomsWithZeroVolume 0, rotations 2 entry(ies), unenclosed 0 item(s), unmeasurable 0
+    item(s), unplaced 0 item(s), volumeComputationOff false, volumeNotComputed 0 item(s),
+    volumes 2 entry(ies), widths 2 entry(ies). inputs came elements from the selection (2).
+    on P1102 MEP
+  negative_case: run with category=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP TYP instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running filter-elements-by-category, set-selection with this phase's
+    own values. returned areas 0 entry(ies), boundaryOptions SpatialElementBoundaryOptions,
+    identities 0 entry(ies), irregular 0 entry(ies), lengths 0 entry(ies), measure Func`3,
+    notSpatial 10 item(s) [404243, 411658, 411660, ...], roomsSeen 0, roomsWithZeroVolume
+    0, rotations 0 entry(ies), unenclosed 0 item(s), unmeasurable 0 item(s), unplaced 0 item(s),
+    volumeComputationOff false, volumeNotComputed 0 item(s), volumes 0 entry(ies), widths
+    0 entry(ies). inputs came elements from the selection (10). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: ba21220dca778458
-
+  fingerprint: 8b14983aeeb056bc
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

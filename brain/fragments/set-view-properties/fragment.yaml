@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -294,33 +294,42 @@ contract:
       type: int
 
 proof:
-  date: '2026-10-14'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project1, Revit 2020, session 33484 - the count is NOT recorded because 2,927 elements
-    was measured on Project2, the document in front, and this ran against another one (row
-    15)
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned changed 1, findings 1 item(s) [1
-    of 1 view(s) changed in some way: scale set on 0, detail l...], scale 0, visualStyleNote
-    "Shaded" read back on 1 of 1 view(s): Shaded on 1. Show Edges was left as each view had
-    it - say "Shaded with Edges" to turn edges on.. inputs came views as given (1); scale
-    as given; detailLevel as given; visualStyle as given. on Project1'
-  negative_case: 'run with views=HERON TEST - VISUAL STYLE, scale=0, detailLevel=, visualStyle=Shadded
-    instead - chosen because it should not contain what this fragment reports - run inside
-    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    changed 0, findings 2 item(s) [No visual style is called "Shadded", so the visual style
-    was..., 0 of 1 view(s) changed in some way: scale set on 0, detail l...], scale 0, visualStyleNote
-    No visual style is called "Shadded", so the visual style was not touched on any view.
-    Say one of the words Revit''s View Control Bar shows: Wireframe, Hidden Line, Shaded,
-    Shaded with Edges, Consistent Colors, Realistic, Realistic with Edges - or Revit''s own
-    name for one: Wireframe, HLR, Shading, ShadingWithEdges, Rendering, Realistic, FlatColors,
-    RealisticWithEdges.. inputs came views as given (1); scale as given; detailLevel as given;
-    visualStyle as given. on Project1'
+    the transaction group ROLLED BACK afterwards. returned alreadySet 0 item(s), alreadyThatDetailLevel
+    0, alreadyThatScale 0, alreadyThatViewRange 0, alreadyThatVisualStyle 0, changed 1, findings
+    1 item(s) [1 of 1 view(s) changed in some way: scale set on 0, detail l...], phaseFilterSet
+    0 item(s), phaseSet 0 item(s), refused 0 item(s), scale 0, templateControlled 0 item(s),
+    unsupported 0 item(s), viewRangeSet 0, visualStyleNote , wasBottomMm 0, wasCutMm 0, wasScale
+    0 entry(ies), wasTopMm 0, wasViewRange . inputs came views as given (1); scale not given
+    - "0", the card''s own default (optional); detailLevel as given; visualStyle not given
+    - "keep", the card''s own default (optional); phaseId not given - "none", the card''s
+    own default (optional); phaseFilterId not given - "none", the card''s own default (optional);
+    topMm not given - "keep", the card''s own default (optional); cutMm not given - "keep",
+    the card''s own default (optional); bottomMm not given - "keep", the card''s own default
+    (optional). on P1102 MEP'
+  negative_case: 'run with detailLevel=Finest, views=Level 1 HVAC Plan instead - chosen because
+    it should not contain what this fragment reports - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned alreadySet 0 item(s),
+    alreadyThatDetailLevel 0, alreadyThatScale 0, alreadyThatViewRange 0, alreadyThatVisualStyle
+    0, changed 0, findings 3 item(s) [0 of 1 view(s) changed in some way: scale set on 0,
+    detail l..., Refused: ''Level 1 HVAC Plan'': detail level must be Coarse, M..., A view
+    controlled by a VIEW TEMPLATE refuses the properties ...], phaseFilterSet 0 item(s), phaseSet
+    0 item(s), refused 1 item(s) [378466], scale 0, templateControlled 0 item(s), unsupported
+    0 item(s), viewRangeSet 0, visualStyleNote , wasBottomMm 0, wasCutMm 0, wasScale 0 entry(ies),
+    wasTopMm 0, wasViewRange . inputs came views as given (1); scale not given - "0", the
+    card''s own default (optional); detailLevel as given; visualStyle not given - "keep",
+    the card''s own default (optional); phaseId not given - "none", the card''s own default
+    (optional); phaseFilterId not given - "none", the card''s own default (optional); topMm
+    not given - "keep", the card''s own default (optional); cutMm not given - "keep", the
+    card''s own default (optional); bottomMm not given - "keep", the card''s own default (optional).
+    on P1102 MEP'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 9bbdfa885185a07f
-
+  fingerprint: f57741d1627feeba
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

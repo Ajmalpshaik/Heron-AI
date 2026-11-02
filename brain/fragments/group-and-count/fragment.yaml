@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -69,22 +69,24 @@ contract:
       type: bool
 
 proof:
-  date: '2026-09-13'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: test projject (3,501 elements), Revit 2024, session 40932
-  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-in-region, set-selection, read-element-parameters with this phase''s own values.
-    returned groups 2 item(s) [[Basic Wall: Generic - 200mm, 19], [Rectangular Duct: Radius
-    Elbows / Taps, 6]]. inputs came values from read-element-parameters (25). on test projject'
-  negative_case: run with minMm=-2000,-2000,-2000, maxMm=50000,50000,8000, exact=false, categories=Walls,
-    Ducts, parameterName=ZZZ No Such Parameter instead - chosen because it should not contain
-    what this fragment reports - the arrangement was re-made first by running select-in-region,
-    set-selection, read-element-parameters with this phase's own values. returned groups 0
-    item(s). inputs came values from read-element-parameters (0). on test projject
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, read-element-parameters with this phase's own values. returned
+    counts 2 entry(ies), groups 2 item(s) [[Undefined, 9], [Supply Air, 1]], incomplete false,
+    missing 0 entry(ies), quantities (null), totals 0 entry(ies). inputs came values from
+    read-element-parameters (10); quantities not given - none (optional). on P1102 MEP
+  negative_case: run with category=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP TYP, parameterName=ZZZNOTHINGHERE
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running filter-elements-by-category, read-element-parameters with
+    this phase's own values. returned counts 0 entry(ies), groups 0 item(s), incomplete false,
+    missing 0 entry(ies), quantities (null), totals 0 entry(ies). inputs came values from
+    read-element-parameters (0); quantities not given - none (optional). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 24c77e51d94e98e6
+  fingerprint: 362f4c80a60f8443
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
