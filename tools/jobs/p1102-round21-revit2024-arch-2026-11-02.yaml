@@ -1,0 +1,26 @@
+# Round 21, 2026-11-02 - Revit 2024.3, session 57392. "Snowdon Towers Sample Architectural" = a
+# scratch copy of Revit 2024's own Samples\Snowdon Towers Sample Architectural.rvt. Its sheets
+# include "Fifth Floor Plan" and "Cover" (read off check-sheet-sets-by-parameter's missingSets).
+# Every run is read-only or ROLLED BACK. The model holds 3 scope boxes, none named "Block" (first
+# run), so the positive matches every name.
+model: "Snowdon Towers Sample Architectural (scratch copy, Revit 2024 sample), Revit 2024"
+
+defaults:
+  in: "Snowdon Towers Sample Architectural"
+  setup: []
+
+jobs:
+  - fragment: select-scope-boxes
+    expect: elements
+    set: {nameContains: ""}
+    negative-set: {nameContains: "ZZZNOTHINGHERE"}
+
+  - fragment: center-viewports-on-sheets
+    write: true
+    setup: [find-sheets]
+    keep-chain: true
+    expect: centred
+    setup-set: {numberOrNameContains: "Fifth Floor Plan"}
+    negative-setup-set: {numberOrNameContains: "Cover"}
+    set: {}
+    negative-set: {}
