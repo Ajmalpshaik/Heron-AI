@@ -1,0 +1,45 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "broke an association nobody asked to break".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for ASSOCIATE_ANALYTICAL_ELEMENTS): the scratch
+# project CREATE_ANALYTICAL_ELEMENTS is proved on - new from Revit's metric
+# STRUCTURAL template, saved under %TEMP%\heron-work, never a working model, on
+# Revit 2023 to 2027 - with beam B1 (its analytical member M1 tied to it), a
+# second beam B2 whose analytical member was deleted in Revit so it has none,
+# and a loose analytical member M9 drawn on its own (CREATE_ANALYTICAL_ELEMENTS,
+# kept). Every run is ROLLED BACK unless the modeller keeps it. Before and after
+# each run, read the analytical model with REPORT_ANALYTICAL_MODEL - the
+# second route.
+#
+# The negative legs are DIFFERENT SELECTIONS OR VALUES, not empty ones: M9 and
+# B1, whose own member M1 is already tied to it; two beams.
+
+positive:
+  - given: M9 and B2 selected
+    expect: >
+      associated 1; report "Analytical Members ... (M9) is now associated with
+      Structural Framing ... (B2) - read back from the model";
+      REPORT_ANALYTICAL_MODEL afterwards no longer lists M9 as tied to nothing
+
+  - given: M9 and B1 selected, replace true
+    expect: >
+      associated 1; report names B1 removed first from M1, and M9 now tied to
+      B1; M1 then listed as tied to nothing - neither element deleted
+
+negative:
+  - given: M9 and B1 selected, replace left out
+    expect: >
+      associated 0; refused says B1 is associated with M1 and asks for
+      replace; M1 still tied to B1, M9 still tied to nothing. Any change is the
+      defect. THE FIRST CASE TO RUN
+
+  - given: B1 and B2 selected (two beams, no analytical element)
+    expect: >
+      associated 0; refused says 2 were selected - 0 analytical member or
+      panel, 2 physical; nothing changed
+
+second_route:
+  - >
+    Revit's own Properties or the Associated Physical Element on the
+    analytical member selected in a 3D view: the pairing `report` gives

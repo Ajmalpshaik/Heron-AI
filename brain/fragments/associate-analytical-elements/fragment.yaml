@@ -1,0 +1,109 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-165
+semantic-identity: "tie this analytical member or panel to that beam, column, brace, floor or wall, so Revit knows which physical element it stands for"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "associate this analytical
+# member with that beam" - Revit's Analyze > Analytical Model > Associate. No
+# card made an association (grep of every fragment's C# that day for
+# AddAssociation: nothing). REPORT_ANALYTICAL_MODEL (FRG-ELE-089) reads every
+# association and lists analytical elements tied to none, so every question
+# goes there (D-86).
+#
+# ONE OF A SET. CREATE_ANALYTICAL_ELEMENTS (FRG-ELE-163) draws analytical
+# elements; ADJUST_ANALYTICAL_ELEMENTS (FRG-ELE-164) moves their lines and
+# outlines.
+#
+# ONE PAIR A RUN: exactly two elements selected, one analytical member or
+# panel and one physical element. Anything else is refused with what was
+# selected.
+#
+# AN ASSOCIATION ALREADY THERE IS NEVER BROKEN SILENTLY. Either element tied
+# to something else is refused, naming what it is tied to - unless `replace`
+# is true, and then the old tie is removed first and named in the report. The
+# elements themselves are never deleted or moved.
+#
+# 2023 TO 2027 ONLY - see compatibility-note.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: ASSOCIATE_ANALYTICAL_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Ties one analytical member or panel to the physical beam, column, brace,
+  floor or wall it stands for, as Analyze > Associate does, and reads the
+  association back from the model.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      # Exactly two, selected: one analytical member or panel and one physical
+      # element.
+      type: IList<Element>
+    - name: replace
+      # True to remove an association either element already has and make
+      # this one. Left out it is false, and such a pair is refused.
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: associated
+      # Associations made and read back - 0 or 1. Something the write DID.
+      role: result
+      type: int
+    - name: associatedIds
+      # The analytical element of the association made.
+      role: accounting
+      type: IList<ElementId>
+    - name: report
+      # ONE LINE, read back from the model: the analytical element, the
+      # physical element it is now tied to, and any tie removed to make it.
+      role: accounting
+      type: string
+    - name: refused
+      # Why it declined the whole run, in Revit words: not one analytical and
+      # one physical element, an association already there, Revit's own
+      # refusal. Never a thing done (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2023", "2024", "2025", "2026", "2027"]
+runtime: [net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Read with tools/api-surface --members on 2026-11-02, all eight releases
+  2020-2027. AnalyticalToPhysicalAssociationManager -
+  GetAnalyticalToPhysicalAssociationManager(Document), AddAssociation(ElementId,
+  ElementId), RemoveAssociation(ElementId), HasAssociation(ElementId),
+  GetAssociatedElementId(ElementId), IsAnalyticalElement and
+  IsPhysicalElement - is present 2023-2027 in that form and absent 2020-2022,
+  where an analytical model was part of its physical element and could not be
+  tied to another. The set-to-set AddAssociation and GetAssociatedElementIds
+  (2024 on) are not used, so one route serves all five releases.
+
+# ROUTING (2026-11-02) - the same rows are in CREATE_ANALYTICAL_ELEMENTS,
+# ADJUST_ANALYTICAL_ELEMENTS and REPORT_ANALYTICAL_MODEL.
+#
+#   "associate this analytical member with that beam"
+#                                                -> here
+#   "which analytical members have no beam"      -> REPORT_ANALYTICAL_MODEL
+#   "add an analytical member between these two points"
+#                                                -> CREATE_ANALYTICAL_ELEMENTS
+#   "move the analytical line of this beam 200 mm down"
+#                                                -> ADJUST_ANALYTICAL_ELEMENTS
+utterances:
+  - associate this analytical member with that beam

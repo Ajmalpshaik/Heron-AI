@@ -1346,6 +1346,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-mf.md`](needs-checking/group-mf.md)
 
+## Group MG - Analyze > Analytical Model - draw analytical members, panels and links, move or redraw an analytical line or outline without moving the element, and tie an analytical element to its physical one: `CREATE_ANALYTICAL_ELEMENTS`, `ADJUST_ANALYTICAL_ELEMENTS`, `ASSOCIATE_ANALYTICAL_ELEMENTS` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-mg.md`](needs-checking/group-mg.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
