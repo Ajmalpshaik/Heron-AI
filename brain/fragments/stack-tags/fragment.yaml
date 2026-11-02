@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -131,31 +131,37 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-14'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 33220
+  model: Snowdon Towers Sample HVAC (9,628 elements), Revit 2024, session 59960
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned MmToFeet 0.00328083989501312,
-    down XYZ, gap 157.48031496063, gapMm 500, headOf Func`2, index 9, movable 9 item(s) [[-37.7595552681191,
-    Autodesk.Revit.DB.IndependentTag], [-10.4245837343251, Autodesk.Revit.DB.IndependentTag],
-    [-11.0047397696025, Autodesk.Revit.DB.IndependentTag], ...], noHead 0 item(s), notTags
-    0 item(s), refused 0 item(s), scale 96, stacked 9, targetOf Func`2. inputs came view as
-    given; elements from the selection (9); stackAt as given; gapMm as given. on Snowdon-scratch_ajmal.al
-  negative_case: 'run with categoryName=Ducts, inViewOnly=FloorPlan: M1, view=FloorPlan: M1,
-    stackAt=-22000,8000,0, gapMm=500 instead - chosen because it should not contain what this
-    fragment reports - the arrangement was re-made first by running select-by-category-name,
+    filter-elements-by-category, set-selection with this phase's own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    MmToFeet 0.00328083989501312, down XYZ, edgeMarginMm 0, edges false, findings 0 item(s),
+    gap 157.48031496063, gapMm 500, headOf Func`2, index 39, layoutProblem , layoutWord point,
+    movable 39 item(s) [[-30.0928886014525, Autodesk.Revit.DB.IndependentTag], [-37.7595552681191,
+    Autodesk.Revit.DB.IndependentTag], [-39.2595552681193, Autodesk.Revit.DB.IndependentTag],
+    ...], noHead 0 item(s), notTags 0 item(s), perSide 0 entry(ies), refused 0 item(s), scale
+    96, stacked 39, targetOf Func`2, usedTagExtent false. inputs came view as given; elements
+    from the selection (39); stackAt as given; gapMm as given; layout not given - "point",
+    the card's own default (optional); marginMm not given - "none", the card's own default
+    (optional). on Snowdon Towers Sample HVAC
+  negative_case: 'run with category=Mechanical Equipment, gapMm=500, inViewOnly=FloorPlan:
+    L2, stackAt=20000,20000,0, view=FloorPlan: L2 instead - chosen because it should not contain
+    what this fragment reports - the arrangement was re-made first by running filter-elements-by-category,
     set-selection with this phase''s own values - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned MmToFeet 0.00328083989501312, down
-    XYZ, gap 157.48031496063, gapMm 500, headOf Func`2, index 0, movable 0 item(s), noHead
-    0 item(s), notTags 22 item(s) [1447716, 1447725, 1447768, ...], refused 0 item(s), scale
-    96, stacked 0, targetOf Func`2. inputs came view as given; elements from the selection
-    (22); stackAt as given; gapMm as given. on Snowdon-scratch_ajmal.al'
+    XYZ, edgeMarginMm 0, edges false, findings 0 item(s), gap 157.48031496063, gapMm 500,
+    headOf Func`2, index 0, layoutProblem , layoutWord point, movable 0 item(s), noHead 0
+    item(s), notTags 9 item(s) [1365188, 1366142, 1366354, ...], perSide 0 entry(ies), refused
+    0 item(s), scale 96, stacked 0, targetOf Func`2, usedTagExtent false. inputs came view
+    as given; elements from the selection (9); stackAt as given; gapMm as given; layout not
+    given - "point", the card''s own default (optional); marginMm not given - "none", the
+    card''s own default (optional). on Snowdon Towers Sample HVAC'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: a025c8f0653108d1
-
+  fingerprint: 23687cbfb4cdc483
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
