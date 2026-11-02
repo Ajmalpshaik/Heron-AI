@@ -53,6 +53,22 @@ positive:
       and detail view in the model - the project's four default elevations
       among them - as REPORT_VIEW_CUT_PLANES did with an empty viewName
 
+  # THE WORK PLANE (2026-11-02, row 5b-1392). Each FAILS before that day,
+  # which had no `workPlanes`.
+  - given: >
+      WORK PLANE. "FloorPlan: Level 1", its work plane set by hand in
+      Architecture > Work Plane > Set to Level 2 (4000 mm above Level 1)
+    expect: >
+      `workPlanes` "'Level 1' (FloorPlan) work plane Level : Level 2 -
+      horizontal at elevation 4000 mm" - the Work Plane dialog's Current line
+      says Level : Level 2
+
+  - given: >
+      WORK PLANE. no view named, "FloorPlan: Level 1" in front
+    expect: >
+      `workPlanes` holds that one row for the view in front, and `findings`
+      says the work plane was read for the view in front
+
 negative:
   - given: VERSION 2. a sheet, a schedule and a perspective camera view named together
     expect: >
@@ -73,6 +89,21 @@ negative:
       having none of the five - NOT a value. A reader that printed a default
       for every view would put one here
 
+  - given: >
+      WORK PLANE. a sheet and "FloorPlan: Level 1" named together, the plan's
+      work plane Level 1
+    expect: >
+      the sheet's `workPlanes` row says "no work plane", never a plane, and
+      the plan's names Level : Level 1. A reader that fell back to the
+      plan's plane, or to the view in front, would give the sheet one
+
+  - given: >
+      WORK PLANE, tracking. the same plan after its work plane is set by
+      hand to reference plane "Ceiling Datum" at 2700 mm
+    expect: >
+      its row reads Reference Plane : Ceiling Datum - horizontal at elevation
+      2700 mm, and nothing else in the answer changes
+
   # Tracking (D-53), beside the sheet: the answer follows the model.
   - given: the positive floor plan with Detail Level changed by hand to Coarse
     expect: the Detail Level reads Coarse and nothing else in the row changes
@@ -86,3 +117,6 @@ second_route:
     Level, Visual Style, Discipline) and the Phasing group (Phase Filter,
     Phase), and greyed-out rows for what a template holds; and for a plan,
     Properties > Extents > View Range > Edit
+  - >
+    WORK PLANE. Architecture > Work Plane > Set in each view named: the
+    dialog's Current line is the plane `workPlanes` names

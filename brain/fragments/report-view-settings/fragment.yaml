@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-140
-semantic-identity: "how a view is shown - its ratio, detail level, visual style, discipline, phase, phase filter and view range, and where a section or elevation cuts"
+semantic-identity: "how a view is shown - its ratio, detail level, visual style, discipline, phase, phase filter and view range, where a section or elevation cuts, and which work plane it is on"
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
 # FRAGMENT-ISSUES row 5b-477: nothing read a view's detail level, visual
@@ -37,6 +37,15 @@ capability: REPORT_VIEW_SETTINGS
 # no view named every one in the model, which is why `views` is optional now.
 # Version 1's proof below no longer describes the code and is kept as the
 # record; the card is DRAFT until it is proved again.
+#
+# WIDENED 2026-11-02, STILL VERSION 2 AND UNPROVED - THE WORK PLANE.
+# FRAGMENT-ISSUES row 5b-1392: "which work plane is this view on" and "what
+# is the work plane of this view" reached CREATE_PROJECT_REFERENCE_PLANES, a
+# write, without the host's question flag, and this card - which did not read
+# the work plane - with it. `workPlanes` now reads each view's work plane, as
+# the Work Plane dialog's Current line names it, and where it lies; with no
+# view named, the view in front. Its write half is SET_VIEW_WORK_PLANE, built
+# the same day. The two sentences are declared below.
 version: 2
 source: OFFICIAL
 risk: READ
@@ -101,6 +110,11 @@ purpose: >
   for each section, elevation and detail - every one in the model when none
   is named - a point it cuts through in millimetres, the direction it looks
   and its far clip, on or off and how deep.
+
+  And the work plane each view is on, as the Work Plane dialog names it - the
+  level, reference plane or grid it was taken from - and where that plane
+  lies in millimetres, or that the view has none; with no view named, the
+  view in front.
 
 contract:
   needs:
@@ -172,6 +186,14 @@ contract:
       # section, elevation and detail views `cutPlanes` lists.
       role: result
       type: int
+    - name: workPlanes
+      # 2026-11-02 (row 5b-1392). ONE STRING, a row per view named - or the
+      # view in front when none is: "'Level 1' (FloorPlan) work plane Level :
+      # Level 1 - horizontal at elevation 0 mm", "'A101 - Plans'
+      # (DrawingSheet) no work plane". Whether it is shown is not read: Revit
+      # has no member for it.
+      role: result
+      type: string
 
 proof:
   date: '2026-10-21'
@@ -241,6 +263,11 @@ compatibility-note: >
   VIEWER_BOUND_OFFSET_FAR (REPORT_VIEW_CUT_PLANES' card, 2026-10-12) - all
   present 2020 through 2027.
 
+  The work plane (2026-11-02) reads View.SketchPlane, SketchPlane.GetPlane
+  and GetPlaneReference, Document.GetElement(Reference), Document.ActiveView
+  and BuiltInParameter DATUM_TEXT - present unchanged 2020 to 2027 with
+  tools/api-surface --members that day. Not seen in Revit.
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "what is the detail level of this view"  -> here
@@ -275,6 +302,11 @@ compatibility-note: >
 #   "what does the view template control"    -> REPORT_VIEW_TEMPLATE_CONTROL,
 #                                               which names everything the
 #                                               template holds
+#   "which work plane is this view on"       -> here since 2026-11-02 (row
+#   "what is the work plane of this view"       5b-1392), with or without the
+#                                               host's question flag
+#   "set the work plane to Level 2"          -> SET_VIEW_WORK_PLANE. A change,
+#   "show the work plane in this view"          and this reads (D-86)
 
 utterances:
   - what is the detail level of this view
@@ -315,3 +347,10 @@ utterances:
   # backend; left out, it ranks to SET_VIEW_PROPERTIES there, a write - a
   # regression from READ_VIEW_SCALE answering it by ranking, recorded for the
   # owner, and held off by D-128 when the host marks the call a question.
+  # DECLARED 2026-11-02, FRAGMENT-ISSUES row 5b-1392. The modeller's own
+  # questions for the Work Plane dialog's Current line. Before, on scratch
+  # stores, both reached CREATE_PROJECT_REFERENCE_PLANES (earlier
+  # ADD_FAMILY_MODEL_TEXT and CREATE_REFERENCE_PLANES), writes, without the
+  # host's question flag. The write half is SET_VIEW_WORK_PLANE.
+  - which work plane is this view on
+  - what is the work plane of this view

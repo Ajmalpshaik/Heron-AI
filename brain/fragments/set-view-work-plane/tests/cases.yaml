@@ -1,0 +1,83 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that sets a view's work plane, "changed something nobody asked
+# for": a plane nobody named, a view that cannot take one, a plane set twice,
+# or another view's work plane moved.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for SET_VIEW_WORK_PLANE): a scratch project
+# "workplane-ip" made from the default architectural template and saved under
+# %TEMP%\heron-work, never a working model - levels "Level 1" at 0 and "Level
+# 2" at 4000 mm; a straight grid "B" from 6000,0 to 6000,20000 mm; a section
+# "Section 1" looking north across grid B; in it, ONE horizontal reference
+# plane named "Ceiling Datum", 2700 mm above Level 1; the floor plan "Level 1"
+# with its work plane Level 1 (as the template leaves it); a sheet "A101"; a
+# drafting view "Drafting 1"; the "{3D}" view. Where the model differs, the
+# job file changes - never the card. EVERY RUN ROLLED BACK, so each case
+# starts from the model as saved.
+
+positive:
+  - given: >
+      view "FloorPlan: Level 1", plane "Level 2" - "set the work plane to
+      Level 2" - the job file's positive
+    expect: >
+      changed 1; before "Level : Level 1 - horizontal at elevation 0 mm";
+      after "Level : Level 2 - horizontal at elevation 4000 mm"; Architecture
+      > Work Plane > Set in Level 1 shows Current: Level : Level 2. THE FIRST
+      POSITIVE TO RUN
+
+  - given: >
+      view "FloorPlan: Level 1", plane "reference plane Ceiling Datum"
+    expect: >
+      changed 1; after "Reference Plane : Ceiling Datum - horizontal at
+      elevation 2700 mm"; the Work Plane dialog says the same
+
+  - given: >
+      view "FloorPlan: Level 1", display "show", plane left out
+    expect: >
+      changed 1; before and after both "Level : Level 1 ..."; the work plane
+      grid shows in Level 1; the reply says the display is not read back
+      because Revit gives no way to read it
+
+  - given: >
+      view "FloorPlan: Level 1", plane "Level 1"
+    expect: >
+      changed 0; the reply says Level 1 is already the view's work plane and
+      nothing was changed
+
+negative:
+  - given: >
+      the same values as the first positive, view "Sheet: A101" - the job
+      file's negative
+    expect: >
+      changed 0; refused naming "A101" as a sheet, which has no work plane;
+      NOTHING WAS CHANGED; the work plane of "Level 1" still Level 1. THE
+      FIRST CASE TO RUN
+
+  - given: >
+      view "FloorPlan: Level 1", plane "Level 9"
+    expect: >
+      refused "Nothing in this project named "Level 9" can be a work plane
+      ... NOTHING WAS CHANGED." listing levels Level 1, Level 2, reference
+      plane Ceiling Datum and grid B; Level 1's work plane unchanged
+
+  - given: >
+      view "FloorPlan: Level 1", plane and display both left out
+    expect: >
+      refused saying nothing was asked, with the levels, reference planes and
+      grids listed; nothing changed
+
+  - given: >
+      view "Drafting 1", plane "Level 2"
+    expect: >
+      refused naming "Drafting 1" as a drafting view; nothing changed
+
+  - given: >
+      view "FloorPlan: Level 1", display "on"
+    expect: >
+      refused - "on" is not show or hide; nothing changed
+
+second_route:
+  - >
+      Architecture > Work Plane > Set in "Level 1" by hand: the dialog's
+      Current line before the run, and after the kept positive, reads the
+      same plane the reply names - Level : Level 1, then Level : Level 2

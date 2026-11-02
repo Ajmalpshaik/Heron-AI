@@ -155,14 +155,17 @@ compatibility-note: >
 #                                     (check-routing, scratch store,
 #                                     2026-11-02); a datum plane named
 #                                     "Ceiling Datum" is not a ceiling
-#   "set the work plane to Level 2", "show the work plane in this view",
+#   "set the work plane to Level 2", "show the work plane in this view"
+#                                  -> SET_VIEW_WORK_PLANE (since 2026-11-02),
+#                                     which sets and shows a view's work
+#                                     plane; this card draws planes and sets
+#                                     none
 #   "which work plane is this view on"
-#                                  -> NOT THIS CARD. Nothing sets or shows a
-#                                     view's work plane yet and nothing reads
-#                                     it; on a scratch store these reach this
-#                                     card by ranking, a write, the question
-#                                     too without the host's question flag
-#                                     (FRAGMENT-ISSUES row 5b-1392, OPEN)
+#                                  -> REPORT_VIEW_SETTINGS, a read (since
+#                                     2026-11-02). Before, these reached this
+#                                     card by ranking, the question too
+#                                     without the host's question flag
+#                                     (FRAGMENT-ISSUES row 5b-1392, FIXED)
 
 utterances:
   - draw a reference plane along grid B in this plan
