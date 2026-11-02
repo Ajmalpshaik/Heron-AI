@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -67,6 +67,35 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: Snowdon Towers Sample Structural (9,500 elements), Revit 2024, session 59960
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    load-family with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, count 3, culture
+    CultureInfo, findings 1 item(s) [1 adaptive instance(s) of "M_Diagnostic Tripod-3 point:
+    M_Di...], groups 1 item(s) [System.Collections.Generic.List`1[Autodesk.Revit.DB.XYZ]],
+    lines 0 item(s), nodeText , numberStyle NumberStyles, placed 1, placedIds 1 item(s) [1029439],
+    refusal (null), report . inputs came familyType as given; pointsMm as given; onNodesOf
+    as given. on Snowdon Towers Sample Structural'
+  negative_case: 'run with familyPath=C:/ProgramData/Autodesk/RVT 2020/Libraries/US Metric/Mass/M_Diagnostic
+    Tripod-3 point.rfa, familyType=M_Diagnostic Tripod-3 point, onNodesOf=, overwriteValues=False,
+    pointsMm=0,-60000,0; 3000,-60000,0, reload=False instead - chosen because it should not
+    contain what this fragment reports - the arrangement was re-made first by running load-family
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned MmPerFoot 304.8, count 3, culture CultureInfo,
+    findings 2 item(s) [0 adaptive instance(s) of "M_Diagnostic Tripod-3 point: M_Di..., a
+    group of 2 point(s) - the family needs 3; left.], groups 1 item(s) [System.Collections.Generic.List`1[Autodesk.Revit.DB.XYZ]],
+    lines 1 item(s) [a group of 2 point(s) - the family needs 3; left.], nodeText , numberStyle
+    NumberStyles, placed 0, placedIds 0 item(s), refusal (null), report a group of 2 point(s)
+    - the family needs 3; left.. inputs came familyType as given; pointsMm as given; onNodesOf
+    as given. on Snowdon Towers Sample Structural'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 364175dafa52ff59
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
