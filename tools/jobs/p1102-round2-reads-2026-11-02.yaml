@@ -1,0 +1,150 @@
+# Round 2, 2026-11-02 - Revit 2020, "P1102 MEP" = a copy of Revit 2020's own
+# Samples\rme_advanced_sample_project.rvt in %TEMP%\heron-work\prove-1102 (scratch).
+# Read-only DRAFTs. The small selection is the callout "Callout of Level 1 HVAC WSHP TYP":
+# 10 ducts, 9 duct fittings, 2 air terminals (measured before the run). "Level 1 - Lighting
+# Plan" draws no ducts. Nothing here changes the model.
+model: "P1102 MEP (copy of rme_advanced_sample_project.rvt), Revit 2020"
+
+defaults:
+  in: "P1102 MEP"
+  setup:
+    - filter-elements-by-category
+    - set-selection
+  set:
+    category: "Ducts"
+    inViewOnly: "Callout of Level 1 HVAC WSHP TYP"
+  negative-set:
+    category: "Sheets"
+
+jobs:
+  - fragment: report-connectors
+    negative-set: {category: "Walls", levelId: "Level 1"}
+
+  - fragment: measure-run-quantities
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", measure: "length"}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", measure: "ZZZNOTHINGHERE"}
+
+  - fragment: read-space-loads
+    set: {category: "Spaces", levelId: "Level 1"}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP"}
+
+  - fragment: report-room-space-data
+    set: {category: "Spaces", levelId: "Level 1"}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP"}
+
+  - fragment: measure-element-volume
+    set: {category: "Walls", levelId: "Level 1"}
+    negative-set: {category: "Sheets"}
+
+  - fragment: report-material-takeoff
+    set: {category: "Walls", levelId: "Level 1"}
+    negative-set: {category: "Sheets"}
+
+  - fragment: report-curtain-elements
+    set: {category: "Walls", levelId: "Level 1"}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP"}
+
+  - fragment: find-clashes
+    expect: clashes
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", against: "", includeLinks: false, categories: "Walls", includeHost: true, compareParameter: "none"}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", against: "", includeLinks: false, categories: "Furniture", includeHost: true, compareParameter: "none"}
+
+  - fragment: check-minimum-clearance
+    expect: tooClose
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", defaultClearance: 5000, rules: "", includeInsulation: false}
+    negative-set: {category: "Sheets", defaultClearance: 5000, rules: "", includeInsulation: false}
+
+  - fragment: probe-around-elements
+    expect: hits
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", view3d: "3D Duct & Equipment", directions: "0,0,1", maxDistance: 5000}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", view3d: "3D Duct & Equipment", directions: "0,0,1", maxDistance: 1}
+
+  - fragment: group-and-count
+    setup: [filter-elements-by-category, read-element-parameters]
+    keep-chain: true
+    expect: groups
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", parameterName: "System Type"}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", parameterName: "ZZZNOTHINGHERE"}
+
+  - fragment: describe-blank-parameters
+    setup: [filter-elements-by-category, read-element-parameters]
+    keep-chain: true
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", parameterNames: "Comments", parameterName: "Comments"}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", parameterNames: "Comments", parameterName: "ZZZ NO SUCH PARAMETER"}
+
+  - fragment: report-findings
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    set: {category: "Sprinklers", checkedCount: 6, whatWasChecked: "the sprinklers in this model"}
+    negative-set: {category: "Sprinklers", checkedCount: 0, whatWasChecked: "nothing at all"}
+
+  - fragment: find-views
+    setup: []
+    expect: elements
+    set: {viewType: "FloorPlan", nameContains: "HVAC"}
+    negative-set: {viewType: "FloorPlan", nameContains: "ZZZNOTHINGHERE"}
+
+  - fragment: find-sheets
+    setup: []
+    expect: elements
+    set: {numberOrNameContains: "Lighting"}
+    negative-set: {numberOrNameContains: "ZZZNOTHINGHERE"}
+
+  - fragment: find-purgeable-elements
+    setup: []
+    expect: elements
+    set: {categories: ""}
+    negative-set: {categories: "Rooms"}
+
+  - fragment: list-materials
+    setup: []
+    expect: materialCount
+    set: {withAllTabs: true, namePattern: "*Concrete*"}
+    negative-set: {withAllTabs: true, namePattern: "ZZZ*"}
+
+  - fragment: select-by-parameter-value
+    setup: []
+    expect: elements
+    set: {parameterName: "System Type", matchText: "Supply", matchMode: "contains", includeTypeParameters: "false", categories: "Ducts", includeLinks: "false"}
+    negative-set: {parameterName: "System Type", matchText: "ZZZNOTHINGHERE", matchMode: "contains", includeTypeParameters: "false", categories: "Ducts", includeLinks: "false"}
+
+  - fragment: report-masses
+    setup: []
+    expect: massCount
+    set: {siteArea: "4500", withOutlines: true}
+    negative-set: {masses: "NoSuchFamily"}
+
+  - fragment: report-phase-filters
+    setup: []
+    expect: filterCount
+    set: {}
+    negative-set: {filterName: "ZZZ No Such Filter"}
+
+  - fragment: list-export-setups
+    setup: []
+    expect: setups
+    set: {kind: "dwg", setupName: "all"}
+    negative-set: {kind: "dwg", setupName: "ZZZ NO SUCH SETUP"}
+
+  - fragment: report-family-tables-in-project
+    setup: []
+    set: {nameContains: "Elbow"}
+    negative-set: {nameContains: "ZZZNOTAFAMILY"}
+
+  - fragment: report-view-settings
+    setup: []
+    expect: viewSettings
+    set: {views: "Level 1 HVAC Plan"}
+    negative-set: {views: "Space Schedule"}
+
+  - fragment: report-view-filters
+    setup: []
+    set: {viewName: "*"}
+    negative-set: {viewName: "Space Schedule"}
+
+  - fragment: report-analytical-model
+    setup: []
+    expect: analytical
+    set: {}
+    negative-in: "Project1"
+    negative-set: {}

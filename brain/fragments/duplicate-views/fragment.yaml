@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -133,27 +133,39 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-13'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 47740
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: run as it would normally be run - the arrangement was re-made first by running
     find-views with this phase's own values - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned askedFor Duplicate, duplicated
-    11, newViewIds 11 item(s) [1543132, 1543142, 1543153, ...], notDuplicated 0 item(s), option
-    ViewDuplicateOption, optionRecognised true. inputs came elements from find-views (11);
-    duplicateOption as given. on Snowdon-scratch_ajmal.al
-  negative_case: run with duplicateOption=ZZZNOTANOPTION, nameContains=, viewType=FloorPlan
-    instead - chosen because it should not contain what this fragment reports - the arrangement
-    was re-made first by running find-views with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned askedFor ZZZNOTANOPTION,
-    duplicated 0, newViewIds 0 item(s), notDuplicated 11 item(s) [1363403, 1363413, 32, ...],
-    option ViewDuplicateOption, optionRecognised false. inputs came elements from find-views
-    (11); duplicateOption as given. on Snowdon-scratch_ajmal.al
+    the transaction group ROLLED BACK afterwards. returned askedFor Duplicate, copyName ,
+    copyTemplates false, duplicated 2, findings 1 item(s) [2 view(s) duplicated, 0 view template(s)
+    copied, 0 not dupli...], given Func`2, handed 2 item(s) [Level 1 HVAC Plan, North Level
+    1 HVAC Plan], newNames 2 item(s) [Level 1 HVAC Plan Copy 1, North Level 1 HVAC Plan Copy
+    1], newViewIds 2 item(s) [1020307, 1020317], notDuplicated 0 item(s), option ViewDuplicateOption,
+    optionRecognised true, plainViews 2 item(s) [Level 1 HVAC Plan, North Level 1 HVAC Plan],
+    templateCopyIds 0 item(s), templatesToCopy 0 item(s), wantedName , wantedTemplate . inputs
+    came elements from find-views (2); duplicateOption as given; newName not given - "none",
+    the card's own default (optional); copyTemplates not given - false (optional); templateName
+    not given - "none", the card's own default (optional). on P1102 MEP
+  negative_case: run with duplicateOption=ZZZNOTANOPTION, nameContains=Level 1 HVAC Plan,
+    viewType=FloorPlan instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running find-views with this phase's own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned askedFor ZZZNOTANOPTION, copyName , copyTemplates false, duplicated 0, findings
+    2 item(s) [0 view(s) duplicated, 0 view template(s) copied, 2 not dupli..., 'ZZZNOTANOPTION'
+    is not one of the three ways to duplicate -...], given Func`2, handed 2 item(s) [Level
+    1 HVAC Plan, North Level 1 HVAC Plan], newNames 0 item(s), newViewIds 0 item(s), notDuplicated
+    2 item(s) [378466, 534568], option ViewDuplicateOption, optionRecognised false, plainViews
+    2 item(s) [Level 1 HVAC Plan, North Level 1 HVAC Plan], templateCopyIds 0 item(s), templatesToCopy
+    0 item(s), wantedName , wantedTemplate . inputs came elements from find-views (2); duplicateOption
+    as given; newName not given - "none", the card's own default (optional); copyTemplates
+    not given - false (optional); templateName not given - "none", the card's own default
+    (optional). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 29ce42cbd1421550
-
+  fingerprint: c5db6bb65d964a57
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

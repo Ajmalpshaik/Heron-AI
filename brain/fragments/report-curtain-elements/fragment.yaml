@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -118,27 +118,42 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-07'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Snowdon Towers Sample HVAC (9,686 elements), Revit 2024, session 42676
-  positive_case: 'one Exterior Glazing curtain wall, drawn in the HOST model of Snowdon Towers
-    Sample HVAC and selected. Drawn rather than found because the sample''s own walls are
-    in a LINKED model and the executor skips links deliberately. returned curtainWallsFound
-    1, emptyCells 0, findings 5 item(s) [1 curtain wall(s): 6 panel cell(s), 0 mullion(s),
-    0 empty ce..., ''Exterior Glazing'' (id 1543791):,     6 curtain panel(s), ...], mullionCount
-    0, notCurtain 0 item(s), panelCount 6. inputs came elements from the selection (1). on
-    Snowdon Towers Sample HVAC'
-  negative_case: '28 duct taps selected in the same model - none of which is a wall at all,
-    so the answer had to be empty. returned curtainWallsFound 0, emptyCells 0, findings 1
-    item(s) [0 curtain wall(s): 0 panel cell(s), 0 mullion(s), 0 empty ce...], mullionCount
-    0, notCurtain 28 item(s) [''Taps'' is not a wall, ''1.5 D'' is not a wall, ''Taps'' is
-    not a wall, ...], panelCount 0. inputs came elements from the selection (28). on Snowdon
-    Towers Sample HVAC'
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase''s own values. returned MillimetresPerFoot
+    304.8, SameMm 0.001, allSized 115 item(s) [(3060.06434845539, 144.999999999854, ), (3060.06434845539,
+    144.999999999854, ), (3060.06434845539, 144.999999999854, ), ...], allUnsized 29, curtainWallsFound
+    1, differentPanelSizes 14, doorsCategory 1 item(s) [id -2000023], emptyCells 0, findings
+    7 item(s) [1 curtain wall(s): 144 panel cell(s), 173 mullion(s), 0 empt..., ''Standard''
+    (id 573610):,     144 curtain panel(s), ...], groupSizes Func`2, invariant CultureInfo,
+    kindOf Func`2, lengthOf Func`3, mullionCount 173, notCurtain 1 item(s) [''Lamelle 11.5''
+    is a wall but not a CURTAIN wall - its build-...], panelCount 144, panelSizes 14 item(s)
+    [3 at 1010 x 1990 mm (1 of them a door), 15 at 3050.1-3055.1 x 2940 mm, 14 at 3050.1-3055.1
+    x 2990 mm, ...], panelsCategory 1 item(s) [id -2000170], sayMm Func`2, sizesNotRead 29
+    item(s) [''Standard'' (id 573610): cell 577858 ''Metallpanel'' - Revit gi..., ''Standard''
+    (id 573610): cell 577873 ''Metallpanel'' - Revit gi..., ''Standard'' (id 573610): cell
+    577859 ''Verglasung'' - Revit giv..., ...], span Func`3, tolerance 5, toleranceMm 5, toleranceUsable
+    true. inputs came elements from the selection (2); toleranceMm not given - "5", the card''s
+    own default (optional). on P1102 MEP'
+  negative_case: 'run with category=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP TYP instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running filter-elements-by-category, set-selection with this phase''s
+    own values. returned MillimetresPerFoot 304.8, SameMm 0.001, allSized 0 item(s), allUnsized
+    0, curtainWallsFound 0, differentPanelSizes 0, doorsCategory 1 item(s) [id -2000023],
+    emptyCells 0, findings 1 item(s) [0 curtain wall(s): 0 panel cell(s), 0 mullion(s), 0
+    empty ce...], groupSizes Func`2, invariant CultureInfo, kindOf Func`2, lengthOf Func`3,
+    mullionCount 0, notCurtain 10 item(s) [''Mitered Elbows / Taps'' is not a wall, ''Mitered
+    Elbows / Taps'' is not a wall, ''Mitered Elbows / Taps'' is not a wall, ...], panelCount
+    0, panelSizes 0 item(s), panelsCategory 1 item(s) [id -2000170], sayMm Func`2, sizesNotRead
+    0 item(s), span Func`3, tolerance 5, toleranceMm 5, toleranceUsable true. inputs came
+    elements from the selection (10); toleranceMm not given - "5", the card''s own default
+    (optional). on P1102 MEP'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: d2fccdc4fd587dc7
-
+  fingerprint: 2ecb617c47edefdf
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

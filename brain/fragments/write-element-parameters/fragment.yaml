@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -178,37 +178,41 @@ contract:
 # NEEDS-CHECKING Group HZ proves version 5 (D-30). Every value that is not an
 # element reference still takes the road this proof ran.
 proof:
-  date: '2026-10-21'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Cinematic ID Test (5,262 elements), Revit 2020, session 68704
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name with this phase's own values - run inside a transaction, and Revit
-    reported the transaction group ROLLED BACK afterwards. returned absent 0 item(s), alreadyThat
-    0 item(s), ambiguous 0 item(s), asked 0 item(s), askedReference 0 item(s), findings 0
-    item(s), isYesNo Func`2, materialSpec (null), materialSpecProperty (null), namedElements
-    (null), notAYesNoWord 0, numericValue Func`2, pending 0 item(s), pendingReference 0 item(s),
-    readOnly 0 item(s), referenceByName Func`3, refused 0 item(s), said night proof 2026-10-21,
-    snapped 0 item(s), tickAsked (null), tickedWords 5 item(s) [yes, true, on, ...], untickedWords
-    5 item(s) [no, false, off, ...], unverified 0 item(s), written 24, yesNoProperty (null),
-    yesNoSpec (null), yesNoSpecs (null). inputs came elements from select-by-category-name
-    (24); parameterName as given; value as given. on Cinematic ID Test
-  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: Level 1, parameterName=Zz
-    No Such Parameter, value=Night proof 2026-10-21 instead - chosen because it should not
-    contain what this fragment reports - the arrangement was re-made first by running select-by-category-name
-    with this phase''s own values - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned absent 24 item(s) [198749, 418079, 422243, ...],
-    alreadyThat 0 item(s), ambiguous 0 item(s), asked 0 item(s), askedReference 0 item(s),
-    findings 0 item(s), isYesNo Func`2, materialSpec (null), materialSpecProperty (null),
-    namedElements (null), notAYesNoWord 0, numericValue Func`2, pending 0 item(s), pendingReference
-    0 item(s), readOnly 0 item(s), referenceByName Func`3, refused 0 item(s), said night proof
-    2026-10-21, snapped 0 item(s), tickAsked (null), tickedWords 5 item(s) [yes, true, on,
-    ...], untickedWords 5 item(s) [no, false, off, ...], unverified 0 item(s), written 0,
-    yesNoProperty (null), yesNoSpec (null), yesNoSpecs (null). inputs came elements from select-by-category-name
-    (24); parameterName as given; value as given. on Cinematic ID Test'
+    filter-elements-by-category with this phase's own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned absent 0 item(s),
+    alreadyEmpty 0 item(s), alreadyThat 0 item(s), ambiguous 0 item(s), asked 0 item(s), askedReference
+    0 item(s), clear false, clearAndValue false, clearOnType 0, clearRefusals 0 item(s), cleared
+    0, findings 0 item(s), isYesNo Func`2, materialSpec (null), materialSpecProperty (null),
+    namedElements (null), notAYesNoWord 0, notThere 0, numericValue Func`2, pending 0 item(s),
+    pendingReference 0 item(s), readOnly 0 item(s), referenceByName Func`3, refused 0 item(s),
+    said p1102 proof, snapped 0 item(s), tickAsked (null), tickedWords 5 item(s) [yes, true,
+    on, ...], untickedWords 5 item(s) [no, false, off, ...], unverified 0 item(s), written
+    10, yesNoProperty (null), yesNoSpec (null), yesNoSpecs (null). inputs came elements from
+    filter-elements-by-category (10); parameterName as given; value as given; clear not given
+    - false (optional). on P1102 MEP
+  negative_case: run with category=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP TYP, parameterName=Zz
+    No Such Parameter, value=P1102 proof instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running filter-elements-by-category
+    with this phase's own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned absent 10 item(s) [404243, 411658, 411660, ...],
+    alreadyEmpty 0 item(s), alreadyThat 0 item(s), ambiguous 0 item(s), asked 0 item(s), askedReference
+    0 item(s), clear false, clearAndValue false, clearOnType 0, clearRefusals 0 item(s), cleared
+    0, findings 0 item(s), isYesNo Func`2, materialSpec (null), materialSpecProperty (null),
+    namedElements (null), notAYesNoWord 0, notThere 0, numericValue Func`2, pending 0 item(s),
+    pendingReference 0 item(s), readOnly 0 item(s), referenceByName Func`3, refused 0 item(s),
+    said p1102 proof, snapped 0 item(s), tickAsked (null), tickedWords 5 item(s) [yes, true,
+    on, ...], untickedWords 5 item(s) [no, false, off, ...], unverified 0 item(s), written
+    0, yesNoProperty (null), yesNoSpec (null), yesNoSpecs (null). inputs came elements from
+    filter-elements-by-category (10); parameterName as given; value as given; clear not given
+    - false (optional). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: cc1d5b73b8662362
+  fingerprint: f8f103398e5895db
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

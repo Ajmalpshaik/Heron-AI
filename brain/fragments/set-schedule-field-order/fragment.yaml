@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -104,6 +104,37 @@ contract:
       # FOUND (D-52).
       role: accounting
       type: string
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    find-views with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyInOrder 0, appliedOrder
+    ''Level 2 Space Schedule'': 1 Room: Name, 2 Level, 3 Room: Number, 4 Number, 5 Name, 6
+    Space Type, 7 Calculated Cooling Load, asked move Room: Name to the front, askedLower
+    move room: name to the front, handed 2, listed 0 item(s), moveAfter false, moveAnchor
+    (null), moveName Room: Name, moveTo 1, notKept 0 item(s), notPresent 1 item(s) [''Space
+    Schedule'' - ''Room: Name'' is not a column in it. NOTHI...], orderParts 1 item(s) [''Level
+    2 Space Schedule'': 1 Room: Name, 2 Level, 3 Room: Num...], refused (null), reordered
+    1, scheduleBehind Func`2, scheduleIdsSeen HashSet`1, schedulesSeen 2. inputs came elements
+    from find-views (2); order as given. on P1102 MEP'
+  negative_case: run with order=move ZZZ NO SUCH COLUMN to the front arranged with nameContains=Space
+    Schedule, viewType=Schedule instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running find-views with this phase's own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned alreadyInOrder 0, appliedOrder , asked move ZZZ NO SUCH COLUMN to
+    the front, askedLower move zzz no such column to the front, handed 2, listed 0 item(s),
+    moveAfter false, moveAnchor (null), moveName ZZZ NO SUCH, moveTo 1, notKept 0 item(s),
+    notPresent 2 item(s) ['Level 2 Space Schedule' - 'ZZZ NO SUCH' is not a column in ...,
+    'Space Schedule' - 'ZZZ NO SUCH' is not a column in it. NOTH...], orderParts 0 item(s),
+    refused (null), reordered 0, scheduleBehind Func`2, scheduleIdsSeen HashSet`1, schedulesSeen
+    2. inputs came elements from find-views (2); order as given. on P1102 MEP
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: bbc23253cd1342a3
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

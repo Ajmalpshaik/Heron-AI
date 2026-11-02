@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -131,29 +131,33 @@ contract:
       type: IList<ElementId>
 
 proof:
-  date: '2026-09-10'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project1 work_ajmal.al (3,445 elements), Revit 2024, session 24688
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values. returned airflowLs
-    0 entry(ies), coolingW 0 entry(ies), findings 5 item(s) [S1 Stair S1  - NO LOAD READABLE.
-    Revit refused the figures, ..., S2 Stair S2  - NO LOAD READABLE. Revit refused the figures,
-    ..., E1 Elevator E1  - NO LOAD READABLE. Revit refused the figure..., ...], heatingW 0
-    entry(ies), litresPerCubicFoot 28.316846592, noLoad 5 item(s) [1411634, 1411663, 1411726,
-    ...], notSpaces 0 item(s), wattsPerInternalLoad 1055.05585262. inputs came elements from
-    the selection (5). on Snowdon-scratch_ajmal.al
-  negative_case: 'run with categoryName=Ducts, inViewOnly=FloorPlan: M1 instead - chosen because
-    it should not contain what this fragment reports - the arrangement was re-made first by
-    running select-by-category-name, set-selection with this phase''s own values. returned
-    airflowLs 0 entry(ies), coolingW 0 entry(ies), findings 0 item(s), heatingW 0 entry(ies),
-    litresPerCubicFoot 28.316846592, noLoad 0 item(s), notSpaces 22 item(s) [1447716, 1447725,
-    1447768, ...], wattsPerInternalLoad 1055.05585262. inputs came elements from the selection
-    (22). on Snowdon-scratch_ajmal.al'
+    filter-elements-by-category, set-selection with this phase's own values. returned actualExhaustLs
+    2 entry(ies), actualReturnLs 2 entry(ies), actualSupplyLs 2 entry(ies), airflowLs 2 entry(ies),
+    calculatedSupplyLs 2 entry(ies), coolingW 2 entry(ies), findings 2 item(s) [17 Workshop
+    IV 17  - heating 49063716 W (entered), cooling 8..., 49d Corridor 49d  - heating 133884364
+    W (entered), cooling 6...], flowOf Func`3, heatingW 2 entry(ies), litresPerCubicFoot 28.316846592,
+    noDesignFigure 0 item(s), noLoad 0 item(s), notSpaces 0 item(s), specifiedExhaustLs 2
+    entry(ies), specifiedReturnLs 2 entry(ies), specifiedSupplyLs 2 entry(ies), unplaced 0
+    item(s), wattsPerInternalLoad 1055.05585262. inputs came elements from the selection (2).
+    on P1102 MEP
+  negative_case: run with category=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP TYP instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running filter-elements-by-category, set-selection with this phase's
+    own values. returned actualExhaustLs 0 entry(ies), actualReturnLs 0 entry(ies), actualSupplyLs
+    0 entry(ies), airflowLs 0 entry(ies), calculatedSupplyLs 0 entry(ies), coolingW 0 entry(ies),
+    findings 0 item(s), flowOf Func`3, heatingW 0 entry(ies), litresPerCubicFoot 28.316846592,
+    noDesignFigure 0 item(s), noLoad 0 item(s), notSpaces 10 item(s) [404243, 411658, 411660,
+    ...], specifiedExhaustLs 0 entry(ies), specifiedReturnLs 0 entry(ies), specifiedSupplyLs
+    0 entry(ies), unplaced 0 item(s), wattsPerInternalLoad 1055.05585262. inputs came elements
+    from the selection (10). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 3fb4b672c68754de
-
+  fingerprint: 0c7fc39faf9dbf08
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

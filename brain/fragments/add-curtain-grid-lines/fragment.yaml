@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -175,6 +175,69 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    create-wall with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned InsideEdgeMm 100, MillimetresPerFoot
+    304.8, MostLines 100, PlacedWithinMm 1, SameLineMm 5, across XYZ, added 5, alongMax 29.5275590551181,
+    alongMin 0, askedMm 0 item(s), countsBefore 8 item(s) [0, 0, 0, ...], curtainWalls 1 item(s)
+    [Wall], edgeWords 2 item(s) [start, base], equalPanels 6, findings 2 item(s) [Added 5
+    vertical grid lines to curtain wall 1020327 (''Curtai..., Read back from Revit - see readBack],
+    flagFrom this wall had no vertical or horizontal line to measure, so from the one recorded
+    measurement (SET_CURTAIN_WALL_GRID''s proof, Project2, Revit 2024): vertical lines in
+    Revit''s V set - and checked on every line made, flat XYZ, fullName Func`2, grid CurtainGrid,
+    invariant CultureInfo, label curtain wall 1020327 (''Curtain Wall: Standard''), level
+    0.00174532836589831, measureLines Action`2, mullionAsked none, mullionToAdd (null), mullionsAdded
+    0, mullionsOfType Func`2, mullionsOnLine Func`3, mullionsOnWall Func`1, notCurtain 0 item(s),
+    panelsOnWall Func`1, placedBefore 2 item(s) [System.Collections.Generic.List`1[System.Double],
+    System.Collections.Generic.List`1[System.Double]], plain Func`2, plane 0, positionOf Func`3,
+    readBack curtain wall 1020327 (''Curtain Wall: Standard''): its grid measured 9000 mm
+    long and 3000 mm high, from its curtain cells. Vertical grid lines 0 before, 5 (Revit''s
+    U set 0, V set 5) now; horizontal 0 before, 0 now; at an angle 0 before, 0 now. Vertical
+    lines now at 1500, 3000, 4500, 6000, 7500 mm from its start. Panels 1 before, 6 now. Mullions
+    before: none. Now: none. New lines asked in Revit''s V set - this wall had no vertical
+    or horizontal line to measure, so from the one recorded measurement (SET_CURTAIN_WALL_GRID''s
+    proof, Project2, Revit 2024): vertical lines in Revit''s V set - and checked on every
+    line made, refused , run Line, runs Func`2, sayMm Func`2, sizeWords 2 item(s) [long, high],
+    skipped 0 item(s), span 2 item(s) [29.5275590551181, 9.84251968503937], start XYZ, steep
+    0.999998476913288, targets 5 item(s) [4.92125984251968, 9.84251968503937, 14.7637795275591,
+    ...], toAdd 5 item(s) [4.92125984251968, 9.84251968503937, 14.7637795275591, ...], verticalIsU
+    false, wall Wall, way 0, wayWords 4 item(s) [vertical, horizontal, at an angle, ...],
+    zMax 10.1514820763725, zMin 0.308962391333159. inputs came elements from create-wall as
+    ''created'' (1); direction as given; positions as given; mullionType not given - "none",
+    the card''s own default (optional). on P1102 MEP'
+  negative_case: 'run with direction=vertical, height=3000, level=Level 1, points=0,-60000,0;
+    9000,-60000,0, positions=equal 6, structural=false, wallType=Basic Wall: Exterior - Brick
+    on Mtl. Stud instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running create-wall with this phase''s own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned InsideEdgeMm 100, MillimetresPerFoot 304.8, MostLines 100, PlacedWithinMm 1,
+    SameLineMm 5, across (null), added 0, alongMax -1.79769313486232E+308, alongMin 1.79769313486232E+308,
+    askedMm 0 item(s), countsBefore 8 item(s) [0, 0, 0, ...], curtainWalls 0 item(s), edgeWords
+    2 item(s) [start, base], equalPanels 0, findings 1 item(s) [Nothing given is a curtain
+    wall - ''Exterior - Brick on Mtl. ...], flagFrom , flat (null), fullName Func`2, grid
+    (null), invariant CultureInfo, label , level 0.00174532836589831, measureLines Action`2,
+    mullionAsked none, mullionToAdd (null), mullionsAdded 0, mullionsOfType Func`2, mullionsOnLine
+    Func`3, mullionsOnWall Func`1, notCurtain 1 item(s) [''Exterior - Brick on Mtl. Stud''
+    (id 1020345) is a basic wall...], panelsOnWall Func`1, placedBefore 2 item(s) [System.Collections.Generic.List`1[System.Double],
+    System.Collections.Generic.List`1[System.Double]], plain Func`2, plane 0, positionOf Func`3,
+    readBack , refused Nothing given is a curtain wall - ''Exterior - Brick on Mtl. Stud''
+    (id 1020345) is a basic wall, not a curtain wall - it has no grid. Select the one curtain
+    wall to add grid lines to. Nothing was changed, run (null), runs Func`2, sayMm Func`2,
+    sizeWords 2 item(s) [long, high], skipped 0 item(s), span 2 item(s) [0, 0], start (null),
+    steep 0.999998476913288, targets 0 item(s), toAdd 0 item(s), verticalIsU false, wall (null),
+    way -1, wayWords 4 item(s) [vertical, horizontal, at an angle, ...], zMax -1.79769313486232E+308,
+    zMin 1.79769313486232E+308. inputs came elements from create-wall as ''created'' (1);
+    direction as given; positions as given; mullionType not given - "none", the card''s own
+    default (optional). on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 0bdff42e9e123d6a
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -314,40 +314,54 @@ contract:
 # the counts below: a probe read each one back 0.0 mm from its duct's
 # midpoint, recorded in 5b-452.
 proof:
-  date: '2026-10-13'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project1 (3,026 elements), Revit 2020, session 33484
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    filter-elements-by-category with this phase''s own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned MmToFeet 0.00328083989501312,
-    alreadyHasTag HashSet`1, alreadyTagged 0, because Action`1, derivedTagCategory 0 entry(ies),
-    leaderMode none, leaderOffsetMm 0, leadersDrawn 0, leadersNotDrawn 0, minLengthMm 0, notTagged
-    0 item(s), notTaggedWhy 0 item(s), offsetFeet 2.6246719160105, ownPoint Func`2, routeFor
-    1 entry(ies), scale 100, tagCategoryByName Func`2, tagCategoryFor 17 entry(ies), tagTypesUsed
-    1 item(s) [Duct Tags: M_Duct Size Tag: M_Duct Size Tag (the caller''s hi...], tagged 3,
-    tooShort 0 item(s), typeCorrections 0, typeForCategory 1 entry(ies), verticalSkipped 0
-    item(s), wantLeader false, whyCount 0 entry(ies). inputs came elements from filter-elements-by-category
-    (3); view as given; tagTypeHintId as given; leader as given; minLengthMm as given; leaderOffsetMm
-    as given. on Project1'
-  negative_case: 'run with view=FloorPlan: Level 1 Copy 2, tagTypeHintId=M_Duct Size Tag,
-    leader=none, minLengthMm=100000, leaderOffsetMm=0 arranged with category=Ducts, levelId=Level
-    1, includeLinks=false instead - chosen because it should not contain what this fragment
-    reports - the arrangement was re-made first by running filter-elements-by-category with
-    this phase''s own values - run inside a transaction, and Revit reported the transaction
+    filter-elements-by-category, set-selection with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    MmToFeet 0.00328083989501312, alreadyHasTag HashSet`1, alreadyTagged 0, because Action`1,
+    derivedTagCategory 0 entry(ies), exactProblem (null), exactType (null), findings 0 item(s),
+    firstSpatialRefusal (null), heldTag Action`2, leaderMode none, leaderOffsetMm 0, leadersDrawn
+    0, leadersNotDrawn 0, minLengthMm 100, mismatched 0 item(s), newTags 9 item(s) [1020257,
+    1020258, 1020259, ...], notEnclosed 0 item(s), notTagged 0 item(s), notTaggedWhy 0 item(s),
+    offsetFeet 1.31233595800525, otherLevel 0 item(s), ownPoint Func`2, planLevel Level, readSpatialTags
+    Func`1, roomTagsCategory 1 item(s) [id -2000480], routeFor 1 entry(ies), scale 50, skipped
+    0 item(s), spaceTagsCategory 1 item(s) [id -2000485], spatialCategoriesUsed HashSet`1,
+    spatialHanded 0, spatialTagged 0, spatialTaggedHere (null), tagCategoryByName Func`2,
+    tagCategoryFor 17 entry(ies), tagTypesOn 9 entry(ies), tagTypesUsed 1 item(s) [Duct Tags:
+    M_Bottom Elevation Duct Tag: M_Bottom Elevation D...], tagged 9, tooShort 0 item(s), typeCorrections
+    0, typeForCategory 1 entry(ies), typeLabel Func`2, unplaced 0 item(s), verticalSkipped
+    1 item(s) [478969], viewsSharingTags HashSet`1, wantLeader false, whyCount 0 entry(ies),
+    zoneTagTargets Func`2, zoneTagsCategory 1 item(s) [id -2008115]. inputs came elements
+    from the selection (10); view as given; tagTypeHintId as given; tagTypeId not given -
+    "none", the card''s own default (optional); leader as given; minLengthMm as given; leaderOffsetMm
+    as given. on P1102 MEP'
+  negative_case: run with category=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP TYP, leader=none,
+    leaderOffsetMm=0, minLengthMm=100000, tagTypeHintId=none, view=Callout of Level 1 HVAC
+    WSHP TYP instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running filter-elements-by-category, set-selection with
+    this phase's own values - run inside a transaction, and Revit reported the transaction
     group ROLLED BACK afterwards. returned MmToFeet 0.00328083989501312, alreadyHasTag HashSet`1,
-    alreadyTagged 0, because Action`1, derivedTagCategory 0 entry(ies), leaderMode none, leaderOffsetMm
-    0, leadersDrawn 0, leadersNotDrawn 0, minLengthMm 100000, notTagged 0 item(s), notTaggedWhy
-    0 item(s), offsetFeet 2.6246719160105, ownPoint Func`2, routeFor 0 entry(ies), scale 100,
-    tagCategoryByName Func`2, tagCategoryFor 17 entry(ies), tagTypesUsed 0 item(s), tagged
-    0, tooShort 3 item(s) [345710, 345714, 345717], typeCorrections 0, typeForCategory 0 entry(ies),
-    verticalSkipped 0 item(s), wantLeader false, whyCount 0 entry(ies). inputs came elements
-    from filter-elements-by-category (3); view as given; tagTypeHintId as given; leader as
-    given; minLengthMm as given; leaderOffsetMm as given. on Project1'
+    alreadyTagged 0, because Action`1, derivedTagCategory 0 entry(ies), exactProblem (null),
+    exactType (null), findings 0 item(s), firstSpatialRefusal (null), heldTag Action`2, leaderMode
+    none, leaderOffsetMm 0, leadersDrawn 0, leadersNotDrawn 0, minLengthMm 100000, mismatched
+    0 item(s), newTags 0 item(s), notEnclosed 0 item(s), notTagged 0 item(s), notTaggedWhy
+    0 item(s), offsetFeet 1.31233595800525, otherLevel 0 item(s), ownPoint Func`2, planLevel
+    Level, readSpatialTags Func`1, roomTagsCategory 1 item(s) [id -2000480], routeFor 0 entry(ies),
+    scale 50, skipped 0 item(s), spaceTagsCategory 1 item(s) [id -2000485], spatialCategoriesUsed
+    HashSet`1, spatialHanded 0, spatialTagged 0, spatialTaggedHere (null), tagCategoryByName
+    Func`2, tagCategoryFor 17 entry(ies), tagTypesOn 0 entry(ies), tagTypesUsed 0 item(s),
+    tagged 0, tooShort 9 item(s) [404243, 411658, 411660, ...], typeCorrections 0, typeForCategory
+    0 entry(ies), typeLabel Func`2, unplaced 0 item(s), verticalSkipped 1 item(s) [478969],
+    viewsSharingTags HashSet`1, wantLeader false, whyCount 0 entry(ies), zoneTagTargets Func`2,
+    zoneTagsCategory 1 item(s) [id -2008115]. inputs came elements from the selection (10);
+    view as given; tagTypeHintId as given; tagTypeId not given - "none", the card's own default
+    (optional); leader as given; minLengthMm as given; leaderOffsetMm as given. on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 12bbc94345a1dc3d
-
+  fingerprint: b449c50a9af9aa52
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

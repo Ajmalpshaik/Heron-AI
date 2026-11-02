@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -207,32 +207,52 @@ contract:
 # fingerprint no longer describes the code and the card is DRAFT until
 # version 2 is proved on a real model (D-30).
 proof:
-  date: '2026-09-09'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 43652
-  positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction
-    and ROLLED BACK, so the model was left exactly as it was. returned added 2, alreadyPresent
-    0, availableFields 256 item(s) [Actual Appliance - Dwelling Unit Load, Actual Cooling
-    Load, Actual Default Load, ...], handed 3, refused (null), scheduleBehind Func`2, schedulesSeen
-    3, unknownField 1 item(s) [Comments], wanted 1 item(s) [Comments]. inputs came elements
-    from the selection (3); fieldNames as given (1). on Snowdon-scratch_ajmal.al
-  negative_case: run with categoryName=Title Blocks, fieldNames=Comments, inViewOnly=Notes,
-    Symbols & Schedules instead - chosen because it should not contain what this fragment
-    reports - the arrangement was re-made first by running select-by-category-name, set-selection
-    with this phase's own values - run inside a transaction and ROLLED BACK, so the model
-    was left exactly as it was. returned added 0, alreadyPresent 0, availableFields 0 item(s),
-    handed 1, refused not one of the 1 element(s) handed in is a schedule, so NOTHING WAS
-    ADDED. A schedule is a VIEW and cannot be selected in the model; what CAN be selected
-    is a schedule PLACED ON A SHEET, which this now reads through to the schedule behind it.
-    Click the schedule on the sheet, or select the category 'Schedule Graphics', scheduleBehind
-    Func`2, schedulesSeen 0, unknownField 0 item(s), wanted 1 item(s) [Comments]. inputs came
-    elements from the selection (1); fieldNames as given (1). on Snowdon-scratch_ajmal.al
+  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    find-views with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned added 2, alreadyPresent 0, appliedOrder
+    ''Level 2 Space Schedule'': 1 Level, 2 Comments (new), 3 Room: Number, 4 Room: Name, 5
+    Number, 6 Name, 7 Space Type, 8 Calculated Cooling Load; ''Space Schedule'': 1 Level,
+    2 Comments (new), 3 Number, 4 Name, 5 Calculated Supply Airflow, 6 Actual Supply Airflow,
+    7 Airflow Delta, availableFields 123 item(s) [Actual Cooling Load, Actual Exhaust Airflow,
+    Actual HVAC Load, ...], columnNow , columnsCalled Func`3, combinedAsked false, drawn Func`4,
+    editExisting false, edited 0, handed 2, headingOf Func`2, keepParts true, keepSeparators
+    true, notASchedule 0 item(s), notPlaced 0 item(s), nowLines 0 item(s), orderParts 2 item(s)
+    [''Level 2 Space Schedule'': 1 Level, 2 Comments (new), 3 Room:..., ''Space Schedule'':
+    1 Level, 2 Comments (new), 3 Number, 4 Nam...], parameterName Func`4, partMissing 0 item(s),
+    positionAnchor , positionForPlain true, positionKind at, positionNumber 2, positionProblem
+    (null), positionText 2, refused (null), refusedSchedules 0 item(s), refusedWhy , saysKeep
+    Func`2, scheduleBehind Func`2, schedulesSeen 2, separatorList 0 item(s), unknownField
+    0 item(s), wanted 1 item(s) [Comments], wantedName , whyLines 0 item(s). inputs came elements
+    from find-views (2); fieldNames as given (1); columnName not given - "none", the card''s
+    own default (optional); partFields not given - "keep", the card''s own default (optional);
+    partSeparators not given - "keep", the card''s own default (optional); editExisting not
+    given - false (optional); position as given. on P1102 MEP'
+  negative_case: run with fieldNames=Comments, position=after ZZZ NO SUCH COLUMN arranged
+    with nameContains=Space Schedule, viewType=Schedule instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    find-views with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned added 0, alreadyPresent 0, appliedOrder
+    , availableFields 123 item(s) [Actual Cooling Load, Actual Exhaust Airflow, Actual HVAC
+    Load, ...], columnNow , columnsCalled Func`3, combinedAsked false, drawn Func`4, editExisting
+    false, edited 0, handed 2, headingOf Func`2, keepParts true, keepSeparators true, notASchedule
+    0 item(s), notPlaced 2 item(s) ['Level 2 Space Schedule' - 'ZZZ NO SUCH COLUMN' is not
+    a col..., 'Space Schedule' - 'ZZZ NO SUCH COLUMN' is not a column in i...], nowLines 0
+    item(s), orderParts 0 item(s), parameterName Func`4, partMissing 0 item(s), positionAnchor
+    ZZZ NO SUCH COLUMN, positionForPlain true, positionKind after, positionNumber 0, positionProblem
+    (null), positionText after ZZZ NO SUCH COLUMN, refused (null), refusedSchedules 0 item(s),
+    refusedWhy , saysKeep Func`2, scheduleBehind Func`2, schedulesSeen 2, separatorList 0
+    item(s), unknownField 0 item(s), wanted 1 item(s) [Comments], wantedName , whyLines 0
+    item(s). inputs came elements from find-views (2); fieldNames as given (1); columnName
+    not given - "none", the card's own default (optional); partFields not given - "keep",
+    the card's own default (optional); partSeparators not given - "keep", the card's own default
+    (optional); editExisting not given - false (optional); position as given. on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 881ab120a0a95f58
-
+  fingerprint: 62e4b904bc1f442e
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

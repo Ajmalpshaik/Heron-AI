@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -200,32 +200,36 @@ contract:
 # matched version 4's impl/ - see the version 5 note at the top.) Version 5
 # changed impl/; Groups EF and EH, and the version 5 cases, replace it.
 proof:
-  date: '2026-10-18'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project1 (3,047 elements), Revit 2020, session 2648
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    create-grids with this phase's own values - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned anyById Func`2, byId Func`3, created
-    1 item(s) [id 345608], elsewhere Func`2, fileOf Func`2, findings 1 item(s) [Dimension
-    drawn on 'Level 1' across 2 reference(s), reading ...], hostPoint Func`2, hostVector Func`2,
-    inLink , lastNormal XYZ, lastPoint XYZ, linkCalled Func`2, linkSaid Func`2, linkWords
-    , linkedAsked 0, links Func`1, measured 14000 mm, mm Func`2, problems 0 item(s), referenceOf
-    Func`2, refused (null), source Document, toHost Transform, viaLink (null). inputs came
-    view as given; between as given; lineFrom as given; lineTo as given. on Project1
-  negative_case: 'run with between=grid A | grid Nope, categoryName=Text Notes, inViewOnly=FloorPlan:
-    Level 1, lineFrom=-3000,3000,0, lineTo=13000,3000,0, view=FloorPlan: Level 1 instead -
-    chosen because it should not contain what this fragment reports - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned anyById Func`2,
-    byId Func`3, created (null), elsewhere Func`2, fileOf Func`2, findings 1 item(s) [Nothing
-    was drawn. No grid is called "Nope".], hostPoint Func`2, hostVector Func`2, inLink , lastNormal
-    (null), lastPoint (null), linkCalled Func`2, linkSaid Func`2, linkWords , linkedAsked
-    0, links Func`1, measured , mm Func`2, problems 1 item(s) [No grid is called "Nope".],
-    referenceOf Func`2, refused Nothing was drawn. No grid is called "Nope"., source Document,
+    1 item(s) [id 1020265], elsewhere Func`2, fileOf Func`2, findings 1 item(s) [Dimension
+    drawn on 'Level 1 HVAC Plan' across 2 reference(s)...], hostPoint Func`2, hostVector Func`2,
+    inLink , lastNormal XYZ, lastPoint XYZ, lastWord grid, linkCalled Func`2, linkSaid Func`2,
+    linkWords , linkedAsked 0, links Func`1, measured 6000 mm, mm Func`2, problems 0 item(s),
+    referenceOf Func`2, refused (null), shownDatums HashSet`1, shownHere Func`2, source Document,
     toHost Transform, viaLink (null). inputs came view as given; between as given; lineFrom
-    as given; lineTo as given. on Project1'
+    as given; lineTo as given. on P1102 MEP
+  negative_case: run with between=grid Q | grid Nope, firstLetter=Q, firstNumber=91, lineFrom=-3000,-54000,0,
+    lineTo=15000,-54000,0, origin=0,-60000,0, spacingsAcross=6000,6000, spacingsUp=6000,6000,
+    view=Level 1 HVAC Plan instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running create-grids with this phase's
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned anyById Func`2, byId Func`3, created (null), elsewhere Func`2,
+    fileOf Func`2, findings 1 item(s) [Nothing was drawn. No grid is called "Nope".], hostPoint
+    Func`2, hostVector Func`2, inLink , lastNormal (null), lastPoint (null), lastWord grid,
+    linkCalled Func`2, linkSaid Func`2, linkWords , linkedAsked 0, links Func`1, measured
+    , mm Func`2, problems 1 item(s) [No grid is called "Nope".], referenceOf Func`2, refused
+    Nothing was drawn. No grid is called "Nope"., shownDatums HashSet`1, shownHere Func`2,
+    source Document, toHost Transform, viaLink (null). inputs came view as given; between
+    as given; lineFrom as given; lineTo as given. on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 6155c5d9503d6351
+  fingerprint: a5fd65178a0e5cb1
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

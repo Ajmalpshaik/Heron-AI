@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -90,6 +90,34 @@ contract:
       # CanGroupHeaders saying no with the cells it was asked about (D-52).
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    find-views with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned applied ''Level 2 Space Schedule'':
+    ''Room: Number'', ''Room: Name'' grouped under ''Room'' (asked at body row 0, columns
+    1 to 2); read back: row 0 reads ''Room'', grouped 1, notPresent 2 item(s) [''Room: Number''
+    on ''Space Schedule'' - not a column in this sc..., ''Room: Name'' on ''Space Schedule''
+    - not a column in this sche...], refused 0 item(s), scheduleBehind Func`2. inputs came
+    elements from find-views (2); fromColumn as given; toColumn as given; caption as given;
+    mode not given - "group", the card''s own default (optional). on P1102 MEP'
+  negative_case: 'run with caption=Room, fromColumn=ZZZ No Such Column, toColumn=Room: Name
+    arranged with nameContains=Space Schedule, viewType=Schedule instead - chosen because
+    it should not contain what this fragment reports - the arrangement was re-made first by
+    running find-views with this phase''s own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned applied , grouped 0, notPresent
+    3 item(s) [''ZZZ No Such Column'' on ''Level 2 Space Schedule'' - not a col..., ''ZZZ
+    No Such Column'' on ''Space Schedule'' - not a column in t..., ''Room: Name'' on ''Space
+    Schedule'' - not a column in this sche...], refused 0 item(s), scheduleBehind Func`2.
+    inputs came elements from find-views (2); fromColumn as given; toColumn as given; caption
+    as given; mode not given - "group", the card''s own default (optional). on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 94db1b6746f9c6b8
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

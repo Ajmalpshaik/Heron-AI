@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -142,38 +142,51 @@ contract:
 # IO proves version 3 (D-30). It ran `which` "all" and a project, both of
 # which version 3 answers as version 2 did.
 proof:
-  date: '2026-10-22'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: GIP M_Skylight-Pyramid (1,872 elements), Revit 2020, session 60544
-  positive_case: 'run as it would normally be run. returned combinationList adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008d00:
-    solid extrusion adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008894, void extrusion adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008b34,
-    void extrusion adb89b7a-2040-4618-8ae2-3b66e7c5b964-0000961f  ||  7c60094e-5c63-49f7-a842-9d816e78436e-0000af24:
-    void extrusion adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008b34, void extrusion adb89b7a-2040-4618-8ae2-3b66e7c5b964-0000961f,
-    solid extrusion 7c60094e-5c63-49f7-a842-9d816e78436e-0000aeaf, findings 1 item(s) [1 form(s)
-    of 9 in the family, by id; 2 join(s) or cut(s).], formCount 1, formList void extrusion
-    adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008b34 (on Reference Lines): X -352 to 352, Y 121
-    to 514.8, Z 3960.8 to 4195 mm, subcategory (the family''s own), shows in coarse, medium,
-    fine | plan, front/back, left/right, in adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008d00
-    and 7c60094e-5c63-49f7-a842-9d816e78436e-0000af24, ids 1 item(s) [adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008b34],
-    invariant CultureInfo, joins 2 item(s) [adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008d00:
-    solid extrusi..., 7c60094e-5c63-49f7-a842-9d816e78436e-0000af24: void extrusio...], kindOf
-    Func`2, known 8 item(s) [solid, void, extrusion, ...], mm Func`2, named HashSet`1, notAFamily
-    false, parts 1 item(s) [adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008b34], planeOf Func`2,
-    problems 0 item(s), rows 1 item(s) [void extrusion adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008b34...],
-    scanned 9, squash Func`2, words 0 item(s). inputs came which as given. on GIP M_Skylight-Pyramid'
-  negative_case: run with which=b8cc9e63-4da8-4dd2-9b35-df4c8c3f3d63-00009df9 instead - chosen
-    because it should not contain what this fragment reports. returned combinationList , findings
-    1 item(s) [Nothing was read. "b8cc9e63-4da8-4dd2-9b35-df4c8c3f3d63-0000...], formCount
-    0, formList , ids 1 item(s) [b8cc9e63-4da8-4dd2-9b35-df4c8c3f3d63-00009df9], invariant
-    CultureInfo, joins 0 item(s), kindOf Func`2, known 8 item(s) [solid, void, extrusion,
-    ...], mm Func`2, named HashSet`1, notAFamily false, parts 1 item(s) [b8cc9e63-4da8-4dd2-9b35-df4c8c3f3d63-00009df9],
-    planeOf Func`2, problems 1 item(s) ["b8cc9e63-4da8-4dd2-9b35-df4c8c3f3d63-00009df9" is
-    not an id...], rows 0 item(s), scanned 0, squash Func`2, words 0 item(s). inputs came
-    which as given. on GIP M_Skylight-Pyramid
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 MEP Family, P1102 Family - active
+    was P1102 MEP, Revit 2020, session 59096'
+  positive_case: 'run as it would normally be run. returned combinationList , elements 7 item(s)
+    [Extrusion, Extrusion, Extrusion, ...], findings 2 item(s) [7 form(s) of 7 in the family;
+    0 join(s) or cut(s)., 7 form(s) handed on as elements - SET_SELECTION highlights t...],
+    formCount 7, formList solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009cb (on
+    Ref. Level): X 0 to 539.8, Y 0 to 184.1, Z 0 to 38.1 mm, 3.787 L, subcategory (the family''s
+    own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion
+    a0683e65-4584-4c07-94d1-ebbad3e4649b-000009e2 (on Center (Left/Right)): X 63.6 to 463.6,
+    Y -12.7 to 184.1, Z 38.1 to 222.3 mm, 14.262 L, subcategory (the family''s own), shows
+    in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009f9
+    (on Center (Left/Right)): X 14 to 489, Y 184.1 to 495.3, Z -38.1 to 222.3 mm, 38.479 L,
+    subcategory (the family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a17 (on Center (Front/Back)): X 503.3
+    to 525.5, Y 184.1 to 209.5, Z 7.9 to 30.2 mm, 0.01 L, subcategory (the family''s own),
+    shows in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a23
+    (on Center (Left/Right)): X 463.6 to 489, Y 46 to 61.9, Z 106.4 to 122.2 mm, 0.005 L,
+    subcategory (the family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a2a (on Center (Left/Right)): X 463.6
+    to 489, Y 100 to 115.9, Z 106.4 to 122.2 mm, 0.005 L, subcategory (the family''s own),
+    shows in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a39
+    (on Ref. Level): X 0 to 14, Y 393.7 to 469.9, Z 174.7 to 200.1 mm, 0.027 L, subcategory
+    (the family''s own), shows in coarse, medium, fine | plan, front/back, left/right, ids
+    0 item(s), invariant CultureInfo, joins 0 item(s), kindOf Func`2, known 9 item(s) [solid,
+    void, extrusion, ...], mm Func`2, named HashSet`1, namedInOrder 0 item(s), notAFamily
+    false, notNamed false, parts 0 item(s), planeOf Func`2, problems 0 item(s), refused (null),
+    rows 7 item(s) [solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009c..., solid
+    extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009e..., solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009f...,
+    ...], scanned 7, squash Func`2, words 0 item(s). inputs came which as given. on P1102
+    MEP Family'
+  negative_case: run against 'P1102 Family' with which=all instead - chosen because it should
+    not contain what this fragment reports. returned combinationList , elements 0 item(s),
+    findings 3 item(s) [0 form(s) of 0 in the family; 0 join(s) or cut(s)., This family has
+    no forms yet - nothing has been modelled in ..., 0 form(s) handed on as elements - SET_SELECTION
+    highlights t...], formCount 0, formList , ids 0 item(s), invariant CultureInfo, joins
+    0 item(s), kindOf Func`2, known 9 item(s) [solid, void, extrusion, ...], mm Func`2, named
+    HashSet`1, namedInOrder 0 item(s), notAFamily false, notNamed false, parts 0 item(s),
+    planeOf Func`2, problems 0 item(s), refused (null), rows 0 item(s), scanned 0, squash
+    Func`2, words 0 item(s). inputs came which as given. on P1102 Family
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 5e77ab6d7c862c25
+  fingerprint: fd07c9faafcdd691
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

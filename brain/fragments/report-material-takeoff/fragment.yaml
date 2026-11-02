@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-EXP-018
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -170,25 +170,38 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-07'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Snowdon Towers Sample HVAC (9,641 elements), Revit 2024, session 42676
-  positive_case: 4 walls selected in Snowdon Towers Sample HVAC - 'Exterior - Brick on Mtl.
-    Stud', drawn in the host model because the sample's own walls are in a LINKED model and
-    the executor skips links deliberately - run as it would normally be run. returned addTo
-    Action`3, areas 7 entry(ies), elementsWithNoMaterial 0 item(s), paintedMaterials 0 item(s),
-    volumes 5 entry(ies). inputs came elements from the selection (4). on Snowdon Towers Sample
-    HVAC
-  negative_case: 28 duct taps selected in Snowdon Towers Sample HVAC - none of which carries
-    a material, so the answer had to be empty. returned addTo Action`3, areas 0 entry(ies),
-    elementsWithNoMaterial 28 item(s) [1383647, 1383653, 1384651, ...], paintedMaterials 0
-    item(s), volumes 0 entry(ies). inputs came elements from the selection (28). on Snowdon
-    Towers Sample HVAC
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase's own values. returned CubicMetresPerCubicFoot
+    0.028316846592, MetresPerFoot 0.3048, addTo Action`3, areaM2 1 entry(ies), areas 1 entry(ies),
+    by material, carbon , elementsWithNoMaterial 1 item(s) [573610], factorName none, factorOf
+    Func`2, factors 0 entry(ies), findings 1 item(s) [1 material(s) taken off 2 element(s),
+    0 painted; 1 element(s...], groups 0 entry(ies), invariant CultureInfo, materials 1 entry(ies),
+    noFactor 0 item(s), noMaterial 1 item(s) [573610], noVolume 0, paintedMaterials 0 item(s),
+    seen HashSet`1, shown 20, top 0, totalKg 0, volumeM3 1 entry(ies), volumes 1 entry(ies),
+    withCarbon false. inputs came elements from the selection (2); factorParameter not given
+    - "none", the card's own default (optional); groupBy not given - "material", the card's
+    own default (optional); top not given - "0", the card's own default (optional). on P1102
+    MEP
+  negative_case: run with category=Sheets instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running filter-elements-by-category,
+    set-selection with this phase's own values. returned CubicMetresPerCubicFoot 0.028316846592,
+    MetresPerFoot 0.3048, addTo Action`3, areaM2 0 entry(ies), areas 0 entry(ies), by material,
+    carbon , elementsWithNoMaterial 7 item(s) [541359, 541389, 545964, ...], factorName none,
+    factorOf Func`2, factors 0 entry(ies), findings 1 item(s) [0 material(s) taken off 7 element(s),
+    0 painted; 7 element(s...], groups 0 entry(ies), invariant CultureInfo, materials 0 entry(ies),
+    noFactor 0 item(s), noMaterial 7 item(s) [541359, 541389, 545964, ...], noVolume 0, paintedMaterials
+    0 item(s), seen HashSet`1, shown 20, top 0, totalKg 0, volumeM3 0 entry(ies), volumes
+    0 entry(ies), withCarbon false. inputs came elements from the selection (7); factorParameter
+    not given - "none", the card's own default (optional); groupBy not given - "material",
+    the card's own default (optional); top not given - "0", the card's own default (optional).
+    on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 452f1e88de47b242
-
+  fingerprint: d05cbc4538bea121
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

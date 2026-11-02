@@ -1,0 +1,63 @@
+# Round 7, 2026-11-02 - Revit 2020, "P1102 ARCH" = a scratch copy of Revit 2020's own
+# Samples\rac_advanced_sample_project.rvt in %TEMP%\heron-work\prove-1102. Read before the run:
+# 9 model group types, 2 shaft openings and 1 wall opening, 1 imported CAD "Roofing Detail.dwg",
+# railing types "1100mm" and "900mm", curtain panels "System Panel: Solid / Glazed", curtain wall
+# type "Curtain Wall: Exterior Curtain Wall"; levels 01 - Entry Level, 02 - Floor, 03 - Floor,
+# Roof, Parapet. Every MODIFY run is ROLLED BACK. "01 - Entry Level" names a floor, ceiling and
+# area plan, so the floor plan is written "FloorPlan: 01 - Entry Level" (first run refused).
+model: "P1102 ARCH (scratch copy of rac_advanced_sample_project.rvt) + P1102 Family, Revit 2020"
+
+defaults:
+  in: "P1102 ARCH"
+  setup: []
+
+jobs:
+  - fragment: select-openings
+    expect: elements
+    set: {}
+    negative-in: "P1102 Family"
+    negative-set: {}
+
+  - fragment: select-group-members
+    setup: [filter-elements-by-category, set-selection]
+    expect: elements
+    set: {category: "Model Groups", inViewOnly: "FloorPlan: 01 - Entry Level"}
+    negative-set: {category: "Walls", inViewOnly: "FloorPlan: 01 - Entry Level"}
+
+  - fragment: report-keynotes
+    expect: tagCount
+    set: {viewName: "Typical Wall Section"}
+    negative-set: {viewName: "{3D}"}
+
+  - fragment: stack-tags
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    set: {category: "Room Tags", inViewOnly: "FloorPlan: 01 - Entry Level", view: "FloorPlan: 01 - Entry Level", stackAt: "-60000,0,0", gapMm: 500}
+    negative-set: {category: "Walls", inViewOnly: "FloorPlan: 01 - Entry Level", view: "FloorPlan: 01 - Entry Level", stackAt: "-60000,0,0", gapMm: 500}
+
+  - fragment: set-railing-type
+    write: true
+    expect: railingType
+    set: {railingTypeName: "900mm Pipe", duplicateAs: "Heron Guard", topRailTypeName: "", topRailHeightMm: 1000, handrailTypeName: "", handrailHeightMm: 0, handrailSide: ""}
+    negative-set: {railingTypeName: "ZZZ No Such Railing", duplicateAs: "Heron Guard", topRailTypeName: "", topRailHeightMm: 1000, handrailTypeName: "", handrailHeightMm: 0, handrailSide: ""}
+
+  - fragment: set-curtain-panel-type
+    write: true
+    setup: [create-wall]
+    expect: changed
+    set: {level: "01 - Entry Level", wallType: "Curtain Wall: Exterior Curtain Wall", points: "0,-60000,0; 9000,-60000,0", height: "3000", structural: "false", panelTypeName: "System Panel: Solid", whichPanels: "bottom row"}
+    negative-set: {level: "01 - Entry Level", wallType: "Basic Wall: Exterior - Brick on Mtl. Stud", points: "0,-60000,0; 9000,-60000,0", height: "3000", structural: "false", panelTypeName: "System Panel: Solid", whichPanels: "bottom row"}
+
+  - fragment: place-rooms
+    write: true
+    setup: [create-wall]
+    expect: created
+    set: {level: "01 - Entry Level", wallType: "Basic Wall: Exterior - Brick on Mtl. Stud", points: "0,-60000,0; 6000,-60000,0; 6000,-56000,0; 0,-56000,0; 0,-60000,0", height: 3000, structural: false, levelId: "01 - Entry Level", placeKind: "rooms", planViewId: "FloorPlan: 01 - Entry Level"}
+    negative-set: {level: "01 - Entry Level", wallType: "Basic Wall: Exterior - Brick on Mtl. Stud", points: "0,-60000,0; 6000,-60000,0; 6000,-56000,0; 0,-56000,0; 0,-60000,0", height: 3000, structural: false, levelId: "Parapet", placeKind: "rooms", planViewId: "FloorPlan: 01 - Entry Level"}
+
+  - fragment: convert-cad-to-directshape
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: created
+    set: {category: "Roofing Detail.dwg", inViewOnly: "Roofing Termination Detail"}
+    negative-set: {category: "Walls", levelId: "01 - Entry Level"}

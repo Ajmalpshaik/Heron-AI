@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 16
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -268,42 +268,63 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-15'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project2, Revit 2020, session 25244 - the count is NOT recorded because 25,093 elements
-    was measured on 4355-BHVD-3D-21S10-BL001A, the document in front, and this ran against
-    another one (row 15)
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned bareOperator , created 1 item(s)
-    [id 918728], firstOperator does not contain, firstText Level 1, name HERON PROOF CVF Levels,
-    operatorMethods 10 entry(ies), operatorWords 8 item(s) [does not begin with, does not
-    end with, does not contain, ...], refused (null), wanted Name. inputs came view as given;
-    filterName as given; categoryIds as given (1); parameterName as given; matchValue as given;
-    moreRules as given; combine as given; colour as given. on Project2
-  negative_case: run with categoryIds=Levels, colour=255,0,0, combine=, filterName=HERON PROOF
-    CVF Levels, matchValue=does not contain Level 1, moreRules=, parameterName=System Classification,
-    view={3D} instead - chosen because it should not contain what this fragment reports -
-    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned bareOperator , created (null), firstOperator does not contain, firstText Level
-    1, name HERON PROOF CVF Levels, operatorMethods 10 entry(ies), operatorWords 8 item(s)
-    [does not begin with, does not end with, does not contain, ...], refused no parameter
-    the filter's categories share is called "System Classification" - nothing was made, wanted
-    System Classification. inputs came view as given; filterName as given; categoryIds as
-    given (1); parameterName as given; matchValue as given; moreRules as given; combine as
-    given; colour as given. on Project2
-  second_route: '2026-10-15, Project2: the positive run once more and KEPT - fragment --in
-    Project2 create-view-filter --write --apply with the same values, created id 918729, APPLIED.
-    Then read back by two PROVEN reads that share no code with this fragment. REPORT_VIEW_FILTERS
-    viewName={3D}: {3D}, which carried no filter before, now carries one - ''HERON PROOF CVF
-    Levels'', Visibility ON, Projection/Surface Lines colour 255,0,0, Surface Patterns foreground
-    colour 255,0,0, Cut Lines colour 255,0,0, Cut Patterns foreground colour 255,0,0, cut
-    not applicable for Levels - and the project''s filters went from 10 to 11. TEST_VIEW_FILTER_MATCH
-    filterName=HERON PROOF CVF Levels on the two levels collected in North - Mech (select-by-category-name,
-    elements 2 [Level 1, Level 2]): matched 1 [Level 2], outOfScope 0, so the rule Revit holds
-    lets Level 2 through and stops Level 1 - Name does not contain ''Level 1''. Two routes
-    agree. The kept filter stays in Project2, unsaved, as one undo step.'
-  fingerprint: 266666b41263c99c
-
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyExists 0 item(s), answersTo
+    Func`3, badName , bareOperator , builtInNameOf Func`2, cannotFilter 0 item(s), categoriesTyped
+    true, categoryList 1 item(s) [-2000240], categoryName 1 entry(ies), colourProblem , colourWord
+    255,0,0, created 1 item(s) [id 1020303], createdIds 1 item(s) [1020303], droppedCategories
+    0 item(s), elements 0 item(s), extra 0 item(s), factoryProblem (null), firstParameter
+    1 item(s) [id -1008000], handed 0 item(s), how and, isNone Func`2, labelOf Func`2, leftOut
+    0 item(s), moreRules , names 1 item(s) [HERON PROOF CVF Levels], namesGiven true, noTextOperators
+    HashSet`1, noTextWithText , noValueGiven false, operatorMethods 12 entry(ies), operatorWords
+    10 item(s) [does not begin with, does not end with, does not contain, ...], operators
+    1 item(s) [does not contain], paint Color, parameterCalled Func`2, parameterProblem (null),
+    perValue false, prefix , quoteProblem , readBack ''HERON PROOF CVF Levels'': categories
+    Levels; rule Name does not contain ''Level 1''; catches 3 element(s) in the model today
+    (Levels 3); on ''3D Duct & Equipment'', line colour read back 255,0,0, refused (null),
+    repeated , ruleProblem (null), seen HashSet`1, shared 8 item(s) [-1012201, -1008000, -1007112,
+    ...], tests 1 entry(ies), textRule Func`4, texts 1 item(s) [Level 1], toCreate 1 item(s)
+    [0], unquoted Func`2, valueText does not contain Level 1, values 1 item(s) [does not contain
+    Level 1], valuesFound 0 item(s), wantColour true, wanted Name. inputs came view as given;
+    filterName as given (1); categoryIds as given (1); parameterName as given; matchValue
+    as given; moreRules given empty - "none", the card''s own default (optional); combine
+    given empty - "and", the card''s own default (optional); colour as given; elements not
+    given - none (optional); perValue not given - false (optional); namePrefix not given -
+    "none", the card''s own default (optional). on P1102 MEP'
+  negative_case: 'run with categoryIds=Levels, colour=255,0,0, combine=, filterName=HERON
+    PROOF CVF Levels, matchValue=does not contain Level 1, moreRules=, parameterName=System
+    Classification, view=3D Duct & Equipment instead - chosen because it should not contain
+    what this fragment reports - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned alreadyExists 0 item(s), answersTo Func`3, badName
+    , bareOperator , builtInNameOf Func`2, cannotFilter 1 item(s) [Levels - it cannot be filtered
+    by ''System Classification''], categoriesTyped true, categoryList 1 item(s) [-2000240],
+    categoryName 1 entry(ies), colourProblem , colourWord 255,0,0, created (null), createdIds
+    0 item(s), droppedCategories 0 item(s), elements 0 item(s), extra 0 item(s), factoryProblem
+    (null), firstParameter (null), handed 0 item(s), how and, isNone Func`2, labelOf Func`2,
+    leftOut 0 item(s), moreRules , names 1 item(s) [HERON PROOF CVF Levels], namesGiven true,
+    noTextOperators HashSet`1, noTextWithText , noValueGiven false, operatorMethods 12 entry(ies),
+    operatorWords 10 item(s) [does not begin with, does not end with, does not contain, ...],
+    operators 1 item(s) [does not contain], paint Color, parameterCalled Func`2, parameterProblem
+    (null), perValue false, prefix , quoteProblem , readBack , refused NOTHING WAS CREATED.
+    1 of the 1 categories cannot take a rule on ''System Classification'': Levels - it cannot
+    be filtered by ''System Classification''. Revit rejects a filter whose categories include
+    one the parameter does not apply to, so take it out of the list and ask again, repeated
+    , ruleProblem (null), seen HashSet`1, shared 0 item(s), tests 0 entry(ies), textRule Func`4,
+    texts 1 item(s) [Level 1], toCreate 0 item(s), unquoted Func`2, valueText does not contain
+    Level 1, values 1 item(s) [does not contain Level 1], valuesFound 0 item(s), wantColour
+    true, wanted System Classification. inputs came view as given; filterName as given (1);
+    categoryIds as given (1); parameterName as given; matchValue as given; moreRules given
+    empty - "none", the card''s own default (optional); combine given empty - "and", the card''s
+    own default (optional); colour as given; elements not given - none (optional); perValue
+    not given - false (optional); namePrefix not given - "none", the card''s own default (optional).
+    on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 66b3bb0bc787d845
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -111,34 +111,36 @@ contract:
       type: double
 
 proof:
-  date: '2026-09-09'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 43652
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values. returned areaUnknown
-    0 item(s), areaWords 5 item(s) [area, areas, sqm, ...], areas 22 entry(ies), lengthUnknown
-    0 item(s), lengthWords 13 item(s) [length, lengths, long, ...], lengths 22 entry(ies),
-    measureWords 1 item(s) [area], namesOneOf Func`2, quantities 22 entry(ies), refused (null),
-    saysSheetMetal false, saysSquareMetres false, wantArea true, wantedMeasure area. inputs
-    came elements from the selection (22); measure as given. on Snowdon-scratch_ajmal.al
-  negative_case: 'run with categoryName=Ducts, inViewOnly=FloorPlan: M1, measure=ZZZNOTHINGHERE
+    filter-elements-by-category, set-selection with this phase's own values. returned MillimetresPerFoot
+    304.8, answered HashSet`1, areaUnknown 0 item(s), areaWords 5 item(s) [area, areas, sqm,
+    ...], areas 10 entry(ies), lengthUnknown 0 item(s), lengthWords 13 item(s) [length, lengths,
+    long, ...], lengths 10 entry(ies), lengthsMm 10 entry(ies), measureWords 1 item(s) [length],
+    namesOneOf Func`2, quantities 10 entry(ies), refused (null), saysSheetMetal false, saysSquareMetres
+    false, totalMm 64110.2170470463, wantArea false, wantedMeasure length. inputs came elements
+    from the selection (10); measure as given. on P1102 MEP
+  negative_case: 'run with category=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP TYP, measure=ZZZNOTHINGHERE
     instead - chosen because it should not contain what this fragment reports - the arrangement
-    was re-made first by running select-by-category-name, set-selection with this phase''s
-    own values. returned areaUnknown 0 item(s), areaWords 5 item(s) [area, areas, sqm, ...],
-    areas 0 entry(ies), lengthUnknown 0 item(s), lengthWords 13 item(s) [length, lengths,
-    long, ...], lengths 0 entry(ies), measureWords 1 item(s) [zzznothinghere], namesOneOf
-    Func`2, quantities 0 entry(ies), refused ''ZZZNOTHINGHERE'' is not a measure this fragment
-    takes, so NOTHING WAS MEASURED. It knows two: LENGTH (length, linear, run, distance, metres
-    - or leave it out) and AREA (area, surface area, sheet metal, square metres). Either may
-    be part of a longer phrase, so ''total length'' and ''surface area'' both read. Reading
-    an unknown word as length would hand back a column of confident numbers in the wrong unit.
-    If what you want is weight, volume or insulation, that is a different fragment, saysSheetMetal
-    false, saysSquareMetres false, wantArea false, wantedMeasure zzznothinghere. inputs came
-    elements from the selection (22); measure as given. on Snowdon-scratch_ajmal.al'
+    was re-made first by running filter-elements-by-category, set-selection with this phase''s
+    own values. returned MillimetresPerFoot 304.8, answered HashSet`1, areaUnknown 0 item(s),
+    areaWords 5 item(s) [area, areas, sqm, ...], areas 0 entry(ies), lengthUnknown 0 item(s),
+    lengthWords 13 item(s) [length, lengths, long, ...], lengths 0 entry(ies), lengthsMm 0
+    entry(ies), measureWords 1 item(s) [zzznothinghere], namesOneOf Func`2, quantities 0 entry(ies),
+    refused ''ZZZNOTHINGHERE'' is not a measure this fragment takes, so NOTHING WAS MEASURED.
+    It knows two: LENGTH (length, linear, run, distance, metres - or leave it out) and AREA
+    (area, surface area, sheet metal, square metres). Either may be part of a longer phrase,
+    so ''total length'' and ''surface area'' both read. Reading an unknown word as length
+    would hand back a column of confident numbers in the wrong unit. If what you want is weight,
+    volume or insulation, that is a different fragment, saysSheetMetal false, saysSquareMetres
+    false, totalMm 0, wantArea false, wantedMeasure zzznothinghere. inputs came elements from
+    the selection (10); measure as given. on P1102 MEP'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: cbc5e5b00c8db592
+  fingerprint: 54c3814944d4c615
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
