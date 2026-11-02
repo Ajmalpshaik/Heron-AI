@@ -1,0 +1,193 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-152
+semantic-identity: "make an L-shaped, U-shaped or spiral stair from one level to another, placed from a point, turning left or right at its landing"
+kind: action
+domain: revit.elements
+capability: CREATE_SHAPED_STAIRS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: the modeller asked for an L-shaped stair turning left at the
+# landing, a U-shaped stair with a 1200 landing at a point, and a spiral stair
+# of 1500 radius. brain/heron_retrieve.py with those words reached
+# CREATE_STAIRS first every time; nothing in the library makes an L or a spiral
+# run, or a landing of a chosen depth.
+#
+# WHY CREATE_STAIRS WAS NOT WIDENED. It is PROVEN (Group HS, 2026-10-22, Heron
+# Capture Test), and any change under its impl/ makes that proof stale. It makes
+# a straight or U stair FITTED TO A STAIR HALL - a rectangle, an entry side, a
+# start offset, side-stringer insets, an optional slab opening. This one is
+# placed FROM A POINT, with a direction and a turn, and makes the shapes that
+# card cannot: L, spiral, and a U with a landing of a set depth. The duplicate
+# check (heron-duplicate-checker's method, 2026-11-02) read the pair as an
+# OVERLAP on the U only:
+#   a (both)              base and top level, stair type by name, risers from
+#                         the type's rules, all-or-nothing read-back inside the
+#                         edit scope, one riser more once, Revit's words, the
+#                         railings Revit adds named, nothing left by a refusal
+#   b (CREATE_STAIRS)     straight run, a U fitted to a hall's clear inside,
+#                         side-stringer inset, cut the opening in the slab above
+#   c (this card)         L, spiral, a U from a point, a landing of a chosen
+#                         depth (sketched), the turn left or right, Revit's
+#                         default stair type when none is named
+# Combining them is the owner's choice once this is proved; until then a U in a
+# stair hall stays CREATE_STAIRS's.
+#
+# ADD_STAIRS_LANDING (FRG-ELE-153) adds a landing between two runs of a stair
+# ALREADY in the model; this one makes the whole stair with its landing.
+#
+# THE PATTERN IS CREATE_STAIRS's, line for line where it can be: the ambient
+# `editScopeFailures` need (D-112), the elevation frames of 5b-445, the riser
+# retry of 5b-1239, Revit's words of 5b-1240, the sweep of 5b-1241 and the
+# railings read after the Commit (5b-455).
+
+purpose: >
+  Makes a Revit stair by component - an L-shaped stair with a landing at the
+  turn, a U-shaped stair with a landing across its end, or a spiral stair -
+  from a base level to a top level, placed from a point on plan: the middle of
+  the first riser for an L or U, the centre for a spiral. The first run climbs
+  north, south, east or west and turns left or right. The riser count comes
+  from the stair type's Maximum Riser Height and its tread from the type's
+  Minimum Tread Depth; the type is the one named, or Revit's default for new
+  stairs, said in the answer. A landing depth in mm sets the landing; without
+  one Revit makes its own. What Revit made is read back - risers, tread, runs,
+  landings and the landing's depth - and a stair Revit refuses is refused with
+  its reason and leaves nothing.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: editScopeFailures
+      type: IFailuresPreprocessor
+      source: ambient
+    - name: baseLevel
+      # Never guessed: the level by its name in the model's level list.
+      type: Level
+      source: request
+    - name: topLevel
+      type: Level
+      source: request
+    - name: stairType
+      # A stair type by its name. Left out, Revit's default type for new stairs
+      # (ElementTypeGroup.StairsType), named in the answer; a name not loaded is
+      # refused with the loaded names listed.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: shape
+      # l, u or spiral ("L-shaped", "U-shaped", "dogleg" are read the same).
+      type: string
+      source: request
+    - name: startPoint
+      # Three numbers in mm. L or U: the middle of the first riser. Spiral: the
+      # centre of the stair.
+      type: XYZ
+      source: request
+    - name: direction
+      # north, south, east or west. L or U: the way the first run climbs.
+      # Spiral: the side of the centre the first riser is on.
+      type: string
+      source: request
+    - name: turn
+      # left or right, as you climb. On a spiral, left is anticlockwise seen
+      # from above and right clockwise ("clockwise" is read too).
+      type: string
+      source: request
+    - name: runWidth
+      # mm; refused under the type's Minimum Run Width.
+      type: double
+      source: request
+    - name: landingDepth
+      # mm, L or U only: the landing's depth along the first run, made as a
+      # sketched landing. Left out (0), Revit's automatic landing.
+      type: double
+      source: request
+      optional: true
+      absent: "0"
+    - name: radius
+      # mm, spiral only: to the centre line of the run. Never guessed - a
+      # spiral without one is refused.
+      type: double
+      source: request
+      optional: true
+      absent: "0"
+    - name: firstRunRisers
+      # L or U only: risers in the first run. Left out (0), the larger half.
+      type: int
+      source: request
+      optional: true
+      absent: "0"
+  provides:
+    - name: created
+      role: result
+      type: ElementId
+    - name: risers
+      role: result
+      type: int
+    - name: riserHeightMm
+      role: result
+      type: double
+    - name: treadDepthMm
+      role: result
+      type: double
+    - name: runCount
+      role: result
+      type: int
+    - name: landingCount
+      role: result
+      type: int
+    - name: landingDepthMm
+      # The deepest landing's depth along the first run, off its footprint.
+      role: result
+      type: double
+    - name: railings
+      # The railings Revit added with the stair, read after the edit scope's
+      # Commit as CREATE_STAIRS does (5b-455). Empty when refused.
+      role: result
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, no #if. Read off the reference
+  assemblies for 2020 to 2027 with tools/api-surface on 2026-11-02, every one
+  present with the same signature throughout: StairsEditScope(Document, string),
+  Start(ElementId, ElementId), Commit(IFailuresPreprocessor), Cancel and
+  IsPermitted (on StairsEditScope for 2020-2021, inherited from EditScope from
+  2022); StairsRun.CreateStraightRun(Document, ElementId, Line,
+  StairsRunJustification), CreateSpiralRun(Document, ElementId, XYZ, double,
+  double, double, bool, StairsRunJustification), ActualRunWidth,
+  ActualRisersNumber and TopElevation; StairsLanding.CanCreateAutomaticLanding,
+  CreateAutomaticLanding, CreateSketchedLanding(Document, ElementId, CurveLoop,
+  double) and GetFootprintBoundary; Stairs.DesiredRisersNumber,
+  ActualRisersNumber, ActualRiserHeight, ActualTreadDepth, GetStairsRuns,
+  GetStairsLandings and GetAssociatedRailings; StairsType.MaxRiserHeight,
+  MinTreadDepth and MinRunWidth; Document.GetDefaultElementTypeId with
+  ElementTypeGroup.StairsType. NOT RUN on any Revit.
+
+# ROUTING
+#
+#   "make an L-shaped stair ... turning left at the landing"   -> here
+#   "add a U-shaped stair with a 1200 landing here"            -> here
+#   "place a spiral stair of 1500 radius ..."                  -> here
+#   "create a U-shaped stair in the stair hall"                -> CREATE_STAIRS
+#   "make the stair" / "add a stair from level 1 to level 2"   -> CREATE_STAIRS
+#   "add a landing between these two runs"                     -> ADD_STAIRS_LANDING
+#   "put railings on these stairs"                             -> CREATE_RAILING
+utterances:
+  - make an L-shaped stair from Level 1 to Level 2 turning left at the landing
+  - add a U-shaped stair with a 1200 landing here
+  - place a spiral stair of 1500 radius from Level 0 to Level 1

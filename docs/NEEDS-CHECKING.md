@@ -1290,6 +1290,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-lr.md`](needs-checking/group-lr.md)
 
+## Group LS - an L-shaped, U-shaped or spiral stair by component placed from a point, and a landing added between two runs of a stair already made: `CREATE_SHAPED_STAIRS`, `ADD_STAIRS_LANDING` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-ls.md`](needs-checking/group-ls.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

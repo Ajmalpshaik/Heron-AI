@@ -1,0 +1,31 @@
+# D-30: the negative case is what catches "changed something and called it the
+# answer". Arrange on the scratch project of NEEDS-CHECKING Group LS, "Heron
+# Shaped Stair Test", after its own arrangement: one more stair by component,
+# Level 1 to Level 2, drawn with Revit's Stair tool as two straight runs in an
+# L whose landing has been DELETED, so the runs meet with no landing; and the
+# L stair made by CREATE_SHAPED_STAIRS's first positive case, landing and all.
+
+positive:
+  - given: the two runs of the stair whose landing was deleted, selected (Tab onto each run)
+    expect: >
+      one landing added between them, of the landing type the stair type names;
+      its depth, thickness and height above the stair's base given in mm; the
+      stair's risers before and after named; the plan shows the landing back
+
+negative:
+  - given: >
+      the two runs of the L stair that ALREADY has its landing, selected
+    expect: >
+      refused - Revit answers it cannot join them with a landing - NOTHING WAS
+      CHANGED, no new landing on that stair. THE PROOF'S NEGATIVE: two runs of
+      a stair that must not be touched. THIS IS THE FIRST CASE TO RUN
+  - given: one run of each of the two stairs, selected
+    expect: refused - the runs belong to different stairs - nothing changed
+  - given: a wall and a run, or only one run, selected
+    expect: refused - select the two stair runs - nothing changed
+  - given: run as a read (no --write)
+    expect: refused by the add-in, D-112 - an edit-mode fragment never runs on the read path
+
+second_route:
+  - Revit's own Edit Stairs > Landing > Pick Two Runs on the same pair, on a copy, its landing depth compared with the one read back here
+  - the stair after a Keep, selected in Revit - the landing selectable inside it, Properties showing its height as the answer gave
