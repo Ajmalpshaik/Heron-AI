@@ -29,7 +29,7 @@ widening its code would put its proof out of date; `RELOAD_LINKS` (DRAFT) reload
 reference assemblies of all eight releases with `tools/api-surface --members` - the lists are in each card's
 `compatibility-note`. **Revit requires an open transaction for the load:** `LoadFrom` and `Reload` throw
 `ModificationOutsideTransactionException` without one (RevitAPI.xml, 2020 to 2027), so Heron's transaction group,
-which stopped Reload Latest ([row 5b-1418](../fragment-issues/section-5b-rows-401-425.md)), is no obstacle here.
+which stopped Reload Latest ([row 5b-1423](../fragment-issues/section-5b-rows-401-425.md)), is no obstacle here.
 **Nothing here has run in Revit.** Both cards are DRAFT. **Only Revit can settle:** whether
 `Element.GetExternalFileReference` answers for the keynote table, or only the resource reference's display path
 does (LZ2); which status `Reload` returns for a file that has not changed - Success or ResourceAlreadyCurrent

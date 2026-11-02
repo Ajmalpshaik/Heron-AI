@@ -6,7 +6,7 @@
 // one here: KeyBasedTreeEntryTable.LoadFrom and Reload both throw
 // ModificationOutsideTransactionException when "the document has no open
 // transaction" - RevitAPI.xml, every release 2020 to 2027. So, unlike Reload
-// Latest (row 5b-1418), this runs inside Heron's transaction group as it is.
+// Latest (row 5b-1423), this runs inside Heron's transaction group as it is.
 //
 // WHAT IT DOES - Annotate > Keynoting Settings, the keynote table file:
 //

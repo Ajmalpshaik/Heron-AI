@@ -42,7 +42,7 @@ semantic-identity: "load or reload the keynote file the keynote tags read from, 
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Revit
 # requires one: LoadFrom and Reload throw ModificationOutsideTransactionException
 # without it (RevitAPI.xml, 2020 to 2027) - so Heron's transaction group, which
-# stopped Reload Latest (row 5b-1418), is no obstacle here.
+# stopped Reload Latest (row 5b-1423), is no obstacle here.
 kind: action
 domain: revit.annotation
 capability: LOAD_KEYNOTE_FILE

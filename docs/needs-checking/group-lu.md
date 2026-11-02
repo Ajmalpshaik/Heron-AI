@@ -52,7 +52,7 @@ declared utterance and routing-table sentence of every live card plus five load 
 sentences reach this card on Revit 2027 and with no Revit named, without the flag; with the flag, and on Revit
 2024 where the card is not offered, they reach a read. *"What is the cooling load of this space"* moved from
 `READ_SPACE_LOADS` to this card on `model` without the flag, and is now declared on `READ_SPACE_LOADS` - [row
-5b-1415](../fragment-issues/section-5b-rows-401-425.md), FIXED. Its paraphrase *"what is the heating load of this
+5b-1422](../fragment-issues/section-5b-rows-401-425.md), FIXED. Its paraphrase *"what is the heating load of this
 space"*, which nobody has said, still reaches this card on `model` without the flag on Revit 2027 and with no
 Revit named - recorded in that row, not tuned. With the flag five sentences claimed by writes moved from one read
 to another (*"rename the sheet set"*, *"bring the excluded parts back"*, *"make a dependent view"*, *"set up a sheet
