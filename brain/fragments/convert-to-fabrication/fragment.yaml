@@ -1,0 +1,142 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-084
+semantic-identity: "turn these design ducts and pipes, with their fittings, into fabrication parts of a named loaded service - Revit's Design to Fabrication"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "convert these ducts to
+# fabrication parts using the Low Pressure service" and "convert this pipe run
+# to fabrication using service Copper Plumbing" - Revit's Systems > Fabrication
+# > Design to Fabrication. No card made a fabrication part: grep of
+# brain/fragments that day for DesignToFabricationConverter, FabricationPart
+# and FabricationConfiguration found nothing, and brain/heron_retrieve.py on
+# the two sentences (Revit 2024) answered CONVERT_MEP_PLACEHOLDERS and
+# CHECK_FIXTURE_CONNECTIVITY.
+#
+# WHY APART FROM CONVERT_MEP_PLACEHOLDERS. That card turns a placeholder into
+# a design duct or pipe; this one turns a design duct or pipe into fabrication
+# parts of a service. Both say "convert"; a placeholder handed here is named
+# and pointed at Convert Placeholder, never sent. Two jobs, two cards (08 B9).
+#
+# THE WRITE HALF OF A PAIR. REPORT_FABRICATION_SETUP answers which services
+# are loaded and their exact names; the service is never guessed here - named
+# by its whole name or abbreviation, else nothing changes and the loaded
+# services are listed.
+#
+# REFUSED, BY NAME: a model with no fabrication configuration (Revit's words:
+# MEP Fabrication Settings); anything not a design duct, pipe, duct or pipe
+# fitting or accessory - a placeholder, a flex duct or pipe, a part already
+# fabrication, equipment - each named in `notDesign` and left exactly as it
+# was. A design element borrowed by somebody else is named in `notConverted`,
+# never taken (Article 12).
+#
+# THE DESIGN ELEMENTS ARE REVIT'S TO REPLACE, NOT THIS CARD'S. It deletes
+# nothing itself. Whether Revit's conversion removes each design element it
+# converts, or leaves it, is not stated in RevitAPI.xml; every one handed to
+# Revit is looked at again afterwards and the report says how many are gone
+# and which are still there - see the NEEDS-CHECKING group.
+#
+# RISK MODIFY. It changes the ducts and pipes handed in, by Revit's own
+# conversion, and nothing else.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: CONVERT_TO_FABRICATION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Converts the design ducts, pipes, duct and pipe fittings and accessories
+  handed in into fabrication parts of the loaded fabrication service named,
+  as Design to Fabrication does, and reports Revit's result in words - a
+  success or each partial failure - with every new fabrication part's id,
+  service, size and straight length, how many design elements Revit replaced,
+  and every element left alone and why.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The design ducts, pipes, fittings and accessories - the selection or the
+    # step before. Anything else handed in is named and left alone.
+    - name: elements
+      type: IList<Element>
+    - name: service
+      # The loaded fabrication service to convert to, by its whole name or its
+      # abbreviation as MEP Fabrication Settings shows it - "Low Pressure
+      # Ductwork", "Copper Plumbing". Never guessed: a name that matches no
+      # loaded service, or two, converts nothing and lists the loaded
+      # services.
+      type: string
+      source: request
+  provides:
+    - name: fabricationParts
+      # The new fabrication parts Revit made, read back as fabrication parts
+      # after a regenerate.
+      role: result
+      type: IList<ElementId>
+    - name: notDesign
+      # Handed in and not a design duct, pipe, fitting or accessory, each by
+      # name - left as it was (D-52).
+      role: accounting
+      type: IList<string>
+    - name: notConverted
+      # Design elements Revit refused, or borrowed by somebody else, each with
+      # the reason in Revit's words (D-52).
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING: the service, Revit's result in words, each new part, how
+      # many design elements Revit replaced and which are still there, what
+      # was left and why.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. DesignToFabricationConverter
+  (Document) with Convert(ISet<ElementId>, int) returning
+  DesignToFabricationConverterResult Success or PartialFailure,
+  GetConvertedFabricationParts, GetPartialConvertFailureResults (the five
+  PartialFailureResults) and GetElementsWithOpenConnector;
+  FabricationConfiguration.GetFabricationConfiguration (parameter renamed doc
+  to document in 2024, called by position), GetAllLoadedServices and
+  GetAllServices; FabricationService Name, Abbreviation and ServiceId;
+  FabricationPart ServiceName, Size, CenterlineLength and IsAStraight;
+  Duct.IsPlaceholder, Pipe.IsPlaceholder and WorksharingUtils.GetCheckoutStatus
+  are present and unchanged 2020 through 2027 - read with tools/api-surface
+  --members on 2026-11-02. The converter's namespace is not one the executor
+  imports, so it is found beside FabricationPart and called by reflection;
+  check-api-surface matches names in code, not in strings, so these four
+  members were checked by hand. Lengths are feet x 304.8, said in mm. Not
+  seen in Revit.
+
+# ROUTING (2026-11-02) - the same rows are in REPORT_FABRICATION_SETUP.
+#
+#   "convert these ducts to fabrication parts using the Low Pressure service"
+#                                                             -> here
+#   "convert this pipe run to fabrication using service Copper Plumbing"
+#                                                             -> here
+#   "which fabrication configuration and services are loaded" -> REPORT_FABRICATION_SETUP
+#   "list the fabrication services and their buttons"         -> REPORT_FABRICATION_SETUP
+#   "optimise the lengths of these fabrication parts"         -> OPTIMIZE_FABRICATION_LENGTHS -
+#                                                                the parts once they are
+#                                                                fabrication
+#   "convert these placeholders to real ducts"                -> CONVERT_MEP_PLACEHOLDERS -
+#                                                                a placeholder to a
+#                                                                design duct, not to
+#                                                                fabrication
+utterances:
+  - convert these ducts to fabrication parts using the Low Pressure service
+  - convert this pipe run to fabrication using service Copper Plumbing

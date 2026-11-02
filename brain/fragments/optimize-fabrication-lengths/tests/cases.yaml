@@ -1,0 +1,47 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "re-cut what it was not given": a design duct or a wall
+# touched, or a run lengthened or shortened.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for OPTIMIZE_FABRICATION_LENGTHS): the scratch
+# project of CONVERT_TO_FABRICATION's cases, saved under %TEMP%\heron-work,
+# never a working model. From the MEP Fabrication Parts palette, the ductwork
+# service: one straight run about 6000 mm long drawn as THREE short straights
+# (about 2000 mm each) joined end to end, so there is something to optimise;
+# one design duct (D) and one wall (W) beside it. Write down every id and
+# each straight's Length - the second route. Each case starts from the saved
+# file.
+
+positive:
+  - given: the three fabrication straights selected
+    expect: >
+      report "Optimize Lengths on 3 fabrication part(s), 3 of them straights
+      totalling 6000 mm. Revit returned n new or changed part(s): id ...
+      straight ... mm ... After: ... straight(s) totalling 6000 mm; ..."; no
+      finding about the total changing; optimised each a fabrication part.
+      RECORD how many straights Revit made and their lengths
+
+negative:
+  - given: D and W selected
+    expect: >
+      nothing changed; report "None of the 2 element(s) given is a
+      fabrication part that can be optimised - ... a design duct; Design to
+      Fabrication makes it fabrication first ... wall ..."; D and W as they
+      were. THE FIRST CASE TO RUN
+
+  - given: one fabrication elbow selected, no straight
+    expect: >
+      nothing changed; report "None of the 1 fabrication part(s) given is a
+      straight - Optimize Lengths re-cuts straights only ..."
+
+second_route:
+  - >
+    Revit's own Modify | Fabrication Parts > Optimize Lengths on a copy of the
+    same saved file and the same straights: the same number of straights, of
+    the same lengths, as `report` gives
+  - >
+    Each id in optimised, selected in Revit: Properties shows the Length the
+    report gives
+  - >
+    Undo: one entry in Revit's undo list, and Undo puts the three straights
+    back as they were

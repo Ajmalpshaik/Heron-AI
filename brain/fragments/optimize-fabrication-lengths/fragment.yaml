@@ -1,0 +1,102 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-085
+semantic-identity: "optimise the lengths of these fabrication straights - Revit's Optimize Lengths, the run re-cut into the longest straights the service allows"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "optimise the lengths of these
+# fabrication parts", beside CONVERT_TO_FABRICATION and
+# REPORT_FABRICATION_SETUP - Revit's Modify | Fabrication Parts > Optimize
+# Lengths. No card touched a fabrication part (grep of brain/fragments that
+# day for FabricationPart: nothing), and brain/heron_retrieve.py on the
+# sentence (Revit 2024) answered DIVIDE_PARTS.
+#
+# LOOK-ALIKES, NOT DUPLICATES. DIVIDE_PARTS, MERGE_PARTS and CREATE_PARTS work
+# on Revit's Parts - a wall or floor cut into pieces - not fabrication parts.
+# SPLIT_MEP_RUN cuts one design duct or pipe at a measured distance; this
+# re-cuts a fabrication run to the lengths its service allows, the lengths
+# chosen by Revit, not by the modeller.
+#
+# REFUSED, BY NAME: anything not a fabrication part - a design duct or pipe is
+# pointed at Design to Fabrication - and a selection with no straight, which
+# Revit itself refuses. A part borrowed by somebody else is named, never taken
+# (Article 12).
+#
+# READ BACK: every straight's length before; each new or changed part Revit
+# returns, with its length; how many of the straights handed in Revit
+# replaced; and the run's total straight length before and after, a
+# difference over 1 mm said as a finding.
+#
+# RISK MODIFY. It changes the fabrication straights handed in, by Revit's own
+# Optimize Lengths, and nothing else.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: OPTIMIZE_FABRICATION_LENGTHS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Runs Revit's Optimize Lengths on the fabrication parts handed in - the
+  straights of the run re-cut to the lengths their service allows - and
+  reports each new or changed part with its length, how many of the straights
+  handed in Revit replaced, the run's total straight length before and after,
+  and every element left alone and why.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The fabrication parts of the run - the selection, or
+    # CONVERT_TO_FABRICATION's `fabricationParts`. Anything else handed in is
+    # named and left alone.
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: optimised
+      # The new and changed fabrication parts Revit returned, read back as
+      # fabrication parts after a regenerate.
+      role: result
+      type: IList<ElementId>
+    - name: notFabrication
+      # Handed in and not a fabrication part, each by name - left as it was
+      # (D-52).
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING: how many parts and straights went in, each part Revit
+      # returned with its length, the total straight length before and after,
+      # what was left and why.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. FabricationPart.OptimizeLengths
+  (Document, ISet<ElementId>) returning ISet<ElementId> is present 2020
+  through 2027, its document parameter named doc to 2023 and document from
+  2024 - called by position. FabricationPart.IsAStraight and
+  CenterlineLength, and WorksharingUtils.GetCheckoutStatus, are unchanged -
+  read with tools/api-surface --members on 2026-11-02. Lengths are feet x
+  304.8, said in mm. Not seen in Revit.
+
+# ROUTING (2026-11-02) - the same row is in CONVERT_TO_FABRICATION.
+#
+#   "optimise the lengths of these fabrication parts" -> here
+#   "convert these ducts to fabrication parts using the Low Pressure service"
+#                                                     -> CONVERT_TO_FABRICATION -
+#                                                        design ducts become
+#                                                        fabrication parts first
+utterances:
+  - optimise the lengths of these fabrication parts

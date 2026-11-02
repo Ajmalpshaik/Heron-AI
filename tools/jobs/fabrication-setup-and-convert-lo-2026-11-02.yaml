@@ -1,0 +1,95 @@
+# NEEDS-CHECKING Group LO - REPORT_FABRICATION_SETUP, CONVERT_TO_FABRICATION and
+# OPTIMIZE_FABRICATION_LENGTHS (all new), built 2026-11-02 in a cloud session
+# with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/fabrication-setup-and-convert-lo-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/fabrication-setup-and-convert-lo-2026-11-02.yaml
+#
+# THE MODEL (docs/needs-checking/group-lo.md, LO1): the scratch project
+# "fabrication-lo", from Revit's metric Mechanical template, saved under
+# %TEMP%\heron-work. Systems > Fabrication > MEP Fabrication Settings: one of
+# Autodesk's sample configurations, ONE ductwork service and ONE pipework
+# service loaded. In the floor plan "Level 1": a rectangular duct run of two
+# straights and an elbow, a copper pipe run of two straights and an elbow,
+# and nothing else that is a duct or pipe. For the third job only, the
+# fabrication run of LO5 - three ductwork straights of about 2000 mm, end to
+# end, from the MEP Fabrication Parts palette - added to a copy saved as
+# "fabrication-lo-run", the design duct run still beside it.
+#
+# THE SERVICE NAME BELOW IS NOT KNOWN UNTIL LO2 HAS RUN. The sample
+# configurations' service names differ between versions, and this file will
+# not guess one any more than the card does: run the first job, read the
+# ductwork service's exact name from its `names`, and write it in both
+# `service:` lines of the second job before running it. Left as it is, the
+# second job's positive converts nothing - which is the card refusing a
+# guessed name, not a failure of the card.
+#
+# THE ARRANGEMENT: the read takes no selection. The convert takes the ducts
+# as `elements`, and the optimise the fabrication straights, each selected by
+# select-by-category-name and set-selection. Each negative is a different
+# value or selection, not an empty one (fragment-proving, rules 3 and 5): a
+# service name no service has, part of a name, and design ducts handed to the
+# optimise - nothing may be converted or re-cut. Every write is ROLLED BACK.
+
+model: "fabrication-lo scratch project (metric Mechanical template), a sample fabrication configuration with one ductwork and one pipework service loaded, one duct run and one pipe run, Revit 2024"
+
+jobs:
+  - fragment: report-fabrication-setup
+    expect: loadedServices
+    in: "fabrication-lo"
+    set:
+      show: "configuration; services"
+    negative-set:
+      show: "services"
+      service: "ZZNOTASERVICE"
+    note: >
+      LO2. Negative - THE FIRST CASE TO RUN: service "ZZNOTASERVICE",
+      loadedServices 0, findings "No loaded service has a name or
+      abbreviation matching "ZZNOTASERVICE". The loaded services are: ..."
+      naming both. Positive: configurationName as MEP Fabrication Settings
+      shows it; loadedServices 2; names the two services quoted - WRITE THE
+      DUCTWORK SERVICE'S NAME INTO THE NEXT JOB.
+
+  - fragment: convert-to-fabrication
+    expect: fabricationParts
+    in: "fabrication-lo"
+    write: true
+    setup: [select-by-category-name, set-selection]
+    set:
+      categoryName: "Ducts"
+      inViewOnly: "FloorPlan: Level 1"
+      service: "THE DUCTWORK SERVICE'S EXACT NAME FROM LO2"
+    negative-set:
+      categoryName: "Ducts"
+      inViewOnly: "FloorPlan: Level 1"
+      service: "Low"
+    note: >
+      LO3. Negative - THE FIRST CASE TO RUN: service "Low", part of a name,
+      nothing converted; report "No loaded service is called "Low". The
+      services loaded in this project are: ..."; every duct still a design
+      duct. Positive: report "Design to Fabrication with the service "...":
+      2 of 2 design element(s) taken by Revit's conversion ..."; each id in
+      fabricationParts a fabrication part on that service. RECORD how many
+      design ducts the report says are no longer in the model and which are
+      still there - that is what Revit does to the originals. The elbow is a
+      duct fitting, not a duct, so "Ducts" does not select it; LO4 does.
+
+  - fragment: optimize-fabrication-lengths
+    expect: optimised
+    in: "fabrication-lo-run"
+    write: true
+    setup: [select-by-category-name, set-selection]
+    set:
+      categoryName: "MEP Fabrication Ductwork"
+      inViewOnly: "FloorPlan: Level 1"
+    negative-set:
+      categoryName: "Ducts"
+      inViewOnly: "FloorPlan: Level 1"
+    note: >
+      LO5. Negative - THE FIRST CASE TO RUN: the design ducts, nothing
+      re-cut; report "None of the n element(s) given is a fabrication part
+      that can be optimised - ... a design duct; Design to Fabrication makes
+      it fabrication first ...". Positive: report "Optimize Lengths on 3
+      fabrication part(s), 3 of them straights totalling ... mm. ... After:
+      ... straight(s) totalling ... mm" - the two totals the same, no finding
+      that they differ. RECORD the straights Revit made and their lengths.

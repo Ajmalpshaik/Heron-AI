@@ -174,3 +174,9 @@ utterances:
   # sentence, and a comment is not indexed, so ranking decided: "round lengths
   # to 5 mm": MEASURE_ELEMENT_LENGTHS answered it on both backends.
   - round lengths to 5 mm
+  # ADDED 2026-11-02, row 5b-1394 (FIXED). The routing table above claims
+  # both, and both reached this card until the fabrication cards were added:
+  # then REPORT_PROJECT_UNITS answered the first without the host's question
+  # flag, and the second once the first was declared.
+  - change the project units to imperial
+  - set cooling load to Btu/h

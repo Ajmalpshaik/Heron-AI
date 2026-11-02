@@ -1274,6 +1274,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ln.md`](needs-checking/group-ln.md)
 
+## Group LO - MEP fabrication: the configuration and loaded services read, design ducts and pipes converted to fabrication parts of a named service, and Optimize Lengths: `REPORT_FABRICATION_SETUP`, `CONVERT_TO_FABRICATION`, `OPTIMIZE_FABRICATION_LENGTHS` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lo.md`](needs-checking/group-lo.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
