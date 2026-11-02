@@ -221,7 +221,7 @@ utterances:
   - turn off the schedule headers
   - turn off the grid lines on the sheet for this schedule
   - use a different text type for the schedule header
-  # ADDED 2026-11-02, row 5b-1408 (FIXED). The routing table above sends it
+  # ADDED 2026-11-02, row 5b-1414 (FIXED). The routing table above sends it
   # here, headerTextType; it reached this card by ranking until
   # SET_DIMENSION_TYPE ("2.5mm Arial" in its words) was added and took it.
   - use the 3.5mm Arial text for the schedule header

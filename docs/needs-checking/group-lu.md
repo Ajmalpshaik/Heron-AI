@@ -52,12 +52,12 @@ declared utterance and routing-table sentence of every live card plus five load 
 sentences reach this card on Revit 2027 and with no Revit named, without the flag; with the flag, and on Revit
 2024 where the card is not offered, they reach a read. *"What is the cooling load of this space"* moved from
 `READ_SPACE_LOADS` to this card on `model` without the flag, and is now declared on `READ_SPACE_LOADS` - [row
-5b-1406](../fragment-issues/section-5b-rows-401-425.md), FIXED. Its paraphrase *"what is the heating load of this
+5b-1412](../fragment-issues/section-5b-rows-401-425.md), FIXED. Its paraphrase *"what is the heating load of this
 space"*, which nobody has said, still reaches this card on `model` without the flag on Revit 2027 and with no
 Revit named - recorded in that row, not tuned. With the flag five sentences claimed by writes moved from one read
 to another (*"rename the sheet set"*, *"bring the excluded parts back"*, *"make a dependent view"*, *"set up a sheet
 for this"*, *"make all the architecture faint"*) - recorded, not tuned. `tools/check-routing.py`: no question
-answered by a write; claimed in a routing table and not reached 67 before and 67 after on `1327aed`, and 69 before and 69 after on `184eb96` - the same lines each time. **One question is not repaired:** `tests/test_routing_phrases.py`'s *"which units does this model show cooling load in"* is a coin toss between this card and `REPORT_PROJECT_UNITS` on the trained model without the flag, on Revit 2027 and with no Revit named, and this card takes it - [row 5b-1407](../fragment-issues/section-5b-rows-401-425.md), OPEN, the owner's to choose.
+answered by a write; claimed in a routing table and not reached 67 before and 67 after on `1327aed`, and 69 before and 69 after on `184eb96` - the same lines each time. **One question is not repaired:** `tests/test_routing_phrases.py`'s *"which units does this model show cooling load in"* is a coin toss between this card and `REPORT_PROJECT_UNITS` on the trained model without the flag, on Revit 2027 and with no Revit named, and this card takes it - [row 5b-1413](../fragment-issues/section-5b-rows-401-425.md), OPEN, the owner's to choose.
 
 **The model** - a scratch copy of the Snowdon Towers Sample HVAC model, opened and saved in **Revit 2027** under
 `%TEMP%\heron-work`, never a working model. Every write here is ROLLED BACK unless the modeller keeps it. The job
