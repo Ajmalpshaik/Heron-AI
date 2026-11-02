@@ -1,0 +1,70 @@
+positive:
+  - given: >
+      an L-shaped run of DN50 Domestic Cold Water pipe drawn flat at 2700 mm -
+      three pipes and two elbows, selected whole - count 3, spacingMm 150,
+      side left, in a plan view where the run shows
+    expect: >
+      three new runs of three pipes and two elbows each, 150, 300 and 450 mm
+      from the original centre to centre, every pipe DN50 on Domestic Cold
+      Water read back in the Properties palette, each copy's elbows connected
+      both sides; the inside copies' legs shorter than the original's, the
+      outside ones longer; copies lists 15 ids, perCopy three lines; the
+      original's pipes and elbows keep their ids, lengths and connections
+
+  - given: >
+      a straight run of three 25 mm conduits joined by unions, count 4,
+      spacingMm 50, side north (the run going east to west)
+    expect: >
+      four straight conduit runs 50, 100, 150 and 200 mm north of it, each of
+      three 25 mm conduits and two unions; copies lists 20 ids
+
+  - given: >
+      the L-shaped pipe run, count 2, spacingMm 200, side up
+    expect: >
+      two copies standing straight over the original, 200 and 400 mm higher,
+      the same plan shape exactly, with their elbows made
+
+negative:
+  - given: >
+      a run of DUCT - two ducts and an elbow - with count 3, spacingMm 150,
+      side left
+    expect: >
+      refused names the duct pieces and says this makes parallel pipes and
+      conduits; copies empty, no element made, and the ducts untouched
+
+  - given: >
+      the L-shaped pipe run AND a branch teed off its middle pipe, all
+      selected, count 2, spacingMm 150, side left
+    expect: >
+      refused names the tee as a branch; copies empty, the run untouched
+
+  - given: the L-shaped DN50 run with spacingMm 40
+    expect: >
+      refused - 40 mm is not wider than the 50 mm pipe, so the copies would
+      sit inside one another - copies empty, nothing made. THE PROOF'S
+      NEGATIVE: the same run, a different value
+
+  - given: the L-shaped run, count 3, spacingMm 1500, side to the INSIDE of its bend, legs 2000 mm long
+    expect: >
+      refused before anything is drawn, naming the copy and piece whose
+      inside corner the spacing closes up - copies empty
+
+  - given: count 0, or side "sideways"
+    expect: refused before Revit is asked, naming the value - never guessed
+
+  - given: >
+      a run where Revit will not make one copy's elbow - a pipe type whose
+      routing preferences have no elbow for that size
+    expect: >
+      THROWS with Revit's words for that copy and joint, and NONE of the copies
+      kept - the caller's transaction takes back every piece already drawn
+
+second_route:
+  - >
+    Revit's own Parallel Pipes (Systems > Plumbing & Piping > Parallel Pipes),
+    Horizontal Number 3 and Horizontal Offset 150 mm on the same run, then
+    each copy's pipe lengths and elbow positions compared with this one's in
+    the Properties palette
+  - >
+    select a copy's pipes and read Diameter, System Type and Reference Level in
+    the Properties palette - each must match the original pipe beside it

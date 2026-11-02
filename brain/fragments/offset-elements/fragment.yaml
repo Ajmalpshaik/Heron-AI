@@ -114,6 +114,11 @@ compatibility-note: >
 #                                  resolved HERE - a confident answer that
 #                                  moves the duct instead of cutting it
 #   "move these up 200"         -> MOVE_ELEMENTS - a named direction
+#   "add 3 parallel pipes to this run at 150 mm spacing"
+#                               -> CREATE_PARALLEL_RUNS (2026-11-02) - new
+#                                  pipe or conduit copies with their elbows
+#                                  re-made; this moves the run itself and
+#                                  leaves it apart at its joints
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search

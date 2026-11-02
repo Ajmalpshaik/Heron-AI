@@ -1,0 +1,61 @@
+# NEEDS-CHECKING Group LQ - CREATE_PARALLEL_RUNS (new): Revit's Parallel Pipes
+# and Parallel Conduits - copies of one connected run, side by side or above or
+# below it, their elbows re-made - built 2026-11-02 in a cloud session with no
+# Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/parallel-runs-lq-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/parallel-runs-lq-2026-11-02.yaml
+#
+# THE MODELS (docs/needs-checking/group-lq.md, LQ1), scratch projects from
+# Revit's metric Plumbing and Electrical templates, saved under
+# %TEMP%\heron-work, never a working model:
+#
+#   "parallel-lq"         In the floor plan "Level 1": ONE L-shaped run of
+#                         DN50 Domestic Cold Water pipe drawn flat at 2700 mm -
+#                         a 3000 mm leg east, then a 2000 mm leg north, then a
+#                         1500 mm leg east, joined by two elbows Revit put in
+#                         as it was drawn. Nothing else that is a pipe.
+#   "parallel-conduit-lq" In "Level 1": ONE straight run of three 25 mm
+#                         conduits, 2000 mm each, running east to west at
+#                         3000 mm, joined by unions. Nothing else that is a
+#                         conduit.
+#
+# THE ARRANGEMENT: each write takes its selection from select-by-category-name
+# and set-selection in "Level 1" - the run's pipes or conduits; their fittings
+# need not be selected. Each negative is the SAME run with a different value,
+# not an empty selection (fragment-proving, rules 3 and 5): a spacing no wider
+# than the pipe or conduit - nothing may be drawn. Every write is ROLLED BACK.
+#
+# ONE JOB, THE PIPE RUN. A second job for the same fragment would write the
+# same run record and overwrite this one, so the conduit run is LQ3 in the
+# group file, run by hand with `validate` and the values written there.
+
+model: "parallel-lq scratch project (metric Plumbing template), Revit 2024"
+
+jobs:
+  - fragment: create-parallel-runs
+    expect: copies
+    in: "parallel-lq"
+    write: true
+    setup: [select-by-category-name, set-selection]
+    set:
+      categoryName: "Pipes"
+      inViewOnly: "FloorPlan: Level 1"
+      count: 3
+      spacingMm: 150
+      side: "left"
+    negative-set:
+      categoryName: "Pipes"
+      inViewOnly: "FloorPlan: Level 1"
+      count: 3
+      spacingMm: 40
+      side: "left"
+    note: >
+      LQ2. Negative - THE FIRST CASE TO RUN: spacingMm 40, not wider than the
+      50 mm pipe - copies empty, refused "a spacing of 40 mm centre to centre
+      is not wider than the run's largest pipe, 50 mm", nothing drawn.
+      Positive: copies 15 ids - three copies of three pipes and two elbows;
+      perCopy three lines at 150, 300 and 450 mm "to the left"; the summary
+      names the start point (the run's west end). RECORD which side "left"
+      came out on, and that the inside copies' legs are shorter than the
+      original's and the outside ones longer.
