@@ -38,6 +38,16 @@ positive:
     expect: >
       loadCount 2 - B1's line load and S1's area load, and not C1's point load
 
+  - given: >
+      nothing selected, show "combinations" - with GROUP KZ's arrangement plus
+      the load combination ULS-A = 1.2 x DL1, Ultimate, Combination, made by
+      hand in Analyze > Load Combinations (2026-11-02)
+    expect: >
+      report lists "Load combinations (n)" naming every combination Analyze >
+      Load Combinations shows, ULS-A as "Ultimate, Combination: 1.2 x
+      \"DL1\"", and the load usages; no natures, cases, loads or boundary
+      section; combinationCount n
+
 negative:
   - given: >
       W1 selected - a structural wall that carries no load and no boundary
@@ -63,6 +73,13 @@ negative:
     expect: >
       NOTHING IN THE MODEL CHANGES - no transaction opened; Analyze > Load
       Cases and every load's Properties the same before and after
+
+  - given: >
+      nothing selected, show "loads" - in the same arrangement, with ULS-A
+      there (2026-11-02)
+    expect: >
+      no Load combinations section - "loads" is not read as "load
+      combinations"; combinationCount still the number of combinations
 
 second_route:
   - >

@@ -1,0 +1,55 @@
+# NEEDS-CHECKING Group ME - CREATE_LOAD_COMBINATION, and REPORT_STRUCTURAL_LOADS
+# widened to list load combinations, built 2026-11-02 in a cloud session with
+# no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/create-load-combination-me-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-load-combination-me-2026-11-02.yaml
+#
+# THE MODEL is Group KZ's scratch project, "loads-kz"
+# (docs/needs-checking/group-kz.md, KZ1), with its load cases DL1 and LL1, and
+# ONE load combination made by hand in Analyze > Load Combinations (ME1):
+# ULS-A = 1.2 x DL1, Ultimate, Combination. Never a working model. Before the
+# run, write down every load combination (name, state, type, factors and load
+# cases) and every load case - the second route.
+#
+# THE ARRANGEMENT: neither card takes a selection, so `setup: []`. Each
+# negative is a DIFFERENT VALUE, never an empty one (fragment-proving, rule
+# 5): for the write, "uls-a" - ULS-A in other capitals - so added 0, skipped
+# naming ULS-A, before and after the same; for the read, show "loads", which
+# must not list the combinations. Every write here is ROLLED BACK.
+
+model: "loads-kz scratch project (metric structural template) with load cases DL1 and LL1 and the load combination ULS-A = 1.2 x DL1 made by hand, Revit 2020"
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: create-load-combination
+    expect: added
+    setup: []
+    set:
+      combinations: "ULS-T1 = 1.2 DL1 + 1.6 LL1"
+      state: "ultimate"
+    negative-set:
+      combinations: "uls-a = 1.4 DL1"
+      state: "ultimate"
+    note: >
+      ME2. Negative - THE FIRST CASE TO RUN: "uls-a", ULS-A in other
+      capitals, so added 0, skipped names "uls-a" and ULS-A, before and after
+      the same, ULS-A still 1.2 x DL1. Positive - added 1, after holds every
+      combination before and "ULS-T1" - Ultimate: 1.2 x "DL1" + 1.6 x "LL1",
+      read back; findings name the type Revit gave it.
+
+  - fragment: report-structural-loads
+    expect: combinationCount
+    write: false
+    setup: []
+    set:
+      show: "combinations"
+    negative-set:
+      show: "loads"
+    note: >
+      ME3. Positive: report lists "Load combinations (n)" with ULS-A as
+      "Ultimate, Combination: 1.2 x \"DL1\"" and the load usages, and no
+      other section. Negative: show "loads" - no Load combinations section,
+      combinationCount still n. Read only - nothing to roll back.

@@ -119,6 +119,10 @@ compatibility-note: >
 #   "add a load case called Wind X"              -> here, name Wind X, its
 #                                                   category asked
 #   "what load cases are in this model"          -> REPORT_STRUCTURAL_LOADS
+#   "make a combination ULS1 = 1.4 Dead"         -> CREATE_LOAD_COMBINATION -
+#                                                   a combination of cases
+#                                                   already made (2026-11-02)
+#   "what load combinations are in this model"   -> REPORT_STRUCTURAL_LOADS
 #   "put a 10 kN point load on this beam end"    -> PLACE_STRUCTURAL_LOADS
 #   "add a load classification called Kitchen Equipment"
 #                                                -> ADD_LOAD_CLASSIFICATION -

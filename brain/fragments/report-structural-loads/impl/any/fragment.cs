@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `show` and `loadCase` are in
-// scope, and leaves `loadCount`, `caseCount`, `boundaryCount`, `report`,
-// `names`, `noAnalytical` and `findings` behind.
+// scope, and leaves `loadCount`, `caseCount`, `combinationCount`,
+// `boundaryCount`, `report`, `names`, `noAnalytical` and `findings` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -8,8 +8,10 @@
 // Load Cases: the load natures, the load cases (name, number, nature,
 // category, how many loads each holds), every point, line and area load with
 // its values, load case and host, and every boundary condition with its host
-// and fixity. Every list, or only the ones `show` names (cases; natures;
-// loads; boundary - several separated by ; or ,). The loads narrowed to one
+// and fixity - and, from Analyze > Load Combinations, every load combination
+// with its state, type, factored load cases and usages (2026-11-02). Every
+// list, or only the ones `show` names (cases; natures; combinations; loads;
+// boundary - several separated by ; or ,). The loads narrowed to one
 // load case by `loadCase`; loads and boundary conditions narrowed to the
 // elements handed in, through each one's analytical element.
 //
@@ -34,7 +36,9 @@
 // ForceVector, MomentVector), LineLoad (StartPoint, EndPoint, ForceVector1,
 // ForceVector2, MomentVector1, IsUniform), AreaLoad (Area, ForceVector1-3,
 // NumRefPoints) and BoundaryConditions (HostElementId, Point,
-// GetBoundaryConditionsType, GetCurve) carry the same signatures 2020 to 2027.
+// GetBoundaryConditionsType, GetCurve) carry the same signatures 2020 to 2027,
+// and so do LoadCombination (State, Type, GetComponents, GetUsageIds),
+// LoadComponent (LoadCaseOrCombinationId, Factor) and LoadUsage (2026-11-02).
 // AnalyticalModel and Element.GetAnalyticalModel are 2020-2022 only;
 // AnalyticalToPhysicalAssociationManager 2023-2027 - hence the one branch.
 //
@@ -42,6 +46,7 @@
 
 var loadCount = 0;
 var caseCount = 0;
+var combinationCount = 0;
 var boundaryCount = 0;
 var report = "";
 var names = new List<string>();
@@ -82,7 +87,7 @@ Func<XYZ, bool> isZero = v => v == null || v.IsZeroLength();
 // ---- Which lists -----------------------------------------------------------
 var asked = (show ?? "").Trim().ToLowerInvariant();
 var every = asked.Length == 0 || asked == "all";
-bool wantNatures = every, wantCases = every, wantLoads = every, wantBoundary = every;
+bool wantNatures = every, wantCases = every, wantLoads = every, wantBoundary = every, wantCombinations = every;
 var unknownWords = new List<string>();
 if (!every)
 {
@@ -90,9 +95,11 @@ if (!every)
     {
         var w = raw.Trim().Replace(" ", "").Replace("-", "");
         if (w.Length == 0) continue;
-        if (w == "all") { wantNatures = wantCases = wantLoads = wantBoundary = true; }
+        if (w == "all") { wantNatures = wantCases = wantLoads = wantBoundary = wantCombinations = true; }
         else if (w.StartsWith("nature")) wantNatures = true;
         else if (w.StartsWith("case") || w.StartsWith("loadcase")) wantCases = true;
+        // Before "load", which "loadcombinations" also begins with.
+        else if (w.StartsWith("comb") || w.StartsWith("loadcomb")) wantCombinations = true;
         else if (w.StartsWith("load")) wantLoads = true;
         else if (w.StartsWith("bound") || w.StartsWith("support")) wantBoundary = true;
         else unknownWords.Add(raw.Trim());
@@ -100,7 +107,7 @@ if (!every)
 }
 if (unknownWords.Count > 0)
     findings.Add("\"" + string.Join("\", \"", unknownWords) + "\" is not one of the lists - cases, natures, "
-        + "loads or boundary. Nothing was guessed for it.");
+        + "combinations, loads or boundary. Nothing was guessed for it.");
 
 // ---- Analytical element <-> physical element -------------------------------
 #if REVIT2020 || REVIT2021 || REVIT2022
@@ -223,6 +230,46 @@ if (wantCases)
         lines.Add("  " + c.Number + "  \"" + c.Name + "\" - nature " + nature + ", category " + category
             + ", " + held + " load(s)");
     }
+}
+
+// ---- Load combinations -----------------------------------------------------
+// Counted always, like the cases; listed when asked. Each with its state,
+// type, factored load cases (or combinations) and usages, as Analyze > Load
+// Combinations shows them.
+var combinationsHad = new FilteredElementCollector(doc).OfClass(typeof(LoadCombination)).Cast<LoadCombination>()
+    .OrderBy(c => c.Name).ToList();
+combinationCount = combinationsHad.Count;
+if (wantCombinations)
+{
+    Func<ElementId, string> nameOf = id =>
+    {
+        if (id == null || id == ElementId.InvalidElementId) return "?";
+        var e = doc.GetElement(id);
+        return e == null ? "?" : e.Name;
+    };
+    lines.Add("Load combinations (" + combinationsHad.Count + "):" + (combinationsHad.Count == 0 ? " none" : ""));
+    foreach (var c in combinationsHad)
+    {
+        var parts = new List<string>();
+        try
+        {
+            foreach (var comp in c.GetComponents())
+                parts.Add(num(comp.Factor) + " x \"" + nameOf(comp.LoadCaseOrCombinationId) + "\"");
+        }
+        catch { parts.Add("components unreadable"); }
+        var usages = new List<string>();
+        try { foreach (var id in c.GetUsageIds()) usages.Add("\"" + nameOf(id) + "\""); } catch { }
+        string st = "?", ty = "?";
+        try { st = c.State.ToString(); } catch { }
+        try { ty = c.Type.ToString(); } catch { }
+        lines.Add("  \"" + c.Name + "\" - " + st + ", " + ty + ": "
+            + (parts.Count == 0 ? "no components" : string.Join(" + ", parts))
+            + (usages.Count == 0 ? "" : "; usage " + string.Join(", ", usages)));
+    }
+    var usagesHad = new FilteredElementCollector(doc).OfClass(typeof(LoadUsage)).Cast<LoadUsage>()
+        .OrderBy(u => u.Name).ToList();
+    lines.Add("Load usages (" + usagesHad.Count + "): "
+        + (usagesHad.Count == 0 ? "none" : string.Join(", ", usagesHad.Select(u => "\"" + u.Name + "\""))));
 }
 
 // ---- Loads -----------------------------------------------------------------

@@ -1338,6 +1338,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-md.md`](needs-checking/group-md.md)
 
+## Group ME - Analyze > Load Combinations - add load combinations from factored load cases, with their state and type, and list the combinations a model has: `CREATE_LOAD_COMBINATION`, `REPORT_STRUCTURAL_LOADS` widened (2026-11-02)
+
+**Its own file:** [`needs-checking/group-me.md`](needs-checking/group-me.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

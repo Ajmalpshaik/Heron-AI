@@ -1,0 +1,162 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-162
+semantic-identity: "add a load combination - by name, from factored load cases, with its state and type"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "add a load combination 1.2DL
+# + 1.6LL", "make a combination ULS1 = 1.4 Dead" and "add the serviceability
+# combination SLS1 = 1.0DL + 1.0LL" - Revit's Analyze > Load Combinations. No
+# card made one (grep of every fragment's C# that day for LoadCombination and
+# LoadUsage: nothing). heron_retrieve sent the three to LIST_GRIDS,
+# COMBINE_FAMILY_FORMS and ADD_PROJECT_PARAMETER - nothing near.
+#
+# A SEPARATE CARD FROM CREATE_LOAD_CASE, ON PURPOSE. Widening that card was
+# weighed: a load case takes a category, a nature and a number, and a
+# combination takes a formula of factored cases, a state, a type and usages -
+# no input in common but the document, and Revit keeps them on two dialogs.
+# One card would be two jobs behind a switch. This one builds ON the cases
+# CREATE_LOAD_CASE makes, and never makes one itself.
+#
+# ONE OF A SET. REPORT_STRUCTURAL_LOADS (FRG-ELE-144) answers every question -
+# which load cases and load combinations exist, each combination's factors,
+# state and type - so no question reaches this write (D-86).
+#
+# NEVER OVERWRITES, RENAMES OR DELETES. A combination name already used, in
+# any capitals, is skipped and named. Each combination is made inside its own
+# sub-transaction: one Revit refuses half-way leaves nothing of itself.
+#
+# NEVER GUESSED (D-33). Every load case in a formula is matched by its exact
+# name - "Dead" is not DL1 - and one no case has refuses that combination with
+# the cases listed; a load case is never made here. A state or type left out
+# keeps Revit's own default, read back and stated - never read out of a name
+# such as SLS1, though the answer says when the name and the state disagree.
+# An entry with no name is named after its formula as written, and the answer
+# says so.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: CREATE_LOAD_COMBINATION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Adds structural load combinations, as Analyze > Load Combinations does - each
+  written as factored load cases such as ULS1 = 1.2 DL1 + 1.6 LL1, with its
+  state, Ultimate or Serviceability, and its type, Combination or Envelope -
+  each read back from the model with its factors and load cases. A name
+  already used is skipped, never overwritten; a load case is never made.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: combinations
+      # One or more, separated by ; - each a name, "=", and terms joined by
+      # "+": a factor and a load case's EXACT name ("1.2 DL1", "1.2DL1",
+      # "1.2 x DL1"), or a name alone for factor 1. No "=", named after its
+      # formula. REPORT_STRUCTURAL_LOADS lists the case names.
+      type: string
+      source: request
+    - name: state
+      # ultimate | serviceability - from 2026 also quasi-permanent, frequent,
+      # rare, accidental, special. For every combination of the call. Left
+      # out, Revit's default, read back and stated.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: combinationType
+      # combination | envelope. Left out, Revit's default, read back and
+      # stated.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: usage
+      # Load usages the project has, by exact name, separated by ; - never
+      # made. Left out, none set.
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: added
+      # Load combinations made. Something the write DID.
+      role: result
+      type: int
+    - name: before
+      # The load combinations with state, type and factored load cases,
+      # before (D-52).
+      role: accounting
+      type: IList<string>
+    - name: after
+      # The same list after, read back from the model (D-52).
+      role: accounting
+      type: IList<string>
+    - name: skipped
+      # A combination name already used, named - left as it is (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why one or all declined, in Revit words: a load case no case is called,
+      # a combination named as a component, a case twice, an empty term, a
+      # state, type or usage this Revit or project has not got, a name Revit
+      # will not take. Never a thing done (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation with one branch. LoadCombination.Create(Document, string)
+  and (Document, string, LoadCombinationType, LoadCombinationState), State and
+  Type { get; set; }, GetComponents, SetComponents(IList<LoadComponent>),
+  GetUsageIds and SetUsageIds(IList<ElementId>), new LoadComponent(ElementId,
+  double) with LoadCaseOrCombinationId and Factor, LoadUsage,
+  LoadCombinationType Combination and Envelope, LoadCombinationState
+  Serviceability and Ultimate, and SubTransaction carry the same signatures
+  2020 through 2027 - read with tools/api-surface --members on 2026-11-02.
+  LoadCombinationState ServiceabilityQuasiPermanent, ServiceabilityFrequent,
+  ServiceabilityRare, Accidental and Special are 2026 on (#if
+  REVIT2026_OR_GREATER); asked for earlier, refused with the release named.
+  Revit's default state and type for Create(Document, string) have not been
+  seen in Revit - the answer reads them back rather than assuming them.
+
+# ROUTING (2026-11-02) - the same rows are in CREATE_LOAD_CASE and
+# REPORT_STRUCTURAL_LOADS.
+#
+#   "add a load combination 1.2DL + 1.6LL"       -> here, named after its
+#                                                   formula; DL and LL must be
+#                                                   cases' exact names
+#   "make a combination ULS1 = 1.4 Dead"         -> here
+#   "add the serviceability combination SLS1 = 1.0DL + 1.0LL"
+#                                                -> here, state serviceability
+#   "what load combinations are in this model"   -> REPORT_STRUCTURAL_LOADS
+#   "add a load case called Wind X"              -> CREATE_LOAD_CASE
+#   "join these family forms"                    -> COMBINE_FAMILY_FORMS -
+#                                                   family forms, not loads
+#
+# WHAT MOVED (2026-11-02, heron_retrieve.find on fresh scratch stores of the
+# tree at 0597dfa and of this change; `model` backend, re-ranker absent; no
+# Revit filter, 2020, 2024; with and without the host's question flag). The
+# three sentences above reach this card without the flag and a read with it;
+# the question reaches REPORT_STRUCTURAL_LOADS both ways. The first draft
+# pulled three probes about load combinations here; two closed in the same
+# change (FRAGMENT-ISSUES row 5b-1430). The probe "what combinations are in
+# this model" - nobody's words, so not declared - still reaches this write
+# without the flag (row 5b-1431).
+utterances:
+  - add a load combination 1.2DL + 1.6LL
+  - make a combination ULS1 = 1.4 Dead
+  - add the serviceability combination SLS1 = 1.0DL + 1.0LL

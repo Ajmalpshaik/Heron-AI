@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-144
-semantic-identity: "which load cases, load natures, loads and boundary conditions this model has - each load's values, load case and host"
+semantic-identity: "which load cases, load combinations, load natures, loads and boundary conditions this model has - each load's values, load case and host"
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
 # 2026-11-01: asked for in the modeller's words "what load cases are in this
@@ -22,10 +22,18 @@ semantic-identity: "which load cases, load natures, loads and boundary condition
 # "Load" in ADD_LOAD_CLASSIFICATION, READ_SPACE_LOADS and REPORT_PANEL_CIRCUITS
 # is electrical or heating and cooling load - a different job.
 #
-# THE READ HALF OF A SET. CREATE_LOAD_CASE, PLACE_STRUCTURAL_LOADS and
-# PLACE_BOUNDARY_CONDITIONS write; every question about which load cases,
-# natures, loads or boundary conditions there are - and their exact names - is
-# answered here, so none reaches a write (D-86).
+# THE READ HALF OF A SET. CREATE_LOAD_CASE, CREATE_LOAD_COMBINATION,
+# PLACE_STRUCTURAL_LOADS and PLACE_BOUNDARY_CONDITIONS write; every question
+# about which load cases, load combinations, natures, loads or boundary
+# conditions there are - and their exact names - is answered here, so none
+# reaches a write (D-86).
+#
+# WIDENED 2026-11-02, AT DRAFT, for "what load combinations are in this model"
+# - Revit's Analyze > Load Combinations - beside CREATE_LOAD_COMBINATION's
+# write: a list of every load combination with its state, type, factored load
+# cases and usages, and the load usages the project has (`show`
+# combinations), and `combinationCount`. A second reader of the same loads
+# dialog would have been a second card for one job.
 #
 # THE HOST. A hosted load sits on an ANALYTICAL element; the answer names the
 # beam, column, wall or floor it belongs to as well. A selected element with
@@ -43,10 +51,11 @@ risk: READ
 
 purpose: >
   Answers which structural loads the model holds - the load natures, the load
-  cases with their number, nature and category, every point, line and area
-  load with its force in kN, kN/m or kPa, its load case and the beam, column,
-  wall or floor it sits on, and every boundary condition with its fixity - for
-  the whole model, one load case, or the elements selected.
+  cases with their number, nature and category, which load combinations the
+  model has with their state, type and factored load cases, every point, line
+  and area load with its force in kN, kN/m or kPa, its load case and the beam,
+  column, wall or floor it sits on, and every boundary condition with its
+  fixity - for the whole model, one load case, or the elements selected.
 
 contract:
   needs:
@@ -59,7 +68,8 @@ contract:
       type: IList<Element>
       optional: true
     - name: show
-      # Which lists: cases | natures | loads | boundary - one, or several
+      # Which lists: cases | natures | combinations | loads | boundary - one,
+      # or several
       # separated by ; - or left out for every list (`absent: all`). A word
       # that is none of them is named, never guessed.
       type: string
@@ -83,13 +93,18 @@ contract:
       # Load cases in the model.
       role: result
       type: int
+    - name: combinationCount
+      # Load combinations in the model (2026-11-02).
+      role: result
+      type: int
     - name: boundaryCount
       # Boundary conditions listed.
       role: result
       type: int
     - name: report
       # LIST BY LIST: load natures; load cases with number, nature, category
-      # and how many loads each holds; each load with its point or ends in mm,
+      # and how many loads each holds; load combinations with state, type,
+      # factored load cases and usages, and the load usages; each load with its point or ends in mm,
       # force in kN, kN/m or kPa, load case and host; each boundary condition
       # with its kind, place, fixity and host. A STRING, because a reply cuts
       # a list to three items and this is the answer.
@@ -120,7 +135,10 @@ compatibility-note: >
   MomentVector1, IsUniform), AreaLoad (Area, ForceVector1 to 3, NumRefPoints)
   and BoundaryConditions (HostElementId, Point, GetBoundaryConditionsType,
   GetCurve) carry the same signatures 2020 through 2027 - read with
-  tools/api-surface --members on 2026-11-01. The host's physical element is
+  tools/api-surface --members on 2026-11-01 - and so do LoadCombination
+  (State, Type, GetComponents, GetUsageIds), LoadComponent
+  (LoadCaseOrCombinationId, Factor) and LoadUsage, read the same way on
+  2026-11-02. The host's physical element is
   AnalyticalModel.GetElementId() 2020 to 2022 (#if REVIT2020 || REVIT2021 ||
   REVIT2022) and AnalyticalToPhysicalAssociationManager.GetAssociatedElementId
   from 2023, where AnalyticalModel is gone. Forces are converted with
@@ -134,8 +152,11 @@ compatibility-note: >
 # PLACE_STRUCTURAL_LOADS and PLACE_BOUNDARY_CONDITIONS.
 #
 #   "what load cases are in this model"          -> here, show cases
+#   "what load combinations are in this model"   -> here, show combinations
+#                                                   (2026-11-02)
 #   "list the loads on this beam"                -> here, the beam selected
 #   "add a load case called Wind X"              -> CREATE_LOAD_CASE
+#   "make a combination ULS1 = 1.4 Dead"         -> CREATE_LOAD_COMBINATION
 #   "put a 10 kN point load on this beam end"    -> PLACE_STRUCTURAL_LOADS
 #   "add a 5 kN/m line load along this beam"     -> PLACE_STRUCTURAL_LOADS
 #   "add a 2.5 kPa area load on this slab"       -> PLACE_STRUCTURAL_LOADS
@@ -161,4 +182,5 @@ compatibility-note: >
 # 5b-1381).
 utterances:
   - what load cases are in this model
+  - what load combinations are in this model
   - list the loads on this beam
