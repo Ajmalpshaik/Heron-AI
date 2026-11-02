@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -170,6 +170,77 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: Snowdon Towers Sample Architectural (34,509 elements), Revit 2024, session 57392
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    create-wall, set-curtain-wall-grid with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned Forms bottom
+    row, top row, row 2, first column, last column, column 3, row 1 column 3, floor lines,
+    all, ListedAtMost 40, MillimetresPerFoot 304.8, OnGridLineMm 5, SameEdgeMm 1, alongOf
+    Func`2, alreadyThatType 0, angled 0, asked 1 item(s) [System.Int32[]], askedText bottom
+    row, askedWords 1 item(s) [bottom row], bandsOf Func`3, before Tuple`3, cellFaces 18 item(s)
+    [Panel, Panel, Panel, ...], cellIds 18 item(s) [2493478, 2493614, 2493616, ...], census
+    Func`2, changed 6, chosen 6, columnEdges 7 item(s) [-4.44089209850063E-16, 4.92125984351969,
+    9.84251968603937, ...], columnsOf 18 item(s) [System.Collections.Generic.List`1[System.Int32],
+    System.Collections.Generic.List`1[System.Int32], System.Collections.Generic.List`1[System.Int32],
+    ...], curtainWall Wall, describe Func`2, differs 0 item(s), edgesOf Func`4, endsAt 18
+    item(s) [4.92125984351969, 9.84251968653937, 14.7637795290591, ...], findings 3 item(s)
+    [Curtain wall 2493477: 6 panel(s) at ''bottom row'' now show ''S..., Only these panels
+    changed. The wall''s type, and the Curtain ..., Rows count from the bottom, columns from
+    the wall''s start en...], flat 0.00174532836589831, floorLineNotes 0 item(s), form Regex,
+    fullName Func`2, heldBy Func`2, highest 18 item(s) [13.0045931758528, 13.0045931758528,
+    13.0045931758528, ...], layout wall 2493477: 3 row(s), counted from the bottom - mm above
+    its lowest panel edge: 0-1500, 1500-3000, 3000-4500. 6 column(s), counted from its start
+    end, its LEFT end seen from outside - mm along its location line: 0-1500, 1500-3000, 3000-4500,
+    4500-6000, 6000-7500, 7500-9000, leftAlone 0 item(s), listed Func`2, lowest 18 item(s)
+    [8.0833333333331, 8.0833333333331, 8.0833333333331, ...], measured wall 2493477. Before:
+    18 panel(s) - 18 x ''System Panel: Glazed''. After, read off its grid again: 18 panel(s)
+    - 12 x ''System Panel: Glazed'', 6 x ''System Panel: Solid''. ''System Panel: Solid''
+    is a curtain panel type - a PanelType to Revit''s API. Of the 6 chosen, Revit counted
+    0 locked and 0 pinned before the change. 0 of the 6 changed came back as a new element,
+    with a new id, mm Func`2, newType PanelType, newTypeKind a curtain panel type, onGridLine
+    0.0164041994750656, path Line, picked HashSet`1, plain Func`2, refused , rowEdges 4 item(s)
+    [8.0833333333331, 13.0045931758528, 17.9258530183725, ...], rowsOf 18 item(s) [System.Collections.Generic.List`1[System.Int32],
+    System.Collections.Generic.List`1[System.Int32], System.Collections.Generic.List`1[System.Int32],
+    ...], runs Func`2, sameEdge 0.00328083989501312, shownBy Func`2, skipped 0 item(s), span
+    Func`3, spoken Func`2, startSide , its LEFT end seen from outside, startsAt 18 item(s)
+    [0, 4.92125984301969, 9.84251968553937, ...], steep 0.999998476913288, typeIdOf Func`2,
+    typeNameOf Func`2, unmeasured 0, wallGrid CurtainGrid, wantAll false, wantFloorLines false.
+    inputs came elements from set-curtain-wall-grid as ''created'' (1); panelTypeName as given;
+    whichPanels as given. on Snowdon Towers Sample Architectural'
+  negative_case: 'run with curtainWallType=Curtain Wall: _Not Defined, grid=vertical layout=fixed
+    distance; vertical spacing=1500; horizontal layout=fixed distance; horizontal spacing=1500,
+    height=4500, level=L2, panelTypeName=System Panel: Solid, points=0,-200000,0; 9000,-200000,0,
+    structural=false, wallType=Basic Wall: Exterior - Brick on Mtl. Stud, whichPanels=bottom
+    row instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running create-wall, set-curtain-wall-grid with this phase''s own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned Forms bottom row, top row, row 2, first column, last column, column
+    3, row 1 column 3, floor lines, all, ListedAtMost 40, MillimetresPerFoot 304.8, OnGridLineMm
+    5, SameEdgeMm 1, alongOf Func`2, alreadyThatType 0, angled 0, asked 1 item(s) [System.Int32[]],
+    askedText bottom row, askedWords 1 item(s) [bottom row], bandsOf Func`3, before (null),
+    cellFaces 0 item(s), cellIds 0 item(s), census Func`2, changed 0, chosen 0, columnEdges
+    0 item(s), columnsOf 0 item(s), curtainWall (null), describe Func`2, differs 0 item(s),
+    edgesOf Func`4, endsAt 0 item(s), findings 1 item(s) [None of what is selected is a curtain
+    wall: ''Exterior - Bric...], flat 0.00174532836589831, floorLineNotes 0 item(s), form
+    Regex, fullName Func`2, heldBy Func`2, highest 0 item(s), layout , leftAlone 1 item(s)
+    [''Exterior - Brick on Mtl. Stud'', Walls (id 2494071)], listed Func`2, lowest 0 item(s),
+    measured , mm Func`2, newType (null), newTypeKind , onGridLine 0.0164041994750656, path
+    (null), picked HashSet`1, plain Func`2, refused None of what is selected is a curtain
+    wall: ''Exterior - Brick on Mtl. Stud'', Walls (id 2494071). Select the curtain wall itself
+    - Tab to it - and ask again. Nothing was changed, rowEdges 0 item(s), rowsOf 0 item(s),
+    runs Func`2, sameEdge 0.00328083989501312, shownBy Func`2, skipped 0 item(s), span Func`3,
+    spoken Func`2, startSide , startsAt 0 item(s), steep 0.999998476913288, typeIdOf Func`2,
+    typeNameOf Func`2, unmeasured 0, wallGrid (null), wantAll false, wantFloorLines false.
+    inputs came elements from set-curtain-wall-grid as ''created'' (1); panelTypeName as given;
+    whichPanels as given. on Snowdon Towers Sample Architectural'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 5548ccd69664198e
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

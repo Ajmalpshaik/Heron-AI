@@ -1,0 +1,33 @@
+# Round 22, 2026-11-02 - Revit 2024.3, session 57392. "Snowdon Towers Sample Architectural" = a
+# scratch copy of Revit 2024's own Samples\Snowdon Towers Sample Architectural.rvt. Read before the
+# run: 3 keynote tags, all in the detail view "North Wall Window Detail" ("Parapet Detail - Typical"
+# holds none); curtain wall types include "Curtain Wall: _Not Defined"; panel type "System Panel :
+# Solid". The curtain wall each curtain card needs is made by CREATE_WALL (and given a grid by
+# SET_CURTAIN_WALL_GRID) inside the same rolled-back run, at -200000 mm clear of the building.
+# On Revit 2020 SET_CURTAIN_WALL_GRID was refused because a mullion did not fit its grid; the
+# _Not Defined type carries none. Every run is read-only or ROLLED BACK.
+model: "Snowdon Towers Sample Architectural (scratch copy, Revit 2024 sample), Revit 2024"
+
+defaults:
+  in: "Snowdon Towers Sample Architectural"
+  setup: []
+
+jobs:
+  - fragment: report-keynotes
+    expect: tagCount
+    set: {viewName: "North Wall Window Detail"}
+    negative-set: {viewName: "Parapet Detail - Typical"}
+
+  - fragment: set-curtain-wall-grid
+    write: true
+    setup: [create-wall]
+    expect: applied
+    set: {level: "L2", wallType: "Curtain Wall: _Not Defined", points: "0,-200000,0; 9000,-200000,0", height: "4500", structural: "false", curtainWallType: "Curtain Wall: _Not Defined", grid: "vertical layout=fixed distance; vertical spacing=1500; horizontal layout=fixed distance; horizontal spacing=1500"}
+    negative-set: {level: "L2", wallType: "Curtain Wall: _Not Defined", points: "0,-200000,0; 9000,-200000,0", height: "4500", structural: "false", curtainWallType: "Curtain Wall: No Such Type", grid: "vertical layout=fixed distance; vertical spacing=1500; horizontal layout=fixed distance; horizontal spacing=1500"}
+
+  - fragment: set-curtain-panel-type
+    write: true
+    setup: [create-wall, set-curtain-wall-grid]
+    expect: changed
+    set: {level: "L2", wallType: "Curtain Wall: _Not Defined", points: "0,-200000,0; 9000,-200000,0", height: "4500", structural: "false", curtainWallType: "Curtain Wall: _Not Defined", grid: "vertical layout=fixed distance; vertical spacing=1500; horizontal layout=fixed distance; horizontal spacing=1500", panelTypeName: "System Panel: Solid", whichPanels: "bottom row"}
+    negative-set: {level: "L2", wallType: "Basic Wall: Exterior - Brick on Mtl. Stud", points: "0,-200000,0; 9000,-200000,0", height: "4500", structural: "false", curtainWallType: "Curtain Wall: _Not Defined", grid: "vertical layout=fixed distance; vertical spacing=1500; horizontal layout=fixed distance; horizontal spacing=1500", panelTypeName: "System Panel: Solid", whichPanels: "bottom row"}
