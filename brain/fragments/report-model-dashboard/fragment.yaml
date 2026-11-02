@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -209,6 +209,131 @@ contract:
     - name: findings
       role: accounting
       type: string
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 STR, P1102 Light - active was P1102
+    STR, Revit 2020, session 12404'
+  positive_case: 'run as it would normally be run. returned dashboardJson {"format":1,"model":{"title":"P1102
+    STR","isFamily":false,"isWorkshared":false},"elementTotal":955,"categories":[{"name":"Structural
+    Framing","instances":397,"types":6},{"name":"Structural Foundations","instances":294,"types":4},{"name":"Structural
+    Columns","instances":203,"types":3},{"name":"Structural Beam Systems","instances":13,"types":1},{"name":"Structural
+    Rebar","instances":11,"types":3},{"name":"Sheets","instances":9,"types":1},{"name":"Walls","instances":6,"types":1},{"name":"Floors","instances":5,"types":4},{"name":"Shaft
+    Openings","instances":4,"types":0},{"name":"Cameras","instances":2,"types":1},{"name":"Structural
+    Stiffeners","instances":2,"types":1},{"name":"Structural Trusses","instances":2,"types":1},{"name":"Structural
+    Trusses","instances":2,"types":1},{"name":"Project Base Point","instances":1,"types":0},{"name":"Structural
+    Area Reinforcement","instances":1,"types":1},{"name":"Structural opening cut","instances":1,"types":0},{"name":"Structural
+    Path Reinforcement","instances":1,"types":1},{"name":"Survey Point","instances":1,"types":0}],"levels":[{"name":"Sub
+    Level","elevationMm":-2500,"instances":0},{"name":"01 - Entry Level","elevationMm":0,"instances":378},{"name":"02
+    - Floor","elevationMm":3800,"instances":69},{"name":"03 - Floor","elevationMm":7600,"instances":64},{"name":"Roof","elevationMm":11400,"instances":1}],"noLevel":443,"worksets":[],"warnings":{"total":3,"errors":0,"groups":[{"text":"Elements
+    have duplicate \"Mark\" values.","severity":"warning","count":3,"ids":["124614","124616","124638","124645","124647","124653","124655","124657","124659","124661","128213","128264","128318","128344","128372","128397","128432","128473","124784","124788","124790","124792","124794","124796","124798","124800","124802","124804","124806","151775","151776","151777","151778","151779","151780","151781","151782","151783","151784","151785","152083","152084","152085","152086","152087","152088","152089","152090","152091","152092","152093","124559","124565","124568","124571","124574","124577","124579","124582","124585","124587","124590","124592","124594","124598","124600","124602","124604","124606","124608","124610","124612","124620","124622","124624","124626","124628","124630","124632","124634","124636","124666","124669","124672","124674","124677","124680","124684","124686","124688","124690","124692","124694","124696","124698","124707","124709","124713","124715","124724","124726","124730","124732","124736","124742","124745","124747","124749","124751","124753","124755","124757","124759","124761","124765","124767","124769","124771","124773","124775","124777","124779","124782","124808","124810","124812","124818","124820","124822","127484","127485","127486","127516","127517","127518","127581","127582","127583","127649","127650","127651","151693","151694","151695","151696","151697","151698","151699","151700","151701","151702","151703","151704","151705","151706","151707","151708","151709","151710","151711","151712","151713","151714","151715","151716","151717","151718","151719","151720","151721","151722","151723","151724","151725","151726","151727","151728","151729","151730","151731","151732","151733","151734","151735","151736","151737","151738","151739","151740","151741","151742","151743","151744","151745","151746","151747","151748","151749","151750","151751","151752","151753","151754","151755","151756","151757","151758","151759","151760","151761","151762","151763","151764","151765","151766","151767","151768","151769","151770","151771","151772","151773","151774","151786","151787","151788","151789","151790","151791","151802","151803","151804","151814","151815","151816","151824","151825","151826","151836","151837","151838","151839","151840","151841","151842","151843","151844","151845","151846","152001","152002","152003","152004","152005","152006","152007","152008","152009","152010","152011","152012","152013","152014","152015","152016","152017","152018","152019","152020","152021","152022","152023","152024","152025","152026","152027","152028","152029","152030","152031","152032","152033","152034","152035","152036","152037","152038","152039","152040","152041","152042","152043","152044","152045","152046","152047","152048","152049","152050","152051","152052","152053","152054","152055","152056","152057","152058","152059","152060","152061","152062","152063","152064","152065","152066","152067","152068","152069","152070","152071","152072","152073","152074","152075","152076","152077","152078","152079","152080","152081","152082","152094","152095","152096","152097","152098","152099","152110","152111","152112","152122","152123","152124","152132","152133","152134","152144","152145","152146","152147","152148","152149","152150","152151","152152","152153","152154"]}]},"views":{"total":33,"templates":14,"onSheets":8,"notOnSheets":25,"withoutTemplate":31,"byType":{"ColumnSchedule":1,"Detail":2,"DraftingView":5,"Elevation":5,"EngineeringPlan":10,"Legend":1,"Schedule":1,"Section":6,"ThreeD":2},"notOnSheetsIds":["2354","4803","4816","4827","39401","119215","119223","119231","122632","128512","152848","153754","155378","156672","156862","161965","163829","170132","170634","171094","187492","187502","187512","187522","187532"]},"sheets":{"total":9,"empty":0,"placeholders":0,"emptyIds":[]},"families":{"loaded":145,"inPlace":0,"unused":116,"types":220,"unusedNames":["Boundary
+    Condition-Fixed","Boundary Condition-Pinned","Boundary Condition-Roller","Boundary Condition-Variable","Callout
+    Head","Circular Mullion","Connection-Brace-Kicker","Connection-Brace-Parallel","Connection-Column-Default","Connection-Column-Filled
+    Triangle","Connection-Column-Plate","Connection-Moment-Filled","Connection-Moment-Not
+    Filled","Elevation Mark Circle - Upgrade","Elevation Mark Pointer_Circle","Elevation Mark
+    Pointer_Square","Elevation Mark Square - Upgrade","Empty System Panel","L Corner Mullion","M_00","M_01","M_02","M_03","M_04","M_05","M_06","M_07","M_08","M_09","M_10","M_11","M_12","M_13","M_14","M_16","M_17","M_17A","M_18","M_19","M_20","M_22","M_23","M_24","M_Area
+    Reinforcement Symbol","M_Area Reinforcement Tag","M_Boundary Condition-Fixed","M_Boundary
+    Condition-Roller","M_Boundary Condition-Variable","M_Callout Head","M_Centreline","M_Concrete
+    Block","M_Concrete-Rectangular-Column","M_Connection-Brace-Angle","M_Connection-Brace-Kicker","M_Connection-Brace-Parallel","M_Connection-Column-Default","M_Connection-Column-Filled
+    Triangle","M_Connection-Column-Plate","M_Connection-Column-Vertical Plates","M_Connection-Moment-Filled","M_Connection-Moment-Not
+    Filled","M_Door-Opening","M_Footing-Rectangular","M_Form Deck_Non-Composite","M_Grid Head
+    - Circle1","M_Grid Head - No Bubble","M_Howe Flat Truss","M_HSS Square","M_Keynote Tag","M_L-Angle-Bolted
+    Connection-Section","M_Level Head - Circle","M_Level Head - Circle1","M_Level Head - No
+    Bubble","M_Material Tag","M_North Arrow-1","M_Reveal-Brick Course","M_Revision Tag","M_Roof
+    Deck","M_S1","M_S2","M_S3","M_S4","M_S5","M_S6","M_Section Head - Filled","M_Section Head
+    - No Arrow","M_Section Head - Open","M_Section Tail - Filled","M_Section Tail - Filled
+    Horizontal","M_Slab Edge-Thickened","M_Spot Elevation - Crosshair","M_Spot Elevation -
+    Target Filled","M_Stair Nosing - Radius","M_Structural Column Tag-45","M_Structural Foundation
+    Tag","M_Structural Framing Tag-w-Start Reactions","M_T1","M_T2","M_T3","M_T6","M_T7","M_T8","M_T9","M_View
+    Reference","M_Window-Square Opening","Quad Corner Mullion","Rectangular Mullion","Section
+    Head - no arrow","Section Tail - Filled Horizontal","System Panel","Trapezoid Corner Mullion","UB-Universal
+    Beam-Profile","UB-Universal Beam-Section","V Corner Mullion","View Title","View Title
+    - No Scale Text"]},"groups":{"modelTypes":0,"detailTypes":0,"unusedTypes":0},"links":[{"name":"Technical_school-current_m.rvt","loaded":false,"pinned":true,"instances":1}],"cad":{"total":0,"linked":0,"imported":0,"names":[]},"rooms":{"total":0,"placed":0,"unplaced":0,"notEnclosed":0,"unplacedIds":[],"notEnclosedIds":[]},"spaces":{"total":0,"placed":0,"unplaced":0,"notEnclosed":0,"unplacedIds":[],"notEnclosedIds":[]},"fill":{"parameters":["Mark"],"rows":[{"category":"Cameras","parameter":"Mark","populated":0,"empty":0,"absent":2,"doubled":0,"emptyIds":[]},{"category":"Floors","parameter":"Mark","populated":0,"empty":5,"absent":0,"doubled":0,"emptyIds":["133345","134840","139467","151849","152157"]},{"category":"Project
+    Base Point","parameter":"Mark","populated":0,"empty":0,"absent":1,"doubled":0,"emptyIds":[]},{"category":"Shaft
+    Openings","parameter":"Mark","populated":0,"empty":0,"absent":4,"doubled":0,"emptyIds":[]},{"category":"Sheets","parameter":"Mark","populated":0,"empty":0,"absent":9,"doubled":0,"emptyIds":[]},{"category":"Structural
+    Area Reinforcement","parameter":"Mark","populated":0,"empty":1,"absent":0,"doubled":0,"emptyIds":["155416"]},{"category":"Structural
+    Beam Systems","parameter":"Mark","populated":0,"empty":13,"absent":0,"doubled":0,"emptyIds":["127478","127506","127575","127639","128103","151797","151807","151819","151829","152105","152115","152127","152137"]},{"category":"Structural
+    Columns","parameter":"Mark","populated":0,"empty":203,"absent":0,"doubled":0,"emptyIds":["122477","122478","122479","122480","122481","122482","122483","122484","122485","122486","122487","122488","122490","122491","122492","122493","122494","122495","122496","122497","122498","122500","122501","122503","122504","122505","122506","122507","122508","122509","122510","122511","122512","122514","122516","122517","122520","122521","122524","122525","122528","122529","122536","122537","122541","122542","122544","122545","122547","122548","122552","122553","122556","122559","122562","122565","122566","122567","122568","122569","122570","122571","122695","122796","122873","123067","123068","123069","123070","147371","151627","151628","151629","151630","151631","151632","151633","151634","151635","151636","151637","151638","151639","151640","151641","151642","151643","151644","151645","151646","151647","151648","151649","151650","151651","151652","151653","151654","151655","151656","151657","151658","151659","151660","151661","151662","151663","151664","151665","151666","151667","151668","151669","151670","151671","151672","151673","151674","151675","151676","151677","151678","151679","151680","151681","151682","151683","151684","151685","151686","151687","151688","151871","151935","151936","151937","151938","151939","151940","151941","151942","151943","151944","151945","151946","151947","151948","151949","151950","151951","151952","151953","151954","151955","151956","151957","151958","151959","151960","151961","151962","151963","151964","151965","151966","151967","151968","151969","151970","151971","151972","151973","151974","151975","151976","151977","151978","151979","151980","151981","151982","151983","151984","151985","151986","151987","151988","151989","151990","151991","151992","151993","151994","151995","151996","152179","153219","153265","153322","153369","153422","153475","153524"]},{"category":"Structural
+    Foundations","parameter":"Mark","populated":0,"empty":294,"absent":0,"doubled":0,"emptyIds":["142647","142649","142650","142808","142810","142811","142929","142931","142932","143084","143086","143087","143129","143131","143132","143168","143170","143171","143567","143569","143570","143632","143634","143635","143719","143721","143722","143768","143770","143771","143819","143821","143822","143864","143866","143867","143911","143913","143914","144010","144012","144013","144087","144089","144090","144124","144126","144127","144367","144369","144370","145611","145613","145614","145668","145670","145671","146114","146116","146117","146209","146211","146212","146449","146451","146452","146570","146572","146573","146653","146655","146656","146740","146742","146743","146932","146934","146935","147648","147650","147651","147703","147705","147706","147734","147736","147737","147769","147771","147772","147826","147828","147829","147861","147863","147864","147898","147900","147901","147935","147937","147938","148040","148042","148043","148127","148129","148130","148174","148176","148177","148219","148221","148222","148268","148270","148271","148343","148345","148346","148404","148406","148407","148523","148525","148526","148556","148558","148559","148641","148643","148644","148746","148748","148749","148827","148829","148830","148971","148973","148974","149200","149202","149203","149307","149309","149310","149311","149312","149575","149577","149578","149579","149580","149632","149634","149635","149636","149637","149689","149691","149692","149693","149694","149742","149744","149745","149746","149747","149971","149973","149974","149975","149976","150008","150010","150011","150012","150013","150037","150039","150040","150041","150042","150068","150070","150071","150072","150073","150103","150105","150106","150107","150108","150138","150140","150141","150142","150143","150191","150193","150194","150195","150196","150242","150244","150245","150246","150247","150347","150349","150350","150351","150352","150414","150416","150417","150418","150419","150449","150451","150452","150453","150454","150484","150486","150487","150488","150489","150557","150559","150560","150561","150562","150608","150610","150611","150612","150613","150651","150653","150654","150655","150656","150684","150686","150687","150688","150689","150763","150765","150766","150767","150768","150802","150804","150805","150806","150807","150857","150859","150860","150861","150862","150930","150932","150933","150934","150935","150973","150975","150976","150977","150978","151106","151108","151109","151110","151111","151147","151149","151150","151151","151152","151180","151182","151183","151184","151185","151221","151223","151224","151225","151226"]},{"category":"Structural
+    Framing","parameter":"Mark","populated":357,"empty":40,"absent":0,"doubled":0,"emptyIds":["125944","125958","125972","126003","127308","128135","128137","128139","128141","128143","128145","128147","132740","132741","132742","132744","132745","132746","132748","132749","132750","132751","132752","132753","132754","133227","133228","133229","133230","133231","133232","133233","133234","133235","133236","133237","133238","133239","187046","187137"]},{"category":"Structural
+    opening cut","parameter":"Mark","populated":0,"empty":0,"absent":1,"doubled":0,"emptyIds":[]},{"category":"Structural
+    Path Reinforcement","parameter":"Mark","populated":0,"empty":1,"absent":0,"doubled":0,"emptyIds":["156275"]},{"category":"Structural
+    Rebar","parameter":"Mark","populated":0,"empty":11,"absent":0,"doubled":0,"emptyIds":["153781","153882","153976","154029","154030","154062","154063","157002","157117","157195","157199"]},{"category":"Structural
+    Stiffeners","parameter":"Mark","populated":0,"empty":2,"absent":0,"doubled":0,"emptyIds":["137553","137674"]},{"category":"Structural
+    Trusses","parameter":"Mark","populated":0,"empty":2,"absent":0,"doubled":0,"emptyIds":["132598","133226"]},{"category":"Structural
+    Trusses","parameter":"Mark","populated":0,"empty":2,"absent":0,"doubled":0,"emptyIds":["132597","133225"]},{"category":"Survey
+    Point","parameter":"Mark","populated":0,"empty":0,"absent":1,"doubled":0,"emptyIds":[]},{"category":"Walls","parameter":"Mark","populated":0,"empty":6,"absent":0,"doubled":0,"emptyIds":["123276","123964","124071","124110","138817","139121"]}]},"breakdowns":null,"notRead":[],"capped":[]},
+    elementTotal 955, findings Model ''P1102 STR'' - a project
+
+    Elements: 955 placed model element(s) in 18 categories
+
+    Levels: 5 level(s); 443 placed model element(s) on no level
+
+    Fill: Mark 357 populated, 580 empty, 18 absent - over 955 placed model element(s)
+
+    Worksets: not workshared
+
+    Warnings: 3 (0 error(s)) in 1 kind(s)
+
+    Views: 33 (and 14 template(s)); 8 on a sheet, 25 on no sheet; 31 with no view template
+
+    Sheets: 9, 0 with no view or schedule on them, 0 placeholder(s)
+
+    Families: 145 loaded and 0 in-place, 220 type(s); 116 with nothing placed
+
+    Groups: 0 model and 0 detail group type(s); 0 with nothing placed
+
+    Links: 1 Revit link(s), 1 not loaded, 0 with a placement not pinned
+
+    CAD: 0 placed (0 linked, 0 imported) from 0 file(s)
+
+    Rooms: 0 - 0 not placed, 0 placed with no area (not enclosed, or redundant)
+
+    Spaces: 0 - 0 not placed, 0 placed with no area (not enclosed, or redundant), sectionsNotRead
+    0. inputs came parameters as given; breakdowns given empty - "none", the card''s own default
+    (optional). on P1102 STR'
+  negative_case: 'run against ''P1102 Light'' with breakdowns=, parameters=Mark instead -
+    chosen because it should not contain what this fragment reports. returned dashboardJson
+    {"format":1,"model":{"title":"P1102 Light","isFamily":true,"isWorkshared":false},"elementTotal":null,"categories":null,"levels":null,"noLevel":null,"worksets":null,"warnings":null,"views":null,"sheets":null,"families":null,"groups":null,"links":null,"cad":null,"rooms":null,"spaces":null,"fill":null,"breakdowns":null,"notRead":["elements:
+    not a project - this is a family document, and the dashboard reads projects only","categories:
+    not a project - this is a family document, and the dashboard reads projects only","levels:
+    not a project - this is a family document, and the dashboard reads projects only","worksets:
+    not a project - this is a family document, and the dashboard reads projects only","warnings:
+    not a project - this is a family document, and the dashboard reads projects only","views:
+    not a project - this is a family document, and the dashboard reads projects only","sheets:
+    not a project - this is a family document, and the dashboard reads projects only","families:
+    not a project - this is a family document, and the dashboard reads projects only","groups:
+    not a project - this is a family document, and the dashboard reads projects only","links:
+    not a project - this is a family document, and the dashboard reads projects only","cad:
+    not a project - this is a family document, and the dashboard reads projects only","rooms:
+    not a project - this is a family document, and the dashboard reads projects only","spaces:
+    not a project - this is a family document, and the dashboard reads projects only","fill:
+    not a project - this is a family document, and the dashboard reads projects only"],"capped":[]},
+    elementTotal 0, findings Model ''P1102 Light'' - a family document
+
+    Nothing else was read: the dashboard reads projects only.
+
+    Not read: elements: not a project - this is a family document, and the dashboard reads
+    projects only; categories: not a project - this is a family document, and the dashboard
+    reads projects only; levels: not a project - this is a family document, and the dashboard
+    reads projects only; worksets: not a project - this is a family document, and the dashboard
+    reads projects only; warnings: not a project - this is a family document, and the dashboard
+    reads projects only; views: not a project - this is a family document, and the dashboard
+    reads projects only; sheets: not a project - this is a family document, and the dashboard
+    reads projects only; families: not a project - this is a family document, and the dashboard
+    reads projects only; groups: not a project - this is a family document, and the dashboard
+    reads projects only; links: not a project - this is a family document, and the dashboard
+    reads projects only; cad: not a project - this is a family document, and the dashboard
+    reads projects only; rooms: not a project - this is a family document, and the dashboard
+    reads projects only; spaces: not a project - this is a family document, and the dashboard
+    reads projects only; fill: not a project - this is a family document, and the dashboard
+    reads projects only, sectionsNotRead 14. inputs came parameters as given; breakdowns given
+    empty - "none", the card''s own default (optional). on P1102 Light'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 26e34c5fe86c31a2
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
