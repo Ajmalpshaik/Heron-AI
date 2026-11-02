@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -118,35 +118,36 @@ contract:
       type: string
 
 proof:
-  date: '2026-09-09'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32312
+  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction
-    and ROLLED BACK, so the model was left exactly as it was. returned accepted 139 item(s)
-    [1395899, 1395935, 1396164, ...], anchors 139 item(s) [(-11.000000000, 27.819602745, 29.666666667),
-    (-9.333333333, 26.420976278, 29.666666667), (-13.927083333, 20.729375229, 29.666666667),
-    ...], centrelines 307 item(s) [[1395899, Autodesk.Revit.DB.Line], [1395935, Autodesk.Revit.DB.Line],
-    [1395946, Autodesk.Revit.DB.Line], ...], created ElementId, notLinear 0 item(s), offset
-    1.64041994750656, offsetMm 500, options Options, positions 139 item(s) [10.9999999999997,
-    9.33333333333305, 13.9270833333333, ...], references 139 item(s) [Autodesk.Revit.DB.Reference,
-    Autodesk.Revit.DB.Reference, Autodesk.Revit.DB.Reference, ...], refused 168 item(s) [1395946,
-    1396156, 1396211, ...], runDirection XYZ. inputs came view as given; elements from the
-    selection (307); offsetMm as given. on Snowdon-scratch_ajmal.al
-  negative_case: 'run with categoryName=Duct Tags, inViewOnly=FloorPlan: L3, view=FloorPlan:
-    L3, offsetMm=500 instead - chosen because it should not contain what this fragment reports
-    - the arrangement was re-made first by running select-by-category-name, set-selection
-    with this phase''s own values - run inside a transaction and ROLLED BACK, so the model
-    was left exactly as it was. returned accepted 0 item(s), anchors 0 item(s), centrelines
-    0 item(s), created (null), notLinear 73 item(s) [1491274, 1491277, 1491289, ...], offset
-    1.64041994750656, offsetMm 500, options Options, positions 0 item(s), references 0 item(s),
-    refused 0 item(s), runDirection (null). inputs came view as given; elements from the selection
-    (73); offsetMm as given. on Snowdon-scratch_ajmal.al'
+    filter-elements-by-category, set-selection with this phase's own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    created 1 item(s) [id 1020225], datumsHanded 0 item(s), dimensionedCount 5, instances
+    0 item(s), kindsHanded 1 item(s) [10 run(s)], mixed false, namedAxis (null), noReference
+    0 item(s), notLinear 0 item(s), offset 1.64041994750656, offsetMm 500, problem , refused
+    5 item(s) [411780, 411839, 478867, ...], roomSentence , roomsHanded 0, runElements 10
+    item(s) [Mitered Elbows / Taps, Mitered Elbows / Taps, Mitered Elbows / Taps, ...], wantedAxis
+    . inputs came view as given; elements from the selection (10); axis not given - "across",
+    the card's own default (optional); offsetMm as given. on P1102 MEP
+  negative_case: run with category=Sheets, offsetMm=500, view=Callout of Level 1 HVAC WSHP
+    TYP instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running filter-elements-by-category, set-selection with this phase's
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned created (null), datumsHanded 0 item(s), dimensionedCount 0,
+    instances 0 item(s), kindsHanded 0 item(s), mixed false, namedAxis (null), noReference
+    0 item(s), notLinear 7 item(s) [541359, 541389, 545964, ...], offset 1.64041994750656,
+    offsetMm 500, problem nothing handed in is a straight run - a duct, pipe, conduit or cable
+    tray - or a family instance - an air terminal, fixture or piece of equipment - so there
+    is nothing here to dimension (grids and levels are CREATE_LINEAR_DIMENSION's). NOTHING
+    WAS DRAWN, refused 0 item(s), roomSentence , roomsHanded 0, runElements 0 item(s), wantedAxis
+    . inputs came view as given; elements from the selection (7); axis not given - "across",
+    the card's own default (optional); offsetMm as given. on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: b8cbaf194e14e982
-
+  fingerprint: 609ca176ac6a9e48
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

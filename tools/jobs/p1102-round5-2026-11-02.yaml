@@ -1,0 +1,233 @@
+# Round 5, 2026-11-02 - Revit 2020. Scratch copies in %TEMP%\heron-work\prove-1102:
+#   "P1102 MEP"         Samples\rme_advanced_sample_project.rvt
+#   "P1102 MEP Family"  Samples\rme_advanced_sample_family.rfa - Mechanical Equipment, 6 connectors
+#   "P1102 Family"      Samples\rac_advanced_sample_family.rfa - line-based Generic Model, 0 forms
+# Every MODIFY run is ROLLED BACK. "Space Schedule" and "Level 2 Space Schedule" match
+# nameContains "Space Schedule"; their columns include Level, Room: Number, Room: Name
+# (read with report-schedule-definition before the run).
+model: "P1102 MEP + P1102 MEP Family + P1102 Family (scratch copies of the Revit 2020 samples), Revit 2020"
+
+defaults:
+  in: "P1102 MEP"
+  setup: []
+
+jobs:
+  # ---- reads ----------------------------------------------------------------
+  - fragment: read-model-warnings
+    expect: warningCount
+    set: {}
+    negative-in: "P1102 Family"
+    negative-set: {}
+
+  - fragment: report-browser-organization
+    expect: organization
+    set: {}
+    negative-in: "P1102 Family"
+    negative-set: {}
+
+  - fragment: report-level-elevations
+    expect: storeys
+    set: {includeLinks: false}
+    negative-in: "P1102 MEP Family"
+    negative-set: {includeLinks: false}
+
+  - fragment: select-openings
+    expect: elements
+    set: {}
+    negative-in: "P1102 Family"
+    negative-set: {}
+
+  - fragment: trace-connectivity
+    setup: [filter-elements-by-category, set-selection]
+    expect: reached
+    set: {category: "Mechanical Equipment", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", start: "selected", tolerance: 10}
+    negative-set: {category: "Sheets", start: "selected", tolerance: 10}
+
+  # ---- MODIFY: selection-based ----------------------------------------------
+  - fragment: move-elements
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: moved
+    set: {category: "Mass", offset: "1000,0,0"}
+    negative-set: {category: "Sheets", offset: "1000,0,0"}
+    note: >
+      Round 4's negative, offset 0,0,0 on the masses, answered "moved 6" - a zero move counted
+      as a move (recorded). Sheets have no location, so nothing can move.
+
+  - fragment: flip-elements
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: flipped
+    set: {category: "Doors", levelId: "Level 1", flipHand: true, flipFacing: false}
+    negative-set: {category: "Doors", levelId: "Level 1", flipHand: false, flipFacing: false}
+
+  - fragment: create-mep-system
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: memberIds
+    set: {category: "Air Terminals", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", systemType: "Supply Air", systemName: "Heron Supply", baseEquipment: ""}
+    negative-set: {category: "Walls", levelId: "Level 1", systemType: "Supply Air", systemName: "Heron Supply", baseEquipment: ""}
+
+  - fragment: create-dimension
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: created
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", view: "Callout of Level 1 HVAC WSHP TYP", offsetMm: 500}
+    negative-set: {category: "Sheets", view: "Callout of Level 1 HVAC WSHP TYP", offsetMm: 500}
+
+  - fragment: set-category-graphics
+    write: true
+    expect: overridden
+    set: {view: "Level 1 HVAC Plan", categories: "Ducts", overrides: "projection-line-colour=200,30,30; projection-line-weight=5"}
+    negative-set: {view: "Space Schedule", categories: "Ducts", overrides: "projection-line-colour=200,30,30; projection-line-weight=5"}
+
+  - fragment: set-datum-extent-type
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    set: {category: "Levels", inViewOnly: "North - Mech", view: "North - Mech", viewSpecific: true}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", view: "Callout of Level 1 HVAC WSHP TYP", viewSpecific: true}
+
+  - fragment: frame-elements-in-camera
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: framed
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", viewName: "Heron Frame - Callout Ducts", direction: "south-east", lookDownDeg: "30"}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", viewName: "Space Schedule", direction: "south-east", lookDownDeg: "30"}
+
+  - fragment: attach-walls
+    write: true
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: attachedIds
+    setup-set: {category: "Walls", levelId: "Level 1"}
+    negative-setup-set: {category: "Sprinklers"}
+    set: {where: "top"}
+    negative-set: {where: "top"}
+
+  - fragment: create-walls-by-face
+    write: true
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: created
+    setup-set: {category: "Mass"}
+    negative-setup-set: {category: "Walls", levelId: "Level 1"}
+    set: {wallType: "Basic Wall: Exterior - Brick on Mtl. Stud"}
+    negative-set: {wallType: "Basic Wall: Exterior - Brick on Mtl. Stud"}
+
+  - fragment: set-mass-floor-usage
+    write: true
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: changed
+    setup-set: {category: "Mass"}
+    negative-setup-set: {category: "Walls", levelId: "Level 1"}
+    set: {usage: "Level 1=Retail; Level 2=Office"}
+    negative-set: {usage: "Level 1=Retail; Level 2=Office"}
+
+  # ---- MODIFY: schedules (the two Space Schedules, by name) ------------------
+  - fragment: set-schedule-field-order
+    write: true
+    setup: [find-views]
+    keep-chain: true
+    expect: reordered
+    setup-set: {viewType: "Schedule", nameContains: "Space Schedule"}
+    negative-setup-set: {viewType: "Schedule", nameContains: "Space Schedule"}
+    set: {order: "move Room: Name to the front"}
+    negative-set: {order: "move ZZZ NO SUCH COLUMN to the front"}
+
+  - fragment: add-schedule-fields
+    write: true
+    setup: [find-views]
+    keep-chain: true
+    expect: added
+    setup-set: {viewType: "Schedule", nameContains: "Space Schedule"}
+    negative-setup-set: {viewType: "Schedule", nameContains: "Space Schedule"}
+    set: {fieldNames: "Comments", position: "2"}
+    negative-set: {fieldNames: "Comments", position: "after ZZZ NO SUCH COLUMN"}
+
+  - fragment: set-schedule-appearance
+    write: true
+    setup: [find-views]
+    keep-chain: true
+    expect: appliedAppearance
+    setup-set: {viewType: "Schedule", nameContains: "Space Schedule"}
+    negative-setup-set: {viewType: "Schedule", nameContains: "Space Schedule"}
+    set: {fieldName: "Room: Name", newHeading: "HERON NAME"}
+    negative-set: {fieldName: "ZZZNOTHINGHERE", newHeading: "HERON NAME"}
+
+  - fragment: set-schedule-options
+    write: true
+    setup: [find-views]
+    keep-chain: true
+    expect: changed
+    setup-set: {viewType: "Schedule", nameContains: "Space Schedule"}
+    negative-setup-set: {viewType: "Schedule", nameContains: "Space Schedule"}
+    set: {showTitle: "no", showHeaders: "no"}
+    negative-set: {showTitle: "maybe"}
+
+  - fragment: set-schedule-sort-group
+    write: true
+    setup: [find-views]
+    keep-chain: true
+    expect: sorted
+    setup-set: {viewType: "Schedule", nameContains: "Space Schedule"}
+    negative-setup-set: {viewType: "Schedule", nameContains: "Space Schedule"}
+    set: {sortFieldNames: "Room: Name", descending: "true", showHeader: "false", showFooter: "false", showGrandTotal: "true", itemized: "true"}
+    negative-set: {sortFieldNames: "ZZZ NO SUCH COLUMN", descending: "true", showHeader: "false", showFooter: "false", showGrandTotal: "true", itemized: "true"}
+
+  - fragment: group-schedule-headers
+    write: true
+    setup: [find-views]
+    keep-chain: true
+    expect: grouped
+    setup-set: {viewType: "Schedule", nameContains: "Space Schedule"}
+    negative-setup-set: {viewType: "Schedule", nameContains: "Space Schedule"}
+    set: {fromColumn: "Room: Number", toColumn: "Room: Name", caption: "Room"}
+    negative-set: {fromColumn: "ZZZ No Such Column", toColumn: "Room: Name", caption: "Room"}
+
+  # ---- MODIFY: sheets -------------------------------------------------------
+  - fragment: manage-sheet-sets
+    write: true
+    setup: [find-sheets]
+    keep-chain: true
+    setup-set: {numberOrNameContains: "Lighting"}
+    negative-setup-set: {numberOrNameContains: "ZZZ"}
+    set: {mode: "create", setName: "HERON SET Z1"}
+    negative-set: {mode: "create", setName: "HERON SET Z1"}
+
+  - fragment: center-viewports-on-sheets
+    write: true
+    setup: [find-sheets]
+    keep-chain: true
+    expect: centred
+    setup-set: {numberOrNameContains: "Lighting"}
+    negative-setup-set: {numberOrNameContains: "Unnamed"}
+    set: {}
+    negative-set: {}
+
+  # ---- MODIFY: no selection -------------------------------------------------
+  - fragment: create-duct-runs
+    write: true
+    expect: runsDrawn
+    set: {systemType: "Supply Air", ductType: "Rectangular Duct: Mitered Elbows / Tees", level: "Level 1", runs: "400x200: 0,-60000,2700; 4000,-60000,2700 | 300x300: 6000,-60000,2700; 9000,-60000,2700"}
+    negative-set: {systemType: "Supply Air", ductType: "Rectangular Duct: Mitered Elbows / Tees", level: "Level 1", runs: ""}
+
+  - fragment: create-linear-dimension
+    write: true
+    setup: [create-grids]
+    expect: created
+    set: {origin: "0,-60000,0", spacingsAcross: "6000,6000", spacingsUp: "6000,6000", firstLetter: "Q", firstNumber: 91, view: "Level 1 HVAC Plan", between: "grid Q | grid R", lineFrom: "-3000,-54000,0", lineTo: "15000,-54000,0"}
+    negative-set: {origin: "0,-60000,0", spacingsAcross: "6000,6000", spacingsUp: "6000,6000", firstLetter: "Q", firstNumber: 91, view: "Level 1 HVAC Plan", between: "grid Q | grid Nope", lineFrom: "-3000,-54000,0", lineTo: "15000,-54000,0"}
+
+  - fragment: draw-family-detail-lines
+    write: true
+    expect: lineIds
+    set: {view: "Callout of Level 1 HVAC WSHP TYP", shapes: "rect -25,0 25,50", subcategory: "none", lockToPlanes: false}
+    negative-in: "P1102 Family"
+    negative-set: {view: "Ref. Level", shapes: "rect -25,0 25,50", subcategory: "none", lockToPlanes: false}
+
+  - fragment: draw-family-filled-region
+    write: true
+    expect: regionId
+    set: {workPlane: "Callout of Level 1 HVAC WSHP TYP", shapes: "rect -300,-50 300,50", regionType: "masking"}
+    negative-set: {workPlane: "Callout of Level 1 HVAC WSHP TYP", shapes: "rect -300,-50 300,50", regionType: "Not A Type"}

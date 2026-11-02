@@ -1,0 +1,109 @@
+# Round 4, 2026-11-02 - Revit 2020 after a restart. Scratch copies in %TEMP%\heron-work\prove-1102:
+#   "P1102 MEP"         Samples\rme_advanced_sample_project.rvt
+#   "P1102 MEP Family"  Samples\rme_advanced_sample_family.rfa - Mechanical Equipment, 6 connectors, 7 forms
+#   "P1102 Family"      Samples\rac_advanced_sample_family.rfa - line-based Generic Model, 0 connectors, 0 forms
+# Round 3's re-arrangements and the family tools. Every MODIFY run is ROLLED BACK.
+model: "P1102 MEP + P1102 MEP Family + P1102 Family (scratch copies of the Revit 2020 samples), Revit 2020"
+
+defaults:
+  in: "P1102 MEP"
+  setup: []
+
+jobs:
+  # ---- round 3 re-arrangements ---------------------------------------------
+  - fragment: find-clashes
+    setup: [filter-elements-by-category, set-selection]
+    setup-set: {category: "Ducts", levelId: "Level 1"}
+    negative-setup-set: {category: "Ducts", levelId: "Level 1"}
+    expect: clashes
+    set: {against: "", includeLinks: false, categories: "Walls", includeHost: true, compareParameter: "none"}
+    negative-set: {against: "", includeLinks: false, categories: "Furniture", includeHost: true, compareParameter: "none"}
+    note: >
+      Round 3 handed `categories` to the setup step as well and selected walls (row 142's shape);
+      the setup's own values keep the selection on the ducts.
+
+  - fragment: check-minimum-clearance
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: tooClose
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", defaultClearance: 5000, rules: "", includeInsulation: false}
+    negative-set: {category: "Sprinklers", defaultClearance: 1, rules: "", includeInsulation: false}
+
+  - fragment: move-elements
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: moved
+    set: {category: "Mass", offset: "1000,0,0"}
+    negative-set: {category: "Mass", offset: "0,0,0"}
+
+  - fragment: rotate-elements
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: rotated
+    set: {category: "Mass", angleRadians: 0.5, pivot: "0,0,0"}
+    negative-set: {category: "Mass", angleRadians: 0, pivot: "0,0,0"}
+
+  - fragment: create-floor
+    write: true
+    expect: created
+    set: {level: "Level 1", floorType: "Floor: STB 20.0", boundary: "0,-60000,0; 5000,-60000,0; 5000,-55000,0; 0,-55000,0"}
+    negative-set: {level: "Level 1", floorType: "Floor: STB 20.0", boundary: "0,-60000,0; 5000,-60000,0"}
+
+  - fragment: report-view-filters
+    set: {viewName: "*"}
+    negative-in: "P1102 Family"
+    negative-set: {viewName: "*"}
+
+  # ---- family reads ---------------------------------------------------------
+  - fragment: report-family-connectors
+    in: "P1102 MEP Family"
+    expect: connectorCount
+    negative-in: "P1102 Family"
+
+  - fragment: report-family-template
+    in: "P1102 MEP Family"
+    expect: templateReport
+    negative-in: "P1102 MEP"
+
+  - fragment: report-family-forms
+    in: "P1102 MEP Family"
+    expect: formList
+    set: {which: "all"}
+    negative-in: "P1102 Family"
+    negative-set: {which: "all"}
+
+  - fragment: check-family-standards
+    expect: offStandard
+    set: {namePattern: "ZZZ*", requiredParameters: "HERON NOT A PARAMETER", mustHaveConnectors: true}
+    negative-set: {namePattern: "*", requiredParameters: "", mustHaveConnectors: false}
+
+  # ---- family writes --------------------------------------------------------
+  - fragment: create-family-forms
+    in: "P1102 Family"
+    write: true
+    expect: formCount
+    set: {forms: "kind=extrusion workPlane=Ref. Level profile=circle 0,0 150 startMm=0 endMm=500 solid=true material=by category"}
+    negative-set: {forms: "kind=extrusion workPlane=ZZZ No Such Plane profile=circle 0,0 150 startMm=0 endMm=500 solid=true material=by category"}
+
+  - fragment: draw-family-detail-lines
+    in: "P1102 Family"
+    write: true
+    expect: lineIds
+    set: {view: "Ref. Level", shapes: "rect -25,0 25,50", subcategory: "none", lockToPlanes: true}
+    negative-in: "P1102 MEP"
+    negative-set: {view: "Ref. Level", shapes: "rect -25,0 25,50", subcategory: "none", lockToPlanes: true}
+
+  - fragment: draw-family-filled-region
+    in: "P1102 Family"
+    write: true
+    expect: regionId
+    set: {workPlane: "Ref. Level", shapes: "rect -300,-50 300,50", regionType: "Solid Black"}
+    negative-set: {workPlane: "Ref. Level", shapes: "rect -300,-50 300,50", regionType: "Not A Type"}
+
+  - fragment: set-family-settings
+    in: "P1102 MEP Family"
+    write: true
+    expect: changed
+    set: {settings: "Shared=yes"}
+    negative-in: "P1102 MEP"
+    negative-set: {settings: "Shared=yes"}

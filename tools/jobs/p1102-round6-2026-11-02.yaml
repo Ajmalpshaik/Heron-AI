@@ -1,0 +1,56 @@
+# Round 6, 2026-11-02 - Revit 2020, "P1102 MEP" = a scratch copy of Revit 2020's own
+# Samples\rme_advanced_sample_project.rvt in %TEMP%\heron-work\prove-1102.
+# Round 5's re-arrangements. Every run is ROLLED BACK. The six masses carry no mass floors,
+# so the mass-floor tools get theirs from CREATE_MASS_FLOORS inside the same rolled-back run.
+model: "P1102 MEP (scratch copy of rme_advanced_sample_project.rvt), Revit 2020"
+
+defaults:
+  in: "P1102 MEP"
+  setup: []
+
+jobs:
+  - fragment: create-duct-runs
+    write: true
+    expect: runsDrawn
+    set: {systemType: "Supply Air", ductType: "Rectangular Duct: Mitered Elbows / Tees", level: "Level 1", runs: "400x200: 0,-60000,2700; 4000,-60000,2700 | 300x300: 6000,-60000,2700; 9000,-60000,2700"}
+    negative-set: {systemType: "Supply Air", ductType: "Rectangular Duct: Mitered Elbows / Tees", level: "Level 1", runs: "400x200: 0,-60000,2700; 0,-60000,2700"}
+
+  - fragment: draw-family-detail-lines
+    write: true
+    expect: lineIds
+    set: {view: "Callout of Level 1 HVAC WSHP TYP", shapes: "rect -25,0 25,50", subcategory: "none", lockToPlanes: false, lineKind: "detail"}
+    negative-in: "P1102 Family"
+    negative-set: {view: "Ref. Level", shapes: "rect -25,0 25,50", subcategory: "none", lockToPlanes: false, lineKind: "detail"}
+
+  - fragment: frame-elements-in-camera
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: framed
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", viewName: "Heron Frame - Callout Ducts", direction: "south-east", lookDownDeg: "30"}
+    negative-set: {category: "Sheets", viewName: "Heron Frame - Sheets", direction: "south-east", lookDownDeg: "30"}
+
+  - fragment: create-walls-by-face
+    write: true
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: created
+    setup-set: {category: "Mass"}
+    negative-setup-set: {category: "Walls", levelId: "Level 1"}
+    set: {wallType: "Basic Wall: Exterior - Brick on Mtl. Stud", faces: "", locationLine: ""}
+    negative-set: {wallType: "Basic Wall: Exterior - Brick on Mtl. Stud", faces: "", locationLine: ""}
+
+  - fragment: set-mass-floor-usage
+    write: true
+    setup: [filter-elements-by-category, create-mass-floors]
+    keep-chain: true
+    expect: changed
+    set: {category: "Mass", levelNames: "Level 1, Level 2", usage: "Level 1=Retail; Level 2=Office"}
+    negative-set: {category: "Mass", levelNames: "Level 1, Level 2", usage: "Roof Level=Retail"}
+
+  - fragment: remove-mass-floors
+    write: true
+    setup: [filter-elements-by-category, create-mass-floors]
+    keep-chain: true
+    expect: removed
+    set: {category: "Mass", levelNames: "Level 1, Level 2"}
+    negative-set: {category: "Sprinklers", levelNames: "Level 1, Level 2"}
