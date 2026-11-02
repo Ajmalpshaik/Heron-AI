@@ -21,9 +21,12 @@ jobs:
     negative-set: {category: "Walls", levelId: "L1", systemType: "Supply Air", systemName: "Heron Supply"}
 
   - fragment: connect-air-terminals
-    setup: [filter-elements-by-category, set-selection, create-duct-runs]
+    setup: [filter-elements-by-category, set-selection]
     expect: connected
-    set: {category: "Air Terminals", levelId: "L1", systemType: "Supply Air", ductType: "Rectangular Duct: Default", level: "L1", runs: "300x200: 68000,0,3000; 74000,0,3000", ducts: "Ducts", maxDistanceMm: 3000}
-    negative-set: {category: "Air Terminals", levelId: "L1", systemType: "Supply Air", ductType: "Rectangular Duct: Default", level: "L1", runs: "300x200: 68000,0,3000; 74000,0,3000", ducts: "Ducts", maxDistanceMm: 10}
+    set: {category: "Air Terminals", levelId: "L1", ducts: "Ducts", maxDistanceMm: 3000}
+    negative-set: {category: "Air Terminals", levelId: "L1", ducts: "Ducts", maxDistanceMm: 10}
     note: >
-      The duct runs 600 mm above the diffusers; the negative allows only 10 mm, so nothing is in reach.
+      Second arrangement. The first drew the duct by CREATE_DUCT_RUNS inside the run, and its
+      `elements` (the duct) outranked the diffusers. After CREATE_DUCT_RUNS was proved (tracked
+      1/2/3 segments) and signed, one 300x200 duct was KEPT 600 mm above the two diffusers, and the
+      run has no change step. The negative allows 10 mm, so nothing is in reach.

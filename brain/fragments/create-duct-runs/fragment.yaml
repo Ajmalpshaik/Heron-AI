@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -154,6 +154,43 @@ contract:
     - name: summary
       role: result
       type: string
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: Project2 (6,034 elements), Revit 2024, session 57392
+  positive_case: 'run with runs=400x200: 80000,0,2700; 83000,0,2700 - the first of 3 tracked
+    inputs - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned diameterParam BuiltInParameter, drawn duct, elements 1 item(s) [Duct],
+    heightParam BuiltInParameter, invariant CultureInfo, isConduit false, isDuct true, isFlex
+    false, isFlexDuct false, isFlexPipe false, isPipe false, isTray false, kindSaid any, lengthMm
+    2999.99999999999, maxLengthMm 0, mmPerFoot 304.8, numberStyle NumberStyles, pending 2
+    item(s) [Duct, Duct], pendingAsked 2 item(s) [1.31233595800525, 0.656167979002625], pendingLabel
+    2 item(s) [run 1, segment 1, run 1, segment 1], pendingParam 2 item(s) [RBS_CURVE_WIDTH_PARAM,
+    RBS_CURVE_HEIGHT_PARAM], problems 0 item(s), runDiameter 1 item(s) [0], runHeight 1 item(s)
+    [0.656167979002625], runLabel 1 item(s) [run 1], runPoints 1 item(s) [System.Collections.Generic.List`1[Autodesk.Revit.DB.XYZ]],
+    runTexts 1 item(s) [400x200: 80000,0,2700; 83000,0,2700], runWidth 1 item(s) [1.31233595800525],
+    runsDrawn 1, segments 1, shortest 0.00256026455729167, sized 1, summary 1 run(s) drawn
+    as 1 duct piece(s), 3000 mm along the points given; 1 sized as asked. NOTHING IS CONNECTED
+    - sharing a point is not a joint in Revit. FIT_MEP_JOINTS puts the fittings in and can
+    take these duct pieces straight from here, systemName Supply Air, takesDiameter true,
+    takesWidth true, typeName Default, widthParam BuiltInParameter. inputs came systemType
+    as given; ductType as given; level as given; runs as given; maxLengthMm not given - "0",
+    the card''s own default (optional); runKind not given - "any", the card''s own default
+    (optional). on Project2'
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). create-duct-runs\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 3 different inputs:\n\n      runs=400x200: 80000,0,2700; 83000,0,2700 -> segments\
+    \ 1\n      runs=400x200: 80000,0,2700; 83000,0,2700; 83000,3000,2700 -> segments 2\n \
+    \     runs=400x200: 80000,0,2700; 83000,0,2700; 83000,3000,2700; 86000,3000,2700 -> segments\
+    \ 3\n\n    Different inputs, exact matches every time. A fragment falling back to the\
+    \ active view, the whole model, or a previous run could not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: aad53f475c93a7ba
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
