@@ -1,0 +1,127 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-079
+semantic-identity: "make a toposurface from survey points, or add a building pad or a subregion to it, on the topography Revit had before toposolids"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "make a toposurface from these
+# points", "add a building pad at Level 0 inside these corners" and "add a
+# subregion for the car park on the toposurface" - Massing & Site on Revit 2020
+# to 2023. No card touched it (grep of brain/fragments that day for
+# TopographySurface, BuildingPad and SiteSubRegion: nothing). CREATE_TOPOSOLID
+# and EDIT_TOPOSOLID (its mode subdivide, which ADD_TOPOSOLID_SUBDIVISION was
+# merged into) are look-alikes by word - terrain, pad, car park - for the
+# TOPOSOLID, an element Revit 2024 brought and absent before; this is the
+# toposurface, its pads and its subregions, which a 2020-2023 model has instead.
+# CREATE_FLOOR makes a floor; a building pad is cut into a toposurface.
+#
+# ONE CARD FOR THE THREE. Each is a single Create call on the same old site,
+# from a list of points in millimetres; the mode chooses which. Three cards
+# would share every input but the level, the type and the host.
+#
+# NEVER GUESSED (D-33). A level, a pad type or a host toposurface not named is
+# taken only when the model has exactly one; otherwise refused with the list.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.geometry
+capability: CREATE_TOPOSURFACE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes a toposurface from points with heights in millimetres, or adds a
+  building pad at a level or a subregion on a toposurface inside an outline of
+  corners in millimetres, and reads back its id, points and area - the site
+  tools of Revit 2020 to 2023, before toposolids.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: mode
+      # "toposurface", "pad" or "subregion".
+      type: string
+      source: request
+    - name: pointsMm
+      # toposurface: "x,y,z; x,y,z; ..." three or more, heights in millimetres
+      # above the internal origin (CREATE_TOPOSOLID's rule). pad and
+      # subregion: corners "x,y; x,y; ..." closed automatically.
+      type: string
+      source: request
+    - name: level
+      # pad: the level by name. Left out, taken only when the model has one;
+      # otherwise refused with the levels listed.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: typeName
+      # pad: the building pad type by name. Left out, taken only when the
+      # model has one; otherwise refused with the types listed.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: host
+      # subregion: the toposurface's id. Left out, taken only when the model
+      # has one; otherwise refused with the toposurfaces listed.
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: resultIds
+      # The toposurface, building pad or subregion made, read back. Something
+      # the write DID.
+      role: result
+      type: IList<ElementId>
+    - name: report
+      # What was read back: a toposurface's points, heights and areas; a pad's
+      # type, level, host toposurface, edges and area; a subregion's host,
+      # edges, area and whether its host lists it (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why NOTHING WAS MADE, as one sentence - a release with toposolids
+      # instead, a point that is not numbers, a level, type or host not
+      # named, with the list; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023"]
+runtime: [net48]
+tests: tests/
+
+compatibility-note: >
+  TopographySurface.Create(Document, IList<XYZ>), ArePointsDistinct,
+  GetPoints, GetBoundaryPoints, GetHostedSubRegionIds and IsSiteSubRegion,
+  SiteSubRegion.Create(Document, IList<CurveLoop>, ElementId), IsValidBoundary,
+  GetBoundary and TopographySurface, BuildingPad.Create(Document, ElementId,
+  ElementId, IList<CurveLoop>), GetBoundary and HostId, BuildingPadType and
+  Level.ProjectElevation are present 2020 to 2027 - read with tools/api-surface
+  --members on 2026-11-02 - and TopographySurface.Create and SiteSubRegion
+  .Create are marked OBSOLETE from 2024, when toposolids replaced the
+  toposurface. The card claims 2020 to 2023; run on a later release it refuses
+  and names CREATE_TOPOSOLID's and EDIT_TOPOSOLID's words.
+
+# ROUTING (2026-11-02) - the same rows are in CREATE_TOPOSOLID and EDIT_TOPOSOLID.
+#
+#   "make a toposurface from these points"                -> here, mode toposurface
+#   "add a building pad at Level 0 inside these corners"  -> here, mode pad
+#   "add a subregion for the car park on the toposurface" -> here, mode subregion
+#   "make a toposolid from these survey points"           -> CREATE_TOPOSOLID (2024 on)
+#   "add a car park area to the terrain"                  -> EDIT_TOPOSOLID, mode
+#                                                            subdivide (2024 on)
+#   "cut the terrain with the building pad"               -> EDIT_TOPOSOLID, excavate
+utterances:
+  - make a toposurface from these points
+  - add a building pad at Level 0 inside these corners
+  - add a subregion for the car park on the toposurface

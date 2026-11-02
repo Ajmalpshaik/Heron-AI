@@ -376,3 +376,8 @@ utterances:
   # claims it, and it reached here before CONVERT_TO_FLEX_DUCT was added,
   # which took it on the model backend.
   - run flex to that diffuser
+  # DECLARED 2026-11-02 (row 5b-1439): SPLIT_MEP_RUN's routing row claims it
+  # for this card, and it reached here before CREATE_TOPOSURFACE and
+  # CREATE_PROPERTY_LINE were added; with them CONVERT_TO_FLEX_DUCT took it on
+  # the model backend, a coin toss of 0.4 of one rank.
+  - draw a new duct

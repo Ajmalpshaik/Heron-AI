@@ -1358,6 +1358,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-mi.md`](needs-checking/group-mi.md)
 
+## Group MJ - Massing & Site before toposolids and the property line - make a toposurface from survey points, add a building pad at a level or a subregion on a toposurface, and draw a property line through points or from a table of distances and bearings: `CREATE_TOPOSURFACE`, `CREATE_PROPERTY_LINE` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-mj.md`](needs-checking/group-mj.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

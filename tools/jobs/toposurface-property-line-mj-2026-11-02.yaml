@@ -1,0 +1,66 @@
+# NEEDS-CHECKING Group MJ - CREATE_TOPOSURFACE and CREATE_PROPERTY_LINE (both
+# new), built 2026-11-02 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/toposurface-property-line-mj-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/toposurface-property-line-mj-2026-11-02.yaml
+#
+# TWO MODELS, because the two cards share no release (docs/needs-checking/
+# group-mj.md, MJ1):
+#   "site-mj-2023"  a scratch project from Revit 2023's metric architectural
+#                   template - the last release with the toposurface tools.
+#                   Massing & Site > Toposurface by hand: four points at 0,0 /
+#                   60000,0 / 60000,40000 / 0,40000 mm, elevation 0 -
+#                   toposurface A. One wall on Level 1 - wall W. Both ids
+#                   written down with Manage > IDs of Selection and typed below
+#                   in place of the placeholders 0000001 (A) and 0000002 (W).
+#   "site-mj-2027"  a scratch project from Revit 2027's metric architectural
+#                   template - the first release with a property line in the
+#                   API. Nothing drawn.
+# Both saved under %TEMP%\heron-work, never a working model, a site plan in
+# front.
+#
+# THE ARRANGEMENT: neither card takes a selection; every input is a value.
+# Each negative is a DIFFERENT VALUE, not an empty one (fragment-proving, rules
+# 3 and 5): a wall's id where a toposurface's belongs, and the same four
+# corners of a property line in an order whose edges cross. Every write here
+# is ROLLED BACK.
+
+model: "site-mj-2023 (toposurface A, wall W) and site-mj-2027 (empty) - scratch projects from the metric architectural templates"
+
+jobs:
+  - fragment: create-toposurface
+    expect: resultIds
+    in: "site-mj-2023"
+    write: true
+    setup: []
+    set:
+      mode: "subregion"
+      pointsMm: "35000,5000; 55000,5000; 55000,20000; 35000,20000"
+      host: "0000001"
+    negative-set:
+      mode: "subregion"
+      pointsMm: "35000,5000; 55000,5000; 55000,20000; 35000,20000"
+      host: "0000002"
+    note: >
+      MJ2. Negative - THE FIRST CASE TO RUN: wall W's id as the host, so
+      resultIds empty and refused "No toposurface has the id ... - the
+      toposurfaces here are toposurface <A> (4 points). NOTHING WAS MADE."
+      Positive: one subregion, report "subregion ... on toposurface <A>, 4
+      edge(s), projected area 300 m2, listed among the toposurface's
+      subregions". The toposurface and pad modes are MJ3, by hand.
+
+  - fragment: create-property-line
+    expect: propertyLine
+    in: "site-mj-2027"
+    write: true
+    setup: []
+    set:
+      pointsMm: "0,0; 40000,0; 40000,25000; 0,25000; 0,0"
+    negative-set:
+      pointsMm: "0,0; 40000,25000; 40000,0; 0,25000; 0,0"
+    note: >
+      MJ4. Negative - THE FIRST CASE TO RUN: the same corners, edges
+      crossing, so propertyLine null and refused "... may cross itself" (or
+      "Revit refused the property line: ..." from Create). Positive: report
+      "property line ..., sketched, closed, area 1000 m2, starting at 0,0 mm."
+      The table is MJ5, by hand.
