@@ -71,7 +71,10 @@ contract:
   provides:
     # The whole network as one JSON string, format 1.
     - name: networkJson
-      role: result
+      # ACCOUNTING, NOT RESULT (rows 5b-1401, 5b-1412): it always carries the
+      # systems it chose from, so a name no system has still fills it;
+      # elementCount is the result.
+      role: accounting
       type: string
     # How many elements of the chosen system were read. Not `elements` - that
     # name is an element list everywhere else, and a count under it would be

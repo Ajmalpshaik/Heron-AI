@@ -76,7 +76,10 @@ contract:
       type: string
     - name: kindUsed
       # "DWG", "DXF", "DGN" or "PDF". Empty when nothing was found.
-      role: result
+      # ACCOUNTING, NOT RESULT (row 5b-1412): it names the setup that was
+      # FOUND, and is filled when every option asked is refused; done and
+      # changed are the result.
+      role: accounting
       type: string
     - name: unchangedOptions
       # Options asked for that were already set that way. Given, not found

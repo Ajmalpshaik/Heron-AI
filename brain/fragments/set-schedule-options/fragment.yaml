@@ -149,7 +149,10 @@ contract:
       # A second read of every setting asked, per schedule, "before -> after"
       # or "(already)". ONE STRING joined with "; ", because a list reaches the
       # chat cut to three entries of sixty characters.
-      role: result
+      # ACCOUNTING, NOT RESULT (row 5b-1412): it is written for every schedule
+      # handed in - "nothing it could set" too - so it never reads empty;
+      # changed is the result.
+      role: accounting
       type: string
     - name: refused
       # Why a setting was not set, in the user's words - a word that is not
