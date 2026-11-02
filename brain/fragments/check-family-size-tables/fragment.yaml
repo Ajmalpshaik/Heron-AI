@@ -77,7 +77,10 @@ contract:
     - name: report
       # Every problem, then every note, on one line each. A string, because a
       # list is abbreviated to three entries before a reader sees it.
-      role: result
+      # ACCOUNTING, NOT RESULT (row 5b-1410): its notes - ROWS NOT CHECKED,
+      # UNUSED TABLE - fill it on a family with no problem at all, so it can
+      # never read empty; problemCount is the result.
+      role: accounting
       type: string
     - name: lookupsChecked
       # size_lookup calls found in the family's formulas. Work DONE, never a

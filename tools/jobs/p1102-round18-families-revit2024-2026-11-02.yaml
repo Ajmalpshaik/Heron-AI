@@ -1,0 +1,66 @@
+# Round 18, 2026-11-02 - Revit 2024.3, session 59960. Families copied from Revit 2020's US Metric
+# library into %TEMP%\heron-work\prove-1102\fam and opened in Revit 2024 (upgraded in memory):
+#   "P1102 Box"      Mass\M_Box.rfa - one solid form bcb0b59e-...-0000786e, no divided surface
+#   "P1102 Tripod1"  Mass\M_Diagnostic Tripod-1 point.rfa - an adaptive component
+#   "P1102 Elbow24"  Pipe\Fittings\Generic\M_Elbow - Generic.rfa - 1 size_lookup, problemCount 0
+#   "P1102 Light24"  Lighting\...\M_Downlight - Recessed Can.rfa - no nested family; the nested
+#                    one loaded is M_Downlight - Round - LED, type LED15FMM9-W120
+# plus "Snowdon Towers Sample Structural" (a scratch copy of the Revit 2024 sample) as the project
+# for placing an adaptive component. What each needs that the family lacks is made by a PROVEN
+# creator inside the same rolled-back run. Every run is ROLLED BACK.
+model: "P1102 family copies (Revit 2020 US Metric library) + Snowdon Towers Sample Structural, Revit 2024"
+
+defaults:
+  setup: []
+  write: true
+
+jobs:
+  - fragment: check-family-size-tables
+    in: "P1102 Elbow24"
+    setup: [write-family-size-table]
+    expect: problemCount
+    set: {csvPath: "C:/Users/ajmal/AppData/Local/Temp/heron-work/prove-1102/fam/pos/M_Pipe Fitting - Generic.csv", tableName: "M_Pipe Fitting - Generic"}
+    negative-set: {csvPath: "C:/Users/ajmal/AppData/Local/Temp/heron-work/prove-1102/fam/p1102-other-table.csv", tableName: "P1102 Other Table"}
+    note: >
+      Third arrangement. Revit refused a size_lookup at a missing column as "an invalid formula
+      string", and refused a Lookup Table Name no table holds ("Parameter set failed"). So the
+      positive REPLACES the family's own table with one that has no FOD column - the column
+      "Fitting Outside Diameter"'s size_lookup reads; the negative writes the same rows as a NEW
+      table and leaves the family's own whole (problemCount 0 before the run). Revit names an
+      imported table after its CSV FILE, so the positive's file is called "M_Pipe Fitting - Generic.csv".
+
+  - fragment: set-divided-surface-layout
+    in: "P1102 Box"
+    setup: [divide-family-surface]
+    expect: applied
+    set: {form: "bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e", face: "front", uGrid: "6", vGrid: "3000 mm", pattern: "", dividedSurface: "only", surfaceLayout: "u layout=number; u number=8; v layout=number; v number=4"}
+    negative-set: {form: "bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e", face: "front", uGrid: "6", vGrid: "3000 mm", pattern: "", dividedSurface: "only", surfaceLayout: "u layout=ZZZ"}
+
+  - fragment: report-divided-surfaces
+    in: "P1102 Box"
+    setup: [divide-family-surface]
+    expect: surfaceCount
+    set: {form: "bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e", face: "front", uGrid: "6", vGrid: "3000 mm", pattern: "", withNodes: false}
+    negative-in: "P1102 Light24"
+    negative-set: {form: "bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e", face: "front", uGrid: "6", vGrid: "3000 mm", pattern: "", withNodes: false}
+
+  - fragment: set-adaptive-point-orientation
+    in: "P1102 Tripod1"
+    expect: changed
+    set: {orientation: "Host and Loop System", points: "all"}
+    negative-in: "P1102 Light24"
+    negative-set: {orientation: "Host and Loop System", points: "all"}
+
+  - fragment: place-adaptive-components
+    in: "Snowdon Towers Sample Structural"
+    setup: [load-family]
+    expect: placedIds
+    set: {familyPath: "C:/ProgramData/Autodesk/RVT 2020/Libraries/US Metric/Mass/M_Diagnostic Tripod-3 point.rfa", reload: false, overwriteValues: false, familyType: "M_Diagnostic Tripod-3 point", pointsMm: "0,-60000,0; 3000,-60000,0; 0,-57000,0", onNodesOf: ""}
+    negative-set: {familyPath: "C:/ProgramData/Autodesk/RVT 2020/Libraries/US Metric/Mass/M_Diagnostic Tripod-3 point.rfa", reload: false, overwriteValues: false, familyType: "M_Diagnostic Tripod-3 point", pointsMm: "0,-60000,0; 3000,-60000,0", onNodesOf: ""}
+
+  - fragment: add-family-type-parameter
+    in: "P1102 Furn24"
+    setup: [load-family, place-family-instances]
+    expect: linked
+    set: {familyPath: "C:/ProgramData/Autodesk/RVT 2020/Libraries/US Metric/Lighting/Architectural/Internal/M_Downlight - Round - LED.rfa", reload: false, overwriteValues: false, symbol: "M_Downlight - Round - LED : LED15FMM9-W120", points: "0,0,0", level: "Ref. Level", parameterName: "Lamp Type", category: "Lighting Fixtures", instance: false, parameterGroup: "", elements: "M_Downlight - Round - LED", typeValues: ""}
+    negative-set: {familyPath: "C:/ProgramData/Autodesk/RVT 2020/Libraries/US Metric/Lighting/Architectural/Internal/M_Downlight - Round - LED.rfa", reload: false, overwriteValues: false, symbol: "M_Downlight - Round - LED : LED15FMM9-W120", points: "0,0,0", level: "Ref. Level", parameterName: "Lamp Type", category: "Generic Models", instance: false, parameterGroup: "", elements: "M_Downlight - Round - LED", typeValues: ""}

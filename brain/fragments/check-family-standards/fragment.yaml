@@ -127,7 +127,11 @@ contract:
     # CHECKED with its fix, joined - a list would arrive cut to three. Empty
     # in a project.
     - name: familyReport
-      role: result
+      # ACCOUNTING, NOT RESULT (row 5b-1410): every check is written here,
+      # PASS lines too, so a family with nothing off standard still fills it;
+      # offStandard and warned are the result. classificationReport says so
+      # for the same reason.
+      role: accounting
       type: string
     - name: warned
       # In a family document, the WARNs - things that may be meant. In a
