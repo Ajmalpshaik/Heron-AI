@@ -224,6 +224,12 @@ utterances:
   - change the body text of the schedule
   - stripe the schedule rows
   - include elements in links in this schedule
+  # ADDED 2026-11-01 (FRAGMENT-ISSUES row 5b-1385). The routing table above
+  # sends the shorter sentence here, includeLinks yes. It reached FIND_CLASHES
+  # and, once REPORT_STRUCTURAL_CONNECTIONS and PLACE_STRUCTURAL_CONNECTIONS
+  # moved the ranking, ZOOM_TO_LINKED_ELEMENTS; declared here, so the identity
+  # route answers it before any ranking runs.
+  - include elements in links
   - filter the schedule by sheet
   - add an embedded schedule
   - set the schedule row height

@@ -208,6 +208,19 @@ compatibility-note: >
 #     is the type swap for any category, by id or from a source element. See
 #     the same block on that card.
 
+# STEEL CONNECTIONS (2026-11-01). A structural connection is an element with a
+# type, so changing its type is this card's job - newTypeId the connection
+# type, by name, with the connections selected. Nothing else changes one, and
+# PLACE_STRUCTURAL_CONNECTIONS leaves a connection handed to it alone. The
+# same rows are in REPORT_STRUCTURAL_CONNECTIONS and
+# PLACE_STRUCTURAL_CONNECTIONS.
+#
+#   "change these connections to Clip angle"   -> here, the connections
+#                                                 selected
+#   "list the connection types loaded"         -> REPORT_STRUCTURAL_CONNECTIONS
+#   "put a shear plate connection between this beam and column"
+#                                              -> PLACE_STRUCTURAL_CONNECTIONS
+
 utterances:
   - change the type
   - swap them to a different type
@@ -234,3 +247,8 @@ utterances:
   # rebar numbering cards moved the ranking; declared here, so the identity
   # route answers it before any ranking runs.
   - change this one mullion
+  # ADDED 2026-11-01 with REPORT_STRUCTURAL_CONNECTIONS and
+  # PLACE_STRUCTURAL_CONNECTIONS - the modeller's words for a steel
+  # connection's type, which this card changes; see the STEEL CONNECTIONS
+  # block above.
+  - change these connections to Clip angle

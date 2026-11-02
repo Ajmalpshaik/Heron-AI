@@ -1,0 +1,88 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that adds elements, "made something nobody asked for": a
+# connection of a type nobody chose, a connection joining members that do not
+# meet, a second connection where one already stood.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for PLACE_STRUCTURAL_CONNECTIONS): a scratch project
+# new from Revit's metric STRUCTURAL template, saved under %TEMP%\heron-work,
+# never a working model - REPORT_STRUCTURAL_CONNECTIONS' project saved as a
+# copy BEFORE its connections were drawn. On Level 1: steel columns C1 and C2
+# standing apart, steel beam B1 framing into C1's face, a structural wall W1
+# away from all three, and the template's grids. No connection. Before
+# anything runs, open Steel > Connection >
+# Connection Settings and write down the loaded types - load "Shear plate" and
+# "Base plate" there if the template has not got them (Revit's Steel
+# Connections must be installed for a detailed type), and save. Where the model
+# differs, the job file changes - never the card. EVERY RUN ROLLED BACK, so
+# each case starts from the model as saved.
+
+positive:
+  - given: >
+      B1 and C1 selected, connectionType "Shear plate" (or the type the
+      arrangement wrote down), layout left out
+    expect: >
+      created one id; report "Connection 1 (B1, C1): placed (<id>), type
+      "<type>", joins 2: Structural Columns ... (primary), Structural Framing
+      ..."; the connection, read in the same rolled-back group, of that type
+      and joining exactly B1 and C1
+
+  - given: >
+      the structural columns of the Level 1 plan (C1 and C2) selected,
+      connectionType "Base plate", layout "each" - the job file's positive
+    expect: >
+      two connections, one on each column alone, each "joins 1" and naming
+      the end Revit put it at (end index 0 or 1). THE FIRST POSITIVE TO RUN
+
+  - given: >
+      the first positive again, connectionType written as "Family: Type" from
+      the list REPORT_STRUCTURAL_CONNECTIONS gave
+    expect: the same connection - both spellings name one type
+
+negative:
+  - given: >
+      the grids of the Level 1 plan selected, connectionType "Base plate",
+      layout "each" - the job file's negative
+    expect: >
+      created none; each grid named "not a structural framing, column, wall,
+      floor or foundation - Revit connects only those", never handed to Revit;
+      refused "Nothing handed in is a structural framing, column, wall, floor
+      or foundation"; no connection added to the model. THE FIRST CASE TO RUN
+
+  - given: >
+      B1 and C2 selected - two members that do not touch - connectionType the
+      shear plate type, layout left out
+    expect: >
+      created none; refused names C2 as touching none of B1 and says layout
+      "each" places one connection per member; no connection added
+
+  - given: B1 and C1 selected, connectionType left out
+    expect: >
+      created none; refused "No connection type was named, so nothing was
+      placed - the model's connection types are ..." - every type named, none
+      chosen, even when the model holds only one
+
+  - given: B1 and C1 selected, connectionType "Moment end plate" - a name the model has no type of
+    expect: created none; refused "No connection type called "Moment end plate"" with the list
+
+  - given: >
+      B1 and C1 selected, the same type, after the first positive was KEPT in
+      a scratch copy - the pair already joined
+    expect: >
+      created none; alreadyConnected 1; the report names the connection that
+      already joins them, by id and type - nothing doubled, nothing deleted
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE, AND NOTHING DELETED. Golden Rule 16 - undo
+      is the caller's; the SubTransactions live inside the caller's
+      transaction. No member and no connection that was there before is gone
+
+second_route:
+  - >
+    A Structural Connections schedule, read inside the same rolled-back group:
+    one more row per connection placed, of the type asked
+  - >
+    Revit's own Steel > Connection on the same members, compared in a 3D view:
+    the same type at the same joint, the same primary member
+  - one Ctrl+Z takes every connection placed away in a single step (Golden Rule 16)
