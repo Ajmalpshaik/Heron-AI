@@ -46,7 +46,7 @@ asking to change one is refused naming what can be changed; and moving dimension
 **Routing.** `tools/check-routing.py` on its own scratch store, on a copy of the tree without the two cards and on
 this change (`model` backend): no question answered by a write; claimed in a routing table and not reached 67
 before and 67 after, the same lines - once two sentences these cards had pulled were declared on the cards that
-claim them ([row 5b-1404](../fragment-issues/section-5b-rows-401-425.md), FIXED). The five declared sentences
+claim them ([row 5b-1408](../fragment-issues/section-5b-rows-401-425.md), FIXED). The five declared sentences
 reach their card by identity; through the host's lookup, with and without its question flag, on Revit 2024 and
 with no Revit filter, the question reaches `REPORT_DIMENSION_TYPES` every time, and each change reaches
 `SET_DIMENSION_TYPE` without the flag and the read with it. A paraphrase nobody has said, *"what tick mark does

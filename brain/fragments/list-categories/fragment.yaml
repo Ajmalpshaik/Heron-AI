@@ -275,7 +275,7 @@ utterances:
   - what colour is the signature subcategory
   - what line weight is the hidden lines subcategory
   - list the object styles in this family
-  # ADDED 2026-11-02, row 5b-1404 (FIXED). The routing table above claims it;
+  # ADDED 2026-11-02, row 5b-1408 (FIXED). The routing table above claims it;
   # it reached this card by ranking until REPORT_DIMENSION_TYPES - another read
   # of a "style" - was added and took it. Declared, so identity answers it.
   - show the object style of Generic Annotations
