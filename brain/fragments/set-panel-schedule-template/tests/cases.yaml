@@ -1,0 +1,84 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "changed something nobody asked for": a template already
+# there replaced under its own name, or a panel's schedule switched when it
+# should have been left alone.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for SET_PANEL_SCHEDULE_TEMPLATE): Group KU's scratch
+# project, new from Revit's metric ELECTRICAL template, saved under
+# %TEMP%\heron-work - never a working model. By hand before the run: write
+# down the panel schedule templates the template ships with (Manage > Panel
+# Schedule Templates > Manage Templates) - "Branch Panel" is assumed below;
+# use whatever name it has - then place two branch panelboards, Panel Name
+# DB-1 and DB-2, and make a panel schedule for DB-1 only
+# (CREATE_PANEL_SCHEDULES, or Create Panel Schedules). REPORT_ELECTRICAL_SETTINGS
+# with show "templates" is run before and after every case - the second route.
+#
+# Every run below is ROLLED BACK (validate --write) except the one try-once,
+# which the modeller keeps or discards.
+#
+# The negative leg is a DIFFERENT VALUE, not an empty one: a template name the
+# model already has. It must come back with `changed` 0 and the template list
+# the same before and after.
+
+positive:
+  - given: >
+      action make, fromTemplate "Branch Panel", templateName "DB Standard"
+    expect: >
+      changed 1; after holds "\"DB Standard\" (branch panel)" beside every
+      template in before; Panel Schedule Templates in the Project Browser
+      shows it, and opened it has Branch Panel's columns and sections
+
+  - given: >
+      after the one above is kept: action apply, panelName "DB-1",
+      templateName "DB Standard"
+    expect: >
+      changed 1; before "panel DB-1 (id ...): schedule \"DB-1\" on \"Branch
+      Panel\"", after the same on "DB Standard"; DB-1's panel schedule opened
+      in Revit shows the template DB Standard
+
+  - given: >
+      action apply, DB-1 selected in Revit and panelName left out,
+      templateName "Branch Panel" (after DB-1 was switched to DB Standard)
+    expect: >
+      changed 1 - the selection reaches the same panel as its name
+
+negative:
+  - given: >
+      action make, fromTemplate "Branch Panel", templateName "Branch Panel" -
+      a name the model already has
+    expect: >
+      changed 0; skipped "A panel schedule template is already named
+      \"Branch Panel\" - left as it is, nothing made."; before and after the
+      same list. THE FIRST CASE TO RUN
+
+  - given: action make, templateName "DB Standard 2", fromTemplate left out
+    expect: >
+      changed 0; refused "No template was named to copy ... - which one is
+      never guessed", the model's templates listed
+
+  - given: action apply, panelName "DB-2" (no panel schedule yet), templateName "Branch Panel"
+    expect: >
+      changed 0; skipped "panel DB-2 (id ...) has no panel schedule yet ..." -
+      no schedule view made
+
+  - given: action apply, panelName "DB-1", templateName "ZZNOTEMPLATE"
+    expect: >
+      changed 0; refused "No panel schedule template is named
+      \"ZZNOTEMPLATE\". The model's panel schedule templates are: ..."
+
+  - given: action apply, panelName "DB-1", the switchboard template the model ships
+    expect: >
+      changed 0; skipped "... is a switchboard template and panel DB-1 ...'s
+      schedule is a branch panel one ..."
+
+  - given: action rename, templateName "DB Standard"
+    expect: >
+      changed 0; refused - rename is not one of the two things this does
+
+second_route:
+  - >
+    Revit's own Manage > Panel Schedule Templates > Manage Templates (the
+    templates and their kinds) and, with DB-1's panel schedule open,
+    Modify Panel Schedule > Change Template (the template it is on): each the
+    same as `after`, and nothing else in either list different from `before`

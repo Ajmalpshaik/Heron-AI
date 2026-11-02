@@ -36,6 +36,26 @@ positive:
       voltageTypes is the count of voltage types whose name holds 230; names
       lists only those, each "(voltage)"
 
+  - given: show templates (added 2026-11-02)
+    expect: >
+      panelScheduleTemplates is the number Manage > Panel Schedule Templates
+      > Manage Templates lists; report "Panel schedule templates (n):
+      \"Branch Panel\" branch panel, default, used by n panel schedule(s):
+      ..." with each template's kind and the schedules on it by name; every
+      other count 0
+
+  - given: show naming, Revit 2021 or later (added 2026-11-02)
+    expect: >
+      circuitNamingSchemes is the number Electrical Settings > Circuit Naming
+      lists; report "Circuit naming schemes (n): \"...\": Panel \"-\" +
+      Circuit Number ... - the project's ... The project uses \"...\"." with
+      each scheme's parameters and separators in order; every other count 0
+
+  - given: show naming, Revit 2020
+    expect: >
+      circuitNamingSchemes 0; report says circuit naming schemes arrived in
+      Revit 2021 - nothing else read for that list
+
 negative:
   - given: >
       nameContains "ZZNOTASETTING" - a name nothing in the model has
@@ -61,3 +81,11 @@ second_route:
     Definitions, Distribution Systems, Wiring Types), Load Classifications and
     Demand Factors dialogs: every name, voltage, phase, wire count, demand
     factor and percentage in `report` is the one the dialogs show
+  - >
+    Manage > Panel Schedule Templates > Manage Templates: every template, its
+    kind and the default as `report` names them; each panel schedule opened
+    shows the template `report` counts it under
+  - >
+    Electrical Settings > Circuit Naming (2021 on): every scheme, its
+    parameters and separators, and the project's scheme as `report` names
+    them

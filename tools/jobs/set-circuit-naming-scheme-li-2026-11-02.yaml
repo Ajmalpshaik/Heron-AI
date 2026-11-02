@@ -1,0 +1,62 @@
+# NEEDS-CHECKING Group LI - SET_CIRCUIT_NAMING_SCHEME, and the circuit naming
+# list REPORT_ELECTRICAL_SETTINGS gained beside it, built 2026-11-02 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/set-circuit-naming-scheme-li-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-circuit-naming-scheme-li-2026-11-02.yaml
+#
+# THE MODEL is "electrical-settings-li", Group KU's scratch project made again
+# in Revit 2024 - circuit naming schemes are Revit 2021 on, so KU's 2020
+# project has none - new from Revit's metric ELECTRICAL template, saved under
+# %TEMP%\heron-work, never a working model. By hand before the run (LI1):
+# open Manage > MEP Settings > Electrical Settings > Circuit Naming and write
+# down every scheme, its parameters and the project's - the jobs below assume
+# one named "Standard"; use the template's name if it differs - place one
+# branch panelboard DB-1 with one circuit on it, and save.
+#
+# THE ARRANGEMENT: neither job takes a selection, so `setup: []`. Each
+# negative is a DIFFERENT VALUE, never an empty one (fragment-proving, rule
+# 5): for the write, a scheme name the model already has - changed 0 and the
+# scheme list the same before and after; for the read, a name no scheme has -
+# circuitNamingSchemes 0. Every write here is ROLLED BACK.
+
+model: "electrical-settings-li scratch project from Revit's metric electrical template, panel DB-1 with one circuit, Revit 2024"
+
+jobs:
+  - fragment: set-circuit-naming-scheme
+    expect: changed
+    write: true
+    setup: []
+    set:
+      action: "make"
+      schemeName: "Panel-Circuit"
+      parts: "panel; circuit number"
+      separator: "-"
+    negative-set:
+      action: "make"
+      schemeName: "Standard"
+      parts: "panel; circuit number"
+      separator: "-"
+    note: >
+      LI2. Negative - THE FIRST CASE TO RUN: a new scheme named Standard,
+      which the model has, so changed 0, skipped "A circuit naming scheme is
+      already named \"Standard\" - left as it is, nothing made.", before and
+      after the same list and Standard's parts unchanged. Positive - changed
+      1, after holds "\"Panel-Circuit\": Panel \"-\" + Circuit Number" beside
+      every scheme in before. The use cases are row LI3, run with
+      `validate --write`.
+
+  - fragment: report-electrical-settings
+    expect: circuitNamingSchemes
+    setup: []
+    set:
+      show: "naming"
+    negative-set:
+      show: "naming"
+      nameContains: "ZZNOSCHEME"
+    note: >
+      LI5. Negative - THE FIRST CASE TO RUN: naming narrowed to ZZNOSCHEME, so
+      circuitNamingSchemes 0 and findings "Nothing in the lists read has a
+      name containing \"ZZNOSCHEME\"". Positive - every scheme LI1 wrote down
+      with its parameters and separators in order, the project's marked, and
+      "The project uses ..." naming it; every other count 0.

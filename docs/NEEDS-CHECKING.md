@@ -1246,6 +1246,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-lg.md`](needs-checking/group-lg.md)
 
+## Group LH - a panel schedule template made, or a panel's schedule switched to one: `SET_PANEL_SCHEDULE_TEMPLATE` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lh.md`](needs-checking/group-lh.md)
+
+## Group LI - a circuit naming scheme made, or the project's circuit naming set: `SET_CIRCUIT_NAMING_SCHEME` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-li.md`](needs-checking/group-li.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

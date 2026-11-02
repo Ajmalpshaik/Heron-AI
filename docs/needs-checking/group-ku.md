@@ -19,6 +19,11 @@ loads, `CREATE_WIRES` picks a wire type - look-alikes, none reads the settings.
 |---|---|---|
 | `REPORT_ELECTRICAL_SETTINGS` (READ) | [`brain/fragments/report-electrical-settings`](../../brain/fragments/report-electrical-settings/fragment.yaml) | Lists the **voltage types** (actual, minimum and maximum volts, in use), the **distribution systems** (1- or 3-phase, wye or delta, wires, line-to-line and line-to-ground voltages), the **wire types** (material, temperature rating, insulation, maximum size, neutral), the **load classifications** with the demand factor each uses, and the **demand factors** with their rule and steps in kVA or quantity and percent (`report`, five counts, `names`). `show` picks lists, `nameContains` narrows them; a word that is not a list is named, never guessed. Opens no transaction |
 
+**Widened 2026-11-02** with a sixth list, `show` **templates** - the panel schedule templates, beside
+`SET_PANEL_SCHEDULE_TEMPLATE` - and a seventh, `show` **naming** - the circuit naming schemes, Revit 2021 on,
+beside `SET_CIRCUIT_NAMING_SCHEME`. Their rows are [Group LH](group-lh.md)'s (LH5) and
+[Group LI](group-li.md)'s (LI5); the rows below are unchanged.
+
 **The read half of a set** - every question about these settings is answered here, so none reaches
 `ADD_ELECTRICAL_DISTRIBUTION` ([Group KV](group-kv.md)) or `ADD_LOAD_CLASSIFICATION`
 ([Group KW](group-kw.md)).

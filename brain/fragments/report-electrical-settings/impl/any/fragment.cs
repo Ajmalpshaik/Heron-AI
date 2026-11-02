@@ -1,15 +1,18 @@
 // NOT STANDALONE. Assumes `doc`, `show` and `nameContains` are in scope, and
 // leaves `voltageTypes`, `distributionSystems`, `wireTypes`,
-// `loadClassifications`, `demandFactors`, `report`, `names` and `findings`
-// behind.
+// `loadClassifications`, `demandFactors`, `panelScheduleTemplates`,
+// `circuitNamingSchemes`, `report`, `names` and `findings` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
 // WHAT IT READS. Manage > MEP Settings > Electrical Settings - Voltage
 // Definitions, Distribution Systems and Wiring Types - and Manage > MEP
-// Settings > Load Classifications and Demand Factors. Every list, or only the
-// ones `show` names (voltages; distribution; wires; loads; demand - several
-// separated by ; or ,), narrowed to names containing `nameContains`.
+// Settings > Load Classifications and Demand Factors, Manage > Panel Schedule
+// Templates and Electrical Settings > Circuit Naming (both added 2026-11-02,
+// beside SET_PANEL_SCHEDULE_TEMPLATE and SET_CIRCUIT_NAMING_SCHEME). Every
+// list, or only the ones `show` names (voltages; distribution; wires; loads;
+// demand; templates; naming - several separated by ; or ,), narrowed to names
+// containing `nameContains`.
 //
 // UNITS. Revit keeps a voltage and a load in its own internal units: one volt,
 // and one volt-ampere, is 1 / (0.3048 * 0.3048) of them - the factor
@@ -29,6 +32,13 @@
 // .Abbreviation is 2021 on. WireType's material, insulation and temperature
 // rating are objects to 2025 and ElementIds from 2026, and MaxSize a WireSize
 // to 2025 and a string from 2026 - each release takes its own branch.
+// PanelScheduleTemplate.GetPanelScheduleType and IsDefault, and
+// PanelScheduleView.GetTemplate and IsPanelScheduleTemplate, are present 2020
+// to 2027 (tools/api-surface --members, 2026-11-02). CircuitNamingScheme
+// (GetCombinedParameters) and CircuitNamingSchemeSettings
+// (GetCircuitNamingSchemeSettings, CircuitNamingSchemeId) are 2021 on and not
+// in 2020 (#if !REVIT2020); TableCellCombinedParameterData ParamId, Prefix,
+// Suffix and Separator are 2020 to 2027.
 //
 // AN ElementId IS COMPARED WITH ==, NEVER READ AS A NUMBER.
 
@@ -37,6 +47,8 @@ var distributionSystems = 0;
 var wireTypes = 0;
 var loadClassifications = 0;
 var demandFactors = 0;
+var panelScheduleTemplates = 0;
+var circuitNamingSchemes = 0;
 var report = "";
 var names = new List<string>();
 var findings = new List<string>();
@@ -51,6 +63,8 @@ Func<string, string> quoted = n => "\"" + (n ?? "") + "\"";
 var asked = (show ?? "").Trim().ToLowerInvariant();
 var every = asked.Length == 0 || asked == "all";
 bool wantVoltages = every, wantDistribution = every, wantWires = every, wantLoads = every, wantDemand = every;
+var wantTemplates = every;
+var wantNaming = every;
 var unknownWords = new List<string>();
 if (!every)
 {
@@ -58,18 +72,21 @@ if (!every)
     {
         var w = raw.Trim().Replace(" ", "").Replace("-", "");
         if (w.Length == 0) continue;
-        if (w == "all") { wantVoltages = wantDistribution = wantWires = wantLoads = wantDemand = true; }
+        if (w == "all") { wantVoltages = wantDistribution = wantWires = wantLoads = wantDemand = wantTemplates = wantNaming = true; }
         else if (w.StartsWith("volt")) wantVoltages = true;
         else if (w.StartsWith("distribution") || w == "systems") wantDistribution = true;
         else if (w.StartsWith("wire") || w.StartsWith("wiring")) wantWires = true;
         else if (w.StartsWith("load")) wantLoads = true;
         else if (w.StartsWith("demand")) wantDemand = true;
+        // "panels" alone is not a list - a panel's circuits are another read.
+        else if (w.StartsWith("template") || w.StartsWith("panelschedule")) wantTemplates = true;
+        else if (w.StartsWith("naming") || w.StartsWith("circuitnaming") || w.StartsWith("scheme")) wantNaming = true;
         else unknownWords.Add(raw.Trim());
     }
 }
 if (unknownWords.Count > 0)
     findings.Add("\"" + string.Join("\", \"", unknownWords) + "\" is not one of the lists - voltages, distribution, wires, "
-        + "loads or demand, or all. Nothing was guessed for it.");
+        + "loads, demand, templates or naming, or all. Nothing was guessed for it.");
 
 // ---- The unit, checked against Revit's own ---------------------------------
 var perVolt = 1.0 / (0.3048 * 0.3048);
@@ -245,11 +262,124 @@ if (wantDemand)
     lines.Add("Demand factors (" + factorRows.Count + "): " + (factorRows.Count == 0 ? "none" : string.Join("; ", factorRows)));
 }
 
+// ---- Panel Schedule Templates ----------------------------------------------
+if (wantTemplates)
+{
+    // Template -> the panel schedules that use it, by name.
+    var used = new Dictionary<ElementId, List<string>>();
+    foreach (var e in new FilteredElementCollector(doc).OfClass(typeof(PanelScheduleView)))
+    {
+        var v = e as PanelScheduleView;
+        if (v == null || v.IsPanelScheduleTemplate()) continue;
+        ElementId t = null;
+        try { t = v.GetTemplate(); } catch (Exception) { t = null; }
+        if (t == null || t == ElementId.InvalidElementId) continue;
+        List<string> on;
+        if (!used.TryGetValue(t, out on)) { on = new List<string>(); used[t] = on; }
+        on.Add(quoted(v.Name));
+    }
+    var rows = new List<string>();
+    foreach (var e in new FilteredElementCollector(doc).OfClass(typeof(PanelScheduleTemplate)))
+    {
+        var t = e as PanelScheduleTemplate;
+        if (t == null || !wanted(t.Name)) continue;
+        panelScheduleTemplates++;
+        names.Add(quoted(t.Name) + " (panel schedule template)");
+        var kind = "unknown kind";
+        try
+        {
+            var k = t.GetPanelScheduleType();
+            kind = k == PanelScheduleType.Branch ? "branch panel" : k == PanelScheduleType.Switchboard ? "switchboard"
+                : k == PanelScheduleType.Data ? "data panel" : "unknown kind";
+        }
+        catch (Exception) { }
+        List<string> users;
+        if (!used.TryGetValue(t.Id, out users)) users = new List<string>();
+        users.Sort(StringComparer.OrdinalIgnoreCase);
+        rows.Add(quoted(t.Name) + " " + kind + (t.IsDefault ? ", default" : "") + ", used by " + users.Count
+            + " panel schedule(s)" + (users.Count == 0 ? "" : ": " + string.Join(", ", users)));
+    }
+    rows.Sort(StringComparer.OrdinalIgnoreCase);
+    lines.Add("Panel schedule templates (" + rows.Count + "): " + (rows.Count == 0 ? "none" : string.Join("; ", rows)));
+}
+
+// ---- Circuit Naming Schemes (Revit 2021 on) ---------------------------------
+if (wantNaming)
+{
+#if REVIT2020
+    lines.Add("Circuit naming schemes: none in Revit 2020 - they arrived in Revit 2021; in 2020 each panel names its "
+        + "circuits by its own Circuit Naming parameter.");
+#else
+    var inUse = ElementId.InvalidElementId;
+    try
+    {
+        var namingSettings = CircuitNamingSchemeSettings.GetCircuitNamingSchemeSettings(doc);
+        if (namingSettings != null) inUse = namingSettings.CircuitNamingSchemeId;
+    }
+    catch (Exception ex) { findings.Add("The project's circuit naming setting could not be read: " + ex.Message); }
+
+    // A part's parameter by name: a project parameter's element, else the
+    // parameter of that id on any circuit in the model, else Revit's label of
+    // the circuit parameters a scheme is usually made of.
+    var circuitSample = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_ElectricalCircuit)
+        .WhereElementIsNotElementType().FirstElement();
+    var usual = new[] { BuiltInParameter.RBS_ELEC_CIRCUIT_PANEL_PARAM, BuiltInParameter.RBS_ELEC_CIRCUIT_NUMBER,
+        BuiltInParameter.RBS_ELEC_CIRCUIT_NAME, BuiltInParameter.RBS_ELEC_CIRCUIT_START_SLOT };
+    Func<ElementId, string> partName = id =>
+    {
+        if (id == null || id == ElementId.InvalidElementId) return "nothing";
+        var pe = doc.GetElement(id) as ParameterElement;
+        if (pe != null) return pe.Name;
+        if (circuitSample != null)
+            foreach (Parameter p in circuitSample.Parameters)
+                if (p != null && p.Id == id && p.Definition != null) return p.Definition.Name;
+        foreach (var b in usual)
+            if (new ElementId(b) == id)
+            {
+                try { return LabelUtils.GetLabelFor(b); } catch (Exception) { return b.ToString(); }
+            }
+        return "a parameter not named here (id " + id + ")";
+    };
+
+    var rows = new List<string>();
+    var projects = "";
+    foreach (var e in new FilteredElementCollector(doc).OfClass(typeof(CircuitNamingScheme)))
+    {
+        var scheme = e as CircuitNamingScheme;
+        if (scheme == null) continue;
+        if (scheme.Id == inUse) projects = scheme.Name;
+        if (!wanted(scheme.Name)) continue;
+        circuitNamingSchemes++;
+        names.Add(quoted(scheme.Name) + " (circuit naming scheme)");
+        var parts = new List<string>();
+        try
+        {
+            var data = scheme.GetCombinedParameters();
+            for (var i = 0; data != null && i < data.Count; i++)
+            {
+                var d = data[i];
+                parts.Add((string.IsNullOrEmpty(d.Prefix) ? "" : quoted(d.Prefix) + " ") + partName(d.ParamId)
+                    + (string.IsNullOrEmpty(d.Suffix) ? "" : " " + quoted(d.Suffix))
+                    + (i < data.Count - 1 || !string.IsNullOrEmpty(d.Separator) ? " " + quoted(d.Separator ?? "") : ""));
+            }
+        }
+        catch (Exception ex) { parts.Add("parts not read: " + ex.Message); }
+        rows.Add(quoted(scheme.Name) + ": " + (parts.Count == 0 ? "no parts" : string.Join(" + ", parts))
+            + (scheme.Id == inUse ? " - the project's" : ""));
+    }
+    rows.Sort(StringComparer.OrdinalIgnoreCase);
+    lines.Add("Circuit naming schemes (" + rows.Count + "): " + (rows.Count == 0 ? "none" : string.Join("; ", rows))
+        + ". The project uses " + (projects.Length == 0 ? "none Heron could read" : quoted(projects)) + ".");
+#endif
+}
+
 report = string.Join(" | ", lines);
-var total = voltageTypes + distributionSystems + wireTypes + loadClassifications + demandFactors;
+var total = voltageTypes + distributionSystems + wireTypes + loadClassifications + demandFactors + panelScheduleTemplates
+    + circuitNamingSchemes;
 findings.Insert(0, (needle.Length > 0 ? "Matching \"" + needle + "\": " : "")
     + voltageTypes + " voltage(s), " + distributionSystems + " distribution system(s), " + wireTypes + " wire type(s), "
-    + loadClassifications + " load classification(s), " + demandFactors + " demand factor(s)"
+    + loadClassifications + " load classification(s), " + demandFactors + " demand factor(s), "
+    + panelScheduleTemplates + " panel schedule template(s), " + circuitNamingSchemes + " circuit naming scheme(s)"
     + (every ? "" : " - only the lists asked for were read") + ".");
 if (needle.Length > 0 && total == 0)
     findings.Add("Nothing in the lists read has a name containing \"" + needle + "\" - leave it out to see every name.");

@@ -1,0 +1,158 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-082
+semantic-identity: "make a new circuit naming scheme from circuit parameters, or switch the project to another circuit naming scheme"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "make a circuit naming scheme
+# Panel-Circuit with a dash" and "use the Panel-Circuit naming for this
+# project" - Revit's Manage > MEP Settings > Electrical Settings > Circuit
+# Naming. No card in the library made a scheme or set one (grep of
+# brain/fragments that day for CircuitNamingScheme and
+# CircuitNamingSchemeSettings: nothing). EDIT_ELECTRICAL_CIRCUIT changes a
+# circuit's devices and panel, CREATE_MEP_SYSTEM makes a circuit,
+# REPORT_PANEL_CIRCUITS reads circuit numbers - none touches how circuits are
+# named. Look-alikes, not duplicates.
+#
+# ONE OF A SET. REPORT_ELECTRICAL_SETTINGS (FRG-MEP-076) answers every
+# question - which circuit naming schemes exist, their parts, and which one
+# the project uses - so no question reaches this write (D-86).
+#
+# ONE FRAGMENT FOR THE TWO, NOT TWO. Both act on circuit naming schemes by
+# their exact names, in one Revit dialog; split, each would declare the same
+# scheme name and list the same schemes when it is wrong. `action` says which.
+#
+# REVIT 2021 ON. Circuit naming schemes arrived in Revit 2021 - in 2020 a
+# panel's circuit naming was its own parameter and there was no scheme to
+# make or set. The card claims 2021 to 2027 and nothing else.
+#
+# NEVER GUESSED (D-33). A scheme name not there exactly is refused with the
+# schemes listed; one differing in capitals is named, never taken. A part
+# Heron cannot name as a circuit parameter is refused with the words it
+# knows; Revit's IsValidCombinedParameters is asked before anything is made.
+#
+# NEVER OVERWRITES, RENAMES OR DELETES. A new name already used, in any
+# capitals, is skipped and named; the scheme already in use is left as it is;
+# no panel's own Circuit Naming parameter is touched.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). A
+# read-back that disagrees throws, so the caller rolls the whole change back.
+kind: action
+domain: revit.mep
+capability: SET_CIRCUIT_NAMING_SCHEME
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes a new circuit naming scheme from circuit parameters - panel, circuit
+  number, load name - with the separator between them, or sets the circuit
+  naming scheme the project uses, reporting the schemes and the project's
+  scheme before and after.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: action
+      # make | use - make a new scheme, or set the project's to one the model
+      # has. Also "create", "new"; "set", "apply", "switch". Anything else
+      # refuses.
+      type: string
+      source: request
+    - name: schemeName
+      # make: the new scheme's name, the modeller's, never made up. use: the
+      # scheme the project takes, by its exact name (REPORT_ELECTRICAL_SETTINGS
+      # lists them).
+      type: string
+      source: request
+    - name: parts
+      # make only: the circuit parameters in order, separated by ; - "panel;
+      # circuit number". Revit's labels, or panel, circuit number, load name,
+      # start slot, or a project parameter of electrical circuits by its exact
+      # name. Left out on make, refused - never guessed.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: separator
+      # make only: what goes between each two parts - "-" for "with a dash".
+      # Left out, nothing between them.
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: changed
+      # 1 when the scheme was made or the project's scheme set, else 0.
+      # Something the write DID.
+      role: result
+      type: int
+    - name: report
+      # ONE STRING: every scheme with its parts, the project's marked, before
+      # and after.
+      role: accounting
+      type: string
+    - name: before
+      # Each scheme with its parts and the project's marked, before (D-52).
+      role: accounting
+      type: IList<string>
+    - name: after
+      # The same, read back from the model after (D-52).
+      role: accounting
+      type: IList<string>
+    - name: skipped
+      # Left as it was, and why: a name already used, the scheme already the
+      # project's (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in Revit words: no name, no parts, a part Heron
+      # cannot name, a scheme the model has not got, Revit's own refusal.
+      # Never a thing done (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for 2021 to 2027. CircuitNamingScheme.Create(Document,
+  string, IList<TableCellCombinedParameterData>), GetCombinedParameters,
+  IsNameUnique and IsValidCombinedParameters, and CircuitNamingSchemeSettings
+  .GetCircuitNamingSchemeSettings, CircuitNamingSchemeId (get and set) and
+  IsValidCircuitNamingSchemeId, are present 2021 through 2027 with the same
+  signatures and absent in 2020 - read with tools/api-surface --members on
+  2026-11-02. TableCellCombinedParameterData.Create, ParamId, CategoryId,
+  Prefix, Suffix and Separator, LabelUtils.GetLabelFor(BuiltInParameter), and
+  RBS_ELEC_CIRCUIT_PANEL_PARAM, RBS_ELEC_CIRCUIT_NUMBER, RBS_ELEC_CIRCUIT_NAME
+  and RBS_ELEC_CIRCUIT_START_SLOT are 2020 to 2027. A part's Separator is drawn
+  after it, as ADD_SCHEDULE_COMBINED_FIELD measured in Revit 2020 for a
+  schedule's combined parameters; that a circuit naming scheme draws it the
+  same way has not been seen in Revit. An ElementId is compared with ==, never
+  read as a number.
+
+# ROUTING (2026-11-02) - the same rows are in REPORT_ELECTRICAL_SETTINGS.
+#
+#   "make a circuit naming scheme Panel-Circuit with a dash"
+#                                              -> here, action make,
+#                                                 schemeName Panel-Circuit,
+#                                                 parts "panel; circuit
+#                                                 number", separator "-"
+#   "use the Panel-Circuit naming for this project"
+#                                              -> here, action use,
+#                                                 schemeName Panel-Circuit
+#   "which circuit naming scheme is the project using"
+#                                              -> REPORT_ELECTRICAL_SETTINGS
+#   "move these circuits to panel DB-2"        -> EDIT_ELECTRICAL_CIRCUIT - a
+#                                                 circuit's panel, not its name
+utterances:
+  - make a circuit naming scheme Panel-Circuit with a dash
+  - use the Panel-Circuit naming for this project

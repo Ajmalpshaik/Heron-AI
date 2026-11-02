@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-076
-semantic-identity: "which voltages, distribution systems, wire types, load classifications and demand factors this model has set up"
+semantic-identity: "which voltages, distribution systems, wire types, load classifications, demand factors, panel schedule templates and circuit naming schemes this model has set up"
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
 # 2026-11-01: asked for in the modeller's words "what voltages and
@@ -31,6 +31,21 @@ semantic-identity: "which voltages, distribution systems, wire types, load class
 # and voltages, the wire types, each load classification's demand factor, and
 # each demand factor's rule and steps.
 #
+# WIDENED 2026-11-02 WITH THE PANEL SCHEDULE TEMPLATES (Manage > Panel
+# Schedule Templates), asked for in the modeller's words "what panel schedule
+# templates are in this model" beside SET_PANEL_SCHEDULE_TEMPLATE, which makes
+# and switches them. A widening of this DRAFT rather than a second read: the
+# same "what has this project set up for electrical" question, the same
+# `show` and `nameContains`, and the names a write is handed back. Nothing
+# else in the library listed them - CREATE_PANEL_SCHEDULES names the
+# templates only when the one it is given is missing.
+#
+# AND WITH THE CIRCUIT NAMING SCHEMES (Electrical Settings > Circuit Naming,
+# Revit 2021 on), asked for the same day in the modeller's words "which
+# circuit naming scheme is the project using", beside
+# SET_CIRCUIT_NAMING_SCHEME. The card still claims 2020: there the list says
+# schemes arrived in 2021, and every other list reads as before.
+#
 # READ ONLY - opens no transaction and needs none.
 kind: action
 domain: revit.mep
@@ -43,18 +58,22 @@ purpose: >
   Lists the electrical settings set up in the project - the voltage types with
   their actual, minimum and maximum volts, the distribution systems with phase,
   wye or delta, number of wires and line-to-line and line-to-ground voltages,
-  and the wire types, as Electrical Settings shows them - and the load
-  classifications with the demand factor each uses, and every demand factor
-  with its rule and percentages over kVA or quantity.
+  and the wire types, as Electrical Settings shows them - the load
+  classifications with the demand factor each uses, every demand factor with
+  its rule and percentages over kVA or quantity, the panel schedule templates
+  with their kind, the default and the panel schedules that use each, and the
+  circuit naming schemes with their parts and the one the project uses.
 
 contract:
   needs:
     - name: doc
       type: Document
     - name: show
-      # Which lists: voltages | distribution | wires | loads | demand - one,
-      # or several separated by ; - or left out for every list
-      # (`absent: all`). A word that is none of them is named, never guessed.
+      # Which lists: voltages | distribution | wires | loads | demand |
+      # templates (panel schedule templates) | naming (circuit naming
+      # schemes) - one, or several separated by ; - or left out for every
+      # list (`absent: all`). A word that is none of them is named, never
+      # guessed.
       type: string
       source: request
       optional: true
@@ -84,11 +103,20 @@ contract:
     - name: demandFactors
       role: result
       type: int
+    - name: panelScheduleTemplates
+      role: result
+      type: int
+    - name: circuitNamingSchemes
+      # 0 in Revit 2020, which has none.
+      role: result
+      type: int
     - name: report
       # LIST BY LIST, in words: each voltage in volts, each distribution
       # system's phase, wires and voltages, each wire type, each load
       # classification's demand factor, each demand factor's steps in kVA or
-      # quantity and percent. A STRING, because a reply cuts a list to three
+      # quantity and percent, each panel schedule template's kind, whether it
+      # is the default and the panel schedules that use it, by name, each
+      # circuit naming scheme's parts and separators and the project's. A STRING, because a reply cuts a list to three
       # items and this is the answer.
       role: accounting
       type: string
@@ -113,7 +141,11 @@ compatibility-note: >
   .RuleType, GetValues, AdditionalLoad and IncludeAdditionalLoad; and
   ElectricalDemandFactorValue MinRange, MaxRange and Factor carry the same
   signatures 2020 through 2027 - read with tools/api-surface --members on
-  2026-11-01. ElectricalLoadClassification.Abbreviation is 2021 on (#if
+  2026-11-01 - as do PanelScheduleTemplate.GetPanelScheduleType and IsDefault
+  and PanelScheduleView.GetTemplate and IsPanelScheduleTemplate (2026-11-02).
+  CircuitNamingScheme.GetCombinedParameters and CircuitNamingSchemeSettings
+  .GetCircuitNamingSchemeSettings and CircuitNamingSchemeId are 2021 to 2027
+  and absent in 2020 (#if !REVIT2020, 2026-11-02). ElectricalLoadClassification.Abbreviation is 2021 on (#if
   !REVIT2020). WireType.WireMaterial, Insulation and TemperatureRating are
   objects to 2025 and ElementIds from 2026, and MaxSize a WireSize to 2025 and
   a string from 2026 (#if REVIT2026_OR_GREATER). Volts and volt-amperes are
@@ -123,10 +155,20 @@ compatibility-note: >
   read as a number.
 
 # ROUTING (2026-11-01) - the same rows are in ADD_ELECTRICAL_DISTRIBUTION and
-# ADD_LOAD_CLASSIFICATION.
+# ADD_LOAD_CLASSIFICATION; the panel schedule template rows (2026-11-02) in
+# SET_PANEL_SCHEDULE_TEMPLATE, the circuit naming rows in
+# SET_CIRCUIT_NAMING_SCHEME.
 #
 #   "what voltages and distribution systems are set up in this model" -> here
 #   "list the load classifications and demand factors"     -> here
+#   "what panel schedule templates are in this model"      -> here, show
+#                                                             templates
+#   "make a new panel schedule template from Branch Panel called DB Standard"
+#                                                          -> SET_PANEL_SCHEDULE_TEMPLATE
+#   "set panel DB-1 to use the DB Standard template"       -> SET_PANEL_SCHEDULE_TEMPLATE
+#   "which circuit naming scheme is the project using"     -> here, show naming
+#   "make a circuit naming scheme Panel-Circuit with a dash" -> SET_CIRCUIT_NAMING_SCHEME
+#   "use the Panel-Circuit naming for this project"        -> SET_CIRCUIT_NAMING_SCHEME
 #   "add a 230 V voltage type"                             -> ADD_ELECTRICAL_DISTRIBUTION
 #   "add a 400/230 V 3-phase 4-wire distribution system"   -> ADD_ELECTRICAL_DISTRIBUTION
 #   "add a load classification called Kitchen Equipment"   -> ADD_LOAD_CLASSIFICATION
@@ -159,3 +201,5 @@ compatibility-note: >
 utterances:
   - what voltages and distribution systems are set up in this model
   - list the load classifications and demand factors
+  - what panel schedule templates are in this model
+  - which circuit naming scheme is the project using
