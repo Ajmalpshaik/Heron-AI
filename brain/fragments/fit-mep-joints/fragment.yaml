@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -138,48 +138,60 @@ contract:
       type: string
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project2 (3,716 elements), Revit 2020, session 30308
+  model: P1102 MEP, Revit 2020, session 59096 - the count is NOT recorded because 1,501 elements
+    was measured on HeronNewFam_P1102, the document in front, and this ran against another
+    one (row 15)
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-in-region, set-selection with this phase''s own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned created 1 item(s)
-    [1328524], crosses 0, elbows 1, ends 4 item(s) [Autodesk.Revit.DB.Connector, Autodesk.Revit.DB.Connector,
-    Autodesk.Revit.DB.Connector, ...], failures 0 item(s), fitted 1, fittingCategories 4 item(s)
-    [-2008010, -2008049, -2008126, ...], freeEnds 2, jointCount 1, joints 3 item(s) [System.Collections.Generic.List`1[Autodesk.Revit.DB.Connecto...,
+    create-duct-runs with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned created 1 item(s) [1020441], crosses
+    0, dangling 2 item(s) [Autodesk.Revit.DB.Connector, Autodesk.Revit.DB.Connector], elbows
+    1, ends 4 item(s) [Autodesk.Revit.DB.Connector, Autodesk.Revit.DB.Connector, Autodesk.Revit.DB.Connector,
+    ...], failures 0 item(s), fitted 1, fittingCategories 4 item(s) [-2008010, -2008049, -2008126,
+    ...], freeEnds 2, gaps 1 item(s) [(0, -60000, 2700) mm and (4000, -56000, 2700) mm: two
+    open e...], invariantCulture CultureInfo, jointCount 1, joints 3 item(s) [System.Collections.Generic.List`1[Autodesk.Revit.DB.Connecto...,
     System.Collections.Generic.List`1[Autodesk.Revit.DB.Connecto..., System.Collections.Generic.List`1[Autodesk.Revit.DB.Connecto...],
-    mmPerFoot 304.8, notMepCurve 0 item(s), ontoOutlets 0, outletsUnder Func`2, owners 4 item(s)
-    [1328489, 1328489, 1328491, ...], placeOf Func`2, runCount 2, runs 2 item(s) [Radius Elbows
-    / Taps, Radius Elbows / Taps], sameSizeAs Func`3, summary 1 joint(s) among 2 run(s), and
-    all 1 fitted: 1 elbow(s), 0 tee(s), 0 tap(s), 0 transition(s) - 0 of them straight onto
-    a unit''s or terminal''s outlet - 0 union(s), 0 cross(es). 2 free end(s) left open - an
-    end with nothing meeting it, or on an outlet of its own size, is not a joint; CONNECT_OPEN_ENDS
-    joins those to equipment and terminals, taken 4 item(s) [True, True, True, ...], tapTarget
-    Func`2, taps 0, tees 0, tolerance 0.0328083989501312, toleranceMm 10, transitions 0, unions
-    0. inputs came elements from the selection (2); toleranceMm as given. on Project2'
-  negative_case: 'run with toleranceMm=10 arranged with categories=Ducts, exact=False, maxMm=11900,200,3200,
-    minMm=100,-200,2800 instead - chosen because it should not contain what this fragment
-    reports - the arrangement was re-made first by running select-in-region, set-selection
-    with this phase''s own values - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned created 0 item(s), crosses 0, elbows 0, ends 2
-    item(s) [Autodesk.Revit.DB.Connector, Autodesk.Revit.DB.Connector], failures 0 item(s),
-    fitted 0, fittingCategories 4 item(s) [-2008010, -2008049, -2008126, ...], freeEnds 2,
-    jointCount 0, joints 2 item(s) [System.Collections.Generic.List`1[Autodesk.Revit.DB.Connecto...,
-    System.Collections.Generic.List`1[Autodesk.Revit.DB.Connecto...], mmPerFoot 304.8, notMepCurve
-    0 item(s), ontoOutlets 0, outletsUnder Func`2, owners 2 item(s) [1328486, 1328486], placeOf
-    Func`2, runCount 1, runs 1 item(s) [Radius Elbows / Taps], sameSizeAs Func`3, summary
+    mmPerFoot 304.8, nearestGapMm 5656.85424949238, nearestOf Func`2, noOpenEnd 0 item(s),
+    notMepCurve 0 item(s), ontoOutlets 0, outletsUnder Func`2, owners 4 item(s) [1020431,
+    1020431, 1020433, ...], placeOf Func`2, refused (null), runCount 2, runs 2 item(s) [Duct,
+    Duct], sameSizeAs Func`3, summary 1 joint(s) among 2 run(s), and all 1 fitted: 1 elbow(s),
+    0 tee(s), 0 tap(s), 0 transition(s) - 0 of them straight onto a unit''s or terminal''s
+    outlet - 0 union(s), 0 cross(es). 2 free end(s) left open - an end with nothing meeting
+    it, or on an outlet of its own size, is not a joint; CONNECT_OPEN_ENDS joins those to
+    equipment and terminals. 1 gap(s) between free ends, named: (0, -60000, 2700) mm and (4000,
+    -56000, 2700) mm: two open ends 5656.9 mm apart - nothing was moved to close it, taken
+    4 item(s) [True, True, True, ...], tapTarget Func`2, taps 0, tees 0, tolerance 0.0328083989501312,
+    toleranceMm 10, transitions 0, unions 0. inputs came elements from create-duct-runs (2);
+    toleranceMm as given. on P1102 MEP'
+  negative_case: 'run with ductType=Rectangular Duct: Mitered Elbows / Tees, level=Level 1,
+    runs=400x200: 0,-60000,2700; 4000,-60000,2700, systemType=Supply Air, toleranceMm=10 instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running create-duct-runs with this phase''s own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    created 0 item(s), crosses 0, dangling 2 item(s) [Autodesk.Revit.DB.Connector, Autodesk.Revit.DB.Connector],
+    elbows 0, ends 2 item(s) [Autodesk.Revit.DB.Connector, Autodesk.Revit.DB.Connector], failures
+    0 item(s), fitted 0, fittingCategories 4 item(s) [-2008010, -2008049, -2008126, ...],
+    freeEnds 2, gaps 0 item(s), invariantCulture CultureInfo, jointCount 0, joints 2 item(s)
+    [System.Collections.Generic.List`1[Autodesk.Revit.DB.Connecto..., System.Collections.Generic.List`1[Autodesk.Revit.DB.Connecto...],
+    mmPerFoot 304.8, nearestGapMm 1.79769313486232E+308, nearestOf Func`2, noOpenEnd 0 item(s),
+    notMepCurve 0 item(s), ontoOutlets 0, outletsUnder Func`2, owners 2 item(s) [1020444,
+    1020444], placeOf Func`2, refused one run was given and neither of its ends meets anything
+    - a fitting joins two, three or four runs, or one run onto an outlet of another size or
+    onto the side of another run, runCount 1, runs 1 item(s) [Duct], sameSizeAs Func`3, summary
     0 joint(s) among 1 run(s), and all 0 fitted: 0 elbow(s), 0 tee(s), 0 tap(s), 0 transition(s)
     - 0 of them straight onto a unit''s or terminal''s outlet - 0 union(s), 0 cross(es). 2
     free end(s) left open - an end with nothing meeting it, or on an outlet of its own size,
-    is not a joint; CONNECT_OPEN_ENDS joins those to equipment and terminals, taken 2 item(s)
-    [True, True], tapTarget Func`2, taps 0, tees 0, tolerance 0.0328083989501312, toleranceMm
-    10, transitions 0, unions 0. inputs came elements from the selection (1); toleranceMm
-    as given. on Project2'
+    is not a joint; CONNECT_OPEN_ENDS joins those to equipment and terminals. Nothing fitted:
+    one run was given and neither of its ends meets anything - a fitting joins two, three
+    or four runs, or one run onto an outlet of another size or onto the side of another run,
+    taken 2 item(s) [True, True], tapTarget Func`2, taps 0, tees 0, tolerance 0.0328083989501312,
+    toleranceMm 10, transitions 0, unions 0. inputs came elements from create-duct-runs (1);
+    toleranceMm as given. on P1102 MEP'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 2670f0dab1a8bd80
-
+  fingerprint: cf59c660acd4f3ec
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

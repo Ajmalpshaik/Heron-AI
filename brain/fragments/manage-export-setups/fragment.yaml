@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-EXP-018
 heron-step: 16
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -99,6 +99,31 @@ contract:
       # print setting is current afterwards. Never a finding.
       role: accounting
       type: string
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: P1102 MEP, Revit 2020, session 59096 - the count is NOT recorded because 1,501 elements
+    was measured on HeronNewFam_P1102, the document in front, and this ran against another
+    one (row 15)
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned done true, exact Func`3, found
+    , kindUsed DWG/DXF, namesOf Func`2, note , nowCalled HERON P1102 DWG, operation create,
+    refused , setupsNow HERON P1102 DWG, source HERON P1102 DWG, target HERON P1102 DWG, wantedKind
+    dwg, words Func`2. inputs came setupName as given; mode as given; newName not given -
+    "none", the card's own default (optional); kind as given. on P1102 MEP
+  negative_case: 'run with kind=any, mode=delete, setupName=ZZZ NO SUCH SETUP instead - chosen
+    because it should not contain what this fragment reports - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned done false, exact
+    Func`3, found , kindUsed , namesOf Func`2, note , nowCalled , operation delete, refused
+    No export setup called ''ZZZ NO SUCH SETUP''. The setups there are: print ''Default''.
+    Nothing was changed., setupsNow , source ZZZ NO SUCH SETUP, target , wantedKind , words
+    Func`2. inputs came setupName as given; mode as given; newName not given - "none", the
+    card''s own default (optional); kind as given. on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: e27451f0b6f17ff7
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
