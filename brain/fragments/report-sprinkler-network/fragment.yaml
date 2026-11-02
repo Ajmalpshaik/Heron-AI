@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -88,6 +88,101 @@ contract:
     - name: findings
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: P1102 MEP, Revit 2020, session 59096 - the count is NOT recorded because 12,508 elements
+    was measured on P1102 ARCH, the document in front, and this ran against another one (row
+    15)
+  positive_case: run as it would normally be run. returned FeetToMetres 0.3048, angleShared
+    0 item(s), backslash \, baseEquipment (null), body StringBuilder, chosen PipingSystem,
+    classification Func`2, doubleOf Func`3, elementCount 29, elements 29 item(s) [15 mm Pendent
+    on Drop with Guard, 15 mm Pendent on Drop with Guard, 15 mm Pendent on Drop with Guard,
+    ...], esc Func`2, findings 1 item(s) [The system was chosen by its name, Fire Protection
+    Wet 1.], fireSystems 1 item(s) [Fire Protection Wet 1], first false, firstSpace false,
+    headSpaces 1 entry(ies), invariant CultureInfo, isCategory Func`3, json StringBuilder,
+    kParameter Func`2, levelOf Func`2, managerOf Func`2, metres Func`2, networkJson {"format":1,"document":"P1102
+    MEP","systems":[{"id":"545760","name":"Fire Protection Wet 1","classification":"FireProtectWet","chosen":true}],"system":{"id":"545760","name":"Fire
+    Protection Wet 1","classification":"FireProtectWet","base_equipment":null},"elements":[{"id":"545673","kind":"sprinkler","category":"Sprinklers","family":"M_Sprinkler
+    - Pendent - Hosted","type":"15 mm Pendent on Drop with Guard","type_id":"337731","inner_diameter_m":null,"nominal_diameter_m":null,"length_m":null,"part_type":null,"angle_deg":null,"k":{"connector":0,"parameter":"K-Factor
+    = 81"},"level":null,"space":"53 EDP II 53","space_id":"380510","at":[-10.139,-9.688,6.25],"connectors":[{"id":1,"type":"end","point":[-10.139,-9.688,6.25],"radius_m":0.008,"to":[["545831",0]]}]},{"id":"545696","kind":"sprinkler","category":"Sprinklers","family":"M_Sprinkler
+    - Pendent - Hosted","type":"15 mm Pendent on Drop with Guard","type_id":"337731","inner_diameter_m":null,"nominal_diameter_m":null,"length_m":null,"part_type":null,"angle_deg":null,"k":{"connector":0,"parameter":"K-Factor
+    = 81"},"level":null,"space":"53 EDP II 53","space_id":"380510","at":[-5.939,-9.688,6.25],"connectors":[{"id":1,"type":"end","point":[-5.939,-9.688,6.25],"radius_m":0.008,"to":[["545838",0]]}]},{"id":"545726","kind":"sprinkler","category":"Sprinklers","family":"M_Sprinkler
+    - Pendent - Hosted","type":"15 mm Pendent on Drop with Guard","type_id":"337731","inner_diameter_m":null,"nominal_diameter_m":null,"length_m":null,"part_type":null,"angle_deg":null,"k":{"connector":0,"parameter":"K-Factor
+    = 81"},"level":null,"space":"53 EDP II 53","space_id":"380510","at":[-10.139,-6.088,6.25],"connectors":[{"id":1,"type":"end","point":[-10.139,-6.088,6.25],"radius_m":0.008,"to":[["545845",0]]}]},{"id":"545728","kind":"sprinkler","category":"Sprinklers","family":"M_Sprinkler
+    - Pendent - Hosted","type":"15 mm Pendent on Drop with Guard","type_id":"337731","inner_diameter_m":null,"nominal_diameter_m":null,"length_m":null,"part_type":null,"angle_deg":null,"k":{"connector":0,"parameter":"K-Factor
+    = 81"},"level":null,"space":"53 EDP II 53","space_id":"380510","at":[-5.939,-6.088,6.25],"connectors":[{"id":1,"type":"end","point":[-5.939,-6.088,6.25],"radius_m":0.008,"to":[["545852",0]]}]},{"id":"545736","kind":"sprinkler","category":"Sprinklers","family":"M_Sprinkler
+    - Pendent - Hosted","type":"15 mm Pendent on Drop with Guard","type_id":"337731","inner_diameter_m":null,"nominal_diameter_m":null,"length_m":null,"part_type":null,"angle_deg":null,"k":{"connector":0,"parameter":"K-Factor
+    = 81"},"level":null,"space":"53 EDP II 53","space_id":"380510","at":[-10.139,-2.488,6.25],"connectors":[{"id":1,"type":"end","point":[-10.139,-2.488,6.25],"radius_m":0.008,"to":[["545826",0]]}]},{"id":"545737","kind":"sprinkler","category":"Sprinklers","family":"M_Sprinkler
+    - Pendent - Hosted","type":"15 mm Pendent on Drop with Guard","type_id":"337731","inner_diameter_m":null,"nominal_diameter_m":null,"length_m":null,"part_type":null,"angle_deg":null,"k":{"connector":0,"parameter":"K-Factor
+    = 81"},"level":null,"space":"53 EDP II 53","space_id":"380510","at":[-5.939,-2.488,6.25],"connectors":[{"id":1,"type":"end","point":[-5.939,-2.488,6.25],"radius_m":0.008,"to":[["545859",0]]}]},{"id":"545820","kind":"pipe","category":"Pipes","family":"Pipe
+    Types","type":"Standard","type_id":"142438","inner_diameter_m":0.01066,"nominal_diameter_m":0.015,"length_m":3.544412,"part_type":null,"angle_deg":null,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":null,"connectors":[{"id":0,"type":"end","point":[-8.039,-9.667,6.45],"radius_m":0.008,"to":[["972753",3]]},{"id":1,"type":"end","point":[-8.039,-6.123,6.45],"radius_m":0.008,"to":[["545863",2]]}]},{"id":"545821","kind":"pipe","category":"Pipes","family":"Pipe
+    Types","type":"Standard","type_id":"142438","inner_diameter_m":0.01066,"nominal_diameter_m":0.015,"length_m":3.543,"part_type":null,"angle_deg":null,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":null,"connectors":[{"id":0,"type":"end","point":[-8.039,-6.053,6.45],"radius_m":0.008,"to":[["545863",1]]},{"id":1,"type":"end","point":[-8.039,-2.51,6.45],"radius_m":0.008,"to":[["545865",3]]}]},{"id":"545822","kind":"pipe","category":"Pipes","family":"Pipe
+    Types","type":"Standard","type_id":"142438","inner_diameter_m":0.01066,"nominal_diameter_m":0.015,"length_m":2.062075,"part_type":null,"angle_deg":null,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":null,"connectors":[{"id":1,"type":"end","point":[-8.061,-2.488,6.45],"radius_m":0.008,"to":[["545865",1]]},{"id":0,"type":"end","point":[-10.124,-2.488,6.45],"radius_m":0.008,"to":[["545866",2]]}]},{"id":"545826","kind":"pipe","category":"Pipes","family":"Pipe
+    Types","type":"Standard","type_id":"142438","inner_diameter_m":0.01066,"nominal_diameter_m":0.015,"length_m":0.184125,"part_type":null,"angle_deg":null,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":null,"connectors":[{"id":1,"type":"end","point":[-10.139,-2.488,6.434],"radius_m":0.008,"to":[["545866",1]]},{"id":0,"type":"end","point":[-10.139,-2.488,6.25],"radius_m":0.008,"to":[["545736",1]]}]},{"id":"545828","kind":"pipe","category":"Pipes","family":"Pipe
+    Types","type":"Standard","type_id":"142438","inner_diameter_m":0.01066,"nominal_diameter_m":0.015,"length_m":2.063488,"part_type":null,"angle_deg":null,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":null,"connectors":[{"id":0,"type":"end","point":[-10.124,-9.688,6.45],"radius_m":0.008,"to":[["545832",2]]},{"id":1,"type":"end","point":[-8.06,-9.688,6.45],"radius_m":0.008,"to":[["972753",1]]}]},{"id":"545831","kind":"pipe","category":"Pipes","family":"Pipe
+    Types","type":"Standard","type_id":"142438","inner_diameter_m":0.01066,"nominal_diameter_m":0.015,"length_m":0.184125,"part_type":null,"angle_deg":null,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":null,"connectors":[{"id":0,"type":"end","point":[-10.139,-9.688,6.25],"radius_m":0.008,"to":[["545673",1]]},{"id":1,"type":"end","point":[-10.139,-9.688,6.434],"radius_m":0.008,"to":[["545832",1]]}]},{"id":"545832","kind":"fitting","category":"Pipe
+    Fittings","family":"M_Pipe Elbow","type":"Standard","type_id":"133158","inner_diameter_m":null,"nominal_diameter_m":null,"length_m":null,"part_type":"Elbow","angle_deg":90,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":[-10.139,-9.688,6.45],"connectors":[{"id":2,"type":"end","point":[-10.124,-9.688,6.45],"radius_m":0.008,"to":[["545828",0]]},{"id":1,"type":"end","point":[-10.139,-9.688,6.434],"radius_m":0.008,"to":[["545831",1]]}]},{"id":"545835","kind":"pipe","category":"Pipes","family":"Pipe
+    Types","type":"Standard","type_id":"142438","inner_diameter_m":0.01066,"nominal_diameter_m":0.015,"length_m":2.063488,"part_type":null,"angle_deg":null,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":null,"connectors":[{"id":1,"type":"end","point":[-8.019,-9.688,6.45],"radius_m":0.008,"to":[["972753",2]]},{"id":0,"type":"end","point":[-5.955,-9.688,6.45],"radius_m":0.008,"to":[["545839",2]]}]},{"id":"545838","kind":"pipe","category":"Pipes","family":"Pipe
+    Types","type":"Standard","type_id":"142438","inner_diameter_m":0.01066,"nominal_diameter_m":0.015,"length_m":0.184125,"part_type":null,"angle_deg":null,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":null,"connectors":[{"id":1,"type":"end","point":[-5.939,-9.688,6.434],"radius_m":0.008,"to":[["545839",1]]},{"id":0,"type":"end","point":[-5.939,-9.688,6.25],"radius_m":0.008,"to":[["545696",1]]}]},{"id":"545839","kind":"fitting","category":"Pipe
+    Fittings","family":"M_Pipe Elbow","type":"Standard","type_id":"133158","inner_diameter_m":null,"nominal_diameter_m":null,"length_m":null,"part_type":"Elbow","angle_deg":90,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":[-5.939,-9.688,6.45],"connectors":[{"id":1,"type":"end","point":[-5.939,-9.688,6.434],"radius_m":0.008,"to":[["545838",1]]},{"id":2,"type":"end","point":[-5.955,-9.688,6.45],"radius_m":0.008,"to":[["545835",0]]}]},{"id":"545842","kind":"pipe","category":"Pipes","family":"Pipe
+    Types","type":"Standard","type_id":"142438","inner_diameter_m":0.01066,"nominal_diameter_m":0.015,"length_m":2.049175,"part_type":null,"angle_deg":null,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":null,"connectors":[{"id":1,"type":"end","point":[-8.074,-6.088,6.45],"radius_m":0.008,"to":[["545863",3]]},{"id":0,"type":"end","point":[-10.124,-6.088,6.45],"radius_m":0.008,"to":[["545846",2]]}]},{"id":"545845","kind":"pipe","category":"Pipes","family":"Pipe
+    Types","type":"Standard","type_id":"142438","inner_diameter_m":0.01066,"nominal_diameter_m":0.015,"length_m":0.184125,"part_type":null,"angle_deg":null,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":null,"connectors":[{"id":1,"type":"end","point":[-10.139,-6.088,6.434],"radius_m":0.008,"to":[["545846",1]]},{"id":0,"type":"end","point":[-10.139,-6.088,6.25],"radius_m":0.008,"to":[["545726",1]]}]},{"id":"545846","kind":"fitting","category":"Pipe
+    Fittings","family":"M_Pipe Elbow","type":"Standard","type_id":"133158","inner_diameter_m":null,"nominal_diameter_m":null,"length_m":null,"part_type":"Elbow","angle_deg":90,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":[-10.139,-6.088,6.45],"connectors":[{"id":2,"type":"end","point":[-10.124,-6.088,6.45],"radius_m":0.008,"to":[["545842",0]]},{"id":1,"type":"end","point":[-10.139,-6.088,6.434],"radius_m":0.008,"to":[["545845",1]]}]},{"id":"545849","kind":"pipe","category":"Pipes","family":"Pipe
+    Types","type":"Standard","type_id":"142438","inner_diameter_m":0.01066,"nominal_diameter_m":0.015,"length_m":2.049175,"part_type":null,"angle_deg":null,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":null,"connectors":[{"id":1,"type":"end","point":[-8.004,-6.088,6.45],"radius_m":0.008,"to":[["545863",4]]},{"id":0,"type":"end","point":[-5.955,-6.088,6.45],"radius_m":0.008,"to":[["545853",2]]}]},{"id":"545852","kind":"pipe","category":"Pipes","family":"Pipe
+    Types","type":"Standard","type_id":"142438","inner_diameter_m":0.01066,"nominal_diameter_m":0.015,"length_m":0.184125,"part_type":null,"angle_deg":null,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":null,"connectors":[{"id":0,"type":"end","point":[-5.939,-6.088,6.25],"radius_m":0.008,"to":[["545728",1]]},{"id":1,"type":"end","point":[-5.939,-6.088,6.434],"radius_m":0.008,"to":[["545853",1]]}]},{"id":"545853","kind":"fitting","category":"Pipe
+    Fittings","family":"M_Pipe Elbow","type":"Standard","type_id":"133158","inner_diameter_m":null,"nominal_diameter_m":null,"length_m":null,"part_type":"Elbow","angle_deg":90,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":[-5.939,-6.088,6.45],"connectors":[{"id":1,"type":"end","point":[-5.939,-6.088,6.434],"radius_m":0.008,"to":[["545852",1]]},{"id":2,"type":"end","point":[-5.955,-6.088,6.45],"radius_m":0.008,"to":[["545849",0]]}]},{"id":"545856","kind":"pipe","category":"Pipes","family":"Pipe
+    Types","type":"Standard","type_id":"142438","inner_diameter_m":0.01066,"nominal_diameter_m":0.015,"length_m":2.062075,"part_type":null,"angle_deg":null,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":null,"connectors":[{"id":0,"type":"end","point":[-5.955,-2.488,6.45],"radius_m":0.008,"to":[["545860",2]]},{"id":1,"type":"end","point":[-8.017,-2.488,6.45],"radius_m":0.008,"to":[["545865",2]]}]},{"id":"545859","kind":"pipe","category":"Pipes","family":"Pipe
+    Types","type":"Standard","type_id":"142438","inner_diameter_m":0.01066,"nominal_diameter_m":0.015,"length_m":0.184125,"part_type":null,"angle_deg":null,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":null,"connectors":[{"id":0,"type":"end","point":[-5.939,-2.488,6.25],"radius_m":0.008,"to":[["545737",1]]},{"id":1,"type":"end","point":[-5.939,-2.488,6.434],"radius_m":0.008,"to":[["545860",1]]}]},{"id":"545860","kind":"fitting","category":"Pipe
+    Fittings","family":"M_Pipe Elbow","type":"Standard","type_id":"133158","inner_diameter_m":null,"nominal_diameter_m":null,"length_m":null,"part_type":"Elbow","angle_deg":90,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":[-5.939,-2.488,6.45],"connectors":[{"id":1,"type":"end","point":[-5.939,-2.488,6.434],"radius_m":0.008,"to":[["545859",1]]},{"id":2,"type":"end","point":[-5.955,-2.488,6.45],"radius_m":0.008,"to":[["545856",0]]}]},{"id":"545863","kind":"fitting","category":"Pipe
+    Fittings","family":"M_Pipe Cross","type":"Standard","type_id":"132244","inner_diameter_m":null,"nominal_diameter_m":null,"length_m":null,"part_type":"Cross","angle_deg":null,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":[-8.039,-6.088,6.45],"connectors":[{"id":2,"type":"end","point":[-8.039,-6.123,6.45],"radius_m":0.008,"to":[["545820",1]]},{"id":4,"type":"end","point":[-8.004,-6.088,6.45],"radius_m":0.008,"to":[["545849",1]]},{"id":3,"type":"end","point":[-8.074,-6.088,6.45],"radius_m":0.008,"to":[["545842",1]]},{"id":1,"type":"end","point":[-8.039,-6.053,6.45],"radius_m":0.008,"to":[["545821",0]]}]},{"id":"545865","kind":"fitting","category":"Pipe
+    Fittings","family":"M_Pipe Tee","type":"Standard","type_id":"130550","inner_diameter_m":null,"nominal_diameter_m":null,"length_m":null,"part_type":"Tee","angle_deg":90,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":[-8.039,-2.488,6.45],"connectors":[{"id":3,"type":"end","point":[-8.039,-2.51,6.45],"radius_m":0.008,"to":[["545821",1]]},{"id":2,"type":"end","point":[-8.017,-2.488,6.45],"radius_m":0.008,"to":[["545856",1]]},{"id":1,"type":"end","point":[-8.061,-2.488,6.45],"radius_m":0.008,"to":[["545822",1]]}]},{"id":"545866","kind":"fitting","category":"Pipe
+    Fittings","family":"M_Pipe Elbow","type":"Standard","type_id":"133158","inner_diameter_m":null,"nominal_diameter_m":null,"length_m":null,"part_type":"Elbow","angle_deg":90,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":[-10.139,-2.488,6.45],"connectors":[{"id":1,"type":"end","point":[-10.139,-2.488,6.434],"radius_m":0.008,"to":[["545826",1]]},{"id":2,"type":"end","point":[-10.124,-2.488,6.45],"radius_m":0.008,"to":[["545822",0]]}]},{"id":"972753","kind":"fitting","category":"Pipe
+    Fittings","family":"M_Cross - Generic","type":"Standard","type_id":"600217","inner_diameter_m":null,"nominal_diameter_m":null,"length_m":null,"part_type":"Cross","angle_deg":null,"k":null,"level":"Level
+    2","space":null,"space_id":null,"at":[-8.039,-9.688,6.45],"connectors":[{"id":4,"type":"end","point":[-8.039,-9.708,6.45],"radius_m":0.008,"to":[]},{"id":3,"type":"end","point":[-8.039,-9.667,6.45],"radius_m":0.008,"to":[["545820",0]]},{"id":2,"type":"end","point":[-8.019,-9.688,6.45],"radius_m":0.008,"to":[["545835",1]]},{"id":1,"type":"end","point":[-8.06,-9.688,6.45],"radius_m":0.008,"to":[["545828",1]]}]}],"spaces":[{"id":"380510","number":"53","name":"EDP
+    II 53","level":"Level 2","area_m2":94.615665,"outline":[[-4.518,-5.145],[-4.518,-4.646],[-4.633,-4.646],[-4.633,-4.445],[-4.633,-1.202],[-12.57,-1.202],[-12.768,-1.202],[-12.768,-12.719],[-4.518,-12.719],[-4.518,-5.145]],"inner_loops":0,"separation_edges":0}],"findings":["The
+    system was chosen by its name, Fire Protection Wet 1."]}, num Func`2, numOrNull Func`2,
+    point Func`2, quote ", seen HashSet`1, systemOf Func`2, take Action`1, wanted Fire Protection
+    Wet 1. inputs came systemName as given. on P1102 MEP
+  negative_case: run with systemName=ZZZ No Such System instead - chosen because it should
+    not contain what this fragment reports. returned FeetToMetres 0.3048, angleShared 0 item(s),
+    backslash \, baseEquipment (null), body StringBuilder, chosen (null), classification Func`2,
+    doubleOf Func`3, elementCount 0, elements 0 item(s), esc Func`2, findings 1 item(s) [No
+    fire protection system is named "ZZZ No Such System" in t...], fireSystems 1 item(s) [Fire
+    Protection Wet 1], first true, firstSpace true, headSpaces 0 entry(ies), invariant CultureInfo,
+    isCategory Func`3, json StringBuilder, kParameter Func`2, levelOf Func`2, managerOf Func`2,
+    metres Func`2, networkJson {"format":1,"document":"P1102 MEP","systems":[{"id":"545760","name":"Fire
+    Protection Wet 1","classification":"FireProtectWet","chosen":false}],"system":null,"elements":[],"spaces":[],"findings":["No
+    fire protection system is named \"ZZZ No Such System\" in this model."]}, num Func`2,
+    numOrNull Func`2, point Func`2, quote ", seen HashSet`1, systemOf Func`2, take Action`1,
+    wanted ZZZ No Such System. inputs came systemName as given. on P1102 MEP
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 8cffde063d891c0f
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

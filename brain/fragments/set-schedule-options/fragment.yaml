@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -166,6 +166,47 @@ contract:
       # before 2024. Never a thing it found (D-52).
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    find-views with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned applied ''Level 2 Space Schedule'':
+    Show Title yes -> no, Show Headers yes -> no; ''Space Schedule'': Show Title yes -> no,
+    Show Headers yes -> no, changed 4, notApplicable 0 item(s), refused 0 item(s), scheduleBehind
+    Func`2. inputs came elements from find-views (2); showTitle as given; showHeaders as given;
+    gridLinesOnSheets not given - "leave", the card''s own default (optional); titleTextType
+    not given - "leave", the card''s own default (optional); headerTextType not given - "leave",
+    the card''s own default (optional); bodyTextType not given - "leave", the card''s own
+    default (optional); stripedRows not given - "leave", the card''s own default (optional);
+    stripedRowsOnSheets not given - "leave", the card''s own default (optional); stripedRowColour
+    not given - "leave", the card''s own default (optional); rowHeightMm not given - "leave",
+    the card''s own default (optional); includeLinks not given - "leave", the card''s own
+    default (optional); filterBySheet not given - "leave", the card''s own default (optional);
+    embeddedSchedule not given - "leave", the card''s own default (optional). on P1102 MEP'
+  negative_case: 'run with showTitle=maybe arranged with nameContains=Space Schedule, viewType=Schedule
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running find-views with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned applied ''Level
+    2 Space Schedule'': nothing it could set; ''Space Schedule'': nothing it could set, changed
+    0, notApplicable 0 item(s), refused 1 item(s) [Show Title takes yes or no, not ''maybe''
+    - left as it was on ...], scheduleBehind Func`2. inputs came elements from find-views
+    (2); showTitle as given; showHeaders not given - "leave", the card''s own default (optional);
+    gridLinesOnSheets not given - "leave", the card''s own default (optional); titleTextType
+    not given - "leave", the card''s own default (optional); headerTextType not given - "leave",
+    the card''s own default (optional); bodyTextType not given - "leave", the card''s own
+    default (optional); stripedRows not given - "leave", the card''s own default (optional);
+    stripedRowsOnSheets not given - "leave", the card''s own default (optional); stripedRowColour
+    not given - "leave", the card''s own default (optional); rowHeightMm not given - "leave",
+    the card''s own default (optional); includeLinks not given - "leave", the card''s own
+    default (optional); filterBySheet not given - "leave", the card''s own default (optional);
+    embeddedSchedule not given - "leave", the card''s own default (optional). on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 4b32d0d29b408cc2
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-EXP-018
 heron-step: 16
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -96,6 +96,46 @@ contract:
       # no. Never a thing it FOUND (D-52).
       role: accounting
       type: string
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: P1102 MEP, Revit 2020, session 59096 - the count is NOT recorded because 1,501 elements
+    was measured on HeronNewFam_P1102, the document in front, and this ran against another
+    one (row 15)
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    manage-export-setups with this phase''s own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned aliases 31 entry(ies),
+    changed fileVersion: 2018 -> 2013, changes 1 item(s) [fileVersion: 2018 -> 2013], current
+    DWGExportOptions, dgnSettings (null), done true, dwgSettings ExportDWGSettings, dxfHalf
+    false, errors 0 item(s), expected 2 entry(ies), found HERON P1102 DWG, kindUsed DWG, kindWord
+    dwg, layerExpected 0 item(s), lookKind dwg, namesOf Func`2, notKept , offer Action`3,
+    offerEnum Action`5, offerYesNo Action`3, offered Func`2, pick Func`4, read 18 entry(ies),
+    refused , rowOf Func`4, same 1 item(s) [units (Millimeter)], squash Func`2, unchangedOptions
+    units (Millimeter), wantedName HERON P1102 DWG, write 18 entry(ies), yes Func`2, yesNo
+    Func`2. inputs came setupName as given; options as given; kind as given. on P1102 MEP'
+  negative_case: 'run with kind=dwg, mode=create, options=units=parsecs, setupName=HERON P1102
+    DWG instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running manage-export-setups with this phase''s own values - run
+    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned aliases 31 entry(ies), changed , changes 0 item(s), current DWGExportOptions,
+    dgnSettings (null), done false, dwgSettings ExportDWGSettings, dxfHalf false, errors 1
+    item(s) [units: ''parsecs'' is not one of Default, Inch, Foot, Millimet...], expected
+    0 entry(ies), found HERON P1102 DWG, kindUsed DWG, kindWord dwg, layerExpected 0 item(s),
+    lookKind dwg, namesOf Func`2, notKept , offer Action`3, offerEnum Action`5, offerYesNo
+    Action`3, offered Func`2, pick Func`4, read 18 entry(ies), refused Nothing was changed.
+    units: ''parsecs'' is not one of Default, Inch, Foot, Millimeter, Centimeter, Meter. The
+    options a DWG setup takes here: colors, coordinates, externalreferences, fileversion,
+    hidereferenceplanes, hidescopeboxes, hideunreferencedviewtags, layerstandard, linescaling,
+    marknonplotlayers, mergedviews, nonplotsuffix, preservecoincidentlines, propertyoverrides,
+    roomsandareasaspolylines, solids, texttreatment, units, layer:<category>[:<subcategory>],
+    cutlayer:<category>[:<subcategory>]., rowOf Func`4, same 0 item(s), squash Func`2, unchangedOptions
+    , wantedName HERON P1102 DWG, write 18 entry(ies), yes Func`2, yesNo Func`2. inputs came
+    setupName as given; options as given; kind as given. on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 35a30fad0832ce4c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
