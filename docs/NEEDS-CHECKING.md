@@ -1302,6 +1302,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-lu.md`](needs-checking/group-lu.md)
 
+## Group LV - Manage > Project Information written - project number, client name, address, building name, status or an added shared parameter, each by its exact name and read back: `SET_PROJECT_INFORMATION` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lv.md`](needs-checking/group-lv.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

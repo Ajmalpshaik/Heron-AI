@@ -1,0 +1,41 @@
+# NEEDS-CHECKING Group LV - SET_PROJECT_INFORMATION, built 2026-11-02 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/set-project-information-lv-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-project-information-lv-2026-11-02.yaml
+#
+# THE MODEL (docs/needs-checking/group-lv.md, LV1): a scratch project from
+# Revit's default architectural template, saved under %TEMP%\heron-work,
+# never a working model. In Manage > Project Information, by hand: Project
+# Number "0001", Client Name "Owner", Building Name left empty; a shared Text
+# parameter "Project Code" bound to the Project Information category, left
+# empty. The ten values and Project Code written down before the first run.
+#
+# THE ARRANGEMENT: the write takes no selection - it touches the one Project
+# Information element - so the two cases differ by the VALUES asked for.
+# Positive: one pair, a name the dialog shows. Negative: the same good pair
+# AND a misspelt second name - a different value, not an empty one
+# (fragment-proving, rules 3 and 5): nothing may be written, not even the
+# good half, and Project Number must still read 0001 after it. Every write
+# here is ROLLED BACK.
+
+model: "a scratch project from Revit's default architectural template, Project Number 0001"
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: set-project-information
+    expect: written
+    set:
+      values: "Project Number=QA-2026-114"
+    negative-set:
+      values: "Project Number=QA-2026-114|Client Nme=Ashghal"
+    note: >
+      LV2. Negative - THE FIRST CASE TO RUN: refused "NOTHING WAS WRITTEN to
+      Project Information: Project Information has no parameter named
+      exactly 'Client Nme'.", written 0, changes empty, parameterNames
+      listing every name Project Information carries with "Client Name" and
+      "Project Code" among them - and Project Number still 0001 in the
+      dialog. Positive: written 1, changes "Project Number: 0001 ->
+      QA-2026-114", refused null, every other value as written down before.

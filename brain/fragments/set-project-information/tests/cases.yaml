@@ -1,0 +1,81 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write to the one element every title block reads, "wrote when it was
+# told not to": a value changed under a name that matched nothing, or the
+# good half of a request written when the other half was refused.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING Group LV): a scratch
+# project from Revit's default architectural template, saved under
+# %TEMP%\heron-work, never a working model. In Manage > Project Information,
+# by hand: Project Number "0001", Client Name "Owner", Project Status
+# "Project Status", Building Name left empty. A shared parameter "Project
+# Code" (Text) from a scratch shared parameter file bound as an instance
+# parameter to the Project Information category, left empty. Write down the
+# ten values and Project Code before the first run. Where the model
+# differs, the job file changes - never the card. EVERY RUN ROLLED BACK, so
+# each case starts from the model as saved.
+
+positive:
+  - given: >
+      values "Project Number=QA-2026-114" - "set the project number to
+      QA-2026-114" - the job file's positive
+    expect: >
+      refused null; written 1; changes "Project Number: 0001 -> QA-2026-114";
+      alreadyThat empty; parameterNames empty. THE CHECK THAT MATTERS: Manage
+      > Project Information shows Project Number QA-2026-114 and the other
+      nine values and Project Code exactly as written down before - nothing
+      but that one value moved
+
+  - given: >
+      values "Project Address=12 Corniche Road, Doha|Building Name=Tower B" -
+      "fill in the project address and building name"
+    expect: >
+      written 2; changes "Project Address: Enter address here -> 12 Corniche
+      Road, Doha  ||  Building Name: (empty) -> Tower B" (the address's
+      before is whatever the template holds); ONE entry in Revit's undo list
+      for both
+
+  - given: >
+      values "Project Code=PRJ-77" - "set the shared parameter Project Code on
+      project information to PRJ-77"
+    expect: >
+      written 1; changes "Project Code: (empty) -> PRJ-77" - an added shared
+      parameter takes the same road as Revit's own ten
+
+  - given: >
+      values "Client Name=Owner" - the value it already holds
+    expect: >
+      written 0; alreadyThat ["Client Name"]; changes "Client Name: already
+      Owner - not changed"; refused null. A second run changes nothing and
+      says so
+
+negative:
+  - given: >
+      values "Project Number=QA-2026-114|Client Nme=Ashghal" - the second name
+      misspelt - the job file's negative
+    expect: >
+      refused "NOTHING WAS WRITTEN to Project Information: Project Information
+      has no parameter named exactly 'Client Nme'."; written 0; changes
+      empty; parameterNames lists every name Project Information carries,
+      "Client Name" and "Project Code" among them. THE CHECK THAT MATTERS:
+      Project Number still reads 0001 - the good half of a request is not
+      written when the other half is refused. THE FIRST CASE TO RUN
+
+  - given: >
+      values "Project Code=PRJ-77" with the shared parameter "Project Code"
+      changed to a Number (or Integer) parameter in a second scratch copy
+    expect: >
+      refused naming 'Project Code' and saying PRJ-77 is not a number - text
+      is never pushed into a number; nothing written
+
+  - given: a family document open in front, any values
+    expect: >
+      notAProject true; refused "The document in front, ... is a family, and
+      Project Information belongs to a project - nothing was written."
+
+second_route:
+  - >
+    Manage > Project Information in Revit, typing the same values into the
+    dialog: the same parameters by the same labels, and the title block on
+    any sheet whose labels print them showing the new values. Undo takes the
+    Heron run back as one entry. REPORT_PROJECT_INFORMATION read after the
+    run gives the same values as `changes`' after column.

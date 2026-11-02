@@ -1,0 +1,156 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-063
+semantic-identity: "change the values in Manage > Project Information - project number, client name, address, building name, status, or a parameter added there - each by its exact name, read back"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "set the project number to
+# QA-2026-114", "change the client name to Ashghal", "fill in the project
+# address and building name", "set the project status to Issued for
+# Construction" and "set the shared parameter Project Code on project
+# information to PRJ-77". No card wrote Manage > Project Information:
+# REPORT_PROJECT_INFORMATION's own routing table says "set the project
+# number" -> "nothing in Heron yet", and a search of every fragment's code
+# for ProjectInformation that day found it only in that read and in
+# LIST_EXPORT_SETUPS. brain/heron_retrieve.py on the five sentences (a
+# scratch store, Revit 2024) answered the read, or REPORT_GLOBAL_PARAMETERS,
+# first.
+#
+# WRITTEN NEW, NOT WIDENED (heron-duplicate-checker's method, 2026-11-02;
+# heron_merge.py found no group with this capability, heron_duplicates.look
+# "0 already here").
+#   REPORT_PROJECT_INFORMATION (PROVEN) - LOOK-ALIKE, the read half. A read
+#     cannot become a write without every question it answers needing a
+#     Keep or Discard (D-86). Its reading of a value is copied here; that
+#     card's impl/ is not touched.
+#   WRITE_ELEMENT_PARAMETERS (PROVEN) - LOOK-ALIKE. One value onto elements
+#     handed in from a selection or a filter, reported as ids; Project
+#     Information is never selected, nothing upstream hands it in, and it
+#     gives no before value and no list of names when a name is absent.
+#     Widening it would put its proof out of date (heron_apply LANDS_AT).
+#   SET_PARAMETER_VALUES_BY_ID (DRAFT) - LOOK-ALIKE: a different value for
+#     each named element, refused when anything moved since a table was read.
+#   SET_GLOBAL_PARAMETER (DRAFT) - LOOK-ALIKE: a global parameter is its own
+#     element, written through its own calls; a Project Information parameter
+#     driven by one is refused here and pointed there.
+kind: action
+domain: revit.document
+capability: SET_PROJECT_INFORMATION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Changes values in Manage > Project Information - the project name and
+  number, client name, project address, building name, project status and
+  issue date, author, organization, and any project or shared parameter
+  added to Project Information - each given as its exact name and the value
+  to set. Several can be set in one go. A name that matches nothing is
+  refused and every name Project Information carries is listed; a read-only
+  value, one driven by a global parameter, or a value of the wrong kind is
+  refused by name, and then nothing at all is changed. Text is written as
+  typed; a number is read in the project's own units, as the dialog reads
+  it. Each value is read back, before and after. Nothing but Project
+  Information is touched.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # One or more "Parameter Name = value" pairs, split by "|" or a line
+    # break: "Project Number=QA-2026-114", "Project Address=12 Corniche
+    # Road|Building Name=Tower B". The name is matched EXACTLY - Revit's own
+    # label ("Client Name", "Project Status", "Project Issue Date") or the
+    # added parameter's name ("Project Code"). An address is set on one line.
+    - name: values
+      type: string
+      source: request
+  provides:
+    - name: written
+      # How many values were written AND read back as asked. A thing it
+      # CHANGED, so a result (D-52).
+      role: result
+      type: int
+    - name: changes
+      # ONE STRING, a row per value: "Project Number: 0001 -> QA-2026-114",
+      # before and after as Revit shows them, read back after the write;
+      # "already X - not changed" for one that held it.
+      role: result
+      type: string
+    - name: alreadyThat
+      # Names that ALREADY held the value asked for, so nothing was written
+      # to them. The evidence it looked, never a change (D-52).
+      role: accounting
+      type: IList<string>
+    - name: parameterNames
+      # Filled only when a name matched nothing: every name Project
+      # Information carries, sorted, read-only ones marked - what to choose
+      # from. Never a value found (D-52).
+      role: accounting
+      type: string
+    - name: notAProject
+      # That the document in front is a family, which has no Project
+      # Information.
+      role: accounting
+      type: bool
+    - name: refused
+      # Why NOTHING was written, every reason named. Null when it wrote
+      # (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read with tools/api-surface
+  --members on the reference assemblies of 2020 to 2027 on 2026-11-02:
+  `Document.ProjectInformation`, `IsFamilyDocument`, `Title`, `Regenerate`
+  and `GetElement(ElementId)`; on ProjectInfo, inherited from Element,
+  `GetParameters(string)`, `Parameters`, `get_Parameter(Definition)` and
+  `Name`; on Parameter, `IsReadOnly`, `UserModifiable`, `StorageType`,
+  `HasValue`, `Definition`, `GetAssociatedGlobalParameter`, `AsString`,
+  `AsValueString()`, `AsInteger`, `AsDouble`, `Set(string)`, `Set(int)` and
+  `SetValueString`; `Definition.Name`; `ElementId.InvalidElementId` - all
+  present and unchanged on all eight. ProjectInfo's own properties (Name,
+  Number, ClientName, Address, BuildingName, Author, OrganizationName,
+  OrganizationDescription, Status, IssueDate - every one a string) are there
+  2020 to 2027 too, but the write goes through the parameter so a name and
+  an added parameter take one road. Whether a parameter is a Yes/No is asked
+  by reflection - `Definition.GetDataType()` against
+  `SpecTypeId.Boolean.YesNo` from 2022, `Definition.ParameterType` on 2020
+  and 2021 - as WRITE_ELEMENT_PARAMETERS asks it, because fragments compile
+  with no release symbols (5b-181). A number goes through SetValueString,
+  which parses in the document's display units, so no units API is touched
+  and nothing meets the 2021 move to ForgeTypeId.
+
+# ROUTING (2026-11-02) - the same rows are in REPORT_PROJECT_INFORMATION.
+#
+#   "set the project number to QA-2026-114"  -> here
+#   "change the client name to Ashghal"      -> here
+#   "fill in the project address and building name" -> here, two pairs
+#   "set the project status to Issued for Construction" -> here
+#   "set the shared parameter Project Code on project information to PRJ-77" -> here
+#   "what is the project number", "who is the client", "what is the project
+#   status"                                  -> REPORT_PROJECT_INFORMATION -
+#                                               a question, nothing changed
+#   "set the comments on these"              -> WRITE_ELEMENT_PARAMETERS - a
+#                                               parameter ON elements
+#   "change the global parameter"            -> SET_GLOBAL_PARAMETER
+#   "add a project parameter for the drawing checker" -> ADD_PROJECT_PARAMETER
+#                                               - it MAKES the parameter; this
+#                                               fills one that exists
+
+utterances:
+  - set the project number to QA-2026-114
+  - change the client name to Ashghal
+  - fill in the project address and building name
+  - set the project status to Issued for Construction
+  - set the shared parameter Project Code on project information to PRJ-77

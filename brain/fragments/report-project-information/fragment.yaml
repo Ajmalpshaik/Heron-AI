@@ -120,8 +120,12 @@ compatibility-note: >
 #   "where is this project"                  -> REPORT_LOCATION - the site,
 #                                               not the project's details
 #   "add a project parameter for the drawing checker" -> ADD_PROJECT_PARAMETER
-#   "set the project number"                 -> nothing in Heron yet. A
-#                                               change, and this never makes it
+#   "set the project number to QA-2026-114"  -> SET_PROJECT_INFORMATION - a
+#                                               change, and this never makes
+#                                               it. Until 2026-11-02 this row
+#                                               read "set the project number
+#                                               -> nothing in Heron yet"
+#   "change the client name to Ashghal"      -> SET_PROJECT_INFORMATION
 
 utterances:
   - what does project information say
