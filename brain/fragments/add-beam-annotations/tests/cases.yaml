@@ -1,0 +1,101 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that annotates, "annotated something nobody asked for": a tag or
+# a spot on a column or a brace, in a section, of a type nobody named and the
+# project does not default to, or a second tag stacked on a beam already
+# tagged.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE. The model is a scratch project from
+# Revit's metric STRUCTURAL template, Revit 2024: two steel columns C1 and C2
+# 6 m apart on Level 1 to Level 2, beam B1 (a W-shape, top of steel at Level
+# 2) between their tops, beam B2 parallel to it 3 m away, and the structural
+# plan "Level 2" (ViewType EngineeringPlan) showing all four - SAVED before
+# the run, with no tag and no spot elevation on the beams (NEEDS-CHECKING
+# Group MC, MC1). The template's default structural framing tag and spot
+# elevation type are used: no type is named, so nothing in the job depends on
+# a name the template may not have.
+#
+# The beams are collected by SELECT_BY_CATEGORY_NAME with Structural Framing in
+# "EngineeringPlan: Level 2" and SET_SELECTION, as Group KM does. The negative
+# leg is the SAME call with Structural Columns: a different set, not an empty
+# one (fragment-proving, rules 3 and 5) - a column is not a beam, so nothing
+# may be placed. Where the model differs, the job file changes - never the
+# card. EVERY RUN ROLLED BACK.
+
+positive:
+  - given: >
+      B1 and B2 from SELECT_BY_CATEGORY_NAME with Structural Framing and
+      SET_SELECTION, view "Level 2" (a structural plan), everything else left
+      out - a tag at the middle, spots at both ends, the top face, the
+      project's default types
+    expect: >
+      tagged 2; newTags 2 ids; newSpots 4 ids; alreadyTagged and notAnnotated
+      empty; refused empty; findings "2 element(s) handed in, in "Level 2": 2
+      beam tag(s) placed at the middle as '...' (the project's default
+      structural framing tag); 4 spot elevation(s) placed at both ends, on the
+      TOP face ...". report names each beam with its tag id and two spot ids,
+      each showing the level Revit prints. Look at the plan - a tag at
+      mid-span on each beam and a spot near each end, 300 mm in from the
+      column, reading Level 2's height
+
+  - given: B1 alone, tagAt "start", spotsAt "end", face "bottom"
+    expect: >
+      tagged 1 near B1's start; newSpots 1 near its end; the value it shows
+      lower than the positive's top by the beam's depth. The choice of face
+      has to change the number or it is not being made - read it against the
+      section's depth in the type's Properties
+
+  - given: the first case again, after it was KEPT
+    expect: >
+      tagged 0; newSpots empty; alreadyTagged B1 and B2, each named "already
+      carries a tag" - no second tag and no second pair of spots
+
+  - given: B1 with tagAt "none"
+    expect: tagged 0 and newTags empty, newSpots 2 - spots only, as asked
+
+negative:
+  - given: >
+      the structural columns of Level 2 instead - SELECT_BY_CATEGORY_NAME
+      with Structural Columns - with the same plan
+    expect: >
+      tagged 0, newTags and newSpots empty, C1 and C2 in notAnnotated with
+      "not structural framing - beam annotations go on beams only". No tag or
+      spot of any kind placed. THE FIRST CASE TO RUN - a fragment that
+      annotated whatever it was handed shows here
+
+  - given: the positive's beams with view a section through them
+    expect: >
+      tagged 0; refused naming the section - "is a Section view, and beam
+      annotations go only in a plan" - and "Nothing was placed."
+
+  - given: the positive's beams with tagType "ZZZ No Such Tag"
+    expect: >
+      tagged 0, newSpots empty; refused "No beam tag type is called 'ZZZ No
+      Such Tag'"; typesLoaded lists the structural framing tag types the model
+      has. The spots are NOT placed either - one refusal stops the whole call
+
+  - given: the positive's beams with tagType naming a Door Tag type the model has
+    expect: refused naming it as a Door Tags type, not a structural framing tag
+
+  - given: the positive's beams with tagAt "quarter"
+    expect: refused "'quarter' is not a place along a beam this knows"
+
+  - given: a brace among the beams
+    expect: the brace named in notAnnotated, "not a beam"; the beams annotated
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one plan of beam annotations is one undo entry
+
+second_route:
+  - >
+    In Revit, after a KEPT run: select each new spot - its Properties name its
+    type, and the level it shows is what `report` quoted; select B1 - its
+    Properties' Elevation at Top (or a section through it) gives the same top
+    of steel. Revit's own Annotate > Beam Annotations on B2 in a copy of the
+    plan, set to a tag at the middle and spot elevations at both ends, places
+    the same annotations at the same places
+  - >
+    REPORT_SPOT_DIMENSIONS on "Level 2" lists the four new spot elevations
+    with the same values, and REPORT_TAGS_AND_TARGETS names B1 and B2 as what
+    the two new tags point at

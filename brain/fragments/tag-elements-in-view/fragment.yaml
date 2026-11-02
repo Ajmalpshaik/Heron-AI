@@ -445,6 +445,13 @@ compatibility-note: >
 #                                       reads the independent tag class only,
 #                                       so to it every room is untagged (row
 #                                       recorded on TAG_ROOMS, 2026-09-24)
+#   "put beam tags at mid-span on every beam in this view"
+#                                    -> ADD_BEAM_ANNOTATIONS (2026-11-02) - a
+#                                       tag at a beam's start, middle or end,
+#                                       with spot elevations at its ends if
+#                                       asked; this card tags at an element's
+#                                       own point and knows no position along
+#                                       a beam
 
 # VERSION 7 (2026-11-01) - TAG_ROOMS WAS MERGED INTO THIS CARD on the owner's
 # instruction ("make sure there is no duplicate tools"), and is DEPRECATED.

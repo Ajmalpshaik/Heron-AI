@@ -126,6 +126,15 @@ compatibility-note: >
 #                                             and east of a point, not a height
 #   "add spot coordinates to these column  -> ADD_SPOT_COORDINATES
 #    corners"
+
+
+# ROUTING (2026-11-02) - repeated in ADD_BEAM_ANNOTATIONS.
+#
+#   "annotate all the beams in this plan    -> ADD_BEAM_ANNOTATIONS - Revit's
+#    with tags and top-of-steel spot           Beam Annotations: spots at a
+#    elevations"                               beam's ENDS with a tag, where
+#                                              this puts one spot at a face's
+#                                              middle
 utterances:
   - put the levels on the drawing
   - add spot levels to these

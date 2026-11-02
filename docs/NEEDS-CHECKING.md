@@ -1330,6 +1330,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-mb.md`](needs-checking/group-mb.md)
 
+## Group MC - Annotate > Beam Annotations - on each beam in a plan, in one go, a beam tag at its start, middle or end and spot elevations on its top or bottom at its ends, beams already tagged left alone: `ADD_BEAM_ANNOTATIONS` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-mc.md`](needs-checking/group-mc.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
