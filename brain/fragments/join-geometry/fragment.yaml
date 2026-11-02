@@ -253,6 +253,14 @@ compatibility-note: >
 # ROUTING (2026-10-12, the gap fill)
 #
 #   "cope these beams at the columns"       -> COPE_FRAMING
+#
+# ROUTING (2026-11-02, Cut Geometry) - repeated in CUT_GEOMETRY and
+# REPORT_GEOMETRY_CUTS. A cut takes one element's shape out of another; a
+# join shares the overlap. Two Revit commands, two cards.
+#
+#   "cut this beam out of the slab"         -> CUT_GEOMETRY
+#   "uncut these two"                       -> CUT_GEOMETRY, cut false
+#   "which elements is this cutting"        -> REPORT_GEOMETRY_CUTS
 utterances:
   - join these walls together
   - the wall and the slab are not joining

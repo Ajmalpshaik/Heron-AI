@@ -1,0 +1,33 @@
+# REPORT_GEOMETRY_CUTS - built 2026-11-02 in a cloud session with no Revit.
+# NOT RUN. Arranged as docs/needs-checking/group-lw.md says.
+positive:
+  - given: >
+      a floor cut by a beam with Modify > Cut Geometry by hand, both selected
+    expect: >
+      two rows - "<floor> is CUT BY <beam> - solid from solid" and "<beam>
+      CUTS <floor> - solid from solid"; withoutCuts 0
+
+  - given: a placed opening family cutting a wall with its void, the family selected
+    expect: one row "<opening family> CUTS <wall> - with its void"
+
+  - given: the same floor after CUT_GEOMETRY with cut false
+    expect: no rows for it and withoutCuts counting it - the read shows the uncut worked
+
+negative:
+  - given: >
+      THE FIRST CASE TO RUN. A wall and a floor JOINED with Join Geometry, never
+      cut, both selected
+    expect: >
+      no rows and withoutCuts 2. A join is not a cut; a row here would mean
+      this read is reporting joins, which are REPORT_JOINED_ELEMENTS'
+
+  - given: twenty walls in a model where nothing has been cut
+    expect: no rows and withoutCuts 20 - the ordinary answer, reading as ordinary
+
+  - given: no elements given
+    expect: refused, with the reason
+
+second_route: >
+  Revit itself: Modify > Uncut Geometry offers exactly the pairs this lists as
+  cut - pick the element and Revit highlights what cuts it; a section through
+  the junction shows the cut or it does not

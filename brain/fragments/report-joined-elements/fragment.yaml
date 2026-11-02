@@ -93,11 +93,17 @@ compatibility-note: >
 #                                       overlap away, and nothing on screen
 #                                       says so
 #   "which one is cutting which"     -> here - the direction, which is the half
-#                                       that decides the volumes
+#                                       that decides the volumes. Answered by
+#                                       identity; since 2026-11-02 ranking
+#                                       alone puts REPORT_GEOMETRY_CUTS first
+#                                       (FRAGMENT-ISSUES 5b-1416)
 #   "join these"                     -> JOIN_GEOMETRY
 #   "unjoin these two walls"         -> JOIN_GEOMETRY, join false
 #   "the wrong one is cutting"       -> JOIN_GEOMETRY, join switch - turn
 #                                       the join round rather than lose it
+#   "which elements is this cutting" -> REPORT_GEOMETRY_CUTS (2026-11-02) - a
+#                                       cut made by Cut Geometry is not a join
+#                                       and does not show here
 
 utterances:
   - what is this joined to

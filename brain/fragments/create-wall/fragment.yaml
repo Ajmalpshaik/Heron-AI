@@ -192,7 +192,12 @@ compatibility-note: >
 #    points"                            -> here, with "arc MX,MY X,Y" in the
 #                                          points (version 2, 5b-1216). A
 #                                          wall drawn as many short straight
-#                                          ones reads as flat facets close up
+#                                          ones reads as flat facets close up.
+#                                          DECLARED below since 2026-11-02:
+#                                          CUT_GEOMETRY's new words moved the
+#                                          ranking and this row went to
+#                                          DRAW_FAMILY_POINT_CURVE
+#                                          (FRAGMENT-ISSUES 5b-1416)
 #   "line the walls of every room with  -> CREATE_FROM_ROOM_BOUNDARIES, version 2
 #    plaster"                              (row 5b-1255): a wall type there
 #                                          lines each room's walls on their
@@ -256,3 +261,7 @@ utterances:
   - draw a curtain wall between these points
   - draw an arc wall through these points
   - draw a wall starting above its level
+  # DECLARED 2026-11-02 from this card's own routing row (5b-1216), once
+  # CUT_GEOMETRY's words moved the ranking and it reached
+  # DRAW_FAMILY_POINT_CURVE (FRAGMENT-ISSUES 5b-1416). Card text only.
+  - draw a curved wall through these points

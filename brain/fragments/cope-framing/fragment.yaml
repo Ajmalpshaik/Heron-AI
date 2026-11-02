@@ -164,6 +164,9 @@ compatibility-note: >
 #
 #   "cope these beams at the columns"         -> here
 #   "join these walls"                        -> JOIN_GEOMETRY
+#   "cut this beam out of the slab"           -> CUT_GEOMETRY (2026-11-02) -
+#                                                Cut Geometry between two
+#                                                elements, not a coping
 
 utterances:
   - cope these beams at the columns

@@ -230,6 +230,12 @@ compatibility-note: >
 #                                       `shape` - CREATE_FAMILY_HOST_OPENING
 #                                       until 2026-11-01
 #   "cut the solid with the void"    -> COMBINE_FAMILY_FORMS
+#   "make the opening family cut the wall" -> CUT_GEOMETRY (2026-11-02): the
+#                                       opening family is already placed and
+#                                       is made to cut; nothing new is made.
+#                                       Declared there and answered by
+#                                       identity; ranking alone puts this card
+#                                       first on it (FRAGMENT-ISSUES 5b-1416)
 #
 # VERSION 3 - WHERE CREATE_FAMILY_HOST_OPENING'S INPUTS AND OUTPUTS ARE NOW:
 #   shape                 shape, the same one closed loop in millimetres
