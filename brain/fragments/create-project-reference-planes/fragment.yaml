@@ -1,0 +1,170 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-150
+semantic-identity: "add reference planes in a project, set out from a named grid or level - Architecture > Work Plane > Ref Plane - each read back"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "draw a reference plane along
+# grid B in this plan", "add a reference plane named Ceiling Datum 2700 above
+# Level 1" and "add reference planes at 600 centres here" - Revit's
+# Architecture > Work Plane > Ref Plane, in a project. No card drew one: a
+# grep of every fragment's C# that day for NewReferencePlane found it only in
+# family cards, and brain/heron_retrieve.py on the sentences (a scratch store,
+# model backend) answered DRAW_FAMILY_DETAIL_LINES, MEASURE_CEILING_HEIGHT and
+# SET_FAMILY_PLANE_REFERENCE.
+#
+# LOOK-ALIKES, NOT DUPLICATES (heron-duplicate-checker's method, 2026-11-02).
+# CREATE_REFERENCE_PLANES (PROVEN) makes named planes in the FAMILY being
+# edited, measured from the family origin, and refuses a project in its own
+# C# - its proof's negative case is that refusal on Project1. This one is the
+# project's: measured from a grid or a level, and it refuses a family the
+# same way, naming that card. SET_REFERENCE_PLANE_LENGTH sets the length of
+# planes already there and makes none. CREATE_GRIDS and CREATE_LEVELS make
+# datums that show on sheets; a reference plane does not.
+#
+# THE DATUM IS NEVER GUESSED (D-33). A grid or a level by its name; with none
+# named, or a name nothing has, nothing is made and the grids and levels are
+# listed. "Here" in "at 600 centres here" is the modeller's to name.
+#
+# SKIPPED, NEVER MADE TWICE, NEVER MOVED. A name already used, a name given
+# twice, or a place a plane already lies is named in `skipped`; the rest are
+# made. Nothing deletes, so Article 7's confirmation does not arise.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: CREATE_PROJECT_REFERENCE_PLANES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws reference planes in a project, set out from one grid or level named
+  by the modeller - never guessed. Along a straight grid, or parallel to it at
+  distances in millimetres east or north of it, drawn in a plan; or
+  horizontal, at heights above or below a level, drawn in a section or
+  elevation. Each may be named; a spacing and a count give a row of planes at
+  equal centres. A name already in the project, or a place a plane already
+  lies, is skipped and named. Each plane is read back.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The view to draw in, by name - "Level 1", "Section 1". Left out, it
+    # binds null and the view in front is used. A plan for a grid, a section
+    # or elevation for a level; any other kind, and any template, is refused
+    # by name.
+    - name: view
+      type: View
+      source: request
+      optional: true
+    # The grid or level the distances are measured from, by its name - "B",
+    # "Level 1". Left out, nothing is made and the grids and levels are
+    # listed.
+    - name: datum
+      type: string
+      source: request
+      optional: true
+      absent: ""
+    # "name=mm" entries with ";" between - "Ceiling Datum=2700; 0" - in
+    # MILLIMETRES from the datum: east or north of a grid, above a level
+    # (negative the other way). An entry with no "=" is an unnamed plane at
+    # that distance; "0" with a grid is a plane along it.
+    - name: planes
+      type: string
+      source: request
+      optional: true
+      absent: ""
+    # Equal centres: `count` unnamed planes at this spacing from the datum,
+    # in MILLIMETRES - 600 and 5 give 600, 1200 ... 3000. Both or neither.
+    - name: spacingMm
+      type: double
+      source: request
+      optional: true
+      absent: '0'
+    - name: count
+      type: int
+      source: request
+      optional: true
+      absent: '0'
+  provides:
+    - name: created
+      # The reference planes made, each read back before it was kept.
+      role: result
+      type: IList<ElementId>
+    - name: skipped
+      # Each plane asked for and not made, with why - a name already used,
+      # a name given twice, a plane already lying there. Evidence it looked,
+      # never a thing it made (D-52).
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING: how many made of how many asked, in which view, from
+      # which datum, then each plane's name and where it was read back -
+      # "\"Ceiling Datum\" 2700 mm above level \"Level 1\" (elevation 2700
+      # mm)" - joined by " || ", SKIPPED rows last.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was made, in the modeller's words - with the grids and
+      # levels listed when the datum was not clear. Null when it ran (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. ItemFactoryBase.NewReferencePlane(
+  XYZ, XYZ, XYZ, View) reached through Document.Create, ReferencePlane.Name /
+  Normal / GetPlane, Grid.Curve / IsCurved, Level.ProjectElevation,
+  View.ViewType / IsTemplate / GenLevel / RightDirection / ViewDirection /
+  Origin, Document.ActiveView / IsFamilyDocument and BuiltInParameter
+  DATUM_TEXT read the same 2020 through 2027 with tools/api-surface --members
+  on 2026-11-02. NewReferencePlane's third argument is a DIRECTION. Not seen
+  in Revit.
+
+# ROUTING (2026-11-02) - the same rows are in CREATE_REFERENCE_PLANES and
+# SET_REFERENCE_PLANE_LENGTH.
+#
+#   "draw a reference plane along grid B in this plan"
+#                                  -> here, datum B, planes "0", the plan in
+#                                     front
+#   "add a reference plane named Ceiling Datum 2700 above Level 1"
+#                                  -> here, datum Level 1, a section or
+#                                     elevation named or in front
+#   "add reference planes at 600 centres here"
+#                                  -> here, spacing 600 and a count; with no
+#                                     grid or level named it makes nothing and
+#                                     lists them
+#   "add reference planes at 300 each side"
+#                                  -> CREATE_REFERENCE_PLANES, in a family
+#   "make these reference planes 5 m long"
+#                                  -> SET_REFERENCE_PLANE_LENGTH
+#   "put a ceiling at 2700"        -> CREATE_FLOOR, a ceiling - by identity.
+#                                     The keyword route alone ranks this card
+#                                     first on "ceiling" and "2700"
+#                                     (check-routing, scratch store,
+#                                     2026-11-02); a datum plane named
+#                                     "Ceiling Datum" is not a ceiling
+#   "set the work plane to Level 2", "show the work plane in this view",
+#   "which work plane is this view on"
+#                                  -> NOT THIS CARD. Nothing sets or shows a
+#                                     view's work plane yet and nothing reads
+#                                     it; on a scratch store these reach this
+#                                     card by ranking, a write, the question
+#                                     too without the host's question flag
+#                                     (FRAGMENT-ISSUES row 5b-1392, OPEN)
+
+utterances:
+  - draw a reference plane along grid B in this plan
+  - add a reference plane named Ceiling Datum 2700 above Level 1
+  - add reference planes at 600 centres here

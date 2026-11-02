@@ -242,6 +242,14 @@ compatibility-note: >
 #    from these corners"                 -> CREATE_FOUNDATION_SLAB - the same
 #                                           boundary writing, a Foundation Slab
 #                                           type, Structural Foundations
+#   "put a ceiling at 2700"              -> here, a ceiling at that height -
+#                                           by identity. Since 2026-11-02 the
+#                                           keyword route alone ranks
+#                                           CREATE_PROJECT_REFERENCE_PLANES
+#                                           first on "2700" and "ceiling"
+#                                           (check-routing, scratch store); a
+#                                           reference plane is a line to set
+#                                           out from, not a ceiling
 
 
 # ROUTING (2026-10-13, the gap fill)

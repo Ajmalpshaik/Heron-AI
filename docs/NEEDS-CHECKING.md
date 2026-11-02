@@ -1262,6 +1262,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-lk.md`](needs-checking/group-lk.md)
 
+## Group LL - reference planes drawn in a project from a named grid or level: `CREATE_PROJECT_REFERENCE_PLANES` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-ll.md`](needs-checking/group-ll.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
