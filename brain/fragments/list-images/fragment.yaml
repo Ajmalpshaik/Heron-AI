@@ -1,0 +1,103 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-062
+semantic-identity: "which images and PDF pages this model holds - Manage Images - each one's file, page, link or import, and where it is placed"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "what images are loaded in
+# this model", beside "import this PDF page into the current view" - Revit's
+# Manage > Manage Images. No card listed them: FIND_PURGEABLE_ELEMENTS names
+# only the images it finds UNUSED, and counts the rest without naming them;
+# READ_RENDERED_IMAGES reads saved renderings and image files in a folder, not
+# Manage Images. brain/heron_retrieve.py on the sentence (Revit 2024, a
+# scratch store) answered READ_RENDERED_IMAGES, and READ_RENDERED_IMAGES' own
+# routing table sent "which images are loaded in the model" to
+# FIND_PURGEABLE_ELEMENTS, which cannot name a used image - that row now names
+# this card.
+#
+# LOOK-ALIKES, NOT DUPLICATES (heron-duplicate-checker's method, 2026-11-02).
+# FIND_PURGEABLE_ELEMENTS answers what can be purged, of every kind, by a slow
+# walk of every element's image parameters; this answers what is in Manage
+# Images and where each is placed, and never calls one unused - "placed 0
+# times" is not "unused", because an image named by an image parameter is in
+# use, and only the purge card's rule decides that. READ_RENDERED_IMAGES reads
+# a saved rendering's pixels and the files a render wrote to a folder; a
+# rendering saved to the project shows here as one row among the images.
+# LIST_LINKED_MODELS lists Revit links, never images.
+#
+# THE READ HALF OF A PAIR. IMPORT_IMAGE imports a PDF page or a picture; every
+# question about which images there are, and their exact names, is answered
+# here so none reaches the write (D-86).
+#
+# READ ONLY - opens no transaction and needs none.
+kind: action
+domain: revit.document
+capability: LIST_IMAGES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Answers which images and PDF pages the model holds - Revit's Manage Images
+  list - each with its name, file path, PDF page, whether it is imported,
+  linked or a saved rendering, its pixel size and DPI, whether its file is
+  found, and how many times and in which views it is placed. It only reads.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: imageCount
+      # Images in Manage Images. Something the read FOUND.
+      role: result
+      type: int
+    - name: placedCount
+      # Placements of those images in views, all together (D-52).
+      role: accounting
+      type: int
+    - name: report
+      # ONE STRING, one row per image joined by "  ||  ": name and id,
+      # imported, linked or a saved rendering (2021 on), file and relative
+      # path, PDF page, pixel size and DPI and whether the file was found
+      # (2021 on), placed N times in which views - or the sentence saying
+      # there is none. A string because a reply cuts a list to three items.
+      role: accounting
+      type: string
+    - name: names
+      # The images' exact names, quoted, so none is retyped.
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation, with one fork at 2020. ImageType Path, PathType and
+  PageNumber, the enum PathType, ImageInstance, Element GetTypeId and
+  OwnerViewId are the same 2020 through 2027. ImageType Source, Status,
+  Resolution, WidthInPixels and HeightInPixels and the enums ImageTypeSource
+  and ImageTypeStatus are 2021 on, so on 2020 the row says Revit 2020 does not
+  say imported or linked, and no pixel size or file status is given rather
+  than guessed. All read with tools/api-surface --members on 2026-11-02. Not
+  seen in Revit.
+
+# ROUTING (2026-11-02) - the same rows are in IMPORT_IMAGE,
+# READ_RENDERED_IMAGES and FIND_PURGEABLE_ELEMENTS.
+#
+#   "what images are loaded in this model"         -> here
+#   "import this PDF page into the current view"   -> IMPORT_IMAGE, a write
+#   "which images are not used"                    -> FIND_PURGEABLE_ELEMENTS -
+#                                                     its rule for unused
+#   "list the renderings saved in the project browser"
+#                                                  -> READ_RENDERED_IMAGES
+#   "which models are linked"                      -> LIST_LINKED_MODELS
+utterances:
+  - what images are loaded in this model

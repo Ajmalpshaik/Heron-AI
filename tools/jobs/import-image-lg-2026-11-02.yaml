@@ -1,0 +1,46 @@
+# NEEDS-CHECKING Group LG - IMPORT_IMAGE, built 2026-11-02 in a cloud session
+# with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/import-image-lg-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/import-image-lg-2026-11-02.yaml
+#
+# THE MODEL (docs/needs-checking/group-lg.md, LG1): "images-ip", a scratch
+# project new from Revit's metric architectural template, saved under
+# %TEMP%\heron-work, never a working model - its "Level 1" floor plan, a
+# "{3D}" view, a sheet "A101", a room schedule, nothing in Manage Images.
+# Beside it, in %TEMP%\heron-work\images: site.png and plans.pdf with THREE
+# pages. THE PATH BELOW IS THE OWNER'S PC'S - where %TEMP% is elsewhere, this
+# file changes, never the card; the path is read on the PC Revit runs on.
+#
+# THE ARRANGEMENT: page 3 of plans.pdf into "FloorPlan: Level 1" for the
+# positive; the same file and page into the "{3D}" view for the negative - a
+# different value, not an empty one (fragment-proving, rules 3 and 5): Revit
+# places no image in a 3D view, so nothing may be loaded into Manage Images.
+# Every write here is ROLLED BACK.
+
+model: "images-ip scratch project (metric architectural template) with plans.pdf and site.png beside it, Revit 2024"
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: import-image
+    expect: imageInstanceId
+    in: "images-ip"
+    set:
+      path: 'C:\Users\ajmal\AppData\Local\Temp\heron-work\images\plans.pdf'
+      view: "FloorPlan: Level 1"
+      page: 3
+    negative-set:
+      path: 'C:\Users\ajmal\AppData\Local\Temp\heron-work\images\plans.pdf'
+      view: "{3D}"
+      page: 3
+    note: >
+      LG2. Negative - THE FIRST CASE TO RUN: the {3D} view, imageInstanceId
+      and imageTypeId invalid, refused ""{3D}" is a 3D view, and Revit does
+      not place images there ... NOTHING WAS IMPORTED.", Manage Images
+      unchanged. Positive - page 3 into Level 1: imageInstanceId and
+      imageTypeId valid, reusedType false, report "Imported "plans..."
+      (image <id>, page 3, ... imported) into "Level 1" as placed image
+      <id>: <w> x <h> mm, centre at 0,0 mm in the view, drawn in the
+      background".
