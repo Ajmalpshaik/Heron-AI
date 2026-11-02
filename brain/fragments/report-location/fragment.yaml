@@ -305,3 +305,9 @@ utterances:
   # (CHECK_LINK_COORDINATES, a read about links, had it before). It is a
   # question about where a point is, and this read answers it.
   - what are the coordinates of this point
+  # ADDED 2026-11-02, FRAGMENT-ISSUES row 5b-1438: this card's routing table
+  # has claimed it since it was written, and it rode the ranked route; adding
+  # ADD_WIRE_TYPE, ADD_AREA_BASED_LOAD and ADD_ELECTRICAL_ANALYTICAL_NODE moved
+  # it, without the question flag, from this read to SET_PROJECT_LOCATION, an
+  # Admin write. Declared so the identity route answers it here.
+  - what latitude is the site set to

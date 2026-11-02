@@ -1354,6 +1354,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-mh.md`](needs-checking/group-mh.md)
 
+## Group MI - Electrical Settings > Wiring Types and the electrical analytical model - add a wire type by its material, rating and insulation, an area-based load type in W/m2 put on the selected spaces, and power distribution nodes connected to the node that feeds them: `ADD_WIRE_TYPE`, `ADD_AREA_BASED_LOAD`, `ADD_ELECTRICAL_ANALYTICAL_NODE` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-mi.md`](needs-checking/group-mi.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

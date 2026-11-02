@@ -1,0 +1,154 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-095
+semantic-identity: "add a power distribution node - power source, transformer, bus, transfer switch or equipment load - to the electrical analytical model, or connect a node or an area-based load to the node that feeds it"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "add a power distribution node
+# for transformer TX-1" and "connect the MDB node to the transformer node" -
+# Revit 2023's electrical analytical model (Analyze > Power Distribution
+# System, the analytical nodes drawn before any equipment is placed). No card
+# in the library touched it (grep of brain/fragments that day for
+# ElectricalAnalyticalNode and ConnectToUpstreamNode: nothing).
+# ADD_ELECTRICAL_DISTRIBUTION adds a distribution system - a voltage, phase
+# and wire setting - not a node; CREATE_MEP_SYSTEM and EDIT_MEP_SYSTEM make
+# and edit circuits and systems of placed equipment; CONNECT_INTO_MAIN joins
+# pipes and ducts - look-alikes by word ("distribution", "connect").
+#
+# ONE CARD FOR ADD AND CONNECT, AND FOR EVERY UPSTREAM CONNECTION. A node is
+# made to be connected; "add TX-1 fed from Utility" is one request, and the
+# same `upstream` connects an area-based load (ADD_AREA_BASED_LOAD,
+# FRG-MEP-094, makes those) - one contract for the whole tree.
+#
+# NEVER RENAMES, RETYPES, DISCONNECTS OR DELETES. A name already present is
+# skipped. A node or load already fed from another node is refused and named,
+# a transfer switch's second source being Revit's own question.
+#
+# NEVER GUESSED (D-33). Both ends are matched by exact name; "the transformer
+# node" names no node, so it comes back with the nodes the model has, each
+# with its kind.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: ADD_ELECTRICAL_ANALYTICAL_NODE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Adds one node to the electrical analytical model - a power source, bus,
+  transformer, transfer switch or equipment load, by name - and connects a
+  node or an area-based load to the node upstream that feeds it, reporting
+  every node with its kind, what feeds it, how many it feeds and its total
+  load before and after. A name already present is skipped; nothing is
+  disconnected.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: name
+      # The node to add, or the node or area-based load to connect, by its
+      # exact name. Never made up.
+      type: string
+      source: request
+    - name: nodeType
+      # powerSource | bus | transformer | transferSwitch | equipmentLoad - to
+      # add the node when the model has none of that name. Left out, nothing
+      # is added and `name` must already be there.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: upstream
+      # The node that feeds `name`, by its exact name. Left out, nothing is
+      # connected.
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: added
+      # 1 when the node was made, else 0. Something the write DID.
+      role: result
+      type: int
+    - name: connected
+      # 1 when the connection was made and read back, else 0.
+      role: result
+      type: int
+    - name: before
+      # Every node with its kind, id, what feeds it, how many it feeds and its
+      # total load, and every area-based load with what feeds it (D-52).
+      role: accounting
+      type: IList<string>
+    - name: after
+      # The same list after, read back from the model (D-52).
+      role: accounting
+      type: IList<string>
+    - name: skipped
+      # A name already present, a connection already made - named, left as it
+      # is (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in Revit words: no name, a kind that is none of the
+      # five, a name the model has not got with the nodes it has, a node
+      # already fed from another, a connection Revit says cannot be made.
+      # Never a thing done (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2023", "2024", "2025", "2026", "2027"]
+runtime: [net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  The electrical analytical model is Revit 2023 on.
+  ElectricalAnalyticalNode.Create(Document, ElectricalAnalyticalNodeType,
+  string), NodeType, TotalLoad, CanConnectToUpstreamNode(ElementId),
+  ConnectToUpstreamNode(ElementId), GetUpstreamNodeIds and
+  GetDownstreamNodeIds, the ElectricalAnalyticalNodeType values PowerSource,
+  Bus, Transformer, TransferSwitch and EquipmentLoad, and Zone.GetDomainData
+  carry the same signatures 2023 to 2027 and are absent in 2020 to 2022 -
+  read with tools/api-surface --members on 2026-11-02.
+  AreaBasedLoadData.CanConnectToUpstreamNode, ConnectToUpstreamNode and
+  GetUpstreamNodeId are 2024 on (#if REVIT2024_OR_GREATER): in 2023 a node is
+  added and connected as on every release, and an area-based load is named and
+  refused. TotalLoad is reported in VA through UnitUtils - which quantity
+  Revit keeps in it has not been seen in Revit. An ElementId is compared with
+  ==, never read as a number.
+
+# ROUTING (2026-11-02) - the same rows are in ADD_AREA_BASED_LOAD.
+#
+#   "add a power distribution node for transformer TX-1"   -> here, name TX-1,
+#                                                             nodeType
+#                                                             transformer
+#   "connect the MDB node to the transformer node"         -> here, name MDB,
+#                                                             upstream the
+#                                                             transformer's exact
+#                                                             name - "the
+#                                                             transformer node"
+#                                                             comes back with the
+#                                                             nodes' names
+#   "add an area-based load of 25 W/m2 for Office lighting" -> ADD_AREA_BASED_LOAD
+#   "assign area-based loads to these spaces"              -> ADD_AREA_BASED_LOAD
+#   "what connects to what"                                -> TRACE_CONNECTIVITY - a
+#                                                             question about placed
+#                                                             ducts and pipes. This
+#                                                             card ranks first for
+#                                                             it on the keyword
+#                                                             route alone; identity
+#                                                             answers it there
+#   "add a 400/230 V 3-phase 4-wire distribution system"   -> ADD_ELECTRICAL_DISTRIBUTION -
+#                                                             a supply setting, not
+#                                                             a node
+utterances:
+  - add a power distribution node for transformer TX-1
+  - connect the MDB node to the transformer node

@@ -225,7 +225,12 @@ compatibility-note: >
 #                                       RUN_HEATING_COOLING_LOADS ranks first
 #                                       for these, and for "what is the
 #                                       heating load" and "what is the cooling
-#                                       load"; identity answers all four here
+#                                       load"; identity answers all four here.
+#                                       Since 2026-11-02 ADD_AREA_BASED_LOAD,
+#                                       an electrical write, also ranks first
+#                                       for "what are the loads on these
+#                                       spaces" on the keyword route alone;
+#                                       identity still answers it here
 #   "run the heating and cooling loads", "calculate the HVAC loads for this
 #   model", "run the loads analysis and show the cooling load per space"
 #                                    -> RUN_HEATING_COOLING_LOADS (2027

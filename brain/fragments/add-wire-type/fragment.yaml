@@ -1,0 +1,176 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-093
+semantic-identity: "add a wire type to the project's Electrical Settings - by name, with its conductor material, temperature rating and insulation"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "add a wire type called XLPE
+# 4C with copper conductor and 90 degree insulation" - Revit's Manage > MEP
+# Settings > Electrical Settings > Wiring Types. No card in the library added
+# one (grep of brain/fragments that day for AddWireType and WireType.Duplicate:
+# nothing). CREATE_WIRES (PROVEN) draws wires and picks a wire type the model
+# already has; it never makes one. REPORT_ELECTRICAL_SETTINGS (FRG-MEP-076)
+# lists the wire types with their material, rating, insulation, max size,
+# neutral and conduit - the read half, so no question reaches this write
+# (D-86).
+#
+# WHY NOT A WIDENING OF ADD_ELECTRICAL_DISTRIBUTION (FRG-MEP-077), which adds
+# to the same dialog: a wire type takes a material, a temperature rating, an
+# insulation and a size, none of which a voltage or a distribution system
+# has, and its own reasoning for keeping voltages apart from load
+# classifications holds here - one contract for all of them would carry a
+# dozen inputs, most meaningless for any one run.
+#
+# NEVER OVERWRITES, RENAMES OR DELETES. A name already present, in any
+# capitals, is skipped and named.
+#
+# NEVER GUESSED (D-33). The material, temperature rating, insulation, max size
+# and base are matched by exact name and refused with the model's list
+# otherwise - "copper" against "Copper" is named, never taken, and "90
+# degree" comes back with the ratings the model has ("90 C" in Revit's own
+# templates, not checked in Revit). The neutral settings and conduit, which
+# the modeller rarely says, are copied from a wire type the model has and the
+# report names which.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16); the
+# wire type is made inside a SubTransaction so a value Revit refuses keeps
+# nothing.
+kind: action
+domain: revit.mep
+capability: ADD_WIRE_TYPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Adds one wire type to Electrical Settings - its name, conductor material,
+  temperature rating and insulation, and optionally its maximum size - with
+  the neutral settings and conduit copied from a wire type already there,
+  reporting the wire types before and after with their values. A name
+  already present is skipped, never overwritten.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: name
+      # The new wire type's name. Never made up - the modeller's.
+      type: string
+      source: request
+    - name: material
+      # The conductor material, by its exact name in the model (Copper,
+      # Aluminum, ...). A name the model lacks is refused with its list.
+      type: string
+      source: request
+    - name: temperatureRating
+      # The temperature rating, by its exact name (Revit's templates say
+      # "90 C" - not checked in Revit). To 2025 it must be one of that
+      # material's ratings.
+      type: string
+      source: request
+    - name: insulation
+      # By its exact name. Left out: the only insulation the rating offers,
+      # or refused with the list when there are several.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: maxSize
+      # The largest conductor size, by its exact name. Left out: the base
+      # wire type's, or the rating's largest when it has not that size.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: basedOn
+      # The wire type the neutral multiplier, neutral required, neutral size
+      # and conduit are copied from, by its exact name. Left out, the first
+      # wire type by name - named in the report.
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: added
+      # 1 when the wire type was added and read back from Revit's own list,
+      # else 0. Something the write DID.
+      role: result
+      type: int
+    - name: before
+      # The wire types before, each with its id, material, rating,
+      # insulation, max size, neutral and conduit (D-52).
+      role: accounting
+      type: IList<string>
+    - name: after
+      # The same list after, read back from the model (D-52).
+      role: accounting
+      type: IList<string>
+    - name: skipped
+      # A name already present, named - left as it is (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in Revit words: no name, material or rating; a name
+      # the model has not got, with the names it has; several insulations and
+      # none named; a value Revit will not take. Never a thing done (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Two routes, chosen at compile time. To 2025: ElectricalSetting
+  .WireMaterialTypes, WireMaterialType.TemperatureRatings,
+  TemperatureRatingType.InsulationTypes and WireSizes, WireSize.Size and
+  Ampacity, and ElectricalSetting.AddWireType(string, WireMaterialType,
+  TemperatureRatingType, InsulationType, WireSize, double, bool, NeutralMode,
+  WireConduitType) - present 2020 to 2026, obsolete in 2026 and gone in 2027.
+  From 2026 (#if REVIT2026_OR_GREATER): ConductorMaterial, TemperatureRating,
+  InsulationMaterial and ConductorSize with their Get...Ids and Get...
+  statics (2026 and 2027 only), and ElementType.Duplicate(string) of the base
+  wire type with WireType.WireMaterial, TemperatureRating and Insulation set
+  as ElementIds and MaxSize as a string - the 2026 obsolete message's own
+  route. WireType.Conduit, NeutralMultiplier, NeutralRequired, NeutralSize,
+  NeutralMode and SubTransaction carry the same signatures 2020 to 2027 -
+  read with tools/api-surface --members on 2026-11-02. Whether Revit 2026
+  takes a temperature rating that belonged to another material before the
+  upgrade has not been seen in Revit; a refusal rolls the SubTransaction
+  back. An ElementId is compared with ==, never read as a number.
+
+# ROUTING (2026-11-02) - the wire type rows are in REPORT_ELECTRICAL_SETTINGS
+# too.
+#
+#   "add a wire type called XLPE 4C with copper conductor and 90 degree
+#    insulation"                                           -> here, name XLPE
+#                                                             4C, material and
+#                                                             temperatureRating
+#                                                             by their exact
+#                                                             names - a word the
+#                                                             model has not got
+#                                                             comes back with
+#                                                             its list
+#   "what wire types are in this model"                    -> REPORT_ELECTRICAL_SETTINGS,
+#                                                             show wires
+#   "add a 230 V voltage type"                             -> ADD_ELECTRICAL_DISTRIBUTION
+#   "add insulation"                                       -> SET_MEP_INSULATION -
+#                                                             pipe and duct
+#                                                             insulation; and
+#   "make this part optional in some types"                -> LINK_FAMILY_PARAMETER.
+#                                                             This card ranks first
+#                                                             for both on the
+#                                                             keyword route alone;
+#                                                             identity answers each
+#                                                             there
+#   "draw wires between these sockets"                     -> CREATE_WIRES - draws
+#                                                             wires of a type the
+#                                                             model has
+utterances:
+  - add a wire type called XLPE 4C with copper conductor and 90 degree insulation

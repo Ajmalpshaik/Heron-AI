@@ -1,0 +1,169 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-094
+semantic-identity: "add an area-based load type in W/m2 to the electrical analytical model, and put the electrical load areas of the selected spaces in an area-based load of that type"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "add an area-based load of 25
+# W/m2 for Office lighting" and "assign area-based loads to these spaces" -
+# Revit 2023's electrical analytical model, Analyze > Area Based Load. No card
+# in the library touched it (grep of brain/fragments that day for
+# AreaBasedLoad, ElectricalLoadArea and CreateAreaBasedLoad: nothing).
+# READ_SPACE_LOADS reads a space's heating and cooling loads, RUN_HEATING_
+# COOLING_LOADS runs that analysis, SET_FAMILY_LIGHT_SOURCE sets a lighting
+# family's photometry and PLACE_STRUCTURAL_LOADS places structural loads -
+# look-alikes by word ("load", "W/m2", "spaces"), none an electrical load
+# density over an area.
+#
+# ONE CARD FOR THE TYPE AND THE LOADS. The load density lives on the
+# area-based load TYPE, so "add an area-based load of 25 W/m2" with nothing
+# selected can only make the type; with spaces selected the same run puts
+# their load areas in a load of that type. Two cards would share every input
+# but the selection. Connecting the load to a node upstream is
+# ADD_ELECTRICAL_ANALYTICAL_NODE's (FRG-MEP-095), which also connects nodes -
+# one contract for every upstream connection in this model.
+#
+# NEVER OVERWRITES, RETYPES OR DELETES. A type already present keeps its
+# density and classification; an area-based load already of that name on
+# that level is added to when it is of that type and skipped otherwise.
+#
+# NEVER GUESSED (D-33). The type, the load classification and the load are
+# matched by exact name; a type differing only in capitals is named, never
+# taken and never made beside. A new type with no density is refused.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: ADD_AREA_BASED_LOAD
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes an area-based load type with its load density in W/m2 and load
+  classification when the model has none of that name, and puts the
+  electrical load areas of the selected spaces - made for the level first
+  when it has none - in an area-based load of that type on each level,
+  reporting the area-based load types and loads before and after with their
+  densities, load areas and loads in W and VA. Nothing present is changed.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      # Spaces, or electrical load areas, selected. Nothing selected binds
+      # empty and only the type is made.
+      type: IList<Element>
+      optional: true
+    - name: loadType
+      # The area-based load type, by its exact name. Never made up.
+      type: string
+      source: request
+    - name: density
+      # W/m2, to make the type when the model has none of that name. Left out
+      # (0), an existing type only - a missing one is refused with the list.
+      type: double
+      source: request
+      optional: true
+      absent: "0"
+    - name: loadClassification
+      # A new type's load classification, by its exact name. Left out,
+      # Revit's own default, named.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: name
+      # The area-based load the selected spaces go in. Left out, the type's
+      # name - with the level's when the spaces span levels.
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: typesAdded
+      # 1 when the area-based load type was made, else 0. Something the write
+      # DID.
+      role: result
+      type: int
+    - name: loadsAdded
+      # Area-based loads made, one per level and phase.
+      role: result
+      type: int
+    - name: areasAssigned
+      # Electrical load areas put in an area-based load and read back in it.
+      role: result
+      type: int
+    - name: before
+      # Every area-based load type with its density, power factor and load
+      # classification, and every area-based load with its level, type, load
+      # areas and load, before (D-52).
+      role: accounting
+      type: IList<string>
+    - name: after
+      # The same list after, read back from the model (D-52).
+      role: accounting
+      type: IList<string>
+    - name: skipped
+      # A type already present, a load of another type under that name, a
+      # load area already in it, an element that is not a space - named, left
+      # as it is (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in Revit words: no type named, a new type with no
+      # density, a classification the model has not got, a space with no
+      # load area inside it. Never a thing done (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2023", "2024", "2025", "2026", "2027"]
+runtime: [net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  The electrical analytical model is Revit 2023 on. AreaBasedLoadType
+  (Create(Document, string), LoadDensity, ApparentPowerDensity, PowerFactor,
+  LoadClassification), Zone.CreateAreaBasedLoad(Document, string, ElementId,
+  ElementId) and GetDomainData, AreaBasedLoadData (AreaBasedLoadType,
+  AddElectricalLoadArea, GetElectricalLoadAreas, TrueLoad, ApparentLoad),
+  ElectricalLoadAreaData.CreateElectricalLoadAreas(Document, ElementId,
+  ElementId) and SpatialElement.GetSpatialElementDomainData carry the same
+  signatures 2023 to 2027 and are absent in 2020 to 2022 - read with
+  tools/api-surface --members on 2026-11-02. Space.IsPointInSpace and
+  UnitUtils.IsValidUnit / ConvertToInternalUnits(double, ForgeTypeId) are
+  present throughout. W/m2 is UnitTypeId.WattsPerSquareMeter, checked valid
+  for SpecTypeId.ElectricalPowerDensity on the release that runs; that
+  LoadDensity is that spec, and not seen in Revit, is what the read-back
+  shows. An ElementId is compared with ==, never read as a number.
+
+# ROUTING (2026-11-02) - the same rows are in ADD_ELECTRICAL_ANALYTICAL_NODE.
+#
+#   "add an area-based load of 25 W/m2 for Office lighting" -> here, loadType
+#                                                             Office lighting,
+#                                                             density 25 -
+#                                                             nothing selected,
+#                                                             the type only
+#   "assign area-based loads to these spaces"              -> here, the spaces
+#                                                             selected; the type
+#                                                             asked when not said
+#   "add a power distribution node for transformer TX-1"   -> ADD_ELECTRICAL_ANALYTICAL_NODE
+#   "connect the MDB node to the transformer node"         -> ADD_ELECTRICAL_ANALYTICAL_NODE
+#   "what are the loads on these spaces"                   -> READ_SPACE_LOADS - a
+#                                                             question, a space's
+#                                                             heating and cooling
+#                                                             loads. This card
+#                                                             ranks first for it
+#                                                             on the keyword route
+#                                                             alone; identity
+#                                                             answers it there
+utterances:
+  - add an area-based load of 25 W/m2 for Office lighting
+  - assign area-based loads to these spaces

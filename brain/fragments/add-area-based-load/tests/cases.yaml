@@ -1,0 +1,67 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "changed what nobody asked for": a type already present
+# given a new density, or an area-based load of another type retyped.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE - a scratch project on Revit 2024 (the
+# first release with every member this card and ADD_ELECTRICAL_ANALYTICAL_NODE
+# use), new from Revit's metric ELECTRICAL template, saved under
+# %TEMP%\heron-work, never a working model. Draw four walls making two rooms
+# on Level 1 and place a space in each (Analyze > Space). Leave Level 2 with no
+# spaces. Before the run, open the Project Browser's Area Based Load Types
+# (Analyze > Area Based Load) and write down what the template has - the
+# second route. A view of Level 1 is in front.
+#
+# Every run below is ROLLED BACK (validate --write) except the one try-once,
+# which the modeller keeps or discards.
+#
+# The negative leg is a DIFFERENT VALUE, not an empty one: a type made in the
+# first positive case, asked for again at another density. It must come back
+# with `typesAdded` 0 and that type's density unchanged.
+
+positive:
+  - given: >
+      nothing selected, loadType "Office lighting", density 25,
+      loadClassification Lighting (or the template's own name for it), name
+      left out
+    expect: >
+      typesAdded 1, loadsAdded 0, areasAssigned 0; after holds "\"Office
+      lighting\" (area-based load type, id ...) 25 W/m2, ..., load
+      classification \"Lighting\""; findings says no spaces were selected.
+      name left out is never read as a load called "none" (row 5b-1432)
+
+  - given: >
+      after the one above is kept: the two spaces on Level 1 selected,
+      loadType "Office lighting", density left out
+    expect: >
+      typesAdded 0, loadsAdded 1, areasAssigned 2; findings says Level 1 had
+      no electrical load areas and Revit made them; after holds "\"Office
+      lighting\" (area-based load, id ...) on \"Level 1\", type \"Office
+      lighting\", 2 load area(s), ... W"; the area-based load's properties
+      show the type and 25 W/m2 x the two areas
+
+negative:
+  - given: >
+      after the first positive is kept: nothing selected, loadType "Office
+      lighting", density 40
+    expect: >
+      typesAdded 0; skipped "Area-based load type \"Office lighting\" is
+      already here at 25 W/m2 - left as it is, not changed to 40 W/m2";
+      before and after the same. THE FIRST CASE TO RUN after that keep
+
+  - given: >
+      the two spaces selected, loadType "office lighting" (other capitals)
+    expect: >
+      every count 0; refused "... \"Office lighting\" differs only in capitals
+      - Heron does not take one for the other, nor makes a second."
+
+  - given: two walls selected, loadType "Office lighting"
+    expect: >
+      loadsAdded 0, areasAssigned 0; skipped "... is not a space or an
+      electrical load area - left out" for each wall
+
+second_route:
+  - >
+    Revit's own Project Browser and Properties: the Area Based Load Type with
+    the load density and load classification in `after`, the area-based load
+    on Level 1 with its type and load areas - and nothing else in either list
+    different from `before`

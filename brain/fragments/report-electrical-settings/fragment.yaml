@@ -169,6 +169,9 @@ compatibility-note: >
 #   "which circuit naming scheme is the project using"     -> here, show naming
 #   "make a circuit naming scheme Panel-Circuit with a dash" -> SET_CIRCUIT_NAMING_SCHEME
 #   "use the Panel-Circuit naming for this project"        -> SET_CIRCUIT_NAMING_SCHEME
+#   "what wire types are in this model" (2026-11-02)       -> here, show wires
+#   "add a wire type called XLPE 4C with copper conductor and 90 degree
+#    insulation"                                           -> ADD_WIRE_TYPE
 #   "add a 230 V voltage type"                             -> ADD_ELECTRICAL_DISTRIBUTION
 #   "add a 400/230 V 3-phase 4-wire distribution system"   -> ADD_ELECTRICAL_DISTRIBUTION
 #   "add a load classification called Kitchen Equipment"   -> ADD_LOAD_CLASSIFICATION
@@ -203,3 +206,4 @@ utterances:
   - list the load classifications and demand factors
   - what panel schedule templates are in this model
   - which circuit naming scheme is the project using
+  - what wire types are in this model
