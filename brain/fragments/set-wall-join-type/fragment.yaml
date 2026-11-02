@@ -1,0 +1,132 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-158
+semantic-identity: "make the join where these walls meet a butt, a miter or a square off"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "make this wall corner a miter
+# join", "change these wall joins to butt" and "square off the wall join here" -
+# Revit's Modify > Wall Joins, the Butt / Miter / Square Off choice at a
+# wall-end join. No card did it: of every fragment's C# none called
+# LocationCurve.get_JoinType or set_JoinType. brain/heron_retrieve.py on the
+# three sentences (a scratch store, Revit 2024) answered CREATE_WALL,
+# REPORT_JOINED_ELEMENTS and DISALLOW_JOIN - none of which sets a join type.
+#
+# LOOK-ALIKES, KEPT SEPARATE (heron-duplicate-checker's method, 2026-11-02):
+#   DISALLOW_JOIN (PROVEN)     whether a wall end joins at all - Disallow /
+#                              Allow Join. This one changes the SHAPE of a join
+#                              that is there, and never turns joining on or
+#                              off: a disallowed end is refused in words and
+#                              left for DISALLOW_JOIN.
+#   JOIN_GEOMETRY (DRAFT)      Join Geometry between elements - which one gives
+#                              its overlap to the other. Not the end cleanup.
+#   REPORT_JOINED_ELEMENTS     reads Join Geometry joins. A wall corner cleans
+#     (PROVEN)                 up by the end join and does not show there (its
+#                              own proof says so).
+#   TRIM_EXTEND_ELEMENTS       moves two ends to meet; this moves no wall.
+#     (PROVEN)
+#
+# WHICH END IS NEVER GUESSED. An end is changed only where the wall at that
+# end's join is ANOTHER WALL HANDED IN - select the walls on both sides of the
+# corner. A wall meeting none of the others is refused by name, and one wall
+# alone is refused before anything changes. End 0 and end 1 are the order the
+# wall was drawn in, which nothing on screen shows, so they are never asked
+# for.
+#
+# Each corner is changed once, however many of its walls were handed in, and
+# read back after one regeneration. Revit refusing a type at a join (a miter
+# where three walls meet, say) is reported in words, with Revit's message.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: SET_WALL_JOIN_TYPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets the join where the walls handed in meet each other to butt, miter or
+  square off - Revit's Wall Joins tool - and reads each corner back.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The walls on BOTH sides of each corner - the selection, or the chain.
+    # Only an end whose join holds another of these walls is changed.
+    - name: elements
+      type: IList<Element>
+    # butt, miter (or mitre) or square off. Asked for, never defaulted; any
+    # other word is refused before anything changes.
+    - name: joinType
+      type: string
+      source: request
+  provides:
+    - name: changed
+      role: result
+      type: int
+    - name: corners
+      # Each corner changed, READ BACK after the call: the walls at it and
+      # the join type before and after. Describes the run (D-52).
+      role: accounting
+      type: IList<string>
+    - name: alreadyRight
+      # Corners already of the type asked for - left alone. The evidence it
+      # looked, never a change it made (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in words: not a wall, a wall meeting none of the
+      # others, joining disallowed at that end, Revit refusing the type at
+      # that join, or a read-back that did not change (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read with tools/api-surface --members
+  on the reference assemblies of 2020 to 2027 on 2026-11-02, every one present
+  with the same signature in all eight: `LocationCurve.JoinType[int end]`
+  (get_JoinType / set_JoinType), `LocationCurve.ElementsAtJoin[int end]`
+  (get_ElementsAtJoin, an ElementArray), `JoinType` None -1, Abut 0, Miter 1,
+  SquareOff 2, Extension 3 - Revit's "Butt" is `Abut`;
+  `WallUtils.IsWallJoinAllowedAtEnd`; `Element.Location`, `Element.Pinned`,
+  `Document.Regenerate`. ElementIds are compared as ElementIds and never read
+  as numbers.
+
+# ROUTING - repeated in REPORT_WALL_JOIN_TYPE, DISALLOW_JOIN and JOIN_GEOMETRY.
+#
+#   "make this wall corner a miter join"    -> here
+#   "change these wall joins to butt"       -> here
+#   "square off the wall join here"         -> here
+#   "what join type is at this wall corner" -> REPORT_WALL_JOIN_TYPE - the read,
+#                                              never this write. Answered by
+#                                              identity; ranking alone puts this
+#                                              card first
+#   "stop the walls joining at the corner"  -> DISALLOW_JOIN - joining off, not
+#                                              its shape
+#   "allow the joins again"                 -> DISALLOW_JOIN, allowJoin true
+#   "join these walls together"             -> JOIN_GEOMETRY - Join Geometry,
+#                                              not the end cleanup
+#   "trim these back to the corner"         -> TRIM_EXTEND_ELEMENTS
+#   "square off these two ducts"            -> TRIM_EXTEND_ELEMENTS. Answered by
+#                                              identity; ranking alone puts this
+#                                              card first
+#   "join these walls"                      -> JOIN_GEOMETRY, declared there
+#                                              since row 5b-1419 - ranking alone
+#                                              moved it here
+
+utterances:
+  - make this wall corner a miter join
+  - change these wall joins to butt
+  - square off the wall join here

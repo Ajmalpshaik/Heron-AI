@@ -1314,6 +1314,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-lx.md`](needs-checking/group-lx.md)
 
+## Group LY - Modify > Wall Joins - butt, miter or square off where the walls handed in meet, each corner read back - the read of the join type at each wall end, and structural framing's start / end extension and join cutback by the end: `SET_WALL_JOIN_TYPE`, `REPORT_WALL_JOIN_TYPE`, `SET_FRAMING_END_EXTENSION` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-ly.md`](needs-checking/group-ly.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

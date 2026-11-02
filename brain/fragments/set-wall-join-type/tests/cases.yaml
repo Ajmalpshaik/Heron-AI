@@ -1,0 +1,48 @@
+# SET_WALL_JOIN_TYPE - built 2026-11-02 in a cloud session with no Revit. NOT RUN.
+# Arranged as docs/needs-checking/group-ly.md says: the walls on both sides of
+# each corner are selected; joinType is typed.
+positive:
+  - given: >
+      two walls meeting in an L, cleaned up with the default butt join, both
+      selected, joinType miter
+    expect: >
+      changed 1; corners "wall ... with wall ...: Butt -> Miter, read back";
+      the corner drawn as a miter in plan, LOOKED AT. REPORT_WALL_JOIN_TYPE on
+      the two walls afterwards says Miter
+
+  - given: the same two walls, joinType butt
+    expect: changed 1, "Miter -> Butt, read back"; the corner back as it was
+
+  - given: the same two walls, joinType miter a second time
+    expect: >
+      changed 0 and the corner in alreadyRight - a second run counting the
+      corner again would be counting work it did not do
+
+negative:
+  - given: >
+      THE FIRST CASE TO RUN. Two walls that do NOT meet - parallel, a metre
+      apart - both selected, joinType miter
+    expect: >
+      changed 0; each wall refused "meets none of the other walls handed in";
+      neither wall's ends touched. An end changed here would mean the end was
+      guessed
+
+  - given: ONE wall of the L selected alone, joinType miter
+    expect: refused before anything changes - "Select the walls on BOTH sides of the corner"
+
+  - given: three walls meeting in a T, all three selected, joinType miter
+    expect: >
+      the T corner refused with Revit's own message in words, or read back
+      unchanged and refused - never counted in changed
+
+  - given: the L walls with joining disallowed at the corner (DISALLOW_JOIN), joinType miter
+    expect: >
+      refused "joining is disallowed at that end" or "meets none" - joining is
+      never turned back on here
+
+  - given: joinType sideways
+    expect: refused before anything changes, naming butt, miter and square off
+
+second_route: >
+  Revit itself: Modify > Wall Joins, pick the same corner - the Options Bar
+  shows Butt, Miter or Square Off selected, and the corner in plan shows it

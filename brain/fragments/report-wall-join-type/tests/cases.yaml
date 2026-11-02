@@ -1,0 +1,28 @@
+# REPORT_WALL_JOIN_TYPE - built 2026-11-02 in a cloud session with no Revit.
+# NOT RUN. Arranged as docs/needs-checking/group-ly.md says.
+positive:
+  - given: two walls meeting in an L with a miter join made by hand (Modify > Wall Joins), both selected
+    expect: >
+      one row "wall ... , start|end, with wall ...: Miter" - one row for the
+      corner, not two; freeEnds 2 for the two open ends
+
+  - given: the same L after SET_WALL_JOIN_TYPE with joinType butt
+    expect: the same corner reading Butt - the read shows the write worked
+
+negative:
+  - given: >
+      THE FIRST CASE TO RUN. A single free-standing wall touching nothing,
+      selected
+    expect: >
+      no rows and freeEnds 2. A row here would mean it is reporting something
+      that is not a wall-end join
+
+  - given: two floors and a duct selected
+    expect: no rows; a finding that 3 elements are not walls drawn along a line
+
+  - given: no elements
+    expect: a finding asking for the walls at the corner, and nothing else
+
+second_route: >
+  Revit itself: Modify > Wall Joins on the same corner - the Options Bar shows
+  which of Butt, Miter or Square Off is selected

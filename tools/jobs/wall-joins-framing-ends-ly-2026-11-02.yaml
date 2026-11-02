@@ -1,0 +1,81 @@
+# NEEDS-CHECKING Group LY - SET_WALL_JOIN_TYPE, REPORT_WALL_JOIN_TYPE and
+# SET_FRAMING_END_EXTENSION, built 2026-11-02 in a cloud session with no
+# Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/wall-joins-framing-ends-ly-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/wall-joins-framing-ends-ly-2026-11-02.yaml
+#
+# THE MODEL (docs/needs-checking/group-ly.md, LY1): a scratch project from
+# Revit's default structural template, saved under %TEMP%\heron-work, never a
+# working model. Drawn by hand on Level 1: two walls A and B meeting in an L
+# with Revit's default butt join; two walls C and D parallel and a metre
+# apart, touching nothing; two structural columns with a steel beam E framing
+# between them, both ends joined; and a beam F standing free, touching
+# nothing. Every id written down with Manage > IDs of Selection and typed
+# below in place of the placeholders 0000001 (A), 0000002 (B), 0000003 (C),
+# 0000004 (D), 0000005 (E) and 0000006 (F).
+#
+# THE ARRANGEMENT. The walls and beams come from FILTER_ELEMENTS_BY_ID with
+# their ids typed - a read, so each shows before anything changes - kept in
+# the chain (keep-chain). Positive: the L, and the beam between columns.
+# Negative: two walls that do not meet, and a beam joined to nothing - a
+# different selection that must not be touched, not an empty one
+# (fragment-proving, rules 3 and 5). Every write here is ROLLED BACK.
+
+model: "a scratch project from Revit's default structural template - two walls in an L, two walls apart, one beam between two columns, one free beam"
+
+jobs:
+  - fragment: set-wall-join-type
+    write: true
+    keep-chain: true
+    expect: changed
+    setup: [filter-elements-by-id]
+    setup-set:
+      elementIds: "0000001, 0000002"
+    negative-setup-set:
+      elementIds: "0000003, 0000004"
+    set:
+      joinType: miter
+    negative-set:
+      joinType: miter
+    note: >
+      LY2. Negative - THE FIRST CASE TO RUN: walls C and D, which do not meet -
+      changed 0, each refused "meets none of the other walls handed in".
+      Positive: walls A and B - changed 1, corners "wall ... with wall ...:
+      Butt -> Miter, read back".
+
+  - fragment: report-wall-join-type
+    keep-chain: true
+    expect: joins
+    setup: [filter-elements-by-id]
+    set:
+      elementIds: "0000001, 0000002"
+    negative-set:
+      elementIds: "0000003"
+    note: >
+      LY3. Positive: the L - ONE row for the corner, reading Butt (or Miter if
+      LY2 was kept), freeEnds 2. Negative: wall C alone, touching nothing -
+      no rows, freeEnds 2.
+
+  - fragment: set-framing-end-extension
+    write: true
+    keep-chain: true
+    expect: changed
+    setup: [filter-elements-by-id]
+    setup-set:
+      elementIds: "0000005"
+    negative-setup-set:
+      elementIds: "0000006"
+    set:
+      setting: cutback
+      whichEnd: joined
+      lengthMm: "50"
+    negative-set:
+      setting: cutback
+      whichEnd: joined
+      lengthMm: "50"
+    note: >
+      LY4. Negative - THE FIRST CASE TO RUN: beam F, joined to nothing -
+      changed 0, refused "neither end is joined to another member". Positive:
+      beam E - changed 2, ends "... Start Join Cutback (at <column>): 0 mm ->
+      50 mm, read back" and the same for End.

@@ -310,6 +310,13 @@ compatibility-note: >
 # ROUTING (2026-10-20, the material tools of Group IA, row 5b-1263)
 #
 #   "make these columns concrete"  -> SET_ELEMENT_MATERIAL - the material parameter found for you, on the element, its type or its system type
+#
+# ROUTING (2026-11-02, framing ends) - repeated in SET_FRAMING_END_EXTENSION.
+#
+#   "set the beam end extension to 150 mm"   -> SET_FRAMING_END_EXTENSION - the
+#                                              end chosen from what the beam
+#                                              meets, not a parameter named
+
 utterances:
   - set the comments on these
   - set the comments to X

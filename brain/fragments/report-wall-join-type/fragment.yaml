@@ -1,0 +1,81 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-159
+semantic-identity: "what kind of join is at the ends of these walls - butt, miter or square off"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "what join type is at this wall
+# corner", beside SET_WALL_JOIN_TYPE's three. A write may not declare a
+# question it does not need to change the model to answer (D-86), and no read
+# reported a wall join type: of every fragment's C# none called
+# LocationCurve.get_JoinType. brain/heron_retrieve.py on the sentence (a
+# scratch store, Revit 2024) answered CREATE_WALL.
+#
+# NOT A WIDENING OF REPORT_JOINED_ELEMENTS, AND WHY. That card reads Join
+# Geometry joins - its own proof records that walls meeting at a corner clean
+# up by a different mechanism that does not show there. It is PROVEN, so any
+# change under its impl/ would make its proof stale and send it back to DRAFT;
+# a small read of its own costs nothing proven. heron-duplicate-checker's
+# verdict, 2026-11-02: LOOK-ALIKE - the end join of a wall against Join
+# Geometry, two Revit mechanisms.
+#
+# Changes nothing, needs no transaction.
+kind: filter
+domain: revit.elements
+capability: REPORT_WALL_JOIN_TYPE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports, for each wall handed in, what meets it at each end and whether that
+  join is a butt, a miter or a square off - and changes nothing.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: joins
+      role: result
+      type: IList<string>
+    - name: freeEnds
+      # A wall end that meets nothing is an ordinary answer. Counted so an
+      # empty list cannot be read as a failed read: evidence it ran (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read with tools/api-surface --members
+  on the reference assemblies of 2020 to 2027 on 2026-11-02, every one present
+  with the same signature in all eight: `LocationCurve.JoinType[int end]`
+  (get_JoinType), `LocationCurve.ElementsAtJoin[int end]` (get_ElementsAtJoin,
+  an ElementArray), `JoinType` None, Abut, Miter, SquareOff, Extension -
+  Revit's "Butt" is `Abut`; `WallUtils.IsWallJoinAllowedAtEnd`;
+  `Element.Location`, `Element.Category`, `Element.Name`. Ids are reported by
+  name and id, never read as numbers.
+
+# ROUTING - repeated in SET_WALL_JOIN_TYPE.
+#
+#   "what join type is at this wall corner" -> here. Answered by identity, with
+#                                              and without the host's question
+#                                              flag; ranking alone puts
+#                                              SET_WALL_JOIN_TYPE first
+#   "make this wall corner a miter join"    -> SET_WALL_JOIN_TYPE
+#   "what is this joined to"                -> REPORT_JOINED_ELEMENTS - Join
+#                                              Geometry joins, not wall ends
+
+utterances:
+  - what join type is at this wall corner

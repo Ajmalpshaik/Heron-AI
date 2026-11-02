@@ -167,6 +167,13 @@ compatibility-note: >
 #   "cut this beam out of the slab"           -> CUT_GEOMETRY (2026-11-02) -
 #                                                Cut Geometry between two
 #                                                elements, not a coping
+#
+# ROUTING (2026-11-02, framing ends) - repeated in SET_FRAMING_END_EXTENSION.
+#
+#   "cut back these beams 50 mm at the column" -> SET_FRAMING_END_EXTENSION -
+#                                                the join cutback, a length,
+#                                                not a coping cut
+#   "set the beam end extension to 150 mm"   -> SET_FRAMING_END_EXTENSION
 
 utterances:
   - cope these beams at the columns
