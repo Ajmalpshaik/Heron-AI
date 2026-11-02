@@ -208,10 +208,16 @@ def main():
           "and NOT ONE of them needs the host - all are keep-separate")
     names = sorted(one for group in real["decided"]
                    for one in group["fragments"])
+    # 2026-11-02 (NEEDS-CHECKING Group MF): SET_STRUCTURAL_SETTINGS and
+    # SET_REINFORCEMENT_SETTINGS joined the settings-table group by the same
+    # design - one table of named settings in, changed / alreadyThat /
+    # findings / refused out - each for a different dialog, so keep-separate
+    # like SET_PROJECT_LOCATION and SET_PROJECT_UNITS. Still two groups.
     check(names == ["set-project-location", "set-project-units",
+                    "set-reinforcement-settings", "set-structural-settings",
                     "transfer-materials-between-documents",
                     "transfer-view-filters-between-documents"],
-          "the four are: %s" % ", ".join(names))
+          "the six are: %s" % ", ".join(names))
     check(not set(names) & set(real["retired"]),
           "and no retired card is in any group")
     check(all(len(one["capabilities"]) == 2 for one in real["decided"]),
