@@ -13,28 +13,28 @@ version: 2
 source: OFFICIAL
 risk: MODIFY
 
-# DEPRECATED 2026-11-01 - MERGED INTO CREATE_DUCT_RUNS (create-duct-runs), on the owner's instruction
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_MEP_RUNS (create-mep-runs), on the owner's instruction
 # in conversation: "make sure there is no duplicate tools", every conflict to
 # keep the safer rule. Constitution Article 1: kept, never deleted, so its
 # record and its proof stay readable and it can be brought back. Nothing
 # offers it now - retrieval leaves DEPRECATED out, and its sentences claim
 # nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
-# sentences moved to CREATE_DUCT_RUNS. The proof below, where there is one, is the record
+# sentences moved to CREATE_MEP_RUNS. The proof below, where there is one, is the record
 # of what this card's code did, not a claim about today.
 deprecated:
   date: '2026-11-01'
   by: Ajmal PS
-  superseded-by: CREATE_DUCT_RUNS
+  superseded-by: CREATE_MEP_RUNS
   why: >
     The same drawing, flexible: one flex duct or flex pipe along the points
     given, no route guessed, a required maximum length that refuses a longer
-    route before anything is made, nothing connected. CREATE_DUCT_RUNS makes
+    route before anything is made, nothing connected. CREATE_MEP_RUNS makes
     flex since its version 3: a flex duct or flex pipe type - Revit's own
     FlexPipe.IsFlexPipeTypeId deciding a flex pipe - draws ONE curve through
     every point of a run, on the matching system, with maxLengthMm required.
     This card's flexPipeType is its ductType, its points one run in
     millimetres, its created its elements, its lengthMm its lengthMm. Its
-    refusal returned null where CREATE_DUCT_RUNS throws; nothing is made
+    refusal returned null where CREATE_MEP_RUNS throws; nothing is made
     either way, one rule for every kind.
 
 purpose: >
@@ -168,7 +168,7 @@ compatibility-note: >
 # on "a duct type cannot serve a piping system"; the pairing is checked before
 # Revit is asked, so a refusal from Create is now reported as Revit said it.
 
-# ROUTING - cross-referenced in CREATE_DUCT_RUNS and
+# ROUTING - cross-referenced in CREATE_MEP_RUNS and
 # CONNECT_AIR_TERMINALS.
 #
 #   "run a flexible pipe to that sprinkler"  -> here
@@ -176,9 +176,9 @@ compatibility-note: >
 #   "make the flex drop to that diffuser"    -> here - with a flex DUCT type, on
 #                                               an air system
 #   "run flex to that diffuser"              -> here, the same
-#   "draw pipe between these points"         -> CREATE_DUCT_RUNS, which makes RIGID
+#   "draw pipe between these points"         -> CREATE_MEP_RUNS, which makes RIGID
 #                                               pipe (CREATE_PIPE until 2026-11-01)
-#   "draw duct along these points"           -> CREATE_DUCT_RUNS, which makes
+#   "draw duct along these points"           -> CREATE_MEP_RUNS, which makes
 #                                               RIGID duct
 #   "connect the terminal to the duct"       -> CONNECT_AIR_TERMINALS. This one
 #                                               makes the flex and does NOT

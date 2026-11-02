@@ -99,7 +99,7 @@ namespace Heron.Revit.Addin
         /// to do two jobs, one of which has no such value: TRACE_CONNECTIVITY
         /// took in FIND_SYSTEM_ISLANDS, which partitions the whole set and has
         /// no `start`; ALIGN_ELEMENTS took in ALIGN_MEP_ELEVATION, whose typed
-        /// height has no `reference`; CREATE_DUCT_RUNS took in cable tray and
+        /// height has no `reference`; CREATE_MEP_RUNS took in cable tray and
         /// conduit, and CREATE_MEP_SYSTEM electrical circuits, neither of which
         /// has a duct or piping system type. An element and a resolved type
         /// have no empty form but null, and the card that marks one optional

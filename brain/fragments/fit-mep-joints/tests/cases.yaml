@@ -8,7 +8,7 @@ positive:
       union, in line and a different size a transition with the larger end
       first
 
-  - given: a run drawn as CREATE_DUCT_RUNS segments (CREATE_DUCT until 2026-11-01) - a main with three branch points and an end, and four branches each turning down to a terminal
+  - given: a run drawn as CREATE_MEP_RUNS segments (CREATE_DUCT until 2026-11-01) - a main with three branch points and an end, and four branches each turning down to a terminal
     expect: >
       every joint fitted in one call - a tee at each branch point, an elbow at
       the end and at every drop - and the free ends at the unit and the

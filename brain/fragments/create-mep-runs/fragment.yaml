@@ -8,7 +8,17 @@ id: FRG-MEP-052
 semantic-identity: "draw duct, pipe, cable tray or conduit - or a flexible duct or pipe - one run from here to there or every run of a layout, each at its own size, in one go"
 kind: action
 domain: revit.mep
-capability: CREATE_DUCT_RUNS
+# CREATE_DUCT_RUNS (folder create-duct-runs) until 2026-11-02, renamed on the owner's
+# word: it draws duct, pipe, cable tray, conduit and flex, so a duct-only name misled.
+# The folder IS the capability in lower case, and the proof fingerprint hashes each
+# impl/ file's PATH as well as its content - so the move made the signed proof STALE
+# with no code changed, and the card went back to DRAFT to be proved again (D-30).
+# The OLD proof text, where kept elsewhere, uses the old name, as it was run.
+# Re-proved 2026-11-02 on Revit 2020, Project1 (a new project), by tracking ducts - below,
+# signed. PIPE MEASURED THE SAME RUN, outside the signed proof: "Pipe Types: Standard",
+# Hydronic Supply, d50, 1 / 2 / 3 segments for 2 / 3 / 4 points, `drawn pipe`, rolled
+# back each time. Tray and conduit have not met a model yet.
+capability: CREATE_MEP_RUNS
 version: 3
 source: OFFICIAL
 risk: MODIFY
@@ -158,7 +168,9 @@ contract:
 proof:
   date: '2026-11-02'
   by: Ajmal PS
-  model: Project2 (6,034 elements), Revit 2024, session 57392
+  model: Project1, Revit 2020, session 62628 - the count is NOT recorded because 23,799 elements
+    was measured on 4355-BHVD-3D-50S10-BL001A, the document in front, and this ran against
+    another one (row 15)
   positive_case: 'run with runs=400x200: 80000,0,2700; 83000,0,2700 - the first of 3 tracked
     inputs - run inside a transaction, and Revit reported the transaction group ROLLED BACK
     afterwards. returned diameterParam BuiltInParameter, drawn duct, elements 1 item(s) [Duct],
@@ -174,11 +186,11 @@ proof:
     as 1 duct piece(s), 3000 mm along the points given; 1 sized as asked. NOTHING IS CONNECTED
     - sharing a point is not a joint in Revit. FIT_MEP_JOINTS puts the fittings in and can
     take these duct pieces straight from here, systemName Supply Air, takesDiameter true,
-    takesWidth true, typeName Default, widthParam BuiltInParameter. inputs came systemType
-    as given; ductType as given; level as given; runs as given; maxLengthMm not given - "0",
-    the card''s own default (optional); runKind not given - "any", the card''s own default
-    (optional). on Project2'
-  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). create-duct-runs\
+    takesWidth true, typeName Mitered Elbows / Tees, widthParam BuiltInParameter. inputs came
+    systemType as given; ductType as given; level as given; runs as given; maxLengthMm not
+    given - "0", the card''s own default (optional); runKind not given - "any", the card''s
+    own default (optional). on Project1'
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). create-mep-runs\
     \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
     \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
     \ about a set it was not given - is caught here by the answer following the input exactly\
@@ -190,8 +202,7 @@ proof:
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: aad53f475c93a7ba
-
+  fingerprint: 68b00c046ff37806
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

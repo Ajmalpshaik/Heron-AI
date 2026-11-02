@@ -270,7 +270,7 @@ def need_may_be_absent(entry):
     an empty list since 2026-11-01 (PLACE_VIEW_ON_SHEET reads its handed-on
     `elements` when no view is named) - or an `Element` or an `MEPSystemType`
     marked so, which binds null since 2026-11-01 (TRACE_CONNECTIVITY with no
-    `start` partitions the whole set; CREATE_DUCT_RUNS draws cable tray with no
+    `start` partitions the whole set; CREATE_MEP_RUNS draws cable tray with no
     system type), or an `IList<XYZ>`, which binds an empty list (CREATE_OPENING's
     family half names neither) - and HeronBindingNote.DeclaredAbsent
     binds one whose card names what leaving it out means (`absent:`,

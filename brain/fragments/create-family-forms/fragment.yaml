@@ -313,7 +313,7 @@ compatibility-note: >
 #                                                   a path that leaves the plane
 #   "use a profile family for this sweep"        -> SET_FAMILY_SWEEP_PROFILE,
 #                                                   by the sweep's id here
-#   "draw a duct along this route"               -> CREATE_DUCT_RUNS, a project
+#   "draw a duct along this route"               -> CREATE_MEP_RUNS, a project
 #                                                   duct, not a family form
 #   "cut the solid with the void"                -> COMBINE_FAMILY_FORMS, by
 #                                                   the ids given back here

@@ -13,22 +13,22 @@ version: 1
 source: OFFICIAL
 risk: MODIFY
 
-# DEPRECATED 2026-11-01 - MERGED INTO CREATE_DUCT_RUNS (create-duct-runs), on the owner's instruction
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_MEP_RUNS (create-mep-runs), on the owner's instruction
 # in conversation: "make sure there is no duplicate tools", every conflict to
 # keep the safer rule. Constitution Article 1: kept, never deleted, so its
 # record and its proof stay readable and it can be brought back. Nothing
 # offers it now - retrieval leaves DEPRECATED out, and its sentences claim
 # nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
-# sentences moved to CREATE_DUCT_RUNS. The proof below, where there is one, is the record
+# sentences moved to CREATE_MEP_RUNS. The proof below, where there is one, is the record
 # of what this card's code did, not a claim about today.
 deprecated:
   date: '2026-11-01'
   by: Ajmal PS
-  superseded-by: CREATE_DUCT_RUNS
+  superseded-by: CREATE_MEP_RUNS
   why: >
     The same drawing for containment: cable tray or conduit between
     consecutive points, a type and a level, nothing connected, no size set.
-    CREATE_DUCT_RUNS draws cable tray and conduit since its version 3, the type
+    CREATE_MEP_RUNS draws cable tray and conduit since its version 3, the type
     class deciding as it does for duct, pipe and flex: a cable tray or conduit
     type with NO system type draws containment, one run of points or every run
     of a layout, in one undo. This card's runType is its ductType, its runKind
@@ -42,7 +42,7 @@ deprecated:
 purpose: >
   Draws electrical containment between consecutive points - cable tray or
   conduit, one segment per pair. The electrical half of the same job
-  CREATE_DUCT_RUNS does for air and water.
+  CREATE_MEP_RUNS does for air and water.
 
   **Tray and conduit are ONE fragment, and that is a decision worth the
   sentence.** They are separate Revit classes with the same creation shape, and
@@ -133,13 +133,13 @@ compatibility-note: >
   live in the electrical namespace, which the wrapper already carries. No units
   API is touched and no ElementId is constructed.
 
-# ROUTING - repeated in CREATE_DUCT_RUNS and SET_MEP_SIZE.
+# ROUTING - repeated in CREATE_MEP_RUNS and SET_MEP_SIZE.
 #
 #   "draw a cable tray"              -> here, with tray asked for
 #   "draw a conduit"                 -> here, with conduit asked for
 #   "run the containment across"     -> here
-#   "draw a duct from here to there" -> CREATE_DUCT_RUNS
-#   "run a pipe from here to there"  -> CREATE_DUCT_RUNS, with a pipe type
+#   "draw a duct from here to there" -> CREATE_MEP_RUNS
+#   "run a pipe from here to there"  -> CREATE_MEP_RUNS, with a pipe type
 #   "make it 300 wide"               -> SET_MEP_SIZE - the run already exists
 #   "they are touching but not
 #    connected"                      -> CONNECT_OPEN_ENDS

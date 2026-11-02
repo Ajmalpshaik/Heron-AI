@@ -30,7 +30,7 @@ risk: MODIFY
 # refused first: Revit puts a wire in one such view.
 #
 # A wire is drawn annotation, not the circuit: CREATE_MEP_SYSTEM makes
-# the circuit, CREATE_DUCT_RUNS the tray and conduit.
+# the circuit, CREATE_MEP_RUNS the tray and conduit.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 purpose: >
@@ -149,7 +149,7 @@ compatibility-note: >
 #   "draw a wire from this socket to the next one" -> here
 #   "circuit these sockets"                   -> CREATE_MEP_SYSTEM - the
 #                                                circuit, not the drawn wire
-#   "run conduit / cable tray"                -> CREATE_DUCT_RUNS
+#   "run conduit / cable tray"                -> CREATE_MEP_RUNS
 
 utterances:
   - draw wires between these sockets

@@ -228,7 +228,7 @@ compatibility-note: >
 #                                              (CREATE_ELECTRICAL_CIRCUIT until
 #                                              2026-11-01)
 #   "assign them to panel DB-1"             -> here, with the panel given
-#   "draw the cable tray"                   -> CREATE_DUCT_RUNS - CONTAINMENT,
+#   "draw the cable tray"                   -> CREATE_MEP_RUNS - CONTAINMENT,
 #                                              not a circuit
 #   "what is on circuit 3"                  -> SELECT_BY_ELECTRICAL_CIRCUIT
 #   "what circuits are on panel DB-1"       -> REPORT_PANEL_CIRCUITS
