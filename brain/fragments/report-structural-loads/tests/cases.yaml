@@ -26,7 +26,9 @@ positive:
       LL1 1); loadCount 3 - B1's line load "uniform (0, 0, -5) kN/m", C1's
       point load "(0, 0, -10) kN", S1's area load "(0, 0, -2.5) kPa" - each
       with its load case and "on Structural Framing ... through analytical
-      ..."; boundaryCount 1, at C1's base, its fixity as Revit shows it
+      ..."; boundaryCount 1, at C1's base, its fixity as Revit shows it.
+      The loadCase left out narrows nothing - never read as a value called "none" (row 5b-1432) - and "No load
+      case is called \"none\"" with no loads listed is the defect
 
   - given: B1 selected, show "loads"
     expect: >

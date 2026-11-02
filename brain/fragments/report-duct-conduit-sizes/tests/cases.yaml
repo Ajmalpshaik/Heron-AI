@@ -27,7 +27,8 @@ positive:
       every list: three duct shapes, one line per conduit standard the
       Conduit Settings > Size dropdown lists, and the cable tray sizes;
       tables is 4 plus the number of conduit standards; each conduit size
-      with its ID, OD and bend radius as the dialog shows them
+      with its ID, OD and bend radius as the dialog shows them; the
+      standard left out narrows nothing - never read as a value called "none" (row 5b-1432)
 
   - given: show "conduit", standard the exact name of one standard the template has
     expect: >

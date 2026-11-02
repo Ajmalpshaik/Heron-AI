@@ -24,7 +24,7 @@ positive:
       the n the configuration has. \"...\" (...) ... - k palette(s): \"...\"
       m button(s) | ... Fabrication parts in this model: 4 - ask for parts,
       or select some, to list them"; loadedServices 2; names the two services
-      quoted
+      quoted; the service left out narrows nothing - never read as a value called "none" (row 5b-1432)
 
   - given: show "services; buttons", service the ductwork service's name
     expect: >

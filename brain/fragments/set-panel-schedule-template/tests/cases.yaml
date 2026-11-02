@@ -41,7 +41,8 @@ positive:
       action apply, DB-1 selected in Revit and panelName left out,
       templateName "Branch Panel" (after DB-1 was switched to DB Standard)
     expect: >
-      changed 1 - the selection reaches the same panel as its name
+      changed 1 - the selection reaches the same panel as its name; the
+      panelName left out is never read as a value called "none" (row 5b-1432)
 
 negative:
   - given: >
@@ -55,7 +56,8 @@ negative:
   - given: action make, templateName "DB Standard 2", fromTemplate left out
     expect: >
       changed 0; refused "No template was named to copy ... - which one is
-      never guessed", the model's templates listed
+      never guessed", the model's templates listed - the fromTemplate left
+      out is never read as a value called "none" (row 5b-1432)
 
   - given: action apply, panelName "DB-2" (no panel schedule yet), templateName "Branch Panel"
     expect: >

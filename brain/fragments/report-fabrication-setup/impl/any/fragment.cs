@@ -66,6 +66,8 @@ foreach (var e in elements ?? new List<Element>())
 var asked = (show ?? "").Trim().ToLowerInvariant();
 var every = asked.Length == 0 || asked == "all";
 var needle = (service ?? "").Trim();
+// `absent: none` arrives as the text "none" when left out (FRAGMENT-ISSUES row 5b-1432).
+if (string.Equals(needle, "none", StringComparison.OrdinalIgnoreCase)) needle = "";
 bool wantConfiguration = every, wantServices = every && picked.Count == 0, wantButtons = false,
      wantParts = every && picked.Count > 0;
 var unknownWords = new List<string>();

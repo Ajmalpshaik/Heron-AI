@@ -189,6 +189,8 @@ if (wantNatures)
 var cases = new FilteredElementCollector(doc).OfClass(typeof(LoadCase)).Cast<LoadCase>()
     .OrderBy(c => c.Number).ThenBy(c => c.Name).ToList();
 var wantCaseName = (loadCase ?? "").Trim();
+// `absent: none` arrives as the text "none" when left out (FRAGMENT-ISSUES row 5b-1432).
+if (string.Equals(wantCaseName, "none", StringComparison.OrdinalIgnoreCase)) wantCaseName = "";
 LoadCase onlyCase = null;
 if (wantCaseName.Length > 0)
 {

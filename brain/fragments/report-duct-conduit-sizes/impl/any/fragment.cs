@@ -37,6 +37,8 @@ var findings = new List<string>();
 var invariant = System.Globalization.CultureInfo.InvariantCulture;
 Func<double, string> mm = feet => Math.Round(feet * 304.8, 2).ToString("0.##", invariant);
 var needle = (standard ?? "").Trim();
+// `absent: none` arrives as the text "none" when left out (FRAGMENT-ISSUES row 5b-1432).
+if (string.Equals(needle, "none", StringComparison.OrdinalIgnoreCase)) needle = "";
 
 // ---- Which lists -----------------------------------------------------------
 var asked = (show ?? "").Trim().ToLowerInvariant();

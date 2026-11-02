@@ -127,6 +127,8 @@ var cases = new FilteredElementCollector(doc).OfClass(typeof(LoadCase)).Cast<Loa
     .OrderBy(c => c.Number).ThenBy(c => c.Name).ToList();
 var caseList = cases.Count == 0 ? "none - CREATE_LOAD_CASE makes one" : string.Join(", ", cases.Select(c => quoted(c.Name)));
 var wantCase = (loadCase ?? "").Trim();
+// `absent: none` arrives as the text "none" when left out (FRAGMENT-ISSUES row 5b-1432).
+if (string.Equals(wantCase, "none", StringComparison.OrdinalIgnoreCase)) wantCase = "";
 LoadCase theCase = null;
 if (ok)
 {
@@ -154,6 +156,7 @@ if (ok)
 var hosts = (elements ?? new List<Element>()).Where(e => e != null).ToList();
 var freePoints = new List<XYZ>();
 var pointsText = (points ?? "").Trim();
+if (string.Equals(pointsText, "none", StringComparison.OrdinalIgnoreCase)) pointsText = ""; // row 5b-1432
 if (ok && pointsText.Length > 0)
 {
     foreach (var raw in pointsText.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
@@ -185,6 +188,7 @@ if (ok && hosts.Count > 0 && freePoints.Count > 0)
 
 // The end of a member a point load goes on.
 var e0 = (at ?? "").Trim().ToLowerInvariant();
+if (e0 == "none") e0 = ""; // row 5b-1432
 AnalyticalElementSelector? end = null;
 if (e0 == "start" || e0 == "base" || e0 == "bottom") end = AnalyticalElementSelector.StartOrBase;
 else if (e0 == "end" || e0 == "top") end = AnalyticalElementSelector.EndOrTop;

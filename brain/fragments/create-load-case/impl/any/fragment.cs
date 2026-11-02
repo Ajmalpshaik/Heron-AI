@@ -83,6 +83,9 @@ var natureList = natures.Count == 0 ? "none" : string.Join(", ", natures.Select(
 var wantName = (name ?? "").Trim();
 var wantCategory = (category ?? "").Trim();
 var wantNature = (nature ?? "").Trim();
+// `absent: none` arrives as the text "none" when left out (FRAGMENT-ISSUES row 5b-1432).
+if (string.Equals(wantCategory, "none", StringComparison.OrdinalIgnoreCase)) wantCategory = "";
+if (string.Equals(wantNature, "none", StringComparison.OrdinalIgnoreCase)) wantNature = "";
 var ok = true;
 
 if (wantName.Length == 0)

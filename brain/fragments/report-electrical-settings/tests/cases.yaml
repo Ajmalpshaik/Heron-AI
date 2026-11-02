@@ -23,7 +23,8 @@ positive:
       voltage in volts as Electrical Settings shows it, each distribution
       system with its phase, wires and both voltages, each load
       classification with its demand factor's name, each demand factor with
-      its rule and percentages
+      its rule and percentages; nameContains left out narrows nothing -
+      never read as a value called "none" (row 5b-1432)
 
   - given: show "loads; demand"
     expect: >

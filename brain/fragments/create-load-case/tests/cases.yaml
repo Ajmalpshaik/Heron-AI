@@ -19,7 +19,7 @@ positive:
       added 1; after holds every case of before and one more, "Wind X" -
       nature Wind, category as Analyze > Load Cases shows Wind Loads, Revit's
       next number; findings say the nature Wind was used because none was
-      named; Analyze > Load Cases now lists Wind X
+      named - the nature left out is never read as a value called "none" (row 5b-1432); Analyze > Load Cases now lists Wind X
 
   - given: name "Crane 1", category "live", nature "Live", number a number no case uses
     expect: >
@@ -36,7 +36,8 @@ negative:
   - given: name "Wind X2", category left out
     expect: >
       added 0; refused says no category was given and lists the categories -
-      Wind is never read out of the name; nothing added
+      Wind is never read out of the name, and the category left out is
+      never read as a value called "none" (row 5b-1432); nothing added
 
   - given: name "Wind X3", category "gravity" - not a category the project has
     expect: >

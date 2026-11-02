@@ -141,7 +141,9 @@ before.AddRange(listOf(schemes));
 if (mode == "make")
 {
     var taken = anyCapitals(wanted);
-    var words = (parts ?? "").Split(new[] { ';', ',', '+' }, StringSplitOptions.RemoveEmptyEntries)
+    // `absent: none` arrives as the text "none" when left out (FRAGMENT-ISSUES row 5b-1432).
+    var partsText = string.Equals((parts ?? "").Trim(), "none", StringComparison.OrdinalIgnoreCase) ? "" : (parts ?? "");
+    var words = partsText.Split(new[] { ';', ',', '+' }, StringSplitOptions.RemoveEmptyEntries)
         .Select(w => w.Trim()).Where(w => w.Length > 0).ToList();
     var knownWords = string.Join(", ", known.Select(k => quoted(label(k.Item1)) + " (" + string.Join(", ", k.Item2) + ")"))
         + ", or a project parameter of electrical circuits by its name";
@@ -189,6 +191,7 @@ if (mode == "make")
         if (refused.Count == 0)
         {
             var gap = separator ?? "";
+            if (string.Equals(gap.Trim(), "none", StringComparison.OrdinalIgnoreCase)) gap = ""; // row 5b-1432
             var data = new List<TableCellCombinedParameterData>();
             for (var i = 0; i < ids.Count; i++)
             {

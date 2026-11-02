@@ -143,6 +143,8 @@ if (proceed && !oneSizeOnly && (outsideMm > 0 || insideMm > 0 || bendRadiusMm > 
         + "so it was not used.");
 
 var wantedName = (name ?? "").Trim();
+// `absent: none` arrives as the text "none" when left out (FRAGMENT-ISSUES row 5b-1432).
+if (string.Equals(wantedName, "none", StringComparison.OrdinalIgnoreCase)) wantedName = "";
 if (proceed && (kind == "pipe" || kind == "conduit") && wantedName.Length == 0)
 {
     refused.Add("Which " + (kind == "pipe" ? "pipe segment" : "conduit standard") + "? It must be named - every one is a "

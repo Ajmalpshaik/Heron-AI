@@ -51,6 +51,11 @@ negative:
       added 0; refused naming the outside diameter and inside diameter as
       needed and never guessed; the segment unchanged
 
+  - given: sizeList pipe, action add, sizes "65", outsideMm 76.1, insideMm 70.3, name left out
+    expect: >
+      added 0; refused asks which pipe segment - none is chosen for you -
+      and the name left out is never read as a value called "none" (row 5b-1432); every segment unchanged
+
   - given: sizeList "segments-and-ducts" - not a size list
     expect: >
       refused naming it as not a size list; nothing changed anywhere

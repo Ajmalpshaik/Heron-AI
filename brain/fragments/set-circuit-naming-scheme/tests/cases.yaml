@@ -39,6 +39,15 @@ positive:
       Circuit Naming dialog shows it as the project's, and DB-1's circuit
       reads DB-1-1 where the panel follows the project setting
 
+  - given: >
+      action make, schemeName "PanelCircuit", parts "panel; circuit number",
+      separator left out
+    expect: >
+      changed 1; after holds "\"PanelCircuit\": Panel \"\" + Circuit
+      Number" - nothing between the parts - the separator left out is
+      never read as a value called "none" (row 5b-1432); a "none" between
+      them is the defect
+
 negative:
   - given: >
       action make, schemeName "Standard" - a name the model already has -
@@ -55,7 +64,8 @@ negative:
 
   - given: action make, schemeName "No Parts", parts left out
     expect: >
-      changed 0; refused - which parameters it is made of is never guessed
+      changed 0; refused - which parameters it is made of is never guessed;
+      the parts left out are never read as a value called "none" (row 5b-1432)
 
   - given: action use, schemeName "ZZNOSCHEME"
     expect: >

@@ -48,6 +48,8 @@ var what = (add ?? "").Trim().ToLowerInvariant().Replace(" ", "").Replace("-", "
 var isVoltage = what == "voltage" || what == "voltagetype" || what == "voltages";
 var isDistribution = what == "distribution" || what == "distributionsystem" || what == "distributionsystems";
 var wantName = (name ?? "").Trim();
+// `absent: none` arrives as the text "none" when left out (FRAGMENT-ISSUES row 5b-1432).
+if (string.Equals(wantName, "none", StringComparison.OrdinalIgnoreCase)) wantName = "";
 
 // ---- The unit, checked against Revit's own ---------------------------------
 var perVolt = 1.0 / (0.3048 * 0.3048);
@@ -156,6 +158,7 @@ if (refused.Count == 0 && isDistribution)
 {
     var lg = double.IsNaN(lineToGroundVolts) || lineToGroundVolts <= 0 ? 0.0 : lineToGroundVolts;
     var conf = (configuration ?? "").Trim().ToLowerInvariant();
+    if (conf == "none") conf = ""; // row 5b-1432
     ElectricalPhase phase = ElectricalPhase.SinglePhase;
     ElectricalPhaseConfiguration phaseConfig = ElectricalPhaseConfiguration.Undefined;
     if (phases == 1) phase = ElectricalPhase.SinglePhase;

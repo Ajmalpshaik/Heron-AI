@@ -109,6 +109,8 @@ if (mode == "make")
 {
     foreach (var t in templates) before.Add(templateLine(t));
     var fromName = (fromTemplate ?? "").Trim();
+    // `absent: none` arrives as the text "none" when left out (FRAGMENT-ISSUES row 5b-1432).
+    if (string.Equals(fromName, "none", StringComparison.OrdinalIgnoreCase)) fromName = "";
     PanelScheduleTemplate source = null;
     if (fromName.Length == 0)
         refused.Add("No template was named to copy " + quoted(wanted) + " from - which one is never guessed. "
@@ -235,7 +237,8 @@ if (mode == "apply")
             panels.Add(e);
         }
     }
-    var named = (panelName ?? "").Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)
+    var panelText = string.Equals((panelName ?? "").Trim(), "none", StringComparison.OrdinalIgnoreCase) ? "" : (panelName ?? ""); // row 5b-1432
+    var named = panelText.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)
         .Select(n => n.Trim()).Where(n => n.Length > 0).ToList();
     if (template != null && named.Count > 0)
     {

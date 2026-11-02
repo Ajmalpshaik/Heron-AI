@@ -24,7 +24,7 @@ positive:
       add voltage, volts 230, name left out
     expect: >
       added 1; after holds "\"230 V\" 230 V (min 230, max 230)" and
-      everything before; findings "Added voltage type \"230 V\" ..."; the
+      everything before - the name left out is never read as a value called "none" (row 5b-1432); findings "Added voltage type \"230 V\" ..."; the
       Voltage Definitions dialog shows it
 
   - given: add voltage, volts 400, minVolts 380, maxVolts 420
@@ -52,6 +52,14 @@ negative:
     expect: >
       added 0 - no voltage type is 415 V; refused "No voltage type of 415 V
       for the line-to-line voltage. The model's voltage types are: ..."
+
+  - given: >
+      add distribution, volts 400, lineToGroundVolts 230, phases 3, wires 4,
+      configuration left out
+    expect: >
+      added 0; refused "A 3-phase distribution system is wye or delta -
+      configuration was not given, and it is never guessed." - the
+      configuration left out is never read as a value called "none" (row 5b-1432)
 
   - given: add distribution, volts 400, lineToGroundVolts 230, wires 4, phases left out
     expect: >

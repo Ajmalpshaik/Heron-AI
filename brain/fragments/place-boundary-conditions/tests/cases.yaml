@@ -47,11 +47,13 @@ negative:
 
   - given: C2 selected, kind point, at "base", fixity left out
     expect: >
-      placed 0; refused asks for Fixed, Pinned or Roller; nothing placed
+      placed 0; refused says no fixity was given and asks for Fixed, Pinned
+      or Roller - never read as a value called "none" (row 5b-1432); nothing placed
 
   - given: C2 selected, kind point, at left out, fixity "pinned"
     expect: >
-      placed 0; refused asks for start or end and gives C2's base and top
+      placed 0; refused asks for start or end and gives C2's base and top -
+      the end left out is never read as a value called "none" (row 5b-1432)
 
 second_route:
   - >

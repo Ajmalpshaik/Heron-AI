@@ -76,6 +76,8 @@ if (!isPoint && !isLine && !isArea)
     ok = false;
 }
 var f = (fixity ?? "").Trim().ToLowerInvariant();
+// `absent: none` arrives as the text "none" when left out (FRAGMENT-ISSUES row 5b-1432).
+if (f == "none") f = "";
 var isFixed = f == "fixed" || f == "fix";
 var isPinned = f == "pinned" || f == "pin";
 var isRoller = f == "roller";
@@ -90,6 +92,7 @@ var tZ = TranslationRotationValue.Fixed;
 var rot = isFixed ? TranslationRotationValue.Fixed : TranslationRotationValue.Release;
 
 var e0 = (at ?? "").Trim().ToLowerInvariant();
+if (e0 == "none") e0 = ""; // row 5b-1432
 int? endIndex = null;
 if (e0 == "start" || e0 == "base" || e0 == "bottom") endIndex = 0;
 else if (e0 == "end" || e0 == "top") endIndex = 1;

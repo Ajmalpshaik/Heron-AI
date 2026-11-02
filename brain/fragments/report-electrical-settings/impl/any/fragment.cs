@@ -55,6 +55,8 @@ var findings = new List<string>();
 
 var invariant = System.Globalization.CultureInfo.InvariantCulture;
 var needle = (nameContains ?? "").Trim();
+// `absent: none` arrives as the text "none" when left out (FRAGMENT-ISSUES row 5b-1432).
+if (string.Equals(needle, "none", StringComparison.OrdinalIgnoreCase)) needle = "";
 Func<string, bool> wanted = n => needle.Length == 0 || (n ?? "").IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0;
 Func<double, string> num = v => Math.Round(v, 2).ToString("0.##", invariant);
 Func<string, string> quoted = n => "\"" + (n ?? "") + "\"";

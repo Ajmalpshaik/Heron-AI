@@ -17,12 +17,13 @@
 # has; a point load with no end.
 
 positive:
-  - given: B1 selected, kind line, loadCase "DL1", value 5, direction left out
+  - given: B1 selected, kind line, loadCase "DL1", value 5, direction and points left out
     expect: >
       placed 1; report "Line load ... uniform (0, 0, -5) kN/m; load case
       \"DL1\"; on Structural Framing ... (B1) through analytical ..." read
       back; findings say the load points down because no direction was given;
-      B1's Properties show the new load in DL1 at -5 kN/m
+      B1's Properties show the new load in DL1 at -5 kN/m. The points left
+      out are never read as a value called "none" (row 5b-1432) - refused "\"none\" is not a point" is the defect
 
   - given: B1 selected, kind point, loadCase "LL1", value 10, at "end"
     expect: >
@@ -55,7 +56,13 @@ negative:
 
   - given: B1 selected, kind point, loadCase "LL1", value 10, at left out
     expect: >
-      placed 0; refused asks for start or end and gives B1's two end points
+      placed 0; refused asks for start or end and gives B1's two end points -
+      the end left out is never read as a value called "none" (row 5b-1432)
+
+  - given: B1 selected, kind line, value 5, loadCase left out
+    expect: >
+      placed 0; refused "No load case was named, and it is never guessed"
+      with every load case - never read as a value called "none" (row 5b-1432); nothing placed
 
   - given: B1 selected, kind line, loadCase "DL1", value 5 - run twice, the first kept
     expect: >
