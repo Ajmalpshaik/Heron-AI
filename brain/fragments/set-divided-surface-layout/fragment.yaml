@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -159,6 +159,96 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: P1102 Box, Revit 2024, session 59960 - the count is NOT recorded because 9,500 elements
+    was measured on Snowdon Towers Sample Structural, the document in front, and this ran
+    against another one (row 15)
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    divide-family-surface with this phase''s own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned LargestAngleDegrees 360,
+    LargestDistanceMm 100000, LargestOffsetMm 100000, MillimetresPerFoot 304.8, MostDivisions
+    1000, MostIndent 1000, SameDegrees 0.01, SameMm 0.5, SmallestDistanceMm 100, SmallestOffsetMm
+    10, allRotationBefore 0, allRotationTarget 0, alreadyAsAsked 1, alreadyCutting 0 item(s),
+    applied 3, askAllRotationDegrees (null), askBorder (null), askComponentRotation (null),
+    askDistanceMm 2 item(s) [(null), (null)], askFlip (null), askIndent 2 item(s) [(null),
+    (null)], askIntersect (null), askJustification 2 item(s) [(null), (null)], askLayout 2
+    item(s) [FixedNumber, FixedNumber], askMirror (null), askNumber 2 item(s) [8, 4], askOffsetMm
+    2 item(s) [(null), (null)], askRotationDegrees 2 item(s) [(null), (null)], borderBefore
+    BorderTile, borderTarget BorderTile, borderWords 3 entry(ies), clearCuts false, componentRotationBefore
+    ComponentRotation, componentRotationTarget ComponentRotation, componentRotations 4 entry(ies),
+    cutWords Func`2, cutsBefore 0 item(s), degreeUnits 4 item(s) [degrees, degree, deg, ...],
+    degreesText Func`2, distanceBefore 2 item(s) [4.92125984251977, 9.84251968503937], distanceTarget
+    2 item(s) [4.92125984251977, 9.84251968503937], elementWords Func`2, findings 2 item(s)
+    [Changed divided surface 33359 on form 30830 (ebe6b5a8-f2d7-4..., Gridline counts are
+    what Revit made: whether a Number counts...], flipBefore false, flipTarget false, hostWords
+    Func`2, indentBefore 2 item(s) [0, 0], indentTarget 2 item(s) [0, 0], invariant CultureInfo,
+    justificationBefore 2 item(s) [Center, Center], justificationTarget 2 item(s) [Center,
+    Center], justificationWords 5 entry(ies), layoutBefore 2 item(s) [FixedNumber, FixedDistance],
+    layoutShown 5 entry(ies), layoutTarget 2 item(s) [FixedNumber, FixedNumber], layoutWords
+    9 entry(ies), letters 2 item(s) [U, V], linesBefore 2 item(s) [6, 9], mirrorBefore false,
+    mirrorTarget false, mmText Func`2, mmUnits 1 item(s) [mm], noUnits 0 item(s), noWords
+    3 item(s) [no, false, off], notAFamily false, number0 Func`2, numberBefore 2 item(s) [6,
+    3], numberOf Func`3, numberTarget 2 item(s) [8, 4], offsetBefore 2 item(s) [0, 0], offsetTarget
+    2 item(s) [0, 0], plain Func`2, readBack U grid: layout Fixed Number (asked, already so),
+    number 8 (asked, was 6), justification Center, rotation 0 degrees, offset 0.0 mm; 6 gridline(s)
+    before, 7 now | V grid: layout Fixed Number (asked, was Fixed Distance), number 4 (asked,
+    was none), justification Center, rotation 0 degrees, offset 0.0 mm; 9 gridline(s) before,
+    11 now | surface: all grid rotation 0 degrees, border tiles Partial, component rotation
+    0 degrees, component flip no, component mirror no, U indent 0, V indent 0, cut by none,
+    refused , rotationBefore 2 item(s) [0, 0], rotationTarget 2 item(s) [0, 0], rules 2 item(s)
+    [Autodesk.Revit.DB.SpacingRule, Autodesk.Revit.DB.SpacingRule], sameAngle Func`3, sameLength
+    Func`3, sayComponentRotation Func`2, sayLayout Func`2, settingList u layout, u number,
+    u distance, u justification, u rotation, u offset, u indent, the same seven for v, all
+    rotation, border, component rotation, flip, mirror, intersect, settingNames 27 entry(ies),
+    settingOf Func`2, skipped 0 item(s), surface DividedSurface, surfaceId ebe6b5a8-f2d7-4337-acd8-dfdfb520c057-0000824f,
+    surfaceWords Func`2, surfaces 1 item(s) [DividedSurface], toAdd 0 item(s), usesDistance
+    Func`2, writeGrid 2 item(s) [True, True], wrote true, yesNo Func`2, yesWords 3 item(s)
+    [yes, true, on]. inputs came dividedSurface as given; surfaceLayout as given (4). on P1102
+    Box'
+  negative_case: 'run with dividedSurface=only, face=front, form=bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e,
+    pattern=, surfaceLayout=u layout=ZZZ, uGrid=6, vGrid=3000 mm instead - chosen because
+    it should not contain what this fragment reports - the arrangement was re-made first by
+    running divide-family-surface with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned LargestAngleDegrees
+    360, LargestDistanceMm 100000, LargestOffsetMm 100000, MillimetresPerFoot 304.8, MostDivisions
+    1000, MostIndent 1000, SameDegrees 0.01, SameMm 0.5, SmallestDistanceMm 100, SmallestOffsetMm
+    10, allRotationBefore 0, allRotationTarget 0, alreadyAsAsked 0, alreadyCutting 0 item(s),
+    applied 0, askAllRotationDegrees (null), askBorder (null), askComponentRotation (null),
+    askDistanceMm 2 item(s) [(null), (null)], askFlip (null), askIndent 2 item(s) [(null),
+    (null)], askIntersect (null), askJustification 2 item(s) [(null), (null)], askLayout 2
+    item(s) [(null), (null)], askMirror (null), askNumber 2 item(s) [(null), (null)], askOffsetMm
+    2 item(s) [(null), (null)], askRotationDegrees 2 item(s) [(null), (null)], borderBefore
+    BorderTile, borderTarget BorderTile, borderWords 3 entry(ies), clearCuts false, componentRotationBefore
+    ComponentRotation, componentRotationTarget ComponentRotation, componentRotations 4 entry(ies),
+    cutWords Func`2, cutsBefore 0 item(s), degreeUnits 4 item(s) [degrees, degree, deg, ...],
+    degreesText Func`2, distanceBefore 2 item(s) [0, 0], distanceTarget 2 item(s) [0, 0],
+    elementWords Func`2, findings 1 item(s) ["ZZZ" is not a layout. The U layout is one of:
+    none, number,...], flipBefore false, flipTarget false, hostWords Func`2, indentBefore
+    2 item(s) [0, 0], indentTarget 2 item(s) [0, 0], invariant CultureInfo, justificationBefore
+    2 item(s) [0, 0], justificationTarget 2 item(s) [0, 0], justificationWords 5 entry(ies),
+    layoutBefore 2 item(s) [None, None], layoutShown 5 entry(ies), layoutTarget 2 item(s)
+    [None, None], layoutWords 9 entry(ies), letters 2 item(s) [U, V], linesBefore 2 item(s)
+    [0, 0], mirrorBefore false, mirrorTarget false, mmText Func`2, mmUnits 1 item(s) [mm],
+    noUnits 0 item(s), noWords 3 item(s) [no, false, off], notAFamily false, number0 Func`2,
+    numberBefore 2 item(s) [0, 0], numberOf Func`3, numberTarget 2 item(s) [0, 0], offsetBefore
+    2 item(s) [0, 0], offsetTarget 2 item(s) [0, 0], plain Func`2, readBack , refused "ZZZ"
+    is not a layout. The U layout is one of: none, number, distance, maximum spacing, minimum
+    spacing. Nothing was changed, rotationBefore 2 item(s) [0, 0], rotationTarget 2 item(s)
+    [0, 0], rules 2 item(s) [(null), (null)], sameAngle Func`3, sameLength Func`3, sayComponentRotation
+    Func`2, sayLayout Func`2, settingList u layout, u number, u distance, u justification,
+    u rotation, u offset, u indent, the same seven for v, all rotation, border, component
+    rotation, flip, mirror, intersect, settingNames 27 entry(ies), settingOf Func`2, skipped
+    0 item(s), surface DividedSurface, surfaceId , surfaceWords Func`2, surfaces 1 item(s)
+    [DividedSurface], toAdd 0 item(s), usesDistance Func`2, writeGrid 2 item(s) [False, False],
+    wrote false, yesNo Func`2, yesWords 3 item(s) [yes, true, on]. inputs came dividedSurface
+    as given; surfaceLayout as given (1). on P1102 Box'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 6c28b1d6a95c8ddc
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

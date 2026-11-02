@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -81,6 +81,38 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 Box, P1102 Light24 - active was Snowdon
+    Towers Sample Structural, Revit 2024, session 59960'
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    divide-family-surface with this phase''s own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, componentRotationShown
+    4 entry(ies), cutWords Func`2, degreesText Func`2, divided divided surface 33361 on Form
+    30830: U FixedNumber 6, Center (6 gridlines), V FixedDistance 3000 mm, Center (9 gridlines),
+    border tiles Partial, all grid rotation 0 degrees, component rotation 0 degrees, component
+    flip no, component mirror no, U indent 0, V indent 0, cut by none, elementWords Func`2,
+    findings 2 item(s) [1 divided surface(s) and 0 divided path(s) read in "P1102 Bo..., divided
+    surface 33361 on Form 30830: U FixedNumber 6, Center...], held Func`2, invariant CultureInfo,
+    mm Func`2, options Options, pathCount 0, report 1 item(s) [divided surface 33361 on Form
+    30830: U FixedNumber 6, Center...], rule Func`2, sayComponentRotation Func`2, surfaceCount
+    1, withNodes false, yesNo Func`2. inputs came withNodes as given. on P1102 Box'
+  negative_case: run against 'P1102 Light24' with face=front, form=bcb0b59e-99d9-418b-a20c-4ca018a12198-0000786e,
+    pattern=, uGrid=6, vGrid=3000 mm, withNodes=False instead - chosen because it should not
+    contain what this fragment reports - the arrangement was re-made first by running divide-family-surface
+    with this phase's own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned MmPerFoot 304.8, componentRotationShown 4 entry(ies),
+    cutWords Func`2, degreesText Func`2, divided , elementWords Func`2, findings 1 item(s)
+    [0 divided surface(s) and 0 divided path(s) read in "P1102 Li...], held Func`2, invariant
+    CultureInfo, mm Func`2, options Options, pathCount 0, report 0 item(s), rule Func`2, sayComponentRotation
+    Func`2, surfaceCount 0, withNodes false, yesNo Func`2. inputs came withNodes as given.
+    on P1102 Light24
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 68dc177a2425799e
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
