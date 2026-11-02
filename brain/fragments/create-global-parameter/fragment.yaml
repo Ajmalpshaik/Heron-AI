@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -76,6 +76,28 @@ contract:
       type: ElementId
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Snowdon Towers Sample Site, P1102 2024 Family
+    - active was Snowdon Towers Sample HVAC, Revit 2024, session 59960'
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned created true, findings 2 item(s)
+    [Created the global parameter "HERON P1102 Setback", read bac..., It has no value yet
+    beyond whatever its spec starts at, and ...], parameterId 1 item(s) [id 1377788], wantedName
+    HERON P1102 Setback. inputs came parameterName as given; specTypeId as given. on Snowdon
+    Towers Sample Site
+  negative_case: run against 'P1102 2024 Family' with parameterName=HERON P1102 Setback, specTypeId=length
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    created false, findings 1 item(s) [This document cannot hold global parameters at all
+    - they ex...], parameterId (null), wantedName HERON P1102 Setback. inputs came parameterName
+    as given; specTypeId as given. on P1102 2024 Family
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: f8753a63ee50bb71
 
 revit: ["2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

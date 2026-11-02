@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -183,28 +183,63 @@ contract:
       type: int
 
 proof:
-  date: '2026-10-23'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: N23 Snowdon HVAC 2024, Revit 2024, session 83588 - the count is NOT recorded because
-    9,433 elements was measured on N23 Structure Night 2024, the document in front, and this
-    ran against another one (row 15)
-  positive_case: 'run as it would normally be run. returned byCategory Family 5, Section Marks
-    4, Material Assets 2, ElementType 2, Callout Heads 2, View Titles 2, Detail Items 1, AppearanceAssetElement
-    1, counts 8 entry(ies), elements 19 item(s) [Diagonal Crosshatch, Satin, Aluminum, ...],
-    findings 1 item(s) [19 element(s) Purge Unused would offer in "N23 Snowdon HVAC ...],
-    purgeableNames 19 item(s) [Detail Items: Diagonal Crosshatch, AppearanceAssetElement:
-    Satin, Material Assets: Aluminum, ...], refusal (null), scope HashSet`1, wanted HashSet`1.
-    inputs came categories as given. on N23 Snowdon HVAC 2024'
+  model: Snowdon Towers Sample Structural (9,500 elements), Revit 2024, session 59960
+  positive_case: 'run as it would normally be run. returned askedEverything true, askedFor
+    Func`2, attachedDetailGroupsInUse 0 item(s), byCategory Family 102, Detail Items 100,
+    Materials 49, AppearanceAssetElement 43, Structural Rebar 40, Rebar Shape 39, Structural
+    Fabric Reinforcement 39, Structural Rebar Couplers 38, Profiles 19, Generic Annotations
+    16, Elevation Marks 15, Structural Framing 12, SpotDimensionType 11, Walls 10, Windows
+    9, Structural Foundations 9, Section Marks 8, Structural Rebar Tags 8, Doors 7, Structural
+    Fabric Reinforcement Symbols 7, Structural Connections 7, ElementType 6, Curtain Wall
+    Mullions 6, Structural Framing Tags 6, Structural Columns 6, Floors 5, Span Direction
+    Symbol 5, Material Assets 5, Structural Rebar Coupler Tags 5, Generic Models 5, Callout
+    Heads 5, Keynote Tags 4, Cover Type 4, LineAndTextAttrSymbol 3, Curtain Panels 3, Title
+    Blocks 3, Structural Loads 3, Connection Symbols 3, Division Profiles 3, Detail Item Tags
+    3, TextNoteType 2, ViewFamilyType 2, Structural Truss Tags 2, Grids 2, Cable Trays 2,
+    Hole Tags 2, Plate Tags 2, Shear Stud Tags 2, Weld Tags 2, Anchor Tags 2, Bolt Tags 2,
+    DimensionType 2, TextElementType 1, Structural Foundation Tags 1, Property Lines 1, Spot
+    Elevation Symbols 1, Revision Cloud Tags 1, Brace in Plan View Symbols 1, Stairs 1, Structural
+    Column Tags 1, Structural Area Reinforcement Tags 1, Structural Area Reinforcement Symbols
+    1, Material Tags 1, Structural Path Reinforcement Tags 1, Structural Path Reinforcement
+    Symbols 1, Constructions 1, Structural Trusses 1, Structural Stiffeners 1, Structural
+    Fabric Reinforcement Tags 1, Cut Marks 1, Multi-Rebar Annotations 1, Level Heads 1, Wall
+    Tags 1, Floor Tags 1, Structural Beam System Tags 1, Levels 1, counts 76 entry(ies), elements
+    719 item(s) [Box Filled, Triangle Filled, Rectangular Mullion 1, ...], familyLine Action`3,
+    filtersOnlyInUnusedTemplates 0 item(s), findings 8 item(s) [719 element(s) Purge Unused
+    would offer in "Snowdon Towers S..., The names list stops at 300; every element is handed
+    on., 0 group definition(s) have nothing placed, of 2 walked - a R..., ...], heldBack 0
+    item(s), inUseHere HashSet`1, includeMaterials false, onlyReports false, perFamily 155
+    item(s) [00  - NOTHING used, all 1 type(s): 00, 000_BreakLine_Pick  - 1 of 2 type(s) unused:
+    Small, 000_BreakLine_Pipe  - 1 of 2 type(s) unused: Small, ...], purgeableNames 300 item(s)
+    [ElementType: Box Filled, ElementType: Triangle Filled, Curtain Wall Mullions: Rectangular
+    Mullion 1, ...], refusal (null), reportLines 5 item(s) [0 group definition(s) have nothing
+    placed, of 2 walked - a R..., 14 image(s) in Manage Images; 0 used nowhere - a REPORT,
+    by ..., 15 view template(s) applied to no view, 6 view filter(s) use..., ...], route Revit''s
+    own unused-element list (Revit 2024 and later), scannedInstances 0, scannedTypes 0, scope
+    HashSet`1, templatesKeptAsDefault 3, unreadable 0, unusedFilterNames 6 item(s) [Roofs
+    - Generic, 3 Hour, 1 Hour (Smoke), ...], unusedGroupTypeNames 0 item(s), unusedImageNames
+    0 item(s), unusedList RuntimeMethodInfo, unusedMaterialNames 0 item(s), unusedTemplateNames
+    15 item(s) [Structural Section, Architectural Plan, Architectural Elevation, ...], usedImageCount
+    14, wanted HashSet`1, wholeFamilyUnused 111 item(s) [00, 01, 02, ...]. inputs came categories
+    as given; includeMaterials not given - false (optional). on Snowdon Towers Sample Structural'
   negative_case: run with categories=Rooms instead - chosen because it should not contain
-    what this fragment reports. returned byCategory , counts 0 entry(ies), elements 0 item(s),
-    findings 1 item(s) [0 element(s) Purge Unused would offer in "N23 Snowdon HVAC 2...],
-    purgeableNames 0 item(s), refusal (null), scope HashSet`1, wanted HashSet`1. inputs came
-    categories as given. on N23 Snowdon HVAC 2024
+    what this fragment reports. returned askedEverything false, askedFor Func`2, attachedDetailGroupsInUse
+    0 item(s), byCategory , counts 0 entry(ies), elements 0 item(s), familyLine Action`3,
+    filtersOnlyInUnusedTemplates 0 item(s), findings 1 item(s) [0 element(s) Purge Unused
+    would offer in "Snowdon Towers Sam...], heldBack 0 item(s), inUseHere HashSet`1, includeMaterials
+    false, onlyReports false, perFamily 0 item(s), purgeableNames 0 item(s), refusal (null),
+    reportLines 0 item(s), route Revit's own unused-element list (Revit 2024 and later), scannedInstances
+    0, scannedTypes 0, scope HashSet`1, templatesKeptAsDefault 0, unreadable 0, unusedFilterNames
+    0 item(s), unusedGroupTypeNames 0 item(s), unusedImageNames 0 item(s), unusedList RuntimeMethodInfo,
+    unusedMaterialNames 0 item(s), unusedTemplateNames 0 item(s), usedImageCount 0, wanted
+    HashSet`1, wholeFamilyUnused 0 item(s). inputs came categories as given; includeMaterials
+    not given - false (optional). on Snowdon Towers Sample Structural
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 850270d4166a24ce
-
+  fingerprint: 5af5d49170c9635f
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

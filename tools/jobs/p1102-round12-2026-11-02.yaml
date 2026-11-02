@@ -1,0 +1,48 @@
+# Round 12, 2026-11-02 - Revit 2020 after a second restart. Scratch copies in
+# %TEMP%\heron-work\prove-1102:
+#   "P1102 STR"         Samples\rst_advanced_sample_project.rvt - section "Slope Slab - Roof"
+#                       shows 18 round concrete columns; bar types 10M-57M; hook "Stirrup/Tie - 135 deg."
+#   "P1102 ARCH"        Samples\rac_advanced_sample_project.rvt - 104 furniture, 30 planting
+# Result: set-family-light-source and link-family-parameter PASS. place-column-rebar - Revit
+# refused a bar in every round "450mm" column, and no rectangular concrete column is placed in
+# this sample. copy-elements-between-documents - stopped twice (Furniture, then Planting) by
+# Revit's duplicate-types dialog (Dialog_Revit_PasteSimilarSymbolsPaste), which Heron cancels
+# rather than answer for the modeller; it needs a source sharing no type with the target.
+#   "P1102 Light"       Libraries\US Metric\...\M_Downlight - Recessed Can.rfa
+#   "P1102 MEP Family"  Samples\rme_advanced_sample_family.rfa - instance "Nominal Air Flow"
+#   "P1102 Family"      Samples\rac_advanced_sample_family.rfa - a Generic Model, no light
+# Every run is ROLLED BACK.
+model: "P1102 STR + ARCH + Light + MEP Family + Family (scratch copies of Revit 2020 samples and library), Revit 2020"
+
+defaults:
+  in: "P1102 STR"
+  setup: []
+
+jobs:
+  - fragment: place-column-rebar
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: placed
+    set: {category: "Structural Columns", inViewOnly: "Slope Slab - Roof", mainBars: "4 x 16M", ties: "10M @ 150", tieHook: "Stirrup/Tie - 135 deg.", cover: "40"}
+    negative-set: {category: "Structural Columns", inViewOnly: "Slope Slab - Roof", mainBars: "4 x T16", ties: "10M @ 150", tieHook: "Stirrup/Tie - 135 deg.", cover: "40"}
+
+  - fragment: copy-elements-between-documents
+    write: true
+    expect: copiedIds
+    set: {sourceDocumentTitle: "P1102 ARCH", categories: "Planting", elementIds: "", offsetMm: "0,-60000,0"}
+    negative-set: {sourceDocumentTitle: "No Such File", categories: "Planting", elementIds: "", offsetMm: "0,-60000,0"}
+
+  - fragment: set-family-light-source
+    in: "P1102 Light"
+    write: true
+    expect: changed
+    set: {shape: "", distribution: "", intensity: "4500 lm", colorTemperature: "4000 K", typeName: "", lightLossFactor: "", dimming: "", colorFilter: "", position: "", aim: ""}
+    negative-in: "P1102 Family"
+    negative-set: {shape: "", distribution: "", intensity: "4500 lm", colorTemperature: "4000 K", typeName: "", lightLossFactor: "", dimming: "", colorFilter: "", position: "", aim: ""}
+
+  - fragment: link-family-parameter
+    in: "P1102 MEP Family"
+    write: true
+    expect: changed
+    set: {category: "Duct Connector", system: "Supply Air", links: "Flow=Nominal Air Flow"}
+    negative-set: {category: "Duct Connector", system: "Supply Air", links: "Flow=ZZZ No Such Parameter"}

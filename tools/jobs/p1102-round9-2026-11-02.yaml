@@ -1,0 +1,78 @@
+# Round 9, 2026-11-02 - Revit 2020. Scratch copies in %TEMP%\heron-work\prove-1102:
+#   "P1102 MEP"   Samples\rme_advanced_sample_project.rvt
+#   "P1102 ARCH"  Samples\rac_advanced_sample_project.rvt
+# Each of these needs something the samples do not hold, so a PROVEN creator makes it inside
+# the same rolled-back run (a setup step that changes the model takes the run's own values).
+# Every run is ROLLED BACK.
+model: "P1102 MEP + P1102 ARCH (scratch copies of the Revit 2020 samples), Revit 2020"
+
+defaults:
+  in: "P1102 MEP"
+  setup: []
+
+jobs:
+  - fragment: report-category-overrides
+    write: true
+    setup: [set-category-graphics]
+    expect: overriddenCategories
+    set: {view: "Level 2 HVAC Plan", categories: "Ducts", overrides: "projection-line-colour=200,30,30", allCategories: false}
+    negative-set: {view: "Condensate Drain", categories: "Ducts", overrides: "projection-line-colour=200,30,30", allCategories: false}
+
+  - fragment: place-view-on-sheet
+    write: true
+    setup: [create-sheets]
+    expect: placed
+    set: {numbers: "HZ-901", names: "HERON TEST SHEET", titleBlockName: "A0 metric", sheetId: "HZ-901", views: "Callout of Level 1 HVAC WSHP TYP", at: "400,300,0"}
+    negative-set: {numbers: "HZ-901", names: "HERON TEST SHEET", titleBlockName: "A0 metric", sheetId: "HZ-999", views: "Callout of Level 1 HVAC WSHP TYP", at: "400,300,0"}
+
+  - fragment: fit-mep-joints
+    write: true
+    setup: [create-duct-runs]
+    keep-chain: true
+    expect: created
+    set: {systemType: "Supply Air", ductType: "Rectangular Duct: Mitered Elbows / Tees", level: "Level 1", runs: "400x200: 0,-60000,2700; 4000,-60000,2700; 4000,-56000,2700", toleranceMm: 10}
+    negative-set: {systemType: "Supply Air", ductType: "Rectangular Duct: Mitered Elbows / Tees", level: "Level 1", runs: "400x200: 0,-60000,2700; 4000,-60000,2700", toleranceMm: 10}
+
+  - fragment: set-material-properties
+    write: true
+    setup: [create-starter-materials]
+    expect: changedMaterialIds
+    set: {namePrefix: "P1102_", starterPick: "glass", materialsNamed: "P1102_Glass", fieldValues: "Manufacturer=P1102 Maker; Mark=P1"}
+    negative-set: {namePrefix: "P1102_", starterPick: "glass", materialsNamed: "P1102_Glas", fieldValues: "Mark=P2"}
+
+  - fragment: create-assembly-views
+    write: true
+    setup: [filter-elements-by-category, create-assembly]
+    keep-chain: true
+    expect: created
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", assemblyName: "HERON A1", namingCategory: "Ducts", withPartList: true, withMaterialTakeoff: true}
+    negative-set: {category: "Sheets", assemblyName: "HERON A1", namingCategory: "Ducts", withPartList: true, withMaterialTakeoff: true}
+
+  - fragment: manage-export-setups
+    write: true
+    expect: done
+    set: {setupName: "HERON P1102 DWG", mode: "create", kind: "dwg"}
+    negative-set: {setupName: "ZZZ NO SUCH SETUP", mode: "delete", kind: "any"}
+
+  - fragment: set-export-setup-options
+    write: true
+    setup: [manage-export-setups]
+    expect: changed
+    set: {setupName: "HERON P1102 DWG", mode: "create", kind: "dwg", options: "units=mm; fileVersion=2013"}
+    negative-set: {setupName: "HERON P1102 DWG", mode: "create", kind: "dwg", options: "units=parsecs"}
+
+  - fragment: report-keynotes
+    in: "P1102 ARCH"
+    expect: tagCount
+    set: {viewName: "Roofing Termination Detail"}
+    negative-set: {viewName: "{3D}"}
+
+  - fragment: check-structural-supports
+    in: "P1102 ARCH"
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: unsupported
+    setup-set: {category: "Structural Framing", levelId: "02 - Floor"}
+    negative-setup-set: {category: "Structural Columns", levelId: "01 - Entry Level"}
+    set: {toleranceMm: 0}
+    negative-set: {toleranceMm: 0}

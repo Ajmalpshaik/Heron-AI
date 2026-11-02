@@ -1,0 +1,18 @@
+# Round 17, 2026-11-02 - Revit 2024.3, session 59960. "Snowdon Towers Sample HVAC" = a scratch
+# copy of Revit 2024's own Samples\Snowdon Towers Sample HVAC.rvt. No duct accessory family is
+# loaded, so LOAD_FAMILY loads Revit 2020's US Metric "M_Fire Damper - Rectangular - Simple.rfa"
+# (upgraded on load) inside the same rolled-back run. "FloorPlan: L1 - Block 37" draws 79 ducts,
+# the smallest set of any plan (read before the run). Every run is ROLLED BACK.
+model: "Snowdon Towers Sample HVAC (scratch copy, Revit 2024 sample), Revit 2024"
+
+defaults:
+  in: "Snowdon Towers Sample HVAC"
+  setup: []
+
+jobs:
+  - fragment: place-accessory-on-run
+    write: true
+    setup: [filter-elements-by-category, set-selection, load-family]
+    expect: placed
+    set: {category: "Ducts", inViewOnly: "FloorPlan: L1 - Block 37", familyPath: "C:/ProgramData/Autodesk/RVT 2020/Libraries/US Metric/Duct/Accessories/Dampers/M_Fire Damper - Rectangular - Simple.rfa", reload: false, overwriteValues: false, accessorySymbol: "M_Fire Damper - Rectangular - Simple: Standard", positionAlong: 0.5}
+    negative-set: {category: "Ducts", inViewOnly: "FloorPlan: L1 - Block 37", familyPath: "C:/ProgramData/Autodesk/RVT 2020/Libraries/US Metric/Duct/Accessories/Dampers/M_Fire Damper - Rectangular - Simple.rfa", reload: false, overwriteValues: false, accessorySymbol: "ZZZNOTHINGHERE", positionAlong: 0.5}

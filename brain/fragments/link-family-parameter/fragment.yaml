@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -180,45 +180,54 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
-    Revit 2024, session 32340'
+  model: P1102 MEP Family, Revit 2020, session 12404 - the count is NOT recorded because 9,179
+    elements was measured on P1102 STR, the document in front, and this ran against another
+    one (row 15)
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned alreadyLinked 0, asked 1 item(s)
-    [(Flow, Supply Flow, False)], changed 2, chosen 2 item(s) [Supply Air, Return Air], classificationOf
+    the transaction group ROLLED BACK afterwards. returned alreadyLinked 1, asked 1 item(s)
+    [(Flow, Nominal Air Flow, False)], byCategory true, byForms false, byNested false, changed
+    0, chosen 1 item(s) [Supply Air], classificationOf Func`2, dbNamespace Autodesk.Revit.DB,
+    describe Func`2, ductFlow 1 item(s) [id -1013405], everyCategory false, everySystem false,
+    findings 1 item(s) [Family ''P1102 MEP Family'': 0 link(s) or value(s) changed and...],
+    flags BindingFlags, isFlow Func`2, isMaterialField Func`2, isVoidForm Func`2, kindName
+    Func`2, kindOf Func`2, lacking 0 item(s), leftOut 0, linkReport Duct Connector (Supply
+    Air) id 2630: Flow already linked to Nominal Air Flow (reads 94.4 L/s), linked true, matched
+    1, materialField 1 item(s) [id -1002107], materialWords Func`2, nameOf Func`2, notAFamily
+    false, pipeFlow 1 item(s) [id -1140213], planAlready 1 item(s) [False], planBefore 1 item(s)
+    [], plans 1 item(s) [(Autodesk.Revit.DB.ConnectorElement, Autodesk.Revit.DB.Param...],
+    quoted Func`2, reads Func`2, refused (null), revitAssembly RuntimeAssembly, saidCategory
+    Duct Connector, saidFamily , saidForms , saidSystem Supply Air, saidType , sameKind Func`3,
+    sameSystem Func`3, sameWord Func`3, spaced Func`2, squash Func`2, systemWords Func`2,
+    unlessNone Func`2, ways 1, whatEachLacks Func`1. inputs came category as given; system
+    as given; forms not given - "none", the card''s own default (optional); family not given
+    - "none", the card''s own default (optional); type not given - "none", the card''s own
+    default (optional); links as given (1). on P1102 MEP Family'
+  negative_case: 'run with category=Duct Connector, links=Flow=ZZZ No Such Parameter, system=Supply
+    Air instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    alreadyLinked 0, asked 1 item(s) [(Flow, ZZZ No Such Parameter, False)], byCategory true,
+    byForms false, byNested false, changed 0, chosen 1 item(s) [Supply Air], classificationOf
     Func`2, dbNamespace Autodesk.Revit.DB, describe Func`2, ductFlow 1 item(s) [id -1013405],
-    everyCategory false, everySystem true, findings 2 item(s) [Family ''Family1'': 2 link(s)
-    changed and 0 already as asked, ..., The links are in the family only. Placed units in
-    a project ...], flags BindingFlags, isFlow Func`2, kindName Func`2, kindOf Func`2, lacking
-    0 item(s), leftOut 0, linkReport Duct Connector (Supply Air) id 2954: Flow not linked
-    -> Supply Flow (reads 0.0 L/s)  ||  Duct Connector (Return Air) id 2955: Flow not linked
-    -> Supply Flow (reads 0.0 L/s), matched 2, nameOf Func`2, notAFamily false, pipeFlow 1
-    item(s) [id -1140213], plans 2 item(s) [(Autodesk.Revit.DB.ConnectorElement, Autodesk.Revit.DB.Param...,
-    (Autodesk.Revit.DB.ConnectorElement, Autodesk.Revit.DB.Param...], quoted Func`2, reads
-    Func`2, refused (null), revitAssembly RuntimeAssembly, saidCategory Duct Connector, saidSystem
-    all, sameKind Func`3, sameSystem Func`3, sameWord Func`3, spaced Func`2, squash Func`2,
-    systemWords Func`2, whatEachLacks Func`1. inputs came category as given; system as given;
-    links as given (1). on Family1'
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned alreadyLinked 0, asked 0 item(s), changed 0, chosen 0
-    item(s), classificationOf Func`2, dbNamespace Autodesk.Revit.DB, describe Func`2, ductFlow
-    1 item(s) [id -1013405], everyCategory false, everySystem true, findings 1 item(s) [The
-    document in front, "Project1", is a project, not a famil...], flags BindingFlags, isFlow
-    Func`2, kindName Func`2, kindOf Func`2, lacking 0 item(s), leftOut 0, linkReport , matched
-    0, nameOf Func`2, notAFamily true, pipeFlow 1 item(s) [id -1140213], plans 0 item(s),
-    quoted Func`2, reads Func`2, refused The document in front, "Project1", is a project,
-    not a family open in the Family Editor. A link between an element's parameter and a family
-    parameter lives inside the family - open it for editing first (OPEN_FAMILY_FOR_EDITING).
-    Nothing was changed., revitAssembly RuntimeAssembly, saidCategory Duct Connector, saidSystem
-    all, sameKind Func`3, sameSystem Func`3, sameWord Func`3, spaced Func`2, squash Func`2,
-    systemWords Func`2, whatEachLacks Func`1. inputs came category as given; system as given;
-    links as given (1). on Project1
+    everyCategory false, everySystem false, findings 1 item(s) [Nothing was changed. No family
+    parameter is called "ZZZ No S...], flags BindingFlags, isFlow Func`2, isMaterialField
+    Func`2, isVoidForm Func`2, kindName Func`2, kindOf Func`2, lacking 0 item(s), leftOut
+    0, linkReport , linked false, matched 1, materialField 1 item(s) [id -1002107], materialWords
+    Func`2, nameOf Func`2, notAFamily false, pipeFlow 1 item(s) [id -1140213], planAlready
+    0 item(s), planBefore 0 item(s), plans 0 item(s), quoted Func`2, reads Func`2, refused
+    Nothing was changed. No family parameter is called "ZZZ No Such Parameter". The ones that
+    could drive "Flow" (Air Flow) on Duct Connector (Supply Air) id 2630: Nominal Air Flow.,
+    revitAssembly RuntimeAssembly, saidCategory Duct Connector, saidFamily , saidForms , saidSystem
+    Supply Air, saidType , sameKind Func`3, sameSystem Func`3, sameWord Func`3, spaced Func`2,
+    squash Func`2, systemWords Func`2, unlessNone Func`2, ways 1, whatEachLacks Func`1. inputs
+    came category as given; system as given; forms not given - "none", the card''s own default
+    (optional); family not given - "none", the card''s own default (optional); type not given
+    - "none", the card''s own default (optional); links as given (1). on P1102 MEP Family'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 98be486c00c237c2
+  fingerprint: 7cd2ed6aab90e09f
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

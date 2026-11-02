@@ -1,0 +1,16 @@
+# Round 13, 2026-11-02 - Revit 2020. "P1102 STR" = a scratch copy of Revit 2020's own
+# Samples\rst_advanced_sample_project.rvt; "P1102 Light" = a copy of the US Metric library's
+# M_Downlight - Recessed Can.rfa, whose dashboard elementTotal read 0 before the run (no placed
+# model element - its light is the family's own geometry). Nothing here changes the model.
+model: "P1102 STR + P1102 Light (scratch copies of the Revit 2020 sample and library), Revit 2020"
+
+defaults:
+  in: "P1102 STR"
+  setup: []
+
+jobs:
+  - fragment: report-model-dashboard
+    expect: elementTotal
+    set: {parameters: "Mark", breakdowns: ""}
+    negative-in: "P1102 Light"
+    negative-set: {parameters: "Mark", breakdowns: ""}

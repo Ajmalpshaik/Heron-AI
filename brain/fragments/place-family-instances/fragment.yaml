@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -244,36 +244,39 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-17'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project1 (3,240 elements), Revit 2020, session 51568
-  positive_case: 'run with points=1000,1000,6152 - the first of 4 tracked inputs - run inside
+  model: P1102 ARCH, Revit 2020, session 59096 - the count is NOT recorded because 1,501 elements
+    was measured on HeronNewFam_P1102, the document in front, and this ran against another
+    one (row 15)
+  positive_case: 'run with points=0,-60000,0 - the first of 3 tracked inputs - run inside
     a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    CloseEnough 0.00164041994750656, MillimetresPerFoot 304.8, askedAt 1 item(s) [(3.280839895,
-    3.280839895, 20.183727034)], carried Func`3, described Func`2, failed 0, heightId BuiltInParameter,
-    invariant CultureInfo, kindWords level-based, on ''Level 2'', levelOf Func`2, levelParameterOrder
-    5 item(s) [FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM, LEVEL_PARAM, ...], levelPlane (null),
-    levelZ 13.1233595800514, made 1 item(s) [FamilyInstance], mm Func`2, named TRG_GEN_CutOut_Rectangular_HVAC:
-    25mm Cutout Buffer, onLevelPlane false, placed 1 item(s) [923039], placement FamilyPlacementType,
-    readBack 1 x level-based, on ''Level 2'', standing 2152 mm above it - Level ''Level 2'',
-    Elevation from Level 2152 mm, its insertion point 150 mm below that, standsAt Func`2,
-    tally 1 entry(ies). inputs came symbol as given; points as given (1); level as given.
-    on Project1'
+    askedKind , failed 0, familyWords ''M_Desk: 1525 x 762mm'', findings 1 item(s) [1 placed
+    on ''01 - Entry Level'', 0 point(s) could not take on...], instanceId , isColumn false,
+    isFoundation false, isFraming false, lineTool Ask PLACE_LINE_BASED_FAMILY instead, with
+    `curves` as start;end pairs in millimetres and a pipe between lines - "0,0,0; 5000,0,0
+    | 5000,0,0; 5000,3000,4000". Nothing was placed, nestedHere false, notAsked Func`2, offsetFeet
+    0, offsetText , placed 1 item(s) [418642], planeName , readBack 1 x level-based, on ''01
+    - Entry Level'', standing 0 mm above it - Level ''01 - Entry Level'', Elevation from Level
+    0 mm, refused (null), structural false, topLevel (null), topName , tops 0 item(s), understood
+    true, wanted StructuralType. inputs came symbol as given; points as given (1); level as
+    given; structuralType not given - "none", the card''s own default (optional); topLevelName
+    not given - "none", the card''s own default (optional); topOffset not given - "none",
+    the card''s own default (optional); workPlane not given - "none", the card''s own default
+    (optional). on P1102 ARCH'
   negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). place-family-instances\
     \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
     \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
     \ about a set it was not given - is caught here by the answer following the input exactly\
-    \ across 4 different inputs:\n\n      points=1000,1000,6152 -> placed 1 item(s) [923039]\n\
-    \      points=1000,1000,6152; 3000,1000,6127 -> placed 2 item(s) [923040, 923041]\n  \
-    \    points=1000,1000,6152; 3000,1000,6127; 5000,1000,6100 -> placed 3 item(s) [923042,\
-    \ 923043, 923044]\n      points=1000,1000,6152; 3000,1000,6127; 5000,1000,6100; 7000,1000,6075;\
-    \ 9000,1000,6050 -> placed 5 item(s) [923045, 923046, 923047, ...]\n\n    Different inputs,\
-    \ exact matches every time. A fragment falling back to the active view, the whole model,\
-    \ or a previous run could not do that."
+    \ across 3 different inputs:\n\n      points=0,-60000,0 -> placed 1 item(s) [418642]\n\
+    \      points=0,-60000,0; 3000,-60000,0 -> placed 2 item(s) [418643, 418644]\n      points=0,-60000,0;\
+    \ 3000,-60000,0; 6000,-60000,0 -> placed 3 item(s) [418645, 418646, 418647]\n\n    Different\
+    \ inputs, exact matches every time. A fragment falling back to the active view, the whole\
+    \ model, or a previous run could not do that."
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: d9db040d807d158c
+  fingerprint: e7d1daad101c7814
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

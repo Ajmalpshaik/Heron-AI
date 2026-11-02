@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -100,6 +100,49 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: Snowdon Towers Sample Site (5,394 elements), Revit 2024, session 59960
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
+    culture CultureInfo, cutters 0 item(s), edited 1, findings 11 item(s) [1 toposolid(s)
+    edited (simplify) and read back. 9 toposolid(..., toposolid 1264746: 2399 shape point(s)
+    before, 1293 after., toposolid 1264941: nothing to simplify - 0 shape points, lef...,
+    ...], how simplify, lines 10 item(s) [toposolid 1264746: 2399 shape point(s) before, 1293
+    after., toposolid 1264941: nothing to simplify - 0 shape points, lef..., toposolid 1265012:
+    nothing to simplify - 0 shape points, lef..., ...], loops 0 item(s), numberStyle NumberStyles,
+    outline 0 item(s), refusal (null), report toposolid 1264746: 2399 shape point(s) before,
+    1293 after. | toposolid 1264941: nothing to simplify - 0 shape points, left as it was.
+    | toposolid 1265012: nothing to simplify - 0 shape points, left as it was. | toposolid
+    1265049: nothing to simplify - 0 shape points, left as it was. | toposolid 1265069: nothing
+    to simplify - 0 shape points, left as it was. | toposolid 1265228: nothing to simplify
+    - 0 shape points, left as it was. | toposolid 1276611: nothing to simplify - 0 shape points,
+    left as it was. | toposolid 1296346: nothing to simplify - 0 shape points, left as it
+    was. | toposolid 1320892: nothing to simplify - 0 shape points, left as it was. | toposolid
+    1348276: nothing to simplify - 0 shape points, left as it was., resultIds 1 item(s) [1264746],
+    share 50, sketchHeight Func`2, text 50, unchanged 9. inputs came elements from filter-elements-by-category
+    (10); mode as given; value as given. on Snowdon Towers Sample Site'
+  negative_case: 'run with mode=simplify, value=50 arranged with category=Walls instead -
+    chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running filter-elements-by-category with this phase''s own values - run
+    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned MmPerFoot 304.8, culture CultureInfo, cutters 0 item(s), edited 0, findings 11
+    item(s) [0 toposolid(s) edited (simplify) and read back., 1139388: not a toposolid., 1139389:
+    not a toposolid., ...], how simplify, lines 10 item(s) [1139388: not a toposolid., 1139389:
+    not a toposolid., 1264743: not a toposolid., ...], loops 0 item(s), numberStyle NumberStyles,
+    outline 0 item(s), refusal (null), report 1139388: not a toposolid. | 1139389: not a toposolid.
+    | 1264743: not a toposolid. | 1267253: not a toposolid. | 1267254: not a toposolid. |
+    1267474: not a toposolid. | 1267475: not a toposolid. | 1267476: not a toposolid. | 1267477:
+    not a toposolid. | 1267479: not a toposolid., resultIds 0 item(s), share 50, sketchHeight
+    Func`2, text 50, unchanged 0. inputs came elements from filter-elements-by-category (10);
+    mode as given; value as given. on Snowdon Towers Sample Site'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 3c506a0926d88068
 
 revit: ["2024", "2025", "2026", "2027"]
 runtime: [net48, net8.0-windows, net10.0-windows]
