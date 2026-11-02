@@ -27,6 +27,27 @@ positive:
       "circle 0,0 100"
     expect: an opening in the template's ceiling, X and Y -100 to 100 mm by its ends
 
+  # VERSION 4 (2026-11-02), the wall's own call. Each FAILS on version 3,
+  # which sent a wall to the floor-and-roof call and had no `wallOpening`.
+  - given: >
+      a straight basic wall on "Level 1", 200 mm thick, 6000 mm long and 3000
+      mm high, selected as host; wallOpening "1200 x 800 at 900";
+      perpendicularFace left out - "put a 1200 x 800 opening in this wall at
+      900 above the floor" - THE FIRST POSITIVE TO RUN
+    expect: >
+      created one opening; built "A 1200 x 800 mm opening in the wall ..., its
+      sill 900 mm above "Level 1", its centre 3000 mm along the wall from its
+      start - read back."; a finding that it was centred; LOOKED AT in an
+      elevation of the wall and measured: 1200 wide, 800 high, sill 900
+
+  - given: the same wall, wallOpening "600 x 600 at 1200 along 1000"
+    expect: an opening 600 x 600, sill 1200, its centre 1000 mm from the wall's start - no centred finding
+
+  - given: >
+      the same wall, boundary "2400,0,900; 3600,0,900; 3600,0,1700; 2400,0,1700"
+      on a wall whose location line runs from 0,0 to 6000,0 on Level 1 at 0
+    expect: the same 1200 x 800 opening at sill 900 as the first case, by the wall's own call
+
 negative:
   - given: no host
     expect: refused by name, nothing cut
@@ -58,7 +79,36 @@ negative:
       worked out against the wrong face is the likely mistake, and a silent
       opening in the wrong place is worse than a refusal
 
+  # VERSION 4, the wall's refusals - each a different value, nothing cut.
+  - given: >
+      the same wall, wallOpening "1200 x 800 at 2500" - its top 3300 mm above
+      "Level 1", over the 3000 mm wall - THE NEGATIVE TO RUN BESIDE THE FIRST
+      POSITIVE
+    expect: >
+      refused "... it would run off the wall's bottom or top", created
+      invalid, no opening in the wall (SELECT_OPENINGS counts the same before
+      and after)
+
+  - given: a CURVED wall as host, wallOpening "1200 x 800 at 900"
+    expect: refused - a curved wall, not checked, refused rather than tried - nothing cut
+
+  - given: a curtain wall as host, wallOpening "1200 x 800 at 900"
+    expect: refused by name - a curtain wall - nothing cut
+
+  - given: a floor as host, wallOpening "1200 x 800 at 900"
+    expect: refused - `wallOpening` is a wall's; a floor takes boundary points - nothing cut
+
+  - given: the straight wall, boundary "0,0,900; 1200,0,900; 600,0,1700" (a triangle)
+    expect: refused - a wall opening is an upright rectangle, point 3 is not at a corner - nothing cut
+
+  - given: the straight wall, wallOpening "1200 by 800"
+    expect: refused, saying how it is written - nothing cut
+
 second_route:
+  - >
+      Version 4: Revit's own Architecture > Opening > Wall drawn by hand beside
+      the one made here at the same size and sill, the two compared in an
+      elevation - and both counted by SELECT_OPENINGS as wall openings
   - >
       Revit's own Architecture then Wall Opening on the same wall, and the two
       compared in a section
