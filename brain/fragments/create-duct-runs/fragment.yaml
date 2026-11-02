@@ -273,6 +273,12 @@ compatibility-note: >
 #   "make the flex drop to the head" -> here, with a FLEX pipe type
 #   "circuit these sockets"         -> CREATE_MEP_SYSTEM - a circuit is the
 #                                      electrical relationship, not containment
+#   "convert this last duct run to the diffuser into flex duct"
+#                                   -> CONVERT_TO_FLEX_DUCT - an existing
+#                                      rigid duct removed and flex put in its
+#                                      place, joined; this draws new flex
+#                                      along points and joins nothing
+#   "change these short ducts to flex" -> CONVERT_TO_FLEX_DUCT
 #   "connect the terminal to the duct" -> CONNECT_AIR_TERMINALS. This makes
 #                                      the flex and does NOT join it up
 #   "is the sprinkler connected"    -> TRACE_CONNECTIVITY
@@ -318,3 +324,7 @@ utterances:
   - make the flex drop to that diffuser
   - create flexible ductwork on this route
   - draw a flexible pipe from the sprinkler branch line down to the head, along the points I give
+  # DECLARED 2026-11-02 (row 5b-1396): this card's own routing row above
+  # claims it, and it reached here before CONVERT_TO_FLEX_DUCT was added,
+  # which took it on the model backend.
+  - run flex to that diffuser

@@ -1,8 +1,30 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `ducts` and `maxDistanceMm` are in
 // scope; leaves `connected`, `findings`, `alreadyConnected`, `noDuctNear`,
-// `refused`, `moved`, `notMeasured`, `branched`, `runs` and `noMainNear` behind.
+// `refused`, `moved`, `notMeasured`, `branched`, `runs`, `noMainNear` and
+// `created` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
+//
+// VERSION 3 (2026-11-02) - REVIT'S CONNECT INTO, FOR THE CASES THIS ALREADY
+// DRAWS. Asked as "connect this diffuser into the main duct" and "connect this
+// sink into the waste pipe". Two things version 2 lacked:
+//
+//   THE RIGHT CONNECTOR OF A FIXTURE WITH SEVERAL. Version 2 branched the
+//   FIRST open pipe connector - on a sink, possibly the cold water one, to a
+//   waste pipe. Now, when an element has more than one open pipe connector,
+//   only a connector whose system classification (Connector.PipeSystemType)
+//   is the main's (its piping system type's SystemClassification) is used,
+//   and only to mains of that classification. None, or more than one
+//   connector, matching: nothing is drawn and the connectors are named. One
+//   open connector - a sprinkler, a floor drain - is version 2, unchanged.
+//
+//   THE NEW ELEMENTS BY ID. `created` holds every element this made - the
+//   tap fitting Revit cut for a terminal, read off the terminal's connector
+//   after the tap, and each riser and arm of a branch - and the findings say
+//   which.
+//
+// THE MAIN IS NEVER SEARCHED FOR IN THE MODEL: it is chosen only from
+// `ducts`, handed in, the nearest of them. Hand in one and that is the main.
 //
 // VERSION 2 (2026-11-01) - CREATE_FIXTURE_BRANCHES MERGED IN. AIR TERMINALS AND
 // SPRINKLERS OR FIXTURES, ONE TOOL. An element handed in with a DUCT connector
@@ -85,6 +107,8 @@ var notMeasured = new List<ElementId>();
 var branched = 0;
 var runs = new List<Element>();
 var noMainNear = new List<ElementId>();
+// VERSION 3 - every element made, by id.
+var created = new List<ElementId>();
 
 var maxDistance = maxDistanceMm / 304.8;
 
@@ -126,6 +150,18 @@ if (ducts != null)
         mains.Add(pipe);
     }
 }
+// VERSION 3: a main's system classification, as its piping system type says
+// it - compared by name with a connector's PipeSystemType.
+Func<Pipe, string> classOf = p =>
+{
+    try
+    {
+        var sp = p.get_Parameter(BuiltInParameter.RBS_PIPING_SYSTEM_TYPE_PARAM);
+        var st = sp == null ? null : doc.GetElement(sp.AsElementId()) as MEPSystemType;
+        return st == null ? null : st.SystemClassification.ToString();
+    }
+    catch { return null; }
+};
 var mainsUsed = new HashSet<ElementId>();
 var headsSeen = new HashSet<ElementId>();
 
@@ -200,14 +236,14 @@ foreach (var terminal in elements)
         if (!headsSeen.Add(head.Id)) continue;
         var instance = (FamilyInstance)head;
 
-        // The head's open pipe end. All piping ends connected already: skipped.
-        Connector open = null;
+        // The head's open pipe ends. All piping ends connected already: skipped.
+        var opens = new List<Connector>();
         try
         {
             foreach (Connector c in instance.MEPModel.ConnectorManager.Connectors)
             {
                 if (c.ConnectorType != ConnectorType.End || c.Domain != Domain.DomainPiping) continue;
-                if (!c.IsConnected && open == null) open = c;
+                if (!c.IsConnected) opens.Add(c);
             }
         }
         catch (Exception ex)
@@ -215,7 +251,30 @@ foreach (var terminal in elements)
             refused.Add(string.Format("{0}: its connectors could not be read - {1}", head.Id, ex.Message));
             continue;
         }
-        if (open == null) { alreadyConnected.Add(head.Id); continue; }
+        if (opens.Count == 0) { alreadyConnected.Add(head.Id); continue; }
+
+        // VERSION 3: more than one open pipe connector - a sink's waste, cold
+        // and hot - and only the one whose system is the main's is used.
+        Connector open = opens[0];
+        var headMains = mains;
+        if (opens.Count > 1)
+        {
+            var mainClasses = new HashSet<string>(mains.Select(m => classOf(m)).Where(n => n != null));
+            var matching = opens.Where(c => mainClasses.Contains(c.PipeSystemType.ToString())).ToList();
+            if (matching.Count != 1)
+            {
+                refused.Add(string.Format("{0} ('{1}'): it has {2} open pipe connectors ({3}) and {4} of them "
+                    + "matches the system of the pipes handed in ({5}), so nothing was drawn - hand in the one "
+                    + "main its connector belongs on.", head.Id, head.Name, opens.Count,
+                    string.Join(", ", opens.Select(c => c.PipeSystemType.ToString()).ToArray()),
+                    matching.Count == 0 ? "none" : matching.Count.ToString(),
+                    mainClasses.Count == 0 ? "no system read" : string.Join(", ", mainClasses.ToArray())));
+                continue;
+            }
+            open = matching[0];
+            var wantedClass = open.PipeSystemType.ToString();
+            headMains = mains.Where(m => classOf(m) == wantedClass).ToList();
+        }
 
         if (mains.Count == 0)
         {
@@ -245,7 +304,7 @@ foreach (var terminal in elements)
         XYZ bestLanding = null;
         var bestLength = double.MaxValue;
 
-        foreach (var main in mains)
+        foreach (var main in headMains)
         {
             var line = (Line)((LocationCurve)main.Location).Curve;
             var a = line.GetEndPoint(0);
@@ -360,15 +419,15 @@ foreach (var terminal in elements)
 
             branch.Commit();
 
-            foreach (var e in made) runs.Add(e);
+            foreach (var e in made) { runs.Add(e); created.Add(e.Id); }
             if (mainsUsed.Add(best.Id)) runs.Add(best);
             branched++;
-            findings.Add(string.Format("{0}: riser {1} mm{2}, {3}, to main {4}; joined at the head",
+            findings.Add(string.Format("{0}: riser {1} mm{2}, {3}, to main {4}; joined at the head; new pipe id(s) {5}",
                 head.Id, Math.Round(Math.Abs(bestLanding.Z - start.Z) * mmPerFoot),
                 arm == null ? " landing on the main's axis"
                     : string.Format(" and arm {0} mm", Math.Round(bendPoint.DistanceTo(bestLanding) * mmPerFoot)),
                 string.IsNullOrEmpty(diameterText) ? "at the connector's size" : diameterText,
-                best.Id));
+                best.Id, string.Join(", ", made.Select(e => e.Id.ToString()).ToArray())));
         }
         catch (Exception ex)
         {
@@ -453,8 +512,21 @@ foreach (var terminal in elements)
         }
 
         connected++;
-        findings.Add(string.Format("{0} tapped into {1}, {2:0} mm away",
-            terminal.Id, nearest.Id, nearestDistance * 304.8));
+        // VERSION 3: the tap Revit cut, by id - whatever the terminal's
+        // connector is now joined to, other than the duct itself.
+        var tapIds = new List<ElementId>();
+        try
+        {
+            foreach (Connector other in connectorOf(terminal).AllRefs)
+                if (other.Owner != null && other.Owner.Id != terminal.Id && other.Owner.Id != nearest.Id
+                    && !(other.Owner is MEPSystem) && !tapIds.Contains(other.Owner.Id))
+                    tapIds.Add(other.Owner.Id);
+        }
+        catch { }
+        created.AddRange(tapIds);
+        findings.Add(string.Format("{0} tapped into {1}, {2:0} mm away{3}",
+            terminal.Id, nearest.Id, nearestDistance * 304.8,
+            tapIds.Count == 0 ? "" : "; new fitting id(s) " + string.Join(", ", tapIds.Select(i => i.ToString()).ToArray())));
     }
     catch (Exception ex)
     {

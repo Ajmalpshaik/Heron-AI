@@ -1,0 +1,132 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-086
+semantic-identity: "turn this short rigid duct into flex duct between the same two fittings, at its size and on its system - Revit's Convert to Flex Duct"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "convert this last duct run to
+# the diffuser into flex duct" and "change these short ducts to flex" - Revit's
+# Systems > Convert to Flex Duct. No card replaced a rigid duct with flex:
+# brain/heron_retrieve.py on the two sentences (Revit 2024) answered
+# CREATE_DUCT_RUNS and SET_MEP_SYSTEM_TYPE, and grep of brain/fragments that
+# day found NewFlexDuct in no implementation.
+#
+# WHY APART FROM CREATE_DUCT_RUNS. That card draws a NEW flex duct along points
+# given and joins nothing; this one takes a rigid duct that is already there,
+# removes it and puts flex in its place, joined to the same two fittings, at
+# its size and on its system - no point is given and nothing is left open. A
+# draw and a replace are two contracts (08 B9). CHANGE_ELEMENT_TYPE cannot do
+# it either: a flex duct is a different kind of element, not another type of
+# duct.
+#
+# RISK MODIFY, as every delete in the library is graded (DELETE_ELEMENTS,
+# REMOVE_MEP_INSULATION, DELETE_REVISION). DELETING THE RIGID DUCT IS PART OF
+# THE JOB: each removed duct is in `removed` by id and named in the report.
+# ARTICLE 7'S CONFIRMATION IS REVIT'S (D-142): anything a kept change deletes
+# is asked in Revit in a box of its own, Ask to Keep on or off, so this card
+# takes no `confirm` - the modeller picked the ducts. Revit deleting anything
+# beyond what hangs on the duct (its insulation, lining, tags), or either
+# fitting it joins, puts that duct back untouched.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: CONVERT_TO_FLEX_DUCT
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Turns each straight duct handed in into a flex duct of the flex duct type
+  named, as Convert to Flex Duct does: the rigid duct is removed and a flex
+  duct is drawn between the same two fittings or terminals it joined, joined at
+  both ends, at the rigid duct's size, on its system and its level. Only a
+  straight duct with exactly two joined ends and nothing tapped into its side
+  is converted; anything else is named with why and left as it was. The flex
+  type is never guessed - not named or not found, nothing changes and the
+  loaded flex duct types are listed. A flex type of another shape than the
+  duct, a duct over the maximum length given, or a flex Revit makes at another
+  size, off the system or with an open end puts that duct back. The report
+  names every rigid duct removed and every new flex duct by id.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The straight ducts to turn into flex - the selection or the step before.
+    # Anything else handed in is named and left alone.
+    - name: elements
+      type: IList<Element>
+    - name: flexDuctType
+      # The flex duct type, by its type name or "family: type" as the type
+      # selector shows it - "Flex - Round", "Flex Duct Round: Flex - Round".
+      # Never guessed: a name that matches no loaded flex duct type, or two,
+      # changes nothing and lists the loaded ones with their shapes.
+      type: string
+      source: request
+    - name: maxLengthMm
+      # Revit's own Max Length on Convert to Flex Duct: a straight longer than
+      # this is named and left rigid. Left out it is 0 - no limit.
+      type: double
+      source: request
+      optional: true
+      absent: '0'
+  provides:
+    - name: flexDucts
+      # The new flex ducts, one per duct converted, each read back joined at
+      # both ends, at the rigid duct's size and on its system.
+      role: result
+      type: IList<ElementId>
+    - name: removed
+      # The rigid ducts this deleted to put the flex in their place - the
+      # deletion that is part of the job, said by id.
+      role: result
+      type: IList<ElementId>
+    - name: notConverted
+      # Ducts left exactly as they were, and anything handed in that is not a
+      # duct, each with why (D-52).
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING: the flex type, each duct removed and the flex that
+      # replaced it with its size and system, and what was left and why.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Creation.Document.NewFlexDuct(Connector,
+  Connector, FlexDuctType), Document.Delete(ElementId) returning the ids
+  deleted, Element.GetDependentElements(ElementFilter), Connector
+  ConnectorType, AllRefs, Owner, Origin, Shape and IsConnected,
+  MEPCurve.ConnectorManager, ReferenceLevel, Diameter, Width and Height,
+  FamilyInstance.MEPModel and MEPModel.ConnectorManager, MEPCurveType.Shape,
+  Duct.IsPlaceholder, WorksharingUtils.GetCheckoutStatus and SubTransaction
+  are present and unchanged 2020 through 2027 - read with tools/api-surface
+  --members on 2026-11-02. Revit has no Convert to Flex Duct call; the three
+  steps are delete, find the two open ends again by where they are (within
+  1 mm) and draw. Lengths are feet x 304.8, said in mm. Not seen in Revit.
+
+# ROUTING (2026-11-02) - the CREATE_DUCT_RUNS rows are repeated on that card.
+#
+#   "convert this last duct run to the diffuser into flex duct" -> here
+#   "change these short ducts to flex"                          -> here
+#   "make the flex drop to that diffuser"   -> CREATE_DUCT_RUNS - a NEW flex
+#                                              along points given, joined to
+#                                              nothing; no rigid duct removed
+#   "run a flexible duct along these points" -> CREATE_DUCT_RUNS
+#   "change these ducts to 400x250"          -> SET_MEP_SIZE - still rigid
+#   "delete these ducts"                     -> DELETE_ELEMENTS - nothing put
+#                                               in their place
+utterances:
+  - convert this last duct run to the diffuser into flex duct
+  - change these short ducts to flex

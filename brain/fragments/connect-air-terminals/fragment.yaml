@@ -9,7 +9,7 @@ semantic-identity: "tap these diffusers into the duct running past them, or pipe
 kind: action
 domain: revit.mep
 capability: CONNECT_AIR_TERMINALS
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -62,6 +62,15 @@ purpose: >
   refuses, or that will not join, is taken back WHOLE - nothing is left for it,
   as nothing is left for a terminal Revit declines. Version 2's proof is owed;
   the card is DRAFT and the version 1 proof below is the record.
+
+  **Connect Into, and the right connector (version 3, 2026-11-02).** The main
+  is only ever one of `ducts`, handed in - hand in one and that is the main;
+  nothing else in the model is searched. A fixture with more than one open
+  pipe connector - a sink's waste, cold and hot - uses only the connector
+  whose system classification is the main's, and only to mains of it; none
+  or more than one matching, nothing is drawn and its connectors are named.
+  Every element made is in `created` by id: the tap fitting Revit cut for a
+  terminal, and each riser and arm of a branch.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Joining
   raises Revit warnings on a real model; how those are handled belongs to
@@ -142,6 +151,13 @@ contract:
       # found (D-52).
       role: accounting
       type: IList<ElementId>
+    # VERSION 3 - Connect Into's new elements, by id.
+    - name: created
+      # Every element this made: the tap fitting Revit cut for each terminal,
+      # read off the terminal's connector after the tap, and each riser and
+      # arm drawn for a head. Nothing made is never a refusal hidden here.
+      role: result
+      type: IList<ElementId>
 
 proof-held: >
   waiting on the owner's tolerance decision - how far Revit may move a terminal
@@ -197,7 +213,14 @@ compatibility-note: >
   `Connector.ConnectTo`, `Connector.Radius` / `Shape` / `Domain` /
   `CoordinateSystem`, `RBS_PIPE_DIAMETER_PARAM`, `RBS_PIPING_SYSTEM_TYPE_PARAM`
   and `SubTransaction` (`Start`, `Commit`, `RollBack`, `HasStarted`,
-  `HasEnded`) are present 2020 through 2027. The connector overload of
+  `HasEnded`) are present 2020 through 2027.
+
+  Version 3: `Connector.PipeSystemType`, `Connector.AllRefs`,
+  `Connector.Owner` and `MEPSystemType.SystemClassification` are present and
+  unchanged 2020 through 2027 - read with tools/api-surface --members on
+  2026-11-02. The two enums are compared by name: PipeSystemType and
+  MEPSystemClassification share the names of the piping classifications
+  (Sanitary, DomesticColdWater, ...). The connector overload of
   Pipe.Create is NOT used: RevitAPI.xml says that when it cannot join it still
   creates the pipe and THROWS, which leaves a pipe nothing here can name.
 
@@ -218,6 +241,19 @@ compatibility-note: >
 # the head still reads open - a pipe left hanging beside a head reads as piped
 # on plan and is not.
 
+# VERSION 3 (2026-11-02) - REVIT'S CONNECT INTO, asked in the modeller's
+# words "connect this diffuser into the main duct" and "connect this sink into
+# the waste pipe". WIDENED HERE, NOT A NEW CARD: connecting a terminal or a
+# fixture into a main handed in is this card's job already (08 B9); what it
+# lacked was the right connector of a fixture with several - version 2 took
+# the first open pipe connector, on a sink possibly the cold water one, into a
+# waste pipe - and the new elements by id. NOT YET: Revit's Connect Into from
+# EQUIPMENT ("tap this equipment into the main") - a duct connector on
+# mechanical equipment still goes to the air-terminal tap call, which is for
+# air terminals, and a sideways pipe connector is still refused. That
+# sentence is not declared here until it is done. The proof below is version
+# 1's record; versions 2 and 3 are owed.
+#
 # TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
 #
 # Another tool, on real models and mostly on Revit 2020, saw this same Revit
@@ -254,6 +290,14 @@ compatibility-note: >
 #   "make the flex drop to that diffuser" -> CREATE_DUCT_RUNS - it makes flex
 #                                          and does NOT join it up
 #   "is every sprinkler actually piped" -> CHECK_FIXTURE_CONNECTIVITY
+#   "connect this diffuser into the main duct" -> here - the main handed in
+#                                          (version 3, Connect Into)
+#   "connect this sink into the waste pipe" -> here - the sink's waste
+#                                          connector, matched to the pipe's
+#                                          system
+#   "convert this last duct run to the diffuser into flex duct"
+#                                       -> CONVERT_TO_FLEX_DUCT - the duct is
+#                                          there already and becomes flex
 
 utterances:
   - connect the diffusers to the duct
@@ -270,3 +314,6 @@ utterances:
   - pipe these sprinklers to the main
   - run branch pipes from these heads to the pipe
   - draw the branch from each floor drain down to the drain line
+  # VERSION 3 (2026-11-02) - the modeller's words for Revit's Connect Into.
+  - connect this diffuser into the main duct
+  - connect this sink into the waste pipe
