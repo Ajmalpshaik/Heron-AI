@@ -1,0 +1,155 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-066
+semantic-identity: "change Manage > Structural Settings for the whole model - the symbolic cutback distances, the brace symbols above and below, the parallel line offset and the boundary condition symbols"
+kind: action
+domain: revit.document
+capability: SET_STRUCTURAL_SETTINGS
+version: 1
+source: OFFICIAL
+# ADMIN, BEHIND THE OWNER'S ADMIN SWITCH (D-106) - graded as SET_PROJECT_UNITS
+# and SET_AREA_VOLUME_COMPUTATIONS are. Manage > Structural Settings is how the
+# project is set up: one cutback distance, brace symbol or boundary condition
+# symbol is drawn by EVERY plan view's beams, braces, columns and boundary
+# conditions, for everybody who opens the model - D-106's Admin row, "settings
+# other work is built on". No element moves and no stored length changes; the
+# symbolic lines are drawn differently. One Ctrl+Z takes it back. Not MODIFY
+# like SET_OBJECT_STYLE: one Object Styles row is one category's look, and a
+# view's override still wins over it; nothing in a view overrides these.
+risk: ADMIN
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words below - Revit's Manage >
+# Structural Settings. Checked that day with brain/heron_retrieve.py's find()
+# on a scratch store built from this tree, without and with the host's
+# question flag: "set the beam symbolic cutback distance to 50 mm" reached
+# SET_FRAMING_END_EXTENSION, a write to chosen beams' own ends; "set the brace
+# symbol to show above and below" reached SET_VIEW_UNDERLAY; "change the column
+# connection symbol plan offset" reached PLACE_STRUCTURAL_CONNECTIONS. None of
+# them touches Structural Settings, and no card called
+# StructuralSettings.GetStructuralSettings.
+#
+# WHY A CARD OF ITS OWN - each near card read in full (the
+# heron-duplicate-checker method; brain/heron_merge.py and heron_duplicates
+# found no same-signature or same-capability card):
+#   SET_FRAMING_END_EXTENSION sets chosen beams' Start / End Join Cutback - a
+#     real shortening of those members. The symbolic cutback here is how far
+#     every beam's single-line symbol stops short of what it joins, in plan,
+#     for the whole model. Different settings, different elements.
+#   PLACE_STRUCTURAL_CONNECTIONS places connection elements; it sets no symbol.
+#   REPORT_STRUCTURAL_SETTINGS READS these values - a question goes there.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33). `settings` is a table, "name=value",
+# ";" between, in the dialog's own words: brace cutback, beam/truss cutback,
+# column cutback, parallel line offset (millimetres); show brace above, show
+# brace below (yes/no) and show brace (above and below, above, below, none);
+# brace above / brace below / kicker brace symbol and the fixed, pinned,
+# roller and user defined boundary condition symbols (a type the model has, by
+# name or "Family: Type"); boundary condition symbol spacing (millimetres);
+# loads display scaling (yes/no, Revit 2024 and later). A distance is
+# millimetres and nothing else - feet and inches are refused, never converted.
+#
+# THE CONNECTION SYMBOLS ARE NOT REACHABLE - NO API ON ANY RELEASE. The
+# dialog's Connection Symbols (beams and braces, column connection) have no
+# member on StructuralSettings in 2020-2027 (tools/api-surface --members
+# StructuralSettings --inherited, 2026-11-02). "change the column connection
+# symbol plan offset" therefore reaches this card and is REFUSED BY NAME, sent
+# to the dialog, with the column's own symbolic cutback named as the one
+# column setting this card can change - never guessed onto it (D-33).
+#
+# REFUSED BY NAME, NOTHING CHANGED: a name not in the list (the list given); a
+# value that is not a distance, a yes/no or a type the model has; a setting
+# named twice; nothing named; a document with no Structural Settings.
+#
+# A SETTING REVIT REFUSES is caught with Revit's own words, every setting this
+# call already wrote is put back to the value read before, and `refused` says
+# so - NOTHING WAS CHANGED. A put-back that fails throws, and the caller's
+# transaction rolls back.
+#
+# READ BACK: `before` and `after` are every setting above, read off the model;
+# a value that reads back different throws, so nothing is kept.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Changes Manage > Structural Settings, Symbolic Representation and Boundary
+  Conditions, for the whole model: the symbolic cutback distance of braces,
+  beams and trusses and columns, whether braces show above and below in plan
+  and with which symbols, the brace parallel line offset, the kicker brace
+  symbol and the boundary condition symbols and their spacing. Every setting
+  is read back before and after.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # "name=value; name=value" in the dialog's words - "beam/truss cutback=50;
+    # show brace=above and below". Distances in millimetres.
+    - name: settings
+      type: string
+      source: request
+  provides:
+    - name: before
+      # Every setting this card reaches, read before the change - "brace
+      # cutback 2.4 mm; beam/truss cutback 2.4 mm; ...". Empty when refused.
+      role: result
+      type: string
+    - name: after
+      # The same, read back after it.
+      role: result
+      type: string
+    - name: changed
+      # How many settings Revit changed - one already holding the value asked
+      # is not counted. 0 when refused.
+      role: result
+      type: int
+    - name: refused
+      # Why NOTHING WAS CHANGED, as one sentence - Revit's own reason when
+      # Revit refused; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. StructuralSettings.
+  GetStructuralSettings(Document), SymbolicCutbackForBrace,
+  SymbolicCutbackForBeamAndTruss, SymbolicCutbackForColumn,
+  BraceParallelLineOffset, ShowBraceAbove, ShowBraceBelow, BraceAboveSymbol,
+  BraceBelowSymbol, KickerBraceSymbol,
+  BoundaryConditionAreaAndLineSymbolSpacing and the four
+  BoundaryConditionFamilySymbol* properties - each 2020 to 2027 with one
+  signature, read off tools/api-surface --members for all eight releases on
+  2026-11-02. UseLoadsDisplayScaling is 2024 and later only, behind
+  `#if REVIT2024_OR_GREATER` (the add-in hands fragments the release symbols -
+  row 5b-181, FIXED); on 2020-2023 "loads display scaling" is refused as a
+  2024 setting. The thirteen analytical-model properties 2020-2022 carry are
+  not this dialog's symbolic tab and are left alone; BoundarySetbackDisabled
+  ForSteelElements (2026 and later) is read by REPORT_STRUCTURAL_SETTINGS and
+  not set here. NOT KNOWN FROM THE ASSEMBLIES and measured in NEEDS-CHECKING
+  Group MF: that the cutback distances and the parallel line offset are held as
+  model lengths in feet, as every Revit length is, rather than paper distances.
+
+# ROUTING (2026-11-02) - the same rows are repeated in
+# REPORT_STRUCTURAL_SETTINGS and SET_REINFORCEMENT_SETTINGS.
+#
+#   "set the beam symbolic cutback distance to 50 mm"  -> here, beam/truss cutback
+#   "set the brace symbol to show above and below"     -> here, show brace
+#   "change the column connection symbol plan offset"  -> here - refused, no API
+#   "what are the structural settings"                 -> REPORT_STRUCTURAL_SETTINGS - a question goes to the read
+#   "cut back these beams 50 mm at the column"         -> SET_FRAMING_END_EXTENSION - chosen beams' own ends
+#   "turn on rebar shape defines hooks"                -> SET_REINFORCEMENT_SETTINGS
+#
+# WHAT MOVED: see REPORT_STRUCTURAL_SETTINGS' card - one measurement for the
+# three cards, before and after, with and without the host's question flag.
+utterances:
+  - set the beam symbolic cutback distance to 50 mm
+  - set the brace symbol to show above and below
+  - change the column connection symbol plan offset

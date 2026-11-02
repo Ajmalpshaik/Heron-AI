@@ -1,0 +1,74 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write to a project-wide dialog, "changed a setting nobody named".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE. The model is a scratch project from
+# Revit's metric STRUCTURAL template, any release 2020 to 2027, with one beam,
+# one brace and one column in "Structural Plan: Level 2" so a change shows.
+# Before the run, REPORT_STRUCTURAL_SETTINGS records every setting - the values
+# the cases below are checked against (NEEDS-CHECKING Group MF, MF1). SAVED,
+# and never a working model. EVERY RUN ROLLED BACK.
+#
+# Values written below as "the template's" are read off that answer, never
+# typed from memory: templates differ by release and by country.
+
+positive:
+  - given: settings "beam/truss cutback=50"
+    expect: >
+      changed 1; before reads the template's beam/truss cutback, after reads
+      "beam/truss cutback 50 mm" and every other setting exactly as before.
+      findings name the one setting changed for the whole model.
+      REPORT_STRUCTURAL_SETTINGS in the same run reads 50 mm
+
+  - given: settings "beam symbolic cutback distance=50 mm"
+    expect: the same - the dialog's longer name is the same setting
+
+  - given: settings "show brace=above and below"
+    expect: >
+      show brace above yes and show brace below yes after; changed counts only
+      the ones that were not already yes
+
+  - given: settings "brace cutback=3; column cutback=4; parallel line offset=2"
+    expect: changed 3 (fewer if one already held it); after reads 3, 4 and 2 mm
+
+negative:
+  - given: >
+      settings "beam/truss cutback=50 ft". THE FIRST CASE TO RUN: a fragment
+      that wrote whatever number it was handed shows here
+    expect: >
+      changed 0; refused "beam/truss cutback "50 ft" is not a distance in
+      millimetres. NOTHING WAS CHANGED."; before and after empty;
+      REPORT_STRUCTURAL_SETTINGS reads exactly what MF1 recorded
+
+  - given: settings "column connection symbol plan offset=10"
+    expect: >
+      refused by name - the Connection Symbols cannot be set through the Revit
+      API, change them in Manage > Structural Settings, and "column cutback"
+      named as the column's own setting; nothing changed
+
+  - given: settings "beam/truss cutback=50; beam cutback=60"
+    expect: refused - beam/truss cutback named twice - nothing changed
+
+  - given: settings "beam/truss cutback=<the value MF1 recorded>"
+    expect: changed 0, a finding that every setting asked is already so
+
+  - given: settings "loads display scaling=yes" on Revit 2020 to 2023
+    expect: refused as a Revit 2024 setting; nothing changed
+
+  - given: settings "brace above symbol=ZZZ No Such Type"
+    expect: refused with the types of that kind the model has; nothing changed
+
+  - given: settings "" (nothing)
+    expect: refused - no setting was named, the list given - nothing changed
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      the whole table is one undo entry
+
+second_route:
+  - >
+    Revit's own Manage > Structural Settings > Symbolic Representation
+    Settings, opened after the positive run is KEPT (or with the value typed
+    by hand): Symbolic Cutback Distance, Beam/Truss reads 50 mm, and the beam's
+    single-line symbol in "Structural Plan: Level 2" at Coarse stops 50 mm
+    short of the column.

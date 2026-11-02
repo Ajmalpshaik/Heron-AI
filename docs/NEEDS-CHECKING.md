@@ -1342,6 +1342,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-me.md`](needs-checking/group-me.md)
 
+## Group MF - Manage > Structural Settings and Structure > Reinforcement Settings - read both dialogs, and change either for the whole model, read back before and after: `REPORT_STRUCTURAL_SETTINGS`, `SET_STRUCTURAL_SETTINGS`, `SET_REINFORCEMENT_SETTINGS` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-mf.md`](needs-checking/group-mf.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

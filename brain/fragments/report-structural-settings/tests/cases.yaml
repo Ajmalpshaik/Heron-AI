@@ -1,0 +1,39 @@
+# D-30. A READ that describes two project-wide dialogs cannot come back empty
+# while Revit runs a project, so the negative case is TRACKING (D-53): the
+# answer must follow the model, value by value, when the model is changed under
+# it - and a family, which has no project settings, must not be answered with
+# a project's.
+
+positive:
+  - given: a scratch project from Revit's metric structural template, nothing selected (NEEDS-CHECKING Group MF, MF1)
+    expect: >
+      structuralSettings opens "Structural Settings - Symbolic cutback
+      distance: brace cutback ..., beam/truss cutback ..., column cutback ..."
+      and names the brace and boundary condition symbols; reinforcementSettings
+      opens "Reinforcement Settings - General: include hooks in rebar shape
+      definition ..." with the presentation, numbering and rounding. Manage >
+      Structural Settings and Structure > Reinforcement Settings show the same.
+      settingsRead counts them; a finding says the Connection Symbols are not
+      readable through the API
+
+negative:
+  - given: >
+      the same project with beam/truss cutback set to 50 mm by
+      SET_STRUCTURAL_SETTINGS and rebar rounding set to 5 mm by
+      SET_REINFORCEMENT_SETTINGS, as a rolled-back setup
+    expect: >
+      exactly "beam/truss cutback 50 mm" and the two rebar roundings "5 mm"
+      changed and every other value as before - a reader repeating a
+      remembered answer, or the template's defaults, could not follow it
+
+  - given: an open family document (a beam family) in front
+    expect: >
+      RECORD what Revit gives. Expected: structuralSettings and
+      reinforcementSettings empty or a finding that the document has none -
+      never a project's values
+
+second_route:
+  - >
+    Manage > Structural Settings > Symbolic Representation Settings and
+    Boundary Conditions Settings, and Structure > Reinforcement Settings >
+    General, Rebar Presentation and Rounding, read by eye against the answer.

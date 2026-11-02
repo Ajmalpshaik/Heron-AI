@@ -1,0 +1,158 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-067
+semantic-identity: "change Structure > Reinforcement Settings for the whole model - hooks and end treatments in the rebar shape definition, host structural rebar, rebar presentation, and rebar and fabric length rounding"
+kind: action
+domain: revit.document
+capability: SET_REINFORCEMENT_SETTINGS
+version: 1
+source: OFFICIAL
+# ADMIN, BEHIND THE OWNER'S ADMIN SWITCH (D-106) - graded as SET_PROJECT_UNITS
+# and SET_AREA_VOLUME_COMPUTATIONS are. Reinforcement Settings is how the
+# project's rebar is set up, for everybody who opens the model: whether a hook
+# is part of a rebar shape decides which Rebar Shape every new bar is matched
+# to, and Revit lets it change only before the model holds rebar; the rounding
+# changes the length every rebar schedule and tag prints for every bar at
+# once. D-106's Admin row - "settings other work is built on". One Ctrl+Z
+# takes it back.
+risk: ADMIN
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words below - Revit's Structure >
+# Reinforcement Settings. Checked that day with brain/heron_retrieve.py's
+# find() on a scratch store built from this tree, without and with the host's
+# question flag: "turn on rebar shape defines hooks" and "include hooks in
+# rebar shape definition" reached LIST_REBAR_TYPES, a read; "set the rebar
+# rounding to 5 mm" reached CREATE_REBAR_BAR_TYPE. Nothing changed a
+# Reinforcement Setting.
+#
+# WHY A CARD OF ITS OWN - each near card read in full (the
+# heron-duplicate-checker method; brain/heron_merge.py and heron_duplicates
+# found no same-signature or same-capability card):
+#   LIST_REBAR_TYPES (PROVEN) reads the loaded rebar types and, as one line,
+#     whether the rebar shape defines hooks. It changes nothing; the question
+#     side of this dialog is REPORT_STRUCTURAL_SETTINGS'.
+#   CREATE_REBAR_BAR_TYPE makes a Rebar Bar Type; a bar type's own rounding
+#     override is not this project-wide rounding.
+#   SET_REBAR_VIEW_STATE shows chosen bars unobscured or solid in one view;
+#     the presentation here is the default every new bar set gets in views and
+#     sections.
+#   EDIT_REBAR_NUMBERING changes rebar numbers in a partition; numbering is not
+#     set here.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33). `settings` is a table, "name=value",
+# ";" between, in the dialog's own words: include hooks in rebar shape
+# definition, include end treatments in rebar shape definition, host
+# structural rebar (yes/no); rebar presentation in view / in section (show
+# all, show first and last, show middle); rebar total length rounding, rebar
+# segment length rounding, and "rebar rounding" for both (millimetres); the
+# same three with "method" (nearest, up, down); the fabric ones likewise;
+# varying length number suffix (text). Feet and inches are refused, never
+# converted.
+#
+# "REBAR ROUNDING" IS BOTH. The dialog's Rebar rounding has a total bar length
+# row and a segment length row; "set the rebar rounding to 5 mm" sets both and
+# the answer names the two.
+#
+# ROUNDING UNITS ARE REVIT'S: the millimetres asked are converted into the unit
+# the rounding manager names (GetLengthUnitTypeId; LengthDisplayUnit on 2020)
+# and read back out of it, so neither a feet nor a millimetre storage is
+# assumed (NEEDS-CHECKING Group MF records which it is).
+#
+# A SETTING REVIT REFUSES is caught with Revit's own words - "include hooks in
+# rebar shape definition" once the model has rebar is the one the modeller will
+# meet - every setting this call already wrote is put back, and `refused` says
+# so: NOTHING WAS CHANGED. A put-back that fails throws, and the caller's
+# transaction rolls back.
+#
+# REFUSED BY NAME, NOTHING CHANGED: a name not in the list (the list given); a
+# value that is not a yes/no, a presentation, a rounding or a method; a
+# setting named twice ("rebar rounding" with a rebar total length rounding);
+# nothing named.
+#
+# READ BACK: `before` and `after` are every setting above, read off the model;
+# a value that reads back different throws, so nothing is kept.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Changes Structure > Reinforcement Settings for the whole model: whether
+  hooks and end treatments are part of the rebar shape definition, whether
+  area and path reinforcement host structural rebar, how rebar sets are
+  presented in views and sections, and the rebar and fabric length rounding
+  with its method. Every setting is read back before and after, and a setting
+  Revit will not change is answered with Revit's reason.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # "name=value; name=value" in the dialog's words - "include hooks in rebar
+    # shape definition=yes; rebar rounding=5". Roundings in millimetres.
+    - name: settings
+      type: string
+      source: request
+  provides:
+    - name: before
+      # Every setting this card reaches, read before the change. Empty when
+      # refused.
+      role: result
+      type: string
+    - name: after
+      # The same, read back after it.
+      role: result
+      type: string
+    - name: changed
+      # How many settings Revit changed - "rebar rounding" counts as two; one
+      # already holding the value asked is not counted. 0 when refused.
+      role: result
+      type: int
+    - name: refused
+      # Why NOTHING WAS CHANGED, as one sentence - Revit's own reason when
+      # Revit refused; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. ReinforcementSettings.
+  GetReinforcementSettings(Document) - its parameter renamed at 2022, called by
+  position so both compile - RebarShapeDefinesHooks,
+  RebarShapeDefinesEndTreatments, HostStructuralRebar,
+  RebarPresentationInView, RebarPresentationInSection,
+  RebarVaryingLengthNumberSuffix, GetRebarRoundingManager and
+  GetFabricRoundingManager; RebarRoundingManager and FabricRoundingManager
+  TotalLengthRounding, SegmentLengthRounding and their RoundingMethods;
+  RebarPresentationMode and RoundingMethod - each 2020 to 2027 with one
+  signature, read off tools/api-surface --members for all eight releases on
+  2026-11-02. The rounding unit: ReinforcementRoundingManager.
+  GetLengthUnitTypeId with UnitUtils.Convert(double, ForgeTypeId,
+  ForgeTypeId) and UnitTypeId.Millimeters on 2021-2027; LengthDisplayUnit with
+  the DisplayUnitType overload on 2020, behind `#if REVIT2020` (row 5b-181,
+  FIXED). Numbering (NumberVaryingLengthRebarsIndividually to 2025,
+  NumberingMethod from 2026) and the abbreviation tags are not set here.
+
+# ROUTING (2026-11-02) - the same rows are repeated in
+# REPORT_STRUCTURAL_SETTINGS and SET_STRUCTURAL_SETTINGS.
+#
+#   "turn on rebar shape defines hooks"         -> here
+#   "include hooks in rebar shape definition"   -> here
+#   "set the rebar rounding to 5 mm"            -> here, both rebar roundings
+#   "what are the reinforcement settings"       -> REPORT_STRUCTURAL_SETTINGS - a question goes to the read
+#   "what rebar bar types are loaded"           -> LIST_REBAR_TYPES
+#   "set the beam symbolic cutback distance to 50 mm" -> SET_STRUCTURAL_SETTINGS
+#
+# WHAT MOVED: see REPORT_STRUCTURAL_SETTINGS' card - one measurement for the
+# three cards.
+utterances:
+  - turn on rebar shape defines hooks
+  - set the rebar rounding to 5 mm
+  - include hooks in rebar shape definition
