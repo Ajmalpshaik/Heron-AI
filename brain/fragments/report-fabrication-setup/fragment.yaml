@@ -154,6 +154,14 @@ compatibility-note: >
 #                                                             -> CONVERT_TO_FABRICATION
 #   "convert this pipe run to fabrication using service Copper Plumbing"
 #                                                             -> CONVERT_TO_FABRICATION
+#   "change these fabrication parts to the High Pressure service"
+#                                                             -> CHANGE_FABRICATION_SERVICE_SIZE -
+#                                                                the service and button
+#                                                                names it needs are listed
+#                                                                here (2026-11-02)
+#   "put a hanger on this fabrication pipe"                   -> ADD_FABRICATION_HANGERS
+#   "add a fabrication elbow from the Copper Plumbing service"
+#                                                             -> PLACE_FABRICATION_PART
 #   "convert these placeholders to real ducts"                -> CONVERT_MEP_PLACEHOLDERS -
 #                                                                a placeholder to a
 #                                                                design duct, not to

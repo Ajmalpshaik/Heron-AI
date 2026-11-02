@@ -278,6 +278,8 @@ compatibility-note: >
 #   "report the areas"           -> REPORT_AREAS. An AREA is a third spatial
 #                                   element, not a room - placed separately, in
 #                                   schemes that overlap on purpose
+#   "place the areas"            -> here, placeKind area - declared below
+#                                   (2026-11-02, row 5b-1436)
 #   "place the areas in the GIA plan" -> here, placeKind area, since version 3
 #                                   (PLACE_AREAS until it was merged here,
 #                                   2026-11-01)
@@ -360,3 +362,8 @@ utterances:
   - place the areas for the lettable area plan
   # ...and its semantic identity, which nothing else declares:
   - place areas in this area plan at these points
+  # DECLARED 2026-11-02 (FRAGMENT-ISSUES row 5b-1436): CREATE_ROOM_SEPARATION_
+  # LINES' routing table sends these words here, and three fabrication cards
+  # added that day (CHANGE_FABRICATION_SERVICE_SIZE, ADD_FABRICATION_HANGERS,
+  # PLACE_FABRICATION_PART) moved the ranked answer to CREATE_AREA_PLAN.
+  - place the areas

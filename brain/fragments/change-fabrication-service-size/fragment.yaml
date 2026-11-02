@@ -1,0 +1,173 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-090
+semantic-identity: "change these fabrication parts to another loaded service, or their straights to another size - Revit's Change Service and Change Size"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "change these fabrication
+# parts to the High Pressure service" and "change the size of these
+# fabrication ducts to 400x300" - Revit's Modify | Fabrication Parts > Change
+# Service and Change Size. No card changed a fabrication part's service or
+# size: a grep of brain/fragments that day for FabricationNetworkChangeService
+# found nothing, and brain/heron_retrieve.py on the two sentences (Revit 2024)
+# answered CONVERT_TO_FABRICATION first for both.
+#
+# LOOK-ALIKES, NOT DUPLICATES (heron-duplicate-checker's method, 2026-11-02).
+# CONVERT_TO_FABRICATION turns DESIGN ducts and pipes into fabrication parts
+# of a service; this changes parts that are ALREADY fabrication to another
+# service - Revit keeps the two apart, Design to Fabrication and Change
+# Service, by different calls. SET_MEP_SIZE (PROVEN) sets a design duct's or
+# pipe's Width, Height or Diameter parameter, which Revit snaps to the type's
+# size table; a fabrication straight has no such parameter and takes a size
+# only from its service, through Revit's network change. AUTO_SIZE_MEP sizes
+# design runs from flow. EDIT_MEP_SIZES edits the size lists of design duct
+# and pipe types. Each is a different job through different plumbing.
+#
+# ONE CARD FOR BOTH BUTTONS. Change Service and Change Size are one Revit
+# object (the fabrication network change service), take the same selection,
+# fail the same way and read back the same way; a size asked with a service
+# is Revit's own "change the size, change the service, or both".
+#
+# NEVER GUESSED: the service by its whole name or abbreviation among the
+# LOADED services, else nothing changes and the loaded services are listed;
+# a palette (a group to 2021) by its name, else nothing changes and the
+# service's palettes are listed; a size as width x depth or one diameter in
+# mm, else nothing changes.
+#
+# NO FABRICATION CONFIGURATION: refused in Revit words. Anything not a
+# fabrication part - a design duct is pointed at Design to Fabrication - is
+# named in `notFabrication` and left exactly as it was. A part borrowed by
+# somebody else is named, never taken (Article 12).
+#
+# WHAT REVIT DOES TO THE PARTS IS READ BACK, NOT ASSUMED. It deletes nothing
+# itself. Revit's change may re-make a part with a new id; every part handed
+# in is looked at again - gone or still there - and every fabrication part in
+# the model that was not there before is named as made by Revit.
+#
+# RISK MODIFY. It changes the fabrication parts handed in, by Revit's own
+# Change Service and Change Size, and nothing else.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: CHANGE_FABRICATION_SERVICE_SIZE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Changes the fabrication parts handed in to another loaded fabrication
+  service, as Change Service does, or the straights among them to another
+  size, as Change Size does, or both, and reports Revit's result in words -
+  each part's service and size before and after, every part Revit made or
+  replaced, every part Revit could not change and why, and every element
+  left alone.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The fabrication parts - the selection or the step before. Anything else
+    # handed in is named and left alone.
+    - name: elements
+      type: IList<Element>
+    - name: service
+      # The loaded fabrication service to change to, by its whole name or its
+      # abbreviation as MEP Fabrication Settings shows it - "High Pressure
+      # Ductwork". Left out ("none"), the service is not changed and a size
+      # must be given. A name that matches no loaded service, or two, changes
+      # nothing and lists the loaded services.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: palette
+      # The palette of that service (a button group to Revit 2021) to take the
+      # new parts from, by name - Revit is then restricted to it. Left out
+      # ("none"), the service's first palette not excluded is handed to Revit
+      # unrestricted. A name the service has not got changes nothing and lists
+      # its palettes.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: size
+      # The new size of the straights in MILLIMETRES: width x depth for
+      # rectangular or oval ("400x300"), one number for round ("150"). Left
+      # out ("none"), sizes are not changed and a service must be given.
+      # Anything else changes nothing.
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: changed
+      # The fabrication parts whose service or size reads differently after
+      # the change, and every part Revit made - read back after a regenerate.
+      role: result
+      type: IList<ElementId>
+    - name: notChanged
+      # Parts Revit reported it could not change, straights it left at their
+      # size, parts borrowed by somebody else and parts that read the same
+      # after - each with the reason (D-52).
+      role: accounting
+      type: IList<string>
+    - name: notFabrication
+      # Handed in and not a fabrication part, each by name - left as it was
+      # (D-52).
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING: what was asked, Revit's result in words, each part before
+      # and after, the parts Revit made and replaced, what was left and why.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. FabricationNetworkChangeService
+  (Document), ChangeService(ISet<ElementId>, int, int) and its four-argument
+  form with a bool (the third int a group id to 2021 and a palette id from
+  2022 - the same types), ChangeSize(ISet<ElementId>, ISet<
+  FabricationPartSizeMap>), GetMapOfAllSizesForStraights,
+  GetElementsThatFailed, GetStraightsThatWereNotChanged and Dispose;
+  FabricationNetworkChangeServiceResult Success, PartialFailure, UserAborted
+  and InvalidSelection; FabricationPartSizeMap ServiceId, ProfileType,
+  WidthDiameter, Depth, MappedServiceId, MappedProfileType,
+  MappedWidthDiameter and MappedDepth are present 2020 through 2027 - read
+  with tools/api-surface --members on 2026-11-02. Both classes live in
+  Revit's Fabrication namespace, which the executor does not import, so they
+  are found beside FabricationPart and called by reflection; check-api-surface
+  matches names in code, not in strings, so those members were checked by
+  hand. FabricationService palettes are groups to 2021 (GroupCount,
+  GetGroupName, IsGroupExcluded) and palettes from 2022 (PaletteCount,
+  GetPaletteName, IsPaletteExcluded): #if REVIT2020 || REVIT2021.
+  FabricationConfiguration.GetFabricationConfiguration (parameter renamed doc
+  to document in 2024, called by position), GetAllLoadedServices and
+  GetAllServices; FabricationPart ServiceId, ServiceName, Size, IsAStraight,
+  CenterlineLength and ConnectorManager; Connector Shape, Width, Height and
+  Radius are unchanged. Millimetres become feet by / 304.8. Not seen in Revit.
+
+# ROUTING (2026-11-02) - the same rows are in CONVERT_TO_FABRICATION and
+# ADD_FABRICATION_HANGERS.
+#
+#   "change these fabrication parts to the High Pressure service"   -> here
+#   "change the size of these fabrication ducts to 400x300"         -> here
+#   "convert these ducts to fabrication parts using the Low Pressure service"
+#                                                                   -> CONVERT_TO_FABRICATION -
+#                                                                      design ducts become
+#                                                                      fabrication parts
+#   "add hangers to these fabrication ducts every 1500 mm using the Rod Hanger button"
+#                                                                   -> ADD_FABRICATION_HANGERS
+utterances:
+  - change these fabrication parts to the High Pressure service
+  - change the size of these fabrication ducts to 400x300
