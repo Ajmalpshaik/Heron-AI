@@ -202,17 +202,17 @@ def main():
     # four groups to two. Gone: create-family-document / create-project-
     # document (the second DEPRECATED) and dimension-family-instances /
     # dimension-mep-runs (both DEPRECATED, merged into CREATE_DIMENSION).
-    check(len(real["decided"]) == 2,
-          "exactly two groups of live cards share a contract signature")
+    # 2026-11-02 (NEEDS-CHECKING Group MF): THREE. SET_STRUCTURAL_SETTINGS and
+    # SET_REINFORCEMENT_SETTINGS share a signature with each other - two
+    # dialogs, one settings-table contract - and are keep-separate for the
+    # same reason SET_PROJECT_LOCATION and SET_PROJECT_UNITS are.
+    check(len(real["decided"]) == 3,
+          "exactly three groups of live cards share a contract signature")
     check(real["for_the_host"] == [],
           "and NOT ONE of them needs the host - all are keep-separate")
     names = sorted(one for group in real["decided"]
                    for one in group["fragments"])
-    # 2026-11-02 (NEEDS-CHECKING Group MF): SET_STRUCTURAL_SETTINGS and
-    # SET_REINFORCEMENT_SETTINGS joined the settings-table group by the same
-    # design - one table of named settings in, changed / alreadyThat /
-    # findings / refused out - each for a different dialog, so keep-separate
-    # like SET_PROJECT_LOCATION and SET_PROJECT_UNITS. Still two groups.
+    # 2026-11-02: the new third pair (Group MF) joins the roll-call by name.
     check(names == ["set-project-location", "set-project-units",
                     "set-reinforcement-settings", "set-structural-settings",
                     "transfer-materials-between-documents",
