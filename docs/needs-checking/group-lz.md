@@ -5,16 +5,19 @@
 > this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py) reads it back
 > into the register for every tool that reads it, so a row here is seen exactly as it was seen there.
 
-## Group LZ - Annotate > Keynoting Settings - load the keynote file the modeller names by its full path, or reload the one loaded, absolute or relative, with Revit's load result and the file and entry count read back - and the keynote file named by the keynote read: `LOAD_KEYNOTE_FILE`, `REPORT_KEYNOTES` (2026-11-02)
+## Group LZ - Annotate > Keynoting Settings - load the keynote file the modeller names by its full path, or reload the one loaded, absolute or relative, with Revit's load result and the file and entry count read back - and the keynote file named by a read of its own: `LOAD_KEYNOTE_FILE`, `REPORT_KEYNOTE_FILE` (2026-11-02)
 
 Asked for in the modeller's words: *"load the keynote file C:\Standards\Keynotes.txt"*, *"reload the keynote
 file"*, *"which keynote file is this project using"*, *"change the keynote file to the office standard on the
 server"* and *"set keynote numbering to by sheet"*. No card did it: of every fragment's C# none called
-`KeyBasedTreeEntryTable.LoadFrom` or `Reload`, and `REPORT_KEYNOTES` (DRAFT) read the loaded table's entries
-but never named the file. heron-duplicate-checker's method, run before writing: `brain/heron_merge.py` found no
+`KeyBasedTreeEntryTable.LoadFrom` or `Reload`, and `REPORT_KEYNOTES` read the loaded table's entries but never
+named the file. heron-duplicate-checker's method, run before writing: `brain/heron_merge.py` found no
 shared signature with a shared capability; the duplicate check (`0 already here`) and the Matcher (`0
-match(es), 0 partial`) found nothing equal. **Widened, not written twice:** the read half went into
-`REPORT_KEYNOTES`, a DRAFT, so no proof went stale. **Look-alikes, kept separate:** `REPORT_EXTERNAL_REFERENCES`
+match(es), 0 partial`) found nothing equal. **The read half is a card of its own, `REPORT_KEYNOTE_FILE`.** It
+was first written into `REPORT_KEYNOTES`, then DRAFT, as `keynoteFile` and `tableEntries`; the same day #794
+proved `REPORT_KEYNOTES` on Revit 2024 against code without them, so the read moved line for line to
+`REPORT_KEYNOTE_FILE` (FRG-VIEW-170, READ) and `REPORT_KEYNOTES` keeps main's proved code byte for byte.
+**Look-alikes, kept separate:** `REPORT_EXTERNAL_REFERENCES`
 (PROVEN) lists the keynote table as one row among every link, import and point cloud, with no entry count, and
 widening its code would put its proof out of date; `RELOAD_LINKS` (DRAFT) reloads Revit links on link types;
 `LOAD_FAMILY` (PROVEN) loads a family file.
@@ -22,7 +25,7 @@ widening its code would put its proof out of date; `RELOAD_LINKS` (DRAFT) reload
 | What | Where | What it does |
 |---|---|---|
 | `LOAD_KEYNOTE_FILE` (MODIFY, Revit 2020-2027) | [`brain/fragments/load-keynote-file`](../../brain/fragments/load-keynote-file/fragment.yaml) | Loads the keynote file at `filePath` - the full path the modeller typed, read on the Revit PC - into the keynote table; with `filePath` empty, reloads the file already named (Revit's Reload). `pathType` absolute or relative as asked, empty keeps the current one; with no file named, a path type asked for loads the same file again under it. **The path is never guessed:** one that is not whole, or has no file at it, is refused before anything changes; relative for a model never saved is refused. Revit's `ExternalResourceLoadStatus` is reported in words, with the files it could not read, the lines it could not parse, the entries it left out (duplicate key, missing parent) and its failure messages. The file - path as saved, path type, where it resolves, Revit's status - and the entry count are read back before and after into `fileBefore` / `fileAfter` and `entriesBefore` / `entriesAfter` |
-| `REPORT_KEYNOTES` (READ, Revit 2020-2027), widened | [`brain/fragments/report-keynotes`](../../brain/fragments/report-keynotes/fragment.yaml) | As before - the keynote tags and the keynote values the table does not hold - and now `keynoteFile`: the file Keynoting Settings names, as saved, its path type, where it resolves when that differs, and Revit's status (Loaded, NotFound); and `tableEntries`, the entries in the loaded table, counted |
+| `REPORT_KEYNOTE_FILE` (READ, Revit 2020-2027) | [`brain/fragments/report-keynote-file`](../../brain/fragments/report-keynote-file/fragment.yaml) | `keynoteFile`: the file Keynoting Settings names, as saved, its path type, where it resolves when that differs, and Revit's status (Loaded, NotFound) - empty, and said, when none is named; and `tableEntries`, the entries in the loaded table, counted. `REPORT_KEYNOTES` (PROVEN, #794) still answers the tags and the values the table does not hold |
 
 **What is done and what is not.** Both compile on every release 2020 to 2027
 (`tools/check-fragments-compile.py`, 2026-11-02, a Linux container). Every Revit member they call was read off the
@@ -44,10 +47,12 @@ five sentences and every live card's utterance and routing row with *keynote*, *
 *numbering*, *path type*, *relative*, *absolute*, *office standard* or *server* in it (129), on Revit 2024, 2027
 and none named, with and without the host's question flag. The three writes reach `LOAD_KEYNOTE_FILE` by
 identity without the flag (before: `REPORT_KEYNOTES`, and `LOAD_FAMILY` for *"reload the keynote file"*);
-*"which keynote file is this project using"* reaches `REPORT_KEYNOTES` by identity with and without it. One
+*"which keynote file is this project using"* reached `REPORT_KEYNOTES` by identity with and without it, and
+since the read moved reaches `REPORT_KEYNOTE_FILE` - with and without the flag, never `LOAD_KEYNOTE_FILE`
+(`heron_retrieve.find` on a scratch store of the split, 2026-11-02, Revit 2024, 2027 and none named). One
 sentence the new words moved off the card a routing table names is declared on that card, card text only -
 [row 5b-1421](../fragment-issues/section-5b-rows-401-425.md). *"Set keynote numbering to by sheet"* still reaches
-`REPORT_KEYNOTES`; nothing can do it (row 5b-1420).
+`REPORT_KEYNOTES`, after the move too; nothing can do it (row 5b-1420).
 
 **The model** - a scratch project from Revit's default architectural template, saved under `%TEMP%\heron-work`,
 never a working model. Every write here is ROLLED BACK unless the modeller keeps it. The job file is
@@ -57,8 +62,8 @@ never a working model. Every write here is ROLLED BACK unless the modeller keeps
 
 | # | Run | Look for |
 |---|---|---|
-| **LZ1** | *Arrange.* A new project from the default architectural template; Annotate > Keynoting Settings shows Revit's default keynote file, Absolute - write its path and its entry count (View) down. One keynote tag on Level 1. In `%TEMP%\heron-work`, beside the saved model: `keynotes-b.txt`, four lines of key, text and parent separated by tabs; `keynotes-bad.txt`, two lines with no tabs and one key written twice. `keynotes-missing.txt` must not exist. Type the full paths into the job file in place of `YOU` | Keynoting Settings shows the default file; the three paths typed whole |
-| **LZ2** | *The read.* The job file's `report-keynotes` job | Positive, Level 1: keynoteFile the default file's path, *"path type Absolute"*, *"Revit: Loaded"*; tableEntries the count written down; tagCount 1. Negative, `{3D}`: tagCount 0, keynoteFile and tableEntries the same. **If keynoteFile is only a display path with no path type, that is Revit's answer for `GetExternalFileReference` - record it** |
+| **LZ1** | *Arrange.* `keynote-lz`: a new project from the default architectural template; Annotate > Keynoting Settings shows Revit's default keynote file, Absolute - write its path and its entry count (View) down. One keynote tag on Level 1. `keynote-lz-b`: the same template, saved beside it, with `keynotes-b.txt` loaded by hand in Keynoting Settings, Absolute. In `%TEMP%\heron-work`, beside the saved model: `keynotes-b.txt`, four lines of key, text and parent separated by tabs; `keynotes-bad.txt`, two lines with no tabs and one key written twice. `keynotes-missing.txt` must not exist. Type the full paths into the job file in place of `YOU` | Keynoting Settings shows the default file; the three paths typed whole |
+| **LZ2** | *The read, D-30 positive and negative, THE NEGATIVE FIRST.* The job file's `report-keynote-file` job | Negative, `keynote-lz-b`: keynoteFile names keynotes-b.txt and **not** the default file, tableEntries 4. Positive, `keynote-lz`: keynoteFile the default file's path, *"path type Absolute"*, *"Revit: Loaded"*; tableEntries the count written down. **If keynoteFile is only a display path with no path type, that is Revit's answer for `GetExternalFileReference` - record it** |
 | **LZ3** | *D-30 positive and negative, THE NEGATIVE FIRST.* The job file's `load-keynote-file` job, `--write`, rolled back | Negative, keynotes-missing.txt: refused *"There is no file at ... that this PC can see"*, fileAfter equal to fileBefore, entriesAfter equal to entriesBefore. Positive, keynotes-b.txt: loadResult *"loaded"*, fileAfter *"...keynotes-b.txt (Absolute), Revit: Loaded"*, entriesAfter 4 |
 | **LZ4** | *The reload and the path type, each rolled back.* `filePath` empty, `pathType` empty, on the default file; then `filePath` keynotes-b.txt, `pathType` relative; then `filePath` empty, `pathType` relative | First: *"reloaded"* or *"already current - Revit changed nothing"* - record which - with fileAfter and entriesAfter as before. Second: fileAfter *"keynotes-b.txt (Relative)"*, entriesAfter 4. Third: the default file again, *"(Relative)"* - or Revit's refusal, if the default file is on another drive from the model |
 | **LZ5** | *The refusals and Revit's own result.* `filePath` `Keynotes.txt` (no folder); `pathType` sideways; `filePath` keynotes-bad.txt; then any load DISCARDED in Revit's Keep or Discard box | *"not a full path"* and the path types named, nothing changed; keynotes-bad.txt: the unreadable lines and the duplicate key named in words, entriesAfter what Revit kept; after Discard, Keynoting Settings shows the file from before |

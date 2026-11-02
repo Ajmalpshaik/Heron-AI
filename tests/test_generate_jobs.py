@@ -558,9 +558,13 @@ def test_the_second_set_is_named_by_category():
     # set joins it by name, and the check above has already asked that it
     # brings a first set too. create-fixture-branches joined 2026-10-14 - its
     # `pipes` are the mains, named by category; its heads are the selection.
+    # connect-into-main joined 2026-11-02 - CONNECT_AIR_TERMINALS' version 3,
+    # moved to a card of its own: its `ducts` are the main, its terminals or
+    # fixtures the selection.
     freed = unblocked_by("IList<Element>")
     check(freed == ["check-room-mep-completeness", "connect-air-terminals",
-                    "create-fixture-branches", "propose-mep-openings"],
+                    "connect-into-main", "create-fixture-branches",
+                    "propose-mep-openings"],
           "it frees the second-set fragments: %s" % (freed or "nothing"))
 
 

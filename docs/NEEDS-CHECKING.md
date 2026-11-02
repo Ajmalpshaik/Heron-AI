@@ -1278,7 +1278,7 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-lo.md`](needs-checking/group-lo.md)
 
-## Group LP - a rigid duct turned into flex between the same two fittings, and Connect Into with a fixture's right connector: `CONVERT_TO_FLEX_DUCT`, `CONNECT_AIR_TERMINALS` widened (2026-11-02)
+## Group LP - a rigid duct turned into flex between the same two fittings, and Connect Into with a fixture's right connector: `CONVERT_TO_FLEX_DUCT`, `CONNECT_INTO_MAIN` (2026-11-02)
 
 **Its own file:** [`needs-checking/group-lp.md`](needs-checking/group-lp.md)
 
@@ -1318,7 +1318,7 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ly.md`](needs-checking/group-ly.md)
 
-## Group LZ - Annotate > Keynoting Settings - load the keynote file the modeller names by its full path, or reload the one loaded, absolute or relative, with Revit's load result and the file and entry count read back - and the keynote file named by the keynote read: `LOAD_KEYNOTE_FILE`, `REPORT_KEYNOTES` (2026-11-02)
+## Group LZ - Annotate > Keynoting Settings - load the keynote file the modeller names by its full path, or reload the one loaded, absolute or relative, with Revit's load result and the file and entry count read back - and the keynote file named by a read of its own: `LOAD_KEYNOTE_FILE`, `REPORT_KEYNOTE_FILE` (2026-11-02)
 
 **Its own file:** [`needs-checking/group-lz.md`](needs-checking/group-lz.md)
 

@@ -318,7 +318,7 @@ compatibility-note: >
 #                                              meets, not a parameter named
 #
 # ROUTING (2026-11-02, the keynote file) - repeated in REPORT_KEYNOTES and
-# LOAD_KEYNOTE_FILE.
+# LOAD_KEYNOTE_FILE; which file is loaded is REPORT_KEYNOTE_FILE.
 #
 #   "change the keynote on these"            -> here, the Keynote parameter
 #   "load the keynote file C:\Standards\Keynotes.txt" -> LOAD_KEYNOTE_FILE -

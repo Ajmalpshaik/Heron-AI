@@ -17,9 +17,11 @@ semantic-identity: "load or reload the keynote file the keynote tags read from, 
 # answered REPORT_KEYNOTES, a read, and LOAD_FAMILY.
 #
 # LOOK-ALIKES, KEPT SEPARATE (heron-duplicate-checker's method, 2026-11-02):
-#   REPORT_KEYNOTES (DRAFT)    READS the keynote file, its path type and entry
-#                              count - widened the same day to answer "which
-#                              keynote file is this project using". This
+#   REPORT_KEYNOTE_FILE        READS the keynote file, its path type and entry
+#     (DRAFT)                  count - written the same day to answer "which
+#                              keynote file is this project using" (first as a
+#                              widening of REPORT_KEYNOTES, moved to a card of
+#                              its own when #794 proved that one). This
 #                              changes it; a write never answers a question.
 #   REPORT_EXTERNAL_REFERENCES lists the keynote table as one row among every
 #     (PROVEN)                 file the model needs; reads only.
@@ -131,13 +133,13 @@ compatibility-note: >
   ModificationOutsideTransactionException with no open transaction. There is
   no KeynotingOptions type and no numbering-method member on any release.
 
-# ROUTING - repeated in REPORT_KEYNOTES.
+# ROUTING - repeated in REPORT_KEYNOTES and REPORT_KEYNOTE_FILE.
 #
 #   "load the keynote file C:\Standards\Keynotes.txt" -> here
 #   "reload the keynote file"                  -> here, filePath empty
 #   "change the keynote file to the office standard on the server" -> here,
 #                                                 the full path asked for
-#   "which keynote file is this project using" -> REPORT_KEYNOTES - a READ
+#   "which keynote file is this project using" -> REPORT_KEYNOTE_FILE - a READ
 #   "check the keynotes"                       -> REPORT_KEYNOTES
 #   "change the keynote on these"              -> WRITE_ELEMENT_PARAMETERS, the
 #                                                 Keynote parameter

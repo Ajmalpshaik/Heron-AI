@@ -1,7 +1,8 @@
-# NEEDS-CHECKING Group LP - CONVERT_TO_FLEX_DUCT (new) and CONNECT_AIR_TERMINALS
-# version 3 (Connect Into: the right connector of a fixture with several, and
-# the new elements by id), built 2026-11-02 in a cloud session with no Revit.
-# NOT RUN.
+# NEEDS-CHECKING Group LP - CONVERT_TO_FLEX_DUCT (new) and CONNECT_INTO_MAIN,
+# written as CONNECT_AIR_TERMINALS version 3 (Connect Into: the right
+# connector of a fixture with several, and the new elements by id) and moved
+# to a card of its own when main's #795 proved that card's version 2, built
+# 2026-11-02 in a cloud session with no Revit. NOT RUN.
 #
 #     python tools/batch-prove.py tools/jobs/flex-and-connect-into-lp-2026-11-02.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/flex-and-connect-into-lp-2026-11-02.yaml
@@ -60,7 +61,7 @@ jobs:
       If the type's name in this template differs, write it here - never on
       the card.
 
-  - fragment: connect-air-terminals
+  - fragment: connect-into-main
     expect: created
     in: "connect-lp"
     write: true
@@ -82,7 +83,7 @@ jobs:
       in Revit that id is the takeoff on the duct. Read `moved` - the
       held-proof question (row 5b-187) - and record it.
 
-  - fragment: connect-air-terminals
+  - fragment: connect-into-main
     expect: created
     in: "sink-lp"
     write: true

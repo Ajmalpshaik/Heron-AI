@@ -259,6 +259,13 @@ compatibility-note: >
 #   "make the flex drop to that diffuser" -> CREATE_MEP_RUNS - it makes flex
 #                                          and does NOT join it up
 #   "is every sprinkler actually piped" -> CHECK_FIXTURE_CONNECTIVITY
+#   "connect this diffuser into the main duct" -> CONNECT_INTO_MAIN - Revit's
+#                                          Connect Into, the main handed in,
+#                                          every new element by id
+#   "connect this sink into the waste pipe" -> CONNECT_INTO_MAIN - the sink's
+#                                          waste connector, matched to the
+#                                          pipe's system; this card takes a
+#                                          fixture's first open connector
 #   "convert this last duct run to the diffuser into flex duct"
 #                                       -> CONVERT_TO_FLEX_DUCT - the duct is
 #                                          there already and becomes flex

@@ -1,6 +1,7 @@
-# NEEDS-CHECKING Group LZ - LOAD_KEYNOTE_FILE, and REPORT_KEYNOTES widened to
-# name the keynote file, built 2026-11-02 in a cloud session with no Revit.
-# NOT RUN.
+# NEEDS-CHECKING Group LZ - LOAD_KEYNOTE_FILE, and REPORT_KEYNOTE_FILE to
+# name the keynote file (first written into REPORT_KEYNOTES, moved to a card
+# of its own when #794 proved that one), built 2026-11-02 in a cloud session
+# with no Revit. NOT RUN.
 #
 #     python tools/batch-prove.py tools/jobs/keynote-file-lz-2026-11-02.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/keynote-file-lz-2026-11-02.yaml
@@ -8,7 +9,8 @@
 # THE MODEL (docs/needs-checking/group-lz.md, LZ1): a scratch project from
 # Revit's default architectural template, saved under %TEMP%\heron-work, never
 # a working model, with Revit's default keynote file loaded (Absolute) and one
-# keynote tag placed in Level 1. Beside it in %TEMP%\heron-work, written for
+# keynote tag placed in Level 1 - "keynote-lz" - and "keynote-lz-b", the same
+# template with keynotes-b.txt loaded instead. Beside it in %TEMP%\heron-work, written for
 # the test: keynotes-b.txt, four keynote lines (key, text, parent, separated by
 # tabs). keynotes-missing.txt must NOT exist. The full path below is typed in
 # place of YOU with the Windows user name - the file is read on the Revit PC,
@@ -22,18 +24,17 @@
 model: "a scratch project from Revit's default architectural template, the default keynote file loaded, one keynote tag on Level 1, keynotes-b.txt beside it"
 
 jobs:
-  - fragment: report-keynotes
+  - fragment: report-keynote-file
+    in: "keynote-lz"
+    negative-in: "keynote-lz-b"
     expect: keynoteFile
-    set:
-      viewName: "Level 1"
-    negative-set:
-      viewName: "{3D}"
     note: >
-      LZ2. Positive: keynoteFile the default keynote file's path, "path type
+      LZ2. Negative - THE FIRST CASE TO RUN: "keynote-lz-b" - keynoteFile
+      names keynotes-b.txt and NOT the default file, tableEntries 4; a reader
+      answering a default path would name the default file here. Positive:
+      "keynote-lz" - keynoteFile the default keynote file's path, "path type
       Absolute", "Revit: Loaded"; tableEntries the count Keynoting Settings >
-      View lists; tagCount 1. Negative: the 3D view - tagCount 0, and
-      keynoteFile and tableEntries the same, because the file is the model's,
-      not the view's.
+      View lists.
 
   - fragment: load-keynote-file
     write: true

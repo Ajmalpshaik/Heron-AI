@@ -1,0 +1,41 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+# Arranged on the scratch projects of NEEDS-CHECKING Group LZ (LZ1): "keynote-lz",
+# Revit's default architectural template with its default keynote file loaded
+# (Absolute), and "keynote-lz-b", the same template with keynotes-b.txt - four
+# lines - loaded instead. The read was first written into REPORT_KEYNOTES'
+# cases on 2026-11-02 and moved here with it.
+
+positive:
+  - given: >
+      "keynote-lz": Annotate > Keynoting Settings names Revit's default keynote
+      file, path type Absolute, and its View lists the entries
+    expect: >
+      keynoteFile the same path the dialog shows, "path type Absolute",
+      "Revit: Loaded"; tableEntries the number of lines the dialog's View
+      lists - counted by hand, never assumed
+
+negative:
+  - given: >
+      "keynote-lz-b", whose Keynoting Settings names keynotes-b.txt. THIS IS
+      THE FIRST CASE TO RUN
+    expect: >
+      keynoteFile names keynotes-b.txt and NOT the default file; tableEntries
+      4. A reader that answered a default path, or the last file it saw,
+      would name the default file here
+
+  - given: >
+      the keynote file renamed on disk after the model was saved, the model
+      reopened (Revit warns it cannot find it)
+    expect: >
+      keynoteFile still the saved path with "Revit: NotFound" - the path is
+      reported as saved, never replaced with one that exists
+
+  - given: a model with no keynote table loaded, if Revit allows one
+    expect: >
+      keynoteFile empty, tableEntries 0, and the findings saying "none named
+      in Keynoting Settings" - never a path guessed
+
+second_route:
+  - >
+    Annotate > Keynote > Keynoting Settings: the path, its path type, and View
+    counted by hand - read beside keynoteFile and tableEntries

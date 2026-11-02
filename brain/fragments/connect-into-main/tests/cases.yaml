@@ -1,0 +1,56 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# Arranged in NEEDS-CHECKING Group LP (docs/needs-checking/group-lp.md), LP1:
+# "connect-lp", "sink-lp" and "sink-lp-two". Moved here 2026-11-02 with
+# CONNECT_AIR_TERMINALS' version 3 code; that card's version 1 and 2 cases
+# stay on it, and the code they test is carried here unchanged.
+
+positive:
+  - given: >
+      one round-neck supply diffuser selected; ducts the one supply main above
+      it (selected by id, the only duct handed in); maxDistanceMm 1500
+    expect: >
+      connected 1; `created` holds the tap fitting's id, and the finding
+      "... tapped into <main id>, ... mm away; new fitting id(s) <id>" names
+      it; selected in Revit that id is the takeoff on the main
+
+  - given: >
+      a sink with a sanitary, a cold water and a hot water connector, the
+      sanitary facing down, selected; ducts one straight Sanitary pipe below
+      it, clear of its ends; maxDistanceMm 1500
+    expect: >
+      branched 1; the riser and arm start at the SANITARY connector, on the
+      Sanitary pipe's type and system; `created` holds their two ids; the cold
+      and hot connectors still open. On CONNECT_AIR_TERMINALS version 2 the
+      first open connector was used, whichever it was
+
+negative:
+  - given: >
+      the same sink selected; ducts one straight Domestic Cold Water pipe
+      below it AND one Sanitary pipe below it; maxDistanceMm 1500
+    expect: >
+      two of the sink's connectors match the pipes handed in, so it is not
+      guessed which was meant: NOTHING is drawn and `refused` names the
+      sink's three connectors and both systems - "hand in the one main its
+      connector belongs on"; `created` empty. THE FIRST CASE TO RUN
+
+  - given: >
+      the same sink selected; ducts one straight Vent pipe below it - a
+      system the sink has no connector for
+    expect: >
+      nothing drawn; `refused` names the sink's connectors and the pipe's
+      system; `created` empty
+
+  - given: the diffuser of the first positive case with maxDistanceMm 10
+    expect: >
+      the diffuser in `noDuctNear`, `created` empty, nothing made
+
+  - given: the sink of the second positive case with ducts named "Ducts"
+    expect: >
+      no pipe handed in, so nothing drawn; `refused` says no straight pipe was
+      handed in as a main; `created` empty
+
+second_route:
+  - >
+    Revit's own Connect Into (Modify | Plumbing Fixtures or Air Terminals >
+    Connect Into) on copies of the same saved files: the same main, the same
+    connector, the same fitting or riser and arm as `created` names

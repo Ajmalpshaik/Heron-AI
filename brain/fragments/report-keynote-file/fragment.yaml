@@ -1,0 +1,115 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-170
+semantic-identity: "which keynote file the project uses - the path Keynoting Settings names, its path type, where it resolves and whether Revit finds it, with the loaded table's entry count"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked in the modeller's words "which keynote file is this
+# project using" (NEEDS-CHECKING Group LZ). No card answered it for the
+# keynote file alone: REPORT_EXTERNAL_REFERENCES (PROVEN) lists the keynote
+# table as one row among every link, import and point cloud, with no entry
+# count, and widening its code would put its proof out of date.
+#
+# A CARD OF ITS OWN, NOT A WIDENING (2026-11-02). The read was first written
+# into REPORT_KEYNOTES as its `keynoteFile` and `tableEntries`, on a branch
+# where that card was DRAFT. The same day #794 proved REPORT_KEYNOTES on
+# Revit 2024 against code without it, and any change under its impl/ would
+# make that proof stale - so the read moved here, its C# carried line for
+# line, and the sentence with it. REPORT_KEYNOTES answers which keynote tags
+# a view shows and which keynote values the table does not hold; this answers
+# only which file the table was loaded from.
+#
+# LOOK-ALIKES, NOT DUPLICATES. LOAD_KEYNOTE_FILE is the write half - it loads
+# or reloads the file and reads it before and after; a question never reaches
+# a write (D-86). REPORT_EXTERNAL_REFERENCES reads every external file the
+# model needs, the keynote table one row among them.
+kind: action
+domain: revit.annotation
+capability: REPORT_KEYNOTE_FILE
+version: 1
+source: OFFICIAL
+risk: READ
+
+# HOW IT ANSWERS - a comment, not `purpose`, because `purpose` is searched.
+#
+# **THE PATH AS SAVED.** Revit's ExternalFileReference for the keynote table:
+# the saved path, its path type (Absolute, Relative, or Content - the
+# dialog's At Library Locations), where it resolves on this PC when that
+# differs, and Revit's status for it (Loaded, NotFound). A file Revit cannot
+# find is named as saved with "Revit: NotFound" - never replaced with one
+# that exists. A table Revit does not track as a file (a keynote server)
+# falls back to its resource reference's display path.
+#
+# **NONE NAMED IS SAID, NEVER GUESSED.** `keynoteFile` stays empty and the
+# finding says "none named in Keynoting Settings".
+#
+# **THE NUMBERING METHOD IS NOT READ.** Keynoting Settings' By keynote / By
+# sheet has no Revit API member on any release 2020-2027 (row 5b-1420).
+#
+# `purpose` HOLDS NO CHANGE VERB, so load and reload requests stay with
+# LOAD_KEYNOTE_FILE.
+purpose: >
+  Answers which keynote file the project uses, as Annotate > Keynoting
+  Settings names it - the path as saved, its path type, where it resolves on
+  this PC and whether Revit finds it - and how many entries the loaded keynote
+  table holds. It only reads.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: keynoteFile
+      # The keynote file Keynoting Settings names: the path as saved, its path
+      # type, where it resolves on this PC when that differs, and Revit's
+      # status for it (Loaded, NotFound) - "C:\...\Keynotes.txt | path type
+      # Absolute | Revit: Loaded". Empty when none is named.
+      role: result
+      type: string
+    - name: tableEntries
+      # Entries in the loaded keynote table, counted.
+      role: result
+      type: int
+    - name: findings
+      # One line naming the file, or "none named in Keynoting Settings", and
+      # the entry count; a line when the model has no keynote table or it
+      # could not be read.
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, no #if. KeynoteTable.GetKeynoteTable,
+  KeyBasedTreeEntryTable.GetKeyBasedTreeEntries, Element.GetExternalFileReference,
+  ExternalFileReference.GetPath / GetAbsolutePath / PathType /
+  GetLinkedFileStatus, ModelPathUtils.ConvertModelPathToUserVisiblePath,
+  Element.GetExternalResourceReference,
+  ExternalResourceTypes.BuiltInExternalResourceTypes.KeynoteTable and
+  ExternalResourceReference.InSessionPath - each read with tools/api-surface
+  --members on the reference assemblies of 2020 to 2027 on 2026-11-02, the
+  day the read was first written into REPORT_KEYNOTES; present in all eight.
+  Not seen in Revit.
+
+# ROUTING - the same rows are in REPORT_KEYNOTES and LOAD_KEYNOTE_FILE.
+#
+#   "which keynote file is this project using" -> here, with or without the
+#                                                host's question flag
+#   "reload the keynote file"                 -> LOAD_KEYNOTE_FILE, a write
+#   "load the keynote file C:\Standards\Keynotes.txt" -> LOAD_KEYNOTE_FILE
+#   "check the keynotes"                      -> REPORT_KEYNOTES, the tags and
+#                                                the values the table lacks
+#   "set keynote numbering to by sheet"       -> NOTHING HERE DOES THAT - no
+#                                                Revit API member reaches the
+#                                                numbering method (row 5b-1420);
+#                                                Annotate > Keynoting Settings
+
+# DECLARED 2026-11-02 - the modeller's own question (Group LZ), moved here
+# from REPORT_KEYNOTES with the read.
+utterances:
+  - which keynote file is this project using

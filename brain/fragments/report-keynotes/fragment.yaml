@@ -120,6 +120,8 @@ compatibility-note: >
 #   "change the keynote on these"             -> WRITE_ELEMENT_PARAMETERS, the
 #                                                Keynote parameter
 #   "which elements are not tagged"           -> FIND_UNTAGGED_ELEMENTS
+#   "which keynote file is this project using" -> REPORT_KEYNOTE_FILE - the
+#                                                file and its entry count
 #   "reload the keynote file"                 -> LOAD_KEYNOTE_FILE, a write
 #   "load the keynote file C:\Standards\Keynotes.txt" -> LOAD_KEYNOTE_FILE
 #   "set keynote numbering to by sheet"       -> NOTHING HERE DOES THAT - no
