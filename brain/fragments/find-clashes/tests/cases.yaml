@@ -56,7 +56,42 @@ positive:
       1 agree, 0 differ - the host searched with the elements handed in left
       out, and `clashes` empty because `against` was
 
+  # VERSION 4 (2026-11-01) - SELECT_TOUCHING merged in. Each FAILS on version
+  # 3, which refused a call with no `against` typed (it was not optional),
+  # answered `against` blank with "NOTHING WAS LOOKED IN", and handed nothing
+  # on as `elements`. NOT RUN.
+  - given: >
+      ONE pipe selected that passes through a wall and a floor of this model,
+      `against` LEFT OUT, includeLinks left out, categories "Walls, Floors"
+    expect: >
+      the call binds (no `against` typed); passedThrough names the wall and the
+      floor; `elements` holds exactly those two - this model's ids - and NOT
+      the pipe; SET_SELECTION run next selects them. A finding says this model
+      was searched because no `against` and no link was asked for
+  - given: >
+      the same pipe, categories "all", a duct copied onto itself as a second
+      arrangement (a duct overlapped by a copy of it)
+    expect: >
+      the copy found and handed on in `elements`; the duct itself never in
+      `elements` - an element is never returned as touching itself
+  - given: >
+      a pipe through a wall of the ARCHITECTURAL LINK only, `against` left
+      out, includeLinks true, categories Walls
+    expect: >
+      the linked wall named in linkedMatches and passedThrough as text, id IN
+      THE LINK; `elements` EMPTY - a linked element is never handed on (row
+      75), and with a link asked for this model is not searched unless
+      includeHost is set
+
 negative:
+  - given: >
+      VERSION 4. Two ducts joined by a real elbow at a shared connector, one
+      selected, `against` left out, categories "all"
+    expect: >
+      `elements` EMPTY and a finding saying nothing in this model OVERLAPS it
+      and that is not the same as nothing related - TRACE_CONNECTIVITY answers
+      "what is connected". SELECT_TOUCHING's first case; version 3 gave no
+      answer here at all
   - given: a DIAGONAL duct running past a beam without touching it
     expect: >
       it is CLEAR. A bounding-box check would report it as clashing, because the
@@ -82,7 +117,10 @@ negative:
     expect: >
       nothing counted clear and nothing clashing, and a finding saying nothing
       was checked. A report of forty clear elements that were tested against
-      nothing reads as a clean model
+      nothing reads as a clean model. VERSION 4: `clear` and `clashing` still
+      0 and the finding says `against` tested nothing - and, with no link
+      asked for, that THIS MODEL was searched instead (SELECT_TOUCHING's job);
+      what it found is in passedThrough and `elements`, never in `clear`
 
   # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
   - given: includeLinks ABSENT, on a model that HAS loaded links

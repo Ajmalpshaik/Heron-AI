@@ -249,6 +249,22 @@ compatibility-note: >
 #                                                      a Family Category and
 #                                                      Parameters switch
 
+# JUDGED 2026-11-01 (a duplicate sweep's look-alike, on the owner's rule "if one
+# tool can safely do both, merge") AGAINST SET_FAMILY_SETTINGS AND KEPT APART -
+# the next sweep should not reopen it unless one of these stops being true:
+#   - NOTHING IS CODED TWICE. That card ticks Light Source (the family
+#     parameter LIGHTING_FIXTURE_LIGHT_EMITTER, proved by GetLightFamily
+#     succeeding after); this one defines the light - LightFamily and
+#     LightType - and only READS whether the tick is there, refusing with the
+#     route when it is not.
+#   - DIFFERENT OBJECTS IN REVIT: a Family Category and Parameters switch
+#     there; the light source element and its lighting API here.
+#   - A SAFETY REASON ONE TOOL CANNOT HOLD: this card refuses the family's half
+#     and the types' half in one call, because Revit lost type values when they
+#     changed in one transaction with the family's light (5b-1297, Revit 2020).
+#     Ticking the box is what makes the light source; making and defining it in
+#     one transaction is the same risk, untested.
+
 utterances:
   - set the light source of this fixture family
   - make the light source a spot light with a 30 degree beam

@@ -319,8 +319,10 @@ compatibility-note: >
 #                                                   a box locked to four planes
 #   "make an opening in this wall"               -> CREATE_OPENING, a project
 #                                                   wall or floor, not a family
-#   "array these round a circle"                 -> ARRAY_ELEMENTS_RADIAL,
+#   "array these round a circle"                 -> COPY_ELEMENTS, sweepDegrees -
 #                                                   copies, not a turned form
+#                                                   (ARRAY_ELEMENTS_RADIAL until
+#                                                   2026-11-01)
 #   "blend a rectangle into a circle"            -> here, one kind=blend row
 #                                                   (CREATE_FAMILY_BLEND until
 #                                                   2026-11-01)

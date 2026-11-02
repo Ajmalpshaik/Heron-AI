@@ -126,6 +126,18 @@ compatibility-note: >
 #   "put railings on these stairs"           -> CREATE_RAILING
 #   "make the top rail 1100 high"            -> SET_RAILING_TYPE
 
+# JUDGED 2026-11-01 (a duplicate sweep's look-alike, on the owner's rule "if one
+# tool can safely do both, merge") AGAINST CHANGE_ELEMENT_TYPE (the type option) AND KEPT APART -
+# the next sweep should not reopen it unless one of these stops being true:
+#   - THE TYPE HERE IS ONE PART OF ONE RAILING EDIT, not a second type tool.
+#     It is named as the modeller says it, matched among RAILING types only -
+#     a railing can never be put on another category's type - and applied in
+#     the edit's own order (reset, path, host, type, flip) in one undo entry,
+#     read back after a regeneration. CHANGE_ELEMENT_TYPE takes a type id or a
+#     source element, for any category. Taking the type out of this card would
+#     split "move this railing and make it the glass one" into two calls and
+#     stale a PROVEN proof, for no rule the other card holds that this lacks.
+
 utterances:
   - edit the path of this railing
   - flip this railing to the other side

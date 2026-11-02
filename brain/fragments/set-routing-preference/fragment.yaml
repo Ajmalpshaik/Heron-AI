@@ -172,6 +172,15 @@ compatibility-note: >
 #                                           what the type is made of
 #   "rename this type"                   -> EDIT_TEXT_VALUES
 
+# JUDGED 2026-11-01 (a duplicate sweep's look-alike, on the owner's rule "if one
+# tool can safely do both, merge") AGAINST COPY_ROUTING_PREFERENCES AND KEPT APART -
+# the next sweep should not reopen it unless one of these stops being true:
+#   - THE SAME REVIT OBJECT AND TWO DIFFERENT EDITS, WITH NO INPUT IN COMMON:
+#     this points ONE rule at a named part and carries its size window; that
+#     copies EVERY rule of each group from another type, Segments only when
+#     named. "make this pipe type copper" is only reachable here. See the
+#     same block on that card. Both PROVEN.
+
 utterances:
   - make this pipe type copper
   - change the segment this type uses

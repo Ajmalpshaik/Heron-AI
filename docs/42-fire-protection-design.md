@@ -119,11 +119,11 @@ needs. Now it can work them out:
 | You ask | Heron works out | Then, in Revit |
 |---|---|---|
 | *"What hazard class is a car park?"* | what NFPA 13's annex and your own file list beside it, and what each class asks for - **never the class itself** (`hazard_class`) | the class you confirm, written to the Spaces |
-| *"How many sprinklers for this room?"* | the fewest on a grid inside your spacing, area and wall limits, with their points (`sprinkler_layout`) | `PLACE_FAMILY_INSTANCES` at the points, then `CHECK_OBSTRUCTIONS` |
+| *"How many sprinklers for this room?"* | the fewest on a grid inside your spacing, area and wall limits, with their points (`sprinkler_layout`) | `PLACE_FAMILY_INSTANCES` at the points, then `PROBE_AROUND_ELEMENTS` on the same `points` |
 | *"Check my sprinkler spacing"* | each drawn head's S, L and area as NFPA 13 measures them, its walls and its nearest neighbour (`sprinkler_spacing`) | the heads and the outline come from `READ_ROOM_GEOMETRY` and the model |
 | *"What pipe size for 10 sprinklers, light hazard?"* | the pipe schedule's size, steel or copper (`pipe_schedule`) | `SET_MEP_SIZE`, one call per size |
 | *"Sprinklers above AND below the ceiling on one branch?"* | the above-and-below schedule, counted over two levels, and the 8-and-8 branch limit (`pipe_schedule`) | `SET_MEP_SIZE` |
-| *"The beam is 700 mm away - how high can the deflector be?"* | the beam rule's allowance, the three-times rule, the wide-obstruction rule (`obstruction`) | `CHECK_OBSTRUCTIONS` finds the beams |
+| *"The beam is 700 mm away - how high can the deflector be?"* | the beam rule's allowance, the three-times rule, the wide-obstruction rule (`obstruction`) | `PROBE_AROUND_ELEMENTS` finds the beams |
 | *"How many heads in the design area, and what flow?"* | the area after its adjustments, its sprinklers, 1.2 sqrt A along a branch, each head's flow and pressure (`design_area`) | `hydraulic` takes them as the operating heads |
 | *"What pressure does the riser need?"* | a tree or a looped grid solved node by node (`hydraulic`), against a flow test (`water_supply`) | `READ_MEP_SYSTEM` and `REPORT_CONNECTOR_LOADS` give the network |
 | *"How big is the fire tank? Is this pump right?"* | the volume over each demand's duration (`water_storage`); NFPA 20's curve rules and the demand (`fire_pump`) | - |

@@ -188,7 +188,7 @@ compatibility-note: >
   assemblies at both ends" is a claim about names only until something compiles
   it.**
 
-# ROUTING - repeated in MOVE_TO_RAY_HIT, SNAP_TO_GRID and CHECK_OBSTRUCTIONS.
+# ROUTING - repeated in MOVE_TO_RAY_HIT, SNAP_TO_GRID and PROBE_AROUND_ELEMENTS.
 #
 #   "is the equipment sitting flat on the floor" -> here
 #   "will these sit properly against the ceiling" -> here
@@ -198,7 +198,7 @@ compatibility-note: >
 #                                           first and leave the straddling ones
 #                                           out of it
 #   "line these up with the ceiling grid" -> SNAP_TO_GRID - also a move
-#   "is anything above this point"       -> CHECK_OBSTRUCTIONS - ONE ray from one
+#   "is anything above this point"       -> PROBE_AROUND_ELEMENTS - ONE ray from one
 #                                           point, which is the thing this exists
 #                                           because it is not enough
 

@@ -123,6 +123,27 @@ compatibility-note: >
 #   "make a wall along these points"              -> CREATE_WALL
 #   "add mass floors at every level"              -> CREATE_MASS_FLOORS
 
+# JUDGED 2026-11-01 (a duplicate sweep's look-alike, on the owner's rule "if one
+# tool can safely do both, merge") AGAINST CREATE_CURTAIN_SYSTEM AND KEPT APART -
+# the next sweep should not reopen it unless one of these stops being true:
+#   - A DIFFERENT OBJECT AND A DIFFERENT RESULT IN REVIT: FaceWall.Create makes
+#     ONE WALL PER FACE, each a WallType; NewCurtainSystem2 makes ONE curtain
+#     system ACROSS every face handed to it, a CurtainSystemType. A count, an
+#     undo and a read-back per face here; per host there.
+#   - THE SAFETY RULE AGAINST A DOUBLED SKIN CANNOT BE HELD FOR BOTH. Here a
+#     mass already carrying walls by face is read (GetJoinedElementIds) and
+#     skipped, so a re-run never doubles the walls. A curtain system has no
+#     host face Revit's API will read back, so that card can only COUNT one
+#     standing in the outline (alreadyNear). One tool letting the type decide,
+#     as CREATE_FLOOR does, would skip a second run for one type and double it
+#     for the other under the same sentence.
+#   - THE FACES DIFFER: sides or vertical here; vertical, top or all there - a
+#     wall on a top face is not a thing Revit makes.
+#   - THE RECORD: this card was CREATE_ELEMENTS_BY_FACE, doing both, and was
+#     narrowed to walls on purpose on 2026-10-29. Nothing measured since says
+#     that was wrong; this card still refuses a curtain system type by name
+#     and sends it there.
+
 utterances:
   - put walls by face on the sides of this mass
   - make a wall by face on every face of the massing

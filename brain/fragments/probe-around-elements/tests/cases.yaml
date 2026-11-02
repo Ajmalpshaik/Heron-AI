@@ -23,7 +23,45 @@ positive:
       for the direction facing the wall, naming it and giving the distance
       in mm - checked with a dimension in plan
 
+  # VERSION 3 (2026-11-01) - CHECK_OBSTRUCTIONS merged in. Each FAILS on
+  # version 2, which had no `points`, no `blocked`/`clear` and no template
+  # guard. NOT RUN. The first two are CHECK_OBSTRUCTIONS' own positives.
+  - given: >
+      a room with one beam, a grid of 12 points (nothing placed), directions
+      "0,0,1", maxDistance so the beam is inside it, in a 3D view WITH
+      structural framing visible, `elements` left out with nothing selected
+    expect: >
+      the points under the beam in `blocked`, the rest in `clear`, the split
+      matching what a person sees in the 3D view; findings names the beam and
+      its distance in mm for each blocked point
+  - given: the same points and a maxDistance SHORTER than the distance to the beam
+    expect: >
+      all 12 clear - the distance decides, not whether something was hit
+  - given: >
+      the same points, the beam in the STRUCTURAL LINK instead, includeLinks
+      left out
+    expect: >
+      all 12 clear AND the summary saying LINKS WERE NOT READ and to set
+      includeLinks (CHECK_OBSTRUCTIONS always read links; this card reads them
+      only when asked, D-59). With includeLinks true: the points under the
+      linked beam blocked, the beam named with its id IN THE LINK
+
 negative:
+  # VERSION 3, from CHECK_OBSTRUCTIONS. NOT RUN.
+  - given: >
+      THE SAME MODEL AND POINTS, in a 3D view with structural framing SWITCHED
+      OFF
+    expect: >
+      every point clear - the card behaving correctly while giving a dangerous
+      answer; the summary says a ray sees only what the view shows
+  - given: a VIEW TEMPLATE passed as the view, with points and elements
+    expect: >
+      notChecked = every point, `clear` EMPTY, `nothingHit` EMPTY, no
+      exception, and a finding saying nothing was probed. Version 2 threw
+  - given: points given and directions "0,0,0" only
+    expect: every point notChecked - a zero direction casts nothing - never clear
+  - given: neither elements nor points
+    expect: a finding "Nothing was given to probe", every list empty
   - given: a 3D view with the WALLS category hidden
     expect: >
       a wall not reported, and the path reading clear. This is the trap: the

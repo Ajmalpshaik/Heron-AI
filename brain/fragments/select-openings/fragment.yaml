@@ -170,7 +170,7 @@ compatibility-note: >
 #                                           the sleeves MEP puts in rather than
 #                                           the holes the building has
 #   "what size should the sleeve be"     -> CHECK_SLEEVE_SIZE
-#   "what is in the way"                 -> CHECK_OBSTRUCTIONS
+#   "what is in the way"                 -> PROBE_AROUND_ELEMENTS
 #   "all the ductwork"                   -> FILTER_ELEMENTS_BY_CATEGORY
 
 utterances:
