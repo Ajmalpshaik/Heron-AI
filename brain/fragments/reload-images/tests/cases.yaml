@@ -1,0 +1,68 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a reload, "reloaded an image nobody named": an image left out of the
+# names must come back exactly as it was.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING Group MK): one scratch
+# project "images-reload", new from Revit's metric ARCHITECTURAL template,
+# saved under %TEMP%\heron-work, never a working model. In
+# %TEMP%\heron-work\images: "site.png" (a red square), "logo.png", a
+# three-page "plans.pdf", and "site-v2.png" (the same size, blue).
+#   With Insert > Import Image, site.png placed once in "Level 1"; with
+#   Insert > Import PDF, page 2 of plans.pdf placed once in "Level 1"; with
+#   Insert > Link Image (2021 on; Import Image on 2020), logo.png linked and
+#   placed once. Save and close. Then, outside Revit, paint site.png GREEN
+#   (same size) and RENAME logo.png: the imported site.png still shows red
+#   until it is reloaded, and logo.png's file cannot be found.
+# Where the files differ, the job file changes - never the card.
+
+positive:
+  - given: images-reload in front, names "site.png" - the job file's positive
+    expect: >
+      reloaded 1; reloadedIds site.png's id; report "\"site.png\" (<id>):
+      reloaded, \"...\\site.png\" - now Loaded, <w> x <h> px (was ...)" and
+      the square in Level 1 now GREEN. Manage Images still one site.png row.
+      On Revit 2020 the row says "Revit 2020 does not say whether it loaded
+      or its size"
+
+  - given: images-reload, names left out
+    expect: >
+      reloaded 2 - site.png and plans.pdf page 2; skipped names logo.png
+      "Revit cannot reload it from ... - the file is not found ... Left as it
+      was." and logo.png's row in Manage Images unchanged
+
+  - given: images-reload on 2021 or later, names "site.png", fromPath the full path of site-v2.png
+    expect: >
+      reloaded 1; report "reloaded from a new file, \"...\\site-v2.png\""; the
+      square BLUE in Level 1; Manage Images' Path column now site-v2.png. On
+      Revit 2020 refused by name - "Revit 2020 cannot read an image's
+      resolution ..." - and nothing reloaded
+
+negative:
+  - given: images-reload in front, names "logo.png" - the job file's negative
+    expect: >
+      reloaded 0; skipped names logo.png - "Revit cannot reload it from ...
+      - the file is not found ... Left as it was." - and site.png NOT
+      reloaded: its square in Level 1 still RED, the colour it had when the
+      project was saved. THE FIRST CASE TO RUN
+
+  - given: images-reload, names "no such image"
+    expect: >
+      reloaded 0; report "No image is named \"no such image\" in Manage
+      Images. The images here are ..." and "NOTHING WAS RELOADED."
+
+  - given: images-reload, names "site.png; logo.png", fromPath site-v2.png
+    expect: >
+      reloaded 0; refused "Reload From takes ONE image ... 2 were named" -
+      neither image changed
+
+  - given: a project with nothing in Manage Images (the template untouched)
+    expect: >
+      reloaded 0; report "No image or PDF page is in this model's Manage
+      Images. NOTHING WAS RELOADED."
+
+second_route:
+  - >
+    Manage > Manage Images on images-reload: select site.png, Reload - the
+    same green square; select it, Reload From site-v2.png - the same blue one
+  - one Ctrl+Z takes the whole reload back in a single step (Golden Rule 16)
+  - LIST_IMAGES before and after - the same rows, with site.png's status and size as reported

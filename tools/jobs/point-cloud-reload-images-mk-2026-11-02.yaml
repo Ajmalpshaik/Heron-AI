@@ -1,0 +1,71 @@
+# NEEDS-CHECKING Group MK - LINK_FILES version 2 (a point cloud linked) and
+# RELOAD_IMAGES (new), built 2026-11-02 in a cloud session with no Revit. NOT
+# RUN.
+#
+#     python tools/batch-prove.py tools/jobs/point-cloud-reload-images-mk-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/point-cloud-reload-images-mk-2026-11-02.yaml
+#
+# TWO SCRATCH PROJECTS on Revit 2024, new from the metric architectural
+# template, saved under %TEMP%\heron-work, never a working model
+# (docs/needs-checking/group-mk.md, MK1):
+#   "links-mk"       nothing linked. In %TEMP%\heron-work\link-mk: a small
+#                    ReCap project "scan.rcp" with its scans, and a copy of
+#                    any small .ifc as "structure.ifc" - the owner's own test
+#                    files, never a client's.
+#   "images-reload"  in %TEMP%\heron-work\images: site.png (a red square),
+#                    logo.png, a three-page plans.pdf and site-v2.png (the
+#                    same size, blue). site.png imported and placed once in
+#                    "Level 1", page 2 of plans.pdf imported and placed once,
+#                    logo.png linked (Insert > Link Image) and placed once.
+#                    Saved and closed; then, outside Revit, site.png painted
+#                    GREEN at the same size and logo.png RENAMED.
+# THE PATHS BELOW ARE THE OWNER'S PC'S - where %TEMP% is elsewhere, this file
+# changes, never the card; a path is read on the PC Revit runs on.
+#
+# THE ARRANGEMENT: neither card takes a selection; every input is a value.
+# Each negative is a DIFFERENT VALUE, not an empty one (fragment-proving,
+# rules 3 and 5): the IFC file where the point cloud was named, which must
+# link nothing; and logo.png, whose file is gone, where site.png was named -
+# site.png must stay RED. Every write here is ROLLED BACK.
+
+model: "links-mk (nothing linked; scan.rcp and structure.ifc beside it) and images-reload (site.png, plans.pdf page 2, logo.png) - scratch projects, Revit 2024"
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: link-files
+    expect: linkedIds
+    in: "links-mk"
+    set:
+      paths: 'C:\Users\ajmal\AppData\Local\Temp\heron-work\link-mk\scan.rcp'
+      placement: origin
+      viewName: ""
+    negative-set:
+      paths: 'C:\Users\ajmal\AppData\Local\Temp\heron-work\link-mk\structure.ifc'
+      placement: origin
+      viewName: ""
+    note: >
+      MK2. Negative - THE FIRST CASE TO RUN: structure.ifc named, linked 0,
+      report "structure.ifc: an IFC file is not linked here - Revit links an
+      IFC through its IFC add-in (Insert > Link IFC), which first writes a
+      Revit file from it.", Manage Links unchanged. Positive: linked 1,
+      linkedIds one point cloud, report "scan.rcp: linked, origin to origin, a
+      point cloud, its file found.", Manage Links' Point Clouds tab listing
+      scan.rcp. Shared, the second run and the folder are MK3, by hand.
+
+  - fragment: reload-images
+    expect: reloadedIds
+    in: "images-reload"
+    set:
+      names: "site.png"
+    negative-set:
+      names: "logo.png"
+    note: >
+      MK4. Negative - THE FIRST CASE TO RUN: logo.png, whose file was
+      renamed, reloaded 0, skipped "\"logo.png\" (<id>): Revit cannot reload
+      it from ... Left as it was." - and site.png's square in Level 1 still
+      RED. Positive: reloaded 1, reloadedIds site.png's id, report
+      "\"site.png\" (<id>): reloaded, ... - now Loaded, <w> x <h> px (was
+      ...)" and the square GREEN. Every image and Reload From are MK5, by
+      hand.

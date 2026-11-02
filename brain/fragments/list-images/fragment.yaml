@@ -41,11 +41,15 @@ version: 1
 source: OFFICIAL
 risk: READ
 
+# "whether it is loaded" ADDED TO `purpose` 2026-11-02, row 5b-1442: with
+# RELOAD_IMAGES in the library, "are the images loaded" reached that write
+# without the host's question flag. The report already says it on 2021 on.
 purpose: >
   Answers which images and PDF pages the model holds - Revit's Manage Images
   list - each with its name, file path, PDF page, whether it is imported,
-  linked or a saved rendering, its pixel size and DPI, whether its file is
-  found, and how many times and in which views it is placed. It only reads.
+  linked or a saved rendering, its pixel size and DPI, whether it is loaded
+  and its file found, and how many times and in which views it is placed. It
+  only reads.
 
 contract:
   needs:
@@ -99,5 +103,7 @@ compatibility-note: >
 #   "list the renderings saved in the project browser"
 #                                                  -> READ_RENDERED_IMAGES
 #   "which models are linked"                      -> LIST_LINKED_MODELS
+#   "reload the images"                            -> RELOAD_IMAGES, a write
+#                                                     (added 2026-11-02)
 utterances:
   - what images are loaded in this model

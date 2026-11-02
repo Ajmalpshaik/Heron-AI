@@ -1,10 +1,25 @@
 # D-30: the negative case is what catches "succeeded and did nothing".
+#
+# VERSION 2 (2026-11-02) - the point cloud cases at the end of each list.
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING Group MK): the
+# folder below is version 1's - one .rvt and two .dwg - with a small ReCap
+# project "scan.rcp" ADDED to it, and a copy of any small .ifc as
+# "structure.ifc"; both the owner's own test files, never a client's. A
+# scratch project, never a working model. Where the files differ, the job
+# file changes - never the card.
 
 positive:
   - given: paths a folder holding one .rvt and two .dwg files, placement origin, viewName empty
     expect: >
       linked 3, each read back - the Revit link Loaded, the two CAD links in
       the model - and Manage Links listing all three
+
+  - given: paths the full path of scan.rcp, placement origin (VERSION 2)
+    expect: >
+      linked 1; linkedIds one point cloud instance; report "scan.rcp: linked,
+      origin to origin, a point cloud, its file found." Manage Links' Point
+      Clouds tab lists scan.rcp, and the cloud is seen in a 3D view at the
+      place Revit's own Insert > Point Cloud, Auto - Origin to Origin, puts it
 
 negative:
   - given: the same folder straight after
@@ -15,6 +30,33 @@ negative:
     expect: >
       linked 0 and report naming the missing path
 
+  # VERSION 2. The folder now holds scan.rcp and structure.ifc as well, and
+  # neither is gathered: a folder links Revit and CAD files only, as before.
+  - given: paths the same folder, on a fresh copy of the scratch project, placement origin
+    expect: >
+      linked 3 - the .rvt and the two .dwg, exactly version 1's report - and
+      NO point cloud and no IFC: Manage Links' Point Clouds tab empty
+
+  - given: paths the .ifc file named, placement origin
+    expect: >
+      linked 0; report "structure.ifc: an IFC file is not linked here - Revit
+      links an IFC through its IFC add-in (Insert > Link IFC), which first
+      writes a Revit file from it." Nothing in Manage Links. THE FIRST CASE TO
+      RUN
+
+  - given: paths scan.rcp named, placement shared
+    expect: >
+      linked 0; report "scan.rcp: a point cloud is linked origin to origin
+      only - by shared coordinates is not built here, so it was not linked."
+      - never linked origin to origin instead
+
+  - given: paths scan.rcp named a second time, after the positive
+    expect: linked 0 and alreadyLinked naming scan.rcp - one point cloud, not two
+
 second_route:
   - Manage > Manage Links, the Revit and CAD Formats tabs read
   - one Ctrl+Z removes every new link in a single step (Golden Rule 16)
+  - >
+    VERSION 2: Insert > Point Cloud, Auto - Origin to Origin, on scan.rcp in a
+    copy of the same project - the same place in a 3D view, the same row in
+    Manage Links' Point Clouds tab
