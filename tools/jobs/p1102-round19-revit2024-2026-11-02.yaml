@@ -1,0 +1,15 @@
+# Round 19, 2026-11-02 - Revit 2024.3, session 59960. "P1102 Elbow24" = a copy of Revit 2020's US
+# Metric Pipe\Fittings\Generic\M_Elbow - Generic.rfa opened in Revit 2024. With no rule it passes
+# 13 of check-family-standards' checks (read before the run); `namePattern` is a CONTAINS test
+# ("*" is taken literally and fails every family, so it is never used here). Nothing is changed.
+model: "P1102 Elbow24 (a copy of the Revit 2020 US Metric elbow), Revit 2024"
+
+defaults:
+  in: "P1102 Elbow24"
+  setup: []
+
+jobs:
+  - fragment: check-family-standards
+    expect: offStandard
+    set: {namePattern: "TRG_", requiredParameters: "", mustHaveConnectors: false}
+    negative-set: {namePattern: "", requiredParameters: "", mustHaveConnectors: false}
