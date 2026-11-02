@@ -1,0 +1,66 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that adds bars, "added them somewhere nobody chose": a bar in a
+# host Revit will not take, a bar type or shape nobody named, or a set spread
+# a way nobody said.
+# Arrange on the Group HY scratch project (docs/needs-checking/group-hy.md) -
+# NEEDS-CHECKING Group LX. LX1 reads, before anything runs, the bar type and
+# shape names the model has (LIST_REBAR_TYPES) and wall W1's location line and
+# thickness, so the points below are inside it. Where the model differs from
+# that, the job file changes - never the card. EVERY RUN ROLLED BACK, so each
+# case starts from the model as saved.
+
+positive:
+  - given: >
+      wall W1 selected (200 mm structural concrete); barType a loaded bar type
+      LX1 read; shape the straight shape LX1 read (M_00 in a metric template,
+      if that is its name); box two points 1000 mm apart along W1's location
+      line, 1000 mm above its base; spreadToward along the wall; spacing 200;
+      setLength 2000
+    expect: >
+      placed 1 - one rebar set in W1, report "shape '<the shape>', bar type
+      '<the type>', 11 bar(s), maximum spacing, spacing 200 mm", W1's cover
+      named and "not changed"; readBackWrong empty; in an elevation of W1 the
+      bars stand 200 apart over 2000 mm. THIS IS THE FIRST POSITIVE TO RUN
+  - given: >
+      floor S1 selected; barType the same; shape left out; through three
+      points in S1's mid-depth plane making an L, 1500 mm and 800 mm legs
+    expect: >
+      placed 1 - one sketched bar, report "sketched through 3 points", the
+      shape Revit matched or made named, 1 bar (single), and S1's top and
+      bottom cover named and not changed
+  - given: >
+      wall W1, a bent shape LX1 read, box three points at a right angle
+      inside W1's thickness plane
+    expect: >
+      placed 1 - the shape's two sides fitted to the box, its shape read back
+      as the one named
+
+negative:
+  - given: >
+      the steel column N1 selected instead of W1, every other value the first
+      positive's
+    expect: >
+      placed 0; refused "Revit says ... cannot hold rebar - its rebar host
+      check answers no ... Nothing was placed" - Structural Rebar count in
+      {3D} unchanged. THIS IS THE FIRST CASE TO RUN
+  - given: W1 and S1 both selected, the first positive's values
+    expect: placed 0; refused - a bar goes in ONE host
+  - given: the first positive with barType T16 and no bar type named T16
+    expect: placed 0; refused naming the loaded bar types - T16 is never read as 16 mm
+  - given: the first positive with shape a name no loaded shape has
+    expect: placed 0; refused listing the loaded shapes whose name holds what was typed
+  - given: the first positive with spreadToward left out
+    expect: placed 0; refused - which side the set spreads was not said
+  - given: the first positive with spacing 200 and setLength left out
+    expect: placed 0; refused - a spacing over what length or for how many bars
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one operation is one undo entry
+
+second_route:
+  - >
+    Revit's own Structure > Rebar with the same shape and bar type, placed by
+    hand in W1 beside this one, compared in an elevation and in Properties:
+    the same shape, bar type, Layout Rule, Quantity and Bar Spacing
+  - one Ctrl+Z takes the bar or set back in a single step (Golden Rule 16)

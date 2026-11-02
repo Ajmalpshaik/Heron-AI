@@ -1,0 +1,62 @@
+# NEEDS-CHECKING Group LX - PLACE_REBAR, built 2026-11-02 in a cloud session
+# with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/place-rebar-lx-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/place-rebar-lx-2026-11-02.yaml
+#
+# THE MODEL is Group HY's scratch project (docs/needs-checking/group-hy.md) -
+# a new project from Revit's metric STRUCTURAL template in
+# %TEMP%\heron-work\rebar-hy, never a working model. Wall W1 is the
+# positive's host; the steel column N1 the negative's.
+#
+# FOUR VALUES BELOW ARE NOT KNOWN YET, and LX1 in
+# docs/needs-checking/group-lx.md reads them - they are never guessed:
+#   - W1's and N1's element ids (Manage > IDs of Selection), typed in place
+#     of 0000001 and 0000002;
+#   - a loaded bar type and the straight Rebar Shape's exact name
+#     (LIST_REBAR_TYPES), in place of the marked values;
+#   - two points 1000 mm apart on W1's location line, 1000 mm above its base,
+#     in millimetres, in place of the marked box - and spreadToward, the
+#     wall's direction, in place of its marked value.
+# Until they are filled in the run is refused naming what is loaded, or the
+# point text is refused by the binder - expected, NOT RUN.
+#
+# THE NEGATIVE IS A DIFFERENT HOST, NOT AN EMPTY ONE: the steel column N1,
+# every other value the same - Revit's rebar host check answers no, so
+# nothing is placed. The other refusals in the card's tests/cases.yaml are
+# rows LX3 to LX5, run with `validate --write`. Every write here is ROLLED
+# BACK.
+
+model: rebar-hy scratch project (metric structural template), Revit 2020
+
+jobs:
+  - fragment: place-rebar
+    write: true
+    keep-chain: true
+    expect: placed
+    setup: [filter-elements-by-id]
+    setup-set:
+      elementIds: "0000001"
+    negative-setup-set:
+      elementIds: "0000002"
+    set:
+      barType: "THE BAR TYPE LX1 READ"
+      shape: "THE STRAIGHT SHAPE LX1 READ"
+      box: "THE TWO POINTS LX1 READ"
+      spreadToward: "THE WALL DIRECTION LX1 READ"
+      spacing: "200"
+      setLength: "2000"
+    negative-set:
+      barType: "THE BAR TYPE LX1 READ"
+      shape: "THE STRAIGHT SHAPE LX1 READ"
+      box: "THE TWO POINTS LX1 READ"
+      spreadToward: "THE WALL DIRECTION LX1 READ"
+      spacing: "200"
+      setLength: "2000"
+    note: >
+      LX2. Negative - THE FIRST CASE TO RUN: N1, the steel column - placed 0,
+      refused "Revit says ... cannot hold rebar - its rebar host check
+      answers no ... Nothing was placed". Positive: placed 1 - one set in W1,
+      report "shape '<the shape>', bar type '<the type>', 11 bar(s), maximum
+      spacing, spacing 200 mm", W1's cover named and "not changed",
+      readBackWrong empty.
