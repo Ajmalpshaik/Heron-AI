@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -125,24 +125,32 @@ contract:
 # fingerprint no longer describes the code and the card is DRAFT until
 # version 2 is proved on a real model (D-30).
 proof:
-  date: '2026-09-08'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
-  positive_case: run as it would normally be run. returned elements 8 item(s) [L1 - Block
-    35, L1 - Block 37, L1 - Block 43, ...], found 8 item(s) [L1 - Block 43, L2, L1 - Block
-    35, ...], matchedButExcluded 50, notDrawings HashSet`1, skippedNonDrawing 40, skippedTemplates
-    18, wantedName L, wantedType FloorPlan. inputs came viewType as given; nameContains as
-    given. on Snowdon-scratch_ajmal.al
-  negative_case: run with viewType=FloorPlan, nameContains=ZZZNOTHINGHERE instead - chosen
-    because it should not contain what this fragment reports. returned elements 0 item(s),
-    found 0 item(s), matchedButExcluded 0, notDrawings HashSet`1, skippedNonDrawing 40, skippedTemplates
-    18, wantedName ZZZNOTHINGHERE, wantedType FloorPlan. inputs came viewType as given; nameContains
-    as given. on Snowdon-scratch_ajmal.al
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: run as it would normally be run. returned byType 1 entry(ies), elements 20
+    item(s) [Callout of Level 1 HVAC WSHP TYP, Level 1 HVAC Duct Plan, Level 1 HVAC Duct Plan_A,
+    ...], findings 0 item(s), found 20 item(s) [Level 1 HVAC Plan, Level 2 HVAC Plan, Level
+    3 HVAC Plan, ...], matchedButExcluded 9, notDrawings HashSet`1, onSheets 1 item(s) [606890],
+    ordered 20 item(s) [Callout of Level 1 HVAC WSHP TYP, Level 1 HVAC Duct Plan, Level 1
+    HVAC Duct Plan_A, ...], placedCount 23, placedOn 23 entry(ies), schedulesAsked false,
+    skippedInternal 0, skippedNonDrawing 23, skippedTemplates 46, wantedName HVAC, wantedPlacement
+    any, wantedType FloorPlan, withoutTemplate false, working 19. inputs came viewType as
+    given; nameContains as given; placement not given - "any", the card's own default (optional);
+    withoutTemplate not given - false (optional). on P1102 MEP
+  negative_case: run with category=Sheets, nameContains=ZZZNOTHINGHERE, viewType=FloorPlan
+    instead - chosen because it should not contain what this fragment reports. returned byType
+    0 entry(ies), elements 0 item(s), findings 0 item(s), found 0 item(s), matchedButExcluded
+    0, notDrawings HashSet`1, onSheets 0 item(s), ordered 0 item(s), placedCount 23, placedOn
+    23 entry(ies), schedulesAsked false, skippedInternal 0, skippedNonDrawing 23, skippedTemplates
+    46, wantedName ZZZNOTHINGHERE, wantedPlacement any, wantedType FloorPlan, withoutTemplate
+    false, working 0. inputs came viewType as given; nameContains as given; placement not
+    given - "any", the card's own default (optional); withoutTemplate not given - false (optional).
+    on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 05cbe732f6e9e265
-
+  fingerprint: 36569e9e277b0352
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

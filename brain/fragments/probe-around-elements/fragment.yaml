@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -187,33 +187,40 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project2 (3,035 elements), Revit 2020, session 13520
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values. returned MillimetresPerFoot
-    304.8, describeLinked Func`3, fireRatingOf Func`2, hits 1 entry(ies), includeLinks false,
-    intersector ReferenceIntersector, linkBlocked , linkDocs 0 item(s), linkIntersector (null),
-    linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only
-    - links not read], linkedTotal 0, linksSearched 0, maxDistance 9.84251968503937, nestedLinks
-    0, noOrigin 0 item(s), nothingHit 1 item(s) [345451]. inputs came view3d as given; elements
-    from the selection (2); directions as given (1); maxDistance as given; includeLinks not
-    given - false (optional). on Project2
-  negative_case: run with categoryName=Ducts, directions=0,-1,0, inViewOnly=Heron 3D, maxDistance=1,
-    view3d=Heron 3D instead - chosen because it should not contain what this fragment reports
-    - the arrangement was re-made first by running select-by-category-name, set-selection
-    with this phase's own values. returned MillimetresPerFoot 304.8, describeLinked Func`3,
-    fireRatingOf Func`2, hits 0 entry(ies), includeLinks false, intersector ReferenceIntersector,
-    linkBlocked , linkDocs 0 item(s), linkIntersector (null), linkPlacements 0 item(s), linkTypes
-    0 item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0,
-    linksSearched 0, maxDistance 0.00328083989501312, nestedLinks 0, noOrigin 0 item(s), nothingHit
-    2 item(s) [345448, 345451]. inputs came view3d as given; elements from the selection (2);
+    filter-elements-by-category, set-selection with this phase's own values. returned MillimetresPerFoot
+    304.8, blocked 0 item(s), blockedLines 0 item(s), clear 0 item(s), describeLinked Func`3,
+    elementCount 10, findings 0 item(s), fireRatingOf Func`2, hits 7 entry(ies), includeLinks
+    false, intersector ReferenceIntersector, linkBlocked , linkDocs 0 item(s), linkIntersector
+    (null), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model
+    only - links not read], linkedTotal 0, linksSearched 0, maxDistance 16.4041994750656,
+    mmText Func`2, nestedLinks 0, noOrigin 0 item(s), notChecked 0, nothingHit 3 item(s) [411658,
+    411660, 478953], pointList 0 item(s), points 0 item(s), usableDirections 1 item(s) [(0.000000000,
+    0.000000000, 1.000000000)], viewUsable true. inputs came view3d as given; elements from
+    the selection (10); points not given - new List<XYZ>() (optional); directions as given
+    (1); maxDistance as given; includeLinks not given - false (optional). on P1102 MEP
+  negative_case: run with category=Ducts, directions=0,0,1, inViewOnly=Callout of Level 1
+    HVAC WSHP TYP, maxDistance=1, view3d=3D Duct & Equipment instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase's own values. returned MillimetresPerFoot
+    304.8, blocked 0 item(s), blockedLines 0 item(s), clear 0 item(s), describeLinked Func`3,
+    elementCount 10, findings 0 item(s), fireRatingOf Func`2, hits 0 entry(ies), includeLinks
+    false, intersector ReferenceIntersector, linkBlocked , linkDocs 0 item(s), linkIntersector
+    (null), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model
+    only - links not read], linkedTotal 0, linksSearched 0, maxDistance 0.00328083989501312,
+    mmText Func`2, nestedLinks 0, noOrigin 0 item(s), notChecked 0, nothingHit 10 item(s)
+    [404243, 411658, 411660, ...], pointList 0 item(s), points 0 item(s), usableDirections
+    1 item(s) [(0.000000000, 0.000000000, 1.000000000)], viewUsable true. inputs came view3d
+    as given; elements from the selection (10); points not given - new List<XYZ>() (optional);
     directions as given (1); maxDistance as given; includeLinks not given - false (optional).
-    on Project2
+    on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 161659d52b4a2e31
+  fingerprint: 3cccc7fb73de145e
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

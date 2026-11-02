@@ -3,7 +3,7 @@
 # one home and this repository has been bitten by the alternative.
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 7
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -278,39 +278,50 @@ contract:
       # read, and that why something is missing is DIAGNOSE_VISIBILITY's.
       type: IList<string>
 proof:
-  date: '2026-10-06'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project2, Revit 2024, session 51820 - the count is NOT recorded because 1,790 elements
-    was measured on GM_PipeSupport_HexNut, the document in front, and this ran against another
-    one (row 15)
-  positive_case: run as it would normally be run - the arrangement was re-made first by running
-    load-family, place-family-instances with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned category BuiltInCategory,
-    elements 3 item(s) [FamilyInstance, FamilyInstance, FamilyInstance], hostLevelName Level
-    1, includeLinks false, levelOf Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM,
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: run as it would normally be run. returned askedLevel (null), byName , category
+    BuiltInCategory, categoryOf Func`2, elements 10 item(s) [Mitered Elbows / Taps, Mitered
+    Elbows / Taps, Mitered Elbows / Taps, ...], everyCategory false, examined 10, findings
+    3 item(s) [10 element(s), within Ducts, Read through view 'Callout of Level 1 HVAC WSHP
+    TYP'. This i..., Something expected and missing is a question for DIAGNOSE_VI...], found
+    10, hostLevelName (null), inModel 0, includeLinks false, isModelElement Func`2, levelGiven
+    false, levelOf Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM,
+    LEVEL_PARAM, ...], linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkThroughView
+    (null), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
+    linkedTotal 0, linksSearched 0, matching 10 item(s) [Mitered Elbows / Taps, Mitered Elbows
+    / Taps, Mitered Elbows / Taps, ...], modelOnly false, nameMissed false, namedCategory
+    (null), nearMisses 0 item(s), nestedLinks 0, notShowingIn (null), ofWanted Func`2, perCategory
+    1 entry(ies), resolvedNames 1 item(s) [Ducts], resolvedTo Ducts, safeLevelOf Func`2, scope
+    , within Ducts, showing 0, unresolvedLevel 0, wanted 1 item(s) [OST_DuctCurves], withoutLevel
+    false. inputs came category as given; categories not given - "INVALID", the card's own
+    default (optional); categoryName not given - "none", the card's own default (optional);
+    levelId not given - "none", the card's own default (optional); inViewOnly as given; notShowingIn
+    not given - null (optional); withoutLevel not given - false (optional); includeLinks not
+    given - false (optional). on P1102 MEP
+  negative_case: run with category=Ducts, inViewOnly=Level 1 - Lighting Plan instead - chosen
+    because it should not contain what this fragment reports. returned askedLevel (null),
+    byName , category BuiltInCategory, categoryOf Func`2, elements 0 item(s), everyCategory
+    false, examined 0, findings 3 item(s) [0 element(s), within Ducts, Read through view 'Level
+    1 - Lighting Plan'. This is what th..., Something expected and missing is a question for
+    DIAGNOSE_VI...], found 0, hostLevelName (null), inModel 0, includeLinks false, isModelElement
+    Func`2, levelGiven false, levelOf Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM,
     SCHEDULE_LEVEL_PARAM, LEVEL_PARAM, ...], linkBlocked , linkDocs 0 item(s), linkPlacements
-    0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
-    linkedTotal 0, linksSearched 0, matching 3 item(s) [FamilyInstance, FamilyInstance, FamilyInstance],
-    nestedLinks 0, unresolvedLevel 0. inputs came category as given; levelId as given; includeLinks
-    not given - false (optional). on Project2
-  negative_case: 'run with familyPath=C:/ProgramData/Autodesk/RVT 2020/Libraries/US Metric/Mechanical/MEP/Air-Side
-    Components/Air Terminals/M_Supply Diffuser - Circular - Round Neck - Ceiling Mounted.rfa,
-    symbol=M_Supply Diffuser - Circular - Round Neck - Ceiling Mounted: 250 mm Face 125 mm
-    Neck, points=2000,2000,3000; 4000,2000,3000; 6000,2000,3000, level=Level 1, category=Air
-    Terminals, levelId=Level 2 instead - chosen because it should not contain what this fragment
-    reports - the arrangement was re-made first by running load-family, place-family-instances
-    with this phase''s own values - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned category BuiltInCategory, elements 0 item(s), hostLevelName
-    Level 2, includeLinks false, levelOf Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM,
-    SCHEDULE_LEVEL_PARAM, LEVEL_PARAM, ...], linkBlocked , linkDocs 0 item(s), linkPlacements
-    0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
-    linkedTotal 0, linksSearched 0, matching 3 item(s) [FamilyInstance, FamilyInstance, FamilyInstance],
-    nestedLinks 0, unresolvedLevel 0. inputs came category as given; levelId as given; includeLinks
-    not given - false (optional). on Project2'
+    0 item(s), linkThroughView (null), linkTypes 0 item(s), linkedMatches 1 item(s) [Host
+    model only - links not read], linkedTotal 0, linksSearched 0, matching 0 item(s), modelOnly
+    false, nameMissed false, namedCategory (null), nearMisses 0 item(s), nestedLinks 0, notShowingIn
+    (null), ofWanted Func`2, perCategory 1 entry(ies), resolvedNames 1 item(s) [Ducts], resolvedTo
+    Ducts, safeLevelOf Func`2, scope , within Ducts, showing 0, unresolvedLevel 0, wanted
+    1 item(s) [OST_DuctCurves], withoutLevel false. inputs came category as given; categories
+    not given - "INVALID", the card's own default (optional); categoryName not given - "none",
+    the card's own default (optional); levelId not given - "none", the card's own default
+    (optional); inViewOnly as given; notShowingIn not given - null (optional); withoutLevel
+    not given - false (optional); includeLinks not given - false (optional). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 492d8e1fd3344327
+  fingerprint: c826f2c0535e4652
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

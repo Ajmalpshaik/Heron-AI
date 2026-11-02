@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -205,34 +205,45 @@ contract:
       type: int
 
 proof:
-  date: '2026-10-28'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: 4355-BHVD-3D-21S10-BL001A, Revit 2020, session 33972 - the count is NOT recorded
-    because 3,174 elements was measured on Project1, the document in front, and this ran against
-    another one (row 15)
-  positive_case: run as it would normally be run. returned ambiguous 0, elements 1 item(s)
-    [1], findings 1 item(s) [1 of 15 scanned element(s) match Name equals '1'. 0 do not c...],
-    includeLinks false, includeTypeParameters false, knownModes 6 item(s) [contains, equals,
-    begins, ...], linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0
-    item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched
-    0, mode equals, needle 1, nestedLinks 0, wantName Name, withoutParameter 0. inputs came
-    parameterName as given; matchText as given; matchMode as given; includeTypeParameters
-    as given; categories as given (1); includeLinks as given. on 4355-BHVD-3D-21S10-BL001A
-  negative_case: run against '4355-BHVD-3D-21S10-BL001A' with categories=Grids, includeLinks=False,
-    includeTypeParameters=False, matchMode=exact, matchText=ZZZNOTHINGHERE, parameterName=Name
-    instead - chosen because it should not contain what this fragment reports. returned ambiguous
-    0, elements 0 item(s), findings 1 item(s) [0 of 15 scanned element(s) match Name equals
-    'ZZZNOTHINGHERE...], includeLinks false, includeTypeParameters false, knownModes 6 item(s)
-    [contains, equals, begins, ...], linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s),
-    linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal
-    0, linksSearched 0, mode equals, needle ZZZNOTHINGHERE, nestedLinks 0, wantName Name,
-    withoutParameter 0. inputs came parameterName as given; matchText as given; matchMode
-    as given; includeTypeParameters as given; categories as given (1); includeLinks as given.
-    on 4355-BHVD-3D-21S10-BL001A
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: run as it would normally be run. returned MillimetresPerFoot 304.8, ambiguous
+    0, compareValue NaN, compareValueMax NaN, elements 372 item(s) [Mitered Elbows / Taps,
+    Mitered Elbows / Taps, Mitered Elbows / Taps, ...], exactMatch false, findings 1 item(s)
+    [372 of 728 scanned element(s) match System Type contains 'Su...], found 372, includeLinks
+    false, includeTypeParameters false, knownModes 6 item(s) [contains, equals, begins, ...],
+    linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches
+    1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched 0, lowValue
+    NaN, matchedFamilies 2 entry(ies), mode contains, namingFamily false, needle Supply, nestedLinks
+    0, notNumeric 0, numeric false, numericModes 7 item(s) [gt, gte, lt, ...], scannedWholeModel
+    false, slack 0.00328083989501312, tolerance 0, typedIsNumber false, typedNumber 0, wantName
+    System Type, withoutParameter 0. inputs came parameterName as given; matchText as given;
+    matchMode as given; includeTypeParameters as given; categories as given (1); includeLinks
+    as given; exactMatch not given - false (optional); compareValue not given - "NaN", the
+    card's own default (optional); compareValueMax not given - "NaN", the card's own default
+    (optional); tolerance not given - "0", the card's own default (optional). on P1102 MEP
+  negative_case: run with categories=Ducts, category=Sheets, includeLinks=false, includeTypeParameters=false,
+    matchMode=contains, matchText=ZZZNOTHINGHERE, parameterName=System Type instead - chosen
+    because it should not contain what this fragment reports. returned MillimetresPerFoot
+    304.8, ambiguous 0, compareValue NaN, compareValueMax NaN, elements 0 item(s), exactMatch
+    false, findings 1 item(s) [0 of 728 scanned element(s) match System Type contains 'ZZZN...],
+    found 0, includeLinks false, includeTypeParameters false, knownModes 6 item(s) [contains,
+    equals, begins, ...], linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes
+    0 item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0,
+    linksSearched 0, lowValue NaN, matchedFamilies 0 entry(ies), mode contains, namingFamily
+    false, needle ZZZNOTHINGHERE, nestedLinks 0, notNumeric 0, numeric false, numericModes
+    7 item(s) [gt, gte, lt, ...], scannedWholeModel false, slack 0.00328083989501312, tolerance
+    0, typedIsNumber false, typedNumber 0, wantName System Type, withoutParameter 0. inputs
+    came parameterName as given; matchText as given; matchMode as given; includeTypeParameters
+    as given; categories as given (1); includeLinks as given; exactMatch not given - false
+    (optional); compareValue not given - "NaN", the card's own default (optional); compareValueMax
+    not given - "NaN", the card's own default (optional); tolerance not given - "0", the card's
+    own default (optional). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 08d9b88d796171a1
+  fingerprint: 2b8b88e3592f3ab5
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -145,35 +145,38 @@ contract:
 # SELECT_BY_NUMERIC_PARAMETER - a circle, not the 77.25 m2 20-sided polygon.
 # Version 1's proof (2026-09-10) described the code before arcs (row 5b-1216).
 proof:
-  date: '2026-10-19'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: HM floor test (2,943 elements), Revit 2020, session 15072
-  positive_case: run ONCE on the live model through the Keep or Discard box in Revit (D-119)
-    on 2026-10-19; the modeller saw the result in Revit and pressed Keep, and Revit kept it
-    as one undo step. returned MillimetresPerFoot 304.8, arcs 2, corners 2 item(s) [(16.404199475,
-    196.850393701, 0.000000000), (-16.404199475, 196.850393701, 0.000000000)], created 1 item(s)
-    [id 345453], creation Document, findings 2 item(s) [Floor created on 'Level 1' using the
-    pre-2022 call. It is a ..., 2 of its 2 edges are arcs. Its Area in Properties is measure...],
-    invariant CultureInfo, mm Func`2, newStyle (null), numbers Func`2, oldStyle RuntimeMethodInfo,
-    pointOf Func`3, problem (null), shortest 0.00256026455729167, through 2 item(s) [(0.000000000,
-    213.254593176, 0.000000000), (0.000000000, 180.446194226, 0.000000000)]. inputs came level
-    as given; floorType as given; boundary as given. on HM floor test
-  negative_case: run with level=Level 1, floorType=Generic 300mm, boundary=5000,60000,0; arc
-    0,60000 -5000,60000; arc 0,55000 5000,60000 instead - chosen because it should not contain
-    what this fragment reports - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, arcs 2, corners 2 item(s)
-    [(16.404199475, 196.850393701, 0.000000000), (-16.404199475, 196.850393701, 0.000000000)],
-    created (null), creation Document, findings 1 item(s) [The arc from 5000,60000 through
-    0,60000 to -5000,60000 is no...], invariant CultureInfo, mm Func`2, newStyle (null), numbers
-    Func`2, oldStyle RuntimeMethodInfo, pointOf Func`3, problem The arc from 5000,60000 through
-    0,60000 to -5000,60000 is not an arc - its three points are in a line, or two are in the
-    same place., shortest 0.00256026455729167, through 2 item(s) [(0.000000000, 196.850393701,
-    0.000000000), (0.000000000, 180.446194226, 0.000000000)]. inputs came level as given;
-    floorType as given; boundary as given. on HM floor test
+  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, arcs
+    0, asCeiling false, asFloor FloorType, asRoof (null), ceilingCategory Category, ceilingClass
+    RuntimeType, ceilingCreate (null), corners 4 item(s) [(0.000000000, -196.850393701, 0.000000000),
+    (16.404199475, -196.850393701, 0.000000000), (16.404199475, -180.446194226, 0.000000000),
+    ...], created 1 item(s) [id 1020212], creation Document, edges 0, findings 1 item(s) [Floor
+    created on ''Level 1'' using the pre-2022 call. It is a ...], heightAboveLevel NaN, heightAsked
+    false, heightFeet 0, invariant CultureInfo, kindWord floor, measuredMm , mm Func`2, newStyle
+    (null), numbers Func`2, oldStyle RuntimeMethodInfo, pointOf Func`3, problem (null), shortest
+    0.00256026455729167, through 4 item(s) [(null), (null), (null), ...], typeShown Floor:
+    STB 20.0. inputs came level as given; floorType as given; boundary as given; heightAboveLevel
+    not given - "NaN", the card''s own default (optional). on P1102 MEP'
+  negative_case: 'run with boundary=0,-60000,0; 5000,-60000,0, floorType=Floor: STB 20.0,
+    level=Level 1 instead - chosen because it should not contain what this fragment reports
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned MillimetresPerFoot 304.8, arcs 0, asCeiling false, asFloor FloorType, asRoof
+    (null), ceilingCategory Category, ceilingClass RuntimeType, ceilingCreate (null), corners
+    2 item(s) [(0.000000000, -196.850393701, 0.000000000), (16.404199475, -196.850393701,
+    0.000000000)], created (null), creation Document, edges 0, findings 1 item(s) [A floor
+    needs at least three boundary points and 2 were give...], heightAboveLevel NaN, heightAsked
+    false, heightFeet 0, invariant CultureInfo, kindWord floor, measuredMm , mm Func`2, newStyle
+    (null), numbers Func`2, oldStyle RuntimeMethodInfo, pointOf Func`3, problem (null), shortest
+    0.00256026455729167, through 2 item(s) [(null), (null)], typeShown Floor: STB 20.0. inputs
+    came level as given; floorType as given; boundary as given; heightAboveLevel not given
+    - "NaN", the card''s own default (optional). on P1102 MEP'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: afec7d7a9549e170
+  fingerprint: db997d34c6317f6a
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

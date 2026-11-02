@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -90,6 +90,55 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: 'run as it would normally be run. returned M2PerFt2 0.09290304, M3PerFt3
+    0.028316846592, MmPerFoot 304.8, asked 0 item(s), byLevel 0 entry(ies), byLevelHeight
+    0 entry(ies), byUsage 0 entry(ies), coverage 0, culture CultureInfo, elements 6 item(s)
+    [Sporthalle, Giebel, Giebel, ...], findings 14 item(s) [6 mass(es); Gross Floor Area 0.00
+    m2 in all., Plot ratio (FAR) 0.00 on a site of 4500.00 m2; site coverage..., mass 579452
+    "Sporthalle1 : Sporthalle" (in-place): Gross Vol..., ...], found 6 item(s) [Sporthalle,
+    Giebel, Giebel, ...], grossFloorAreaM2 0, levelElevation 4 entry(ies), levelName 4 entry(ies),
+    lines 12 item(s) [mass 579452 "Sporthalle1 : Sporthalle" (in-place): Gross Vol...,   no
+    mass floors - its Gross Floor Area stays 0 until CREATE..., mass 579920 "Giebel : Giebel"
+    (loaded family): Gross Volume ..., ...], m2 Func`2, m3 Func`2, massCount 6, mm Func`2,
+    options Options, outlineCount 0, overlapPairs 0, report mass 579452 "Sporthalle1 : Sporthalle"
+    (in-place): Gross Volume 2572.77 m3, Gross Surface Area 1406.29 m2, Gross Floor Area 0.00
+    m2, base 94 mm, top 5795 mm, height 5700 mm. |   no mass floors - its Gross Floor Area
+    stays 0 until CREATE_MASS_FLOORS adds them. | mass 579920 "Giebel : Giebel" (loaded family):
+    Gross Volume 769.88 m3, Gross Surface Area 525.52 m2, Gross Floor Area 0.00 m2, base 94
+    mm, top 9094 mm, height 9000 mm. |   no mass floors - its Gross Floor Area stays 0 until
+    CREATE_MASS_FLOORS adds them. | mass 579921 "Giebel : Giebel" (loaded family): Gross Volume
+    769.88 m3, Gross Surface Area 525.52 m2, Gross Floor Area 0.00 m2, base 94 mm, top 9094
+    mm, height 9000 mm. |   no mass floors - its Gross Floor Area stays 0 until CREATE_MASS_FLOORS
+    adds them. | mass 579922 "Giebel : Giebel" (loaded family): Gross Volume 769.88 m3, Gross
+    Surface Area 525.52 m2, Gross Floor Area 0.00 m2, base 94 mm, top 9094 mm, height 9000
+    mm. |   no mass floors - its Gross Floor Area stays 0 until CREATE_MASS_FLOORS adds them.
+    | mass 579923 "Giebel : Giebel" (loaded family): Gross Volume 769.88 m3, Gross Surface
+    Area 525.52 m2, Gross Floor Area 0.00 m2, base 94 mm, top 9094 mm, height 9000 mm. |   no
+    mass floors - its Gross Floor Area stays 0 until CREATE_MASS_FLOORS adds them. | mass
+    579943 "Körper 2 : Körper 1" (in-place): Gross Volume 28357.76 m3, Gross Surface Area
+    11641.74 m2, Gross Floor Area 0.00 m2, base 94 mm, top 8094 mm, height 8000 mm. |   no
+    mass floors - its Gross Floor Area stays 0 until CREATE_MASS_FLOORS adds them., siteM2
+    4500, siteText 4500, solidsByMass 6 entry(ies), solidsOf Func`2, withOutlines false. inputs
+    came masses as given; siteArea as given; withOutlines as given. on P1102 MEP'
+  negative_case: run with masses=NoSuchFamily, siteArea=4500, withOutlines=False instead -
+    chosen because it should not contain what this fragment reports. returned M2PerFt2 0.09290304,
+    M3PerFt3 0.028316846592, MmPerFoot 304.8, asked 1 item(s) [NoSuchFamily], byLevel 0 entry(ies),
+    byLevelHeight 0 entry(ies), byUsage 0 entry(ies), coverage 0, culture CultureInfo, elements
+    0 item(s), findings 2 item(s) [0 mass(es); Gross Floor Area 0.00 m2 in all., No mass matched
+    "NoSuchFamily" - an id, or words of its fami...], found 0 item(s), grossFloorAreaM2 0,
+    levelElevation 4 entry(ies), levelName 4 entry(ies), lines 0 item(s), m2 Func`2, m3 Func`2,
+    massCount 0, mm Func`2, options Options, outlineCount 0, overlapPairs 0, report , siteM2
+    4500, siteText 4500, solidsByMass 0 entry(ies), solidsOf Func`2, withOutlines false. inputs
+    came masses as given; siteArea as given; withOutlines as given. on P1102 MEP
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 346e541441582bad
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

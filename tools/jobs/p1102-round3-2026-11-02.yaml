@@ -1,0 +1,210 @@
+# Round 3, 2026-11-02 - Revit 2020, "P1102 MEP" = a copy of Revit 2020's own
+# Samples\rme_advanced_sample_project.rvt in %TEMP%\heron-work\prove-1102 (scratch).
+# Round 2's re-arrangements, then the first MODIFY tools. Every MODIFY run is ROLLED BACK.
+# Callout "Callout of Level 1 HVAC WSHP TYP": 10 ducts, 9 duct fittings, 2 air terminals.
+# Types read before the run with select-types: walls "Basic Wall: Exterior - Brick on Mtl.
+# Stud", floors "Floor: STB 20.0", title block "A0 metric", curtain "Curtain Wall: Standard".
+model: "P1102 MEP (copy of rme_advanced_sample_project.rvt), Revit 2020"
+
+defaults:
+  in: "P1102 MEP"
+  setup: []
+
+jobs:
+  # ---- reads, re-arranged after round 2 ------------------------------------
+  - fragment: find-clashes
+    setup: [filter-elements-by-category, set-selection]
+    expect: clashes
+    set: {category: "Ducts", levelId: "Level 1", against: "", includeLinks: false, categories: "Walls", includeHost: true, compareParameter: "none"}
+    negative-set: {category: "Ducts", levelId: "Level 1", against: "", includeLinks: false, categories: "Furniture", includeHost: true, compareParameter: "none"}
+
+  - fragment: check-minimum-clearance
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: tooClose
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", defaultClearance: 5000, rules: "", includeInsulation: false}
+    negative-set: {category: "Sheets", defaultClearance: 5000, rules: "", includeInsulation: false}
+
+  - fragment: list-materials
+    expect: materialCount
+    set: {withAllTabs: false, namePattern: "*"}
+    negative-set: {withAllTabs: false, namePattern: "ZZZ*"}
+
+  - fragment: report-masses
+    expect: massCount
+    set: {masses: "", siteArea: "4500", withOutlines: false}
+    negative-set: {masses: "NoSuchFamily", siteArea: "4500", withOutlines: false}
+
+  - fragment: find-purgeable-elements
+    expect: perFamily
+    set: {categories: ""}
+    negative-set: {categories: "Rooms"}
+
+  # ---- MODIFY on the callout's ducts ----------------------------------------
+  - fragment: move-elements
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: moved
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", offset: "1000,0,0"}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", offset: "0,0,0"}
+
+  - fragment: rotate-elements
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: rotated
+    set: {category: "Air Terminals", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", angleRadians: 0.5, pivot: "0,0,0"}
+    negative-set: {category: "Air Terminals", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", angleRadians: 0, pivot: "0,0,0"}
+
+  - fragment: copy-elements
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: copies
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", offset: "1000,0,0", toLevels: "", turnDegrees: "", turnCentreMm: "", toWorkset: ""}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", offset: "0,0,0", toLevels: "Level 99", turnDegrees: "", turnCentreMm: "", toWorkset: ""}
+
+  - fragment: change-element-type
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: changed
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", newTypeId: "Rectangular Duct: Mitered Elbows / Tees"}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", newTypeId: "Floor: STB 20.0"}
+
+  - fragment: set-mep-justification
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: set
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", horizontalOffsetMm: 50, verticalOffsetMm: 50}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", horizontalOffsetMm: 0, verticalOffsetMm: 0}
+
+  - fragment: write-element-parameters
+    write: true
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: written
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", parameterName: "Comments", value: "P1102 proof"}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", parameterName: "Zz No Such Parameter", value: "P1102 proof"}
+
+  - fragment: set-element-level
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: moved
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", newLevel: "Level 2"}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", newLevel: "Level 1"}
+
+  - fragment: override-graphics-in-view
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: overridden
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", view: "Callout of Level 1 HVAC WSHP TYP", overrides: "halftone=true; transparency=50"}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", view: "Space Schedule", overrides: "halftone=true; transparency=50"}
+
+  - fragment: set-view-crop
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: applied
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", view: "Level 1 HVAC Plan", marginMm: 500}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", view: "Space Schedule", marginMm: 500}
+
+  - fragment: tag-elements-in-view
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: tagged
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", view: "Callout of Level 1 HVAC WSHP TYP", leader: "none", minLengthMm: 100, leaderOffsetMm: 0, tagTypeHintId: "none"}
+    negative-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", view: "Callout of Level 1 HVAC WSHP TYP", leader: "none", minLengthMm: 100000, leaderOffsetMm: 0, tagTypeHintId: "none"}
+
+  - fragment: dimension-element-faces
+    write: true
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: created
+    set: {category: "Walls", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", view: "Callout of Level 1 HVAC WSHP TYP", direction: "across", offsetMm: 0}
+    negative-set: {category: "Walls", inViewOnly: "Callout of Level 1 HVAC WSHP TYP", view: "3D Duct & Equipment", direction: "across", offsetMm: 0}
+
+  # ---- MODIFY with no selection ---------------------------------------------
+  - fragment: create-levels
+    write: true
+    expect: created
+    set: {elevations: "15000,18000", names: "HERON L15,HERON L18"}
+    negative-set: {elevations: "", names: ""}
+
+  - fragment: create-grids
+    write: true
+    expect: created
+    set: {origin: "0,-60000,0", spacingsAcross: "6000,6000", spacingsUp: "6000,6000", firstLetter: "Q", firstNumber: 91}
+    negative-set: {origin: "0,-60000,0", spacingsAcross: "", spacingsUp: "", firstLetter: "Q", firstNumber: 91}
+
+  - fragment: create-floor
+    write: true
+    expect: created
+    set: {level: "Level 1", floorType: "STB 20.0", boundary: "0,-60000,0; 5000,-60000,0; 5000,-55000,0; 0,-55000,0"}
+    negative-set: {level: "Level 1", floorType: "STB 20.0", boundary: "0,-60000,0; 5000,-60000,0"}
+
+  - fragment: create-room-separation-lines
+    write: true
+    expect: created
+    set: {view: "Level 1 HVAC Plan", points: "0,-60000,0; 5000,-60000,0", lineKind: "room"}
+    negative-set: {view: "Level 1 HVAC Plan", points: "0,-60000,0", lineKind: "room"}
+
+  - fragment: create-sheets
+    write: true
+    expect: created
+    set: {numbers: "HZ-901", names: "HERON TEST SHEET", titleBlockName: "A0 metric"}
+    negative-set: {numbers: "HZ-902", names: "HERON TEST SHEET", titleBlockName: "NoSuchTitleBlockAnywhere"}
+
+  - fragment: create-schedule
+    write: true
+    expect: created
+    set: {categoryId: "Ducts", fieldNames: "Family and Type,Length", scheduleName: "HERON TEST SCHEDULE"}
+    negative-set: {categoryId: "Views", fieldNames: "Family and Type,Length", scheduleName: "HERON TEST SCHEDULE 2"}
+
+  - fragment: create-starter-materials
+    write: true
+    expect: createdMaterialIds
+    set: {namePrefix: "P1102_", starterPick: "glass; copper"}
+    negative-set: {namePrefix: "P1102_", starterPick: "granite"}
+
+  - fragment: create-view-filter
+    write: true
+    expect: created
+    set: {view: "3D Duct & Equipment", filterName: "HERON PROOF CVF Levels", categoryIds: "Levels", parameterName: "Name", matchValue: "does not contain Level 1", moreRules: "", combine: "", colour: "255,0,0"}
+    negative-set: {view: "3D Duct & Equipment", filterName: "HERON PROOF CVF Levels", categoryIds: "Levels", parameterName: "System Classification", matchValue: "does not contain Level 1", moreRules: "", combine: "", colour: "255,0,0"}
+
+  - fragment: create-phase-filter
+    write: true
+    expect: created
+    set: {filterName: "As-Built", newDisplay: "By Category", existingDisplay: "By Category", demolishedDisplay: "Not Displayed", temporaryDisplay: "Not Displayed"}
+    negative-set: {filterName: "Show Complete", newDisplay: "Not Displayed"}
+
+  - fragment: set-view-properties
+    write: true
+    expect: changed
+    set: {views: "Level 1 HVAC Plan", detailLevel: "Fine"}
+    negative-set: {views: "Level 1 HVAC Plan", detailLevel: "Finest"}
+
+  - fragment: copy-graphic-display-options
+    write: true
+    expect: viewsCopied
+    set: {sourceView: "Level 1 HVAC Plan", targetViews: "Level 2 HVAC Plan"}
+    negative-set: {sourceView: "Level 1 HVAC Plan", targetViews: "Space Schedule"}
+
+  - fragment: duplicate-views
+    write: true
+    setup: [find-views]
+    keep-chain: true
+    expect: duplicated
+    set: {viewType: "FloorPlan", nameContains: "Level 1 HVAC Plan", duplicateOption: "Duplicate"}
+    negative-set: {viewType: "FloorPlan", nameContains: "Level 1 HVAC Plan", duplicateOption: "ZZZNOTANOPTION"}
+
+  - fragment: add-curtain-grid-lines
+    write: true
+    setup: [create-wall]
+    expect: added
+    set: {level: "Level 1", wallType: "Curtain Wall: Standard", points: "0,-60000,0; 9000,-60000,0", height: "3000", structural: "false", direction: "vertical", positions: "equal 6"}
+    negative-set: {level: "Level 1", wallType: "Basic Wall: Exterior - Brick on Mtl. Stud", points: "0,-60000,0; 9000,-60000,0", height: "3000", structural: "false", direction: "vertical", positions: "equal 6"}
+
+  - fragment: set-curtain-wall-grid
+    write: true
+    setup: [create-wall]
+    expect: applied
+    set: {level: "Level 1", wallType: "Curtain Wall: Standard", points: "0,-60000,0; 9000,-60000,0", height: "3000", structural: "false", curtainWallType: "Curtain Wall: Standard", grid: "vertical layout=fixed distance; vertical spacing=2500; horizontal layout=fixed distance; horizontal spacing=4000"}
+    negative-set: {level: "Level 1", wallType: "Curtain Wall: Standard", points: "0,-60000,0; 9000,-60000,0", height: "3000", structural: "false", curtainWallType: "Curtain Wall: No Such Type", grid: "vertical layout=fixed distance; vertical spacing=2500"}

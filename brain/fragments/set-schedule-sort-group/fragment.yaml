@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -173,41 +173,60 @@ contract:
       type: string
 
 proof:
-  date: '2026-09-09'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 43652
+  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase''s own values - run inside a transaction
-    and ROLLED BACK, so the model was left exactly as it was. returned appliedOrder 1 item(s)
-    [''Heat Recovery Unit Summary'': Mark ascending; every element ...], askedFor 1, cannotSortBy
-    0 item(s), descending false, handed 3, itemized true, notPresent 2 item(s) [''Mark'' on
-    ''Space Schedule'' - not a column in this schedule, ..., ''Mark'' on ''<Revision Schedule>
-    15'' - not a column in this sc...], refused (null), replacedRules 2 item(s) [''Heat Recovery
-    Unit Summary'' was sorted by Level ascending, ''Heat Recovery Unit Summary'' was sorted
-    by Mark ascending], scheduleBehind Func`2, schedulesSeen 3, showFooter false, showGrandTotal
-    false, showHeader false, sorted 1. inputs came elements from the selection (3); sortFieldNames
-    as given (1); descending as given; showHeader as given; showFooter as given; showGrandTotal
-    as given; itemized as given. on Snowdon-scratch_ajmal.al'
-  negative_case: run with categoryName=Title Blocks, descending=False, inViewOnly=Notes, Symbols
-    & Schedules, itemized=True, showFooter=False, showGrandTotal=False, showHeader=False,
-    sortFieldNames=Mark instead - chosen because it should not contain what this fragment
-    reports - the arrangement was re-made first by running select-by-category-name, set-selection
-    with this phase's own values - run inside a transaction and ROLLED BACK, so the model
-    was left exactly as it was. returned appliedOrder 0 item(s), askedFor 1, cannotSortBy
-    0 item(s), descending false, handed 1, itemized true, notPresent 0 item(s), refused not
-    one of the 1 element(s) handed in is a schedule, so NOTHING WAS SORTED. A schedule is
-    a VIEW and cannot be selected in the model; what CAN be selected is a schedule PLACED
-    ON A SHEET, which this now reads through to the schedule behind it. Click the schedule
-    on the sheet, or select the category 'Schedule Graphics', replacedRules 0 item(s), scheduleBehind
-    Func`2, schedulesSeen 0, showFooter false, showGrandTotal false, showHeader false, sorted
-    0. inputs came elements from the selection (1); sortFieldNames as given (1); descending
-    as given; showHeader as given; showFooter as given; showGrandTotal as given; itemized
-    as given. on Snowdon-scratch_ajmal.al
+    find-views with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned accepted ascending, descending,
+    header, no header, footer, no footer, footer title, no footer title, footer count, no
+    footer count, blank line, no blank line, anyFooter false, appliedOrder 1 item(s) [''Level
+    2 Space Schedule'': Room: Name descending, no header, ...], askedFor 1, cannotSortBy 0
+    item(s), descending true, footerAt Func`2, handed 2, itemized true, levelBlankLine 1 item(s)
+    [(null)], levelDescending 1 item(s) [(null)], levelFooter 1 item(s) [(null)], levelFooterCount
+    1 item(s) [(null)], levelFooterTitle 1 item(s) [(null)], levelHeader 1 item(s) [(null)],
+    levelsText , notPresent 1 item(s) [''Room: Name'' on ''Space Schedule'' - not a column
+    in this sche...], onOff Func`2, problems 0 item(s), refused (null), replacedRules 1 item(s)
+    [''Level 2 Space Schedule'' was sorted by Room: Number ascendin...], scheduleBehind Func`2,
+    schedulesSeen 2, showFooter false, showGrandTotal true, showHeader false, sorted 1, tidy
+    Func`2, titleText , wantBlankLine (null), wantFooterCount (null), wantFooterTitle (null),
+    wantGrandCount (null), wantGrandTitleShown (null), yesNo Func`3. inputs came elements
+    from find-views (2); sortFieldNames as given (1); descending as given; showHeader as given;
+    showFooter as given; showGrandTotal as given; itemized as given; showFooterTitle not given
+    - "leave", the card''s own default (optional); showFooterCount not given - "leave", the
+    card''s own default (optional); showBlankLine not given - "leave", the card''s own default
+    (optional); levelOptions not given - "none", the card''s own default (optional); grandTotalTitle
+    not given - "leave", the card''s own default (optional); showGrandTotalTitle not given
+    - "leave", the card''s own default (optional); showGrandTotalCount not given - "leave",
+    the card''s own default (optional). on P1102 MEP'
+  negative_case: run with descending=true, itemized=true, showFooter=false, showGrandTotal=true,
+    showHeader=false, sortFieldNames=ZZZ NO SUCH COLUMN arranged with nameContains=Space Schedule,
+    viewType=Schedule instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running find-views with this phase's own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned accepted ascending, descending, header, no header, footer, no footer, footer
+    title, no footer title, footer count, no footer count, blank line, no blank line, anyFooter
+    false, appliedOrder 0 item(s), askedFor 1, cannotSortBy 0 item(s), descending true, footerAt
+    Func`2, handed 2, itemized true, levelBlankLine 1 item(s) [(null)], levelDescending 1
+    item(s) [(null)], levelFooter 1 item(s) [(null)], levelFooterCount 1 item(s) [(null)],
+    levelFooterTitle 1 item(s) [(null)], levelHeader 1 item(s) [(null)], levelsText , notPresent
+    2 item(s) ['ZZZ NO SUCH COLUMN' on 'Level 2 Space Schedule' - not a col..., 'ZZZ NO SUCH
+    COLUMN' on 'Space Schedule' - not a column in t...], onOff Func`2, problems 0 item(s),
+    refused (null), replacedRules 0 item(s), scheduleBehind Func`2, schedulesSeen 2, showFooter
+    false, showGrandTotal true, showHeader false, sorted 0, tidy Func`2, titleText , wantBlankLine
+    (null), wantFooterCount (null), wantFooterTitle (null), wantGrandCount (null), wantGrandTitleShown
+    (null), yesNo Func`3. inputs came elements from find-views (2); sortFieldNames as given
+    (1); descending as given; showHeader as given; showFooter as given; showGrandTotal as
+    given; itemized as given; showFooterTitle not given - "leave", the card's own default
+    (optional); showFooterCount not given - "leave", the card's own default (optional); showBlankLine
+    not given - "leave", the card's own default (optional); levelOptions not given - "none",
+    the card's own default (optional); grandTotalTitle not given - "leave", the card's own
+    default (optional); showGrandTotalTitle not given - "leave", the card's own default (optional);
+    showGrandTotalCount not given - "leave", the card's own default (optional). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 16a37a01e7dc2e41
-
+  fingerprint: 62c4917724e3abc5
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

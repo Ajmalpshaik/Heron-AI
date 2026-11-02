@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -102,26 +102,31 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-13'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: test projject (3,432 elements), Revit 2024, session 40932
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-in-region, set-selection with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyThatType
-    0, changed 4, refused 0 item(s). inputs came elements from the selection (4); newTypeId
-    as given. on test projject
-  negative_case: 'run with minMm=-1000,-1000,-1000, maxMm=9000,7000,4000, exact=false, categories=Walls,
-    newTypeId=Floor: Generic 300mm instead - chosen because it should not contain what this
-    fragment reports - the arrangement was re-made first by running select-in-region, set-selection
-    with this phase''s own values - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned alreadyThatType 0, changed 0, refused 4 item(s)
-    [925629, 925630, 925631, ...]. inputs came elements from the selection (4); newTypeId
-    as given. on test projject'
+    filter-elements-by-category, set-selection with this phase's own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    alreadyThatType 0, changed 10, findings 2 item(s) [10 element(s) changed to 'Mitered Elbows
+    / Tees'. 0 already ..., Only the TYPE changed. Mark, comments, offsets and every oth...],
+    fromSource false, fromWord none, named true, refused 0 item(s), source (null), stop (null),
+    wantedTypeId 1 item(s) [id 142426]. inputs came elements from the selection (10); newTypeId
+    as given; typeFrom not given - "none", the card's own default (optional). on P1102 MEP
+  negative_case: 'run with category=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP TYP, newTypeId=Floor:
+    STB 20.0 instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running filter-elements-by-category, set-selection with
+    this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned alreadyThatType 0, changed 0, findings 1 item(s)
+    [0 element(s) changed to ''STB 20.0''. 0 already had it, and 10...], fromSource false,
+    fromWord none, named true, refused 10 item(s) [404243, 411658, 411660, ...], source (null),
+    stop (null), wantedTypeId 1 item(s) [id 563400]. inputs came elements from the selection
+    (10); newTypeId as given; typeFrom not given - "none", the card''s own default (optional).
+    on P1102 MEP'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 8473e87ce5b20e4c
-
+  fingerprint: 78e00f70870b3a97
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

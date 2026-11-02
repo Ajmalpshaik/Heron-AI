@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -165,28 +165,44 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-16'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: PIPE (3,332 elements), Revit 2020, session 8084
-  positive_case: 'run as it would normally be run. returned families 126 item(s) [Rectangular
-    Mullion, Circular Mullion, System Panel, ...], familiesRead 1, findings 1 item(s) [1 family(ies)
-    read of 126 scanned; 1 table(s) found, 0 famil...], folder , leftOpen 0 item(s), needle
-    TRG_Cap, noTable 0 item(s), refused 0 item(s), scanned 126, summary TRG_Cap_Copper: Calotta
-    rame(18 rows), summaryRows 1 item(s) [TRG_Cap_Copper: Calotta rame(18 rows)], tablesFound
-    1, wasOpenBefore HashSet`1. inputs came nameContains as given; exportFolder as given.
-    on PIPE'
-  negative_case: run with nameContains=ZZZNOTAFAMILY, exportFolder= instead - chosen because
-    it should not contain what this fragment reports. returned families 126 item(s) [Rectangular
-    Mullion, Circular Mullion, System Panel, ...], familiesRead 0, findings 1 item(s) [0 family(ies)
-    read of 126 scanned; 0 table(s) found, 0 famil...], folder , leftOpen 0 item(s), needle
-    ZZZNOTAFAMILY, noTable 0 item(s), refused 0 item(s), scanned 126, summary , summaryRows
-    0 item(s), tablesFound 0, wasOpenBefore HashSet`1. inputs came nameContains as given;
-    exportFolder as given. on PIPE
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: 'run as it would normally be run. returned columnCount 0, columnHeaders ,
+    countAll Func`4, exportedTo , familiesRead 15, findings 1 item(s) [15 family(ies) read
+    of 196 scanned; 8 table(s) found, 7 fami...], folder , given Func`2, leftOpen 0 item(s),
+    namesIn Func`2, needle Elbow, noTable 7 item(s) [M_Rectangular Duct Elbow - Mitered, M_Round
+    Duct Elbow, M_Rectangular Elbow - Mitered, ...], notAFamily true, readWhole Action`3,
+    refused 0 item(s), rowCount 0, rows , scanned 196, summary M_Rectangular Duct Elbow -
+    Mitered: NO TABLE  ||  M_Round Duct Elbow: NO TABLE  ||  M_Pipe Elbow: M_Pipe Fitting
+    Sizes(15 rows)  ||  M_Elbow - Generic: M_Pipe Fitting - Generic(30 rows)  ||  Conduit
+    Elbow - Aluminum: Conduit Elbow - Aluminum(12 rows)  ||  Conduit Elbow - Steel: Conduit
+    Elbow - Steel(10 rows)  ||  Conduit Elbow - without Fittings - EMT: Conduit Elbow - without
+    Fittings - EMT(10 rows)  ||  Conduit Elbow - without Fittings - RMC: Conduit Elbow - without
+    Fittings - RMC(12 rows)  ||  Conduit Elbow - without Fittings - RNC: Conduit Elbow - without
+    Fittings - RNC(12 rows)  ||  Conduit Elbow - Plain End - PVC: Conduit Elbow - Plain End
+    - PVC(12 rows)  ||  M_Rectangular Elbow - Mitered: NO TABLE  ||  M_Rectangular Elbow -
+    Radius: NO TABLE  ||  M_Round Elbow: NO TABLE  ||  M_Oval Elbow - Gored: NO TABLE  ||  M_Oval
+    Elbow - Mitered: NO TABLE, summaryRows 15 item(s) [M_Rectangular Duct Elbow - Mitered:
+    NO TABLE, M_Round Duct Elbow: NO TABLE, M_Pipe Elbow: M_Pipe Fitting Sizes(15 rows), ...],
+    tableNames , tablesFound 8, wantedPath , wantedTable . inputs came nameContains as given;
+    exportFolder not given - "none", the card''s own default (optional); tableName not given
+    - "none", the card''s own default (optional); exportTo not given - "none", the card''s
+    own default (optional). on P1102 MEP'
+  negative_case: run with category=Sheets, nameContains=ZZZNOTAFAMILY instead - chosen because
+    it should not contain what this fragment reports. returned columnCount 0, columnHeaders
+    , countAll Func`4, exportedTo , familiesRead 0, findings 1 item(s) [0 family(ies) read
+    of 196 scanned; 0 table(s) found, 0 famil...], folder , given Func`2, leftOpen 0 item(s),
+    namesIn Func`2, needle ZZZNOTAFAMILY, noTable 0 item(s), notAFamily true, readWhole Action`3,
+    refused 0 item(s), rowCount 0, rows , scanned 196, summary , summaryRows 0 item(s), tableNames
+    , tablesFound 0, wantedPath , wantedTable . inputs came nameContains as given; exportFolder
+    not given - "none", the card's own default (optional); tableName not given - "none", the
+    card's own default (optional); exportTo not given - "none", the card's own default (optional).
+    on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: cf7c7be255dd4de5
-
+  fingerprint: 60cb1e9daf6648d7
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

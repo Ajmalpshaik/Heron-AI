@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LVL-027
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -120,30 +120,33 @@ contract:
       type: IList<ElementId>
 
 proof:
-  date: '2026-09-19'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project1 work_ajmal.al (3,529 elements), Revit 2024, session 20472
+  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned changed 2 item(s)
-    [311, 694], ends 2 item(s) [End0, End1], findings 1 item(s) [2 datum(s) changed to 2D
-    (this view only), 0 end(s) were alr...], notADatum 0 item(s), viewSpecific true, wanted
-    DatumExtentType, wasAlready 0. inputs came view as given; elements from the selection
-    (2); viewSpecific as given. on Project1 work_ajmal.al
-  negative_case: run with categoryName=Ducts, inViewOnly=1 - Mech, view=1 - Mech, viewSpecific=True
-    instead - chosen because it should not contain what this fragment reports - the arrangement
-    was re-made first by running select-by-category-name, set-selection with this phase's
-    own values - run inside a transaction, and Revit reported the transaction group ROLLED
-    BACK afterwards. returned changed 0 item(s), ends 2 item(s) [End0, End1], findings 1 item(s)
-    [0 datum(s) changed to 2D (this view only), 0 end(s) were alr...], notADatum 9 item(s)
-    [925641, 925646, 925658, ...], viewSpecific true, wanted DatumExtentType, wasAlready 0.
-    inputs came view as given; elements from the selection (9); viewSpecific as given. on
-    Project1 work_ajmal.al
+    filter-elements-by-category, set-selection with this phase's own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    alreadyAsAsked 0 item(s), changed 4 item(s) [378117, 378118, 378119, ...], ends 2 item(s)
+    [End0, End1], endsChanged 8, findings 1 item(s) [4 datum(s) changed to 2D (that view only)
+    in 1 view(s) - 8 e...], inViews 1 item(s) [North - Mech], notADatum 0 item(s), refused
+    0 item(s), viewSpecific true, views 0 item(s), wanted DatumExtentType, wasAlready 0. inputs
+    came view as given; views not given - new List<View>() (optional); elements from the selection
+    (4); viewSpecific as given. on P1102 MEP
+  negative_case: run with category=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP TYP, view=Callout
+    of Level 1 HVAC WSHP TYP, viewSpecific=True instead - chosen because it should not contain
+    what this fragment reports - the arrangement was re-made first by running filter-elements-by-category,
+    set-selection with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyAsAsked 0 item(s), changed
+    0 item(s), ends 2 item(s) [End0, End1], endsChanged 0, findings 1 item(s) [0 datum(s)
+    changed to 2D (that view only) in 1 view(s) - 0 e...], inViews 1 item(s) [Callout of Level
+    1 HVAC WSHP TYP], notADatum 10 item(s) [404243, 411658, 411660, ...], refused 0 item(s),
+    viewSpecific true, views 0 item(s), wanted DatumExtentType, wasAlready 0. inputs came
+    view as given; views not given - new List<View>() (optional); elements from the selection
+    (10); viewSpecific as given. on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: ed5ce615ed16a18e
-
+  fingerprint: 35c92990534e1d57
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

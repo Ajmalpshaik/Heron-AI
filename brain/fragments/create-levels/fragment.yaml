@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-EXP-018
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -98,26 +98,30 @@ contract:
       type: bool
 
 proof:
-  date: '2026-09-13'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: test projject (3,436 elements), Revit 2024, session 40932
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, SameHeight
-    0.00164041994750656, alreadyThere 0 item(s), created 2 item(s) [925927, 925928], elevationOf
-    2 entry(ies), elevations 2 item(s) [26.246719160105, 39.3700787401575], existing 4 item(s)
-    [0, 13.1233595800514, 26.246719160105, ...], nameRefused 0 item(s), namedAs 2 entry(ies).
-    inputs came elevations as given (2); names as given (2). on test projject
-  negative_case: run with elevations=0,4000, names=HERON DUP1,HERON DUP2 instead - chosen
-    because it should not contain what this fragment reports - run inside a transaction, and
-    Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
-    304.8, SameHeight 0.00164041994750656, alreadyThere 2 item(s) [0, 13.1233595800525], created
-    0 item(s), elevationOf 0 entry(ies), elevations 2 item(s) [0, 13.1233595800525], existing
-    2 item(s) [0, 13.1233595800514], nameRefused 0 item(s), namedAs 0 entry(ies). inputs came
-    elevations as given (2); names as given (2). on test projject
+    0.00164041994750656, alreadyThere 0 item(s), askedMm 2 item(s) [15000, 18000], clashes
+    0 item(s), created 2 item(s) [1020267, 1020268], elevationOf 2 entry(ies), elevations
+    2 item(s) [49.2125984251969, 59.0551181102362], existing 6 item(s) [0.308962391333159,
+    12.4671916010495, 23.9501312335954, ...], existingNames 4 item(s) [Level 1, Level 2, Level
+    3, ...], nameRefused 0 item(s), namedAs 2 entry(ies), noViewsMade true, planned 2 item(s)
+    [0, 1], plannedNames 2 item(s) [HERON L15, HERON L18], refused (null). inputs came elevations
+    as given (2); names as given (2). on P1102 MEP
+  negative_case: run with elevations=, names= instead - chosen because it should not contain
+    what this fragment reports - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, SameHeight 0.00164041994750656,
+    alreadyThere 0 item(s), askedMm 0 item(s), clashes 0 item(s), created 0 item(s), elevationOf
+    0 entry(ies), elevations 0 item(s), existing 4 item(s) [0.308962391333159, 12.4671916010495,
+    23.9501312335954, ...], existingNames 4 item(s) [Level 1, Level 2, Level 3, ...], nameRefused
+    0 item(s), namedAs 0 entry(ies), noViewsMade true, planned 0 item(s), plannedNames 0 item(s),
+    refused (null). inputs came elevations as given (0); names as given (0). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 2cdd65a3468733e9
+  fingerprint: 0fb8a3062e7e5102
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

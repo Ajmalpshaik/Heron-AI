@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-WRN-016
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -88,18 +88,32 @@ contract:
       type: int
 
 proof:
-  date: '2026-09-13'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: >
-    Snowdon Towers Sample HVAC.rvt (9,628 elements) and Project1 (3,410 elements, unsaved default template), both open at once in Revit 2024.3
-  positive_case: >
-    Snowdon Towers: 145 warnings over 87 elements, grouped into 5 kinds, worst first - 'x111 The calculation was run with the Pressure Drop set to 0'. The grouping is the answer; 145 individual rows would not be.
-  negative_case: >
-    Project1: 0 warnings, 0 elements, 0 kinds. A clean model returns nothing rather than a spurious finding, with both documents open.
-  second_route: >
-    Revit's own Manage > Warnings dialog lists the same set and the same total.
-  fingerprint: "9b6bb49afca0cf5e"
-
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 MEP, P1102 Family - active was P1102
+    MEP, Revit 2020, session 59096'
+  positive_case: run as it would normally be run. returned counts 3 entry(ies), elements 4
+    item(s) [FB 15.0 - Holzdielen, FB 15.0 - Holzdielen, Verglasung, ...], errorsOnly false,
+    filtered false, findings 5 item(s) [4 element(s) named by 125 of the model's 125 warning(s).
+    Eac..., warning x122  No Loss Defined, warning x2  Some panels in this curtain system
+    are slightly ..., ...], matched 125, notInThisModel 0 item(s), order 3 item(s) [No Loss
+    Defined, Some panels in this curtain system are slightly malformed.  ..., Highlighted
+    floors overlap.], phrase , seen HashSet`1, unresolved 0, warningCount 125, warnings 125
+    item(s) [Autodesk.Revit.DB.FailureMessage, Autodesk.Revit.DB.FailureMessage, Autodesk.Revit.DB.FailureMessage,
+    ...], worst 3 entry(ies). inputs came errorsOnly not given - false (optional); descriptionContains
+    not given - "none", the card's own default (optional). on P1102 MEP
+  negative_case: run against 'P1102 Family' instead - chosen because it should not contain
+    what this fragment reports. returned counts 0 entry(ies), elements 0 item(s), errorsOnly
+    false, filtered false, findings 3 item(s) [0 element(s) named by 0 of the model's 0 warning(s).
+    Each el..., This model has no warnings at all, These are Revit's own warnings, of THIS
+    document only. A cla...], matched 0, notInThisModel 0 item(s), order 0 item(s), phrase
+    , seen HashSet`1, unresolved 0, warningCount 0, warnings 0 item(s), worst 0 entry(ies).
+    inputs came errorsOnly not given - false (optional); descriptionContains not given - "none",
+    the card's own default (optional). on P1102 Family
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: cf0528e772e4292e
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

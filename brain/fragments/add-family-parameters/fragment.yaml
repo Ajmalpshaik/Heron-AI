@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -215,55 +215,39 @@ contract:
 # by Ajmal PS on his word - NEEDS-CHECKING CO. The switching mode of version 2 shares
 # this implementation; its own runs are NEEDS-CHECKING CA.
 proof:
-  date: '2026-10-07'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: HeronRenameProof, Revit 2024, session 51820 - the count is NOT recorded because 3,515
-    elements was measured on Project6, the document in front, and this ran against another
-    one (row 15)
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 Family, P1102 MEP - active was HeronNewFam_P1102,
+    Revit 2020, session 59096'
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned addParameter RuntimeMethodInfo,
-    added 0 item(s), alreadyThere 0 item(s), catalogueColumns 0 item(s), countLabels Func`1,
-    dbNamespace Autodesk.Revit.DB, describe Func`2, describeTied Func`2, findings 3 item(s)
-    [Renamed 2 parameter(s), read back from the family by the new..., Formulas that read them,
-    read back with the new names: Total..., Kept as they were: Pipe CC 1 to 2: 1 labelled
-    dimension(s).], flags BindingFlags, formulasReadBack Total = Pipe CC 1 to 2 + Pipe CC
-    2 to 3, groupInternalNames 124 entry(ies), groupLabel Func`2, groupNamed Func`3, groupType
-    RuntimeType, groupValue (null), groups 124 item(s) [[Cross-Section Definition, Autodesk.Revit.DB.ForgeTypeId],
-    [Visibility, Autodesk.Revit.DB.ForgeTypeId], [Extents, Autodesk.Revit.DB.ForgeTypeId],
-    ...], idText Func`2, instance false, isBuiltIn Func`2, keptLinks Pipe CC 1 to 2: 1 labelled
-    dimension(s), kindKey , kindLabel Func`2, kindNames (null), kinds 10 entry(ies), names
-    1 item(s) [CC 1 to 2=Pipe CC 1 to 2; CC 2 to 3=Pipe CC 2 to 3], namesReadFrom Func`3,
-    notAFamily false, refused (null), renameExisting true, renamed 2 item(s) [CC 1 to 2 ->
-    Pipe CC 1 to 2, CC 2 to 3 -> Pipe CC 2 to 3], repeated 0 item(s), revitAssembly RuntimeAssembly,
-    sameKind Func`3, scopeReadBack , specFor Func`2, specOf Func`2, specType RuntimeType,
-    specValue (null), squash Func`2, switchExisting false, switched 0 item(s), tiedTo Func`2,
-    wantedGroup . inputs came parameterNames as given (1); kind as given; instance as given;
-    parameterGroup as given; switchExisting not given - false (optional); renameExisting as
-    given. on HeronRenameProof'
-  negative_case: run against 'HeronRenameProof' with renameExisting=true, parameterNames=CC
-    1 to 2=cc 2 to 3, kind=, parameterGroup=, instance=false instead - chosen because it should
-    not contain what this fragment reports - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned addParameter RuntimeMethodInfo,
-    added 0 item(s), alreadyThere 0 item(s), catalogueColumns 0 item(s), countLabels Func`1,
-    dbNamespace Autodesk.Revit.DB, describe Func`2, describeTied Func`2, findings 1 item(s)
-    [Nothing was renamed. 'cc 2 to 3' is already a parameter in t...], flags BindingFlags,
-    formulasReadBack , groupInternalNames 124 entry(ies), groupLabel Func`2, groupNamed Func`3,
-    groupType RuntimeType, groupValue (null), groups 124 item(s) [[Cross-Section Definition,
-    Autodesk.Revit.DB.ForgeTypeId], [Visibility, Autodesk.Revit.DB.ForgeTypeId], [Extents,
-    Autodesk.Revit.DB.ForgeTypeId], ...], idText Func`2, instance false, isBuiltIn Func`2,
-    keptLinks , kindKey , kindLabel Func`2, kindNames (null), kinds 10 entry(ies), names 1
-    item(s) [CC 1 to 2=cc 2 to 3], namesReadFrom Func`3, notAFamily false, refused Nothing
-    was renamed. 'cc 2 to 3' is already a parameter in this family (as 'CC 2 to 3') - names
-    are told apart without regard to capitals. Choose another name., renameExisting true,
-    renamed 0 item(s), repeated 0 item(s), revitAssembly RuntimeAssembly, sameKind Func`3,
-    scopeReadBack , specFor Func`2, specOf Func`2, specType RuntimeType, specValue (null),
-    squash Func`2, switchExisting false, switched 0 item(s), tiedTo Func`2, wantedGroup .
-    inputs came parameterNames as given (1); kind as given; instance as given; parameterGroup
-    as given; switchExisting not given - false (optional); renameExisting as given. on HeronRenameProof
+    the transaction group ROLLED BACK afterwards. returned added 1 item(s) [HERON P1102 Width
+    (Length, type, under Dimensions)], alreadyThere 0 item(s), createMissing false, created
+    0 item(s), findings 2 item(s) [Added 1 parameter(s), read back from the family: HERON
+    P1102..., They hold NO value yet - a new length reads 0 in every type....], formulasReadBack
+    , instance false, keptLinks , kindAsked length, notAFamily false, refused (null), renameExisting
+    false, renamed 0 item(s), replaceExisting false, replaced 0 item(s), scopeReadBack , sharedFile
+    , sharedKind false, switchExisting false, switched 0 item(s). inputs came parameterNames
+    as given (1); kind as given; instance as given; parameterGroup as given; switchExisting
+    not given - false (optional); renameExisting not given - false (optional); replaceExisting
+    not given - false (optional); createMissing not given - false (optional). on P1102 Family'
+  negative_case: run against 'P1102 MEP' with parameterNames=HERON P1102 Width, kind=length,
+    instance=false, parameterGroup=Dimensions instead - chosen because it should not contain
+    what this fragment reports - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned added 0 item(s), alreadyThere 0 item(s), createMissing
+    false, created 0 item(s), findings 1 item(s) [The document in front is a project, not
+    a family open in the...], formulasReadBack , instance false, keptLinks , kindAsked length,
+    notAFamily true, refused The document in front is a project, not a family open in the
+    Family Editor, so it takes no family parameters. A project parameter is ADD_PROJECT_PARAMETER's
+    job; to work on a family, open it first., renameExisting false, renamed 0 item(s), replaceExisting
+    false, replaced 0 item(s), scopeReadBack , sharedFile , sharedKind false, switchExisting
+    false, switched 0 item(s). inputs came parameterNames as given (1); kind as given; instance
+    as given; parameterGroup as given; switchExisting not given - false (optional); renameExisting
+    not given - false (optional); replaceExisting not given - false (optional); createMissing
+    not given - false (optional). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 0dde2ad244a2a319
+  fingerprint: fac1d7fd8c8dec21
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

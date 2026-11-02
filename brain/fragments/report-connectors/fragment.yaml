@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -146,30 +146,93 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project2 (3,035 elements), Revit 2020, session 13520
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase''s own values. returned connections
-    2 entry(ies), connectorFacts 2 entry(ies), connectorSummary element 345448: DomainHvac
-    SupplyAir, Rectangular, 1 x 1 ft, at (3.281, 3.281, 8.858) ft, facing (-1, 0, 0), OPEN
-    (IsConnected flag: False) ; DomainHvac SupplyAir, Rectangular, 1 x 1 ft, at (29.528, 3.281,
-    8.858) ft, facing (1, 0, 0), OPEN (IsConnected flag: False)  ||  element 345451: DomainHvac
-    ReturnAir, Round, radius 0.5 ft, at (13.123, 16.404, 8.858) ft, facing (1, 0, 0), OPEN
-    (IsConnected flag: False) ; DomainHvac ReturnAir, Round, radius 0.5 ft, at (3.281, 16.404,
-    8.858) ft, facing (-1, 0, 0), OPEN (IsConnected flag: False), flagDisagrees 0 item(s),
-    noConnectors 0 item(s), openConnectors 2 entry(ies). inputs came elements from the selection
-    (2). on Project2'
-  negative_case: run with categoryName=Walls, inViewOnly=Heron 3D instead - chosen because
-    it should not contain what this fragment reports - the arrangement was re-made first by
-    running select-by-category-name, set-selection with this phase's own values. returned
-    connections 0 entry(ies), connectorFacts 0 entry(ies), connectorSummary , flagDisagrees
-    0 item(s), noConnectors 5 item(s) [345432, 345433, 345434, ...], openConnectors 0 entry(ies).
-    inputs came elements from the selection (5). on Project2
+    filter-elements-by-category, set-selection with this phase''s own values. returned MillimetresPerFoot
+    304.8, connections 10 entry(ies), connectorFacts 10 entry(ies), connectorSummary element
+    404243: DomainHvac SupplyAir, Rectangular, 2.133 x 1.148 ft, at (136.94, -26.061, 10.359)
+    ft, facing (0, -1, 0), joined to 404487 (IsConnected flag: True) ; DomainHvac SupplyAir,
+    Rectangular, 2.133 x 1.148 ft, at (136.94, -24.246, 10.359) ft, facing (0, 1, 0), joined
+    to 404248 (IsConnected flag: True) ; DomainHvac SupplyAir, Rectangular, 2.133 x 1.148
+    ft, at (136.94, -24.246, 10.359) ft, facing (0, 1, 0), joined to 404245 (IsConnected flag:
+    True) ; DomainHvac SupplyAir, Rectangular, 2.133 x 1.148 ft, at (136.94, -15.387, 10.359)
+    ft, facing (0, 1, 0), joined to 404488 (IsConnected flag: True) ; DomainHvac SupplyAir,
+    Rectangular, 2.133 x 1.148 ft, at (136.94, -18.96, 10.359) ft, facing (0, 1, 0), joined
+    to 404371 (IsConnected flag: True)  ||  element 411658: DomainHvac ReturnAir, Rectangular,
+    1.312 x 0.984 ft, at (140.59, -12.153, 10.384) ft, facing (0, 1, 0), joined to 411873
+    (IsConnected flag: True) ; DomainHvac ReturnAir, Rectangular, 1.312 x 0.984 ft, at (140.59,
+    -15.003, 10.384) ft, facing (0, -1, 0), joined to 411657 (IsConnected flag: True)  ||  element
+    411660: DomainHvac ReturnAir, Rectangular, 1.312 x 0.984 ft, at (143.543, -15.003, 10.384)
+    ft, facing (0, -1, 0), joined to 411656 (IsConnected flag: True) ; DomainHvac ReturnAir,
+    Rectangular, 1.312 x 0.984 ft, at (143.543, -12.153, 10.384) ft, facing (0, 1, 0), joined
+    to 411898 (IsConnected flag: True)  ||  element 411724: DomainHvac ReturnAir, Rectangular,
+    2.953 x 1.64 ft, at (136.277, -11, 10.384) ft, facing (0, 1, 0), joined to 478951 (IsConnected
+    flag: True) ; DomainHvac ReturnAir, Rectangular, 2.953 x 1.64 ft, at (136.277, -9.688,
+    10.384) ft, facing (0, 1, 0), OPEN (IsConnected flag: False) ; DomainHvac ReturnAir, Rectangular,
+    2.953 x 1.64 ft, at (136.277, -12.312, 10.384) ft, facing (0, -1, 0), joined to 404284
+    (IsConnected flag: True) ; DomainHvac ReturnAir, Rectangular, 2.953 x 1.64 ft, at (136.277,
+    -11, 10.384) ft, facing (0, 1, 0), joined to 411791 (IsConnected flag: True)  ||  element
+    411780: DomainHvac ReturnAir, Rectangular, 1.64 x 0.984 ft, at (140.59, -11, 10.384) ft,
+    facing (1, 0, 0), joined to 411873 (IsConnected flag: True) ; DomainHvac ReturnAir, Rectangular,
+    1.64 x 0.984 ft, at (144.643, -11, 10.384) ft, facing (1, 0, 0), joined to 411851 (IsConnected
+    flag: True) ; DomainHvac ReturnAir, Rectangular, 1.64 x 0.984 ft, at (143.543, -11, 10.384)
+    ft, facing (1, 0, 0), joined to 411898 (IsConnected flag: True) ; DomainHvac ReturnAir,
+    Rectangular, 1.64 x 0.984 ft, at (138.163, -11, 10.384) ft, facing (-1, 0, 0), joined
+    to 411791 (IsConnected flag: True)  ||  element 411839: DomainHvac ReturnAir, Rectangular,
+    1.312 x 0.984 ft, at (145.039, -11, 10.384) ft, facing (-1, 0, 0), joined to 411851 (IsConnected
+    flag: True) ; DomainHvac ReturnAir, Rectangular, 1.312 x 0.984 ft, at (153.632, -11, 10.384)
+    ft, facing (1, 0, 0), joined to 709691 (IsConnected flag: True)  ||  element 478867: DomainHvac
+    ReturnAir, Rectangular, 1.312 x 1.148 ft, at (132.832, -8.594, 8.708) ft, facing (-1,
+    0, 0), joined to 478970 (IsConnected flag: True) ; DomainHvac ReturnAir, Rectangular,
+    1.312 x 1.148 ft, at (43.921, -8.594, 8.708) ft, facing (-1, 0, 0), joined to 479078 (IsConnected
+    flag: True) ; DomainHvac ReturnAir, Rectangular, 1.312 x 1.148 ft, at (5.875, -8.594,
+    8.708) ft, facing (-1, 0, 0), joined to 479183 (IsConnected flag: True) ; DomainHvac ReturnAir,
+    Rectangular, 1.312 x 1.148 ft, at (-10.554, -8.594, 8.708) ft, facing (-1, 0, 0), joined
+    to 479601 (IsConnected flag: True) ; DomainHvac ReturnAir, Rectangular, 1.312 x 1.148
+    ft, at (102.976, -8.594, 8.708) ft, facing (-1, 0, 0), joined to 712022 (IsConnected flag:
+    True) ; DomainHvac ReturnAir, Rectangular, 1.312 x 1.148 ft, at (162.379, -8.594, 8.708)
+    ft, facing (1, 0, 0), joined to 709693 (IsConnected flag: True) ; DomainHvac ReturnAir,
+    Rectangular, 1.312 x 1.148 ft, at (74.105, -8.594, 8.708) ft, facing (-1, 0, 0), joined
+    to 479049 (IsConnected flag: True) ; DomainHvac ReturnAir, Rectangular, 1.312 x 1.148
+    ft, at (-9.566, -8.594, 8.708) ft, facing (-1, 0, 0), joined to 479467 (IsConnected flag:
+    True) ; DomainHvac ReturnAir, Rectangular, 1.312 x 1.148 ft, at (1.253, -8.594, 8.708)
+    ft, facing (-1, 0, 0), joined to 479424 (IsConnected flag: True)  ||  element 478940:
+    DomainHvac ReturnAir, Rectangular, 0.656 x 0.492 ft, at (133.242, -11, 10.384) ft, facing
+    (-1, 0, 0), joined to 478974 (IsConnected flag: True) ; DomainHvac ReturnAir, Rectangular,
+    0.656 x 0.492 ft, at (134.467, -11, 10.384) ft, facing (1, 0, 0), joined to 478951 (IsConnected
+    flag: True)  ||  element 478953: DomainHvac ReturnAir, Rectangular, 0.656 x 0.492 ft,
+    at (132.832, -10.59, 10.384) ft, facing (0, -1, 0), joined to 478974 (IsConnected flag:
+    True) ; DomainHvac ReturnAir, Rectangular, 0.656 x 0.492 ft, at (132.832, -8.922, 10.384)
+    ft, facing (0, 1, 0), joined to 478971 (IsConnected flag: True)  ||  element 478969: DomainHvac
+    ReturnAir, Rectangular, 0.656 x 0.492 ft, at (132.832, -8.594, 10.056) ft, facing (0,
+    0, 1), joined to 478971 (IsConnected flag: True) ; DomainHvac ReturnAir, Rectangular,
+    0.656 x 0.492 ft, at (132.832, -8.594, 9.615) ft, facing (0, 0, -1), joined to 478970
+    (IsConnected flag: True), describeMm Func`2, findings 1 item(s) [0 placed family instance(s)
+    graded: 0 with a mismatched join...], flagDisagrees 0 item(s), grade Action`1, gradeLeft
+    0, gradeLines 0 item(s), gradeSizes true, mismatched 0 item(s), noConnectors 0 item(s),
+    openConnectors 10 entry(ies), sizeTolerance 0, toleranceFeet 0, unconnectedSpigots 0,
+    unitsGraded 0. inputs came elements from the selection (10); sizeTolerance not given -
+    "0", the card''s own default (optional). on P1102 MEP'
+  negative_case: 'run with category=Walls, levelId=Level 1 instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase''s own values. returned MillimetresPerFoot
+    304.8, connections 0 entry(ies), connectorFacts 0 entry(ies), connectorSummary , describeMm
+    Func`2, findings 71 item(s) [0 placed family instance(s) graded: 0 with a mismatched join...,
+    STB 30.0 Rot (id 573298): not a placed family instance or an..., STB 30.0 (id 573299):
+    not a placed family instance or an MEP..., ...], flagDisagrees 0 item(s), grade Action`1,
+    gradeLeft 0, gradeLines 70 item(s) [STB 30.0 Rot (id 573298): not a placed family instance
+    or an..., STB 30.0 (id 573299): not a placed family instance or an MEP..., STB 30.0 Rot
+    (id 573316): not a placed family instance or an..., ...], gradeSizes true, mismatched
+    0 item(s), noConnectors 70 item(s) [573298, 573299, 573316, ...], openConnectors 0 entry(ies),
+    sizeTolerance 0, toleranceFeet 0, unconnectedSpigots 0, unitsGraded 0. inputs came elements
+    from the selection (70); sizeTolerance not given - "0", the card''s own default (optional).
+    on P1102 MEP'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: c56b6c476db82360
+  fingerprint: bec433c1aed97f5b
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
