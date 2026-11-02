@@ -1,0 +1,41 @@
+# Round 14, 2026-11-02 - Revit 2024.3, session 59960. "Snowdon Towers Sample Structural" = a
+# scratch copy of Revit 2024's own Samples\Snowdon Towers Sample Structural.rvt in
+# %TEMP%\heron-work\prove-1102\s2024. "Project1" is the modeller's own open project - it is
+# only ever a NEGATIVE here, read and never changed. The cards whose first release is 2022 to
+# 2024, plus draw-family-filled-region's masking region (a call Revit 2024 added).
+# Every MODIFY run is ROLLED BACK. The model's numbering sequences are "Numeric" and "Custom"
+# (read off the first run's refusal, which named them).
+model: "Snowdon Towers Sample Structural (scratch copy, Revit 2024 sample), Revit 2024"
+
+defaults:
+  in: "Snowdon Towers Sample Structural"
+  setup: []
+
+jobs:
+  - fragment: report-analytical-model
+    expect: analytical
+    set: {}
+    negative-in: "Project1"
+    negative-set: {}
+
+  - fragment: find-purgeable-elements
+    expect: elements
+    set: {categories: ""}
+    negative-set: {categories: "Rooms"}
+
+  - fragment: delete-revision-numbering-sequence
+    write: true
+    expect: deleted
+    set: {name: "Custom", confirm: "Custom"}
+    negative-set: {name: "Numeric", confirm: "Numeric"}
+
+  - fragment: draw-family-filled-region
+    write: true
+    expect: regionId
+    set: {workPlane: "Top of Footing", shapes: "rect -300,-50 300,50", regionType: "masking"}
+    negative-set: {workPlane: "Top of Footing", shapes: "rect -300,-50 300,50", regionType: "Not A Type"}
+
+  - fragment: report-linked-view-usage
+    expect: usage
+    set: {linkName: ""}
+    negative-set: {linkName: "No Such Link"}
