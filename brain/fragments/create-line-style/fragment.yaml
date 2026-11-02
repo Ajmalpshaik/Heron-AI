@@ -187,6 +187,11 @@ compatibility-note: >
 #   "move these lines to the thin lines style" -> REMAP_LINE_STYLES
 #   "bring the line styles from that model"   -> TRANSFER_LINE_STYLES_BETWEEN_DOCUMENTS
 #   "make a dash dot pattern"                 -> CREATE_LINE_PATTERN
+#   "set the projection line weight of Doors to 3" -> SET_OBJECT_STYLE - any project
+#                                                category's or subcategory's own Object
+#                                                Styles, which this card does not reach
+#                                                (row 5b-463); Lines is refused there and
+#                                                sent here (2026-11-02)
 #   "what colour is the signature subcategory" -> LIST_CATEGORIES - a question goes to the read
 #   "what colours, line weights and patterns does this view use" -> REPORT_CATEGORY_OVERRIDES -
 #                                                a question goes to the read; it reached

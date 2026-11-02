@@ -1326,6 +1326,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ma.md`](needs-checking/group-ma.md)
 
+## Group MB - Manage > Object Styles - one category's or subcategory's projection and cut line weight, line colour, line pattern and material, for the whole model, read back before and after: `SET_OBJECT_STYLE` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-mb.md`](needs-checking/group-mb.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

@@ -264,6 +264,10 @@ compatibility-note: >
 #                                          view's override, not the category's
 #                                          own style
 #   "make a red dashed line style"      -> CREATE_LINE_STYLE - the write
+#   "what are the object style settings for Pipes" -> here, categories "Pipes"
+#                                          - declared 2026-11-02 (row 5b-1425)
+#   "set the projection line weight of Doors to 3" -> SET_OBJECT_STYLE - the
+#                                          write to a category's own Object Styles
 #   "put this extrusion on the Hidden Lines subcategory" -> SET_FAMILY_FORM_SUBCATEGORY
 
 utterances:
@@ -279,3 +283,7 @@ utterances:
   # it reached this card by ranking until REPORT_DIMENSION_TYPES - another read
   # of a "style" - was added and took it. Declared, so identity answers it.
   - show the object style of Generic Annotations
+  # ADDED 2026-11-02, row 5b-1425 (FIXED). Without the host's question flag
+  # it reached CREATE_LINE_STYLE, a write, while SET_OBJECT_STYLE was being
+  # built. Declared, so identity answers it here.
+  - what are the object style settings for Pipes

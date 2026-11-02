@@ -1,0 +1,38 @@
+# NEEDS-CHECKING Group MB - SET_OBJECT_STYLE, built 2026-11-02 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/set-object-style-mb-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-object-style-mb-2026-11-02.yaml
+#
+# THE MODEL is a scratch project from Revit's metric ARCHITECTURAL template, any
+# release 2020 to 2027, with at least one wall and one door in
+# "FloorPlan: Level 1". MB1 makes it, SAVES it and records Walls' and Doors'
+# Object Styles rows with LIST_CATEGORIES (categories "Walls, Doors") - the
+# values both legs are checked against. Never a working model.
+#
+# NOTHING IS SELECTED: the row is named, so there is no setup chain. The
+# negative is a DIFFERENT VALUE on the same row - a line pattern no element in
+# the model is named - so nothing may change and Walls must read back exactly
+# as MB1 recorded it. Every write here is ROLLED BACK.
+
+model: scratch project from the metric architectural template (MB1), Revit 2024
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: set-object-style
+    expect: changed
+    set:
+      category: "Walls"
+      projectionWeight: 5
+    negative-set:
+      category: "Walls"
+      pattern: "ZZZ No Such Pattern"
+    note: >
+      MB2. Negative - THE FIRST CASE TO RUN: changed 0, refused "This model
+      has no line pattern named "ZZZ No Such Pattern", so NOTHING WAS CHANGED"
+      with the nearest real pattern names, before and after empty. Positive -
+      changed 1, after reads "projection weight 5" and every other setting as
+      before reads it; LIST_CATEGORIES in the same run shows Walls'
+      subcategories and Doors unchanged.
