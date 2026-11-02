@@ -1,0 +1,56 @@
+# D-30: the negative case is what catches "changed something and called it the
+# answer". Arrange on the SCRATCH project of NEEDS-CHECKING Group LR, "Heron
+# Dimension Type Test": the shipped metric template's dimension types, three
+# linear dimensions on "Linear - 3mm Arial" in a floor plan that is in front,
+# and "Diagonal 3mm" among its arrowhead types. Every run is rolled back
+# unless the modeller presses Keep.
+
+positive:
+  - given: >
+      dimensionTypeName "Linear - 3mm Arial", duplicateAs "2.5mm Arial",
+      changes "Text Size=2.5"
+    expect: >
+      a new type "Linear Dimension Style: 2.5mm Arial", Text Size 2.5 mm read
+      back, every other setting as on "Linear - 3mm Arial"; typeBefore the
+      original, unchanged; usedBy 0 dimension(s) - the three dimensions stay on
+      the original
+  - given: >
+      dimensionTypeName "Linear - 3mm Arial", changes "Tick Mark=Diagonal 3mm;
+      Color=255,0,0"
+    expect: >
+      Tick Mark Diagonal 3mm and Color 255,0,0 read back in typeAfter; the three
+      dimensions in the plan redrawn with red diagonal ticks; usedBy 3
+  - given: >
+      dimensionTypeName "Linear - 3mm Arial", changes "Units Format=Millimeters,
+      0 decimal places"
+    expect: >
+      Units Format Millimeters, 0 decimal places, no symbol read back; the three
+      dimensions read whole millimetres; Type Properties > Units Format shows
+      "Use project settings" unticked
+
+negative:
+  - given: >
+      dimensionTypeName "Linear - 3mm Arial", changes "Tick Mark=No Such Tick"
+    expect: >
+      refused, naming the arrowhead types there are - NOTHING WAS CHANGED,
+      typeAfter empty, the three dimensions unchanged. THE PROOF'S NEGATIVE:
+      the same type, a value that must not be written. THIS IS THE FIRST CASE
+      TO RUN
+  - given: >
+      dimensionTypeName "Linear - 3mm Arial", duplicateAs a name another linear
+      dimension type already has
+    expect: >
+      refused, naming that type - no copy made, nothing changed
+  - given: >
+      dimensionTypeName "No Such Dimension Type", changes "Text Size=2.5"
+    expect: >
+      refused, listing the dimension types - none is guessed, nothing changed
+  - given: >
+      dimensionTypeName "Linear - 3mm Arial", changes "Units Format=Degrees"
+    expect: >
+      refused, listing the length units Revit offers for a linear type -
+      nothing changed
+
+second_route:
+  - Type Properties of the type in Revit after a Keep - Text Size, Tick Mark, Color and Units Format as typeAfter says
+  - Revit's own Duplicate in Type Properties, then the same values typed by hand, compared setting by setting with the copy made here

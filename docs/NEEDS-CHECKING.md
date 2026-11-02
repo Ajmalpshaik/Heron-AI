@@ -1286,6 +1286,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-lq.md`](needs-checking/group-lq.md)
 
+## Group LR - dimension types read, and one changed or copied under a new name - text size, font, tick mark, units format, colour: `REPORT_DIMENSION_TYPES`, `SET_DIMENSION_TYPE` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lr.md`](needs-checking/group-lr.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
