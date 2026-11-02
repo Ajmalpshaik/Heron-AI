@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -162,6 +162,369 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: P1102 MEP, Revit 2020, session 59096 - the count is NOT recorded because 12,508 elements
+    was measured on P1102 ARCH, the document in front, and this ran against another one (row
+    15)
+  positive_case: 'run as it would normally be run. returned compareWithDocument true, comparedWith
+    P1102 MEP (project), comparison Door Level: in the document as a shared parameter in the
+    project with GUID e30c5485-191a-4e25-8830-aac0ab9fee47 - that GUID is not in this file  ||  Door
+    Level: in the document as a shared parameter in the project with GUID 70a79728-4515-43f0-a33f-4fce376af5ae
+    - that GUID is not in this file  ||  OK FFB: in the document as a shared parameter in
+    the project with GUID a1a579ca-846a-42f8-96d8-52966483460d - that GUID is not in this
+    file  ||  OK RFB: in the document as a shared parameter in the project with GUID 5ab7acb8-764a-40ed-91c5-9d44ebd26414
+    - that GUID is not in this file  ||  Höhe OK FFB bis UK Sturz: in the document as a shared
+    parameter in the project with GUID 9465fd6d-80f2-45c2-a78d-70dfc171d6e2 - that GUID is
+    not in this file  ||  Lichte Breite: in the document as a shared parameter in the project
+    with GUID cad7fc17-998b-480d-8a71-715e926023f6 - that GUID is not in this file  ||  Lichte
+    Höhe: in the document as a shared parameter in the project with GUID 5ab37d62-f3a8-414e-a205-93ae6576ec29
+    - that GUID is not in this file  ||  Filter Tragend / Nichttragend: in the document as
+    a shared parameter in the project with GUID 562f6658-f3ea-4fdb-983b-668427e3e49e - that
+    GUID is not in this file, dataTypeOf Func`2, everything 211 item(s) [(Air_terminals, Autodesk.Revit.DB.ExternalDefinition),
+    (Air_terminals, Autodesk.Revit.DB.ExternalDefinition), (Air_terminals, Autodesk.Revit.DB.ExternalDefinition),
+    ...], file DefinitionFile, fileExists true, fileReadOnly false, fileState on disk, not
+    marked read-only, opens in Revit - 18 group(s), 211 parameter(s), findings 3 item(s) [Revit
+    is set to the shared parameter file "D:\04_BIM\06_Shar..., Compared with P1102 MEP (project):
+    0 of 211 listed parameter..., Nothing was changed - not the setting, not the file, not
+    the...], groupParts 0 item(s), groups Air_terminals (38)  ||  Air_Flow (15)  ||  Location_Data
+    (10)  ||  Duct_Accessory (10)  ||  Common (10)  ||  Unit_Dimensions (11)  ||  View_Organization
+    (7)  ||  Project_Information (18)  ||  Geometry (12)  ||  Sheet_Attributes (3)  ||  Tagging_Convention
+    (7)  ||  Family_Attributes (7)  ||  Electrical_Panels (7)  ||  DuctStandards (8)  ||  System
+    (7)  ||  Asset_FM_Data (2)  ||  AJ TEST Parameters (1)  ||  Mechanical_Equipment (38),
+    guidMismatches 0, holdsAny Func`3, inFile 211, lineOf Func`2, listed 211 item(s) [(Air_Flow,
+    Autodesk.Revit.DB.ExternalDefinition), (Air_Flow, Autodesk.Revit.DB.ExternalDefinition),
+    (Air_Flow, Autodesk.Revit.DB.ExternalDefinition), ...], matchedByGuid 0, nameParts 0 item(s),
+    notShared 0, opensInRevit true, parameterCount 211, parameterList Actual_Air_Flow | GUID
+    8d49c8f3-2bfc-44c2-8b1b-01892d78619f | Air Flow [HVACAirflow] | group Air_Flow | visible
+    | no description  ||  Actual_Exhaust_Air_Flow | GUID e353280c-3c64-42ed-80b0-60f58005f815
+    | Air Flow [HVACAirflow] | group Air_Flow | visible | no description  ||  Actual_Fresh_Air_Flow
+    | GUID b1e4bd58-2bd3-4e33-b908-42e17a76990c | Air Flow [HVACAirflow] | group Air_Flow
+    | visible | no description  ||  Actual_Return_Air_Flow | GUID f49d45cc-e856-4254-a376-906048216f89
+    | Air Flow [HVACAirflow] | group Air_Flow | visible | no description  ||  Actual_Supply_Air_Flow
+    | GUID 325358b0-f871-479d-a94b-839f8601f1e8 | Air Flow [HVACAirflow] | group Air_Flow
+    | visible | no description  ||  Airflow_Verified | GUID 2711d221-3b20-4a11-8d38-55d0576f6fab
+    | Yes/No [YesNo] | group Air_Flow | visible | no description  ||  Air_Change_Rate | GUID
+    7f0fc2b7-f919-4186-b62f-42edd686d385 | Number [Number] | group Air_Flow | visible | no
+    description  ||  Designed_Air_Flow | GUID ba2c264b-9aec-428b-8e1f-358e60d647f1 | Air Flow
+    [HVACAirflow] | group Air_Flow | visible | no description  ||  Designed_Exhaust_Air_Flow
+    | GUID ec9e5620-dbb8-4e85-9d46-fb74d61c43a3 | Air Flow [HVACAirflow] | group Air_Flow
+    | visible | no description  ||  Designed_Fresh_Air_Flow | GUID 05df7f58-07e9-4111-a264-7346f4cff229
+    | Air Flow [HVACAirflow] | group Air_Flow | visible | no description  ||  Designed_Return_Air_Flow
+    | GUID a6648820-109a-4d9e-aa7e-1e89982eb9f1 | Air Flow [HVACAirflow] | group Air_Flow
+    | visible | no description  ||  Designed_Supply_Air_Flow | GUID 6806d14a-a05e-4735-8d10-959ceab1d527
+    | Air Flow [HVACAirflow] | group Air_Flow | visible | no description  ||  External_Static_Pressure
+    | GUID d33c75a7-156a-4e19-8fa3-e1945b6c00f5 | Pressure [HVACPressure] | group Air_Flow
+    | visible | no description  ||  Flow_Difference | GUID c2b59705-b71c-4532-ad2a-c7617b3faec2
+    | Air Flow [HVACAirflow] | group Air_Flow | visible | no description  ||  Total_Static_Pressure
+    | GUID e167eb97-5bb4-4d39-8116-3fd8bb1e32aa | Pressure [HVACPressure] | group Air_Flow
+    | visible | no description  ||  Actual_Neck_Height | GUID 69969655-42fb-4840-89b0-01dde31fecb2
+    | Length [Length] | group Air_terminals | visible | no description  ||  Actual_Neck_Width
+    | GUID 64cf0923-8147-4677-bb61-3b765685f5a0 | Length [Length] | group Air_terminals |
+    visible | no description  ||  Air_Terminal_Size | GUID c029d7b0-6c30-4df6-9bfb-e617aaba91f3
+    | Text [Text] | group Air_terminals | visible | no description  ||  Air_Terminal_Type
+    | GUID f13b88d4-9d35-42bb-859e-2c2eee07b610 | Text [Text] | group Air_terminals | visible
+    | no description  ||  Auto_Size | GUID fd926262-9b5e-4073-bc7f-bc46417bb8a8 | Yes/No [YesNo]
+    | group Air_terminals | visible | no description  ||  Ceiling_Opening_Height | GUID f3cf5fb0-8a02-4efc-92f9-6657762cc790
+    | Length [Length] | group Air_terminals | visible | no description  ||  Ceiling_Opening_Width
+    | GUID f1df9886-f75a-4dd4-8363-d2db4319136c | Length [Length] | group Air_terminals |
+    visible | no description  ||  Collar_Depth | GUID 73eb0345-66e0-4021-8fca-b9f507d7079c
+    | Length [Length] | group Air_terminals | visible | no description  ||  Core_Centre_Size
+    | GUID 50b20966-8a2a-479d-828e-15ab09539afb | Length [Length] | group Air_terminals |
+    visible | no description  ||  Core_Depth | GUID 35bc1362-d87c-4671-91ed-745a7498aa91 |
+    Length [Length] | group Air_terminals | visible | no description  ||  Core_Ring_1_Size
+    | GUID 1b20e03b-373c-4449-9e38-822d58de7720 | Length [Length] | group Air_terminals |
+    visible | no description  ||  Core_Ring_2_Size | GUID 99f27ec7-088f-4e39-802f-97e1c739cf00
+    | Length [Length] | group Air_terminals | visible | no description  ||  Core_Step | GUID
+    04435715-69b5-40a5-aa86-dc34d13ff2ce | Length [Length] | group Air_terminals | visible
+    | no description  ||  Damper_Type | GUID bc2499cd-a595-441d-aa28-65833c8cde0b | Yes/No
+    [YesNo] | group Air_terminals | visible | no description  ||  Design_Neck_Velocity | GUID
+    1a14ed0b-ca10-4870-ac8b-5bfa12745272 | Velocity [HVACVelocity] | group Air_terminals |
+    visible | no description  ||  Face_Area | GUID 66e4820b-27d0-4fd7-b92f-cb0e9568e7f3 |
+    Area [Area] | group Air_terminals | visible | no description  ||  Face_Diameter | GUID
+    62f45117-cfb0-4e7d-a7f8-ef15608fdf30 | Length [Length] | group Air_terminals | visible
+    | no description  ||  Face_Height | GUID d8fe3d82-c2e6-41e2-b6df-7e9cf0e1456f | Length
+    [Length] | group Air_terminals | visible | no description  ||  Face_Thickness | GUID 1bed1164-7d89-41a2-9c9f-185e4f765023
+    | Length [Length] | group Air_terminals | visible | no description  ||  Face_Velocity
+    | GUID 0ea6d4f3-524d-4872-8cb7-8a042dd99bb5 | Velocity [HVACVelocity] | group Air_terminals
+    | visible | no description  ||  Face_Width | GUID aaac1331-19bf-4717-a466-36e471c76472
+    | Length [Length] | group Air_terminals | visible | no description  ||  Finish | GUID
+    93fd19bd-2119-4feb-82a2-2470197ddd1d | Text [Text] | group Air_terminals | visible | no
+    description  ||  Free_Area_Percentage | GUID 0ce5b083-d22f-43dd-bddb-e21ac9c22d45 | Number
+    [Number] | group Air_terminals | visible | no description  ||  Mounting_Type | GUID fbfd433f-0bf7-4965-95fe-bd1248ed305d
+    | Text [Text] | group Air_terminals | visible | no description  ||  Neck_Area | GUID e0907e59-ead0-4a25-8daf-522dfc20d893
+    | Area [Area] | group Air_terminals | visible | no description  ||  Neck_Depth | GUID
+    dba549b1-6d1a-495d-b46f-ef2463793675 | Length [Length] | group Air_terminals | visible
+    | no description  ||  Neck_Diameter | GUID 720e2d08-a651-408d-b0ac-ac65f705bfca | Length
+    [Length] | group Air_terminals | visible | no description  ||  Neck_Height | GUID b8025dc8-0826-464d-8516-25f081d8ba26
+    | Duct Size [HVACDuctSize] | group Air_terminals | visible | no description  ||  Neck_Size
+    | GUID 04041da7-e378-4fc9-9297-d85d5fd98397 | Length [Length] | group Air_terminals |
+    visible | no description  ||  Neck_Velocity | GUID 7ce119aa-3a64-4d30-9629-328a3b95f8a8
+    | Velocity [HVACVelocity] | group Air_terminals | visible | no description  ||  Neck_Width
+    | GUID 9a138d84-6226-4897-8644-bf2c35decf34 | Duct Size [HVACDuctSize] | group Air_terminals
+    | visible | no description  ||  Neck_Width_Manual | GUID 3424e661-65de-422d-85de-2b590844bd84
+    | Duct Size [HVACDuctSize] | group Air_terminals | visible | no description  ||  Noise_Level_(NC)
+    | GUID 853e072a-d795-4ba5-87e2-625b5d4e228a | Integer [Integer] | group Air_terminals
+    | visible | no description  ||  Plenum_Box_Dia | GUID bcf86f28-1f16-4775-bf46-909cd4f7f7cf
+    | Length [Length] | group Air_terminals | visible | no description  ||  Pressure_Drop
+    | GUID 342c0a1a-8b8f-496b-bf5a-d36b745aefff | Pressure [HVACPressure] | group Air_terminals
+    | visible | no description  ||  Required_Neck_Size | GUID 3699c05a-94dd-4a38-a17e-70180626fe62
+    | Length [Length] | group Air_terminals | visible | no description  ||  Throw_Distance
+    | GUID 5257cc51-9a14-4fba-8730-4a4bc733d061 | Length [Length] | group Air_terminals |
+    visible | no description  ||  Velocity_Check | GUID 7ca73a9a-019e-4dff-ab8c-e3e740e39de9
+    | Text [Text] | group Air_terminals | visible | no description  ||  AJ_TEST_Status | GUID
+    e676b221-e5cc-4592-97be-c52ed904e8aa | Text [Text] | group AJ TEST Parameters | visible
+    | no description  ||  Model_Number | GUID 3e8fac05-9441-41c7-9bff-0f915d2b4d25 | Text
+    [Text] | group Asset_FM_Data | visible | no description  ||  Serial_Number | GUID eaa9893c-3af7-4686-b889-b99633ad5485
+    | Text [Text] | group Asset_FM_Data | visible | no description  ||  Abbreviations | GUID
+    d1f79219-f251-4db0-bf66-5ec106e9b828 | Text [Text] | group Common | visible | no description  ||  Casing_Material
+    | GUID 15548ef8-5095-48c6-8604-93a6a38d966e | Material [Material] | group Common | visible
+    | no description  ||  CHWR_Material | GUID dd91e0d1-f6b3-4bd8-92c9-40bb57a26f7c | Material
+    [Material] | group Common | visible | no description  ||  CHWS_Material | GUID fe94c7a4-3cb9-47b5-9a7f-804ab2be078c
+    | Material [Material] | group Common | visible | no description  ||  Drain_Material |
+    GUID 5c607625-3468-4f01-b528-b0ef3a05927e | Material [Material] | group Common | visible
+    | no description  ||  Electrical_Material | GUID 153772c7-914a-4c6d-96c1-ec9c4980ffae
+    | Material [Material] | group Common | visible | no description  ||  Filter_By | GUID
+    67075236-d6e3-4306-8671-277675af8216 | Text [Text] | group Common | visible | no description  ||  Material
+    | GUID 12320498-fb3a-4bfb-81cd-32aace0e6e41 | Material [Material] | group Common | visible
+    | no description  ||  Material_Abbreviation | GUID a9e252b7-4605-4a00-9fc7-45f404b0389e
+    | Text [Text] | group Common | visible | no description  ||  Pipework_Material | GUID
+    6ff47fb1-af66-42eb-babf-ec1f9ae4557e | Material [Material] | group Common | visible |
+    no description  ||  Duct_Material_Name | GUID 2a40b9fb-5096-4c77-acbb-91e2243e4d6a | Text
+    [Text] | group DuctStandards | visible | no description  ||  Duct_Pressure_Class | GUID
+    98c47389-f091-4aa3-b35a-0c2936326139 | Text [Text] | group DuctStandards | visible | no
+    description  ||  Duct_Rule_Source | GUID 3b8fabbe-c03f-4ed8-b535-8e8608d1b7f3 | Text [Text]
+    | group DuctStandards | visible | no description  ||  Duct_Sheet_Area | GUID 9d9ba30a-6a6a-4b84-b888-f4fbf0293aca
+    | Number [Number] | group DuctStandards | visible | no description  ||  Duct_Total_Weight
+    | GUID 8b02759e-8c87-4358-bb14-e998f7e1d490 | Number [Number] | group DuctStandards |
+    visible | no description  ||  Duct_Weight_per_Meter | GUID 9624fea9-c341-4a7c-97e3-30cc7dc87425
+    | Number [Number] | group DuctStandards | visible | no description  ||  Gauge | GUID 98f7ce00-fb93-4233-90b7-f25852953de1
+    | Text [Text] | group DuctStandards | visible | no description  ||  Sheet_Thickness |
+    GUID 02410a50-4653-49a1-991a-13a4cf80dbc0 | Number [Number] | group DuctStandards | visible
+    | no description  ||  Access_Door_Required | GUID 6f5ea4aa-9e71-4c05-bea3-f97a9464ba86
+    | Yes/No [YesNo] | group Duct_Accessory | visible | no description  ||  Actuator_Type
+    | GUID aacb9abe-f862-45dd-9584-bc355fd3a795 | Text [Text] | group Duct_Accessory | visible
+    | no description  ||  Duct_Accessory_Diameter | GUID 57f0617c-170c-4668-a1c3-413766e2c080
+    | Length [Length] | group Duct_Accessory | visible | no description  ||  Duct_Accessory_Height
+    | GUID 2f57a2c5-1f2c-4f32-9c2d-efe964b77a81 | Length [Length] | group Duct_Accessory |
+    visible | no description  ||  Duct_Accessory_Length | GUID 382fdf4a-d50e-423b-bdb2-3d8ad8aca5c2
+    | Length [Length] | group Duct_Accessory | visible | no description  ||  Duct_Accessory_Width
+    | GUID b8e49105-5a69-457f-bf9c-f5e1d2c9b7ba | Length [Length] | group Duct_Accessory |
+    visible | no description  ||  Duct_Damper_Type | GUID f303f91d-cc64-409e-b720-a6be3c1904cf
+    | Text [Text] | group Duct_Accessory | visible | no description  ||  Duct_Opening_Height
+    | GUID 37a651e8-06f8-4099-93a7-0a5d01baa31b | Length [Length] | group Duct_Accessory |
+    visible | no description  ||  Duct_Opening_Width | GUID 9c84d745-f738-4eb1-8fda-6a2833c048d7
+    | Length [Length] | group Duct_Accessory | visible | no description  ||  Fire_Rating |
+    GUID 28e44edb-b806-4410-9d3c-769c1e8173b4 | Text [Text] | group Duct_Accessory | visible
+    | no description  ||  Panel_Height | GUID 88796287-705c-4f5e-b33b-b2aed40996d5 | Length
+    [Length] | group Electrical_Panels | visible | no description  ||  Panel_Length | GUID
+    92750458-1630-4b03-971a-75b7d3b416ac | Length [Length] | group Electrical_Panels | visible
+    | no description  ||  Panel_Main_Breaker_Rating | GUID 8d488a3f-c508-4b20-b344-dc904525d0dc
+    | Text [Text] | group Electrical_Panels | visible | no description  ||  Panel_Mounting
+    | GUID f006a817-efb8-488e-ae3a-3f8e3b462d6f | Text [Text] | group Electrical_Panels |
+    visible | no description  ||  Panel_Number_of_Circuits | GUID c488cb49-51f0-4d87-aeeb-f1459557db62
+    | Number [Number] | group Electrical_Panels | visible | no description  ||  Panel_Voltage
+    | GUID d73c904e-28f7-4d43-b424-ed46a44a1c0a | Text [Text] | group Electrical_Panels |
+    visible | no description  ||  Panel_Width | GUID 4f24af27-976a-42f0-b484-82a911bbef2f
+    | Length [Length] | group Electrical_Panels | visible | no description  ||  Family_Approved_By
+    | GUID ccec5593-6882-4dc9-a3de-dded3cf99a01 | Text [Text] | group Family_Attributes |
+    visible | no description  ||  Family_Approved_Date | GUID 084976cd-42e5-42de-89c6-5981875b89da
+    | Text [Text] | group Family_Attributes | visible | no description  ||  Family_Created_By
+    | GUID 307915bd-c155-4b58-bd46-6b370ecbaa2e | Text [Text] | group Family_Attributes |
+    visible | no description  ||  Family_Created_Date | GUID faf825bb-465a-413c-9f08-237eab993bdb
+    | Text [Text] | group Family_Attributes | visible | no description  ||  Family_Revision
+    | GUID 9afc9d1f-ff95-47da-a200-864c6071a5a5 | Text [Text] | group Family_Attributes |
+    visible | no description  ||  Family_Source | GUID f836694c-dc0d-4fb2-af50-d6427db9c5a8
+    | Text [Text] | group Family_Attributes | visible | no description  ||  Family_Status
+    | GUID a28d7da9-1f16-467a-81f2-8a066c9b13d0 | Text [Text] | group Family_Attributes |
+    visible | no description  ||  Angle | GUID 284f59e2-dd91-4944-95e4-c40d3e7f096f | Angle
+    [Angle] | group Geometry | visible | no description  ||  Area | GUID d8beb765-9366-4d59-ae9b-5326ec087cfb
+    | Area [Area] | group Geometry | visible | no description  ||  Depth | GUID 559d80c2-c060-4c57-8ed5-0b0283ad4edc
+    | Length [Length] | group Geometry | visible | no description  ||  Diameter | GUID 09ccdc5c-d181-4a39-8e0c-01101054cbdf
+    | Length [Length] | group Geometry | visible | no description  ||  Height | GUID 73050cb3-507c-44e6-ab09-7a2b21e4d674
+    | Length [Length] | group Geometry | visible | no description  ||  Length | GUID cfb6bf07-836b-4c10-86f6-fc68b473e57b
+    | Length [Length] | group Geometry | visible | no description  ||  Radius | GUID 06c36cc3-4cc3-48b9-a8cd-b6494aef536a
+    | Length [Length] | group Geometry | visible | no description  ||  Suspension_Length |
+    GUID e30ee994-c24e-4969-ad22-de4d89b2150c | Length [Length] | group Geometry | visible
+    | no description  ||  Thickness | GUID d877ab3b-d04b-4481-97d4-fc088f78e19d | Length [Length]
+    | group Geometry | visible | no description  ||  Volume | GUID 04795ba7-a112-4268-a98c-5e757c93270a
+    | Volume [Volume] | group Geometry | visible | no description  ||  Weight | GUID 8504db12-f480-4c91-b7b3-b8890d3ad267
+    | Mass [Mass] | group Geometry | visible | no description  ||  Width | GUID 939413f0-a21b-40ed-8367-2d7be19c63b9
+    | Length [Length] | group Geometry | visible | no description  ||  ID_Altitude | GUID
+    4f7d1135-6b1a-4574-af2c-70a07910fa44 | Length [Length] | group Location_Data | visible
+    | no description  ||  ID_Easting | GUID 67d73868-f05e-45d8-b5f1-0ab0573d58aa | Length
+    [Length] | group Location_Data | visible | no description  ||  ID_Level_Name | GUID 4c378db8-8e48-4fd8-b011-3f2be00f12e9
+    | Text [Text] | group Location_Data | visible | no description  ||  ID_Northing | GUID
+    dca2fc62-2d67-41b4-ad3c-2d3c66285a19 | Length [Length] | group Location_Data | visible
+    | no description  ||  ID_Room_Name | GUID 0022ea51-5044-4908-9d86-aa18a73a357b | Text
+    [Text] | group Location_Data | visible | no description  ||  ID_Room_Number | GUID 1b41379f-fded-46c3-b0a1-f9db838b8284
+    | Text [Text] | group Location_Data | visible | no description  ||  ID_Space_Name | GUID
+    73dd57c0-6785-42a0-b66a-f5f92743994a | Text [Text] | group Location_Data | visible | no
+    description  ||  ID_Space_Number | GUID db1dd205-b120-4e32-90bb-73c870985709 | Text [Text]
+    | group Location_Data | visible | no description  ||  ID_Zone_Name | GUID ae2128d2-bf03-4dc0-b9d6-181b272a9e3b
+    | Text [Text] | group Location_Data | visible | no description  ||  ID_Zone_Number | GUID
+    6d21f840-35f4-4554-8913-9a87cba6ffc8 | Text [Text] | group Location_Data | visible | no
+    description  ||  Apparent_Load | GUID c468ed36-6016-48a7-b8df-f934f09e050b | Apparent
+    Power [ElectricalApparentPower] | group Mechanical_Equipment | visible | no description  ||  Chilled_Water_Flow
+    | GUID 08987fb0-517a-4579-adc7-aea8002e1daa | Flow [PipingFlow] | group Mechanical_Equipment
+    | visible | no description  ||  CHW_Return_Diameter | GUID 2f9898db-0561-4061-b0d2-36e6fd7b2a9d
+    | Pipe Size [PipeSize] | group Mechanical_Equipment | visible | no description  ||  CHW_Return_Height
+    | GUID f9b5c20e-cacb-4d0e-a747-08cbf0f48ac5 | Length [Length] | group Mechanical_Equipment
+    | visible | no description  ||  CHW_Return_Offset | GUID ac907805-e349-4953-b9d9-2c57cd2afd5e
+    | Length [Length] | group Mechanical_Equipment | visible | no description  ||  CHW_Return_Radius
+    | GUID 131b0c6c-07c7-4f7f-9ddf-8f9bed315075 | Pipe Size [PipeSize] | group Mechanical_Equipment
+    | visible | no description  ||  CHW_Supply_Diameter | GUID 5e2e6af0-06f0-434f-975a-45171a8782f0
+    | Pipe Size [PipeSize] | group Mechanical_Equipment | visible | no description  ||  CHW_Supply_Height
+    | GUID 9409aadb-d485-4181-be68-210c0c5a770f | Length [Length] | group Mechanical_Equipment
+    | visible | no description  ||  CHW_Supply_Offset | GUID 65f624be-f48b-468c-8fff-321c34b05dc5
+    | Length [Length] | group Mechanical_Equipment | visible | no description  ||  CHW_Supply_Radius
+    | GUID 04fcbac7-b5f7-447b-a2a3-62a536a14e5b | Pipe Size [PipeSize] | group Mechanical_Equipment
+    | visible | no description  ||  Condensate_Drain_Diameter | GUID ade9d493-cf76-43ae-a137-862cbf824c4b
+    | Pipe Size [PipeSize] | group Mechanical_Equipment | visible | no description  ||  Control_Box_Depth
+    | GUID 057c67e1-4c4c-4e4d-b35e-c83517ff46d1 | Length [Length] | group Mechanical_Equipment
+    | visible | no description  ||  Control_Box_Height | GUID e628f452-0429-4ade-b310-c3d3b35e702b
+    | Length [Length] | group Mechanical_Equipment | visible | no description  ||  Control_Box_Offset
+    | GUID e168b7ff-2ed8-443a-a84e-bc44d1437504 | Length [Length] | group Mechanical_Equipment
+    | visible | no description  ||  Control_Box_Width | GUID 8eeca899-6faf-4e64-a977-b222fe5fd943
+    | Length [Length] | group Mechanical_Equipment | visible | no description  ||  Drain_Flow
+    | GUID d83aa3c5-53a4-49c6-914a-93d646eef140 | Flow [PipingFlow] | group Mechanical_Equipment
+    | visible | no description  ||  Drain_Height | GUID c93be68b-5f05-4126-9fc3-0bb17221a534
+    | Length [Length] | group Mechanical_Equipment | visible | no description  ||  Drain_Offset
+    | GUID 2c86d6d6-febc-4cfe-ac85-aa91f8cc65c0 | Length [Length] | group Mechanical_Equipment
+    | visible | no description  ||  Drain_Radius | GUID 1c072811-79b1-4bfd-8054-488d1b646761
+    | Pipe Size [PipeSize] | group Mechanical_Equipment | visible | no description  ||  Duct_Spigot_Depth
+    | GUID bdad203d-1941-4ee6-88b8-7b66aff89d66 | Length [Length] | group Mechanical_Equipment
+    | visible | no description  ||  Full_Load_Ampere | GUID 20041c20-99b0-4f6e-a242-4fcc014e09e6
+    | Current [ElectricalCurrent] | group Mechanical_Equipment | visible | no description  ||  Number_of_Poles
+    | GUID f3d25956-7967-48e2-bb8a-920bc6113259 | Number of Poles [NumberOfPoles] | group
+    Mechanical_Equipment | visible | no description  ||  Phase | GUID df515c3b-387c-48bb-8b52-1b5626ccd7e9
+    | Text [Text] | group Mechanical_Equipment | visible | no description  ||  Pipe_High_Offset
+    | GUID 9bbe4d13-1240-4339-86b4-b3e440d91a52 | Length [Length] | group Mechanical_Equipment
+    | visible | no description  ||  Pipe_Low_Offset | GUID dca1a088-bc57-4865-b584-272f08f1da08
+    | Length [Length] | group Mechanical_Equipment | visible | no description  ||  Pipe_Stub_Length
+    | GUID 30a715aa-d69f-4271-a35c-473f3019bc0b | Length [Length] | group Mechanical_Equipment
+    | visible | no description  ||  Pipe_Y_Offset | GUID de7c6991-7858-4d58-8bc1-bf35bc160fa9
+    | Length [Length] | group Mechanical_Equipment | visible | no description  ||  Power_Consumption
+    | GUID 12dea7a4-3be6-4a24-83a4-e0caa877ccf7 | Power [ElectricalPower] | group Mechanical_Equipment
+    | visible | no description  ||  Power_Factor | GUID fe6ebe00-2abd-4884-b630-eff68a18844b
+    | Number [Number] | group Mechanical_Equipment | visible | no description  ||  Return_Air_Height
+    | GUID ed93f48a-63f9-4da8-9408-1fa27efd96d6 | Duct Size [HVACDuctSize] | group Mechanical_Equipment
+    | visible | no description  ||  Return_Air_Width | GUID 57d6576f-2a5b-4d2e-823e-07dc0b8a88a5
+    | Duct Size [HVACDuctSize] | group Mechanical_Equipment | visible | no description  ||  Sensible_Cooling_Capacity
+    | GUID 76d1e54b-97ca-41d4-94dd-a7383f9a98d1 | Power [HVACPower] | group Mechanical_Equipment
+    | visible | no description  ||  Show_Clearance | GUID c0bf7d7a-a86a-4802-8c22-a9612080da24
+    | Yes/No [YesNo] | group Mechanical_Equipment | visible | no description  ||  Supply_Air_Height
+    | GUID 4fceb49a-ca35-4c3d-9299-8afd34b51729 | Duct Size [HVACDuctSize] | group Mechanical_Equipment
+    | visible | no description  ||  Supply_Air_Width | GUID bbf14c52-9f26-422e-ab66-e22e86dbafb3
+    | Duct Size [HVACDuctSize] | group Mechanical_Equipment | visible | no description  ||  Total_Cooling_Capacity
+    | GUID 3712ab29-5059-4d3e-9338-7e0162c28731 | Power [HVACPower] | group Mechanical_Equipment
+    | visible | no description  ||  Voltage | GUID 2dd769db-fab1-4387-b41a-37145bf43e10 |
+    Electrical Potential [ElectricalPotential] | group Mechanical_Equipment | visible | no
+    description  ||  Water_Pressure_Drop | GUID 2ea0aa15-87d5-4fa7-bd11-92b4da2a1b6c | Pressure
+    [PipingPressure] | group Mechanical_Equipment | visible | no description  ||  BIM_Manager
+    | GUID 6a435080-c98e-4bdd-b232-cae567f9af25 | Text [Text] | group Project_Information
+    | visible | no description  ||  Coordination_Status | GUID 2afc21bd-ed4c-44af-a409-070b55403237
+    | Text [Text] | group Project_Information | visible | no description  ||  Discipline_Team_Leader
+    | GUID 2ff31dcd-278c-4138-a026-a7aba5679910 | Text [Text] | group Project_Information
+    | visible | no description  ||  File_Name | GUID 7d341c87-2b17-41cb-a358-0cf8a126fe3d
+    | Text [Text] | group Project_Information | visible | no description  ||  File_Number
+    | GUID f91d4100-d44d-40d7-9059-64672db47f16 | Text [Text] | group Project_Information
+    | visible | no description  ||  Model_CLASS | GUID f8cef4a6-7be5-4283-94c4-02c5e1cc28a2
+    | Text [Text] | group Project_Information | visible | no description  ||  Model_CLASS_Code
+    | GUID dad0f5ef-55e9-46b9-8035-8e884bb540fa | Text [Text] | group Project_Information
+    | visible | no description  ||  Model_Discipline | GUID c81ee490-ef09-4015-b5b5-0b1be5755b66
+    | Text [Text] | group Project_Information | visible | no description  ||  Model_Discipline_Code
+    | GUID ebc61a24-2892-407f-ad78-b805da914627 | Text [Text] | group Project_Information
+    | visible | no description  ||  Model_Origin | GUID da89d23c-ab2f-4203-a2d0-b6c8160a830e
+    | Text [Text] | group Project_Information | visible | no description  ||  Model_Type |
+    GUID 9d1d3981-3a21-4f04-99b7-d26420daf503 | Text [Text] | group Project_Information |
+    visible | no description  ||  Organization_Code | GUID 14c82135-12c6-43c5-ac97-64f8e192a8b9
+    | Text [Text] | group Project_Information | visible | no description  ||  Project_Code
+    | GUID 09ea94b2-b70d-482f-b616-cff2b7d4ed94 | Text [Text] | group Project_Information
+    | visible | no description  ||  Project_Manager | GUID ff75288c-5e38-43e8-bef4-2a3b8f7a590d
+    | Text [Text] | group Project_Information | visible | no description  ||  Project_Title_1
+    | GUID b43b0fda-a984-4256-b1e5-1f1455946215 | Text [Text] | group Project_Information
+    | visible | no description  ||  Project_Title_2 | GUID 99be89dc-caee-46f0-b25c-b95499037ea2
+    | Text [Text] | group Project_Information | visible | no description  ||  Project_Title_3
+    | GUID 334bc96c-248f-4853-962b-c56e73fa6e29 | Text [Text] | group Project_Information
+    | visible | no description  ||  Revision_Number | GUID 74d3313b-062d-4e27-86c9-c8579bea7862
+    | Text [Text] | group Project_Information | visible | no description  ||  Document_Class
+    | GUID 87f14a2a-fc5c-4b8e-9dc6-17b4073712b0 | Text [Text] | group Sheet_Attributes | visible
+    | no description  ||  Document_Class_Code | GUID 15f3e7f3-4a1b-4a37-a121-9643df61bf2d
+    | Text [Text] | group Sheet_Attributes | visible | no description  ||  Number_of_Sheet
+    | GUID 54a35a28-fc07-43f2-a2dd-f4a951b30173 | Text [Text] | group Sheet_Attributes | visible
+    | no description  ||  Discipline_Code | GUID 7ff252f4-470d-49e4-9608-b94600c1bb23 | Text
+    [Text] | group System | visible | no description  ||  Main_System_Code | GUID c1bc1b2e-a497-4100-b6a0-7478f52e9703
+    | Text [Text] | group System | visible | no description  ||  Service_Code | GUID ee567d76-872f-4b6c-86a5-689a392d03ea
+    | Text [Text] | group System | visible | no description  ||  Sub_System_Code | GUID d70a9d0a-8342-43f3-9894-aaf94c2aada5
+    | Text [Text] | group System | visible | no description  ||  System_Code | GUID a6ebe8d1-a85f-46c9-a0d8-b69d426f1c89
+    | Text [Text] | group System | visible | no description  ||  System_Flow_Type | GUID 221aab23-ec81-46d1-831f-e35ea2ef4f63
+    | Text [Text] | group System | visible | no description  ||  System_Name | GUID b903462e-0516-411c-970f-dbf0b6396536
+    | Text [Text] | group System | visible | no description  ||  Additional_Tag | GUID 4a629ec5-4929-4d9b-9170-78523af930de
+    | Text [Text] | group Tagging_Convention | visible | no description  ||  Discipline |
+    GUID fb193cef-3c14-4a7f-b83d-02e69ba7d637 | Text [Text] | group Tagging_Convention | visible
+    | no description  ||  Item_Tag | GUID 401e2427-b613-40f1-b89f-ad9ad339bf63 | Text [Text]
+    | group Tagging_Convention | visible | no description  ||  LV00_Object_Code | GUID a95ea4fb-9508-4501-b35b-65d6b44c84b3
+    | Text [Text] | group Tagging_Convention | visible | no description  ||  LV01_Object_Code
+    | GUID 54b8fb61-1304-4129-93fc-e5c421dbb2dc | Text [Text] | group Tagging_Convention |
+    visible | no description  ||  LV02_Object_Code | GUID 0bb478aa-0e16-414a-9e6c-bc9a8902b3f1
+    | Text [Text] | group Tagging_Convention | visible | no description  ||  LV03_Sequence_Number
+    | GUID 217475e9-5b13-4a4f-a5aa-55235a14543f | Text [Text] | group Tagging_Convention |
+    visible | no description  ||  Clearance_Bottom | GUID 76c79f12-1be4-44ce-90a9-f1a740baba85
+    | Length [Length] | group Unit_Dimensions | visible | no description  ||  Clearance_Front
+    | GUID 262bb167-d103-410b-b6fa-f59eeb3a8a39 | Length [Length] | group Unit_Dimensions
+    | visible | no description  ||  Clearance_Left | GUID 5b5c55a8-a844-4a46-b62b-70582324095c
+    | Length [Length] | group Unit_Dimensions | visible | no description  ||  Clearance_Rear
+    | GUID ea5843b1-20c8-45b7-bbc3-e4ee5334c4b9 | Length [Length] | group Unit_Dimensions
+    | visible | no description  ||  Clearance_Right | GUID 20bc8d59-52a2-4c82-af1d-8448f3b9b6bd
+    | Length [Length] | group Unit_Dimensions | visible | no description  ||  Clearance_Side
+    | GUID dbd87209-d4a3-4806-bf26-85c945e19f9e | Length [Length] | group Unit_Dimensions
+    | visible | no description  ||  Clearance_Top | GUID b3072ad6-0a8c-4d45-aa03-99a4605acca5
+    | Length [Length] | group Unit_Dimensions | visible | no description  ||  Unit_Height
+    | GUID efbfe050-e1d9-4fa3-a9b9-edebe191959c | Length [Length] | group Unit_Dimensions
+    | visible | no description  ||  Unit_Length | GUID 1032a0bc-6063-4e69-9f35-6b4bf296ff42
+    | Length [Length] | group Unit_Dimensions | visible | no description  ||  Unit_Thickness
+    | GUID 6847e933-6894-4776-85fb-262499248f0a | Length [Length] | group Unit_Dimensions
+    | visible | no description  ||  Unit_Width | GUID 9f92ece2-b7ee-4f62-a7e6-9362b3672e29
+    | Length [Length] | group Unit_Dimensions | visible | no description  ||  Approved_By
+    | GUID 39f75571-b921-45ce-8889-7176e2359aa3 | Text [Text] | group View_Organization |
+    visible | no description  ||  Checked_By | GUID 813f7f70-47b6-4774-84e5-499158bd78a1 |
+    Text [Text] | group View_Organization | visible | no description  ||  Drawn_By | GUID
+    cf3b60e2-1c2c-4cd2-91af-d1f13dddf0db | Text [Text] | group View_Organization | visible
+    | no description  ||  View_Category | GUID dfaecf4f-90bb-410e-aeb7-5cfc950c402c | Text
+    [Text] | group View_Organization | visible | no description  ||  View_Discipline | GUID
+    c671e6d9-80a8-4d77-b2e8-fca881a769a9 | Text [Text] | group View_Organization | visible
+    | no description  ||  View_Owner | GUID 14f85d99-9b5d-46dd-96c1-cde94670841f | Text [Text]
+    | group View_Organization | visible | no description  ||  View_Sub_Category | GUID d4abe945-2cc5-461a-b0e6-d324109b0e7a
+    | Text [Text] | group View_Organization | visible | no description, partsOf Func`2, sharedFile
+    D:\04_BIM\06_Shared_Parameters\Shared_Parameters.txt, squash Func`2. inputs came nameContains
+    given empty - "all", the card''s own default (optional); groupContains not given - "all",
+    the card''s own default (optional); compareWithDocument as given. on P1102 MEP'
+  negative_case: run with compareWithDocument=true, nameContains=ZZZ_Not_In_The_File instead
+    - chosen because it should not contain what this fragment reports. returned compareWithDocument
+    true, comparedWith P1102 MEP (project), comparison , dataTypeOf Func`2, everything 211
+    item(s) [(Air_terminals, Autodesk.Revit.DB.ExternalDefinition), (Air_terminals, Autodesk.Revit.DB.ExternalDefinition),
+    (Air_terminals, Autodesk.Revit.DB.ExternalDefinition), ...], file DefinitionFile, fileExists
+    true, fileReadOnly false, fileState on disk, not marked read-only, opens in Revit - 18
+    group(s), 211 parameter(s), findings 5 item(s) [Revit is set to the shared parameter file
+    "D:\04_BIM\06_Shar..., 0 of 211 parameter(s) listed, names holding "ZZZ_Not_In_The_...,
+    "ZZZ_Not_In_The_File" is not in the shared parameter file "D..., ...], groupParts 0 item(s),
+    groups Air_terminals (38)  ||  Air_Flow (15)  ||  Location_Data (10)  ||  Duct_Accessory
+    (10)  ||  Common (10)  ||  Unit_Dimensions (11)  ||  View_Organization (7)  ||  Project_Information
+    (18)  ||  Geometry (12)  ||  Sheet_Attributes (3)  ||  Tagging_Convention (7)  ||  Family_Attributes
+    (7)  ||  Electrical_Panels (7)  ||  DuctStandards (8)  ||  System (7)  ||  Asset_FM_Data
+    (2)  ||  AJ TEST Parameters (1)  ||  Mechanical_Equipment (38), guidMismatches 0, holdsAny
+    Func`3, inFile 211, lineOf Func`2, listed 0 item(s), matchedByGuid 0, nameParts 1 item(s)
+    [ZZZ_Not_In_The_File], notShared 0, opensInRevit true, parameterCount 0, parameterList
+    , partsOf Func`2, sharedFile D:\04_BIM\06_Shared_Parameters\Shared_Parameters.txt, squash
+    Func`2. inputs came nameContains as given; groupContains not given - "all", the card's
+    own default (optional); compareWithDocument as given. on P1102 MEP
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 7e9e3360114070f3
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
