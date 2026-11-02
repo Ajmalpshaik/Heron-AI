@@ -222,6 +222,13 @@ compatibility-note: >
 #   "slope this roof"                  -> SLOPE_ROOF_EDGES - the edges of a
 #                                         footprint roof that exists, gable or
 #                                         hip at the modeller's pitch
+#   "make a barrel roof over the entrance",
+#   "add a gable extrusion roof on reference plane North Face"
+#                                      -> CREATE_EXTRUSION_ROOF (2026-11-02) -
+#                                         an open profile on a vertical plane,
+#                                         extruded between a start and an end;
+#                                         this card's roof is a closed outline
+#                                         on plan
 #   "how high is the ceiling"          -> MEASURE_CEILING_HEIGHT - a READ, and it
 #                                         must not answer a request to build one
 #   "where is the ceiling grid"        -> READ_CEILING_GRID

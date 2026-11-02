@@ -1294,6 +1294,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ls.md`](needs-checking/group-ls.md)
 
+## Group LT - a roof by extrusion, its profile sketched on a named reference plane or along a grid and extruded between a start and an end: `CREATE_EXTRUSION_ROOF` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lt.md`](needs-checking/group-lt.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

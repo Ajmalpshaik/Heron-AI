@@ -202,6 +202,12 @@ compatibility-note: >
 #   "put a roof over this"               -> CREATE_FLOOR, with a roof type
 #                                           (CREATE_ROOF merged in). It makes the roof FLAT;
 #                                           this slopes it afterwards
+#   "add a gable extrusion roof on reference plane North Face",
+#   "make a barrel roof over the entrance"
+#                                        -> CREATE_EXTRUSION_ROOF (2026-11-02).
+#                                           A roof by extrusion takes its slope
+#                                           from its profile; this card refuses
+#                                           one by name
 #   "what pitch is this roof"            -> NOT HERE, and nowhere yet. A
 #                                           question must not land on a write,
 #                                           and nothing reads a roof's pitch
