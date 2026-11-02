@@ -86,6 +86,8 @@ keep        -> %TEMP%\Heron\companion\chat-PID.json     (the Companion button re
 | [`heron_companion.py`](heron_companion.py) | The server: pairing, the protection rules, which Revit to show, the keeper that follows the Companion switch (D-109), the activity list, the element table, the HVAC Load Calculation panel (docs/44), the Sprinkler Hydraulic Calculation panel (docs/46), the Sprinkler Layout panel (docs/47), the Model Dashboard (docs/40 s21.10) and the route that opens either sheet - and the after-change tables, switched off |
 | [`static/index.html`](static/index.html), [`static/companion.js`](static/companion.js), [`static/companion.css`](static/companion.css), [`static/loads3d.js`](static/loads3d.js), [`static/sprinkler3d.js`](static/sprinkler3d.js) | The page, the 3D views of the Loads panel and the Sprinkler panel, and the Sprinkler Layout panel's plans, drawn by companion.js - renderers of its own. Nothing is loaded from the internet |
 
+**The page is a desktop page**: a sidebar of five workspaces (Model Dashboard, HVAC Loads, Sprinkler Hydraulics, Sprinkler Layout, Element Table), one shown at a time, under a bar that always shows which Revit, model and view. There is no phone or tablet layout; under 1280 px wide the sidebar keeps only its icons ([docs/40 §21.16](../../docs/40-heron-companion.md)). A new panel is a new `<section class="ws" id=...>` in `index.html`, one entry in `WORKSPACES` in `companion.js` and one `body[data-ws=...]` line in `companion.css`.
+
 ## Rules for this folder
 
 1. **Never talk to an AI.** No outgoing connection of any kind; the page is served to, and reads from,

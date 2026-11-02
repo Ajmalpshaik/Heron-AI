@@ -17,7 +17,11 @@ let failures = 0;
 
 function $(id) { return document.getElementById(id); }
 
-function set(id, text) { $(id).textContent = text == null || text === "" ? "—" : String(text); }
+function set(id, text) {
+  const shown = text == null || text === "" ? "—" : String(text);
+  $(id).textContent = shown;
+  $(id).title = shown === "—" ? "" : shown;     // the bar clips a long model name; the full one is here
+}
 
 function pill(text, kind) {
   const el = $("link");
@@ -2666,7 +2670,6 @@ async function sprinkler_() {
     const key = S ? (S.run_id || "") + "/" + S.at + "/" + (S.report ? "r" : "") + (S.confirmed ? "c" : "") : "none";
     if (key === sprinklerShown) return;
     sprinklerShown = key;
-    $("sprinkler").hidden = !S;
     renderSprinkler(S);
     if (window.HeronSprinkler3D) window.HeronSprinkler3D.update($("k-3d"), S && S.has_view ? (S.run_id || "") + "/" + S.at : null);
   } catch (e) { /* the state poll reports a closed page */ }
@@ -2946,7 +2949,6 @@ async function layout_() {
     const key = Y ? Y.at + "/" + Object.keys(Y.placed || {}).join(",") : "none";
     if (key === layoutShown) return;
     layoutShown = key;
-    $("layout").hidden = !Y;
     renderLayout(Y);
   } catch (e) { /* the state poll reports a closed page */ }
 }
@@ -3016,9 +3018,136 @@ function theme() {
   });
 }
 
+// ---------------------------------------------------------------- workspaces
+// One workspace is shown at a time (docs/40 s21.16). The sidebar says which of
+// them holds something; a workspace that gets its first data while the open
+// one is empty is opened for you; otherwise it is only marked "New", never
+// pulled in front of what you are working on. All of it reads the page's own
+// elements - nothing here asks Heron or Revit for anything.
+const WORKSPACES = [
+  ["dashboard", "d-empty"], ["loads", "l-empty"], ["sprinkler", "k-empty"],
+  ["layout", "y-empty"], ["table", "t-empty"],
+];
+let wsNow = "dashboard";
+const wsHad = {};
+const wsNew = {};
+let wsLooked = false;
+const wsBorn = Date.now();       // data that arrives in the first moments is not "new" - it was just not fetched yet
+let jumpKey = "";
+
+function wsHas(id) {
+  const pair = WORKSPACES.find(w => w[0] === id);
+  return !!pair && $(pair[1]).hidden;
+}
+
+function wsShow(id) {
+  if (!WORKSPACES.some(w => w[0] === id)) return;
+  wsNow = id;
+  wsNew[id] = false;
+  document.body.dataset.ws = id;
+  document.querySelectorAll(".nav-item").forEach(b => {
+    const on = b.dataset.ws === id;
+    if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  });
+  jumpKey = "";
+  // A 3D view drawn while its workspace was hidden had no size to draw into; once the workspace
+  // shows, tell it to draw again (the three views redraw on a window resize).
+  requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
+  const main = document.getElementById("main");
+  if (main && main.scrollTo) main.scrollTo(0, 0);
+  window.scrollTo(0, 0);
+  wsSync();
+}
+
+function wsSync() {
+  WORKSPACES.forEach(([id]) => {
+    const has = wsHas(id);
+    const was = wsHad[id];
+    if (has && !was) {
+      if (wsLooked && id !== wsNow && Date.now() - wsBorn > 5000) wsNew[id] = true;
+      if (!wsHas(wsNow) && id !== wsNow) wsShow(id);
+    }
+    wsHad[id] = has;
+    const chip = document.querySelector('.nav-state[data-for="' + id + '"]');
+    if (chip) {
+      const word = id === wsNow && has ? "Open" : wsNew[id] ? "New" : has ? "Ready" : "Empty";
+      if (chip.textContent !== word) chip.textContent = word;
+      chip.title = word === "Empty" ? "Nothing here yet" : word === "New" ? "Heron put something new here" : word === "Open" ? "You are here" : "Holds something";
+      chip.dataset.state = word.toLowerCase();
+    }
+  });
+  wsLooked = true;
+  jumpSync();
+}
+
+// A long workspace gets a row of links to its own headings.
+function jumpSync() {
+  const bar = $("jump");
+  const sec = $(wsNow);
+  // A heading may carry a badge ("Checks on the model  1 INFO"): the link uses only its own words.
+  const words = h => Array.from(h.childNodes).filter(n => n.nodeType === 3).map(n => n.textContent).join("").trim();
+  const heads = Array.from(sec.querySelectorAll("h3"))
+    .filter(h => !h.closest("details") && !h.closest(".welcome") && words(h));
+  heads.forEach((h, i) => { h.id = "j-" + wsNow + "-" + i; });
+  const key = wsNow + "|" + heads.map(words).join("|");
+  if (key === jumpKey) return;
+  jumpKey = key;
+  bar.replaceChildren();
+  if (heads.length < 3) { bar.hidden = true; return; }
+  bar.hidden = false;
+  const label = document.createElement("span");
+  label.className = "jump-label";
+  label.textContent = "Jump to";
+  bar.append(label);
+  heads.forEach(h => {
+    const a = document.createElement("button");
+    a.type = "button";
+    a.className = "jump-link";
+    a.textContent = words(h).replace(/\s+-\s+.*$/, "");
+    a.title = words(h);
+    a.addEventListener("click", () => {
+      const slow = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      h.scrollIntoView({ behavior: slow ? "smooth" : "auto", block: "start" });
+    });
+    bar.append(a);
+  });
+}
+
+function workspaces() {
+  document.querySelectorAll(".nav-item").forEach(b => b.addEventListener("click", () => wsShow(b.dataset.ws)));
+  document.addEventListener("keydown", e => {
+    if (!e.altKey || e.ctrlKey || e.metaKey) return;
+    const hit = document.querySelector('.nav-item[data-key="' + e.key + '"]');
+    if (hit) { e.preventDefault(); wsShow(hit.dataset.ws); }
+  });
+  // The example sentences: one press copies it, to paste into the chat.
+  document.addEventListener("click", e => {
+    const b = e.target.closest ? e.target.closest(".ask-copy") : null;
+    if (!b) return;
+    const text = b.dataset.copy || "";
+    const done = () => {
+      b.textContent = "Copied";
+      setTimeout(() => { b.textContent = "Copy"; }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, () => {});
+    else {
+      const t = document.createElement("textarea");
+      t.value = text;
+      document.body.append(t);
+      t.select();
+      try { document.execCommand("copy"); done(); } catch (err) { /* the sentence is on screen to type */ }
+      t.remove();
+    }
+  });
+  wsShow("dashboard");
+  const loop = () => { wsSync(); setTimeout(loop, 400); };
+  loop();
+}
+
 async function start() {
   theme();
   dock();
+  workspaces();
   if (SHOW_CHANGES) paint();
   const code = new URLSearchParams(location.search).get("pair");
   if (code) {
