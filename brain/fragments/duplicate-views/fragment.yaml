@@ -208,7 +208,14 @@ compatibility-note: >
 #   "make a detail view"             -> CREATE_DRAFTING_VIEW
 #   "add a colour fill legend"       -> APPLY_COLOR_FILL_SCHEME - Revit's
 #                                       Color Fill Legend, placed IN a plan,
-#                                       not a legend view
+#                                       not a legend view. So are its duct and
+#                                       pipe words, "add a duct colour fill
+#                                       legend" - Analyze > Duct Legend and
+#                                       Pipe Legend (2026-11-02)
+#   "make a legend"                  -> here, declared below and answered by
+#                                       identity. Since 2026-11-02 the keyword
+#                                       route alone ranks APPLY_COLOR_FILL_SCHEME
+#                                       first for it; the row is in both cards
 #
 # VERSION 3 (2026-11-01) - CREATE_LEGEND_VIEW AND DUPLICATE_VIEW_TEMPLATE WERE
 # MERGED INTO THIS CARD on the owner's instruction ("make sure there is no
