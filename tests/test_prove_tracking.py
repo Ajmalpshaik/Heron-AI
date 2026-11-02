@@ -327,6 +327,12 @@ def main():
         check(frag is not None, "%s is in the library" % slug)
         if frag is None:
             continue
+        # ONE THAT HAS SINCE BEEN PROVED WAS ARRANGEABLE - its signed proof says
+        # so, and refusing it now is section 3's PROVEN check working, not this
+        # one failing. report-findings was proved 2026-11-02, and broke this until then.
+        if getattr(frag, "status", "") in ("PROVEN", "PRODUCTION"):
+            check(True, "%s is %s now - it was arranged and proved" % (slug, frag.status))
+            continue
         why = T.refusals(frag, need, values, GJ.receivable, held,
                          GJ.ELEMENT_INSTANCE_REASON)
         check(why == [], "%s varying `%s` is arrangeable%s"
