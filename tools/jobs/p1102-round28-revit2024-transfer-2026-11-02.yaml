@@ -1,0 +1,26 @@
+# Round 28, 2026-11-02 - Revit 2024.3, session 57392. ADMIN, so run as `validate --allow-publish
+# --write` (no batch sends one), with the owner's Changes and Admin switches on. Two projects the
+# modeller opened new for this work: "Project2" (Revit 2024's default template, his walls) and
+# "Project3". Kept in Project2 first by the PROVEN ADD_PROJECT_PARAMETER: HERON_P1102_TAG, an
+# instance parameter on Walls, from the scratch shared parameter file
+# %TEMP%\heron-work\prove-1102\heron-p1102-shared.txt (Revit's own shared-file setting put back to
+# what it was, none). Result: PASS - bound HERON_P1102_TAG / 0 for a name nothing has. Rolled back.
+#
+#   python mcp/client/heron_bridge_client.py validate --session 57392 --in "Project3" \
+#     --out brain/proof-drafts/runs/transfer-project-parameters-between-documents.json \
+#     --allow-publish --write --set sourceDocumentTitle=Project2 --set sharedParameterFile=<file> \
+#     --set nameContains=HERON_P1102 --negative-set sourceDocumentTitle=Project2 \
+#     --negative-set sharedParameterFile=<file> --negative-set "nameContains=ZZZ NO SUCH PARAM" \
+#     transfer-project-parameters-between-documents
+model: "Project3 (target) and Project2 (source), new projects in Revit 2024"
+
+defaults:
+  in: "Project3"
+  setup: []
+  write: true
+
+jobs:
+  - fragment: transfer-project-parameters-between-documents
+    expect: bound
+    set: {sourceDocumentTitle: "Project2", sharedParameterFile: "%TEMP%/heron-work/prove-1102/heron-p1102-shared.txt", nameContains: "HERON_P1102"}
+    negative-set: {sourceDocumentTitle: "Project2", sharedParameterFile: "%TEMP%/heron-work/prove-1102/heron-p1102-shared.txt", nameContains: "ZZZ NO SUCH PARAM"}
