@@ -122,6 +122,11 @@ compatibility-note: >
 #   "dimension the radius"       -> CREATE_RADIAL_DIMENSION - Revit 2025 and
 #                                   later ONLY, which is not a choice this
 #                                   library made
+#   "add an arc length dimension -> CREATE_ARC_LENGTH_DIMENSION - Revit 2025
+#    to this curved wall"           and later. Before that card existed
+#                                   (2026-11-02) this sentence reached here,
+#                                   which measures an angle and draws no
+#                                   length
 
 utterances:
   - dimension the angle between grid A and grid 1

@@ -287,6 +287,8 @@ compatibility-note: >
 #                                       (DIMENSION_WALL_OPENINGS until it was
 #                                       merged there, 2026-11-01)
 #   "dimension to a radius"          -> CREATE_RADIAL_DIMENSION
+#   "dimension the length of this arc"-> CREATE_ARC_LENGTH_DIMENSION, Revit
+#                                       2025+ - along a curve, not straight
 
 utterances:
   - dimension between grid A and grid B

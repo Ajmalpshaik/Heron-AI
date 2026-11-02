@@ -611,8 +611,10 @@ def test_a_line_is_two_points_and_curves_are_pairs_of_them():
     still = GJ.blockers(found["create-linear-dimension"], supply, ordinal, ladder)
     check(not still,
           "a linear dimension takes typed references now and is not blocked: %s" % (still or "nothing"))
+    # create-arc-length-dimension joined this roll-call 2026-11-02: it takes the
+    # arc typed or selected too, never a Reference (NEEDS-CHECKING Group MA).
     dims = sorted(slug for slug in ("create-linear-dimension", "create-angular-dimension",
-                                    "create-radial-dimension")
+                                    "create-radial-dimension", "create-arc-length-dimension")
                   if any("Reference" in (need.get("type") or "") for need in found[slug].needs()))
     check(dims == [], "and no dimension fragment asks for a Reference: %s" % (dims or "none"))
 

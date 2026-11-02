@@ -1,0 +1,179 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-171
+semantic-identity: "dimension the length along a curved wall, curved beam or arc line, on this view"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "add an arc length dimension to
+# this curved wall", "dimension the length of this arc" and "put an arc length
+# dimension on this curved beam" - Revit's Annotate > Arc Length. Checked that
+# day with brain/heron_retrieve.py on a scratch store, Revit 2025: all three
+# reached CREATE_ANGULAR_DIMENSION, which measures an ANGLE between two straight
+# arms and refuses an arc. Nothing in the library drew an arc length (the
+# 2026-11-01 ribbon coverage note lists it MISSING).
+#
+# WHY A CARD OF ITS OWN AND NOT CREATE_RADIAL_DIMENSION WIDENED. That card is
+# DRAFT, so widening it was allowed, and it was weighed. Its contract is one arc
+# reference and an `isDiameter` flag - radius and diameter are ONE Revit call
+# with a flag. An arc length is a different call (ArcLengthDimension.Create)
+# that wants THREE references - the arc and one crossing each end - and a
+# placement arc; it measures along curved walls and beams, which that card
+# does not take, and `isDiameter` means nothing to it. Revit's own ribbon has
+# them as separate tools. Both are Revit 2025 and later for the same reason.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33):
+#   view           the view, as the Project Browser names it - a plan, a
+#                  section, an elevation, a detail or drafting view, or a
+#                  LOCKED orthographic 3D view. Any other view (a schedule, a
+#                  sheet, a legend, an unlocked or perspective 3D view, a
+#                  template) is refused BY NAME. So is a view that sees the
+#                  arc edge-on: a curved wall's arc lies flat in plan, and a
+#                  section shows it as a straight band
+#   elements       the selection - exactly ONE curved wall, curved beam or arc
+#                  model or detail line
+#   arc            the same thing typed instead: "wall 123456", "beam 123456",
+#                  "line 123456". Typed wins over the selection
+#   face           walls and beams: "exterior" (left out) or "interior" - the
+#                  side face the length is measured along. For a wall, Revit's
+#                  own exterior side; for a beam, the outer (larger radius)
+#                  face. Ignored for a line
+#   dimensionType  an ARC LENGTH dimension type by name. Left out, the
+#                  project's default arc length type, and the answer names it.
+#                  A name that is not an arc length type is refused, with the
+#                  loaded arc length types listed
+#   offsetMm       how far outside the arc the dimension line sits, in
+#                  millimetres; negative is inside. Left out or 0 means 500 mm,
+#                  and the answer says so
+#
+# REFUSED BY NAME, nothing drawn: nothing named or selected; more than one
+# element selected; an element that is not a wall, a beam or a line; a straight
+# one (that is CREATE_LINEAR_DIMENSION's); a full circle (no two ends).
+#
+# READ BACK. The length Revit measured and the type it carries. For a line the
+# reading must equal the line's own length to half a millimetre or the call
+# throws and is rolled back. For a wall or a beam the ends are its end FACES,
+# which a join at either end moves off square, so a reading that differs from
+# the face's own run is REPORTED, not thrown.
+#
+# RISK MODIFY. It adds one dimension and deletes nothing.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.annotation
+capability: CREATE_ARC_LENGTH_DIMENSION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws an arc length dimension - Revit's Annotate > Arc Length - along a curved
+  wall, a curved beam or an arc line, between its two ends, in one view, of the
+  arc length dimension type the modeller names or the project's default. Says
+  the length Revit measured and the type it used, or why it drew nothing.
+  Revit 2025 and later: there is no project route to an arc length dimension
+  before that release.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The view to draw it in, as the Project Browser names it - "Level 1".
+    - name: view
+      type: View
+      source: request
+    # The selection: ONE curved wall, curved beam or arc model or detail line.
+    - name: elements
+      type: IList<Element>
+      optional: true
+    # The same, typed: "wall 123456", "beam 123456" or "line 123456". Typed wins.
+    - name: arc
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # Walls and beams: "exterior" (left out) or "interior" - the face measured along.
+    - name: face
+      type: string
+      source: request
+      optional: true
+      absent: exterior
+    # An arc length dimension type by name. Left out, the project's default.
+    - name: dimensionType
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # How far outside the arc the dimension line sits, in mm. Left out or 0, 500.
+    - name: offsetMm
+      type: double
+      source: request
+      optional: true
+      absent: 0
+  provides:
+    - name: created
+      role: result
+      type: ElementId
+    - name: measured
+      # What the dimension reads, read back - "arc length 4712.4 mm".
+      role: result
+      type: string
+    - name: typeUsed
+      # The dimension type it carries, read back.
+      role: result
+      type: string
+    - name: refused
+      # Why it declined, in the user's words - evidence it looked and said no.
+      # Never a thing it FOUND (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2025", "2026", "2027"]
+runtime: [net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  **THIS FRAGMENT CLAIMS ONLY THREE RELEASES, AND THAT IS THE API'S LIMIT.**
+  `ArcLengthDimension` and its `Create(Document, View, Arc, Reference arcRef,
+  IList<Reference> references)` are absent from the 2020 to 2024 reference
+  assemblies and present in 2025, 2026 and 2027 - tools/api-surface --members
+  on 2026-11-02. The create call takes no dimension type, so the type is set
+  afterwards with Element.ChangeTypeId and read back. Everything else used -
+  HostObjectUtils.GetSideFaces, CylindricalFace.Axis and Radius,
+  PlanarFace.FaceNormal, Curve.GetEndPointReference, GeometryInstance.
+  GetSymbolGeometry, Document.GetDefaultElementTypeId with
+  ElementTypeGroup.ArcLengthDimensionType, DimensionType.StyleType with
+  DimensionStyleType.ArcLength, View3D.IsLocked and IsPerspective - is present
+  2020 to 2027. Millimetres become feet by dividing by 304.8 (D-20).
+
+# ROUTING (2026-11-02) - the same rows are in CREATE_RADIAL_DIMENSION,
+# CREATE_ANGULAR_DIMENSION and CREATE_LINEAR_DIMENSION.
+#
+#   "add an arc length dimension to this     -> here, Revit 2025+
+#    curved wall"
+#   "dimension the length of this arc"       -> here, Revit 2025+
+#   "put an arc length dimension on this     -> here, Revit 2025+
+#    curved beam"
+#   "dimension this radius"                  -> CREATE_RADIAL_DIMENSION
+#   "dimension this angle"                   -> CREATE_ANGULAR_DIMENSION
+#   "dimension between these"                -> CREATE_LINEAR_DIMENSION
+#
+# WHAT MOVED (tools/check-routing.py on a scratch store, with and without this
+# card, 2026-11-02). No declared utterance changed the card the lookup gives
+# it. ONE ROUTING-TABLE SENTENCE MOVED between two cards neither of which its
+# table names: "put it back", claimed by SHOW_ELEMENTS and not reached before
+# this card either, went from PLACE_FAMILY_INSTANCES back to RESET_GRAPHIC_
+# OVERRIDES - the flip FRAGMENT-ISSUES rows 5b-1375 and 5b-1405 hold OPEN for
+# the owner to settle; this move is row 5b-1424, OPEN. On the keyword route alone, "link this nested beam's length
+# to Beam Length" now ranks this card first and "disconnect these two
+# elements" ranks EDIT_ELECTRICAL_CIRCUIT first; the lookup answers both by
+# identity on LINK_FAMILY_PARAMETER and DISCONNECT_CONNECTORS, as before.
+utterances:
+  - add an arc length dimension to this curved wall
+  - dimension the length of this arc
+  - put an arc length dimension on this curved beam
