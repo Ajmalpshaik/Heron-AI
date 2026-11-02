@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -36,6 +36,31 @@ contract:
     - name: report
       role: result
       type: string
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: Project2 (5,854 elements), Revit 2024, session 57392
+  positive_case: "run with category=Sheets - the first of 3 tracked inputs - the arrangement\
+    \ was re-made first by running filter-elements-by-category with this phase's own values.\
+    \ returned checkedCount 1, report Checked 1 the elements of one category. 1 to look at:\r\
+    \n  - 22 element(s), within Sheets\r\n, sb StringBuilder. inputs came findings from filter-elements-by-category\
+    \ (1); checkedCount as given; whatWasChecked as given. on Project2"
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). report-findings\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 3 different inputs:\n\n      category=Sheets -> report Checked 1 the elements\
+    \ of one category. 1 to look at:\r\n  - 22 element(s), within Sheets\r\n\n      category=Cameras\
+    \ -> report Checked 1 the elements of one category. 1 to look at:\r\n  - 0 element(s),\
+    \ within Cameras\r\n\n      category=Views -> report Checked 1 the elements of one category.\
+    \ 1 to look at:\r\n  - 68 element(s), within Views\r\n\n\n    Different inputs, exact\
+    \ matches every time. A fragment falling back to the active view, the whole model, or\
+    \ a previous run could not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 32c3e1eb75c824de
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
