@@ -1318,6 +1318,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ly.md`](needs-checking/group-ly.md)
 
+## Group LZ - Annotate > Keynoting Settings - load the keynote file the modeller names by its full path, or reload the one loaded, absolute or relative, with Revit's load result and the file and entry count read back - and the keynote file named by the keynote read: `LOAD_KEYNOTE_FILE`, `REPORT_KEYNOTES` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lz.md`](needs-checking/group-lz.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

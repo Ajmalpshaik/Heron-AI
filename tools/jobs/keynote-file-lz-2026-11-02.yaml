@@ -1,0 +1,52 @@
+# NEEDS-CHECKING Group LZ - LOAD_KEYNOTE_FILE, and REPORT_KEYNOTES widened to
+# name the keynote file, built 2026-11-02 in a cloud session with no Revit.
+# NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/keynote-file-lz-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/keynote-file-lz-2026-11-02.yaml
+#
+# THE MODEL (docs/needs-checking/group-lz.md, LZ1): a scratch project from
+# Revit's default architectural template, saved under %TEMP%\heron-work, never
+# a working model, with Revit's default keynote file loaded (Absolute) and one
+# keynote tag placed in Level 1. Beside it in %TEMP%\heron-work, written for
+# the test: keynotes-b.txt, four keynote lines (key, text, parent, separated by
+# tabs). keynotes-missing.txt must NOT exist. The full path below is typed in
+# place of YOU with the Windows user name - the file is read on the Revit PC,
+# never guessed.
+#
+# THE ARRANGEMENT. No selection: the keynote table is the model's own.
+# Positive: a file that exists. Negative: a file that does not - a different
+# value that must leave the table untouched, not an empty one
+# (fragment-proving, rules 3 and 5). The write is ROLLED BACK.
+
+model: "a scratch project from Revit's default architectural template, the default keynote file loaded, one keynote tag on Level 1, keynotes-b.txt beside it"
+
+jobs:
+  - fragment: report-keynotes
+    expect: keynoteFile
+    set:
+      viewName: "Level 1"
+    negative-set:
+      viewName: "{3D}"
+    note: >
+      LZ2. Positive: keynoteFile the default keynote file's path, "path type
+      Absolute", "Revit: Loaded"; tableEntries the count Keynoting Settings >
+      View lists; tagCount 1. Negative: the 3D view - tagCount 0, and
+      keynoteFile and tableEntries the same, because the file is the model's,
+      not the view's.
+
+  - fragment: load-keynote-file
+    write: true
+    expect: loadResult
+    set:
+      filePath: "C:\\Users\\YOU\\AppData\\Local\\Temp\\heron-work\\keynotes-b.txt"
+      pathType: ""
+    negative-set:
+      filePath: "C:\\Users\\YOU\\AppData\\Local\\Temp\\heron-work\\keynotes-missing.txt"
+      pathType: ""
+    note: >
+      LZ3. Negative - THE FIRST CASE TO RUN: keynotes-missing.txt - refused
+      "There is no file at ... that this PC can see", fileAfter equal to
+      fileBefore, entriesAfter equal to entriesBefore. Positive:
+      keynotes-b.txt - loadResult "loaded", fileAfter "...keynotes-b.txt
+      (Absolute), Revit: Loaded", entriesAfter 4.

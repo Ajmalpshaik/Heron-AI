@@ -316,6 +316,13 @@ compatibility-note: >
 #   "set the beam end extension to 150 mm"   -> SET_FRAMING_END_EXTENSION - the
 #                                              end chosen from what the beam
 #                                              meets, not a parameter named
+#
+# ROUTING (2026-11-02, the keynote file) - repeated in REPORT_KEYNOTES and
+# LOAD_KEYNOTE_FILE.
+#
+#   "change the keynote on these"            -> here, the Keynote parameter
+#   "load the keynote file C:\Standards\Keynotes.txt" -> LOAD_KEYNOTE_FILE -
+#                                              the file, not a value on these
 
 utterances:
   - set the comments on these
@@ -338,3 +345,6 @@ utterances:
   - take the mark off these
   - blank this parameter
   - remove the value from these
+  # ADDED 2026-11-02, row 5b-1421. REPORT_KEYNOTES' routing table sends it
+  # here; when LOAD_KEYNOTE_FILE was added, ranking moved it there.
+  - change the keynote on these

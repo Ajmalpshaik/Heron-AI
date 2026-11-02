@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-123
-semantic-identity: "list the keynote tags and the keynote values the keynote table does not hold"
+semantic-identity: "list the keynote tags and the keynote values the keynote table does not hold, and which keynote file is loaded"
 kind: action
 domain: revit.annotation
 capability: REPORT_KEYNOTES
@@ -26,6 +26,17 @@ risk: READ
 #
 # THE TABLE IS REVIT'S LOADED COPY (KeynoteTable), not the file on disk.
 #
+# WHICH KEYNOTE FILE - WIDENED 2026-11-02, asked in the modeller's words
+# "which keynote file is this project using". No card answered it for the
+# keynote file alone: REPORT_EXTERNAL_REFERENCES (PROVEN) lists the keynote
+# table as one row among every link, import and point cloud, with no entry
+# count - a look-alike, kept separate; widening its code would put its proof
+# out of date. Here: the path as saved, its path type, where it resolves on
+# this PC, Revit's status for it, and the entry count. Loading or reloading
+# the file is LOAD_KEYNOTE_FILE, a write. The numbering method (By keynote /
+# By sheet) is NOT read - no Revit API member reaches it on any release
+# 2020-2027 (row 5b-1420).
+#
 # Changing a keynote value is WRITE_ELEMENT_PARAMETERS on the Keynote
 # parameter; this only reads.
 #
@@ -33,7 +44,8 @@ risk: READ
 purpose: >
   Lists keynote tags with the text each shows, and every keynote value used on
   element types and materials, naming the values the loaded keynote table does
-  not hold.
+  not hold - and names the keynote file the model uses, its path type, and how
+  many entries it loaded.
 
 contract:
   needs:
@@ -66,6 +78,16 @@ contract:
       # be checked against one, and the findings say so (D-52).
       role: accounting
       type: bool
+    - name: keynoteFile
+      # The keynote file Keynoting Settings names: the path as saved, its path
+      # type, where it resolves on this PC when that differs, and Revit's
+      # status for it (Loaded, NotFound). Empty when none is named.
+      role: result
+      type: string
+    - name: tableEntries
+      # Entries in the loaded keynote table, counted.
+      role: result
+      type: int
     - name: findings
       type: IList<string>
 
@@ -80,7 +102,13 @@ compatibility-note: >
   present 2020 through 2027 - read off RevitAPI.xml in the Nice3point
   reference packages for all eight releases on 2026-10-12. The tag's target is
   not read, so the 2022 change to how a tag names its element does not reach
-  it.
+  it. The keynote file (2026-11-02): Element.GetExternalFileReference,
+  ExternalFileReference.GetPath / GetAbsolutePath / PathType /
+  GetLinkedFileStatus, ModelPathUtils.ConvertModelPathToUserVisiblePath,
+  Element.GetExternalResourceReference,
+  ExternalResourceTypes.BuiltInExternalResourceTypes.KeynoteTable and
+  ExternalResourceReference.InSessionPath - each read with tools/api-surface
+  --members on the reference assemblies of 2020 to 2027, present in all eight.
 
 # ROUTING - the same rows are in the fragments named here.
 #
@@ -89,6 +117,13 @@ compatibility-note: >
 #   "change the keynote on these"             -> WRITE_ELEMENT_PARAMETERS, the
 #                                                Keynote parameter
 #   "which elements are not tagged"           -> FIND_UNTAGGED_ELEMENTS
+#   "which keynote file is this project using" -> here, keynoteFile
+#   "reload the keynote file"                 -> LOAD_KEYNOTE_FILE, a write
+#   "load the keynote file C:\Standards\Keynotes.txt" -> LOAD_KEYNOTE_FILE
+#   "set keynote numbering to by sheet"       -> NOTHING HERE DOES THAT - no
+#                                                Revit API member reaches the
+#                                                numbering method (row 5b-1420);
+#                                                Annotate > Keynoting Settings
 
 utterances:
   - check the keynotes against the keynote file
@@ -96,3 +131,5 @@ utterances:
   - list the keynote tags on this sheet view
   - what do the keynotes say
   - check the keynotes
+  # ADDED 2026-11-02 with keynoteFile, the modeller's own words.
+  - which keynote file is this project using

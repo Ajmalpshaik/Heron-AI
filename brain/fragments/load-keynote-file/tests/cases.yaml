@@ -1,0 +1,52 @@
+# LOAD_KEYNOTE_FILE - built 2026-11-02 in a cloud session with no Revit.
+# NOT RUN. Arranged as docs/needs-checking/group-lz.md says: two keynote text
+# files saved beside the scratch model, and filePath and pathType typed.
+positive:
+  - given: >
+      the scratch model with Revit's default keynote file loaded (Absolute);
+      filePath the full path of keynotes-b.txt (four entries, written for the
+      test), pathType empty
+    expect: >
+      loadResult "loaded"; fileBefore the default file and its entry count,
+      fileAfter keynotes-b.txt "(Absolute)", "Revit: Loaded", entriesAfter 4.
+      Annotate > Keynoting Settings shows keynotes-b.txt, LOOKED AT
+
+  - given: the same model as it was, filePath empty, pathType empty
+    expect: >
+      loadResult "reloaded" or "already current - Revit changed nothing" -
+      record which Revit returns; fileAfter equal to fileBefore, entriesAfter
+      equal to entriesBefore
+
+  - given: >
+      filePath the full path of keynotes-b.txt, pathType relative (the model
+      saved beside the file)
+    expect: >
+      loadResult "loaded"; fileAfter "keynotes-b.txt (Relative)", entriesAfter
+      4 - the path type as asked, read back
+
+negative:
+  - given: >
+      THE FIRST CASE TO RUN. filePath the full path of a file that does not
+      exist (keynotes-missing.txt), pathType empty
+    expect: >
+      refused "There is no file at ... that this PC can see"; fileAfter equal
+      to fileBefore and entriesAfter equal to entriesBefore - the table
+      untouched. A changed file here would mean the path was guessed
+
+  - given: filePath "Keynotes.txt" - a file name with no folder
+    expect: refused "not a full path"; nothing changed
+
+  - given: >
+      filePath the full path of keynotes-bad.txt - a file whose lines have no
+      tabs, and one key written twice
+    expect: >
+      Revit's result reported in words - lines it could not read, or the
+      DuplicateEntry named - and fileAfter / entriesAfter read back, whatever
+      Revit chose; never "loaded" with entries that were left out unsaid
+
+  - given: pathType sideways
+    expect: refused before anything changes, naming absolute and relative
+
+second_route: >
+  Revit itself: Annotate > Keynote > Keynoting Settings shows the file, its
+  path type and View lists the entries - counted by hand beside entriesAfter

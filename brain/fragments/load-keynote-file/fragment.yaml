@@ -1,0 +1,153 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-169
+semantic-identity: "load or reload the keynote file the keynote tags read from, at the path the modeller names, absolute or relative"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "load the keynote file
+# C:\Standards\Keynotes.txt", "reload the keynote file" and "change the keynote
+# file to the office standard on the server" - Annotate > Keynoting Settings,
+# the keynote table file, its path type, and Reload. No card did it: of every
+# fragment's C# none called KeyBasedTreeEntryTable.LoadFrom or Reload.
+# brain/heron_retrieve.py on the sentences (a scratch store, Revit 2024)
+# answered REPORT_KEYNOTES, a read, and LOAD_FAMILY.
+#
+# LOOK-ALIKES, KEPT SEPARATE (heron-duplicate-checker's method, 2026-11-02):
+#   REPORT_KEYNOTES (DRAFT)    READS the keynote file, its path type and entry
+#                              count - widened the same day to answer "which
+#                              keynote file is this project using". This
+#                              changes it; a write never answers a question.
+#   REPORT_EXTERNAL_REFERENCES lists the keynote table as one row among every
+#     (PROVEN)                 file the model needs; reads only.
+#   RELOAD_LINKS (DRAFT)       reloads Revit links, on link types - never the
+#                              keynote table.
+#   LOAD_FAMILY (PROVEN)       loads a family file into the project - a .rfa,
+#                              never a keynote file.
+#
+# THE PATH IS THE MODELLER'S. It is read on the Revit PC as typed: a path that
+# is not whole, or has no file at it, is refused before anything changes, and
+# nothing is ever completed or guessed. "The office standard on the server"
+# names no path - the host asks for it, or finds it in the office standards,
+# and never makes one up (D-33).
+#
+# THE NUMBERING METHOD IS NOT HERE. Keynoting Settings' By keynote / By sheet
+# has no Revit API member on any release 2020-2027 - no KeynotingOptions, no
+# BuiltInParameter; only PostableCommand.KeynotingSettings, which opens the
+# dialog. "Set keynote numbering to by sheet" is row 5b-1420, OPEN.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Revit
+# requires one: LoadFrom and Reload throw ModificationOutsideTransactionException
+# without it (RevitAPI.xml, 2020 to 2027) - so Heron's transaction group, which
+# stopped Reload Latest (row 5b-1418), is no obstacle here.
+kind: action
+domain: revit.annotation
+capability: LOAD_KEYNOTE_FILE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Loads the keynote file named by its full path into the model's keynote table,
+  or reloads the one already loaded, Absolute or Relative as asked, and reports
+  the file and entry count before and after with Revit's own load result.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The keynote file's FULL path as the modeller typed it - C:\...\Keynotes.txt
+    # or \\server\share\Keynotes.txt. EMPTY reloads the file already named in
+    # Keynoting Settings. Never guessed: a path that is not whole, or has no
+    # file at it on this PC, is refused before anything changes.
+    - name: filePath
+      type: string
+      source: request
+    # absolute or relative as asked; EMPTY keeps the path type the model has
+    # now. With filePath empty, a path type asked for loads the same file
+    # again under it. Any other word is refused before anything changes.
+    - name: pathType
+      type: string
+      source: request
+  provides:
+    - name: loadResult
+      # Revit's own result in words: loaded, reloaded, already current, or
+      # FAILED with Revit's reason - or why nothing was loaded.
+      role: result
+      type: string
+    - name: fileBefore
+      # The keynote file before: path as saved, path type, where it resolves,
+      # Revit's status. Describes the run (D-52).
+      role: accounting
+      type: string
+    - name: fileAfter
+      # The same, READ BACK after the call - never the path typed.
+      role: accounting
+      type: string
+    - name: entriesBefore
+      role: accounting
+      type: int
+    - name: entriesAfter
+      # Entries in the keynote table after, counted (D-52).
+      role: accounting
+      type: int
+    - name: refused
+      # Why it declined, in words: a path not whole, no file at it, a path
+      # type it does not set, a relative path for an unsaved model, Revit's
+      # refusal or a failed load. Never a thing it found (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read with tools/api-surface --members
+  on the reference assemblies of 2020 to 2027 on 2026-11-02, every one present
+  in all eight with the same signature: `KeynoteTable.GetKeynoteTable`;
+  `KeyBasedTreeEntryTable.LoadFrom(ExternalResourceReference,
+  KeyBasedTreeEntriesLoadResults)`, `Reload(KeyBasedTreeEntriesLoadResults)`,
+  `ServerSupports`, `GetKeyBasedTreeEntries`, each returning
+  `ExternalResourceLoadStatus` (Success, Failure, Uninitialized,
+  ResourceAlreadyCurrent, CannotFindServer, ServerThrewException);
+  `KeyBasedTreeEntriesLoadResults` - constructor, `GetFileReadErrors`,
+  `GetFileSyntaxErrors`, `GetKeyBasedTreeEntryErrors`, `GetFailureMessages`;
+  `KeyBasedTreeEntryError.ErrorType` / `GetEntry`; `KeyBasedTreeEntry.Key`;
+  `FailureMessage.GetDescriptionText`;
+  `ExternalResourceReference.CreateLocalResource(Document, ExternalResourceType,
+  ModelPath, PathType)` and `InSessionPath`;
+  `ExternalResourceTypes.BuiltInExternalResourceTypes.KeynoteTable`;
+  `Element.GetExternalFileReference` / `GetExternalResourceReference`;
+  `ExternalFileReference.GetPath` / `GetAbsolutePath` / `PathType` /
+  `GetLinkedFileStatus`; `ModelPathUtils.ConvertUserVisiblePathToModelPath` /
+  `ConvertModelPathToUserVisiblePath`; `PathType` (Relative, Absolute, Server,
+  Content). RevitAPI.xml, every release: LoadFrom and Reload throw
+  ModificationOutsideTransactionException with no open transaction. There is
+  no KeynotingOptions type and no numbering-method member on any release.
+
+# ROUTING - repeated in REPORT_KEYNOTES.
+#
+#   "load the keynote file C:\Standards\Keynotes.txt" -> here
+#   "reload the keynote file"                  -> here, filePath empty
+#   "change the keynote file to the office standard on the server" -> here,
+#                                                 the full path asked for
+#   "which keynote file is this project using" -> REPORT_KEYNOTES - a READ
+#   "check the keynotes"                       -> REPORT_KEYNOTES
+#   "change the keynote on these"              -> WRITE_ELEMENT_PARAMETERS, the
+#                                                 Keynote parameter
+#   "set keynote numbering to by sheet"        -> NOTHING HERE DOES THAT - no
+#                                                 Revit API member reaches it
+#                                                 (row 5b-1420)
+#   "reload the links"                         -> RELOAD_LINKS
+#   "load this family"                         -> LOAD_FAMILY
+
+utterances:
+  - load the keynote file C:\Standards\Keynotes.txt
+  - reload the keynote file
+  - change the keynote file to the office standard on the server
