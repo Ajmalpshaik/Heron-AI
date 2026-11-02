@@ -1,6 +1,5 @@
 // NOT STANDALONE. Assumes `doc` and `viewName` are in scope; leaves `keynotes`,
-// `tagCount`, `missingFromTable`, `tableLoaded`, `keynoteFile`, `tableEntries`
-// and `findings` behind.
+// `tagCount`, `missingFromTable`, `tableLoaded` and `findings` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -21,22 +20,12 @@
 //
 // Retagging or changing a keynote value is a parameter write on the element
 // type: WRITE_ELEMENT_PARAMETERS with the Keynote parameter. This only reads.
-//
-// WHICH KEYNOTE FILE (2026-11-02): the file Annotate > Keynoting Settings
-// names - the path as the model SAVED it, its path type (Absolute, Relative,
-// or Content, which Revit's dialog calls At Library Locations), where it
-// RESOLVES on this PC, and whether Revit can find it - with the count of
-// entries in the loaded table. Loading or reloading it is LOAD_KEYNOTE_FILE.
-// The numbering method (By keynote / By sheet) is not read: no Revit API
-// member reaches it on any release 2020-2027 (row 5b-1420).
 
 var findings = new List<string>();
 var lines = new List<string>();
 var missingFromTable = new List<string>();
 var tagCount = 0;
 var tableLoaded = false;
-var keynoteFile = "";
-var tableEntries = 0;
 
 // THE TABLE: every key, and every keynote text, so a tag showing either is known.
 var keys = new HashSet<string>(StringComparer.Ordinal);
@@ -49,60 +38,17 @@ try
         foreach (var entry in table.GetKeyBasedTreeEntries())
         {
             if (entry == null) continue;
-            tableEntries++;
             if (!string.IsNullOrEmpty(entry.Key)) keys.Add(entry.Key);
             var keynote = entry as KeynoteEntry;
             if (keynote != null && !string.IsNullOrEmpty(keynote.KeynoteText)) texts.Add(keynote.KeynoteText);
         }
         tableLoaded = keys.Count > 0;
-
-        // THE FILE. A ModelPath is not a string: each conversion is guarded,
-        // because a cloud-hosted path has no user-visible form.
-        Func<ModelPath, string> readable = path =>
-        {
-            if (path == null) return "";
-            try { return ModelPathUtils.ConvertModelPathToUserVisiblePath(path) ?? ""; }
-            catch { return ""; }
-        };
-        ExternalFileReference fileRef = null;
-        try { fileRef = table.GetExternalFileReference(); } catch { }
-        if (fileRef != null)
-        {
-            var saved = "";
-            var resolved = "";
-            var pathType = "";
-            var status = "";
-            try { saved = readable(fileRef.GetPath()); } catch { }
-            try { resolved = readable(fileRef.GetAbsolutePath()); } catch { }
-            try { pathType = fileRef.PathType.ToString(); } catch { }
-            try { status = fileRef.GetLinkedFileStatus().ToString(); } catch { }
-            keynoteFile = (saved == "" ? "(no path saved)" : saved)
-                + (pathType == "" ? "" : " | path type " + pathType)
-                + (resolved != "" && !string.Equals(resolved, saved, StringComparison.OrdinalIgnoreCase)
-                    ? " | resolves to " + resolved : "")
-                + (status == "" ? "" : " | Revit: " + status);
-        }
-        if (keynoteFile == "")
-        {
-            // Not a file Revit tracks as one - a keynote server, or none. The
-            // resource reference still names it by its display path.
-            try
-            {
-                var resource = table.GetExternalResourceReference(
-                    ExternalResourceTypes.BuiltInExternalResourceTypes.KeynoteTable);
-                if (resource != null && !string.IsNullOrEmpty(resource.InSessionPath))
-                    keynoteFile = resource.InSessionPath;
-            }
-            catch { }
-        }
     }
 }
 catch (Exception ex)
 {
     findings.Add("The keynote table could not be read: " + ex.Message);
 }
-lines.Add("KEYNOTE FILE: " + (keynoteFile == "" ? "none named in Keynoting Settings" : keynoteFile)
-    + " | " + tableEntries + " entr" + (tableEntries == 1 ? "y" : "ies") + " loaded");
 
 // THE VIEW BY NAME, AND EMPTY MEANS EVERY VIEW - a string, because a View
 // need cannot be left out.
@@ -196,8 +142,6 @@ if (missingFromTable.Count > 0)
     lines.Add("KEYNOTE VALUES THE TABLE DOES NOT HOLD: " + string.Join("; ", missingFromTable));
 
 var keynotes = string.Join("\n", lines);
-findings.Add("Keynote file: " + (keynoteFile == "" ? "none named in Keynoting Settings" : keynoteFile)
-    + "; " + tableEntries + " entr" + (tableEntries == 1 ? "y" : "ies") + " in the loaded table.");
 findings.Add(tagCount + " keynote tag(s)" + (view == null ? "" : " in \"" + view.Name + "\"") + "; "
     + seen.Count + " keynote value(s) in use on types and materials; "
     + (tableLoaded

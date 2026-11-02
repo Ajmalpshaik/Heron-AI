@@ -1,0 +1,54 @@
+# Round 24, 2026-11-02 - Revit 2024.3, session 57392. Scratch copies of Revit 2024's own Japanese
+# samples in %TEMP%\heron-work\prove-1102\jp2024, opened by hand (each shows a warning on open,
+# which Heron cancels rather than answer):
+#   "JP Arch"  Samples\サンプル意匠.rvt - 1385 parts (17 on level RSL), grids X1.. and Y1..,
+#              railing type "外部階段手摺(1)" (external stair handrail)
+#   "JP MEP"   Samples\サンプル設備.rvt - 795 ducts, 1155 pipes, levels 1F..RF
+# Read before the run with report-model-dashboard, filter-elements-by-category and select-types.
+# Every run is read-only or ROLLED BACK.
+# RESULT: none passed. divide-parts - Revit will not divide parts already divided by a sketch
+# (the first try named a grid Y4 that is not there); merge-parts - the 17 RSL parts do not touch and
+# share material and source; set-railing-type - row 5b-1415; find-clashes - no 2F duct overlaps a pipe.
+model: "JP Arch + JP MEP (scratch copies of Revit 2024's Japanese samples), Revit 2024"
+
+defaults:
+  setup: []
+
+jobs:
+  - fragment: divide-parts
+    in: "JP Arch"
+    write: true
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: divided
+    setup-set: {category: "Parts", levelId: "RSL"}
+    negative-setup-set: {category: "Parts", levelId: "RSL"}
+    set: {cutterNames: "X1, X2, Y1"}
+    negative-set: {cutterNames: "ZZZ No Such Grid"}
+
+  - fragment: merge-parts
+    in: "JP Arch"
+    write: true
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: merged
+    setup-set: {category: "Parts", levelId: "RSL"}
+    negative-setup-set: {category: "Walls", levelId: "RSL"}
+    set: {}
+    negative-set: {}
+
+  - fragment: set-railing-type
+    in: "JP Arch"
+    write: true
+    expect: railingType
+    set: {railingTypeName: "外部階段手摺(1)", duplicateAs: "Heron Guard", topRailTypeName: "", topRailHeightMm: 1100, handrailTypeName: "", handrailHeightMm: 0, handrailSide: ""}
+    negative-set: {railingTypeName: "ZZZ No Such Railing", duplicateAs: "Heron Guard", topRailTypeName: "", topRailHeightMm: 1100, handrailTypeName: "", handrailHeightMm: 0, handrailSide: ""}
+
+  - fragment: find-clashes
+    in: "JP MEP"
+    setup: [filter-elements-by-category, set-selection]
+    setup-set: {category: "Ducts", levelId: "2F"}
+    negative-setup-set: {category: "Ducts", levelId: "2F"}
+    expect: clashes
+    set: {against: "", includeLinks: false, categories: "Pipes", includeHost: true, compareParameter: "none"}
+    negative-set: {against: "", includeLinks: false, categories: "Sprinklers", includeHost: true, compareParameter: "none"}

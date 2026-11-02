@@ -23,9 +23,9 @@ risk: MODIFY
 deprecated:
   date: '2026-11-01'
   by: Ajmal PS
-  # CREATE_FLEX_PIPE was itself merged into CREATE_DUCT_RUNS later on
-  # 2026-11-01, so the tool that does this job now is CREATE_DUCT_RUNS.
-  superseded-by: CREATE_DUCT_RUNS
+  # CREATE_FLEX_PIPE was itself merged into CREATE_MEP_RUNS later on
+  # 2026-11-01, so the tool that does this job now is CREATE_MEP_RUNS.
+  superseded-by: CREATE_MEP_RUNS
   why: >
     The same job: one flexible run along the points given, no route guessed, a
     length limit enforced before anything is made, nothing connected.
@@ -146,7 +146,7 @@ compatibility-note: >
 #   "connect the terminal to the duct" -> CONNECT_AIR_TERMINALS. This one makes
 #                                         the flex and does NOT join it up
 #   "is it actually connected"         -> TRACE_CONNECTIVITY
-#   "make the flex drop to that sprinkler" -> CREATE_DUCT_RUNS - flexible PIPE,
+#   "make the flex drop to that sprinkler" -> CREATE_MEP_RUNS - flexible PIPE,
 #                                         on a piping system (2026-10-14)
 
 utterances:

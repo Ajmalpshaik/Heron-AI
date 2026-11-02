@@ -15,7 +15,7 @@ semantic-identity: "turn this short rigid duct into flex duct between the same t
 # CREATE_DUCT_RUNS and SET_MEP_SYSTEM_TYPE, and grep of brain/fragments that
 # day found NewFlexDuct in no implementation.
 #
-# WHY APART FROM CREATE_DUCT_RUNS. That card draws a NEW flex duct along points
+# WHY APART FROM CREATE_MEP_RUNS. That card draws a NEW flex duct along points
 # given and joins nothing; this one takes a rigid duct that is already there,
 # removes it and puts flex in its place, joined to the same two fittings, at
 # its size and on its system - no point is given and nothing is left open. A
@@ -116,14 +116,14 @@ compatibility-note: >
   steps are delete, find the two open ends again by where they are (within
   1 mm) and draw. Lengths are feet x 304.8, said in mm. Not seen in Revit.
 
-# ROUTING (2026-11-02) - the CREATE_DUCT_RUNS rows are repeated on that card.
+# ROUTING (2026-11-02) - the CREATE_MEP_RUNS rows are repeated on that card.
 #
 #   "convert this last duct run to the diffuser into flex duct" -> here
 #   "change these short ducts to flex"                          -> here
-#   "make the flex drop to that diffuser"   -> CREATE_DUCT_RUNS - a NEW flex
+#   "make the flex drop to that diffuser"   -> CREATE_MEP_RUNS - a NEW flex
 #                                              along points given, joined to
 #                                              nothing; no rigid duct removed
-#   "run a flexible duct along these points" -> CREATE_DUCT_RUNS
+#   "run a flexible duct along these points" -> CREATE_MEP_RUNS
 #   "change these ducts to 400x250"          -> SET_MEP_SIZE - still rigid
 #   "delete these ducts"                     -> DELETE_ELEMENTS - nothing put
 #                                               in their place

@@ -122,7 +122,7 @@ compatibility-note: >
 # NOT for a run that bends: its leg running the way of the move lands inside
 # the original. OFFSET_ELEMENTS moves each piece sideways IN PLACE, makes no
 # copy, and leaves the run apart at every joint (its own card says so).
-# CREATE_DUCT_RUNS draws new runs along points the caller gives and
+# CREATE_MEP_RUNS draws new runs along points the caller gives and
 # FIT_MEP_JOINTS fits ducts and pipes, not conduit. This one copies a run it
 # reads, at right angles to each piece, with the corners re-mitred and the
 # fittings re-made - for pipe and conduit.

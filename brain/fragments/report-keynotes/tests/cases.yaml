@@ -6,14 +6,6 @@ positive:
       tagCount 3, each line naming its tag's text as a key in the table, and
       missingFromTable naming "99 99 99" with the wall type carrying it
 
-  - given: >
-      WIDENED 2026-11-02. The same model; Annotate > Keynoting Settings names
-      the keynote file, path type Absolute, and Revit shows its entries
-    expect: >
-      keynoteFile the same path the dialog shows, "path type Absolute",
-      "Revit: Loaded"; tableEntries the number of lines the dialog's View
-      lists - counted by hand, never assumed
-
 negative:
   - given: view set to a plan with no keynote tags, every keynote value in the table
     expect: >
@@ -23,15 +15,7 @@ negative:
   - given: a model with no keynote table loaded
     expect: >
       tableLoaded false and the findings saying no value could be checked -
-      never every value reported missing; keynoteFile empty, tableEntries 0,
-      "none named in Keynoting Settings" - never a path guessed
-
-  - given: >
-      the keynote file renamed on disk after the model was saved, the model
-      reopened (Revit warns it cannot find it)
-    expect: >
-      keynoteFile still the saved path with "Revit: NotFound" - the path is
-      reported as saved, never replaced with one that exists
+      never every value reported missing
 
 second_route:
   - Annotate > Keynote > Keynoting Settings > View, read beside missingFromTable

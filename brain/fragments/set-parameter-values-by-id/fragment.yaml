@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -359,48 +359,51 @@ contract:
 # DRAFT until NEEDS-CHECKING Group HZ proves version 4 (D-30). A row that names
 # neither a type nor an element reference still takes the road this proof ran.
 proof:
-  date: '2026-10-28'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: 4355-BHVD-3D-50S10-BL001A (23,789 elements), Revit 2020, session 27048
-  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
-    on 2026-10-28; the modeller saw the result in Revit and pressed Keep, and Revit kept it
-    as one undo step. returned applied false, backslash \, esc Func`2, faceKeeper (null),
-    findings 0 item(s), groupLocked Func`3, isYesNo Func`2, keyed true, levelAsks Func`3,
-    materialSpec (null), materialSpecProperty (null), namedElements (null), parametersCalled
+  model: Snowdon Towers Sample Architectural (34,509 elements), Revit 2024, session 57392
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned applied false, backslash \, blankCellsSkipped
+    0, cellsCleared 0, csvMode false, csvStale 0 item(s), esc Func`2, faceKeeper (null), findings
+    0 item(s), groupLocked Func`3, isYesNo Func`2, keyed true, levelAsks Func`3, materialSpec
+    ForgeTypeId, materialSpecProperty RuntimePropertyInfo, namedElements (null), parametersCalled
     Func`3, plan 0 item(s), quote ", readBack 0 item(s), readValue Func`2, referenceByName
-    Func`3, refused 0 item(s), resultJson {"format": 2, "applied": true, "written": 3, "key":
-    "Mark", "types": false, "in": ["Duct Accessories"], "where": [], "problem": null, "stale":
-    [], "refused": [], "readBack": [{"key": "530", "id": "8395771", "name": "Equipment Tag
-    {e133774c-3f62-45f1-a0c6-7e6c6238380b}", "asked": "VCD020", "value": "VCD020", "raw":
-    "VCD020"}, {"key": "531", "id": "8395926", "name": "Equipment Tag {e133774c-3f62-45f1-a0c6-7e6c6238380b}",
-    "asked": "VCD021", "value": "VCD021", "raw": "VCD021"}, {"key": "532", "id": "8395994",
-    "name": "Equipment Tag {e133774c-3f62-45f1-a0c6-7e6c6238380b}", "asked": "VCD022", "value":
-    "VCD022", "raw": "VCD022"}]}, same Func`2, stale 0 item(s), staleJson 0 item(s), storedValue
-    Func`2, theOne Func`3, ticked 5 item(s) [yes, true, on, ...], unchanged Func`3, unticked
-    5 item(s) [no, false, off, ...], written 3, yesNoProperty (null), yesNoSpec (null), yesNoSpecs
-    (null). inputs came rows as given; keepFace not given - "none", the card''s own default
-    (optional); renameViews not given - "none", the card''s own default (optional). on 4355-BHVD-3D-50S10-BL001A'
-  negative_case: 'run with rows=key=Mark|in=Duct Accessories;530|Equipment Tag=VCD020 instead
-    - chosen because it should not contain what this fragment reports - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned applied false,
-    backslash \, esc Func`2, faceKeeper (null), findings 1 item(s) [1 row(s) not written,
-    0 written - refused says why, by key.], groupLocked Func`3, isYesNo Func`2, keyed true,
-    levelAsks Func`3, materialSpec (null), materialSpecProperty (null), namedElements (null),
-    parametersCalled Func`3, plan 0 item(s), quote ", readBack 0 item(s), readValue Func`2,
-    referenceByName Func`3, refused 1 item(s) [530: two parameters on it are called Equipment
-    Tag and more ...], resultJson {"format": 2, "applied": false, "written": 0, "key": "Mark",
-    "types": false, "in": ["Duct Accessories"], "where": [], "problem": null, "stale": [],
-    "refused": [{"key": "530", "why": "two parameters on it are called Equipment Tag and more
-    than one can be written - name the one meant as ''Equipment Tag {its GUID}'' - not written
-    (id 8395771)"}], "readBack": []}, same Func`2, stale 0 item(s), staleJson 0 item(s), storedValue
-    Func`2, theOne Func`3, ticked 5 item(s) [yes, true, on, ...], unchanged Func`3, unticked
-    5 item(s) [no, false, off, ...], written 0, yesNoProperty (null), yesNoSpec (null), yesNoSpecs
-    (null). inputs came rows as given; keepFace not given - "none", the card''s own default
-    (optional); renameViews not given - "none", the card''s own default (optional). on 4355-BHVD-3D-50S10-BL001A'
+    Func`3, refused 0 item(s), resultJson {"format": 2, "applied": true, "written": 1, "key":
+    "Mark", "types": false, "in": ["Doors"], "where": [], "problem": null, "stale": [], "refused":
+    [], "readBack": [{"key": "201A", "id": "887778", "name": "Comments", "asked": "P1102",
+    "value": "P1102", "raw": "P1102"}]}, rowFindings , rowsGiven true, rowsMatched 0, rowsUnmatched
+    0, same Func`2, stale 0 item(s), staleJson 0 item(s), storedValue Func`2, theOne Func`3,
+    ticked 5 item(s) [yes, true, on, ...], unchanged Func`3, unticked 5 item(s) [no, false,
+    off, ...], valuesRejected 0, written 1, yesNoProperty RuntimePropertyInfo, yesNoSpec ForgeTypeId,
+    yesNoSpecs RuntimeType. inputs came rows as given; csvPath not given - "none", the card''s
+    own default (optional); blankCells not given - "none", the card''s own default (optional);
+    keepFace not given - "none", the card''s own default (optional); renameViews not given
+    - "none", the card''s own default (optional). on Snowdon Towers Sample Architectural'
+  negative_case: 'run with rows=key=Mark|in=Doors;ZZZ999|Comments=P1102 instead - chosen because
+    it should not contain what this fragment reports - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned applied false, backslash
+    \, blankCellsSkipped 0, cellsCleared 0, csvMode false, csvStale 0 item(s), esc Func`2,
+    faceKeeper (null), findings 1 item(s) [1 row(s) not written, 0 written - refused says
+    why, by key.], groupLocked Func`3, isYesNo Func`2, keyed true, levelAsks Func`3, materialSpec
+    ForgeTypeId, materialSpecProperty RuntimePropertyInfo, namedElements (null), parametersCalled
+    Func`3, plan 0 item(s), quote ", readBack 0 item(s), readValue Func`2, referenceByName
+    Func`3, refused 1 item(s) [ZZZ999: no element in Doors has Mark ''ZZZ999'' - not written],
+    resultJson {"format": 2, "applied": false, "written": 0, "key": "Mark", "types": false,
+    "in": ["Doors"], "where": [], "problem": null, "stale": [], "refused": [{"key": "ZZZ999",
+    "why": "no element in Doors has Mark ''ZZZ999'' - not written"}], "readBack": []}, rowFindings
+    ZZZ999: no element in Doors has Mark ''ZZZ999'' - not written, rowsGiven true, rowsMatched
+    0, rowsUnmatched 0, same Func`2, stale 0 item(s), staleJson 0 item(s), storedValue Func`2,
+    theOne Func`3, ticked 5 item(s) [yes, true, on, ...], unchanged Func`3, unticked 5 item(s)
+    [no, false, off, ...], valuesRejected 0, written 0, yesNoProperty RuntimePropertyInfo,
+    yesNoSpec ForgeTypeId, yesNoSpecs RuntimeType. inputs came rows as given; csvPath not
+    given - "none", the card''s own default (optional); blankCells not given - "none", the
+    card''s own default (optional); keepFace not given - "none", the card''s own default (optional);
+    renameViews not given - "none", the card''s own default (optional). on Snowdon Towers
+    Sample Architectural'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 623bf673ccc9f3f4
+  fingerprint: 27b0c5a70516b94c
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

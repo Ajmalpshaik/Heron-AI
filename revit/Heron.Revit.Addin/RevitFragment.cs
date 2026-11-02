@@ -6599,7 +6599,7 @@ namespace Heron.Revit.Addin
             //
             //   HostObjAttributes  CREATE_FROM_ROOM_BOUNDARIES branches on
             //                      `hostType is CeilingType` / `is FloorType`
-            //   MEPCurveType       CREATE_DUCT_RUNS builds duct, pipe, cable tray,
+            //   MEPCurveType       CREATE_MEP_RUNS builds duct, pipe, cable tray,
             //                      conduit or flex from the same value
             //   FilterElement      APPLY_VIEW_FILTER says it in its own comment:
             //                      a rule filter and a selection filter share a

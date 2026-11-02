@@ -1,0 +1,55 @@
+# Round 26, 2026-11-02 - Revit 2024.3, session 57392. "Project2" = the modeller's new, never-saved
+# project from Revit 2024's default template, where he drew 44 walls (Generic - 8") on L1 by hand for
+# this proof; L2 has none, and there is no room (read before the run). Round 25 could not make the
+# walls in the same run: CREATE_WALL's `points` reached PLACE_ROOMS' own `points` too. So the walls
+# are the model's own here and PLACE_ROOMS is given no points. Every run is ROLLED BACK.
+model: "Project2 (new project from Revit 2024's default template, 44 walls on L1 drawn by the modeller), Revit 2024"
+
+defaults:
+  in: "Project2"
+  setup: []
+  write: true
+
+jobs:
+  - fragment: place-rooms
+    expect: created
+    set: {levelId: "L1", placeKind: "rooms", phaseId: "New Construction", planViewId: "FloorPlan: L1 - Architectural"}
+    negative-set: {levelId: "HERON EMPTY", placeKind: "rooms", phaseId: "New Construction", planViewId: "FloorPlan: HERON EMPTY Plan"}
+    note: >
+      Fourth arrangement. The walls reach L2, so L2 was enclosed too (11 rooms); a level made in the
+      same run collided twice - CREATE_LEVELS' `names` reached PLACE_ROOMS' own `names`, and an
+      unnamed one could not be named back. So the empty level "HERON EMPTY" (30000 mm) was KEPT in
+      this scratch project first, by the PROVEN CREATE_LEVELS, with a floor plan "HERON EMPTY Plan"
+      kept by CREATE_PLAN_VIEW - Revit threw "level" placing rooms on a level with no plan view.
+
+  - fragment: set-global-parameter
+    expect: changed
+    set: {parameterName: "HERON Setback", newValue: "length 1000"}
+    negative-set: {parameterName: "ZZZ No Such GP", newValue: "length 1000"}
+    note: >
+      "HERON Setback" (Length) was KEPT in this scratch project first by the PROVEN
+      CREATE_GLOBAL_PARAMETER, the owner's Admin switch on.
+
+  - fragment: find-clashes
+    setup: [create-wall, create-duct-runs]
+    keep-chain: true
+    expect: elements
+    set: {level: "L1", wallType: "Basic Wall: Exterior - Brick on Mtl. Stud", points: "50000,-10000,0; 50000,10000,0", height: 3000, structural: false, systemType: "Supply Air", ductType: "Rectangular Duct: Default", runs: "400x200: 45000,0,1500; 55000,0,1500", against: "", includeLinks: false, categories: "Walls", includeHost: true, compareParameter: "none"}
+    negative-set: {level: "L1", wallType: "Basic Wall: Exterior - Brick on Mtl. Stud", points: "50000,-10000,0; 50000,10000,0", height: 3000, structural: false, systemType: "Supply Air", ductType: "Rectangular Duct: Default", runs: "400x200: 45000,0,1500; 55000,0,1500", against: "", includeLinks: false, categories: "Planting", includeHost: true, compareParameter: "none"}
+    note: >
+      A wall and a duct run made in the same rolled-back run, crossing at x 50000 mm, clear of the
+      modeller's own walls; the ducts are handed on by CREATE_DUCT_RUNS' `elements`. With no
+      `against`, the result is version 3's `elements` - what the ducts pass through (the wall: 1) -
+      not `clashes`, which counts only an `against` set (first run named the wrong one).
+
+  - fragment: report-model-geometry
+    setup: []
+    write: false
+    expect: triangles
+    set: {wholeModel: "true", categories: "OST_Walls", maxTriangles: 20000}
+    negative-set: {wholeModel: "true", categories: "OST_Planting", maxTriangles: 20000}
+    note: >
+      With no 3D view active the card reads the whole model whatever wholeModel says (its own
+      rule), so the first run's active-view negative read the 44 walls too. The negative is by
+      category: OST_Walls (the 44) against OST_Planting, which this project has none of. The card
+      takes Revit's own category names (a plain "Walls" was refused).

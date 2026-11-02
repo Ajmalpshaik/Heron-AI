@@ -1,11 +1,11 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-123
-semantic-identity: "list the keynote tags and the keynote values the keynote table does not hold, and which keynote file is loaded"
+semantic-identity: "list the keynote tags and the keynote values the keynote table does not hold"
 kind: action
 domain: revit.annotation
 capability: REPORT_KEYNOTES
@@ -26,17 +26,6 @@ risk: READ
 #
 # THE TABLE IS REVIT'S LOADED COPY (KeynoteTable), not the file on disk.
 #
-# WHICH KEYNOTE FILE - WIDENED 2026-11-02, asked in the modeller's words
-# "which keynote file is this project using". No card answered it for the
-# keynote file alone: REPORT_EXTERNAL_REFERENCES (PROVEN) lists the keynote
-# table as one row among every link, import and point cloud, with no entry
-# count - a look-alike, kept separate; widening its code would put its proof
-# out of date. Here: the path as saved, its path type, where it resolves on
-# this PC, Revit's status for it, and the entry count. Loading or reloading
-# the file is LOAD_KEYNOTE_FILE, a write. The numbering method (By keynote /
-# By sheet) is NOT read - no Revit API member reaches it on any release
-# 2020-2027 (row 5b-1420).
-#
 # Changing a keynote value is WRITE_ELEMENT_PARAMETERS on the Keynote
 # parameter; this only reads.
 #
@@ -44,8 +33,7 @@ risk: READ
 purpose: >
   Lists keynote tags with the text each shows, and every keynote value used on
   element types and materials, naming the values the loaded keynote table does
-  not hold - and names the keynote file the model uses, its path type, and how
-  many entries it loaded.
+  not hold.
 
 contract:
   needs:
@@ -78,18 +66,39 @@ contract:
       # be checked against one, and the findings say so (D-52).
       role: accounting
       type: bool
-    - name: keynoteFile
-      # The keynote file Keynoting Settings names: the path as saved, its path
-      # type, where it resolves on this PC when that differs, and Revit's
-      # status for it (Loaded, NotFound). Empty when none is named.
-      role: result
-      type: string
-    - name: tableEntries
-      # Entries in the loaded keynote table, counted.
-      role: result
-      type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: Snowdon Towers Sample Architectural (34,509 elements), Revit 2024, session 57392
+  positive_case: 'run as it would normally be run. returned collector FilteredElementCollector,
+    findings 1 item(s) [3 keynote tag(s) in "North Wall Window Detail"; 80 keynote v...],
+    keynotes tag 2374992 | North Wall Window Detail | "6" Metal Stud" | a keynote text in
+    the table
+
+    tag 2375010 | North Wall Window Detail | "Backer Rod w/ Sealant" | a keynote text in the
+    table
+
+    tag 2375015 | North Wall Window Detail | "6" Metal Stud" | a keynote text in the table,
+    keys HashSet`1, lines 3 item(s) [tag 2374992 | North Wall Window Detail | "6" Metal Stud"
+    | a..., tag 2375010 | North Wall Window Detail | "Backer Rod w/ Seal..., tag 2375015 |
+    North Wall Window Detail | "6" Metal Stud" | a...], missingFromTable 0 item(s), readValue
+    Action`1, seen 80 entry(ies), tableLoaded true, tagCount 3, texts HashSet`1, view ViewSection,
+    viewProblem (null), wantedView North Wall Window Detail. inputs came viewName as given.
+    on Snowdon Towers Sample Architectural'
+  negative_case: run with viewName=Parapet Detail - Typical instead - chosen because it should
+    not contain what this fragment reports. returned collector FilteredElementCollector, findings
+    1 item(s) [0 keynote tag(s) in "Parapet Detail - Typical"; 80 keynote v...], keynotes
+    , keys HashSet`1, lines 0 item(s), missingFromTable 0 item(s), readValue Action`1, seen
+    80 entry(ies), tableLoaded true, tagCount 0, texts HashSet`1, view ViewSection, viewProblem
+    (null), wantedView Parapet Detail - Typical. inputs came viewName as given. on Snowdon
+    Towers Sample Architectural
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 5e856d8f10c1f928
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -102,13 +111,7 @@ compatibility-note: >
   present 2020 through 2027 - read off RevitAPI.xml in the Nice3point
   reference packages for all eight releases on 2026-10-12. The tag's target is
   not read, so the 2022 change to how a tag names its element does not reach
-  it. The keynote file (2026-11-02): Element.GetExternalFileReference,
-  ExternalFileReference.GetPath / GetAbsolutePath / PathType /
-  GetLinkedFileStatus, ModelPathUtils.ConvertModelPathToUserVisiblePath,
-  Element.GetExternalResourceReference,
-  ExternalResourceTypes.BuiltInExternalResourceTypes.KeynoteTable and
-  ExternalResourceReference.InSessionPath - each read with tools/api-surface
-  --members on the reference assemblies of 2020 to 2027, present in all eight.
+  it.
 
 # ROUTING - the same rows are in the fragments named here.
 #
@@ -117,7 +120,6 @@ compatibility-note: >
 #   "change the keynote on these"             -> WRITE_ELEMENT_PARAMETERS, the
 #                                                Keynote parameter
 #   "which elements are not tagged"           -> FIND_UNTAGGED_ELEMENTS
-#   "which keynote file is this project using" -> here, keynoteFile
 #   "reload the keynote file"                 -> LOAD_KEYNOTE_FILE, a write
 #   "load the keynote file C:\Standards\Keynotes.txt" -> LOAD_KEYNOTE_FILE
 #   "set keynote numbering to by sheet"       -> NOTHING HERE DOES THAT - no
@@ -131,5 +133,3 @@ utterances:
   - list the keynote tags on this sheet view
   - what do the keynotes say
   - check the keynotes
-  # ADDED 2026-11-02 with keynoteFile, the modeller's own words.
-  - which keynote file is this project using

@@ -16,9 +16,9 @@ semantic-identity: "draw duct or pipe placeholders along these points - Revit's 
 # placeholder.
 #
 # WHY A NEW CARD AND NOT A WIDENING. Written when CREATE_DUCT and CREATE_PIPE
-# were PROVEN; main's #777 has since merged both into CREATE_DUCT_RUNS, DRAFT
+# were PROVEN; main's #777 has since merged both into CREATE_MEP_RUNS, DRAFT
 # (version 3: duct, pipe, tray, conduit and flex, one run or a layout), and
-# retired them (corrected 2026-11-01). CREATE_DUCT_RUNS draws no placeholder.
+# retired them (corrected 2026-11-01). CREATE_MEP_RUNS draws no placeholder.
 # Whether this card merges into it is OPEN for the owner - row 5b-1382. A
 # placeholder is a different element to a duct: Revit draws it single-line,
 # with no fittings, and it is what CONVERT_MEP_PLACEHOLDERS turns into real
@@ -142,8 +142,8 @@ compatibility-note: >
 #
 #   "draw a duct placeholder from here to here" -> here
 #   "rough in the pipe route as placeholders"   -> here
-#   "draw a duct from here to there"            -> CREATE_DUCT_RUNS - real duct
-#   "run a pipe from here to there"             -> CREATE_DUCT_RUNS - real pipe
+#   "draw a duct from here to there"            -> CREATE_MEP_RUNS - real duct
+#   "run a pipe from here to there"             -> CREATE_MEP_RUNS - real pipe
 #   "convert these placeholders to real ducts"  -> CONVERT_MEP_PLACEHOLDERS
 #   "turn the pipe placeholders into pipes"     -> CONVERT_MEP_PLACEHOLDERS
 utterances:

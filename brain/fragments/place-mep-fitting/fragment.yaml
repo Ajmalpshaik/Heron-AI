@@ -122,7 +122,7 @@ compatibility-note: >
 
   Millimetres to feet is arithmetic - divide by 304.8, per D-20.
 
-# ROUTING - repeated in CREATE_DUCT_RUNS, TRACE_CONNECTIVITY and SPLIT_MEP_RUN.
+# ROUTING - repeated in CREATE_MEP_RUNS, TRACE_CONNECTIVITY and SPLIT_MEP_RUN.
 #
 #   "join these two"             -> here
 #   "connect these two ducts"    -> here
@@ -130,7 +130,7 @@ compatibility-note: >
 #   "add a duct fitting"         -> here
 #   "is this duct connected"     -> TRACE_CONNECTIVITY - a READ, and it must
 #                                   not answer a request to change the model
-#   "draw a duct from here"      -> CREATE_DUCT_RUNS - makes a new run
+#   "draw a duct from here"      -> CREATE_MEP_RUNS - makes a new run
 #   "split this duct"            -> SPLIT_MEP_RUN - the opposite job
 #   "they are touching but not connected" -> CONNECT_OPEN_ENDS - it joins ends
 #                                       ALREADY at one point and adds no fitting

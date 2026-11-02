@@ -40,45 +40,7 @@ positive:
       connected 3 (the taps, into the DUCT only) and branched 2 (into the PIPE
       only) - no terminal taps a pipe, no head branches to a duct
 
-  # VERSION 3 (2026-11-02), Revit's Connect Into. Arranged in NEEDS-CHECKING
-  # Group LP (docs/needs-checking/group-lp.md).
-  - given: >
-      one round-neck supply diffuser selected; ducts the one supply main above
-      it (selected by id, the only duct handed in); maxDistanceMm 1500
-    expect: >
-      connected 1; `created` holds the tap fitting's id, and the finding
-      "... tapped into <main id>, ... mm away; new fitting id(s) <id>" names
-      it; selected in Revit that id is the takeoff on the main
-
-  - given: >
-      a sink with a sanitary, a cold water and a hot water connector, the
-      sanitary facing down, selected; ducts one straight Sanitary pipe below
-      it, clear of its ends; maxDistanceMm 1500
-    expect: >
-      branched 1; the riser and arm start at the SANITARY connector, on the
-      Sanitary pipe's type and system; `created` holds their two ids; the cold
-      and hot connectors still open. On version 2 the first open connector
-      was used, whichever it was
-
 negative:
-  # VERSION 3 (2026-11-02), Revit's Connect Into.
-  - given: >
-      the same sink selected; ducts one straight Domestic Cold Water pipe
-      below it AND one Sanitary pipe below it; maxDistanceMm 1500
-    expect: >
-      two of the sink's connectors match the pipes handed in, so it is not
-      guessed which was meant: NOTHING is drawn and `refused`
-      names the sink's three connectors and both systems - "hand in the one
-      main its connector belongs on"; `created` empty. THE FIRST VERSION 3
-      CASE TO RUN
-
-  - given: >
-      the same sink selected; ducts one straight Vent pipe below it - a
-      system the sink has no connector for
-    expect: >
-      nothing drawn; `refused` names the sink's connectors and the pipe's
-      system; `created` empty
-
   # VERSION 2, from CREATE_FIXTURE_BRANCHES.
   - given: the two sprinklers with maxDistanceMm 300
     expect: >

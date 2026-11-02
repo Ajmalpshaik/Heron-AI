@@ -1,0 +1,69 @@
+# Round 20, 2026-11-02 - Revit 2024.3 (restarted, session 57392). "Snowdon Towers Sample
+# Architectural" = a scratch copy of Revit 2024's own Samples\Snowdon Towers Sample Architectural.rvt
+# in %TEMP%\heron-work\prove-1102\s2024, its 6 links loaded from the copies beside it. Read before
+# the run: 18 levels (L2 at 2463.8 mm), 54 rooms, 55 sheets, 36 schedules (no key schedule),
+# material "Concrete, Precast", door Marks on L2 such as 201A, title block "B 11 x 17 Horizontal",
+# railing type "Handrail - Pipe", plan "L2 Wall Top" on no sheet and "L2" on one, phase
+# "New Construction". What a card needs that the model lacks is made by a PROVEN creator inside
+# the same rolled-back run. The modeller's own open Project1 is never touched.
+model: "Snowdon Towers Sample Architectural (scratch copy, Revit 2024 sample, 6 links), Revit 2024"
+
+defaults:
+  in: "Snowdon Towers Sample Architectural"
+  setup: []
+
+jobs:
+  - fragment: check-sheet-sets-by-parameter
+    write: true
+    setup: [manage-sheet-sets]
+    expect: inStep
+    set: {mode: "by-parameter", parameterName: "Drawn By", setPrefix: "none", values: "all"}
+    negative-set: {mode: "by-parameter", parameterName: "ZZZ NO SUCH PARAMETER", setPrefix: "none", values: "all"}
+    note: >
+      Second arrangement. With no set in the model the counts (inStep, outOfStep) are 0 and only
+      the missingSets sentence fills, which accept does not count beside a count; so
+      MANAGE_SHEET_SETS makes the sets from "Drawn By" in the same run and the check reads them.
+
+  - fragment: list-export-setups
+    write: true
+    setup: [manage-export-setups]
+    expect: setups
+    set: {setupName: "HERON P1102 DWG", mode: "create", kind: "dwg"}
+    negative-set: {setupName: "ZZZ NO SUCH SETUP", mode: "delete", kind: "dwg"}
+    note: >
+      The setup is made by MANAGE_EXPORT_SETUPS in the same run and listed by name; the
+      negative's setup step deletes a setup that is not there (refused) and lists that name.
+
+  - fragment: set-material-properties
+    write: true
+    expect: changedMaterialIds
+    set: {materialsNamed: "Concrete, Precast", fieldValues: "Manufacturer=P1102 Maker; Mark=P1"}
+    negative-set: {materialsNamed: "Concrete, Precst", fieldValues: "Mark=P2"}
+
+  - fragment: set-parameter-values-by-id
+    write: true
+    expect: written
+    set: {rows: "key=Mark|in=Doors;201A|Comments=P1102"}
+    negative-set: {rows: "key=Mark|in=Doors;ZZZ999|Comments=P1102"}
+
+  - fragment: set-railing-type
+    write: true
+    expect: railingType
+    set: {railingTypeName: "Handrail - Pipe", duplicateAs: "Heron Guard", topRailTypeName: "", topRailHeightMm: 1000, handrailTypeName: "", handrailHeightMm: 0, handrailSide: ""}
+    negative-set: {railingTypeName: "ZZZ No Such Railing", duplicateAs: "Heron Guard", topRailTypeName: "", topRailHeightMm: 1000, handrailTypeName: "", handrailHeightMm: 0, handrailSide: ""}
+
+  - fragment: place-rooms
+    write: true
+    setup: [create-wall]
+    expect: created
+    set: {level: "L2", wallType: "Basic Wall: Exterior - Brick on Mtl. Stud", points: "0,-200000,0; 6000,-200000,0; 6000,-196000,0; 0,-196000,0; 0,-200000,0", height: 3000, structural: false, levelId: "L2", placeKind: "rooms", phaseId: "New Construction", planViewId: "FloorPlan: L2 Wall Top"}
+    negative-set: {level: "L2", wallType: "Basic Wall: Exterior - Brick on Mtl. Stud", points: "0,-200000,0; 6000,-200000,0; 6000,-196000,0; 0,-196000,0; 0,-200000,0", height: 3000, structural: false, levelId: "Parapet 2", placeKind: "rooms", phaseId: "New Construction", planViewId: "FloorPlan: L2 Wall Top"}
+
+  - fragment: place-view-on-sheet
+    write: true
+    setup: [create-sheets]
+    expect: placed
+    set: {numbers: "HZ-901", names: "HERON TEST SHEET", titleBlockName: "B 11 x 17 Horizontal", sheetId: "HZ-901", views: "FloorPlan: L2 Wall Top", at: "200,150,0"}
+    negative-set: {numbers: "HZ-901", names: "HERON TEST SHEET", titleBlockName: "B 11 x 17 Horizontal", sheetId: "HZ-901", views: "FloorPlan: L2", at: "200,150,0"}
+    note: >
+      "L2" is already on a sheet, and Revit puts a plan on one sheet only.

@@ -160,7 +160,7 @@ compatibility-note: >
   `Connector.Domain` and `Domain.DomainElectrical` are present 2020 to 2027.
 
 # ROUTING - repeated in SELECT_BY_MEP_SYSTEM, REPORT_CONNECTOR_LOADS and
-# CREATE_DUCT_RUNS.
+# CREATE_MEP_RUNS.
 #
 #   "what is on this circuit"        -> here
 #   "what is on circuit 3"           -> here, a question - never
@@ -193,7 +193,7 @@ compatibility-note: >
 #                                       are read differently
 #   "how much load is on it"         -> REPORT_CONNECTOR_LOADS - the numbers,
 #                                       once the elements are chosen
-#   "draw the containment"           -> CREATE_DUCT_RUNS. Tray and conduit
+#   "draw the containment"           -> CREATE_MEP_RUNS. Tray and conduit
 #                                       are the physical route; a circuit is
 #                                       the electrical one, and a model can
 #                                       have either without the other

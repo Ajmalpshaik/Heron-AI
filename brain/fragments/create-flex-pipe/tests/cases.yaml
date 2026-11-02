@@ -42,7 +42,7 @@ negative:
   - given: VERSION 2. A RIGID duct type named as flexPipeType, on Supply Air
     expect: >
       refused by name as neither a flex duct nor a flex pipe type, pointed at
-      CREATE_DUCT_RUNS, nothing created
+      CREATE_MEP_RUNS, nothing created
 
   - given: >
       VERSION 2. A flex DUCT type on a PIPING system - Domestic Cold Water - or

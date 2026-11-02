@@ -1,0 +1,30 @@
+# Round 30, 2026-11-02 - Revit 2024.3, session 57392. "Project2" = the modeller's new, never-saved
+# project from Revit 2024's default template, with his 44 walls on L1 made into 44 parts (kept by
+# CREATE_PARTS, round 27). Round 27's cutter, the level HERON MID, was refused by Revit; so a grid
+# "HERON CUT" along x = 0 was kept by the PROVEN CREATE_GRIDS - region counts (select-in-region)
+# put 27 walls at x <= 0 and 19 at x >= 0 of 44, so at least two cross it. The parts are chosen by
+# SELECT_IN_REGION in a 1 m band around x = 0. Every run below is ROLLED BACK.
+# RESULT: none passed - row 5b-1418 (DIVIDE_PARTS passes an empty sketch plane; MERGE_PARTS
+# has nothing divided to merge).
+model: "Project2 (new project from Revit 2024's default template, with parts and a grid kept for this work), Revit 2024"
+
+defaults:
+  in: "Project2"
+  write: true
+
+jobs:
+  - fragment: divide-parts
+    setup: [select-in-region]
+    keep-chain: true
+    expect: divided
+    setup-set: {minMm: "-500,-100000,-1000", maxMm: "500,100000,5000", exact: false, categories: "Parts"}
+    negative-setup-set: {minMm: "-500,-100000,-1000", maxMm: "500,100000,5000", exact: false, categories: "Parts"}
+    set: {cutterNames: "HERON CUT"}
+    negative-set: {cutterNames: "ZZZ No Such Grid"}
+
+  - fragment: merge-parts
+    setup: [select-in-region, divide-parts]
+    keep-chain: true
+    expect: merged
+    set: {minMm: "-500,-100000,-1000", maxMm: "500,100000,5000", exact: false, categories: "Parts", cutterNames: "HERON CUT"}
+    negative-set: {minMm: "-500,-100000,-1000", maxMm: "500,100000,5000", exact: false, categories: "Walls", cutterNames: "HERON CUT"}

@@ -1,0 +1,44 @@
+# Round 23, 2026-11-02 - Revit 2024.3, session 57392. One batch of every remaining DRAFT with a
+# chance on "Snowdon Towers Sample Architectural" = a scratch copy of Revit 2024's own
+# Samples\Snowdon Towers Sample Architectural.rvt. Every run is read-only or ROLLED BACK.
+#   place-rooms - round 20's negative (another level) still found enclosed areas, so this negative
+#     keeps the same new walls and asks for rooms in phase "Existing", where those walls do not stand.
+#   set-railing-type - round 20's "Handrail - Pipe" came back empty; this asks for a top rail only.
+#   find-clashes - the L2 doors against walls / against planting.
+#   report-model-geometry - the whole model / the active view only (a plan, not a 3D view).
+# RESULT: none passed. place-rooms' negative THREW (phase Existing refused for walls of New
+# Construction - a throw is not an empty answer); set-railing-type empty again (no primary
+# handrail to change); find-clashes 0 (a door in its opening is not a clash); report-model-geometry's
+# active-view negative still drew 18641 triangles (it needs an empty 3D view in front).
+model: "Snowdon Towers Sample Architectural (scratch copy, Revit 2024 sample), Revit 2024"
+
+defaults:
+  in: "Snowdon Towers Sample Architectural"
+  setup: []
+
+jobs:
+  - fragment: place-rooms
+    write: true
+    setup: [create-wall]
+    expect: created
+    set: {level: "L2", wallType: "Basic Wall: Exterior - Brick on Mtl. Stud", points: "0,-200000,0; 6000,-200000,0; 6000,-196000,0; 0,-196000,0; 0,-200000,0", height: 3000, structural: false, levelId: "L2", placeKind: "rooms", phaseId: "New Construction", planViewId: "FloorPlan: L2 Wall Top"}
+    negative-set: {level: "L2", wallType: "Basic Wall: Exterior - Brick on Mtl. Stud", points: "0,-200000,0; 6000,-200000,0; 6000,-196000,0; 0,-196000,0; 0,-200000,0", height: 3000, structural: false, levelId: "L2", placeKind: "rooms", phaseId: "Existing", planViewId: "FloorPlan: L2 Wall Top"}
+
+  - fragment: set-railing-type
+    write: true
+    expect: railingType
+    set: {railingTypeName: "Glass Panel - Bottom Fill", duplicateAs: "Heron Guard", topRailTypeName: "", topRailHeightMm: 1100, handrailTypeName: "none", handrailHeightMm: 0, handrailSide: "none"}
+    negative-set: {railingTypeName: "ZZZ No Such Railing", duplicateAs: "Heron Guard", topRailTypeName: "", topRailHeightMm: 1100, handrailTypeName: "none", handrailHeightMm: 0, handrailSide: "none"}
+
+  - fragment: find-clashes
+    setup: [filter-elements-by-category, set-selection]
+    setup-set: {category: "Doors", levelId: "L2"}
+    negative-setup-set: {category: "Doors", levelId: "L2"}
+    expect: clashes
+    set: {against: "", includeLinks: false, categories: "Walls", includeHost: true, compareParameter: "none"}
+    negative-set: {against: "", includeLinks: false, categories: "Planting", includeHost: true, compareParameter: "none"}
+
+  - fragment: report-model-geometry
+    expect: triangles
+    set: {wholeModel: "true", maxTriangles: 20000}
+    negative-set: {wholeModel: "false", maxTriangles: 20000}

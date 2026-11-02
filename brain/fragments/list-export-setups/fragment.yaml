@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-EXP-018
 heron-step: 16
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -92,6 +92,96 @@ contract:
       # it FOUND (D-52).
       role: accounting
       type: string
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: Snowdon Towers Sample Architectural (34,509 elements), Revit 2024, session 57392
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    manage-export-setups with this phase''s own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned activeSetups , actives
+    0 item(s), asked Func`2, counts 1 item(s) [1 DWG/DXF], findings 2 item(s) [Setup ''HERON
+    P1102 DWG'' in Snowdon Towers Sample Architectur..., IFC, Navisworks, DWF and image export
+    keep no setup the Revi...], hides Func`2, layerCount Func`2, layerParts 80 item(s) [Abutment
+    Foundation Tags -> S-BRDG-ABUT-FNDN-IDEN (colour 2), Abutment Pile Tags -> S-BRDG-ABUT-PILE-IDEN
+    (colour 2), Abutment Tags -> S-BRDG-ABUT-IDEN (colour 2), ...], layerRowsMore 823, layerRowsShown
+    80, layerSources 1 item(s) [Autodesk.Revit.DB.DWGExportOptions], layerTable Abutment Foundation
+    Tags -> S-BRDG-ABUT-FNDN-IDEN (colour 2); Abutment Pile Tags -> S-BRDG-ABUT-PILE-IDEN
+    (colour 2); Abutment Tags -> S-BRDG-ABUT-IDEN (colour 2); Abutment Wall Tags -> S-BRDG-WALL-ABUT-IDEN
+    (colour 2); Abutments -> S-BRDG-ABUT (colour 83), cut S-BRDG-ABUT; Abutments : <Hidden
+    Lines> -> S-BRDG-ABUT-HDLN (colour 2), cut S-BRDG-ABUT-HDLN; Abutments : Abutment Foundations
+    -> S-BRDG-ABUT-FNDN (colour 2), cut S-BRDG-ABUT-FNDN; Abutments : Abutment Piles -> S-BRDG-ABUT-PILE
+    (colour 2), cut S-BRDG-ABUT-PILE; Abutments : Abutment Walls -> S-BRDG-WALL-ABUT (colour
+    2), cut S-BRDG-WALL-ABUT; Abutments : Approach Slabs -> S-BRDG-APPR-SLAB (colour 2), cut
+    S-BRDG-APPR-SLAB; Adaptive Points -> A-ANNO-SYMB (colour 150); Adaptive Points : Lines
+    -> A-ANNO-SYMB (colour 150); Adaptive Points : Planes -> A-ANNO-SYMB (colour 150); Adaptive
+    Points : Points -> A-ANNO-SYMB (colour 150); Air Terminal Tags -> M-HVAC-CDFF-IDEN (colour
+    2); Air Terminals -> M-HVAC-CDFF (colour 50); Alignment Station Label Sets -> L-SITE (colour
+    91); Alignment Station Labels -> L-SITE (colour 91); Alignment Tags -> L-SITE (colour
+    91); Alignments -> L-SITE (colour 91), cut L-SITE; Analytical Link Tags -> S-LINK-ANLY-IDEN
+    (colour 2); Analytical Links -> S-LINK-ANLY (colour 1); Analytical Member Tags -> S-BEAM-ANLY-IDEN
+    (colour 2); Analytical Members -> S-BEAM-ANLY (colour 2); Analytical Members : Cross Section
+    ->  (colour -1); Analytical Members : Local Coordinate System ->  (colour -1); Analytical
+    Node Tags -> S-NODE-ANLY-IDEN (colour 2); Analytical Nodes -> S-NODE-ANLY (colour 1);
+    Analytical Opening Tags -> S-OPNG-ANLY-IDEN (colour 2); Analytical Openings -> S-OPNG-ANLY
+    (colour 2); Analytical Panel Tags -> S-SLAB-ANLY-IDEN (colour 2); Analytical Panels ->
+    S-SLAB-ANLY (colour 2); Analytical Panels : Local Coordinate System ->  (colour -1); Analytical
+    Pipe Connections -> P-PIPE-ANLY (colour 3); Analytical Pipe Connections : Connection Line
+    Symbol -> P-PIPE-ANLY (colour 3); Analytical Spaces -> M-AREA-ANLY (colour 132); Analytical
+    Surfaces -> M-AREA-ANLY (colour 70); Analytical Surfaces : Air Openings -> M-OPNG-ANLY
+    (colour 254); Analytical Surfaces : Air Surfaces -> M-AREA-ANLY (colour 254); Analytical
+    Surfaces : Ceilings -> M-CLNG-ANLY (colour 191); Analytical Surfaces : Exterior Walls
+    -> M-WALL-ANLY (colour 73); Analytical Surfaces : Fixed Skylights -> M-GLAZ-ANLY (colour
+    141); Analytical Surfaces : Fixed Windows -> M-GLAZ-ANLY (colour 141); Analytical Surfaces
+    : Interior Floors -> M-FLOR-ANLY (colour 183); Analytical Surfaces : Interior Walls ->
+    M-WALL-ANLY (colour 71); Analytical Surfaces : Non-sliding Doors -> M-DOOR-ANLY (colour
+    241); Analytical Surfaces : Operable Skylights -> M-GLAZ-ANLY (colour 141); Analytical
+    Surfaces : Operable Windows -> M-GLAZ-ANLY (colour 141); Analytical Surfaces : Raised
+    Floors -> M-FLOR-ANLY (colour 183); Analytical Surfaces : Roofs -> M-ROOF-ANLY (colour
+    182); Analytical Surfaces : Shades -> M-AREA-ANLY (colour 253); Analytical Surfaces :
+    Slabs on Grade -> M-SLAB-ANLY (colour 183); Analytical Surfaces : Sliding Doors -> M-DOOR-ANLY
+    (colour 241); Analytical Surfaces : Underground Ceilings -> M-CLNG-ANLY (colour 23); Analytical
+    Surfaces : Underground Slabs -> M-SLAB-ANLY (colour 23); Analytical Surfaces : Underground
+    Walls -> M-WALL-ANLY (colour 23); Analyze As -> Analyze As (colour -1), cut Analyze As;
+    Analyze As : Foundation -> Foundation (colour -1), cut Foundation; Analyze As : Gravity
+    -> Gravity (colour -1), cut Gravity; Analyze As : Gravity and Lateral -> Gravity and Lateral
+    (colour -1), cut Gravity and Lateral; Analyze As : Hanger -> Hanger (colour -1), cut Hanger;
+    Analyze As : Lateral -> Lateral (colour -1), cut Lateral; Analyze As : Not for analysis
+    -> Not for analysis (colour -1), cut Not for analysis; Analyze As : One-Way -> One-Way
+    (colour -1), cut One-Way; Analyze As : Slab on Grade -> Slab on Grade (colour -1), cut
+    Slab on Grade; Analyze As : Two-Way -> Two-Way (colour -1), cut Two-Way; Anchor Tags ->
+    S-FSTN (colour 2); Approach Slab Tags -> S-BRDG-APPR-SLAB-IDEN (colour 2); Area Based
+    Load Tags -> E-ELEC-ARBL-IDEN (colour 2); Area Load Tags -> S-LOAD-CASE-IDEN (colour 2);
+    Area Polylines -> A-AREA-BNDY (colour 1), cut A-AREA-BNDY; Area Tags -> A-AREA-IDEN (colour
+    2); Areas -> A-AREA (colour 32); Areas : Color Fill -> A-AREA-PATT (colour 32); Assembly
+    Tags -> A-ANNO-TEXT (colour 131); Audio Visual Device Tags -> A-AVDV-IDEN (colour 13);
+    Audio Visual Devices -> A-AVDV (colour 13), cut A-AVDV; Audio Visual Devices : <Hidden
+    Lines> -> A-AVDV-HDLN (colour 13), cut A-AVDV-HDLN; Bearing Tags -> S-BRDG-BEAR-IDEN (colour
+    2); Bearings -> S-BRDG-BEAR (colour 152), cut S-BRDG-BEAR; and 823 more rows, readLayers
+    Action`1, refused , rows 1 item(s) [DWG/DXF: HERON P1102 DWG - AutoCAD 2018 format, units
+    Inch, ...], seen 1 item(s) [DWG/DXF ''HERON P1102 DWG''], setupCount 1, setups DWG/DXF:
+    HERON P1102 DWG - AutoCAD 2018 format, units Inch, Project Internal coordinates, views
+    on sheets as external references, layer standard AIA, 903 layer rows, solids polymesh,
+    colours AutoCAD index, line scaling paper space, category properties ByEntity, text exact,
+    rooms and areas as polylines no, hide scope boxes yes, hide reference planes yes, hide
+    unreferenced view tags yes, preserve coincident lines no, wantedKind dwg, wantedName HERON
+    P1102 DWG, yesNo Func`2. inputs came kind as given; setupName as given. on Snowdon Towers
+    Sample Architectural'
+  negative_case: run with kind=dwg, mode=delete, setupName=ZZZ NO SUCH SETUP instead - chosen
+    because it should not contain what this fragment reports - the arrangement was re-made
+    first by running manage-export-setups with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned activeSetups
+    , actives 0 item(s), asked Func`2, counts 1 item(s) [0 DWG/DXF], findings 1 item(s) [No
+    DWG export setup called 'ZZZ NO SUCH SETUP'. This project...], hides Func`2, layerCount
+    Func`2, layerParts 0 item(s), layerRowsMore 0, layerRowsShown 0, layerSources 0 item(s),
+    layerTable , readLayers Action`1, refused No DWG export setup called 'ZZZ NO SUCH SETUP'.
+    This project has none of that kind., rows 0 item(s), seen 0 item(s), setupCount 0, setups
+    , wantedKind dwg, wantedName ZZZ NO SUCH SETUP, yesNo Func`2. inputs came kind as given;
+    setupName as given. on Snowdon Towers Sample Architectural
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: cf3fe622aafb506d
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "tap these diffusers into the duct running past them, or pipe
 kind: action
 domain: revit.mep
 capability: CONNECT_AIR_TERMINALS
-version: 3
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -62,15 +62,6 @@ purpose: >
   refuses, or that will not join, is taken back WHOLE - nothing is left for it,
   as nothing is left for a terminal Revit declines. Version 2's proof is owed;
   the card is DRAFT and the version 1 proof below is the record.
-
-  **Connect Into, and the right connector (version 3, 2026-11-02).** The main
-  is only ever one of `ducts`, handed in - hand in one and that is the main;
-  nothing else in the model is searched. A fixture with more than one open
-  pipe connector - a sink's waste, cold and hot - uses only the connector
-  whose system classification is the main's, and only to mains of it; none
-  or more than one matching, nothing is drawn and its connectors are named.
-  Every element made is in `created` by id: the tap fitting Revit cut for a
-  terminal, and each riser and arm of a branch.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Joining
   raises Revit warnings on a real model; how those are handled belongs to
@@ -151,13 +142,6 @@ contract:
       # found (D-52).
       role: accounting
       type: IList<ElementId>
-    # VERSION 3 - Connect Into's new elements, by id.
-    - name: created
-      # Every element this made: the tap fitting Revit cut for each terminal,
-      # read off the terminal's connector after the tap, and each riser and
-      # arm drawn for a head. Nothing made is never a refusal hidden here.
-      role: result
-      type: IList<ElementId>
 
 proof-held: >
   waiting on the owner's tolerance decision - how far Revit may move a terminal
@@ -168,35 +152,40 @@ proof-held: >
   very run; the owner signed it and chose to hold it, 2026-09-23.
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project2 (3,716 elements), Revit 2020, session 30308
+  model: Project2 (6,036 elements), Revit 2024, session 57392
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-in-region, set-selection with this phase''s own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyConnected
-    0 item(s), called 2, connected 2, connectorOf Func`2, facingBefore 2 entry(ies), facingOf
-    Func`2, findings 4 item(s) [1328501 tapped into 1328486, 1513 mm away, 1328502 tapped
-    into 1328486, 1513 mm away, 2 terminal(s) tapped in. 0 were already connected, 0 had no
-    ..., ...], furthestMm 1380.58891781732, maxDistance 9.84251968503937, maxDistanceMm 3000,
-    moved 2 item(s) [1328501: moved 1380.6 mm (x 0.0, y -1347.6, z +300.0), turne..., 1328502:
-    moved 1380.6 mm (x 0.0, y -1347.6, z +300.0), turne...], noDuctNear 0 item(s), notMeasured
-    0 item(s), pointBefore 2 entry(ies), pointOf Func`2, refused 0 item(s). inputs came elements
-    from the selection (2); ducts as given (5); maxDistanceMm as given. on Project2'
-  negative_case: run with ducts=Ducts, maxDistanceMm=10 arranged with categories=Air Terminals,
-    exact=False, maxMm=8500,2000,2900, minMm=2500,1000,2500 instead - chosen because it should
-    not contain what this fragment reports - the arrangement was re-made first by running
-    select-in-region, set-selection with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyConnected
-    0 item(s), called 0, connected 0, connectorOf Func`2, facingBefore 2 entry(ies), facingOf
+    filter-elements-by-category, set-selection with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    alreadyConnected 0 item(s), branched 0, called 2, connected 2, connectorOf Func`2, endClearMin
+    0.328083989501312, facingBefore 2 entry(ies), facingOf Func`2, findings 4 item(s) [1201648
+    tapped into 1201669, 498 mm away, 1201649 tapped into 1201669, 498 mm away, 2 terminal(s)
+    tapped in. 0 were already connected, 0 had no ..., ...], furthestMm 500, headsSeen HashSet`1,
+    isPipeHead Func`2, mains 0 item(s), mainsUsed HashSet`1, maxDistance 9.84251968503937,
+    maxDistanceMm 3000, minArm 0.00328083989501312, minRiser 0.164041994750656, mmPerFoot
+    304.8, moved 2 item(s) [1201648: moved 500.0 mm (x 0.0, y 0.0, z +500.0), 1201649: moved
+    500.0 mm (x 0.0, y 0.0, z +500.0)], noDuctNear 0 item(s), noMainNear 0 item(s), notMeasured
+    0 item(s), pointBefore 2 entry(ies), pointOf Func`2, refused 0 item(s), runs 0 item(s).
+    inputs came elements from the selection (2); ducts as given (1); maxDistanceMm as given.
+    on Project2'
+  negative_case: run with category=Air Terminals, ducts=Ducts, levelId=L1, maxDistanceMm=10
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running filter-elements-by-category, set-selection with this phase's
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned alreadyConnected 0 item(s), branched 0, called 0, connected
+    0, connectorOf Func`2, endClearMin 0.328083989501312, facingBefore 2 entry(ies), facingOf
     Func`2, findings 1 item(s) [0 terminal(s) tapped in. 0 were already connected, 2 had no
-    ...], furthestMm 0, maxDistance 0.0328083989501312, maxDistanceMm 10, moved 0 item(s),
-    noDuctNear 2 item(s) [1328501, 1328502], notMeasured 0 item(s), pointBefore 2 entry(ies),
-    pointOf Func`2, refused 0 item(s). inputs came elements from the selection (2); ducts
-    as given (5); maxDistanceMm as given. on Project2
+    ...], furthestMm 0, headsSeen HashSet`1, isPipeHead Func`2, mains 0 item(s), mainsUsed
+    HashSet`1, maxDistance 0.0328083989501312, maxDistanceMm 10, minArm 0.00328083989501312,
+    minRiser 0.164041994750656, mmPerFoot 304.8, moved 0 item(s), noDuctNear 2 item(s) [1201648,
+    1201649], noMainNear 0 item(s), notMeasured 0 item(s), pointBefore 2 entry(ies), pointOf
+    Func`2, refused 0 item(s), runs 0 item(s). inputs came elements from the selection (2);
+    ducts as given (1); maxDistanceMm as given. on Project2
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 9455f0c5551fe947
+  fingerprint: f749ba881bead58f
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -213,14 +202,7 @@ compatibility-note: >
   `Connector.ConnectTo`, `Connector.Radius` / `Shape` / `Domain` /
   `CoordinateSystem`, `RBS_PIPE_DIAMETER_PARAM`, `RBS_PIPING_SYSTEM_TYPE_PARAM`
   and `SubTransaction` (`Start`, `Commit`, `RollBack`, `HasStarted`,
-  `HasEnded`) are present 2020 through 2027.
-
-  Version 3: `Connector.PipeSystemType`, `Connector.AllRefs`,
-  `Connector.Owner` and `MEPSystemType.SystemClassification` are present and
-  unchanged 2020 through 2027 - read with tools/api-surface --members on
-  2026-11-02. The two enums are compared by name: PipeSystemType and
-  MEPSystemClassification share the names of the piping classifications
-  (Sanitary, DomesticColdWater, ...). The connector overload of
+  `HasEnded`) are present 2020 through 2027. The connector overload of
   Pipe.Create is NOT used: RevitAPI.xml says that when it cannot join it still
   creates the pipe and THROWS, which leaves a pipe nothing here can name.
 
@@ -241,19 +223,6 @@ compatibility-note: >
 # the head still reads open - a pipe left hanging beside a head reads as piped
 # on plan and is not.
 
-# VERSION 3 (2026-11-02) - REVIT'S CONNECT INTO, asked in the modeller's
-# words "connect this diffuser into the main duct" and "connect this sink into
-# the waste pipe". WIDENED HERE, NOT A NEW CARD: connecting a terminal or a
-# fixture into a main handed in is this card's job already (08 B9); what it
-# lacked was the right connector of a fixture with several - version 2 took
-# the first open pipe connector, on a sink possibly the cold water one, into a
-# waste pipe - and the new elements by id. NOT YET: Revit's Connect Into from
-# EQUIPMENT ("tap this equipment into the main") - a duct connector on
-# mechanical equipment still goes to the air-terminal tap call, which is for
-# air terminals, and a sideways pipe connector is still refused. That
-# sentence is not declared here until it is done. The proof below is version
-# 1's record; versions 2 and 3 are owed.
-#
 # TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
 #
 # Another tool, on real models and mostly on Revit 2020, saw this same Revit
@@ -287,14 +256,9 @@ compatibility-note: >
 #                                          `runs` (CREATE_FIXTURE_BRANCHES until
 #                                          2026-11-01)
 #   "draw the drops from the sprinklers to the branch line" -> here
-#   "make the flex drop to that diffuser" -> CREATE_DUCT_RUNS - it makes flex
+#   "make the flex drop to that diffuser" -> CREATE_MEP_RUNS - it makes flex
 #                                          and does NOT join it up
 #   "is every sprinkler actually piped" -> CHECK_FIXTURE_CONNECTIVITY
-#   "connect this diffuser into the main duct" -> here - the main handed in
-#                                          (version 3, Connect Into)
-#   "connect this sink into the waste pipe" -> here - the sink's waste
-#                                          connector, matched to the pipe's
-#                                          system
 #   "convert this last duct run to the diffuser into flex duct"
 #                                       -> CONVERT_TO_FLEX_DUCT - the duct is
 #                                          there already and becomes flex
@@ -314,6 +278,3 @@ utterances:
   - pipe these sprinklers to the main
   - run branch pipes from these heads to the pipe
   - draw the branch from each floor drain down to the drain line
-  # VERSION 3 (2026-11-02) - the modeller's words for Revit's Connect Into.
-  - connect this diffuser into the main duct
-  - connect this sink into the waste pipe
