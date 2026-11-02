@@ -323,6 +323,11 @@ compatibility-note: >
 #   "turn on room bounding for the linked model" -> SET_LINK_ROOM_BOUNDING, first,
 #                                           when spaces will not bound in an MEP
 #                                           model (2026-10-14)
+#   "create the rooms on this floor"     -> here, by identity. On the keyword
+#                                           route alone CREATE_PATHS_OF_TRAVEL
+#                                           ranks above it since 2026-11-02
+#                                           (CREATE_FROM_ROOM_BOUNDARIES before);
+#                                           `find` answers it here (2020, 2024)
 
 utterances:
   - place the rooms

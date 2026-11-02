@@ -1,0 +1,166 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-078
+semantic-identity: "draw a path of travel in a floor plan - Analyze > Route Analysis > Path of Travel - from rooms or points to one named exit door or point, each length read back"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "draw the path of travel from
+# this room to the nearest exit" and "show the egress route from each room on
+# Level 2 to the stair door" - Revit's Analyze > Route Analysis > Path of
+# Travel. No card drew one: a grep of every fragment's C# that day for
+# PathOfTravel found none, and brain/heron_retrieve.py on the sentences
+# (Revit 2024, a scratch store) answered FIND_NEAREST_ELEMENTS and
+# CREATE_STAIRS.
+#
+# LOOK-ALIKES, NOT DUPLICATES (heron-duplicate-checker's method, 2026-11-02).
+# FIND_NEAREST_ELEMENTS ranks by straight line or box gap and draws nothing;
+# its card says "the nearest exit may be through a wall". CREATE_ROOM_
+# SEPARATION_LINES and DRAW_FAMILY_DETAIL_LINES draw lines along curves they
+# are given; here Revit finds the route itself, around what the plan shows.
+#
+# THE WRITE HALF OF A PAIR. REPORT_PATHS_OF_TRAVEL answers every question about
+# the paths a plan has and how long they are, so none reaches this write
+# (D-86). "Show the egress route" is drawn here because Revit has no route to
+# show until one is drawn.
+#
+# THE EXIT IS NEVER GUESSED (D-33). A door by its Mark or a point in mm; with
+# neither, nothing is drawn and the level's doors are listed. "The nearest
+# exit" is the modeller's to name: one exit per run in version 1.
+#
+# A MEASURED LENGTH, NOT A VERDICT - never called compliant.
+#
+# RISK MODIFY. It adds path of travel lines and deletes nothing - a path
+# already there from the same start to the same end is named, not redrawn -
+# so Article 7's confirmation does not arise.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.rooms
+capability: CREATE_PATHS_OF_TRAVEL
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws path of travel lines in a floor plan - Revit's Analyze > Route
+  Analysis > Path of Travel - from rooms (by number or name, or every room on
+  the level) or points in millimetres to one exit: a door named by its Mark,
+  or a point. Revit finds each route around the walls. Each new line's length
+  is read back in metres, and any start Revit found no path from is named with
+  Revit's status. The exit is never guessed. Deletes nothing.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The floor plan, by name - "Level 2". Left out, it binds null and the
+    # view in front is used. Any view that is not a floor plan is refused by
+    # name.
+    - name: view
+      type: View
+      source: request
+      optional: true
+    # The rooms to start from, by number or name, separated by ";" -
+    # "204; 205; Office" - or "all" for every placed room on the plan's level
+    # in its phase. Each starts at its room location point.
+    - name: rooms
+      type: string
+      source: request
+      optional: true
+      absent: ""
+    # Further starts, "x,y; x,y" in MILLIMETRES from the internal origin.
+    # Feet by / 304.8 (D-20).
+    - name: fromPoints
+      type: string
+      source: request
+      optional: true
+      absent: ""
+    # The exit door's Mark - "D-12". Ends at the door's location point. Give
+    # this or toPoint, never both.
+    - name: toDoor
+      type: string
+      source: request
+      optional: true
+      absent: ""
+    # The exit as one point "x,y" in MILLIMETRES. Give this or toDoor.
+    - name: toPoint
+      type: string
+      source: request
+      optional: true
+      absent: ""
+  provides:
+    - name: created
+      # The paths drawn, looked up again by id after a regenerate.
+      role: result
+      type: IList<ElementId>
+    - name: notFound
+      # Each start Revit found no path from, with Revit's own status
+      # (NoPathOfTravel, PointOutsideActiveCrop, ...) - evidence it tried,
+      # never a thing it made (D-52).
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING: how many drawn of how many asked, the exit, the longest,
+      # then per path its start (room or point), id, length in metres, start
+      # and end in mm; a path already there is named and not redrawn; NO PATH
+      # rows last.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was drawn, in the modeller's words - with the level's
+      # doors or rooms listed where the exit or a room was not clear. Null
+      # when it ran (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. PathOfTravel.Create(View, XYZ, XYZ,
+  out PathOfTravelCalculationStatus), GetCurves, PathStart and PathEnd are in
+  the 2020 assembly checked here and unchanged to 2027, read with
+  tools/api-surface --members on 2026-11-02. PathOfTravelCalculationStatus
+  gained TemporaryModeFailureDataExist and TemporaryModeFailureWireframe in
+  2021; the status is reported by name, so the code names neither.
+  Millimetres become feet by / 304.8 and feet metres by * 0.3048 as plain
+  arithmetic. Not seen in Revit.
+
+# ROUTING (2026-11-02) - the same rows are in REPORT_PATHS_OF_TRAVEL and
+# FIND_NEAREST_ELEMENTS.
+#
+#   "draw the path of travel from this room to the nearest exit"
+#                                                  -> here, the room and the
+#                                                     exit door named; with no
+#                                                     door named it draws nothing
+#                                                     and lists the level's doors
+#   "show the egress route from each room on Level 2 to the stair door"
+#                                                  -> here, rooms "all", view
+#                                                     Level 2, the stair door's
+#                                                     Mark
+#   "what is the travel distance from room 204 to the exit"
+#                                                  -> REPORT_PATHS_OF_TRAVEL - a
+#                                                     question, never this write
+#   "list the path of travel lines in this plan and their lengths"
+#                                                  -> REPORT_PATHS_OF_TRAVEL
+#   "find the nearest exit"                        -> FIND_NEAREST_ELEMENTS - a
+#                                                     straight-line search
+#   "create the rooms on this floor"               -> PLACE_ROOMS, by identity.
+#                                                     On the keyword route alone
+#                                                     this card ranks above it
+#                                                     since 2026-11-02
+#                                                     (tools/check-routing.py, a
+#                                                     scratch store)
+#   "find the nearest exit" on the keyword route alone ranks this card above
+#   FIND_NEAREST_ELEMENTS since 2026-11-02; `find` answers it there by identity
+#   on 2020 and 2024
+utterances:
+  - draw the path of travel from this room to the nearest exit
+  - show the egress route from each room on Level 2 to the stair door

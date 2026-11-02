@@ -1,0 +1,60 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a list, "listed something that is not there": a plan with no path of
+# travel must come back empty, said in words, never with another plan's paths.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for REPORT_PATHS_OF_TRAVEL): a scratch project
+# "travel-ip" new from Revit's metric ARCHITECTURAL template, saved under
+# %TEMP%\heron-work, never a working model. On "Level 1": a 20000 x 10000 mm
+# box of Generic - 200mm walls with one interior wall across it at x = 10000
+# leaving a 1000 mm gap at its north end; rooms "201 Office" (west half) and
+# "202 Store" (east half); a door with Mark "D-EXIT" in the east outer wall.
+# With Revit's own Analyze > Path of Travel, TWO paths drawn in "Level 1":
+# from the middle of room 201 to the door, and from the middle of room 202 to
+# the door. "Level 2" floor plan left with NO path. Where the model differs,
+# the job file changes - never the card.
+
+positive:
+  - given: view "Level 1", room left out - the job file's positive
+    expect: >
+      pathCount 2; report "2 path(s) of travel in "Level 1", the longest
+      <n.nn> m: path <id>: <n.nn> m, from <x,y> mm in room 201 "Office" to
+      <x,y> mm in room 202 "Store" (or no room), at door "D-EXIT" ... ||
+      path <id>: ..." - the 201 path longer than 10 m because it goes round
+      the interior wall's end. THE FIRST POSITIVE TO RUN
+
+  - given: view "Level 1", room "201"
+    expect: pathCount 1 - only the path starting in room 201, "(of 2)" in the report
+
+  - given: view left out with "Level 1" in front, room "Office"
+    expect: the same one path as by number
+
+negative:
+  - given: view "Level 2" - a plan with no path of travel - the job file's negative
+    expect: >
+      pathCount 0; pathIds empty; report ""Level 2" has no path of travel
+      lines. CREATE_PATHS_OF_TRAVEL draws them ..."; nothing from Level 1
+      listed. THE FIRST CASE TO RUN
+
+  - given: view "Level 1", room "999"
+    expect: >
+      pathCount 0; report ""Level 1" has 2 path(s) of travel, and none starts
+      or ends in a room numbered or named "999"."
+
+  - given: view "{3D}", then a ceiling plan "Level 1", then a sheet
+    expect: >
+      refused ""{3D}" is a 3D view. Paths of travel are drawn in floor plans
+      only - name a floor plan. NOTHING WAS READ." - and "a ceiling plan",
+      "a sheet" for the others; pathCount 0
+
+  - given: any run at all
+    expect: NO TRANSACTION OPENED, NOTHING CHANGED - the model's undo list is untouched
+
+second_route:
+  - >
+    Select each path in "Level 1" and read Revit's Properties palette: its
+    Length matches the row's metres to the hundredth
+  - >
+    Revit's own path of travel schedule (View > Schedules, category Path of
+    Travel, fields Length and From Room / To Room where the release has them)
+    lists the same two lines with the same lengths

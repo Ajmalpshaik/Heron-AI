@@ -1,0 +1,36 @@
+# NEEDS-CHECKING Group LJ - REPORT_PATHS_OF_TRAVEL, built 2026-11-02 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/report-paths-of-travel-lj-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-paths-of-travel-lj-2026-11-02.yaml
+#
+# THE MODEL (docs/needs-checking/group-lj.md, LJ1): "travel-ip", a scratch
+# project new from Revit's metric architectural template, saved under
+# %TEMP%\heron-work, never a working model. On "Level 1" a 20000 x 10000 mm
+# box of Generic - 200mm walls, an interior wall across it at x = 10000 with a
+# 1000 mm gap at its north end, rooms "201 Office" and "202 Store", a door
+# Mark "D-EXIT" in the east wall, and TWO paths of travel drawn with Revit's
+# own Analyze > Path of Travel, one from each room's middle to the door. The
+# "Level 2" floor plan has none.
+#
+# A READ, so the negative is a DIFFERENT PLAN in the same model, not an empty
+# value (fragment-proving, rules 3 and 5): "Level 2" must come back with no
+# path and none of Level 1's.
+
+model: "travel-ip scratch project (metric architectural template) with two paths of travel on Level 1, Revit 2024"
+
+jobs:
+  - fragment: report-paths-of-travel
+    expect: pathCount
+    in: "travel-ip"
+    set:
+      view: "FloorPlan: Level 1"
+    negative-set:
+      view: "FloorPlan: Level 2"
+    note: >
+      LJ2. Negative - THE FIRST CASE TO RUN: "Level 2", pathCount 0, report
+      ""Level 2" has no path of travel lines. CREATE_PATHS_OF_TRAVEL draws
+      them ..." and no row of Level 1. Positive - "Level 1": pathCount 2,
+      each row with its length in metres, start and end in mm, room 201 or
+      202 at its start and door "D-EXIT" at its end; the 201 path longer than
+      10 m because it goes round the interior wall.

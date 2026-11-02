@@ -1254,6 +1254,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-li.md`](needs-checking/group-li.md)
 
+## Group LJ - the path of travel lines in a floor plan and their lengths: `REPORT_PATHS_OF_TRAVEL` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lj.md`](needs-checking/group-lj.md)
+
+## Group LK - path of travel lines drawn from rooms or points to a named exit: `CREATE_PATHS_OF_TRAVEL` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lk.md`](needs-checking/group-lk.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
