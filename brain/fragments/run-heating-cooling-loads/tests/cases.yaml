@@ -1,0 +1,86 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that runs an analysis over the whole model, "ran when it was
+# told not to": a report made, or a space's loads changed, under a name that
+# was refused, or on a model with no spaces to load.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for RUN_HEATING_COOLING_LOADS): REVIT 2027 - the
+# only release that can run it. A scratch copy of the Snowdon Towers Sample
+# HVAC model, opened and saved in Revit 2027 under %TEMP%\heron-work, never a
+# working model: its MEP spaces placed and bounded, Area and Volume
+# Computations on, Analyze > Energy Settings as the sample ships them, and
+# its floor plan view "M1". Note before the first run each space's
+# Calculated Cooling Load and Calculated Heating Load in Properties for
+# three spaces on Level 1. Where the model differs, the job file changes -
+# never the card. EVERY RUN ROLLED BACK, so each case starts from the model
+# as saved.
+
+positive:
+  - given: >
+      reportName "Heron Loads Report LU" - "run the heating and cooling loads"
+      - the job file's positive
+    expect: >
+      refused null; reportView 1 id - a view "Heron Loads Report LU" in the
+      Project Browser under Reports, showing Revit's loads report; report
+      "Heating and cooling loads run. Loads report view "Heron Loads Report
+      LU" made (id ...). Ran with this model's Energy Settings, unchanged:
+      building type ..., phase "...", report type ..., use current view only
+      ... Revit says the analysis completed. N of N placed space(s) have a
+      calculated load ..."; analysisCompleted true; coolingW and heatingW one
+      entry per placed, bounded space. THE CHECK THAT MATTERS: three spaces'
+      Calculated Cooling Load and Calculated Heating Load in Properties after
+      the run, in W, equal to their coolingW and heatingW within 1 W - the
+      conversion is Revit's own and no factor is assumed, which is what this
+      checks. Analyze > Energy Settings unchanged, compared field by field
+      with a screenshot taken before. THE FIRST POSITIVE TO RUN
+
+  - given: >
+      reportName left out - "calculate the HVAC loads for this model"
+    expect: >
+      reportView 1 id named "Heating and Cooling Loads Report" - or "... 2"
+      when the model already has that name; the same read-back as the
+      first positive
+
+negative:
+  - given: >
+      reportName "M1" - the name of a floor plan the model already has - the
+      job file's negative
+    expect: >
+      refused "A view called "M1" is already in this model. Name the loads
+      report something else. NOTHING WAS RUN - no report was made and no
+      space's loads were changed."; reportView invalid; coolingW and heatingW
+      empty; no new view in the Project Browser and the three spaces'
+      Calculated Cooling and Heating Load in Properties as noted before. THE
+      FIRST CASE TO RUN
+
+  - given: >
+      a scratch project from the default metric architectural template, with
+      rooms and no spaces, saved in Revit 2027, any reportName -
+      "run the loads analysis and show the cooling load per space"
+    expect: >
+      refused "This model has no spaces. Revit calculates heating and cooling
+      loads space by space, so there is nothing to calculate - a Room carries
+      no load. Place spaces first ..."; no view made
+
+  - given: >
+      the Snowdon copy with Energy Settings Revit will not run with - left
+      to whoever arranges it to find one Revit's own Heating and Cooling
+      Loads dialog refuses, and recorded
+    expect: >
+      the call throws "Revit refused to run the heating and cooling loads:
+      <Revit's words> ... NOTHING from this call was kept - no report and no
+      space's loads."; no view made; Energy Settings unchanged. A run that
+      changes a setting to get past it is a finding for the author, never a
+      pass
+
+  - given: a family open in front, any values
+    expect: refused "The document in front is a family ..."; nothing made
+
+second_route:
+  - >
+      Analyze > Heating and Cooling Loads by hand in the same Snowdon copy,
+      Calculate pressed with the dialog's own settings: the three noted
+      spaces' Calculated Cooling and Heating Load in Properties after it,
+      compared with the first positive's coolingW and heatingW - the same
+      within 1 W - and the Loads Report it makes, against the view this
+      makes

@@ -218,6 +218,19 @@ compatibility-note: >
 #                                       no load involved
 #   "the spaces are missing"         -> PLACE_ROOMS. Nothing here can report a
 #                                       load on a space that does not exist
+#   "what is the cooling load of this space", "what are the loads on these
+#   spaces"                          -> here - a question, read from what the
+#                                       spaces hold; nothing is run. On the
+#                                       keyword route alone
+#                                       RUN_HEATING_COOLING_LOADS ranks first
+#                                       for these, and for "what is the
+#                                       heating load" and "what is the cooling
+#                                       load"; identity answers all four here
+#   "run the heating and cooling loads", "calculate the HVAC loads for this
+#   model", "run the loads analysis and show the cooling load per space"
+#                                    -> RUN_HEATING_COOLING_LOADS (2027
+#                                       only) - runs Revit's analysis, then
+#                                       reads the calculated loads back
 
 utterances:
   - what is the heating load
@@ -235,3 +248,7 @@ utterances:
   - how much air is going into each space
   - check the space airflows
   - do the diffuser flows add up to the space airflow
+  # 2026-11-02, the question asked beside "run the heating and cooling
+  # loads" when RUN_HEATING_COOLING_LOADS was built: without it, on Revit 2027
+  # and with no Revit named, the search sent it to that write (row 5b-1406).
+  - what is the cooling load of this space

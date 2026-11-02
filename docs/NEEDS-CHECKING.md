@@ -1298,6 +1298,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-lt.md`](needs-checking/group-lt.md)
 
+## Group LU - Revit's heating and cooling loads, run on the model with its own Energy Settings, a loads report made and each space's calculated loads read back: `RUN_HEATING_COOLING_LOADS` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lu.md`](needs-checking/group-lu.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
