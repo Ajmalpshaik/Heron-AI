@@ -1,0 +1,65 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and
+# here, "succeeded and replaced this project's standards".
+#
+# NONE OF THESE HAS BEEN RUN. Arranged as NEEDS-CHECKING Group MD names, on
+# SCRATCH projects only: "Heron Standards Target.rvt" in front (a new project
+# from the default template, saved), and "Heron Standards Source.rvt" open
+# alongside - a copy of the same template holding, added by hand, a DRAFTING
+# fill pattern "Heron Hatch 45", a text type "Heron 2.5mm Arial", a linear
+# dimension type "Heron Dim 2.5mm" and a basic wall type "Heron Block 190",
+# none of them in the target. "Diagonal up" (drafting) is in both, untouched.
+
+positive:
+  - given: 'sourceDocumentTitle "Heron Standards Source", kinds "fill patterns", nameContains "Heron"'
+    expect: >
+      copied 1, copiedIds read back here, report "fill patterns: 1 copied, 0
+      skipped ... 0 refused"; Manage > Additional Settings > Fill Patterns in
+      the target lists Heron Hatch 45 under Drafting; one entry in the
+      target's undo list and none in the source's
+
+  - given: 'sourceDocumentTitle "Heron Standards Source.rvt", kinds "text types and dimension types", nameContains "Heron"'
+    expect: >
+      copied 2 - one per kind, each its own line in the report - with the
+      ".rvt" taken as the same name; the text type and the dimension type in
+      the target's Type Selector
+
+  - given: 'kinds "wall types, materials", nameContains "Heron"'
+    expect: >
+      Heron Block 190 copied with the materials its layers use; the materials
+      line naming TRANSFER_MATERIALS_BETWEEN_DOCUMENTS and counted refused,
+      nothing copied for it on its own
+
+negative:
+  - given: 'sourceDocumentTitle "Heron Standards Source", kinds "fill patterns", nameContains "Diagonal up"'
+    expect: >
+      copied 0, skipped 1 or more, copiedIds empty - the target's own Diagonal
+      up exactly as it was. A name already here is never overwritten
+
+  - given: 'sourceDocumentTitle "No Such File", kinds "fill patterns"'
+    expect: >
+      refused, naming the projects that ARE open; copied 0, nothing attempted
+
+  - given: 'sourceDocumentTitle "Heron Standards", kinds "fill patterns"'
+    expect: >
+      refused - the source is named EXACTLY, and a part of its name is not it
+
+  - given: 'kinds "everything"'
+    expect: >
+      refused with the fixed list; nothing copied
+
+  - given: 'kinds "fill patterns", duplicates "overwrite"'
+    expect: >
+      refused - Revit's API has no overwrite - pointing at Manage > Transfer
+      Project Standards > Overwrite, and saying only Undo takes that back
+
+  - given: 'kinds "line styles, object styles"'
+    expect: >
+      refused naming TRANSFER_LINE_STYLES_BETWEEN_DOCUMENTS and
+      TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS; nothing copied
+
+second_route:
+  - >
+    in the target, open Manage > Transfer Project Standards with "Heron
+    Standards Source" chosen, tick only Fill Patterns and press New Only:
+    after this run Revit brings no pattern named Heron, because it is already
+    here - and Manage > Additional Settings > Fill Patterns shows it

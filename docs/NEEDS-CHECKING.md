@@ -1334,6 +1334,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-mc.md`](needs-checking/group-mc.md)
 
+## Group MD - Manage > Transfer Project Standards - fill patterns, line patterns, text, dimension, wall, floor, roof, ceiling, filled region, grid and level types from another open project, this project's kept where a name is already here: `TRANSFER_PROJECT_STANDARDS` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-md.md`](needs-checking/group-md.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
