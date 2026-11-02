@@ -1,0 +1,40 @@
+# D-30. A READ of a project-wide dialog cannot come back empty while Revit runs
+# a project, so the negative case is TRACKING (D-53): the answer must follow
+# the model, value by value, when the model is changed under it - and a
+# family, which has no Energy Settings, must not be answered with a project's.
+#
+# THE ARRANGEMENT (NEEDS-CHECKING Group MM, MM1): "Heron MM Energy", a scratch
+# project from Revit's metric ARCHITECTURAL template, any release 2020 to 2027,
+# with four walls, a floor and a roof enclosing one room on Level 1, saved
+# under %TEMP%\heron-work. Before the first run, Analyze > Energy Settings is
+# read by eye and written down. "Heron MM Family", any family saved from the
+# same Revit, is the negative document.
+
+positive:
+  - given: nothing selected - "read the energy settings"
+    expect: >
+      energySettings opens "Energy Settings - building type ...; ground plane
+      \"...\"; project phase \"...\"; analysis mode ...; export category ...;
+      ..." with every value equal to what the dialog shows (MM1); settingsRead
+      counts them; energyModelExists false and a finding that the model holds
+      no energy analytical model - until CREATE_ENERGY_MODEL is kept (MM6),
+      after which it is true with the counts. RECORD the glazing percentage the
+      dialog shows beside the one read
+
+negative:
+  - given: >
+      the same project with building type set to "school or university" and
+      ground plane to Level 2 by SET_ENERGY_SETTINGS, as a rolled-back setup
+    expect: >
+      exactly building type school or university and ground plane "Level 2"
+      changed and every other value as MM1 recorded
+
+  - given: the family "Heron MM Family" in front
+    expect: >
+      energySettings empty, settingsRead 0, a finding that Energy Settings are
+      a project's - never a project's values
+
+second_route:
+  - >
+    Analyze > Energy Settings, read by eye against the answer, and the 3D
+    view's Energy Model display after MM6 for the analytical spaces counted.

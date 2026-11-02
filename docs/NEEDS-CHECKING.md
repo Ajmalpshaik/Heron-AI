@@ -1370,6 +1370,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ml.md`](needs-checking/group-ml.md)
 
+## Group MM - Manage > Mechanical Settings, Analyze > Energy Settings and Create Energy Model, and Insert > Import gbXML - read and change the duct and pipe settings and the energy settings for the whole model, build the energy analytical model, and import a gbXML file: `REPORT_MECHANICAL_SETTINGS`, `SET_MECHANICAL_SETTINGS`, `REPORT_ENERGY_SETTINGS`, `SET_ENERGY_SETTINGS`, `CREATE_ENERGY_MODEL`, `IMPORT_GBXML` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-mm.md`](needs-checking/group-mm.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

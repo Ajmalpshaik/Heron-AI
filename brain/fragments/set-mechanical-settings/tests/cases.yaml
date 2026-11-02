@@ -1,0 +1,73 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write to a project-wide dialog, "changed a setting nobody named".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE. "Heron MM Mechanical" (NEEDS-CHECKING
+# Group MM, MM1): a scratch project from Revit's metric MECHANICAL template,
+# any release 2020 to 2027, with one tagged rectangular duct (a size tag) and
+# one pipe in "Mechanical Plan: Level 1" so a change shows. Before the run,
+# REPORT_MECHANICAL_SETTINGS records every setting - the values the cases below
+# are checked against. SAVED, and never a working model. EVERY RUN ROLLED BACK.
+
+positive:
+  - given: settings "duct connector separator=#"
+    expect: >
+      changed 1; before reads the template's duct connector separator, after
+      reads duct connector separator "#" and every other setting exactly as
+      before. REPORT_MECHANICAL_SETTINGS in the same run reads "#"
+
+  - given: settings "connector separator=/", system "both"
+    expect: >
+      changed 2 (fewer if one already held it); after reads duct connector
+      separator "/" and pipe connector separator "/"
+
+  - given: settings "duct fitting annotation size=5; air density=1.25 kg/m3"
+    expect: >
+      changed 2; after reads duct fitting annotation size 5 mm and air density
+      1.25 kg/m3 - and Mechanical Settings > Duct Settings shows the same
+
+  - given: settings "rectangular duct size separator=\" x \""
+    expect: changed 1; after reads rectangular duct size separator " x " with both spaces
+
+negative:
+  - given: >
+      settings "connector separator=#", system left out. THE FIRST CASE TO RUN:
+      a fragment that guessed a page shows here
+    expect: >
+      changed 0; refused names both - "connector separator" is on both Duct
+      Settings and Pipe Settings, say "duct connector separator" or "pipe
+      connector separator", or name the system - NOTHING WAS CHANGED; before
+      and after empty; REPORT_MECHANICAL_SETTINGS reads exactly what MM1
+      recorded
+
+  - given: settings "duct fitting annotation size=3 in"
+    expect: refused - not a size in millimetres - nothing changed
+
+  - given: settings "duct rise drop symbol=Dot"
+    expect: >
+      refused by name - the rise/drop symbols are not reachable through Duct or
+      Pipe Settings, Revit holds them on each system type - with "duct
+      rise/drop annotation size" named; nothing changed
+
+  - given: settings "air density=0"
+    expect: refused - not a density above 0 - nothing changed
+
+  - given: settings "duct connector separator=#; duct connector separator=-"
+    expect: refused - named more than once - nothing changed
+
+  - given: settings "duct connector separator=<the value MM1 recorded>"
+    expect: changed 0, a finding that every setting asked is already so
+
+  - given: settings "" (nothing)
+    expect: refused - no setting was named, the list given - nothing changed
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      the whole table is one undo entry
+
+second_route:
+  - >
+    Revit's own Manage > MEP Settings > Mechanical Settings > Duct Settings,
+    opened after the first positive is KEPT: Duct Connector Separator reads
+    "#", and a duct size tag on a duct with a connector-separated value shows
+    the new separator.

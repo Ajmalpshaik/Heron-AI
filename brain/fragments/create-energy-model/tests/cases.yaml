@@ -1,0 +1,54 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that builds a model-wide analytical model, "built one when it
+# was told it could not": an energy model made in a family, or with no
+# analytical spaces passed as one that worked.
+#
+# THE ARRANGEMENT (NEEDS-CHECKING Group MM, MM1): "Heron MM Energy", a scratch
+# project from Revit's metric ARCHITECTURAL template, any release 2020 to
+# 2027, with four walls, a floor and a roof enclosing one room on Level 1,
+# Energy Settings' analysis mode "building elements", saved under
+# %TEMP%\heron-work, never a working model. "Heron MM Family", any family, is
+# the negative document. EVERY RUN ROLLED BACK unless named.
+
+positive:
+  - given: >
+      "Heron MM Energy" in front, nothing selected - "create the energy
+      analytical model"
+    expect: >
+      refused null; energyModel an id; analyticalSpaces 1 or more,
+      analyticalSurfaces 6 or more (four walls, floor, roof), analyticalOpenings
+      as the model has; report "Energy model created (id ...) from this model's
+      Energy Settings, unchanged - mode "building elements": ..." and "There
+      was no energy model before."; REPORT_ENERGY_SETTINGS in the same run
+      says energyModelExists true with the same counts. THE FIRST POSITIVE
+
+  - given: the same, run a second time after the first is KEPT
+    expect: >
+      RECORD which finding comes back - rebuilt in place, replaced, or a
+      second model beside the first. That is the measurement; the card says
+      it was not seen
+
+negative:
+  - given: >
+      "Heron MM Family" in front. THE FIRST CASE TO RUN
+    expect: >
+      refused "The document in front is a family. An energy model is built
+      from a project, so NOTHING WAS MADE."; energyModel invalid; counts 0
+
+  - given: >
+      a copy "Heron MM Empty" - the same template with nothing drawn - in
+      front
+    expect: >
+      RECORD Revit's words. Expected: Revit refuses and the call throws, so
+      nothing is kept; or Revit builds a model with analyticalSpaces 0 and the
+      finding "The energy model has NO analytical spaces" - never a model
+      passed as one that worked
+
+  - given: on Revit 2020 or 2021, Energy Settings mode "conceptual masses and building elements"
+    expect: refused by name - only building elements on this Revit - nothing made
+
+second_route:
+  - >
+    A 3D view with the Energy Model visible (Analytical Spaces and Analytical
+    Surfaces in Visibility/Graphics) after the first positive is KEPT: the
+    room's volume shows as one analytical space with its surfaces.

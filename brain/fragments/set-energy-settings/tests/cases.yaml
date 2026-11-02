@@ -1,0 +1,67 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write to a project-wide dialog, "changed a setting nobody named".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE. "Heron MM Energy" (NEEDS-CHECKING
+# Group MM, MM1): a scratch project from Revit's metric ARCHITECTURAL template,
+# any release 2020 to 2027, with one enclosed room on Level 1 and a Level 2.
+# Before the run, REPORT_ENERGY_SETTINGS records every setting - the values the
+# cases below are checked against. SAVED, and never a working model. EVERY RUN
+# ROLLED BACK.
+
+positive:
+  - given: settings "building type=office"
+    expect: >
+      changed 1 (0 if the template already says office - pick another type,
+      then); before reads the template's building type, after reads building
+      type office and every other setting exactly as before
+
+  - given: settings "ground plane=Level 1; project phase=New Construction; export category=spaces"
+    expect: >
+      changed counts those not already so; after reads ground plane "Level 1",
+      project phase "New Construction", export category spaces
+
+  - given: settings "target percentage glazing=40"
+    expect: >
+      after reads target percentage glazing 40 %, and Analyze > Energy Settings
+      shows 40% - RECORD it, because the form Revit holds it in is asked of
+      Revit's own range check
+
+negative:
+  - given: >
+      settings "building type=spaceship". THE FIRST CASE TO RUN: a fragment
+      that wrote whatever it was handed shows here
+    expect: >
+      changed 0; refused "building type: "spaceship" is not one of Revit's
+      choices: ..." with Revit's list; before and after empty;
+      REPORT_ENERGY_SETTINGS reads exactly what MM1 recorded
+
+  - given: settings "ground plane=Level 99"
+    expect: refused with the levels the model has; nothing changed
+
+  - given: settings "location=London"
+    expect: refused by name and sent to SET_PROJECT_LOCATION; nothing changed
+
+  - given: settings "sliver space tolerance=1 ft"
+    expect: refused - not a length in millimetres - nothing changed
+
+  - given: settings "analysis mode=rooms or spaces" on Revit 2020 or 2021
+    expect: refused - not one of Revit's choices there, the list given; nothing changed
+
+  - given: settings "use current view only=yes" on Revit 2020 to 2023
+    expect: refused as a Revit 2024 setting; nothing changed
+
+  - given: settings "building type=office; building type=school or university"
+    expect: refused - named more than once - nothing changed
+
+  - given: settings "" (nothing)
+    expect: refused - no setting was named, the list given - nothing changed
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      the whole table is one undo entry
+
+second_route:
+  - >
+    Revit's own Analyze > Energy Settings, opened after the first positive is
+    KEPT (or with the value chosen by hand): Building Type reads Office.

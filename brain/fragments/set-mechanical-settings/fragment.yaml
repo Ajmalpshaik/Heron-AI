@@ -1,0 +1,158 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-097
+semantic-identity: "change Manage > Mechanical Settings for the whole model - the connector separator, size prefix and suffix text, flat on top and flat on bottom, set up and set down, fitting and rise/drop symbol size, air density and viscosity"
+kind: action
+domain: revit.mep
+capability: SET_MECHANICAL_SETTINGS
+version: 1
+source: OFFICIAL
+# ADMIN, BEHIND THE OWNER'S ADMIN SWITCH (D-106) - graded as
+# SET_STRUCTURAL_SETTINGS and SET_PROJECT_UNITS are. Mechanical Settings are
+# how the project is set up: one connector separator, size suffix or flat on
+# top text is printed by EVERY duct and pipe tag and schedule that shows it, a
+# fitting annotation size by every single line fitting, and the air density
+# and viscosity feed every duct pressure loss Revit calculates - for everybody
+# who opens the model. D-106's Admin row, "settings other work is built on".
+# No element moves; one Ctrl+Z takes it back.
+risk: ADMIN
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for as a ribbon gap - "Mechanical Settings: read and set
+# DuctSettings values: connector separator, flat-on-top/bottom annotations,
+# duct fitting annotation size, air density/viscosity, rise/drop symbols, and
+# so on", the pipe settings beside them. Checked that day with
+# brain/heron_retrieve.py's find() on a scratch store of this tree (Revit
+# 2024): "change the duct connector separator to x" reached
+# ADD_FAMILY_CONNECTOR, "set the duct fitting annotation size to 3 mm"
+# EDIT_MEP_SIZES, "set the flat on top annotation to FOT"
+# ADD_BEAM_ANNOTATIONS and "change the air density in mechanical settings"
+# ADD_AREA_BASED_LOAD - writes that touch none of these settings. No card
+# called DuctSettings.GetDuctSettings or PipeSettings.GetPipeSettings.
+#
+# WHY A CARD OF ITS OWN - each near card read in full (the
+# heron-duplicate-checker method; brain/heron_duplicates and the Matcher found
+# no same-capability or same-signature card):
+#   EDIT_MEP_SIZES adds and removes sizes on the Duct Settings size pages and
+#     pipe segments - size lists, not these values.
+#   SET_STRUCTURAL_SETTINGS is the same settings-table shape for another
+#     dialog; its contract differs by `system` here.
+#   SET_MEP_SYSTEM_TYPE / CREATE_MEP_SYSTEM_TYPE change system types, where
+#     Revit holds the rise/drop symbols - not changed here.
+#   REPORT_MECHANICAL_SETTINGS READS these values - a question goes there.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33). `settings` is a table, "name=value",
+# ";" between, in the dialog's own words with "duct" or "pipe" in front where
+# both pages have the setting. Text as written ("" for empty, quotes to keep a
+# space); annotation sizes in millimetres; air density kg/m3; air dynamic
+# viscosity Pa-s. A name both pages have, given without "duct" or "pipe", is
+# taken for `system` and refused naming both when `system` names none.
+#
+# THE RISE/DROP SYMBOLS ARE NOT REACHABLE FROM HERE. DuctSettings and
+# PipeSettings have no member for them on any release 2020-2027
+# (tools/api-surface --members DuctSettings and PipeSettings, 2026-11-02);
+# Revit holds them as parameters of each duct and pipe system type. "set the
+# duct rise drop symbol" therefore reaches this card and is REFUSED BY NAME,
+# with the rise/drop annotation size named as the one rise/drop value this
+# card changes - never guessed onto it (D-33).
+#
+# REFUSED BY NAME, NOTHING CHANGED: a name not in the list (the list given);
+# a value that is not text, a yes/no or a number in the one unit taken; a
+# setting named twice; nothing named; a page this card does not change
+# (fitting angles, pipe slopes, conversion, sizing, calculation); a document
+# with no Duct or Pipe Settings.
+#
+# A SETTING REVIT REFUSES is caught with Revit's own words, every setting this
+# call already wrote is put back to the value read before, and `refused` says
+# so - NOTHING WAS CHANGED. A put-back that fails throws, and the caller's
+# transaction rolls back.
+#
+# READ BACK: `before` and `after` are every setting above, read off the model;
+# a value that reads back different throws, so nothing is kept.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Changes the project-wide Mechanical Settings dialog on its Duct Settings
+  and Pipe Settings pages - the connector separator, the size prefix,
+  separator and suffix text, the flat on top, flat on bottom, set up and set
+  down abbreviations, the centerline text, the single line fitting and
+  rise/drop symbol size, and the air density and viscosity used for pressure
+  loss. Every setting is read back before and after.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # "name=value; name=value" in the dialog's words - "duct connector
+    # separator=-; air density=1.2". Sizes in millimetres.
+    - name: settings
+      type: string
+      source: request
+    # Which page a name both pages have is for, when it is given without
+    # "duct" or "pipe": duct | pipe | both. Left out, such a name is refused
+    # naming both - never guessed.
+    - name: system
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: before
+      # Every setting this card reaches, read before the change - "Duct
+      # Settings - ...; duct connector separator \"-\"; ... | Pipe Settings -
+      # ...". Empty when refused.
+      role: result
+      type: string
+    - name: after
+      # The same, read back after it.
+      role: result
+      type: string
+    - name: changed
+      # How many settings Revit changed - one already holding the value asked
+      # is not counted. 0 when refused.
+      role: result
+      type: int
+    - name: refused
+      # Why NOTHING WAS CHANGED, as one sentence - Revit's own reason when
+      # Revit refused; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Every DuctSettings and PipeSettings
+  member REPORT_MECHANICAL_SETTINGS names is 2020 to 2027 with one signature
+  and a setter, read off tools/api-surface --members for all eight releases on
+  2026-11-02, except air viscosity: AirViscosity 2020-2024 (obsolete in 2025)
+  and AirDynamicViscosity 2025 on, behind `#if REVIT2025_OR_GREATER`. Density
+  and viscosity go through UnitUtils.ConvertToInternalUnits /
+  ConvertFromInternalUnits - DisplayUnitType on 2020 (`#if REVIT2020`),
+  UnitTypeId KilogramsPerCubicMeter and PascalSeconds from 2021. NOT KNOWN
+  FROM THE ASSEMBLIES and measured in NEEDS-CHECKING Group MM: that the
+  fitting and rise/drop annotation sizes are held in feet, so that / 304.8
+  writes what the dialog then shows; and Revit's words for a value it will
+  not take.
+
+# ROUTING (2026-11-02) - the same rows are in REPORT_MECHANICAL_SETTINGS.
+#
+#   "set the connector separator"                -> here - which page is asked
+#                                                   when `system` names none
+#   "set the air density and viscosity"          -> here, air density and air
+#                                                   dynamic viscosity
+#   "read the mechanical settings"               -> REPORT_MECHANICAL_SETTINGS - a question goes to the read (D-86)
+#   "what duct sizes are available for round ducts"
+#                                                -> REPORT_DUCT_CONDUIT_SIZES - the size lists
+#
+# WHAT MOVED: see NEEDS-CHECKING Group MM.
+utterances:
+  - set the connector separator
+  - set the air density and viscosity

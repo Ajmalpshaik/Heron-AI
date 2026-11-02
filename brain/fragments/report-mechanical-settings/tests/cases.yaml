@@ -1,0 +1,41 @@
+# D-30. A READ of two project-wide pages cannot come back empty while Revit
+# runs a project, so the negative case is TRACKING (D-53): the answer must
+# follow the model, value by value, when the model is changed under it - and a
+# page not asked for must not be read.
+#
+# THE ARRANGEMENT (NEEDS-CHECKING Group MM, MM1): a scratch project from
+# Revit's metric MECHANICAL (or Systems) template, any release 2020 to 2027,
+# "Heron MM Mechanical", saved under %TEMP%\heron-work, never a working model.
+# Before the first run, Manage > MEP Settings > Mechanical Settings > Duct
+# Settings and Pipe Settings are read by eye and written down.
+
+positive:
+  - given: show left out, nothing selected - "read the mechanical settings"
+    expect: >
+      ductSettings opens "Duct Settings - duct use annotation scale for single
+      line fittings ...; duct fitting annotation size ... mm; air density ...
+      kg/m3; air dynamic viscosity ... Pa-s; ..." and pipeSettings opens "Pipe
+      Settings - ..."; each value equal to what the dialog shows (MM1);
+      settingsRead counts them; a finding names what is not read (rise/drop
+      symbols, fitting angles, slopes, conversion, sizing, calculation)
+
+  - given: show "pipe"
+    expect: pipeSettings as above and ductSettings EMPTY - the duct page not read
+
+negative:
+  - given: >
+      the same project with duct connector separator set to "#" and pipe size
+      suffix set to "PS" by SET_MECHANICAL_SETTINGS, as a rolled-back setup
+    expect: >
+      exactly duct connector separator "#" and pipe size suffix "PS" changed
+      and every other value as MM1 recorded - a reader repeating a remembered
+      answer, or the template's defaults, could not follow it
+
+  - given: show "sprinklers"
+    expect: a finding that "sprinklers" is not duct, pipe or all, and both pages read
+
+second_route:
+  - >
+    Manage > MEP Settings > Mechanical Settings > Duct Settings and Pipe
+    Settings, read by eye against the answer - in particular the air density
+    and viscosity in the units the project shows them in.
