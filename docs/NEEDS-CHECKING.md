@@ -1378,6 +1378,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-mn.md`](needs-checking/group-mn.md)
 
+## Group MO - Modify > Offset, Insert > Insert from File, Analyze > Systems Analysis and Manage > Coordinates > Publish Coordinates - offset a chain of lines as a copy or a move with its corners joined, insert drafting views, legends or 2D elements from a file that is not open, start Revit's Systems Analysis, and publish this model's coordinates into a link: `OFFSET_LINE_CHAIN`, `INSERT_VIEWS_FROM_FILE`, `RUN_SYSTEMS_ANALYSIS`, `PUBLISH_COORDINATES` (2026-11-03)
+
+**Its own file:** [`needs-checking/group-mo.md`](needs-checking/group-mo.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

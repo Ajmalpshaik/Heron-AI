@@ -1,0 +1,172 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-101
+semantic-identity: "start Revit's Systems Analysis of this model's HVAC systems in the background, with a new systems analysis report view - Analyze > Systems Analysis"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-03: asked for as a gap on Revit's ribbon - "Systems Analysis
+# (Analyze > Systems Analysis)". The ribbon coverage note
+# (docs/work-notes/investigations/2026-11-01-revit-ribbon-coverage.md) put it
+# MISSING, with "ViewSystemsAnalysisReport.Create + RequestSystemsAnalysis
+# (SystemsAnalysisOptions) ... Earliest release: UNSURE". No card in the
+# library names ViewSystemsAnalysisReport (grep, 2026-11-03, main and every
+# branch). heron_duplicates.look: 0 already here.
+#
+# WHAT THE API OFFERS (tools/api-surface --members over RevitAPI 2020 to
+# 2027, 2026-11-03): ViewSystemsAnalysisReport - Create(Document, string),
+# RequestSystemsAnalysis(SystemsAnalysisOptions), IsAnalysisCompleted(),
+# GetReportContent(), GetLatestSystemsAnalysisReport(Document), and the
+# read-only WeatherFile, SystemsAnalysisWorkflowFile, SystemsAnalysisOutputFolder
+# and AnalysisDateAndTime - in all eight; SystemsAnalysisOptions (WeatherFile,
+# WorkflowFile, OutputFolder) in all eight; ReportStyle 2022 to 2027 only, so
+# it is neither set nor read; CancelSystemsAnalysis 2023 to 2027, not used.
+# RevitAPI.xml says "since 2020.1" for every one: Revit 2020 needs its 2020.1
+# update or later.
+#
+# LOOK-ALIKES, KEPT SEPARATE (heron-duplicate-checker's method, 2026-11-03):
+#   RUN_HEATING_COOLING_LOADS (DRAFT, this branch, Revit 2027)  Revit's
+#     other analysis, Analyze > Heating and Cooling Loads: ViewHVACLoadsReport,
+#     run at once, each space's calculated loads read back. A different
+#     command, a different report class and a different engine.
+#   CREATE_ENERGY_MODEL (DRAFT, this branch)  builds the energy analytical
+#     model this analysis asks for; runs nothing.
+#   READ_SPACE_LOADS, REPORT_ENERGY_SETTINGS  reads; change nothing.
+#
+# RISK MODIFY. It makes one report view in the model and asks Revit to run
+# the analysis. The analysis itself runs in the BACKGROUND after the call
+# returns and writes its results to Revit's output folder - the system TEMP
+# folder unless Revit is told otherwise, which this card never does: no
+# shared location is written (Article 10). Revit may download the weather
+# file for the site's location, as its own command does.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33):
+#   reportName    the report view's name; left out, the first free
+#                 "Systems Analysis Report", "... 2", ...
+#   weatherFile   a .epw file on this PC; left out, Revit's own choice for
+#                 the site's location
+#   workflowFile  a .osw file on this PC; left out, Revit's default, "HVAC
+#                 Systems Loads and Sizing.osw"
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: RUN_SYSTEMS_ANALYSIS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Revit's Analyze > Systems Analysis, started from the API. A systems
+  analysis report view is made - named as asked, or the first free "Systems
+  Analysis Report" - and Revit is asked to run the analysis on it with the
+  model's own energy model, spaces, zones and HVAC systems. The analysis runs
+  in the background after the call returns, so the answer says whether Revit
+  had finished, what the report view showed then, and which weather file,
+  workflow and output folder it used; the finished report is read in Revit's
+  own report view. A weather or workflow file named must exist on this PC. A
+  family, a report name a view already has and a file that is missing are
+  refused before anything is made; Revit's own refusal - no valid energy
+  model, no weather station near the site - is passed on in its words and
+  nothing is kept. The results are calculated values, never a statement that
+  anything complies.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The report view's name. A name any view already has is refused. Left
+    # out, the first of "Systems Analysis Report", "... 2", ... not in use.
+    - name: reportName
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # A .epw weather file on this PC. Left out, Revit's choice for the site.
+    - name: weatherFile
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # A .osw workflow file on this PC. Left out, Revit's default workflow.
+    - name: workflowFile
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: reportView
+      # The systems analysis report view made. A thing it MADE (D-52). Null
+      # when nothing was made.
+      role: result
+      type: ElementId
+    - name: requested
+      # True when Revit took the request without refusing it.
+      role: result
+      type: bool
+    - name: analysisCompleted
+      # Revit's own IsAnalysisCompleted when the call returned - usually
+      # false, as the analysis runs in the background.
+      role: accounting
+      type: bool
+    - name: reportContent
+      # What Revit's report view held when the call returned - "Calculating..."
+      # while the analysis runs, as RevitAPI.xml says - or the file it names.
+      role: accounting
+      type: string
+    - name: weatherFileUsed
+      role: accounting
+      type: string
+    - name: workflowFileUsed
+      role: accounting
+      type: string
+    - name: outputFolder
+      # Where Revit writes the analysis's results, read back from the view.
+      role: accounting
+      type: string
+    - name: report
+      # ONE STRING: the view made, the files used, whether Revit had finished,
+      # and where to read the result.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was made, in the modeller's words. Null when it ran (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read with tools/api-surface --members
+  on 2026-11-03, the same 2020 to 2027: `ViewSystemsAnalysisReport.Create`,
+  `RequestSystemsAnalysis`, `IsAnalysisCompleted`, `GetReportContent`,
+  `GetLatestSystemsAnalysisReport`, `WeatherFile`,
+  `SystemsAnalysisWorkflowFile`, `SystemsAnalysisOutputFolder`;
+  `SystemsAnalysisOptions` with `WeatherFile` and `WorkflowFile`;
+  `EnergyAnalysisDetailModel.GetMainEnergyAnalysisDetailModel`. RevitAPI.xml
+  gives "since 2020.1" for each, so Revit 2020 without its 2020.1 update does
+  not have them. `ReportStyle` (2022-2027) and `CancelSystemsAnalysis`
+  (2023-2027) are not used. RevitAPI.xml (2024): the request runs "in the
+  background"; it throws for "A valid energy model is required", for no
+  weather station within 500 nautical miles and for a weather file it cannot
+  download. Not seen in Revit: whether RequestSystemsAnalysis runs inside the
+  host's open transaction, what becomes of the background analysis when the
+  modeller presses Discard and the view is rolled back, and how long it runs
+  (row 5b-1460).
+
+# ROUTING (2026-11-03) - the rows for this card's sentences.
+#
+#   "run systems analysis"                -> here
+#   "run the heating and cooling loads"   -> RUN_HEATING_COOLING_LOADS -
+#                                            Revit's other analysis
+#   "create the energy analytical model"  -> CREATE_ENERGY_MODEL - the model
+#                                            this one asks for
+utterances:
+  - run systems analysis

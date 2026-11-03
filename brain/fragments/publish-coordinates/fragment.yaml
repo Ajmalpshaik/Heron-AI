@@ -1,0 +1,167 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-070
+semantic-identity: "publish this model's shared coordinates into a linked Revit model, recording where the link sits now as a named position in it - Manage > Coordinates > Publish Coordinates"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-03: asked for as a gap on Revit's ribbon - "Publish Coordinates
+# (Manage > Coordinates > Publish Coordinates)". The ribbon coverage note
+# (docs/work-notes/investigations/2026-11-01-revit-ribbon-coverage.md) put it
+# MISSING: "writes into the linked model (Art. 7 confirmation)". No card in
+# the library calls Document.PublishCoordinates (grep, 2026-11-03, main and
+# every branch). ACQUIRE_COORDINATES' own purpose says "Publishing INTO a link
+# changes the linked file and is not done here either".
+# heron_duplicates.look: 0 already here.
+#
+# LOOK-ALIKES, KEPT SEPARATE (heron-duplicate-checker's method, 2026-11-03):
+#   ACQUIRE_COORDINATES (PROVEN, ADMIN)  the same dialog the other way round:
+#     the LINK's system becomes this model's, and the linked file is never
+#     touched. Its impl/ is PROVEN and not edited.
+#   CHECK_LINK_COORDINATES (PROVEN, READ)  says whether the links agree with
+#     this model's shared coordinates; changes nothing. The read to run first.
+#   SET_PROJECT_LOCATION, REPORT_LOCATION  the site's place on the earth, not
+#     a link's position.
+#
+# RISK ADMIN, as ACQUIRE_COORDINATES is: a change to how the project is set
+# up (D-106), here reaching into another model as well. Article 7: anything
+# touching a linked model needs explicit confirmation for that operation, so
+# `confirm` must repeat the link's name exactly, as REMOVE_PROJECT_PARAMETER
+# and DELETE_REVISION_NUMBERING_SEQUENCE ask for theirs. Article 10: the
+# LINKED FILE ON DISK IS NOT WRITTEN BY THIS CALL. Revit holds the published
+# position in the session and asks, at the modeller's next save of this
+# model, whether to save it into the link ("Location Position Changed").
+# Saving it from here would need RevitLinkType.SavePositions, which takes a
+# callback that must be a class - a fragment cannot declare one - and is a
+# save of another file, never this card's to do (row 5b-1461).
+#
+# EVERY VALUE IS THE MODELLER'S (D-33):
+#   linkInstance  the link, by its instance name as Manage > Links and the
+#                 Project Browser's Revit Links show it
+#   position      a named position in the linked model (its Location
+#                 Weather and Site dialog's Site tab); left out, the
+#                 linked model's current one
+#   confirm       the link's name again, exactly
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.document
+capability: PUBLISH_COORDINATES
+version: 1
+source: OFFICIAL
+risk: ADMIN
+
+purpose: >
+  Revit's Manage > Coordinates > Publish Coordinates for one linked Revit
+  model: this model's shared origin and True North are recorded in the link
+  as one of its named positions, based on where the link sits now. Runs only
+  with confirm repeating the link's name exactly - its file name as Manage
+  Links lists it, or its instance name; anything else changes nothing and
+  says what would change. A link not loaded, a CAD link and a position name
+  the link does not have are refused. The linked model's position is read
+  before and after and set beside this model's shared coordinates at the
+  link's origin. The linked file is not saved here: Revit asks at the next
+  save of this model whether to save the new position into the link, and
+  that answer is the modeller's.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The link to publish into, by its instance name as the Project
+    # Browser's Revit Links shows it.
+    - name: linkInstance
+      type: RevitLinkInstance
+      source: request
+    # A named position in the linked model. Left out, the linked model's
+    # current position.
+    - name: position
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # The owner's yes for THIS link: its name again, exactly - the file name
+    # Manage Links lists ("Structure.rvt") or the instance name. Anything
+    # else publishes nothing and says what would change (Article 7).
+    - name: confirm
+      type: string
+      source: request
+  provides:
+    - name: published
+      # True only when Revit took the publish without refusing it.
+      role: result
+      type: bool
+    - name: positionName
+      # The linked model's position the coordinates were recorded in.
+      role: result
+      type: string
+    - name: before
+      # The linked model's internal origin in that position's shared
+      # coordinates before: E/W, N/S and elevation in mm, angle to True North
+      # in degrees.
+      role: accounting
+      type: string
+    - name: after
+      # The same, read back from Revit after publishing - never assumed.
+      role: result
+      type: string
+    - name: expected
+      # This model's shared coordinates at the link's origin - what `after`
+      # should read. Worked out from this model, so accounting (D-52).
+      role: accounting
+      type: string
+    - name: waitingToSave
+      # RevitLinkType.HasSaveablePositions after the publish: true when Revit
+      # holds a position to write into the linked file at the next save.
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was published, in words: no link, not loaded, no confirm
+      # or a confirm that is not the link's name, no such position, or
+      # Revit's own refusal. Empty when it was published (D-52).
+      role: accounting
+      type: string
+    - name: report
+      # ONE STRING: what was published into which link and position, before,
+      # after and expected, and what the next save will ask; or the refusal.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read with tools/api-surface --members
+  on 2026-11-03, the same 2020 to 2027: `Document.PublishCoordinates(
+  LinkElementId)`; `LinkElementId(ElementId, ElementId)`;
+  `RevitLinkInstance.GetLinkDocument`, `Instance.GetTotalTransform`;
+  `RevitLinkType.HasSaveablePositions`; `Document.ProjectLocations`,
+  `ActiveProjectLocation`; `ProjectLocation.GetProjectPosition` and
+  `ProjectPosition`'s four values. RevitAPI.xml (2024) says the locationId is
+  "the ProjectLocation in the linked document" and that only a
+  RevitLinkInstance is supported - an ImportInstance throws - and that
+  `RevitLinkType.SavePositions` writes the change to disk and cannot be
+  undone; it is not called. Not seen in Revit: whether PublishCoordinates
+  runs inside the host's open transaction (ACQUIRE_COORDINATES' proof says
+  its sibling did), whether the linked model's position reads the new values
+  before the next save, and what Revit's Location Position Changed question
+  does when the save is Heron's SAVE_DOCUMENT rather than the modeller's
+  Ctrl+S (row 5b-1461).
+
+# ROUTING (2026-11-03) - the rows for this card's sentences.
+#
+#   "publish coordinates to the linked model" -> here. Needs confirm
+#   "acquire coordinates from the architecture link"
+#                                             -> ACQUIRE_COORDINATES - the
+#                                                other way round
+#   "check the links against our shared coordinates"
+#                                             -> CHECK_LINK_COORDINATES - a
+#                                                read, and the one to run first
+utterances:
+  - publish coordinates

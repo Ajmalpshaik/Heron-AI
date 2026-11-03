@@ -1,0 +1,55 @@
+# RUN_SYSTEMS_ANALYSIS - built 2026-11-03 in a cloud session with no Revit.
+# NOT RUN. D-30: the negative case is what catches "succeeded and did
+# nothing" - and, for an analysis, "made a report nobody can read".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING Group MO, MO1): a
+# scratch project "Heron MO Systems", new from Revit's metric mechanical
+# template (Revit 2021 or later - 2020 needs its 2020.1 update), saved under
+# %TEMP%\heron-work, never a working model. Four walls, a floor and a roof
+# enclosing one room on Level 1, a Level 2; one space placed in the room and
+# one HVAC zone holding it; Manage > Location set to a city with a weather
+# station; Analyze > Energy Settings' analysis mode "use rooms or spaces";
+# CREATE_ENERGY_MODEL (or Analyze > Create Energy Model) run once and kept.
+# A view named "MO Report" made by duplicating any plan. Saved.
+
+positive:
+  - given: Heron MO Systems, reportName left out, weatherFile and workflowFile left out - the job's positive
+    expect: >
+      requested true; reportView the id of a new view "Systems Analysis
+      Report" in the Project Browser's Reports; analysisCompleted false (or
+      RECORD true); reportContent "Calculating..." or RECORD what it holds;
+      workflowFileUsed ending "HVAC Systems Loads and Sizing.osw";
+      outputFolder a folder under the system TEMP folder; the finding "THE
+      ANALYSIS RUNS IN THE BACKGROUND ...". ROLLED BACK - then RECORD whether
+      files still appeared in outputFolder after the Discard (row 5b-1460)
+
+  - given: Heron MO Systems, reportName "MO Systems 1", KEPT once in a saved copy
+    expect: >
+      the view "MO Systems 1"; wait, then open it - RECORD how long Revit took
+      to finish and what the finished report shows
+
+negative:
+  - given: Heron MO Systems, reportName "MO Report" (a view already has it) - the job's negative
+    expect: >
+      requested false; reportView null; refused "A view is already named
+      \"MO Report\". Name the report something no view has, or leave the
+      name out. NOTHING WAS MADE."; no new view in the Project Browser
+
+  - given: Heron MO Systems, weatherFile "C:\\nowhere\\none.epw"
+    expect: refused "weatherFile ... is not an EnergyPlus weather file (.epw) found on this PC ... NOTHING WAS MADE."
+
+  - given: Heron MO Systems, workflowFile a .txt file that exists
+    expect: refused "workflowFile ... is not an OpenStudio workflow file (.osw) found on this PC ... NOTHING WAS MADE."
+
+  - given: a family open in the Family Editor
+    expect: refused "The document in front is a family ... NOTHING WAS MADE."
+
+  - given: a copy of Heron MO Systems with its energy model deleted (Energy Settings' energy model switch off), reportName left out
+    expect: RECORD Revit's own refusal, passed on in its words ("A valid energy model is required ..."), and that nothing was kept
+
+second_route:
+  - >
+    Revit itself: Analyze > Systems Analysis in a copy of Heron MO Systems,
+    the same weather and workflow - a report view of the same kind, and the
+    same workflow named in its properties
+  - one Ctrl+Z takes the report view back as one entry (Golden Rule 16)

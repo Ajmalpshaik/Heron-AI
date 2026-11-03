@@ -1,0 +1,60 @@
+# PUBLISH_COORDINATES - built 2026-11-03 in a cloud session with no Revit. NOT
+# RUN. Risk ADMIN: proved by name with `validate ... --allow-publish --write`
+# and the owner's Admin and Changes switches on (D-106); no batch sends it.
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a change reaching into a linked model, "published into a link nobody
+# confirmed".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING Group MO, MO1): two
+# scratch projects saved under %TEMP%\heron-work, never working models, any
+# one release 2020 to 2027.
+#   "Heron MO Link"  new from the metric architectural template, four walls,
+#                    its shared coordinates never changed. Saved and closed.
+#   "Heron MO Host"  new from the metric mechanical template; Insert > Link
+#                    Revit, "Heron MO Link.rvt", Origin to Origin, then moved
+#                    10000 mm east. Manage > Coordinates > Specify Coordinates
+#                    at Point is NOT used. Saved.
+# EVERY RUN BELOW IS ROLLED BACK - and the host is then closed WITHOUT saving,
+# so Revit never asks to write the link (row 5b-1461).
+
+positive:
+  - given: Heron MO Host, linkInstance the one instance of "Heron MO Link.rvt", position left out, confirm "Heron MO Link.rvt" - the job's positive
+    expect: >
+      published true; positionName the link's current position (RECORD the
+      name - "Internal" in a new project); expected "E/W 10000 mm, N/S 0 mm,
+      elevation 0 mm, angle to True North 0 degrees" or this model's own
+      shared values at the link's origin; after the same as expected, or
+      RECORD what it reads (row 5b-1461); waitingToSave true; the finding
+      "THE LINKED FILE IS NOT SAVED YET ...". Heron MO Link.rvt's file time
+      on disk is UNCHANGED
+
+  - given: Heron MO Host, the same link, position "Internal", confirm the instance's name exactly as the Project Browser shows it
+    expect: published true, positionName "Internal"
+
+negative:
+  - given: Heron MO Host, the same link, position left out, confirm "Heron MO Other.rvt" - the job's negative
+    expect: >
+      published false; refused "Publishing coordinates into 'Heron MO
+      Link.rvt' records this model's shared origin ... It is done only with
+      confirm repeating the link's name exactly, \"Heron MO Link.rvt\" ...
+      (confirm was \"Heron MO Other.rvt\"). NOTHING WAS PUBLISHED."; before
+      and expected filled; after empty; waitingToSave false. THE FIRST CASE
+      TO RUN
+
+  - given: Heron MO Host, the same link, confirm "heron mo link.rvt"
+    expect: refused as above - the name must match exactly, capitals included
+
+  - given: Heron MO Host, the same link, position "No Such Position", confirm "Heron MO Link.rvt"
+    expect: refused "The linked model 'Heron MO Link' has no position named exactly \"No Such Position\". Its positions are ..."
+
+  - given: Heron MO Host with the link unloaded (Manage Links > Unload), confirm "Heron MO Link.rvt"
+    expect: refused "... is not loaded, so there is no linked model to record the position in. NOTHING WAS PUBLISHED ..."
+
+second_route:
+  - >
+    Revit itself: Manage > Coordinates > Publish Coordinates, pick the link,
+    Location Weather and Site's Site tab - the same position name and the
+    same shared values Revit's own Report Shared Coordinates gives at the
+    link's origin
+  - CHECK_LINK_COORDINATES on Heron MO Host before and after the KEPT run, in a copy
+  - one Ctrl+Z takes the publish back as one entry (Golden Rule 16)

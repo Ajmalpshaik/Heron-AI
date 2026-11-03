@@ -1,0 +1,151 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-081
+semantic-identity: "offset a chain of model lines, detail lines or walls by a distance with the corners kept joined, as a copy or moving them - Modify > Offset"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-03: asked for as a gap on Revit's ribbon - "Offset (Modify >
+# Offset) for a chain of lines. Offset selected model/detail lines or a chain
+# by a distance, copy or move." The ribbon coverage note
+# (docs/work-notes/investigations/2026-11-01-revit-ribbon-coverage.md) put
+# Offset PARTIAL: "moves only; no copy option, no line chains".
+# brain/heron_retrieve.py on a scratch store (Revit 2024) sent "offset these
+# detail lines 300 as a copy" to DRAW_FAMILY_DETAIL_LINES and "offset this
+# chain of model lines" to EXTRACT_CAD_CURVES; no card in the library calls
+# CurveLoop.CreateViaOffset (grep, 2026-11-03).
+# heron_duplicates.look: 0 already here.
+#
+# LOOK-ALIKES, KEPT SEPARATE (heron-duplicate-checker's method, 2026-11-03):
+#   OFFSET_ELEMENTS (PROVEN)  moves each linear run on its own, in plan, with
+#     Curve.CreateOffset - ducts and pipes above all. No copy, and two pieces
+#     of a chain each offset alone overlap or part at the corner. PROVEN, so
+#     its impl/ is not touched (a change makes its proof stale); a duct, pipe
+#     or other run handed in here is left alone and named as its.
+#   COPY_ELEMENTS (PROVEN)  duplicates by one vector or onto levels; a
+#     parallel copy of a chain needs every piece trimmed to a new length,
+#     which no single vector gives.
+#   MOVE_ELEMENTS (PROVEN)  one vector for everything.
+#   OFFSET_PART_FACES, OFFSET_TAGS_FROM_HOST, OFFSET_MEP_SECTION  faces of
+#     parts, tags, a section of a run - not lines or walls.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33):
+#   elements  the selection: model lines, detail lines, walls
+#   distance  millimetres, signed; feet by / 304.8 (D-20)
+#   mode      copy (left out - Revit's Copy box is ticked by default) or move
+#   towards   a point "x,y" or "x,y,z" in mm on the side wanted - Revit's own
+#             cursor side. Left out, the sign decides and the answer says
+#             which way each chain went
+#
+# RISK MODIFY. It copies or moves lines and walls in the model in front;
+# nothing is deleted.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.geometry
+capability: OFFSET_LINE_CHAIN
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Revit's Modify > Offset for model lines, detail lines and walls. The pieces
+  handed in are sorted into chains - pieces whose ends meet, as Tab selects
+  them - and each chain is offset as one, so the corners stay joined: each
+  piece is trimmed or extended to meet its neighbour. A copy by default, as
+  Revit's Copy box is; move moves the originals. A line is offset in its own
+  sketch plane, a wall along its location line in plan. A point on the side
+  wanted turns the side round; left out, a positive distance goes to the
+  right of each chain as it was drawn, and the answer says which way. A copy
+  keeps the line style or the wall type, and a copied wall's doors and
+  windows come with it and are named. Every piece is read back after Revit
+  resolves its joins.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The selection: model lines, detail lines and walls. Anything else is
+    # left alone and named in notOffset.
+    - name: elements
+      type: IList<Element>
+    # Millimetres, signed - 300 or -300. 0 is refused.
+    - name: distance
+      type: double
+      source: request
+    # copy or move. Left out, copy - Revit's own default.
+    - name: mode
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # A point in mm on the side wanted - "1000,2000" or "1000,2000,0". Left
+    # out, the sign of distance decides.
+    - name: towards
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: results
+      # The copies made, or the elements moved - each read back after one
+      # regeneration. A thing it MADE or CHANGED, so a result (D-52).
+      role: result
+      type: IList<ElementId>
+    - name: offsetCount
+      role: result
+      type: int
+    - name: notOffset
+      # Handed in but not a model line, detail line or wall - left alone.
+      # What it was GIVEN and could not use, never a thing it found (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: refused
+      # Why a chain or a piece was not offset, in words - Revit's own where
+      # Revit refused. Empty when everything went (D-52).
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING: copied or moved, how many of how many, the distance, the
+      # number of chains, and what was left or refused.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read with tools/api-surface --members
+  on 2026-11-03, the same 2020 to 2027: `CurveLoop` (constructor, `Append`,
+  `IsOpen`, `GetEnumerator`) and `CurveLoop.CreateViaOffset(CurveLoop, double,
+  XYZ)`; `Curve.CreateReversed`, `Evaluate`, `GetEndPoint`, `IsBound`;
+  `CurveElement.GeometryCurve`, `SketchPlane`, `SetGeometryCurve(Curve,
+  bool)`; `SketchPlane.GetPlane`; `ElementTransformUtils.CopyElement(Document,
+  ElementId, XYZ)`; `LocationCurve.Curve`; `Document.Regenerate`. RevitAPI.xml
+  (2024) says a positive offset goes to the right of the loop with the normal
+  as up, and that SetGeometryCurve refuses a curve of another type - so an
+  ellipse or spline, whose offset comes back a HermiteSpline, is refused by
+  Revit and named. Not seen in Revit: whether moving the pieces of a joined
+  chain one by one with overrideJoins true leaves them joined at the new
+  corners, and what a moved wall's unselected neighbours do (row 5b-1458).
+
+# ROUTING (2026-11-03). OFFSET_ELEMENTS is PROVEN and its card is not
+# edited for these rows (row 5b-1462 has the measurement).
+#
+#   "offset a chain of lines"             -> here
+#   "offset selected model lines or detail lines by a distance"
+#                                         -> here
+#   "offset these ducts", "move the pipe over 300", "offset it sideways"
+#                                         -> OFFSET_ELEMENTS - a run moved
+#                                            in plan, its own sentences
+#   "duplicate these elements at an offset"
+#                                         -> COPY_ELEMENTS - one vector
+utterances:
+  - offset a chain of lines
+  - offset selected model lines or detail lines by a distance

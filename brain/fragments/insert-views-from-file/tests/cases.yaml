@@ -1,0 +1,59 @@
+# INSERT_VIEWS_FROM_FILE - built 2026-11-03 in a cloud session with no Revit.
+# NOT RUN. D-30: the negative case is what catches "succeeded and did
+# nothing" - and, for an insert, "brought something nobody named".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING Group MO, MO1): two
+# scratch projects saved under %TEMP%\heron-work, never working models, any
+# one release 2020 to 2027.
+#   "Heron MO Source"  new from the metric architectural template. A drafting
+#                      view "MO Detail" holding three detail lines and one
+#                      text note "MO"; a legend "MO Legend" holding one
+#                      legend component (any door) and one text note. Saved
+#                      and CLOSED - it must not be open in Revit.
+#   "Heron MO Insert"  new from the same template, with an empty drafting
+#                      view "MO Target". Saved.
+# Every run below is in "Heron MO Insert" and rolled back.
+
+positive:
+  - given: Heron MO Insert, filePath "%TEMP%\\heron-work\\Heron MO Source.rvt" (written out in full), viewNames "MO Detail; MO Legend", into left out - the job's positive
+    expect: >
+      newViews two ids; copied "MO Detail (4 of 4 element(s))" and "MO Legend
+      (2 of 2 element(s))"; elementsCopied 6; report "Inserted 2 view(s) with
+      6 element(s) from \"Heron MO Source.rvt\"; the file was closed without
+      saving."; both views in the Project Browser with their lines, text and
+      legend component. View > Switch Windows does not list Heron MO Source;
+      its file time on disk is UNCHANGED. RECORD whether the legend component
+      arrived (row 5b-1459)
+
+  - given: Heron MO Insert, the same file, viewNames "MO Detail", into "MO Target"
+    expect: >
+      newViews empty; copied "MO Target (4 of 4 element(s) from \"MO
+      Detail\")"; elementsCopied 4; the lines and text at the same
+      coordinates as in the file's view
+
+  - given: Heron MO Insert, the same file opened in Revit first, viewNames "MO Detail"
+    expect: copied as above; the finding "... is already open in this Revit - used as it is and left open"; it is still open afterwards
+
+negative:
+  - given: Heron MO Insert, the same file, viewNames "Level 1" (a floor plan in it) - the job's negative
+    expect: >
+      newViews empty; elementsCopied 0; notFound "Level 1 (a FloorPlan view,
+      not a drafting view or legend)"; refused "None of the 1 view(s) named
+      is a drafting view or legend in ... NOTHING WAS COPIED."; no new view in
+      the Project Browser; Heron MO Source not left open
+
+  - given: Heron MO Insert, the same file, viewNames "MO Detail; MO Legend", into "MO Target"
+    expect: refused "Insert 2D Elements takes the elements of ONE view - 2 were named. NOTHING WAS COPIED."
+
+  - given: Heron MO Insert, filePath "%TEMP%\\heron-work\\no such file.rvt", viewNames "MO Detail"
+    expect: refused "No file is at ... NOTHING WAS COPIED."
+
+  - given: Heron MO Insert, filePath its own path, viewNames "MO Target"
+    expect: refused "... is the model in front. NOTHING WAS COPIED."
+
+second_route:
+  - >
+    Revit itself: Insert > Insert from File > Insert Views from File, the same
+    file, MO Detail ticked - the same view, the same four elements
+  - Insert 2D Elements from File into MO Target by hand in a copy - the same elements
+  - one Ctrl+Z takes each Heron run back as one entry (Golden Rule 16)
