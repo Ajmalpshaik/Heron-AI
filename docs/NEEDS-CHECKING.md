@@ -1374,6 +1374,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-mm.md`](needs-checking/group-mm.md)
 
+## Group MN - Structure > Rebar Shape, Annotate > Symbol > Area, Path and Fabric Reinforcement Symbols, and Architecture > Stair > Create Sketch - make a rebar shape from its segments and bends, put Revit's reinforcement symbols on area and path reinforcement and fabric sheets, and sketch a stair from its boundaries and riser lines: `CREATE_REBAR_SHAPE`, `PLACE_REINFORCEMENT_SYMBOLS`, `CREATE_SHAPED_STAIRS` widened (2026-11-02)
+
+**Its own file:** [`needs-checking/group-mn.md`](needs-checking/group-mn.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

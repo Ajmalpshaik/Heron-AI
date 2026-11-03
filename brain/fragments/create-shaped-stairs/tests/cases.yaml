@@ -29,6 +29,17 @@ positive:
       one curved run round 10000,0, its first riser east of the centre, turning
       clockwise; no landing; risers read back as reaching Level 2; the answer
       gives the angle turned and the 1500 mm radius
+  - given: >
+      VERSION 2 (Group MN, MN6). shape sketch, the same levels, stairType left
+      out, startPoint 20000,0,0, leftBoundary "0,0,0; 0,4000,0",
+      rightBoundary "1000,0,0; 1000,4000,0", riserLines left out
+    expect: >
+      one stair with ONE sketched run and no landing, between x 20000 and
+      21000; risers the fewest at or under the default type's Maximum Riser
+      Height, read back as reaching Level 2; the finding "Sketched stair ...
+      1000 mm run width, 0 landing(s), N riser line(s) spread evenly along the
+      boundaries". RECORD whether the riser count read back equals the riser
+      lines drawn (row 5b-1456)
 
 negative:
   - given: >
@@ -49,6 +60,17 @@ negative:
     expect: refused - 'Level 1' is not above 'Level 2' - nothing made
   - given: shape L, landingDepth 600, runWidth 1000
     expect: refused - an L landing must be at least as deep as the run is wide - nothing made
+  - given: >
+      VERSION 2. The sketch positive with riserLines "0,0,0; 1000,0,0 |
+      0,2000,0; 1000,2000,0 | 0,4000,0; 1000,4000,0" - three riser lines for
+      a 3000 mm climb
+    expect: >
+      refused before the model is touched - "3 riser lines make risers of
+      1000 mm, over the Maximum Riser Height of ..." - nothing made
+  - given: the first positive case (an L) with leftBoundary "0,0,0; 0,4000,0" as well
+    expect: >
+      refused - boundary points and riser lines are for a sketched stair -
+      nothing made; an L with none of them is made exactly as version 1 made it
   - given: run as a read (no --write)
     expect: refused by the add-in, D-112 - an edit-mode fragment never runs on the read path
 

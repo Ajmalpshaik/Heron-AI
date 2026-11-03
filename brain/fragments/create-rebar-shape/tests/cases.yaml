@@ -1,0 +1,58 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that makes a type, "made something nobody asked for": a shape of
+# the wrong number of segments, or one made under a name already in use.
+#
+# THE ARRANGEMENT (Group MN, MN1): a scratch project from Revit's metric
+# STRUCTURAL template, saved, with the template's rebar shapes loaded - so the
+# shape parameters A, B, C ... are in the model - and no shape named
+# "HN U 300" or "HN L 45". Never a working model. EVERY RUN ROLLED BACK.
+
+positive:
+  - given: >
+      shapeName "HN U 300", segments "300, 600, 300", bends "90 left, 90 left",
+      shapeStyle standard
+    expect: >
+      created 1; readBack "'HN U 300' ..., standard, 3 segment(s): A 300 mm,
+      B 600 mm, C 300 mm; bends 90 left, 90 left; start hook none, end hook
+      none; allowed for N bar type(s)"; refused empty. The Rebar Shape Browser
+      shows a U of those three legs
+
+  - given: >
+      shapeName "HN L 45", segments "500, 500", bends "45 right", shapeStyle
+      standard, endHook "90 left"
+    expect: >
+      created 1; readBack 2 segment(s), bend 45 right, end hook 90 degrees.
+      RECORD whether a finding says the bend categories solved swapped (row
+      5b-1454)
+
+negative:
+  - given: >
+      shapeName "HN U 300 bad", segments "300, 600, 300", bends "90 left" -
+      one bend for three segments
+    expect: >
+      created 0; refused "3 segment(s) need 2 bend(s), one at each corner - 1
+      were given. Nothing was made". No shape in the browser. THE FIRST CASE
+      TO RUN
+
+  - given: the positive's values after it was KEPT
+    expect: >
+      created 0; refused "A Rebar Shape named 'HN U 300' is already in the
+      model ..." - nothing made
+
+  - given: >
+      shapeName "HN tie", segments "200, 300, 200, 300", bends "90 left, 90
+      left, 90 left", shapeStyle stirrup/tie, attachment left out
+    expect: created 0; refused naming interior or exterior - never chosen for you
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's
+
+second_route:
+  - >
+    Structure > Reinforcement > Rebar Shape Browser after a KEPT run: the new
+    shape is there by name, its picture three legs of 300, 600 and 300
+  - >
+    Project Browser > Families > Structural Rebar Shape: the new shape's Type
+    Properties - its style and hooks as readBack says
+  - one Ctrl+Z takes it back (Golden Rule 16)

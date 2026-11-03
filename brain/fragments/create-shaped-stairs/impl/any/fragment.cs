@@ -1,6 +1,7 @@
 // NOT STANDALONE. Assumes `doc`, `editScopeFailures`, `baseLevel`, `topLevel`,
 // `stairType`, `shape`, `startPoint`, `direction`, `turn`, `runWidth`,
-// `landingDepth`, `radius` and `firstRunRisers`; leaves `created`, `risers`,
+// `landingDepth`, `radius`, `firstRunRisers`, `leftBoundary`, `rightBoundary`
+// and `riserLines`; leaves `created`, `risers`,
 // `riserHeightMm`, `treadDepthMm`, `runCount`, `landingCount`,
 // `landingDepthMm`, `railings` and `findings`.
 //
@@ -27,6 +28,24 @@
 //           run's centre line; the first riser on the `direction` side of the
 //           centre; `turn` left is anticlockwise seen from above, right is
 //           clockwise
+//   sketch  VERSION 2 (2026-11-02, row 5b-1456): Revit's Create Sketch - one
+//           sketched run from its two boundaries and its riser lines,
+//           StairsRun.CreateSketchedRun. `leftBoundary` and `rightBoundary`
+//           are two chains of points (straight lines between them), the left
+//           and right edges as you climb, measured from `startPoint` (0,0,0
+//           for the model's own coordinates). `riserLines` is the riser lines
+//           in order from the bottom, "x,y,z; x,y,z | x,y,z; x,y,z", also from
+//           `startPoint`; left out, the risers the type's rules give are
+//           spread evenly along the two boundaries. The stair path runs
+//           through the middle of every riser line. Direction, turn, run
+//           width, landing depth, radius and first-run risers are not a
+//           sketch's - the width is the boundaries'
+//
+// VERSION 2 CHANGES NOTHING FOR L, U OR SPIRAL. The three new values are
+// optional and refused on those shapes when given; direction, turn and run
+// width became optional for the sketch's sake and are refused on L, U and
+// spiral when left out, as the add-in refused them before - in this card's
+// words now rather than the add-in's.
 //
 // LENGTHS: `runWidth`, `landingDepth` and `radius` arrive in MILLIMETRES and
 // become feet by / 304.8 (D-20); `startPoint` arrives in feet - the add-in
@@ -79,6 +98,15 @@ var form = (shape ?? "").Trim().ToLowerInvariant().Replace("-", "").Replace(" ",
 if (form == "dogleg") form = "u";
 var heading = (direction ?? "").Trim().ToLowerInvariant();
 var hand = (turn ?? "").Trim().ToLowerInvariant().Replace("-", "").Replace(" ", "");
+// An optional need left out arrives as the text "none" (row 5b-1432).
+if (heading == "none") heading = "";
+if (hand == "none") hand = "";
+if (form == "sketched" || form == "bysketch" || form == "createsketch") form = "sketch";
+var riserText = (riserLines ?? "").Trim();
+if (string.Equals(riserText, "none", StringComparison.OrdinalIgnoreCase)) riserText = "";
+var leftPoints = leftBoundary ?? new List<XYZ>();
+var rightPoints = rightBoundary ?? new List<XYZ>();
+var sketchGiven = leftPoints.Count > 0 || rightPoints.Count > 0 || riserText.Length > 0;
 if (hand == "clockwise") hand = "right";
 if (hand == "anticlockwise" || hand == "counterclockwise") hand = "left";
 
@@ -104,6 +132,139 @@ var width = runWidth / 304.8;
 var depth = landingDepth / 304.8;
 var centreRadius = radius / 304.8;
 
+// ---- THE SKETCH (version 2): its points, read before the model is touched --------
+var invariantFloat = System.Globalization.NumberStyles.Float;
+var sketchLeft = new List<XYZ>();
+var sketchRight = new List<XYZ>();
+var givenRisers = new List<Line>();
+var boundaryCurves = new List<Curve>();
+var riserCurves = new List<Curve>();
+var pathCurves = new List<Curve>();
+var sketchWidth = 0.0;
+var fixedRisers = false;
+
+// A point of the sketch on the base level: `startPoint` plus the offset given, in feet.
+Func<XYZ, XYZ> onBase = offset => new XYZ(startPoint.X + offset.X, startPoint.Y + offset.Y,
+    baseLevel == null ? 0.0 : baseLevel.ProjectElevation);
+// The chain's points with any repeated point dropped.
+Func<IList<XYZ>, List<XYZ>> chainOf = given =>
+{
+    var chain = new List<XYZ>();
+    foreach (var p in given)
+    {
+        var q = onBase(p);
+        if (chain.Count == 0 || chain[chain.Count - 1].DistanceTo(q) > tolerance) chain.Add(q);
+    }
+    return chain;
+};
+Func<List<XYZ>, double> lengthOf = chain =>
+{
+    var sum = 0.0;
+    for (var i = 1; i < chain.Count; i++) sum += chain[i - 1].DistanceTo(chain[i]);
+    return sum;
+};
+// The point a fraction of the way along a chain, by length.
+Func<List<XYZ>, double, XYZ> pointAlong = (chain, fraction) =>
+{
+    var goal = lengthOf(chain) * fraction;
+    for (var i = 1; i < chain.Count; i++)
+    {
+        var step = chain[i - 1].DistanceTo(chain[i]);
+        if (goal <= step || i == chain.Count - 1)
+            return chain[i - 1] + (chain[i] - chain[i - 1]) * (step > 0 ? Math.Min(goal / step, 1.0) : 0.0);
+        goal -= step;
+    }
+    return chain[chain.Count - 1];
+};
+// "x,y,z; x,y,z | x,y,z; x,y,z" in MILLIMETRES from `startPoint` - the binder's own
+// spelling for pairs of points; two numbers to a point are read with z 0.
+Func<string> readRiserLines = () =>
+{
+    foreach (var pair in riserText.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries))
+    {
+        var ends = pair.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+        if (ends.Length != 2)
+            return string.Format("'{0}' is not one riser line - two points in mm, a semicolon between them, "
+                + "a pipe between one line and the next: \"0,0,0; 1200,0,0 | 0,280,0; 1200,280,0\"", pair.Trim());
+        var points = new List<XYZ>();
+        foreach (var end in ends)
+        {
+            var numbers = end.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            var values = new List<double>();
+            foreach (var n in numbers)
+            {
+                double v;
+                if (!double.TryParse(n.Trim(), invariantFloat, System.Globalization.CultureInfo.InvariantCulture, out v)
+                    || double.IsNaN(v) || double.IsInfinity(v) || Math.Abs(v) > 100000000)
+                    return string.Format("'{0}' is not a point in mm in the riser lines", end.Trim());
+                values.Add(v);
+            }
+            if (values.Count != 2 && values.Count != 3)
+                return string.Format("'{0}' is not a point - two or three numbers in mm", end.Trim());
+            points.Add(onBase(new XYZ(values[0] / 304.8, values[1] / 304.8, 0)));
+        }
+        if (points[0].DistanceTo(points[1]) <= tolerance)
+            return string.Format("The riser line '{0}' has no length", pair.Trim());
+        givenRisers.Add(Line.CreateBound(points[0], points[1]));
+    }
+    return null;
+};
+// Everything a sketch can be refused for before the model is touched.
+Func<string> sketchRefusal = () =>
+{
+    if (runWidth != 0 || landingDepth != 0 || radius != 0 || firstRunRisers != 0)
+        return "A sketched stair takes its width from its boundaries and has one run - run width, landing depth, "
+            + "radius and first-run risers are for an L, U or spiral. Nothing was made";
+    sketchLeft = chainOf(leftPoints);
+    sketchRight = chainOf(rightPoints);
+    if (sketchLeft.Count < 2 || sketchRight.Count < 2)
+        return "A sketched stair needs both boundaries, each two or more points in mm: leftBoundary and "
+            + "rightBoundary, the left and right edges as you climb. Nothing was made";
+    if (sketchLeft.Any(p => sketchRight.Any(q => p.DistanceTo(q) <= tolerance)))
+        return "The left and right boundaries touch - Revit's sketch needs two separate edges. Nothing was made";
+    if (riserText.Length > 0)
+    {
+        var why = readRiserLines();
+        if (why != null) return why + ". Nothing was made";
+        if (givenRisers.Count < 2) return "A sketched run needs at least two riser lines. Nothing was made";
+    }
+    if (heading.Length > 0 || hand.Length > 0)
+        findings.Add("A sketch has no direction or turn of its own - the boundaries say which way it climbs; "
+            + "the direction and turn given were not used.");
+    return null;
+};
+
+// The sketch's curves for n risers: the boundaries, the riser lines - those given,
+// or n spread evenly along the boundaries - and the path through their middles.
+Func<int, string> sketchFor = n =>
+{
+    boundaryCurves.Clear(); riserCurves.Clear(); pathCurves.Clear();
+    foreach (var chain in new[] { sketchLeft, sketchRight })
+        for (var i = 1; i < chain.Count; i++) boundaryCurves.Add(Line.CreateBound(chain[i - 1], chain[i]));
+    if (givenRisers.Count > 0)
+        foreach (var line in givenRisers) riserCurves.Add(line);
+    else
+    {
+        if (n < 2) return string.Format("{0} riser(s) cannot be sketched - a sketched run needs two or more", n);
+        for (var i = 0; i < n; i++)
+        {
+            var f = (double)i / (n - 1);
+            riserCurves.Add(Line.CreateBound(pointAlong(sketchLeft, f), pointAlong(sketchRight, f)));
+        }
+    }
+    XYZ last = null;
+    foreach (Line riserLine in riserCurves)
+    {
+        var middle = (riserLine.GetEndPoint(0) + riserLine.GetEndPoint(1)) / 2.0;
+        if (last != null && last.DistanceTo(middle) > tolerance) pathCurves.Add(Line.CreateBound(last, middle));
+        last = middle;
+    }
+    var firstRiser = (Line)riserCurves[0];
+    sketchWidth = firstRiser.Length;
+    if (pathCurves.Count == 0) return "The riser lines' middles are all at one point - there is no path to climb";
+    return null;
+};
+
 if (baseLevel == null || topLevel == null)
     refused = "Both a base level and a top level are needed - name them as the model's level list does";
 else if (topLevel.ProjectElevation <= baseLevel.ProjectElevation + tolerance)
@@ -115,21 +276,31 @@ else if (chosenType == null)
             + "are: {0}", string.Join(", ", typeNames))
         : string.Format("There is no stair type called '{0}' in this model. The ones loaded are: {1}",
             stairType, string.Join(", ", typeNames));
-else if (form != "l" && form != "u" && form != "spiral")
-    refused = string.Format("'{0}' is not a shape this makes - say L, U or spiral. A straight stair, "
+else if (form != "l" && form != "u" && form != "spiral" && form != "sketch")
+    refused = string.Format("'{0}' is not a shape this makes - say L, U, spiral or sketch. A straight stair, "
         + "or one fitted to the walls of a stair hall, is made by asking for the stair in the stair hall",
         shape);
 else if (startPoint == null)
     refused = "No point was given to place the stair from";
+else if (form == "sketch")
+    refused = sketchRefusal();
+else if (sketchGiven)
+    refused = "Boundary points and riser lines are for a sketched stair (shape sketch) - an L, U or spiral "
+        + "is laid out from its point, direction and turn. Nothing was made";
+else if (heading.Length == 0)
+    refused = "No direction was given - say north, south, east or west: the way the first run climbs, or on a "
+        + "spiral the side of the centre its first riser is on";
 else if (heading != "north" && heading != "south" && heading != "east" && heading != "west")
     refused = string.Format("'{0}' is not a direction - say north, south, east or west: the way the "
         + "first run climbs, or on a spiral the side of the centre its first riser is on", direction);
+else if (hand.Length == 0)
+    refused = "No turn was given - say left or right";
 else if (hand != "left" && hand != "right")
     refused = string.Format("'{0}' is not a turn - say left or right", turn);
 else if (runWidth <= 0 || landingDepth < 0 || radius < 0 || firstRunRisers < 0)
     refused = "The run width must be more than zero, and the landing depth, radius and first-run risers "
         + "cannot be negative";
-else if (width < chosenType.MinRunWidth - tolerance)
+else if (form != "sketch" && width < chosenType.MinRunWidth - tolerance)
     refused = string.Format("A {0} mm run is narrower than '{1}' allows - its Minimum Run Width is {2} mm",
         runWidth, chosenType.Name, mm(chosenType.MinRunWidth));
 else if (form == "spiral" && radius <= 0)
@@ -156,6 +327,7 @@ Func<int, string> layoutFor = n =>
     total = n;
     riser = height / total;
     if (form == "spiral") { first = total; second = 0; return null; }
+    if (form == "sketch") { first = total; second = 0; return sketchFor(total); }
     first = firstRunRisers > 0 ? firstRunRisers : (total + 1) / 2;
     second = total - first;
     if (first < 2 || second < 2)
@@ -168,7 +340,23 @@ if (refused == null)
 {
     height = topLevel.ProjectElevation - baseLevel.ProjectElevation;
     tread = chosenType.MinTreadDepth;
-    refused = layoutFor((int)Math.Ceiling(height / chosenType.MaxRiserHeight - 1e-9));
+    var fewest = (int)Math.Ceiling(height / chosenType.MaxRiserHeight - 1e-9);
+    if (form == "sketch" && givenRisers.Count > 0)
+    {
+        // THE RISER LINES DRAWN ARE THE RISERS: one line per riser, the first and the
+        // last included (row 5b-1456). Never one more - nothing here adds a line.
+        fixedRisers = true;
+        refused = givenRisers.Count < fewest
+            ? string.Format("{0} riser lines make risers of {1} mm, over the Maximum Riser Height of '{2}' ({3} mm) - "
+                + "'{4}' needs {5} or more", givenRisers.Count, mm(height / givenRisers.Count), chosenType.Name,
+                mm(chosenType.MaxRiserHeight), topLevel.Name, fewest)
+            : layoutFor(givenRisers.Count);
+    }
+    else
+        refused = layoutFor(fewest);
+    if (refused == null && form == "sketch" && sketchWidth < chosenType.MinRunWidth - tolerance)
+        refused = string.Format("The sketch is {0} mm wide at its first riser, narrower than '{1}' allows - its "
+            + "Minimum Run Width is {2} mm", mm(sketchWidth), chosenType.Name, mm(chosenType.MinRunWidth));
 }
 
 // ---------------------------------------------------------------------------
@@ -260,7 +448,13 @@ if (refused == null)
                         var p0 = new XYZ(startPoint.X, startPoint.Y, z);
                         var turnDegrees = 0.0;
 
-                        if (form == "spiral")
+                        if (form == "sketch")
+                        {
+                            // VERSION 2: the sketched run, its curves as sketchFor laid them
+                            // out for `total` risers, its base the stair's own (0, relative).
+                            StairsRun.CreateSketchedRun(doc, stairsId, 0.0, boundaryCurves, riserCurves, pathCurves);
+                        }
+                        else if (form == "spiral")
                         {
                             var startAngle = Math.Atan2(along.Y, along.X);
                             var included = Math.Max(total - 1, 1) * tread / centreRadius;
@@ -329,12 +523,12 @@ if (refused == null)
                             foreach (var runId in runs)
                                 perRun.Add(((StairsRun)doc.GetElement(runId)).ActualRisersNumber.ToString(invariant));
 
-                            var wantRuns = form == "spiral" ? 1 : 2;
+                            var wantRuns = form == "spiral" || form == "sketch" ? 1 : 2;
                             var box = stairs.get_BoundingBox(null);
 
                             if (runCount != wantRuns)
                                 refused = string.Format("Revit made {0} run(s) where {1} were laid out", runCount, wantRuns);
-                            else if (form != "spiral" && landingCount < 1)
+                            else if ((form == "l" || form == "u") && landingCount < 1)
                                 refused = "Revit made the two runs and no landing between them";
                             else if (risers != total)
                                 refused = string.Format("The stair has {0} risers ({1} by run) where {2} reach "
@@ -347,11 +541,13 @@ if (refused == null)
                                 madeNote = string.Format("{0} stair of type '{1}'{2} from '{3}' to '{4}': {5} risers "
                                     + "of {6} mm ({7} by run), {8} mm treads, {9} mm run width, {10} landing(s){11}{12}"
                                     + ". Plan extent X {13}..{14}, Y {15}..{16} mm",
-                                    form == "l" ? "L-shaped" : form == "u" ? "U-shaped" : "Spiral",
+                                    form == "l" ? "L-shaped" : form == "u" ? "U-shaped" : form == "sketch" ? "Sketched" : "Spiral",
                                     chosenType.Name, usedDefault ? " (Revit's default for new stairs)" : "",
                                     baseLevel.Name, topLevel.Name, risers, riserHeightMm,
-                                    string.Join(" + ", perRun), treadDepthMm, runWidth, landingCount,
-                                    form == "spiral" ? "" : string.Format(" {0} mm deep, turning {1}", landingDepthMm, hand),
+                                    string.Join(" + ", perRun), treadDepthMm, form == "sketch" ? (object)mm(sketchWidth) : runWidth, landingCount,
+                                    form == "spiral" ? "" : form == "sketch" ? string.Format(", {0} riser line(s) {1}",
+                                        riserCurves.Count, givenRisers.Count > 0 ? "as drawn" : "spread evenly along the boundaries")
+                                    : string.Format(" {0} mm deep, turning {1}", landingDepthMm, hand),
                                     form == "spiral" ? string.Format(", turning {0} degrees {1} round a {2} mm radius",
                                         Math.Round(turnDegrees, 1).ToString(invariant),
                                         hand == "right" ? "clockwise" : "anticlockwise", radius) : "",
@@ -372,8 +568,8 @@ if (refused == null)
                         // count Revit would not make on one type was made with one more.
                         var said = revitSaid();
                         var was = total;
-                        var why = riserRetried ? "" : layoutFor(was + 1);
-                        if (!riserRetried && why == null)
+                        var why = riserRetried || fixedRisers ? "" : layoutFor(was + 1);
+                        if (!riserRetried && !fixedRisers && why == null)
                         {
                             riserRetried = true;
                             riserNote = string.Format("Revit would not make {0} risers of {1} mm with '{2}'{3}, so "

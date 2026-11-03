@@ -9,7 +9,19 @@ semantic-identity: "make an L-shaped, U-shaped or spiral stair from one level to
 kind: action
 domain: revit.elements
 capability: CREATE_SHAPED_STAIRS
-version: 1
+# Version 2 (2026-11-02, FRAGMENT-ISSUES 5b-1456, Group MN): a STAIR BY
+# SKETCH - Architecture > Stair > Create Sketch, its boundary and riser lines -
+# was asked for as a ribbon gap. Version 1 made runs by component only
+# (CreateStraightRun, CreateSpiralRun); nothing in the library called
+# StairsRun.CreateSketchedRun. Widened here rather than a second stair card:
+# the same job (a whole new stair between two levels in one edit scope), the
+# same values for the levels and the type, the same riser rules, read-back,
+# retry and sweep. shape "sketch" takes leftBoundary, rightBoundary and,
+# optionally, riserLines; direction, turn and runWidth became optional (a
+# sketch has none) and L, U and spiral refuse them left out in this card's
+# words, where the add-in refused them before. Nothing else about L, U or
+# spiral changed. The card was DRAFT on this branch only, and stays DRAFT.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -59,7 +71,8 @@ purpose: >
   stairs, said in the answer. A landing depth in mm sets the landing; without
   one Revit makes its own. What Revit made is read back - risers, tread, runs,
   landings and the landing's depth - and a stair Revit refuses is refused with
-  its reason and leaves nothing.
+  its reason and leaves nothing. Or a stair by sketch: one run from its two
+  boundaries and its risers.
 
 contract:
   needs:
@@ -84,28 +97,39 @@ contract:
       optional: true
       absent: none
     - name: shape
-      # l, u or spiral ("L-shaped", "U-shaped", "dogleg" are read the same).
+      # l, u, spiral or sketch ("L-shaped", "U-shaped", "dogleg" are read the
+      # same; "sketched" as sketch).
       type: string
       source: request
     - name: startPoint
       # Three numbers in mm. L or U: the middle of the first riser. Spiral: the
-      # centre of the stair.
+      # centre of the stair. Sketch: the point the sketch's points are measured
+      # from - 0,0,0 for the model's own coordinates.
       type: XYZ
       source: request
     - name: direction
       # north, south, east or west. L or U: the way the first run climbs.
-      # Spiral: the side of the centre the first riser is on.
+      # Spiral: the side of the centre the first riser is on. Not a sketch's -
+      # left out, L, U and spiral refuse it by name.
       type: string
       source: request
+      optional: true
+      absent: none
     - name: turn
       # left or right, as you climb. On a spiral, left is anticlockwise seen
-      # from above and right clockwise ("clockwise" is read too).
+      # from above and right clockwise ("clockwise" is read too). Not a
+      # sketch's - left out, L, U and spiral refuse it by name.
       type: string
       source: request
+      optional: true
+      absent: none
     - name: runWidth
-      # mm; refused under the type's Minimum Run Width.
+      # mm; refused under the type's Minimum Run Width. Not a sketch's - its
+      # width is its boundaries'; left out (0), L, U and spiral refuse it.
       type: double
       source: request
+      optional: true
+      absent: "0"
     - name: landingDepth
       # mm, L or U only: the landing's depth along the first run, made as a
       # sketched landing. Left out (0), Revit's automatic landing.
@@ -126,6 +150,26 @@ contract:
       source: request
       optional: true
       absent: "0"
+    - name: leftBoundary
+      # Sketch only: the left edge as you climb, two or more points in mm from
+      # startPoint, straight lines between them - "0,0,0; 0,3000,0".
+      type: IList<XYZ>
+      source: request
+      optional: true
+    - name: rightBoundary
+      # Sketch only: the right edge as you climb, the same way.
+      type: IList<XYZ>
+      source: request
+      optional: true
+    - name: riserLines
+      # Sketch only: the riser lines in order from the bottom, in mm from
+      # startPoint, "x,y,z; x,y,z | x,y,z; x,y,z" - one line per riser, the
+      # first and the last included. Left out, the risers the type's rules give
+      # are spread evenly along the two boundaries.
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: created
       role: result
@@ -169,7 +213,9 @@ compatibility-note: >
   IsPermitted (on StairsEditScope for 2020-2021, inherited from EditScope from
   2022); StairsRun.CreateStraightRun(Document, ElementId, Line,
   StairsRunJustification), CreateSpiralRun(Document, ElementId, XYZ, double,
-  double, double, bool, StairsRunJustification), ActualRunWidth,
+  double, double, bool, StairsRunJustification), CreateSketchedRun(Document,
+  ElementId, double, IList<Curve>, IList<Curve>, IList<Curve>) (version 2,
+  read 2026-11-02, one signature 2020-2027), ActualRunWidth,
   ActualRisersNumber and TopElevation; StairsLanding.CanCreateAutomaticLanding,
   CreateAutomaticLanding, CreateSketchedLanding(Document, ElementId, CurveLoop,
   double) and GetFootprintBoundary; Stairs.DesiredRisersNumber,
@@ -183,11 +229,17 @@ compatibility-note: >
 #   "make an L-shaped stair ... turning left at the landing"   -> here
 #   "add a U-shaped stair with a 1200 landing here"            -> here
 #   "place a spiral stair of 1500 radius ..."                  -> here
+#   "create a stair by sketch from these boundary and riser
+#    lines"                                                    -> here, version 2
 #   "create a U-shaped stair in the stair hall"                -> CREATE_STAIRS
 #   "make the stair" / "add a stair from level 1 to level 2"   -> CREATE_STAIRS
 #   "add a landing between these two runs"                     -> ADD_STAIRS_LANDING
 #   "put railings on these stairs"                             -> CREATE_RAILING
+#   "make the leaders L-shaped"                                -> FORCE_TAG_LEADER_LSHAPE -
+#                                                                 tag leaders, not a stair;
+#                                                                 declared there (row 5b-1457)
 utterances:
   - make an L-shaped stair from Level 1 to Level 2 turning left at the landing
   - add a U-shaped stair with a 1200 landing here
   - place a spiral stair of 1500 radius from Level 0 to Level 1
+  - create a stair by sketch from these boundary and riser lines

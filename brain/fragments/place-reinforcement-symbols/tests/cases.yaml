@@ -1,0 +1,69 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that annotates, "annotated something nobody asked for": a symbol
+# on a wall or a floor, a second symbol on a host already showing one, or a
+# symbol in a view Revit does not show it in.
+#
+# THE ARRANGEMENT (Group MN, MN1): a scratch project from Revit's metric
+# STRUCTURAL template, saved, with on Level 1 a 200 mm structural floor F1
+# carrying one area reinforcement AR1, one path reinforcement PR1 along its
+# edge and one fabric area FA1 of one or more sheets; W1, a structural wall.
+# Any reinforcement symbol Revit drew when they were made is DELETED before
+# saving, so "Level 1" starts with none. The template's area, path and fabric
+# reinforcement symbol families loaded, each set as the project's default by
+# using its button once by hand in another view and deleting the result.
+#
+# The hosts are collected by SELECT_BY_CATEGORY_NAME and SET_SELECTION, as
+# Group KF does: "Structural Path Reinforcement" in "FloorPlan: Level 1" for
+# the positive; Walls for the negative - a different set, not an empty one
+# (fragment-proving, rules 3 and 5). EVERY RUN ROLLED BACK.
+
+positive:
+  - given: >
+      PR1 from SELECT_BY_CATEGORY_NAME with Structural Path Reinforcement and
+      SET_SELECTION, view "Level 1", symbolType left out
+    expect: >
+      placed 1; newSymbols 1 id; refused empty; findings "1 reinforcement
+      symbol(s) placed in "Level 1"" and "Path Reinforcement Symbol: '...',
+      the project's default". Look at the plan - one path reinforcement
+      symbol at the middle of PR1
+
+  - given: AR1, PR1 and FA1 together, view "Level 1"
+    expect: >
+      one symbol on AR1, one on PR1 and one on each of FA1's sheets, each
+      read back with its type, the view and its host; report naming each
+
+  - given: the first call again, after the first run was KEPT
+    expect: placed 0, PR1 in alreadyHere - no second symbol stacked
+
+negative:
+  - given: >
+      the walls of Level 1 instead - SELECT_BY_CATEGORY_NAME with Walls -
+      with the same view
+    expect: >
+      placed 0, newSymbols empty, W1 in notReinforcement. No symbol of any
+      kind placed. THE FIRST CASE TO RUN
+
+  - given: PR1 with view a 3D view instead of the plan
+    expect: >
+      placed 0; refused "\"{3D}\" is a ThreeD view. Revit places
+      reinforcement symbols in floor plans, ceiling plans and elevations ...
+      Nothing was placed."
+
+  - given: PR1 with symbolType "No Such Symbol"
+    expect: >
+      placed 0; refused "No area, path or fabric reinforcement symbol type is
+      called 'No Such Symbol' ..."; typesLoaded lists the three kinds' types
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one view of symbols is one undo entry
+
+second_route:
+  - >
+    Revit's own Annotate > Symbol > Path Reinforcement Symbol on PR1 by hand in
+    a saved copy, then this card on PR1: PR1 in alreadyHere
+  - >
+    Select the new symbol after a KEPT run: Properties names its type;
+    right-click, Select All Instances, Visible in View - Revit's own count
+    of that symbol in "Level 1" is `placed`

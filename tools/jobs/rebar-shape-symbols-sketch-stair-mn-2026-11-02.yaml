@@ -1,0 +1,99 @@
+# NEEDS-CHECKING Group MN - CREATE_REBAR_SHAPE, PLACE_REINFORCEMENT_SYMBOLS and
+# CREATE_SHAPED_STAIRS version 2 (the stair by sketch), built 2026-11-02 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/rebar-shape-symbols-sketch-stair-mn-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/rebar-shape-symbols-sketch-stair-mn-2026-11-02.yaml
+#
+# THE MODELS (docs/needs-checking/group-mn.md, MN1), both scratch, saved under
+# %TEMP%\heron-work, never a working model, any one release 2020 to 2027:
+#   "Heron MN Rebar"            a new project from the metric structural
+#                               template, its rebar shapes loaded; on Level 1
+#                               a structural floor F1 with area reinforcement
+#                               AR1, path reinforcement PR1 and a fabric area
+#                               FA1, and a structural wall W1; no
+#                               reinforcement symbol in "Level 1"
+#   "Heron Shaped Stair Test"   Group LS's (LS1), Level 1 at 0 and Level 2 at
+#                               3000, nothing near 20000,0,0
+#
+# THE ARRANGEMENT: each negative is the SAME call with one value that must not
+# be built - one bend for three segments, the walls instead of the
+# reinforcement, three riser lines for a 3000 mm climb - never an empty input
+# (fragment-proving, rules 3 and 5). EVERY WRITE HERE IS ROLLED BACK.
+
+model: "scratch projects Heron MN Rebar and Heron Shaped Stair Test, Revit 2024"
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: create-rebar-shape
+    in: "Heron MN Rebar"
+    expect: created
+    set:
+      shapeName: "HN U 300"
+      segments: "300, 600, 300"
+      bends: "90 left, 90 left"
+      shapeStyle: "standard"
+    negative-set:
+      shapeName: "HN U 300 bad"
+      segments: "300, 600, 300"
+      bends: "90 left"
+      shapeStyle: "standard"
+    note: >
+      MN2. RUN THE NEGATIVE FIRST. Negative - one bend for three segments:
+      created 0, refused "3 segment(s) need 2 bend(s) ... Nothing was made",
+      no shape in the Rebar Shape Browser. Positive: created 1, readBack
+      "'HN U 300' ..., standard, 3 segment(s): A 300 mm, B 600 mm, C 300 mm;
+      bends 90 left, 90 left; start hook none, end hook none". Rolled back.
+
+  - fragment: place-reinforcement-symbols
+    in: "Heron MN Rebar"
+    expect: placed
+    setup:
+      - select-by-category-name
+      - set-selection
+    setup-set:
+      categoryName: "Structural Path Reinforcement"
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categoryName: Walls
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      view: "Level 1"
+    negative-set:
+      view: "Level 1"
+    note: >
+      MN4. RUN THE NEGATIVE FIRST. Negative - the walls instead of the path
+      reinforcement: placed 0, W1 in notReinforcement, no symbol placed.
+      Positive: placed 1 on PR1, newSymbols 1 id, the finding "Path
+      Reinforcement Symbol: '...', the project's default". RECORD any Revit
+      refusal naming a category (row 5b-1455). Rolled back.
+
+  - fragment: create-shaped-stairs
+    in: "Heron Shaped Stair Test"
+    expect: created
+    set:
+      shape: "sketch"
+      baseLevel: "Level 1"
+      topLevel: "Level 2"
+      startPoint: "20000,0,0"
+      leftBoundary: "0,0,0; 0,4000,0"
+      rightBoundary: "1000,0,0; 1000,4000,0"
+    negative-set:
+      shape: "sketch"
+      baseLevel: "Level 1"
+      topLevel: "Level 2"
+      startPoint: "20000,0,0"
+      leftBoundary: "0,0,0; 0,4000,0"
+      rightBoundary: "1000,0,0; 1000,4000,0"
+      riserLines: "0,0,0; 1000,0,0 | 0,2000,0; 1000,2000,0 | 0,4000,0; 1000,4000,0"
+    note: >
+      MN6. RUN THE NEGATIVE FIRST. Negative - three riser lines for a 3000 mm
+      climb: refused "3 riser lines make risers of 1000 mm, over the Maximum
+      Riser Height of ...", created invalid, NOTHING WAS MADE. Positive:
+      created a stair id, runCount 1, landingCount 0, the finding "Sketched
+      stair ... 1000 mm run width, 0 landing(s), N riser line(s) spread
+      evenly along the boundaries". RECORD the risers read back against the
+      riser lines drawn (row 5b-1456). Rolled back.
