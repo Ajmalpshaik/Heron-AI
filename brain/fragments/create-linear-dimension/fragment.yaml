@@ -69,7 +69,42 @@ capability: CREATE_LINEAR_DIMENSION
 # anywhere - this model or another loaded link. Every version 3 word reads as
 # it did; the purpose is still version 2's, word for word. DRAFT until
 # NEEDS-CHECKING Group EH runs it on a new project linking a saved test one.
-version: 4
+#
+# VERSION 5 (2026-11-01) - GRIDS AND LEVELS ARE THIS CARD'S ALONE. After
+# CREATE_DIMENSION's version 4 (DIMENSION_GRIDS_AND_LEVELS merged in) two
+# cards dimensioned grids and levels; on the owner's instruction ("make sure
+# there is no duplicate tools", "ok go ahead merge all", "in every conflict
+# keep the safer rule") the job is given to this card, and CREATE_DIMENSION
+# keeps runs and family instances and refuses a grid or a level handed in,
+# naming this card. What that route had and this card lacked, carried in
+# impl/: a grid or a level of this model the view is NOT SHOWING found and
+# named before anything is drawn (its notVisibleInView - Revit throws on one
+# and does not say which); an ARC grid refused, named; grids OUT OF PARALLEL
+# refused, named; LEVELS IN A PLAN refused with the reason; a level placed by
+# its ProjectElevation, never its Elevation (row 5b-179 - version 4 used
+# Elevation for the one-point string); grids or levels all at one position
+# drawing nothing. THE SAFER RULE ON MIXING: a GRID WITH A LEVEL is refused,
+# naming both, as CREATE_DIMENSION refused it; a grid or a level WITH A FACE,
+# a wall, a family's reference, a line or a plane is still one string - the
+# builders-work opening dimensioned from its grid and its level (5b-482).
+#
+# NOT CARRIED, AND WHY: CREATE_DIMENSION placed the string automatically
+# offsetMm clear of the grid ends, from a selection; here where the string
+# sits is the caller's (D-33) - two points, or one point twice for the string
+# to run through it square to the grids - and the datums are named, "grid A |
+# grid B". And it drew the datums the view shows while setting aside the rest;
+# here one not shown refuses the string, nothing drawn, as any reference that
+# cannot be used does on this card - the safer rule. Its six grid and level
+# sentences moved here.
+#
+# THE PROOF BELOW WAS NOT STALE before version 5. The comment above it said it
+# was version 2's; `python brain/heron_fragment.py` and Fragment.proof_is_stale
+# measured its fingerprint, 6155c5d9503d6351, equal to version 4's impl/ on
+# 2026-11-01 - it was taken on version 4's code on 2026-10-18 (its returned
+# values carry the link variables only version 4 has), though its cases ran
+# grids in a floor plan only. Version 5 changed impl/, so it is now the record
+# and this card is DRAFT until version 5 is proved on a real model (D-30).
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -103,6 +138,9 @@ purpose: >
 
   **READ BACK.** The dimension's references are counted and each segment's value
   is read again, so `measured` is what Revit measured, not what was asked.
+
+  **VERSION 5 IS THE ONE TOOL FOR GRIDS AND LEVELS.** A grid or level this view
+  does not show, an arc grid, or a grid with a level is refused, nothing drawn.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -156,38 +194,42 @@ contract:
     - name: findings
       type: IList<string>
 
-# THIS PROOF IS VERSION 2's AND IT IS STALE. It ran grids in a floor plan and
-# never reached a family instance, a solid face or a string run through one
-# point - none of which version 2 had - nor a link, which version 4 reaches.
-# The fingerprint below no longer matches the implementation; Groups EF and EH
-# are the runs that replace it.
+# THIS PROOF RAN GRIDS IN A FLOOR PLAN ONLY, and never reached a family
+# instance, a solid face, a string run through one point or a link. (This
+# comment said it was version 2's and stale; on 2026-11-01 its fingerprint
+# matched version 4's impl/ - see the version 5 note at the top.) Version 5
+# changed impl/; Groups EF and EH, and the version 5 cases, replace it.
 proof:
-  date: '2026-10-18'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project1 (3,047 elements), Revit 2020, session 2648
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    create-grids with this phase's own values - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned anyById Func`2, byId Func`3, created
-    1 item(s) [id 345608], elsewhere Func`2, fileOf Func`2, findings 1 item(s) [Dimension
-    drawn on 'Level 1' across 2 reference(s), reading ...], hostPoint Func`2, hostVector Func`2,
-    inLink , lastNormal XYZ, lastPoint XYZ, linkCalled Func`2, linkSaid Func`2, linkWords
-    , linkedAsked 0, links Func`1, measured 14000 mm, mm Func`2, problems 0 item(s), referenceOf
-    Func`2, refused (null), source Document, toHost Transform, viaLink (null). inputs came
-    view as given; between as given; lineFrom as given; lineTo as given. on Project1
-  negative_case: 'run with between=grid A | grid Nope, categoryName=Text Notes, inViewOnly=FloorPlan:
-    Level 1, lineFrom=-3000,3000,0, lineTo=13000,3000,0, view=FloorPlan: Level 1 instead -
-    chosen because it should not contain what this fragment reports - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned anyById Func`2,
-    byId Func`3, created (null), elsewhere Func`2, fileOf Func`2, findings 1 item(s) [Nothing
-    was drawn. No grid is called "Nope".], hostPoint Func`2, hostVector Func`2, inLink , lastNormal
-    (null), lastPoint (null), linkCalled Func`2, linkSaid Func`2, linkWords , linkedAsked
-    0, links Func`1, measured , mm Func`2, problems 1 item(s) [No grid is called "Nope".],
-    referenceOf Func`2, refused Nothing was drawn. No grid is called "Nope"., source Document,
+    1 item(s) [id 1020265], elsewhere Func`2, fileOf Func`2, findings 1 item(s) [Dimension
+    drawn on 'Level 1 HVAC Plan' across 2 reference(s)...], hostPoint Func`2, hostVector Func`2,
+    inLink , lastNormal XYZ, lastPoint XYZ, lastWord grid, linkCalled Func`2, linkSaid Func`2,
+    linkWords , linkedAsked 0, links Func`1, measured 6000 mm, mm Func`2, problems 0 item(s),
+    referenceOf Func`2, refused (null), shownDatums HashSet`1, shownHere Func`2, source Document,
     toHost Transform, viaLink (null). inputs came view as given; between as given; lineFrom
-    as given; lineTo as given. on Project1'
+    as given; lineTo as given. on P1102 MEP
+  negative_case: run with between=grid Q | grid Nope, firstLetter=Q, firstNumber=91, lineFrom=-3000,-54000,0,
+    lineTo=15000,-54000,0, origin=0,-60000,0, spacingsAcross=6000,6000, spacingsUp=6000,6000,
+    view=Level 1 HVAC Plan instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running create-grids with this phase's
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned anyById Func`2, byId Func`3, created (null), elsewhere Func`2,
+    fileOf Func`2, findings 1 item(s) [Nothing was drawn. No grid is called "Nope".], hostPoint
+    Func`2, hostVector Func`2, inLink , lastNormal (null), lastPoint (null), lastWord grid,
+    linkCalled Func`2, linkSaid Func`2, linkWords , linkedAsked 0, links Func`1, measured
+    , mm Func`2, problems 1 item(s) [No grid is called "Nope".], referenceOf Func`2, refused
+    Nothing was drawn. No grid is called "Nope"., shownDatums HashSet`1, shownHere Func`2,
+    source Document, toHost Transform, viaLink (null). inputs came view as given; between
+    as given; lineFrom as given; lineTo as given. on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 6155c5d9503d6351
+  fingerprint: a5fd65178a0e5cb1
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -221,7 +263,7 @@ compatibility-note: >
   linked element is found by the same Id.ToString() match, inside the link's
   own document.
 
-# ROUTING - repeated in CREATE_DIMENSION and DIMENSION_GRIDS_AND_LEVELS.
+# ROUTING - repeated in CREATE_DIMENSION.
 #
 #   "dimension from this to that"    -> here
 #   "dimension this opening from the level and the grid" -> here, version 3:
@@ -231,12 +273,22 @@ compatibility-note: >
 #                                       backend only - not declared, see below)
 #   "dimension the linked cut-outs to the grid" -> here, version 4: a
 #                                       reference inside a loaded link
-#   "dimension the duct spacing"     -> DIMENSION_MEP_RUNS - centrelines of
-#                                       parallel MEP runs, and only that
-#   "dimension the grids"            -> DIMENSION_GRIDS_AND_LEVELS
+#   "dimension the duct spacing"     -> CREATE_DIMENSION - centrelines of
+#                                       parallel MEP runs
+#   "dimension the grids"            -> here, version 5 - "grid A | grid B",
+#                                       or level to level in a section. It was
+#                                       CREATE_DIMENSION's version 4 too
+#                                       (DIMENSION_GRIDS_AND_LEVELS merged
+#                                       there) until 2026-11-01, when the job
+#                                       was given to this card alone
+#   "dimension between the levels"   -> here, version 5, in a section
 #   "dimension the rooms"            -> DIMENSION_ROOMS
-#   "dimension the doors in this wall"-> DIMENSION_WALL_OPENINGS
+#   "dimension the doors in this wall"-> DIMENSION_ELEMENT_FACES, along
+#                                       (DIMENSION_WALL_OPENINGS until it was
+#                                       merged there, 2026-11-01)
 #   "dimension to a radius"          -> CREATE_RADIAL_DIMENSION
+#   "dimension the length of this arc"-> CREATE_ARC_LENGTH_DIMENSION, Revit
+#                                       2025+ - along a curve, not straight
 
 utterances:
   - dimension between grid A and grid B
@@ -281,3 +333,12 @@ utterances:
   # DIMENSION_WALL_OPENINGS to this card on the model2vec backend; without
   # the word it stays there on both backends measured.
   - dimension the builders work layout from the grid
+  # MOVED 2026-11-01 from CREATE_DIMENSION, with the grid and level route
+  # (version 5). They came to that card from DIMENSION_GRIDS_AND_LEVELS the
+  # same day.
+  - dimension the grids
+  - put the setting out dimensions on this plan
+  - dimension between the levels
+  - grid to grid dimension
+  - add a dimension string across the grid lines
+  - dimension the floor to floor heights

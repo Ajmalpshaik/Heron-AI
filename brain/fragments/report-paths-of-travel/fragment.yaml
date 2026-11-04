@@ -1,0 +1,129 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-077
+semantic-identity: "how far the egress route is - the path of travel lines in a floor plan, Analyze > Route Analysis > Path of Travel - each one's measured travel distance to the exit door, and the room it starts in"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "what is the travel distance
+# from room 204 to the exit" and "list the path of travel lines in this plan
+# and their lengths", beside "draw the path of travel from this room to the
+# nearest exit" - Revit's Analyze > Route Analysis > Path of Travel. No card
+# read or drew one: a grep of every fragment's C# that day for PathOfTravel
+# found none, and brain/heron_retrieve.py on the sentences (Revit 2024, a
+# scratch store) answered FIND_NEAREST_ELEMENTS, DRAW_FAMILY_DETAIL_LINES and
+# CREATE_STAIRS.
+#
+# LOOK-ALIKES, NOT DUPLICATES (heron-duplicate-checker's method, 2026-11-02).
+# FIND_NEAREST_ELEMENTS ranks targets by a straight line, box gap or axis sum
+# between bounding boxes and says on its own card that "the nearest exit may
+# be through a wall" - it walks no route. MEASURE_DISTANCE measures between
+# two named elements' boxes. PROBE_AROUND_ELEMENTS casts rays. DIMENSION_ROOMS
+# and MEASURE_ROOM_DIMENSIONS are room sizes. None reads a path of travel
+# element, the only thing in Revit that measures a walk around the walls.
+#
+# THE READ HALF OF A PAIR. CREATE_PATHS_OF_TRAVEL draws them; every question
+# about which paths a plan has and how long they are is answered here so none
+# reaches the write (D-86).
+#
+# A MEASURED LENGTH, NOT A VERDICT. The answer never calls a travel distance
+# compliant or not - that is the engineer's or the authority's decision.
+#
+# READ ONLY - opens no transaction and needs none.
+kind: action
+domain: revit.rooms
+capability: REPORT_PATHS_OF_TRAVEL
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists the path of travel lines in a floor plan - Revit's Analyze > Route
+  Analysis > Path of Travel - with each one's travel distance, how far it is
+  to walk measured along the line in metres, its start and end in mm, the room each
+  end is in, the door it ends at and its waypoints. Can narrow to the paths
+  from one room. A measured length, never a compliance verdict. It only reads.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The floor plan, by name - "Level 2", or "FloorPlan: Level 2" where a
+    # ceiling plan shares it. Left out, it binds null and the view in front is
+    # used. Any view that is not a floor plan is refused by name.
+    - name: view
+      type: View
+      source: request
+      optional: true
+    # Only the paths that start or end in this room, by number ("204") or
+    # name ("Office"). Left out, every path in the plan.
+    - name: room
+      type: string
+      source: request
+      optional: true
+      absent: ""
+  provides:
+    - name: pathCount
+      # Paths of travel listed. Something the read FOUND.
+      role: result
+      type: int
+    - name: pathIds
+      # Their ids, in the order listed (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, one row per path joined by "  ||  ": its id, length in
+      # metres, start and end in mm with the room at each, the door within
+      # 1500 mm of its end by Mark, its waypoints - or the sentence saying
+      # there is none. A string because a reply cuts a list to three items.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was read - not a floor plan, a template, no view in front.
+      # Null when the plan was read (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. PathOfTravel with GetCurves,
+  GetWaypoints, PathStart and PathEnd is in the 2020 assembly checked here and
+  unchanged to 2027, as are Curve.Length, View.GenLevel, Level
+  ProjectElevation and Document.GetRoomAtPoint - read with tools/api-surface
+  --members on 2026-11-02. Feet become millimetres by * 304.8 and metres by
+  * 0.3048 as plain arithmetic. Not seen in Revit.
+
+# ROUTING (2026-11-02) - the same rows are in CREATE_PATHS_OF_TRAVEL and
+# FIND_NEAREST_ELEMENTS.
+#
+#   "what is the travel distance from room 204 to the exit"
+#                                                  -> here, room 204 - a path
+#                                                     already drawn is read; with
+#                                                     none, the answer says so
+#                                                     and names the write
+#   "list the path of travel lines in this plan and their lengths"
+#                                                  -> here
+#   "draw the path of travel from this room to the nearest exit"
+#                                                  -> CREATE_PATHS_OF_TRAVEL, a
+#                                                     write, with the exit door
+#                                                     named
+#   "find the nearest exit"                        -> FIND_NEAREST_ELEMENTS - a
+#                                                     straight-line search, not a
+#                                                     walk around the walls
+#   "how far apart are these two"                  -> MEASURE_DISTANCE
+#   "what files travel with this model"            -> REPORT_EXTERNAL_REFERENCES,
+#                                                     by identity. On the keyword
+#                                                     route alone this card ranks
+#                                                     above it since 2026-11-02 -
+#                                                     the word "travel"
+utterances:
+  - what is the travel distance from room 204 to the exit
+  - list the path of travel lines in this plan and their lengths

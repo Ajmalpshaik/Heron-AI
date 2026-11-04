@@ -1,0 +1,62 @@
+# NEEDS-CHECKING Group JZ - CREATE_WALL_FOUNDATION, built 2026-11-01 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/create-wall-foundation-jz-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-wall-foundation-jz-2026-11-01.yaml
+#
+# THE MODEL: JZ Structure, a scratch copy of Revit 2020's
+# rst_advanced_sample_project.rvt in %TEMP%\heron-work\wall-foundation-jz,
+# open and in front in Revit 2020 - never the library file and never a working
+# model. Which wall foundation types it holds, and which of its walls already
+# stand on a wall foundation, are NOT KNOWN here and are not guessed.
+#
+# THE TWO PLAN VIEWS AND THE TYPE BELOW ARE NOT KNOWN YET EITHER. JZ1 in
+# docs/needs-checking/group-jz.md reads them: a plan view holding a FEW walls -
+# under twenty - none of them on a wall foundation, a plan view whose walls ALL
+# stand on one, and the name of a wall foundation type off Revit's Type
+# Selector under Structure > Foundation > Wall. All three go in place of the
+# marked values. Until then no view answers to them and the setup should stop
+# there, before the foundation runs - expected, NOT RUN. If the model has no
+# wall foundation type, or no wall that already has one, JZ1 says so and the
+# job's negative is arranged by hand as JZ1 describes.
+#
+# THE ARRANGEMENT, RE-MADE BEFORE EACH PHASE: the walls of the view, by
+# select-by-category-name, then selected. A rolled-back write clears Revit's
+# selection, which is why it is a chain and not a hand selection.
+#
+# THE NEGATIVE IS A DIFFERENT SELECTION WITH THE SAME TYPE: walls that already
+# stand on a wall foundation, which must come back with nothing made and none
+# doubled, while the count of wall foundations in the model stays as it was.
+#
+# Not a wall, no type named, a type the model has not got, and curtain and
+# stacked walls are rows JZ3 to JZ6 of the group, run with `validate --write`.
+# Every write here is ROLLED BACK.
+
+model: JZ Structure (scratch copy of Revit 2020's rst_advanced_sample_project), Revit 2020
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: create-wall-foundation
+    expect: created
+    setup:
+      - select-by-category-name
+      - set-selection
+    setup-set:
+      categoryName: Walls
+      inViewOnly: "THE PLAN JZ1 READ - WALLS WITH NO WALL FOUNDATION"
+    negative-setup-set:
+      categoryName: Walls
+      inViewOnly: "THE PLAN JZ1 READ - WALLS ALL ON A WALL FOUNDATION"
+    set:
+      foundationType: "THE WALL FOUNDATION TYPE JZ1 READ"
+    negative-set:
+      foundationType: "THE WALL FOUNDATION TYPE JZ1 READ"
+    note: >
+      JZ2. Positive - created equal to the walls of the first view, report a
+      line per wall "wall foundation made (<id>), type "<type>"". Negative -
+      THE FIRST CASE TO RUN: the walls of the second view, every one of which
+      already stands on a wall foundation, so created 0, each named "already
+      has a wall foundation ... not doubled", refused "All N selected wall(s)
+      already have a wall foundation"; no foundation added anywhere.

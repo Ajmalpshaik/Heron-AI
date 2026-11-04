@@ -9,7 +9,12 @@ semantic-identity: "what warnings is this model carrying, and which elements cau
 kind: filter
 domain: revit.quality
 capability: READ_MODEL_WARNINGS
-version: 1
+# VERSION 2 (2026-11-01): SELECT_WITH_WARNINGS was merged into this card on the
+# owner's instruction - "make sure there is no duplicate tools" - and is
+# DEPRECATED; see the merge block above `utterances`. Version 1's proof below
+# is kept as the record; it no longer describes the code, so the card is DRAFT
+# until version 2 is proved on a real model (D-30).
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -29,10 +34,28 @@ purpose: >
   rows of the same duplicate-instance message. A flat list of 800 is unreadable
   and hides the five that matter.
 
+  **ERRORS ONLY, OR ONE KIND OF WARNING (version 2).** `errorsOnly` keeps the
+  Error severity; `descriptionContains` the warnings whose text holds a phrase.
+  An empty answer is not a clean model. Version 2 is DRAFT until proved.
+
 contract:
   needs:
     - name: doc
       type: Document
+    - name: errorsOnly
+      # VERSION 2, from SELECT_WITH_WARNINGS: only the warnings Revit raises at
+      # Error severity. Left out it binds false - every warning, as version 1.
+      type: bool
+      source: request
+      optional: true
+    - name: descriptionContains
+      # VERSION 2, from SELECT_WITH_WARNINGS: only the warnings whose text holds
+      # this phrase, capitals ignored - "duplicate", "off axis". Left out it
+      # binds `none`, no phrase.
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: elements
       role: result
@@ -50,20 +73,47 @@ contract:
       # unusable, never a warning it found (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: matched
+      # VERSION 2: how many warnings passed `errorsOnly` and
+      # `descriptionContains` - all of them with neither. `warningCount` stays
+      # the model's whole total. About the list, never an element (D-52).
+      role: accounting
+      type: int
+    - name: unresolved
+      # VERSION 2, from SELECT_WITH_WARNINGS: how many ids in those warnings
+      # resolve to no element here - the count of `notInThisModel`. A large
+      # figure means the warning list is stale. Never an element it found
+      # (D-52).
+      role: accounting
+      type: int
 
 proof:
-  date: '2026-09-13'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: >
-    Snowdon Towers Sample HVAC.rvt (9,628 elements) and Project1 (3,410 elements, unsaved default template), both open at once in Revit 2024.3
-  positive_case: >
-    Snowdon Towers: 145 warnings over 87 elements, grouped into 5 kinds, worst first - 'x111 The calculation was run with the Pressure Drop set to 0'. The grouping is the answer; 145 individual rows would not be.
-  negative_case: >
-    Project1: 0 warnings, 0 elements, 0 kinds. A clean model returns nothing rather than a spurious finding, with both documents open.
-  second_route: >
-    Revit's own Manage > Warnings dialog lists the same set and the same total.
-  fingerprint: "9b6bb49afca0cf5e"
-
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 MEP, P1102 Family - active was P1102
+    MEP, Revit 2020, session 59096'
+  positive_case: run as it would normally be run. returned counts 3 entry(ies), elements 4
+    item(s) [FB 15.0 - Holzdielen, FB 15.0 - Holzdielen, Verglasung, ...], errorsOnly false,
+    filtered false, findings 5 item(s) [4 element(s) named by 125 of the model's 125 warning(s).
+    Eac..., warning x122  No Loss Defined, warning x2  Some panels in this curtain system
+    are slightly ..., ...], matched 125, notInThisModel 0 item(s), order 3 item(s) [No Loss
+    Defined, Some panels in this curtain system are slightly malformed.  ..., Highlighted
+    floors overlap.], phrase , seen HashSet`1, unresolved 0, warningCount 125, warnings 125
+    item(s) [Autodesk.Revit.DB.FailureMessage, Autodesk.Revit.DB.FailureMessage, Autodesk.Revit.DB.FailureMessage,
+    ...], worst 3 entry(ies). inputs came errorsOnly not given - false (optional); descriptionContains
+    not given - "none", the card's own default (optional). on P1102 MEP
+  negative_case: run against 'P1102 Family' instead - chosen because it should not contain
+    what this fragment reports. returned counts 0 entry(ies), elements 0 item(s), errorsOnly
+    false, filtered false, findings 3 item(s) [0 element(s) named by 0 of the model's 0 warning(s).
+    Each el..., This model has no warnings at all, These are Revit's own warnings, of THIS
+    document only. A cla...], matched 0, notInThisModel 0 item(s), order 0 item(s), phrase
+    , seen HashSet`1, unresolved 0, warningCount 0, warnings 0 item(s), worst 0 entry(ies).
+    inputs came errorsOnly not given - false (optional); descriptionContains not given - "none",
+    the card's own default (optional). on P1102 Family
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: cf0528e772e4292e
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -103,6 +153,44 @@ compatibility-note: >
 #                                           card keeps "is the model healthy"
 #                                           and hands back the elements
 #                                           (2026-11-01)
+#   "select everything with a warning"   -> here since version 2 - it was
+#                                           SELECT_WITH_WARNINGS', merged in
+#   "isolate the error level warnings"   -> here with errorsOnly, then
+#                                           ISOLATE_ELEMENTS
+#   "fix the slightly off axis warnings" -> STRAIGHTEN_OFF_AXIS_LINES, after
+#                                           this selects them with
+#                                           descriptionContains
+#   "show me the duplicate instances"    -> FIND_DUPLICATE_ELEMENTS - the check
+#                                           built for it, which does not depend
+#                                           on Revit having noticed
+#   "what clashes"                       -> FIND_CLASHES. A clash is not a
+#                                           Revit warning
+#
+# VERSION 2 (2026-11-01) - SELECT_WITH_WARNINGS WAS MERGED INTO THIS CARD on
+# the owner's instruction in conversation: "make sure there is no duplicate
+# tools", every conflict to keep the SAFER rule. It is DEPRECATED. The same
+# job - the elements Revit's warnings name, each once, handed on - and this
+# card already provided `elements` for ISOLATE_ELEMENTS and SET_SELECTION.
+# Where each retired output is now:
+#
+#   SELECT_WITH_WARNINGS                here
+#     errorsOnly, descriptionContains   the same, both optional now
+#     elements                          elements - each element once
+#     unresolved                        unresolved, beside notInThisModel's
+#                                       ids
+#     findings                          findings - its first line, "N
+#                                       element(s) named by M of the model's
+#                                       warnings", "no warning matched that
+#                                       filter", and that these are Revit's
+#                                       own warnings, never a clash or a
+#                                       standard - followed by this card's
+#                                       rows, grouped by message, worst first
+#
+# THE SAFER RULE WHERE THEY DIFFERED. Version 1 here answered a clean model
+# with NO findings; SELECT_WITH_WARNINGS said "This model has no warnings at
+# all" and that an empty answer is not a clean model. Saying it is kept: an
+# unexplained empty set reads as a clean federated model, and this document's
+# warnings are all GetWarnings() reads.
 
 utterances:
   - how many warnings
@@ -114,3 +202,9 @@ utterances:
   - what is causing the warnings
   - are there any errors in the model
   - is the model healthy
+  # MOVED 2026-11-01 from SELECT_WITH_WARNINGS, merged into this card.
+  - select everything with a warning
+  - show me the elements revit is warning about
+  - isolate the error level warnings
+  - find elements with duplicate instances warning
+  - which elements have warnings

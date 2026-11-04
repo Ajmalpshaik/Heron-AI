@@ -1,0 +1,36 @@
+# NEEDS-CHECKING Group KU - REPORT_ELECTRICAL_SETTINGS, built 2026-11-01 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/report-electrical-settings-ku-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-electrical-settings-ku-2026-11-01.yaml
+#
+# THE MODEL is a scratch project new from Revit's metric ELECTRICAL template
+# (Systems template where there is none), saved as "electrical-settings-ku"
+# under %TEMP%\heron-work - never a working model. By hand before the run
+# (KU1): open Manage > MEP Settings > Electrical Settings (Voltage Definitions,
+# Distribution Systems, Wiring Types), Load Classifications and Demand Factors,
+# and write down every name and value - the second route.
+#
+# THE ARRANGEMENT: this read takes no selection, so `setup: []`. The negative
+# is a DIFFERENT VALUE - a name nothing in the model has - never an empty one
+# (fragment-proving, rule 5): every count 0, and the finding says nothing
+# matched.
+
+model: "electrical-settings-ku scratch project from Revit's metric electrical template, Revit 2020"
+
+jobs:
+  - fragment: report-electrical-settings
+    expect: voltageTypes
+    setup: []
+    set:
+      show: "voltages"
+    negative-set:
+      show: "voltages"
+      nameContains: "ZZNOTASETTING"
+    note: >
+      KU2. Negative - THE FIRST CASE TO RUN: voltages narrowed to
+      ZZNOTASETTING, so voltageTypes 0 and findings "Nothing in the lists read
+      has a name containing \"ZZNOTASETTING\"". Positive - every voltage type
+      the Voltage Definitions tab lists, each with the actual, minimum and
+      maximum volts KU1 wrote down; distributionSystems, wireTypes,
+      loadClassifications and demandFactors 0 - only voltages were asked for.

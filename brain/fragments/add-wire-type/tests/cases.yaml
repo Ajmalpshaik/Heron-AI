@@ -1,0 +1,65 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "changed a setting nobody asked for": a wire type already
+# present given a new material or rating under its own name.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE - the same scratch project as
+# REPORT_ELECTRICAL_SETTINGS' group (docs/NEEDS-CHECKING.md names it): new from
+# Revit's metric ELECTRICAL template, saved under %TEMP%\heron-work, never a
+# working model. Before the run, open Manage > MEP Settings > Electrical
+# Settings > Wiring Types and write down every wire type with its material,
+# temperature rating, insulation and max size, and - from the Wire Sizes page
+# - the exact names of the materials, ratings and insulations the template
+# has. "Copper", "90 C" and "THWN" are assumed below; use whatever it has.
+# REPORT_ELECTRICAL_SETTINGS with show wires is run before and after every
+# case, and the dialog read - the second route.
+#
+# Every run below is ROLLED BACK (validate --write) except the one try-once,
+# which the modeller keeps or discards.
+#
+# The negative leg is a DIFFERENT VALUE, not an empty one: a name the template
+# already has. It must come back with `added` 0 and that wire type's values
+# unchanged.
+
+positive:
+  - given: >
+      name XLPE 4C, material Copper, temperatureRating "90 C", insulation
+      THWN (or the one name the template offers under Copper 90 C), maxSize
+      and basedOn left out
+    expect: >
+      added 1; after holds "\"XLPE 4C\" (id ...) Copper, 90 C, THWN, max size
+      ..." and every wire type in before unchanged; findings names the wire
+      type its neutral settings and conduit were copied from; the Wiring
+      Types page shows the new row with those values. maxSize and basedOn
+      left out are never read as values called "none" (row 5b-1432)
+
+  - given: >
+      name XLPE 4C Al, material Aluminum, temperatureRating "75 C",
+      insulation named, basedOn the second wire type in the dialog
+    expect: >
+      added 1; findings names that wire type as the one copied from, and the
+      new row's neutral multiplier and conduit equal its
+
+negative:
+  - given: >
+      name the first wire type the template has, in other capitals, material
+      Copper, temperatureRating "90 C"
+    expect: >
+      added 0; skipped "A wire type is already named \"...\" - left as it
+      is"; before and after the same. THE FIRST CASE TO RUN
+
+  - given: name XLPE 4C, material copper (lower case), temperatureRating "90 C"
+    expect: >
+      added 0; refused "No conductor material is named \"copper\". \"Copper\"
+      differs only in capitals ... The ones here are: ..."
+
+  - given: name XLPE 4C, material Copper, temperatureRating 90
+    expect: >
+      added 0; refused "No temperature rating ... is named \"90\". The ones
+      here are: \"60 C\", \"75 C\", \"90 C\"" - never the nearest guessed
+
+second_route:
+  - >
+    Revit's own Manage > MEP Settings > Electrical Settings > Wiring Types:
+    the wire type added, with the name, material, temperature rating,
+    insulation and max size in `after` - and no other row different from
+    `before`

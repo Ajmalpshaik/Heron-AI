@@ -1,0 +1,55 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# The proof plan is tools/jobs/sheet-sets-by-parameter-scratch-2026-11-01.yaml,
+# NEEDS-CHECKING Group KA rows KA12 to KA14. NEVER on a 4355-* job model.
+
+positive:
+  - given: >
+      a scratch project with six sheets and a text sheet parameter
+      "HERON Browser 1" - A101 to A103 "01_IAB-ISSUED AS-BUILT", A104 and A105
+      "02_IFI-ISSUED FOR INFORMATION", A106 empty - and no View/Sheet Set
+    expect: >
+      done true, created naming '01_IAB-ISSUED AS-BUILT' (3) and
+      '02_IFI-ISSUED FOR INFORMATION' (2); File - Print - Settings listing
+      both sets with those sheets ticked; A106 in neither
+
+  - given: the same, after A103's value is changed to 02_IFI, with updateExisting true
+    expect: >
+      updated naming '01_IAB-ISSUED AS-BUILT' (0 in, 1 out) and
+      '02_IFI-ISSUED FOR INFORMATION' (1 in, 0 out); the sets in the dialog
+      matching
+
+  - given: the same change, with updateExisting left out
+    expect: >
+      done false, refused saying every set already exists, and unchanged
+      naming both as out of step and left alone - the sets as they were
+
+  - given: setPrefix "ISSUE - "
+    expect: >
+      the sets named "ISSUE - 01_IAB-ISSUED AS-BUILT" and so on
+
+  - given: the Print dialog's range on Current window before the run
+    expect: >
+      printRange saying it was put back to Current window, and the dialog
+      showing it after the run and after the rollback
+
+negative:
+  - given: parameterName "ZZZ NO SUCH PARAMETER"
+    expect: >
+      refused naming 'ZZZ NO SUCH PARAMETER', done false, no set made - the
+      dialog's set list exactly as before
+
+  - given: values "03_NOBODY HAS THIS"
+    expect: >
+      refused naming the value, nothing made
+
+  - given: a value whose set name Revit will not take
+    expect: >
+      that value in skipped with Revit's reason, the others still made
+
+second_route:
+  - >
+    File - Print - Settings in Revit, each set selected in turn, its ticked
+    sheets read by a person against the sheet parameter in a sheet list
+  - >
+    CHECK_SHEET_SETS_BY_PARAMETER on the same model after the run: every
+    value in step

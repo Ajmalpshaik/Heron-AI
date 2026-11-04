@@ -186,7 +186,7 @@ compatibility-note: >
 #
 #   "where do I need holes"            -> here
 #   "propose the sleeves"              -> here
-#   "what penetrates this wall"        -> SELECT_TOUCHING - which elements
+#   "what penetrates this wall"        -> FIND_CLASHES - which elements
 #                                         pass through, and nothing more.
 #                                         "...and how big" is here
 #   "are the openings the right size"  -> CHECK_SLEEVE_SIZE. That inspects what

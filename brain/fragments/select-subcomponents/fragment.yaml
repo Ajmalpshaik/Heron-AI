@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: SELECT_SUBCOMPONENTS
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO SELECT_GROUP_MEMBERS (select-group-members), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools", then "ok go ahead merge all". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to SELECT_GROUP_MEMBERS. A proof below is
+# the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: SELECT_GROUP_MEMBERS
+  why: >
+    The same job: what is INSIDE a container the collector returns whole,
+    handed on as elements to read. SELECT_GROUP_MEMBERS since its version 3
+    opens a family instance as the third kind of container, with this
+    card's rules: a list of parents from the selection or a chain; nested
+    families followed as deep as built by default, `recursive` false for one
+    level, the depth reported; every id visited once; `withoutSubComponents`
+    (the same name); an element that is no family instance counted and
+    named. THE DEPTH RULES WERE OPPOSITE and each is kept for its own kind:
+    a group is opened one level and never flattened (the keeper's rule), a
+    nested family goes deep (this card's). Nothing of this card is left out.
 
 purpose: >
   Returns the nested sub-components of family instances - the shared families

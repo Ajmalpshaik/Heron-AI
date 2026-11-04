@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LVL-027
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -13,6 +13,30 @@ version: 1
 source: OFFICIAL
 risk: MODIFY
 
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_GRIDS (create-grids), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools", "in every conflict keep the safer rule". Constitution Article 1:
+# kept, never deleted, so its record and its proof stay readable and it can
+# be brought back. Nothing offers it now - retrieval leaves DEPRECATED out,
+# and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to CREATE_GRIDS. The proof below is
+# the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_GRIDS
+  why: >
+    The same job - setting-out grids - with a third input, as CREATE_GRID's
+    two points were. CREATE_GRIDS version 3 takes centreMm, radiiMm,
+    spokeAnglesDegrees, startDegrees and endDegrees: arcs at each radius
+    over the sweep, spokes to the largest radius, a full circle drawn just
+    short of closed, a spoke outside the sweep drawn and said, and every one
+    of this card's refusals before anything is made. Revit names them, as it
+    did here, and the names are read back. Not taken, and why: this card
+    caught a grid Revit refused and KEPT THE REST; the keeper undoes the
+    whole call (all or nothing, Article 8) - the safer rule. Its sweep is now
+    asked for rather than read as required doubles, the same thing typed.
+
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.
 #
@@ -24,8 +48,11 @@ risk: MODIFY
 #
 # Revit numbers the grids; the names are read back and returned.
 #
-# CREATE_GRIDS (PROVEN) sets out straight grids from bay spacings, and
-# CREATE_GRID draws one; neither makes an arc.
+# CREATE_GRIDS sets out straight grids from bay spacings or between points
+# given; it makes no arc. Judged 2026-11-01, when CREATE_GRID was merged into
+# it, and kept apart: this card names no grid, so the taken-name rule does not
+# bear on it, and a centre, radii, spokes and a sweep share no input with a
+# straight grid.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 purpose: >

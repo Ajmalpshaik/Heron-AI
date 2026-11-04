@@ -1,8 +1,39 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `viewName`, `direction`,
 // `lookDownDeg`, `distanceMm`, `marginPercent`, `shot`, `side`,
-// `eyeHeightMm`, `lensMm`, `composition`, `levelCamera` and `aspect` are in scope;
+// `eyeHeightMm`, `lensMm`, `composition`, `levelCamera`, `aspect`, `eyeMm`,
+// `targetMm`, `levelName`, `farClipMm` and `createIfMissing` are in scope;
 // leaves `camera`, `madeNew`, `framed`, `readBack`, `lens`, `noGeometry`,
 // `refused` and `findings` behind.
+//
+// VERSION 5 (2026-11-01) - SET_VIEW_CAMERA MERGED IN, on the owner's
+// instruction ("make sure there is no duplicate tools"). Both point a
+// perspective camera; this card worked the eye and target out from elements,
+// that one took them TYPED. Now both: `eyeMm` and `targetMm`, "x,y,z" in
+// millimetres, give the camera directly, and then no element is framed:
+//
+//   ONE JOB WHETHER THE VIEW EXISTS OR IS NEW: a perspective 3D view of that
+//   name has its camera moved; with none, a NEW PERSPECTIVE view is made only
+//   when `createIfMissing` says so - SET_VIEW_CAMERA's rule, kept on this road
+//   because the name is the caller's and a typo must not quietly make a view.
+//   AN EXISTING ISOMETRIC VIEW IS REFUSED, NEVER TURNED PERSPECTIVE - this
+//   card's rule, the safer of the two: SET_VIEW_CAMERA's `perspective` true
+//   toggled an isometric view for good (Revit has no call back), and moved an
+//   isometric camera otherwise. That is not carried, and is the one thing of
+//   SET_VIEW_CAMERA's that was not.
+//   THE UP DIRECTION IS DERIVED, never asked for - square to the line of sight
+//   in the vertical plane through it, so the camera is level; looking
+//   straight up or down, north is up (`upFor`, the same rule).
+//   `levelName` measures the eye's and the target's heights from a level, by
+//   its ProjectElevation, and Revit's Eye Elevation and Target Elevation are
+//   read back. `farClipMm` is off, or the Far Clip Offset in millimetres with
+//   Far Clip Active on, read back.
+//   A VIEW A TEMPLATE CONTROLS is refused, as on the element road.
+//   READ BACK: eye, direction and projection off the view, in millimetres,
+//   and a finding when the camera did not read back where it was put.
+//   A typed camera with any of the framing inputs - a shot, a side, a
+//   direction, a look-down angle, a distance, a margin, a lens, a
+//   composition, a level camera or an aspect - is refused: they frame
+//   elements, and a typed eye frames nothing.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One call is one undo entry.
 //
@@ -16,8 +47,8 @@
 //
 // ONE JOB WHETHER THE VIEW EXISTS OR IS NEW: a perspective 3D view of that name
 // is re-aimed; with none, one is made - what the ribbon's Camera tool makes.
-// An isometric view of that name is refused, not turned: SET_VIEW_CAMERA turns
-// a view perspective when that is what is wanted.
+// An isometric view of that name is refused, not turned (since version 5 no
+// tool here turns one - SET_VIEW_CAMERA did, and was merged in without that).
 //
 // THE CROP BOX IS GIVEN IN THE VIEW'S OWN FRAME - the transform Revit hands back
 // with the crop box - so no assumption is made about where that frame sits.
@@ -328,10 +359,82 @@ var margin = marginGiven ? number(marginPercent) : (cinematic && shotKey != "non
 if (refused == null && (margin == null || margin < 0 || margin > 200))
     refused = "'" + marginPercent + "' is not a margin - a percentage, 0 to 200. NOTHING WAS CHANGED.";
 
+// ---- VERSION 5, FROM SET_VIEW_CAMERA: AN EYE AND A TARGET TYPED ----
+// "x,y,z" in millimetres; `none` (left out) is neither.
+Func<string, XYZ> pointMm = text =>
+{
+    var parts = (text ?? "").Split(',');
+    if (parts.Length != 3) return null;
+    double x, y, z;
+    var numberStyle = System.Globalization.NumberStyles.Float;
+    if (!double.TryParse(parts[0].Trim(), numberStyle, culture, out x)
+        || !double.TryParse(parts[1].Trim(), numberStyle, culture, out y)
+        || !double.TryParse(parts[2].Trim(), numberStyle, culture, out z)) return null;
+    return new XYZ(x / MmPerFoot, y / MmPerFoot, z / MmPerFoot);
+};
+Func<string, bool> typedGiven = text =>
+{
+    var said = squash(text);
+    return said.Length > 0 && said != "none" && said != "keep" && said != "auto";
+};
+var typed = typedGiven(eyeMm) || typedGiven(targetMm);
+XYZ typedEye = null, typedTarget = null;
+Level typedLevel = null;
+var typedFarOff = false;
+double? typedFarClip = null;
+if (refused == null && typed)
+{
+    typedEye = typedGiven(eyeMm) ? pointMm(eyeMm) : null;
+    typedTarget = typedGiven(targetMm) ? pointMm(targetMm) : null;
+    if (!typedGiven(eyeMm) || !typedGiven(targetMm))
+        refused = "A typed camera needs both an eye and a target, \"x,y,z\" in millimetres - one was left out. "
+            + "NOTHING WAS CHANGED.";
+    else if (typedEye == null)
+        refused = "\"" + eyeMm + "\" is not a point - three numbers in millimetres, separated by commas. NOTHING WAS CHANGED.";
+    else if (typedTarget == null)
+        refused = "\"" + targetMm + "\" is not a point - three numbers in millimetres, separated by commas. NOTHING WAS "
+            + "CHANGED.";
+    else if (typedEye.DistanceTo(typedTarget) < 1.0 / MmPerFoot)
+        refused = "The eye and the target are the same point, so there is nothing to look along. NOTHING WAS CHANGED.";
+    else if (cinematic || directionGiven || lookDownGiven || distance != null || marginGiven)
+        refused = "A typed eye and target frame nothing, so a shot, a side, a direction, a look-down angle, a distance, "
+            + "a margin, a lens, a composition, a level camera or an aspect cannot go with them - give the eye and the "
+            + "target alone, or the elements and those. NOTHING WAS CHANGED.";
+}
+if (refused == null && typed && typedGiven(levelName))
+{
+    foreach (var candidate in new FilteredElementCollector(doc).OfClass(typeof(Level)))
+    {
+        var asLevel = candidate as Level;
+        if (asLevel != null && string.Equals(asLevel.Name, levelName.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            typedLevel = asLevel;
+            break;
+        }
+    }
+    if (typedLevel == null) refused = "No level is called \"" + levelName.Trim() + "\", so NOTHING WAS CHANGED.";
+    else
+    {
+        typedEye = new XYZ(typedEye.X, typedEye.Y, typedEye.Z + typedLevel.ProjectElevation);
+        typedTarget = new XYZ(typedTarget.X, typedTarget.Y, typedTarget.Z + typedLevel.ProjectElevation);
+    }
+}
+if (refused == null && typed && typedGiven(farClipMm))
+{
+    double typedFar;
+    if (squash(farClipMm) == "off") typedFarOff = true;
+    else if (double.TryParse(farClipMm.Trim(), System.Globalization.NumberStyles.Float, culture, out typedFar) && typedFar > 0)
+        typedFarClip = typedFar / MmPerFoot;
+    else refused = "\"" + farClipMm + "\" is not a far clip - off, or millimetres from the camera. NOTHING WAS CHANGED.";
+}
+if (refused == null && !typed && (typedGiven(levelName) || typedGiven(farClipMm)))
+    refused = "levelName and farClipMm go with a typed eye and target - this frames the elements and sets the far "
+        + "clip to reach them. NOTHING WAS CHANGED.";
+
 // The elements' box, in model coordinates.
 XYZ low = null, high = null;
 var boxed = new List<Element>();
-if (refused == null)
+if (refused == null && !typed)
 {
     if (elements == null || elements.Count == 0)
         refused = "No elements were handed in - select what the camera should frame. NOTHING WAS CHANGED.";
@@ -356,7 +459,10 @@ if (refused == null)
 }
 
 var name = (viewName ?? "").Trim();
-if (refused == null && (name.Length == 0 || squash(name) == "auto"))
+if (refused == null && typed && (name.Length == 0 || squash(name) == "auto"))
+    refused = "A typed camera needs the view named - the perspective view to move, or, with createIfMissing, the "
+        + "name of the new one. NOTHING WAS CHANGED.";
+if (refused == null && !typed && (name.Length == 0 || squash(name) == "auto"))
 {
     var first = boxed[0];
     name = (cinematic && shotKey != "none" ? "Heron " + shotTitle[shotKey] + " - " : "Heron Frame - ")
@@ -373,14 +479,21 @@ if (refused == null)
     }
     if (camera != null && !camera.IsPerspective)
     {
-        refused = "'" + camera.Name + "' is an isometric 3D view. This frames elements in a perspective view - name a new "
-            + "one, or turn this one perspective with SET_VIEW_CAMERA first. NOTHING WAS CHANGED.";
+        refused = "'" + camera.Name + "' is an isometric 3D view. This works in a perspective view and never turns an "
+            + "isometric one perspective - Revit has no call to turn it back - so name a new one. NOTHING WAS CHANGED.";
         camera = null;
     }
     else if (camera != null && camera.ViewTemplateId != ElementId.InvalidElementId)
     {
         refused = "'" + camera.Name + "' is controlled by a view template, which owns its orientation. NOTHING WAS CHANGED.";
         camera = null;
+    }
+    else if (camera == null && typed && !createIfMissing)
+    {
+        // SET_VIEW_CAMERA'S RULE ON THE TYPED ROAD (version 5): a name not
+        // found makes nothing unless the caller said to make it.
+        refused = "No 3D view is named \"" + name + "\", so NOTHING WAS CHANGED. Say createIfMissing to make a new "
+            + "perspective view of that name.";
     }
     else if (camera == null)
     {
@@ -469,7 +582,70 @@ Func<XYZ, XYZ> upFor = look =>
     new XYZ(look.X, look.Y, 0).GetLength() < 1e-9 ? XYZ.BasisY
         : look.CrossProduct(XYZ.BasisZ).Normalize().CrossProduct(look).Normalize();
 var cinematicText = "";
-var reachedCamera = refused == null && camera != null;
+var reachedCamera = refused == null && camera != null && !typed;
+
+// ---- VERSION 5: THE TYPED CAMERA, SET AND READ BACK (SET_VIEW_CAMERA) ----
+if (refused == null && camera != null && typed)
+{
+    var tForward = (typedTarget - typedEye).Normalize();
+    try
+    {
+        if (camera.IsLocked) camera.Unlock();
+        camera.SetOrientation(new ViewOrientation3D(typedEye, upFor(tForward), tForward));
+    }
+    catch (Exception ex)
+    {
+        refused = "Revit refused the camera: " + ex.Message + ". "
+            + (madeNew ? "The new view was made; its camera was not set." : "NOTHING WAS CHANGED.");
+    }
+
+    if (refused == null && (typedFarOff || typedFarClip != null))
+    {
+        try
+        {
+            camera.get_Parameter(BuiltInParameter.VIEWER_BOUND_ACTIVE_FAR).Set(typedFarOff ? 0 : 1);
+            if (typedFarClip != null) camera.get_Parameter(BuiltInParameter.VIEWER_BOUND_OFFSET_FAR).Set(typedFarClip.Value);
+        }
+        catch (Exception ex) { findings.Add("Revit refused the far clip: " + ex.Message); }
+    }
+
+    if (refused == null)
+    {
+        doc.Regenerate();
+        var tOrientation = camera.GetOrientation();
+        var tEye = tOrientation.EyePosition;
+        var tLook = tOrientation.ForwardDirection;
+        Func<double, string> tUnit = v => Math.Round(v, 4).ToString(culture);
+        readBack = "'" + camera.Name + "': eye " + mm(tEye.X) + "," + mm(tEye.Y) + "," + mm(tEye.Z) + " mm, looking "
+            + tUnit(tLook.X) + "," + tUnit(tLook.Y) + "," + tUnit(tLook.Z) + ", "
+            + (camera.IsPerspective ? "perspective" : "isometric");
+        if (typedLevel != null)
+        {
+            var tEyeElevation = camera.get_Parameter(BuiltInParameter.VIEWER_EYE_ELEVATION);
+            var tTargetElevation = camera.get_Parameter(BuiltInParameter.VIEWER_TARGET_ELEVATION);
+            readBack += ", heights from \"" + typedLevel.Name + "\" - Eye Elevation "
+                + (tEyeElevation != null && tEyeElevation.HasValue ? mm(tEyeElevation.AsDouble()) + " mm" : "not given")
+                + ", Target Elevation "
+                + (tTargetElevation != null && tTargetElevation.HasValue ? mm(tTargetElevation.AsDouble()) + " mm" : "not given");
+        }
+        if (typedFarOff || typedFarClip != null)
+        {
+            var tFarActive = camera.get_Parameter(BuiltInParameter.VIEWER_BOUND_ACTIVE_FAR);
+            var tFarOffset = camera.get_Parameter(BuiltInParameter.VIEWER_BOUND_OFFSET_FAR);
+            var tFarOn = tFarActive != null && tFarActive.AsInteger() == 1;
+            readBack += ", far clip " + (tFarOn ? "on at " + (tFarOffset != null ? mm(tFarOffset.AsDouble()) : "?") + " mm" : "off");
+            if (tFarOn == typedFarOff || (typedFarClip != null && (tFarOffset == null
+                    || Math.Abs(tFarOffset.AsDouble() - typedFarClip.Value) > 1.0 / MmPerFoot)))
+                findings.Add("The far clip did not read back as asked - Revit holds " + (tFarOn ? "on" : "off") + ".");
+        }
+        readBack += ". Its " + phaseOf(camera) + ".";
+        var tAimedOff = tLook.AngleTo(tForward) * 180.0 / Math.PI;
+        if (tEye.DistanceTo(typedEye) > 1.0 / MmPerFoot || tAimedOff > 0.01)
+            findings.Add("The camera did not read back where it was put - Revit holds " + readBack);
+        findings.Insert(0, (madeNew ? "Made perspective view \"" : "Set the camera of \"") + camera.Name + "\": "
+            + readBack + " (read back).");
+    }
+}
 
 // WHERE THE CROP WINDOW REALLY IS (row 5b-1301). Measured 2026-10-21 on Revit
 // 2020: a perspective view's crop box reads its Z top as the far clip over a
@@ -954,12 +1130,12 @@ if (reachedCamera && cinematic)
         if (!entered)
             refused = "The line through the middle of " + roomName + " toward its " + sideWord + " side never enters the room "
                 + mm(eyeZ - baseZ) + " mm up - the room may be unplaced, not enclosed, or lower than the eye. Select its "
-                + "walls, or stand the camera by hand with SET_VIEW_CAMERA.";
+                + "walls, or stand the camera by hand with eyeMm and targetMm.";
         else if (!clear)
             refused = "No point from " + mm(inset) + " mm in from " + roomName + (haveRoom ? "'s own boundary" : "") + " on the "
                 + sideWord + " side to half way across, " + mm(eyeZ - baseZ) + " mm up, is "
                 + (firstInTheWay != null ? "clear of solids - " + nameThem(firstInTheWay) + " in the way" : "inside the room")
-                + ". Give a distanceMm, another side or another eyeHeightMm, or stand the camera by hand with SET_VIEW_CAMERA.";
+                + ". Give a distanceMm, another side or another eyeHeightMm, or stand the camera by hand with eyeMm and targetMm.";
         if (refused != null)
             refused += " " + (madeNew ? "The new view was made; it is not framed." : "NOTHING WAS CHANGED.");
         else

@@ -9,7 +9,7 @@ semantic-identity: "whether this model's level heights can be trusted in a calcu
 kind: action
 domain: revit.document
 capability: REPORT_LEVEL_ELEVATIONS
-version: 3
+version: 4
 source: OFFICIAL
 risk: READ
 
@@ -73,8 +73,8 @@ purpose: >
   "Building Story" setting, and for every level NOT marked, how many model
   elements have that level as their level. An IFC export makes a storey only
   from a level marked Building Story, so elements on an unmarked level are
-  put in another storey on the way out. An element's level is found the way
-  SELECT_WITHOUT_LEVEL finds it, in its four steps and order, ending on an
+  put in another storey on the way out. An element's level is found in four
+  steps and in this order, ending on an
   MEP curve's start level, because a duct keeps its level nowhere else. Only
   model elements are counted; views, sheets and annotation carry a level
   too and go into no storey. **Numbers, never a verdict** - an unmarked
@@ -84,6 +84,13 @@ purpose: >
   not read for this, whatever `includeLinks` says. Versions 1 and 2 above
   are kept as the record; this is version 3, and the fragment is DRAFT until
   it is proved again.
+
+  **IT IS ALSO THE LIST OF LEVELS** (version 4, when LIST_LEVELS was merged
+  in): the levels bottom to top, handed on as `elements`, each one's height in
+  millimetres as its level head shows it in `elevationsMm` and from the
+  project origin in `projectElevationsMm`, one line per level in `findings`
+  with the two said apart where they differ, and each linked level's own
+  level head beside its height here. DRAFT until version 4 is proved.
 
 contract:
   needs:
@@ -143,6 +150,28 @@ contract:
       # up in THIS model (FRAGMENT-ISSUES row 75).
       role: accounting
       type: IList<string>
+    - name: elements
+      # Version 4, from LIST_LEVELS: the same levels as `levels`, bottom to
+      # top, under the name the next step reads.
+      role: result
+      type: IList<Element>
+    - name: elevationsMm
+      # Version 4, from LIST_LEVELS: each level's height in millimetres AS ITS
+      # LEVEL HEAD SHOWS IT - Elevation, from the base the level type names.
+      # LIST_LEVELS put ProjectElevation here, reading the two the other way
+      # round (row 5b-180); this card's reading is RevitAPI.xml's.
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: projectElevationsMm
+      # Version 4: each level's height in millimetres from the PROJECT ORIGIN
+      # - ProjectElevation, the one in the same space as every coordinate.
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: findings
+      # Version 4, from LIST_LEVELS: how many levels, then one line per level,
+      # bottom to top, its level head in mm and - where it differs - its
+      # height from the project origin.
+      type: IList<string>
     - name: storeys
       # Version 3. One line saying how many levels are marked Building Story,
       # then one line per UNMARKED level with the count of model elements on
@@ -186,16 +215,40 @@ compatibility-note: >
 #                                        scheme - that sentence resolved HERE
 #                                        until 2026-09-05, and a list of level
 #                                        heights is not a floor area
-#   "list the levels"                 -> LIST_LEVELS - the levels themselves;
-#                                        this fragment is about whether their
-#                                        heights can be trusted
+#   "list the levels"                 -> here since version 4 - the levels
+#                                        themselves, bottom to top, and whether
+#                                        their heights can be trusted
+#   "how many levels" / "what levels do we have" -> here
+#   "what level is this duct on"      -> READ_ELEMENT_LEVEL - the level of an
+#                                        ELEMENT, a different question with the
+#                                        same words in it
+#   "move these to level 3"           -> SET_ELEMENT_LEVEL
+#   "add a level"                     -> CREATE_LEVELS
+#   "sort the schedule by level"      -> SET_SCHEDULE_SORT_GROUP - the order of
+#                                        rows in a table, not the levels
+#   "filter the schedule to level 2"  -> SET_SCHEDULE_FILTERS
+#   "turn the level heads on"         -> SET_DATUM_BUBBLES
 #   "where exactly is this"           -> REPORT_LOCATION - an ELEMENT's
 #                                        position, internal or shared; this
 #                                        fragment is about LEVELS
 #
 # Version 3's Building Story report has NO utterance of its own yet: no
-# modeller has asked for it in words, and none is invented. A sentence about
-# levels ranks LIST_LEVELS first today.
+# modeller has asked for it in words, and none is invented.
+#
+# LIST_LEVELS WAS MERGED INTO THIS CARD on 2026-11-01, on the owner's
+# instruction ("make sure there is no duplicate tools"), and is DEPRECATED.
+# Its outputs, here now: `elements`, `elevationsMm`, `findings`,
+# `linksSearched` and `linkedMatches` under the same names; sorted by height
+# as it was. ITS READING OF THE TWO HEIGHTS IS NOT CARRIED, BECAUSE IT WAS
+# INVERTED: it called Elevation "from the internal origin" and ProjectElevation
+# "the level head", the opposite of RevitAPI.xml (ProjectElevation is relative
+# to the project origin) and of this card - row 5b-180, which recorded the
+# disagreement and left it open. So `elevationsMm` here is the level head by
+# this card's reading, Elevation, and `projectElevationsMm` the project
+# origin's; on a model whose base was never moved they are the same numbers
+# LIST_LEVELS gave. Its link lines are this card's: each linked level carried
+# into this model's space and set against this model's level of the same name,
+# with its own level head beside it.
 
 utterances:
   - can I trust the level heights on this model
@@ -204,3 +257,11 @@ utterances:
   - is this model on a survey offset
   - why are my heights wrong
   - check the project base point
+  # MOVED 2026-11-01 from LIST_LEVELS, merged into this card.
+  - list the levels
+  - how many levels
+  - what levels do we have
+  - show me the levels
+  - what are the floor levels
+  - level heights
+  - what levels are in this model

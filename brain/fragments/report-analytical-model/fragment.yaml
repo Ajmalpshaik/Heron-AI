@@ -66,8 +66,19 @@ compatibility-note: >
 #
 #   "export the analytical model"             -> here, as text
 #   "which analytical members have no beam"   -> here
+#   "add an analytical member between these two points"
+#                                             -> CREATE_ANALYTICAL_ELEMENTS
+#   "move the analytical line of this beam 200 mm down"
+#                                             -> ADJUST_ANALYTICAL_ELEMENTS
+#   "associate this analytical member with that beam"
+#                                             -> ASSOCIATE_ANALYTICAL_ELEMENTS
+#
+# 2026-11-02: "export the analytical model" is declared below because
+# CREATE_ANALYTICAL_ELEMENTS took it on the hybrid route once it landed - a
+# write answering a read (FRAGMENT-ISSUES row 5b-1434).
 
 utterances:
+  - export the analytical model
   - read the structural analytical model
   - list the analytical members and their beams
   - which analytical elements have no physical element

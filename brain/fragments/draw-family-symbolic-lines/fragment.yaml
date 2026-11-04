@@ -134,12 +134,12 @@ compatibility-note: >
   symbolic line takes is not in the remarks; both are tried and the setting
   read back (NEEDS-CHECKING BQ2).
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "draw the valve symbol in plan"               -> here
 #   "draw a circle and a cross as the plan symbol" -> here
 #   "hide the body in plan views in the family"   -> SET_FAMILY_FORM_VISIBILITY
-#   "draw detail lines in this view"              -> CREATE_LINE, a project
+#   "draw detail lines in this view"              -> DRAW_FAMILY_DETAIL_LINES, a project
 #                                                    view's lines
 
 utterances:

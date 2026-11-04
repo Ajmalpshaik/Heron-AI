@@ -40,6 +40,22 @@ Each pair takes the same arguments and hands back the same shape, and
 each does a different job - DIMENSION_FAMILY_INSTANCES is not
 DIMENSION_MEP_RUNS. The signature matched because the plumbing matched.
 
+(2026-11-01: the owner had both dimension cards merged into
+CREATE_DIMENSION, which now draws by either route - centrelines for a
+run, built-in centre references for a family instance - and both are
+DEPRECATED, never deleted. That was a merge of two ROUTES of one job,
+decided by a person reading the cards, not by their signature. The two
+retired cards still share one, and are no longer compared - see below.)
+
+A RETIRED CARD IS NOT COMPARED (2026-11-01). A DEPRECATED or ARCHIVED
+card is kept as the record of a merge, never offered and never claiming a
+sentence (heron_search.RETIRED_FRAGMENTS, read from there, never copied).
+Compared, it paired with its own successor or with its retired twin - the
+dimension pair above, both retired, still made a "keep separate" group -
+and a verdict about which of two cards to keep is no question once the
+owner has kept one. Such cards are listed under `retired`, never dropped:
+a card skipped is not a card that matched nothing.
+
 So a matching signature is a QUESTION, never an answer, and the one
 answer this agent gives on its own is KEEP SEPARATE - when the two
 declare different capabilities, the match is a coincidence of plumbing
@@ -65,6 +81,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import heron_fragment as FRAG  # noqa: E402
+import heron_search as SEARCH  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -75,9 +92,13 @@ KEEP_SEPARATE = VERDICTS[2]
 # The state docs/09 s118 protects by name.
 GUARDED = "PRODUCTION"
 
-# Statuses that mean a fragment is already on its way out, so a pair
-# involving one is not a question about which to keep.
-LEAVING = ("DEPRECATED", "ARCHIVED")
+# Statuses that mean a fragment has left the library: never compared, and
+# listed under `retired` instead. heron_search's, so the two cannot drift.
+RETIRED = SEARCH.RETIRED_FRAGMENTS
+
+# Kept for anything that still reads it. Every status in it is now skipped
+# before a pair is formed, so no pair can hold one.
+LEAVING = RETIRED
 
 
 def signature(fragment):
@@ -123,7 +144,7 @@ def look(fragments):
                        "relation, and a relation needs two."
                        % len(fragments)}
 
-    known, unreadable = {}, []
+    known, unreadable, retired, seen = {}, [], [], set()
     for entry in fragments:
         card = getattr(entry, "data", entry)
         if not isinstance(card, dict):
@@ -135,11 +156,17 @@ def look(fragments):
             return {"looked": False, "refused": "NOT_A_FRAGMENT",
                     "why": "a fragment has no id, so nothing here could "
                            "report a pair it is in."}
-        if who in known:
+        if who in seen:
             return {"looked": False, "refused": "DUPLICATE_ID",
                     "why": "'%s' appears twice. Two fragments under one id "
                            "would pair with themselves, which is not a "
                            "finding." % who}
+        seen.add(who)
+        if _of(entry, "heron-status").upper() in RETIRED:
+            # LISTED, NEVER COMPARED. A retired card answers nothing; which of
+            # it and its successor to keep was decided when it was retired.
+            retired.append(who)
+            continue
         shape, why_not = signature(entry)
         if shape is None:
             # REPORTED, NEVER DROPPED. A fragment nothing can compare is
@@ -201,14 +228,16 @@ def look(fragments):
     return {
         "looked": True, "of": len(known),
         "decided": decided, "for_the_host": asking,
-        "unreadable": unreadable,
+        "unreadable": unreadable, "retired": sorted(retired),
         "why": "%d fragment(s) compared: %d group(s) share a signature "
                "covering %d fragment(s) - %d decided here as '%s', %d left "
-               "to the host%s."
+               "to the host%s%s."
                % (len(known), len(decided) + len(asking), paired,
                   len(decided), KEEP_SEPARATE, len(asking),
                   ", %d could not be compared" % len(unreadable)
-                  if unreadable else ""),
+                  if unreadable else "",
+                  ", %d retired card(s) not compared" % len(retired)
+                  if retired else ""),
         "unjudged": [
             "NOTHING WAS MERGED, REPLACED OR DEPRECATED. docs/09 s118: all "
             "three of split, merge and evolution PROPOSE, and none may "

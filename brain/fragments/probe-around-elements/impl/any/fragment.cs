@@ -1,6 +1,32 @@
-// NOT STANDALONE. Assumes `doc`, `view3d`, `elements`, `directions`,
-// `maxDistance` and `includeLinks` are in scope, and leaves `hits`,
-// `nothingHit`, `noOrigin`, `linksSearched` and `linkedMatches` behind.
+// NOT STANDALONE. Assumes `doc`, `view3d`, `elements`, `points`,
+// `directions`, `maxDistance` and `includeLinks` are in scope, and leaves
+// `hits`, `nothingHit`, `noOrigin`, `linksSearched`, `linkedMatches`,
+// `blocked`, `clear`, `notChecked` and `findings` behind.
+//
+// VERSION 3 (2026-11-01) - CHECK_OBSTRUCTIONS MERGED IN, on the owner's
+// instruction ("make sure there is no duplicate tools"). Its job - is anything
+// in the way of THESE POINTS, before anything is placed there - on the same
+// rays:
+//
+//   BARE POINTS AS A START. `points` (each "x,y,z" in mm, converted by the
+//   add-in) are probed in every one of `directions`; `elements` may be left
+//   out for them. A point with something within `maxDistance` in any
+//   direction is in `blocked`, one with nothing that near in `clear` - a hit
+//   further away is clear FOR THIS QUESTION, the distance decides - and one
+//   that could not be tested (no point, no usable direction, a view that
+//   cannot cast) is counted in `notChecked`, NEVER called clear. `findings`
+//   names what blocks each point and how far away.
+//
+//   A VIEW TEMPLATE, OR NO VIEW, CASTS NOTHING. ReferenceIntersector throws on
+//   a template, and version 2 had no guard. Now nothing is attempted: every
+//   point is notChecked, `clear` stays EMPTY, no element is probed and none is
+//   put in `nothingHit`, and a finding says so.
+//
+//   THE OPPOSITE RULE, AND THE SAFER ONE KEPT: CHECK_OBSTRUCTIONS ALWAYS
+//   looked into linked models. Here a link is read ONLY WHEN `includeLinks` IS
+//   SET (D-59) - the modeller decides, job by job - and a point's answer says
+//   in words when links were not read, because a beam in the structural link
+//   does not block a point that was tested against this model alone.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -144,8 +170,10 @@ Func<Document, Element, string> describeLinked = (linked, element) =>
 };
 
 var linkBlocked = "";
+// VERSION 3: a view template, or no view, casts nothing - see the header.
+var viewUsable = view3d != null && !view3d.IsTemplate;
 ReferenceIntersector linkIntersector = null;
-if (linkDocs.Count > 0 && view3d != null)
+if (linkDocs.Count > 0 && viewUsable)
 {
     linkIntersector = new ReferenceIntersector(view3d);
     linkIntersector.FindReferencesInRevitLinks = true;
@@ -155,12 +183,24 @@ if (linkDocs.Count > 0 && view3d != null)
 var hits = new Dictionary<ElementId, IList<string>>();
 var nothingHit = new List<ElementId>();
 var noOrigin = new List<ElementId>();
+// VERSION 3, from CHECK_OBSTRUCTIONS.
+var blocked = new List<XYZ>();
+var clear = new List<XYZ>();
+var notChecked = 0;
+var findings = new List<string>();
 
-var intersector = new ReferenceIntersector(view3d);
-intersector.FindReferencesInRevitLinks = false;
-intersector.TargetType = FindReferenceTarget.Element;
+ReferenceIntersector intersector = null;
+if (viewUsable)
+{
+    intersector = new ReferenceIntersector(view3d);
+    intersector.FindReferencesInRevitLinks = false;
+    intersector.TargetType = FindReferenceTarget.Element;
+}
 
-foreach (var element in elements)
+var elementCount = 0;
+foreach (var element in elements ?? new List<Element>()) if (element != null) elementCount++;
+
+foreach (var element in viewUsable ? (elements ?? new List<Element>()) : new List<Element>())
 {
     if (element == null) continue;
 
@@ -256,8 +296,115 @@ foreach (var element in elements)
     else nothingHit.Add(element.Id);
 }
 
+// ---- version 3: bare points, from CHECK_OBSTRUCTIONS -----------------------
+
+var pointList = points ?? new List<XYZ>();
+var usableDirections = new List<XYZ>();
+foreach (var direction in directions ?? new List<XYZ>())
+    if (direction != null && direction.GetLength() >= 1e-9) usableDirections.Add(direction.Normalize());
+
+Func<XYZ, string> mmText = p => string.Format("({0:0}, {1:0}, {2:0}) mm",
+    p.X * MillimetresPerFoot, p.Y * MillimetresPerFoot, p.Z * MillimetresPerFoot);
+var blockedLines = new List<string>();
+
+foreach (var point in pointList)
+{
+    // A point that was never tested is NOT a clear point.
+    if (point == null || !viewUsable || usableDirections.Count == 0) { notChecked++; continue; }
+
+    var inTheWay = new List<string>();
+    var tested = false;
+    foreach (var unit in usableDirections)
+    {
+        // THIS MODEL.
+        try
+        {
+            var nearest = intersector.FindNearest(point, unit);
+            tested = true;
+            if (nearest != null && nearest.Proximity <= maxDistance)
+            {
+                Element hitElement = null;
+                try
+                {
+                    var reference = nearest.GetReference();
+                    if (reference != null) hitElement = doc.GetElement(reference.ElementId);
+                }
+                catch { }
+                string what = "something";
+                if (hitElement != null)
+                {
+                    string name = "", category = "";
+                    try { name = hitElement.Name ?? ""; } catch { }
+                    try { if (hitElement.Category != null) category = hitElement.Category.Name ?? ""; } catch { }
+                    what = (category.Length > 0 ? category + " " : "") + name + " (" + hitElement.Id.ToString() + ")";
+                }
+                inTheWay.Add(string.Format("({0:0.##}, {1:0.##}, {2:0.##}) {3} at {4:0} mm", unit.X, unit.Y,
+                    unit.Z, what, nearest.Proximity * MillimetresPerFoot));
+            }
+        }
+        catch { }
+
+        // THE LINKS - only when asked for (D-59), never always as
+        // CHECK_OBSTRUCTIONS did.
+        if (linkIntersector != null)
+        {
+            try
+            {
+                var linkNearest = linkIntersector.FindNearest(point, unit);
+                var linkReference = linkNearest == null ? null : linkNearest.GetReference();
+                if (linkReference != null && linkNearest.Proximity <= maxDistance
+                    && linkReference.LinkedElementId != ElementId.InvalidElementId)
+                {
+                    var placement = doc.GetElement(linkReference.ElementId) as RevitLinkInstance;
+                    Document linked = null;
+                    try { linked = placement == null ? null : placement.GetLinkDocument(); } catch { }
+                    var linkedElement = linked == null ? null : linked.GetElement(linkReference.LinkedElementId);
+                    inTheWay.Add(string.Format("({0:0.##}, {1:0.##}, {2:0.##}) {3} at {4:0} mm", unit.X, unit.Y,
+                        unit.Z, linkedElement == null ? "a linked element"
+                            : linked.Title + " - " + describeLinked(linked, linkedElement),
+                        linkNearest.Proximity * MillimetresPerFoot));
+                }
+            }
+            catch { }
+        }
+    }
+
+    if (!tested) { notChecked++; continue; }
+    if (inTheWay.Count > 0)
+    {
+        blocked.Add(point);
+        if (blockedLines.Count < 50)
+            blockedLines.Add("  " + mmText(point) + " BLOCKED: " + string.Join("; ", inTheWay.ToArray()));
+    }
+    else clear.Add(point);
+}
+
+if (!viewUsable)
+    findings.Add(string.Format("NOTHING WAS PROBED - {0}. A ray is cast in a real 3D view; {1} point(s) "
+        + "are counted NOT CHECKED and none is called clear, and the {2} element(s) were not probed",
+        view3d == null ? "no 3D view was given" : "'" + view3d.Name + "' is a view TEMPLATE",
+        pointList.Count, elementCount));
+else if (pointList.Count == 0 && elementCount == 0)
+    findings.Add("Nothing was given to probe - no element and no point");
+
+if (viewUsable && pointList.Count > 0)
+{
+    findings.Add(string.Format("{0} point(s) probed in '{1}', {2} direction(s), within {3:0} mm: {4} "
+        + "BLOCKED, {5} clear, {6} NOT CHECKED. A ray sees only what this view shows{7}",
+        pointList.Count, view3d.Name, usableDirections.Count, maxDistance * MillimetresPerFoot,
+        blocked.Count, clear.Count, notChecked,
+        includeLinks ? "" : " - and LINKS WERE NOT READ: a beam in a linked model does not block a point "
+            + "here. Set includeLinks to look into them"));
+    findings.AddRange(blockedLines);
+    if (blocked.Count > blockedLines.Count)
+        findings.Add(string.Format("  the first {0} are named; {1} more are blocked", blockedLines.Count,
+            blocked.Count - blockedLines.Count));
+}
+
 if (linkDocs.Count > 0 && view3d == null)
     linkBlocked = "Links NOT read: no 3D view was given to cast the rays in";
+else if (linkDocs.Count > 0 && !viewUsable)
+    linkBlocked = "Links NOT read: a view template cannot cast rays";
 
 // THE ANSWER SAYS WHAT IT READ. Asked-and-found, asked-and-none-loaded and not
 // asked read differently on purpose - D-59's own worked example.

@@ -1,0 +1,85 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-167
+semantic-identity: "what justification these beams and braces have - yz, y and z justification, offset values, and start and end level offsets"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: the request was to "set AND READ the structural framing
+# yz-justification, y/z offsets and start/end level offsets". The setting is
+# SET_FRAMING_JUSTIFICATION's, a write; reading is a question, and a question
+# never reaches a write (D-86). Measured 2026-11-02 on a scratch store of this
+# change before this card existed: the probe "what is the z justification of
+# this beam" - nobody's words - reached SET_FRAMING_JUSTIFICATION through
+# `find` with no question flag, words #1 and nearness #1.
+#
+# LOOK-ALIKES, KEPT SEPARATE (heron-duplicate-checker's method, 2026-11-02):
+#   READ_ELEMENT_PARAMETERS (PROVEN)  reads ONE parameter named exactly. A
+#     member's justification is up to fourteen parameters, which ones depend
+#     on its own yz Justification, and the choices are numbers underneath -
+#     this reads the set that applies, each choice in Revit's own word.
+#   REPORT_WALL_JOIN_TYPE (DRAFT)  walls' end joins, not framing.
+#
+# THE WORDS. Two declared, the request's own "read" of the two the write
+# declares. No other sentence is declared until a modeller says one.
+kind: filter
+domain: revit.elements
+capability: REPORT_FRAMING_JUSTIFICATION
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports, for each structural beam and brace handed in, where it sits on its
+  own line as Properties shows it - yz uniform or independent, y and z (at
+  each end when independent), the y and z offset values, and the start and
+  end level offsets in millimetres - and changes nothing.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Structural framing - the selection, or the chain. Anything else is
+    # named in notFraming, never read as framing.
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: justifications
+      # One line per member: its name and id, then each value as Properties
+      # names it, a choice in Revit's own word, a length in millimetres, and
+      # a parameter it does not carry as "absent".
+      role: result
+      type: IList<string>
+    - name: notFraming
+      # Elements handed in that are not structural framing, named. The
+      # evidence it looked, never a value it read (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read with tools/api-surface --members
+  on 2026-11-02, every one present in all eight, 2020 to 2027: the fifteen
+  BuiltInParameter values SET_FRAMING_JUSTIFICATION's note lists
+  (`YZ_JUSTIFICATION` to `END_Z_OFFSET_VALUE`, `STRUCTURAL_BEAM_END0_ELEVATION`
+  and `STRUCTURAL_BEAM_END1_ELEVATION`); `Parameter.AsValueString`,
+  `AsInteger`, `AsDouble`, `StorageType`. Uniform is taken to be stored as 0
+  and Independent as 1, which decides only which set is read; the word
+  printed is Revit's own either way. Not seen in Revit.
+
+# ROUTING (2026-11-02) - the same rows are in SET_FRAMING_JUSTIFICATION.
+#
+#   "read the justification of these beams" -> here
+#   "set the justification of these beams"  -> SET_FRAMING_JUSTIFICATION - the
+#                                              write
+utterances:
+  - read the justification of these beams
+  - read the start and end level offsets of these beams

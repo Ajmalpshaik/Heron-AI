@@ -40,7 +40,7 @@ purpose: >
   inventing one is worse than saying so.
 
   **This breaks MEP connections at the ends it moves.** A duct dragged off its
-  neighbour is disconnected, and Revit does not put it back. PLACE_MEP_FITTING
+  neighbour is disconnected, and Revit does not put it back. FIT_MEP_JOINTS
   joins the new corner with a real elbow, which is usually the next step.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). The
@@ -110,21 +110,31 @@ compatibility-note: >
 # takeoffs, look at each takeoff before trusting the report, and do not take a
 # terminal reading "connected" as the answer. NEEDS-CHECKING AJ3.
 
-# ROUTING - repeated in PLACE_MEP_FITTING, MOVE_ELEMENTS and FILLET_LINES.
+# ROUTING - repeated in FIT_MEP_JOINTS, MOVE_ELEMENTS and FILLET_LINES.
 #
 #   "make these two meet"            -> here
 #   "trim these back to the corner"  -> here
 #   "extend this until it hits
 #    that one"                       -> here
-#   "put an elbow in"                -> PLACE_MEP_FITTING. Run this FIRST so
+#   "put an elbow in"                -> FIT_MEP_JOINTS. Run this FIRST so
 #                                       the two ends coincide - a fitting needs
 #                                       connectors close enough to bridge
 #   "round that corner off"          -> FILLET_LINES for drafting lines,
-#                                       PLACE_MEP_FITTING for a duct or pipe.
+#                                       FIT_MEP_JOINTS for a duct or pipe.
 #                                       An MEP corner is rounded by a real
 #                                       fitting, not by an arc
 #   "move this duct 200 across"      -> MOVE_ELEMENTS - a whole element, not
 #                                       one of its ends
+#
+# ROUTING (2026-11-02, Wall Joins and framing ends) - repeated in
+# SET_WALL_JOIN_TYPE and SET_FRAMING_END_EXTENSION.
+#
+#   "square off these two ducts"     -> here. Answered by identity; ranking
+#                                       alone puts SET_WALL_JOIN_TYPE first
+#   "square off the wall join here"  -> SET_WALL_JOIN_TYPE - the join's
+#                                       shape; no wall end moves
+#   "set the beam end extension to 150 mm" -> SET_FRAMING_END_EXTENSION -
+#                                       the line stays, Revit draws past it
 
 utterances:
   - make these two lines meet
@@ -133,3 +143,6 @@ utterances:
   - extend this line until it meets that one
   - square off these two ducts
   - trim and extend to a corner
+  # ADDED 2026-11-02, row 5b-1419. This card's own routing table claims it;
+  # when SET_FRAMING_END_EXTENSION was added, ranking moved it there.
+  - extend this until it hits that one

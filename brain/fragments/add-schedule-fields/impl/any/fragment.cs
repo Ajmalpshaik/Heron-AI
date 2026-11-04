@@ -1,6 +1,70 @@
-// NOT STANDALONE. Assumes `doc`, `elements` and `fieldNames` are in scope, and
-// leaves `added`, `alreadyPresent`, `unknownField`, `availableFields` and
-// `refused` behind.
+// NOT STANDALONE. Assumes `doc`, `elements`, `fieldNames`, `columnName`,
+// `partFields`, `partSeparators`, `editExisting` and `position` are in scope,
+// and leaves `added`, `alreadyPresent`, `unknownField`, `availableFields`,
+// `refused`, `edited`, `columnNow`, `partMissing`, `notASchedule`,
+// `refusedSchedules`, `refusedWhy`, `notPlaced` and `appliedOrder` behind.
+//
+// VERSION 3 (2026-11-01, FRAGMENT-ISSUES row 5b-1367, NEEDS-CHECKING Group
+// KK): `position` ALSO places the PLAIN columns `fieldNames` adds, when no
+// `columnName` is given. Version 2 refused that call ("a position was given
+// with no columnName"); every call version 2 ran, it runs the same way:
+//
+//   columnName given      position places THAT column, exactly version 2. The
+//                         plain columns of the same call still go last.
+//   no columnName, plain  position places the new plain columns, in the order
+//   columns asked         given, from that place, by InsertField: first, last,
+//                         after <column>, before <column>, or a place in the
+//                         Fields tab's list counted from 1 - hidden fields
+//                         count, as they do in that list and in GetFieldOrder,
+//                         the list InsertField's index counts in. "Mark, Size"
+//                         at 2 makes Mark the 2nd field and Size the 3rd. "keep"
+//                         (left out) and "last" are version 1's AddField.
+//   neither               refused, as version 2 refused it.
+//
+// A field already on the schedule is NOT moved (alreadyPresent, as version 1):
+// moving one is `columnName` with `editExisting`, or SET_SCHEDULE_FIELD_ORDER
+// for a whole order. A PLACE THAT CANNOT BE FOUND ON A SCHEDULE ADDS NOTHING TO
+// IT: worked out before the first InsertField there, named in `notPlaced`, the
+// schedule left as it was, the other schedules still done. `appliedOrder` is
+// each such schedule's field order read back, the new columns marked; a column
+// that did not land where asked is named in `notPlaced` with where it did.
+//
+// VERSION 2 (2026-11-01) - ADD_SCHEDULE_COMBINED_FIELD MERGED IN, AND WHAT IT
+// HAD THAT THIS LACKED. Its code is carried below whole, after this card's
+// plain-column loop, and runs only when a combined column, an edit or a move
+// is asked for - `columnName`, `partFields`, `partSeparators`, `editExisting`
+// or `position`. Called with `fieldNames` alone, this is version 1 exactly.
+//
+//   A COMBINED COLUMN: `columnName` is its heading, `partFields` the
+//   parameters joined in order, `partSeparators` what goes BETWEEN them
+//   (entry i between part i and part i + 1, written to part i's Separator,
+//   where Revit draws it; N parts take N - 1 at most, more is refused, nothing
+//   ever follows the last - FRAGMENT-ISSUES 5b-1292). A REAL FIELD, not text:
+//   it follows the model. A PART THAT DOES NOT RESOLVE STOPS THE WHOLE COLUMN
+//   on that schedule (`partMissing`) - half a column reads as correct and is
+//   missing a value on every row. A combined field JOINS text; it never
+//   calculates, and a formula column has no public API on this release range.
+//
+//   `editExisting`: `columnName` names a column already on the schedule -
+//   printed heading first, field name only when no heading matches - and its
+//   parts and separators are replaced in place: same field, same heading,
+//   same place, so its sort, filter, width and totals stay. Two columns
+//   answering to it, or a plain column asked for new parts, is refused in
+//   words, nothing changed.
+//
+//   `position` - first, last, after <column>, before <column>, or a column
+//   number from 1 in Revit's Fields tab list - places the column `columnName`
+//   names. With `editExisting` and no parts and no separators it MOVES the
+//   column and changes nothing else, plain or combined: the one place in the
+//   library that reorders columns (SetFieldOrder). Position with no
+//   `columnName` is refused - there is no column to place, and the plain
+//   columns `fieldNames` adds go last as version 1 put them.
+//
+//   Every change is read back into `columnNow`; every refusal is a sentence
+//   in `refusedWhy`, and the schedule in `refusedSchedules` (that card's
+//   `refused`, renamed - this card's `refused` is the sentence that stops the
+//   whole call). `notASchedule` names what was handed in and is not a
+//   schedule, on either path.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16), so a batch of columns across
 // several schedules is one undo entry.
@@ -66,6 +130,10 @@ int alreadyPresent = 0;
 var unknownField = new List<string>();
 var availableFields = new List<string>();
 string refused = null;
+// VERSION 3.
+var notPlaced = new List<string>();
+var appliedOrder = "";
+var orderParts = new List<string>();
 
 var handed = 0;
 var schedulesSeen = 0;
@@ -79,11 +147,182 @@ if (fieldNames != null)
         if (trimmed.Length > 0) wanted.Add(trimmed);
     }
 }
+// VERSION 2: `fieldNames` may be left out when a combined column, an edit or
+// a move is asked - it arrives as "none" (the card's `absent: none`).
+if (wanted.Count == 1 && string.Equals(wanted[0], "none", StringComparison.OrdinalIgnoreCase))
+    wanted.Clear();
 
-if (wanted.Count == 0)
+int edited = 0;
+// The read-back and the refusals are each ONE string, a line per schedule
+// joined by "  ||  ", not a list: a list is shown as three entries of sixty
+// characters (RevitFragment.Describe), which cuts every line here in half -
+// the same lesson as REPORT_SCHEDULE_DEFINITION's filterRules (row 5b-1290).
+var nowLines = new List<string>();
+var partMissing = new List<ElementId>();
+var refusedSchedules = new List<ElementId>();
+var whyLines = new List<string>();
+
+// "none" is what a left-out columnName arrives as (the card's `absent: none`).
+string wantedName = (columnName ?? "").Trim();
+if (string.Equals(wantedName, "none", StringComparison.OrdinalIgnoreCase)) wantedName = "";
+
+// "keep" is what a left-out `partFields` or `partSeparators` arrives as (the
+// card's `absent: keep`). An empty list is read the same way for the parts:
+// a column cannot be made of nothing.
+Func<IList<string>, bool> saysKeep = list =>
+    list == null || list.Count == 0 ||
+    (list.Count == 1 && string.Equals((list[0] ?? "").Trim(), "keep", StringComparison.OrdinalIgnoreCase));
+
+bool keepParts = saysKeep(partFields);
+bool keepSeparators = partSeparators != null && partSeparators.Count == 1 &&
+    string.Equals((partSeparators[0] ?? "").Trim(), "keep", StringComparison.OrdinalIgnoreCase);
+var separatorList = new List<string>();
+if (!keepSeparators && partSeparators != null)
+    foreach (var s in partSeparators) separatorList.Add(s ?? "");
+
+// THE POSITION, read once. kind: keep | first | last | after | before | at.
+string positionText = (position ?? "").Trim();
+string positionKind = "keep";
+string positionAnchor = "";
+int positionNumber = 0;
+string positionProblem = null;
+{
+    string lower = positionText.ToLowerInvariant();
+    int number;
+    if (lower.Length == 0 || lower == "keep") positionKind = "keep";
+    else if (lower == "first" || lower == "start" || lower == "front") positionKind = "first";
+    else if (lower == "last" || lower == "end") positionKind = "last";
+    else if (lower.StartsWith("after "))
+    {
+        positionKind = "after";
+        positionAnchor = positionText.Substring(6).Trim();
+    }
+    else if (lower.StartsWith("before "))
+    {
+        positionKind = "before";
+        positionAnchor = positionText.Substring(7).Trim();
+    }
+    else if (int.TryParse(positionText, System.Globalization.NumberStyles.Integer,
+                          System.Globalization.CultureInfo.InvariantCulture, out number))
+    {
+        positionKind = "at";
+        positionNumber = number;
+    }
+    else positionProblem = "position '" + positionText + "' is not one this tool reads - say first, "
+        + "last, after <column>, before <column>, or a column number counted from 1.";
+
+    if (positionProblem == null && (positionKind == "after" || positionKind == "before") && positionAnchor.Length == 0)
+        positionProblem = "position '" + positionText + "' names no column to go " + positionKind + ".";
+    if (positionProblem == null && positionKind == "at" && positionNumber < 1)
+        positionProblem = "position " + positionNumber + " - columns are counted from 1.";
+}
+
+// The columns of one schedule that answer to a name: printed heading first,
+// field name only when no heading matches - the heading is what the modeller
+// reads on the sheet, and SET_SCHEDULE_APPEARANCE's rename is why the two can
+// differ.
+Func<ScheduleDefinition, string, List<ScheduleField>> columnsCalled = (definition, said) =>
+{
+    var byHeading = new List<ScheduleField>();
+    var byName = new List<ScheduleField>();
+    foreach (var id in definition.GetFieldOrder())
+    {
+        ScheduleField field = null;
+        try { field = definition.GetField(id); } catch { }
+        if (field == null) continue;
+        string heading = "";
+        string name = "";
+        try { heading = (field.ColumnHeading ?? "").Trim(); } catch { }
+        try { name = (field.GetName() ?? "").Trim(); } catch { }
+        if (string.Equals(heading, said, StringComparison.OrdinalIgnoreCase)) byHeading.Add(field);
+        else if (string.Equals(name, said, StringComparison.OrdinalIgnoreCase)) byName.Add(field);
+    }
+    return byHeading.Count > 0 ? byHeading : byName;
+};
+
+Func<ScheduleField, string> headingOf = field =>
+{
+    string heading = "";
+    try { heading = field.ColumnHeading ?? ""; } catch { }
+    if (heading.Length == 0) { try { heading = field.GetName() ?? ""; } catch { } }
+    return heading;
+};
+
+// A part's parameter, named the way the schedule offers it - the same name
+// `partFields` is matched on - so the read-back can be typed straight back in.
+Func<ScheduleDefinition, IList<SchedulableField>, ElementId, string> parameterName = (definition, offered, paramId) =>
+{
+    if (offered != null)
+        foreach (var candidate in offered)
+        {
+            try
+            {
+                if (candidate.ParameterId == paramId) return candidate.GetName(doc) ?? "";
+            }
+            catch { }
+        }
+    try
+    {
+        var element = doc.GetElement(paramId);
+        if (element != null) return element.Name;
+    }
+    catch { }
+    return "(a parameter this schedule no longer offers)";
+};
+
+// How Revit will draw a combined column: each part's prefix, [its parameter],
+// its suffix, then its separator - the last one's too, so a trailing separator
+// is seen rather than hidden. A plain column is said to be one.
+Func<ScheduleDefinition, IList<SchedulableField>, IList<TableCellCombinedParameterData>, string> drawn =
+    (definition, offered, data) =>
+{
+    var text = new System.Text.StringBuilder();
+    if (data == null || data.Count == 0) return "a plain column, not a combined one";
+    foreach (var part in data)
+    {
+        if (part == null) continue;
+        text.Append(part.Prefix ?? "");
+        text.Append("[").Append(parameterName(definition, offered, part.ParamId)).Append("]");
+        text.Append(part.Suffix ?? "");
+        text.Append(part.Separator ?? "");
+    }
+    return "'" + text.ToString() + "'";
+};
+
+// VERSION 3. A position with no columnName, given with plain columns to add,
+// places THOSE columns - version 2 refused it.
+bool positionForPlain = wantedName.Length == 0 && wanted.Count > 0
+    && (positionKind != "keep" || positionProblem != null);
+
+// VERSION 2. Was a combined column, an edit or a move asked for at all?
+bool combinedAsked = wantedName.Length > 0 || editExisting || !keepParts
+    || (partSeparators != null && !keepSeparators)
+    || (!positionForPlain && (positionKind != "keep" || positionProblem != null));
+
+// What was handed in and is not a schedule, once, for both paths.
+var notASchedule = new List<ElementId>();
+foreach (var element in elements)
+    if (element != null && scheduleBehind(element) == null) notASchedule.Add(element.Id);
+
+if (wanted.Count == 0 && !combinedAsked)
 {
     refused = "no column names were given, so there is nothing to add. NOTHING WAS ADDED - "
-        + "name the fields you want as columns";
+        + "name the fields you want as columns, or a combined column's heading and parts";
+}
+else if (combinedAsked && wantedName.Length == 0)
+{
+    // The combined path needs its column named: a new combined column's
+    // heading, or the column to edit or move. Refused before either path
+    // writes anything.
+    refused = (positionKind != "keep" || positionProblem != null)
+        ? "a position was given with no column to place, so NOTHING WAS ADDED OR CHANGED - name "
+          + "the new columns in fieldNames, or the column to move in columnName"
+        : "a combined column, an edit or a move needs columnName - the new column's heading, or "
+          + "the heading of the column to change. NOTHING WAS ADDED OR CHANGED";
+}
+else if (positionForPlain && positionProblem != null)
+{
+    refused = positionProblem + " NOTHING WAS ADDED.";
 }
 
 foreach (var element in elements)
@@ -115,6 +354,48 @@ foreach (var element in elements)
         if (existing != null) present.Add(existing.GetName());
     }
 
+    // VERSION 3: where the first new plain column goes on THIS schedule,
+    // worked out before anything is inserted. -1 is version 1's AddField.
+    var insertAt = -1;
+    if (positionForPlain && positionKind != "keep" && positionKind != "last")
+    {
+        var fieldOrder = definition.GetFieldOrder();
+        if (positionKind == "first") insertAt = 0;
+        else if (positionKind == "at")
+        {
+            if (positionNumber > fieldOrder.Count + 1)
+            {
+                notPlaced.Add(string.Format("'{0}' - it has {1} field(s) in its Fields tab, so place {2} "
+                    + "does not exist; give 1 to {3}. NOTHING WAS ADDED to it", schedule.Name,
+                    fieldOrder.Count, positionNumber, fieldOrder.Count + 1));
+                continue;
+            }
+            insertAt = positionNumber - 1;
+        }
+        else
+        {
+            var anchors = columnsCalled(definition, positionAnchor);
+            if (anchors.Count != 1)
+            {
+                notPlaced.Add(string.Format(anchors.Count == 0
+                    ? "'{0}' - '{1}' is not a column in it, so there is nowhere to put the new column. "
+                      + "NOTHING WAS ADDED to it"
+                    : "'{0}' - {2} columns answer to '{1}', so where '{3}' is, is not clear. "
+                      + "NOTHING WAS ADDED to it", schedule.Name, positionAnchor, anchors.Count, positionKind));
+                continue;
+            }
+            var at = fieldOrder.IndexOf(anchors[0].FieldId);
+            if (at < 0)
+            {
+                notPlaced.Add(string.Format("'{0}' - '{1}' could not be found in its field order. NOTHING "
+                    + "WAS ADDED to it", schedule.Name, positionAnchor));
+                continue;
+            }
+            insertAt = positionKind == "after" ? at + 1 : at;
+        }
+    }
+    var placedHere = new List<KeyValuePair<string, int>>();
+
     foreach (var name in wanted)
     {
         if (present.Contains(name))
@@ -145,7 +426,8 @@ foreach (var element in elements)
 
         try
         {
-            definition.AddField(match);
+            if (insertAt < 0) definition.AddField(match);
+            else definition.InsertField(match, insertAt);
         }
         catch (Exception)
         {
@@ -170,10 +452,46 @@ foreach (var element in elements)
             }
         }
 
-        if (nowPresent) { added++; present.Add(name); }
+        if (nowPresent)
+        {
+            added++;
+            present.Add(name);
+            if (insertAt >= 0) { placedHere.Add(new KeyValuePair<string, int>(name, insertAt)); insertAt++; }
+        }
         else if (!unknownField.Contains(name)) unknownField.Add(name);
     }
+
+    // VERSION 3: with a position, the order read back, the new columns marked,
+    // and any that did not land where asked named.
+    if (positionForPlain)
+    {
+        var readOrder = new List<string>();
+        var fresh = definition.GetFieldOrder();
+        for (var i = 0; i < fresh.Count; i++)
+        {
+            var f = definition.GetField(fresh[i]);
+            if (f == null) continue;
+            var fieldName = f.GetName();
+            var isNew = placedHere.Any(p => string.Equals(p.Key, fieldName, StringComparison.OrdinalIgnoreCase));
+            readOrder.Add((i + 1) + " " + fieldName + (isNew ? " (new)" : "") + (f.IsHidden ? " (hidden)" : ""));
+        }
+        foreach (var p in placedHere)
+        {
+            var landed = -1;
+            for (var i = 0; i < fresh.Count; i++)
+            {
+                var f = definition.GetField(fresh[i]);
+                if (f != null && string.Equals(f.GetName(), p.Key, StringComparison.OrdinalIgnoreCase)) { landed = i; break; }
+            }
+            if (landed != p.Value)
+                notPlaced.Add(string.Format("'{0}' - '{1}' was asked for at place {2} and a read back finds it at "
+                    + "{3}", schedule.Name, p.Key, p.Value + 1, landed < 0 ? "no place" : (landed + 1).ToString()));
+        }
+        orderParts.Add(string.Format("'{0}': {1}", schedule.Name, string.Join(", ", readOrder)));
+    }
 }
+
+appliedOrder = string.Join("; ", orderParts);
 
 availableFields.Sort(StringComparer.OrdinalIgnoreCase);
 
@@ -189,3 +507,344 @@ if (refused == null && handed > 0 && schedulesSeen == 0)
         + "category 'Schedule Graphics'",
         handed);
 }
+
+if (refused == null && combinedAsked)
+foreach (var element in elements)
+{
+    var schedule = scheduleBehind(element);
+    if (schedule == null) continue;
+
+    Action<string> refuse = why =>
+    {
+        refusedSchedules.Add(schedule.Id);
+        whyLines.Add("'" + schedule.Name + "' - " + why + " Nothing was changed on this schedule.");
+    };
+
+    if (positionProblem != null) { refuse(positionProblem); continue; }
+
+    ScheduleDefinition definition = null;
+    try { definition = schedule.Definition; } catch { }
+    if (definition == null) { refuse("its definition could not be read."); continue; }
+
+    if (!editExisting && keepParts)
+    {
+        refuse("a new combined column needs its parts named - partFields was empty.");
+        continue;
+    }
+
+    IList<SchedulableField> schedulable = null;
+    try { schedulable = definition.GetSchedulableFields(); } catch { }
+    if (schedulable == null) { refuse("Revit would not list what this schedule can show."); continue; }
+
+    // ---- the column to edit, when editing --------------------------------
+    ScheduleField target = null;
+    IList<TableCellCombinedParameterData> before = null;
+    if (editExisting)
+    {
+        var found = columnsCalled(definition, wantedName);
+        if (found.Count == 0)
+        {
+            var headings = new List<string>();
+            foreach (var id in definition.GetFieldOrder())
+            {
+                try { headings.Add(headingOf(definition.GetField(id))); } catch { }
+            }
+            refuse("no column is headed '" + wantedName + "'. Its columns are: "
+                + (headings.Count == 0 ? "none" : string.Join(" | ", headings)) + ".");
+            continue;
+        }
+        if (found.Count > 1)
+        {
+            var places = new List<string>();
+            foreach (var f in found) places.Add((definition.GetFieldIndex(f.FieldId) + 1).ToString());
+            refuse(found.Count + " columns answer to '" + wantedName + "' (columns "
+                + string.Join(" and ", places) + "), so which one is meant is not clear. "
+                + "Give one of them another heading first, then ask again.");
+            continue;
+        }
+        target = found[0];
+
+        bool combined = false;
+        try { combined = target.IsCombinedParameterField; } catch { }
+        if (combined)
+        {
+            try { before = target.GetCombinedParameters(); } catch { }
+        }
+
+        bool replacingParts = !keepParts || !keepSeparators;
+        if (replacingParts && !combined)
+        {
+            refuse("'" + headingOf(target) + "' is a plain column of one parameter, not a combined "
+                + "column, so it has no parts to replace. Add a combined column instead (without "
+                + "editExisting), then hide or remove the plain one.");
+            continue;
+        }
+        if (replacingParts && (before == null || before.Count == 0))
+        {
+            refuse("'" + headingOf(target) + "' is a combined column whose parts Revit would not read.");
+            continue;
+        }
+        if (!replacingParts && positionKind == "keep")
+        {
+            refuse("nothing to change was asked for '" + headingOf(target) + "' - no parts, no "
+                + "separators and no position.");
+            continue;
+        }
+    }
+
+    // ---- the parts --------------------------------------------------------
+    // Null when the column keeps the parts it has (a move only).
+    List<TableCellCombinedParameterData> parts = null;
+    string missingName = null;
+
+    if (!keepParts)
+    {
+        parts = new List<TableCellCombinedParameterData>();
+        for (int i = 0; i < partFields.Count; i++)
+        {
+            string partName = (partFields[i] ?? "").Trim();
+            SchedulableField match = null;
+
+            foreach (var candidate in schedulable)
+            {
+                string name = "";
+                try { name = candidate.GetName(doc) ?? ""; } catch { }
+                if (string.Equals(name, partName, StringComparison.OrdinalIgnoreCase))
+                {
+                    match = candidate;
+                    break;
+                }
+            }
+
+            if (match == null) { missingName = partName; break; }
+
+            TableCellCombinedParameterData data = null;
+            try
+            {
+                data = TableCellCombinedParameterData.Create();
+                data.ParamId = match.ParameterId;
+                data.CategoryId = definition.CategoryId;
+                data.Prefix = "";
+                data.Suffix = "";
+                data.Separator = "";
+
+                // EDITING: a parameter that was already in the column keeps the
+                // prefix, suffix and category it had there - what somebody set
+                // by hand in Revit's dialog is not this request's to wipe.
+                if (before != null)
+                    foreach (var old in before)
+                    {
+                        if (old == null || old.ParamId != match.ParameterId) continue;
+                        data.Prefix = old.Prefix ?? "";
+                        data.Suffix = old.Suffix ?? "";
+                        data.CategoryId = old.CategoryId;
+                        break;
+                    }
+            }
+            catch { missingName = partName; break; }
+
+            parts.Add(data);
+        }
+
+        if (missingName != null)
+        {
+            partMissing.Add(schedule.Id);
+            whyLines.Add("'" + schedule.Name + "' - '" + missingName + "' is not a parameter this "
+                + "schedule can show, so no part of the column was made. Nothing was changed on "
+                + "this schedule.");
+            continue;
+        }
+    }
+    else if (!keepSeparators && before != null)
+    {
+        // New separators on the parts the column already has.
+        parts = new List<TableCellCombinedParameterData>();
+        try
+        {
+            foreach (var old in before)
+            {
+                var data = TableCellCombinedParameterData.Create();
+                data.ParamId = old.ParamId;
+                data.CategoryId = old.CategoryId;
+                data.Prefix = old.Prefix ?? "";
+                data.Suffix = old.Suffix ?? "";
+                data.Separator = "";
+                parts.Add(data);
+            }
+        }
+        catch { refuse("its parts could not be copied to take the new separators."); continue; }
+    }
+
+    // ---- the separators: BETWEEN parts, never after the last -------------
+    if (parts != null)
+    {
+        if (!keepSeparators)
+        {
+            if (separatorList.Count > parts.Count - 1)
+            {
+                refuse(parts.Count + " part(s) take " + (parts.Count - 1) + " separator(s) - one between "
+                    + "each pair, none after the last - and " + separatorList.Count + " were given, so "
+                    + "which goes where is not clear.");
+                continue;
+            }
+            for (int i = 0; i < parts.Count - 1 && i < separatorList.Count; i++)
+                parts[i].Separator = separatorList[i];
+        }
+        else if (before != null)
+        {
+            // New parts, separators left out, on a column that had some: each
+            // gap keeps the separator it had - a gap, never the old last part's
+            // trailing one - and the last part gets none.
+            for (int i = 0; i < parts.Count - 1 && i < before.Count - 1; i++)
+                parts[i].Separator = before[i] == null ? "" : (before[i].Separator ?? "");
+        }
+        parts[parts.Count - 1].Separator = "";
+
+        bool valid = false;
+        try { valid = definition.IsValidCombinedParameters(parts); } catch { }
+        if (!valid)
+        {
+            refuse("Revit will not combine these parameters on this schedule.");
+            continue;
+        }
+    }
+
+    // ---- where it goes ----------------------------------------------------
+    // An index into Revit's own field list (hidden columns counted), worked out
+    // with the edited column taken OUT, so "after X" means after X either way.
+    var order = new List<ScheduleFieldId>(definition.GetFieldOrder());
+    if (target != null) order.Remove(target.FieldId);
+
+    int wantIndex = -1;          // -1: keep (new column last, edited one where it is)
+    if (positionKind == "first") wantIndex = 0;
+    else if (positionKind == "last") wantIndex = order.Count;
+    else if (positionKind == "at")
+    {
+        if (positionNumber > order.Count + 1)
+        {
+            refuse("position " + positionNumber + " is past the end - the schedule would have "
+                + (order.Count + 1) + " column(s).");
+            continue;
+        }
+        wantIndex = positionNumber - 1;
+    }
+    else if (positionKind == "after" || positionKind == "before")
+    {
+        var anchors = columnsCalled(definition, positionAnchor);
+        if (target != null) anchors.RemoveAll(f => f.FieldId == target.FieldId);
+        if (anchors.Count != 1)
+        {
+            refuse(anchors.Count == 0
+                ? "no other column is headed '" + positionAnchor + "' to go " + positionKind + "."
+                : anchors.Count + " columns answer to '" + positionAnchor + "', so where '"
+                  + positionKind + "' is, is not clear.");
+            continue;
+        }
+        int at = order.IndexOf(anchors[0].FieldId);
+        if (at < 0) { refuse("the column '" + positionAnchor + "' could not be placed in the order."); continue; }
+        wantIndex = positionKind == "after" ? at + 1 : at;
+    }
+
+    // ---- the change -------------------------------------------------------
+    ScheduleField result = null;
+    string was = null;
+    string headingBefore = null;
+
+    if (target == null)
+    {
+        try
+        {
+            result = definition.InsertCombinedParameterField(parts, wantedName,
+                wantIndex < 0 ? definition.GetFieldCount() : wantIndex);
+        }
+        catch { refuse("Revit refused to add the column."); continue; }
+    }
+    else
+    {
+        result = target;
+        headingBefore = target.ColumnHeading;
+        was = drawn(definition, schedulable, before);
+        bool partsWritten = false;
+        try
+        {
+            if (parts != null) { target.SetCombinedParameters(parts); partsWritten = true; }
+
+            // The heading is the column's, not the parts': Revit is not known to
+            // touch it here, and it is put back if it moved.
+            if (target.ColumnHeading != headingBefore) target.ColumnHeading = headingBefore;
+
+            if (wantIndex >= 0)
+            {
+                order.Insert(wantIndex, target.FieldId);
+                definition.SetFieldOrder(order);
+            }
+        }
+        catch
+        {
+            // Once the parts are written, "nothing was changed" would be false.
+            if (!partsWritten) { refuse("Revit refused the change to '" + headingOf(target) + "'."); continue; }
+            refusedSchedules.Add(schedule.Id);
+            whyLines.Add("'" + schedule.Name + "' - the parts of '" + headingOf(target) + "' were "
+                + "replaced, then Revit refused the rest (its heading or its place). Look at this "
+                + "column before the change is kept.");
+            continue;
+        }
+    }
+
+    // ---- read back: the column has to be ON the schedule, as asked --------
+    bool present = false;
+    string now = "";
+    int index = -1;
+    try
+    {
+        if (result != null)
+        {
+            foreach (var id in definition.GetFieldOrder())
+                if (id == result.FieldId) { present = true; break; }
+            index = definition.GetFieldIndex(result.FieldId);
+
+            // A plain column, moved, has no parts to read - it is said to be plain.
+            IList<TableCellCombinedParameterData> kept = null;
+            if (result.IsCombinedParameterField) kept = result.GetCombinedParameters();
+            now = drawn(definition, schedulable, kept);
+
+            if (present && parts != null)
+            {
+                if (kept == null || kept.Count != parts.Count) present = false;
+                else
+                    for (int i = 0; i < parts.Count; i++)
+                        if (kept[i].ParamId != parts[i].ParamId ||
+                            (kept[i].Separator ?? "") != (parts[i].Separator ?? ""))
+                        { present = false; break; }
+            }
+            if (present && wantIndex >= 0 && index != wantIndex) present = false;
+            if (present && headingBefore != null && result.ColumnHeading != headingBefore) present = false;
+        }
+    }
+    catch { present = false; }
+
+    if (!present)
+    {
+        refusedSchedules.Add(schedule.Id);
+        whyLines.Add("'" + schedule.Name + "' - the change did not read back as asked: the column "
+            + "reads " + (now.Length == 0 ? "(nothing)" : now) + ". Look at this column before "
+            + "the change is kept.");
+        continue;
+    }
+
+    string line = "'" + schedule.Name + "' / '" + headingOf(result) + "', column " + (index + 1)
+        + " of " + definition.GetFieldCount() + ": " + now;
+    if (target == null)
+    {
+        added++;
+        nowLines.Add(line + " - added");
+    }
+    else
+    {
+        edited++;
+        nowLines.Add(line + " - was " + was + (wantIndex >= 0 ? ", moved" : ", same place"));
+    }
+}
+
+string columnNow = string.Join("  ||  ", nowLines);
+string refusedWhy = string.Join("  ||  ", whyLines);

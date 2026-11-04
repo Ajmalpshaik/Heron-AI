@@ -47,7 +47,7 @@ purpose: >
 
   **A PART NAMED BUT NOT FOUND RETURNS THE NEAR MISSES.** "Copper" and
   "Copper - K" are different segments, and picking one for the caller is a
-  confident wrong answer wearing a right one's clothes. SELECT_BY_CATEGORY_NAME
+  confident wrong answer wearing a right one's clothes. FILTER_ELEMENTS_BY_CATEGORY
   refuses that guess for a category; this refuses it for a part.
 
   **EDITING A TYPE CHANGES EVERY ELEMENT OF THAT TYPE**, not only the ones
@@ -170,7 +170,16 @@ compatibility-note: >
 #   "change these pipes to another type" -> CHANGE_ELEMENT_TYPE. That swaps the
 #                                           TYPE on an element; this changes
 #                                           what the type is made of
-#   "rename this type"                   -> RENAME_ELEMENTS
+#   "rename this type"                   -> EDIT_TEXT_VALUES
+
+# JUDGED 2026-11-01 (a duplicate sweep's look-alike, on the owner's rule "if one
+# tool can safely do both, merge") AGAINST COPY_ROUTING_PREFERENCES AND KEPT APART -
+# the next sweep should not reopen it unless one of these stops being true:
+#   - THE SAME REVIT OBJECT AND TWO DIFFERENT EDITS, WITH NO INPUT IN COMMON:
+#     this points ONE rule at a named part and carries its size window; that
+#     copies EVERY rule of each group from another type, Segments only when
+#     named. "make this pipe type copper" is only reachable here. See the
+#     same block on that card. Both PROVEN.
 
 utterances:
   - make this pipe type copper

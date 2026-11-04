@@ -1,0 +1,87 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that annotates, "annotated something nobody asked for": a
+# dimension on a straight wall, in a view that sees the arc edge-on, or of a
+# type nobody named.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE. The model is a scratch project from
+# Revit's metric ARCHITECTURAL template, Revit 2025 or later: on Level 1, W1 - a
+# curved wall drawn with Wall > Arc, radius 5000 mm to its location line, 90
+# degrees, unjoined at both ends; W2 - a straight wall, unjoined; L1 - an arc
+# detail line in "FloorPlan: Level 1", radius 3000 mm, 60 degrees; and, from the
+# Structural Framing tools, B1 - a curved beam drawn as an arc. SAVED before the
+# run, with no dimension in the plan (NEEDS-CHECKING Group MA, MA1).
+#
+# The wall is collected by SELECT_BY_CATEGORY_NAME with Walls in
+# "FloorPlan: Level 1" narrowed to W1 by SET_SELECTION, or typed as "wall <id>".
+# The negative leg is W2: a different wall, not an empty selection
+# (fragment-proving, rules 3 and 5) - a straight wall has no arc, so nothing may
+# be drawn. Where the model differs, the job file changes - never the card.
+# EVERY RUN ROLLED BACK.
+
+positive:
+  - given: >
+      arc "line <L1's id>", view "Level 1" (a floor plan), dimensionType and
+      offsetMm left out
+    expect: >
+      created one id; measured "arc length 3141.6 mm" - 3000 x pi / 3, the
+      line's own length, checked against the radius and angle L1 was drawn at
+      and not read off the report; typeUsed the project's default arc length
+      type, named in findings as the default; findings saying the dimension
+      line sits 500 mm outside the arc
+
+  - given: W1 selected (or arc "wall <W1's id>"), the same plan, face left out
+    expect: >
+      one arc length dimension along W1's exterior face, reading that face's
+      radius x pi / 2 - the face radius is 5000 mm plus or minus half the
+      wall's thickness, by which side Revit calls exterior - and no finding
+      about end faces, because W1 is unjoined
+
+  - given: the same W1 with face "interior" and dimensionType naming an arc length type the model has
+    expect: >
+      the dimension along the interior face, differing from the exterior one
+      by the wall's thickness x pi / 2; typeUsed reads back the name given
+
+  - given: B1 typed as "beam <id>", the same plan
+    expect: one dimension along the beam's outer curved face, reading back a length
+
+negative:
+  - given: >
+      W2 - the straight wall - selected instead, with the same plan. THE FIRST
+      CASE TO RUN: a fragment that dimensioned whatever it was handed shows here
+    expect: >
+      created none; refused "... is straight. An arc length is measured along a
+      CURVED wall - a straight one is CREATE_LINEAR_DIMENSION's. Nothing was
+      drawn." No dimension of any kind in the plan
+
+  - given: W1 with view a section cut across it ("Section 1")
+    expect: >
+      refused naming the view - the arc does not lie flat in it - and nothing
+      drawn
+
+  - given: W1 with view an unlocked 3D view, then a schedule
+    expect: refused naming the view both times; nothing drawn
+
+  - given: W1 with dimensionType naming a LINEAR dimension type
+    expect: >
+      refused "'<name>' is a Linear dimension type, not an arc length one", the
+      loaded arc length types listed; nothing drawn
+
+  - given: W1 and L1 selected together
+    expect: refused "2 elements are selected ... select one"; nothing drawn
+
+  - given: this fragment attempted on Revit 2024
+    expect: >
+      IT IS NOT DEPLOYED THERE AT ALL - the contract claims 2025, 2026 and 2027
+      only, and tools/check-fragments-compile.py enforces that
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and one
+      dimension is one undo entry
+
+second_route:
+  - >
+    Revit's own Annotate > Arc Length picked on L1 (the arc, then its two ends)
+    and on W1's exterior face and its two end faces, and the values compared
+    with what this drew. Then select the new dimension: Properties names the
+    type `typeUsed` quoted

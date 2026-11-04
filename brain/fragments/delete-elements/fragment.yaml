@@ -101,12 +101,18 @@ compatibility-note: >
 #                                       and reversible; in the model it is here
 #                                       and it is not. The sentence does not say
 #   "hide these"                     -> HIDE_ELEMENTS
-#   "delete these" / "remove these"  -> here
+#   "delete these" / "remove these"  -> here. "remove these" DECLARED below
+#                                       2026-11-01 (row 5b-1358): without it
+#                                       the bare sentence ranked to
+#                                       REMOVE_TAGS, then REMOVE_MEP_INSULATION
+#   "remove the insulation from these
+#    ducts"                          -> REMOVE_MEP_INSULATION - the insulation
+#                                       only, never the duct
 #   "undo that"                      -> Revit's own Undo, never a delete written
 #                                       to reverse a create
-#   "delete these forms" (ids given) -> SELECT_FAMILY_FORMS first, in a
+#   "delete these forms" (ids given) -> REPORT_FAMILY_FORMS first, in a
 #                                       family; its forms then come here
-#                                       with expect_from select-family-forms
+#                                       with expect_from report-family-forms
 #
 # "GET RID OF THEM" IS THE DANGEROUS SENTENCE and it is genuinely ambiguous.
 # Hiding and deleting are one word apart in English and a world apart in the
@@ -118,6 +124,7 @@ compatibility-note: >
 
 utterances:
   - delete these
+  - remove these
   - remove these elements
   - delete them from the model
   - take these out of the model

@@ -2,24 +2,26 @@ positive:
   - given: >
       a family with one solid extrusion "circle 0,0 150" on Ref. Level from 0
       to 500 and one void extrusion "circle 0,0 50" from -10 to 510, both made
-      by create-family-extrusion; which "all"
+      by create-family-forms; which "all"
     expect: >
       formCount 2; formList names the solid extrusion with the same id
-      create-family-extrusion gave back, "on Level : Ref. Level" or Revit's own
+      create-family-forms gave back, "on Level : Ref. Level" or Revit's own
       name for that sketch plane, X and Y -150 to 150, Z 0 to 500 mm, 35.343 L,
       and the void beside it; scanned 2
 
   - given: the same family, which "void"
     expect: formCount 1, the void alone, and scanned still 2
 
-  - given: the same family, which LEFT OUT (version 2)
+  - given: the same family, which LEFT OUT (version 2; version 4's default)
     expect: >
-      the same answer as which "all" - formCount 2, scanned 2 - and the binding
-      note reads `which not given - "all", the card's own default (optional)`;
-      never refused for a missing value
+      the same READ as which "all" - formCount 2, scanned 2 - and the binding
+      note reads `which not given - "not named", the card's own default
+      (optional)`; never refused for a missing value. Since version 4,
+      `elements` EMPTY and a finding saying no form was named, so none is
+      handed on (version 2's note said "all")
 
   - given: >
-      the same family, which = the void's id exactly as create-family-extrusion
+      the same family, which = the void's id exactly as create-family-forms
       gave it back (VERSION 3, row 5b-1312)
     expect: >
       formCount 1, the void alone with that same id, X and Y -50 to 50 mm, Z
@@ -28,6 +30,30 @@ positive:
 
   - given: which = both forms' ids, commas between, the solid's typed twice
     expect: formCount 2, each form once; scanned 2
+
+  # VERSION 4 (2026-11-01), from SELECT_FAMILY_FORMS. Each FAILS on version 3,
+  # which left no `elements` and no `refused`.
+  - given: >
+      a scratch family holding a solid extrusion, a void extrusion and a solid
+      revolve, each made by its form tool; which "<the revolve's id>, <the
+      solid extrusion's id>"
+    expect: >
+      elements 2, the revolve FIRST and the extrusion second - the order named;
+      formCount 2, scanned 3, refused empty
+
+  - given: >
+      the first case's two forms carried into SET_SELECTION (expect_from
+      "report-family-forms where which=<the same ids>"), then READ_SELECTION
+    expect: >
+      the family's window shows exactly those two highlighted, and
+      READ_SELECTION reads back the same two ids - SELECT_FAMILY_FORMS' job,
+      done from this card
+
+  - given: the same family, which "void"
+    expect: elements 1, the void extrusion alone, handed on
+
+  - given: a family holding a freeform made by CREATE_FAMILY_FREEFORM_SOLID, which "freeform"
+    expect: formCount 1 and elements 1, the freeform - version 3 knew no "freeform" and read it as an id
 
 negative:
   - given: which "revolve" on the same family, which holds no revolve
@@ -61,6 +87,20 @@ negative:
 
   - given: which = the solid's element number as Select by ID shows it, digits only (VERSION 3)
     expect: refused - "that is an element number; give the long id the form tools gave back"
+
+  # VERSION 4 (2026-11-01), from SELECT_FAMILY_FORMS.
+  - given: >
+      the same family, which "<the solid extrusion's id>, <the UniqueId of the
+      reference plane Center (Left/Right)>"
+    expect: >
+      refused naming the reference plane as not a form; elements 0 - the good
+      id is NOT handed on either, all or nothing
+
+  - given: which "cylinder"
+    expect: refused as neither an id in this family nor a kind or side; elements 0
+
+  - given: a project in front, which "all"
+    expect: notAFamily true, refused saying so, elements 0
 
 second_route:
   - >

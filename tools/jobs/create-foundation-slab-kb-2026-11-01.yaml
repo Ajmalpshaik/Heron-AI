@@ -1,0 +1,61 @@
+# NEEDS-CHECKING Group KB - CREATE_FOUNDATION_SLAB, built 2026-11-01 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/create-foundation-slab-kb-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-foundation-slab-kb-2026-11-01.yaml
+#
+# THE MODEL: KB Structure, a scratch copy of Revit 2020's
+# rst_advanced_sample_project.rvt in %TEMP%\heron-work\foundation-slab-kb,
+# open and in front in Revit 2020 - never the library file and never a working
+# model. Which foundation slab types and which ordinary floor types it holds,
+# and what its levels are called, are NOT KNOWN here and are not guessed.
+#
+# THE LEVEL AND THE TWO TYPES BELOW ARE NOT KNOWN YET. KB1 in
+# docs/needs-checking/group-kb.md reads them: a level, a foundation slab type
+# off Revit's Type Selector under Structure > Foundation > Slab, and an
+# ORDINARY floor type under Architecture > Floor. All three go in place of the
+# marked values. Until then no level or type answers to them and the run should
+# stop there - expected, NOT RUN. If the model has no foundation slab type, KB1
+# says so and stops: making one is not this group's to do.
+#
+# THE BOUNDARY: a 20 m by 12 m rectangle, 240 m2, set 200 m east of the origin
+# so it sits clear of the building. KB1 confirms nothing is there in plan, or
+# moves it in both legs alike. Millimetres (D-71); the Z is the level's.
+#
+# THE NEGATIVE IS THE SAME LEVEL AND BOUNDARY WITH AN ORDINARY FLOOR TYPE: it
+# must be refused by name, the foundation slab types listed with their
+# thicknesses, and nothing made - neither a slab nor an ordinary floor.
+#
+# This file runs on the Revit 2020 copy - NewFoundationSlab. KB3 runs the same
+# job on a Revit 2024 copy, where it goes through Floor.Create; whether that
+# makes a Structural Foundation is what KB3 measures.
+#
+# No type named, a thickness for a type, too few corners, a bad arc and a
+# crossing boundary are rows KB4 to KB6, run with `validate --write`. Every
+# write here is ROLLED BACK.
+
+model: KB Structure (scratch copy of Revit 2020's rst_advanced_sample_project), Revit 2020
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: create-foundation-slab
+    expect: created
+    set:
+      level:          "THE LEVEL KB1 READ"
+      foundationType: "THE FOUNDATION SLAB TYPE KB1 READ"
+      boundary:       "200000,0,0; 220000,0,0; 220000,12000,0; 200000,12000,0"
+    negative-set:
+      level:          "THE LEVEL KB1 READ"
+      foundationType: "THE ORDINARY FLOOR TYPE KB1 READ"
+      boundary:       "200000,0,0; 220000,0,0; 220000,12000,0; 200000,12000,0"
+    note: >
+      KB2. Positive - created one id; report "Foundation slab made (<id>),
+      type "<type>", on "<level>", in Structural Foundations: Area 240 m2,
+      Thickness <the type's> mm"; findings name the pre-2022 call. Negative -
+      THE FIRST CASE TO RUN: the ordinary floor type, so created none and
+      refused ""<type>" is an ordinary floor type ..., not a foundation slab
+      type, so nothing was made" with every foundation slab type and its
+      thickness; no floor and no foundation added anywhere.

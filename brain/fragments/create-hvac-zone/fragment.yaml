@@ -119,7 +119,7 @@ compatibility-note: >
   statement rather than a failure. `Zone` lives in the mechanical namespace,
   which the wrapper imports.
 
-# ROUTING - repeated in PLACE_ROOMS and REPORT_SPACE_AIRFLOW.
+# ROUTING - repeated in PLACE_ROOMS and READ_SPACE_LOADS.
 #
 #   "create an HVAC zone for these spaces" -> here
 #   "group these spaces into a zone"     -> here
@@ -127,7 +127,7 @@ compatibility-note: >
 #   "place spaces in all the rooms"      -> PLACE_ROOMS - it places rooms OR
 #                                          spaces, and the spaces have to exist
 #                                          before any zone can hold them
-#   "what airflow does this space need"  -> REPORT_SPACE_AIRFLOW
+#   "what airflow does this space need"  -> READ_SPACE_LOADS
 #   "color the hvac zones"             -> APPLY_COLOR_FILL_SCHEME - COLOURING
 #   "colour the spaces by zone"          zones or spaces in a plan changes no
 #                                        zone, and must never reach this

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -69,6 +69,37 @@ contract:
     - name: findings
       type: IList<string>
 
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: Snowdon Towers Sample Architectural (34,509 elements), Revit 2024, session 57392
+  positive_case: 'run as it would normally be run. returned collector FilteredElementCollector,
+    findings 1 item(s) [3 keynote tag(s) in "North Wall Window Detail"; 80 keynote v...],
+    keynotes tag 2374992 | North Wall Window Detail | "6" Metal Stud" | a keynote text in
+    the table
+
+    tag 2375010 | North Wall Window Detail | "Backer Rod w/ Sealant" | a keynote text in the
+    table
+
+    tag 2375015 | North Wall Window Detail | "6" Metal Stud" | a keynote text in the table,
+    keys HashSet`1, lines 3 item(s) [tag 2374992 | North Wall Window Detail | "6" Metal Stud"
+    | a..., tag 2375010 | North Wall Window Detail | "Backer Rod w/ Seal..., tag 2375015 |
+    North Wall Window Detail | "6" Metal Stud" | a...], missingFromTable 0 item(s), readValue
+    Action`1, seen 80 entry(ies), tableLoaded true, tagCount 3, texts HashSet`1, view ViewSection,
+    viewProblem (null), wantedView North Wall Window Detail. inputs came viewName as given.
+    on Snowdon Towers Sample Architectural'
+  negative_case: run with viewName=Parapet Detail - Typical instead - chosen because it should
+    not contain what this fragment reports. returned collector FilteredElementCollector, findings
+    1 item(s) [0 keynote tag(s) in "Parapet Detail - Typical"; 80 keynote v...], keynotes
+    , keys HashSet`1, lines 0 item(s), missingFromTable 0 item(s), readValue Action`1, seen
+    80 entry(ies), tableLoaded true, tagCount 0, texts HashSet`1, view ViewSection, viewProblem
+    (null), wantedView Parapet Detail - Typical. inputs came viewName as given. on Snowdon
+    Towers Sample Architectural
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 5e856d8f10c1f928
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -89,6 +120,14 @@ compatibility-note: >
 #   "change the keynote on these"             -> WRITE_ELEMENT_PARAMETERS, the
 #                                                Keynote parameter
 #   "which elements are not tagged"           -> FIND_UNTAGGED_ELEMENTS
+#   "which keynote file is this project using" -> REPORT_KEYNOTE_FILE - the
+#                                                file and its entry count
+#   "reload the keynote file"                 -> LOAD_KEYNOTE_FILE, a write
+#   "load the keynote file C:\Standards\Keynotes.txt" -> LOAD_KEYNOTE_FILE
+#   "set keynote numbering to by sheet"       -> NOTHING HERE DOES THAT - no
+#                                                Revit API member reaches the
+#                                                numbering method (row 5b-1420);
+#                                                Annotate > Keynoting Settings
 
 utterances:
   - check the keynotes against the keynote file

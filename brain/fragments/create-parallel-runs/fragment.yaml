@@ -1,0 +1,146 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-087
+semantic-identity: "make parallel copies of this connected pipe or conduit run, side by side or above or below it at a spacing, with the elbows re-made"
+kind: action
+domain: revit.mep
+capability: CREATE_PARALLEL_RUNS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Revit's Parallel Pipes and Parallel Conduits: makes `count` copies of one
+  connected run of pipes or of conduits, `spacingMm` apart centre to centre,
+  to its left or right, to the north, south, east or west of it, or above or
+  below it - the first copy one spacing from the run, the next two spacings.
+
+  **Each piece moves perpendicular to itself and every bend is re-mitred**,
+  so a copy on the inside of a bend is shorter and one on the outside longer,
+  and every elbow, union and transition between the copy's pieces is made
+  again on the original piece's own type, system, level and size. A plain
+  copy moved by one distance is not a parallel run once the run bends - its
+  leg running the same way as the move lands inside the original.
+
+  **Left and right are looking along the run from its start** - its west end,
+  or its south end when it runs north to south - and the reply names that
+  point, so a copy on the wrong side is put right by saying the other word.
+
+  **Never guessed.** The count and the spacing are asked for; a spacing not
+  no wider than the run's largest pipe or conduit is refused, because the copies would
+  sit inside one another. Only pipes, conduits and their fittings make a run:
+  ducts are refused by name, and so is a valve or anything else in the run,
+  which would be missing from every copy. A run that branches - a tee joining
+  three of the pieces handed in - is refused, naming the tee.
+
+  **The original is never touched**, and each copy's ends are left open. What
+  can be known before drawing - the run, the values, an inside corner the
+  spacing closes up - is refused with nothing made, saying why. A piece or a
+  fitting Revit refuses, or a size the type snaps, takes the whole job back
+  with Revit's own words, and nothing is kept (Article 8). The reply lists the
+  new pieces and fittings of each copy.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The run - its pipes or conduits, with or without their fittings. A fitting
+    # handed in that joins no two of its pieces (a cap) is listed in notRemade.
+    - name: elements
+      type: IList<Element>
+    # How many copies, the original NOT counted - "add 3 parallel pipes" is 3.
+    # 1 to 50, and never assumed.
+    - name: count
+      type: int
+      source: request
+    # MILLIMETRES, centre to centre between one copy and the next; the first
+    # copy is one spacing from the original. Converted by / 304.8 (D-20).
+    - name: spacingMm
+      type: double
+      source: request
+    # left, right, up, down, north, south, east or west ("above" and "below"
+    # are up and down). Left and right look along the run from its start.
+    - name: side
+      type: string
+      source: request
+  provides:
+    # Every new pipe or conduit and every new fitting, all copies together.
+    - name: copies
+      role: result
+      type: IList<ElementId>
+    # One line per copy - its distance and side, its pieces' ids, its fittings'
+    # ids - joined by " || ", ONE string because a list reaches the reply cut
+    # to three lines.
+    - name: perCopy
+      role: result
+      type: string
+    # The whole answer in one sentence, written on every run that makes
+    # anything - the start point read from, what was not copied. ACCOUNTING:
+    # `copies` decides whether anything was made (D-51).
+    - name: summary
+      role: accounting
+      type: string
+    # Fittings handed in that join no two pieces of the run - a cap, an end
+    # fitting - so there was nothing to re-make. What it was GIVEN and could
+    # not use, never a thing made (D-52).
+    - name: notRemade
+      role: accounting
+      type: IList<ElementId>
+    # Why NOTHING was made, when it was refused before anything was drawn - a
+    # duct, a branch, a value not given, a spacing too tight, an inside corner
+    # the spacing closes up. Null when copies were made. Never a thing it did
+    # (D-52).
+    - name: refused
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Pipe.Create(Document, ElementId,
+  ElementId, ElementId, XYZ, XYZ)`, `Conduit.Create(Document, ElementId, XYZ,
+  XYZ, ElementId)`, `Document.Create.NewElbowFitting`, `NewUnionFitting` and
+  `NewTransitionFitting(Connector, Connector)`, `MEPCurve.ReferenceLevel`,
+  `MEPCurve.ConnectorManager`, `FamilyInstance.MEPModel`, `Connector.AllRefs`,
+  `Owner`, `Origin`, `ConnectorType` and `IsConnected`, and the
+  `RBS_PIPE_DIAMETER_PARAM`, `RBS_CONDUIT_DIAMETER_PARAM` and
+  `RBS_PIPING_SYSTEM_TYPE_PARAM` parameters - each looked up with
+  tools/api-surface on 2026-11-02 and the same 2020 to 2027. Millimetres to
+  feet is arithmetic, / 304.8 (D-20). No ElementId is read as a number.
+
+# WHY THIS IS NOT COPY_ELEMENTS OR OFFSET_ELEMENTS (2026-11-02, the duplicate
+# check before writing). COPY_ELEMENTS copies by ONE vector, `count` times at
+# `spacingMm` - a parallel run for a straight run or straight up and down, and
+# NOT for a run that bends: its leg running the way of the move lands inside
+# the original. OFFSET_ELEMENTS moves each piece sideways IN PLACE, makes no
+# copy, and leaves the run apart at every joint (its own card says so).
+# CREATE_MEP_RUNS draws new runs along points the caller gives and
+# FIT_MEP_JOINTS fits ducts and pipes, not conduit. This one copies a run it
+# reads, at right angles to each piece, with the corners re-mitred and the
+# fittings re-made - for pipe and conduit.
+
+# ROUTING - repeated in COPY_ELEMENTS and OFFSET_ELEMENTS.
+#
+#   "add 3 parallel pipes to this run at 150 mm spacing" -> here, count 3,
+#                                       spacingMm 150, a side asked for
+#   "copy this conduit run 4 times side by side at 50 mm" -> here
+#   "run two parallel pipes above this one at 200 mm" -> here, side up
+#   "repeat this every 3 metres"     -> COPY_ELEMENTS - copies by one vector,
+#                                       any elements, nothing re-made
+#   "run another duct parallel to this" -> OFFSET_ELEMENTS - a duct, and ducts
+#                                       are refused here: Revit has no
+#                                       parallel ducts either
+#   "offset these ducts"             -> OFFSET_ELEMENTS - moved, not copied
+
+utterances:
+  - add 3 parallel pipes to this run at 150 mm spacing
+  - copy this conduit run 4 times side by side at 50 mm
+  - run two parallel pipes above this one at 200 mm

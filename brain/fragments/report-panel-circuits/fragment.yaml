@@ -281,10 +281,25 @@ compatibility-note: >
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "what is on panel DB-1"                   -> here
+#   "what is wired to panel A"                -> here since 2026-11-01 - matched
+#                                                by Panel Name. SELECT_BY_ELECTRICAL_CIRCUIT
+#                                                claimed it too, matching the
+#                                                circuit's own name instead
 #   "show me the panel schedule as a list"    -> here
 #   "which circuits are on no panel"          -> here
 #   "what devices are on circuit 3"           -> SELECT_BY_ELECTRICAL_CIRCUIT
-#   "circuit these sockets"                   -> CREATE_ELECTRICAL_CIRCUIT
+#
+# JUDGED 2026-11-01 AGAINST SELECT_BY_ELECTRICAL_CIRCUIT AND KEPT APART: this
+# card reads a TABLE of circuits per panel, with the panel's totals, and
+# selects nothing; that card hands on the ELEMENTS on a circuit (or on none)
+# for the next step to act on. A different result from different objects.
+# The two shared one sentence, "what is on panel X" - it is this card's now.
+#   "circuit these sockets"                   -> CREATE_MEP_SYSTEM
+#   "move these circuits to panel DB-2"       -> EDIT_MEP_SYSTEM, version 2 - moves
+#                                                a circuit; this card only reads where
+#                                                it is (2026-11-01; EDIT_ELECTRICAL_
+#                                                CIRCUIT until it was merged there,
+#                                                2026-11-04)
 #   "what is the load on these connectors"    -> REPORT_CONNECTOR_LOADS
 #   "make the panel schedules"                -> CREATE_PANEL_SCHEDULES - the schedule
 #                                                VIEW a sheet carries; this card only
@@ -303,3 +318,6 @@ utterances:
   - what is on the panel schedule for DB-1
   - show the panel schedule for DB-1
   - what does the panel schedule say
+  # MOVED 2026-11-01 from SELECT_BY_ELECTRICAL_CIRCUIT - the double claim on
+  # "what is on panel X" settled here, the card that matches the Panel Name.
+  - what is wired to panel A

@@ -1,0 +1,162 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-175
+semantic-identity: "insert drafting views or legends from a Revit file on disk that is not open, with what is drawn in them, or one view's 2D elements into a view here - Insert > Insert from File > Insert Views from File / Insert 2D Elements from File"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-03: asked for as a gap on Revit's ribbon - "Insert views from file
+# (Insert > Insert from File > Insert Views from File / Insert 2D Elements
+# from File)". The ribbon coverage note
+# (docs/work-notes/investigations/2026-11-01-revit-ribbon-coverage.md) put it
+# PARTIAL: "the source file must already be open; nothing pulls from a closed
+# file". heron_duplicates.look: 0 already here.
+#
+# LOOK-ALIKES, KEPT SEPARATE (heron-duplicate-checker's method, 2026-11-03):
+#   TRANSFER_VIEWS_BETWEEN_DOCUMENTS (PROVEN)  copies schedules, legends,
+#     drafting views and templates from another project ALREADY OPEN in the
+#     same Revit, found by its title; its purpose says "guessing at a file on
+#     disk is not something to do quietly". PROVEN, so its impl/ is not
+#     touched (a change makes its proof stale). This card takes a FILE PATH
+#     the modeller names, opens it detached, copies, and closes it unsaved -
+#     a need that card does not have. Its two-copy method (the view, then
+#     what the view owns) is followed here.
+#   COPY_ELEMENTS_BETWEEN_DOCUMENTS (DRAFT on main)  model elements, by
+#     category or id, from an open document or a link; view-specific ones
+#     only as a family's labels. Not a file on disk, not a view's 2D content.
+#   DUPLICATE_VIEWS, CREATE_DRAFTING_VIEW, CREATE_LEGEND_VIEW  inside one
+#     model.
+#   COMPARE_MODELS, UPGRADE_FAMILY_FILES  the two cards that open a file on
+#     disk and close it again. UPGRADE_FAMILY_FILES' proof (2026-09-11) opened
+#     and closed a file inside a run Revit wrapped in a transaction.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33):
+#   filePath   the .rvt to take them from, a path on this PC or the network
+#   viewNames  drafting views or legends in that file, by exact name, ";"
+#              between them
+#   into       a view in this model. Given, the 2D elements of the ONE view
+#              named are copied into it (Insert 2D Elements from File), at
+#              the same coordinates. Left out, each view is made new here
+#
+# RISK MODIFY. It adds views and 2D elements to the model in front. The file
+# on disk is opened detached, read and closed WITHOUT saving: it is never
+# changed, and its central, if it has one, is never touched.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.views
+capability: INSERT_VIEWS_FROM_FILE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Revit's Insert > Insert from File for a Revit file on disk that is not
+  open. Insert Views from File: each drafting view or legend named is copied
+  into this model with everything drawn in it - the view first, then the
+  elements it owns, as a view copied between models arrives empty
+  otherwise. Insert 2D Elements from File: with a view here named as the
+  target, the 2D elements of the one view named are copied into it at the
+  same coordinates. The file is opened detached with its worksets open, read,
+  and closed without saving; a file already open in this Revit is used and
+  left open. A name the file does not have, or a view that is not a drafting
+  view or legend, is named and skipped. A view Revit will not copy - most
+  often a type of the same name already here - is named and the rest go on.
+  Revit makes "Name(1)" for a view name already here. Every view is counted
+  back against what the file's view held.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The Revit file to take them from - a .rvt path on this PC or the
+    # network. It is opened detached and closed unsaved.
+    - name: filePath
+      type: string
+      source: request
+    # Drafting views or legends in that file, by exact name, ";" between
+    # them - "Typical Details; Door Legend". With `into`, exactly one.
+    - name: viewNames
+      type: string
+      source: request
+    # A view in this model, by exact name. Given, the 2D elements of the one
+    # view named are copied into it. Left out, each view is made new here.
+    - name: into
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: copied
+      # Each view made here, or the target view, with how many elements
+      # arrived in it - a thing it MADE (D-52).
+      role: result
+      type: IList<string>
+    - name: newViews
+      # The views made here; empty for Insert 2D Elements.
+      role: result
+      type: IList<ElementId>
+    - name: elementsCopied
+      # 2D elements that arrived, read back in the views here.
+      role: result
+      type: int
+    - name: notFound
+      # Names asked for that the file does not have, or that are not a
+      # drafting view or a legend - what it was GIVEN and could not use (D-52).
+      role: accounting
+      type: IList<string>
+    - name: clashed
+      # Views or contents Revit refused to copy, with Revit's words - most
+      # often a type of the same name already here (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why nothing was copied, in words: no file, not a .rvt, the model in
+      # front itself, a file Revit would not open, no target view of the name.
+      # Empty when anything was copied (D-52).
+      role: accounting
+      type: string
+    - name: report
+      # ONE STRING: what was copied from which file, how many views and
+      # elements, what was skipped, and that the file was closed unsaved.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read with tools/api-surface --members
+  on 2026-11-03, the same 2020 to 2027: `Application.OpenDocumentFile(
+  ModelPath, OpenOptions)`, `ModelPathUtils.ConvertUserVisiblePathToModelPath`;
+  `OpenOptions.DetachFromCentralOption`, `AllowOpeningLocalByWrongUser`,
+  `Audit`, `SetOpenWorksetsConfiguration`; `WorksetConfiguration(
+  WorksetConfigurationOption)`; `Document.Close(bool)`, `PathName`,
+  `Application.Documents`; `ElementTransformUtils.CopyElements` in its
+  document-to-document and view-to-view forms; `CopyPasteOptions`;
+  `Element.OwnerViewId`. RevitAPI.xml (2024): the document form copies only
+  elements that are not view-specific, the view form copies the view-specific
+  ones between "2D graphics views capable of drawing details". A clash of
+  type names needs a handler that is a class, which a fragment cannot
+  declare, so none is set (TRANSFER_VIEWS_BETWEEN_DOCUMENTS' finding). Not
+  seen in Revit: opening a project file inside the host's open transaction on
+  another model (UPGRADE_FAMILY_FILES did it with families), what Revit does
+  with a type of the same name when no handler is set, and whether a legend's
+  legend components arrive (row 5b-1459).
+
+# ROUTING (2026-11-03) - the rows for this card's sentences.
+#
+#   "insert views from file"              -> here
+#   "insert 2D elements from file"        -> here
+#   "copy the legends from the other project", "transfer the drafting views"
+#                                         -> TRANSFER_VIEWS_BETWEEN_DOCUMENTS -
+#                                            from a project already open
+utterances:
+  - insert views from file
+  - insert 2D elements from file

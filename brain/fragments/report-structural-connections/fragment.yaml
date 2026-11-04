@@ -1,0 +1,147 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-148
+semantic-identity: "which steel connections this model has - each connection's type, the beams and columns it joins, its approval and code checking status - and the connection types loaded"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "what steel connections are in
+# this model" and "list the connection types loaded", beside "add a base plate
+# connection to these column bases", "put a shear plate connection between this
+# beam and column" and "change these connections to Clip angle" - Revit's
+# Structure > Connection (Steel tab > Connection from 2019). No card read or
+# placed one: grep of every fragment's C# that day for StructuralConnection
+# and OST_StructConnections found nothing, and brain/heron_retrieve.py on the
+# two questions (Revit 2024) answered TRACE_CONNECTIVITY - an MEP system walk -
+# and LIST_REBAR_TYPES.
+#
+# LOOK-ALIKES, NOT DUPLICATES. COPE_FRAMING cuts a beam end round a column -
+# geometry, not a connection element. PLAN_CONNECTION_ORDER works out the order
+# to wire or pipe a loose set of fittings; "connect" there, in CONNECT_OPEN_ENDS,
+# CONNECT_AIR_TERMINALS, TRACE_CONNECTIVITY and REPORT_CONNECTORS is a pipe,
+# duct or cable joint. CHECK_STRUCTURAL_SUPPORTS looks for beam ends bearing on
+# nothing; ATTACH_COLUMNS attaches a column top or base to a roof or floor.
+#
+# THE READ HALF OF A PAIR. PLACE_STRUCTURAL_CONNECTIONS places them; every
+# question about which connections or connection types there are - and their
+# exact names - is answered here, so none reaches a write (D-86). Changing a
+# connection's type is CHANGE_ELEMENT_TYPE's job: a connection is an element
+# with a type like any other.
+#
+# PLATES, BOLTS, WELDS AND CUTS ARE NOT READ, AND CANNOT BE. A detailed steel
+# connection's fabrication parts are reached only through the Advance Steel
+# API, which Heron does not load. What Revit's own API gives - the connection
+# element, its type, what it joins, its origin, approval and code checking
+# status, and whether its type is generic, detailed or custom - is what this
+# reads.
+#
+# READ ONLY - opens no transaction and needs none.
+kind: action
+domain: revit.elements
+capability: REPORT_STRUCTURAL_CONNECTIONS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Answers which structural steel connections the model holds - each
+  connection's type, the beams, columns, walls, floors or foundations it joins
+  with the primary one first, its origin in mm, its approval and its code
+  checking status - and which connection types are loaded, generic, detailed
+  or custom, with how many connections use each. For the whole model, or for
+  the connections or members selected.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      # Connections, or the beams and columns whose connections are wanted - a
+      # selection or the step before. Left out, it binds empty and the whole
+      # model is read.
+      type: IList<Element>
+      optional: true
+    - name: show
+      # Which lists: connections | types - one, or both separated by ; - or
+      # left out for both (`absent: all`). A word that is neither is named,
+      # never guessed.
+      type: string
+      source: request
+      optional: true
+      absent: all
+  provides:
+    - name: connectionCount
+      # Connections listed. Something the read FOUND.
+      role: result
+      type: int
+    - name: typeCount
+      # Connection types loaded in the model.
+      role: result
+      type: int
+    - name: report
+      # LIST BY LIST: each connection with its id, type, the elements it joins
+      # (primary first), origin in mm, approval and code checking status; each
+      # connection type with generic, detailed or custom and how many
+      # connections use it; the approval types. A STRING, because a reply cuts
+      # a list to three items and this is the answer.
+      role: accounting
+      type: string
+    - name: names
+      # The connection types' exact names, quoted - what
+      # PLACE_STRUCTURAL_CONNECTIONS and CHANGE_ELEMENT_TYPE are handed back,
+      # so no name is retyped.
+      role: accounting
+      type: IList<string>
+    - name: notConnected
+      # Members handed in that no connection joins (D-52) - looked at and
+      # found unconnected, never a connection found.
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. StructuralConnectionHandler
+  (GetConnectedElementIds, GetOrigin, ApprovalTypeId, CodeCheckingStatus,
+  IsDetailed, IsCustom, SingleElementEndIndex, GetTypeId),
+  StructuralConnectionHandlerType (IsGeneric, IsDetailed, IsCustom,
+  FamilyName), StructuralConnectionApprovalType
+  .GetAllStructuralConnectionApprovalTypes and the enum
+  StructuralConnectionCodeCheckingStatus (NotCalculated, OkChecked,
+  CheckingFailed) carry the same signatures 2020 through 2027 - read with
+  tools/api-surface --members on 2026-11-01. Neither class is in RevitAPI.xml's
+  list of classes ElementClassFilter does not support, so both are collected
+  with OfClass. Origins are feet x 304.8, said in mm. Not seen in Revit.
+
+# ROUTING (2026-11-01) - the same rows are in PLACE_STRUCTURAL_CONNECTIONS and
+# CHANGE_ELEMENT_TYPE.
+#
+#   "what steel connections are in this model"   -> here
+#   "list the connection types loaded"           -> here, show types
+#   "add a base plate connection to these column bases"
+#                                                -> PLACE_STRUCTURAL_CONNECTIONS,
+#                                                   layout each
+#   "put a shear plate connection between this beam and column"
+#                                                -> PLACE_STRUCTURAL_CONNECTIONS
+#   "change these connections to Clip angle"     -> CHANGE_ELEMENT_TYPE, the
+#                                                   connections selected
+#   "cope these beams at the columns"            -> COPE_FRAMING - a cut, not a
+#                                                   connection
+#   "what order should I connect these in"       -> PLAN_CONNECTION_ORDER -
+#                                                   wiring and piping order
+#   "check the connections"                      -> TRACE_CONNECTIVITY, which
+#                                                   declares it - pipe and duct
+#                                                   joints. On the keyword route
+#                                                   alone this card ranks above
+#                                                   it since 2026-11-01; the
+#                                                   identity route answers it
+utterances:
+  - what steel connections are in this model
+  - list the connection types loaded

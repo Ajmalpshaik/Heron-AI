@@ -1,0 +1,51 @@
+# NEEDS-CHECKING Group LB - PLACE_STRUCTURAL_LOADS, built 2026-11-01 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/place-structural-loads-lb-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/place-structural-loads-lb-2026-11-01.yaml
+#
+# THE MODEL is Group KZ's scratch project, "loads-kz"
+# (docs/needs-checking/group-kz.md, KZ1). Never a working model. Before the
+# run, read every load with REPORT_STRUCTURAL_LOADS - the second route.
+#
+# THE ARRANGEMENT: the structural framing of "FloorPlan: Level 1" (B1) for the
+# positive, the walls of the same plan (W1 and A1) for the negative - a
+# different selection, not an empty one (fragment-proving, rules 3 and 5).
+# Both legs ask for a LINE load: on W1 it is skipped (a panel, not a member)
+# and A1 has no analytical element, so nothing is placed. Every write here is
+# ROLLED BACK; the read-only setup comes before the write (rule on write
+# proofs).
+
+model: "loads-kz scratch project (metric structural template) with B1, C1, C2, S1, W1, A1 and load cases DL1 and LL1, Revit 2020"
+
+defaults:
+  write: true
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: place-structural-loads
+    expect: placed
+    setup-set:
+      categoryName: Structural Framing
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categoryName: Walls
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      kind: "line"
+      loadCase: "DL1"
+      value: 7.5
+    negative-set:
+      kind: "line"
+      loadCase: "DL1"
+      value: 7.5
+    note: >
+      LB2. Negative - THE FIRST CASE TO RUN: the walls, so placed 0;
+      noAnalytical names A1; skipped names W1 as not a beam, brace or column;
+      no load in the model afterwards, and no free load. Positive - placed 1:
+      "Line load ... uniform (0, 0, -7.5) kN/m; load case \"DL1\"; on
+      Structural Framing ... (B1) through analytical ..." read back, and
+      findings say the load points down because no direction was given.
+      7.5, not 5, so it is not skipped as a repeat of KZ1's load.

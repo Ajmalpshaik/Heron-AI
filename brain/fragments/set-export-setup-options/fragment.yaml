@@ -1,0 +1,173 @@
+heron-agent: HERON-REVIT-EXP-018
+heron-step: 16
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-058
+semantic-identity: "change the options saved in a DWG, DXF, DGN or PDF export setup - version, units, coordinates, layers"
+kind: action
+domain: revit.export
+capability: SET_EXPORT_SETUP_OPTIONS
+version: 1
+source: OFFICIAL
+# MODIFY, NOT PUBLISH. The options are saved in the model and nothing is
+# exported.
+risk: MODIFY
+
+# WRITTEN 2026-11-01 FOR FRAGMENT-ISSUES ROW 5b-1360, beside
+# LIST_EXPORT_SETUPS and MANAGE_EXPORT_SETUPS. Research:
+# docs/work-notes/investigations/2026-11-01-export-setups.md, section 2 - every
+# option here is named there with the API member it is.
+#
+# ALL OR NOTHING. Every option is parsed and applied to Revit's options object
+# first; one unknown name or one bad value refuses the whole call and Revit's
+# setup is never written. A setup half-changed is the shape of wrong nobody
+# sees until a drawing arrives on the other side with the wrong layers.
+#
+# NOT BUILT, AND RECORDED IN ROW 5b-1360: the PDF file naming rule, line type,
+# pattern and font tables, layer colours and modifiers. Print settings stay
+# with SET_PRINT_SETTINGS.
+purpose: >
+  Changes named options of one saved export setup - a DWG/DXF, DGN or PDF
+  (Revit 2022 and later) export setup - and keeps its name: the file version,
+  export units, coordinate basis (shared or project internal), solids,
+  colours, line scaling, whether views on sheets are exported as external
+  references, the layer standard, the hide options, one category's layer name
+  in the layer table, and for PDF the paper, orientation, zoom, colour, quality
+  and whether files are combined. Every option is read back afterwards.
+
+  **ALL OR NOTHING.** An option it does not know, or a value that option does
+  not take, refuses the whole call, naming what it does take, and the setup is
+  left exactly as it was.
+
+  **A SETUP NAME THAT IS NOT THERE IS REFUSED, NAMING IT AND THE ONES THAT ARE.**
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: setupName
+      type: string
+      source: request
+    # "name=value", ";" between them - e.g. "units=millimeter; fileVersion=2013;
+    # externalReferences=yes; layer:Ducts=M-HVAC-DUCT". The names a kind takes
+    # are listed in a refusal.
+    - name: options
+      type: string
+      source: request
+    # "dwg", "dxf" (the DXF half of the same setup), "dgn", "pdf" - or left
+    # out, and the name is looked for under every kind.
+    - name: kind
+      type: string
+      source: request
+      optional: true
+      absent: any
+  provides:
+    - name: done
+      role: result
+      type: bool
+    - name: changed
+      # What changed, "option: before -> after", "; " between them, read back
+      # from the setup after it was saved.
+      role: result
+      type: string
+    - name: kindUsed
+      # "DWG", "DXF", "DGN" or "PDF". Empty when nothing was found.
+      # ACCOUNTING, NOT RESULT (row 5b-1412): it names the setup that was
+      # FOUND, and is filled when every option asked is refused; done and
+      # changed are the result.
+      role: accounting
+      type: string
+    - name: unchangedOptions
+      # Options asked for that were already set that way. Given, not found
+      # (D-52).
+      role: accounting
+      type: string
+    - name: notKept
+      # Options Revit was handed and does not read back as asked - the setup
+      # was saved, and these are not as asked. Empty when every one stuck.
+      role: accounting
+      type: string
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and said
+      # no. Never a thing it FOUND (D-52).
+      role: accounting
+      type: string
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: P1102 MEP, Revit 2020, session 59096 - the count is NOT recorded because 1,501 elements
+    was measured on HeronNewFam_P1102, the document in front, and this ran against another
+    one (row 15)
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    manage-export-setups with this phase''s own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned aliases 31 entry(ies),
+    changed fileVersion: 2018 -> 2013, changes 1 item(s) [fileVersion: 2018 -> 2013], current
+    DWGExportOptions, dgnSettings (null), done true, dwgSettings ExportDWGSettings, dxfHalf
+    false, errors 0 item(s), expected 2 entry(ies), found HERON P1102 DWG, kindUsed DWG, kindWord
+    dwg, layerExpected 0 item(s), lookKind dwg, namesOf Func`2, notKept , offer Action`3,
+    offerEnum Action`5, offerYesNo Action`3, offered Func`2, pick Func`4, read 18 entry(ies),
+    refused , rowOf Func`4, same 1 item(s) [units (Millimeter)], squash Func`2, unchangedOptions
+    units (Millimeter), wantedName HERON P1102 DWG, write 18 entry(ies), yes Func`2, yesNo
+    Func`2. inputs came setupName as given; options as given; kind as given. on P1102 MEP'
+  negative_case: 'run with kind=dwg, mode=create, options=units=parsecs, setupName=HERON P1102
+    DWG instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running manage-export-setups with this phase''s own values - run
+    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned aliases 31 entry(ies), changed , changes 0 item(s), current DWGExportOptions,
+    dgnSettings (null), done false, dwgSettings ExportDWGSettings, dxfHalf false, errors 1
+    item(s) [units: ''parsecs'' is not one of Default, Inch, Foot, Millimet...], expected
+    0 entry(ies), found HERON P1102 DWG, kindUsed DWG, kindWord dwg, layerExpected 0 item(s),
+    lookKind dwg, namesOf Func`2, notKept , offer Action`3, offerEnum Action`5, offerYesNo
+    Action`3, offered Func`2, pick Func`4, read 18 entry(ies), refused Nothing was changed.
+    units: ''parsecs'' is not one of Default, Inch, Foot, Millimeter, Centimeter, Meter. The
+    options a DWG setup takes here: colors, coordinates, externalreferences, fileversion,
+    hidereferenceplanes, hidescopeboxes, hideunreferencedviewtags, layerstandard, linescaling,
+    marknonplotlayers, mergedviews, nonplotsuffix, preservecoincidentlines, propertyoverrides,
+    roomsandareasaspolylines, solids, texttreatment, units, layer:<category>[:<subcategory>],
+    cutlayer:<category>[:<subcategory>]., rowOf Func`4, same 0 item(s), squash Func`2, unchangedOptions
+    , wantedName HERON P1102 DWG, write 18 entry(ies), yes Func`2, yesNo Func`2. inputs came
+    setupName as given; options as given; kind as given. on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 35a30fad0832ce4c
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ExportDWGSettings` and `ExportDGNSettings` with `ListNames`, `FindByName`,
+  `Get/SetDWGExportOptions`, `Get/SetDXFExportOptions`,
+  `Get/SetDGNExportOptions`; every option set on `DWGExportOptions`
+  (`MergedViews`), `ACADExportOptions` and `BaseExportOptions`; and
+  `ExportLayerTable` with `GetKeys`, `GetExportLayerInfo` and its indexer are
+  the same 2020 through 2027 (tools/api-surface --members, 2026-11-01).
+  `DGNExportOptions.MasterUnits` is 2020-2021 and `WorkingUnits` 2021-2027:
+  2020 offers the first, 2021 on the second. `ExportPDFSettings` and
+  `PDFExportOptions` are 2022 on: on 2020 and 2021 a PDF setup is refused as
+  needing 2022, and that code is compiled out. Enum values are matched by
+  their names, read from the enum at run time, so a value a later release adds
+  is taken without a code change. No ElementId is read as a number.
+
+# ROUTING - the same rows are in LIST_EXPORT_SETUPS and MANAGE_EXPORT_SETUPS.
+#
+#   "set Setup 1 to export in millimetres"            -> here
+#   "export views on sheets as external references in Setup 1" -> here
+#   "change the dwg file version in the export setup" -> here
+#   "what units does Setup 1 export in"  -> LIST_EXPORT_SETUPS. A QUESTION
+#   "rename the DWG export setup Setup 1 to Tags Export"
+#                                        -> MANAGE_EXPORT_SETUPS
+#   "set the paper size for printing"    -> SET_PRINT_SETTINGS
+#   "export the views to dwg"            -> EXPORT_VIEWS_TO_DWG. A PUBLISH
+
+utterances:
+  - change the dwg export setup units to millimetres
+  - set export views on sheets as external references in the dwg export setup
+  - change the layer standard in the dwg export setup
+  - change the file version of the dwg export setup

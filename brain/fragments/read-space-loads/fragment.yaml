@@ -5,11 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-011
-semantic-identity: "the heating and cooling load and the airflow on these spaces"
+semantic-identity: "the heating and cooling load and the airflow on these spaces - typed, calculated and actual, and which have no design figure"
 kind: filter
 domain: revit.mep
 capability: READ_SPACE_LOADS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -28,6 +28,17 @@ purpose: >
   means the analysis has never been run, or the space is unbounded and has no
   volume to load. Reporting `0 W` as a result would put a real number-shaped
   answer in front of somebody sizing equipment from it.
+
+  **Typed, calculated and actual airflow, apart (version 2, 2026-11-01).**
+  REPORT_SPACE_AIRFLOW was merged into this card and is DEPRECATED. Each space
+  now also gives its SPECIFIED supply, return and exhaust airflow - what was
+  typed - and its ACTUAL supply, return and exhaust, the sum Revit gives of
+  what the space's terminals carry, in litres per second. `noDesignFigure`
+  names the spaces with no typed airflow of any kind: zero against zero reads
+  as balanced, and those are the rooms nobody has designed yet. A calculated
+  supply is reported as calculated, in `calculatedSupplyLs`, and is never
+  counted as the design target. `unplaced` names a space with no area - in
+  the schedule, not in the model - and nothing is read from it.
 
   **It reads Spaces, not Rooms.** A Room carries no load - loads are the MEP
   half, and a model with rooms and no spaces answers nothing here. PLACE_ROOMS
@@ -76,31 +87,77 @@ contract:
       # works needs a model whose spaces have been analysed; Snowdon's have not.
       role: accounting
       type: IList<ElementId>
+    # VERSION 2 (2026-11-01), from REPORT_SPACE_AIRFLOW. Every airflow in
+    # litres per second, keyed by the space - the exact ft3 to L conversion.
+    - name: specifiedSupplyLs
+      # The TYPED design supply airflow - Specified Supply Airflow. Never a
+      # calculated figure.
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: calculatedSupplyLs
+      # The supply airflow the heating and cooling analysis gave. Reported
+      # apart, never as the design target.
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: specifiedReturnLs
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: specifiedExhaustLs
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: actualSupplyLs
+      # What the terminals connected to the space carry - Revit's own Actual
+      # Supply Airflow, read, never recomputed.
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: actualReturnLs
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: actualExhaustLs
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: noDesignFigure
+      # Spaces with no TYPED airflow of any kind - supply, return and exhaust
+      # all zero. A space nobody has designed reads as balanced because zero
+      # matches zero; this is the list a coordinator acts on. A result, as
+      # REPORT_SPACE_AIRFLOW declared it.
+      role: result
+      type: IList<ElementId>
+    - name: unplaced
+      # Spaces with no area - in the schedule, not in the model. Named, and
+      # nothing read from them. A fault in the model, so a result, as
+      # REPORT_SPACE_AIRFLOW declared it.
+      role: result
+      type: IList<ElementId>
 
 proof:
-  date: '2026-09-10'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project1 work_ajmal.al (3,445 elements), Revit 2024, session 24688
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values. returned airflowLs
-    0 entry(ies), coolingW 0 entry(ies), findings 5 item(s) [S1 Stair S1  - NO LOAD READABLE.
-    Revit refused the figures, ..., S2 Stair S2  - NO LOAD READABLE. Revit refused the figures,
-    ..., E1 Elevator E1  - NO LOAD READABLE. Revit refused the figure..., ...], heatingW 0
-    entry(ies), litresPerCubicFoot 28.316846592, noLoad 5 item(s) [1411634, 1411663, 1411726,
-    ...], notSpaces 0 item(s), wattsPerInternalLoad 1055.05585262. inputs came elements from
-    the selection (5). on Snowdon-scratch_ajmal.al
-  negative_case: 'run with categoryName=Ducts, inViewOnly=FloorPlan: M1 instead - chosen because
-    it should not contain what this fragment reports - the arrangement was re-made first by
-    running select-by-category-name, set-selection with this phase''s own values. returned
-    airflowLs 0 entry(ies), coolingW 0 entry(ies), findings 0 item(s), heatingW 0 entry(ies),
-    litresPerCubicFoot 28.316846592, noLoad 0 item(s), notSpaces 22 item(s) [1447716, 1447725,
-    1447768, ...], wattsPerInternalLoad 1055.05585262. inputs came elements from the selection
-    (22). on Snowdon-scratch_ajmal.al'
+    filter-elements-by-category, set-selection with this phase's own values. returned actualExhaustLs
+    2 entry(ies), actualReturnLs 2 entry(ies), actualSupplyLs 2 entry(ies), airflowLs 2 entry(ies),
+    calculatedSupplyLs 2 entry(ies), coolingW 2 entry(ies), findings 2 item(s) [17 Workshop
+    IV 17  - heating 49063716 W (entered), cooling 8..., 49d Corridor 49d  - heating 133884364
+    W (entered), cooling 6...], flowOf Func`3, heatingW 2 entry(ies), litresPerCubicFoot 28.316846592,
+    noDesignFigure 0 item(s), noLoad 0 item(s), notSpaces 0 item(s), specifiedExhaustLs 2
+    entry(ies), specifiedReturnLs 2 entry(ies), specifiedSupplyLs 2 entry(ies), unplaced 0
+    item(s), wattsPerInternalLoad 1055.05585262. inputs came elements from the selection (2).
+    on P1102 MEP
+  negative_case: run with category=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP TYP instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running filter-elements-by-category, set-selection with this phase's
+    own values. returned actualExhaustLs 0 entry(ies), actualReturnLs 0 entry(ies), actualSupplyLs
+    0 entry(ies), airflowLs 0 entry(ies), calculatedSupplyLs 0 entry(ies), coolingW 0 entry(ies),
+    findings 0 item(s), flowOf Func`3, heatingW 0 entry(ies), litresPerCubicFoot 28.316846592,
+    noDesignFigure 0 item(s), noLoad 0 item(s), notSpaces 10 item(s) [404243, 411658, 411660,
+    ...], specifiedExhaustLs 0 entry(ies), specifiedReturnLs 0 entry(ies), specifiedSupplyLs
+    0 entry(ies), unplaced 0 item(s), wattsPerInternalLoad 1055.05585262. inputs came elements
+    from the selection (10). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 3fb4b672c68754de
-
+  fingerprint: 0c7fc39faf9dbf08
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -131,9 +188,29 @@ compatibility-note: >
 # what Revit shows on screen for the same space. It is written into the test
 # cases as the first negative, not asserted here as if it were settled.
 
-# ROUTING - repeated in PLACE_ROOMS and READ_ROOM_GEOMETRY.
+# 2026-11-01 - REPORT_SPACE_AIRFLOW WAS MERGED INTO THIS CARD (version 2) on
+# the owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same reading: an MEP Space's airflow, design against what is
+# there. Where its outputs are now, in L/s here where it kept Revit's internal
+# ft3/s: designSupply -> specifiedSupplyLs, designReturn -> specifiedReturnLs,
+# designExhaust -> specifiedExhaustLs, actualSupply -> actualSupplyLs,
+# actualReturn -> actualReturnLs, actualExhaust -> actualExhaustLs;
+# noDesignFigure and unplaced by the same names. Added in version 2:
+# calculatedSupplyLs, beside the typed figure rather than in place of it.
+#
+# THE CONFLICT, AND THE SAFER RULE KEPT: this card's `airflowLs` takes the
+# calculated supply where nothing was typed; REPORT_SPACE_AIRFLOW's design
+# figure was the typed one only. Both stand, apart: `airflowLs` as version 1
+# gave it, saying "entered" or "calculated" in the finding, and the design
+# target - `specifiedSupplyLs`, `noDesignFigure` - from typed figures alone,
+# so a calculated figure is never counted as the target silently. Its Rooms
+# were skipped with no row; here they are named in notSpaces, as before.
+
+# ROUTING - repeated in PLACE_ROOMS, READ_ROOM_GEOMETRY and CREATE_HVAC_ZONE.
 #
 #   "what is the heating load"       -> here
+#   "which spaces have no design airflow" -> here, noDesignFigure
+#   "is the supply air balanced"     -> here - specified against actual
 #   "what is the cooling load"       -> here
 #   "how much air does this space need" -> here
 #   "what is the total airflow"      -> here
@@ -141,6 +218,24 @@ compatibility-note: >
 #                                       no load involved
 #   "the spaces are missing"         -> PLACE_ROOMS. Nothing here can report a
 #                                       load on a space that does not exist
+#   "what is the cooling load of this space", "what are the loads on these
+#   spaces"                          -> here - a question, read from what the
+#                                       spaces hold; nothing is run. On the
+#                                       keyword route alone
+#                                       RUN_HEATING_COOLING_LOADS ranks first
+#                                       for these, and for "what is the
+#                                       heating load" and "what is the cooling
+#                                       load"; identity answers all four here.
+#                                       Since 2026-11-02 ADD_AREA_BASED_LOAD,
+#                                       an electrical write, also ranks first
+#                                       for "what are the loads on these
+#                                       spaces" on the keyword route alone;
+#                                       identity still answers it here
+#   "run the heating and cooling loads", "calculate the HVAC loads for this
+#   model", "run the loads analysis and show the cooling load per space"
+#                                    -> RUN_HEATING_COOLING_LOADS (2027
+#                                       only) - runs Revit's analysis, then
+#                                       reads the calculated loads back
 
 utterances:
   - what is the heating load
@@ -150,3 +245,15 @@ utterances:
   - what is the total airflow
   - what are the loads on these spaces
   - show me the design airflow
+  # MOVED 2026-11-01 from REPORT_SPACE_AIRFLOW, merged into this card.
+  - list the spaces and their airflow
+  - which spaces have no design airflow
+  - is the supply air balanced
+  - design versus actual flow
+  - how much air is going into each space
+  - check the space airflows
+  - do the diffuser flows add up to the space airflow
+  # 2026-11-02, the question asked beside "run the heating and cooling
+  # loads" when RUN_HEATING_COOLING_LOADS was built: without it, on Revit 2027
+  # and with no Revit named, the search sent it to that write (row 5b-1422).
+  - what is the cooling load of this space

@@ -23,7 +23,7 @@ semantic-identity: "a viewport sits off-centre on its sheet - move it to the mid
 kind: action
 domain: revit.sheets
 capability: CENTER_VIEWPORTS_ON_SHEETS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -57,6 +57,15 @@ purpose: >
   viewport has nothing to centre. Each is named in its own list and nothing on
   it moves.
 
+  **VERSION 2 CAN LINE THE SHEETS UP TO A MASTER instead** - the plan in the
+  same place on every sheet, so it does not jump as the set is paged
+  through. Name the master sheet and each viewport goes to the master's
+  viewport centre. A sheet at another scale is skipped and named, and so is
+  one whose title block sits at another origin: the centre is measured on
+  the sheet, not the paper, and its title block is never moved. Version 1's
+  proof no longer describes the code and is kept as a record; the card is
+  DRAFT until it is proved again.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a
   drawing set is one undo entry.
 
@@ -66,8 +75,24 @@ contract:
       type: Document
     - name: elements
       type: IList<Element>
+    - name: masterSheetNumber
+      # Version 2, from ALIGN_VIEWPORTS_ACROSS_SHEETS. The sheet whose
+      # viewport is in the right place, BY NUMBER, capitals ignored - found in
+      # the whole model, so it need not be among the sheets handed in. Left
+      # out, "none": each sheet is centred on its own title block, as version
+      # 1. A number no sheet has, or a master with other than one viewport and
+      # one title block, moves nothing and refuses every sheet by name.
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: centred
+      role: result
+      type: int
+    - name: aligned
+      # Version 2. Viewports moved to the master's position and READ BACK
+      # there. Zero when no master is named; `centred` is zero when one is.
       role: result
       type: int
     - name: findings
@@ -105,50 +130,67 @@ contract:
       # not answerable. Left alone (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: scaleMismatch
+      # Version 2, from ALIGN_VIEWPORTS_ACROSS_SHEETS. With a master: sheets
+      # whose viewport is at another scale, so the centres cannot line up -
+      # the same centre puts different amounts of building in the box.
+      # Skipped and named, never moved (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: titleBlockElsewhere
+      # Version 2. With a master: sheets whose title block sits at another
+      # origin than the master's, so copying the centre would land the plan in
+      # the wrong place on the PAPER. Skipped and named, and the title block
+      # NEVER moved. ALIGN_VIEWPORTS_ACROSS_SHEETS' `titleBlockMoved` - that
+      # card moved the title block; this one does not (D-52).
+      role: accounting
+      type: IList<ElementId>
     - name: refused
       # What was handed in that is not a sheet, and sheets Revit would not
       # move or did not read back at the target. The evidence it looked and
-      # said no, never a thing it centred (D-52).
+      # said no, never a thing it centred (D-52). Version 2: every sheet,
+      # when the master named cannot be lined up to.
       role: accounting
       type: IList<ElementId>
 
 proof:
-  date: '2026-10-22'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Heron Capture Test (21,317 elements), Revit 2020, session 60544
+  model: Snowdon Towers Sample Architectural (34,509 elements), Revit 2024, session 57392
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
     find-sheets with this phase''s own values - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned alreadyCentred 0 item(s), ambiguous
-    4 item(s) [624550, 541389, 617750, ...], apartOnPaper Func`3, at Func`2, centred 1, findings
-    E101 Electrical Power Riser Diagram: 2 viewports - which one is the plan is not answerable,
-    nothing moved | E201 Unnamed (FloorPlan: Level 2 - Lighting Plan): was (532, 443) mm,
-    title block centre (594, 420) mm, moved by (63, -23) mm, reads back (594, 420) mm; viewport
-    box 839 x 700 mm in a title block 1188 x 840 mm | E301 North Level 1 - Lighting Plan:
-    3 viewports - which one is the plan is not answerable, nothing moved | E601 Panel Schedules:
-    no viewport on it - nothing to centre | M100 MECHANICAL LEGEND: 6 viewports - which one
-    is the plan is not answerable, nothing moved | M601 Duct Sections: 3 viewports - which
-    one is the plan is not answerable, nothing moved | M701 Mechanical Schedules: no viewport
-    on it - nothing to centre, invariant CultureInfo, lines 7 item(s) [E101 Electrical Power
-    Riser Diagram: 2 viewports - which one..., E201 Unnamed (FloorPlan: Level 2 - Lighting
-    Plan): was (532,..., E301 North Level 1 - Lighting Plan: 3 viewports - which one ...,
-    ...], mm Func`2, noTitleBlock 0 item(s), noViewport 2 item(s) [541359, 545991], refused
-    0 item(s), severalTitleBlocks 0 item(s), tolerance 0.00164041994750656. inputs came elements
-    from find-sheets (7). on Heron Capture Test'
-  negative_case: 'run arranged with numberOrNameContains=M601 instead - chosen because it
+    the transaction group ROLLED BACK afterwards. returned aligned 0, alreadyCentred 0 item(s),
+    ambiguous 0 item(s), apartOnPaper Func`3, at Func`2, centred 2, findings A105 Fifth Floor
+    Plan (FloorPlan: L5): was (481, 389) mm, title block centre (533, 381) mm, moved by (52,
+    -8) mm, reads back (533, 381) mm; viewport box 825 x 673 mm in a title block 1067 x 762
+    mm | SD105 Fifth Floor Plan (FloorPlan: L5_SD): was (481, 389) mm, title block centre
+    (533, 381) mm, moved by (52, -8) mm, reads back (533, 381) mm; viewport box 825 x 673
+    mm in a title block 1067 x 762 mm, invariant CultureInfo, lines 2 item(s) [A105 Fifth
+    Floor Plan (FloorPlan: L5): was (481, 389) mm, ti..., SD105 Fifth Floor Plan (FloorPlan:
+    L5_SD): was (481, 389) mm...], master (null), masterCentre (null), masterOrigin (null),
+    masterProblem (null), masterScale -1, mm Func`2, noTitleBlock 0 item(s), noViewport 0
+    item(s), originOf Func`2, refused 0 item(s), scaleMismatch 0 item(s), scaleOf Func`2,
+    severalTitleBlocks 0 item(s), titleBlockElsewhere 0 item(s), titleBlocksOf Func`2, toMaster
+    false, tolerance 0.00164041994750656, viewportsOf Func`2, wantedMaster . inputs came elements
+    from find-sheets (2); masterSheetNumber not given - "none", the card''s own default (optional).
+    on Snowdon Towers Sample Architectural'
+  negative_case: 'run arranged with numberOrNameContains=Cover instead - chosen because it
     should not contain what this fragment reports - the arrangement was re-made first by running
     find-sheets with this phase''s own values - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned alreadyCentred 0 item(s), ambiguous
-    1 item(s) [545964], apartOnPaper Func`3, at Func`2, centred 0, findings M601 Duct Sections:
-    3 viewports - which one is the plan is not answerable, nothing moved, invariant CultureInfo,
-    lines 1 item(s) [M601 Duct Sections: 3 viewports - which one is the plan is n...], mm
-    Func`2, noTitleBlock 0 item(s), noViewport 0 item(s), refused 0 item(s), severalTitleBlocks
-    0 item(s), tolerance 0.00164041994750656. inputs came elements from find-sheets (1). on
-    Heron Capture Test'
+    the transaction group ROLLED BACK afterwards. returned aligned 0, alreadyCentred 0 item(s),
+    ambiguous 1 item(s) [850623], apartOnPaper Func`3, at Func`2, centred 0, findings G000
+    Cover: 2 viewports - which one is the plan is not answerable, nothing moved, invariant
+    CultureInfo, lines 1 item(s) [G000 Cover: 2 viewports - which one is the plan is not answe...],
+    master (null), masterCentre (null), masterOrigin (null), masterProblem (null), masterScale
+    -1, mm Func`2, noTitleBlock 0 item(s), noViewport 0 item(s), originOf Func`2, refused
+    0 item(s), scaleMismatch 0 item(s), scaleOf Func`2, severalTitleBlocks 0 item(s), titleBlockElsewhere
+    0 item(s), titleBlocksOf Func`2, toMaster false, tolerance 0.00164041994750656, viewportsOf
+    Func`2, wantedMaster . inputs came elements from find-sheets (1); masterSheetNumber not
+    given - "none", the card''s own default (optional). on Snowdon Towers Sample Architectural'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: ceb918d6e9800a09
-
+  fingerprint: 0035c966b7b533e2
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -164,6 +206,10 @@ compatibility-note: >
   only for the report by `* 304.8` (D-20), so no units API is called and the
   2021 units move cannot reach this.
 
+  Version 2 adds `View.Scale` and a title block's `LocationPoint`, unchanged
+  2020 through 2027 - the members ALIGN_VIEWPORTS_ACROSS_SHEETS read, PROVEN
+  on Revit 2024.
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "centre the view on the sheet"       -> here. It used to reach
@@ -175,19 +221,65 @@ compatibility-note: >
 #                                           doors and windows in walls
 #   "move the viewport to the middle     -> here
 #    of the sheet"
-#   "the plan jumps between sheets"      -> ALIGN_VIEWPORTS_ACROSS_SHEETS. The
+#   "the plan jumps between sheets"      -> here, masterSheetNumber (version 2;
+#                                           ALIGN_VIEWPORTS_ACROSS_SHEETS until
+#                                           it was merged here, 2026-11-01). The
 #                                           SAME place on every sheet, copied
-#                                           from a master; this puts each in
+#                                           from a master; without one, each in
 #                                           the middle of its own title block
-#   "put these views on a sheet"         -> PLACE_VIEWS_ON_SHEET, which places
+#   "line the viewports up"              -> here, masterSheetNumber
+#   "change the title block"             -> SET_SHEET_TITLE_BLOCK. This card
+#                                           never moves a title block
+#   "the views are at different scales"  -> SET_VIEW_PROPERTIES, which is what
+#                                           makes lining them up possible
+#   "put these views on a sheet"         -> PLACE_VIEW_ON_SHEET, which places
 #                                           them. This moves one already placed
-#   "change the view scale"              -> SET_VIEW_SCALE. Run this after it
+#   "change the view scale"              -> SET_VIEW_PROPERTIES. Run this after it
 #                                           when a rescaled plan has ended up
 #                                           to one side of its sheet
 #   "which sheets are these"             -> FIND_SHEETS, the read that hands
 #                                           this its sheets
 
+# VERSION 2 (2026-11-01) - ALIGN_VIEWPORTS_ACROSS_SHEETS WAS MERGED INTO THIS
+# CARD on the owner's instruction ("make sure there is no duplicate tools"),
+# and is DEPRECATED. The same job - move the one viewport on each sheet to a
+# target, read it back - with the other target: a MASTER sheet's viewport
+# centre, so the plan sits in the same place on every sheet. What it had and
+# this card lacked is here now: `masterSheetNumber`, found in the whole model;
+# the master needing exactly one viewport; a sheet at another scale skipped in
+# `scaleMismatch`; a sheet whose title block sits at another origin skipped,
+# the centre being measured in sheet space; `aligned`; and its master
+# included in the set left as it is.
+#
+# THE SAFER RULE IN EACH CONFLICT IS KEPT (the owner: "in every conflict keep
+# the safer rule"). That card MOVED a sheet's title block onto the master's
+# origin and then aligned it - a second change nobody asked for, with its
+# purpose saying the sheet was skipped; here such a sheet is skipped and named
+# in `titleBlockElsewhere`, and no title block is ever moved. That card left a
+# move whose read-back missed in place and called it refused (row 5b-237);
+# here it is put back. That card moved a sheet with no title block, or two;
+# here neither is touched, and the master must carry exactly one title block.
+# The read-back tolerance is this card's half millimetre on the paper, not
+# Revit's IsAlmostEqualTo.
+#
+# WHERE ITS OUTPUTS ARE NOW: aligned -> aligned, scaleMismatch ->
+# scaleMismatch, titleBlockMoved -> titleBlockElsewhere (skipped, never
+# moved), ambiguous -> ambiguous, refused -> refused, every sheet with its
+# line in findings. Its sentences moved here.
+
 utterances:
   - centre the view on the sheet
   - move the viewport to the middle of the sheet
   - the plan is off to the side, centre it
+  # MOVED 2026-11-01 from ALIGN_VIEWPORTS_ACROSS_SHEETS, merged into this card.
+  - the plan jumps when i flick through the sheets
+  - line up the viewports across the sheets
+  - line the viewports up on every sheet
+  - put the plan in the same place on every sheet
+  - align the views on these sheets
+  # NOT DECLARED, ON PURPOSE: "line the viewports up". This card's routing row
+  # claims it, and ALIGN_VIEWPORTS_ACROSS_SHEETS' did before - that card won
+  # it by RANKING - but tests/test_routing_phrases.py (row 146) holds it as a
+  # sentence ranking must decide, so it is never declared word for word.
+  # Measured 2026-11-01, lexical backend: with that card retired it reaches
+  # REPORT_VIEWPORT_TYPES, a read. Recorded for the owner, not reworded.

@@ -9,9 +9,31 @@ semantic-identity: "shift these elements by one offset, and check that they actu
 kind: action
 domain: revit.geometry
 capability: MOVE_ELEMENTS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-01) - MOVE_ELEMENTS_TO_POINT WAS MERGED INTO THIS CARD on
+# the owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same job - elements moved, and checked that they arrived -
+# by an offset here and to an absolute point there. Both are here now:
+# `toPoint`, "x,y,z" in millimetres, with each element's offset worked out
+# from its own location point inside the one call. What that card had and
+# this one lacked: the point; an element positioned by a curve counted in
+# `noLocationPoint`, never moved; `notAtPoint` for one that did not arrive; the
+# ids of what moved (`movedIds`); `findings`.
+#
+# TWO RULES MADE SAFER IN THE MERGE (the owner: in every conflict keep the
+# safer rule): the document is REGENERATED BEFORE ANYTHING IS READ BACK - this
+# card's own rule, where MOVE_ELEMENTS_TO_POINT read the position straight
+# after the move; and SEVERAL ELEMENTS TO ONE POINT IS REFUSED unless
+# `stackOnOnePoint` is true - putting two at one coordinate stacks them, a
+# duplicate that schedules twice, and that card did it without a word.
+# Where its outputs are now: `moved` (ids) -> `movedIds`; `notAtPoint` and
+# `noLocationPoint` -> the same names; `findings` -> `findings`.
+#
+# Version 1's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
 
 purpose: >
   Shifts every element by one offset and reports FOUR outcomes, because "it did
@@ -27,6 +49,11 @@ purpose: >
   So the position is read before and after and compared. That comparison is the
   fragment; the move itself is one line.
 
+  Version 2 also puts elements AT a point - `toPoint` - working each one's
+  offset out from its own location point; one positioned by a curve is
+  counted, never moved, and several to one point are refused unless the
+  caller says so.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a bulk
   move is one undo entry.
 
@@ -36,9 +63,26 @@ contract:
       type: Document
     - name: elements
       type: IList<Element>
+    # Left out ("0,0,0") when `toPoint` says where instead. Both is refused.
     - name: offset
       type: XYZ
       source: request
+      optional: true
+      absent: 0,0,0
+    # VERSION 2, from MOVE_ELEMENTS_TO_POINT. The point to put each element AT,
+    # "x,y,z" in MILLIMETRES - its own location point lands on it. Left out
+    # ("none"): moved by `offset`, as version 1.
+    - name: toPoint
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 2. True to let more than one element be put at ONE point,
+    # stacked. Left out it is false, and more than one is refused.
+    - name: stackOnOnePoint
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: moved
       role: result
@@ -61,31 +105,56 @@ contract:
       # evidence it could not check, never a confirmed move (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: movedIds
+      # VERSION 2. The elements that moved the whole way - or, to a point,
+      # that stand on it after the regeneration. The ids `moved` counts.
+      role: result
+      type: IList<ElementId>
+    - name: notAtPoint
+      # VERSION 2, to a point. Elements that are not within a millimetre of it
+      # after the regeneration - refused, or held by a constraint. Evidence it
+      # looked, never a thing it moved (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: noLocationPoint
+      # VERSION 2, to a point. Positioned by a curve rather than a point, so
+      # "put it at this coordinate" has no single meaning - given and
+      # unusable, never moved (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      # VERSION 2. The four outcomes in a sentence, or why nothing moved.
+      type: IList<string>
 
 proof:
-  date: '2026-09-13'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: test projject (3,417 elements), Revit 2024, session 20224
+  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-in-region, set-selection with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned askedForNothing
-    false, attempted 4 item(s) [Generic - 200mm, Generic - 200mm, Generic - 200mm, ...], before
-    4 entry(ies), blocked 0 item(s), moved 4, partly 0, probe Func`2, tolerance 0.00328083989501312,
-    unverified 0 item(s). inputs came elements from the selection (4); offset as given. on
-    test projject
-  negative_case: run with minMm=19000,-1000,-1000, maxMm=29000,7000,4000, exact=false, categories=Walls,
-    offset=500,0,0 instead - chosen because it should not contain what this fragment reports
-    - the arrangement was re-made first by running select-in-region, set-selection with this
-    phase's own values - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned askedForNothing false, attempted 2 item(s) [Generic -
-    200mm, Generic - 200mm], before 2 entry(ies), blocked 2 item(s) [925633, 925634], moved
-    0, partly 0, probe Func`2, tolerance 0.00328083989501312, unverified 0 item(s). inputs
-    came elements from the selection (2); offset as given. on test projject
+    filter-elements-by-category, set-selection with this phase's own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    blocked 0 item(s), findings 1 item(s) [6 moved the whole offset, 0 part of it, 0 did not
+    move, 0 co...], moved 6, movedIds 6 item(s) [579452, 579920, 579921, ...], noLocationPoint
+    0 item(s), notAtPoint 0 item(s), partly 0, pointWord none, probe Func`2, stackOnOnePoint
+    false, stop (null), target (null), toAPoint false, tolerance 0.00328083989501312, unverified
+    0 item(s). inputs came elements from the selection (6); offset as given; toPoint not given
+    - "none", the card's own default (optional); stackOnOnePoint not given - false (optional).
+    on P1102 MEP
+  negative_case: run with category=Sheets, offset=1000,0,0 instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase's own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    blocked 7 item(s) [541359, 541389, 545964, ...], findings 1 item(s) [0 moved the whole
+    offset, 0 part of it, 7 did not move, 0 co...], moved 0, movedIds 0 item(s), noLocationPoint
+    0 item(s), notAtPoint 0 item(s), partly 0, pointWord none, probe Func`2, stackOnOnePoint
+    false, stop (null), target (null), toAPoint false, tolerance 0.00328083989501312, unverified
+    0 item(s). inputs came elements from the selection (7); offset as given; toPoint not given
+    - "none", the card's own default (optional); stackOnOnePoint not given - false (optional).
+    on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 0e4a74f846f5ab08
-
+  fingerprint: e57c28b2b1b6e5d4
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -96,6 +165,13 @@ compatibility-note: >
   and the offset arrives in Revit's internal feet so no units call is made -
   which is what keeps this clear of the 2021 units move.
 
+# ROUTING (2026-11-01, MOVE_ELEMENTS_TO_POINT merged in)
+#
+#   "move it 500 east"         -> here, by `offset`
+#   "put it at 12400, 8600"    -> here, `toPoint`
+#   "move these to level 3"    -> SET_ELEMENT_LEVEL reassigns without moving
+#   "where is it now"          -> REPORT_LOCATION
+
 utterances:
   - move the ducts up 200
   - shift them 300 to the left
@@ -103,3 +179,12 @@ utterances:
   - nudge these over
   - move them down 50
   - drop the services 100 mm
+  # MOVED 2026-11-01 from MOVE_ELEMENTS_TO_POINT, merged into this card.
+  - move this to these coordinates
+  - put it at this exact point
+  - set the location of these
+  - move to 0,0,0
+  - place this at the survey point
+  - put it at 12400, 8600
+  # ...and its semantic identity, which nothing else declares:
+  - put this element at exactly this coordinate

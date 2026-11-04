@@ -1,0 +1,160 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-165
+semantic-identity: "set a view's work plane to a named level, reference plane or grid, or show or hide it - Architecture > Work Plane > Set and Show - read back before and after"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "set the work plane to Level
+# 2", "set the work plane to reference plane Ceiling Datum", "show the work
+# plane in this view" and "hide the work plane" - Revit's Architecture > Work
+# Plane > Set and Show. FRAGMENT-ISSUES row 5b-1392: no card set, showed or
+# read a view's work plane - a grep of every fragment's C# that day found
+# View.SketchPlane, SketchPlane.Create and View.ShowActiveWorkPlane /
+# HideActiveWorkPlane in none, and the sentences reached
+# CREATE_PROJECT_REFERENCE_PLANES, a write that draws reference planes.
+#
+# LOOK-ALIKES, NOT DUPLICATES (heron-duplicate-checker's method, 2026-11-02).
+# CREATE_PROJECT_REFERENCE_PLANES draws reference planes and sets no work
+# plane; a plane it draws is one this card can then be pointed at.
+# SET_VIEW_PROPERTIES sets what the Properties palette holds - scale, detail
+# level, phase, view range - and the work plane is not in the palette.
+# SET_FAMILY_SETTINGS sets the family's Work Plane-Based tick, a family
+# setting, not a view's plane. The family form cards make a sketch plane of
+# their own for one form and leave the view's alone. The QUESTION - "which
+# work plane is this view on" - is REPORT_VIEW_WORK_PLANE's, a read of its
+# own since 2026-11-02 (D-86): a write never answers it.
+#
+# THE PLANE IS NEVER GUESSED (D-33). A level, a named reference plane or a
+# grid by its name; with none named, or a name nothing has, nothing changes
+# and the levels, named reference planes and grids are listed. A name two of
+# them share is refused until the kind is said - "reference plane Ceiling
+# Datum", "level Level 2".
+#
+# NOTHING IS DELETED. The work plane the view had stays in the model, as it
+# does when the Work Plane dialog sets another; Article 7 does not arise.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.views
+capability: SET_VIEW_WORK_PLANE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets the work plane of one view - the view named, or the view in front -
+  to a level, a named reference plane or a grid named by the modeller, never
+  guessed, as Architecture > Work Plane > Set does; and shows or hides the
+  work plane in that view, as Show Work Plane does. The view's work plane is
+  read before and after, by the level, reference plane or grid it was taken
+  from and where it lies. Sheets, schedules, legends, drafting views and view
+  templates are refused by name. A plane already the view's work plane is
+  left alone and said so.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The view, by name - "Level 1", "Section 1", "{3D}". Left out, it binds
+    # null and the view in front is used. A floor, ceiling, structural or
+    # area plan, a section, an elevation, a detail view or a 3D view; any
+    # other kind, and a view template, is refused by name.
+    - name: view
+      type: View
+      source: request
+      optional: true
+    # The level, reference plane or grid to take the work plane from, by its
+    # name - "Level 2", "Ceiling Datum", "B". The kind may be said before it
+    # - "reference plane Ceiling Datum", "level Level 2", "grid B", or Revit's
+    # own "Reference Plane : Ceiling Datum" - and is needed only when two of
+    # them share the name. Left out, the work plane is not changed.
+    - name: plane
+      type: string
+      source: request
+      optional: true
+      absent: ""
+    # "show" or "hide" - Show Work Plane on or off in the view. Left out, the
+    # display is not changed.
+    - name: display
+      type: string
+      source: request
+      optional: true
+      absent: ""
+  provides:
+    - name: after
+      # The view's work plane after the call, read back from the view:
+      # "Level : Level 2 - horizontal at elevation 4000 mm".
+      role: result
+      type: string
+    - name: changed
+      # How many of the two things asked - the plane, the display - were
+      # changed. 0 when the plane was already the view's and nothing else
+      # was asked (D-52).
+      role: result
+      type: int
+    - name: before
+      # The view's work plane as it was found, in the same words as `after`
+      # - "no work plane" when it had none.
+      role: accounting
+      type: string
+    - name: report
+      # ONE STRING: the view, its work plane before and after, and the
+      # display shown or hidden.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was changed, in the modeller's words - with the levels,
+      # reference planes and grids listed when the plane was not clear. Null
+      # when it ran (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. SketchPlane.Create(Document,
+  ElementId) for a level or a grid, SketchPlane.Create(Document, Reference)
+  with ReferencePlane.GetReference() for a reference plane, View.SketchPlane
+  get and set, View.ShowActiveWorkPlane and HideActiveWorkPlane,
+  SketchPlane.GetPlane and GetPlaneReference, Document.GetElement(Reference),
+  ReferencePlane.Normal / GetPlane, Grid.Curve / IsCurved,
+  Level.ProjectElevation, View.ViewType / IsTemplate and Document.ActiveView
+  read the same 2020 through 2027 with tools/api-surface --members on
+  2026-11-02. Revit gives no member that reads whether a view's work plane
+  is SHOWN, on any release, so the display is not read back - the reply says
+  so. Not seen in Revit.
+
+# ROUTING (2026-11-02) - the same rows are in REPORT_VIEW_WORK_PLANE and
+# CREATE_PROJECT_REFERENCE_PLANES.
+#
+#   "set the work plane to Level 2"     -> here, plane Level 2, the view in
+#                                          front
+#   "set the work plane to reference plane Ceiling Datum"
+#                                       -> here, plane "reference plane
+#                                          Ceiling Datum"
+#   "show the work plane in this view"  -> here, display show
+#   "hide the work plane"               -> here, display hide
+#   "which work plane is this view on", "what is the work plane of this view"
+#                                       -> REPORT_VIEW_WORK_PLANE, a read.
+#                                          A question, and this writes (D-86).
+#                                          The keyword route alone ranks this
+#                                          card first on both; `find` answers
+#                                          the read by identity, flag or not
+#   "draw a reference plane along grid B in this plan"
+#                                       -> CREATE_PROJECT_REFERENCE_PLANES,
+#                                          which draws the plane this card
+#                                          can then be set to
+
+utterances:
+  - set the work plane to Level 2
+  - set the work plane to reference plane Ceiling Datum
+  - show the work plane in this view
+  - hide the work plane

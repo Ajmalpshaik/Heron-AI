@@ -266,8 +266,14 @@ def need_may_be_absent(entry):
     `View` marked so, which binds null, the whole model, since 2026-10-22
     (FRAGMENT-ISSUES row 5b-1320: "select the plumbing fixtures" could not be
     asked of the whole model, and this mirror handed the call back for want of
-    a view before Revit was asked) - and HeronBindingNote.DeclaredAbsent binds
-    one whose card names what leaving it out means (`absent:`,
+    a view before Revit was asked) - or an `IList<View>` marked so, which binds
+    an empty list since 2026-11-01 (PLACE_VIEW_ON_SHEET reads its handed-on
+    `elements` when no view is named) - or an `Element` or an `MEPSystemType`
+    marked so, which binds null since 2026-11-01 (TRACE_CONNECTIVITY with no
+    `start` partitions the whole set; CREATE_MEP_RUNS draws cable tray with no
+    system type), or an `IList<XYZ>`, which binds an empty list (CREATE_OPENING's
+    family half names neither) - and HeronBindingNote.DeclaredAbsent
+    binds one whose card names what leaving it out means (`absent:`,
     need_absent_text). Every other request need is still refused when absent
     (FRAGMENT-ISSUES rows 5b-227 and 5b-252), so it answers False for them.
     One rule on both sides, or the Python half calls runnable what Revit
@@ -281,14 +287,24 @@ def need_may_be_absent(entry):
 
 
 # The types HeronBindingNote.AbsentValue binds when absent and marked optional -
-# its switch, word for word: a bool to false, a View to null.
-ABSENT_BINDS = ("bool", "View")
+# its switch, word for word: a bool to false, a View to null, a view list to an
+# empty one, and - since 2026-11-01 - one Element or one duct-or-pipe system
+# type to null, and a point list to an empty one (CREATE_OPENING's family
+# half, merged in from CREATE_FAMILY_HOST_OPENING, names neither).
+ABSENT_BINDS = ("bool", "View", "IList<View>", "Element", "MEPSystemType", "IList<XYZ>")
 
 
 # The element lists HeronBindingNote.EmptyWhenAbsent binds empty - its switch,
-# word for word, so the two halves cannot disagree about a spelling.
+# word for word, so the two halves cannot disagree about a spelling - and,
+# since 2026-11-01, the curve lists it binds empty the same way.
 EMPTY_WHEN_ABSENT = ("IList<Element>", "List<Element>", "ICollection<Element>",
-                     "IEnumerable<Element>")
+                     "IEnumerable<Element>",
+                     "IList<Curve>", "List<Curve>", "ICollection<Curve>",
+                     "IEnumerable<Curve>")
+
+# And the one shape it binds NULL - "nobody handed one on" - since 2026-11-01:
+# GROUP_AND_COUNT version 2's optional `quantities`, word for word.
+NULL_WHEN_ABSENT = ("IDictionary<ElementId,double>",)
 
 
 def need_may_be_empty(entry):
@@ -298,15 +314,17 @@ def need_may_be_empty(entry):
     element list nothing filled - no chain, no selection, no creator's output -
     to an EMPTY list only when the card marks it `optional: true`. REPORT_LOCATION
     version 4 is the case: "where is this project" with nothing selected answers
-    with the site alone. Every other unfilled need is still refused as
+    with the site alone. Since 2026-11-01 a list of CURVES marked so binds
+    empty too - SET_VIEW_CROP's `boundary`, handed on for a shaped crop and
+    absent for the rectangle. Every other unfilled need is still refused as
     needs_unbound, so this answers False for them, and for a request need, which
     need_may_be_absent decides. One rule on both sides, or the Python half
     calls runnable what Revit refuses - row 96's lesson.
     """
     shape = str(entry.get("type") or "").replace(" ", "")
     return (need_source(entry) == "fragment"
-            and "ElementId" not in shape
-            and shape in EMPTY_WHEN_ABSENT
+            and (shape in NULL_WHEN_ABSENT
+                 or ("ElementId" not in shape and shape in EMPTY_WHEN_ABSENT))
             and str(entry.get("optional")).strip().lower() == "true")
 
 
@@ -794,10 +812,11 @@ def need_notes(path):
     A TYPE HINT CANNOT CARRY A SYNTAX, AND THE CARD ALREADY DOES. how_to_type
     says how to write a `double` or a list; it has nothing to say about a
     `string` (NO_HINT_ON_PURPOSE), and for most strings that is right. For some
-    it is the whole job: CREATE_FAMILY_EXTRUSION's `profile` is "loops with `|`
-    between - circle CX,CY R, rect X1,Y1 X2,Y2 ... in the plane's two model
-    coordinates", and that sentence sits in the comment above the need, where
-    yaml.safe_load drops it. On 2026-10-09 a chat building a fire alarm panel
+    it is the whole job: CREATE_FAMILY_FORMS' `forms` is rows whose profile is
+    "loops with `|` between - circle CX,CY R, rect X1,Y1 X2,Y2 ... in the
+    plane's two model coordinates" (CREATE_FAMILY_EXTRUSION's `profile`, when
+    that was a card of its own), and that sentence sits in the comment above
+    the need, where yaml.safe_load drops it. On 2026-10-09 a chat building a fire alarm panel
     was told only `profile  string`, called the capability empty to find out,
     was refused, and then read brain/fragments/*/fragment.yaml to learn the
     syntax - the file-reading AGENTS.md forbids for a Revit job, about a minute

@@ -10,6 +10,44 @@ positive:
   - given: a floor slab and a boundary in its plane
     expect: the slab penetrated, checked in section
 
+  # VERSION 3 (2026-11-01), from CREATE_FAMILY_HOST_OPENING. Each FAILS on
+  # version 2, which had no shape and refused a family with no host.
+  - given: >
+      a new family from the metric Generic Model wall based template, its
+      sample wall running along X; host and boundary left out, shape "rect
+      -300,600 300,1200", perpendicularFace false
+    expect: >
+      an opening hosted by the template's wall, read back X -300 to 300 and Z
+      600 to 1200 mm, openingId its id and a finding that its size is fixed as
+      drawn; LOOKED AT in the elevation - then the family placed on a wall in a
+      test project cuts the same hole there
+
+  - given: >
+      a new family from the metric Generic Model ceiling based template; shape
+      "circle 0,0 100"
+    expect: an opening in the template's ceiling, X and Y -100 to 100 mm by its ends
+
+  # VERSION 4 (2026-11-02), the wall's own call. Each FAILS on version 3,
+  # which sent a wall to the floor-and-roof call and had no `wallOpening`.
+  - given: >
+      a straight basic wall on "Level 1", 200 mm thick, 6000 mm long and 3000
+      mm high, selected as host; wallOpening "1200 x 800 at 900";
+      perpendicularFace left out - "put a 1200 x 800 opening in this wall at
+      900 above the floor" - THE FIRST POSITIVE TO RUN
+    expect: >
+      created one opening; built "A 1200 x 800 mm opening in the wall ..., its
+      sill 900 mm above "Level 1", its centre 3000 mm along the wall from its
+      start - read back."; a finding that it was centred; LOOKED AT in an
+      elevation of the wall and measured: 1200 wide, 800 high, sill 900
+
+  - given: the same wall, wallOpening "600 x 600 at 1200 along 1000"
+    expect: an opening 600 x 600, sill 1200, its centre 1000 mm from the wall's start - no centred finding
+
+  - given: >
+      the same wall, boundary "2400,0,900; 3600,0,900; 3600,0,1700; 2400,0,1700"
+      on a wall whose location line runs from 0,0 to 6000,0 on Level 1 at 0
+    expect: the same 1200 x 800 opening at sill 900 as the first case, by the wall's own call
+
 negative:
   - given: no host
     expect: refused by name, nothing cut
@@ -17,13 +55,63 @@ negative:
   - given: a boundary of two points
     expect: refused by name, nothing cut
 
+  - given: a project, host and boundary both LEFT OUT (version 3 - they bind null and empty now)
+    expect: refused "No host was given", in `refused` and findings, nothing cut - as version 2 refused it
+
+  # VERSION 3, CREATE_FAMILY_HOST_OPENING's negatives.
+  - given: a new family from the metric Generic Model floor based template, shape "rect 0,0 100,100"
+    expect: >
+      refused - Revit's opening call takes only a wall or a ceiling; cut a floor
+      with a void form - nothing cut
+
+  - given: shape "rect 0,0 100,100 | rect 200,0 300,100" in the wall based family
+    expect: refused - an opening takes one closed loop - nothing cut
+
+  - given: a project, a wall as host, three boundary points AND shape "rect 0,0 100,100"
+    expect: refused - shape is a family's - nothing cut
+
+  - given: the wall based family, shape given AND boundary points given
+    expect: refused - a family's opening is the shape - nothing cut
+
   - given: a boundary that does not lie on the host at all
     expect: >
       reported, nothing cut. This is the case that matters most: a profile
       worked out against the wrong face is the likely mistake, and a silent
       opening in the wrong place is worse than a refusal
 
+  # VERSION 4, the wall's refusals - each a different value, nothing cut.
+  - given: >
+      the same wall, wallOpening "1200 x 800 at 2500" - its top 3300 mm above
+      "Level 1", over the 3000 mm wall - THE NEGATIVE TO RUN BESIDE THE FIRST
+      POSITIVE
+    expect: >
+      refused "... it would run off the wall's bottom or top", created
+      invalid, no opening in the wall (SELECT_OPENINGS counts the same before
+      and after)
+
+  - given: a CURVED wall as host, wallOpening "1200 x 800 at 900"
+    expect: refused - a curved wall, not checked, refused rather than tried - nothing cut
+
+  - given: a curtain wall as host, wallOpening "1200 x 800 at 900"
+    expect: refused by name - a curtain wall - nothing cut
+
+  - given: a floor as host, wallOpening "1200 x 800 at 900"
+    expect: refused - `wallOpening` is a wall's; a floor takes boundary points - nothing cut
+
+  - given: the straight wall, boundary "0,0,900; 1200,0,900; 600,0,1700" (a triangle)
+    expect: refused - a wall opening is an upright rectangle, point 3 is not at a corner - nothing cut
+
+  - given: the straight wall, wallOpening "1200 by 800"
+    expect: refused, saying how it is written - nothing cut
+
 second_route:
+  - >
+      Version 4: Revit's own Architecture > Opening > Wall drawn by hand beside
+      the one made here at the same size and sill, the two compared in an
+      elevation - and both counted by SELECT_OPENINGS as wall openings
   - >
       Revit's own Architecture then Wall Opening on the same wall, and the two
       compared in a section
+  - >
+      In the Family Editor (version 3), select the opening: Edit Sketch shows
+      its boundary in the template's wall or ceiling

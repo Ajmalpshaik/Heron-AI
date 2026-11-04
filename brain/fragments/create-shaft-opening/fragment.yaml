@@ -1,0 +1,130 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-151
+semantic-identity: "cut a shaft opening from a base level to a top level through every slab between - Architecture > Opening > Shaft - from corners in plan, read back"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "cut a shaft opening from
+# Level 1 to Roof through all the slabs here" and "add a shaft for the riser
+# at these corners, base Level 0 top Level 6" - Revit's Architecture >
+# Opening > Shaft. No card cut one: a grep of every fragment's C# that day for
+# NewOpening found the host-element, framing and wall calls in CREATE_OPENING
+# and the host-element call in CREATE_STAIRS, never the one that takes two
+# levels. brain/heron_retrieve.py on the sentences (a scratch store) answered
+# SELECT_OPENINGS, a read, and CREATE_STAIRS.
+#
+# A DIFFERENT CONTRACT, NOT A SECOND TOOL FOR ONE (heron-duplicate-checker's
+# method, 2026-11-02). CREATE_OPENING cuts ONE host it is given - a wall, a
+# floor, a roof, a ceiling, a beam - with a boundary in that host's plane.
+# A shaft has no host: two levels and a plan outline, and Revit cuts every
+# floor, roof and ceiling between. Its third API call takes `Level, Level,
+# CurveArray`. SELECT_OPENINGS finds shafts already there and makes none;
+# CREATE_STAIRS cuts the top slab's own opening over a stair and measured a
+# shaft doing nothing there (2026-10-03). Look-alikes, not duplicates.
+#
+# THE LEVELS ARE NEVER GUESSED (D-33): each by its exact name; a name nothing
+# has makes nothing and lists every level with its elevation. A top level not
+# above the base is refused naming both.
+
+kind: action
+domain: revit.elements
+capability: CREATE_SHAFT_OPENING
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Cuts a shaft opening from a base level up to a top level, through every
+  floor, roof and ceiling between, from its corners in plan in millimetres -
+  three or more, closed back to the first. Both levels by name, never guessed:
+  a name no level has makes nothing and lists the levels. A top level that is
+  not above the base, two corners in one place and an outline that crosses
+  itself are refused by name. Read back: the outline's extent to a millimetre
+  and both levels, all or nothing; the slabs it cut, by the volume each lost.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The level the shaft starts at, by its exact name - "Level 1". A NAME,
+    # not a bound Level, so a name nothing has can list every level here.
+    - name: baseLevel
+      type: string
+      source: request
+    # The level it runs up to - "Roof". Must be above the base.
+    - name: topLevel
+      type: string
+      source: request
+    # The outline's corners in plan, in millimetres - "0,0,0; 1200,0,0;
+    # 1200,800,0; 0,800,0" - at least three, in order round the shaft; closed
+    # back to the first by itself. Their heights are not used: the outline is
+    # drawn on the base level.
+    - name: corners
+      type: IList<XYZ>
+      source: request
+  provides:
+    - name: created
+      role: result
+      type: ElementId
+    - name: openingId
+      # The shaft's unique id.
+      role: result
+      type: string
+    - name: built
+      # Its levels, height, corners and outline extent - read back.
+      role: result
+      type: string
+    - name: slabsCut
+      # The floors, roofs and ceilings whose volume the shaft took out of.
+      role: result
+      type: IList<ElementId>
+    - name: refused
+      # Why nothing was cut, in plain words. Empty when a shaft was made (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Document.Create.NewOpening(Level,
+  Level, CurveArray), Opening.BoundaryCurves, Level.ProjectElevation and
+  Name, BuiltInParameter WALL_BASE_CONSTRAINT, WALL_HEIGHT_TYPE and
+  HOST_VOLUME_COMPUTED and Parameter.AsElementId read the same 2020 through
+  2027 with tools/api-surface --members on 2026-11-02.
+  Whether a shaft carries its levels in WALL_BASE_CONSTRAINT and
+  WALL_HEIGHT_TYPE is NOT KNOWN from here - when either is missing the
+  findings say its levels were not read back. Not seen in Revit.
+
+# ROUTING (2026-11-02) - the same rows are in CREATE_OPENING and
+# SELECT_OPENINGS.
+#
+#   "cut a shaft opening from Level 1 to Roof through all the slabs here"
+#                                  -> here, the two levels and the corners
+#   "add a shaft for the riser at these corners, base Level 0 top Level 6"
+#                                  -> here
+#   "put a 1200 x 800 opening in this wall at 900 above the floor"
+#                                  -> CREATE_OPENING, `wallOpening` - one host
+#   "make the hole through the slab", "cut the penetrations"
+#                                  -> CREATE_OPENING - one slab it is given
+#   "cut an opening in this slab"  -> CREATE_OPENING, declared there - by
+#                                     identity. Ranking alone puts this card
+#                                     first on it (check-routing, scratch
+#                                     store, 2026-11-02; FRAGMENT-ISSUES row
+#                                     5b-1393)
+#   "where are the shafts"         -> SELECT_OPENINGS - a READ; it makes none
+#   "where do the holes need to be"-> PROPOSE_MEP_OPENINGS - it creates nothing
+#   "make the stair and its opening"
+#                                  -> CREATE_STAIRS with cutOpening=true - the
+#                                     top slab's own opening, not a shaft
+
+utterances:
+  - cut a shaft opening from Level 1 to Roof through all the slabs here
+  - add a shaft for the riser at these corners, base Level 0 top Level 6

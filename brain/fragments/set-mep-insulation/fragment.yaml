@@ -108,6 +108,13 @@ compatibility-note: >
 #   "insulate these"                  -> here
 #   "add 50 insulation"               -> here
 #   "make the duct bigger"            -> SET_MEP_SIZE - the duct itself
+#   "remove the insulation from these
+#    ducts"                           -> REMOVE_MEP_INSULATION - takes it off
+#                                        and leaves the duct bare (2026-11-01)
+#   "change the lining thickness to
+#    50"                              -> SET_DUCT_LINING - the lining inside
+#                                        the duct, not the insulation
+#                                        outside it (2026-11-01)
 #   "will it fit in the ceiling"      -> FIND_CLASHES, and RUN IT AFTER this:
 #                                        insulation is what makes a run that
 #                                        cleared the void stop clearing it

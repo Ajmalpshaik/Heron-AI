@@ -1,6 +1,47 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `offset`, `toLevels`,
-// `turnDegrees`, `turnCentreMm` and `toWorkset` are in scope; leaves `copies`,
-// `notCopied`, `copiedTo`, `onWorksets` and `refused` behind.
+// `turnDegrees`, `turnCentreMm`, `toWorkset`, `count`, `spacingMm` and
+// `sweepDegrees` are in scope; leaves `copies`, `notCopied`, `copiedTo`,
+// `onWorksets`, `refused`, `copiesEach` and `stepDegrees` behind.
+//
+// VERSION 5 (2026-11-01) - ARRAY_ELEMENTS_RADIAL MERGED IN. `sweepDegrees`
+// copies the set ROUND A POINT - bollards round a turning head, seats round a
+// table - `count` positions in all, the original the first, about a vertical
+// axis through `turnCentreMm`. A full circle divides the sweep by the count, a
+// part sweep by the count less one, and `stepDegrees` says the angle. Kept
+// from that card: the full-circle rule, the count as the total, the set copied
+// together, every copy counted from the model. The SAFER rule kept in each
+// conflict: a sweep over 360 is refused (that card read 720 as a full circle
+// and stood half its copies on the others), a copy Revit will not bring round
+// takes the whole call back (that card left it on top of the original), the
+// copies are made a kilometre aside first (the level path's measured join
+// lesson), and a sweep with no centre is refused rather than turned about the
+// set's own middle. Left out ("none"), version 4 exactly.
+//
+// VERSION 4 (2026-11-01) - ARRAY_ELEMENTS MERGED IN. Copied by the offset,
+// the set can now be REPEATED - an even run along a direction, diffusers down
+// a corridor:
+//
+//   count       how many there are AFTERWARDS, THE ORIGINAL INCLUDED - eight
+//               is the original and seven copies, as Revit's own array counts.
+//               Left out it is 2: one copy, version 3 exactly. 1 or less is an
+//               array of nothing and is refused.
+//   spacingMm   the pitch in millimetres. Given, `offset` is read as a
+//               DIRECTION only - NORMALISED, its length ignored - so a
+//               direction typed as the vector between two points 12 m apart
+//               does not multiply the pitch by twelve. Left out, `offset`
+//               itself is the step.
+//
+// THE SET IS COPIED TOGETHER AT EVERY STEP - the safer of the two cards'
+// rules. ARRAY_ELEMENTS copied element by element, which breaks the
+// relationships between them: a duct and its fitting arrive unconnected. Here
+// each step is one CopyElements call over the whole set, as the offset copy
+// always was, and a step Revit copies fewer for is counted in `notCopied`.
+//
+// A PLAIN COPY, NOT A REVIT ARRAY ELEMENT. A real Array is a constrained group
+// that stays linked and renumbers itself; these copies are independent.
+//
+// A count or a pitch is applied only when copying by the offset; onto levels
+// either is refused rather than ignored.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). `offset` is in internal FEET.
 //
@@ -62,6 +103,9 @@ var notCopied = 0;
 var copiedTo = "";
 var onWorksets = "";
 string refused = null;
+// VERSION 4, from ARRAY_ELEMENTS: copies of each element - count less the
+// original.
+var copiesEach = 0;
 
 var source = new List<ElementId>();
 foreach (var element in elements)
@@ -386,11 +430,216 @@ Action readBackWorksets = () =>
     onWorksets = string.Join("\n", lines);
 };
 
+// VERSION 4: THE RUN, read once for both paths.
+var pitchText = (spacingMm ?? "").Trim();
+var byPitch = pitchText.Length > 0 && !string.Equals(pitchText, "none", StringComparison.OrdinalIgnoreCase);
+double pitchMm = 0;
+string runProblem = null;
+if (count < 2)
+    runProblem = string.Format("A count of {0} is an array of nothing - the count is how many there are "
+        + "afterwards, the original included, so one copy is 2.", count);
+else if (byPitch && (!double.TryParse(pitchText, System.Globalization.NumberStyles.Float,
+                                      System.Globalization.CultureInfo.InvariantCulture, out pitchMm)
+                     || double.IsNaN(pitchMm) || double.IsInfinity(pitchMm) || pitchMm <= 0))
+    runProblem = "\"" + pitchText + "\" is not a spacing - a number of millimetres more than 0.";
+else if (byPitch && (offset == null || offset.GetLength() < 1e-9))
+    runProblem = "A spacing was given and the direction to space along is zero - give `offset` as the "
+        + "direction, \"1,0,0\" for along X.";
+
+// VERSION 5: THE SWEEP, read once - copies ROUND A POINT (ARRAY_ELEMENTS_RADIAL's
+// job, merged in). `sweepDegrees` left out ("none") is version 4 exactly.
+var sweepText = (sweepDegrees ?? "").Trim();
+var bySweep = sweepText.Length > 0 && !string.Equals(sweepText, "none", StringComparison.OrdinalIgnoreCase);
+double sweep = 0;
+XYZ sweepCentre = null;
+string sweepProblem = null;
+if (bySweep)
+{
+    var bareSweep = sweepText.Replace("°", " ").ToLowerInvariant()
+        .Replace("degrees", " ").Replace("degree", " ").Replace("deg", " ").Trim();
+    if (!double.TryParse(bareSweep, System.Globalization.NumberStyles.Float,
+                         System.Globalization.CultureInfo.InvariantCulture, out sweep)
+        || double.IsNaN(sweep) || double.IsInfinity(sweep))
+        sweepProblem = "\"" + sweepText + "\" is not a sweep. Type it in degrees - 360 for a full circle, 90 for a "
+            + "quarter - or leave it out to copy by the offset.";
+    else if (Math.Abs(sweep) < 1e-9)
+        sweepProblem = "A sweep of 0 degrees puts every copy on top of the original.";
+    else if (Math.Abs(sweep) > 360.0 + 1e-9)
+        // THE SAFER RULE, KEPT OVER ARRAY_ELEMENTS_RADIAL's. That card read 720
+        // degrees as a full circle and stepped by 720 / count - so eight round
+        // 720 stood copies at 360, 450, 540 and 630: four of them exactly on the
+        // original and on other copies, each scheduling twice.
+        sweepProblem = "A sweep of " + sweep.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture)
+            + " degrees goes round more than once, and the second time round puts copies on top of the first - "
+            + "360 is a full circle.";
+    else if (levelsText.Length > 0)
+        sweepProblem = "A sweep copies round a point on the originals' own level; onto levels each level's copy "
+            + "turns by turnDegrees instead - give one or the other.";
+    else if (Math.Abs(turn) > 1e-12)
+        sweepProblem = "turnDegrees and sweepDegrees are two ways to say the turn - round a point the step comes "
+            + "from the sweep and the count. Leave turnDegrees out.";
+    else if (byPitch)
+        sweepProblem = "A spacing runs along a direction and a sweep goes round a point - give one or the other.";
+    else if (offset != null && offset.GetLength() > 1e-9)
+        sweepProblem = "Round a point the copies stand where the turn puts them, so `offset` must be 0,0,0. A shift "
+            + "as well is MOVE_ELEMENTS after.";
+    else if (centreText.Length == 0)
+        // Never the middle of what is copied: one element turned about its own
+        // middle is a stack of copies on the spot it already stands on.
+        sweepProblem = "A sweep needs the point to go round - give turnCentreMm as \"x, y\" in millimetres, the "
+            + "column's or the table's centre.";
+    else
+    {
+        var centreParts = centreText.Split(new[] { ',', ';', ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+        var centreNumbers = new List<double>();
+        foreach (var part in centreParts)
+        {
+            double value;
+            if (double.TryParse(part, System.Globalization.NumberStyles.Float,
+                                System.Globalization.CultureInfo.InvariantCulture, out value)
+                && !double.IsNaN(value) && !double.IsInfinity(value) && Math.Abs(value) <= 100000000.0)
+                centreNumbers.Add(value);
+            else
+            {
+                centreNumbers.Clear();
+                break;
+            }
+        }
+        if (centreNumbers.Count == 2 || centreNumbers.Count == 3)
+            sweepCentre = new XYZ(centreNumbers[0] / 304.8, centreNumbers[1] / 304.8, 0);
+        else
+            sweepProblem = "\"" + centreText + "\" is not a plan point. Type it as two numbers in MILLIMETRES - "
+                + "\"26000, 20000\".";
+    }
+}
+// VERSION 5: the angle between one position and the next, worked out from the
+// sweep and the count before anything is made. 0 when no sweep was asked.
+var stepDegrees = 0.0;
+
 if (levelsText.Length == 0)
 {
     if (turnProblem != null)
     {
         refused = turnProblem + " Nothing was copied.";
+    }
+    else if (runProblem != null)
+    {
+        refused = runProblem + " Nothing was copied.";
+    }
+    else if (sweepProblem != null)
+    {
+        refused = sweepProblem + " Nothing was copied.";
+    }
+    else if (bySweep && worksetProblem != null)
+    {
+        refused = worksetProblem + " Nothing was copied.";
+    }
+    else if (bySweep && source.Count == 0)
+    {
+        // Nothing given: nothing copied, exactly as the offset path - and never
+        // the turn refusal below, which would read as the wrong reason.
+    }
+    else if (bySweep)
+    {
+        // ------------------------------------------------------------------
+        // VERSION 5 - ROUND A POINT, from ARRAY_ELEMENTS_RADIAL.
+        //
+        // A FULL CIRCLE AND A PART SWEEP DIVIDE DIFFERENTLY, and getting it
+        // wrong stacks a copy on the original:
+        //   full circle  step = sweep / count        the last gap closes to the start
+        //   part sweep   step = sweep / (count - 1)  both ends are occupied
+        // Eight round 360 stand at 0, 45 ... 315; eight across 90 at 0, 12.86 ... 90.
+        //
+        // THE AXIS IS VERTICAL through turnCentreMm - the array anybody draws
+        // on a plan.
+        //
+        // THE SET IS COPIED TOGETHER AT EVERY STEP - one CopyElements over the
+        // whole set, as both cards did - and made A KILOMETRE ASIDE, then
+        // brought back and turned. A copy made on top of its original joins to
+        // it, and Revit refused to keep that join once the copy was turned
+        // ("Can't keep elements joined", measured on the level path,
+        // 2026-10-14). Only copies that stand on their own are moved; a door, a
+        // panel or a nested part follows its host.
+        //
+        // A COPY REVIT WILL NOT BRING ROUND TAKES THE WHOLE CALL BACK - the safer
+        // rule, kept over ARRAY_ELEMENTS_RADIAL's, which left such a copy where it
+        // was made, on top of the original, and reported it: a stacked duplicate
+        // that schedules twice (Article 8 - never a model partly changed).
+        //
+        // EVERY COPY IS COUNTED FROM THE MODEL after Revit regenerates.
+        // ------------------------------------------------------------------
+        var closesOnItself = Math.Abs(Math.Abs(sweep) - 360.0) < 1e-9;
+        stepDegrees = closesOnItself ? sweep / count : sweep / (count - 1);
+        copiesEach = count - 1;
+
+        double sweepMinX = double.MaxValue, sweepMaxX = double.MinValue;
+        foreach (var element in elements)
+        {
+            var box = element == null ? null : element.get_BoundingBox(null);
+            if (box == null) continue;
+            sweepMinX = Math.Min(sweepMinX, box.Min.X);
+            sweepMaxX = Math.Max(sweepMaxX, box.Max.X);
+        }
+        var sweepAside = (sweepMaxX > sweepMinX ? sweepMaxX - sweepMinX : 0) + 1000000.0 / 304.8;
+        var sweepAxis = Line.CreateBound(sweepCentre, sweepCentre + XYZ.BasisZ);
+
+        for (var i = 1; i <= copiesEach; i++)
+        {
+            var made = copyOnWorkset(() => ElementTransformUtils.CopyElements(doc, source, new XYZ(sweepAside, 0, 0)));
+            var got = made == null ? 0 : made.Count;
+            if (got < source.Count) notCopied += source.Count - got;
+            if (got == 0) continue;
+
+            // VERSION 3 - nothing at all unless a workset was asked for. Each
+            // copy still stands `sweepAside` east of its original.
+            putOnWorksets(made, sweepAside, 0);
+
+            var standsAlone = new List<ElementId>();
+            foreach (var id in made)
+            {
+                var copy = doc.GetElement(id);
+                if (copy == null) continue;
+                var instance = copy as FamilyInstance;
+                if (instance != null
+                    && ((instance.SuperComponent != null && made.Contains(instance.SuperComponent.Id))
+                        || (instance.Host != null && made.Contains(instance.Host.Id))))
+                    continue;
+                standsAlone.Add(id);
+            }
+
+            try
+            {
+                if (standsAlone.Count > 0)
+                {
+                    ElementTransformUtils.MoveElements(doc, standsAlone, new XYZ(-sweepAside, 0, 0));
+                    ElementTransformUtils.RotateElements(doc, standsAlone, sweepAxis, stepDegrees * i * Math.PI / 180.0);
+                }
+            }
+            catch (Exception failure)
+            {
+                throw new InvalidOperationException("Revit would not bring copy " + i + " of " + copiesEach
+                    + " round into place: " + failure.Message + " Nothing was kept - a copy left where it was made "
+                    + "would stand a kilometre aside, or on top of an original.");
+            }
+            copies.AddRange(made);
+        }
+
+        doc.Regenerate();
+        var gone = copies.RemoveAll(id => doc.GetElement(id) == null);
+        notCopied += gone;
+        readBackWorksets();
+
+        var invariantText = System.Globalization.CultureInfo.InvariantCulture;
+        copiedTo = "Round " + (sweepCentre.X * 304.8).ToString("0", invariantText) + ", "
+            + (sweepCentre.Y * 304.8).ToString("0", invariantText) + " mm, "
+            + (closesOnItself
+                ? "a full circle: the step is the sweep divided by the count, because the last gap closes back to "
+                  + "the start"
+                : "a part sweep: the step is the sweep divided by the count less one, because both ends are "
+                  + "occupied")
+            + ". " + count + " position(s) " + stepDegrees.ToString("0.####", invariantText)
+            + " deg apart, the originals the first and not moved; " + copies.Count + " copies made of "
+            + (source.Count * copiesEach) + " asked.";
     }
     else if (Math.Abs(turn) > 1e-12 || centreText.Length > 0)
     {
@@ -398,8 +647,8 @@ if (levelsText.Length == 0)
         // applied per level; reading one here and copying by the offset anyway
         // would be a fragment that succeeded while not doing what it was told.
         refused = "A turn is applied only when copying onto levels - name them in toLevels. To turn "
-            + "elements where they are, ROTATE_ELEMENTS does it; to copy them round a point, "
-            + "ARRAY_ELEMENTS_RADIAL. Nothing was copied.";
+            + "elements where they are, ROTATE_ELEMENTS does it; to copy them round a point, give "
+            + "sweepDegrees and turnCentreMm. Nothing was copied.";
     }
     else if (worksetProblem != null)
     {
@@ -407,18 +656,27 @@ if (levelsText.Length == 0)
     }
     else if (source.Count > 0)
     {
-        // VERSION 1, UNCHANGED - but for a named workset, made active for it.
-        var made = copyOnWorkset(() => ElementTransformUtils.CopyElements(doc, source, offset));
-        if (made != null) copies.AddRange(made);
+        // VERSION 1, UNCHANGED for a count of 2 - but for a named workset, made
+        // active for it. VERSION 4: one CopyElements call over the WHOLE SET per
+        // step of the run, so the set's own joins and hosts come along each time.
+        var step = byPitch ? offset.Normalize().Multiply(pitchMm / 304.8) : offset;
+        copiesEach = count - 1;
+        for (var i = 1; i <= copiesEach; i++)
+        {
+            var shift = step.Multiply(i);
+            var made = copyOnWorkset(() => ElementTransformUtils.CopyElements(doc, source, shift));
+            var got = made == null ? 0 : made.Count;
+            if (made != null) copies.AddRange(made);
 
-        // Fewer back than went in. Not an error and not silence either - the
-        // caller needs to know the lists do not line up before it starts pairing
-        // originals with copies.
-        notCopied = source.Count - copies.Count;
-        if (notCopied < 0) notCopied = 0;
+            // Fewer back than went in. Not an error and not silence either - the
+            // caller needs to know the lists do not line up before it starts
+            // pairing originals with copies. An empty return is Revit accepting
+            // the call and copying nothing, never a copy.
+            if (got < source.Count) notCopied += source.Count - got;
 
-        // VERSION 3 - nothing at all unless a workset was asked for.
-        putOnWorksets(copies, offset != null ? offset.X : 0, offset != null ? offset.Y : 0);
+            // VERSION 3 - nothing at all unless a workset was asked for.
+            putOnWorksets(made, shift.X, shift.Y);
+        }
         readBackWorksets();
     }
 }
@@ -484,6 +742,15 @@ else
     var problems = new List<string>();
     if (turnProblem != null) problems.Add(turnProblem);
     if (worksetProblem != null) problems.Add(worksetProblem);
+    // VERSION 4: a run is copied by the offset only - never ignored here.
+    if (count != 2 || byPitch)
+        problems.Add("A count or a spacing repeats a copy by the offset, and onto levels each level gets one "
+            + "copy - leave both out, or copy by the offset instead.");
+    // VERSION 5: a sweep goes round a point on the originals' own level - never
+    // ignored here either.
+    if (bySweep)
+        problems.Add("A sweep copies round a point on the originals' own level; onto levels each level's copy "
+            + "turns by turnDegrees instead - give one or the other.");
 
     Func<string, string> squeeze = text => string.Join(" ",
         (text ?? "").Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant();

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PHS-032
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -11,7 +11,7 @@ semantic-identity: "the project's phase filters by exact name, and how each one 
 # Built 2026-10-31 beside CREATE_PHASE_FILTER, for Ajmal PS's "As-Built"
 # filter. Nothing read the phase filters (grep of brain/fragments that day):
 # REPORT_PHASES lists PHASES, REPORT_VIEW_FILTERS lists VIEW filters, and
-# SET_VIEW_PHASE takes a phase filter's exact name with nowhere to get it.
+# SET_VIEW_PROPERTIES takes a phase filter's exact name with nowhere to get it.
 #
 # A NEW READ, NOT A WIDENING OF REPORT_PHASES (FRG-DOC-007, PROVEN). A phase
 # and a phase filter are different elements with different jobs, and a change
@@ -62,6 +62,49 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: 'run as it would normally be run. returned all 8 item(s) [Show Previous Phase,
+    Show Previous + New, Show Previous + Demo, ...], chosen 8 item(s) [Show Previous Phase,
+    Show Previous + New, Show Previous + Demo, ...], everyOne true, filterCount 8, findings
+    9 item(s) [8 phase filter(s) in this project, in the order Revit holds ..., "Show Previous
+    Phase": New Not Displayed, Existing Overridde..., "Show Previous + New": New By Category,
+    Existing Overridden,..., ...], lines 8 item(s) ["Show Previous Phase": New Not Displayed,
+    Existing Overridde..., "Show Previous + New": New By Category, Existing Overridden,...,
+    "Show Previous + Demo": New Not Displayed, Existing Overridd..., ...], phaseFilterIds
+    8 entry(ies), phaseFilterNames 8 item(s) [Show Previous Phase, Show Previous + New, Show
+    Previous + Demo, ...], report "Show Previous Phase": New Not Displayed, Existing Overridden,
+    Demolished Not Displayed, Temporary Not Displayed; used by 0 view(s) and 0 view template(s)
+    | "Show Previous + New": New By Category, Existing Overridden, Demolished Not Displayed,
+    Temporary Not Displayed; used by 0 view(s) and 0 view template(s) | "Show Previous + Demo":
+    New Not Displayed, Existing Overridden, Demolished Overridden, Temporary Not Displayed;
+    used by 0 view(s) and 0 view template(s) | "Show Demo + New": New By Category, Existing
+    Not Displayed, Demolished Overridden, Temporary Overridden; used by 0 view(s) and 0 view
+    template(s) | "Show All" (Revit''s own): New By Category, Existing Overridden, Demolished
+    Overridden, Temporary Overridden; used by 96 view(s) and 46 view template(s) | "Show Complete":
+    New By Category, Existing By Category, Demolished Not Displayed, Temporary Not Displayed;
+    used by 0 view(s) and 0 view template(s) | "Show New": New By Category, Existing Not Displayed,
+    Demolished Not Displayed, Temporary Not Displayed; used by 0 view(s) and 0 view template(s)
+    | "Alle anzeigen" (Revit''s own): New By Category, Existing Overridden, Demolished Overridden,
+    Temporary Overridden; used by 0 view(s) and 0 view template(s), statusEnums 4 item(s)
+    [New, Existing, Demolished, ...], statusNames 4 item(s) [New, Existing, Demolished, ...],
+    templatesUsing 1 entry(ies), viewsUsing 1 entry(ies), which all, word Func`2. inputs came
+    filterName not given - "all", the card''s own default (optional). on P1102 MEP'
+  negative_case: run with category=Sheets, filterName=ZZZ No Such Filter instead - chosen
+    because it should not contain what this fragment reports. returned all 8 item(s) [Show
+    Previous Phase, Show Previous + New, Show Previous + Demo, ...], chosen 0 item(s), everyOne
+    false, filterCount 0, findings 1 item(s) [No phase filter is named "ZZZ No Such Filter".
+    The phase fil...], lines 0 item(s), phaseFilterIds 0 entry(ies), phaseFilterNames 0 item(s),
+    report , statusEnums 4 item(s) [New, Existing, Demolished, ...], statusNames 4 item(s)
+    [New, Existing, Demolished, ...], templatesUsing 1 entry(ies), viewsUsing 1 entry(ies),
+    which ZZZ No Such Filter, word Func`2. inputs came filterName as given. on P1102 MEP
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: ab4ba85fe4d35225
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

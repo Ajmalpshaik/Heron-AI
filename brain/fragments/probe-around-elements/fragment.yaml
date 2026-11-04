@@ -9,7 +9,37 @@ semantic-identity: "what is around this thing, and how far away"
 kind: action
 domain: revit.geometry
 capability: PROBE_AROUND_ELEMENTS
-version: 2
+# VERSION 3 (2026-11-01) - CHECK_OBSTRUCTIONS WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools"; "in every
+# conflict keep the safer rule"), and is DEPRECATED. The same rays, cast from
+# BARE POINTS as well as from elements: "is there a beam in the way", "is
+# anything above this point", before anything is placed. What it had that
+# this lacked, all carried:
+#   - `points`, each probed in every one of `directions` (its one `direction`
+#     is a list of one here); `elements` may be left out for them.
+#   - BLOCKED OR CLEAR WITHIN A DISTANCE: `blocked` - something within
+#     maxDistance in any direction - and `clear`; a hit further away is clear
+#     for this question, the distance decides. `findings` names what blocks
+#     each point and how far (CHECK_OBSTRUCTIONS gave only the two lists).
+#   - THREE OUTCOMES KEPT THREE: a point that could not be tested is counted
+#     in `notChecked`, never called clear.
+#   - A VIEW TEMPLATE CASTS NOTHING: every point notChecked, `clear` empty.
+#     Version 2 had no guard and threw; now no element is probed either, and
+#     none is put in `nothingHit`.
+# Where each of its outputs is now: blocked, clear and notChecked by the same
+# names; its `direction` is `directions`; `maxDistance` the same, in mm.
+#
+# THE OPPOSITE RULE, AND WHICH WAS KEPT: CHECK_OBSTRUCTIONS ALWAYS looked into
+# linked models (FindReferencesInRevitLinks on every ray). This card reads a
+# link ONLY WHEN `includeLinks` IS SET - D-59, the modeller decides job by
+# job, and that is the recorded rule. NOT CARRIED: the always-on link search.
+# What makes that safe rather than a quiet loss: a point's summary says in
+# words when links were not read - a beam in the structural link does not
+# block a point tested against this model alone - and to set includeLinks.
+#
+# The proof below is version 2's and no longer describes the code; DRAFT
+# until version 3 is proved on a real model (D-30).
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -77,7 +107,16 @@ contract:
       type: View3D
       source: request
     - name: elements
+      # VERSION 3: MAY BE LEFT OUT (binds empty) when `points` are the start.
       type: IList<Element>
+      optional: true
+    # VERSION 3, from CHECK_OBSTRUCTIONS. Bare points to cast from - nothing
+    # placed there yet - each "x,y,z" in millimetres, converted by the add-in
+    # (D-67). Left out: none (an empty list).
+    - name: points
+      type: IList<XYZ>
+      source: request
+      optional: true
     # Each direction to fire in. Up, down, and the four sides are the usual
     # set; the caller decides, because "what is around this" means different
     # directions for a riser and for a floor-standing unit.
@@ -127,35 +166,61 @@ contract:
       # value (D-54 s3, FRAGMENT-ISSUES 5b-203).
       role: accounting
       type: IList<string>
+    # VERSION 3, from CHECK_OBSTRUCTIONS - the points' answer.
+    - name: blocked
+      # Points with something within maxDistance in any direction asked.
+      role: result
+      type: IList<XYZ>
+    - name: clear
+      # Points with nothing that near. The evidence it looked; `blocked` is
+      # what it found (D-52).
+      role: accounting
+      type: IList<XYZ>
+    - name: notChecked
+      # Points the test could not be run at - no point, no usable direction,
+      # a view template or no view. Never counted clear (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      # VERSION 3. What was probed, what blocks each point and how far, and
+      # whether links were read.
+      type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project2 (3,035 elements), Revit 2020, session 13520
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values. returned MillimetresPerFoot
-    304.8, describeLinked Func`3, fireRatingOf Func`2, hits 1 entry(ies), includeLinks false,
-    intersector ReferenceIntersector, linkBlocked , linkDocs 0 item(s), linkIntersector (null),
-    linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only
-    - links not read], linkedTotal 0, linksSearched 0, maxDistance 9.84251968503937, nestedLinks
-    0, noOrigin 0 item(s), nothingHit 1 item(s) [345451]. inputs came view3d as given; elements
-    from the selection (2); directions as given (1); maxDistance as given; includeLinks not
-    given - false (optional). on Project2
-  negative_case: run with categoryName=Ducts, directions=0,-1,0, inViewOnly=Heron 3D, maxDistance=1,
-    view3d=Heron 3D instead - chosen because it should not contain what this fragment reports
-    - the arrangement was re-made first by running select-by-category-name, set-selection
-    with this phase's own values. returned MillimetresPerFoot 304.8, describeLinked Func`3,
-    fireRatingOf Func`2, hits 0 entry(ies), includeLinks false, intersector ReferenceIntersector,
-    linkBlocked , linkDocs 0 item(s), linkIntersector (null), linkPlacements 0 item(s), linkTypes
-    0 item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0,
-    linksSearched 0, maxDistance 0.00328083989501312, nestedLinks 0, noOrigin 0 item(s), nothingHit
-    2 item(s) [345448, 345451]. inputs came view3d as given; elements from the selection (2);
+    filter-elements-by-category, set-selection with this phase's own values. returned MillimetresPerFoot
+    304.8, blocked 0 item(s), blockedLines 0 item(s), clear 0 item(s), describeLinked Func`3,
+    elementCount 10, findings 0 item(s), fireRatingOf Func`2, hits 7 entry(ies), includeLinks
+    false, intersector ReferenceIntersector, linkBlocked , linkDocs 0 item(s), linkIntersector
+    (null), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model
+    only - links not read], linkedTotal 0, linksSearched 0, maxDistance 16.4041994750656,
+    mmText Func`2, nestedLinks 0, noOrigin 0 item(s), notChecked 0, nothingHit 3 item(s) [411658,
+    411660, 478953], pointList 0 item(s), points 0 item(s), usableDirections 1 item(s) [(0.000000000,
+    0.000000000, 1.000000000)], viewUsable true. inputs came view3d as given; elements from
+    the selection (10); points not given - new List<XYZ>() (optional); directions as given
+    (1); maxDistance as given; includeLinks not given - false (optional). on P1102 MEP
+  negative_case: run with category=Ducts, directions=0,0,1, inViewOnly=Callout of Level 1
+    HVAC WSHP TYP, maxDistance=1, view3d=3D Duct & Equipment instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase's own values. returned MillimetresPerFoot
+    304.8, blocked 0 item(s), blockedLines 0 item(s), clear 0 item(s), describeLinked Func`3,
+    elementCount 10, findings 0 item(s), fireRatingOf Func`2, hits 0 entry(ies), includeLinks
+    false, intersector ReferenceIntersector, linkBlocked , linkDocs 0 item(s), linkIntersector
+    (null), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model
+    only - links not read], linkedTotal 0, linksSearched 0, maxDistance 0.00328083989501312,
+    mmText Func`2, nestedLinks 0, noOrigin 0 item(s), notChecked 0, nothingHit 10 item(s)
+    [404243, 411658, 411660, ...], pointList 0 item(s), points 0 item(s), usableDirections
+    1 item(s) [(0.000000000, 0.000000000, 1.000000000)], viewUsable true. inputs came view3d
+    as given; elements from the selection (10); points not given - new List<XYZ>() (optional);
     directions as given (1); maxDistance as given; includeLinks not given - false (optional).
-    on Project2
+    on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 161659d52b4a2e31
+  fingerprint: 3cccc7fb73de145e
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -170,10 +235,19 @@ compatibility-note: >
 #
 #   "what is above this duct"            -> here
 #   "what is around this equipment"      -> here
-#   "which of these points is blocked"   -> CHECK_OBSTRUCTIONS, which answers
-#                                           blocked or clear for POINTS in one
-#                                           direction. This one names what was
-#                                           hit and how far, from ELEMENTS
+#   "which of these points is blocked"   -> here since version 3, `points`
+#                                           (was CHECK_OBSTRUCTIONS) - blocked
+#                                           or clear within the distance,
+#                                           and what blocks each one
+#   "is there a beam in the way"         -> here, `points` or the elements
+#   "is anything above this point"       -> here, `points`
+#   "can we reach the valve to operate it" -> CHECK_VALVE_ACCESSIBILITY - room,
+#                                           an access panel and reach height
+#   "is there enough space in front of the panel to open the door" ->
+#                                           CHECK_EQUIPMENT_CLEARANCE
+#   "is the equipment sitting flat on the floor" -> CHECK_SURFACE_FIT - the
+#                                           whole FOOTPRINT, because one ray
+#                                           cannot see an edge
 #   "is there enough clearance"          -> CHECK_MINIMUM_CLEARANCE, which
 #                                           judges against a number you give
 #   "move it up until it clears"         -> MOVE_TO_RAY_HIT
@@ -186,3 +260,13 @@ utterances:
   - how far is the nearest thing
   - probe around these elements
   - what would i hit if i moved this up
+  # MOVED 2026-11-01 from CHECK_OBSTRUCTIONS, merged into this card.
+  - is there a beam in the way
+  - there is a beam in the room
+  - check the clearance above
+  - what is blocking these
+  - is anything obstructing the head
+  - check for obstructions
+  - is anything above this point
+  # ...and its semantic identity, which nothing else declares:
+  - which of these points has something in the way

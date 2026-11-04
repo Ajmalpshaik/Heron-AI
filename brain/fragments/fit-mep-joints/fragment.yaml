@@ -9,7 +9,7 @@ semantic-identity: "put the fitting every joint in these runs calls for, all in 
 kind: action
 domain: revit.mep
 capability: FIT_MEP_JOINTS
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -25,7 +25,19 @@ purpose: >
   drawn. The owner's words: make the ducts, and then the path is known, so the
   fittings can be made at one time.
 
-  **The fitting is chosen exactly as PLACE_MEP_FITTING chooses it**, and that is
+  **One joint or every joint - the same tool (version 3, 2026-11-01).** Hand
+  in two runs and it fits the one joint between them; hand in a whole layout
+  and it fits every joint among ALL the runs handed in. PLACE_MEP_FITTING,
+  which fitted one joint a call, was merged into this card and is DEPRECATED.
+  What it did that this did not is here now: two free ends of different runs
+  that are APART are named with the gap - "two open ends 40 mm apart" - in
+  `gaps`, and nothing is moved to close it; a run handed in with no open end
+  is named in `noOpenEnd`; and when nothing at all is fitted, `refused` says
+  why in that card's words - no duct or pipe given, no open end, the gap, or a
+  single run whose ends meet nothing. Its two-to-four rule is a rule about one
+  joint: a point where five or more ends meet fails the whole job.
+
+  **The fitting is chosen as Revit chooses it**, and that is
   the rule Revit follows when one duct is dragged onto another: two ends at an
   angle make an elbow, two in line a union or - if the size changes - a
   transition, three a tee whose main is the most nearly head-on pair, four a
@@ -103,50 +115,83 @@ contract:
       # A count of what it was GIVEN and could not use (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: noOpenEnd
+      # VERSION 3, from PLACE_MEP_FITTING: runs handed in whose every connector
+      # already carries something, so they had no end to join. Given and
+      # unusable as an end - another run may still be tapped onto their side.
+      # Never a thing fitted (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: gaps
+      # VERSION 3, from PLACE_MEP_FITTING: each pair of free ends of different
+      # runs, each the other's nearest, with nothing under either, named with
+      # where they are and how far apart - "two open ends 40 mm apart".
+      # Nothing is moved to close a gap. The evidence it looked (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # VERSION 3, from PLACE_MEP_FITTING: why NOTHING was fitted, in that
+      # card's words - no duct or pipe, no open end, the nearest gap, or one
+      # run whose ends meet nothing. Empty when anything was fitted. Never a
+      # thing it found (D-52).
+      role: accounting
+      type: string
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project2 (3,716 elements), Revit 2020, session 30308
+  model: P1102 MEP, Revit 2020, session 59096 - the count is NOT recorded because 1,501 elements
+    was measured on HeronNewFam_P1102, the document in front, and this ran against another
+    one (row 15)
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-in-region, set-selection with this phase''s own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned created 1 item(s)
-    [1328524], crosses 0, elbows 1, ends 4 item(s) [Autodesk.Revit.DB.Connector, Autodesk.Revit.DB.Connector,
-    Autodesk.Revit.DB.Connector, ...], failures 0 item(s), fitted 1, fittingCategories 4 item(s)
-    [-2008010, -2008049, -2008126, ...], freeEnds 2, jointCount 1, joints 3 item(s) [System.Collections.Generic.List`1[Autodesk.Revit.DB.Connecto...,
+    create-duct-runs with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned created 1 item(s) [1020441], crosses
+    0, dangling 2 item(s) [Autodesk.Revit.DB.Connector, Autodesk.Revit.DB.Connector], elbows
+    1, ends 4 item(s) [Autodesk.Revit.DB.Connector, Autodesk.Revit.DB.Connector, Autodesk.Revit.DB.Connector,
+    ...], failures 0 item(s), fitted 1, fittingCategories 4 item(s) [-2008010, -2008049, -2008126,
+    ...], freeEnds 2, gaps 1 item(s) [(0, -60000, 2700) mm and (4000, -56000, 2700) mm: two
+    open e...], invariantCulture CultureInfo, jointCount 1, joints 3 item(s) [System.Collections.Generic.List`1[Autodesk.Revit.DB.Connecto...,
     System.Collections.Generic.List`1[Autodesk.Revit.DB.Connecto..., System.Collections.Generic.List`1[Autodesk.Revit.DB.Connecto...],
-    mmPerFoot 304.8, notMepCurve 0 item(s), ontoOutlets 0, outletsUnder Func`2, owners 4 item(s)
-    [1328489, 1328489, 1328491, ...], placeOf Func`2, runCount 2, runs 2 item(s) [Radius Elbows
-    / Taps, Radius Elbows / Taps], sameSizeAs Func`3, summary 1 joint(s) among 2 run(s), and
-    all 1 fitted: 1 elbow(s), 0 tee(s), 0 tap(s), 0 transition(s) - 0 of them straight onto
-    a unit''s or terminal''s outlet - 0 union(s), 0 cross(es). 2 free end(s) left open - an
-    end with nothing meeting it, or on an outlet of its own size, is not a joint; CONNECT_OPEN_ENDS
-    joins those to equipment and terminals, taken 4 item(s) [True, True, True, ...], tapTarget
-    Func`2, taps 0, tees 0, tolerance 0.0328083989501312, toleranceMm 10, transitions 0, unions
-    0. inputs came elements from the selection (2); toleranceMm as given. on Project2'
-  negative_case: 'run with toleranceMm=10 arranged with categories=Ducts, exact=False, maxMm=11900,200,3200,
-    minMm=100,-200,2800 instead - chosen because it should not contain what this fragment
-    reports - the arrangement was re-made first by running select-in-region, set-selection
-    with this phase''s own values - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned created 0 item(s), crosses 0, elbows 0, ends 2
-    item(s) [Autodesk.Revit.DB.Connector, Autodesk.Revit.DB.Connector], failures 0 item(s),
-    fitted 0, fittingCategories 4 item(s) [-2008010, -2008049, -2008126, ...], freeEnds 2,
-    jointCount 0, joints 2 item(s) [System.Collections.Generic.List`1[Autodesk.Revit.DB.Connecto...,
-    System.Collections.Generic.List`1[Autodesk.Revit.DB.Connecto...], mmPerFoot 304.8, notMepCurve
-    0 item(s), ontoOutlets 0, outletsUnder Func`2, owners 2 item(s) [1328486, 1328486], placeOf
-    Func`2, runCount 1, runs 1 item(s) [Radius Elbows / Taps], sameSizeAs Func`3, summary
+    mmPerFoot 304.8, nearestGapMm 5656.85424949238, nearestOf Func`2, noOpenEnd 0 item(s),
+    notMepCurve 0 item(s), ontoOutlets 0, outletsUnder Func`2, owners 4 item(s) [1020431,
+    1020431, 1020433, ...], placeOf Func`2, refused (null), runCount 2, runs 2 item(s) [Duct,
+    Duct], sameSizeAs Func`3, summary 1 joint(s) among 2 run(s), and all 1 fitted: 1 elbow(s),
+    0 tee(s), 0 tap(s), 0 transition(s) - 0 of them straight onto a unit''s or terminal''s
+    outlet - 0 union(s), 0 cross(es). 2 free end(s) left open - an end with nothing meeting
+    it, or on an outlet of its own size, is not a joint; CONNECT_OPEN_ENDS joins those to
+    equipment and terminals. 1 gap(s) between free ends, named: (0, -60000, 2700) mm and (4000,
+    -56000, 2700) mm: two open ends 5656.9 mm apart - nothing was moved to close it, taken
+    4 item(s) [True, True, True, ...], tapTarget Func`2, taps 0, tees 0, tolerance 0.0328083989501312,
+    toleranceMm 10, transitions 0, unions 0. inputs came elements from create-duct-runs (2);
+    toleranceMm as given. on P1102 MEP'
+  negative_case: 'run with ductType=Rectangular Duct: Mitered Elbows / Tees, level=Level 1,
+    runs=400x200: 0,-60000,2700; 4000,-60000,2700, systemType=Supply Air, toleranceMm=10 instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running create-duct-runs with this phase''s own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    created 0 item(s), crosses 0, dangling 2 item(s) [Autodesk.Revit.DB.Connector, Autodesk.Revit.DB.Connector],
+    elbows 0, ends 2 item(s) [Autodesk.Revit.DB.Connector, Autodesk.Revit.DB.Connector], failures
+    0 item(s), fitted 0, fittingCategories 4 item(s) [-2008010, -2008049, -2008126, ...],
+    freeEnds 2, gaps 0 item(s), invariantCulture CultureInfo, jointCount 0, joints 2 item(s)
+    [System.Collections.Generic.List`1[Autodesk.Revit.DB.Connecto..., System.Collections.Generic.List`1[Autodesk.Revit.DB.Connecto...],
+    mmPerFoot 304.8, nearestGapMm 1.79769313486232E+308, nearestOf Func`2, noOpenEnd 0 item(s),
+    notMepCurve 0 item(s), ontoOutlets 0, outletsUnder Func`2, owners 2 item(s) [1020444,
+    1020444], placeOf Func`2, refused one run was given and neither of its ends meets anything
+    - a fitting joins two, three or four runs, or one run onto an outlet of another size or
+    onto the side of another run, runCount 1, runs 1 item(s) [Duct], sameSizeAs Func`3, summary
     0 joint(s) among 1 run(s), and all 0 fitted: 0 elbow(s), 0 tee(s), 0 tap(s), 0 transition(s)
     - 0 of them straight onto a unit''s or terminal''s outlet - 0 union(s), 0 cross(es). 2
     free end(s) left open - an end with nothing meeting it, or on an outlet of its own size,
-    is not a joint; CONNECT_OPEN_ENDS joins those to equipment and terminals, taken 2 item(s)
-    [True, True], tapTarget Func`2, taps 0, tees 0, tolerance 0.0328083989501312, toleranceMm
-    10, transitions 0, unions 0. inputs came elements from the selection (1); toleranceMm
-    as given. on Project2'
+    is not a joint; CONNECT_OPEN_ENDS joins those to equipment and terminals. Nothing fitted:
+    one run was given and neither of its ends meets anything - a fitting joins two, three
+    or four runs, or one run onto an outlet of another size or onto the side of another run,
+    taken 2 item(s) [True, True], tapTarget Func`2, taps 0, tees 0, tolerance 0.0328083989501312,
+    toleranceMm 10, transitions 0, unions 0. inputs came elements from create-duct-runs (1);
+    toleranceMm as given. on P1102 MEP'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 2670f0dab1a8bd80
-
+  fingerprint: cf59c660acd4f3ec
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -160,19 +205,46 @@ compatibility-note: >
 
   Millimetres to feet is arithmetic - divide by 304.8, per D-20.
 
-# ROUTING - the neighbours this must not be confused with.
+# 2026-11-01 - PLACE_MEP_FITTING WAS MERGED INTO THIS CARD (version 3) on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same job: the fitting two, three or four open duct or pipe
+# ends call for, chosen from the geometry, nothing moved to close a gap. Where
+# its outputs are now: its `created` (one fitting) is this card's `created`
+# list, one entry for one joint; its `refused` is this card's `refused`, set
+# when nothing was fitted, with the gap named as it named it; its
+# `notMepCurve` is this card's `notMepCurve`. Added in version 3: `gaps`,
+# `noOpenEnd` and `refused`. Its proof is the record of what its code did.
+#
+# THE CONFLICT, AND THE SAFER RULE KEPT: PLACE_MEP_FITTING built a transition
+# with the ends in whatever order they were found; this card puts the LARGER
+# end first, measured 2026-09-23 (a short run was turned inside out the other
+# way). Its rule that two to four RUNS are handed in is not carried as a
+# refusal of five runs - five runs is a layout here - but as the rule it
+# protected: no fitting joins more than four ends, and a point where five meet
+# fails the whole job. Its "Revit declined to build the fitting" is this
+# card's throw with Revit's words, which rolls the whole job back (Article 8).
+
+# ROUTING - the neighbours this must not be confused with. Repeated in
+# CREATE_MEP_RUNS, TRACE_CONNECTIVITY and SPLIT_MEP_RUN.
 #
 #   "fit all the joints"            -> here
 #   "put the elbows and tees in"    -> here
-#   "join these two"                -> PLACE_MEP_FITTING - one joint
+#   "join these two"                -> here - one joint, two runs handed in
+#                                      (PLACE_MEP_FITTING until 2026-11-01)
+#   "connect these two ducts"       -> here
+#   "put an elbow here"             -> here - the elbow is CHOSEN, not named
+#   "is this duct connected"        -> TRACE_CONNECTIVITY - a READ, and it must
+#                                      not answer a request to change the model
+#   "split this duct"               -> SPLIT_MEP_RUN - the opposite job
+#   "join these walls together"     -> JOIN_GEOMETRY
 #   "connect the open ends"         -> CONNECT_OPEN_ENDS - ends already at one
 #                                      point, no fitting added; it is what joins
 #                                      the free ends this leaves
-#   "draw a duct from here"         -> CREATE_DUCT, which this follows
+#   "draw a duct from here"         -> CREATE_MEP_RUNS, which this follows
 #   "connect the diffusers to the
 #    duct"                          -> CONNECT_AIR_TERMINALS - but NEEDS-CHECKING
 #                                      AJ1 saw it lift terminals; see its card
-#   "pipe these sprinklers to the main" -> CREATE_FIXTURE_BRANCHES first - it
+#   "pipe these sprinklers to the main" -> CONNECT_AIR_TERMINALS first - it
 #                                      draws the risers and arms; this then
 #                                      fits its `runs` (2026-10-14)
 #   "jump this pipe over the beam"  -> OFFSET_MEP_SECTION first; this then fits
@@ -190,3 +262,16 @@ utterances:
   # sentence, and a comment is not indexed, so ranking decided: "put the
   # elbows and tees in": MEASURE_FITTING_AREA answered it on both backends.
   - put the elbows and tees in
+  # MOVED 2026-11-01 from PLACE_MEP_FITTING, merged into this card.
+  - join these two
+  - connect these two ducts
+  - put an elbow here
+  - add a duct fitting
+  - join the pipes up
+  - connect them together
+  - add a tee here
+  - join these two ducts
+  # ADDED 2026-11-02, row 5b-1419. FILLET_LINES' routing table sends this
+  # sentence here; it reached AUTO_SIZE_MEP, and FILLET_LINES once the wall
+  # join cards were added.
+  - round off this duct corner

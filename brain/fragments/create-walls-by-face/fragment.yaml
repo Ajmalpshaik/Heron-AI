@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -105,6 +105,49 @@ contract:
     - name: findings
       type: IList<string>
 
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned created 53,
+    createdIds 53 item(s) [1020308, 1020309, 1020310, ...], faceWanted Func`2, facesOf Func`2,
+    findings 8 item(s) [53 wall(s) by face made and read back; 0 mass(es) skipped. L..., mass
+    579452: 3 wall(s) by face, Exterior - Brick on Mtl. Stu..., mass 579920: 6 wall(s) by
+    face, Exterior - Brick on Mtl. Stu..., ...], kind sides, line WallLocationLine, lineText
+    , lines 6 item(s) [mass 579452: 3 wall(s) by face, Exterior - Brick on Mtl. Stu..., mass
+    579920: 6 wall(s) by face, Exterior - Brick on Mtl. Stu..., mass 579921: 6 wall(s) by
+    face, Exterior - Brick on Mtl. Stu..., ...], massCategory 1 item(s) [id -2003400], massList
+    6 item(s) [Sporthalle, Giebel, Giebel, ...], named Func`2, normalOf Func`3, options Options,
+    otherTypes 0 item(s), problems 0 item(s), report mass 579452: 3 wall(s) by face, Exterior
+    - Brick on Mtl. Stud, location line FinishFaceExterior. | mass 579920: 6 wall(s) by face,
+    Exterior - Brick on Mtl. Stud, location line FinishFaceExterior. | mass 579921: 6 wall(s)
+    by face, Exterior - Brick on Mtl. Stud, location line FinishFaceExterior. | mass 579922:
+    6 wall(s) by face, Exterior - Brick on Mtl. Stud, location line FinishFaceExterior. |
+    mass 579923: 6 wall(s) by face, Exterior - Brick on Mtl. Stud, location line FinishFaceExterior.
+    | mass 579943: 26 wall(s) by face, Exterior - Brick on Mtl. Stud, location line FinishFaceExterior.,
+    skipped 0, type WallType, wallTypes 1 item(s) [Exterior - Brick on Mtl. Stud], wantedName
+    Basic Wall: Exterior - Brick on Mtl. Stud. inputs came elements from filter-elements-by-category
+    (6); wallType as given; faces as given; locationLine as given. on P1102 MEP'
+  negative_case: 'run with faces=, locationLine=, wallType=Basic Wall: Exterior - Brick on
+    Mtl. Stud arranged with category=Walls, levelId=Level 1 instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    filter-elements-by-category with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned created 0, createdIds
+    0 item(s), faceWanted Func`2, facesOf Func`2, findings 1 item(s) [NOTHING WAS MADE: 573298
+    is not a mass. 573299 is not a mass...], kind sides, line WallLocationLine, lineText ,
+    lines 0 item(s), massCategory 1 item(s) [id -2003400], massList 0 item(s), named Func`2,
+    normalOf Func`3, options Options, otherTypes 0 item(s), problems 70 item(s) [573298 is
+    not a mass., 573299 is not a mass., 573316 is not a mass., ...], report , skipped 0, type
+    WallType, wallTypes 1 item(s) [Exterior - Brick on Mtl. Stud], wantedName Basic Wall:
+    Exterior - Brick on Mtl. Stud. inputs came elements from filter-elements-by-category (70);
+    wallType as given; faces as given; locationLine as given. on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 337b033f87eb00d7
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -122,6 +165,27 @@ compatibility-note: >
 #   "curtain system by face on this mass"         -> CREATE_CURTAIN_SYSTEM
 #   "make a wall along these points"              -> CREATE_WALL
 #   "add mass floors at every level"              -> CREATE_MASS_FLOORS
+
+# JUDGED 2026-11-01 (a duplicate sweep's look-alike, on the owner's rule "if one
+# tool can safely do both, merge") AGAINST CREATE_CURTAIN_SYSTEM AND KEPT APART -
+# the next sweep should not reopen it unless one of these stops being true:
+#   - A DIFFERENT OBJECT AND A DIFFERENT RESULT IN REVIT: FaceWall.Create makes
+#     ONE WALL PER FACE, each a WallType; NewCurtainSystem2 makes ONE curtain
+#     system ACROSS every face handed to it, a CurtainSystemType. A count, an
+#     undo and a read-back per face here; per host there.
+#   - THE SAFETY RULE AGAINST A DOUBLED SKIN CANNOT BE HELD FOR BOTH. Here a
+#     mass already carrying walls by face is read (GetJoinedElementIds) and
+#     skipped, so a re-run never doubles the walls. A curtain system has no
+#     host face Revit's API will read back, so that card can only COUNT one
+#     standing in the outline (alreadyNear). One tool letting the type decide,
+#     as CREATE_FLOOR does, would skip a second run for one type and double it
+#     for the other under the same sentence.
+#   - THE FACES DIFFER: sides or vertical here; vertical, top or all there - a
+#     wall on a top face is not a thing Revit makes.
+#   - THE RECORD: this card was CREATE_ELEMENTS_BY_FACE, doing both, and was
+#     narrowed to walls on purpose on 2026-10-29. Nothing measured since says
+#     that was wrong; this card still refuses a curtain system type by name
+#     and sends it there.
 
 utterances:
   - put walls by face on the sides of this mass

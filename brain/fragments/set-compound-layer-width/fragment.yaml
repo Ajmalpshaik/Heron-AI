@@ -29,7 +29,7 @@ purpose: >
   width alone, so a wall's colours went on by painting faces - which is not the
   type, and schedules as nothing. The material is given by its name and must
   already be in the project; a name that is not refuses the call, naming the
-  closest that are. `CREATE_MATERIAL` makes one. `<By Category>` clears it.
+  closest that are. `CREATE_STARTER_MATERIALS` makes one by name. `<By Category>` clears it.
 
   **BLANK MEANS LEAVE IT.** `material` and `layerFunction` blank and `widthMm` 0
   read the layer as it stands; `checkOnly` compares what is given and writes
@@ -195,7 +195,7 @@ compatibility-note: >
 #                                      which is not the type
 #   "swap this material for that one everywhere" -> REPLACE_MATERIAL - every
 #                                      layer and parameter holding one material
-#   "make a new material"           -> CREATE_MATERIAL - this only uses one
+#   "make a new material"           -> CREATE_STARTER_MATERIALS - this only uses one
 #
 #   "make the insulation thicker"   -> SET_MEP_INSULATION. Said with no
 #                                      subject a modeller means the pipe or

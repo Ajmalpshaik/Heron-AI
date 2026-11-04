@@ -103,7 +103,7 @@ compatibility-note: >
 #   "show which way the air is going"       -> PLACE_FLOW_ARROWS, which works out
 #                                              where the arrows go
 #   "put a text note here"                  -> CREATE_TEXT_NOTE
-#   "hatch this area"                       -> CREATE_FILLED_REGION
+#   "hatch this area"                       -> DRAW_FAMILY_FILLED_REGION
 
 utterances:
   - put the north arrow on this plan

@@ -1,0 +1,68 @@
+# NEEDS-CHECKING Group JW - EDIT_MEP_SYSTEM, built 2026-11-01 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/edit-mep-system-jw-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/edit-mep-system-jw-2026-11-01.yaml
+#
+# THE MODEL: MEP Night Test, open and in front in Revit 2020 - the model
+# REPORT_MEP_PRESSURE_DROP was proved on (2026-10-21): 51 duct and piping
+# systems, among them "Mechanical Supply Air 1", "2" and "3".
+#
+# THE ROOM BELOW IS NOT KNOWN YET, AND IS NOT GUESSED. JW1 in
+# docs/needs-checking/group-jw.md reads which room holds SOME BUT NOT ALL of
+# Mechanical Supply Air 2's air terminals, and writes its name in place of
+# the marked value. Until then no room answers to it, and the setup should
+# stop there, before the edit runs - expected, NOT RUN. If "Mechanical
+# Supply Air 2" is not what the model calls it, change the values here, never
+# the card.
+#
+# THE ARRANGEMENT, RE-MADE BEFORE EACH PHASE: every air terminal whose System
+# Name is "Mechanical Supply Air 2", kept to the ones in that room, then
+# selected. A rolled-back write clears Revit's selection, which is why it is
+# a chain and not a hand selection.
+#
+# Add to System on elements on no system, an add onto another system, and
+# taking EVERY terminal out are rows JW5 to JW9 of the group, run with
+# `validate --write` on selections made by hand. Every write here is ROLLED
+# BACK.
+
+model: MEP Night Test, Revit 2020
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: edit-mep-system
+    expect: changed
+    setup:
+      - select-by-parameter-value
+      - filter-elements-in-room
+      - set-selection
+    setup-set:
+      parameterName: System Name
+      matchText: Mechanical Supply Air 2
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Air Terminals
+      room: "THE ROOM JW1 READ"
+    negative-setup-set:
+      parameterName: System Name
+      matchText: Mechanical Supply Air 2
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Air Terminals
+      room: "THE ROOM JW1 READ"
+    set:
+      edit: "remove"
+      systemName: "none"
+    negative-set:
+      edit: "remove"
+      systemName: "Mechanical Supply Air"
+    note: >
+      JW2 and JW3. Positive - changed equal to the terminals in that room;
+      systemIds the one system; report "system "Mechanical Supply Air 2" ...
+      N element(s) before, N-k after - k taken out". Negative - THE FIRST CASE
+      TO RUN: the same terminals, but a name every supply system holds as a
+      word, so changed 0, NOTHING WAS CHANGED, the refusal naming Mechanical
+      Supply Air 1, 2, 3 and the rest. Picking one would edit a system nobody
+      named.

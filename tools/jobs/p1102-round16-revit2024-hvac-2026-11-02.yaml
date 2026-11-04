@@ -1,0 +1,64 @@
+# Round 16, 2026-11-02 - Revit 2024.3, session 59960. "Snowdon Towers Sample HVAC" = a scratch
+# copy of Revit 2024's own Samples\Snowdon Towers Sample HVAC.rvt in
+# %TEMP%\heron-work\prove-1102\s2024, with its 6 Revit links loaded from the copies beside it.
+# Read before the run: "FloorPlan: L2" draws 191 ducts, 39 duct tags and 9 heat recovery units
+# (HRU); no duct accessory or flow-arrow family is loaded. Every MODIFY run is ROLLED BACK.
+# Second run: the Architectural link is already Room Bounding ON, so the positive turns it OFF;
+# stack-tags is given a stack point (left out, it reads the project origin and refuses).
+model: "Snowdon Towers Sample HVAC (scratch copy, Revit 2024 sample, 6 links), Revit 2024"
+
+defaults:
+  in: "Snowdon Towers Sample HVAC"
+  setup: []
+
+jobs:
+  - fragment: reload-links
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: done
+    set: {category: "RVT Links", unload: false}
+    negative-set: {category: "Ducts", inViewOnly: "FloorPlan: L2", unload: false}
+
+  - fragment: set-link-room-bounding
+    write: true
+    expect: changed
+    set: {linkName: "Snowdon Towers Sample Architectural.rvt", roomBounding: false}
+    negative-set: {linkName: "No Such Link.rvt", roomBounding: false}
+
+  - fragment: stack-tags
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: stacked
+    set: {category: "Duct Tags", inViewOnly: "FloorPlan: L2", view: "FloorPlan: L2", stackAt: "20000,20000,0", gapMm: 500}
+    negative-set: {category: "Mechanical Equipment", inViewOnly: "FloorPlan: L2", view: "FloorPlan: L2", stackAt: "20000,20000,0", gapMm: 500}
+
+  - fragment: set-mep-justification
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: set
+    set: {category: "Ducts", inViewOnly: "FloorPlan: L2", horizontalOffsetMm: 50, verticalOffsetMm: 50}
+    negative-set: {category: "Mechanical Equipment", inViewOnly: "FloorPlan: L2", horizontalOffsetMm: 50, verticalOffsetMm: 50}
+
+  - fragment: show-analysis-heatmap
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    set: {category: "Ducts", inViewOnly: "FloorPlan: L2", view: "FloorPlan: L2", measurementName: "Pressure Drop"}
+    negative-set: {category: "Ducts", inViewOnly: "FloorPlan: L2", view: "FloorPlan: L2", measurementName: "ZZZ NOTHING"}
+
+  - fragment: check-valve-accessibility
+    setup: [filter-elements-by-category, set-selection]
+    set: {category: "Mechanical Equipment", inViewOnly: "FloorPlan: L2", envelope: 1000, maxReachHeight: 2000, includeLinks: true}
+    negative-set: {category: "Mechanical Equipment", inViewOnly: "FloorPlan: L2", envelope: 1, maxReachHeight: 100000, includeLinks: true}
+
+  - fragment: create-mep-system
+    write: true
+    setup: [filter-elements-by-category, set-selection]
+    expect: memberIds
+    set: {category: "Mechanical Equipment", inViewOnly: "FloorPlan: L2", systemType: "Supply Air", systemName: "Heron Supply", baseEquipment: ""}
+    negative-set: {category: "Duct Tags", inViewOnly: "FloorPlan: L2", systemType: "Supply Air", systemName: "Heron Supply", baseEquipment: ""}
+
+  - fragment: copy-elements-between-documents
+    write: true
+    expect: copiedIds
+    set: {sourceDocumentTitle: "Snowdon Towers Sample Architectural", fromLink: true, categories: "Furniture", elementIds: "", offsetMm: "0,0,0"}
+    negative-set: {sourceDocumentTitle: "No Such File", fromLink: true, categories: "Furniture", elementIds: "", offsetMm: "0,0,0"}

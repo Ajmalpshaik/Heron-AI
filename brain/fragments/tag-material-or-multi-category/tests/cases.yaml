@@ -1,0 +1,79 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that tags, "tagged something nobody asked for": a material tag on
+# a room, a tag of the wrong kind, or a second tag on an element already
+# carrying one of that kind.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE. The Project2 scratch model (never
+# saved), Revit 2020. The elements are collected by FILTER_ELEMENTS_BY_CATEGORY
+# - category=Walls, levelId=Level 1 - which reads the whole model. The negative
+# leg is the SAME call with category=Rooms: a different set, not an empty one
+# (fragment-proving, rules 3 and 5). The tag types' names are NOT known; the
+# first row of the NEEDS-CHECKING group runs this card with tagType left out,
+# which places nothing and lists both kinds. A multi-category tag family may
+# have to be loaded first. Where the model differs, the job file changes -
+# never the card. EVERY RUN ROLLED BACK.
+
+positive:
+  - given: >
+      the walls of Level 1, from FILTER_ELEMENTS_BY_CATEGORY (category=Walls,
+      levelId=Level 1), view "FloorPlan: Level 1", tagType the MATERIAL
+      tag type the first row listed, addLeader left out
+    expect: >
+      one material tag on every wall of Level 1 that has a material - tagged
+      equal to newTags, findings "<n> material tag(s) placed in "Level 1" as
+      ..." and "<m> of the <n> material tag(s) were taken by Revit on a face
+      ...", and "The tags read: Walls ...: "<a material's description>"". Look
+      at the plan - one material tag per wall. THE FIRST POSITIVE TO RUN
+
+  - given: >
+      the same walls and view, tagType the MULTI-CATEGORY tag type the first
+      row listed
+    expect: >
+      one multi-category tag on every wall of Level 1 - tagged equal to the
+      walls handed in, less any in notPlaced with Revit's words; findings
+      "<n> multi-category tag(s) placed ...". A wall tag already on a wall does
+      not stop it
+
+  - given: the material run again, after it was KEPT
+    expect: >
+      tagged 0, newTags empty, every wall the first run tagged in
+      alreadyTaggedHere - no second material tag stacked on the first
+
+negative:
+  - given: >
+      the ROOMS of Level 1 instead - FILTER_ELEMENTS_BY_CATEGORY with
+      category=Rooms, levelId=Level 1 - with the same view and the same
+      material tag type
+    expect: >
+      tagged 0, newTags empty, every room in notTaggable, and findings "<n> x
+      a room, space or area, which takes its own kind of tag - Rooms". No tag
+      of any kind placed. THE FIRST CASE TO RUN
+
+  - given: the positive's walls with tagType left out
+    expect: >
+      tagged 0; refused "No tag type was named, and one is never chosen for
+      you ..."; typesLoaded lists the material tag types and the multi-category
+      tag types, each line saying "none loaded" when there are none
+
+  - given: the positive's walls with tagType a WALL tag type the model has
+    expect: >
+      tagged 0; refused naming that type and "(Wall Tags), not a material or
+      multi-category tag type" - nothing placed
+
+  - given: the positive's walls with view a schedule or a sheet
+    expect: refused naming the view and saying it is not a view these tags go in - nothing placed
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one view of tags is one undo entry
+
+second_route:
+  - >
+    In Revit, select one new tag: Properties names its type and its category
+    (Material Tags or Multi-Category Tags). Right-click it, Select All
+    Instances, Visible in View - the count Revit shows is the tags of that type
+    in the view, which after a first run on an untagged view is `tagged`
+  - >
+    Revit's own Annotate > Material Tag, placed by hand on one of the same
+    walls, reads the same text as the tag this placed on it

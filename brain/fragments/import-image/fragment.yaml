@@ -1,0 +1,201 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-061
+semantic-identity: "import a PDF page or a picture into a view - Insert > Import PDF / Import Image - placed at a point"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "import this PDF page into the
+# current view", "place the site plan image C:\Drawings\site.png on Level 1"
+# and "bring in page 3 of the architect's PDF as an underlay" - Revit's Insert
+# > Import PDF and Insert > Import Image. No card made an image: grep of every
+# fragment's C# that day for ImageType and ImageInstance found only
+# FIND_PURGEABLE_ELEMENTS (which reads unused images) and READ_RENDERED_IMAGES
+# (which reads saved renderings), and brain/heron_retrieve.py on the three
+# sentences (Revit 2024, a scratch store) answered EXPORT_SHEETS_TO_PDF and
+# IMPORT_CAD.
+#
+# LOOK-ALIKES, NOT DUPLICATES (heron-duplicate-checker's method, 2026-11-02).
+# IMPORT_CAD imports DWG, DXF and DGN through Document.Import, placed origin,
+# centre or shared - a drawing of lines Revit can snap to; a PDF page or a
+# picture is an image, made through ImageType and placed at a point, with a
+# page and a resolution IMPORT_CAD has no use for. Revit keeps them as two
+# commands too. LINK_FILES links Revit models and CAD drawings - nothing is
+# imported there and no image is linked. EXPORT_VIEW_IMAGE and
+# EXPORT_SHEETS_TO_PDF are the way OUT: they write files from views.
+# SET_VIEW_UNDERLAY sets a plan's ghosted level - "underlay" there is a level,
+# here a picture behind the drawing.
+#
+# THE READ HALF IS LIST_IMAGES. "what images are loaded in this model" and
+# every question about which images and pages Manage Images holds is answered
+# there, so none reaches this write (D-86).
+#
+# IMPORTED, NEVER LINKED (ImageTypeSource.Import). The job is Insert > Import;
+# Revit's Link PDF and Link Image are a different command and not built here.
+#
+# THE FILE IS THE MODELLER'S AND IS NEVER GUESSED (D-33). It is read on the PC
+# Revit runs on - not where the chat is - so a path that is not there is only
+# found at run time, said in those words, and nothing is made.
+#
+# ONE IMAGE PER FILE AND PAGE. An image already in Manage Images from the same
+# path - and for a PDF the same page - is placed again rather than loaded a
+# second time, and the answer says so.
+#
+# RISK MODIFY. It adds an image and one placement and deletes nothing, so
+# Article 7's confirmation does not arise.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.document
+capability: IMPORT_IMAGE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Imports one page of a PDF, or a PNG, JPG, BMP or TIFF picture, into a plan,
+  section, elevation, drafting view, legend or sheet - Revit's Insert > Import
+  PDF and Import Image - placed at a point in millimetres. An image already in
+  Manage Images from the same file and page is placed again rather than loaded
+  twice. Says the image's name, its placement, size and view, read back.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The full path of the PDF or picture ON THE PC REVIT RUNS ON -
+    # "C:\Drawings\site.png". Never guessed; a path with no file is named and
+    # nothing is made.
+    - name: path
+      type: string
+      source: request
+    # The view to place it in, by name - "Level 1", or "FloorPlan: Level 1"
+    # where a floor plan and a ceiling plan share it. Left out, it binds null
+    # and the view in front is used. A 3D view, a schedule or a template is
+    # refused by name.
+    - name: view
+      type: View
+      source: request
+      optional: true
+    # The PDF page, counted from 1. Left out, page 1. Not used for a picture,
+    # and the answer says so when one was given.
+    - name: page
+      type: int
+      source: request
+      optional: true
+      absent: 1
+    # Dots per inch to rasterise the PDF page or read the picture at. Left out
+    # (0), Revit's own default - read back and said on 2021 on. Not applied to
+    # an image already in Manage Images, and the answer says so.
+    - name: resolution
+      type: int
+      source: request
+      optional: true
+      absent: 0
+    # "x,y" in MILLIMETRES along the view's right and up, from the project's
+    # internal origin as seen in that view - on a sheet, from the sheet's
+    # origin. Left out, 0,0. Feet by / 304.8 (D-20).
+    - name: point
+      type: string
+      source: request
+      optional: true
+      absent: "0,0"
+    # Which point of the image sits at `point`: centre, top left, top right,
+    # bottom left or bottom right. Left out, centre. Any other word is named
+    # and nothing is made.
+    - name: anchor
+      type: string
+      source: request
+      optional: true
+      absent: centre
+  provides:
+    - name: imageInstanceId
+      # The placed image, looked up again by id after a regenerate. Invalid
+      # when nothing was made.
+      role: result
+      type: ElementId
+    - name: imageTypeId
+      # The image in Manage Images - made by this run, or the one already
+      # there from the same file and page. Invalid when nothing was made.
+      role: result
+      type: ElementId
+    - name: reusedType
+      # True when the image was already in Manage Images and was placed again
+      # rather than loaded twice (D-52) - evidence it looked.
+      role: accounting
+      type: bool
+    - name: report
+      # ONE STRING: the image's name and id, page, pixel size, DPI and
+      # imported or linked (2021 on), the view, the placed image's id, its
+      # width and height in mm, where its centre landed in mm, background or
+      # foreground - or the refusal.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was made, in the modeller's words - Heron's own check or
+      # Revit's refusal passed on. Null when the image was placed (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation, with one fork at 2020. ImageType.Create(Document,
+  ImageTypeOptions), ImageInstance.Create(Document, View, ElementId,
+  ImagePlacementOptions), ImageInstance.IsValidView, Width, Height, DrawLayer
+  and GetLocation, ImagePlacementOptions(XYZ, BoxPlacement), the enums
+  BoxPlacement and DrawLayer, ImageTypeOptions PageNumber, Resolution and
+  IsValid, ImageType Path and PageNumber, SubTransaction and Document
+  ActiveView are the same 2020 through 2027. The ImageTypeOptions constructor
+  is not: 2020 has (string, bool) and no ImageTypeSource - that enum is 2021
+  on - while 2022 on has only (string, bool, ImageTypeSource), so 2020 takes
+  the first (#if REVIT2020) and every later release the second with Import.
+  ImageType Source, Resolution, WidthInPixels and HeightInPixels are 2021 on,
+  so 2020 does not report them. All read with tools/api-surface --members on
+  2026-11-02. Not seen in Revit.
+
+# ROUTING (2026-11-02) - the same rows are in LIST_IMAGES, READ_RENDERED_IMAGES
+# and EXPORT_SHEETS_TO_PDF.
+#
+#   "import this PDF page into the current view"   -> here, the view in front
+#   "place the site plan image C:\Drawings\site.png on Level 1"
+#                                                  -> here, view Level 1
+#   "bring in page 3 of the architect's PDF as an underlay"
+#                                                  -> here, page 3
+#   "what images are loaded in this model"         -> LIST_IMAGES - a question,
+#                                                     never this write
+#   "import this dwg into the family plan as an underlay"
+#                                                  -> IMPORT_CAD - a CAD drawing,
+#                                                     not an image
+#   "reload the images"                            -> RELOAD_IMAGES - an image
+#                                                     already in Manage Images,
+#                                                     read again (added
+#                                                     2026-11-02)
+#   "export a png of this sheet"                   -> EXPORT_VIEW_IMAGE - the way
+#                                                     out
+#   "export these sheets to pdf"                   -> EXPORT_SHEETS_TO_PDF - the
+#                                                     way out
+#   "make a pdf of the drawings"                   -> EXPORT_SHEETS_TO_PDF, which
+#                                                     declares it. On the keyword
+#                                                     route alone this card ranks
+#                                                     above it since 2026-11-02
+#                                                     (tools/check-routing.py, a
+#                                                     scratch store); `find`
+#                                                     answers it there by identity
+#                                                     on 2022 on. On 2020 and 2021,
+#                                                     where no card makes a PDF,
+#                                                     it and "i need a pdf set"
+#                                                     reach this card - row
+#                                                     5b-1388, OPEN. With no file
+#                                                     named this card makes nothing
+utterances:
+  - import this PDF page into the current view
+  - place the site plan image C:\Drawings\site.png on Level 1
+  - bring in page 3 of the architect's PDF as an underlay

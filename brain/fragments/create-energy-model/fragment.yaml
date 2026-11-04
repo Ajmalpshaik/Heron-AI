@@ -1,0 +1,117 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-100
+semantic-identity: "create the energy analytical model from this model's Energy Settings - Analyze > Create Energy Model - and count its analytical spaces, surfaces and openings"
+kind: action
+domain: revit.mep
+capability: CREATE_ENERGY_MODEL
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for with the Energy Settings gap - "and, if the API allows
+# from a fragment, create the energy analytical model
+# (EnergyAnalysisDetailModel.Create)". The ribbon coverage note
+# (docs/work-notes/investigations/2026-11-01-revit-ribbon-coverage.md) lists
+# Energy Model as MISSING. brain/heron_retrieve.py's find() on a scratch store
+# of this tree (Revit 2024) sent "create the energy analytical model" to
+# CREATE_ANALYTICAL_ELEMENTS (structural analytical members) and "make the
+# energy model" to CREATE_MEP_SYSTEM. No card called
+# EnergyAnalysisDetailModel.
+#
+# THE API ALLOWS IT FROM A FRAGMENT. EnergyAnalysisDetailModel.Create is 2020
+# to 2027 (Create(Document, options) to 2026, obsolete in 2027 beside the new
+# Create(Document)); it makes an element, so it needs the open transaction the
+# host already holds, and opens none. Not seen in Revit, and measured in
+# NEEDS-CHECKING Group MM: what Revit does with an energy model already there.
+#
+# WRITTEN NEW, NOT WIDENED (each near card read in full; brain/heron_duplicates
+# and the Matcher found no same-capability or same-signature card):
+#   SET_ENERGY_SETTINGS changes the settings and makes nothing; graded ADMIN.
+#     This makes an element and is graded MODIFY - one card would carry two
+#     grades.
+#   RUN_HEATING_COOLING_LOADS runs the loads (Revit 2027) and builds no energy
+#     model; its card says EnergyAnalysisDetailModel "calculates no loads".
+#   CREATE_ANALYTICAL_ELEMENTS draws STRUCTURAL analytical members and panels.
+#   REPORT_ENERGY_SETTINGS says whether an energy model exists - a question
+#     goes there.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Creates the energy analytical model - Analyze > Create Energy Model - from
+  the model's own Energy Settings, which are read and never changed, and
+  counts the analytical spaces, surfaces and openings Revit built. An energy
+  model already there is named before, and the answer says whether Revit
+  rebuilt, replaced or kept it beside the new one. A family is refused;
+  Revit's own refusal comes back in its words and nothing is kept.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: energyModel
+      # The energy analytical model made. A thing it MADE, so a result (D-52).
+      role: result
+      type: ElementId
+    - name: analyticalSpaces
+      # Analytical spaces in it, read back - 0 is named as a finding, never
+      # passed as a model that worked.
+      role: result
+      type: int
+    - name: analyticalSurfaces
+      role: result
+      type: int
+    - name: analyticalOpenings
+      role: result
+      type: int
+    - name: report
+      # ONE STRING: the model made and its id, the Energy Settings mode it was
+      # built in, the three counts, and whether there was one before.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was made, in the modeller's words. Null when it ran (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Read off tools/api-surface --members for all eight releases on 2026-11-02.
+  Revit 2027: EnergyAnalysisDetailModel.Create(Document), which uses the
+  Energy Settings' mode, behind `#if REVIT2027_OR_GREATER` - Create(Document,
+  EnergyAnalysisDetailModelOptions) and EnergyModelType are obsolete there.
+  2022-2026: Create(Document, options) with EnergyModelType.AnalysisMode (2022
+  on), which follows the Energy Settings' mode. 2020-2021: there is no
+  AnalysisMode value, so EnergyModelType.BuildingElement, and a model whose
+  Energy Settings mode is anything but building elements is refused by name
+  (`#if REVIT2020 || REVIT2021`). Tier Final; IncludeShadingSurfaces,
+  ExportMullions and SimplifyCurtainSystems from EnergyDataSettings'
+  IsExportShadingSurfacesEnabled, IsExportMullionsEnabled and
+  IsExportSimplifiedCurtainSystemsEnabled (2020-2027). GetEnergyDataSettings
+  (2026 on) or GetFromDocument before it. GetMainEnergyAnalysisDetailModel,
+  GetAnalyticalSpaces, GetAnalyticalSurfaces and GetAnalyticalOpenings are
+  2020-2027. Not seen in Revit: what happens to an energy model already there,
+  and how long a large model takes.
+
+# ROUTING (2026-11-02) - the same rows are in REPORT_ENERGY_SETTINGS and
+# SET_ENERGY_SETTINGS.
+#
+#   "create the energy analytical model"         -> here
+#   "read the energy settings"                   -> REPORT_ENERGY_SETTINGS - a question goes to the read (D-86)
+#   "set the energy settings building type"      -> SET_ENERGY_SETTINGS
+#   "run the heating and cooling loads"          -> RUN_HEATING_COOLING_LOADS (Revit 2027)
+#
+# WHAT MOVED: see NEEDS-CHECKING Group MM.
+utterances:
+  - create the energy analytical model

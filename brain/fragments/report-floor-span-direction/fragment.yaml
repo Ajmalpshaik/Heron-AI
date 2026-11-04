@@ -1,0 +1,143 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-141
+semantic-identity: "which way these structural floors span - each floor's span direction angle in degrees, and its span direction symbols"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "what is the span direction of
+# this slab" and "which way does this floor span". No card in the library read
+# a floor's span direction (grep of brain/fragments for SpanDirectionAngle that
+# day: only SET_FLOOR_SPAN_DIRECTION and PLACE_SPAN_DIRECTION_SYMBOLS, both
+# writes). FRAGMENT-ISSUES row 5b-1369 recorded the first sentence reaching a
+# write without the host's question flag, and a read that does not answer it
+# with the flag.
+#
+# A CARD OF ITS OWN, NOT READ_ELEMENT_PARAMETERS (FRG-PAR-001, PROVEN) with
+# parameterName "Span Direction". That card owns one-value-off-an-element
+# questions, but whether Revit hands FLOOR_PARAM_SPAN_DIRECTION to a lookup by
+# that name needs a real Revit to know (row 5b-1369), and it could not say why
+# a floor has no span direction - a floor whose Structural box is clear - nor
+# which span direction symbols show it. This reads Revit's own angle and says
+# both.
+#
+# A NON-STRUCTURAL FLOOR HAS NO SPAN DIRECTION. Revit's API documentation for
+# Floor.SpanDirectionAngle, the same sentence in all eight releases 2020 to
+# 2027 (read for SET_FLOOR_SPAN_DIRECTION, 2026-11-01): "An exception will be
+# thrown if the floor is non structural." So the Structural box is read first
+# and such a floor is named, never given an angle of 0.
+#
+# THE ANGLE: Floor.SpanDirectionAngle, radians, reported in degrees, measured
+# as SET_FLOOR_SPAN_DIRECTION sets it - anticlockwise from the model's X axis.
+# A span is an axis, so 90 and 270 degrees are the same span; the answer says
+# the angle Revit holds and the axis it means (0 up to 180). The floor's own
+# Span Direction parameter (FLOOR_PARAM_SPAN_DIRECTION) is reported beside it,
+# in whatever form Revit writes it - a second reading, never the one relied on.
+#
+# THE SYMBOLS: Floor.GetSpanDirectionSymbolIds, present 2020 to 2027 - so the
+# symbols are read on every release, though only 2025 and later can PLACE one
+# (PLACE_SPAN_DIRECTION_SYMBOLS). Each is named with its type and the view it
+# is drawn in; a floor with none is said to have none.
+#
+# READ ONLY - opens no transaction and needs none.
+kind: action
+domain: revit.elements
+capability: REPORT_FLOOR_SPAN_DIRECTION
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports the span direction of each floor handed in - its angle in degrees,
+  as Revit holds it, and the floor's own Span Direction parameter beside it -
+  with whether it is structural, and the span direction symbols that show it,
+  each with its type and the plan it is drawn in. A floor that is not
+  structural has no span direction in Revit and is named, never given an angle.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The floors, from the selection. Anything that is not a floor is named and
+    # left out.
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: read
+      # How many floors' span direction was read - structural floors only.
+      role: result
+      type: int
+    - name: spans
+      # Floor id (as text) -> its span direction in degrees, anticlockwise
+      # from the model's X axis, as Revit holds it.
+      role: result
+      type: IDictionary<string, double>
+    - name: symbolIds
+      # The span direction symbols on those floors, from every view.
+      role: result
+      type: IList<ElementId>
+    - name: notStructural
+      # Floors with the Structural box clear, which Revit gives no span
+      # direction (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notFloors
+      # Handed in and not a floor - a wall, a roof - and left out (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, floor by floor: its type, its span in degrees and as an
+      # axis, the Span Direction parameter, and each symbol with its type and
+      # view - or why it has no span direction (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Floor.SpanDirectionAngle (double,
+  radians), Floor.GetSpanDirectionSymbolIds (ICollection<ElementId>),
+  Floor.FloorType, Element.Id, Document, OwnerViewId, GetTypeId and
+  get_Parameter(BuiltInParameter), Document.GetElement(ElementId),
+  ElementType.FamilyName, View.Name, Parameter.AsInteger and AsValueString,
+  and BuiltInParameter.FLOOR_PARAM_IS_STRUCTURAL and FLOOR_PARAM_SPAN_DIRECTION
+  carry the same signatures 2020 through 2027 - read with tools/api-surface
+  --members on 2026-11-01. SpanDirectionSymbol, the class, exists only from
+  2025 and is NOT used here: a symbol is read as an Element, so the card claims
+  all eight releases. No ElementId is built from a number or read as one.
+
+# ROUTING (2026-11-01) - the same rows are in SET_FLOOR_SPAN_DIRECTION and
+# PLACE_SPAN_DIRECTION_SYMBOLS.
+#
+#   "what is the span direction of this slab"   -> here
+#   "which way does this floor span"            -> here
+#   "set the span direction of this slab to     -> SET_FLOOR_SPAN_DIRECTION - a
+#    run along grid 1"                             WRITE, and this one only reads
+#   "change the floor span to 90 degrees"       -> SET_FLOOR_SPAN_DIRECTION
+#   "add span direction symbols to these slabs  -> PLACE_SPAN_DIRECTION_SYMBOLS
+#    in this plan"                                 - draws the symbol, 2025 and
+#                                                  later. MEASURED 2026-11-01:
+#                                                  behind a 2020 or 2024 wall,
+#                                                  where that card is not
+#                                                  offered, the sentence ranks
+#                                                  HERE - it reached
+#                                                  SET_FLOOR_SPAN_DIRECTION, a
+#                                                  write that turns the span,
+#                                                  before this card. Before
+#                                                  2025 no card can place the
+#                                                  symbol; this one changes
+#                                                  nothing and says which
+#                                                  floors have one
+#   "what is the Mark on these"                 -> READ_ELEMENT_PARAMETERS -
+#                                                  one named value off each
+#                                                  element
+utterances:
+  - what is the span direction of this slab
+  - which way does this floor span

@@ -1,0 +1,228 @@
+heron-agent: HERON-REVIT-EXP-018
+heron-step: 16
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-056
+semantic-identity: "the export setups this project holds - DWG/DXF, DGN, PDF and print - and the options in each"
+kind: action
+domain: revit.export
+capability: LIST_EXPORT_SETUPS
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WRITTEN 2026-11-01 FOR FRAGMENT-ISSUES ROW 5b-1360. Ajmal PS asked Heron to
+# rename the DWG/DXF export setup "Setup 1" on his Revit 2020 job model
+# 4355-BHVD-3D-50S20-BL001A, and nothing in the library could see an export
+# setup at all: "rename the DWG export setup Setup 1 to Tags Export" reached
+# EXPORT_VIEWS_TO_DWG, a PUBLISH that only USES a setup. The research - which
+# setups the Revit API reaches, on which releases - is
+# docs/work-notes/investigations/2026-11-01-export-setups.md.
+#
+# A NEW CARD, NOT A WIDENING. LIST_SHEET_SETS and SET_PRINT_SETTINGS are
+# PROVEN and about other things; EXPORT_VIEWS_TO_DWG is a PUBLISH. One read
+# for every kind of setup the API reaches, not one card per kind.
+#
+# IFC, NAVISWORKS, DWF AND IMAGE ARE LEFT OUT ON PURPOSE. None of them keeps a
+# saved setup the Revit API exposes (the work note, section 1). The answer
+# says so in a finding rather than reading as "none".
+purpose: >
+  Answers which export setups the project holds and what is in each - the
+  DWG/DXF export setups, the DGN export setups, the PDF export setups (Revit
+  2022 and later) and the print settings - each by name, which one is active,
+  and its key options in the export dialog's words: file version, units,
+  coordinate basis, how views on sheets are exported, layer standard, solids,
+  colours, line scaling, and for PDF the paper, zoom, colour and file naming.
+  A question, read and never changed; it opens no transaction.
+
+  **ONE SETUP NAMED SHOWS ITS LAYER TABLE.** With a setup's name given, its
+  category-to-layer rows are listed as well.
+
+  **IFC, NAVISWORKS, DWF AND IMAGE EXPORT ARE NOT LISTED.** They keep no saved
+  setup the Revit API can read, and the answer says so.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # "dwg" (DWG and DXF are one setup), "dgn", "pdf", "print" - or left out
+    # for every kind.
+    - name: kind
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # One setup's name, which also lists its layer table - or left out for
+    # every setup.
+    - name: setupName
+      type: string
+      source: request
+      optional: true
+      absent: all
+  provides:
+    - name: setups
+      # The answer, ONE string with " || " between setups, because a list
+      # reaches the reply cut to three entries of sixty characters. Each:
+      # "<kind>: <name>", "(ACTIVE)" when it is the one the dialog opens on,
+      # then its options. Sorted by kind, then name.
+      role: result
+      type: string
+    - name: setupCount
+      # How many setups were listed - every kind asked for.
+      role: result
+      type: int
+    - name: activeSetups
+      # The setup each kind's dialog opens on, "; " between kinds. Empty for
+      # a kind with none.
+      role: result
+      type: string
+    - name: layerTable
+      # Only with one DWG/DXF or DGN setup named: its layer rows as
+      # "Category : Subcategory -> layer (colour n)", "; " between rows, the
+      # first 80 and then how many more. Empty otherwise.
+      role: result
+      type: string
+    - name: findings
+      type: IList<string>
+    - name: refused
+      # Why it declined, in the user's words - a kind it does not know, or a
+      # setup name that is not there, naming the ones that are. Never a thing
+      # it FOUND (D-52).
+      role: accounting
+      type: string
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: Snowdon Towers Sample Architectural (34,509 elements), Revit 2024, session 57392
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    manage-export-setups with this phase''s own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned activeSetups , actives
+    0 item(s), asked Func`2, counts 1 item(s) [1 DWG/DXF], findings 2 item(s) [Setup ''HERON
+    P1102 DWG'' in Snowdon Towers Sample Architectur..., IFC, Navisworks, DWF and image export
+    keep no setup the Revi...], hides Func`2, layerCount Func`2, layerParts 80 item(s) [Abutment
+    Foundation Tags -> S-BRDG-ABUT-FNDN-IDEN (colour 2), Abutment Pile Tags -> S-BRDG-ABUT-PILE-IDEN
+    (colour 2), Abutment Tags -> S-BRDG-ABUT-IDEN (colour 2), ...], layerRowsMore 823, layerRowsShown
+    80, layerSources 1 item(s) [Autodesk.Revit.DB.DWGExportOptions], layerTable Abutment Foundation
+    Tags -> S-BRDG-ABUT-FNDN-IDEN (colour 2); Abutment Pile Tags -> S-BRDG-ABUT-PILE-IDEN
+    (colour 2); Abutment Tags -> S-BRDG-ABUT-IDEN (colour 2); Abutment Wall Tags -> S-BRDG-WALL-ABUT-IDEN
+    (colour 2); Abutments -> S-BRDG-ABUT (colour 83), cut S-BRDG-ABUT; Abutments : <Hidden
+    Lines> -> S-BRDG-ABUT-HDLN (colour 2), cut S-BRDG-ABUT-HDLN; Abutments : Abutment Foundations
+    -> S-BRDG-ABUT-FNDN (colour 2), cut S-BRDG-ABUT-FNDN; Abutments : Abutment Piles -> S-BRDG-ABUT-PILE
+    (colour 2), cut S-BRDG-ABUT-PILE; Abutments : Abutment Walls -> S-BRDG-WALL-ABUT (colour
+    2), cut S-BRDG-WALL-ABUT; Abutments : Approach Slabs -> S-BRDG-APPR-SLAB (colour 2), cut
+    S-BRDG-APPR-SLAB; Adaptive Points -> A-ANNO-SYMB (colour 150); Adaptive Points : Lines
+    -> A-ANNO-SYMB (colour 150); Adaptive Points : Planes -> A-ANNO-SYMB (colour 150); Adaptive
+    Points : Points -> A-ANNO-SYMB (colour 150); Air Terminal Tags -> M-HVAC-CDFF-IDEN (colour
+    2); Air Terminals -> M-HVAC-CDFF (colour 50); Alignment Station Label Sets -> L-SITE (colour
+    91); Alignment Station Labels -> L-SITE (colour 91); Alignment Tags -> L-SITE (colour
+    91); Alignments -> L-SITE (colour 91), cut L-SITE; Analytical Link Tags -> S-LINK-ANLY-IDEN
+    (colour 2); Analytical Links -> S-LINK-ANLY (colour 1); Analytical Member Tags -> S-BEAM-ANLY-IDEN
+    (colour 2); Analytical Members -> S-BEAM-ANLY (colour 2); Analytical Members : Cross Section
+    ->  (colour -1); Analytical Members : Local Coordinate System ->  (colour -1); Analytical
+    Node Tags -> S-NODE-ANLY-IDEN (colour 2); Analytical Nodes -> S-NODE-ANLY (colour 1);
+    Analytical Opening Tags -> S-OPNG-ANLY-IDEN (colour 2); Analytical Openings -> S-OPNG-ANLY
+    (colour 2); Analytical Panel Tags -> S-SLAB-ANLY-IDEN (colour 2); Analytical Panels ->
+    S-SLAB-ANLY (colour 2); Analytical Panels : Local Coordinate System ->  (colour -1); Analytical
+    Pipe Connections -> P-PIPE-ANLY (colour 3); Analytical Pipe Connections : Connection Line
+    Symbol -> P-PIPE-ANLY (colour 3); Analytical Spaces -> M-AREA-ANLY (colour 132); Analytical
+    Surfaces -> M-AREA-ANLY (colour 70); Analytical Surfaces : Air Openings -> M-OPNG-ANLY
+    (colour 254); Analytical Surfaces : Air Surfaces -> M-AREA-ANLY (colour 254); Analytical
+    Surfaces : Ceilings -> M-CLNG-ANLY (colour 191); Analytical Surfaces : Exterior Walls
+    -> M-WALL-ANLY (colour 73); Analytical Surfaces : Fixed Skylights -> M-GLAZ-ANLY (colour
+    141); Analytical Surfaces : Fixed Windows -> M-GLAZ-ANLY (colour 141); Analytical Surfaces
+    : Interior Floors -> M-FLOR-ANLY (colour 183); Analytical Surfaces : Interior Walls ->
+    M-WALL-ANLY (colour 71); Analytical Surfaces : Non-sliding Doors -> M-DOOR-ANLY (colour
+    241); Analytical Surfaces : Operable Skylights -> M-GLAZ-ANLY (colour 141); Analytical
+    Surfaces : Operable Windows -> M-GLAZ-ANLY (colour 141); Analytical Surfaces : Raised
+    Floors -> M-FLOR-ANLY (colour 183); Analytical Surfaces : Roofs -> M-ROOF-ANLY (colour
+    182); Analytical Surfaces : Shades -> M-AREA-ANLY (colour 253); Analytical Surfaces :
+    Slabs on Grade -> M-SLAB-ANLY (colour 183); Analytical Surfaces : Sliding Doors -> M-DOOR-ANLY
+    (colour 241); Analytical Surfaces : Underground Ceilings -> M-CLNG-ANLY (colour 23); Analytical
+    Surfaces : Underground Slabs -> M-SLAB-ANLY (colour 23); Analytical Surfaces : Underground
+    Walls -> M-WALL-ANLY (colour 23); Analyze As -> Analyze As (colour -1), cut Analyze As;
+    Analyze As : Foundation -> Foundation (colour -1), cut Foundation; Analyze As : Gravity
+    -> Gravity (colour -1), cut Gravity; Analyze As : Gravity and Lateral -> Gravity and Lateral
+    (colour -1), cut Gravity and Lateral; Analyze As : Hanger -> Hanger (colour -1), cut Hanger;
+    Analyze As : Lateral -> Lateral (colour -1), cut Lateral; Analyze As : Not for analysis
+    -> Not for analysis (colour -1), cut Not for analysis; Analyze As : One-Way -> One-Way
+    (colour -1), cut One-Way; Analyze As : Slab on Grade -> Slab on Grade (colour -1), cut
+    Slab on Grade; Analyze As : Two-Way -> Two-Way (colour -1), cut Two-Way; Anchor Tags ->
+    S-FSTN (colour 2); Approach Slab Tags -> S-BRDG-APPR-SLAB-IDEN (colour 2); Area Based
+    Load Tags -> E-ELEC-ARBL-IDEN (colour 2); Area Load Tags -> S-LOAD-CASE-IDEN (colour 2);
+    Area Polylines -> A-AREA-BNDY (colour 1), cut A-AREA-BNDY; Area Tags -> A-AREA-IDEN (colour
+    2); Areas -> A-AREA (colour 32); Areas : Color Fill -> A-AREA-PATT (colour 32); Assembly
+    Tags -> A-ANNO-TEXT (colour 131); Audio Visual Device Tags -> A-AVDV-IDEN (colour 13);
+    Audio Visual Devices -> A-AVDV (colour 13), cut A-AVDV; Audio Visual Devices : <Hidden
+    Lines> -> A-AVDV-HDLN (colour 13), cut A-AVDV-HDLN; Bearing Tags -> S-BRDG-BEAR-IDEN (colour
+    2); Bearings -> S-BRDG-BEAR (colour 152), cut S-BRDG-BEAR; and 823 more rows, readLayers
+    Action`1, refused , rows 1 item(s) [DWG/DXF: HERON P1102 DWG - AutoCAD 2018 format, units
+    Inch, ...], seen 1 item(s) [DWG/DXF ''HERON P1102 DWG''], setupCount 1, setups DWG/DXF:
+    HERON P1102 DWG - AutoCAD 2018 format, units Inch, Project Internal coordinates, views
+    on sheets as external references, layer standard AIA, 903 layer rows, solids polymesh,
+    colours AutoCAD index, line scaling paper space, category properties ByEntity, text exact,
+    rooms and areas as polylines no, hide scope boxes yes, hide reference planes yes, hide
+    unreferenced view tags yes, preserve coincident lines no, wantedKind dwg, wantedName HERON
+    P1102 DWG, yesNo Func`2. inputs came kind as given; setupName as given. on Snowdon Towers
+    Sample Architectural'
+  negative_case: run with kind=dwg, mode=delete, setupName=ZZZ NO SUCH SETUP instead - chosen
+    because it should not contain what this fragment reports - the arrangement was re-made
+    first by running manage-export-setups with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned activeSetups
+    , actives 0 item(s), asked Func`2, counts 1 item(s) [0 DWG/DXF], findings 1 item(s) [No
+    DWG export setup called 'ZZZ NO SUCH SETUP'. This project...], hides Func`2, layerCount
+    Func`2, layerParts 0 item(s), layerRowsMore 0, layerRowsShown 0, layerSources 0 item(s),
+    layerTable , readLayers Action`1, refused No DWG export setup called 'ZZZ NO SUCH SETUP'.
+    This project has none of that kind., rows 0 item(s), seen 0 item(s), setupCount 0, setups
+    , wantedKind dwg, wantedName ZZZ NO SUCH SETUP, yesNo Func`2. inputs came kind as given;
+    setupName as given. on Snowdon Towers Sample Architectural
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: cf3fe622aafb506d
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ExportDWGSettings` and `ExportDGNSettings` with `ListNames`, `FindByName`,
+  `GetActivePredefinedSettings`, `GetDWGExportOptions` and
+  `GetDGNExportOptions`, every option read here on `DWGExportOptions`,
+  `ACADExportOptions` and `BaseExportOptions`, `ExportLayerTable` with its
+  keys and infos, `PrintSetting.PrintParameters` and `PrintSetup` are
+  present with the same signatures 2020 through 2027 - looked up with
+  tools/api-surface --members on every release on 2026-11-01.
+  `DGNExportOptions.MasterUnits` is 2020-2021 and `WorkingUnits` 2021-2027,
+  so 2020 reads the first and 2021 on the second. `ExportPDFSettings` and
+  `PDFExportOptions` exist from 2022 only: on 2020 and 2021 the PDF part is
+  compiled out and a finding says PDF setups need 2022 or later. A naming
+  rule's parameter is matched by ElementId equality against built-in ids,
+  never read as a number, so 2024's 64-bit ids do not reach this code.
+
+# ROUTING - the same rows are in MANAGE_EXPORT_SETUPS and
+# SET_EXPORT_SETUP_OPTIONS.
+#
+#   "list the export setups"             -> here. A QUESTION
+#   "which DWG export setups are there"  -> here
+#   "what units does Setup 1 export in"  -> here, with setupName
+#   "rename the DWG export setup Setup 1 to Tags Export"
+#                                        -> MANAGE_EXPORT_SETUPS. A CHANGE
+#   "copy Setup 1 as MEP Export"         -> MANAGE_EXPORT_SETUPS, duplicate
+#   "set Setup 1 to export in millimetres"
+#                                        -> SET_EXPORT_SETUP_OPTIONS
+#   "list the view/sheet sets"           -> LIST_SHEET_SETS. A sheet set is
+#                                           WHAT gets exported; a setup is HOW
+#   "export the views to dwg"            -> EXPORT_VIEWS_TO_DWG. A PUBLISH
+
+utterances:
+  - list the export setups
+  - which dwg export setups are there
+  - show the options in the dwg export setup
+  # ADDED 2026-11-01, measured on a scratch store, trained model, 2020 and
+  # 2024: without it "what units does Setup 1 export in" - a question - went
+  # to SET_EXPORT_SETUP_OPTIONS, a write, unless the host marked it a
+  # question. Not the modeller's words yet; row 5b-1360 says so.
+  - what units does the export setup export in

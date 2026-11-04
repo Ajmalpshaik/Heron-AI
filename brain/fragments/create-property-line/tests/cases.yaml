@@ -1,0 +1,55 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE - a scratch project on Revit 2027 (the
+# first release with a property line in the API), new from Revit's metric
+# architectural template, saved under %TEMP%\heron-work, never a working
+# model. A site plan in front, nothing drawn.
+#
+# Every run below is ROLLED BACK (validate --write). The negative leg is a
+# DIFFERENT VALUE, not an empty one.
+
+positive:
+  - given: >
+      pointsMm "0,0; 40000,0; 40000,25000; 0,25000; 0,0"
+    expect: >
+      propertyLine set; report "property line ..., sketched, closed, area
+      1000 m2, starting at 0,0 mm." and "4 segment(s), 130000 mm long in all."
+
+  - given: >
+      table "40000, N90E; 25000, S0E; 40000, S90W; 25000, N0E", startMm
+      "100000,0"
+    expect: >
+      propertyLine set; report "..., from a table, closed, area 1000 m2,
+      starting at 100000,0 mm." and one row per entry with the bearing held
+      beside the one typed - READ whether held equals typed (90, 180, 270,
+      0); a difference is the API's convention, NEEDS REAL REVIT
+
+  - given: >
+      pointsMm "0,0; 40000,0; 40000,25000"
+    expect: >
+      an open property line; report "..., open - no area ..."
+
+negative:
+  - given: >
+      pointsMm "0,0; 40000,25000; 40000,0; 0,25000; 0,0" (the same four
+      corners in an order whose edges cross)
+    expect: >
+      propertyLine null; refused "Revit says these points are not a property
+      line - the line may cross itself. NOTHING WAS MADE." - or, if Revit's
+      own check lets a loop crossing itself through, "Revit refused the
+      property line: ..." from Create. THE FIRST CASE TO RUN
+
+  - given: table "40000, N95E; 25000, S0E"
+    expect: >
+      refused - "N95E" is not a bearing Heron reads - nothing made
+
+  - given: both pointsMm and table
+    expect: refused - one or the other - nothing made
+
+second_route:
+  - >
+    Revit's own Massing & Site > Property Line by hand on a copy of the same
+    saved file, Create by entering distances and bearings, with the same
+    table: its Area in Properties and the bearings its table shows, beside the
+    report's
+  - one Ctrl+Z removes each run in a single step (Golden Rule 16)

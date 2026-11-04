@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,31 @@ capability: CHECK_OBSTRUCTIONS
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO PROBE_AROUND_ELEMENTS
+# (probe-around-elements), on the owner's instruction in conversation: "make
+# sure there is no duplicate tools", "in every conflict keep the safer rule".
+# Constitution Article 1: kept, never deleted, so its record and its proof
+# stay readable and it can be brought back. Nothing offers it now - retrieval
+# leaves DEPRECATED out, and its sentences claim nothing in the identity
+# table (heron_search RETIRED_FRAGMENTS). Its sentences moved to
+# PROBE_AROUND_ELEMENTS. The proof below is the record of what this card's
+# code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: PROBE_AROUND_ELEMENTS
+  why: >
+    The same rays from a point. PROBE_AROUND_ELEMENTS version 3 takes bare
+    `points` - nothing placed yet - cast in every one of `directions`, and
+    answers `blocked` and `clear` within maxDistance (a hit further away is
+    clear for this question), `notChecked` for a point that could not be
+    tested, never called clear, and a view template refused with every point
+    notChecked. It also names what blocks each point and how far. Not taken,
+    and why - THE OPPOSITE RULE: this card ALWAYS looked into linked models;
+    the keeper reads a link only when includeLinks is set (D-59, the
+    modeller decides), and its answer says in words when links were not
+    read. The safer, recorded rule was kept.
 
 purpose: >
   Casts a ray from each point and reports which ones hit something within a

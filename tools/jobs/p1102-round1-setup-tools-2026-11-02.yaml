@@ -1,0 +1,19 @@
+# Round 1, 2026-11-02 - Revit 2020, "P1102 MEP" = a copy of Revit 2020's own
+# Samples\rme_advanced_sample_project.rvt in %TEMP%\heron-work\prove-1102 (scratch).
+# The two setup tools nearly every other proof chains through - both went back to
+# DRAFT when the selectors were merged into filter-elements-by-category (#777).
+# Every run is read-only or rolled back.
+model: "P1102 MEP (copy of rme_advanced_sample_project.rvt), Revit 2020"
+
+defaults:
+  in: "P1102 MEP"
+  setup: []
+
+jobs:
+  - fragment: filter-elements-by-category
+    expect: elements
+    set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP"}
+    negative-set: {category: "Ducts", inViewOnly: "Level 1 - Lighting Plan"}
+    note: >
+      Positive - the callout shows 10 ducts (measured 2026-11-02 before the run). Negative -
+      the lighting plan draws no ducts, so the same category through it must be 0.

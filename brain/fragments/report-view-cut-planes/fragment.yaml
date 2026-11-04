@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: REPORT_VIEW_CUT_PLANES
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO REPORT_VIEW_SETTINGS (report-view-
+# settings), on the owner's instruction in conversation: "make sure there is
+# no duplicate tools". Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to REPORT_VIEW_SETTINGS. Its viewName became the views list
+# there, which takes 'Section: Section 1' the same way; left out it reads
+# every section, elevation and detail view, as an empty viewName did here. Its
+# viewCount is cutViewCount there. The proof below is the record of what this
+# card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: REPORT_VIEW_SETTINGS
+  why: >
+    The same kind of job: read how a view is set up, and never change it.
+    REPORT_VIEW_SETTINGS version 2 lists, for each section, elevation and
+    detail view named - or every one in the model when none is - a point on
+    its cut plane in millimetres, the direction it looks (the opposite of
+    ViewDirection) and its far clip, on or off and how deep, in cutPlanes and
+    cutViewCount; a plan named is not listed there.
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.

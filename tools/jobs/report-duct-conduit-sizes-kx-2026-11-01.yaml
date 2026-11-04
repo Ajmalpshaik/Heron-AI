@@ -1,0 +1,37 @@
+# NEEDS-CHECKING Group KX - REPORT_DUCT_CONDUIT_SIZES, built 2026-11-01 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/report-duct-conduit-sizes-kx-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-duct-conduit-sizes-kx-2026-11-01.yaml
+#
+# THE MODEL is a scratch project new from Revit's metric SYSTEMS template
+# (Mechanical where there is none), saved as "mep-sizes-kx" under
+# %TEMP%\heron-work - never a working model. By hand before the run (KX1):
+# open Manage > MEP Settings > Mechanical Settings > Duct Settings > Round,
+# Rectangular and Oval, and Electrical Settings > Conduit Settings > Size
+# (every standard in its dropdown) and Cable Tray Settings > Size, and write
+# down every size - the second route.
+#
+# THE ARRANGEMENT: this read takes no selection, so `setup: []`. The negative
+# is a DIFFERENT VALUE - a conduit standard name no standard in the model has -
+# never an empty one (fragment-proving, rule 5): tables 0, and the finding
+# names every standard the model does have.
+
+model: "mep-sizes-kx scratch project from Revit's metric systems template, Revit 2020"
+
+jobs:
+  - fragment: report-duct-conduit-sizes
+    expect: tables
+    setup: []
+    set:
+      show: "round"
+    negative-set:
+      show: "conduit"
+      standard: "ZZNOTASTANDARD"
+    note: >
+      KX2. Negative - THE FIRST CASE TO RUN: conduit narrowed to
+      ZZNOTASTANDARD, so tables 0, sizeCount 0 and findings "No conduit
+      standard has a name containing \"ZZNOTASTANDARD\". The standards in this
+      model: ..." naming every standard KX1 wrote down. Positive - tables 1,
+      report "Round duct sizes (n): ... mm" holding every round size KX1 wrote
+      down, smallest first, and no other list.

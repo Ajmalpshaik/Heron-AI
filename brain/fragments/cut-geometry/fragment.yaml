@@ -1,0 +1,160 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-155
+semantic-identity: "cut one element with another, or take the cut away again - Revit's Cut Geometry and Uncut Geometry in a project"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "cut this beam out of the
+# slab", "cut the column with the void family", "uncut these two" and "make
+# the opening family cut the wall" - Modify > Cut Geometry and Uncut Geometry.
+# No card did it: of every fragment's C# none called SolidSolidCutUtils or
+# InstanceVoidCutUtils, and the ribbon coverage note of 2026-11-01 lists both
+# buttons MISSING. brain/heron_retrieve.py on the four sentences (a scratch
+# store, Revit 2024) answered COPE_FRAMING, COMBINE_FAMILY_FORMS (twice) and
+# CREATE_OPENING - none of which cuts one project element with another.
+#
+# LOOK-ALIKES, KEPT SEPARATE (heron-duplicate-checker's method, 2026-11-02):
+#   JOIN_GEOMETRY (DRAFT)      Join Geometry - two elements share their overlap
+#                              and one gives way. A cut takes one element's
+#                              shape out of another and is a different Revit
+#                              command with a different utility; widening the
+#                              join card would make one tool of two buttons.
+#   COMBINE_FAMILY_FORMS       the Family Editor's Cut and Join, by a
+#     (PROVEN)                 combination. This one is the project's - the
+#                              solid-cut utility refuses an ordinary family.
+#   COPE_FRAMING (PROVEN)      the steel coping cut of a beam end by columns.
+#   CREATE_OPENING (DRAFT)     makes a new opening element; this one cuts with
+#                              an element already there.
+#
+# WHICH ELEMENT CUTS WHICH IS NEVER GUESSED. The cutter is `cutter`, named the
+# way JOIN_GEOMETRY names its target: the ONE element selected, passed as
+# "selected". Never "the first of the selection" - the add-in refuses
+# `selected` with two or more selected, because a Revit selection has no
+# order (RevitFragment.cs, OneElement). The elements to cut come from the
+# chain - FILTER_ELEMENTS_BY_ID with their ids typed, a read, so each shows
+# before anything changes - or from another read.
+#
+# THE ELEMENTS DECIDE WHICH CUT, NEVER A SETTING. A family instance with an
+# unattached void that cuts when loaded cuts an element a void can cut by
+# InstanceVoidCutUtils; anything else is a cut between solids by
+# SolidSolidCutUtils, asked first with CanElementCutElement so a pair Revit
+# will not cut is refused with Revit's own reason in words.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: CUT_GEOMETRY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Cuts the elements handed in with one named cutting element - a void family
+  or another solid - or takes those cuts away again, in a project.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The elements to be cut, or uncut - from the chain or the selection.
+    - name: elements
+      type: IList<Element>
+    # The ONE element that does the cutting - selected on its own and passed
+    # as "selected". Never taken from among the elements: a selection has no
+    # order, and which one cuts is the whole instruction.
+    - name: cutter
+      type: Element
+      source: request
+    # cut (true) or uncut (false). Asked for, because they are opposite
+    # instructions and a default would be a guess; any other word is refused
+    # before anything changes.
+    - name: cut
+      type: string
+      source: request
+  provides:
+    - name: changed
+      role: result
+      type: int
+    - name: alreadyRight
+      # Elements already in the state asked for - already cut by the cutter,
+      # or not cut by it at all. The evidence it looked, never a change it
+      # made (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: wouldNot
+      # Pairs Revit would not cut, with Revit's reason in words - and a call
+      # Revit accepted whose read-back says nothing changed. Counted, not
+      # thrown, so one bad pair does not lose the rest (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Declined before Revit was asked: a word other than cut or uncut, no
+      # cutter, the cutter among the elements, a cutter that can cut nothing,
+      # and a cut that already runs the other way - never turned round here
+      # (D-52).
+      role: accounting
+      type: IList<string>
+    - name: pairs
+      # Each pair's result, READ BACK after the call - which element, which
+      # cut (void or solid), and whether it is cut now. Describes the run,
+      # never a change by itself (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read with tools/api-surface --members
+  on the reference assemblies of 2020 to 2027 on 2026-11-02, every one present
+  with the same signature in all eight: `SolidSolidCutUtils.AddCutBetweenSolids`
+  (Document, Element solidToBeCut, Element cuttingSolid), `RemoveCutBetweenSolids`,
+  `CanElementCutElement` (cutting, cut, out CutFailureReason),
+  `CutExistsBetweenElements` (first, second, out bool firstCutsSecond),
+  `IsAllowedForSolidCut`, `IsElementFromAppropriateContext`; `CutFailureReason`
+  CutAllowed, CutAlreadyExists, OppositeCutExists, CutNotAppropriateForElements;
+  `InstanceVoidCutUtils.AddInstanceVoidCut` (Document, Element element, Element
+  cuttingInstance), `RemoveInstanceVoidCut`, `CanBeCutWithVoid`,
+  `InstanceVoidCutExists`, `IsVoidInstanceCuttingElement`; `Element.Category`,
+  `Element.Name`, `Category.Name`. There is NO `HasVoidInstanceCut` in any
+  release - `InstanceVoidCutExists` is the call. ElementIds are compared as
+  ElementIds and never read as numbers.
+
+# ROUTING - repeated in REPORT_GEOMETRY_CUTS and JOIN_GEOMETRY.
+#
+#   "cut this beam out of the slab"          -> here
+#   "cut the column with the void family"    -> here
+#   "uncut these two"                        -> here, cut false
+#   "make the opening family cut the wall"   -> here - the opening family is
+#                                               already placed; CREATE_OPENING
+#                                               makes a new opening instead.
+#                                               Answered by identity; ranking
+#                                               alone puts CREATE_OPENING first
+#   "which elements is this cutting"         -> REPORT_GEOMETRY_CUTS - the read,
+#                                               never this write
+#   "join these walls together"              -> JOIN_GEOMETRY - a join, not a cut
+#   "cut the solid with the void"            -> COMBINE_FAMILY_FORMS - in the
+#                                               Family Editor
+#   "cut geometry in the family"             -> COMBINE_FAMILY_FORMS, declared
+#                                               there and answered by identity;
+#                                               ranking alone puts this card
+#                                               first on it (FRAGMENT-ISSUES
+#                                               5b-1416)
+#   "cope these beams at the columns"        -> COPE_FRAMING
+#   "take those out of the set"              -> UPDATE_SAVED_SET - a saved
+#                                               selection set. Answered there
+#                                               by identity; ranking alone puts
+#                                               this card first (5b-1416)
+
+utterances:
+  - cut this beam out of the slab
+  - cut the column with the void family
+  - uncut these two
+  - make the opening family cut the wall

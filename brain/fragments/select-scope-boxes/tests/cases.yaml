@@ -32,9 +32,9 @@ negative:
 
   - given: somebody who wanted the box's size and reached this
     expect: >
-      they get elements and no extents. READ_SCOPE_BOX_EXTENT takes a NAME and
-      returns corners, and it is the one that feeds SELECT_IN_REGION. Answering
-      both here would be two fragments answering one question
+      VERSION 1: they got elements and no extents, READ_SCOPE_BOX_EXTENT
+      answering the size. VERSION 2: with one box matching they get its
+      corners too - see the version 2 cases below
 
   - given: somebody who wanted to CREATE a scope box
     expect: >
@@ -49,6 +49,38 @@ negative:
       beside a real scanned count is an absence; an empty result beside a
       scanned of zero would mean the collector never ran, and the two must be
       tellable apart
+
+  # VERSION 2 (2026-11-01, READ_SCOPE_BOX_EXTENT merged in). Each FAILS on
+  # version 1, which has no minMm, maxMm, scopeBoxId, findings or extent.
+  - given: VERSION 2. A model with a scope box named Podium, nameContains Podium, extent true
+    expect: >
+      elements the one box, scopeBoxId its id, minMm and maxMm its corners in
+      millimetres, and its size in findings. Check against the box's own
+      extents dragged in a plan
+
+  - given: VERSION 2. Those corners handed to SELECT_IN_REGION
+    expect: the elements inside the box, with nothing converted in between
+
+  - given: >
+      VERSION 2. nameContains "Podium" on a project with Podium North and
+      Podium South, extent true
+    expect: >
+      NOTHING returned - elements empty, minMm and maxMm null, scopeBoxId
+      invalid - and a finding naming both. Picking the first answers about the
+      wrong half of a building
+
+  - given: VERSION 2. The same, extent left out
+    expect: >
+      both boxes in elements, as version 1, and NO corners - minMm and maxMm
+      null - with a finding saying corners come for one box only
+
+  - given: VERSION 2. A model with no scope boxes at all
+    expect: >
+      a finding saying so, distinct from "your name did not match", and that
+      one has to be drawn by hand
+
+  - given: VERSION 2. A scope box with no readable extent
+    expect: the id and no corners - never corners at the origin
 
 second_route: >
   The Project Browser does not list scope boxes at all - they are found by

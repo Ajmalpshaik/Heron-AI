@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: CREATE_FAMILY_SWEEP
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_FAMILY_FORMS (create-family-forms), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to CREATE_FAMILY_FORMS. The proof below is the record of what this
+# card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_FAMILY_FORMS
+  why: >
+    The same building: a closed profile drawn about its own origin carried
+    along a path of corners and arcs drawn on a named family plane, solid or
+    void, read back all or nothing. CREATE_FAMILY_FORMS builds it as a list of
+    one row - kind=sweep with this card's own fields, workPlane, path, profile
+    and solid, read as this card read them: the path open and closed only by
+    its own last corner, a loop a hole only by where it lies (5b-276). Its
+    version 3 said what this card said: the path's pieces and length, the
+    profile's loops, its extent and volume, and the area x length comparison.
+    formId is the first row's id there, and SET_FAMILY_SWEEP_PROFILE takes a
+    sweep's id from its formIds. Nothing was opposite.
 
 purpose: >
   Builds a SWEEP in the family open in the Family Editor - a closed shape
@@ -151,7 +175,7 @@ compatibility-note: >
 #   "make a spring as one smooth sweep along a helix" -> CREATE_FAMILY_FREEFORM_SOLID -
 #                                                   a path that leaves the plane, as
 #                                                   a fixed shape, not parametric
-#   "draw a duct along this route"               -> CREATE_DUCT, a project
+#   "draw a duct along this route"               -> CREATE_MEP_RUNS, a project
 #                                                   duct, not a family form
 
 utterances:

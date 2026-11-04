@@ -18,7 +18,37 @@ positive:
       each gets the field if its category has it, and availableFields holds the
       union of what those categories offer
 
+  - given: >
+      VERSION 3 - a duct schedule whose Fields tab reads Family and Type, Size,
+      Length, and fieldNames ["Comments"] with position "2"
+    expect: >
+      added = 1, appliedOrder reading "1 Family and Type, 2 Comments (new),
+      3 Size, 4 Length", and the Fields tab showing Comments second. Then
+      OPEN THE SCHEDULE - Comments is the second printed column
+
+  - given: VERSION 3 - fieldNames ["Mark", "Comments"] with position "after Size" and no columnName
+    expect: >
+      Mark straight after Size and Comments straight after Mark, in the order
+      given, read back in appliedOrder; notPlaced empty
+
 negative:
+  - given: >
+      VERSION 3 - fieldNames ["Comments"], position "after ZZZ NO SUCH
+      COLUMN", no columnName, on the same duct schedule
+    expect: >
+      notPlaced naming the schedule and that 'ZZZ NO SUCH COLUMN' is not a
+      column in it, added = 0, and the Fields tab EXACTLY as before - nothing
+      added at the end instead. THIS IS THE FIRST VERSION 3 CASE TO RUN
+
+  - given: VERSION 3 - fieldNames ["Comments"], position "9" on a schedule with 3 fields
+    expect: >
+      notPlaced saying it has 3 fields and to give 1 to 4, nothing added
+
+  - given: VERSION 3 - position left out
+    expect: >
+      the column added at the END, exactly as version 1 - the absent word is
+      "keep"
+
   - given: a field name misspelled, e.g. "Coments"
     expect: >
       it in unknownField, added = 0 for it, AND availableFields listing the real
@@ -40,7 +70,72 @@ negative:
   - given: an empty fieldNames list
     expect: nothing added, reported as nothing to do
 
+  # VERSION 2 (2026-11-01, ADD_SCHEDULE_COMBINED_FIELD merged in). Each FAILS on
+  # version 1, which has no columnName, partFields, editExisting or position.
+  - given: >
+      VERSION 2. A door schedule, fieldNames left out, columnName "Type Mark",
+      partFields Type, Mark, partSeparators "-"
+    expect: >
+      added 1, one new column reading Type-Mark on every row; columnNow naming
+      it '[Type]-[Mark]'. Change a mark in the model and watch the column
+      follow - a field, never typed text
+
+  - given: VERSION 2. Three parts and two separators
+    expect: >
+      all three joined in order, the first separator between parts 1 and 2,
+      the second between 2 and 3, nothing after the third
+
+  - given: VERSION 2. Two parts and two separators
+    expect: >
+      refused in refusedWhy - two parts take one separator - and nothing
+      changed; the schedule in refusedSchedules
+
+  - given: VERSION 2. A part name not schedulable for that schedule's category
+    expect: >
+      the schedule in partMissing and NO column added to it - half a column is
+      missing a value on every row
+
+  - given: VERSION 2. Two schedules of different categories, one lacking a part
+    expect: the other still gets the column
+
+  - given: >
+      VERSION 2, the owner's job. 'DUCT HEATER SCHEDULE (ROOF FLOOR)' on
+      4355-BHVD-3D-21S10-BL001A (Revit 2020), editExisting true, columnName
+      Size, partFields Duct_Accessory_Width, Duct_Accessory_Height,
+      partSeparators x
+    expect: >
+      edited 1, added 0; the Size column in the same place with the same
+      heading; a row reading 2000x1300 - never 20001300x
+
+  - given: >
+      VERSION 2. editExisting true, columnName Size, position "after Equipment
+      Tag", partFields and partSeparators left out
+    expect: >
+      the column moved there and nothing else changed; columnNow ends "moved"
+
+  - given: VERSION 2. editExisting true on a PLAIN column, Mark, with new parts
+    expect: >
+      refused, refusedWhy saying it is a plain column with no parts to
+      replace; Mark exactly as it was
+
+  - given: VERSION 2. editExisting true and a heading two columns share
+    expect: refused, refusedWhy naming both column numbers; neither changed
+
+  - given: VERSION 2. position "after Equipment Tag" with no columnName and no fieldNames
+    expect: >
+      refused whole, nothing added or changed - there is no column to place.
+      VERSION 3: still refused when fieldNames is empty too; with fieldNames
+      it places those columns (the version 3 cases above)
+
+  - given: VERSION 2. fieldNames ["Comments"] AND a combined column in one call
+    expect: >
+      both added - added 2 - the plain one first, the combined one after it
+
+  - given: VERSION 2. A sheet in the set beside the schedules
+    expect: its id in notASchedule, the schedules still done
+
 second_route:
   - open the schedule and look at the columns, not the count
   - run twice and confirm no schedule gains a duplicate column
   - one Ctrl+Z removes every added column in a single step (Golden Rule 16)
+  - for a combined column, check it against the two parameters it was built from on a row you can read, then change one and see the column follow

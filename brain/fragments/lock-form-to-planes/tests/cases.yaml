@@ -2,7 +2,7 @@ positive:
   - given: >
       a new family from the metric Generic Model template with a reference
       plane "Body Top" at height 500; a solid extrusion "circle 0,0 150" on Ref.
-      Level from 0 to 500 made by create-family-extrusion; form = its id,
+      Level from 0 to 500 made by create-family-forms; form = its id,
       planes "Body Top, Ref. Level"
     expect: >
       two locks - the top face to "Body Top" and the bottom face to "Ref.

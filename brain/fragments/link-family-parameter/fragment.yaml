@@ -5,11 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-025
-semantic-identity: "link or unlink a parameter of elements already in the family to a family parameter, and read the links back"
+semantic-identity: "associate a family parameter: link or unlink a parameter of elements in the family - by category, particular forms by id, or a nested type - or set a form's material, and read it back"
 kind: action
 domain: revit.families
 capability: LINK_FAMILY_PARAMETER
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -19,6 +19,24 @@ purpose: >
   link back - the "Associate Family Parameter" button at the end of a row in
   Properties, for every element the call names at once. A duct connector's
   Flow or size, a solid's Material or Visible: whatever Revit lets be linked.
+
+  **ONE TOOL FOR "ASSOCIATE FAMILY PARAMETER" (version 3, 2026-11-01).**
+  LINK_FAMILY_FORM_PARAMETER, SET_FAMILY_FORM_MATERIAL and
+  LINK_NESTED_TYPE_PARAMETER were merged into this card and are DEPRECATED.
+  The elements are named ONE way a call: by category, as before; or
+  PARTICULAR forms and nested copies by the ids the form tools or
+  PLACE_FAMILY_INSTANCES gave back, or `selected` (`forms`) - one form's Visible,
+  a revolve's End Angle, one copy's Thread Size, its other copies left alone;
+  or a nested family's TYPE by its family and type (`family`, `type`) - the
+  motor's Width following Motor Width. A form's Material is LINKED to a
+  family material parameter, or SET to a material the family holds
+  ("Material=Steel"), or put back with "Material=by category"; a field already
+  linked is unlinked before a material is written into it, and the answer
+  says so. A void has no material and is refused. A reporting parameter
+  cannot drive anything and is refused. A TYPE parameter asked of a nested
+  copy is refused naming family= and type=; an instance parameter asked of a
+  nested type is refused naming the copy. The Material-of-a-form word
+  conflict between those cards ends here: there is one tool.
 
   **THE ELEMENTS ARE NAMED, NEVER GUESSED.** A category as Revit or the
   Properties palette names it - "Duct Connector", "Pipe Connector",
@@ -55,25 +73,69 @@ contract:
   needs:
     - name: doc
       type: Document
+    # VERSION 3: for `forms=selected`, what is selected in the family's window.
+    - name: uidoc
+      type: UIDocument
     # Which elements: a category as Revit or the Properties palette names it -
     # "Duct Connector", "Pipe Connector", "Extrusion", a nested family's name -
     # or "all". Matched exactly first, case aside; failing that with spaces
     # ignored and a plural read as its singular, and refused when that loose
     # match reaches two different sets of elements.
+    #
+    # VERSION 3: optional - left out it binds "none", not named this way. The
+    # elements are named ONE way a call: `category`, `forms`, or `family`
+    # with `type`; two ways together are refused.
     - name: category
       type: string
       source: request
+      optional: true
+      absent: none
     # For connectors, the system classification - "Supply Air", "Return Air",
     # "Hydronic Supply", "Fire Protection Wet", "Fitting" - or "all". Every
     # classification Revit has is accepted but Undefined. Anything but "all"
     # leaves out every element that is not a connector of that system. A blank
     # is refused, never read as "all".
+    # VERSION 3: optional, "none" when left out - which, with a category, is
+    # refused as a blank always was; with forms or a nested type it is not
+    # wanted, and one given there is refused.
     - name: system
       type: string
       source: request
+      optional: true
+      absent: none
+    # VERSION 3, from LINK_FAMILY_FORM_PARAMETER and SET_FAMILY_FORM_MATERIAL:
+    # PARTICULAR forms and nested copies, by the ids the form tools or
+    # PLACE_FAMILY_INSTANCES gave back (PLACE_NESTED_FAMILY until 2026-11-01),
+    # commas between - or `selected`, what is
+    # selected in this family's window. Anything that is not a form or a
+    # nested copy refuses the call. Optional, "none" when left out.
+    - name: forms
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 3, from LINK_NESTED_TYPE_PARAMETER: a nested family's name, as
+    # loaded into this family, for its TYPE parameters. Given with `type`.
+    # Optional, "none" when left out.
+    - name: family
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 3, from LINK_NESTED_TYPE_PARAMETER: the nested type whose
+    # parameters are linked. Given with `family`. Optional, "none" when left
+    # out.
+    - name: type
+      type: string
+      source: request
+      optional: true
+      absent: none
     # Element parameter = family parameter, SEMICOLONS between -
     # "Flow=Actual_Supply_Air_Flow". "Flow=none" unlinks. The left name is the
-    # one in Properties, the right one the one in Family Types.
+    # one in Properties, the right one the one in Family Types. VERSION 3: a
+    # form's Material may name a MATERIAL the family holds - "Material=Steel"
+    # SETS it - or "Material=by category" to put it back; a name that is both
+    # a family parameter and a material is refused. "none" still unlinks.
     - name: links
       type: IDictionary<string, string>
       source: request
@@ -94,10 +156,17 @@ contract:
       role: accounting
       type: int
     - name: matched
-      # How many elements the category and system took. Work done, never a
-      # thing changed (D-52).
+      # How many elements the category and system took - or the forms named,
+      # or the one nested type (version 3). Work done, never a thing changed
+      # (D-52).
       role: accounting
       type: int
+    - name: linked
+      # VERSION 3, from SET_FAMILY_FORM_MATERIAL: true when the call left a
+      # parameter linked to a family parameter, false when it only unlinked or
+      # SET a value - a material linked rather than set.
+      role: result
+      type: bool
     - name: notAFamily
       # That the document in front is a project, not a family being edited.
       role: accounting
@@ -111,45 +180,54 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
-    Revit 2024, session 32340'
+  model: P1102 MEP Family, Revit 2020, session 12404 - the count is NOT recorded because 9,179
+    elements was measured on P1102 STR, the document in front, and this ran against another
+    one (row 15)
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned alreadyLinked 0, asked 1 item(s)
-    [(Flow, Supply Flow, False)], changed 2, chosen 2 item(s) [Supply Air, Return Air], classificationOf
+    the transaction group ROLLED BACK afterwards. returned alreadyLinked 1, asked 1 item(s)
+    [(Flow, Nominal Air Flow, False)], byCategory true, byForms false, byNested false, changed
+    0, chosen 1 item(s) [Supply Air], classificationOf Func`2, dbNamespace Autodesk.Revit.DB,
+    describe Func`2, ductFlow 1 item(s) [id -1013405], everyCategory false, everySystem false,
+    findings 1 item(s) [Family ''P1102 MEP Family'': 0 link(s) or value(s) changed and...],
+    flags BindingFlags, isFlow Func`2, isMaterialField Func`2, isVoidForm Func`2, kindName
+    Func`2, kindOf Func`2, lacking 0 item(s), leftOut 0, linkReport Duct Connector (Supply
+    Air) id 2630: Flow already linked to Nominal Air Flow (reads 94.4 L/s), linked true, matched
+    1, materialField 1 item(s) [id -1002107], materialWords Func`2, nameOf Func`2, notAFamily
+    false, pipeFlow 1 item(s) [id -1140213], planAlready 1 item(s) [False], planBefore 1 item(s)
+    [], plans 1 item(s) [(Autodesk.Revit.DB.ConnectorElement, Autodesk.Revit.DB.Param...],
+    quoted Func`2, reads Func`2, refused (null), revitAssembly RuntimeAssembly, saidCategory
+    Duct Connector, saidFamily , saidForms , saidSystem Supply Air, saidType , sameKind Func`3,
+    sameSystem Func`3, sameWord Func`3, spaced Func`2, squash Func`2, systemWords Func`2,
+    unlessNone Func`2, ways 1, whatEachLacks Func`1. inputs came category as given; system
+    as given; forms not given - "none", the card''s own default (optional); family not given
+    - "none", the card''s own default (optional); type not given - "none", the card''s own
+    default (optional); links as given (1). on P1102 MEP Family'
+  negative_case: 'run with category=Duct Connector, links=Flow=ZZZ No Such Parameter, system=Supply
+    Air instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    alreadyLinked 0, asked 1 item(s) [(Flow, ZZZ No Such Parameter, False)], byCategory true,
+    byForms false, byNested false, changed 0, chosen 1 item(s) [Supply Air], classificationOf
     Func`2, dbNamespace Autodesk.Revit.DB, describe Func`2, ductFlow 1 item(s) [id -1013405],
-    everyCategory false, everySystem true, findings 2 item(s) [Family ''Family1'': 2 link(s)
-    changed and 0 already as asked, ..., The links are in the family only. Placed units in
-    a project ...], flags BindingFlags, isFlow Func`2, kindName Func`2, kindOf Func`2, lacking
-    0 item(s), leftOut 0, linkReport Duct Connector (Supply Air) id 2954: Flow not linked
-    -> Supply Flow (reads 0.0 L/s)  ||  Duct Connector (Return Air) id 2955: Flow not linked
-    -> Supply Flow (reads 0.0 L/s), matched 2, nameOf Func`2, notAFamily false, pipeFlow 1
-    item(s) [id -1140213], plans 2 item(s) [(Autodesk.Revit.DB.ConnectorElement, Autodesk.Revit.DB.Param...,
-    (Autodesk.Revit.DB.ConnectorElement, Autodesk.Revit.DB.Param...], quoted Func`2, reads
-    Func`2, refused (null), revitAssembly RuntimeAssembly, saidCategory Duct Connector, saidSystem
-    all, sameKind Func`3, sameSystem Func`3, sameWord Func`3, spaced Func`2, squash Func`2,
-    systemWords Func`2, whatEachLacks Func`1. inputs came category as given; system as given;
-    links as given (1). on Family1'
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned alreadyLinked 0, asked 0 item(s), changed 0, chosen 0
-    item(s), classificationOf Func`2, dbNamespace Autodesk.Revit.DB, describe Func`2, ductFlow
-    1 item(s) [id -1013405], everyCategory false, everySystem true, findings 1 item(s) [The
-    document in front, "Project1", is a project, not a famil...], flags BindingFlags, isFlow
-    Func`2, kindName Func`2, kindOf Func`2, lacking 0 item(s), leftOut 0, linkReport , matched
-    0, nameOf Func`2, notAFamily true, pipeFlow 1 item(s) [id -1140213], plans 0 item(s),
-    quoted Func`2, reads Func`2, refused The document in front, "Project1", is a project,
-    not a family open in the Family Editor. A link between an element's parameter and a family
-    parameter lives inside the family - open it for editing first (OPEN_FAMILY_FOR_EDITING).
-    Nothing was changed., revitAssembly RuntimeAssembly, saidCategory Duct Connector, saidSystem
-    all, sameKind Func`3, sameSystem Func`3, sameWord Func`3, spaced Func`2, squash Func`2,
-    systemWords Func`2, whatEachLacks Func`1. inputs came category as given; system as given;
-    links as given (1). on Project1
+    everyCategory false, everySystem false, findings 1 item(s) [Nothing was changed. No family
+    parameter is called "ZZZ No S...], flags BindingFlags, isFlow Func`2, isMaterialField
+    Func`2, isVoidForm Func`2, kindName Func`2, kindOf Func`2, lacking 0 item(s), leftOut
+    0, linkReport , linked false, matched 1, materialField 1 item(s) [id -1002107], materialWords
+    Func`2, nameOf Func`2, notAFamily false, pipeFlow 1 item(s) [id -1140213], planAlready
+    0 item(s), planBefore 0 item(s), plans 0 item(s), quoted Func`2, reads Func`2, refused
+    Nothing was changed. No family parameter is called "ZZZ No Such Parameter". The ones that
+    could drive "Flow" (Air Flow) on Duct Connector (Supply Air) id 2630: Nominal Air Flow.,
+    revitAssembly RuntimeAssembly, saidCategory Duct Connector, saidFamily , saidForms , saidSystem
+    Supply Air, saidType , sameKind Func`3, sameSystem Func`3, sameWord Func`3, spaced Func`2,
+    squash Func`2, systemWords Func`2, unlessNone Func`2, ways 1, whatEachLacks Func`1. inputs
+    came category as given; system as given; forms not given - "none", the card''s own default
+    (optional); family not given - "none", the card''s own default (optional); type not given
+    - "none", the card''s own default (optional); links as given (1). on P1102 MEP Family'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 98be486c00c237c2
+  fingerprint: 7cd2ed6aab90e09f
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -166,12 +244,44 @@ compatibility-note: >
   `Definition.GetDataType()` and `LabelUtils.GetLabelForSpec` from 2022 - so
   both are reached by reflection, newest first, the way SET_FAMILY_TYPE_VALUES
   reads a kind. Nested families' TYPE parameters (Edit Type on a nested
-  family) are not reached: only elements placed in the family are.
+  family) were not reached until version 3: a nested TYPE, a `FamilySymbol`
+  found by `Family.GetFamilySymbolIds`, is named by `family` and `type`, as
+  LINK_NESTED_TYPE_PARAMETER named it. `BuiltInParameter.MATERIAL_ID_PARAM`,
+  `Parameter.Set(ElementId)` and `Selection.GetElementIds` read the same 2020
+  through 2027.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# 2026-11-01 - LINK_FAMILY_FORM_PARAMETER, SET_FAMILY_FORM_MATERIAL AND
+# LINK_NESTED_TYPE_PARAMETER WERE MERGED INTO THIS CARD (version 3) on the
+# owner's instruction ("make sure there is no duplicate tools"; a merge covers
+# every area), and are DEPRECATED. One job - Revit's Associate Family
+# Parameter button - for whatever element it sits on. Where their inputs and
+# outputs are now: their `forms` is `forms`; LINK_NESTED_TYPE_PARAMETER's
+# `family` and `type` by the same names; their `links` is `links`;
+# SET_FAMILY_FORM_MATERIAL's `material` is a `links` pair, "Material=<it>";
+# its `changed` list is the `linkReport` line, its `linked` is `linked`; their
+# `changed`, `alreadyLinked`, `notAFamily`, `refused` and `findings` by the
+# same names. Added in version 3: `uidoc`, `forms`, `family`, `type`, `linked`;
+# `category` and `system` optional.
+#
+# THE CONFLICT, AND THE SAFER RULE KEPT: SET_FAMILY_FORM_MATERIAL read
+# "none" as <By Category>; this card's "none" unlinks and keeps the value, so
+# "Material=none" unlinks - <By Category> is "Material=by category". Not
+# carried: LINK_FAMILY_FORM_PARAMETER's refusal of a form's Material, which
+# existed only because another tool owned it; this is that tool now.
+
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "link the connector flow to a family parameter"  -> here
-#   "unlink the solid's material"                    -> here, material=none
+#   "unlink the solid's material"                    -> here, Material=none
+#   "link the handle's visible to Show_Handle"       -> here, forms= its id
+#   "link the elbow's end angle to Bend Angle"       -> here, forms= its id
+#   "link this nested beam's length to Beam Length"  -> here, forms= ONE copy's id
+#   "link the nested type's width to Motor Width"    -> here, family= and type=
+#   "link the body material to Body Material"        -> here, Material=Body Material
+#   "make this extrusion steel"                      -> here, Material=Steel - a
+#                                                       SET, not a link
+#   "show this form only in fine"                    -> SET_FAMILY_FORM_VISIBILITY,
+#                                                       detail levels, no parameter
 #   "put a supply air connector on the neck"         -> ADD_FAMILY_CONNECTOR -
 #                                                       a connector it MAKES,
 #                                                       sized as it is made
@@ -197,3 +307,22 @@ utterances:
   - unlink the connector flow from its family parameter
   - associate the extrusion material with a family parameter
   - link the visibility of this solid to a yes no family parameter
+  # MOVED 2026-11-01 from LINK_FAMILY_FORM_PARAMETER, merged into this card.
+  - link the handle's visible to Show_Handle
+  - link the elbow's end angle to Bend Angle
+  - drive this extrusion's end with the Depth parameter
+  - link this form's visible field to a family parameter
+  - make this part optional in some types
+  - link this nested beam's length to Beam Length
+  - link only this copy's visible to Pipe 2 Visible
+  # MOVED 2026-11-01 from SET_FAMILY_FORM_MATERIAL, merged into this card.
+  - link the body material to Body Material
+  - make this extrusion steel
+  - give the neck its own material parameter
+  - set the material of these forms
+  - put this form back to by category material
+  # MOVED 2026-11-01 from LINK_NESTED_TYPE_PARAMETER, merged into this card.
+  - link the motor type's width to Motor Width
+  - drive the nested type's size from this family
+  - drive the nested motor's sizes from the air handler
+  - make the nested part's size follow this family's parameters

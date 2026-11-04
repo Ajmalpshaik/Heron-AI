@@ -23,7 +23,50 @@ positive:
       view's Properties palette. REPORT_VIEW_TEMPLATE_CONTROL lists it in the
       template's HOLDS list. THE THREE MUST AGREE
 
+  # VERSION 2 - from READ_VIEW_SCALE and REPORT_VIEW_CUT_PLANES. Each FAILS
+  # on version 1, which had no viewScales, no cutPlanes and a required view.
+  - given: >
+      VERSION 2. a floor plan and the default 3D view, named "1 - Mech, {3D}"
+    expect: >
+      `scaled` 2 and two rows in `viewScales`, each "1 : N" with the view's
+      name and type. Each N is the View Scale row in that view's Properties
+      palette - Revit's own number, not a remembered one
+
+  - given: VERSION 2. a floor plan following a view template that includes View Scale
+    expect: >
+      its `viewScales` row says "held by its view template '<name>'", the
+      View Scale row is greyed out in its Properties palette, and the view
+      counts ONCE in `heldByTemplate` even when the template holds its detail
+      level too
+
+  - given: >
+      VERSION 2. a section drawn west to east through 0,5000 looking north,
+      far clip on at 3000 mm, named alone
+    expect: >
+      `cutViewCount` 1 and its `cutPlanes` line reads cuts through about y
+      5000 mm, looking 0,1,0, far clip on, 3000 - "looking" is the opposite of
+      Revit's ViewDirection
+
+  - given: VERSION 2. no view named at all
+    expect: >
+      `read` 0 and `scaled` 0, and `cutPlanes` lists every section, elevation
+      and detail view in the model - the project's four default elevations
+      among them - as REPORT_VIEW_CUT_PLANES did with an empty viewName
+
 negative:
+  - given: VERSION 2. a sheet, a schedule and a perspective camera view named together
+    expect: >
+      `viewScales` empty, `scaled` 0, `noScale` 3, and `findings` naming each
+      with its reason - a sheet has no scale of its own, a schedule is a
+      table, a perspective's scale is meaningless - NEVER a number. A reader
+      that printed View.Scale for every view would put a number here
+
+  - given: >
+      VERSION 2. "FloorPlan: Level 1" named alone
+    expect: >
+      `cutViewCount` 0 - a plan has no cut plane here and is not listed in
+      cutPlanes - while its settings and its ratio are read
+
   - given: a sheet, named by its sheet NAME (not its number)
     expect: >
       `viewSettings` empty, `read` 0, and `findings` naming the sheet as

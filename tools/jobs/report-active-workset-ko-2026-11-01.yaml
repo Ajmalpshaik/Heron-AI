@@ -1,0 +1,35 @@
+# NEEDS-CHECKING Group KO - REPORT_ACTIVE_WORKSET, built 2026-11-01 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/report-active-workset-ko-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-active-workset-ko-2026-11-01.yaml
+#
+# THE MODELS are Group KN's two scratch projects, never a working model (KO1):
+# "active-workset-kn" - a LOCAL of a workshared central made from Revit's
+# metric architectural template, with user worksets "Shared Levels and Grids",
+# "Workset1", "Mechanical" and "Architecture" - and a second new project that
+# was never workshared, saved as "active-workset-kn-plain". Both open in the
+# same Revit. Choose "Mechanical" in the local's status bar Active Workset box
+# by hand before the run.
+#
+# THE ARRANGEMENT: this read takes no value and no selection, so `setup: []`.
+# The negative is the SAME read on the never-workshared project (`negative-in:`)
+# - a different model, not an empty value (fragment-proving, rules 3 and 5):
+# activeWorkset empty, workshared false, and the finding says the model has no
+# worksets.
+
+model: "active-workset-kn scratch local (workshared, Mechanical active) and active-workset-kn-plain (never workshared), Revit 2024"
+
+jobs:
+  - fragment: report-active-workset
+    in: "active-workset-kn"
+    negative-in: "active-workset-kn-plain"
+    expect: activeWorkset
+    setup: []
+    note: >
+      KO2. Negative - THE FIRST CASE TO RUN: the never-workshared project, so
+      activeWorkset empty, workshared false, findings "This model is not
+      workshared, so it has no worksets and no active workset". Positive -
+      activeWorkset "Mechanical", workshared true, userWorksets with
+      Mechanical marked ACTIVE. Then read the status bar: it must still say
+      Mechanical (KO3).

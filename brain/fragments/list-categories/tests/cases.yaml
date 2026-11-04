@@ -70,7 +70,8 @@ negative:
       a document opened on a non-English Revit - French or Arabic
     expect: >
       the names IN THAT LANGUAGE. This is the case worth arranging: it is not a
-      failure, it is the reason SELECT_BY_CATEGORY_NAME exists, and a run that
+      failure, it is the reason FILTER_ELEMENTS_BY_CATEGORY takes the name Revit
+      shows, and a run that
       came back in English would mean something is translating behind the scenes
 
   - given: a family document rather than a project

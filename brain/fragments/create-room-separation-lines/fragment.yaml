@@ -9,9 +9,43 @@ semantic-identity: "draw a room separation line across this opening"
 kind: action
 domain: revit.rooms
 capability: CREATE_ROOM_SEPARATION_LINES
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-01) - CREATE_AREA_BOUNDARY_LINES WAS MERGED INTO THIS CARD
+# on the owner's instruction ("ok go ahead merge all", after "make sure there
+# is no duplicate tools" and "in every conflict keep the safer rule"), and is
+# DEPRECATED. The same job - lines drawn on a plan's level that bound a
+# spatial element where there is no wall - for the third spatial element.
+# What that card had and this one lacked, all of it here: lineKind `area`,
+# drawn with NewAreaBoundaryLine in an AREA PLAN CHOSEN BY NAME
+# (`areaPlanName` - an area plan only, never a floor plan of that name);
+# `traceWalls` inside, outside or centre - a line along every straight
+# exterior wall on the plan's level (wall type Function Exterior) at that
+# face, an arc wall named and left, no exterior wall said; `loopsMm`, closed
+# loops of points in millimetres, each closed automatically, a loop of fewer
+# than three points named and left out, a point that is not one refusing the
+# call with nothing drawn; a line Revit refuses named and the rest drawn;
+# every line read back by its id.
+#
+# THE OPPOSITE RULE, AND THE SAFER ONE KEPT: version 1 drew ROOM separation
+# lines when the kind was not said ("not said means room"). The kind is now
+# REQUIRED - lineKind room, space or area - and never inferred: a room line
+# where a space line was meant splits the architect's rooms and leaves the
+# heating load as it was, and the three look alike on a plan. `asSpace` is
+# gone; asSpace true is lineKind space. Tracing walls, loops and an area plan
+# are the area kind's, and refused - not ignored - for room or space lines.
+# The lines lie on the sketch plane Revit makes on the level, this card's
+# rule; that card used the level's Elevation, which a survey-datum model puts
+# elsewhere.
+#
+# WHERE ITS OUTPUTS ARE NOW: `lineIds` -> `created` (the lines themselves,
+# read back with their category); `made` -> how many are in `created`;
+# `report` -> `refused`; `findings` -> `findings`. Its sentences moved here.
+#
+# Version 1's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
 
 purpose: >
   Draws room separation lines - or space separation lines, when asked - along
@@ -23,14 +57,14 @@ purpose: >
   shop-and-flat plan in Project2 (Revit 2024): the kitchen and the living room
   were joined by a 900 mm opening, PLACE_ROOM_AT_POINT made one room of both
   because nothing bounded the gap, and no fragment called the API that makes a
-  separation line (FRAGMENT-ISSUES row 5b-289). A plain line from CREATE_LINE
+  separation line (FRAGMENT-ISSUES row 5b-289). A plain line from DRAW_FAMILY_DETAIL_LINES
   does not bound a room - it is a drawing or reference line, a different
   category Revit's room boundary never reads.
 
-  **ROOM OR SPACE IS THE CALLER'S WORD, AND NOT SAID MEANS ROOM.** A room
+  **ROOM OR SPACE IS THE CALLER'S WORD, AND IT MUST BE SAID.** A room
   separation line bounds rooms and a space separation line bounds MEP spaces,
   and neither bounds the other: a kitchen split for the architect is still one
-  space for the heating load. `asSpace` true draws the space kind. The two look
+  space for the heating load. `lineKind` space draws the space kind. The two look
   alike on a plan, so every line made is read back and its category reported.
 
   **A RUN OF POINTS, like CREATE_WALL.** Consecutive points make the lines:
@@ -58,10 +92,14 @@ purpose: >
   filed each one under, their ends in millimetres and their total length.
 
   **IT PLACES NO ROOM AND JOINS NOTHING.** Splitting a room that already exists
-  is two steps: this line, then PLACE_ROOM_AT_POINT for the half that has no
-  room. What Revit does to the existing room when the line cuts it, and the
+  is two steps: this line, then PLACE_ROOMS at a point for the half that has
+  no room. What Revit does to the existing room when the line cuts it, and the
   warning it gives for a line lying on a wall or on another separation line,
   are Revit's, and are recorded by the proof rather than claimed.
+
+  **VERSION 2 DRAWS AREA BOUNDARY LINES TOO** - lineKind area, in the area
+  plan named, along a run of points, round the exterior walls at a face, or
+  along closed loops. The kind - room, space or area - is always said.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -70,22 +108,50 @@ contract:
     - name: doc
       type: Document
     # The plan the lines are drawn in. Its level decides their height, so a
-    # view with no level of its own is refused.
+    # view with no level of its own is refused. Version 2: left out for AREA
+    # lines, which go in the area plan named; a room or space line with no
+    # view is refused, as before.
     - name: view
       type: View
       source: request
+      optional: true
     # A run: consecutive points make the lines. Plan position only - the
     # view's level decides the height. Millimetres as typed, internal feet
-    # once the add-in has converted them (D-67).
+    # once the add-in has converted them (D-67). Version 2: may be left out
+    # for area lines traced or looped; a room or space line still needs two.
     - name: points
       type: IList<XYZ>
       source: request
-    # true draws SPACE separation lines, for MEP spaces. Not given means room
-    # separation lines, which is what "separation line" means on its own.
-    - name: asSpace
-      type: bool
+      optional: true
+    # VERSION 2, REQUIRED: room, space or area. Room separation lines bound
+    # rooms, space separation lines MEP spaces, area boundary lines areas;
+    # never inferred (version 1's asSpace, absent meaning room, is gone).
+    - name: lineKind
+      type: string
+      source: request
+    # VERSION 2, from CREATE_AREA_BOUNDARY_LINES. AREA LINES ONLY: the area
+    # plan they go in, as the Project Browser names it.
+    - name: areaPlanName
+      type: string
       source: request
       optional: true
+      absent: none
+    # VERSION 2, from CREATE_AREA_BOUNDARY_LINES. AREA LINES ONLY: "inside",
+    # "outside" or "centre" - a line along every straight exterior wall on
+    # the plan's level at that face. Left out traces no walls.
+    - name: traceWalls
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 2, from CREATE_AREA_BOUNDARY_LINES. AREA LINES ONLY: closed
+    # loops, "x,y; x,y; x,y | x,y; ..." in MILLIMETRES, each closed
+    # automatically. Left out draws no loops.
+    - name: loopsMm
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: created
       # The separation lines Revit made, each fetched again by its id after
@@ -94,8 +160,8 @@ contract:
       type: IList<Element>
     - name: tooShort
       # Consecutive points closer together than Revit's own shortest line, so
-      # no line could exist there. Given and unusable, never a line it drew
-      # (D-52).
+      # no line could exist there - version 2, a traced wall or a loop's side
+      # too. Given and unusable, never a line it drew (D-52).
       role: accounting
       type: int
     - name: refused
@@ -108,28 +174,33 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project2 (3,035 elements), Revit 2020, session 13520
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, asSpace
-    false, created 1 item(s) [ModelLine], findings 2 item(s) [1 line(s) drawn in ''Level 1''
-    on level ''Level 1'', 5000 mm in ..., ends read back, mm: (0, 3000) to (5000, 3000)],
-    kindWords room separation, onLevel Level, refused 0 item(s), tooShort 0, wantedCategory
-    BuiltInCategory. inputs came view as given; points as given (2); asSpace as given. on
-    Project2'
-  negative_case: 'run with asSpace=False, categoryName=Walls, inViewOnly=Heron 3D, points=0,3000,0,
-    view=FloorPlan: Level 1 instead - chosen because it should not contain what this fragment
-    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
-    afterwards. returned MillimetresPerFoot 304.8, asSpace false, created 0 item(s), findings
-    0 item(s), kindWords room separation, onLevel Level, refused 1 item(s) [a line needs two
-    points and 1 were given], tooShort 0, wantedCategory BuiltInCategory. inputs came view
-    as given; points as given (1); asSpace as given. on Project2'
+    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, areaPlan
+    (null), asArea false, asRoom true, asSpace false, created 1 item(s) [ModelLine], drawIn
+    ViewPlan, findings 2 item(s) [1 line(s) drawn in ''Level 1 HVAC Plan'' on level ''Level
+    1'', 5..., ends read back, mm: (0, -60000) to (5000, -60000)], given Func`2, kindWords
+    room separation, loopsText , onLevel Level, planText , pointCount 2, refused 0 item(s),
+    said room, tooShort 0, trace , wantedCategory BuiltInCategory. inputs came view as given;
+    points as given (2); lineKind as given; areaPlanName not given - "none", the card''s own
+    default (optional); traceWalls not given - "none", the card''s own default (optional);
+    loopsMm not given - "none", the card''s own default (optional). on P1102 MEP'
+  negative_case: run with lineKind=room, points=0,-60000,0, view=Level 1 HVAC Plan instead
+    - chosen because it should not contain what this fragment reports - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
+    304.8, areaPlan (null), asArea false, asRoom true, asSpace false, created 0 item(s), drawIn
+    ViewPlan, findings 0 item(s), given Func`2, kindWords room separation, loopsText , onLevel
+    Level, planText , pointCount 1, refused 1 item(s) [a line needs two points and 1 were
+    given], said room, tooShort 0, trace , wantedCategory BuiltInCategory. inputs came view
+    as given; points as given (1); lineKind as given; areaPlanName not given - "none", the
+    card's own default (optional); traceWalls not given - "none", the card's own default (optional);
+    loopsMm not given - "none", the card's own default (optional). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 54fb19549d5d215b
-
+  fingerprint: 2d0849d726841244
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -146,17 +217,25 @@ compatibility-note: >
   number.
 
 # ROUTING - the rows naming another fragment are repeated in
-# PLACE_ROOM_AT_POINT and CREATE_LINE.
+# PLACE_ROOMS and DRAW_FAMILY_DETAIL_LINES.
 #
-#   "draw a room separation line across an opening" -> here
-#   "add a room separator here"          -> here
-#   "draw a space separation line"       -> here, with asSpace true
+#   "draw a room separation line across an opening" -> here, lineKind room
+#   "add a room separator here"          -> here, lineKind room
+#   "draw a space separation line"       -> here, lineKind space
+#   "trace the exterior walls in the GIA plan" -> here, lineKind area, since
+#                                           version 2 (CREATE_AREA_BOUNDARY_
+#                                           LINES until it was merged here,
+#                                           2026-11-01)
+#   "draw the area boundaries"           -> here, lineKind area
+#   "place the areas"                    -> PLACE_ROOMS, placeKind area -
+#                                           inside the boundaries this draws
+#   "report the areas"                   -> REPORT_AREAS
 #   "close off this archway with a separation line" -> here
-#   "put a room in the other half"       -> PLACE_ROOM_AT_POINT. This draws
+#   "put a room in the other half"       -> PLACE_ROOMS, `points`. This draws
 #                                           the line and places no room; the
 #                                           half without one needs placing
 #   "draw a detail line here", "add a model line"
-#                                        -> CREATE_LINE. A detail or model line
+#                                        -> DRAW_FAMILY_DETAIL_LINES. A detail or model line
 #                                           is drawing, and Revit's room
 #                                           boundary never reads it
 #   "put a wall here"                    -> CREATE_WALL. A wall bounds a room
@@ -168,3 +247,10 @@ utterances:
   - add a room separator here
   - draw a space separation line
   - close off this archway with a separation line
+  # MOVED 2026-11-01 from CREATE_AREA_BOUNDARY_LINES, merged into this card.
+  - trace the outside face of the exterior walls in the gross area plan
+  - draw area boundary lines along the exterior walls
+  - add area boundaries at the inside face of the walls
+  - draw an area boundary round these points
+  # ...and its semantic identity, which nothing else declares:
+  - draw area boundary lines round the exterior walls, or along these loops

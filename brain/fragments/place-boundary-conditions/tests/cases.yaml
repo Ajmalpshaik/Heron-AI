@@ -1,0 +1,62 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "supported something nobody selected" or "put a support on
+# an element with no analytical element".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for PLACE_BOUNDARY_CONDITIONS): the scratch project
+# REPORT_STRUCTURAL_LOADS is proved on - new from Revit's metric STRUCTURAL
+# template, saved under %TEMP%\heron-work, never a working model - with B1,
+# C1, C2, S1, W1, A1 and C1's Pinned point boundary condition at its base, on
+# Revit 2020, 2021, 2022 or 2027 (the releases the card claims). Every run is
+# ROLLED BACK unless the modeller keeps it. Before each run, read the boundary
+# conditions with REPORT_STRUCTURAL_LOADS show "boundary" and each one's
+# Properties - the second route.
+#
+# The negative legs are DIFFERENT SELECTIONS OR VALUES, not empty ones: the
+# architectural wall A1, which has no analytical element; C1, which already
+# has a support at its base; no fixity.
+
+positive:
+  - given: C2 selected, kind point, at "base", fixity "pinned"
+    expect: >
+      placed 1; report a Point at C2's base in mm, "Revit shows it as ..." -
+      Pinned expected - asked Pinned, on Structural Columns ... (C2) through
+      analytical ...; C2's base shows the boundary condition symbol in a 3D
+      view, and its Properties read X, Y, Z Fixed and rotations Released
+
+  - given: B1 selected, kind line, fixity "fixed"
+    expect: >
+      placed 1; a Line along B1's analytical line, Fixed
+
+  - given: S1 selected, kind area, fixity "roller"
+    expect: >
+      placed 1; an Area over S1, Z fixed and X, Y released
+
+negative:
+  - given: >
+      A1 selected - the architectural wall with no analytical element - kind
+      area, fixity "fixed"
+    expect: >
+      placed 0; noAnalytical names A1; no boundary condition anywhere. One in
+      the model afterwards is the defect. THE FIRST CASE TO RUN
+
+  - given: C1 selected, kind point, at "base", fixity "fixed"
+    expect: >
+      placed 0; skipped names C1 and the Pinned boundary condition already at
+      its base - left Pinned, not made Fixed and not doubled
+
+  - given: C2 selected, kind point, at "base", fixity left out
+    expect: >
+      placed 0; refused says no fixity was given and asks for Fixed, Pinned
+      or Roller - never read as a value called "none" (row 5b-1432); nothing placed
+
+  - given: C2 selected, kind point, at left out, fixity "pinned"
+    expect: >
+      placed 0; refused asks for start or end and gives C2's base and top -
+      the end left out is never read as a value called "none" (row 5b-1432)
+
+second_route:
+  - >
+    Revit's own Properties palette on each boundary condition placed, and its
+    symbol in a 3D view: its kind, place, fixity and host as `report` gives
+    them; and the boundary conditions that were there before unchanged

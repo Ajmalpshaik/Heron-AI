@@ -5,11 +5,23 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-001
-semantic-identity: "apply one graphic override to these elements in one view"
+semantic-identity: "apply one graphic override to these elements in one view, or to a whole linked model"
 kind: action
 domain: revit.views
 capability: OVERRIDE_GRAPHICS_IN_VIEW
-version: 1
+# VERSION 2 (2026-11-01): SET_LINK_GRAPHICS was merged into this card on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. A linked model is ONE element in the host, so one override on its
+# instance covers everything inside - this card's job, handed a link. From
+# SET_LINK_GRAPHICS: `linksOnly` (asked for a link, anything that is not one is
+# counted in `notALink` and left alone), a view template refused by name, a
+# Revit refusal caught per element instead of aborting the caller's
+# transaction, each link's override read back and named by its file in
+# `appliedTo`, and the "the view template wins" warning, in `refused`. The
+# proof below is version 1's and no longer describes the code; the card is
+# DRAFT until version 2 is proved. HIGHLIGHT_VS_REST was NOT merged - see the
+# ROUTING note at the foot of this card.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -23,6 +35,15 @@ purpose: >
   and weights. That is deliberate and it is what makes one implementation work
   on eight releases - see the compatibility note.
 
+  **A whole linked model, too** (version 2, from SET_LINK_GRAPHICS). A link
+  is one element in the host, so one override on it greys or fades
+  everything inside it - and a CATEGORY override in the host never reaches
+  inside a link, which is why a greyout on a linked job appears to do
+  nothing. Asked for links only, anything else handed in is counted and left
+  alone; each link's override is read back and named by its file. A view
+  template is refused, and a view following one is warned that the template
+  wins.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -35,6 +56,15 @@ contract:
     - name: overrides
       type: OverrideGraphicSettings
       source: request
+    # VERSION 2, from SET_LINK_GRAPHICS. true when the job is a LINKED MODEL:
+    # anything handed in that is not a link instance is counted in
+    # `notALink` and not overridden. Left out it is false - every element is
+    # overridden, as version 1 did. `optional: true` lets it be left out
+    # (HeronBindingNote.AbsentValue).
+    - name: linksOnly
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: overridden
       role: result
@@ -52,27 +82,50 @@ contract:
       # HIGHLIGHT_VS_REST gives.
       role: result
       type: int
+    - name: notALink
+      # VERSION 2, from SET_LINK_GRAPHICS. With linksOnly, how many handed in
+      # were not a linked model and were left alone. A count of what it was
+      # GIVEN and could not use, never a thing it found (D-52).
+      role: accounting
+      type: int
+    - name: refused
+      # VERSION 2, from SET_LINK_GRAPHICS. Why it declined, in the user's
+      # words - a template, a view that takes no override, Revit's own refusal
+      # for one element - and the warning that a view template may win. The
+      # evidence it looked and said no, never a thing it FOUND (D-52).
+      role: accounting
+      type: IList<string>
+    - name: appliedTo
+      # VERSION 2, from SET_LINK_GRAPHICS. Each LINK overridden, by its file
+      # name, with the halftone and transparency READ BACK off the view:
+      # "'Arch.rvt' in 'M1': halftone True, transparency 80%".
+      role: result
+      type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project2 (3,035 elements), Revit 2020, session 13520
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned overridden 5,
-    skipped 0 item(s), wrapsFollowed 0. inputs came view as given; elements from the selection
-    (5); overrides as given. on Project2
-  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: Level 1, overrides=halftone=true;
-    transparency=50, view=Heron Wall Schedule instead - chosen because it should not contain
-    what this fragment reports - the arrangement was re-made first by running select-by-category-name,
-    set-selection with this phase''s own values - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned overridden 0, skipped 5 item(s)
-    [345432, 345433, 345434, ...], wrapsFollowed 0. inputs came view as given; elements from
-    the selection (5); overrides as given. on Project2'
+    filter-elements-by-category, set-selection with this phase's own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    appliedTo 0 item(s), linksOnly false, notALink 0, overridden 10, refused 0 item(s), skipped
+    0 item(s), viewProblem , wrapsFollowed 0. inputs came view as given; elements from the
+    selection (10); overrides as given; linksOnly not given - false (optional). on P1102 MEP
+  negative_case: run with category=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP TYP, overrides=halftone=true;
+    transparency=50, view=Space Schedule instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running filter-elements-by-category,
+    set-selection with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned appliedTo 0 item(s), linksOnly
+    false, notALink 0, overridden 0, refused 1 item(s) ['Space Schedule' (Schedule) does not
+    accept graphic override...], skipped 10 item(s) [404243, 411658, 411660, ...], viewProblem
+    'Space Schedule' (Schedule) does not accept graphic overrides at all, so nothing was changed,
+    wrapsFollowed 0. inputs came view as given; elements from the selection (10); overrides
+    as given; linksOnly not given - false (optional). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: b07412335fdc5b6e
+  fingerprint: 64c722c108c25062
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -86,7 +139,14 @@ compatibility-note: >
   holding only `View.SetElementOverrides`, which is unchanged 2020 to 2027 -
   and, since 2026-09-23, `InsulationLiningBase.GetInsulationIds` and
   `GetLiningIds` and a view-scoped `FilteredElementCollector`, all present
-  2020 through 2027, read off the reference assemblies that day.
+  2020 through 2027, read off the reference assemblies that day. Version 2
+  adds what SET_LINK_GRAPHICS was proved with, present and unchanged 2020
+  through 2027: `RevitLinkInstance`, `RevitLinkType`, `Element.GetTypeId()`,
+  `View.GetElementOverrides`, `View.IsTemplate`, `View.ViewTemplateId` and the
+  `Halftone` and `Transparency` getters. `FilteredElementCollector(Document,
+  ElementId, ElementId)` - the collector that reaches inside a link - is absent
+  on Revit 2020 and is not named; `RevitLinkGraphicsSettings` is absent from
+  2020 and carries no halftone or transparency, and is not used.
 
 # BACK TO DRAFT ON 2026-09-23, AND THE PROOF ABOVE IS KEPT AS THE RECORD OF
 # WHAT WAS RUN.
@@ -170,27 +230,24 @@ compatibility-note: >
 # purpose, and nothing else. So a table saying "-> here" recorded a decision
 # that retrieval could not act on, and these resolved elsewhere.
 
-#   "grey out the linked model"        -> SET_LINK_GRAPHICS AS OF 2026-09-06,
-#                                        which declares it. The reasoning below
-#                                        is why, and it is now that fragment's:
-#                                        a link is ONE element in the host, so
-#                                        one override on it covers everything
+#   "grey out the linked model"        -> HERE again since version 2, with
+#                                        linksOnly. SET_LINK_GRAPHICS declared
+#                                        it from 2026-09-06 until it was merged
+#                                        into this card on 2026-11-01: a link is
+#                                        ONE element in the host, so one
+#                                        override on it covers everything
 #                                        inside - and a CATEGORY override in the
 #                                        host reaches into a link not at all,
 #                                        which is why a grayout on a linked job
-#                                        appears to do nothing. This fragment
-#                                        can still take a link instance handed
-#                                        to it; it just cannot find the links,
-#                                        name them by file, or say that a view
-#                                        template is overruling the result
+#                                        appears to do nothing. LIST_LINKED_
+#                                        MODELS finds the links; this names them
+#                                        by file and says when a view template
+#                                        is overruling the result
 #   "halftone the walls"               -> HERE for named host walls, and
 #                                        SET_CATEGORY_GRAPHICS for the whole
-#                                        category. SET_LINK_GRAPHICS ranks high
-#                                        on it because it declares the sentence
-#                                        somebody types when a greyout did
-#                                        nothing, and that sentence has the word
-#                                        walls in it. It is only the answer if
-#                                        those walls are inside a link
+#                                        category. Handed the LINK instance,
+#                                        with linksOnly, only if those walls are
+#                                        inside a link
 #   "make this pipe look the same as that one" -> READ_GRAPHIC_OVERRIDES
 #                                        FIRST, then here with what it
 #                                        returns. Matching is a read and a
@@ -210,3 +267,43 @@ utterances:
   - grey everything else back
   - grey out the linked model
   - grey out the link
+  # MOVED 2026-11-01 from SET_LINK_GRAPHICS, merged into this card.
+  - grey out the linked model in this view
+  - halftone the architectural link
+  - fade the structure link back
+  - push the linked model into the background
+  - make the link lighter in this view
+  - put the link graphics back to normal
+  - the greyout did nothing because the walls are in a link
+
+# VERSION 2 (2026-11-01) - SET_LINK_GRAPHICS' ROUTING ROWS, NOW HERE:
+#
+#   "fade the structural link"          -> here, linksOnly
+#   "halftone the linked model"         -> here, linksOnly
+#   "put the link back to normal"       -> here, with an empty
+#                                          OverrideGraphicSettings. An unset
+#                                          override IS Revit's cleared state
+#   "grey the architecture back"        -> SET_CATEGORY_GRAPHICS owns the bare
+#                                          sentence; come here when it names a
+#                                          LINK
+#   "grey their walls but keep the grid black"
+#                                       -> NOT HERE AND NOWHERE IN THIS LIBRARY.
+#                                          Overriding categories INSIDE a link
+#                                          needs a collector Revit 2020 does not
+#                                          have. Revit's route: Visibility /
+#                                          Graphics, the Revit Links tab, that
+#                                          link's row, Custom
+#   "which links are loaded"            -> LIST_LINKED_MODELS, which feeds this
+#
+# WHY HIGHLIGHT_VS_REST WAS NOT MERGED HERE (2026-11-01), on the owner's rule
+# that a merge covers everything both cards did and every conflict keeps the
+# safer rule. Its insulation rule is the OPPOSITE of this card's, and both are
+# safe for their own job: there a wrap PULLS IN THE RUN it wraps (colour the
+# insulation, and the duct comes too - the owner's standing rule for a
+# highlight), and here a wrap handed in NEVER drags its run (so a grayout's
+# quiet grey insulation layer stays a layer). One tool cannot do both, and
+# dropping either breaks a job the owner uses - "colour these and grey the
+# rest" needs the first, the grayout's grey wrapper the second. It also builds
+# its two looks from colours and greys EVERY OTHER element in the view, where
+# this applies one prepared override to the set and leaves the rest alone. It
+# stays its own card: five owner answer keys and mep-grayout.yaml name it.

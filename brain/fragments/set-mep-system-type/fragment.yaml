@@ -118,6 +118,10 @@ compatibility-note: >
 #   "change these ducts to return air"        -> here
 #   "this pipe should be hot water"           -> here
 #   "make a system from these"                -> CREATE_MEP_SYSTEM
+#   "remove this pipe run from Domestic Cold
+#    Water 1"                                 -> EDIT_MEP_SYSTEM (2026-11-01),
+#                                                which names a run and points
+#                                                back here for its system type
 #   "change the duct type to rectangular"     -> CHANGE_ELEMENT_TYPE - the
 #                                                duct's own type, not its
 #                                                system

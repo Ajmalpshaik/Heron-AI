@@ -9,7 +9,32 @@ semantic-identity: "which of these actually intersect those"
 kind: action
 domain: revit.qa
 capability: FIND_CLASHES
-version: 3
+# VERSION 4 (2026-11-01) - SELECT_TOUCHING WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools"; "merge means
+# ... all area need to be covered"), and is DEPRECATED. Its job - ONE element
+# against the model, "what is clashing with this", "what runs through this
+# wall" - was already half here: includeHost and `categories` search this
+# model for what each element passes through. What it had that this lacked:
+#   - NO SECOND SET TO TYPE. `against` may be left out (absent "none", an
+#     empty set), and with no `against` and no link asked for THIS MODEL is
+#     searched, as includeHost asks. Version 3 answered that call "NOTHING WAS
+#     LOOKED IN".
+#   - THE HITS HANDED ON AS `elements`, so SET_SELECTION or ISOLATE_ELEMENTS
+#     can act on what is touching - this model's own elements only, never a
+#     linked one (FRAGMENT-ISSUES row 75), each once, the handed-in elements
+#     never among them (never "touching itself").
+#   - "OVERLAPPING IS NOT MEETING" said when nothing overlaps: a duct joined at
+#     a connector shares no volume, and TRACE_CONNECTIVITY answers "what is
+#     connected to this".
+# Where each of SELECT_TOUCHING's outputs is now: elements -> elements;
+# findings -> findings and passedThrough; linksSearched and linkedMatches the
+# same (up to 50 a link here, where it named 20). Its `target` is the one
+# element handed in as `elements`; its `categories` list is `categories` -
+# names, or `all` (left out, the building list; SELECT_TOUCHING's list could
+# not be left blank either - the binder refuses a blank category list).
+# NOT CARRIED: nothing. The proof below is version 3's and no longer
+# describes the code; DRAFT until version 4 is proved on a real model (D-30).
+version: 4
 source: OFFICIAL
 risk: READ
 
@@ -18,7 +43,7 @@ purpose: >
   members of another. Ducts against beams, pipes against structure, services
   against each other.
 
-  **This is NOT `CHECK_OBSTRUCTIONS`, and the two get asked for in the same
+  **This is NOT `PROBE_AROUND_ELEMENTS`, and the two get asked for in the same
   words.** That one casts a ray from a POINT and asks what is within a distance
   of it — the sprinkler-under-a-beam question, answered before anything is
   modelled. This one takes two sets of REAL ELEMENTS and asks whose solids
@@ -81,8 +106,13 @@ contract:
     - name: elements
       type: IList<Element>
     - name: against
+      # VERSION 4: MAY BE LEFT OUT - "none", an empty set. With no `against`
+      # and includeLinks not set, THIS MODEL is searched (as includeHost),
+      # which is SELECT_TOUCHING's one-element-against-the-model job.
       type: ICollection<ElementId>
       source: request
+      optional: true
+      absent: none
     - name: includeLinks
       # D-59. THE MODELLER DECIDES, JOB BY JOB, and absent means host only -
       # which is what this fragment did before and what its proof measured.
@@ -183,85 +213,90 @@ contract:
       # element, its value, by how much, and what it passes through.
       role: accounting
       type: IList<string>
+    - name: elements
+      # VERSION 4, from SELECT_TOUCHING. THIS MODEL's elements that overlap
+      # the ones handed in - from `against` and from this model's search -
+      # each once, the handed-in ones never among them. Handed on so SELECT
+      # or ISOLATE can act on them. Never a linked element (row 75).
+      role: result
+      type: IList<Element>
 
 proof:
-  date: '2026-10-21'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: MEP Night Test, Revit 2020, session 68704 - the count is NOT recorded because 5,262
-    elements was measured on Cinematic ID Test, the document in front, and this ran against
-    another one (row 15)
+  model: Project2 (5,909 elements), Revit 2024, session 57392
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection, select-by-categories with this phase''s own values.
-    returned againstGiven true, agree 0, anyCategory false, boxSolidOf Func`2, buildingCategories
-    9 item(s) [OST_Walls, OST_Floors, OST_Roofs, ...], buildingOnly true, byBox 0, categoryWord
-    building, centreOf Func`2, clashes 59 entry(ies), clashing 59, clear 197, compareFailures
+    create-wall, create-duct-runs with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned against 0 item(s),
+    againstGiven false, agree 0, anyCategory false, boxSolidOf Func`2, buildingCategories
+    9 item(s) [OST_Walls, OST_Floors, OST_Roofs, ...], buildingOnly false, byBox 0, categoryWord
+    Walls, centreOf Func`2, clashes 0 entry(ies), clashing 0, clear 0, compareFailures 0 entry(ies),
+    comparing false, comparison 1 item(s) [No parameter named - nothing compared. Name one
+    in comparePa...], dbNamespace Autodesk.Revit.DB, describeLinked Func`3, done HashSet`1,
+    elementLines 1 item(s) [  element 1200650 ''Rectangular Duct: Default'': 1 - this mode...],
+    elements 1 item(s) [Wall], extentAlong Func`3, facingOf Func`2, findings 2 item(s) [Nothing
+    was given to check against, so `against` tested noth..., This looked in THIS MODEL for
+    Walls, the elements handed in ...], fireRatingOf Func`2, flags BindingFlags, handed 1,
+    handedIds HashSet`1, hitsUnmeasured 0, includeHost true, includeLinks false, isLength
+    Func`2, isLengthSpec Func`2, isLookedFor Func`2, lengthUnits 10 item(s) [Autodesk.Revit.DB.ForgeTypeId,
+    Autodesk.Revit.DB.ForgeTypeId, Autodesk.Revit.DB.ForgeTypeId, ...], linkBlocked , linkDocs
+    0 item(s), linkHitElements 0 item(s), linkHits 0 item(s), linkLines 0 item(s), linkPlacements
+    0 item(s), linkTypes 0 item(s), linkUntested 0, linkedMatches 1 item(s) [Host model only
+    - links not read], linkedTotal 0, linksSearched 0, lookFilter ElementMulticategoryFilter,
+    lookFor 1 item(s) [-2000011], lookForNames 1 item(s) [Walls], lookingFor Walls, measure
+    Func`6, mismatchLines 0 item(s), mismatched 0 item(s), mm 304.8, modelByDefault false,
+    nestedLinks 0, notChecked 0 item(s), notPassedThrough 4 item(s) [-2000160, -2003600, -2003200,
+    ...], notTested 0 item(s), nothingToCompare 0, oldLengthUnits 9 item(s) [DUT_MILLIMETERS,
+    DUT_CENTIMETERS, DUT_DECIMETERS, ...], outlineOf Func`2, overlapOf Func`3, parameterOf
+    Func`2, parameterWord none, passedThrough 2 item(s) [1 element(s) looked at in this model,
+    for Walls: 1 pass thro...,   element 1200650 ''Rectangular Duct: Default'': 1 - this mode...],
+    places 1 item(s) [this model], refusedAgainst 0 item(s), revitAssembly RuntimeAssembly,
+    runOf Func`2, sameKind Func`3, sameWord Func`3, searchHost true, searchLinks false, shownAsLength
+    Func`2, solidsIn Func`2, through 1, throughNothing 0 item(s), touching 1 item(s) [Wall],
+    touchingIds HashSet`1, typeNameOf Func`2, unitOwner RuntimeType, unknownCategories 0 item(s),
+    vertexTolerance 0.0005233832795, whyNot 0 entry(ies). inputs came elements from create-duct-runs
+    (1); against given empty - "none", the card''s own default (optional); includeLinks as
+    given; categories as given; includeHost as given; compareParameter as given. on Project2'
+  negative_case: 'run with against=, categories=Planting, compareParameter=none, ductType=Rectangular
+    Duct: Default, height=3000, includeHost=True, includeLinks=False, level=L1, points=50000,-10000,0;
+    50000,10000,0, runs=400x200: 45000,0,1500; 55000,0,1500, structural=False, systemType=Supply
+    Air, wallType=Basic Wall: Exterior - Brick on Mtl. Stud instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    create-wall, create-duct-runs with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned against 0 item(s),
+    againstGiven false, agree 0, anyCategory false, boxSolidOf Func`2, buildingCategories
+    9 item(s) [OST_Walls, OST_Floors, OST_Roofs, ...], buildingOnly false, byBox 0, categoryWord
+    Planting, centreOf Func`2, clashes 0 entry(ies), clashing 0, clear 0, compareFailures
     0 entry(ies), comparing false, comparison 1 item(s) [No parameter named - nothing compared.
     Name one in comparePa...], dbNamespace Autodesk.Revit.DB, describeLinked Func`3, done
-    HashSet`1, elementLines 59 item(s) [  element 392168 ''Rectangular Duct: Mitered Elbows
-    / Taps'': ...,   element 392170 ''Rectangular Duct: Mitered Elbows / Taps'': ...,   element
-    392689 ''Rectangular Duct: Mitered Elbows / Taps'': ..., ...], extentAlong Func`3, facingOf
-    Func`2, findings 1 item(s) [256 element(s) checked against 70: 59 clash, 197 clear, 0
-    co...], fireRatingOf Func`2, flags BindingFlags, handed 256, handedIds HashSet`1, hitsUnmeasured
-    0, includeHost false, includeLinks false, isLength Func`2, isLengthSpec Func`2, isLookedFor
-    Func`2, lengthUnits 0 item(s), linkBlocked , linkDocs 0 item(s), linkHitElements 0 item(s),
-    linkHits 0 item(s), linkLines 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s),
-    linkUntested 0, linkedMatches 1 item(s) [Host model only - links not read], linkedTotal
-    0, linksSearched 0, lookFilter ElementMulticategoryFilter, lookFor 9 item(s) [-2000011,
-    -2000032, -2000035, ...], lookForNames 0 item(s), lookingFor walls, floors, roofs, ceilings,
-    columns, beams, foundations or stairs, measure Func`6, mismatchLines 0 item(s), mismatched
-    0 item(s), mm 304.8, nestedLinks 0, notChecked 0 item(s), notPassedThrough 4 item(s) [-2000160,
-    -2003600, -2003200, ...], notTested 0 item(s), nothingToCompare 0, oldLengthUnits 9 item(s)
-    [DUT_MILLIMETERS, DUT_CENTIMETERS, DUT_DECIMETERS, ...], outlineOf Func`2, overlapOf Func`3,
-    parameterOf Func`2, parameterWord none, passedThrough 61 item(s) [256 element(s) looked
-    at in `against`, for walls, floors, ro...,   element 392168 ''Rectangular Duct: Mitered
-    Elbows / Taps'': ...,   element 392170 ''Rectangular Duct: Mitered Elbows / Taps'': ...,
-    ...], places 1 item(s) [`against`], refusedAgainst 0 item(s), revitAssembly RuntimeAssembly,
-    runOf Func`2, sameKind Func`3, sameWord Func`3, searchHost false, searchLinks false, shownAsLength
-    Func`2, solidsIn Func`2, through 59, throughNothing 197 item(s) [392174, 392175, 392180,
-    ...], typeNameOf Func`2, unitOwner (null), unknownCategories 0 item(s), vertexTolerance
-    0.0005233832795, whyNot 0 entry(ies). inputs came elements from select-by-categories (256);
-    against as given (70); includeLinks not given - false (optional); categories not given
-    - "building", the card''s own default (optional); includeHost not given - false (optional);
-    compareParameter not given - "none", the card''s own default (optional). on MEP Night
-    Test'
-  negative_case: 'run with against=selected arranged with categories=Grids, categoryName=Walls,
-    inViewOnly=FloorPlan: Level 1 HVAC Plan instead - chosen because it should not contain
-    what this fragment reports - the arrangement was re-made first by running select-by-category-name,
-    set-selection, select-by-categories with this phase''s own values. returned againstGiven
-    true, agree 0, anyCategory false, boxSolidOf Func`2, buildingCategories 9 item(s) [OST_Walls,
-    OST_Floors, OST_Roofs, ...], buildingOnly true, byBox 0, categoryWord building, centreOf
-    Func`2, clashes 0 entry(ies), clashing 0, clear 0, compareFailures 0 entry(ies), comparing
-    false, comparison 1 item(s) [No parameter named - nothing compared. Name one in comparePa...],
-    dbNamespace Autodesk.Revit.DB, describeLinked Func`3, done HashSet`1, elementLines 0 item(s),
-    extentAlong Func`3, facingOf Func`2, findings 2 item(s) [22 element(s) checked against
-    70: 0 clash, 0 clear, 22 could..., 22 element(s) NOT CHECKED - Revit''s intersection test
-    refuse...], fireRatingOf Func`2, flags BindingFlags, handed 22, handedIds HashSet`1, hitsUnmeasured
-    0, includeHost false, includeLinks false, isLength Func`2, isLengthSpec Func`2, isLookedFor
-    Func`2, lengthUnits 0 item(s), linkBlocked , linkDocs 0 item(s), linkHitElements 0 item(s),
-    linkHits 0 item(s), linkLines 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s),
-    linkUntested 0, linkedMatches 1 item(s) [Host model only - links not read], linkedTotal
-    0, linksSearched 0, lookFilter ElementMulticategoryFilter, lookFor 9 item(s) [-2000011,
-    -2000032, -2000035, ...], lookForNames 0 item(s), lookingFor walls, floors, roofs, ceilings,
-    columns, beams, foundations or stairs, measure Func`6, mismatchLines 0 item(s), mismatched
-    0 item(s), mm 304.8, nestedLinks 0, notChecked 22 item(s) [586795, 586898, 586905, ...],
-    notPassedThrough 4 item(s) [-2000160, -2003600, -2003200, ...], notTested 0 item(s), nothingToCompare
-    0, oldLengthUnits 9 item(s) [DUT_MILLIMETERS, DUT_CENTIMETERS, DUT_DECIMETERS, ...], outlineOf
-    Func`2, overlapOf Func`3, parameterOf Func`2, parameterWord none, passedThrough 2 item(s)
-    [22 element(s) looked at in `against`, for walls, floors, roo...,   NOT tested - Revit
-    refused its test against `against` (fin...], places 1 item(s) [`against`], refusedAgainst
-    22 item(s) [586795, 586898, 586905, ...], revitAssembly RuntimeAssembly, runOf Func`2,
-    sameKind Func`3, sameWord Func`3, searchHost false, searchLinks false, shownAsLength Func`2,
-    solidsIn Func`2, through 0, throughNothing 0 item(s), typeNameOf Func`2, unitOwner (null),
-    unknownCategories 0 item(s), vertexTolerance 0.0005233832795, whyNot 1 entry(ies). inputs
-    came elements from select-by-categories (22); against as given (70); includeLinks not
-    given - false (optional); categories not given - "building", the card''s own default (optional);
-    includeHost not given - false (optional); compareParameter not given - "none", the card''s
-    own default (optional). on MEP Night Test'
+    HashSet`1, elementLines 0 item(s), elements 0 item(s), extentAlong Func`3, facingOf Func`2,
+    findings 3 item(s) [Nothing was given to check against, so `against` tested noth..., This
+    looked in THIS MODEL for Planting, the elements handed ..., Nothing in this model OVERLAPS
+    them. That is not the same as...], fireRatingOf Func`2, flags BindingFlags, handed 1,
+    handedIds HashSet`1, hitsUnmeasured 0, includeHost true, includeLinks false, isLength
+    Func`2, isLengthSpec Func`2, isLookedFor Func`2, lengthUnits 10 item(s) [Autodesk.Revit.DB.ForgeTypeId,
+    Autodesk.Revit.DB.ForgeTypeId, Autodesk.Revit.DB.ForgeTypeId, ...], linkBlocked , linkDocs
+    0 item(s), linkHitElements 0 item(s), linkHits 0 item(s), linkLines 0 item(s), linkPlacements
+    0 item(s), linkTypes 0 item(s), linkUntested 0, linkedMatches 1 item(s) [Host model only
+    - links not read], linkedTotal 0, linksSearched 0, lookFilter ElementMulticategoryFilter,
+    lookFor 1 item(s) [-2001360], lookForNames 1 item(s) [Planting], lookingFor Planting,
+    measure Func`6, mismatchLines 0 item(s), mismatched 0 item(s), mm 304.8, modelByDefault
+    false, nestedLinks 0, notChecked 0 item(s), notPassedThrough 4 item(s) [-2000160, -2003600,
+    -2003200, ...], notTested 0 item(s), nothingToCompare 0, oldLengthUnits 9 item(s) [DUT_MILLIMETERS,
+    DUT_CENTIMETERS, DUT_DECIMETERS, ...], outlineOf Func`2, overlapOf Func`3, parameterOf
+    Func`2, parameterWord none, passedThrough 2 item(s) [1 element(s) looked at in this model,
+    for Planting: 0 pass t...,   through nothing: element 1200653], places 1 item(s) [this
+    model], refusedAgainst 0 item(s), revitAssembly RuntimeAssembly, runOf Func`2, sameKind
+    Func`3, sameWord Func`3, searchHost true, searchLinks false, shownAsLength Func`2, solidsIn
+    Func`2, through 0, throughNothing 1 item(s) [1200653], touching 0 item(s), touchingIds
+    HashSet`1, typeNameOf Func`2, unitOwner RuntimeType, unknownCategories 0 item(s), vertexTolerance
+    0.0005233832795, whyNot 0 entry(ies). inputs came elements from create-duct-runs (1);
+    against given empty - "none", the card''s own default (optional); includeLinks as given;
+    categories as given; includeHost as given; compareParameter as given. on Project2'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 37296fedd1603830
-
+  fingerprint: 31f0668f6690a32a
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -284,14 +319,15 @@ compatibility-note: >
 # Revit's reason, and an empty `against` counts nothing clear. The fragment is
 # DRAFT, so no proof moved. FRAGMENT-ISSUES 5b-176; NEEDS-CHECKING AJ6.
 
-# ROUTING - repeated in CHECK_OBSTRUCTIONS, and this pair is the sharpest
+# ROUTING - repeated in PROBE_AROUND_ELEMENTS (CHECK_OBSTRUCTIONS' table until
+# it was merged into that card on 2026-11-01), and this pair is the sharpest
 # collision in the library because both are the word "clash".
 #
-#   "is there a beam above this head"   -> CHECK_OBSTRUCTIONS - a ray from a
+#   "is there a beam above this head"   -> PROBE_AROUND_ELEMENTS - a ray from a
 #                                          POINT, before anything is modelled
 #   "which ducts clash with the beams"  -> here - two sets of real elements
 #   "find the clashes"                  -> here
-#   "is anything blocking these"        -> CHECK_OBSTRUCTIONS
+#   "is anything blocking these"        -> PROBE_AROUND_ELEMENTS
 #   "list the linked models"            -> LIST_LINKED_MODELS - worth
 #                                          running FIRST, because a clash
 #                                          check can only see what is
@@ -319,8 +355,18 @@ compatibility-note: >
 #   "are the sleeves big enough for the pipes" -> CHECK_SLEEVE_SIZE - the
 #                                        hole against what goes THROUGH it,
 #                                        not against what it goes through
-#   "what is touching this beam"     -> SELECT_TOUCHING - ONE element
-#                                        against the model
+#   "what is touching this beam"     -> here since version 4 - ONE element
+#                                        against the model, no `against`
+#                                        typed; the hits handed on as
+#                                        `elements` (was SELECT_TOUCHING)
+#   "what is clashing with this"     -> here, version 4 - the same
+#   "what runs through this wall"    -> here, version 4 - the same
+#   "what is connected to this duct" -> TRACE_CONNECTIVITY. A clean connection
+#                                        has NO volumetric overlap, so this
+#                                        returns nothing for it - a correct
+#                                        answer to a different question
+#   "what is in this area"           -> SELECT_IN_REGION - a volume, not an
+#                                        element, as the target
 utterances:
   - which ducts clash with the beams
   - find the clashes
@@ -341,3 +387,13 @@ utterances:
   - check the cut-out wall width against the walls
   - what does each opening cut through in the links
   - check all the cut-out wall width
+  # MOVED 2026-11-01 from SELECT_TOUCHING, merged into this card.
+  - what is clashing with this
+  - what is touching this element
+  - what runs through this wall
+  - find everything overlapping this
+  - what is in the same place as this
+  - what is touching this beam
+  - what penetrates this wall
+  # ...and its semantic identity, which nothing else declares:
+  - what is physically overlapping this one element

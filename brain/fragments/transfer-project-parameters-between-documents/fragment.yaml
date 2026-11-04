@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -119,6 +119,34 @@ contract:
       # (D-52). Version 2, 5b-317.
       role: accounting
       type: bool
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: Project3 (6,007 elements), Revit 2024, session 57392
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned bound 1 item(s) [HERON_P1102_TAG],
+    clashed 0 item(s), dataGroup Func`2, dbNamespace Autodesk.Revit.DB, definitionFile DefinitionFile,
+    filterText HERON_P1102, flags BindingFlags, groupOf Func`3, insertMethod RuntimeMethodInfo,
+    openTitles 2 item(s) [Project3, Project2], previousRead true, previousSharedFile , refused
+    , regrouped 0 item(s), revitAssembly RuntimeAssembly, settingChanged true, sharedParameterFileRestored
+    true, skipped 0 item(s), source Document, wantedTitle Project2. inputs came sourceDocumentTitle
+    as given; sharedParameterFile as given; nameContains as given. on Project3
+  negative_case: run with sourceDocumentTitle=Project2, sharedParameterFile=C:/Users/ajmal/AppData/Local/Temp/heron-work/prove-1102/heron-p1102-shared.txt,
+    nameContains=ZZZ NO SUCH PARAM instead - chosen because it should not contain what this
+    fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned bound 0 item(s), clashed 0 item(s), dataGroup Func`2,
+    dbNamespace Autodesk.Revit.DB, definitionFile DefinitionFile, filterText ZZZ NO SUCH PARAM,
+    flags BindingFlags, groupOf Func`3, insertMethod RuntimeMethodInfo, openTitles 2 item(s)
+    [Project3, Project2], previousRead true, previousSharedFile , refused No project parameters
+    in 'Project2' matching 'ZZZ NO SUCH PARAM'., regrouped 0 item(s), revitAssembly RuntimeAssembly,
+    settingChanged true, sharedParameterFileRestored true, skipped 0 item(s), source Document,
+    wantedTitle Project2. inputs came sourceDocumentTitle as given; sharedParameterFile as
+    given; nameContains as given. on Project3
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: bf2352ebdef16a7b
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

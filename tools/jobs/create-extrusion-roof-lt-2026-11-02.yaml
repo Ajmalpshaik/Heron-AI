@@ -1,0 +1,50 @@
+# NEEDS-CHECKING Group LT - CREATE_EXTRUSION_ROOF, built 2026-11-02 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/create-extrusion-roof-lt-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-extrusion-roof-lt-2026-11-02.yaml
+#
+# THE MODEL (docs/needs-checking/group-lt.md, LT1): the scratch project
+# "extroof-ip", from the default metric architectural template - levels
+# "Level 1" at 0 and "Level 2" at 4000 mm with the floor plan "Level 2",
+# straight grids "A" (0,0 to 0,20000 mm) and "B" (6000,0 to 6000,20000 mm),
+# one named reference plane "North Face" drawn in "Level 2" from 0,20000 to
+# 12000,20000 mm, and a Basic Roof type "Generic - 400mm".
+#
+# THE ARRANGEMENT: a barrel along grid A for the positive; the same values
+# with the profile CLOSED back to its first point for the negative - a
+# different value, not an empty one (fragment-proving, rules 3 and 5): Revit
+# sketches a roof by extrusion as an open line, so nothing may be made - no
+# roof and no reference plane along grid A. Every write here is ROLLED BACK.
+
+model: "extroof-ip scratch project (metric architectural template), grids A and B, reference plane North Face, Revit 2024"
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: create-extrusion-roof
+    expect: roof
+    in: "extroof-ip"
+    set:
+      level: "Level 2"
+      roofType: "Generic - 400mm"
+      plane: "A"
+      profile: "0,0; arc 6000,2000 12000,0"
+      extrusionStartMm: 0
+      extrusionEndMm: 6000
+    negative-set:
+      level: "Level 2"
+      roofType: "Generic - 400mm"
+      plane: "A"
+      profile: "0,0; arc 6000,2000 12000,0; 0,0"
+      extrusionStartMm: 0
+      extrusionEndMm: 6000
+    note: >
+      LT2. Negative - THE FIRST CASE TO RUN: the closed profile, roof and
+      planeDrawn invalid, refused "The profile ends where it starts, at 0,0.
+      A roof by extrusion is sketched as an OPEN line ... NOTHING WAS MADE.",
+      no roof and no reference plane added. Positive: roof 1 id, planeDrawn
+      1 id, report "Roof by extrusion made (id ...), type "Basic Roof:
+      Generic - 400mm", level "Level 2", sketched on a reference plane drawn
+      along grid A ... extruded from 0 to 6000 mm east of the plane".

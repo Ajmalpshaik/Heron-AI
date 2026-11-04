@@ -14,7 +14,47 @@ capability: CREATE_VIEW_FILTER
 # (FRAGMENT-ISSUES 5b-191) - and `matchValue` may lead with the operator
 # Revit's Filters dialog shows, "does not contain Level 1". No operator is
 # equals, as version 2 read it.
-version: 3
+#
+# Version 4, 2026-11-01: CREATE_VIEW_FILTERS_BY_RULE was merged into this card
+# on the owner's instruction, and is DEPRECATED. Many filters in one call, one
+# value each; the view and the colour optional together, so filters can be
+# made on no view; categories by Revit's own name too; every category asked on
+# its own and named in `cannotFilter`; a name already taken - a selection
+# filter's included - skipped and named while the rest are made; and a
+# read-back of what Revit holds. Version 3's proof below no longer describes
+# the code and is kept as the record; the card is DRAFT until it is proved
+# again.
+#
+# Version 4, review fixes of the same day (the owner's rule that a merged card
+# covers everything both old cards did): a blank value asked for in words -
+# "has no value" or "is blank" - while an empty value is still refused; and
+# `matchValue` is text again, as in version 3, divided by the card, so a comma
+# inside one value no longer splits it. Not a version of its own: version 4
+# was never proved. SAID HERE AND NOT IN `purpose`, which is indexed: a
+# paragraph there saying this moved the owner's question 67 ("Create an air
+# terminals filter, give it colours, and apply it to the active 3D view") from
+# 1st to 2nd behind APPLY_VIEW_FILTER on the model backend, measured
+# 2026-11-01, and was taken out again.
+#
+# Version 5, 2026-11-01: CREATE_VIEW_FILTERS_BY_VALUE was merged into this card
+# on the owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. `perValue` with the elements handed in makes ONE FILTER PER
+# DISTINCT VALUE read off them, each named `namePrefix` and the value; the
+# categories come from the elements when none are typed; an element carrying
+# the parameter's name twice is left out (`leftOut`); the blank group is a
+# filter of its own, "(no value)"; and on a view each filter gets its own
+# colour, stepped evenly round the hue wheel. THE OPPOSITE RULES, AND WHICH WAS
+# KEPT WHERE: a category the caller TYPED that cannot take the rule stops the
+# call, as this card always did; one DERIVED from the elements is dropped and
+# named (`droppedCategories`), as that card did. The blank group uses this
+# card's "has no value" rule, not an equals rule on empty text; and a single
+# `colour` beside perValue is refused - one colour per filter is the job.
+# `filterName`, `matchValue`, `categoryIds`, `moreRules` and `combine` are
+# optional now, because a perValue call names none of them. The purpose gained
+# one short sentence only: version 4 measured that a paragraph there moved
+# owner question 67. Version 3's proof below is still the record; the card is
+# DRAFT until version 5 is proved.
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -32,19 +72,58 @@ purpose: >
   filter list, available everywhere and applicable to the whole set later. It
   outlives the view it was made for.
 
+  **Several at once, and on no view when that is the job** (version 4). Each
+  filter gets its own name and one value, all on the same categories and the
+  same parameter - "Supply Air, Return Air and Exhaust Air on System
+  Classification, for air terminals and ductwork". Leave the view and the
+  colour out and they are made on no view, the way a modeller sets up a
+  standard in Manage > Filters. One category that cannot take the rule stops
+  the whole call and is named; a name already a filter is skipped and named,
+  never overwritten. Each new filter is read back from Revit - its categories,
+  its rule as held, and how many elements it catches today.
+
+  **Or one per value, read off the elements** (version 5): each distinct
+  value of the parameter becomes its own filter in its own colour, the blank
+  ones too.
+
 contract:
   needs:
     - name: doc
       type: Document
+    # Version 4: OPTIONAL, with `colour`. Left out, every filter is made on
+    # no view and none is coloured - APPLY_VIEW_FILTER puts one on a view
+    # later. Given, `colour` must be too.
     - name: view
       type: View
       source: request
+      optional: true
+    # One name, or several comma separated (version 4) - one filter each, the
+    # values in `matchValue` in the same order. A name already a filter in the
+    # project, a selection filter's included, is skipped and named in
+    # `alreadyExists`, never overwritten.
+    #
+    # Version 5: OPTIONAL, because one filter per value names each filter
+    # after its value. Left out it reads `none` - no name - and a call that is
+    # not perValue is then refused, in words, as the binder refused it.
     - name: filterName
-      type: string
+      type: IList<string>
       source: request
+      optional: true
+      absent: none
+    # As Visibility/Graphics shows them - "Ducts, Duct Fittings" - or by
+    # Revit's own name, OST_DuctCurves (version 4; version 3 took the shown
+    # name alone). Every one must take the rule, or nothing is made.
+    #
+    # Version 5: OPTIONAL. Left out it binds INVALID, which names no category:
+    # with perValue the categories are then the elements' own, and one that
+    # cannot take the rule is DROPPED and named in `droppedCategories`; without
+    # perValue the call is refused. Typed, every one must take the rule
+    # whichever road it is - the safer rule for a category the caller chose.
     - name: categoryIds
-      type: ICollection<ElementId>
+      type: IList<BuiltInCategory>
       source: request
+      optional: true
+      absent: INVALID
     # The parameter the first rule tests, by the name Revit shows - "Type
     # Name", "System Classification" - among those EVERY category given may
     # be filtered by. None, or two, refuses; a built-in one may be typed by
@@ -56,70 +135,196 @@ contract:
     # not "equals": equals, does not equal, contains, does not contain, begins
     # with, does not begin with, ends with, does not end with ("does not
     # contain Level 1"). "equals contains" matches the word itself (version 3).
+    # "has no value" - or "is blank" - ALONE catches the elements whose
+    # parameter is empty; a value left blank is refused, so an empty
+    # parameter is only ever asked for in words (version 4).
+    #
+    # ONE PER FILTER NAME, in the same order (version 4). TEXT, divided by the
+    # card and not the binder, whose lists split at every comma: with ONE
+    # filter name the whole text is the value, commas and all ("Smith, John"),
+    # as version 3 read it; with several it is divided at the commas, and a
+    # value holding a comma goes in double quotes - Supply Air, "Return,
+    # Mixed". A value wholly in double quotes is taken as written inside them
+    # either way. Type it as Revit shows it: whether capitals matter on 2023
+    # and later is not known here (the cases say why).
+    #
+    # Version 5: OPTIONAL - perValue reads the values off the elements. Left
+    # out it reads `none`, and a call that is not perValue is refused: type a
+    # value, or "equals none" to match the word none.
     - name: matchValue
       type: string
       source: request
+      optional: true
+      absent: none
     # More rules beside the first, "Name = value; Name contains text", with =,
-    # != or any of the eight operators above; an EMPTY value is the one rule
-    # alone (version 2).
+    # != or any of the operators above - "Comments has no value" too; an
+    # EMPTY value is the one rule alone (version 2). For ONE filter only:
+    # beside several names it is refused (version 4).
+    # Version 5: optional - left out it reads `none`, no more rules. Refused
+    # beside perValue.
     - name: moreRules
       type: string
       source: request
-    # "and" or "or" across the rules; an EMPTY value means and.
+      optional: true
+      absent: none
+    # "and" or "or" across the rules; an EMPTY value means and. Version 5:
+    # optional, left out it is and.
     - name: combine
       type: string
       source: request
+      optional: true
+      absent: and
+    # Three numbers 0 to 255, "255,0,0", put on the filter's lines and
+    # patterns in `view`. Version 4: OPTIONAL, with `view` - left out it is
+    # "none", and a colour with no view, or a view with no colour, is refused
+    # before anything is made. Text since version 4, where version 3 took a
+    # Color: the binder has no way to leave a Color out.
     - name: colour
-      type: Color
+      type: string
       source: request
+      optional: true
+      absent: none
+    # VERSION 5, from CREATE_VIEW_FILTERS_BY_VALUE. The elements whose values
+    # make one filter each, with perValue. Optional: left out it binds an
+    # empty list (HeronBindingNote.EmptyWhenAbsent), and a typed call never
+    # reads it.
+    - name: elements
+      type: IList<Element>
+      optional: true
+    # VERSION 5. true makes ONE FILTER PER DISTINCT VALUE of `parameterName`
+    # across `elements`. Left out it is false, and the filters are the ones
+    # typed in filterName and matchValue, as version 4 made them.
+    - name: perValue
+      type: bool
+      source: request
+      optional: true
+    # VERSION 5, from CREATE_VIEW_FILTERS_BY_VALUE. The start of each
+    # perValue filter's name - "MECH - " makes "MECH - Supply Air". Left out
+    # it reads `none`, no prefix: the value alone.
+    - name: namePrefix
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: created
+      # The filter made - the FIRST, when several were (version 4). Null when
+      # nothing was.
       role: result
       type: ElementId
+    - name: createdIds
+      # Version 4. Every filter made, in the order of the names.
+      role: result
+      type: IList<ElementId>
+    - name: readBack
+      # Version 4, from CREATE_VIEW_FILTERS_BY_RULE. Each new filter as Revit
+      # holds it: its categories, its rules (a "does not" rule unwrapped from
+      # the FilterInverseRule Revit keeps it in), the elements that rule
+      # catches today, and whether it is on the view with its colour. ONE
+      # STRING, because a list reaches the chat as three entries cut at sixty
+      # characters and the rule is at the end of each.
+      role: result
+      type: string
+    - name: alreadyExists
+      # Version 4. Names that were already a filter in the project - a
+      # selection filter's included - and were left exactly as they were.
+      # Given and unused, never a thing it made (D-52).
+      role: accounting
+      type: IList<string>
+    - name: cannotFilter
+      # Version 4. Categories the named parameter cannot filter, each with the
+      # reason - Revit cannot filter the category at all, or it has no
+      # parameter by that name. Any entry here means nothing was created.
+      # Given and unusable (D-52).
+      role: accounting
+      type: IList<string>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
       # "did this come back empty" (D-52).
       role: accounting
       type: string
+    - name: valuesFound
+      # VERSION 5, from CREATE_VIEW_FILTERS_BY_VALUE. Each distinct value read
+      # off the elements, sorted, "(no value)" last when some were blank - one
+      # filter each.
+      role: result
+      type: IList<string>
+    - name: droppedCategories
+      # VERSION 5. Categories DERIVED from the elements that cannot take the
+      # rule, each with the reason, and left out of the filters - Revit would
+      # reject every filter with them in. Given and unusable (D-52).
+      role: accounting
+      type: IList<string>
+    - name: leftOut
+      # VERSION 5. The elements that gave no value, counted by why - outside
+      # the categories, carrying the parameter's name twice, or without it.
+      # The evidence it looked, never a thing it made (D-52). The name twice is
+      # CREATE_VIEW_FILTERS_BY_VALUE's guard, carried: Revit's lookup by name
+      # returns one of the two at random, so such an element gives no value
+      # (D-54 s3, FRAGMENT-ISSUES 5b-203; tests/test_same_name_guard.py
+      # check 6 holds it).
+      role: accounting
+      type: IList<string>
 
 proof:
-  date: '2026-10-15'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project2, Revit 2020, session 25244 - the count is NOT recorded because 25,093 elements
-    was measured on 4355-BHVD-3D-21S10-BL001A, the document in front, and this ran against
-    another one (row 15)
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned bareOperator , created 1 item(s)
-    [id 918728], firstOperator does not contain, firstText Level 1, name HERON PROOF CVF Levels,
-    operatorMethods 10 entry(ies), operatorWords 8 item(s) [does not begin with, does not
-    end with, does not contain, ...], refused (null), wanted Name. inputs came view as given;
-    filterName as given; categoryIds as given (1); parameterName as given; matchValue as given;
-    moreRules as given; combine as given; colour as given. on Project2
-  negative_case: run with categoryIds=Levels, colour=255,0,0, combine=, filterName=HERON PROOF
-    CVF Levels, matchValue=does not contain Level 1, moreRules=, parameterName=System Classification,
-    view={3D} instead - chosen because it should not contain what this fragment reports -
-    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned bareOperator , created (null), firstOperator does not contain, firstText Level
-    1, name HERON PROOF CVF Levels, operatorMethods 10 entry(ies), operatorWords 8 item(s)
-    [does not begin with, does not end with, does not contain, ...], refused no parameter
-    the filter's categories share is called "System Classification" - nothing was made, wanted
-    System Classification. inputs came view as given; filterName as given; categoryIds as
-    given (1); parameterName as given; matchValue as given; moreRules as given; combine as
-    given; colour as given. on Project2
-  second_route: '2026-10-15, Project2: the positive run once more and KEPT - fragment --in
-    Project2 create-view-filter --write --apply with the same values, created id 918729, APPLIED.
-    Then read back by two PROVEN reads that share no code with this fragment. REPORT_VIEW_FILTERS
-    viewName={3D}: {3D}, which carried no filter before, now carries one - ''HERON PROOF CVF
-    Levels'', Visibility ON, Projection/Surface Lines colour 255,0,0, Surface Patterns foreground
-    colour 255,0,0, Cut Lines colour 255,0,0, Cut Patterns foreground colour 255,0,0, cut
-    not applicable for Levels - and the project''s filters went from 10 to 11. TEST_VIEW_FILTER_MATCH
-    filterName=HERON PROOF CVF Levels on the two levels collected in North - Mech (select-by-category-name,
-    elements 2 [Level 1, Level 2]): matched 1 [Level 2], outOfScope 0, so the rule Revit holds
-    lets Level 2 through and stops Level 1 - Name does not contain ''Level 1''. Two routes
-    agree. The kept filter stays in Project2, unsaved, as one undo step.'
-  fingerprint: 266666b41263c99c
-
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyExists 0 item(s), answersTo
+    Func`3, badName , bareOperator , builtInNameOf Func`2, cannotFilter 0 item(s), categoriesTyped
+    true, categoryList 1 item(s) [-2000240], categoryName 1 entry(ies), colourProblem , colourWord
+    255,0,0, created 1 item(s) [id 1020303], createdIds 1 item(s) [1020303], droppedCategories
+    0 item(s), elements 0 item(s), extra 0 item(s), factoryProblem (null), firstParameter
+    1 item(s) [id -1008000], handed 0 item(s), how and, isNone Func`2, labelOf Func`2, leftOut
+    0 item(s), moreRules , names 1 item(s) [HERON PROOF CVF Levels], namesGiven true, noTextOperators
+    HashSet`1, noTextWithText , noValueGiven false, operatorMethods 12 entry(ies), operatorWords
+    10 item(s) [does not begin with, does not end with, does not contain, ...], operators
+    1 item(s) [does not contain], paint Color, parameterCalled Func`2, parameterProblem (null),
+    perValue false, prefix , quoteProblem , readBack ''HERON PROOF CVF Levels'': categories
+    Levels; rule Name does not contain ''Level 1''; catches 3 element(s) in the model today
+    (Levels 3); on ''3D Duct & Equipment'', line colour read back 255,0,0, refused (null),
+    repeated , ruleProblem (null), seen HashSet`1, shared 8 item(s) [-1012201, -1008000, -1007112,
+    ...], tests 1 entry(ies), textRule Func`4, texts 1 item(s) [Level 1], toCreate 1 item(s)
+    [0], unquoted Func`2, valueText does not contain Level 1, values 1 item(s) [does not contain
+    Level 1], valuesFound 0 item(s), wantColour true, wanted Name. inputs came view as given;
+    filterName as given (1); categoryIds as given (1); parameterName as given; matchValue
+    as given; moreRules given empty - "none", the card''s own default (optional); combine
+    given empty - "and", the card''s own default (optional); colour as given; elements not
+    given - none (optional); perValue not given - false (optional); namePrefix not given -
+    "none", the card''s own default (optional). on P1102 MEP'
+  negative_case: 'run with categoryIds=Levels, colour=255,0,0, combine=, filterName=HERON
+    PROOF CVF Levels, matchValue=does not contain Level 1, moreRules=, parameterName=System
+    Classification, view=3D Duct & Equipment instead - chosen because it should not contain
+    what this fragment reports - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned alreadyExists 0 item(s), answersTo Func`3, badName
+    , bareOperator , builtInNameOf Func`2, cannotFilter 1 item(s) [Levels - it cannot be filtered
+    by ''System Classification''], categoriesTyped true, categoryList 1 item(s) [-2000240],
+    categoryName 1 entry(ies), colourProblem , colourWord 255,0,0, created (null), createdIds
+    0 item(s), droppedCategories 0 item(s), elements 0 item(s), extra 0 item(s), factoryProblem
+    (null), firstParameter (null), handed 0 item(s), how and, isNone Func`2, labelOf Func`2,
+    leftOut 0 item(s), moreRules , names 1 item(s) [HERON PROOF CVF Levels], namesGiven true,
+    noTextOperators HashSet`1, noTextWithText , noValueGiven false, operatorMethods 12 entry(ies),
+    operatorWords 10 item(s) [does not begin with, does not end with, does not contain, ...],
+    operators 1 item(s) [does not contain], paint Color, parameterCalled Func`2, parameterProblem
+    (null), perValue false, prefix , quoteProblem , readBack , refused NOTHING WAS CREATED.
+    1 of the 1 categories cannot take a rule on ''System Classification'': Levels - it cannot
+    be filtered by ''System Classification''. Revit rejects a filter whose categories include
+    one the parameter does not apply to, so take it out of the list and ask again, repeated
+    , ruleProblem (null), seen HashSet`1, shared 0 item(s), tests 0 entry(ies), textRule Func`4,
+    texts 1 item(s) [Level 1], toCreate 0 item(s), unquoted Func`2, valueText does not contain
+    Level 1, values 1 item(s) [does not contain Level 1], valuesFound 0 item(s), wantColour
+    true, wanted System Classification. inputs came view as given; filterName as given (1);
+    categoryIds as given (1); parameterName as given; matchValue as given; moreRules given
+    empty - "none", the card''s own default (optional); combine given empty - "and", the card''s
+    own default (optional); colour as given; elements not given - none (optional); perValue
+    not given - false (optional); namePrefix not given - "none", the card''s own default (optional).
+    on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 66b3bb0bc787d845
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -151,6 +356,25 @@ compatibility-note: >
   `ParameterFilterElement.Create(Document, string, ICollection<ElementId>,
   ElementFilter)`, `View.AddFilter` and `View.SetFilterOverrides` are unchanged
   across the whole span.
+
+  Version 4 adds what CREATE_VIEW_FILTERS_BY_RULE used on the same span, read
+  off the reference assemblies there: `ParameterFilterUtilities.
+  GetAllFilterableCategories`; `NamingUtils.IsValidName`; `FilterElement`;
+  `ParameterFilterElement.GetCategories` and `GetElementFilter`;
+  `FilterInverseRule.GetInnerRule`; `FilterRule.GetRuleParameter`;
+  `FilterStringRule.RuleString` and `GetEvaluator`;
+  `ElementParameterFilter.GetRules`; `ElementLogicalFilter.GetFilters`;
+  `ElementMulticategoryFilter(ICollection<ElementId>)`; `Category.GetCategory(
+  Document, BuiltInCategory)` and the `ElementId(BuiltInCategory)`
+  constructor - and for the view's read-back `View.GetFilters` and
+  `View.GetFilterOverrides`, unchanged 2020 to 2027. No id is read as a
+  number on the new paths.
+
+  Version 5 adds what CREATE_VIEW_FILTERS_BY_VALUE was proved with, present
+  2020 through 2027: `Element.GetParameters(string)`, `Element.get_Parameter`
+  by BuiltInParameter and by Definition, `ParameterElement.GetDefinition`,
+  `Element.GetTypeId`, `Parameter.StorageType`, `AsString` and
+  `AsValueString`. No new rule factory: the values use this card's own.
 
   Version 2 put a REQUIREMENT on the executor - define the `REVIT20xx` symbol
   MSBuild defines, or the `#else` branch is taken and this breaks on 2020 to
@@ -191,7 +415,7 @@ compatibility-note: >
 #                                       this one when the drawing has to stay
 #                                       right without being re-run
 #   "colour by system"               -> either; say which behaviour is wanted
-#   "save these as a set"            -> CREATE_SELECTION_FILTER - a LIST,
+#   "save these as a set"            -> UPDATE_SAVED_SET, mode "create" - a LIST,
 #                                       right when the elements share no
 #                                       rule. This is the rule
 #   "put that filter on this view"   -> APPLY_VIEW_FILTER. This makes the
@@ -199,18 +423,60 @@ compatibility-note: >
 #   "what filters already exist"     -> REPORT_VIEW_FILTERS, before making a
 #                                       near-duplicate of one that works
 
-#   "make a filter for every different system type" ->
-#                                        CREATE_VIEW_FILTERS_BY_VALUE - one
-#                                        filter PER VALUE, worked out from the
-#                                        model. This makes ONE, from a rule
-#                                        you already know
+#   "make a filter for every different system type" -> here since version
+#                                        5, with perValue - one filter PER
+#                                        VALUE, worked out from the elements.
+#                                        CREATE_VIEW_FILTERS_BY_VALUE answered
+#                                        it until it was merged into this card
+#                                        on 2026-11-01
+#   "one filter for each fire zone"      -> here, perValue
+#   "set up the colour standard for this project" -> here, perValue - it
+#                                        PERSISTS and catches work modelled
+#                                        later
+#   "colour code by system"              -> COLOR_BY_PARAMETER - per-element
+#                                        overrides, right for looking at
+#                                        something NOW
 #   "take that filter off the view"      -> REMOVE_VIEW_FILTER
-#   "create a supply air filter for      -> CREATE_VIEW_FILTERS_BY_RULE. The
-#    ducts"                                 parameter typed by NAME, the
-#                                           categories by name, one or several
-#                                           filters, and on NO view - this one
-#                                           makes ONE and puts it on a view
-#                                           with a colour
+#   "create a supply air filter for      -> here since version 4, on no view
+#    ducts"                                 when the view and colour are left
+#                                           out. CREATE_VIEW_FILTERS_BY_RULE
+#                                           answered it until it was merged
+#                                           into this card on 2026-11-01
+#   "make filters for supply return and  -> here (version 4). Three names,
+#    exhaust air"                           three values, one category list
+#   "take the Duct Systems category off  -> SET_VIEW_FILTER_CATEGORIES. This
+#    these view filters"                    never edits a filter that exists -
+#                                           it skips the name
+#   "rename this view filter"            -> SET_VIEW_FILTER_CATEGORIES, with newName
+#   "change the filter rule to does not contain TRG_MEC" -> SET_VIEW_FILTER_CATEGORIES, with matchValue
+#   "add grids to this filter"           -> SET_VIEW_FILTER_CATEGORIES, with the whole list
+#   "which parameters can I filter ducts -> REPORT_FILTERABLE_PARAMETERS. What
+#    by"                                    to ask BEFORE this, when the
+#                                           parameter's name is not known
+#
+# VERSION 4 (2026-11-01) - CREATE_VIEW_FILTERS_BY_RULE WAS MERGED INTO THIS
+# CARD on the owner's instruction, and is DEPRECATED. Both make a rule-based
+# filter from a parameter typed by name and an operator in front of the value,
+# through the same reflected factories; this card also puts it on a view with a
+# colour and takes more than one rule. What that card had that this lacked is
+# here, listed in the C# header. The safer of each rule was kept: a filter name
+# already taken is skipped and named, never overwritten, with the clash scan
+# over every FilterElement; a blank value is refused, where version 3 would have
+# built a rule matching blank - and the job version 3 could do by accident is
+# asked for in words now, "has no value" (review fix, 2026-11-01). The other
+# review fix: `matchValue` is text the card divides, because the binder's list
+# rule splits at every comma and has no quote or escape (RevitFragment.Parts);
+# CREATE_VIEW_FILTERS_BY_RULE's `matchValues` list had the same fault. KEPT IN STEP BY HAND WITH
+# SET_VIEW_FILTER_CATEGORIES VERSION 2 (FRAGMENT-ISSUES 5b-481), which builds a
+# filter's NEW rule from the same operator-led value: the operator words, their
+# factory methods reached by reflection, the parameter matched by label or
+# built-in name, and the read-back's rule words are a copy there. A fragment
+# cannot call another's code, so a change to any of them here is made there
+# too - EXCEPT "has no value" and "is blank", added here on 2026-11-01 and not
+# there: SET_VIEW_FILTER_CATEGORIES is PROVEN and its impl/ changes only with
+# its own next version. CREATE_VIEW_FILTERS_BY_VALUE stayed its own card at
+# version 4, its values coming from the model - and was merged in at version 5,
+# on the owner's instruction that there be no duplicate tools.
 utterances:
   - colour by system
   - add a filter to the view
@@ -220,3 +486,19 @@ utterances:
   - set up a view filter
   - make a view filter for supply air
   - make one view filter that needs two rules to match
+  # MOVED 2026-11-01 from CREATE_VIEW_FILTERS_BY_RULE, merged into this card.
+  - create a supply air filter for ducts
+  - make filters for supply return and exhaust air
+  - create view filters on system classification
+  - make a filter for each of these values
+  - set up supply and return filters for the ductwork
+  - make a view filter for return air
+  - make a view filter for exhaust air
+  - create a filter for levels whose name does not contain trg
+  - make a view filter where the type name begins with
+  # MOVED 2026-11-01 from CREATE_VIEW_FILTERS_BY_VALUE, merged into this card.
+  - make a filter for every different system type
+  - one filter for each fire zone
+  - set up the colour standard for this project
+  - a filter per value of this parameter
+  - make filters for each different value

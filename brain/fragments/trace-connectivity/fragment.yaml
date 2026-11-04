@@ -5,11 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-001
-semantic-identity: "walk a real system outward from one element and report what it reaches"
+semantic-identity: "walk a real system outward from one element and report what it reaches - or split the whole set into its separate networks and name the ones nothing feeds"
 kind: action
 domain: revit.mep
 capability: TRACE_CONNECTIVITY
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -24,15 +24,31 @@ purpose: >
   declared connections AND checks geometry, and reports the difference as a
   number - `joinedByGeometry` is how often the flag was wrong.
 
+  **Or the whole set, split into its networks (version 2, 2026-11-01).**
+  FIND_SYSTEM_ISLANDS was merged in. Leave `start` out and the set handed in
+  is partitioned instead of walked: how many separate networks it is really
+  in, each one's size, and - the finding - which networks contain no
+  equipment, so nothing feeds them. A system that looks like one network on
+  screen is very often three, and a walk from inside the main run never learns
+  the orphaned branch exists. The islands are Revit's OWN joins, inside the
+  set; connector ends touching within the tolerance that Revit leaves open are
+  counted in `joinedByGeometry` beside them and never merge two islands - the
+  two answers are kept apart, never added into one count. Version 2's proof is
+  still owed; the card is DRAFT.
+
   The tolerance is an input and is never assumed (D-33). How close two
   connector ends have to be before they count as joined is a judgement about a
   particular model, and a number invented here would be a number tuned later.
 
 contract:
   needs:
+    # Version 2: OPTIONAL. Given, the walk outward from it, as version 1.
+    # Left out, the whole set is split into its networks - FIND_SYSTEM_ISLANDS'
+    # job. Absent binds null (HeronBindingNote.AbsentValue).
     - name: start
       type: Element
       source: request
+      optional: true
     # `elements`, NOT `candidates`. Both filters provide `elements`, and
     # composition here is by name - the first draft called this `candidates`
     # and the orphan check caught it immediately as "an action nothing can
@@ -58,6 +74,27 @@ contract:
       # difference between them.
       role: result
       type: int
+    # VERSION 2 - THE WHOLE-SET PARTITION, FIND_SYSTEM_ISLANDS' four answers
+    # under their own names. Empty when `start` is given.
+    - name: islandOf
+      # Each element's network, by Revit's own joins inside the set.
+      role: result
+      type: IDictionary<ElementId, int>
+    - name: islandSizes
+      # How many elements each network holds. A sourceless island of two is a
+      # leftover; one of ninety is a main run that lost the plant.
+      role: result
+      type: IDictionary<int, int>
+    - name: sourceless
+      # THE FINDING: the networks holding no Mechanical, Electrical or Plumbing
+      # Equipment and no Plumbing Fixture - fed by nothing.
+      role: result
+      type: IList<int>
+    - name: islandCount
+      # How many separate networks there are. Two is normal - supply and
+      # return are two (D-52).
+      role: accounting
+      type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -70,15 +107,49 @@ compatibility-note: >
   release, which sidesteps 2024's widening of ElementId to 64 bits entirely
   rather than relying on it hashing the same way before and after.
 
-# ROUTING - repeated in PLACE_MEP_FITTING and MEP_CONNECTIVITY checks.
+  Version 2's partition is FIND_SYSTEM_ISLANDS' code: `Connector.AllRefs` and
+  equipment by CATEGORY, Plumbing Equipment looked up BY NAME at run time
+  because it is a category only from the 2023.1 API on and its spelled-out
+  member does not compile on 2020 to 2022. Its islands are keyed by
+  `ElementId`, as FIND_SYSTEM_ISLANDS' were, and an id is only compared, never
+  built from a number.
+
+# VERSION 2 (2026-11-01) - FIND_SYSTEM_ISLANDS WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools", "in every
+# conflict keep the safer rule"), and is DEPRECATED. Its `elements` is this
+# card's `elements`, with `start` left out; its islandOf, islandSizes,
+# sourceless and islandCount are here under the same names. Its `doc` was never
+# read and is not carried.
 #
+# THE OPPOSITE RULE, AND THE SAFER ONE KEPT: FIND_SYSTEM_ISLANDS trusted
+# Revit's own joins and stated it as a limit; this card follows touching
+# connectors too. One tool cannot both merge two islands on a touch and refuse
+# to. KEPT: Revit's own joins decide the islands, and touching within the
+# tolerance is reported SEPARATELY in `joinedByGeometry` - never added in.
+# Folding a touch into the count would read "one network" where Revit, and
+# its flow calculation, sees two.
+
+# ROUTING - repeated in FIT_MEP_JOINTS and MEP_CONNECTIVITY checks.
+#
+#   "how many separate pieces is this in" -> here, with no start - the whole
+#                                   set split (FIND_SYSTEM_ISLANDS until
+#                                   2026-11-01)
+#   "which branch is not connected to anything" -> here, with no start
+#   "put a damper in this duct"  -> PLACE_ACCESSORY_ON_RUN, which breaks and
+#                                   rejoins a run on purpose. This finds breaks
+#                                   nobody meant
 #   "is this duct connected"     -> here - a READ
 #   "what does this connect to"  -> here
-#   "connect these two ducts"    -> PLACE_MEP_FITTING. A request to CHANGE
+#   "what connects to what"      -> here - a READ. Since 2026-11-02
+#                                   ADD_ELECTRICAL_ANALYTICAL_NODE, which
+#                                   connects analytical nodes, ranks first for
+#                                   it on the keyword route alone; identity
+#                                   answers it here
+#   "connect these two ducts"    -> FIT_MEP_JOINTS. A request to CHANGE
 #                                   the model, and it used to resolve here -
 #                                   a read-only report answering an
 #                                   instruction to build something
-#   "join these two"             -> PLACE_MEP_FITTING
+#   "join these two"             -> FIT_MEP_JOINTS
 #   "they are touching but not connected" -> CONNECT_OPEN_ENDS - the FIX. This
 #                                       one reads and must not answer a request
 #                                       to change the model
@@ -88,8 +159,10 @@ compatibility-note: >
 #                                       zero-flow run is really missing
 
 #   "are the equipment connectors the right size for the duct" ->
-#                                        CHECK_EQUIPMENT_CONNECTORS - one
-#                                        joint compared, not a network walked
+#                                        REPORT_CONNECTORS - one joint
+#                                        compared, not a network walked
+#                                        (CHECK_EQUIPMENT_CONNECTORS until
+#                                        2026-11-01)
 #   "are all the sinks and toilets connected to the drainage" ->
 #                                        CHECK_FIXTURE_CONNECTIVITY
 utterances:
@@ -116,3 +189,19 @@ utterances:
   # row 133; the owner authorised pinning where the ranking already picks
   # the READ. Row 116's fix is declaring, not demoting.
   - check the connections
+  # MOVED 2026-11-01 from FIND_SYSTEM_ISLANDS, merged into this card.
+  - is this system all connected
+  - how many separate pieces is this in
+  - which branch is not connected to anything
+  - why is the flow not calculating
+  - find the disconnected run
+  - is there a break in this system
+  # ADDED 2026-11-01, row 5b-387. The routing table above claims both - "is
+  # this duct connected -> here - a READ", "what does this connect to ->
+  # here" - and a comment is not indexed, so ranking decided. Measured that
+  # day on a private store of this checkout: "is this duct connected" answered
+  # AUTO_SIZE_MEP, a write, on the trained backend (model2vec potion-base-8M),
+  # and "what does this connect to" answered REPORT_CONNECTORS on lexical.
+  # Declaring, not demoting (row 116).
+  - is this duct connected
+  - what does this connect to

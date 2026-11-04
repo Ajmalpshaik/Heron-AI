@@ -5,16 +5,31 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-117
-semantic-identity: "draw a filled or masking region inside the family being edited - a detail item's hatch, a symbol's mask, a solid plan fill"
+semantic-identity: "draw a filled or masking region - a hatch or mask in a project view, or inside the family being edited: a detail item's hatch, a symbol's mask, a solid plan fill"
 kind: action
 domain: revit.families
 capability: DRAW_FAMILY_FILLED_REGION
-version: 1
+# VERSION 2 (2026-11-01): CREATE_FILLED_REGION was merged into this card on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The keeper is this card because more of the library points at it
+# - nine family-building skills, SET_FAMILY_CATEGORY's table and the family
+# jobs - and it already drew masking regions; the capability keeps its name,
+# so every one of those still reads. From CREATE_FILLED_REGION: a PROJECT's
+# view as well as a family's - named as the Project Browser shows it or
+# "FloorPlan: Level 1"; a view that takes no annotation, a 3D view or a
+# schedule, refused with the reason; and the answer saying every time that a
+# filled region is ANNOTATION, in one view only. A project view at an angle is
+# taken too, its shapes read along the view's right and up. `notAFamily` now
+# says which kind of document it drew in; it is no longer a refusal. The
+# proof below is version 1's and no longer describes the code; DRAFT until
+# version 2 is proved.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Draws a FILLED or MASKING region inside the family open in the Family Editor
+  Draws a FILLED or MASKING region in a project's view, or inside the family
+  open in the Family Editor
   - the hatch of a detail item's insulation, the solid of a cut steel section,
   the white mask a symbol hides what is under it with, the solid fill of a
   plan symbol in a model family. The Family Editor's Filled Region and Masking
@@ -40,6 +55,14 @@ purpose: >
   is masking are read again; one that does not read as asked fails the call.
   Its id comes back.
 
+  **In a project, it exists in ONE view and nowhere else** (version 2, from
+  CREATE_FILLED_REGION) - the drafting patch: a shaft marked up, an area
+  shaded on a key plan, a zone coloured on a coordination drawing. A filled
+  region is annotation, not model: it is on no other drawing, not in the
+  model, and in no schedule, and the answer says so. The view must take
+  annotation - a plan, a section, an elevation, a detail, a drafting view, a
+  legend or a sheet; a 3D view is refused with the reason.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -48,12 +71,17 @@ contract:
       type: Document
     # In a 2D family the VIEW to draw in, as the Project Browser names it -
     # "Ref. Level". In a 3D family a level or a named reference plane facing
-    # left-right, front-back or up.
+    # left-right, front-back or up. Version 2: in a PROJECT the view to draw
+    # in, as the Project Browser names it or "FloorPlan: Level 1" - one that
+    # takes annotation.
     - name: workPlane
       type: string
       source: request
     # Closed loops, `|` between: "circle CX,CY R", "rect X1,Y1 X2,Y2",
-    # "polygon CX,CY R N", or corners "X,Y; X,Y; arc MX,MY X,Y". Millimetres.
+    # "polygon CX,CY R N", or corners "X,Y; X,Y; arc MX,MY X,Y". Millimetres,
+    # in the plane's own two model coordinates - and, in a project view at an
+    # angle (version 2), along the view's right and up from the point of its
+    # plane over the project origin.
     - name: shapes
       type: string
       source: request
@@ -72,6 +100,9 @@ contract:
       role: result
       type: string
     - name: notAFamily
+      # Version 2: true when it drew in a PROJECT's view - which kind of
+      # document it was. Version 1 refused a project; this is no longer a
+      # refusal (D-52: the evidence of where it looked).
       role: accounting
       type: bool
     - name: refused
@@ -82,39 +113,41 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family6, Project1 - active was Family1,
-    Revit 2024, session 32340'
+  model: Snowdon Towers Sample Structural (9,500 elements), Revit 2024, session 59960
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, call
-    RuntimeMethodInfo, category Category, drawn A masking region on the view "Ref. Level":
-    1 loop(s), 800 mm of boundary - read back., family Family, fillType (null), findings 2
-    item(s) [A masking region on the view "Ref. Level": 1 loop(s), 800 mm..., Its boundary
-    lines take Revit''s thin lines. A region only so...], inPlane 3 item(s) [System.Int32[],
-    System.Int32[], System.Int32[]], invariant CultureInfo, isCategory Func`2, loopOf Func`3,
+    RuntimeMethodInfo, category (null), drawn A masking region on the view "Top of Footing":
+    1 loop(s), 1400 mm of boundary - read back., family (null), fillType (null), findings
+    2 item(s) [A masking region on the view "Top of Footing": 1 loop(s), 14..., It is ANNOTATION:
+    it is in no other view, not in the model, ...], inPlane 3 item(s) [System.Int32[], System.Int32[],
+    System.Int32[]], inProject true, invariant CultureInfo, isCategory Func`2, loopOf Func`3,
     loops 1 item(s) [System.Collections.Generic.List`1[System.Double[]]], masking true, mm
-    Func`2, notAFamily false, number Func`2, ownName Func`2, pair Func`2, plain Func`2, plane
-    (null), problems 0 item(s), refused (null), regionId acf0fdea-d4a9-4233-8640-8550d6407a48-000008fa,
+    Func`2, notAFamily true, number Func`2, ownName Func`2, pair Func`2, plain Func`2, plane
+    (null), problems 0 item(s), refused (null), regionId aec83b6c-fc67-4481-8f39-8986af00fc91-000fafca,
     shortest 0.7803686370625, squash Func`2, twoD true, view ViewPlan. inputs came workPlane
-    as given; shapes as given; regionType as given. on Family6'
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, call (null), category (null),
-    drawn , family (null), fillType (null), findings 1 item(s) [The document in front, "Project1",
-    is a project, not a famil...], inPlane 3 item(s) [System.Int32[], System.Int32[], System.Int32[]],
-    invariant CultureInfo, isCategory Func`2, loopOf Func`3, loops 0 item(s), masking true,
-    mm Func`2, notAFamily true, number Func`2, ownName Func`2, pair Func`2, plain Func`2,
-    plane (null), problems 0 item(s), refused The document in front, "Project1", is a project,
-    not a family open in the Family Editor. A region in a project's view is CREATE_FILLED_REGION;
-    this one draws inside a family - open it first., regionId , shortest 0.7803686370625,
-    squash Func`2, twoD false, view (null). inputs came workPlane as given; shapes as given;
-    regionType as given. on Project1
+    as given; shapes as given; regionType as given. on Snowdon Towers Sample Structural'
+  negative_case: 'run with regionType=Not A Type, shapes=rect -300,-50 300,50, workPlane=Top
+    of Footing instead - chosen because it should not contain what this fragment reports -
+    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned along Func`3, axisOf Func`2, call RuntimeMethodInfo, category (null), drawn ,
+    family (null), fillType (null), findings 1 item(s) [Nothing was drawn. No filled region
+    type is called "Not A Ty...], inPlane 3 item(s) [System.Int32[], System.Int32[], System.Int32[]],
+    inProject true, invariant CultureInfo, isCategory Func`2, loopOf Func`3, loops 1 item(s)
+    [System.Collections.Generic.List`1[System.Double[]]], masking false, mm Func`2, notAFamily
+    true, number Func`2, ownName Func`2, pair Func`2, plain Func`2, plane (null), problems
+    1 item(s) [No filled region type is called "Not A Type" in this project...], refused Nothing
+    was drawn. No filled region type is called "Not A Type" in this project. It holds: Diagonal
+    Crosshatch, Diagonal Crosshatch - Transparent, Diagonal Down, Diagonal Down - Transparent,
+    Diagonal Up, Horizontal Lines, Ortho Crosshatch, Solid Black, Solid Gray, Vertical Lines,
+    Wood 1, Wood 2 - or name "masking"., regionId , shortest 0.7803686370625, squash Func`2,
+    twoD true, view ViewPlan. inputs came workPlane as given; shapes as given; regionType
+    as given. on Snowdon Towers Sample Structural'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 2057037ad6d1ea1f
-
+  fingerprint: efa7d762ff85000b
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -127,14 +160,33 @@ compatibility-note: >
   `FilledRegion.CreateMaskingRegion`, both forms, from 2024 (the RevitAPI
   reference assemblies and Autodesk's XML remarks, read 2026-10-01). Both are
   found by signature at run time, so 2020 to 2022 refuse a 3D family's region
-  by name rather than failing to compile.
+  by name rather than failing to compile. Version 2 adds what
+  CREATE_FILLED_REGION was proved with - the view-specific
+  `FilledRegion.Create(Document, ElementId, ElementId, IList<CurveLoop>)` on a
+  project view, the same call - and `View.RightDirection`, `UpDirection`,
+  `Origin` and `ViewDirection` for a view at an angle, present 2020 through
+  2027.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "add a solid fill to this detail item family" -> here
 #   "put a masking region in this family"         -> here
-#   "put a filled region here"                    -> CREATE_FILLED_REGION - a
-#                                                    project's view, not a family
+#   "put a filled region here"                    -> here since version 2, a
+#                                                    project's view (was
+#                                                    CREATE_FILLED_REGION)
+#   "hatch this area on the drawing"              -> here, a project view
+#   "write on the drawing"                        -> CREATE_TEXT_NOTE - the
+#                                                    other markup that lives in
+#                                                    one view only
+#   "make a detail view"                          -> CREATE_DRAFTING_VIEW
+#   "make a floor slab over this area"            -> CREATE_FLOOR. A filled
+#                                                    region LOOKS like a slab on
+#                                                    a plan and is not one
+#   "draw a detail line here"                     -> DRAW_FAMILY_DETAIL_LINES - a line has no
+#                                                    fill
+#   "make a 45 degree hatch pattern"              -> CREATE_FILL_PATTERN - the
+#                                                    pattern, not a region drawn
+#                                                    with one
 #   "draw the valve symbol in plan"               -> DRAW_FAMILY_SYMBOLIC_LINES
 
 utterances:
@@ -142,3 +194,9 @@ utterances:
   - put a masking region in this family
   - draw a filled region in the family
   - fill the insulation hatch in this detail component
+  # MOVED 2026-11-01 from CREATE_FILLED_REGION, merged into this card.
+  - hatch this area on the drawing
+  - shade this bit
+  - put a filled region here
+  - mark this area up on the plan
+  - hatch the shaft on this plan

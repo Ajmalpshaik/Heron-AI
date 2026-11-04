@@ -1,0 +1,109 @@
+# NEEDS-CHECKING Group LP - CONVERT_TO_FLEX_DUCT (new) and CONNECT_INTO_MAIN,
+# written as CONNECT_AIR_TERMINALS version 3 (Connect Into: the right
+# connector of a fixture with several, and the new elements by id) and moved
+# to a card of its own when main's #795 proved that card's version 2, built
+# 2026-11-02 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/flex-and-connect-into-lp-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/flex-and-connect-into-lp-2026-11-02.yaml
+#
+# THE MODELS (docs/needs-checking/group-lp.md, LP1), scratch projects from
+# Revit's metric Mechanical (for the sink, Plumbing) template, saved under
+# %TEMP%\heron-work, never a working model:
+#
+#   "flex-lp"     In the floor plan "Level 1", on a Supply Air system: a round
+#                 300 mm main with a takeoff to a round 200 mm straight D1 of
+#                 about 1200 mm ending in a round-neck supply diffuser; a
+#                 round 200 mm straight D2 of about 800 mm between two elbows;
+#                 a rectangular 300x200 straight D3 between two elbows; a
+#                 round 200 mm straight D4 joined at one end only. Nothing
+#                 else that is a duct. The round flex duct type's exact name
+#                 written down ("Flex - Round" in Revit's own metric template).
+#   "connect-lp"  One round-neck supply diffuser with its connector open, and
+#                 one straight supply duct above it - the only duct.
+#   "sink-lp"     One sink with a sanitary, a cold and a hot water connector,
+#                 the sanitary facing down, and ONE straight Sanitary pipe
+#                 below it, clear of its ends - the only pipe.
+#   "sink-lp-two" A copy of "sink-lp" with a straight Domestic Cold Water pipe
+#                 added below the sink beside the Sanitary one.
+#
+# THE ARRANGEMENT: each write takes its selection from select-by-category-name
+# and set-selection in "Level 1". Each negative is a different value or model,
+# not an empty selection (fragment-proving, rules 3 and 5): a flex type named
+# by part of a name - nothing may be removed; a sink with two pipes its
+# connectors match - nothing may be drawn. Every write is ROLLED BACK.
+
+model: "flex-lp, connect-lp, sink-lp and sink-lp-two scratch projects (metric Mechanical and Plumbing templates), Revit 2024"
+
+jobs:
+  - fragment: convert-to-flex-duct
+    expect: flexDucts
+    in: "flex-lp"
+    write: true
+    setup: [select-by-category-name, set-selection]
+    set:
+      categoryName: "Ducts"
+      inViewOnly: "FloorPlan: Level 1"
+      flexDuctType: "Flex - Round"
+    negative-set:
+      categoryName: "Ducts"
+      inViewOnly: "FloorPlan: Level 1"
+      flexDuctType: "Flex"
+    note: >
+      LP2. Negative - THE FIRST CASE TO RUN: flexDuctType "Flex", part of a
+      name - nothing changed; report "No flex duct type is called "Flex". The
+      flex duct types in this project are: ..."; every duct still rigid, the
+      main included. Positive (the main, D1 to D4 selected): flexDucts 2,
+      removed D1 and D2, each flex joined at both ends at d200 on Supply Air;
+      notConverted names the main (something is tapped into its side), D3
+      (rectangular, the type round) and D4 (an end not joined). RECORD
+      whether the takeoff and the diffuser are still there after D1 went.
+      If the type's name in this template differs, write it here - never on
+      the card.
+
+  - fragment: connect-into-main
+    expect: created
+    in: "connect-lp"
+    write: true
+    setup: [select-by-category-name, set-selection]
+    set:
+      categoryName: "Air Terminals"
+      inViewOnly: "FloorPlan: Level 1"
+      ducts: "Ducts"
+      maxDistanceMm: 1500
+    negative-set:
+      categoryName: "Air Terminals"
+      inViewOnly: "FloorPlan: Level 1"
+      ducts: "Ducts"
+      maxDistanceMm: 10
+    note: >
+      LP3. Negative - THE FIRST CASE TO RUN: maxDistanceMm 10, the diffuser
+      in noDuctNear, created empty, nothing made. Positive: connected 1;
+      created holds the tap fitting's id and the finding names it; selected
+      in Revit that id is the takeoff on the duct. Read `moved` - the
+      held-proof question (row 5b-187) - and record it.
+
+  - fragment: connect-into-main
+    expect: created
+    in: "sink-lp"
+    write: true
+    setup: [select-by-category-name, set-selection]
+    set:
+      categoryName: "Plumbing Fixtures"
+      inViewOnly: "FloorPlan: Level 1"
+      ducts: "Pipes"
+      maxDistanceMm: 1500
+    negative-set:
+      categoryName: "Plumbing Fixtures"
+      inViewOnly: "FloorPlan: Level 1"
+      ducts: "Ducts"
+      maxDistanceMm: 1500
+    note: >
+      LP4. Negative - THE FIRST CASE TO RUN: ducts "Ducts" - no pipe handed
+      in - so nothing drawn; refused "no straight pipe was handed in as a
+      main"; created empty. Positive: branched 1, the riser and arm from the
+      SANITARY connector, on the Sanitary pipe's type and system, their two
+      ids in created; the cold and hot connectors still open. THEN LP5 BY
+      HAND on "sink-lp-two" with this positive's values: two of the sink's
+      connectors match the two pipes, so nothing drawn; refused names the
+      three connectors and both systems - the version 3 rule itself.

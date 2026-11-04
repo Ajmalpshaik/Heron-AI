@@ -37,7 +37,8 @@ risk: READ
 # REPORT_TAGS_AND_TARGETS reads tags placed in a project, not the family.
 #
 # THE READ-FIRST STEP of every label job - SET_FAMILY_LABEL_LAYOUT,
-# CHANGE_ELEMENT_TYPE on a label, COPY_LABELS_FROM_FAMILY - and of the
+# CHANGE_ELEMENT_TYPE on a label, COPY_ELEMENTS_BETWEEN_DOCUMENTS with labels
+# true (COPY_LABELS_FROM_FAMILY until 2026-11-01) - and of the
 # tag-family-creation method.
 
 purpose: >
@@ -184,13 +185,14 @@ compatibility-note: >
   #if REVIT2027_OR_GREATER - AnnotationLabel is in no earlier release.
 
 # ROUTING - the same rows are in SET_FAMILY_LABEL_LAYOUT,
-# COPY_LABELS_FROM_FAMILY and LABEL_FAMILY_DIMENSION.
+# COPY_ELEMENTS_BETWEEN_DOCUMENTS and LABEL_FAMILY_DIMENSION.
 #
 #   "read the labels in this tag family"                    -> here
 #   "which parameters does this label show"                 -> here (2027)
 #   "what prefix and suffix are on the diameter label"      -> here (2027)
 #   "move the diameter label 5 mm up"                       -> SET_FAMILY_LABEL_LAYOUT
-#   "copy the labels from the seed pipe tag"                -> COPY_LABELS_FROM_FAMILY
+#   "copy the labels from the seed pipe tag"                -> COPY_ELEMENTS_BETWEEN_DOCUMENTS,
+#                                                              labels true
 #   "label this dimension with Width"                       -> LABEL_FAMILY_DIMENSION
 #   "tag the pipes in this view"                            -> TAG_ELEMENTS_IN_VIEW
 

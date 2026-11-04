@@ -1045,7 +1045,8 @@ four things, and every one is built:
   an hourly simulation like HAP - so the next panels can be named the same way (a fire fighting
   hydraulic calculation, a plumbing water supply calculation). It leads with the four steps (calculate,
   check the take-off, report, write into Revit), then the building's figures, the checks and the 3D
-  take-off, then the inputs above the results - one column, never side by side.
+  take-off, then the inputs above the results - one column, never side by side
+  (inside the Loads workspace still; the page's frame changed in §21.16).
 - **What is selected, and the Changes tables, are SWITCHED OFF - and KEPT.** The Selected card, the
   Changes tables (21.1 to 21.4) and the colour books that paint them are off the page. Their sections
   sit in `index.html` inside templates, which show nothing and run nothing; their code stays in
@@ -1263,7 +1264,8 @@ by a chart*, re-made the Heron way. **It is a change** - to the active view's gr
 element's data:
 
 - **Colour the view** - type a parameter as Revit shows it (*System Type*, *Fire Rating*, *Level*).
-  `SELECT_VISIBLE_IN_VIEW` reads what the active view shows (READ, PROVEN); `COLOR_BY_PARAMETER` gives
+  `FILTER_ELEMENTS_BY_CATEGORY` with `inViewOnly` reads what the active view shows (READ, DRAFT - it took
+  over `SELECT_VISIBLE_IN_VIEW`, PROVEN, merged into it on 2026-11-01); `COLOR_BY_PARAMETER` gives
   every distinct value its own colour, the same colours every run, a blank its own group (MODIFY, PROVEN).
 - **Clear colours** - `RESET_GRAPHIC_OVERRIDES` on the same elements (MODIFY, PROVEN). A category's own
   colour is not touched; only the per-element ones come off.
@@ -1296,3 +1298,40 @@ the chat - since the page then shows the model as it was before them.
 Until the add-in is redeployed the live file has no `changes` and the page shows no note - never a wrong
 one. **Compiled 2020-2027** (`tools/check-compile.py`, `tools/check-api-surface.py`); **not run in Revit** -
 [group JT](needs-checking/group-jt.md) row JT28.
+
+### 21.16 The page redesigned: a sidebar, one workspace at a time, desktop only (2026-11-01)
+
+On the owner's word - *"redesign completely ... it should be user friendly and easily understandable ...
+we will not use the companion app on mobile, so you can remove the mobile version"*. **What changed is the
+page's frame, not what any panel does or says it does:** every route, hook, number and rule is as before.
+
+- **Workspaces, not one long scroll.** The five panels used to stack in one column about 10,800 px tall.
+  A dark sidebar now lists them - Model Dashboard, HVAC Loads, Sprinkler Hydraulics, Sprinkler Layout,
+  Element Table - and one is shown at a time (Alt+1 to Alt+5 also switch). Each says `Empty`, `Ready` or
+  `New` beside its name. A workspace that gets its first data while the open one is empty is opened for
+  you; otherwise it is only marked `New`, never pulled in front of what the modeller is doing. The
+  Sprinkler Hydraulic and Sprinkler Layout panels are no longer hidden until the chat opens them - they are
+  always in the sidebar, empty until then.
+- **Always in sight.** A bar across the top keeps which Revit, which model, which view and how long ago,
+  with the connection pill; the model name is clipped with its full text in a tooltip.
+- **A workspace says what it is before it has anything.** Each empty workspace shows three plain steps
+  and the sentence to say in the chat, with a Copy button. The Model Dashboard's demo button is there too.
+- **Long workspaces get a "Jump to" row** of links to their own headings (built from what is on screen).
+- **Activity** is a button in the sidebar that opens a drawer on the right (Esc closes it), no longer a
+  bubble over the page.
+- **Look:** soft cards on a pale page, one neon-blue accent (`#00AEEF`; buttons and links use a darker blue
+  so white text on them reads), orange for warnings only, red for danger only, green for done. Segoe UI,
+  Consolas for ids. Light and dark, from Windows or the sidebar switch.
+- **Desktop only.** Every phone and tablet rule is gone (the `max-width` and `pointer: coarse` queries, the
+  touch-action rules, the viewport tag). The one adjustment left is for a window snapped to half a
+  monitor: under 1280 px the sidebar keeps only its icons, and under 900 px the page scrolls sideways.
+- **The owner's 2026-10-04 "one column, never side by side" (§21.6) still holds inside the Loads
+  workspace** - inputs above results. What it ruled out for the whole page is replaced by the sidebar.
+
+**Proved without Revit:** `tests/test_companion.py` passes, with a new group for the frame (five
+workspaces, one at a time, no phone rule left). Looked at in headless Chromium against sample data in every
+workspace, in light and dark, at 1440 and 1000 px wide. **A fault the redesign made, found that way and
+fixed:** a 3D view drawn while its workspace was hidden had no size, so it stayed blank when the workspace
+was opened; showing a workspace now tells the views to draw again. The Loads and Sprinkler 3D views were
+then seen drawing (software WebGL, sample buildings). **Not seen:** the Model Dashboard's own 3D view in
+the new frame (it needs a real 3D read), and anything in Revit's browser or on the owner's PC.

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -16,6 +16,36 @@ capability: DIMENSION_WALL_OPENINGS
 version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO DIMENSION_ELEMENT_FACES (dimension-
+# element-faces), on the owner's instruction in conversation: "make sure there
+# is no duplicate tools", then "ok go ahead merge all". Constitution Article
+# 1: kept, never deleted, so its record and its proof stay readable and it can
+# be brought back. Nothing offers it now - retrieval leaves DEPRECATED out,
+# and its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to DIMENSION_ELEMENT_FACES. The
+# proof below is the record of what this card's code did, not a claim about
+# today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: DIMENSION_ELEMENT_FACES
+  why: >
+    The same technique: a wall's own planar faces read with references
+    computed, the jambs taken off the wall and never off the door - already
+    DIMENSION_ELEMENT_FACES's `along`. Its version 2 took what this card had
+    and it lacked: withOverall, the segments-add-up check (segmentsDisagree),
+    side with sideUsed - right, left, outside away from the rooms, inside, by
+    this card's rules - rooms accepted for their walls, notAWall,
+    noOpeningFaces, and a curved wall refused. Where the rules differed the
+    safer was kept: every string's segments are checked, not only with the
+    overall drawn; an overall at offset 0 is not drawn on top of the running
+    string; a side with another direction or outside a plan is refused whole.
+    Not carried, as opposite: a blank side meaning right of the wall as drawn
+    - blank keeps that card's own placement, and side=right is this card's
+    blank; and strings measured from the location line rather than the wall's
+    middle. This card's call is that card's with direction=along and
+    side=right.
 
 purpose: >
   Draws a running dimension along each wall that picks up every door and window
@@ -184,7 +214,7 @@ compatibility-note: >
 #   "dimension the rooms"                -> DIMENSION_ROOMS, which measures a
 #                                           room's overall size and cannot see
 #                                           an opening at all
-#   "dimension these ducts"              -> DIMENSION_MEP_RUNS
+#   "dimension these ducts"              -> CREATE_DIMENSION
 #   "dimension between these two"        -> CREATE_DIMENSION
 #   "dimension this opening from the level and the grid" -> CREATE_LINEAR_DIMENSION
 #                                           (5b-482) - ONE opening FAMILY in a

@@ -1,0 +1,73 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that adds elements, "made something nobody asked for": a second
+# foundation under a wall that had one, or one under something that is not a
+# wall.
+# Arrange on a scratch copy of Revit 2020's rst_advanced_sample_project.rvt
+# (NEEDS-CHECKING Group JZ). JZ1 reads, before anything runs, the model's wall
+# foundation types (Revit's Type Selector under Structure > Foundation > Wall),
+# and a plan view holding a FEW walls - under twenty - with no wall foundation
+# under them, and one whose walls all have one already. Where the model differs
+# from that, the job file changes - never the card. EVERY RUN ROLLED BACK, so
+# each case starts from the model as saved.
+
+positive:
+  - given: >
+      the walls in the plan JZ1 names that have NO wall foundation, selected by
+      select-by-category-name (Walls, in that view), foundationType the type
+      JZ1 names
+    expect: >
+      created equal to the number of walls; report a line per wall "wall
+      foundation made (<id>), type "<type>""; each foundation, read in the same
+      rolled-back group, hosted by its wall and on its wall's base level
+  - given: >
+      the same walls, foundationType written as "Family: Type" from the list
+      the card itself gave
+    expect: the same foundations - both spellings name one type
+
+negative:
+  - given: >
+      the walls of the plan JZ1 names whose walls ALL have a wall foundation
+      already, foundationType the same type
+    expect: >
+      created 0; each wall named "already has a wall foundation (<the existing
+      one>) - left as it was, not doubled"; refused "All N selected wall(s)
+      already have a wall foundation"; the count of wall foundations in the
+      model unchanged. THIS IS THE FIRST CASE TO RUN
+  - given: >
+      the Structural Columns of the first plan, selected by
+      select-by-category-name, foundationType the same type
+    expect: >
+      created 0; each named "not a wall"; refused "None of the N selected
+      element(s) is a wall"
+  - given: >
+      the walls of the positive, foundationType left out
+    expect: >
+      created 0; refused "No wall foundation type was named, so nothing was
+      made - the model's wall foundation types are ..." - every type named,
+      none chosen, even when the model holds only one
+  - given: >
+      the walls of the positive, foundationType a name the model has no wall
+      foundation type called
+    expect: created 0; refused naming the model's wall foundation types
+  - given: >
+      one curtain wall and one stacked wall, selected by hand (JZ5 - NEEDS
+      REAL REVIT: whether Revit hosts a wall foundation on either is not known)
+    expect: >
+      each either made and read back like any other, or named with its kind
+      ("a curtain wall", "a stacked wall") and "Revit refused: <Revit's
+      words>" - never made and then missing, never silently skipped
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one operation is one undo entry. The SubTransaction per wall lives
+      inside the caller's transaction
+
+second_route:
+  - >
+    A Structural Foundation schedule, read inside the same rolled-back group:
+    one more wall foundation row per wall `created` names, of the type asked,
+    and no new row for a wall that already had one
+  - >
+    Selecting one wall the fragment worked on, in Revit: its foundation
+    highlights under it, and Properties of the foundation name the type asked
+  - one Ctrl+Z takes every foundation it made away in a single step (Golden Rule 16)

@@ -1,0 +1,65 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "changed what nobody asked for": a node renamed or retyped
+# under its own name, or one fed from a new source with the old one cut.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE - the same scratch project as
+# ADD_AREA_BASED_LOAD's (Revit 2024, new from the metric ELECTRICAL template,
+# saved under %TEMP%\heron-work, never a working model). Before the run, open
+# Analyze > Power Distribution System and write down the nodes the template
+# has (most have none) - the second route. Positive cases run in order and
+# each is kept by the one before it only where it says so.
+#
+# Every run below is ROLLED BACK (validate --write) except the one try-once,
+# which the modeller keeps or discards.
+#
+# The negative leg is a DIFFERENT VALUE, not an empty one: a name already
+# present, asked for as another kind. It must come back with `added` 0 and
+# the node's kind unchanged.
+
+positive:
+  - given: name Utility, nodeType powerSource, upstream left out
+    expect: >
+      added 1, connected 0; after holds "\"Utility\" (power source, id ...),
+      fed from nothing, feeds 0, total load 0 VA"; upstream left out is
+      never read as a node called "none" (row 5b-1432)
+
+  - given: >
+      after the one above is kept: name TX-1, nodeType transformer, upstream
+      Utility
+    expect: >
+      added 1, connected 1; after holds "\"TX-1\" (transformer, id ...), fed
+      from \"Utility\"" and "\"Utility\" ... feeds 1"; the Power Distribution
+      System view draws TX-1 under Utility
+
+  - given: >
+      after both are kept and a bus MDB added (name MDB, nodeType bus): name
+      MDB, nodeType left out, upstream TX-1
+    expect: >
+      added 0, connected 1; MDB fed from "TX-1" in after
+
+negative:
+  - given: >
+      after the first positive is kept: name Utility, nodeType bus
+    expect: >
+      added 0; skipped "A node is already named \"Utility\", a power source
+      not a bus - left as it is"; before and after the same. THE FIRST CASE
+      TO RUN after that keep
+
+  - given: >
+      after the second positive is kept and a bus MDB added: name TX-1,
+      upstream MDB
+    expect: >
+      connected 0; refused "\"TX-1\" is already fed from \"Utility\" - Heron
+      never disconnects ..."; TX-1 still fed from Utility in after
+
+  - given: name MDB, upstream "the transformer node"
+    expect: >
+      connected 0; refused "No node is named \"the transformer node\". The
+      nodes here are: \"TX-1\" (transformer), \"Utility\" (power source)"
+
+second_route:
+  - >
+    Revit's own Analyze > Power Distribution System view and each node's
+    Properties: the node added with its kind and name, the connection drawn
+    from the node named upstream - and no other node or connection different
+    from `before`

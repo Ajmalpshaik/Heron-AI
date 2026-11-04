@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,32 @@ capability: SET_VIEW_CAMERA
 version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO FRAME_ELEMENTS_IN_CAMERA (frame-
+# elements-in-camera), on the owner's instruction in conversation: "make sure
+# there is no duplicate tools". Constitution Article 1: kept, never deleted,
+# so its record and its proof stay readable and it can be brought back.
+# Nothing offers it now - retrieval leaves DEPRECATED out, and its sentences
+# claim nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to FRAME_ELEMENTS_IN_CAMERA. ITS ONE RULE NOT CARRIED IS THE
+# OPPOSITE ONE: its perspective switch turned an existing isometric view
+# perspective for good, and it moved an isometric view's camera;
+# FRAME_ELEMENTS_IN_CAMERA refuses an isometric view and never turns one - the
+# safer rule kept, on the owner's word. Its createIfMissing rule is kept there
+# on the typed road. The proof below is the record of what this card's code
+# did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: FRAME_ELEMENTS_IN_CAMERA
+  why: >
+    The same job: point a perspective camera view. FRAME_ELEMENTS_IN_CAMERA
+    version 5 takes this card's eye and target typed in millimetres (eyeMm,
+    targetMm), the up direction derived the same way, levelName for heights
+    from a level with Eye Elevation and Target Elevation read back, farClipMm
+    off or on at a distance, createIfMissing to make a new perspective view of
+    that name, a template-controlled view refused, and the camera read back in
+    millimetres.
 
 # VERSION 2 (2026-10-20) - the rendering tools' widening, on the owner's word
 # ("for the rendering ... all the part should be covered"). Two OPTIONAL

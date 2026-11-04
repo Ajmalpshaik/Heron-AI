@@ -1,0 +1,79 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that annotates, "annotated something nobody asked for": a span
+# symbol on a wall, on a floor that is not structural, in a view that is not a
+# plan, or a second symbol on a floor already showing one.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE - AND IT NEEDS REVIT 2025 OR LATER.
+# SpanDirectionSymbol.Create first exists in 2025. The model is a scratch
+# project from Revit's metric STRUCTURAL template made in Revit 2026 or 2027,
+# as Group HY's HY15 runs there: S1 (a 200 mm structural concrete floor), W1 (a
+# 200 mm structural concrete wall), N2 (an architectural, non-structural
+# floor) on Level 1, and S2 (a structural floor) on Level 2 - SAVED before the
+# run, with any span direction symbol Revit drew on S1 or S2 when it was
+# sketched DELETED, so the plan starts with none (Group KM, KM1).
+#
+# The floors are collected by SELECT_BY_CATEGORY_NAME with Floors in
+# "FloorPlan: Level 1" - S1 and N2 - and SET_SELECTION, as Group KF does. The
+# negative leg is the SAME call with Walls: a different set, not an empty one
+# (fragment-proving, rules 3 and 5). Where the model differs, the job file
+# changes - never the card. EVERY RUN ROLLED BACK.
+
+positive:
+  - given: >
+      the floors of Level 1 (S1 and N2) from SELECT_BY_CATEGORY_NAME with
+      Floors and SET_SELECTION, view "Level 1" (a floor plan), and symbolType
+      naming a span direction type the model has - the one KM2 lists
+    expect: >
+      placed 1 - on S1; newSymbols 1 id; N2 in notStructural; refused empty;
+      findings "1 span direction symbol(s) placed in "Level 1" as ...", and
+      report naming S1's span in degrees. Every floor handed in named in
+      exactly one list. Look at the plan - one symbol on S1, at the middle of
+      its top, its arrow along S1's span
+
+  - given: the same call again, after the first run was KEPT
+    expect: >
+      placed 0, newSymbols empty, S1 in alreadyHere - no second symbol
+      stacked on the first
+
+  - given: S1 and S2 together, view "Level 1"
+    expect: S1 given a symbol, S2 in otherLevel - nothing drawn for a floor of Level 2
+
+negative:
+  - given: >
+      the walls of Level 1 instead - SELECT_BY_CATEGORY_NAME with Walls - with
+      the same plan and the same symbol type
+    expect: >
+      placed 0, newSymbols empty, W1 in notFloors. No symbol of any kind
+      placed. This is the leg D-30 exists for: a fragment that annotated
+      whatever it was handed shows here. THE FIRST CASE TO RUN
+
+  - given: the positive's floors with view a 3D view or a section instead of the plan
+    expect: >
+      placed 0; refused "\"<the view>\" is a ThreeD view. Revit places a span
+      direction symbol only in a floor plan or a structural plan ... Nothing
+      was placed." - the view named, nothing placed
+
+  - given: the positive's floors with symbolType left out
+    expect: >
+      placed 0; refused "No span direction symbol type was named, and one is
+      never chosen for you ..."; typesLoaded lists the span direction types the
+      model has
+
+  - given: N2 alone, with the positive's plan and type
+    expect: placed 0, N2 in notStructural - nothing placed on a floor with no span
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one plan of symbols is one undo entry
+
+second_route:
+  - >
+    In Revit, select the new symbol after a KEPT run: Properties names its type;
+    right-click, Select All Instances, Visible in View - the count Revit shows
+    in "Level 1" is the span direction symbols of that type there, which after
+    a first run on a plan with none is `placed`. Revit's own count, not another
+    Heron read
+  - >
+    Revit's own Annotate > Symbol > Span Direction on S1 by hand in a saved
+    copy, then this card on S1: S1 in alreadyHere

@@ -1,0 +1,85 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "made something active that nobody named": a near name taken
+# as the one meant, a closed workset made active, or a model that is not
+# workshared answered with silence.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE. A NEW project from Revit's metric
+# architectural template, made workshared (Collaborate > Worksets, OK), with
+# user worksets "Shared Levels and Grids" (Revit's own), "Workset1" (Revit's
+# own, the active one after enabling), and "Mechanical" and "Architecture"
+# added by hand, SAVED as a central and opened as a local (NEEDS-CHECKING Group
+# KN, KN1). "Architecture" is then CLOSED in the local (Collaborate > Worksets,
+# Close) for the closed-workset case. A second project, never workshared, for
+# the not-workshared case. The active workset is read off the status bar's
+# Active Workset box before every run - the positive must ask for one that is
+# NOT already active, or it is "already active" and proves nothing.
+#
+# The negative leg is a DIFFERENT NAME, not an empty one (fragment-proving,
+# rules 3 and 5): "mechanical" - the right workset in the wrong case - which
+# must change nothing. Where the model differs, the job file changes - never
+# the card. EVERY RUN ROLLED BACK but KN6's one kept run.
+
+positive:
+  - given: >
+      the workshared local, "Workset1" active, worksetName "Mechanical"
+    expect: >
+      changed true, alreadyActive false, refused empty; activeBefore
+      "Workset1" (with "(owned by <user>)" if Revit reports an owner);
+      activeAfter "Mechanical"; and in Revit, after a KEPT run, the status
+      bar's Active Workset box reads Mechanical - read in Revit, not from this
+      fragment's own answer
+
+  - given: the same, worksetName "Shared Levels and Grids"
+    expect: changed true, activeAfter "Shared Levels and Grids"
+
+  - given: the first positive run again, after it was KEPT
+    expect: >
+      changed false, alreadyActive true, refused empty, activeBefore and
+      activeAfter both "Mechanical" - nothing set twice
+
+negative:
+  - given: >
+      the same workshared local, "Workset1" active, worksetName "mechanical" -
+      the right workset in the wrong case
+    expect: >
+      changed false; refused starts "No user workset is called \"mechanical\"
+      exactly - did you mean \"Mechanical\"?" and lists every user workset;
+      activeAfter "Workset1", the status bar unchanged. A fragment that matched
+      names loosely shows here. THE FIRST CASE TO RUN
+
+  - given: worksetName "Plumbing", a workset the model does not have
+    expect: >
+      changed false, refused names "Plumbing" and lists Architecture (closed),
+      Mechanical, Shared Levels and Grids and Workset1, with no "did you mean";
+      the active workset unchanged
+
+  - given: worksetName "Architecture", closed in this local
+    expect: >
+      changed false, refused "\"Architecture\" is closed in this session ...
+      Open it first"; the active workset unchanged, and Architecture still
+      closed - this card opens nothing
+
+  - given: the project that was never workshared, worksetName "Mechanical"
+    expect: >
+      changed false, refused "This model is not workshared, so it has no
+      worksets and no active workset ..."; activeBefore and activeAfter empty;
+      the model still not workshared afterwards
+
+  - given: worksetName left empty
+    expect: refused "No workset was named ..." with the worksets listed - nothing changed
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one call is one undo entry
+
+second_route:
+  - >
+    Revit's own status bar: the Active Workset box names the workset this card
+    made active, after a KEPT run - and Collaborate > Worksets shows the same
+    one in its Active workset list
+  - >
+    After a ROLLED-BACK positive run, and again after a Discard in try-once,
+    the status bar's Active Workset box is read: does it name the workset
+    before the run, or the one asked for? That answer is KN4's, and the card's
+    reversibility depends on it

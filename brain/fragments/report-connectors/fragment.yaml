@@ -5,11 +5,17 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-036
-semantic-identity: "what connectors are on this thing, where they point, and what is really plugged into them"
+semantic-identity: "what connectors are on this thing, where they point, what is really plugged into them, and whether it matches - size, shape and domain"
 kind: action
 domain: revit.mep
 capability: REPORT_CONNECTORS
-version: 2
+# VERSION 3 (2026-11-01): CHECK_EQUIPMENT_CONNECTORS was merged into this card
+# on the owner's instruction and is DEPRECATED - every joint on a placed
+# family is now GRADED as well as described: `mismatched`,
+# `unconnectedSpigots` and `findings`, sizes within `sizeTolerance`. See the
+# merge block above `utterances`. DRAFT until version 3 is proved (D-30); the
+# version 2 proof below is kept as the record of what was run.
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -49,12 +55,39 @@ purpose: >
   Positions and sizes are handed on in Revit's internal feet, not millimetres
   (D-20 keeps the conversion at the edge, where the user is).
 
+  **VERSION 3 (2026-11-01): EVERY JOINT ON A PLACED FAMILY IS GRADED TOO** -
+  CHECK_EQUIPMENT_CONNECTORS's job, merged here. On each family instance -
+  equipment, terminal, fixture, fitting - every connector is compared with
+  what is really joined to it: the *"the AHU has a 600x400 supply spigot and
+  somebody ran 400x300 off it"* defect, which Revit builds with a transition
+  and nobody sees until the airflow does not arrive. A pipe on a duct spigot
+  is a DOMAIN MISMATCH, its own class - usually the wrong family was placed; a
+  round-to-rectangular joint is a SHAPE CHANGE, said rather than measured;
+  same shape is compared diameter to diameter, or width and height, within
+  `sizeTolerance` in millimetres. `mismatched` names each element with a
+  domain or size mismatch; `unconnectedSpigots` counts the spigots with
+  nothing physically plugged in - usually the bigger finding, a gap no clash
+  test and no connectivity walk flags. Sizes are what the FAMILY declares, and
+  `findings` says so: check the first unit of each type against its datasheet
+  once. The partner is the physical one the description uses - never the
+  logical system, never the flag - which that card's grading did not do.
+
   ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
 
 contract:
   needs:
     - name: elements
       type: IList<Element>
+    # VERSION 3, from CHECK_EQUIPMENT_CONNECTORS: how far apart, in
+    # MILLIMETRES, a spigot and what is joined to it may be before the joint is
+    # a SIZE MISMATCH - per dimension, diameter or width and height. Converted
+    # to feet inside (D-71). Left out it binds 0: compared exactly. A negative
+    # one grades no size at all and says so.
+    - name: sizeTolerance
+      type: double
+      source: request
+      optional: true
+      absent: 0
   provides:
     - name: connectorFacts
       role: result
@@ -88,32 +121,118 @@ contract:
       # The evidence it looked, never a thing it found (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: mismatched
+      # VERSION 3, from CHECK_EQUIPMENT_CONNECTORS: each placed family with a
+      # joint that is a DOMAIN MISMATCH or a SIZE MISMATCH beyond
+      # `sizeTolerance`, once. A SHAPE CHANGE is said in `findings` and not
+      # counted here - a transition there may be right.
+      role: result
+      type: IList<ElementId>
+    - name: unconnectedSpigots
+      # VERSION 3, from CHECK_EQUIPMENT_CONNECTORS: spigots on placed families
+      # with NOTHING PHYSICALLY PLUGGED IN - decided by the partners, never by
+      # IsConnected. Usually the bigger finding: a gap no clash test and no
+      # connectivity walk will flag, because the system that IS connected
+      # traces perfectly. A duct's or pipe's own open end is in
+      # `openConnectors`, not here.
+      role: result
+      type: int
+    - name: findings
+      # VERSION 3: the grading in sentences, millimetres - the summary first,
+      # with the warning that every size is what the FAMILY declares, then each
+      # NOTHING PLUGGED IN, DOMAIN MISMATCH, SHAPE CHANGE and SIZE MISMATCH, and
+      # each element that is not a placed family or has no MEP model. Stops
+      # after 100 sentences and says how many it left out (D-26).
+      type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project2 (3,035 elements), Revit 2020, session 13520
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase''s own values. returned connections
-    2 entry(ies), connectorFacts 2 entry(ies), connectorSummary element 345448: DomainHvac
-    SupplyAir, Rectangular, 1 x 1 ft, at (3.281, 3.281, 8.858) ft, facing (-1, 0, 0), OPEN
-    (IsConnected flag: False) ; DomainHvac SupplyAir, Rectangular, 1 x 1 ft, at (29.528, 3.281,
-    8.858) ft, facing (1, 0, 0), OPEN (IsConnected flag: False)  ||  element 345451: DomainHvac
-    ReturnAir, Round, radius 0.5 ft, at (13.123, 16.404, 8.858) ft, facing (1, 0, 0), OPEN
-    (IsConnected flag: False) ; DomainHvac ReturnAir, Round, radius 0.5 ft, at (3.281, 16.404,
-    8.858) ft, facing (-1, 0, 0), OPEN (IsConnected flag: False), flagDisagrees 0 item(s),
-    noConnectors 0 item(s), openConnectors 2 entry(ies). inputs came elements from the selection
-    (2). on Project2'
-  negative_case: run with categoryName=Walls, inViewOnly=Heron 3D instead - chosen because
-    it should not contain what this fragment reports - the arrangement was re-made first by
-    running select-by-category-name, set-selection with this phase's own values. returned
-    connections 0 entry(ies), connectorFacts 0 entry(ies), connectorSummary , flagDisagrees
-    0 item(s), noConnectors 5 item(s) [345432, 345433, 345434, ...], openConnectors 0 entry(ies).
-    inputs came elements from the selection (5). on Project2
+    filter-elements-by-category, set-selection with this phase''s own values. returned MillimetresPerFoot
+    304.8, connections 10 entry(ies), connectorFacts 10 entry(ies), connectorSummary element
+    404243: DomainHvac SupplyAir, Rectangular, 2.133 x 1.148 ft, at (136.94, -26.061, 10.359)
+    ft, facing (0, -1, 0), joined to 404487 (IsConnected flag: True) ; DomainHvac SupplyAir,
+    Rectangular, 2.133 x 1.148 ft, at (136.94, -24.246, 10.359) ft, facing (0, 1, 0), joined
+    to 404248 (IsConnected flag: True) ; DomainHvac SupplyAir, Rectangular, 2.133 x 1.148
+    ft, at (136.94, -24.246, 10.359) ft, facing (0, 1, 0), joined to 404245 (IsConnected flag:
+    True) ; DomainHvac SupplyAir, Rectangular, 2.133 x 1.148 ft, at (136.94, -15.387, 10.359)
+    ft, facing (0, 1, 0), joined to 404488 (IsConnected flag: True) ; DomainHvac SupplyAir,
+    Rectangular, 2.133 x 1.148 ft, at (136.94, -18.96, 10.359) ft, facing (0, 1, 0), joined
+    to 404371 (IsConnected flag: True)  ||  element 411658: DomainHvac ReturnAir, Rectangular,
+    1.312 x 0.984 ft, at (140.59, -12.153, 10.384) ft, facing (0, 1, 0), joined to 411873
+    (IsConnected flag: True) ; DomainHvac ReturnAir, Rectangular, 1.312 x 0.984 ft, at (140.59,
+    -15.003, 10.384) ft, facing (0, -1, 0), joined to 411657 (IsConnected flag: True)  ||  element
+    411660: DomainHvac ReturnAir, Rectangular, 1.312 x 0.984 ft, at (143.543, -15.003, 10.384)
+    ft, facing (0, -1, 0), joined to 411656 (IsConnected flag: True) ; DomainHvac ReturnAir,
+    Rectangular, 1.312 x 0.984 ft, at (143.543, -12.153, 10.384) ft, facing (0, 1, 0), joined
+    to 411898 (IsConnected flag: True)  ||  element 411724: DomainHvac ReturnAir, Rectangular,
+    2.953 x 1.64 ft, at (136.277, -11, 10.384) ft, facing (0, 1, 0), joined to 478951 (IsConnected
+    flag: True) ; DomainHvac ReturnAir, Rectangular, 2.953 x 1.64 ft, at (136.277, -9.688,
+    10.384) ft, facing (0, 1, 0), OPEN (IsConnected flag: False) ; DomainHvac ReturnAir, Rectangular,
+    2.953 x 1.64 ft, at (136.277, -12.312, 10.384) ft, facing (0, -1, 0), joined to 404284
+    (IsConnected flag: True) ; DomainHvac ReturnAir, Rectangular, 2.953 x 1.64 ft, at (136.277,
+    -11, 10.384) ft, facing (0, 1, 0), joined to 411791 (IsConnected flag: True)  ||  element
+    411780: DomainHvac ReturnAir, Rectangular, 1.64 x 0.984 ft, at (140.59, -11, 10.384) ft,
+    facing (1, 0, 0), joined to 411873 (IsConnected flag: True) ; DomainHvac ReturnAir, Rectangular,
+    1.64 x 0.984 ft, at (144.643, -11, 10.384) ft, facing (1, 0, 0), joined to 411851 (IsConnected
+    flag: True) ; DomainHvac ReturnAir, Rectangular, 1.64 x 0.984 ft, at (143.543, -11, 10.384)
+    ft, facing (1, 0, 0), joined to 411898 (IsConnected flag: True) ; DomainHvac ReturnAir,
+    Rectangular, 1.64 x 0.984 ft, at (138.163, -11, 10.384) ft, facing (-1, 0, 0), joined
+    to 411791 (IsConnected flag: True)  ||  element 411839: DomainHvac ReturnAir, Rectangular,
+    1.312 x 0.984 ft, at (145.039, -11, 10.384) ft, facing (-1, 0, 0), joined to 411851 (IsConnected
+    flag: True) ; DomainHvac ReturnAir, Rectangular, 1.312 x 0.984 ft, at (153.632, -11, 10.384)
+    ft, facing (1, 0, 0), joined to 709691 (IsConnected flag: True)  ||  element 478867: DomainHvac
+    ReturnAir, Rectangular, 1.312 x 1.148 ft, at (132.832, -8.594, 8.708) ft, facing (-1,
+    0, 0), joined to 478970 (IsConnected flag: True) ; DomainHvac ReturnAir, Rectangular,
+    1.312 x 1.148 ft, at (43.921, -8.594, 8.708) ft, facing (-1, 0, 0), joined to 479078 (IsConnected
+    flag: True) ; DomainHvac ReturnAir, Rectangular, 1.312 x 1.148 ft, at (5.875, -8.594,
+    8.708) ft, facing (-1, 0, 0), joined to 479183 (IsConnected flag: True) ; DomainHvac ReturnAir,
+    Rectangular, 1.312 x 1.148 ft, at (-10.554, -8.594, 8.708) ft, facing (-1, 0, 0), joined
+    to 479601 (IsConnected flag: True) ; DomainHvac ReturnAir, Rectangular, 1.312 x 1.148
+    ft, at (102.976, -8.594, 8.708) ft, facing (-1, 0, 0), joined to 712022 (IsConnected flag:
+    True) ; DomainHvac ReturnAir, Rectangular, 1.312 x 1.148 ft, at (162.379, -8.594, 8.708)
+    ft, facing (1, 0, 0), joined to 709693 (IsConnected flag: True) ; DomainHvac ReturnAir,
+    Rectangular, 1.312 x 1.148 ft, at (74.105, -8.594, 8.708) ft, facing (-1, 0, 0), joined
+    to 479049 (IsConnected flag: True) ; DomainHvac ReturnAir, Rectangular, 1.312 x 1.148
+    ft, at (-9.566, -8.594, 8.708) ft, facing (-1, 0, 0), joined to 479467 (IsConnected flag:
+    True) ; DomainHvac ReturnAir, Rectangular, 1.312 x 1.148 ft, at (1.253, -8.594, 8.708)
+    ft, facing (-1, 0, 0), joined to 479424 (IsConnected flag: True)  ||  element 478940:
+    DomainHvac ReturnAir, Rectangular, 0.656 x 0.492 ft, at (133.242, -11, 10.384) ft, facing
+    (-1, 0, 0), joined to 478974 (IsConnected flag: True) ; DomainHvac ReturnAir, Rectangular,
+    0.656 x 0.492 ft, at (134.467, -11, 10.384) ft, facing (1, 0, 0), joined to 478951 (IsConnected
+    flag: True)  ||  element 478953: DomainHvac ReturnAir, Rectangular, 0.656 x 0.492 ft,
+    at (132.832, -10.59, 10.384) ft, facing (0, -1, 0), joined to 478974 (IsConnected flag:
+    True) ; DomainHvac ReturnAir, Rectangular, 0.656 x 0.492 ft, at (132.832, -8.922, 10.384)
+    ft, facing (0, 1, 0), joined to 478971 (IsConnected flag: True)  ||  element 478969: DomainHvac
+    ReturnAir, Rectangular, 0.656 x 0.492 ft, at (132.832, -8.594, 10.056) ft, facing (0,
+    0, 1), joined to 478971 (IsConnected flag: True) ; DomainHvac ReturnAir, Rectangular,
+    0.656 x 0.492 ft, at (132.832, -8.594, 9.615) ft, facing (0, 0, -1), joined to 478970
+    (IsConnected flag: True), describeMm Func`2, findings 1 item(s) [0 placed family instance(s)
+    graded: 0 with a mismatched join...], flagDisagrees 0 item(s), grade Action`1, gradeLeft
+    0, gradeLines 0 item(s), gradeSizes true, mismatched 0 item(s), noConnectors 0 item(s),
+    openConnectors 10 entry(ies), sizeTolerance 0, toleranceFeet 0, unconnectedSpigots 0,
+    unitsGraded 0. inputs came elements from the selection (10); sizeTolerance not given -
+    "0", the card''s own default (optional). on P1102 MEP'
+  negative_case: 'run with category=Walls, levelId=Level 1 instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase''s own values. returned MillimetresPerFoot
+    304.8, connections 0 entry(ies), connectorFacts 0 entry(ies), connectorSummary , describeMm
+    Func`2, findings 71 item(s) [0 placed family instance(s) graded: 0 with a mismatched join...,
+    STB 30.0 Rot (id 573298): not a placed family instance or an..., STB 30.0 (id 573299):
+    not a placed family instance or an MEP..., ...], flagDisagrees 0 item(s), grade Action`1,
+    gradeLeft 0, gradeLines 70 item(s) [STB 30.0 Rot (id 573298): not a placed family instance
+    or an..., STB 30.0 (id 573299): not a placed family instance or an MEP..., STB 30.0 Rot
+    (id 573316): not a placed family instance or an..., ...], gradeSizes true, mismatched
+    0 item(s), noConnectors 70 item(s) [573298, 573299, 573316, ...], openConnectors 0 entry(ies),
+    sizeTolerance 0, toleranceFeet 0, unconnectedSpigots 0, unitsGraded 0. inputs came elements
+    from the selection (70); sizeTolerance not given - "0", the card''s own default (optional).
+    on P1102 MEP'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: c56b6c476db82360
+  fingerprint: bec433c1aed97f5b
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -129,6 +248,12 @@ compatibility-note: >
   the wrong one THROWS rather than returning zero - on every release. Each is
   guarded, and an electrical connector, which has no profile at all, is reported
   with its domain and no size rather than being dropped.
+  Version 3's grading adds nothing new to the API surface: it reads the same
+  `Connector.Shape`, `Radius`, `Width`, `Height`, `Domain`, `AllRefs` and
+  `Owner`, and `FamilyInstance.MEPModel`, that CHECK_EQUIPMENT_CONNECTORS read
+  on all eight releases. `Domain.DomainStructuralAnalytical` is still not
+  named - it arrives after 2020. `sizeTolerance` arrives in millimetres and is
+  divided by 304.8 in the code (D-71).
 
 # BACK TO DRAFT ON 2026-09-23, AND THE PROOF ABOVE IS KEPT AS THE RECORD OF
 # WHAT WAS RUN.
@@ -150,12 +275,15 @@ compatibility-note: >
 #   "what connectors does this have"      -> here. The inventory, with
 #                                            direction and size, before
 #                                            anything is drawn
-#   "which spigots are open"              -> here - `openConnectors`
-#   "does what is plugged in MATCH the    -> CHECK_EQUIPMENT_CONNECTORS. It
-#    equipment"                              judges size, shape and domain
-#                                            against the partner and reports
-#                                            mismatches. This one describes;
-#                                            that one grades
+#   "which spigots are open"              -> here - `openConnectors`, and on a
+#                                            placed family `unconnectedSpigots`
+#   "does what is plugged in MATCH the    -> here since version 3 - it judges
+#    equipment"                              size, shape and domain against the
+#                                            partner: `mismatched`.
+#                                            CHECK_EQUIPMENT_CONNECTORS until
+#                                            2026-11-01
+#   "are the equipment connectors the     -> here, `sizeTolerance` in mm
+#    right size for the duct"
 #   "what flow is on the connectors"      -> REPORT_CONNECTOR_LOADS - the
 #                                            numbers the connector CARRIES,
 #                                            not its geometry
@@ -171,6 +299,43 @@ compatibility-note: >
 #                                            first, a writer in a family;
 #                                            the identity route keeps it
 #                                            here (measured 2026-09-28)
+#   "join these open ends up"             -> CONNECT_OPEN_ENDS - a WRITE
+#
+# VERSION 3 (2026-11-01) - CHECK_EQUIPMENT_CONNECTORS WAS MERGED INTO THIS CARD
+# on the owner's instruction in conversation: "make sure there is no duplicate
+# tools", "merge means ... all area need to be covered", every conflict to keep
+# the safer rule. It is DEPRECATED, never deleted. Where each of its inputs and
+# outputs is now:
+#
+#   CHECK_EQUIPMENT_CONNECTORS          here
+#     equipment                         elements - any element; only a placed
+#                                       family is graded
+#     sizeTolerance (mm)                sizeTolerance (mm), now optional - left
+#                                       out, compared exactly
+#     findings                          findings - the same sentences, the
+#                                       summary first
+#     mismatched                        mismatched - each element once
+#     unconnectedSpigots                unconnectedSpigots
+#
+# THE SAFER RULE WHERE THEY DIFFERED - this card's. That card took the first
+# ref in AllRefs not owned by the unit as the partner, so the logical MEPSystem
+# could be graded as the duct on the other side, and it trusted IsConnected to
+# say a spigot was plugged in. Here the MEPSystem and the element itself are
+# dropped before anything is graded, and a spigot with no physical partner is
+# NOTHING PLUGGED IN whatever the flag says. Two narrower changes, neither an
+# opposite rule: a connector with no profile (electrical) is graded on domain
+# only, where that card read its unreadable shape as a SHAPE CHANGE; and an
+# element is named in `mismatched` once, where that card added it once per
+# bad joint.
+
+# JUDGED 2026-11-01 (a duplicate sweep's look-alike, on the owner's rule "if one
+# tool can safely do both, merge") AGAINST REPORT_CONNECTOR_LOADS AND KEPT APART -
+# the next sweep should not reopen it unless one of these stops being true:
+#   - THE SAME CONNECTORS, A DIFFERENT QUESTION AND A DIFFERENT FINDING. This
+#     reads the geometry and the real partners (open ends, flag disagreements,
+#     a mismatched size); that reads the values a connector CARRIES and splits
+#     the zero that is a hole in the model from the zero that is normal. No
+#     field is read by both. See the same block on that card.
 
 utterances:
   - what connectors does this AHU have
@@ -181,3 +346,9 @@ utterances:
   - what size is the spigot
   - report the connectors
   - is this connector supply or return
+  # MOVED 2026-11-01 from CHECK_EQUIPMENT_CONNECTORS, merged into this card.
+  - are the equipment connectors the right size for the duct
+  - check the spigots on this AHU
+  - which connectors on this unit are not used
+  - does the duct match the equipment connection
+  - check the equipment connectors

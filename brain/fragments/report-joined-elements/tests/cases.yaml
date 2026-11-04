@@ -4,7 +4,7 @@ positive:
       two rows, each naming both elements AND which one cuts. The direction is
       the half the report exists for
 
-  - given: the same wall after SWITCH_JOIN_ORDER on one pair
+  - given: the same wall after JOIN_GEOMETRY with join switch on one pair
     expect: that row reading the other way round, and the other row unchanged
 
   - given: a set of twenty walls in a model with no joins

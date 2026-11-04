@@ -42,6 +42,101 @@ positive:
       `printRange` saying it was put back to Current window, and File - Print
       showing Current window again - after the run, and after the rollback
 
+  # Version 3 (2026-11-01, row 5b-1361). The proof plan is
+  # tools/jobs/manage-sheet-sets-v3-duplicate-scratch-2026-11-01.yaml,
+  # NEEDS-CHECKING Group KA rows KA15 and KA16.
+  - given: mode "duplicate", a saved set's name and a new name, nothing selected
+    expect: >
+      `done` true, `memberCount` the original's count, and File - Print -
+      Settings listing both sets with the same sheets and views ticked - the
+      original unchanged
+
+  - given: mode "copy"
+    expect: >
+      the same as "duplicate"
+
+  # Version 4 (2026-11-01): SYNC_SHEET_SETS_BY_PARAMETER merged in, and its
+  # In-Session rule taken for every mode. The proof plan is
+  # tools/jobs/sheet-sets-by-parameter-scratch-2026-11-01.yaml, NEEDS-CHECKING
+  # Group KA rows KA12, KA14 and KA17. Each case below FAILS on version 3.
+  - given: >
+      THE IN-SESSION RESTORE. On the scratch project "Heron Sheet Sets KA", a
+      saved set "HERON KA KEEP" holding A101, and File - Print - Settings left
+      on "HERON KA KEEP" as the current set; then the In-Session selection
+      ticked to A104 alone and the dialog closed on "<in-session>". Mode
+      "create", setName "HERON KA NEW", elements A102 and A103
+    expect: >
+      `done` true, `memberCount` 2, "HERON KA NEW" holding A102 and A103 -
+      and afterwards File - Print - Settings opening on the set it was on
+      before the run, with the In-Session selection still A104 alone and
+      "HERON KA KEEP" still A101 alone. VERSION 3 FAILS THIS: it wrote A102
+      and A103 onto whichever set was current and left the dialog on "HERON
+      KA NEW"
+  # Added 2026-11-01 from the review of version 4: the saved-set-current path,
+  # and the restore on the modes existing callers already use.
+  - given: >
+      A SAVED SET CURRENT. "HERON KA KEEP" holding A101, the In-Session
+      selection A104 alone, and File - Print - Settings closed with "HERON KA
+      KEEP" as the current set (not "<in-session>"). Mode "create", setName
+      "HERON KA NEW", elements A102 and A103
+    expect: >
+      "HERON KA NEW" holding A102 and A103, "HERON KA KEEP" STILL A101 ALONE,
+      the In-Session selection still A104 alone, and the dialog reopening on
+      "HERON KA KEEP". Version 3 wrote A102 and A103 onto "HERON KA KEEP"
+      itself before saving
+  - given: >
+      "HERON KA KEEP" current in the dialog, then mode "add" of A105 to a
+      different set "HERON KA OTHER", and again with mode "remove"
+    expect: >
+      A105 added, then removed, in "HERON KA OTHER" only; the dialog reopening
+      on "HERON KA KEEP" each time and the In-Session selection untouched.
+      Version 3 left the dialog on "HERON KA OTHER"
+  - given: >
+      "HERON KA KEEP" current in the dialog, then mode "delete" of "HERON KA
+      KEEP" itself, after a yes
+    expect: >
+      the set gone, the dialog reopening on "<in-session>", and `printRange`
+      with NO "could NOT be put back" note - a current set that was the one
+      deleted is not a failure to put it back
+  - given: >
+      mode "rename" of "HERON KA OTHER" with no newName, "HERON KA KEEP" current
+    expect: >
+      refused "No new name was given for the rename." BEFORE the dialog's
+      current set is changed, and the In-Session selection not rewritten -
+      no In-Session write happens in rename, delete, add, remove or duplicate
+  - given: >
+      the same, but mode "duplicate" of "HERON KA KEEP" as "HERON KA KEEP 2"
+    expect: >
+      both sets holding A101, and the dialog back on the set it was on before.
+      Version 3 left it on the copy
+  - given: >
+      mode "by-parameter", parameterName "HERON Browser 1", setPrefix and
+      values left out, no setName and no newName, nothing selected - six
+      sheets, A101 to A103 "01_IAB-ISSUED AS-BUILT", A104 and A105
+      "02_IFI-ISSUED FOR INFORMATION", A106 empty, no set saved
+    expect: >
+      the call binds with neither name given (version 3 refused it unbound),
+      `done` true, `created` naming '01_IAB-ISSUED AS-BUILT' (3) and
+      '02_IFI-ISSUED FOR INFORMATION' (2), `memberCount` 5; File - Print -
+      Settings listing both sets with those sheets ticked; A106 in neither;
+      the In-Session selection as it was before
+  - given: the same, after A103's value is changed to 02_IFI, with updateExisting true
+    expect: >
+      `updated` naming '01_IAB-ISSUED AS-BUILT' (0 in, 1 out) and
+      '02_IFI-ISSUED FOR INFORMATION' (1 in, 0 out); the sets in the dialog
+      matching; CHECK_SHEET_SETS_BY_PARAMETER then reading both in step
+  - given: the same change, with updateExisting left out
+    expect: >
+      `done` false, `refused` saying every set already exists, and
+      `setsUnchanged` naming both as out of step and left alone - the sets as
+      they were
+  - given: setPrefix "ISSUE - "
+    expect: >
+      the sets named "ISSUE - 01_IAB-ISSUED AS-BUILT" and so on
+  - given: values "02_IFI-ISSUED FOR INFORMATION"
+    expect: >
+      one set made, for that value alone
+
 negative:
   - given: the print range left as it was
     expect: >
@@ -90,6 +185,44 @@ negative:
       `refused` naming it, nothing changed, and no new set made under that
       name - add never creates
 
+  # Version 3.
+  - given: mode "duplicate" and a set name that does not exist
+    expect: >
+      `refused` naming it, `done` false, and no set under the new name
+
+  - given: mode "duplicate" and a new name a set already has
+    expect: >
+      `refused` saying that set already exists, nothing copied, and both
+      sets exactly as they were
+
+  - given: mode "duplicate" with no new name
+    expect: >
+      `refused` saying no name was given for the copy
+
+  # Version 4.
+  - given: mode "create" with a set name a saved set already has
+    expect: >
+      `refused` saying that set already exists and naming add and remove,
+      `done` false, the existing set exactly as it was. Version 3 asked
+      SaveAs anyway and did not read what it returned
+  - given: mode "by-parameter" and parameterName "ZZZ NO SUCH PARAMETER"
+    expect: >
+      `refused` naming 'ZZZ NO SUCH PARAMETER', `done` false, no set made -
+      the dialog's set list exactly as before. Version 3 refused the mode
+  - given: mode "by-parameter" and values "03_NOBODY HAS THIS"
+    expect: >
+      `refused` naming the value, nothing made
+  - given: mode "by-parameter" with no parameterName
+    expect: >
+      `refused` "No parameter name was given."
+  - given: mode "by-parameter" and a value whose set name Revit will not take
+    expect: >
+      that value in `skipped` with Revit's reason, the others still made
+  - given: mode "rename" or "create" with setName left out
+    expect: >
+      `refused` "No set name was given." - the word "none" the card binds is
+      no name, never a set called none
+
 second_route:
   - >
     open File - Print in Revit and look at the saved set list, then select the
@@ -98,3 +231,6 @@ second_route:
     LIST_SHEET_SETS on the same model, before and after an add or a remove:
     the set's sheets by number, read by a different card through the
     element rather than the print manager
+  - >
+    CHECK_SHEET_SETS_BY_PARAMETER on the same model after a by-parameter run:
+    every value in step, read as elements, never through the print manager

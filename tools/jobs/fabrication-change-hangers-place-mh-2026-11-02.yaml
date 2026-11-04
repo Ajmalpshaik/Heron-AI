@@ -1,0 +1,102 @@
+# NEEDS-CHECKING Group MH - CHANGE_FABRICATION_SERVICE_SIZE,
+# ADD_FABRICATION_HANGERS and PLACE_FABRICATION_PART (all new), built
+# 2026-11-02 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/fabrication-change-hangers-place-mh-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/fabrication-change-hangers-place-mh-2026-11-02.yaml
+#
+# THE MODEL (docs/needs-checking/group-mh.md, MH1): the scratch project
+# "fabrication-mh", from Revit's metric Mechanical template, saved under
+# %TEMP%\heron-work, with levels "Level 1" and "Level 2" and one structural
+# floor above Level 1. Systems > Fabrication > MEP Fabrication Settings: one
+# of Autodesk's sample configurations, TWO ductwork services (a low and a
+# high pressure one) and one pipework service loaded. In the floor plan
+# "Level 1": from the MEP Fabrication Parts palette, the low pressure service,
+# a horizontal rectangular run of two straights about 3000 mm long and an
+# elbow, 2700 mm above Level 1; one design duct beside it; nothing else that
+# is a duct.
+#
+# THE SERVICE AND BUTTON NAMES BELOW ARE NOT KNOWN UNTIL MH1 HAS RUN. The
+# sample configurations' names differ between versions, and this file will
+# not guess one any more than the cards do: read them with
+# REPORT_FABRICATION_SETUP ("list the fabrication services and their
+# buttons") and write them in every line that says so. Left as it is, each
+# positive places or changes nothing - which is the card refusing a guessed
+# name, not a failure of the card.
+#
+# THE ARRANGEMENT: the change and the hangers take the fabrication run as
+# `elements`, selected by select-by-category-name and set-selection; the
+# placing takes no selection. Each negative is a different selection or value,
+# not an empty one (fragment-proving, rules 3 and 5): the design duct handed
+# to the change and to the hangers - nothing may change or be hung - and a
+# hanger button handed to the placing - nothing may be placed. Every write is
+# ROLLED BACK.
+
+model: "fabrication-mh scratch project (metric Mechanical template), a sample fabrication configuration with two ductwork services and one pipework service loaded, one fabrication duct run and one design duct, Revit 2024"
+
+jobs:
+  - fragment: change-fabrication-service-size
+    expect: changed
+    in: "fabrication-mh"
+    write: true
+    setup: [select-by-category-name, set-selection]
+    set:
+      categoryName: "MEP Fabrication Ductwork"
+      inViewOnly: "FloorPlan: Level 1"
+      service: "THE HIGH PRESSURE DUCTWORK SERVICE'S EXACT NAME FROM MH1"
+    negative-set:
+      categoryName: "Ducts"
+      inViewOnly: "FloorPlan: Level 1"
+      service: "THE HIGH PRESSURE DUCTWORK SERVICE'S EXACT NAME FROM MH1"
+    note: >
+      MH2. Negative - THE FIRST CASE TO RUN: the design duct, nothing
+      changed; report "None of the 1 element(s) given is a fabrication part
+      that can be changed - ... a design duct; Design to Fabrication makes it
+      fabrication first ...". Positive: report "Asked for the service \"...\"
+      on 3 fabrication part(s). Change Service to ...: Revit reported ...";
+      each part read back on the high pressure service. RECORD whether Revit
+      kept the ids or re-made the parts, and which palette it was handed.
+
+  - fragment: add-fabrication-hangers
+    expect: hangers
+    in: "fabrication-mh"
+    write: true
+    setup: [select-by-category-name, set-selection]
+    set:
+      categoryName: "MEP Fabrication Ductwork"
+      inViewOnly: "FloorPlan: Level 1"
+      button: "THE LOW PRESSURE SERVICE'S HANGER BUTTON'S EXACT NAME FROM MH1"
+      spacing: "1500"
+    negative-set:
+      categoryName: "Ducts"
+      inViewOnly: "FloorPlan: Level 1"
+      button: "THE LOW PRESSURE SERVICE'S HANGER BUTTON'S EXACT NAME FROM MH1"
+      spacing: "1500"
+    note: >
+      MH3. Negative - THE FIRST CASE TO RUN: the design duct, no hanger;
+      report "None of the 1 element(s) given is a fabrication straight that
+      can take a hanger - ...". Positive: two hangers on each 3000 mm
+      straight, at 750 and 2250 mm, each read back hosted on its straight;
+      the elbow named "a fitting, not a straight".
+
+  - fragment: place-fabrication-part
+    expect: placed
+    in: "fabrication-mh"
+    write: true
+    set:
+      service: "THE LOW PRESSURE DUCTWORK SERVICE'S EXACT NAME FROM MH1"
+      button: "ITS STRAIGHT BUTTON'S EXACT NAME FROM MH1"
+      point: "5000,3000,2700"
+      level: "Level 1"
+    negative-set:
+      service: "THE LOW PRESSURE DUCTWORK SERVICE'S EXACT NAME FROM MH1"
+      button: "THE LOW PRESSURE SERVICE'S HANGER BUTTON'S EXACT NAME FROM MH1"
+      point: "5000,3000,2700"
+      level: "Level 1"
+    note: >
+      MH4. Negative - THE FIRST CASE TO RUN: the hanger button, nothing
+      placed; report "The button \"...\" is a hanger - a hanger is put on a
+      fabrication straight ...". Positive: report "Placed id ... from the
+      button \"...\" ... on \"Level 1\" with its origin at x 5000, y 3000 mm
+      and 2700 mm above the level. It is connected to nothing". RECORD the
+      straight's length Revit gave it.

@@ -1,0 +1,166 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-081
+semantic-identity: "make a panel schedule template from one the model has, or switch a panel's schedule to another template"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "make a new panel schedule
+# template from Branch Panel called DB Standard" and "set panel DB-1 to use
+# the DB Standard template" - Revit's Manage > Panel Schedule Templates, and
+# Change Template on an open panel schedule. No card in the library made a
+# template or switched one (grep of brain/fragments that day for
+# PanelScheduleTemplate.Create, CopyFrom and GenerateInstanceFromTemplate:
+# nothing). CREATE_PANEL_SCHEDULES (FRG-MEP-067) picks an existing template,
+# by name, for a schedule view it is MAKING, and skips a panel that already
+# has one - it never makes a template and never switches an existing
+# schedule. REPORT_PANEL_CIRCUITS reads circuits. Look-alikes, not
+# duplicates.
+#
+# ONE OF A SET. REPORT_ELECTRICAL_SETTINGS (FRG-MEP-076) answers every
+# question - which panel schedule templates exist, their exact names and
+# kinds, which is the default and which schedules use each - so no
+# question reaches this write (D-86).
+#
+# ONE FRAGMENT FOR THE TWO, NOT TWO. Both act on panel schedule templates by
+# their exact names, and the one Revit dialog holds both; split, each card
+# would declare the same template name and list the same templates when it is
+# wrong. `action` says which.
+#
+# NEVER GUESSED (D-33). A template or panel name not there exactly is
+# refused with the names listed; one differing in capitals is named, never
+# taken.
+#
+# NEVER OVERWRITES, RENAMES OR DELETES. A new name already used, in any
+# capitals, is skipped and named; a panel already on the template, on a
+# template of another kind, or with no schedule yet, is skipped and named.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). A
+# read-back that disagrees throws, so the caller rolls the whole change back.
+kind: action
+domain: revit.mep
+capability: SET_PANEL_SCHEDULE_TEMPLATE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes a new panel schedule template as a copy of one the model already has,
+  under a new name, or switches the panel schedule of each panel selected or
+  named to a panel schedule template the model has, reporting the templates
+  or each schedule's template before and after.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # apply only: the panels whose schedules are switched - electrical
+    # equipment picked in Revit. Anything else is named and left alone.
+    - name: elements
+      type: IList<Element>
+      optional: true
+    - name: action
+      # make | apply - make a new template copied from `fromTemplate`, or
+      # switch panels' schedules to `templateName`. Also "create", "copy",
+      # "duplicate"; "use", "set", "assign", "change". Anything else refuses.
+      type: string
+      source: request
+    - name: templateName
+      # make: the new template's name, the modeller's, never made up. apply:
+      # the template to switch to, by its exact name (REPORT_ELECTRICAL_SETTINGS
+      # lists them).
+      type: string
+      source: request
+    - name: fromTemplate
+      # make only: the template copied, by its exact name - "Branch Panel".
+      # Left out on make, refused with the templates listed - never guessed.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: panelName
+      # apply only: panels by their Panel Name - "DB-1", several separated by
+      # ; - beside or instead of a selection. Matched exactly.
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: changed
+      # make: 1 when the template was made, else 0. apply: the schedules that
+      # read back on the template. Something the write DID.
+      role: result
+      type: int
+    - name: report
+      # ONE STRING: the templates before and after (make), or each panel's
+      # schedule and its template before and after (apply).
+      role: accounting
+      type: string
+    - name: before
+      # The templates with their kinds, or each panel's schedule on its
+      # template, before (D-52).
+      role: accounting
+      type: IList<string>
+    - name: after
+      # The same, read back from the model after (D-52).
+      role: accounting
+      type: IList<string>
+    - name: skipped
+      # Left as it was, and why: a name already used, a panel already on the
+      # template, a template of another kind, a panel with no schedule, a
+      # selected element that is not a panel (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in Revit words: no name, a template or panel the
+      # model has not got, two panels with one name, Revit's own refusal.
+      # Never a thing done (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. PanelScheduleTemplate.Create(Document,
+  PanelScheduleType, PanelConfiguration, string), CopyFrom(Document,
+  PanelScheduleTemplate), GetPanelScheduleType, GetTableData, IsDefault,
+  IsValidType and IsValidPanelConfiguration; PanelScheduleData
+  .PanelConfiguration; PanelScheduleType Branch, Switchboard and Data; and
+  PanelScheduleView.GenerateInstanceFromTemplate(ElementId), GetTemplate,
+  GetPanel and IsPanelScheduleTemplate carry the same signatures 2020 through
+  2027 - read with tools/api-surface --members on 2026-11-02. A template is an
+  Element, not an ElementType, so it has no Duplicate: a copy is Create then
+  CopyFrom. No parameter on a panel holds its template - the template belongs
+  to the panel's schedule view. Whether CopyFrom carries the source's name
+  over has not been seen in Revit; the name is read back and set again if it
+  did. An ElementId is compared with ==, never read as a number.
+
+# ROUTING (2026-11-02) - the same rows are in REPORT_ELECTRICAL_SETTINGS.
+#
+#   "make a new panel schedule template from Branch Panel called DB Standard"
+#                                              -> here, action make,
+#                                                 fromTemplate Branch Panel,
+#                                                 templateName DB Standard
+#   "set panel DB-1 to use the DB Standard template"
+#                                              -> here, action apply,
+#                                                 panelName DB-1, templateName
+#                                                 DB Standard
+#   "what panel schedule templates are in this model"
+#                                              -> REPORT_ELECTRICAL_SETTINGS
+#   "make the panel schedules for these panels" -> CREATE_PANEL_SCHEDULES - a
+#                                                 NEW schedule view, on a
+#                                                 template it is told
+#   "what is on panel DB-1"                    -> REPORT_PANEL_CIRCUITS
+#   "use the office template on this view"     -> APPLY_VIEW_TEMPLATE - a VIEW
+#                                                 template, not a panel
+#                                                 schedule one
+utterances:
+  - make a new panel schedule template from Branch Panel called DB Standard
+  - set panel DB-1 to use the DB Standard template

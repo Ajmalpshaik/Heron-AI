@@ -1,0 +1,68 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that adds elements, "made something nobody asked for": a truss of
+# a type nobody chose, a truss along a vertical line, a second truss on a line
+# that already had one.
+# Arrange on a scratch copy of Revit 2020's rst_advanced_sample_project.rvt
+# (NEEDS-CHECKING Group KC). KC1 reads, before anything runs, the model's truss
+# types (Revit's Type Selector under Structure > Truss) - if it holds none, a
+# truss family from Revit's own library is loaded into the scratch copy and
+# saved first - a level, and an open stretch of plan on it for a 12 m line
+# with nothing standing on it. Where the model differs from that, the job file
+# changes - never the card. EVERY RUN ROLLED BACK, so each case starts from the
+# model as saved.
+
+positive:
+  - given: >
+      level the level KC1 names, trussType the truss type KC1 names, curves
+      "0,0,0; 12000,0,0" shifted to the open stretch KC1 found
+    expect: >
+      created one id; report "Line 1 (from <x>,<y> to <x+12000>,<y>): truss made
+      (<id>), type "<type>", 12000 mm long, on "<level>", <n> member(s)"; the
+      truss, read in the same rolled-back group, in Structural Trusses and on
+      that level's plane. THIS IS THE FIRST POSITIVE TO RUN
+  - given: >
+      the same, curves two lines "0,0,0; 12000,0,0 | 0,6000,0; 12000,6000,0"
+      shifted the same way
+    expect: two trusses, a report line each, both 12000 mm long
+  - given: >
+      the positive again, trussType written as "Family: Type" from the list
+      the card itself gave
+    expect: the same truss - both spellings name one type
+
+negative:
+  - given: >
+      the same level, trussType the same type, curves "0,0,0; 0,0,3000" - a
+      VERTICAL line at the same place
+    expect: >
+      created none; the report says "Line 1 (from <x>,<y> to <x>,<y>):
+      VERTICAL"; refused "None of the 1 line(s) could take a truss"; no truss
+      and no sketch plane added to the model. THIS IS THE FIRST CASE TO RUN
+  - given: the same level and line as the positive, trussType left out
+    expect: >
+      created none; refused "No truss type was named, so nothing was made -
+      the model's truss types are ..." - every type named, none chosen, even
+      when the model holds only one
+  - given: the same level and line, trussType "Howe" - what the modeller called it, not a type name the model has
+    expect: created none; refused "No truss type called "Howe"" with the list
+  - given: the same level and type, curves "0,0,0; 12000,0,1500" - a line that rises
+    expect: created none; the line named as rising 1500 mm, nothing made
+  - given: >
+      the positive's line given twice, "0,0,0; 12000,0,0 | 12000,0,0; 0,0,0"
+    expect: >
+      created one; the second line named "the same line as line 1 - one truss
+      per line, not two"
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one operation is one undo entry. The SubTransactions live inside the
+      caller's transaction
+
+second_route:
+  - >
+    A Structural Truss schedule, read inside the same rolled-back group: one
+    more row, of the type asked, on the level asked - and no new row in a
+    Structural Framing schedule beyond the truss's own members
+  - >
+    Revit's own Structure > Truss drawn on the same two points, the two
+    compared in plan and in a section: the same length, the same height
+  - one Ctrl+Z takes the truss and its members away in a single step (Golden Rule 16)

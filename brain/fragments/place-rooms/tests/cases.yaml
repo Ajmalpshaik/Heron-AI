@@ -39,5 +39,65 @@ negative:
   - given: a level with no enclosed area at all
     expect: refused, saying rooms need bounding elements, rather than reporting a successful placement of nothing
 
+  # VERSION 2 (2026-11-01) - PLACE_ROOM_AT_POINT merged in. Each FAILS on
+  # version 1, which had no `points`. NOT RUN.
+  - given: >
+      points "3000,2000,0; 9000,2000,0" inside two enclosed areas on a level,
+      placeKind room, the phase named
+    expect: >
+      created 2, each tag where its point was, both with a real area, and both
+      in the phase named - read Phase in Properties
+  - given: placeKind space, one point inside and one OUTSIDE any enclosed region
+    expect: >
+      created 2, `unbounded` naming only the outside one - measured after one
+      regeneration, so the inside one is not called unenclosed (5b-298)
+  - given: points with no phase named
+    expect: refused - the phase is required at a point too - nothing placed
+  - given: points with placeKind left empty
+    expect: refused, asking rooms or spaces - nothing placed
+  - given: placeKind space at points with no plan view
+    expect: placed - a space at a point needs no plan view
+  - given: a point Revit refuses outright among three
+    expect: pointsRefused 1, refusedPoints naming it, the other two placed
+  - given: a Z value in the points
+    expect: ignored, the level deciding the height
+  - given: >
+      placeKind room at a point on a model whose phase named is not the one
+      Revit puts a room placed at a point in
+    expect: >
+      the whole call undone, naming the phase each came out in. NEEDS REAL
+      REVIT: which phase that is has not been seen
+
+  # VERSION 3 (2026-11-01) - PLACE_AREAS merged in. Each FAILS on version 2,
+  # which has no area kind and refuses placeKind "area" asking rooms or
+  # spaces. NOT RUN. Arranged as PLACE_AREAS' proof was: CREATE_AREA_PLAN,
+  # then CREATE_ROOM_SEPARATION_LINES with lineKind area round the walls.
+  - given: >
+      placeKind area, areaPlanName "Area Plan GIA" with two enclosed regions,
+      points inside each "x,y" (two numbers), names "Office, Store", numbers
+      "A1, A2", no level and no phase named
+    expect: >
+      created 2, each with a size read back (unbounded empty), named Office
+      and Store and numbered A1 and A2 in that order - read in Properties
+  - given: placeKind area, one point outside every area boundary
+    expect: created 1 and the same id in `unbounded` - placed with no size
+  - given: placeKind area, areaPlanName of a FLOOR plan, not an area plan
+    expect: refused - no area plan of that name - nothing placed
+  - given: placeKind area with no areaPlanName
+    expect: refused, asking for the area plan - nothing placed
+  - given: placeKind area and no points
+    expect: refused - areas are placed at points - nothing placed
+  - given: areaPlanName given and placeKind left empty
+    expect: refused, asking rooms, spaces or areas - the kind is never inferred
+  - given: placeKind area, two points, three names
+    expect: refused - more names than points - nothing placed
+  - given: placeKind area with a level named that is not the area plan's
+    expect: refused, naming the area plan - nothing placed
+  - given: placeKind room, a phase named, points, and names "Office"
+    expect: refused - names go on areas here - nothing placed
+  - given: placeKind room with no phase named, after this version
+    expect: refused - the phase is still required for rooms and spaces
+
 second_route:
   - Revit's own Architecture > Room > Place Rooms Automatically, or Analyze > Space, on the same level, with the counts compared
+  - for areas, the area plan with each area's tag and Properties read, as PLACE_AREAS' second route

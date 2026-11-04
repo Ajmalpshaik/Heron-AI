@@ -1,0 +1,45 @@
+# NEEDS-CHECKING Group KV - ADD_ELECTRICAL_DISTRIBUTION, built 2026-11-01 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/add-electrical-distribution-kv-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/add-electrical-distribution-kv-2026-11-01.yaml
+#
+# THE MODEL is Group KU's scratch project, "electrical-settings-ku"
+# (docs/needs-checking/group-ku.md, KU1), new from Revit's metric ELECTRICAL
+# template. Never a working model. By hand before the run (KV1): if the
+# template has a voltage type of 230 V or of 999 V, delete it in Electrical
+# Settings, so the positive has something to add and the negative nothing to
+# find.
+#
+# THE ARRANGEMENT: this write takes no selection, so `setup: []`. The negative
+# is a DIFFERENT VALUE - a distribution system on a 999 V line-to-line voltage
+# the model has no voltage type for - never an empty one (fragment-proving,
+# rule 5): added 0, refused naming the voltages the model has, and the
+# distribution systems the same before and after. A name already present
+# (skipped, never overwritten) is row KV3. Every write here is ROLLED BACK.
+
+model: "electrical-settings-ku scratch project from Revit's metric electrical template, no 230 V voltage type, Revit 2020"
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: add-electrical-distribution
+    expect: added
+    setup: []
+    set:
+      add: "voltage"
+      volts: "230"
+    negative-set:
+      add: "distribution"
+      volts: "999"
+      phases: "3"
+      configuration: "wye"
+      wires: "4"
+    note: >
+      KV2. Negative - THE FIRST CASE TO RUN: a 999 V 3-phase wye 4-wire
+      distribution system, so added 0, refused "No voltage type of 999 V for
+      the line-to-line voltage. The model's voltage types are: ...", and the
+      distribution systems the same in before and after. Positive - added 1, after holds "\"230 V\" 230 V (min 230, max
+      230)" beside everything before. The name-already-present and distribution
+      system cases are rows KV3 and KV4, run with `validate --write`.

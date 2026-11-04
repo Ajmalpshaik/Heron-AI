@@ -1,0 +1,57 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "placed what it was not asked for": a part from a guessed
+# service or button, or on a guessed level.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for PLACE_FABRICATION_PART): the scratch project
+# "fabrication-mh" of CHANGE_FABRICATION_SERVICE_SIZE's cases, saved under
+# %TEMP%\heron-work, never a working model, with levels "Level 1" and
+# "Level 2". From MEP Fabrication Settings write down the low pressure
+# ductwork service's exact name and the exact names of its straight button
+# (STRAIGHT), an elbow button (ELBOW) and a hanger button (HANGER), and the
+# pipework service's name. The floor plan "Level 1" in front. Each case starts
+# from the saved file.
+
+positive:
+  - given: service the ductwork service; button STRAIGHT; point 5000,3000,2700; level "Level 1"
+    expect: >
+      report "Placed id ... from the button \"STRAIGHT\" ... on \"...\", at its
+      first condition ..., straight ... mm long, on \"Level 1\" with its
+      origin at x 5000, y 3000 mm and 2700 mm above the level. It is
+      connected to nothing"; placed holds one fabrication straight there
+
+  - given: service the pipework service's abbreviation; button ELBOW; point 0,0,3000; level none; size "50"
+    expect: >
+      one elbow on the pipework service on "Level 1" - the plan in front -
+      at the condition Revit picked for 50 mm
+
+negative:
+  - given: service the ductwork service; button HANGER; point 5000,3000,2700; level "Level 1"
+    expect: >
+      nothing placed; report "The button \"HANGER\" is a hanger - a hanger is
+      put on a fabrication straight ..."; no new element. THE FIRST CASE TO RUN
+
+  - given: service "Low"; button STRAIGHT; point 0,0,0; level "Level 1"
+    expect: >
+      nothing placed; report "No loaded service is called \"Low\". The
+      services loaded in this project are: ..."
+
+  - given: service the ductwork service; button left out; point 0,0,0; level "Level 1"
+    expect: >
+      nothing placed; report "No button was named. The buttons of \"...\" are
+      - palette ...: ..." listing them
+
+  - given: service the ductwork service; button STRAIGHT; point 0,0,0; level "Level 9"
+    expect: >
+      nothing placed; report "No level is called \"Level 9\". The levels
+      are: \"Level 1\", \"Level 2\" ..."
+
+second_route:
+  - >
+    The id in placed, selected in Revit: Properties shows the Service, the
+    Size and the Length the report gives, and the Reference Level "Level 1"
+  - >
+    The same button placed by hand from the MEP Fabrication Parts palette:
+    the same part, at the same size
+  - >
+    Undo: one entry in Revit's undo list, and Undo takes the part away

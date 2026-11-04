@@ -1,0 +1,26 @@
+# Round 8, 2026-11-02 - Revit 2020, "P1102 MEP" = a scratch copy of Revit 2020's own
+# Samples\rme_advanced_sample_project.rvt. Read before the run: the six sprinklers are all on
+# "Fire Protection Wet 1" (group-and-count of System Name); Revit's shared parameter file holds
+# 211 parameters (the modeller's own file - only read). Ducts 404243 and 411658 are two of the
+# callout's ten. Nothing here changes the model.
+model: "P1102 MEP (scratch copy of rme_advanced_sample_project.rvt), Revit 2020"
+
+defaults:
+  in: "P1102 MEP"
+  setup: []
+
+jobs:
+  - fragment: report-sprinkler-network
+    expect: networkJson
+    set: {systemName: "Fire Protection Wet 1"}
+    negative-set: {systemName: "ZZZ No Such System"}
+
+  - fragment: report-shared-parameter-file
+    expect: parameterCount
+    set: {nameContains: "", compareWithDocument: "true"}
+    negative-set: {nameContains: "ZZZ_Not_In_The_File", compareWithDocument: "true"}
+
+  - fragment: measure-distance
+    expect: straightMm
+    set: {first: "404243", second: "411658"}
+    negative-set: {first: "404243", second: "404243"}

@@ -1094,6 +1094,294 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ju.md`](needs-checking/group-ju.md)
 
+## Group JV - a circuit that already exists, edited: `EDIT_ELECTRICAL_CIRCUIT` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-jv.md`](needs-checking/group-jv.md)
+
+## Group JW - a duct or piping system that already exists, edited: `EDIT_MEP_SYSTEM` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-jw.md`](needs-checking/group-jw.md)
+
+## Group JX - insulation taken off ducts, pipes and their fittings: `REMOVE_MEP_INSULATION` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-jx.md`](needs-checking/group-jx.md)
+
+## Group JY - lining added to, changed on and taken off ducts and their fittings: `SET_DUCT_LINING` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-jy.md`](needs-checking/group-jy.md)
+
+## Group JZ - a wall foundation put under each selected wall: `CREATE_WALL_FOUNDATION` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-jz.md`](needs-checking/group-jz.md)
+
+## Group KA - the saved export setups and View/Sheet Sets: `LIST_EXPORT_SETUPS`, `MANAGE_EXPORT_SETUPS`, `SET_EXPORT_SETUP_OPTIONS`, `CHECK_SHEET_SETS_BY_PARAMETER`, and `MANAGE_SHEET_SETS` with nothing selected, its copy mode and its by-parameter mode (2026-11-01)
+
+**Its own file:** [`needs-checking/group-ka.md`](needs-checking/group-ka.md)
+
+## Group KB - a foundation slab from typed corners: `CREATE_FOUNDATION_SLAB` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kb.md`](needs-checking/group-kb.md)
+
+## Group KC - a truss along typed lines: `CREATE_TRUSS` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kc.md`](needs-checking/group-kc.md)
+
+## Group KD - columns attached to a selected target: `ATTACH_COLUMNS` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kd.md`](needs-checking/group-kd.md)
+
+## Group KE - rebar couplers on bar ends or between two bars: `PLACE_REBAR_COUPLERS` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-ke.md`](needs-checking/group-ke.md)
+
+## Group KF - one fabric sheet at a point in a slab or wall: `PLACE_FABRIC_SHEET` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kf.md`](needs-checking/group-kf.md)
+
+## Group KG - duct and pipe placeholders, drawn and converted: `CREATE_MEP_PLACEHOLDER`, `CONVERT_MEP_PLACEHOLDERS` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kg.md`](needs-checking/group-kg.md)
+
+## Group KH - area tags in an area plan: `TAG_AREAS` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kh.md`](needs-checking/group-kh.md)
+
+## Group KI - material tags and multi-category tags: `TAG_MATERIAL_OR_MULTI_CATEGORY` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-ki.md`](needs-checking/group-ki.md)
+
+## Group KJ - a Material Takeoff schedule view of one category: `CREATE_MATERIAL_TAKEOFF` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kj.md`](needs-checking/group-kj.md)
+
+## Group KK - the schedule settings Heron could not set: a column's units, min/max, multiple-values text and font; footers, blank lines, per-level sorting and the grand total title; column order and insert; the schedule's own switches; header groups; more kinds of schedule; key rows; split schedules (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kk.md`](needs-checking/group-kk.md)
+
+## Group KL - the span direction of structural floors: `SET_FLOOR_SPAN_DIRECTION` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kl.md`](needs-checking/group-kl.md)
+
+## Group KM - span direction symbols in a plan, Revit 2025 and later: `PLACE_SPAN_DIRECTION_SYMBOLS` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-km.md`](needs-checking/group-km.md)
+
+## Group KN - the active workset: `SET_ACTIVE_WORKSET` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kn.md`](needs-checking/group-kn.md)
+
+## Group KO - which workset is active: `REPORT_ACTIVE_WORKSET` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-ko.md`](needs-checking/group-ko.md)
+
+## Group KP - which way a structural floor spans: `REPORT_FLOOR_SPAN_DIRECTION` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kp.md`](needs-checking/group-kp.md)
+
+## Group KQ - which rebar numbers each partition uses: `REPORT_REBAR_NUMBERING` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kq.md`](needs-checking/group-kq.md)
+
+## Group KR - change Revit's rebar numbers: `EDIT_REBAR_NUMBERING` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kr.md`](needs-checking/group-kr.md)
+
+## Group KS - one multi-rebar annotation across bars in a view: `PLACE_MULTI_REBAR_ANNOTATION` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-ks.md`](needs-checking/group-ks.md)
+
+## Group KT - spot coordinates in a view: `ADD_SPOT_COORDINATES` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kt.md`](needs-checking/group-kt.md)
+
+## Group KU - which voltages, distribution systems, load classifications and demand factors a model has: `REPORT_ELECTRICAL_SETTINGS` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-ku.md`](needs-checking/group-ku.md)
+
+## Group KV - add a voltage type or a distribution system: `ADD_ELECTRICAL_DISTRIBUTION` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kv.md`](needs-checking/group-kv.md)
+
+## Group KW - add a load classification or a demand factor: `ADD_LOAD_CLASSIFICATION` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kw.md`](needs-checking/group-kw.md)
+
+## Group KX - which sizes the duct, conduit and cable tray size lists hold: `REPORT_DUCT_CONDUIT_SIZES` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kx.md`](needs-checking/group-kx.md)
+
+## Group KY - add or remove sizes in a duct size list, a pipe segment, a conduit standard or the cable tray sizes: `EDIT_MEP_SIZES` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-ky.md`](needs-checking/group-ky.md)
+
+## Group KZ - which load cases, loads and boundary conditions a model has: `REPORT_STRUCTURAL_LOADS` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-kz.md`](needs-checking/group-kz.md)
+
+## Group LA - add a structural load case: `CREATE_LOAD_CASE` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-la.md`](needs-checking/group-la.md)
+
+## Group LB - point, line and area loads in a load case: `PLACE_STRUCTURAL_LOADS` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-lb.md`](needs-checking/group-lb.md)
+
+## Group LC - fixed, pinned or roller boundary conditions: `PLACE_BOUNDARY_CONDITIONS` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-lc.md`](needs-checking/group-lc.md)
+
+## Group LD - which steel connections and connection types a model has: `REPORT_STRUCTURAL_CONNECTIONS` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-ld.md`](needs-checking/group-ld.md)
+
+## Group LE - a steel connection of a named type between beams and columns: `PLACE_STRUCTURAL_CONNECTIONS` (2026-11-01)
+
+**Its own file:** [`needs-checking/group-le.md`](needs-checking/group-le.md)
+
+## Group LF - which images and PDF pages a model holds: `LIST_IMAGES` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lf.md`](needs-checking/group-lf.md)
+
+## Group LG - a PDF page or a picture imported into a view: `IMPORT_IMAGE` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lg.md`](needs-checking/group-lg.md)
+
+## Group LH - a panel schedule template made, or a panel's schedule switched to one: `SET_PANEL_SCHEDULE_TEMPLATE` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lh.md`](needs-checking/group-lh.md)
+
+## Group LI - a circuit naming scheme made, or the project's circuit naming set: `SET_CIRCUIT_NAMING_SCHEME` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-li.md`](needs-checking/group-li.md)
+
+## Group LJ - the path of travel lines in a floor plan and their lengths: `REPORT_PATHS_OF_TRAVEL` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lj.md`](needs-checking/group-lj.md)
+
+## Group LK - path of travel lines drawn from rooms or points to a named exit: `CREATE_PATHS_OF_TRAVEL` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lk.md`](needs-checking/group-lk.md)
+
+## Group LL - reference planes drawn in a project from a named grid or level: `CREATE_PROJECT_REFERENCE_PLANES` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-ll.md`](needs-checking/group-ll.md)
+
+## Group LM - a view's work plane set to a named level, reference plane or grid, shown or hidden, and read: `SET_VIEW_WORK_PLANE`, `REPORT_VIEW_WORK_PLANE` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lm.md`](needs-checking/group-lm.md)
+
+## Group LN - a shaft opening cut between two named levels, and a wall's own rectangular opening: `CREATE_SHAFT_OPENING`, `CREATE_OPENING` widened (2026-11-02)
+
+**Its own file:** [`needs-checking/group-ln.md`](needs-checking/group-ln.md)
+
+## Group LO - MEP fabrication: the configuration and loaded services read, design ducts and pipes converted to fabrication parts of a named service, and Optimize Lengths: `REPORT_FABRICATION_SETUP`, `CONVERT_TO_FABRICATION`, `OPTIMIZE_FABRICATION_LENGTHS` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lo.md`](needs-checking/group-lo.md)
+
+## Group LP - a rigid duct turned into flex between the same two fittings, and Connect Into with a fixture's right connector: `CONVERT_TO_FLEX_DUCT`, `CONNECT_INTO_MAIN` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lp.md`](needs-checking/group-lp.md)
+
+## Group LQ - parallel copies of a pipe or conduit run, side by side or above or below it, with the elbows re-made: `CREATE_PARALLEL_RUNS` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lq.md`](needs-checking/group-lq.md)
+
+## Group LR - dimension types read, and one changed or copied under a new name - text size, font, tick mark, units format, colour: `REPORT_DIMENSION_TYPES`, `SET_DIMENSION_TYPE` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lr.md`](needs-checking/group-lr.md)
+
+## Group LS - an L-shaped, U-shaped or spiral stair by component placed from a point, and a landing added between two runs of a stair already made: `CREATE_SHAPED_STAIRS`, `ADD_STAIRS_LANDING` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-ls.md`](needs-checking/group-ls.md)
+
+## Group LT - a roof by extrusion, its profile sketched on a named reference plane or along a grid and extruded between a start and an end: `CREATE_EXTRUSION_ROOF` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lt.md`](needs-checking/group-lt.md)
+
+## Group LU - Revit's heating and cooling loads, run on the model with its own Energy Settings, a loads report made and each space's calculated loads read back: `RUN_HEATING_COOLING_LOADS` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lu.md`](needs-checking/group-lu.md)
+
+## Group LV - Manage > Project Information written - project number, client name, address, building name, status or an added shared parameter, each by its exact name and read back: `SET_PROJECT_INFORMATION` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lv.md`](needs-checking/group-lv.md)
+
+## Group LW - Modify > Cut Geometry and Uncut Geometry in a project - one element cut by a named cutting element, a void family or another solid, each pair read back - and the read of what cuts what: `CUT_GEOMETRY`, `REPORT_GEOMETRY_CUTS` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lw.md`](needs-checking/group-lw.md)
+
+## Group LX - Structure > Rebar in any concrete host - one bar or set of a named shape fitted into a box, or a bar sketched through points, of a named bar type, read back: `PLACE_REBAR` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lx.md`](needs-checking/group-lx.md)
+
+## Group LY - Modify > Wall Joins - butt, miter or square off where the walls handed in meet, each corner read back - the read of the join type at each wall end, and structural framing's start / end extension and join cutback by the end: `SET_WALL_JOIN_TYPE`, `REPORT_WALL_JOIN_TYPE`, `SET_FRAMING_END_EXTENSION` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-ly.md`](needs-checking/group-ly.md)
+
+## Group LZ - Annotate > Keynoting Settings - load the keynote file the modeller names by its full path, or reload the one loaded, absolute or relative, with Revit's load result and the file and entry count read back - and the keynote file named by a read of its own: `LOAD_KEYNOTE_FILE`, `REPORT_KEYNOTE_FILE` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-lz.md`](needs-checking/group-lz.md)
+
+## Group MA - Annotate > Arc Length - an arc length dimension along a curved wall, curved beam or arc line, Revit 2025 and later: `CREATE_ARC_LENGTH_DIMENSION` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-ma.md`](needs-checking/group-ma.md)
+
+## Group MB - Manage > Object Styles - one category's or subcategory's projection and cut line weight, line colour, line pattern and material, for the whole model, read back before and after: `SET_OBJECT_STYLE` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-mb.md`](needs-checking/group-mb.md)
+
+## Group MC - Annotate > Beam Annotations - on each beam in a plan, in one go, a beam tag at its start, middle or end and spot elevations on its top or bottom at its ends, beams already tagged left alone: `ADD_BEAM_ANNOTATIONS` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-mc.md`](needs-checking/group-mc.md)
+
+## Group MD - Manage > Transfer Project Standards - fill patterns, line patterns, text, dimension, wall, floor, roof, ceiling, filled region, grid and level types from another open project, this project's kept where a name is already here: `TRANSFER_PROJECT_STANDARDS` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-md.md`](needs-checking/group-md.md)
+
+## Group ME - Analyze > Load Combinations - add load combinations from factored load cases, with their state and type, and list the combinations a model has: `CREATE_LOAD_COMBINATION`, `REPORT_STRUCTURAL_LOADS` widened (2026-11-02)
+
+**Its own file:** [`needs-checking/group-me.md`](needs-checking/group-me.md)
+
+## Group MF - Manage > Structural Settings and Structure > Reinforcement Settings - read both dialogs, and change either for the whole model, read back before and after: `REPORT_STRUCTURAL_SETTINGS`, `SET_STRUCTURAL_SETTINGS`, `SET_REINFORCEMENT_SETTINGS` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-mf.md`](needs-checking/group-mf.md)
+
+## Group MG - Analyze > Analytical Model - draw analytical members, panels and links, move or redraw an analytical line or outline without moving the element, and tie an analytical element to its physical one: `CREATE_ANALYTICAL_ELEMENTS`, `ADJUST_ANALYTICAL_ELEMENTS`, `ASSOCIATE_ANALYTICAL_ELEMENTS` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-mg.md`](needs-checking/group-mg.md)
+
+## Group MH - MEP fabrication parts changed to another service or size, hung with a named hanger button, and placed one at a time from a named button: `CHANGE_FABRICATION_SERVICE_SIZE`, `ADD_FABRICATION_HANGERS`, `PLACE_FABRICATION_PART` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-mh.md`](needs-checking/group-mh.md)
+
+## Group MI - Electrical Settings > Wiring Types and the electrical analytical model - add a wire type by its material, rating and insulation, an area-based load type in W/m2 put on the selected spaces, and power distribution nodes connected to the node that feeds them: `ADD_WIRE_TYPE`, `ADD_AREA_BASED_LOAD`, `ADD_ELECTRICAL_ANALYTICAL_NODE` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-mi.md`](needs-checking/group-mi.md)
+
+## Group MJ - Massing & Site before toposolids and the property line - make a toposurface from survey points, add a building pad at a level or a subregion on a toposurface, and draw a property line through points or from a table of distances and bearings: `CREATE_TOPOSURFACE`, `CREATE_PROPERTY_LINE` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-mj.md`](needs-checking/group-mj.md)
+
+## Group MK - Insert > Point Cloud and Manage Images > Reload - link a point cloud, and reload images from their files or Reload From another file: `LINK_FILES` widened, `RELOAD_IMAGES` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-mk.md`](needs-checking/group-mk.md)
+
+## Group ML - Modify > Justification, Annotate > Tread Number and Manage > Project Parameters > Remove - set and read where beams and braces sit on their line, place tread or riser numbers on a stair run, and remove a project parameter: `SET_FRAMING_JUSTIFICATION`, `REPORT_FRAMING_JUSTIFICATION`, `PLACE_STAIR_TREAD_NUMBERS`, `REMOVE_PROJECT_PARAMETER` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-ml.md`](needs-checking/group-ml.md)
+
+## Group MM - Manage > Mechanical Settings, Analyze > Energy Settings and Create Energy Model, and Insert > Import gbXML - read and change the duct and pipe settings and the energy settings for the whole model, build the energy analytical model, and import a gbXML file: `REPORT_MECHANICAL_SETTINGS`, `SET_MECHANICAL_SETTINGS`, `REPORT_ENERGY_SETTINGS`, `SET_ENERGY_SETTINGS`, `CREATE_ENERGY_MODEL`, `IMPORT_GBXML` (2026-11-02)
+
+**Its own file:** [`needs-checking/group-mm.md`](needs-checking/group-mm.md)
+
+## Group MN - Structure > Rebar Shape, Annotate > Symbol > Area, Path and Fabric Reinforcement Symbols, and Architecture > Stair > Create Sketch - make a rebar shape from its segments and bends, put Revit's reinforcement symbols on area and path reinforcement and fabric sheets, and sketch a stair from its boundaries and riser lines: `CREATE_REBAR_SHAPE`, `PLACE_REINFORCEMENT_SYMBOLS`, `CREATE_SHAPED_STAIRS` widened (2026-11-02)
+
+**Its own file:** [`needs-checking/group-mn.md`](needs-checking/group-mn.md)
+
+## Group MO - Modify > Offset, Insert > Insert from File, Analyze > Systems Analysis and Manage > Coordinates > Publish Coordinates - offset a chain of lines as a copy or a move with its corners joined, insert drafting views, legends or 2D elements from a file that is not open, start Revit's Systems Analysis, and publish this model's coordinates into a link: `OFFSET_LINE_CHAIN`, `INSERT_VIEWS_FROM_FILE`, `RUN_SYSTEMS_ANALYSIS`, `PUBLISH_COORDINATES` (2026-11-03)
+
+**Its own file:** [`needs-checking/group-mo.md`](needs-checking/group-mo.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

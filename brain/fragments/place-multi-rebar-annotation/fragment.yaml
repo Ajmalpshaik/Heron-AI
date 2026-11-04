@@ -1,0 +1,253 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-163
+semantic-identity: "one multi-rebar annotation - a dimension line and a tag - across these rebar bars - Revit's Multi-Rebar Annotation, Aligned or Linear"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "add a multi-rebar annotation
+# to these bars", "put a multi-rebar tag with a dimension line on this rebar
+# set" and "annotate these bars with one tag and a dimension" - Revit's
+# Annotate > Multi-Rebar, Aligned and Linear. Checked that day with
+# brain/heron_retrieve.py on a scratch store, Revit 2024: they reached
+# PLACE_BEAM_REBAR, CREATE_REBAR_COVER_TYPE and REPORT_TAGS_AND_TARGETS. None
+# of them, and no card in the library, calls MultiReferenceAnnotation - the
+# ribbon-coverage note of 2026-11-01 lists it MISSING.
+#
+# WHY A CARD OF ITS OWN, checked card by card that day (heron-duplicate-
+# checker's method; brain/heron_merge.py and brain/heron_duplicates.py found
+# nothing equal). TAG_ELEMENTS_IN_VIEW and TAG_MATERIAL_OR_MULTI_CATEGORY place
+# one IndependentTag per element and no dimension; CREATE_DIMENSION and
+# CREATE_LINEAR_DIMENSION draw a dimension and no tag, through NewDimension on
+# references the caller or the card picks. A multi-rebar annotation is ONE
+# element owning both, made by its own Revit call from a type that names the
+# tag family and the dimension style, with checks of its own. REPORT_HOST_REBAR
+# reads bars, SET_REBAR_VIEW_STATE shows them, REPORT_REBAR_NUMBERING and
+# EDIT_REBAR_NUMBERING number them - none annotates. LOOK-ALIKES, kept apart.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33):
+#   view            the plan, section, elevation, detail view or locked 3D
+#                   view, as the Project Browser names it. Any other view -
+#                   a template, a perspective, an unlocked 3D view, a sheet -
+#                   is refused by name, nothing placed
+#   elements        the bars - the selection, or a filter before this one
+#   annotationType  the multi-rebar annotation type, as Properties names it,
+#                   or "Family: Type". Left out, or a name no multi-rebar
+#                   annotation type has: NOTHING IS PLACED and the loaded types
+#                   come back in `typesLoaded`, each with its reference
+#                   category, tag family and dimension style. Never guessed,
+#                   even when only one is loaded
+#   style           aligned (left out) or linear - Revit's two Multi-Rebar
+#                   buttons. Aligned is DimensionStyleType.Linear, Linear is
+#                   LinearFixed: Revit's own documentation of
+#                   AreReferencesValidForLinearDimension, every release
+#   direction       horizontal or vertical in the view. Left out: along the
+#                   spread of the first bar set that is spread across the view
+#                   (Linear: the nearer of the two). No such set: nothing
+#                   placed, and the modeller asked for one
+#   offsetMm        PAPER millimetres from the bars to the dimension line, and
+#                   again to the tag head - times the view scale, / 304.8 to
+#                   feet (D-20). Left out or 0: 10
+#   addLeader       a leader on the tag. Left out: none
+#
+# NAMED AND LEFT, EACH WITH ITS REASON: not Structural Rebar, not drawn in the
+# view, already dimensioned by a multi-rebar annotation there, refused by
+# Revit's own check bar by bar. If the bars left fail Revit's checks TOGETHER,
+# nothing is placed and the check is named. What is made is read back - its
+# type, its dimension in this view witnessing the bars, its tag - and a wrong
+# one removed inside the same undo.
+#
+# RISK MODIFY. It adds one annotation and deletes nothing it did not just make.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.annotation
+capability: PLACE_MULTI_REBAR_ANNOTATION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Revit's Annotate > Multi-Rebar, Aligned or Linear: one multi-rebar
+  annotation - a dimension line across the rebar and the tag its type names -
+  on the bars handed in, of the multi-rebar annotation type the modeller names.
+  It says what it placed and why it left every other bar: not rebar, not
+  drawn there, already carrying one, or refused by Revit's own check.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The view the annotation goes in, BY NAME - a plan, section, elevation,
+    # detail view or locked 3D view. Any other is refused.
+    - name: view
+      type: View
+      source: request
+    # The bars, from the selection or from a filter before this one.
+    - name: elements
+      type: IList<Element>
+    # A multi-rebar annotation type, by its Project Browser name. Left out,
+    # nothing is placed and the loaded types are listed.
+    - name: annotationType
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # aligned or linear - Revit's two Multi-Rebar buttons. Left out: aligned.
+    - name: style
+      type: string
+      source: request
+      optional: true
+      absent: aligned
+    # horizontal or vertical in the view. Left out: along the bars' spread.
+    - name: direction
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # PAPER millimetres, times the view scale. Left out, 0: 10.
+    - name: offsetMm
+      type: double
+      source: request
+      optional: true
+      absent: 0
+    # A leader on the tag. Left out, none.
+    - name: addLeader
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: placed
+      # 1 when the annotation was placed and read back, else 0.
+      role: result
+      type: int
+    - name: annotationId
+      # The multi-rebar annotation placed. Invalid when none was.
+      role: result
+      type: ElementId
+    - name: dimensionId
+      # Its dimension, read back in this view witnessing the bars.
+      role: result
+      type: ElementId
+    - name: tagId
+      # Its tag, read back as its own. Invalid when its type names no tag
+      # family - Revit then places the dimension alone.
+      role: result
+      type: ElementId
+    - name: dimensioned
+      # The bars its dimension witnesses, read back from the dimension. What
+      # it measured, not a thing it made (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notRebar
+      # Handed in and not of the type's reference category, Structural Rebar
+      # - a column, a wall - and left alone (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notVisible
+      # Bars not drawn in the view - hidden, cropped out, not cut - or of
+      # another model (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notAligned
+      # Bars Revit's own check refused for this style and direction, one by
+      # one - neither points in the view nor square to the dimension line, or
+      # for Linear not points. `findings` names the check (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: alreadyAnnotated
+      # Bars a multi-rebar annotation's dimension in this view already
+      # witnesses, so a re-run stacks nothing. Evidence it looked (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: typesLoaded
+      # The multi-rebar annotation types the model has, each with its
+      # reference category, tag family and dimension style - what to name.
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why nothing was placed at all, in plain words. Empty when it ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read with tools/api-surface --members
+  on 2026-11-01, the same signatures 2020 through 2027:
+  MultiReferenceAnnotation.Create(Document, ElementId,
+  MultiReferenceAnnotationOptions), DimensionId, TagId,
+  AreElementsValidForMultiReferenceAnnotation,
+  AreReferencesValidForLinearDimension,
+  AreReferencesValidForLinearFixedDimension,
+  IsLinearFixedDimensionDirectionValid and Is3DViewValidForDimension; the
+  MultiReferenceAnnotationOptions constructor, DimensionStyleType,
+  SetElementsToDimension, DimensionLineOrigin, DimensionLineDirection,
+  DimensionPlaneNormal, TagHeadPosition, TagHasLeader,
+  ElementsMatchReferenceCategory and IsAllowedDimensionStyleType;
+  MultiReferenceAnnotationType.ReferenceCategoryId, TagTypeId and
+  DimensionStyleId; IndependentTag.MultiReferenceAnnotationId;
+  Dimension.References; Reference.ElementId; Rebar.IsRebarShapeDriven,
+  GetShapeDrivenAccessor and RebarShapeDrivenAccessor.Normal;
+  RebarInSystem.Normal; View3D.IsLocked and IsPerspective; the
+  FilteredElementCollector(Document, ElementId) constructor; and
+  BuiltInCategory.OST_MultiReferenceAnnotations. The request named
+  MultiReferenceAnnotationOptions.ReferenceCategory: no release has it - the
+  category is the TYPE's ReferenceCategoryId. Revit documents a
+  Dimension.MultiReferenceAnnotationId too, and no release's reference
+  assembly carries it, so the dimension is read back through the
+  annotation's DimensionId instead. No ElementId is built from a number or
+  read as one.
+
+# ROUTING (2026-11-01) - measured that day through heron_retrieve.find on two
+# scratch stores, one built from the tree before this card and one after, over
+# every declared utterance and every routing-table sentence of every live card
+# (4,321 sentences, `model` backend), with no Revit filter and behind the 2024
+# wall.
+#
+#   "add a multi-rebar annotation to these bars"   -> here
+#   "put a multi-rebar tag with a dimension line   -> here
+#    on this rebar set"
+#   "annotate these bars with one tag and a        -> here
+#    dimension"
+#   "tag these"                                    -> TAG_ELEMENTS_IN_VIEW - one
+#                                                     tag per element, no dimension
+#   "annotate these on the drawing"                -> TAG_ELEMENTS_IN_VIEW
+#   "dimension these ducts"                        -> CREATE_DIMENSION - a dimension
+#                                                     and no tag
+#   "add a linear dimension"                       -> CREATE_LINEAR_DIMENSION
+#   "what rebar is in these columns"               -> REPORT_HOST_REBAR - a read
+#
+# WHAT MOVED. No declared utterance changed the card it reaches, and no TAG_
+# ELEMENTS_IN_VIEW sentence moved. ONE ROUTING-TABLE SENTENCE DID, between two
+# cards neither of which its table names: "put it back", claimed by SHOW_
+# ELEMENTS and not reached before this card either, went from PLACE_FAMILY_
+# INSTANCES to RESET_GRAPHIC_OVERRIDES - a write either way. Not declared on
+# SHOW_ELEMENTS here: RESET_GRAPHIC_OVERRIDES claims "put it back how it was",
+# and which card the bare sentence means is the owner's choice - recorded as
+# FRAGMENT-ISSUES row 5b-1375, OPEN.
+#
+# ON THE KEYWORD ROUTE ALONE (tools/check-routing.py, not the lookup) "add a
+# linear dimension" now ranks this card first, where CREATE_DIMENSION did -
+# neither its claimant; the lookup answers it by identity, on CREATE_LINEAR_
+# DIMENSION, before and after. "Linear" is Revit's own name for the button and
+# stays in this card's words.
+#
+# AND SENTENCES NOBODY DECLARES, measured the same day: "tag the rebar", "tag
+# the rebar in this view", "put a tag on this rebar set", "annotate the rebar"
+# and "dimension the rebar" reached CREATE_REBAR_BAR_TYPE, SET_REBAR_VIEW_STATE,
+# PLACE_BEAM_REBAR, LIST_REBAR_TYPES and CREATE_REBAR_COVER_TYPE before this
+# card, and reach it after. Here, with no multi-rebar annotation type named,
+# nothing is placed and the types are listed. Recorded for the owner in row
+# 5b-1375; no words were declared on another card to win them back.
+utterances:
+  - add a multi-rebar annotation to these bars
+  - put a multi-rebar tag with a dimension line on this rebar set
+  - annotate these bars with one tag and a dimension

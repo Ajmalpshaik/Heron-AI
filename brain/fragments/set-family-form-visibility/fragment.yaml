@@ -106,7 +106,7 @@ compatibility-note: >
   / `GetVisibility`, read the same 2020 through 2027 (the RevitAPI reference
   assemblies, read 2026-10-01).
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "show this form only in fine"                -> here
 #   "hide the body in plan views in the family"  -> here

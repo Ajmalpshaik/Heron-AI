@@ -1,0 +1,77 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "changed what it was not given": a design duct or a wall
+# touched, a service guessed, or a size forced on the wrong shape.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for CHANGE_FABRICATION_SERVICE_SIZE): the scratch
+# project "fabrication-mh", from Revit's metric Mechanical template, saved
+# under %TEMP%\heron-work, never a working model. In Systems > Fabrication >
+# MEP Fabrication Settings choose one of Autodesk's sample configurations and
+# load TWO ductwork services (a low and a high pressure one) and one pipework
+# service - write down their exact names and each one's palettes. From the
+# MEP Fabrication Parts palette, the low pressure service: a rectangular run
+# of two straights and an elbow (F1, F2, FE) at a size the service has,
+# written down; one design duct (D) and one wall (W) beside it. Write down
+# every id. A second scratch project with no configuration, holding one
+# duct, is the no-configuration case. Each case starts from the saved file.
+
+positive:
+  - given: F1, F2 and FE selected; service the high pressure service's whole name
+    expect: >
+      report "Asked for the service \"...\" on 3 fabrication part(s). Change
+      Service to \"...\", palette \"...\": Revit reported success ..."; each
+      part read back "was on \"<low>\" ..., now on \"<high>\" ..." or named
+      as no longer in the model with the parts Revit made listed; changed
+      holds every part now on the high pressure service. RECORD whether
+      Revit kept the ids or re-made the parts
+
+  - given: F1 and F2 selected; service none; size "400x300", a size the service has
+    expect: >
+      report "Asked for the size 400 x 300 mm on 2 fabrication part(s).
+      Change Size to 400 x 300 mm (1 present straight size(s) mapped): Revit
+      reported success ..."; both straights read back at 400x300 in their
+      Size; RECORD what Revit did to FE, the elbow between them
+
+  - given: F1, F2 and FE selected; service the high pressure service; size "400x300"
+    expect: >
+      the service changed first, then the size - both read back on each part
+
+negative:
+  - given: D and W selected with F1; service the high pressure service
+    expect: >
+      notFabrication names D "not a fabrication part - a design duct; Design
+      to Fabrication makes it fabrication first" and W "not a fabrication
+      part"; D and W unchanged, D still a design duct. THE FIRST CASE TO RUN
+
+  - given: F1 selected; service "High" - part of a name, not a whole name
+    expect: >
+      nothing changed; report "No loaded service is called \"High\". The
+      services loaded in this project are: ..." naming all three - F1 still
+      on the low pressure service
+
+  - given: F1 selected; service the high pressure service; palette "ZZNOPALETTE"
+    expect: >
+      nothing changed; report "The service \"...\" has no palette called
+      \"ZZNOPALETTE\". Its palettes are: ..."
+
+  - given: F1 selected; service none; size "150" - one number for a rectangular straight
+    expect: >
+      nothing sent for F1; notChanged "a rectangular straight - it takes
+      width x depth, and \"150\" was given. Left at ..."
+
+  - given: the scratch project with no configuration, its duct selected, any service
+    expect: >
+      report "This model has no fabrication configuration - choose one in
+      Systems > Fabrication > MEP Fabrication Settings ..."; nothing changed
+
+second_route:
+  - >
+    Each id in changed, selected in Revit: Properties shows the Service and
+    Size the report gives
+  - >
+    Revit's own Modify | Fabrication Parts > Change Service and Change Size
+    on a copy of the same saved file, the same parts, service and size: the
+    same parts changed, the same ids kept or re-made
+  - >
+    Undo: one entry in Revit's undo list, and Undo puts every part back on
+    its service and size

@@ -107,19 +107,25 @@ compatibility-note: >
 #   a schedule prints short
 # none of them warns, and this fragment is the only place that says so.
 
-# ROUTING - repeated in SET_ELEMENT_WORKSET and READ_ELEMENT_OWNERSHIP.
+# ROUTING - repeated in SET_ELEMENT_WORKSET and REPORT_ELEMENT_OWNERSHIP.
 #
 #   "list the worksets"          -> here
 #   "are all the worksets open"  -> here
 #   "why is the model empty"     -> here is the first thing to check
-#   "which workset is this on"   -> READ_ELEMENT_OWNERSHIP / the element's own
+#   "which workset is this on"   -> REPORT_ELEMENT_OWNERSHIP / the element's own
 #                                   workset - a question about an ELEMENT
 #   "put these on the MEP workset" -> SET_ELEMENT_WORKSET
-#   "who owns this"              -> READ_ELEMENT_OWNERSHIP
+#   "who owns this"              -> REPORT_ELEMENT_OWNERSHIP
+#   "which workset is active"    -> REPORT_ACTIVE_WORKSET - the active one, a
+#                                   read of its own since 2026-11-01 so that
+#                                   this card's proof stays good (5b-1370)
 #   "is this model workshared"   -> here (declared) and answered by
-#                                   READ_ELEMENT_OWNERSHIP, which is left alone
-#                                   deliberately: it PROVIDES `workshared`, so
-#                                   it genuinely answers the question. Both are
+#                                   REPORT_ELEMENT_OWNERSHIP, which is left alone
+#                                   deliberately: it PROVIDES `notWorkshared`
+#                                   (READ_ELEMENT_OWNERSHIP's `workshared`
+#                                   until that card was merged into it,
+#                                   2026-11-01), so it genuinely answers the
+#                                   question. Both are
 #                                   reads and either is usable - not every
 #                                   contested sentence has a wrong side
 #   "add a new workset"              -> CREATE_WORKSET - a write, and this

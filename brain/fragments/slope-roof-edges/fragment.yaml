@@ -16,7 +16,7 @@ risk: MODIFY
 purpose: >
   Slopes the edges of a footprint roof that is already in the model, so a flat
   roof becomes a GABLE or a HIP at the pitch the modeller gives. It acts on the
-  roof SELECTED in Revit - one CREATE_ROOF made, or one drawn by hand through
+  roof SELECTED in Revit - one CREATE_FLOOR made with a roof type, or one drawn by hand through
   Architecture > Roof by Footprint, which is the same kind of element. Several
   roofs may be selected; each is judged, sloped and read back on its own.
 
@@ -28,8 +28,8 @@ purpose: >
   turned back into degrees with the raw ratio printed beside it, and the roof's
   height is measured - the mistake would show twice over if it ever came back.
 
-  **THE PITCH IS ALWAYS ASKED FOR AND NEVER ASSUMED (D-33).** CREATE_ROOF
-  refused to invent one for the same reason: a default pitch becomes a pitch
+  **THE PITCH IS ALWAYS ASKED FOR AND NEVER ASSUMED (D-33).** CREATE_FLOOR
+  refuses to invent one on a roof for the same reason: a default pitch becomes a pitch
   quietly relied on. It is in DEGREES, the usual way to state a pitch on a
   metric drawing. A ratio - "1 in 2" - is the other common way and is NOT read
   here, so that one number can never mean two things: convert it first (1 in 2
@@ -73,10 +73,11 @@ contract:
   needs:
     - name: doc
       type: Document
-    # The roof, FROM THE SELECTION - one CREATE_ROOF made or one drawn by hand;
+    # The roof, FROM THE SELECTION - one CREATE_FLOOR made with a roof type
+    # (CREATE_ROOF until 2026-11-01) or one drawn by hand;
     # they are the same element. Several may be selected, and anything in the
     # selection that is not a footprint roof is named in `refused` and left
-    # alone. SELECT THE ROOF. Run straight after CREATE_ROOF with nothing
+    # alone. SELECT THE ROOF. Run straight after CREATE_FLOOR with nothing
     # selected, the add-in's fallback hands that fragment's `created` - ONE id,
     # not a list - to `elements`; read in RevitFragment.Shape, NOT run, that is
     # a cast the prologue cannot make, so the selection is the route to use.
@@ -193,13 +194,20 @@ compatibility-note: >
   2027's own RevitAPI.xml). No ElementId is constructed and none is read as a
   number.
 
-# ROUTING - repeated in CREATE_ROOF.
+# ROUTING - repeated in CREATE_FLOOR (CREATE_ROOF, merged into it 2026-11-01).
 #
 #   "slope this roof"                    -> here
 #   "make it a gable roof at 30 degrees" -> here
 #   "make this a hip roof"               -> here
-#   "put a roof over this"               -> CREATE_ROOF. It makes the roof FLAT;
+#   "put a roof over this"               -> CREATE_FLOOR, with a roof type
+#                                           (CREATE_ROOF merged in). It makes the roof FLAT;
 #                                           this slopes it afterwards
+#   "add a gable extrusion roof on reference plane North Face",
+#   "make a barrel roof over the entrance"
+#                                        -> CREATE_EXTRUSION_ROOF (2026-11-02).
+#                                           A roof by extrusion takes its slope
+#                                           from its profile; this card refuses
+#                                           one by name
 #   "what pitch is this roof"            -> NOT HERE, and nowhere yet. A
 #                                           question must not land on a write,
 #                                           and nothing reads a roof's pitch

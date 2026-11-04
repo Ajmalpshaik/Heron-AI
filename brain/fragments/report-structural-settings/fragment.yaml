@@ -1,0 +1,123 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-065
+semantic-identity: "what are this model's Structural Settings and Reinforcement Settings - symbolic cutback distances, brace symbols, boundary conditions, hooks in the rebar shape definition, rebar presentation and rounding"
+kind: action
+domain: revit.document
+capability: REPORT_STRUCTURAL_SETTINGS
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words below. Checked that day with
+# brain/heron_retrieve.py's find() on a scratch store built from this tree:
+# "what are the structural settings" reached SET_VIEW_UNDERLAY, a write,
+# without the host's question flag (CHECK_STRUCTURAL_SUPPORTS with it); "what
+# are the reinforcement settings" reached PLACE_AREA_REINFORCEMENT, a write,
+# without the flag (REPORT_HOST_REBAR with it). Nothing read either dialog;
+# LIST_REBAR_TYPES (PROVEN) reads one Reinforcement Setting - whether the rebar
+# shape defines hooks - beside the rebar types, and is left as it is (its
+# impl/ untouched, so its proof stands).
+#
+# ONE READ FOR BOTH DIALOGS, AND WHY. The two are the structural modeller's two
+# project-wide settings dialogs, each answer is one string a chat reads whole,
+# and the two writes, SET_STRUCTURAL_SETTINGS and SET_REINFORCEMENT_SETTINGS,
+# take every value by the name printed here. Two reads would be two cards to
+# route one kind of question between.
+#
+# WHAT IT READS, every release 2020-2027 unless named:
+#   Structural Settings  symbolic cutback distance (brace, beam/truss,
+#                        column), brace parallel line offset, show brace above /
+#                        below with their symbols, kicker brace symbol,
+#                        boundary condition symbol spacing and the fixed,
+#                        pinned, roller and user defined symbols; loads display
+#                        scaling (2024+); boundary setback disabled for steel
+#                        elements (2026+)
+#   Reinforcement        include hooks / end treatments in rebar shape
+#     Settings           definition, host structural rebar, rebar presentation
+#                        in view and in section, rebar and fabric total and
+#                        segment length rounding with their methods (and the
+#                        unit Revit holds them in), varying length number
+#                        suffix, and numbering: "number varying length rebars
+#                        individually" to 2025, the numbering method from 2026
+#
+# NOT READ: the Connection Symbols - no API on any release (see
+# SET_STRUCTURAL_SETTINGS); the 2020-2022 analytical model checks; the rebar
+# abbreviation tags. The answer says the first.
+#
+# READ ONLY. Opens no transaction and needs none.
+purpose: >
+  Answers what this model's Structural Settings and Reinforcement Settings
+  are, by reading Manage > Structural Settings and Structure > Reinforcement
+  Settings: what the beam, brace and column symbolic cutback distance is,
+  whether braces show above and below and with which symbols, the boundary
+  condition symbols, whether hooks are included in the rebar shape
+  definition, how rebar is presented in views and sections, and what the
+  rebar and fabric rounding is. Millimetres. Nothing needs to be selected
+  and nothing changes.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: structuralSettings
+      # Every Structural Setting read, in the names SET_STRUCTURAL_SETTINGS
+      # takes: "Structural Settings - Symbolic cutback distance: brace cutback
+      # 2.4 mm, ...". Empty in a document with none.
+      role: result
+      type: string
+    - name: reinforcementSettings
+      # Every Reinforcement Setting read, in the names
+      # SET_REINFORCEMENT_SETTINGS takes. Empty in a document with none.
+      role: result
+      type: string
+    - name: settingsRead
+      # How many settings were read - a count of what it FOUND.
+      role: result
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, read off tools/api-surface --members
+  for all eight on 2026-11-02. Every StructuralSettings and
+  ReinforcementSettings member SET_STRUCTURAL_SETTINGS and
+  SET_REINFORCEMENT_SETTINGS name is 2020 to 2027 with one signature.
+  UseLoadsDisplayScaling (2024+) behind `#if REVIT2024_OR_GREATER`;
+  BoundarySetbackDisabledForSteelElements and NumberingMethod /
+  ReinforcementNumberingMethod (2026+) behind `#if REVIT2026_OR_GREATER`, with
+  NumberVaryingLengthRebarsIndividually (2020-2025, obsolete in 2026) in the
+  `#else`. The rounding unit's name: LabelUtils.GetLabelForUnit(
+  GetLengthUnitTypeId()) on 2021-2027, LabelUtils.GetLabelFor(
+  LengthDisplayUnit) on 2020 behind `#if REVIT2020` (row 5b-181, FIXED).
+
+# ROUTING (2026-11-02) - the same rows are repeated in SET_STRUCTURAL_SETTINGS
+# and SET_REINFORCEMENT_SETTINGS.
+#
+#   "what are the structural settings"                 -> here
+#   "what are the reinforcement settings"              -> here
+#   "set the beam symbolic cutback distance to 50 mm"  -> SET_STRUCTURAL_SETTINGS. A question never reaches a write (D-86)
+#   "turn on rebar shape defines hooks"                -> SET_REINFORCEMENT_SETTINGS
+#   "what rebar bar types are loaded"                  -> LIST_REBAR_TYPES - the types, not the settings
+#   "read the structural analytical model"             -> REPORT_ANALYTICAL_MODEL
+#
+# WHAT MOVED (heron_retrieve.find over every declared utterance and routing-row
+# sentence of the library, on scratch stores built without and with the three
+# cards, without and with the host's question flag, 2026-11-02): every
+# sentence above reaches the card it names; the two questions reach this card
+# with and without the flag; no other card's declared sentence lost its card.
+# Four made-up questions reach the writes without the flag (this read with it)
+# - row 5b-1433, OPEN. The measurement is in NEEDS-CHECKING Group MF.
+utterances:
+  - what are the structural settings
+  - what are the reinforcement settings

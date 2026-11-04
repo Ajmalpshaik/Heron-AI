@@ -69,10 +69,10 @@ purpose: >
      call. Whether it is accepted in a mass family is owed in NEEDS-CHECKING
      Group JO. Two solids that make one block are joined by the same call.
   6. CHECK IT: REPORT_FAMILY_FORMS (PROVEN) - every form, solid or void,
-     its extent and volume against step 1's table. SET_FAMILY_FORM_MATERIAL
+     its extent and volume against step 1's table. LINK_FAMILY_PARAMETER (links Material=<it>)
      (PROVEN) when the study shows blocks by use or by phase.
   7. INTO THE PROJECT: SAVE_DOCUMENT (PROVEN), then LOAD_FAMILY (PROVEN)
-     into the project and PLACE_FAMILY_INSTANCES (PROVEN) on the ground
+     into the project and PLACE_FAMILY_INSTANCES (DRAFT, version 4 - version 3 was PROVEN; merged 2026-11-01, and until it is proved on a real model a kept change from it is refused, D-117) on the ground
      level at the insertion point; a family changed after it was placed is
      loaded again with reload=true and every instance follows. The
      MASSING-STUDY method takes it from there - mass floors, usage, areas.
@@ -96,7 +96,7 @@ needs:
   - CREATE_CONCEPTUAL_FORM
   - COMBINE_FAMILY_FORMS
   - REPORT_FAMILY_FORMS
-  - SET_FAMILY_FORM_MATERIAL
+  - LINK_FAMILY_PARAMETER
   - DIVIDE_FAMILY_SURFACE
   - SAVE_DOCUMENT
   - LOAD_FAMILY

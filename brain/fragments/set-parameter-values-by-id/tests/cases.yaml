@@ -159,3 +159,43 @@ negative_by_guid:
     expect: written 0; refused says it has no parameter called that; nothing written
   - given: any row naming a parameter as it is spelt, with no braces
     expect: version 5's answer unchanged - the name is found exactly as before
+
+  # VERSION 7 - IMPORT_PARAMETER_VALUES merged in: csvPath. Each fails on
+  # version 6, which has no csvPath, blankCells or elements.
+  - given: >
+      csvPath a file "ElementId,Comments" with three rows for three walls of
+      this model, blankCells skip, rows left out, nothing handed on
+    expect: >
+      written 3, rowsMatched 3, each Comments reading back as in the file, and
+      resultJson's readBack carrying what Revit holds
+
+  - given: the same file with one more row whose id names nothing in this model
+    expect: >
+      NOTHING written - written 0, rowsUnmatched 1, that id in `stale` saying
+      it names no element here. The import wrote the other three; this is all
+      or nothing
+
+  - given: the three-row file, with a fourth wall selected in Revit
+    expect: >
+      written 3 and the selected wall untouched - the rows alone name the
+      elements; no selection is ever read
+
+  - given: a row with a blank Comments cell, blankCells skip, then the same with clear
+    expect: >
+      skip: blankCellsSkipped 1 and that wall's Comments as it was; clear: it
+      reads empty and cellsCleared 1. A blank under a LENGTH column with clear
+      stops the run, naming WRITE_ELEMENT_PARAMETERS clear=true
+
+  - given: a CSV, blankCells left out
+    expect: REFUSED before the file is read - blankCells must be skip or clear
+
+  - given: a CSV whose column is a TYPE parameter (Type Comments) on instance rows
+    expect: >
+      NOTHING written, each row naming the type's id - the import's
+      includeTypeParameters is not carried
+
+  - given: a CSV with a UniqueId column naming another element than the row's id
+    expect: NOTHING written - "a file from another model"
+
+  - given: rows AND csvPath both given
+    expect: REFUSED - one source of rows per run

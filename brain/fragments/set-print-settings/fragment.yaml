@@ -117,8 +117,8 @@ compatibility-note: >
 #                                           the setting it prints with
 #   "print these to PDF"                 -> EXPORT_SHEETS_TO_PDF, the print
 #                                           itself
-#   "the drawing is the wrong size on    -> SET_VIEW_SCALE, which is the view
-#    the sheet"                             rather than the paper
+#   "the drawing is the wrong size on    -> SET_VIEW_PROPERTIES, which sets the
+#    the sheet"                             view's scale rather than the paper
 
 utterances:
   - set the paper size for printing

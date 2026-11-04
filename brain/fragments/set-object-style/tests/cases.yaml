@@ -1,0 +1,91 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write to Object Styles, "restyled something nobody named": the
+# category beside it, the subcategories under it, or a value that was not
+# asked for.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE. The model is a scratch project from
+# Revit's metric ARCHITECTURAL template, any release 2020 to 2027, with at least
+# one wall and one door in "FloorPlan: Level 1" so a change shows. Before the
+# run, LIST_CATEGORIES with categories "Walls, Doors" records every row's
+# settings - the projection weight, cut weight, colour and pattern the cases
+# below are checked against (NEEDS-CHECKING Group MB, MB1). SAVED, and never a
+# working model. EVERY RUN ROLLED BACK.
+#
+# Values written below as "the template's" are read off that LIST_CATEGORIES
+# answer, never typed from memory: templates differ by release and by country.
+
+positive:
+  - given: category "Walls", projectionWeight 5, everything else left out
+    expect: >
+      changed 1; before reads Walls' recorded projection weight, after reads
+      "projection weight 5" and every other setting exactly as before (cut
+      weight, colour, pattern, material). findings say it changed for the
+      whole model. LIST_CATEGORIES afterwards (same run) shows every
+      subcategory of Walls and the Doors row unchanged
+
+  - given: category "Walls > Hidden Lines", projectionWeight 1, pattern "Dash"
+    expect: >
+      only that subcategory changes - after reads "projection weight 1" and
+      "line pattern Dash" (changed counts only the settings that differed);
+      the Walls row itself keeps its recorded settings
+
+  - given: category "Walls", colour "red", cutWeight 4
+    expect: >
+      after reads "line colour 255,0,0" and "cut weight 4"; a finding says
+      Revit holds one line colour for Walls, for projection and cut alike
+
+  - given: category "Generic Models", material naming a material the model has (e.g. "Concrete, Cast-in-Place gray")
+    expect: after names that material; before named the one recorded
+
+  - given: category "walls" (lower case, two spaces before it)
+    expect: the Walls row - capitals and extra spaces are forgiven
+
+negative:
+  - given: >
+      category "Walls", pattern "ZZZ No Such Pattern". THE FIRST CASE TO RUN: a
+      fragment that wrote whatever it was handed shows here
+    expect: >
+      changed 0; refused "This model has no line pattern named "ZZZ No Such
+      Pattern", so NOTHING WAS CHANGED. The nearest it has: ..." with real
+      pattern names; before and after empty; LIST_CATEGORIES shows Walls
+      exactly as recorded
+
+  - given: category "Walls", projectionWeight set to the weight Walls already holds
+    expect: >
+      changed 0 and a finding that Walls already has every setting asked for -
+      nothing counted as work
+
+  - given: category "Generic Annotations", cutWeight 3
+    expect: refused - Revit does not cut Generic Annotations - and nothing changed
+
+  - given: category "Generic Annotations", material any material the model has
+    expect: refused - not a model category - and nothing changed
+
+  - given: category "Lines > Thin Lines", projectionWeight 2
+    expect: refused, sent to CREATE_LINE_STYLE, and nothing changed
+
+  - given: category "Wals"
+    expect: refused, the nearest category names listed (Walls among them), nothing changed
+
+  - given: category "Walls > No Such Sub", projectionWeight 2
+    expect: refused, Walls' own subcategories listed, nothing changed
+
+  - given: category "Walls", projectionWeight 17; then colour "sky blue"
+    expect: >
+      refused both times - 1 to 16; the ten colour names listed - nothing
+      changed
+
+  - given: category "Walls" with nothing else
+    expect: refused - nothing to change was named - and nothing changed
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and one
+      row of Object Styles is one undo entry
+
+second_route:
+  - >
+    Revit's own Manage > Object Styles, opened after the positive run is KEPT
+    (or with the same values typed by hand): the Walls row shows the projection
+    weight, cut weight, colour and pattern `after` quotes, and the Model Objects
+    tab's Material cell the material.

@@ -1,0 +1,47 @@
+# NEEDS-CHECKING Group KN - SET_ACTIVE_WORKSET, built 2026-11-01 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/set-active-workset-kn-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-active-workset-kn-2026-11-01.yaml
+#
+# THE MODEL is a NEW scratch project, never a working model (KN1): Revit's
+# metric architectural template, made workshared (Collaborate > Worksets, OK),
+# with user worksets "Shared Levels and Grids" and "Workset1" (Revit's own),
+# and "Mechanical" and "Architecture" added by hand; saved as a central in
+# %TEMP%\heron-work\active-workset-kn, then opened as a LOCAL. "Workset1" is
+# the active workset before every run - read it off the status bar's Active
+# Workset box; if it is not, choose it there by hand first, or the positive is
+# "already active" and proves nothing.
+#
+# THE ARRANGEMENT: the workset is typed, so nothing is selected and
+# `setup: []`. The negative is the SAME call with "mechanical" - the right
+# workset in the wrong case - which must change nothing: a different value,
+# not an empty one (fragment-proving, rules 3 and 5).
+#
+# READ THE STATUS BAR AFTER EVERY ROLLED-BACK RUN. The active workset is not a
+# transactional change (Revit's API documentation lists no
+# ModificationOutsideTransactionException for SetActiveWorksetId), so a
+# rollback may NOT put it back. If the box reads Mechanical after the rolled-
+# back positive, that is KN4's answer - record it, and choose Workset1 again by
+# hand before the next run.
+
+model: "active-workset-kn scratch local (metric architectural template, workshared, worksets Shared Levels and Grids, Workset1, Mechanical, Architecture), Revit 2024"
+
+defaults:
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: set-active-workset
+    expect: changed
+    setup: []
+    set:
+      worksetName: Mechanical
+    negative-set:
+      worksetName: mechanical
+    note: >
+      KN3. Negative - THE FIRST CASE TO RUN: "mechanical", so changed false,
+      refused "No user workset is called \"mechanical\" exactly - did you mean
+      \"Mechanical\"? ..." listing every user workset, activeAfter "Workset1".
+      Positive - changed true, activeBefore "Workset1", activeAfter
+      "Mechanical", refused empty. Then read the status bar (KN4).

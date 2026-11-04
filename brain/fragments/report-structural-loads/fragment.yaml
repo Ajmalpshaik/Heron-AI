@@ -1,0 +1,186 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-144
+semantic-identity: "which load cases, load combinations, load natures, loads and boundary conditions this model has - each load's values, load case and host"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "what load cases are in this
+# model" and "list the loads on this beam", beside five writes - a load case,
+# point, line and area loads, and boundary conditions. Revit's Analyze > Loads,
+# Load Cases and Boundary Conditions. No card read or wrote any of them (grep
+# of every fragment's C# that day for LoadCase, LoadNature, PointLoad,
+# LineLoad, AreaLoad and BoundaryConditions: nothing).
+# REPORT_ANALYTICAL_MODEL reads the analytical members and panels themselves -
+# their end points and physical elements - and no load, case or support:
+# a look-alike, not a duplicate. It is also 2023 on only, and loads are read
+# on every release from 2020. CHECK_STRUCTURAL_SUPPORTS is a geometric sweep
+# for beam ends bearing on nothing; it never reads a boundary condition.
+# "Load" in ADD_LOAD_CLASSIFICATION, READ_SPACE_LOADS and REPORT_PANEL_CIRCUITS
+# is electrical or heating and cooling load - a different job.
+#
+# THE READ HALF OF A SET. CREATE_LOAD_CASE, CREATE_LOAD_COMBINATION,
+# PLACE_STRUCTURAL_LOADS and PLACE_BOUNDARY_CONDITIONS write; every question
+# about which load cases, load combinations, natures, loads or boundary
+# conditions there are - and their exact names - is answered here, so none
+# reaches a write (D-86).
+#
+# WIDENED 2026-11-02, AT DRAFT, for "what load combinations are in this model"
+# - Revit's Analyze > Load Combinations - beside CREATE_LOAD_COMBINATION's
+# write: a list of every load combination with its state, type, factored load
+# cases and usages, and the load usages the project has (`show`
+# combinations), and `combinationCount`. A second reader of the same loads
+# dialog would have been a second card for one job.
+#
+# THE HOST. A hosted load sits on an ANALYTICAL element; the answer names the
+# beam, column, wall or floor it belongs to as well. A selected element with
+# no analytical element is named in noAnalytical - never read as "it carries
+# no load". A free load is on no element, so it is listed for the model or a
+# load case but never for a selection.
+#
+# READ ONLY - opens no transaction and needs none.
+kind: action
+domain: revit.elements
+capability: REPORT_STRUCTURAL_LOADS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Answers which structural loads the model holds - the load natures, the load
+  cases with their number, nature and category, which load combinations the
+  model has with their state, type and factored load cases, every point, line
+  and area load with its force in kN, kN/m or kPa, its load case and the beam,
+  column, wall or floor it sits on, and every boundary condition with its
+  fixity - for the whole model, one load case, or the elements selected.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      # The beams, columns, walls or floors whose loads and boundary
+      # conditions are wanted - a selection or the step before. Left out, it
+      # binds empty and the whole model is read.
+      type: IList<Element>
+      optional: true
+    - name: show
+      # Which lists: cases | natures | combinations | loads | boundary - one,
+      # or several
+      # separated by ; - or left out for every list (`absent: all`). A word
+      # that is none of them is named, never guessed.
+      type: string
+      source: request
+      optional: true
+      absent: all
+    - name: loadCase
+      # Narrows the loads to the load case of exactly this name. A name no case
+      # has - or one differing only in capitals - narrows nothing and is named
+      # with every case the model has.
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: loadCount
+      # Loads listed. Something the read FOUND.
+      role: result
+      type: int
+    - name: caseCount
+      # Load cases in the model.
+      role: result
+      type: int
+    - name: combinationCount
+      # Load combinations in the model (2026-11-02).
+      role: result
+      type: int
+    - name: boundaryCount
+      # Boundary conditions listed.
+      role: result
+      type: int
+    - name: report
+      # LIST BY LIST: load natures; load cases with number, nature, category
+      # and how many loads each holds; load combinations with state, type,
+      # factored load cases and usages, and the load usages; each load with its point or ends in mm,
+      # force in kN, kN/m or kPa, load case and host; each boundary condition
+      # with its kind, place, fixity and host. A STRING, because a reply cuts
+      # a list to three items and this is the answer.
+      role: accounting
+      type: string
+    - name: names
+      # The load cases' exact names, quoted - what CREATE_LOAD_CASE and
+      # PLACE_STRUCTURAL_LOADS are handed back, so no name is retyped.
+      role: accounting
+      type: IList<string>
+    - name: noAnalytical
+      # Elements handed in that have no analytical element, so can carry no
+      # load (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation with two branches. LoadNature, LoadCase (Number,
+  NatureId, SubcategoryId), LoadBase (HostElementId, IsHosted, IsReaction,
+  LoadCaseId, LoadCaseName, OrientTo), PointLoad (Point, ForceVector,
+  MomentVector), LineLoad (StartPoint, EndPoint, ForceVector1, ForceVector2,
+  MomentVector1, IsUniform), AreaLoad (Area, ForceVector1 to 3, NumRefPoints)
+  and BoundaryConditions (HostElementId, Point, GetBoundaryConditionsType,
+  GetCurve) carry the same signatures 2020 through 2027 - read with
+  tools/api-surface --members on 2026-11-01 - and so do LoadCombination
+  (State, Type, GetComponents, GetUsageIds), LoadComponent
+  (LoadCaseOrCombinationId, Factor) and LoadUsage, read the same way on
+  2026-11-02. The host's physical element is
+  AnalyticalModel.GetElementId() 2020 to 2022 (#if REVIT2020 || REVIT2021 ||
+  REVIT2022) and AnalyticalToPhysicalAssociationManager.GetAssociatedElementId
+  from 2023, where AnalyticalModel is gone. Forces are converted with
+  UnitUtils.ConvertFromInternalUnits - DisplayUnitType.DUT_KILONEWTONS and its
+  kin in 2020 (#if REVIT2020), UnitTypeId.Kilonewtons, KilonewtonsPerMeter,
+  KilonewtonsPerSquareMeter and KilonewtonMeters from 2021. Fixity is each
+  boundary condition's own BOUNDARY_PARAM_PRESET and BOUNDARY_DIRECTION_*
+  parameters as Revit shows them (AsValueString) - not seen in Revit.
+
+# ROUTING (2026-11-01) - the same rows are in CREATE_LOAD_CASE,
+# PLACE_STRUCTURAL_LOADS and PLACE_BOUNDARY_CONDITIONS.
+#
+#   "what load cases are in this model"          -> here, show cases
+#   "what load combinations are in this model"   -> here, show combinations
+#                                                   (2026-11-02)
+#   "list the loads on this beam"                -> here, the beam selected
+#   "add a load case called Wind X"              -> CREATE_LOAD_CASE
+#   "make a combination ULS1 = 1.4 Dead"         -> CREATE_LOAD_COMBINATION
+#   "put a 10 kN point load on this beam end"    -> PLACE_STRUCTURAL_LOADS
+#   "add a 5 kN/m line load along this beam"     -> PLACE_STRUCTURAL_LOADS
+#   "add a 2.5 kPa area load on this slab"       -> PLACE_STRUCTURAL_LOADS
+#   "add a pinned boundary condition at these column bases"
+#                                                -> PLACE_BOUNDARY_CONDITIONS
+#   "list the analytical members and their beams"
+#                                                -> REPORT_ANALYTICAL_MODEL
+#   "list the load classifications and demand factors"
+#                                                -> REPORT_ELECTRICAL_SETTINGS -
+#                                                   electrical load, not
+#                                                   structural
+#
+# WHAT MOVED (2026-11-01, heron_retrieve.find on fresh scratch stores of the
+# tree at 243861c without the four load cards and with them; `model` backend,
+# re-ranker absent; no Revit filter, 2020, 2024; every declared utterance and
+# routing-table sentence of a live card). The two questions above reach this
+# card with and without the host's question flag (ADD_LOAD_CLASSIFICATION and
+# COPE_FRAMING, writes, without the flag before). The first draft of the
+# writes pulled two of REPORT_ANALYTICAL_MODEL's questions to a write on
+# 2020; closed in the same change (FRAGMENT-ISSUES row 5b-1380). The probes
+# "which loads are on this beam" and "show me the boundary conditions" -
+# nobody's words, so not declared - reach a write without the flag (row
+# 5b-1381).
+utterances:
+  - what load cases are in this model
+  - what load combinations are in this model
+  - list the loads on this beam

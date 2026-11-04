@@ -113,7 +113,11 @@ compatibility-note: >
 #   "which renderings are saved"           -> here
 #   "open the render dialog"               -> OPEN_RENDER_DIALOG
 #   "save this view as a jpg"              -> EXPORT_VIEW_IMAGE, a write
-#   "which images are loaded in the model" -> FIND_UNUSED_IMAGES
+#   "which images are loaded in the model" -> LIST_IMAGES - Manage Images, every
+#                                           image named (2026-11-02; this row
+#                                           named FIND_PURGEABLE_ELEMENTS, which
+#                                           names only the unused ones)
+#   "import this PDF page into the current view" -> IMPORT_IMAGE, a write
 
 utterances:
   - is there a saved rendering in this project

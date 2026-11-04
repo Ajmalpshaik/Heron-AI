@@ -1,0 +1,72 @@
+# NEEDS-CHECKING Group JV - EDIT_ELECTRICAL_CIRCUIT, built 2026-11-01 in a
+# cloud session with no Revit. NOT RUN.
+#
+# MOVED 2026-11-04 TO EDIT_MEP_SYSTEM (edit-mep-system). EDIT_ELECTRICAL_CIRCUIT
+# was merged into it as its version 2 and is DEPRECATED (FRAGMENT-ISSUES row
+# 5b-1382); every job below now names edit-mep-system, with the same values -
+# its circuit half takes edit, circuitNumber, circuitPanel and panel exactly as
+# the retired card did. These are the circuit legs of EDIT_MEP_SYSTEM's proof;
+# tools/jobs/edit-mep-system-jw-2026-11-01.yaml has the duct and piping legs.
+#
+#     python tools/batch-prove.py tools/jobs/edit-electrical-circuit-jv-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/edit-electrical-circuit-jv-2026-11-01.yaml
+#
+# THE MODEL: MEP Night Test, open and in front in Revit 2020 - the model
+# REPORT_PANEL_CIRCUITS was proved on (2026-10-21): 19 panels, 155 circuits.
+# Its proof read circuit 1 on PP-1B ("Power Technology 28", 9 devices) and a
+# circuit 1 on PP-1A and PP-2B besides. JV1 in docs/needs-checking/group-jv.md
+# reads them again first; if they have moved, change the values here, never
+# the card.
+#
+# NOTHING SELECTED IN REVIT before the run (JV0). Both jobs name the circuit,
+# and the fragment sets a selection aside when a circuit is named - but a
+# clean start is what makes the binding note read "elements ... (0)".
+#
+# These are the two edits a selection-free job can arrange. Add to Circuit
+# and Remove from Circuit need devices selected by hand in a plan, so they
+# are rows JV6 to JV9 of the group, run with `validate --write`, not here.
+# Every write here is ROLLED BACK.
+
+model: MEP Night Test, Revit 2020
+
+defaults:
+  setup: []
+  write: true
+
+jobs:
+  - fragment: edit-mep-system
+    expect: changed
+    set:
+      edit: "disconnect"
+      circuitNumber: "1"
+      circuitPanel: "PP-1B"
+      panel: "none"
+    negative-set:
+      edit: "disconnect"
+      circuitNumber: "1"
+      circuitPanel: "none"
+      panel: "none"
+    note: >
+      JV2 and JV3. Positive - changed 1, report "circuit 1 on PP-1B ... taken
+      off PP-1B. IT IS ON NO PANEL NOW". Negative - THE FIRST CASE TO RUN:
+      circuit 1 with no panel named matches a circuit on most panels, so
+      changed 0, NOTHING WAS CHANGED, the refusal naming every panel that has
+      a circuit 1; none of them disconnected.
+
+  - fragment: edit-mep-system
+    expect: changed
+    set:
+      edit: "select panel"
+      circuitNumber: "1"
+      circuitPanel: "PP-1B"
+      panel: "PP-1A"
+    negative-set:
+      edit: "select panel"
+      circuitNumber: "1"
+      circuitPanel: "PP-1B"
+      panel: "PP-1B"
+    note: >
+      JV4 and JV5. Positive - changed 1, report "moved from PP-1B to PP-1A,
+      where it is circuit N" - RECORD N, Revit numbers it. Negative - changed
+      0, "already on PP-1B, so it was left", and its circuit number the same
+      as before: a move onto the panel it is on must not renumber it.

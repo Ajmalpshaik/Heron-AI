@@ -22,7 +22,37 @@ positive:
       finding reads "1 toposolid(s) edited (simplify) and read back. 9
       toposolid(s) unchanged". Never "10 toposolid(s) edited"
 
+  # VERSION 3 - ADD_TOPOSOLID_SUBDIVISION merged in. Each fails on version 2,
+  # which refused mode "subdivide" as no mode it knew. NEEDS REAL REVIT.
+  - given: >
+      VERSION 3. One toposolid 30 x 20 m, mode subdivide, value
+      "5000,5000; 15000,5000; 15000,10000; 5000,10000" - ADD_TOPOSOLID_SUBDIVISION's
+      own case
+    expect: >
+      edited 1, resultIds one new subdivision id, read back among the
+      toposolid's subdivisions; in the site plan it follows the terrain inside
+      that outline. RECORD the toposolid's sketch plane height beside its
+      level's Elevation: the outline is drawn at the first, where that card
+      drew it at the second
+
+  - given: >
+      VERSION 3. The same on a model set out to a survey datum, where the
+      toposolid's level has an Elevation Base of Survey Point
+    expect: >
+      the subdivision made where the terrain is - if Revit refuses an outline
+      off the terrain's height, this is the case that shows whether the old
+      Level.Elevation rule would have failed here
+
 negative:
+  - given: VERSION 3. mode subdivide, value "5000,5000; 15000,5000" - two points
+    expect: >
+      refused before anything is made, "A subdivision outline needs three
+      points or more. NOTHING WAS MADE."; resultIds empty
+
+  - given: VERSION 3. two walls, mode subdivide, value the outline above
+    expect: >
+      none made, each named as not a toposolid
+
   - given: two walls, mode simplify, value "50"
     expect: >
       nothing changed - each named as not a toposolid; edited 0

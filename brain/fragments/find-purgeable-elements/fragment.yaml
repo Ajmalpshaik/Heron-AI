@@ -9,7 +9,18 @@ semantic-identity: "which elements of every category are unused in this project 
 kind: filter
 domain: revit.selection
 capability: FIND_PURGEABLE_ELEMENTS
-version: 1
+# VERSION 2 (2026-11-01): FIND_UNUSED_FAMILIES was merged into this card on the
+# owner's instruction, and is DEPRECATED - see the comment block above
+# `utterances`. Version 1's proof below is kept as the record; it no longer
+# describes the code, so the card is DRAFT until version 2 is proved on a real
+# model (D-30) - on 2024 or later for Revit's list, and on 2020-2023 for the
+# fallback.
+#
+# VERSION 3 (2026-11-01): FIND_UNUSED_MATERIALS, FIND_UNUSED_GROUP_TYPES,
+# FIND_UNUSED_IMAGES and FIND_UNUSED_DEFINITIONS were merged in - see the
+# second comment block above `utterances`. Still DRAFT, version 1's proof
+# still the record.
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -24,17 +35,34 @@ risk: READ
 # run after the delete finds the next rung. Revit 2024 opened the list to
 # code.
 #
+# VERSION 2: REVIT 2020 TO 2023 TOO. The list is reached by reflection, so one
+# file compiles on every release; where Revit has no list, FIND_UNUSED_FAMILIES'
+# own count of placed instances is the stated fallback - and it is a REPORT
+# ONLY: `elements` stays empty there, because a family placed only inside
+# another family has no instance of its own and would read as unused.
+#
 # A loaded family is purged by opening it (OPEN_FAMILY_FOR_EDITING), running
 # this and DELETE_ELEMENTS there, and loading it back (LOAD_FAMILY) - a
 # family cannot be opened inside a change in the project.
 #
-# FIND_UNUSED_FAMILIES, FIND_UNUSED_MATERIALS, FIND_UNUSED_GROUP_TYPES and
-# FIND_UNUSED_IMAGES each answer for one kind, on every release.
+# Families are answered here, on every release, since version 2; group
+# definitions, images, view templates, view filters and - asked for, because
+# the walk is slow - materials since version 3, each by its own rule and each
+# as a REPORT by name.
 #
 # READ ONLY - opens no transaction.
 purpose: >
   Finds every element Revit counts as unused - in a project or a family, in
   every category or the ones named - and hands them on for deleting.
+
+  Version 2 also answers which families are unused, family by family, and on
+  Revit 2020 to 2023 counts placed instances instead - a report that hands
+  nothing on for deleting, because a family nested in another reads as unused.
+
+  Version 3 also reports, by name, the group definitions with nothing placed,
+  the images nothing uses, the view templates and view filters nothing uses -
+  and, asked for, the materials nothing uses. Only Revit's own list is handed
+  on, and never anything one of those checks finds in use.
 
 contract:
   needs:
@@ -44,6 +72,14 @@ contract:
     - name: categories
       type: string
       source: request
+    # Version 3, from FIND_UNUSED_MATERIALS: true walks every element and
+    # every type for the materials they use - geometry AND paint - and reports
+    # the ones nothing uses. Slow on a large model, so left out it is false
+    # and materials are not walked.
+    - name: includeMaterials
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: elements
       role: result
@@ -57,48 +93,295 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+    - name: perFamily
+      # VERSION 2, from FIND_UNUSED_FAMILIES. One line per family with types
+      # unused - "M_Diffuser  - 3 of 5 type(s) unused: ..." - on both routes.
+      # TEXT on purpose: on the 2020-2023 fallback it is the whole answer, and
+      # text cannot be carried to a delete (D-52).
+      role: accounting
+      type: IList<string>
+    - name: wholeFamilyUnused
+      # VERSION 2, from FIND_UNUSED_FAMILIES: the families with NOTHING used -
+      # whole files that could go - by NAME. That card handed them on as ids;
+      # here they are names, so the fallback list stays a report (D-52).
+      role: accounting
+      type: IList<string>
+    - name: route
+      # VERSION 2. Which list answered: Revit's own (2024 and later), or the
+      # placed-instance count (2020-2023), which hands nothing on. About the
+      # method, never an element (D-52).
+      role: accounting
+      type: string
+    - name: heldBack
+      # VERSION 3. Elements on Revit's own list that a check here finds IN
+      # USE - an attached detail group, a template named as a view type's
+      # default, an image named by a parameter, a material used as paint - and
+      # so NOT handed on. Turned down, never found (D-52).
+      role: accounting
+      type: IList<string>
+    - name: unusedGroupTypeNames
+      # VERSION 3, from FIND_UNUSED_GROUP_TYPES: group definitions with
+      # nothing placed, by NAME - a report, never handed on (D-52).
+      role: accounting
+      type: IList<string>
+    - name: attachedDetailGroupsInUse
+      # VERSION 3, from FIND_UNUSED_GROUP_TYPES (its usedOnlyAsAttached):
+      # detail groups with no instance of their own that a placed model
+      # group offers - in use, by name. The row that stops a delete (D-52).
+      role: accounting
+      type: IList<string>
+    - name: unusedImageNames
+      # VERSION 3, from FIND_UNUSED_IMAGES: images placed nowhere and named by
+      # no image parameter, by NAME - a report (D-52).
+      role: accounting
+      type: IList<string>
+    - name: usedImageCount
+      # VERSION 3, from FIND_UNUSED_IMAGES (its usedCount): images found in
+      # use. The evidence it looked (D-52).
+      role: accounting
+      type: int
+    - name: unusedTemplateNames
+      # VERSION 3, from FIND_UNUSED_DEFINITIONS: view templates no view
+      # follows and no view family type names as a default, by NAME (D-52).
+      role: accounting
+      type: IList<string>
+    - name: unusedFilterNames
+      # VERSION 3, from FIND_UNUSED_DEFINITIONS: view filters no view or
+      # template uses, by NAME (D-52).
+      role: accounting
+      type: IList<string>
+    - name: filtersOnlyInUnusedTemplates
+      # VERSION 3, from FIND_UNUSED_DEFINITIONS: filters whose only users are
+      # templates that are themselves unused - by NAME (D-52).
+      role: accounting
+      type: IList<string>
+    - name: templatesKeptAsDefault
+      # VERSION 3, from FIND_UNUSED_DEFINITIONS: templates no view follows that
+      # a view family type names as the default for new views - in use. The
+      # evidence it looked (D-52).
+      role: accounting
+      type: int
+    - name: unusedMaterialNames
+      # VERSION 3, from FIND_UNUSED_MATERIALS, with includeMaterials true:
+      # materials neither geometry nor paint of any element or type uses, by
+      # NAME (D-52).
+      role: accounting
+      type: IList<string>
+    - name: scannedInstances
+      # VERSION 3, from FIND_UNUSED_MATERIALS: placed elements walked for
+      # materials. Work done, never a thing found (D-52).
+      role: accounting
+      type: int
+    - name: scannedTypes
+      # VERSION 3, from FIND_UNUSED_MATERIALS: types walked for materials.
+      role: accounting
+      type: int
+    - name: unreadable
+      # VERSION 3, from FIND_UNUSED_MATERIALS: elements that would not report
+      # their materials at all. The evidence it tried (D-52).
+      role: accounting
+      type: int
 
 proof:
-  date: '2026-10-23'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: N23 Snowdon HVAC 2024, Revit 2024, session 83588 - the count is NOT recorded because
-    9,433 elements was measured on N23 Structure Night 2024, the document in front, and this
-    ran against another one (row 15)
-  positive_case: 'run as it would normally be run. returned byCategory Family 5, Section Marks
-    4, Material Assets 2, ElementType 2, Callout Heads 2, View Titles 2, Detail Items 1, AppearanceAssetElement
-    1, counts 8 entry(ies), elements 19 item(s) [Diagonal Crosshatch, Satin, Aluminum, ...],
-    findings 1 item(s) [19 element(s) Purge Unused would offer in "N23 Snowdon HVAC ...],
-    purgeableNames 19 item(s) [Detail Items: Diagonal Crosshatch, AppearanceAssetElement:
-    Satin, Material Assets: Aluminum, ...], refusal (null), scope HashSet`1, wanted HashSet`1.
-    inputs came categories as given. on N23 Snowdon HVAC 2024'
+  model: Snowdon Towers Sample Structural (9,500 elements), Revit 2024, session 59960
+  positive_case: 'run as it would normally be run. returned askedEverything true, askedFor
+    Func`2, attachedDetailGroupsInUse 0 item(s), byCategory Family 102, Detail Items 100,
+    Materials 49, AppearanceAssetElement 43, Structural Rebar 40, Rebar Shape 39, Structural
+    Fabric Reinforcement 39, Structural Rebar Couplers 38, Profiles 19, Generic Annotations
+    16, Elevation Marks 15, Structural Framing 12, SpotDimensionType 11, Walls 10, Windows
+    9, Structural Foundations 9, Section Marks 8, Structural Rebar Tags 8, Doors 7, Structural
+    Fabric Reinforcement Symbols 7, Structural Connections 7, ElementType 6, Curtain Wall
+    Mullions 6, Structural Framing Tags 6, Structural Columns 6, Floors 5, Span Direction
+    Symbol 5, Material Assets 5, Structural Rebar Coupler Tags 5, Generic Models 5, Callout
+    Heads 5, Keynote Tags 4, Cover Type 4, LineAndTextAttrSymbol 3, Curtain Panels 3, Title
+    Blocks 3, Structural Loads 3, Connection Symbols 3, Division Profiles 3, Detail Item Tags
+    3, TextNoteType 2, ViewFamilyType 2, Structural Truss Tags 2, Grids 2, Cable Trays 2,
+    Hole Tags 2, Plate Tags 2, Shear Stud Tags 2, Weld Tags 2, Anchor Tags 2, Bolt Tags 2,
+    DimensionType 2, TextElementType 1, Structural Foundation Tags 1, Property Lines 1, Spot
+    Elevation Symbols 1, Revision Cloud Tags 1, Brace in Plan View Symbols 1, Stairs 1, Structural
+    Column Tags 1, Structural Area Reinforcement Tags 1, Structural Area Reinforcement Symbols
+    1, Material Tags 1, Structural Path Reinforcement Tags 1, Structural Path Reinforcement
+    Symbols 1, Constructions 1, Structural Trusses 1, Structural Stiffeners 1, Structural
+    Fabric Reinforcement Tags 1, Cut Marks 1, Multi-Rebar Annotations 1, Level Heads 1, Wall
+    Tags 1, Floor Tags 1, Structural Beam System Tags 1, Levels 1, counts 76 entry(ies), elements
+    719 item(s) [Box Filled, Triangle Filled, Rectangular Mullion 1, ...], familyLine Action`3,
+    filtersOnlyInUnusedTemplates 0 item(s), findings 8 item(s) [719 element(s) Purge Unused
+    would offer in "Snowdon Towers S..., The names list stops at 300; every element is handed
+    on., 0 group definition(s) have nothing placed, of 2 walked - a R..., ...], heldBack 0
+    item(s), inUseHere HashSet`1, includeMaterials false, onlyReports false, perFamily 155
+    item(s) [00  - NOTHING used, all 1 type(s): 00, 000_BreakLine_Pick  - 1 of 2 type(s) unused:
+    Small, 000_BreakLine_Pipe  - 1 of 2 type(s) unused: Small, ...], purgeableNames 300 item(s)
+    [ElementType: Box Filled, ElementType: Triangle Filled, Curtain Wall Mullions: Rectangular
+    Mullion 1, ...], refusal (null), reportLines 5 item(s) [0 group definition(s) have nothing
+    placed, of 2 walked - a R..., 14 image(s) in Manage Images; 0 used nowhere - a REPORT,
+    by ..., 15 view template(s) applied to no view, 6 view filter(s) use..., ...], route Revit''s
+    own unused-element list (Revit 2024 and later), scannedInstances 0, scannedTypes 0, scope
+    HashSet`1, templatesKeptAsDefault 3, unreadable 0, unusedFilterNames 6 item(s) [Roofs
+    - Generic, 3 Hour, 1 Hour (Smoke), ...], unusedGroupTypeNames 0 item(s), unusedImageNames
+    0 item(s), unusedList RuntimeMethodInfo, unusedMaterialNames 0 item(s), unusedTemplateNames
+    15 item(s) [Structural Section, Architectural Plan, Architectural Elevation, ...], usedImageCount
+    14, wanted HashSet`1, wholeFamilyUnused 111 item(s) [00, 01, 02, ...]. inputs came categories
+    as given; includeMaterials not given - false (optional). on Snowdon Towers Sample Structural'
   negative_case: run with categories=Rooms instead - chosen because it should not contain
-    what this fragment reports. returned byCategory , counts 0 entry(ies), elements 0 item(s),
-    findings 1 item(s) [0 element(s) Purge Unused would offer in "N23 Snowdon HVAC 2...],
-    purgeableNames 0 item(s), refusal (null), scope HashSet`1, wanted HashSet`1. inputs came
-    categories as given. on N23 Snowdon HVAC 2024
+    what this fragment reports. returned askedEverything false, askedFor Func`2, attachedDetailGroupsInUse
+    0 item(s), byCategory , counts 0 entry(ies), elements 0 item(s), familyLine Action`3,
+    filtersOnlyInUnusedTemplates 0 item(s), findings 1 item(s) [0 element(s) Purge Unused
+    would offer in "Snowdon Towers Sam...], heldBack 0 item(s), inUseHere HashSet`1, includeMaterials
+    false, onlyReports false, perFamily 0 item(s), purgeableNames 0 item(s), refusal (null),
+    reportLines 0 item(s), route Revit's own unused-element list (Revit 2024 and later), scannedInstances
+    0, scannedTypes 0, scope HashSet`1, templatesKeptAsDefault 0, unreadable 0, unusedFilterNames
+    0 item(s), unusedGroupTypeNames 0 item(s), unusedImageNames 0 item(s), unusedList RuntimeMethodInfo,
+    unusedMaterialNames 0 item(s), unusedTemplateNames 0 item(s), usedImageCount 0, wanted
+    HashSet`1, wholeFamilyUnused 0 item(s). inputs came categories as given; includeMaterials
+    not given - false (optional). on Snowdon Towers Sample Structural
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 850270d4166a24ce
-
-revit: ["2024", "2025", "2026", "2027"]
-runtime: [net48, net8.0-windows, net10.0-windows]
+  fingerprint: 5af5d49170c9635f
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
   Document.GetUnusedElements(ISet<ElementId>) is present from 2024 and absent
   before - read off RevitAPI.xml in the Nice3point reference packages for all
-  eight releases on 2026-10-13 - so the card declares 2024 to 2027 only.
+  eight releases on 2026-10-13. Version 2 reaches it by reflection, so the one
+  implementation compiles on all eight; on 2020-2023 it is absent and the
+  placed-instance count answers instead, with `route` saying so.
+  `Family.GetFamilySymbolIds()`, `Family.FamilyCategory` and
+  `Element.GetTypeId()` are unchanged 2020 to 2027, and no ElementId is built
+  from an int.
 
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "list everything purgeable in this family" -> here
 #   "every unused element, all categories"     -> here, then DELETE_ELEMENTS
-#   "purge unused"                             -> FIND_UNUSED_FAMILIES, families on every release
+#   "purge unused"                             -> here, AS A LIST. Nothing here deletes;
+#                                                 DELETE_ELEMENTS removes what the modeller
+#                                                 has seen, and on 2020-2023 nothing is
+#                                                 handed on at all
+#   "which families are unused"                -> here (version 2), family by family, on
+#                                                 every release
+#   "purge the unused stuff"                   -> here, AS A LIST (FIND_UNUSED_FAMILIES'
+#                                                 row, moved)
 #   "purge this loaded family"                 -> OPEN_FAMILY_FOR_EDITING, here, DELETE_ELEMENTS, LOAD_FAMILY
-#   "which materials are unused"               -> FIND_UNUSED_MATERIALS
+#   "which materials are unused"               -> here (version 3), with
+#                                                 includeMaterials=true - the walk
+#                                                 of every element is slow
+#   "which groups is nobody using"             -> here (version 3), by name
+#   "which images are not used"                -> here (version 3), by name
+#   "which view templates are unused" / "unused view filters" -> here (version 3),
+#                                                 by name
+#   "delete the unused templates"              -> SELECT_VIEW_TEMPLATES with usage
+#                                                 unused - the templates as ELEMENTS;
+#                                                 the names here are a report
+#   "list the materials in this family"        -> LIST_MATERIALS - every material,
+#                                                 used or not
+#   "what is this material used on"            -> SELECT_BY_MATERIAL - the forward
+#                                                 question, to ask before deleting
+#   "which views are not on a sheet"           -> FIND_VIEWS, placement unplaced
+#   "what filters exist and where"             -> REPORT_VIEW_FILTERS
+
+# VERSION 2 (2026-11-01) - FIND_UNUSED_FAMILIES WAS MERGED INTO THIS CARD on
+# the owner's instruction in conversation: "now merge the other duplicates
+# also", every conflict to keep the SAFER rule. It is DEPRECATED. The same
+# question - what is loaded and unused - and this card answers it from Revit's
+# own list where Revit has one. Where each retired output is now:
+#
+#   elements           elements on 2024+ (Revit's list, handed on); EMPTY on
+#                      2020-2023, where the same families are in perFamily
+#   findings           findings, with the nested-family warning on 2020-2023
+#   wholeFamilyUnused  wholeFamilyUnused, as NAMES rather than ids
+#
+# THE SAFER RULE WHERE THEY DIFFERED. FIND_UNUSED_FAMILIES handed its unplaced
+# types on as `elements` and said they were not to be deleted; this card hands
+# Revit's list on for DELETE_ELEMENTS. Here a list that is Revit's is handed
+# on, and the placed-instance count - which calls a nested-only family unused
+# - is a report that hands nothing on.
+#
+# ROUTING - repeated in CHECK_FAMILY_STANDARDS, SELECT_TYPES, LOAD_FAMILY and
+# FIND_LIBRARY_FAMILIES.
+#
+# VERSION 3 (2026-11-01) - FIND_UNUSED_MATERIALS, FIND_UNUSED_GROUP_TYPES,
+# FIND_UNUSED_IMAGES AND FIND_UNUSED_DEFINITIONS WERE MERGED INTO THIS CARD on
+# the owner's instruction ("make sure there is no duplicate tools"; "in every
+# conflict keep the safer rule"). All four are DEPRECATED. Each one's rule for
+# what counts as USED came with it, on every release 2020-2027:
+#   FIND_UNUSED_GROUP_TYPES   a detail group attached to a placed model group
+#                             is in use - and a placed group that will not say
+#                             what it offers makes every unplaced detail group
+#                             type count as in use (safer than its skip)
+#   FIND_UNUSED_IMAGES        an image named by ANY image parameter of any
+#                             element or type is in use; a schedule header
+#                             image is not seen, and the finding says so
+#   FIND_UNUSED_DEFINITIONS   a template a view family type names as the
+#                             default for new views is in use; filters used
+#                             ONLY by unused templates are their own list
+#   FIND_UNUSED_MATERIALS     both material sets, geometry AND paint, of every
+#                             element and type - opt-in, includeMaterials
+# Where each output is now: unusedGroupTypes -> unusedGroupTypeNames,
+# usedOnlyAsAttached -> attachedDetailGroupsInUse, scanned -> a finding;
+# FIND_UNUSED_IMAGES' elements -> unusedImageNames, usedCount ->
+# usedImageCount; unusedTemplates -> unusedTemplateNames, unusedFilters ->
+# unusedFilterNames, filtersUsedOnlyByUnusedTemplates ->
+# filtersOnlyInUnusedTemplates (the templates kept as a default ->
+# templatesKeptAsDefault); unusedMaterials -> unusedMaterialNames,
+# scannedInstances, scannedTypes and unreadable the same; unusedNames and
+# findings -> the lists above and `findings`.
+#
+# THE SAFER RULE WHERE THEY DIFFERED - version 2's, kept: ONLY REVIT'S OWN LIST
+# IS HANDED ON FOR DELETING. FIND_UNUSED_IMAGES handed its images on as
+# `elements` for DELETE_ELEMENTS, and FIND_UNUSED_MATERIALS,
+# FIND_UNUSED_GROUP_TYPES and FIND_UNUSED_DEFINITIONS returned ids. Here every
+# home-made list is a REPORT BY NAME, so NOT CARRIED, on purpose: an id list a
+# delete could take, from any of the four. And where a home-made check finds
+# something IN USE that Revit's list offers, it is held back (`heldBack`) -
+# the cards' own reasons for existing, applied to the list that is handed on.
+# Not carried either: FIND_UNUSED_MATERIALS' walk on every call - it is
+# opt-in here because it reads every element and every type.
 
 utterances:
   - list everything purgeable in this family
   - every unused element, all categories
   - find the unused elements of every category in the model
+  # MOVED 2026-11-01 from FIND_UNUSED_FAMILIES, merged into this card.
+  - which families are unused
+  - purge unused
+  - what can be purged
+  - find the families nobody is using
+  - which types are not placed
+  - clean up the unused families
+  # MOVED 2026-11-01 from FIND_UNUSED_MATERIALS, merged into this card.
+  - which materials is nobody using
+  - find the unused materials
+  - clean up the material list
+  - what materials can I purge
+  - unused materials in this model
+  - the material browser is full of rubbish
+  # MOVED 2026-11-01 from FIND_UNUSED_GROUP_TYPES, merged into this card.
+  - which group definitions have nothing placed
+  - which groups is nobody using
+  - find the unused groups
+  - clean up the group list
+  - what groups can I purge
+  - unused model groups in this project
+  - the group browser is full of old groups
+  # MOVED 2026-11-01 from FIND_UNUSED_IMAGES, merged into this card.
+  - which images in the project are not used
+  - find the unused images in manage images
+  - clean out the images nothing uses
+  - list the raster images that are not placed anywhere
+  # MOVED 2026-11-01 from FIND_UNUSED_DEFINITIONS, merged into this card.
+  - which view templates are not used
+  - which view templates are unused
+  - the filter list is full of old filters
+  - the filter list is full of rubbish
+  - what can i purge from the templates
+  - unused view filters
+  # ADDED 2026-11-01 with REPORT_VIEW_FILTERS version 4, whose table sends
+  # it here: the unused question, with a filter only templates carry counted
+  # as in use. Ranked here already on lexical and model; declared so the
+  # identity route answers it.
+  - which filters are unused

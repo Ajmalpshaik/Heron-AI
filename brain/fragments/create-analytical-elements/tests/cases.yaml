@@ -1,0 +1,60 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "drew something from a selection nobody meant" or "guessed a
+# level or a link type".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for CREATE_ANALYTICAL_ELEMENTS): a scratch project new
+# from Revit's metric STRUCTURAL template, saved under %TEMP%\heron-work, never a
+# working model, on Revit 2023 to 2027 (the releases the card claims), with
+# Level 1 and Level 2, two structural columns C1 and C2 joined by a beam B1 on
+# Level 2, and the analytical model on - so C1's and C2's analytical nodes N1
+# and N2 at Level 2 exist. Every run is ROLLED BACK unless the modeller keeps
+# it. Before each run, read the analytical model with REPORT_ANALYTICAL_MODEL -
+# the second route - and again after.
+#
+# The negative legs are DIFFERENT SELECTIONS OR VALUES, not empty ones: the
+# beam B1 and column C1 selected for a link (physical elements, not nodes); a
+# level name that is not there; a link with no type named.
+
+positive:
+  - given: kind member, points "0,0,0; 6000,0,0", level "Level 2"
+    expect: >
+      created 1; report "analytical member ... from (0, 0, E2) mm to (6000, 0,
+      E2) mm, 6000 mm long, heights measured from "Level 2" at E2 mm" where E2
+      is Level 2's elevation; REPORT_ANALYTICAL_MODEL afterwards lists one more
+      member, tied to no physical element
+
+  - given: kind panel, points "0,0,0; 6000,0,0; 6000,4000,0; 0,4000,0", level "Level 2"
+    expect: >
+      created 1; an analytical panel with 4 corners, each at Level 2's
+      elevation, the corners as typed
+
+  - given: N1 and N2 selected, kind link, type named from the list a first run without one gave
+    expect: >
+      created 1; an analytical link from N1's point to N2's, nodes N1 and N2,
+      the type named
+
+negative:
+  - given: B1 and C1 selected (a beam and a column, not analytical nodes), kind link, type named
+    expect: >
+      created 0; refused says 2 elements were selected, 0 of them an
+      analytical node, and names B1 and C1; no link anywhere and B1 and C1
+      unchanged. One in the model afterwards is the defect. THE FIRST CASE TO RUN
+
+  - given: kind member, points "0,0,0; 6000,0,0", level "Level 9"
+    expect: >
+      created 0; refused says there is no level called "Level 9" and lists
+      every level with its elevation; nothing drawn
+
+  - given: N1 and N2 selected, kind link, type left out
+    expect: >
+      created 0; refused says no analytical link type was named and lists
+      every type - never read as a type called "none" (row 5b-1432); nothing
+      drawn
+
+second_route:
+  - >
+    Revit's own 3D view with the analytical model shown, and the Properties
+    palette on the element drawn: a member's ends, a panel's outline, a link's
+    two nodes as `report` gives them; REPORT_ANALYTICAL_MODEL before and after
+    differing by exactly the one element

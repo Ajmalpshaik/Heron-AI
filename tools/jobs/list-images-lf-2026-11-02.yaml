@@ -1,0 +1,37 @@
+# NEEDS-CHECKING Group LF - LIST_IMAGES, built 2026-11-02 in a cloud session
+# with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/list-images-lf-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/list-images-lf-2026-11-02.yaml
+#
+# THE MODELS (docs/needs-checking/group-lf.md, LF1), both scratch projects new
+# from Revit's metric architectural template, saved under %TEMP%\heron-work,
+# never a working model:
+#   "images-list"  page 2 of a three-page plans.pdf imported with Revit's own
+#                  Insert > Import PDF and placed twice ("Level 1" and sheet
+#                  "A101"); site.png imported with Insert > Import Image and
+#                  placed once in "Level 1"; from 2021, logo.png linked with
+#                  Insert > Link Image and its placement deleted; saved and
+#                  closed, then logo.png renamed so it is not found on reopen
+#   "images-none"  the template untouched - nothing in Manage Images
+# Both open at the run; `in:` brings each to the front.
+#
+# A READ WITH NO SELECTION, so the negative is a DIFFERENT MODEL, not an empty
+# selection (fragment-proving, rules 3 and 5): imageCount 0 in images-none,
+# with images-list open beside it and none of its rows in the answer.
+
+model: "images-list and images-none scratch projects (metric architectural template), Revit 2024"
+
+jobs:
+  - fragment: list-images
+    expect: imageCount
+    in: "images-list"
+    negative-in: "images-none"
+    note: >
+      LF2. Negative - THE FIRST CASE TO RUN: images-none in front, imageCount
+      0, placedCount 0, report "No image or PDF page is in this model's
+      Manage Images." and no row of images-list. Positive - images-list:
+      imageCount 3 (2 on Revit 2020), placedCount 3, the plans row "page 2,
+      imported ... placed 2 time(s) in "Level 1", "A101"", the site.png row
+      placed once, the logo.png row "linked ... FILE NOT FOUND ... placed 0
+      times" - never "unused".

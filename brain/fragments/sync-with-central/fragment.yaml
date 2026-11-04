@@ -21,7 +21,7 @@ purpose: >
   every fragment AND the whole add-in: `SynchronizeWithCentral` appears nowhere,
   and `Document.Save` appears nowhere. The only `SaveAs` calls are for family
   files and print settings. So Heron could read who owns what
-  (`READ_ELEMENT_OWNERSHIP`), report what may be edited
+  (`REPORT_ELEMENT_OWNERSHIP`), report what may be edited
   (`REPORT_ELEMENT_OWNERSHIP`), and then modify a workshared model and leave every
   change sitting in somebody's local file waiting for a hand on the keyboard.
 
@@ -75,13 +75,13 @@ compatibility-note: >
   `Document.IsWorkshared` and `RelinquishOptions` are present 2020 through 2027 -
   read off the reference assemblies at both ends on 2026-09-18.
 
-# ROUTING - repeated in READ_ELEMENT_OWNERSHIP and SAVE_DOCUMENT.
+# ROUTING - repeated in REPORT_ELEMENT_OWNERSHIP and SAVE_DOCUMENT.
 #
 #   "sync to central"          -> here
 #   "save my work"             -> SAVE_DOCUMENT - a local save, which on a
 #                                 workshared model is NOT a sync and does not
 #                                 reach anybody else
-#   "who owns this"            -> READ_ELEMENT_OWNERSHIP - a READ
+#   "who owns this"            -> REPORT_ELEMENT_OWNERSHIP - a READ
 #   "can I edit these"         -> REPORT_ELEMENT_OWNERSHIP
 #   "make my workset editable" -> SET_WORKSHARING_OWNERSHIP - take or give
 #                                 ownership WITHOUT a sync (2026-10-14)

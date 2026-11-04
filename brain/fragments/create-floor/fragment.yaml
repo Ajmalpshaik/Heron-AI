@@ -9,13 +9,56 @@ semantic-identity: "make a floor slab over this area"
 kind: action
 domain: revit.elements
 capability: CREATE_FLOOR
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 3 (2026-11-01) - CREATE_CEILING AND CREATE_ROOF WERE MERGED INTO THIS
+# CARD on the owner's instruction ("make sure there is no duplicate tools", then
+# "ok go ahead merge all"), and both are DEPRECATED. The same job three times
+# over: one closed boundary on one level, at the level's PROJECT elevation and
+# never its Elevation, closed by itself, a repeated point named, a
+# self-crossing refusal reported - and the type decides what it makes.
+# `floorType` is now the TYPE of whichever (HostObjAttributes, resolved by the
+# add-in among wall, floor, ceiling and roof types, D-54): a floor type makes
+# a floor exactly as version 2 did; a ceiling type a ceiling, CREATE_CEILING's
+# rules - Ceiling.Create found by name, so Revit 2020 and 2021 are refused with
+# the sentence to draw one by hand, the type's category checked, the height
+# above the level (`heightAboveLevel`, millimetres) set and READ BACK; a roof
+# type a footprint roof, CREATE_ROOF's rules - NewFootPrintRoof on every
+# release, left FLAT, `edges` the model curves it hands back and `measuredMm`
+# its size and base height read back off Revit. A wall type is refused by name.
+#
+# WHAT EACH RETIRED CARD'S OUTPUTS ARE NOW: `created` and `findings`, the same
+# names and the same sentences; CREATE_ROOF's `edges` and `measuredMm`, the
+# same names, on this card. Their boundaries were IList<XYZ> read by the
+# add-in; this card's is text read here by the same rule (version 2), so the
+# same "X,Y,Z; ..." makes the same edges - and a ceiling or a roof may now have
+# an arc edge too, which neither could. NOT CARRIED, AS THE LESS SAFE OF TWO:
+# nothing. One thing is NEW, and safer: a height given with a floor or roof
+# type is refused rather than ignored - neither took one, and a number quietly
+# dropped reads as a number used. Asked by a BARE name a wall type also has, a
+# type is now refused naming both, where a floor- or roof-only need found the
+# one; "Basic Roof: Generic - 400mm" says which.
+#
+# SLOPE_ROOF_EDGES STAYS SEPARATE: it slopes the edges of a footprint roof that
+# exists, a decision about the design this card does not make.
+#
+# Version 2's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; CREATE_ROOF's held signature and CREATE_CEILING's proof
+# stay on their own cards. DRAFT until version 3 is proved on a real model
+# (D-30) - a ceiling on 2024 and refused on 2020, a roof measured, a floor
+# word for word as version 2.
 
 purpose: >
   Creates a floor from a closed boundary on one level. The slab everything else
   sits on, and the thing MEP has to penetrate.
+
+  **A CEILING OR A FLAT ROOF FROM THE SAME BOUNDARY (version 3)** - the type
+  decides. A ceiling type makes a ceiling at a height above the level, read
+  back; Revit 2020 and 2021 cannot make one from code, and say so - draw one
+  by hand. A roof type makes a footprint roof, left flat: no slope is set on
+  any edge, and its size and height are measured back.
 
   **The creation call changed at Revit 2022 and this fragment still runs on
   2020.** The old one took a curve array through the document's creation
@@ -34,7 +77,7 @@ purpose: >
 
   **AN EDGE CAN BE AN ARC (version 2, row 5b-1216).** `arc MX,MY X,Y` after a
   corner makes the next edge an arc: through MX,MY, ending at X,Y - the writing
-  CREATE_FAMILY_EXTRUSION's loops take, so one writing works for a family and a
+  CREATE_FAMILY_FORMS's loops take, so one writing works for a family and a
   project. A round slab is two arcs, the second ending where the first began; a
   boundary with an arc in it may end on its first corner, because a round one
   has to. A boundary with no `arc` in it makes exactly the floor version 1 made,
@@ -53,8 +96,10 @@ contract:
     - name: level
       type: Level
       source: request
+    # The TYPE - a floor, ceiling or roof type; it decides what is made
+    # (version 3). "Basic Roof: Generic - 400mm" when a bare name is shared.
     - name: floorType
-      type: FloorType
+      type: HostObjAttributes
       source: request
     # Millimetres, as typed: corners "X,Y,Z" with semicolons between - the Z
     # is taken from the level - and an arc "arc MX,MY X,Y" after a corner: a
@@ -66,10 +111,31 @@ contract:
     - name: boundary
       type: string
       source: request
+    # VERSION 3, from CREATE_CEILING. A ceiling's height above its level, in
+    # MILLIMETRES - 2700. A ceiling type needs it; a floor or roof type
+    # refuses it. Left out it is NaN, "not given".
+    - name: heightAboveLevel
+      type: double
+      source: request
+      optional: true
+      absent: NaN
   provides:
     - name: created
       role: result
       type: ElementId
+    - name: edges
+      # VERSION 3, from CREATE_ROOF. A roof's boundary model curves, handed
+      # back so a slope can be set per edge afterwards - 0 for a floor or a
+      # ceiling. A thing it MADE, so a result (D-52).
+      role: result
+      type: int
+    - name: measuredMm
+      # VERSION 3, from CREATE_ROOF. What Revit says is there, read back off a
+      # new ROOF, in millimetres - its size on plan and its base height beside
+      # the level's. Accounting, not a result (D-52): it describes `created`.
+      # Empty for a floor or a ceiling.
+      role: accounting
+      type: string
     - name: findings
       type: IList<string>
 
@@ -79,35 +145,38 @@ contract:
 # SELECT_BY_NUMERIC_PARAMETER - a circle, not the 77.25 m2 20-sided polygon.
 # Version 1's proof (2026-09-10) described the code before arcs (row 5b-1216).
 proof:
-  date: '2026-10-19'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: HM floor test (2,943 elements), Revit 2020, session 15072
-  positive_case: run ONCE on the live model through the Keep or Discard box in Revit (D-119)
-    on 2026-10-19; the modeller saw the result in Revit and pressed Keep, and Revit kept it
-    as one undo step. returned MillimetresPerFoot 304.8, arcs 2, corners 2 item(s) [(16.404199475,
-    196.850393701, 0.000000000), (-16.404199475, 196.850393701, 0.000000000)], created 1 item(s)
-    [id 345453], creation Document, findings 2 item(s) [Floor created on 'Level 1' using the
-    pre-2022 call. It is a ..., 2 of its 2 edges are arcs. Its Area in Properties is measure...],
-    invariant CultureInfo, mm Func`2, newStyle (null), numbers Func`2, oldStyle RuntimeMethodInfo,
-    pointOf Func`3, problem (null), shortest 0.00256026455729167, through 2 item(s) [(0.000000000,
-    213.254593176, 0.000000000), (0.000000000, 180.446194226, 0.000000000)]. inputs came level
-    as given; floorType as given; boundary as given. on HM floor test
-  negative_case: run with level=Level 1, floorType=Generic 300mm, boundary=5000,60000,0; arc
-    0,60000 -5000,60000; arc 0,55000 5000,60000 instead - chosen because it should not contain
-    what this fragment reports - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, arcs 2, corners 2 item(s)
-    [(16.404199475, 196.850393701, 0.000000000), (-16.404199475, 196.850393701, 0.000000000)],
-    created (null), creation Document, findings 1 item(s) [The arc from 5000,60000 through
-    0,60000 to -5000,60000 is no...], invariant CultureInfo, mm Func`2, newStyle (null), numbers
-    Func`2, oldStyle RuntimeMethodInfo, pointOf Func`3, problem The arc from 5000,60000 through
-    0,60000 to -5000,60000 is not an arc - its three points are in a line, or two are in the
-    same place., shortest 0.00256026455729167, through 2 item(s) [(0.000000000, 196.850393701,
-    0.000000000), (0.000000000, 180.446194226, 0.000000000)]. inputs came level as given;
-    floorType as given; boundary as given. on HM floor test
+  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, arcs
+    0, asCeiling false, asFloor FloorType, asRoof (null), ceilingCategory Category, ceilingClass
+    RuntimeType, ceilingCreate (null), corners 4 item(s) [(0.000000000, -196.850393701, 0.000000000),
+    (16.404199475, -196.850393701, 0.000000000), (16.404199475, -180.446194226, 0.000000000),
+    ...], created 1 item(s) [id 1020212], creation Document, edges 0, findings 1 item(s) [Floor
+    created on ''Level 1'' using the pre-2022 call. It is a ...], heightAboveLevel NaN, heightAsked
+    false, heightFeet 0, invariant CultureInfo, kindWord floor, measuredMm , mm Func`2, newStyle
+    (null), numbers Func`2, oldStyle RuntimeMethodInfo, pointOf Func`3, problem (null), shortest
+    0.00256026455729167, through 4 item(s) [(null), (null), (null), ...], typeShown Floor:
+    STB 20.0. inputs came level as given; floorType as given; boundary as given; heightAboveLevel
+    not given - "NaN", the card''s own default (optional). on P1102 MEP'
+  negative_case: 'run with boundary=0,-60000,0; 5000,-60000,0, floorType=Floor: STB 20.0,
+    level=Level 1 instead - chosen because it should not contain what this fragment reports
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned MillimetresPerFoot 304.8, arcs 0, asCeiling false, asFloor FloorType, asRoof
+    (null), ceilingCategory Category, ceilingClass RuntimeType, ceilingCreate (null), corners
+    2 item(s) [(0.000000000, -196.850393701, 0.000000000), (16.404199475, -196.850393701,
+    0.000000000)], created (null), creation Document, edges 0, findings 1 item(s) [A floor
+    needs at least three boundary points and 2 were give...], heightAboveLevel NaN, heightAsked
+    false, heightFeet 0, invariant CultureInfo, kindWord floor, measuredMm , mm Func`2, newStyle
+    (null), numbers Func`2, oldStyle RuntimeMethodInfo, pointOf Func`3, problem (null), shortest
+    0.00256026455729167, through 2 item(s) [(null), (null)], typeShown Floor: STB 20.0. inputs
+    came level as given; floorType as given; boundary as given; heightAboveLevel not given
+    - "NaN", the card''s own default (optional). on P1102 MEP'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: afec7d7a9549e170
+  fingerprint: db997d34c6317f6a
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -121,13 +190,21 @@ compatibility-note: >
   `Level.ProjectElevation`, `CurveLoop.Create` and `Line.CreateBound` are
   present throughout, and so is `Arc.Create` taking two ends and a point on the
   arc - what version 2 hands both calls for a curved edge, read off the
-  reference assemblies on 2026-10-19 with tools/api-surface.
+  reference assemblies on 2026-10-19 with tools/api-surface. VERSION 3, from
+  the two cards merged in: `Ceiling.Create(Document, IList<CurveLoop>,
+  ElementId, ElementId)` is present from 2022 and absent on 2020, so it is
+  found by name; `Document.Create.NewFootPrintRoof(CurveArray, Level,
+  RoofType, out ModelCurveArray)` is present 2020 through 2027 and did not
+  change at 2022; `BuiltInParameter.CEILING_HEIGHTABOVELEVEL_PARAM`,
+  `CeilingType`, `RoofType` and `Element.get_BoundingBox` are present 2020
+  through 2027 - each read for its own card, CREATE_CEILING and CREATE_ROOF.
 
 # THE OLD CALL WANTS A CurveArray AND THE NEW ONE WANTS CurveLoops, so the
 # boundary is built into both shapes and the one the found method needs is
 # passed. That is the only real difference between the two paths.
 
-# ROUTING - repeated in CREATE_CEILING and MEASURE_ELEMENT_VOLUME.
+# ROUTING - repeated in MEASURE_ELEMENT_VOLUME, MEASURE_CEILING_HEIGHT,
+# READ_CEILING_GRID and SLOPE_ROOF_EDGES.
 #
 #   "make a floor slab over this area" -> here
 #   "add a slab here"                  -> here
@@ -137,23 +214,72 @@ compatibility-note: >
 #                                         reach here on the lexical backend:
 #                                         CREATE_EDGE_SWEEPS, measured
 #                                         2026-10-19 by check-routing
-#   "make a ceiling over this area"    -> CREATE_CEILING - the other flat thing,
-#                                         and the one MEP actually hides above
+#   "make a ceiling over this area",
+#   "add a ceiling to this room"       -> here, with a ceiling type and its
+#                                         height (version 3, CREATE_CEILING
+#                                         merged in) - the other flat thing, and
+#                                         the one MEP actually hides above
+#   "put a roof over this", "add a
+#    flat roof here"                   -> here, with a roof type (version 3,
+#                                         CREATE_ROOF merged in). Left flat
+#   "slope this roof"                  -> SLOPE_ROOF_EDGES - the edges of a
+#                                         footprint roof that exists, gable or
+#                                         hip at the modeller's pitch
+#   "make a barrel roof over the entrance",
+#   "add a gable extrusion roof on reference plane North Face"
+#                                      -> CREATE_EXTRUSION_ROOF (2026-11-02) -
+#                                         an open profile on a vertical plane,
+#                                         extruded between a start and an end;
+#                                         this card's roof is a closed outline
+#                                         on plan
+#   "how high is the ceiling"          -> MEASURE_CEILING_HEIGHT - a READ, and it
+#                                         must not answer a request to build one
+#   "where is the ceiling grid"        -> READ_CEILING_GRID
+#   "put a ceiling in every room"      -> CREATE_FROM_ROOM_BOUNDARIES, which
+#                                         takes the shape from the room
 #   "how much concrete is in this"     -> REPORT_MATERIAL_TAKEOFF
 #   "cut a hole for the duct"          -> NOTHING HERE DOES THAT. An opening is
 #                                         its own job and nothing covers it yet
 #   "build a wall between these points" -> CREATE_WALL
-#   "hatch this area on the drawing" -> CREATE_FILLED_REGION. It LOOKS like a
+#   "hatch this area on the drawing" -> DRAW_FAMILY_FILLED_REGION. It LOOKS like a
 #                                       slab on a plan and is in no other
 #                                       view, no schedule and not the model
 #   "make a slab under these rooms"      -> CREATE_FROM_ROOM_BOUNDARIES. This
 #                                           one takes one typed loop and cuts
 #                                           no openings
+#   "make the slab"                      -> here (declared 2026-11-01, 5b-1372)
+#   "add a foundation slab on Level 0
+#    from these corners"                 -> CREATE_FOUNDATION_SLAB - the same
+#                                           boundary writing, a Foundation Slab
+#                                           type, Structural Foundations
+#   "put a ceiling at 2700"              -> here, a ceiling at that height -
+#                                           by identity. Since 2026-11-02 the
+#                                           keyword route alone ranks
+#                                           CREATE_PROJECT_REFERENCE_PLANES
+#                                           first on "2700" and "ceiling"
+#                                           (check-routing, scratch store); a
+#                                           reference plane is a line to set
+#                                           out from, not a ceiling
 
 
 # ROUTING (2026-10-13, the gap fill)
 #
 #   "lay this floor to follow the terrain"   -> EDIT_SLAB_SHAPE, follow
+
+# JUDGED 2026-11-04 (FRAGMENT-ISSUES row 5b-1382, on the owner's yes to the
+# merges with his condition: the impl/ of a PROVEN keeper is never changed)
+# AGAINST CREATE_FOUNDATION_SLAB (FRG-ELE-135) AND KEPT APART. A card-text
+# note only: nothing under impl/ was touched, so the proof above still
+# describes the code and this card stays PROVEN. That card makes a STRUCTURAL
+# FOUNDATION - NewFoundationSlab before 2022, its category read back in
+# Structural Foundations and rolled back if it is not, a Foundation Slab type
+# only - and this card makes an ordinary floor, ceiling or roof and reads no
+# category. Taking the foundation in means a foundation branch in impl/ and
+# a new proof. Still open here, and not changed by this ruling: a Foundation
+# Slab type handed to this card goes through the plain floor call unchecked
+# (row 5b-1383).
+#   "make a 600 thick raft under the building" -> CREATE_FOUNDATION_SLAB
+#   "pour a mat foundation inside these walls" -> CREATE_FOUNDATION_SLAB
 utterances:
   - make a floor slab over this area
   - add a slab here
@@ -161,3 +287,20 @@ utterances:
   - draw the slab for this area
   - model the floor
   - draw a slab with an arc edge
+  # MOVED 2026-11-01 from CREATE_CEILING, merged into this card.
+  - make a ceiling over this area
+  - add a ceiling to this room
+  - create a ceiling
+  - draw the ceiling in here
+  - put a ceiling at 2700
+  - model the ceiling for this room
+  # MOVED 2026-11-01 from CREATE_ROOF, merged into this card.
+  - put a roof over this
+  - create a roof
+  - make the roof on this level
+  - add a flat roof here
+  # ADDED 2026-11-01 (row 5b-1372): claimed for this card in CREATE_ROOF's
+  # routing table (CREATE_ROOF is merged into this card since), and reached PLACE_AREA_REINFORCEMENT ranked - then
+  # CREATE_FOUNDATION_SLAB once that card came, on 2024 and 2020. Declared so
+  # it reaches here by identity. Outside impl/, so the proof is not stale.
+  - make the slab

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,32 @@ capability: ADD_SCHEDULE_COMBINED_FIELD
 version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO ADD_SCHEDULE_FIELDS (add-schedule-
+# fields), on the owner's instruction in conversation: "make sure there is no
+# duplicate tools", then "ok go ahead merge all". Constitution Article 1:
+# kept, never deleted, so its record and its proof stay readable and it can be
+# brought back. Nothing offers it now - retrieval leaves DEPRECATED out, and
+# its sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to ADD_SCHEDULE_FIELDS. The proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: ADD_SCHEDULE_FIELDS
+  why: >
+    The same job - put a column on a schedule and read it back.
+    ADD_SCHEDULE_FIELDS version 2 carries this card's code whole beside its
+    plain-column loop: combined columns with separators between the parts (row
+    5b-1292), one unresolved part stopping that column on that schedule
+    (partMissing), editExisting rebuilding a column in place with its heading,
+    sort, filter and width kept, position placing or moving a column (the one
+    SetFieldOrder in the library), columnNow read back, refusedWhy,
+    notASchedule. Its refused (schedule ids) is refusedSchedules there,
+    because that card's refused is the sentence that stops the call. Where the
+    rules differed the safer was kept: a position or a combined column with no
+    columnName is refused whole before anything is written. Nothing was not
+    carried.
 
 purpose: >
   Adds a column that joins several existing parameters into one, with a

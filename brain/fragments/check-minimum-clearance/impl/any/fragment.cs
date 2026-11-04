@@ -1,7 +1,39 @@
 // NOT STANDALONE. Assumes `elements`, `targets`, `defaultClearance`, `rules`,
-// `includeInsulation`, `doc` and `includeLinks` are in scope, and leaves
-// `tooClose`, `gapsMm`, `judgedBy`, `pairsChecked`, `linksSearched` and
-// `linkedMatches` behind.
+// `includeInsulation`, `assumeThicknessMm`, `ignoreConnected`, `maxRows`, `doc`
+// and `includeLinks` are in scope, and leaves `tooClose`, `gapsMm`, `judgedBy`,
+// `pairsChecked`, `linksSearched`, `linkedMatches`, `tooCloseIds`, `violations`,
+// `insulatedCount`, `bareCount` and `findings` behind.
+//
+// VERSION 3 (2026-11-01) - CHECK_INSULATION_CLEARANCE MERGED IN, AND WHAT IT
+// HAD THAT VERSION 2 LACKED:
+//
+//   NO INSULATION MODELLED IS THE SILENT PROBLEM, SO IT IS COUNTED AND SAID
+//   FIRST. `insulatedCount` and `bareCount` split the measurable elements - both
+//   sets, each element once - and with insulation counted and some bare, the
+//   first findings line is a WARNING that for those this is exactly the bare
+//   answer. `assumeThicknessMm` treats every element with no wrap as lagged
+//   that thick - how a run is checked against what it is GOING to be lagged
+//   with - and every row it touches says ASSUMED. Given above 0 it counts the
+//   insulation even with includeInsulation off, and says so: a thickness asked
+//   for and then ignored would pass pairs that will not fit.
+//
+//   `ignoreConnected` - a pair joined by a connector is passed over. A duct and
+//   the fitting on its end are at zero clearance by construction.
+//
+//   ONE SET AGAINST ITSELF. With `targets` the same set as `elements` - which is
+//   what `binds: elements` gives - each pair was measured twice, A to B and B to
+//   A, and reported twice. A pair is now measured once, whichever way round it
+//   comes.
+//
+//   `findings`, CAPPED AT `maxRows` ROWS - one row per pair too close, with the
+//   bare gap, both jackets and the real gap in millimetres - and the count
+//   beside it is complete. `tooCloseIds` - every element in a pair too close,
+//   once, so the next step can select or isolate them. `violations` - how many
+//   pairs. An element with no readable extent is counted and said, never a pass,
+//   and so is a run with fewer than two measurable elements.
+//
+//   The wrap's thickness falls back to RBS_INSULATION_THICKNESS where Thickness
+//   cannot be read. LINING IS STILL NOT COUNTED - it is inside the duct.
 //
 // READ ONLY. Opens no transaction, moves nothing.
 //
@@ -42,6 +74,13 @@
 const double MillimetresPerFoot = 304.8;
 defaultClearance = defaultClearance / MillimetresPerFoot;
 
+// AND THE ASSUMED JACKET (version 3, CHECK_INSULATION_CLEARANCE): millimetres
+// in, the same 304.8. Above 0 it counts the insulation whatever
+// includeInsulation says - see the header.
+var assumedFeet = assumeThicknessMm > 0.0 ? assumeThicknessMm / MillimetresPerFoot : 0.0;
+var insulationOn = includeInsulation || assumedFeet > 0.0;
+var rowLimit = maxRows > 0 ? maxRows : 50;
+
 // AND `rules` IS THE SECOND LENGTH IN THIS FILE, which the D-71 sweep walked
 // straight past. FRAGMENT-ISSUES row 51 records that sweep: it looked for a
 // `double` request input with no conversion and found two. `rules` is an
@@ -79,9 +118,11 @@ int pairsChecked = 0;
 
 // How far this element's own insulation stands off its surface. Zero when it
 // has none, which is most elements.
-Func<Element, double> jacketOf = element =>
+// THE MODELLED JACKET ALONE - the thickest wrap, never the sum. GetInsulationIds
+// throws for anything that cannot carry one, and the catch is what reads that as
+// none (CHECK_INSULATION_CLEARANCE's rule).
+Func<Element, double> modelledJacketOf = element =>
 {
-    if (!includeInsulation) return 0.0;
     double thickest = 0.0;
     try
     {
@@ -92,12 +133,61 @@ Func<Element, double> jacketOf = element =>
             {
                 var wrap = doc.GetElement(wrapId) as InsulationLiningBase;
                 if (wrap == null) continue;
-                if (wrap.Thickness > thickest) thickest = wrap.Thickness;
+                double thickness = 0.0;
+                try { thickness = wrap.Thickness; } catch { thickness = 0.0; }
+                if (thickness <= 0.0)
+                {
+                    try
+                    {
+                        var parameter = wrap.get_Parameter(BuiltInParameter.RBS_INSULATION_THICKNESS);
+                        if (parameter != null && parameter.HasValue) thickness = parameter.AsDouble();
+                    }
+                    catch { }
+                }
+                if (thickness > thickest) thickest = thickness;
             }
         }
     }
     catch { }
     return thickest;
+};
+
+// Each element once: its jacket, and whether it was ASSUMED rather than modelled.
+var jacketCache = new Dictionary<ElementId, double>();
+var assumedJacket = new HashSet<ElementId>();
+var modelledInsulated = new HashSet<ElementId>();
+Func<Element, double> jacketOf = element =>
+{
+    if (!insulationOn) return 0.0;
+    double cached;
+    if (jacketCache.TryGetValue(element.Id, out cached)) return cached;
+    var jacket = modelledJacketOf(element);
+    if (jacket > 0.0) modelledInsulated.Add(element.Id);
+    else if (assumedFeet > 0.0) { jacket = assumedFeet; assumedJacket.Add(element.Id); }
+    jacketCache[element.Id] = jacket;
+    return jacket;
+};
+
+// IGNORE CONNECTED (version 3): the owners of every connector joined to this one.
+Func<Element, HashSet<ElementId>> connectedTo = element =>
+{
+    var connected = new HashSet<ElementId>();
+    if (!ignoreConnected || element == null) return connected;
+    ConnectorManager manager = null;
+    try
+    {
+        var curve = element as MEPCurve;
+        if (curve != null) manager = curve.ConnectorManager;
+        var instance = element as FamilyInstance;
+        if (manager == null && instance != null && instance.MEPModel != null)
+            manager = instance.MEPModel.ConnectorManager;
+        if (manager == null) return connected;
+        foreach (Connector connector in manager.Connectors)
+            foreach (Connector reference in connector.AllRefs)
+                if (reference != null && reference.Owner != null) connected.Add(reference.Owner.Id);
+    }
+    catch { }
+    return connected;
 };
 
 Func<double, double, double, double, double> axisGap = (aMin, aMax, bMin, bMax) =>
@@ -110,29 +200,48 @@ Func<double, double, double, double, double> axisGap = (aMin, aMax, bMin, bMax) 
 // Boxes and jackets once per element, not once per pair.
 var targetInfo = new List<KeyValuePair<Element, BoundingBoxXYZ>>();
 var targetJacket = new Dictionary<ElementId, double>();
+var withoutBox = new HashSet<ElementId>();
+var measurable = new HashSet<ElementId>();
 foreach (var target in targets)
 {
     if (target == null) continue;
     BoundingBoxXYZ box = null;
     try { box = target.get_BoundingBox(null); } catch { }
-    if (box == null) continue;
+    if (box == null) { withoutBox.Add(target.Id); continue; }
     targetInfo.Add(new KeyValuePair<Element, BoundingBoxXYZ>(target, box));
     targetJacket[target.Id] = jacketOf(target);
+    measurable.Add(target.Id);
 }
+
+// Version 3: each pair once, whichever way round it comes - one set against
+// itself would otherwise be measured and reported twice.
+var pairsSeen = new HashSet<string>();
+var tooCloseIds = new List<ElementId>();
+var flagged = new HashSet<ElementId>();
+var violations = 0;
+var rows = new List<string>();
 
 foreach (var element in elements)
 {
     if (element == null) continue;
     BoundingBoxXYZ sourceBox = null;
     try { sourceBox = element.get_BoundingBox(null); } catch { }
-    if (sourceBox == null) continue;
+    if (sourceBox == null) { withoutBox.Add(element.Id); continue; }
+    measurable.Add(element.Id);
 
     double sourceJacket = jacketOf(element);
+    var connected = connectedTo(element);
 
     foreach (var pair in targetInfo)
     {
         var target = pair.Key;
         if (target.Id == element.Id) continue;
+
+        var idA = element.Id.ToString();
+        var idB = target.Id.ToString();
+        if (!pairsSeen.Add(string.CompareOrdinal(idA, idB) < 0 ? idA + " & " + idB : idB + " & " + idA))
+            continue;
+        if (ignoreConnected && connected.Contains(target.Id)) continue;
 
         var box = pair.Value;
         pairsChecked++;
@@ -147,6 +256,7 @@ foreach (var element in elements)
         // are touching" is the finding and a negative gap reads as a depth.
         double jacket;
         if (!targetJacket.TryGetValue(target.Id, out jacket)) jacket = 0.0;
+        double bareGap = gap;
         gap = gap - sourceJacket - jacket;
         if (gap < 0.0) gap = 0.0;
 
@@ -169,8 +279,67 @@ foreach (var element in elements)
         tooClose.Add(key);
         gapsMm[key] = gap * MillimetresPerFoot;
         judgedBy[key] = rule;
+
+        violations++;
+        if (flagged.Add(element.Id)) tooCloseIds.Add(element.Id);
+        if (flagged.Add(target.Id)) tooCloseIds.Add(target.Id);
+
+        if (rows.Count < rowLimit)
+        {
+            var assumedHere = assumedJacket.Contains(element.Id) || assumedJacket.Contains(target.Id);
+            rows.Add(string.Format("  {0} (id {1}) to {2} (id {3}): bare {4:F0} mm, jackets {5:F0} + "
+                + "{6:F0} mm, REAL GAP {7:F0} mm against {8:F0} required ({9}){10}",
+                element.Name, element.Id, target.Name, target.Id,
+                bareGap * MillimetresPerFoot, sourceJacket * MillimetresPerFoot,
+                jacket * MillimetresPerFoot, gap * MillimetresPerFoot,
+                required * MillimetresPerFoot, rule,
+                assumedHere ? "  [ASSUMED lagging - not modelled]" : ""));
+        }
     }
 }
+
+// ---- version 3: CHECK_INSULATION_CLEARANCE's findings ----------------------
+
+var insulatedCount = 0;
+var bareCount = 0;
+foreach (var id in measurable)
+{
+    if (modelledInsulated.Contains(id)) insulatedCount++;
+    else bareCount++;
+}
+
+var findings = new List<string>();
+findings.Add(string.Format("{0} pair(s) too close of {1} checked{2}. Distances are bounding-box "
+    + "based - an engineering figure, not a defensible millimetre", violations, pairsChecked,
+    insulationOn ? ", measured between the OUTSIDE faces of the insulation" : ", bare geometry"));
+if (insulationOn)
+{
+    findings.Add(string.Format("{0} element(s) measurable: {1} insulated in the model, {2} with "
+        + "none{3}. Read this line first - it says whether the answer below is about clearance "
+        + "or about the model", measurable.Count, insulatedCount, bareCount,
+        assumedFeet > 0.0
+            ? string.Format(" (uninsulated treated as {0:F0} mm)", assumeThicknessMm) : ""));
+    if (bareCount > 0 && assumedFeet <= 0.0)
+        findings.Insert(0, string.Format("WARNING: {0} element(s) carry NO insulation in the model, "
+            + "so for those this gives EXACTLY the bare-geometry answer. If they are meant to be "
+            + "lagged, this check is passing pairs that will not fit - set assumeThicknessMm, or "
+            + "model the insulation", bareCount));
+    if (!includeInsulation)
+        findings.Add("assumeThicknessMm was given, so insulation was counted although "
+            + "includeInsulation was off - a thickness asked for is never ignored");
+    findings.Add("Lining is deliberately NOT counted - it sits inside the duct and takes no "
+        + "outside space, so counting it would inflate every gap");
+}
+if (withoutBox.Count > 0)
+    findings.Add(string.Format("{0} element(s) had NO readable extent and were skipped. They were "
+        + "not checked, which is not the same as passing", withoutBox.Count));
+if (measurable.Count < 2)
+    findings.Add("Fewer than two measurable elements, so no pair could be compared. That is NOT "
+        + "every pair passing");
+foreach (var row in rows) findings.Add(row);
+if (violations > rows.Count)
+    findings.Add(string.Format("  ... {0} further pair(s) not listed - the count above is complete",
+        violations - rows.Count));
 
 // ---- D-59: the same gap, against each link's building ---------------------
 

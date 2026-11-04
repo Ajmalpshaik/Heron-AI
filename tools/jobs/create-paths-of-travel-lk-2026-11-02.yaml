@@ -1,0 +1,42 @@
+# NEEDS-CHECKING Group LK - CREATE_PATHS_OF_TRAVEL, built 2026-11-02 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/create-paths-of-travel-lk-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-paths-of-travel-lk-2026-11-02.yaml
+#
+# THE MODEL (docs/needs-checking/group-lk.md, LK1): "travel-ip" as Group LJ
+# arranges it, but with NO path of travel drawn yet - the 20000 x 10000 mm
+# box on "Level 1", its interior wall at x = 10000 with a 1000 mm gap at the
+# north end, rooms "201 Office" and "202 Store", doors Mark "D-EXIT" (east
+# wall) and "D-2" (in the gap), and a "{3D}" view.
+#
+# THE ARRANGEMENT: rooms 201 and 202 to door D-EXIT in "Level 1" for the
+# positive; the same rooms and door in the "{3D}" view for the negative - a
+# different value, not an empty one (fragment-proving, rules 3 and 5): Revit
+# draws no path of travel in a 3D view, so nothing may be drawn anywhere.
+# Every write here is ROLLED BACK.
+
+model: "travel-ip scratch project (metric architectural template), no path of travel drawn, Revit 2024"
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: create-paths-of-travel
+    expect: created
+    in: "travel-ip"
+    set:
+      view: "FloorPlan: Level 1"
+      rooms: "201; 202"
+      toDoor: "D-EXIT"
+    negative-set:
+      view: "{3D}"
+      rooms: "201; 202"
+      toDoor: "D-EXIT"
+    note: >
+      LK2. Negative - THE FIRST CASE TO RUN: the {3D} view, created empty,
+      refused ""{3D}" is a 3D view. Revit draws paths of travel in floor
+      plans only - name a floor plan. NOTHING WAS DRAWN.", no path anywhere.
+      Positive - "Level 1": created 2, notFound empty, report "Drew 2 of 2
+      path(s) of travel in "Level 1" to door "D-EXIT" ...", each row's length
+      in metres; the 201 path goes round the interior wall's end.

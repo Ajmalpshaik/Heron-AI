@@ -1,0 +1,138 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-164
+semantic-identity: "move or redraw the analytical line of these beams, columns or braces, or the analytical outline of these floors or walls, without moving the elements themselves"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "move the analytical line of
+# this beam 200 mm down" - Revit's analytical model, adjusted by hand. No card
+# changed an analytical element's geometry (grep of every fragment's C# that day
+# for AnalyticalMember.SetCurve and SetOuterContour: nothing). MOVE_ELEMENTS
+# (PROVEN) moves the BEAM ITSELF; this moves only its analytical line and
+# leaves the beam where it is - a look-alike in words, a different change in
+# the model. REPORT_ANALYTICAL_MODEL answers every question, so no question
+# reaches this write (D-86).
+#
+# ONE OF A SET. CREATE_ANALYTICAL_ELEMENTS (FRG-ELE-163) draws analytical
+# members, panels and links; ASSOCIATE_ANALYTICAL_ELEMENTS (FRG-ELE-165) ties
+# an analytical element to a physical one.
+#
+# TWO WAYS, ONE A RUN. By `offset`, every analytical member's line and
+# panel's outline handed in moves by the same distance. By `points`, ONE
+# element's line or outline is redrawn through them. Both, or neither, is
+# refused.
+#
+# THE ELEMENTS HANDED IN MAY BE PHYSICAL OR ANALYTICAL. A beam, column, brace,
+# floor or wall reaches its analytical element through Revit's association; an
+# element with none is named in noAnalytical and left alone.
+#
+# READ BACK. Each line or outline is read again after the change, and one not
+# where it was asked to go within a millimetre is reported, not counted.
+#
+# NEVER DELETES an element, physical or analytical, and never moves the
+# physical one.
+#
+# 2023 TO 2027 ONLY - see compatibility-note.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: ADJUST_ANALYTICAL_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Moves the analytical line of beams, columns and braces, or the analytical
+  outline of floors and walls, by an offset - or redraws one through new
+  points - leaving the physical elements where they are, and reads each one
+  back before and after.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      # The beams, columns, braces, floors or walls - or their analytical
+      # members and panels - a selection or the step before.
+      type: IList<Element>
+    - name: offset
+      # How far to move, "x,y,z" in MILLIMETRES - "200 mm down" is 0,0,-200.
+      # Left out ("0,0,0") when `points` redraws instead.
+      type: XYZ
+      source: request
+      optional: true
+      absent: 0,0,0
+    - name: points
+      # The new line or outline of ONE element, "x,y,z; x,y,z" in MILLIMETRES
+      # - two for a member, three or more corners for a panel. Left out when
+      # `offset` moves instead.
+      type: IList<XYZ>
+      source: request
+      optional: true
+  provides:
+    - name: adjusted
+      # Analytical elements whose line or outline now reads back where it was
+      # asked to go. Something the write DID.
+      role: result
+      type: int
+    - name: adjustedIds
+      # The analytical elements `adjusted` counts.
+      role: accounting
+      type: IList<ElementId>
+    - name: report
+      # ONE LINE PER ANALYTICAL ELEMENT CHANGED, read back from the model: its
+      # id, the physical element it belongs to, and its ends or corners in mm
+      # before and after.
+      role: accounting
+      type: string
+    - name: noAnalytical
+      # Elements handed in with no analytical element - left alone (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: skipped
+      # Analytical elements not changed, each with why: a link, Revit's
+      # refusal, a read-back not where it was asked to go (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined the whole run, in Revit words: no offset and no
+      # points, both, points for more than one element. Never a thing done
+      # (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2023", "2024", "2025", "2026", "2027"]
+runtime: [net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Read with tools/api-surface --members on 2026-11-02, all eight releases
+  2020-2027. AnalyticalMember.SetCurve(Curve), AnalyticalElement.GetCurve,
+  AnalyticalSurfaceBase.GetOuterContour and SetOuterContour(CurveLoop), and
+  AnalyticalToPhysicalAssociationManager.GetAnalyticalToPhysicalAssociationManager,
+  GetAssociatedElementId and IsAnalyticalElement are present 2023-2027 in one
+  form and absent 2020-2022, where the analytical model was a property of the
+  physical element. Curve.CreateTransformed, CurveLoop.CreateViaTransform and
+  Transform.CreateTranslation are present 2020-2027. SetTransform (2025 on) is
+  not used, so one route serves all five releases.
+
+# ROUTING (2026-11-02) - the same rows are in CREATE_ANALYTICAL_ELEMENTS,
+# ASSOCIATE_ANALYTICAL_ELEMENTS and MOVE_ELEMENTS.
+#
+#   "move the analytical line of this beam 200 mm down"
+#                                                -> here, offset 0,0,-200
+#   "move the ducts up 200"                      -> MOVE_ELEMENTS - moves the
+#                                                   elements themselves
+#   "add an analytical member between these two points"
+#                                                -> CREATE_ANALYTICAL_ELEMENTS
+#   "associate this analytical member with that beam"
+#                                                -> ASSOCIATE_ANALYTICAL_ELEMENTS
+utterances:
+  - move the analytical line of this beam 200 mm down

@@ -1,0 +1,59 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that draws, "drew something nobody asked for": a placeholder of a
+# type nobody named, a real duct where a placeholder was asked for, or one
+# drawn between two points that are the same point.
+# Arrange on the Project2 scratch model (Revit Systems template, never saved),
+# Revit 2020 - the model the MEP batches of 2026-10-18 ran on, where Supply
+# Air, "Rectangular Duct: Default", Domestic Cold Water and Level 1 are known.
+# The pipe type's name is NOT known: the first row of the NEEDS-CHECKING group
+# runs this card with systemType Domestic Cold Water and ductOrPipeType left
+# out, which draws nothing and lists the pipe types. Where the model differs,
+# the job file changes - never the card. EVERY RUN ROLLED BACK.
+
+positive:
+  - given: >
+      systemType Supply Air, ductOrPipeType "Rectangular Duct: Default", level
+      Level 1, points "1000,3000,2700; 4000,3000,2700; 4000,6000,2700"
+    expect: >
+      elements holds 2 duct placeholders; report "2 duct placeholder(s) drawn
+      on Level 1 ... id <id> 3000 mm; id <id> 3000 mm. 0 segment(s) too short
+      to draw, 0 refused by Revit"; findings has no "reads back as a real
+      duct". In a 3D view both show single-line, and Properties says
+      Duct Placeholders. THIS IS THE FIRST POSITIVE TO RUN
+  - given: >
+      systemType Domestic Cold Water, ductOrPipeType the pipe type the first
+      row listed, level Level 1, points "1000,8000,2700; 5000,8000,2700"
+    expect: elements holds 1 pipe placeholder, 4000 mm long, read back as a placeholder
+
+negative:
+  - given: >
+      the first positive's values with the points "1000,3000,2700;
+      1000,3000,2700" - the same point twice
+    expect: >
+      elements empty, tooShort 1, notMade empty, refused empty - and NO
+      exception. THIS IS THE FIRST CASE TO RUN
+  - given: systemType Supply Air with the pipe type the first row listed
+    expect: >
+      elements empty; refused "'<pipe type>' is a pipe type and '<Supply Air,
+      as Revit names it>' is a duct system type - a duct placeholder needs a
+      duct type. Nothing was drawn"; typesLoaded lists the duct types
+  - given: the first positive's values with systemType left out
+    expect: >
+      elements empty; refused "No system type was named - Heron never chooses
+      one ..."; typesLoaded lists the duct and piping system types and the
+      duct and pipe types
+  - given: the first positive's values with ductOrPipeType a name no type has
+    expect: elements empty; refused naming the duct types in typesLoaded
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one operation is one undo entry
+
+second_route:
+  - >
+    Revit's own Systems > Duct Placeholder, drawn by hand between the same
+    two points with the same system and duct type, compared with this one:
+    the same length in Properties and the same single-line look
+  - >
+    select what this drew and read Properties - the category must say Duct
+    Placeholders or Pipe Placeholders, not Ducts or Pipes

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,31 @@ capability: SET_VIEW_RANGE
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO SET_VIEW_PROPERTIES (set-view-
+# properties), on the owner's instruction in conversation: "make sure there is
+# no duplicate tools". Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to SET_VIEW_PROPERTIES. Its 'what is the view range' moved
+# to REPORT_VIEW_SETTINGS, the read, which already declared 'what is the view
+# range of this plan'; its apply=false read mode was not carried into a write,
+# as SET_VIEW_SCALE's was not. It wrote all three offsets on every call;
+# SET_VIEW_PROPERTIES touches only the offsets given - the safer rule kept.
+# The proof below is the record of what this card's code did, not a claim
+# about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: SET_VIEW_PROPERTIES
+  why: >
+    The same job: set a view property and read it back. SET_VIEW_PROPERTIES
+    version 4 sets a plan's top, cut plane and bottom offsets (topMm, cutMm,
+    bottomMm), reads the range BEFORE changing it - wasViewRange for every
+    plan, wasTopMm, wasCutMm and wasBottomMm for the first - refuses a view
+    that is not a plan by name, and reads the range back from the view,
+    because Revit rejects an incoherent range without always throwing.
 
 purpose: >
   Reads a plan's view range and sets its cut plane, top and bottom offsets.

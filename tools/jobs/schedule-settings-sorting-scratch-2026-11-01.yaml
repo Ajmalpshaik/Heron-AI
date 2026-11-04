@@ -1,0 +1,124 @@
+# The proof of SET_SCHEDULE_APPEARANCE version 5's `calculation`
+# (set-schedule-appearance, FRG-VIEW-061 - the calculation drop-down that was
+# SET_SCHEDULE_FIELD_TOTALS version 2 on this branch until main merged that card
+# into this one, PR #777) and SET_SCHEDULE_SORT_GROUP version 2
+# (set-schedule-sort-group, FRG-VIEW-059), written 2026-11-01 for
+# FRAGMENT-ISSUES row 5b-1367 - NEEDS-CHECKING Group KK. NOT RUN - written and
+# read back with --dry-run only.
+#
+#     python tools/batch-prove.py tools/jobs/schedule-settings-sorting-scratch-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/schedule-settings-sorting-scratch-2026-11-01.yaml
+#
+# WHY. Ajmal PS made a duct length schedule through Heron on his Revit 2020 job
+# model and asked for every schedule setting Heron is missing. These two legs
+# prove the calculation drop-down (minimum, maximum, none) and the rest of the
+# Sorting/Grouping tab (footer title and count, blank line, per-level settings,
+# the grand total's title and count).
+#
+# ONE LEG PER FRAGMENT, ON PURPOSE. batch-prove writes each fragment's run
+# record to one path (brain/proof-drafts/runs/<slug>.json), so a second leg of
+# the same fragment would overwrite the first. The calculation leg below runs
+# set-schedule-appearance, which the appearance job file also runs: read this
+# file's record before running that one, or the other way round. The other version 2 cases are
+# the hand runs in Group KK.
+#
+# THE MODEL: A NEW PROJECT, NEVER 4355-* nor any project of Ajmal PS's. In
+# Revit 2020: File, New, Project, the default metric template (a mechanical
+# one if it is there), saved as "Heron Schedules KF Sorting". ARRANGE IT BY HAND FIRST:
+#
+#   1. Four ducts: on Level 1 two of 400x200 (3000 mm and 5000 mm long), on
+#      Level 2 one of 400x200 (2000 mm) and one of 600x300 (4000 mm)
+#   2. View, Schedules, Schedule/Quantities, Ducts, named "HERON KF Ducts",
+#      fields Level, Size, Length, Family and Type - in that order
+#   3. Sorting/Grouping: sort by Mark (add Mark as a field first, hidden), so
+#      the sort leg has a rule to REPLACE. Formatting: Length "Calculate totals"
+#   4. Save the project, so every run below starts from the same schedule
+#
+# `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
+# Open HERON KF Ducts' Properties afterwards: the Mark sort and Length's
+# Calculate totals must be as step 3 made them, rather than assuming the
+# rollback held.
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: the expected result filled on the positive, 0 on the negative
+#   - NEG NOT EMPTY: the negative changed a column or a sort. A FAIL - both
+#     negatives are values Revit or the fragment must refuse
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   field totals, positive: totalled 1, replacedCalculation "'Length' on
+#     'HERON KF Ducts' was calculating totals ... now calculates its minimum
+#     and maximum instead", appliedTotals saying where it prints
+#   field totals, negative: cannotTotal naming 'Family and Type' from
+#     CanDisplayMinMax, totalled 0
+#   sort group, positive: sorted 1; replacedRules naming the Mark sort;
+#     appliedOrder "Level descending with header (grouped), footer on (title
+#     off, count on), blank line on, then Size ascending, no header, footer
+#     off, blank line ..." - SIZE'S BLANK LINE AND FOOTER TITLE ARE REVIT'S
+#     DEFAULT FOR A NEW LEVEL, the value this proof records - and "grand total
+#     ON - title on 'Total Length', count off"
+#   sort group, negative: refused naming 'bold' and the words accepted,
+#     sorted 0, replacedRules EMPTY - nothing cleared
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Heron Schedules KF Sorting (a NEW project from Revit 2020's default metric template, arranged by hand as above), Revit 2020
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: set-schedule-appearance
+    expect: totalled
+    keep-chain: true
+    setup:
+      - find-schedules
+    setup-set:
+      nameContains: HERON KF Ducts
+    set:
+      fieldName: Length
+      calculation: minimum and maximum
+    negative-set:
+      fieldName: Family and Type
+      calculation: maximum
+    # The negative is the SAME schedule, so its chain gets the same name
+    # (FRAGMENT-ISSUES row 5b-242).
+    negative-setup-set:
+      nameContains: HERON KF Ducts
+    note: >
+      KK calculation. Length switched from totals to minimum and maximum; the
+      negative asks a maximum of a text column and must change nothing. Every
+      other input of the card is left out and binds "leave".
+
+  - fragment: set-schedule-sort-group
+    expect: sorted
+    keep-chain: true
+    setup:
+      - find-schedules
+    setup-set:
+      nameContains: HERON KF Ducts
+    set:
+      sortFieldNames: Level, Size
+      descending: "false"
+      showHeader: "false"
+      showFooter: "false"
+      showGrandTotal: "true"
+      itemized: "true"
+      levelOptions: "descending, header, footer, no footer title, footer count, blank line;"
+      grandTotalTitle: Total Length
+      showGrandTotalCount: "no"
+    negative-set:
+      sortFieldNames: Level, Size
+      descending: "false"
+      showHeader: "false"
+      showFooter: "false"
+      showGrandTotal: "true"
+      itemized: "true"
+      levelOptions: "descending; bold"
+    negative-setup-set:
+      nameContains: HERON KF Ducts
+    note: >
+      KF sort group. Level descending, grouped, with a counting footer and a
+      blank line; Size left to the flat switches and Revit's defaults; the
+      grand total titled Total Length with no count. The negative carries an
+      unknown word and must clear nothing.

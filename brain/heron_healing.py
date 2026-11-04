@@ -235,7 +235,7 @@ def main(argv):
         "docs/fragment-catalog.html",
         "brain/fragments/select-all-ducts.yaml",
         "docs/DECISIONS.md",
-        "brain/proof-drafts/runs/align-mep-elevation.json",
+        "brain/proof-drafts/runs/align-elements.json",
         "Project1 work_ajmal.al.rvt",
         "some/cache/that/looks/temporary.tmp",
     ])

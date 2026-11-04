@@ -113,7 +113,7 @@ compatibility-note: >
 #
 #   "move section 3 500 mm north"             -> here
 #   "push the elevation back to the wall"     -> here, throughMm
-#   "where does section 3 cut"                -> REPORT_VIEW_CUT_PLANES
+#   "where does section 3 cut"                -> REPORT_VIEW_SETTINGS
 #   "move these ducts 500"                    -> MOVE_ELEMENTS
 
 utterances:

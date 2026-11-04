@@ -1,0 +1,58 @@
+# NEEDS-CHECKING Group LH - SET_PANEL_SCHEDULE_TEMPLATE, and the panel
+# schedule template list REPORT_ELECTRICAL_SETTINGS gained beside it, built
+# 2026-11-02 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/set-panel-schedule-template-lh-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-panel-schedule-template-lh-2026-11-02.yaml
+#
+# THE MODEL is Group KU's scratch project, "electrical-settings-ku"
+# (docs/needs-checking/group-ku.md, KU1), new from Revit's metric ELECTRICAL
+# template - never a working model. By hand before the run (LH1): write down
+# the panel schedule templates it ships (Manage > Panel Schedule Templates >
+# Manage Templates) - the jobs below assume one named "Branch Panel"; use the
+# template's name if it differs - place two branch panelboards with Panel
+# Name DB-1 and DB-2, make a panel schedule for DB-1 only, and save.
+#
+# THE ARRANGEMENT: neither job takes a selection, so `setup: []`. Each
+# negative is a DIFFERENT VALUE, never an empty one (fragment-proving, rule
+# 5): for the write, a template name the model already has - changed 0 and
+# the template list the same before and after; for the read, a name no
+# template has - panelScheduleTemplates 0. Every write here is ROLLED BACK.
+
+model: "electrical-settings-ku scratch project from Revit's metric electrical template, panels DB-1 and DB-2, Revit 2020"
+
+jobs:
+  - fragment: set-panel-schedule-template
+    expect: changed
+    write: true
+    setup: []
+    set:
+      action: "make"
+      fromTemplate: "Branch Panel"
+      templateName: "DB Standard"
+    negative-set:
+      action: "make"
+      fromTemplate: "Branch Panel"
+      templateName: "Branch Panel"
+    note: >
+      LH2. Negative - THE FIRST CASE TO RUN: a new template named Branch
+      Panel, which the model has, so changed 0, skipped "A panel schedule
+      template is already named \"Branch Panel\" - left as it is, nothing
+      made.", before and after the same list. Positive - changed 1, after
+      holds "\"DB Standard\" (branch panel)" beside every template in before.
+      The apply cases are rows LH3 and LH4, run with `validate --write`.
+
+  - fragment: report-electrical-settings
+    expect: panelScheduleTemplates
+    setup: []
+    set:
+      show: "templates"
+    negative-set:
+      show: "templates"
+      nameContains: "ZZNOTEMPLATE"
+    note: >
+      LH5. Negative - THE FIRST CASE TO RUN: templates narrowed to
+      ZZNOTEMPLATE, so panelScheduleTemplates 0 and findings "Nothing in the
+      lists read has a name containing \"ZZNOTEMPLATE\"". Positive - every
+      template LH1 wrote down, each with its kind, the default marked, and
+      DB-1's schedule named under the template it is on; every other count 0.

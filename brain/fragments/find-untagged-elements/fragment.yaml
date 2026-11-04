@@ -17,7 +17,7 @@ purpose: >
   Splits a set of elements into the ones already tagged in one view and the ones
   not. It answers a real question on its own - *"which ducts have not been
   tagged"* is a drawing check somebody does before issuing - and it is the piece
-  TAG_ELEMENTS needs in front of it.
+  that hands TAG_ELEMENTS_IN_VIEW only the untagged ones.
 
   **It exists because the dependency graph said it had to.** TAG_ELEMENTS was
   written taking `alreadyTagged` as an input and nothing on disk could produce
@@ -107,11 +107,13 @@ compatibility-note: >
   the `#else` branch and breaks on 2020 and 2021 only - which is the release
   the owner actually runs.
 
-# ROUTING - repeated in TAG_ELEMENTS.
+# ROUTING - repeated in TAG_ELEMENTS_IN_VIEW, which TAG_ELEMENTS was merged
+# into on 2026-11-01. TAG_ELEMENTS_IN_VIEW reads the view's tags itself and
+# takes no `alreadyTagged` list; this still hands it `elements`, the untagged.
 #
 #   "which ducts are not tagged"     -> here
-#   "tag the ones that are missing"  -> here, then TAG_ELEMENTS
-#   "tag these"                      -> TAG_ELEMENTS
+#   "tag the ones that are missing"  -> here, then TAG_ELEMENTS_IN_VIEW
+#   "tag these"                      -> TAG_ELEMENTS_IN_VIEW
 #   "how many ducts are there"       -> COUNT_ELEMENTS - a count of elements,
 #                                       not a count of what is annotated
 #   "the tags are on top of each other" -> FIND_OVERLAPPING_TAGS - the opposite

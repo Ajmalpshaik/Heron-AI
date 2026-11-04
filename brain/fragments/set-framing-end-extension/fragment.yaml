@@ -1,0 +1,138 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-160
+semantic-identity: "set how far these beams extend past, or stop short of, their ends - start and end extension, join cutback"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "set the beam end extension to
+# 150 mm" and "cut back these beams 50 mm at the column" - structural framing's
+# Start / End Extension and Start / End Join Cutback. No card set them by the
+# end: of every fragment's C# none named START_EXTENSION, END_EXTENSION,
+# START_JOIN_CUTBACK or END_JOIN_CUTBACK. brain/heron_retrieve.py on the two
+# sentences (a scratch store, Revit 2024) answered CREATE_BEAM_SYSTEM and
+# COPE_FRAMING.
+#
+# LOOK-ALIKES, KEPT SEPARATE (heron-duplicate-checker's method, 2026-11-02):
+#   WRITE_ELEMENT_PARAMETERS   writes ONE parameter named exactly, on every
+#     (PROVEN)                 element, as text. It can write "Start Extension"
+#                              if the modeller names it - it cannot choose the
+#                              end from what the beam meets, and the modeller's
+#                              words name an end and a column, not a parameter.
+#   COPE_FRAMING (PROVEN)      the coping cut round a column or beam - a cut in
+#                              the beam's shape, not its length.
+#   DISALLOW_JOIN (PROVEN)     whether a beam end joins at all. Never touched
+#                              here: a cutback at an end that is not joined is
+#                              refused in words, not made possible.
+#   TRIM_EXTEND_ELEMENTS       moves the location line's ends to meet; this
+#     (PROVEN)                 leaves the line where it is and sets the offset
+#                              Revit draws past it.
+#
+# WHICH END IS NEVER GUESSED. `whichEnd` is start, end, both or joined - joined
+# meaning each end Revit has joined to another member (a column, a beam, a
+# wall), read off the beam's own location line. "The beam end extension" can
+# mean the End Extension or both ends; the host asks rather than picks.
+#
+# Millimetres become feet by / 304.8 (D-20). A parameter Revit has greyed out
+# at that end - a join cutback where the end is not joined - is refused in
+# words, never forced. Every end set is read back after one regeneration.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: SET_FRAMING_END_EXTENSION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets the start or end extension, or the join cutback, of the beams and braces
+  handed in, in millimetres, at the end named or at each end joined to another
+  member - and reads each end back.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Structural framing - the selection, or the chain. Anything else is
+    # refused by name.
+    - name: elements
+      type: IList<Element>
+    # extension (Start / End Extension) or cutback (Start / End Join
+    # Cutback). Asked for - they are two different settings - and any other
+    # word is refused before anything changes.
+    - name: setting
+      type: string
+      source: request
+    # start, end, both, or joined - each end Revit has joined to another
+    # member. Never defaulted: which end is the instruction.
+    - name: whichEnd
+      type: string
+      source: request
+    # Millimetres; turned into feet here by / 304.8 (D-20).
+    - name: lengthMm
+      type: double
+      source: request
+  provides:
+    - name: changed
+      role: result
+      type: int
+    - name: ends
+      # Each end changed, READ BACK after the call: the beam, the parameter,
+      # and the value before and after in millimetres. Describes the run
+      # (D-52).
+      role: accounting
+      type: IList<string>
+    - name: alreadyRight
+      # Ends already at the value asked for - left alone. The evidence it
+      # looked, never a change it made (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in words: not structural framing, no joined end, the
+      # parameter greyed out at that end, Revit refusing the value, or a
+      # read-back that did not change (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read with tools/api-surface --members
+  on the reference assemblies of 2020 to 2027 on 2026-11-02, every one present
+  in all eight: `BuiltInParameter.START_EXTENSION`, `END_EXTENSION`,
+  `START_JOIN_CUTBACK`, `END_JOIN_CUTBACK`; `Element.get_Parameter
+  (BuiltInParameter)`, `Parameter.IsReadOnly`, `StorageType`, `AsDouble`,
+  `Set(double)`; `LocationCurve.ElementsAtJoin[int end]`; `Element.Category`,
+  `Document.Regenerate`. `StructuralFramingUtils.SetEndReference` /
+  `IsEndReferenceValid` / `RemoveEndReference` are present too and NOT used:
+  they attach a beam end to a picked face, which nobody asked for. ElementIds
+  are compared as ElementIds and never read as numbers.
+
+# ROUTING - repeated in COPE_FRAMING, DISALLOW_JOIN and WRITE_ELEMENT_PARAMETERS.
+#
+#   "set the beam end extension to 150 mm"  -> here
+#   "cut back these beams 50 mm at the column" -> here, setting cutback,
+#                                              whichEnd joined
+#   "cope these beams at the columns"       -> COPE_FRAMING - a cut round the
+#                                              column, not a cutback
+#   "the beam is being eaten by the column" -> DISALLOW_JOIN
+#   "trim these back to the corner"         -> TRIM_EXTEND_ELEMENTS
+#   "extend this until it hits that one"    -> TRIM_EXTEND_ELEMENTS, declared
+#                                              there since row 5b-1419 - ranking
+#                                              alone moved it here
+#   "set the justification of these beams"  -> SET_FRAMING_JUSTIFICATION -
+#                                              where the member sits on its
+#                                              line, not its length (added
+#                                              2026-11-02, row 5b-1444)
+
+utterances:
+  - set the beam end extension to 150 mm
+  - cut back these beams 50 mm at the column

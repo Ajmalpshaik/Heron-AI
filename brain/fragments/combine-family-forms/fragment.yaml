@@ -133,13 +133,21 @@ compatibility-note: >
   Revit cannot cast is replaced by (5b-1001) compile on every release too
   (the same tool, 2026-10-17); measured on Revit 2024 only.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "cut the solid with the void"                -> here
 #   "join these solids in the family"            -> here
 #   "join these walls together"                  -> JOIN_GEOMETRY, a project
 #                                                   join, not a family form
 #   "make an opening in this wall"               -> CREATE_OPENING
+#   "cut the column with the void family"        -> CUT_GEOMETRY (2026-11-02),
+#                                                   a cut between elements
+#                                                   placed in a project
+#   "cut geometry in the family"                 -> here - declared here and
+#                                                   answered by identity;
+#                                                   ranking alone puts
+#                                                   CUT_GEOMETRY first on it
+#                                                   (FRAGMENT-ISSUES 5b-1416)
 
 utterances:
   - cut the solid with the void

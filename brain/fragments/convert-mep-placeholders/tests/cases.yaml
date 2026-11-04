@@ -1,0 +1,55 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that converts, "converted something that was not a
+# placeholder": a real duct handed in must come back named and untouched.
+# Arrange on the Project2 scratch model (Revit Systems template, never saved),
+# Revit 2020. The model holds no placeholders until somebody draws them, so the
+# first row of the NEEDS-CHECKING group draws, in the clear strip from
+# 0,14000 to 6000,16000 mm at 2700 mm on Level 1, by Revit's own Duct
+# Placeholder and Pipe Placeholder tools: P1 and P2, two Supply Air duct
+# placeholders meeting at 3000,15000; P3, one Domestic Cold Water pipe
+# placeholder; and R1, one real Supply Air duct. Where the model differs, the
+# job file changes - never the card. EVERY RUN ROLLED BACK, so each case
+# starts from the model as arranged.
+
+positive:
+  - given: >
+      the strip's Duct Placeholders, Pipe Placeholders and Ducts selected -
+      P1, P2, P3 and R1
+    expect: >
+      converted holds the real ducts and pipe standing where P1, P2 and P3
+      were, each with its length in report; notPlaceholders names R1 -
+      "Ducts '<type>' (id <id>): already a real duct, not a placeholder - left
+      as it is"; notConverted empty. In a 3D view at Fine the ducts and pipe
+      show double-line. Record whether Revit kept P1's id or gave a new one,
+      and whether fittingsMade holds the elbow at 3000,15000 - the two things
+      the card says are not known. THIS IS THE FIRST POSITIVE TO RUN
+  - given: P3 alone
+    expect: converted holds 1 pipe; report "1 placeholder(s) sent ... (0 duct, 1 pipe)"
+
+negative:
+  - given: the strip's Ducts alone selected - R1, a real duct
+    expect: >
+      converted empty, fittingsMade empty; report "None of the 1 element(s)
+      given is a duct or pipe placeholder - Ducts '<type>' (id <id>): already
+      a real duct ... Nothing was converted"; R1 unchanged. THIS IS THE FIRST
+      CASE TO RUN
+  - given: a wall selected
+    expect: converted empty; notPlaceholders names the wall as not a duct or pipe placeholder
+  - given: >
+      on a workshared copy, P1 borrowed by a second user and P1 and P2
+      selected
+    expect: >
+      P1 in notConverted, "borrowed by <user> - left alone"; P2 converted
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one operation is one undo entry
+
+second_route:
+  - >
+    Revit's own Modify | Duct Placeholders > Convert Placeholder on the same
+    P1 and P2, compared with this one: the same ducts, the same lengths, and
+    the same fitting at the joint, if Revit's button adds one
+  - >
+    select what this converted and read Properties - the category must say
+    Ducts or Pipes, not Duct Placeholders or Pipe Placeholders

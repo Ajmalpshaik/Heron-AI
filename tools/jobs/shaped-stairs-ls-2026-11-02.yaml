@@ -1,0 +1,79 @@
+# NEEDS-CHECKING Group LS - CREATE_SHAPED_STAIRS and ADD_STAIRS_LANDING (new):
+# an L, U or spiral stair by component placed from a point, and a landing
+# added between two runs of a stair already made - built 2026-11-02 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/shaped-stairs-ls-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/shaped-stairs-ls-2026-11-02.yaml
+#
+# THE MODEL (docs/needs-checking/group-ls.md, LS1): "Heron Shaped Stair Test",
+# a scratch project from Revit's metric Architectural template, saved under
+# %TEMP%\heron-work, never a working model. Level 1 at 0 and Level 2 at 3000;
+# the template's stair types, one of them Revit's default for new stairs;
+# nothing near 0,0,0 or 10000,0,0; and, for the landing, one stair drawn by
+# hand with Revit's Stair tool as two straight runs in an L whose landing has
+# been deleted (LS1 says how). Write the run ids it shows into the second job.
+#
+# THE ARRANGEMENT: each negative is the SAME call with one value that must not
+# be built - a stair type the model has not got, two runs that already share a
+# landing - never an empty input (fragment-proving, rules 3 and 5). Both
+# fragments declare editScopeFailures (D-112), so both are writes and every run
+# here is ROLLED BACK; a kept run is through try-once, on the modeller's yes.
+
+model: "Heron Shaped Stair Test (scratch, metric Architectural template), Revit 2024"
+
+defaults:
+  setup: []
+
+jobs:
+  # The L, from the default type. Negative: the same L with a stair type the
+  # model does not have - refused by name, nothing made.
+  - fragment: create-shaped-stairs
+    write: true
+    expect: created
+    set:
+      shape: "l"
+      baseLevel: "Level 1"
+      topLevel: "Level 2"
+      startPoint: "0,0,0"
+      direction: "north"
+      turn: "left"
+      runWidth: "1000"
+    negative-set:
+      shape: "l"
+      baseLevel: "Level 1"
+      topLevel: "Level 2"
+      stairType: "Spiral Feature Stair"
+      startPoint: "0,0,0"
+      direction: "north"
+      turn: "left"
+      runWidth: "1000"
+    note: >
+      LS2 and LS3. Positive: created a stair id, runCount 2, landingCount 1,
+      risers the fewest at or under the default type's Maximum Riser Height,
+      the finding naming the type "(Revit's default for new stairs)" and the
+      landing "turning left", railings as Revit added them. Negative: refused
+      "There is no stair type called 'Spiral Feature Stair' ... The ones
+      loaded are: ...", created invalid, NOTHING WAS MADE. Rolled back.
+
+  # The landing between two runs. Positive: the two runs of the hand-drawn L
+  # whose landing was deleted. Negative: the two runs of a stair that already
+  # has its landing between them - Revit answers it cannot, nothing changed.
+  - fragment: add-stairs-landing
+    write: true
+    expect: landings
+    setup:
+      - filter-elements-by-id
+      - set-selection
+    set:
+      elementIds: "RUN_A_ID, RUN_B_ID"
+    negative-set:
+      elementIds: "RUN_C_ID, RUN_D_ID"
+    note: >
+      LS6 and LS7. RUN_A/RUN_B: the first hand-drawn L's two runs, its
+      landing deleted; RUN_C/RUN_D: the second hand-drawn L's two runs,
+      left whole with its landing. RUN THE NEGATIVE FIRST. Positive:
+      landings 1 id, the finding giving its depth, thickness and height in
+      mm and the risers before and after. Negative: refused "Revit answers
+      that it cannot join runs ... with a landing", landings empty, NOTHING
+      WAS CHANGED. Rolled back.

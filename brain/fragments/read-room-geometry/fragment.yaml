@@ -40,7 +40,7 @@ purpose: >
   | What you meant | Use |
   |---|---|
   | "how many fit in here", "lay them out in this space" | **this fragment** |
-  | "how big is this room", "what are the room sizes" | `MEASURE_ROOM_DIMENSIONS` |
+  | "how big is this room", "what are the room sizes" | `REPORT_ROOM_SPACE_DATA` |
 
   It carried *"how big is this room"* and *"what is the room size"* until
   `MEASURE_ROOM_DIMENSIONS` existed, and answering those with a list of curves
@@ -130,7 +130,8 @@ compatibility-note: >
 
 # ROUTING - repeated in PLACE_ROOMS and FILTER_ELEMENTS_IN_ROOM.
 #
-#   "how big is this room"       -> MEASURE_ROOM_DIMENSIONS. This row said
+#   "how big is this room"       -> REPORT_ROOM_SPACE_DATA, since 2026-11-01
+#                                   the card that measures a room. This row said
 #                                   "here" until 2026-09-05, contradicting the
 #                                   table in this fragment's OWN purpose ten
 #                                   lines above it - which records that the
@@ -154,6 +155,19 @@ compatibility-note: >
 #   "put a ceiling in every room"        -> CREATE_FROM_ROOM_BOUNDARIES,
 #                                           which builds from these loops
 #                                           without anybody typing them
+
+# JUDGED 2026-11-01 (a duplicate sweep's look-alike, on the owner's rule "if one
+# tool can safely do both, merge") AGAINST REPORT_ROOM_SPACE_DATA AND KEPT APART -
+# the next sweep should not reopen it unless one of these stops being true:
+#   - A DIFFERENT RESULT. This hands back ONE room's or space's outline - the
+#     boundary loop and its holes as points, with its height - for a layout
+#     step the host does the arithmetic on (D-01). That card reads a SET of
+#     rooms and spaces as a schedule - number, name, level, area, volume, and
+#     length and width along the walls - and hands back no loops. One tool
+#     doing both would send every room's loops through a reply cut to a few
+#     lines, or leave a layout step without its outline.
+#   - Both READ; "what is the room area" (here) and "what is the area of this
+#     room" (there) both land on a read whichever answers.
 
 utterances:
   - what is the room area

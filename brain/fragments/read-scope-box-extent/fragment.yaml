@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,31 @@ capability: READ_SCOPE_BOX_EXTENT
 version: 1
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO SELECT_SCOPE_BOXES (select-scope-boxes),
+# on the owner's instruction in conversation: "make sure there is no duplicate
+# tools", then "ok go ahead merge all". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to SELECT_SCOPE_BOXES. The proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: SELECT_SCOPE_BOXES
+  why: >
+    The same job - find a scope box by name, by the Volume of Interest
+    category. SELECT_SCOPE_BOXES version 2 publishes one box's corners as
+    minMm and maxMm in millimetres, the names SELECT_IN_REGION takes, its id
+    in scopeBoxId, and its size - or why there is none: no box, no match, no
+    readable extent - in findings. Where the rules differed the safer was
+    kept: corners only when exactly one box matches, and with extent true two
+    matching boxes are refused with no corners, no id and no elements, as this
+    card refused them. Not carried, as opposite: refusing two matches when no
+    extent is asked - listing every match is that card's answer, and no box's
+    extent is claimed for them. This card's scopeBoxName is its nameContains,
+    with extent true.
 
 purpose: >
   Finds a scope box by name and hands back the box it occupies. Read-only.

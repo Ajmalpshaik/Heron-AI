@@ -1,0 +1,44 @@
+# NEEDS-CHECKING Group LM, row LM5 - REPORT_VIEW_WORK_PLANE (FRG-VIEW-168),
+# written 2026-11-02 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/report-view-work-plane-lm-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-view-work-plane-lm-2026-11-02.yaml
+#
+# READ: nothing is changed, so no transaction and no write switch.
+#
+# THE MODEL (docs/needs-checking/group-lm.md, LM1): the scratch project
+# "workplane-ip" - the floor plan "Level 1" with its work plane Level 1, and a
+# sheet "A101".
+#
+# THE NEGATIVE CHANGES ONLY THE VIEW - THE FIRST CASE TO RUN: a sheet has no
+# work plane, so `workPlanes` must come back empty and `withPlane` 0, the
+# sheet named in `findings` as having none. A reader that fell back to the
+# view in front, or to any plan's plane, would give the sheet one.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - the positive's row reads "'Level 1' (FloorPlan) work plane Level :
+#     Level 1 - horizontal at elevation 0 mm"
+#   - by hand afterwards (D-53, tracking): Work Plane > Set in "Level 1" to
+#     reference plane "Ceiling Datum", ask again through revit_read - the row
+#     follows it and nothing else changes
+#   - the second route: Architecture > Work Plane > Set, its Current line
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to the command.
+
+model: "workplane-ip scratch project (metric architectural template), floor plan Level 1, sheet A101, Revit 2024"
+
+defaults:
+  in: "workplane-ip"
+
+jobs:
+  - fragment: report-view-work-plane
+    expect: workPlanes
+    set:
+      views: "FloorPlan: Level 1"
+    negative-set:
+      views: "Sheet: A101"
+    note: >
+      LM5. Negative - the sheet A101: workPlanes empty, withPlane 0, noPlane
+      1, findings naming 'A101' (DrawingSheet) no work plane. Positive -
+      "Level 1": withPlane 1, Level : Level 1 - horizontal at elevation 0 mm.

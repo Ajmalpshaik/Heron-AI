@@ -1,0 +1,126 @@
+# The schedule FIELDS legs of the schedule-settings work - ADD_SCHEDULE_FIELDS
+# version 3 (add-schedule-fields, FRG-VIEW-034, a column at a place),
+# SET_SCHEDULE_FIELD_ORDER (set-schedule-field-order, FRG-VIEW-157, new) and
+# PLACE_VIEW_ON_SHEET version 5 (place-view-on-sheet, FRG-VIEW-015, a schedule
+# split and its segments - PLACE_SCHEDULE_ON_SHEET was merged into it,
+# 2026-11-01). Written 2026-11-01 for FRAGMENT-ISSUES row 5b-1367 (numbered
+# 5b-1363 until main took that number) - NEEDS-CHECKING Group KK. NOT RUN - written and read back with --dry-run only.
+#
+#     python tools/batch-prove.py tools/jobs/schedule-settings-fields-scratch-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/schedule-settings-fields-scratch-2026-11-01.yaml
+#
+# WHY. Ajmal PS made a duct length schedule through Heron on his Revit 2020
+# job model and could not set its Length column to metres; he asked for every
+# missing schedule setting to be built. These three are the Fields-tab order
+# and the split-on-sheet ones.
+#
+# THE MODEL: A NEW PROJECT, NEVER 4355-* nor any project of Ajmal PS's. In
+# Revit 2020: File, New, Project, the default metric template, saved as
+# "Heron Schedules KF Fields". Arrange it BY HAND first - a setup step that changes
+# the model cannot be given values of its own:
+#
+#   1. Draw about 40 ducts on Level 1 (any sizes, at least three different),
+#      so a schedule of them runs long enough to split
+#   2. A Duct Schedule named "Heron KF Duct Schedule" with the fields, in this
+#      order, Family and Type, Size, Length - and NOT Comments
+#   3. Two sheets: "KK01" with the schedule placed on it, and "KK02" left
+#      empty
+#   4. Save. Every run below starts from this
+#
+# EACH LEG HAS ITS OWN RECORD: batch-prove names a run record by fragment, so
+# one job per fragment here - three records, none overwriting another. The
+# other KK rows are commands of their own in docs/needs-checking/group-kk.md.
+#
+# `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
+# Open the schedule's Fields tab and sheet KK02 afterwards: they must be as
+# steps 2 and 3 left them, rather than assuming the rollback held.
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: the expected result filled on the positive, empty on the negative
+#   - NEG NOT EMPTY: the negative changed or placed something - a FAIL: every
+#     negative below asks for a column, or a split, that must be refused
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   add-schedule-fields, positive: added 1, appliedOrder on Heron KF Duct
+#     Schedule reading "1 Family and Type, 2 Comments (new), 3 Size, 4 Length",
+#     notPlaced empty. The title block's revision schedule, if the selection
+#     takes it, has no Comments: unknownField, nothing added there
+#   add-schedule-fields, negative: notPlaced naming each schedule and 'ZZZ NO
+#     SUCH COLUMN', added 0 - and NOT Comments at the end instead
+#   set-schedule-field-order, positive: reordered 1, appliedOrder "1 Length,
+#     2 Family and Type, 3 Size"
+#   set-schedule-field-order, negative: notPresent naming 'ZZZ NO SUCH COLUMN'
+#     on each schedule, reordered 0, appliedOrder empty
+#   place-view-on-sheet, ON REVIT 2020, positive: version 4's path with
+#     both new inputs "none" - placed 1 on KK02, placedAt about 100 mm, 200 mm
+#     "its top-left corner", no "(split" in it
+#   place-view-on-sheet, ON REVIT 2020, negative: splitInto 2 - notDone
+#     saying Revit 2020 and 2021 cannot split a schedule, placed EMPTY, KK02
+#     still empty. On Revit 2022 or later the split itself is row KK20 of its
+#     own in group-kk.md, run by hand on a 2022+ copy of this project
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Heron Schedules KF Fields (a NEW project from Revit 2020's default metric template, arranged by hand as above), Revit 2020
+
+defaults:
+  in: "Heron Schedules KF Fields"
+  write: true
+
+jobs:
+  - fragment: add-schedule-fields
+    expect: added
+    setup:
+      - select-by-category-name
+      - set-selection
+    set:
+      categoryName: Schedule Graphics
+      inViewOnly: KK01
+      fieldNames: Comments
+      position: "2"
+    negative-set:
+      categoryName: Schedule Graphics
+      inViewOnly: KK01
+      fieldNames: Comments
+      position: "after ZZZ NO SUCH COLUMN"
+    note: >
+      Version 2's D-30 pair. The negative is a VALUE, not a selection: the
+      same schedule, a place that is not there. Comments must not appear at
+      the end instead - open the Fields tab after the run.
+
+  - fragment: set-schedule-field-order
+    expect: reordered
+    setup:
+      - select-by-category-name
+      - set-selection
+    set:
+      categoryName: Schedule Graphics
+      inViewOnly: KK01
+      order: "move Length to the front"
+    negative-set:
+      categoryName: Schedule Graphics
+      inViewOnly: KK01
+      order: "move ZZZ NO SUCH COLUMN to the front"
+    note: >
+      The new card's D-30 pair. The negative names a column that is not
+      there; the Fields tab must read exactly as step 2 left it.
+
+  - fragment: place-view-on-sheet
+    expect: placed
+    set:
+      sheetId: KK02
+      views: "Heron KF Duct Schedule"
+      at: "100,200,0"
+      splitInto: "none"
+      segment: "none"
+    negative-set:
+      sheetId: KK02
+      views: "Heron KF Duct Schedule"
+      at: "100,200,0"
+      splitInto: "2"
+      segment: "all"
+    note: >
+      On Revit 2020: version 4's path kept for a schedule, and a split refused
+      in words with nothing placed. The same schedule both legs, named in
+      views; only the split differs.

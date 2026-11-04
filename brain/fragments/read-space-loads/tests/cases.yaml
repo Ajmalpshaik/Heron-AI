@@ -9,6 +9,22 @@ positive:
   - given: a space where the design airflow was entered by hand at 250 L/s
     expect: 250 L/s reported and marked "entered", not the calculated figure it overrides
 
+  # VERSION 2 (2026-11-01), from REPORT_SPACE_AIRFLOW. Each FAILS on version
+  # 1, which read no specified return or exhaust and no actual figure.
+  - given: spaces with design supply, return and exhaust airflows typed, served by air terminals with flows
+    expect: >
+      specifiedSupplyLs, specifiedReturnLs and specifiedExhaustLs matching the
+      Specified airflows in the Properties palette, and actualSupplyLs,
+      actualReturnLs and actualExhaustLs matching Revit's Actual airflows, all
+      in L/s - one space checked by eye against a Space schedule
+
+  - given: a space with no supply typed but a calculated supply from the analysis
+    expect: >
+      airflowLs the calculated figure, marked "calculated"; calculatedSupplyLs
+      the same; specifiedSupplyLs 0 - the calculated figure is NOT taken as the
+      design target, and if return and exhaust are also untyped the space is
+      in noDesignFigure
+
 negative:
   - given: ANY space with a known load, checked against what Revit shows on screen
     expect: >
@@ -30,6 +46,21 @@ negative:
     expect: >
       they go to `notSpaces` and nothing is reported. A Room carries no load;
       PLACE_ROOMS is what puts Spaces in the model
+
+  # VERSION 2 (2026-11-01), from REPORT_SPACE_AIRFLOW.
+  - given: A SPACE WITH NO TYPED AIRFLOW AT ALL, and no terminals in it
+    expect: >
+      its id in noDesignFigure, and its finding saying no design airflow was
+      typed. Zero against zero would pass a balance check - the case
+      REPORT_SPACE_AIRFLOW existed for
+
+  - given: a RETURN-ONLY space, a typed return and no typed supply
+    expect: NOT in noDesignFigure - a zero supply is correct for it
+
+  - given: an UNPLACED space, in the schedule but not in the model
+    expect: >
+      its id in unplaced, a finding saying so, and NO entry in any figure -
+      not in noLoad either. Version 1 sent it to noLoad as "no load readable"
 
 second_route:
   - Revit's own Space properties, or a Space schedule with load and airflow columns, read for the same space

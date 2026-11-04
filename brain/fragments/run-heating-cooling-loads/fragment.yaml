@@ -1,0 +1,150 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-088
+semantic-identity: "run Revit's heating and cooling loads analysis on this model with its own Energy Settings, and give the loads report and each space's calculated loads - Analyze > Heating and Cooling Loads"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "run the heating and cooling
+# loads", "calculate the HVAC loads for this model" and "run the loads
+# analysis and show the cooling load per space" - Revit's Analyze > Heating
+# and Cooling Loads. No card ran it: the ribbon coverage note
+# (docs/work-notes/investigations/2026-11-01-revit-ribbon-coverage.md) put it
+# PARTIAL, "reads the results but cannot run the analysis", and
+# brain/heron_retrieve.py on the three sentences (a scratch store, Revit
+# 2027) answered READ_SPACE_LOADS first each time, a read.
+#
+# ONLY REVIT 2027 CAN RUN IT FROM THE API (tools/api-surface --members and
+# --dump over RevitAPI 2020 to 2027, 2026-11-02). ViewHVACLoadsReport -
+# Create(Document, string), RunLoadsAnalysis(), IsAnalysisCompleted() - is
+# in 2027 and in no earlier release. EnergyDataSettings (2020-2027) holds the
+# settings and runs nothing; EnergyAnalysisDetailModel (2020-2027) builds the
+# energy analytical model and calculates no loads; no Run, Calculate or
+# Compute member on any Analysis or Mechanical type of 2020-2026 runs them.
+# PostableCommand.HeatingAndCoolingLoads (2020, 2021 and 2027, absent
+# 2022-2026) only opens Revit's dialog for a person to press Calculate.
+#
+# WRITTEN NEW, NOT WIDENED (heron-duplicate-checker's method, 2026-11-02).
+# READ_SPACE_LOADS, REPORT_SPACE_ENVELOPE and REPORT_ROOM_SPACE_DATA read
+# what is already on the spaces and change nothing; this makes a view and
+# changes every space's calculated loads. A read cannot become a write
+# without every question it answers needing a Keep or Discard (D-86).
+# LOOK-ALIKE: the read-back is READ_SPACE_LOADS' reading, COPIED here, and
+# that card is not edited. REPORT_SPACE_AIRFLOW is DEPRECATED into it.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: RUN_HEATING_COOLING_LOADS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Runs Revit's Analyze > Heating and Cooling Loads on the model in front with
+  its own Energy Settings, which are read and never changed. A loads report
+  view is made - named as asked, or the first free "Heating and Cooling
+  Loads Report" - and each placed space's calculated heating and cooling
+  load is read back afterwards, in watts, with a typed design load named
+  where one overrides it. A model with no spaces, or none placed, is refused
+  in plain words; so is a report name a view already has. Settings Revit
+  cannot run with are refused in Revit's own words and nothing is kept. The
+  figures are calculated values, never a statement that anything complies.
+  Revit 2027 only - no earlier release can run the analysis from outside.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The loads report view's name - "Loads Report Level 1". A name any view
+    # already has is refused, never changed. Left out, the first of "Heating
+    # and Cooling Loads Report", "... 2", "... 3" not yet in use.
+    - name: reportName
+      type: string
+      source: request
+      optional: true
+      absent: ""
+  provides:
+    - name: reportView
+      # The loads report view made. A thing it MADE, so a result (D-52).
+      role: result
+      type: ElementId
+    - name: coolingW
+      # Each placed space's CALCULATED cooling load after the run, in watts,
+      # converted by Revit's own UnitUtils - only when Revit says the analysis
+      # completed. A space with none is in noLoad, not here at zero.
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: heatingW
+      # The same for the calculated heating load.
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: analysisCompleted
+      # Revit's own IsAnalysisCompleted after the run. False: the spaces'
+      # figures are not handed back as this run's - they may be from before.
+      role: accounting
+      type: bool
+    - name: noLoad
+      # Placed spaces with no calculated load readable after the run - a
+      # question, never a load of zero (READ_SPACE_LOADS' rule). Spaces it
+      # could not read, so accounting (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING: the view made and its id, the Energy Settings it ran with
+      # (building type, phase, report type, use current view only), whether
+      # Revit says it completed, how many spaces have a load and how many
+      # spaces' figures changed with the run.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was run, in the modeller's words. Null when it ran (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2027"]
+runtime: [net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Revit 2027 only, because the API to run the analysis is. ViewHVACLoadsReport
+  (Create, RunLoadsAnalysis, IsAnalysisCompleted) is in RevitAPI 2027 and in
+  no release 2020-2026, read with tools/api-surface --members on 2026-11-02.
+  EnergyDataSettings.GetEnergyDataSettings (2026-2027) is used, not
+  GetFromDocument, which 2027 marks obsolete; BuildingType, ProjectPhase,
+  ProjectReportType and UseCurrentViewOnly are read and never set.
+  UnitUtils.ConvertFromInternalUnits(double, ForgeTypeId) and UnitTypeId.Watts
+  are in 2021-2027. Space's Calculated and Design Heating and Cooling Load are
+  unchanged 2020-2027. Not seen in Revit: whether RunLoadsAnalysis runs inside
+  the host's open transaction, and whether the analysis has finished when it
+  returns - IsAnalysisCompleted is asked and handed back.
+
+# ROUTING (2026-11-02) - the same rows are in READ_SPACE_LOADS.
+#
+#   "run the heating and cooling loads"   -> here
+#   "calculate the HVAC loads for this model"
+#                                         -> here
+#   "run the loads analysis and show the cooling load per space"
+#                                         -> here - the run, then each
+#                                            space's calculated cooling load
+#   "what is the cooling load of this space", "what is the cooling load",
+#   "what is the heating load", "what are the loads on these spaces"
+#                                         -> READ_SPACE_LOADS - a question,
+#                                            answered from what the spaces
+#                                            already hold, nothing run. Each
+#                                            is declared there; on the keyword
+#                                            route alone this card ranks first
+#                                            (check-routing, 2026-11-02), and
+#                                            identity answers them with the
+#                                            read, with and without the flag
+#   "how big is this space's envelope"    -> REPORT_SPACE_ENVELOPE
+
+utterances:
+  - run the heating and cooling loads
+  - calculate the HVAC loads for this model
+  - run the loads analysis and show the cooling load per space

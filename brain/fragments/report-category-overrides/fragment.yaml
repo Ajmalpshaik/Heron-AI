@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-051
-semantic-identity: "which categories are overridden in this view"
+semantic-identity: "which categories are overridden or switched off in this view"
 kind: filter
 domain: revit.views
 capability: REPORT_CATEGORY_OVERRIDES
@@ -17,13 +17,26 @@ capability: REPORT_CATEGORY_OVERRIDES
 # view overrode 77 of 85 model categories for the LINKED architecture. Left out
 # it is false and every version 1 output is computed exactly as before. DRAFT
 # until version 2 is run in Revit: NEEDS-CHECKING Group ED.
-version: 2
+#
+# VERSION 3 (2026-11-01): REPORT_CATEGORY_VISIBILITY was merged into this card
+# on the owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. Which categories are SWITCHED OFF in the view comes back on every
+# call - `hiddenCategories` as ids, `hiddenCategoryList` one string,
+# `templateOwnedCategories` and `visibilityTemplate`, and DIAGNOSE_VISIBILITY
+# named when nothing is off. THE SAFER RULE OF THE CONFLICT WAS KEPT: every
+# hidden category is listed, empty ones included and marked so, where that
+# card left out a category with nothing in the model; and it does not depend
+# on `allCategories`. The proof below is version 1's and stale; the card is
+# DRAFT until version 3 is proved.
+version: 3
 source: OFFICIAL
 risk: READ
 
 purpose: >
   Lists which CATEGORIES carry a graphic override in one view - the reverse
-  lookup for `SET_CATEGORY_GRAPHICS`, which only ever sets. Read-only.
+  lookup for `SET_CATEGORY_GRAPHICS`, which only ever sets - and, since
+  version 3, which categories are switched off in it, the read half of
+  `SET_CATEGORY_VISIBILITY`. Read-only.
 
   **`READ_GRAPHIC_OVERRIDES` CANNOT ANSWER THIS, AND SAYS SO IN ITS OWN
   PURPOSE** - it reads the PER-ELEMENT override only. Yet *"what category
@@ -51,7 +64,15 @@ purpose: >
   override acts on them too - with each override's colours, line weights and
   patterns beside its Object Styles; the sub-categories and annotation
   categories hidden or overridden; and the elements that carry their own
-  override. The view filters are AUDIT_VIEW_FILTERS'.
+  override. The view filters are REPORT_VIEW_FILTERS'.
+
+  **Switched off is not overridden** (version 3, from
+  REPORT_CATEGORY_VISIBILITY). A category switched off shows nothing; one
+  overridden shows differently. Every category switched off in the view is
+  listed on every call - the whole model is asked, never only what the view
+  draws, because a hidden category's elements are in no view-scoped
+  collector - empty ones included and marked so, with how many of the view's
+  rows its template owns and the template named.
 
 contract:
   needs:
@@ -78,7 +99,8 @@ contract:
     - name: overrideList
       # EVERY OVERRIDDEN CATEGORY, EACH LINE IN FULL, JOINED - the answer this
       # fragment exists to give, and the one to read when this is the read
-      # half of SET_CATEGORY_GRAPHICS or SET_CATEGORY_SOLID_FILL. A STRING
+      # half of SET_CATEGORY_GRAPHICS, with its solidFill switch or without
+      # (SET_CATEGORY_SOLID_FILL was merged into it 2026-11-01). A STRING
       # because a reply shows a list as its first three entries, each cut to
       # sixty characters, and a category's fill starts past the sixtieth once
       # its line colours are set: measured 2026-09-22, the Walls line after a
@@ -116,36 +138,68 @@ contract:
       # each group's count and its first five ids.
       role: result
       type: string
+    # VERSION 3, from REPORT_CATEGORY_VISIBILITY - on every call, whatever
+    # `allCategories` says.
+    - name: hiddenCategories
+      # Every category switched off in the view, by id - the whole model
+      # asked, never only what the view draws, and a category with nothing in
+      # the model included (the safer rule kept, 2026-11-01).
+      role: result
+      type: IList<ElementId>
+    - name: hiddenCategoryList
+      # The same, ONE STRING: a heading line, then "Ceilings - SWITCHED OFF",
+      # "(nothing in the model)" after an empty one.
+      role: result
+      type: string
+    - name: templateOwnedCategories
+      # How many of the view's Visibility/Graphics rows cannot be switched in
+      # the view itself - its template owns them. Never a category it found
+      # hidden (D-52).
+      role: accounting
+      type: int
+    - name: visibilityTemplate
+      # The view template the view follows, by name, or empty - where a
+      # switched-off category is turned back on when the template owns it.
+      role: accounting
+      type: string
 
 # THIS PROOF IS VERSION 1's AND IT IS STALE. It ran with no `allCategories`,
 # which version 2 still answers exactly the same way, but the implementation
 # changed and the fingerprint below no longer matches it. NEEDS-CHECKING Group
 # ED is the run that replaces it.
 proof:
-  date: '2026-10-18'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project2 (3,035 elements), Revit 2020, session 13520
-  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    set-category-solid-fill with this phase''s own values - run inside a transaction, and
-    Revit reported the transaction group ROLLED BACK afterwards. returned allCategories false,
-    annotationCategoryList , elementOverrideList , findings 2 item(s) [1 of 13 category(ies)
-    present in ''Level 1'' carry an override..., Walls: surface pattern <Solid fill>, cut
-    pattern <Solid fill...], modelCategoryList , overriddenCategories 1 item(s) [-2000011],
-    overrideList Walls: surface pattern <Solid fill>, cut pattern <Solid fill>, halftone,
-    subCategoryList . inputs came view as given; allCategories as given. on Project2'
-  negative_case: 'run with allCategories=false, categories=Doors, categoryName=Walls, inViewOnly=Heron
-    3D, overrides=halftone=true, view=FloorPlan: Level 1 instead - chosen because it should
-    not contain what this fragment reports - the arrangement was re-made first by running
-    set-category-solid-fill with this phase''s own values - run inside a transaction, and
-    Revit reported the transaction group ROLLED BACK afterwards. returned allCategories false,
-    annotationCategoryList , elementOverrideList , findings 2 item(s) [0 of 13 category(ies)
-    present in ''Level 1'' carry an override..., nothing is overridden at CATEGORY level here.
-    If something s...], modelCategoryList , overriddenCategories 0 item(s), overrideList ,
-    subCategoryList . inputs came view as given; allCategories as given. on Project2'
+  model: Project2 (5,844 elements), Revit 2024, session 57392
+  positive_case: "run with view=FloorPlan: L1 - Architectural - the first of 3 tracked inputs.\
+    \ returned allCategories false, annotationCategoryList , elementOverrideList , findings\
+    \ 3 item(s) [0 of 6 category(ies) present in 'L1 - Architectural' carry a..., nothing\
+    \ is overridden at CATEGORY level here. If something s..., 10 category(ies) are SWITCHED\
+    \ OFF in 'L1 - Architectural' - ...], hiddenCategories 10 item(s) [-2003400, -2008185,\
+    \ -2001340, ...], hiddenCategoryList 10 of 405 category(ies) asked are switched off in\
+    \ 'L1 - Architectural', every one listed - a category with nothing in the model is marked\
+    \ so.\n  Analytical Nodes - SWITCHED OFF (nothing in the model)\n  Analytical Spaces -\
+    \ SWITCHED OFF (nothing in the model)\n  Analytical Surfaces - SWITCHED OFF (nothing in\
+    \ the model)\n  Internal Origin - SWITCHED OFF\n  Mass - SWITCHED OFF (nothing in the\
+    \ model)\n  Parts - SWITCHED OFF (nothing in the model)\n  Project Base Point - SWITCHED\
+    \ OFF\n  Sun Path - SWITCHED OFF\n  Survey Point - SWITCHED OFF\n  Topography - SWITCHED\
+    \ OFF (nothing in the model), modelCategoryList , overriddenCategories 0 item(s), overrideList\
+    \ , subCategoryList , templateOwnedCategories 0, visibilityTemplate . inputs came view\
+    \ as given; allCategories as given. on Project2"
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). report-category-overrides\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 3 different inputs:\n\n      view=FloorPlan: L1 - Architectural -> hiddenCategories\
+    \ 10 item(s) [-2003400, -2008185, -2001340, ...]\n      view=FloorPlan: Site -> hiddenCategories\
+    \ 38 item(s) [-2005009, -2005002, -2005006, ...]\n      view=FloorPlan: L2 - Architectural\
+    \ -> hiddenCategories 10 item(s) [-2003400, -2008185, -2001340, ...]\n\n    Different\
+    \ inputs, exact matches every time. A fragment falling back to the active view, the whole\
+    \ model, or a previous run could not do that."
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 3d532c9be04fbfa5
+  fingerprint: b6013001d1e07761
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -172,6 +226,10 @@ compatibility-note: >
   `ElementId` number is read - it changes type at 2024 and loses
   `IntegerValue` at 2026 - so categories are keyed by `ElementId` itself.
 
+  Version 3 adds what REPORT_CATEGORY_VISIBILITY was proved with:
+  `View.GetCategoryHidden`, `View.CanCategoryBeHidden` and
+  `Category.GetCategory(Document, ElementId)`, unchanged 2020 through 2027.
+
 # ROUTING - repeated in READ_GRAPHIC_OVERRIDES, SET_CATEGORY_GRAPHICS and
 # DIAGNOSE_VISIBILITY.
 #
@@ -185,15 +243,21 @@ compatibility-note: >
 #   "why is this element not visible" -> DIAGNOSE_VISIBILITY - visibility is a
 #                                        different setting from an override
 
-#   "which categories are turned off in this view" ->
-#                                        REPORT_CATEGORY_VISIBILITY - OFF is
-#                                        not the same as OVERRIDDEN, and that
-#                                        one deliberately does NOT scope to the
+#   "which categories are turned off in this view" -> here since version 3
+#                                        (was REPORT_CATEGORY_VISIBILITY). OFF
+#                                        is not the same as OVERRIDDEN, and that
+#                                        half deliberately does NOT scope to the
 #                                        view: a hidden category has nothing in
 #                                        a view-scoped collector to find
+#   "why can't I see the ceilings on this plan" -> here first, then
+#                                        DIAGNOSE_VISIBILITY for one element
+#   "turn off the ceilings in this view" -> SET_CATEGORY_VISIBILITY - the WRITE,
+#                                        and it must not answer a question about
+#                                        a drawing
 #
 # VERSION 2 - with allCategories true. A QUESTION ABOUT THE DIALOG GOES TO A
-# READ: SET_CATEGORY_VISIBILITY, SET_CATEGORY_GRAPHICS, SET_CATEGORY_SOLID_FILL
+# READ: SET_CATEGORY_VISIBILITY, SET_CATEGORY_GRAPHICS (with or without its
+# solidFill switch, which took SET_CATEGORY_SOLID_FILL's job on 2026-11-01)
 # and APPLY_VIEW_FILTER change the view, and on 2026-10-15 the first of these
 # sentences reached SET_CATEGORY_VISIBILITY.
 #
@@ -204,8 +268,10 @@ compatibility-note: >
 #   "which elements have their own override in this view" -> here, the whole
 #                                        view; READ_GRAPHIC_OVERRIDES reads the
 #                                        elements chosen
-#   "what are the filter rules on this view" -> AUDIT_VIEW_FILTERS, with
-#                                        everyFilter true
+#   "what are the filter rules on this view" -> REPORT_VIEW_FILTERS, with
+#                                        the view named (its version 3 took
+#                                        AUDIT_VIEW_FILTERS' rules on
+#                                        2026-11-01)
 #
 # The document's own Object Styles, with no view in the question, are
 # LIST_CATEGORIES version 2's; this card prints them only BESIDE the view's
@@ -221,3 +287,9 @@ utterances:
   - show me the full visibility graphics of this view
   - what colours, line weights and patterns does this view use
   - which categories are greyed out in this view
+  # MOVED 2026-11-01 from REPORT_CATEGORY_VISIBILITY, merged into this card.
+  - which categories are turned off in this view
+  - why can't I see the ceilings on this plan
+  - what did somebody switch off
+  - list the hidden categories
+  - what is switched off in this view

@@ -9,9 +9,46 @@ semantic-identity: "everything inside this group or assembly, as elements i can 
 kind: filter
 domain: revit.selection
 capability: SELECT_GROUP_MEMBERS
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
+
+# VERSION 3 (2026-11-01) - SELECT_SUBCOMPONENTS WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools", then "ok go
+# ahead merge all"), and is DEPRECATED. The same job - what is INSIDE a
+# container the collector returns whole, handed on as elements the next step
+# can read - and a nested family is the third kind of container. What it had
+# and this card lacked: a LIST of parents (the selection, or a set a chain
+# hands on) rather than one element; GetSubComponentIds followed as deep as
+# somebody built it, with `recursive` and the depth reached reported; every id
+# visited once, so a family that refers back to itself cannot loop;
+# `withoutSubComponents`, the parents with none, so an empty answer is not a
+# failed read; and a handed-in element that is not a family instance counted
+# and named. Its outputs are this card's `elements`, `withoutSubComponents`
+# (the same name) and `findings`.
+#
+# THE INPUT CHANGED SHAPE TO HOLD THAT: `group`, one element typed "selected",
+# is now `containers`, a list filled from the Revit selection or from the
+# `elements` a chain hands on - one group selected is a list of one, exactly as
+# before. Several containers are opened together and each member comes back
+# once.
+#
+# THE TWO CARDS' DEPTH RULES WERE OPPOSITE, AND EACH IS KEPT FOR ITS OWN KIND -
+# not one for both: a GROUP is opened one level and a nested group comes back
+# whole (this card's rule, so the count agrees with Revit and a structure the
+# modeller built is not hidden); a NESTED FAMILY is followed down by default
+# (that card's rule, because nothing else ever returns those parts and a count
+# that stops one level down is short with no sign of it). `recursive` false
+# keeps nested families to one level; it never flattens a group. Nothing of
+# that card is left out.
+#
+# THIS CARD'S OWN MESSAGE NAMED GROUP_BY_ASSEMBLY for "a nested family's
+# parts" - a card merged away before this one, which walked nested families
+# and never opened an assembly. Such an element is now opened here, so the
+# message is gone with the reason for it.
+#
+# Version 2's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; DRAFT until version 3 is proved on a real model (D-30).
 
 purpose: >
   Returns the member elements of a model group instance - the repeated toilet
@@ -47,20 +84,39 @@ purpose: >
   flattening silently would make the count disagree with what Revit shows and
   hide a structure the modeller built on purpose.
 
+  **A FAMILY INSTANCE IS OPENED TOO** (version 3) - its nested shared
+  families, the parts a category sweep never returns: the fan and coil inside
+  an air handling unit. Nesting goes as deep as somebody built it, so it is
+  followed by default and the depth is reported; a parent with no
+  sub-components is the ordinary case and is counted, never mistaken for a
+  failed read.
+
 contract:
   needs:
     - name: doc
       type: Document
-    - name: group
-      type: Element
+    # VERSION 3. The containers to open - model groups, assemblies or family
+    # instances - from the Revit selection, or the `elements` a chain hands
+    # on. One group selected is a list of one, as `group` was until version 3.
+    - name: containers
+      type: IList<Element>
+      binds: elements
+    # VERSION 3, from SELECT_SUBCOMPONENTS. Nested families followed all the
+    # way down (true), or one level only (false). Left out it is TRUE - a part
+    # four levels down is still a part. It never flattens a group.
+    - name: recursive
+      type: bool
       source: request
+      optional: true
+      absent: 'true'
   provides:
     - name: elements
       role: result
       type: IList<Element>
     - name: containerKind
-      # "group" or "assembly" - which kind of container was opened, or empty
-      # when the element handed in was neither. Version 2.
+      # "group", "assembly" or, since version 3, "family" - which kinds of
+      # container were opened, joined by commas when several; empty when
+      # nothing handed in was one. Version 2.
       role: accounting
       type: string
     - name: nestedGroups
@@ -69,32 +125,39 @@ contract:
       # is shallower than it looks.
       role: result
       type: int
+    - name: withoutSubComponents
+      # VERSION 3, from SELECT_SUBCOMPONENTS. Family instances handed in that
+      # had no nested families - the ordinary case, reported so an empty
+      # answer cannot be mistaken for a failed read. Evidence it ran, never a
+      # part it found (D-52).
+      role: accounting
+      type: int
     - name: findings
       type: IList<string>
 
 proof:
-  date: '2026-10-21'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Cinematic ID Test, Revit 2020, session 68704 - the count is NOT recorded because
-    1,576 elements was measured on Night Family Test, the document in front, and this ran
-    against another one (row 15)
-  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-in-region, set-selection with this phase''s own values. returned assembly (null),
-    containerKind group, elements 1 item(s) [Bar Chair], findings 2 item(s) [Group instance
-    id 988384, of group type ''Array Group 3'' hold..., These are safe to read. CHANGING one
-    is not: Revit either re...], instance Group, nestedGroups 0. inputs came group as given.
-    on Cinematic ID Test'
-  negative_case: run with minMm=6400,0,500, maxMm=6500,100,600, exact=false, categories=Doors,
-    group=selected instead - chosen because it should not contain what this fragment reports
-    - the arrangement was re-made first by running select-in-region, set-selection with this
-    phase's own values. returned assembly (null), containerKind , elements 0 item(s), findings
-    1 item(s) ['1730 x 2134mm' (id 906937) is neither a model group nor an ...], instance
-    (null), nestedGroups 0. inputs came group as given. on Cinematic ID Test
+  model: P1102 ARCH (12,508 elements), Revit 2020, session 59096
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase's own values. returned containerKind
+    group, elements 38 item(s) [SHADE SUPPORT, SHADE SUPPORT, SHADE SUPPORT, ...], findings
+    39 item(s) [Group instance id 200611, of group type 'Array Group 4' hold..., Group instance
+    id 200653, of group type 'Array Group 4' hold..., Group instance id 200655, of group type
+    'Array Group 4' hold..., ...], nestedGroups 0, recursive true, withoutSubComponents 0.
+    inputs came containers from the selection (38); recursive not given - "true", the card's
+    own default (optional). on P1102 ARCH
+  negative_case: 'run with category=Walls, inViewOnly=FloorPlan: 01 - Entry Level instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running filter-elements-by-category, set-selection with this phase''s
+    own values. returned containerKind , elements 0 item(s), findings 1 item(s) [72 of what
+    was handed in are neither model groups, assemblie...], nestedGroups 0, recursive true,
+    withoutSubComponents 0. inputs came containers from the selection (72); recursive not
+    given - "true", the card''s own default (optional). on P1102 ARCH'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 159a448533762402
-
+  fingerprint: fccc522b1624d8ee
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -105,8 +168,12 @@ compatibility-note: >
   `AssemblyTypeName` and `NamingCategoryId` are present 2020 through 2027,
   read with tools/api-surface on 2026-10-14. Member ids are resolved
   through `Document.GetElement` and compared as ElementIds, never as numbers.
+  Version 3's `FamilyInstance.GetSubComponentIds` is present 2020 through
+  2027, compiled at both ends for SELECT_SUBCOMPONENTS; the visited ids are a
+  list of ElementId compared by value, never a set of numbers.
 
-# ROUTING - repeated in GROUP_ELEMENTS, UNGROUP_ELEMENTS and GROUP_BY_ASSEMBLY.
+# ROUTING - repeated in GROUP_ELEMENTS, UNGROUP_ELEMENTS, REPORT_NESTED_FAMILIES,
+# SELECT_BY_HOST and COUNT_ELEMENTS.
 #
 #   "what is in this group"          -> here
 #   "select the elements inside this group" -> here
@@ -120,8 +187,20 @@ compatibility-note: >
 #                                       FAMILIES and never opens an assembly,
 #                                       and on 2026-10-14 the sentence reached
 #                                       CREATE_ASSEMBLY, a write (row 5b-470)
-#   "how many units are these really"-> GROUP_BY_ASSEMBLY / REPORT_NESTED_FAMILIES -
-#                                       nested families, not assemblies (row 5b-469)
+#   "what is inside this equipment",
+#   "the nested families in these"   -> here, a family instance (version 3,
+#                                       SELECT_SUBCOMPONENTS merged in) - as
+#                                       elements to act on
+#   "how many units are these really"-> REPORT_NESTED_FAMILIES, which walks UP
+#                                       to the outermost host as well as down,
+#                                       and reports (row 5b-469)
+#   "what is hosted on this wall"    -> SELECT_BY_HOST. Hosting is a door in a
+#                                       wall; nesting is a family built out of
+#                                       families. A modeller says "inside" for
+#                                       both and they return different sets
+#   "count the sensors"              -> COUNT_ELEMENTS, and it comes back SHORT
+#                                       by every sensor nested inside
+#                                       equipment. Run this first and add them
 #   "how many of these groups
 #    are there"                      -> COUNT_ELEMENTS over the group category
 
@@ -137,3 +216,9 @@ utterances:
   - show me the assembly members
   - list what this pipe spool assembly contains
   - which elements are in this assembly
+  # MOVED 2026-11-01 from SELECT_SUBCOMPONENTS, merged into this card.
+  - what is inside this equipment
+  - the nested families in these
+  - show me the sub components
+  - what parts make up this fixture
+  - find nested family instances

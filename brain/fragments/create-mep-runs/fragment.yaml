@@ -1,0 +1,398 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-052
+semantic-identity: "draw duct, pipe, cable tray or conduit - or a flexible duct or pipe - one run from here to there or every run of a layout, each at its own size, in one go"
+kind: action
+domain: revit.mep
+# CREATE_DUCT_RUNS (folder create-duct-runs) until 2026-11-02, renamed on the owner's
+# word: it draws duct, pipe, cable tray, conduit and flex, so a duct-only name misled.
+# The folder IS the capability in lower case, and the proof fingerprint hashes each
+# impl/ file's PATH as well as its content - so the move made the signed proof STALE
+# with no code changed, and the card went back to DRAFT to be proved again (D-30).
+# The OLD proof text, where kept elsewhere, uses the old name, as it was run.
+# Re-proved 2026-11-02 on Revit 2020, Project1 (a new project), by tracking ducts - below,
+# signed. PIPE MEASURED THE SAME RUN, outside the signed proof: "Pipe Types: Standard",
+# Hydronic Supply, d50, 1 / 2 / 3 segments for 2 / 3 / 4 points, `drawn pipe`, rolled
+# back each time. Tray and conduit have not met a model yet.
+capability: CREATE_MEP_RUNS
+version: 3
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws straight duct OR straight pipe - one run from here to there, or every
+  main and every branch of a layout - in ONE call and ONE undo step, each run
+  at its own size. Since 2026-11-01 it is the one straight-duct and
+  straight-pipe tool: CREATE_DUCT, which drew one duct run per call, and
+  CREATE_PIPE, which drew straight pipe between points, were merged into it.
+
+  **Cable tray, conduit and flex too: the type decides (version 3,
+  2026-11-01).** CREATE_ELECTRICAL_RUN, which drew cable tray or conduit, and
+  CREATE_FLEX_PIPE, which made one flexible duct or pipe, were merged in. A
+  cable tray or conduit type draws containment between consecutive points and
+  takes NO system type - one named with it is refused. A flex duct or flex pipe
+  type makes ONE flexible curve through every point of a run, and needs a
+  maximum length: `maxLengthMm` greater than zero, and a run whose route is
+  longer is refused before anything is made. `runKind` - tray, conduit, duct,
+  pipe, flex duct, flex pipe - may be said as well, and must then agree with
+  the type. Sizes stay optional per run and read back: a tray is WxH, a
+  conduit d25.
+
+  **Duct or pipe: the type decides (version 2, 2026-11-01).** Name a duct type
+  and a duct system and it draws duct; name a pipe type and a piping system
+  and it draws pipe - as a flex type draws flex. The two must go
+  together, checked by name before Revit is asked. A pipe run's size is a
+  diameter, `d50`; a width by height on a pipe type is refused. Revit snaps a
+  pipe size to its segment's sizes and still reports success - 77 asked, 80
+  made - so every size is read back, and a snap fails the whole job, named.
+
+  **It exists because drawing was the slow half once the fittings were not.**
+  On 2026-09-23 a five-room supply layout took twenty-five CREATE_DUCT calls
+  and two SET_MEP_SIZE calls, then one FIT_MEP_JOINTS and one
+  CONNECT_OPEN_ENDS. The owner asked for the drawing to be done at one time as
+  well. With this the whole layout is three calls: draw, fit, join.
+
+  **How to write the runs.** Runs are separated by | . Each is an optional
+  size - WxH for rectangular, d250 for round, in millimetres - a colon, then the
+  points in millimetres, x,y,z each, separated by ; . Consecutive points make
+  one segment each. No size means the duct type's own:
+  `850x195: 3075,-2100,3122.5; 3075,-1100,3122.5 | 300x300: 3075,-1100,3122.5; 3075,8100,3122.5`
+
+  **One run is just its points**, with no size and no bar - two points give one
+  duct, five give four, at the duct type's own size:
+  `0,40000,2500; 3000,40000,2500`
+
+  **It guesses no route.** Every point is given and used in order. Deciding
+  where ducts go - reading the connectors, leaving room for an elbow or a
+  transition - happens before this call.
+
+  **It connects nothing.** The new ducts are left as `elements`, so
+  FIT_MEP_JOINTS can take them straight from here, and CONNECT_OPEN_ENDS joins
+  the free ends to equipment and terminals after that.
+
+  **All or nothing.** A run it cannot read, a segment too short to exist, a duct
+  Revit will not create, or a size the duct type snaps to something else - any
+  one of them rolls the whole job back and names each problem (Article 8).
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # RESOLVED OBJECTS, never ids - the 2024 ElementId trap (D-05).
+    # Version 2: a duct system OR a piping system - MEPSystemType, which the
+    # binder resolves as "duct or pipe system type". It must go with the type
+    # below: a duct type with a duct system, a pipe type with a piping system,
+    # checked by name before Revit is asked. Version 1 took a
+    # MechanicalSystemType only.
+    #
+    # Version 3: OPTIONAL. Cable tray and conduit carry no system in Revit, so
+    # it is left out for a cable tray or conduit type - and one named with them
+    # is refused, because it says duct or pipe was meant. Left out for any
+    # other type, that type is refused by name. Absent binds null
+    # (HeronBindingNote.AbsentValue).
+    - name: systemType
+      type: MEPSystemType
+      source: request
+      optional: true
+    # A DUCT type or a PIPE type (version 2), or a CABLE TRAY, CONDUIT, FLEX
+    # DUCT or FLEX PIPE type (version 3), and which it is decides what is
+    # drawn - CREATE_ELECTRICAL_RUN's `runType`, CREATE_FLEX_PIPE's
+    # `flexPipeType`. MEPCurveType because the binder resolves that class by name and
+    # both derive from it; anything else is refused by name. Still called
+    # `ductType` so every call written for version 1 runs unchanged - for a
+    # pipe it is the pipe type (CREATE_PIPE's `pipeType`).
+    - name: ductType
+      type: MEPCurveType
+      source: request
+    - name: level
+      type: Level
+      source: request
+    # The runs as the caller typed them - millimetres, converted here once
+    # (D-20). A string on purpose: many runs, each with its own size, is not
+    # something a list of points can say.
+    - name: runs
+      type: string
+      source: request
+    # Version 3, CREATE_FLEX_PIPE's limit, in millimetres. REQUIRED greater
+    # than zero for a flex duct or flex pipe type; a run whose route, measured
+    # along its points, is longer is refused before anything is made. Given for
+    # a rigid type it holds there too. Left out it is 0 - no limit for rigid,
+    # refused for flex.
+    - name: maxLengthMm
+      type: double
+      source: request
+      optional: true
+      absent: '0'
+    # Version 3, CREATE_ELECTRICAL_RUN's "asked for, never guessed": duct,
+    # pipe, tray, conduit, flex duct or flex pipe. Left out it is `any` and the
+    # type decides; said, it must agree with the type or nothing is drawn. Any
+    # other word is refused, naming the ones it takes.
+    - name: runKind
+      type: string
+      source: request
+      optional: true
+      absent: any
+  provides:
+    # The new ducts or pipes, named `elements` on purpose so FIT_MEP_JOINTS
+    # can take them straight from here with expect_from. CREATE_PIPE's
+    # `created`.
+    - name: elements
+      role: result
+      type: IList<Element>
+    - name: runsDrawn
+      role: result
+      type: int
+    - name: segments
+      role: result
+      type: int
+    - name: sized
+      role: result
+      type: int
+    # Version 3: the length drawn, in millimetres, measured along the points
+    # given - CREATE_FLEX_PIPE's `lengthMm`, now for every kind. Nothing drawn
+    # is a refusal, never a 0 here.
+    - name: lengthMm
+      role: result
+      type: double
+    # The whole answer as ONE string, because a string reaches the reader whole.
+    - name: summary
+      role: result
+      type: string
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: Project1, Revit 2020, session 62628 - the count is NOT recorded because 23,799 elements
+    was measured on 4355-BHVD-3D-50S10-BL001A, the document in front, and this ran against
+    another one (row 15)
+  positive_case: 'run with runs=400x200: 80000,0,2700; 83000,0,2700 - the first of 3 tracked
+    inputs - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned diameterParam BuiltInParameter, drawn duct, elements 1 item(s) [Duct],
+    heightParam BuiltInParameter, invariant CultureInfo, isConduit false, isDuct true, isFlex
+    false, isFlexDuct false, isFlexPipe false, isPipe false, isTray false, kindSaid any, lengthMm
+    2999.99999999999, maxLengthMm 0, mmPerFoot 304.8, numberStyle NumberStyles, pending 2
+    item(s) [Duct, Duct], pendingAsked 2 item(s) [1.31233595800525, 0.656167979002625], pendingLabel
+    2 item(s) [run 1, segment 1, run 1, segment 1], pendingParam 2 item(s) [RBS_CURVE_WIDTH_PARAM,
+    RBS_CURVE_HEIGHT_PARAM], problems 0 item(s), runDiameter 1 item(s) [0], runHeight 1 item(s)
+    [0.656167979002625], runLabel 1 item(s) [run 1], runPoints 1 item(s) [System.Collections.Generic.List`1[Autodesk.Revit.DB.XYZ]],
+    runTexts 1 item(s) [400x200: 80000,0,2700; 83000,0,2700], runWidth 1 item(s) [1.31233595800525],
+    runsDrawn 1, segments 1, shortest 0.00256026455729167, sized 1, summary 1 run(s) drawn
+    as 1 duct piece(s), 3000 mm along the points given; 1 sized as asked. NOTHING IS CONNECTED
+    - sharing a point is not a joint in Revit. FIT_MEP_JOINTS puts the fittings in and can
+    take these duct pieces straight from here, systemName Supply Air, takesDiameter true,
+    takesWidth true, typeName Mitered Elbows / Tees, widthParam BuiltInParameter. inputs came
+    systemType as given; ductType as given; level as given; runs as given; maxLengthMm not
+    given - "0", the card''s own default (optional); runKind not given - "any", the card''s
+    own default (optional). on Project1'
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). create-mep-runs\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 3 different inputs:\n\n      runs=400x200: 80000,0,2700; 83000,0,2700 -> segments\
+    \ 1\n      runs=400x200: 80000,0,2700; 83000,0,2700; 83000,3000,2700 -> segments 2\n \
+    \     runs=400x200: 80000,0,2700; 83000,0,2700; 83000,3000,2700; 86000,3000,2700 -> segments\
+    \ 3\n\n    Different inputs, exact matches every time. A fragment falling back to the\
+    \ active view, the whole model, or a previous run could not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 68b00c046ff37806
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Duct.Create(Document, ElementId, ElementId, ElementId, XYZ, XYZ)`, as
+  CREATE_DUCT used it until it was merged in, `Pipe.Create` with the same
+  arguments, as CREATE_PIPE used it, `RBS_PIPE_DIAMETER_PARAM`, and the `RBS_CURVE_WIDTH_PARAM`,
+  `RBS_CURVE_HEIGHT_PARAM` and `RBS_CURVE_DIAMETER_PARAM` parameters, as SET_MEP_SIZE uses them - all
+  unchanged 2020 to 2027. The numbers are read with the invariant culture, so a
+  PC set to a comma decimal separator reads 3122.5 as the caller meant it.
+
+  Millimetres to feet is arithmetic - divide by 304.8, per D-20.
+
+  Version 3: `CableTray.Create` and `Conduit.Create(Document, ElementId, XYZ,
+  XYZ, ElementId)`, as CREATE_ELECTRICAL_RUN used them, `FlexDuct.Create` and
+  `FlexPipe.Create(Document, ElementId, ElementId, ElementId, IList<XYZ>)` and
+  `FlexPipe.IsFlexPipeTypeId`, as CREATE_FLEX_PIPE used them, and
+  `RBS_CABLETRAY_WIDTH_PARAM`, `RBS_CABLETRAY_HEIGHT_PARAM` and
+  `RBS_CONDUIT_DIAMETER_PARAM` - present 2020 to 2027, compiled against all
+  eight reference assemblies on 2026-11-01. No ElementId is built from a number.
+
+# 2026-11-01 - CREATE_DUCT WAS MERGED INTO THIS CARD on the owner's
+# instruction ("now merge the other duplicates also"), and is DEPRECATED. The
+# same drawing: straight duct between consecutive points, a system type, a duct
+# type and a level, nothing connected. CREATE_DUCT WAS THE ONLY PROVEN
+# STRAIGHT-DUCT TOOL - signed on 2026-09-13 on Revit 2024 - and this card is
+# DRAFT, never proved (NEEDS-CHECKING Group AL), so until AL1 and AL2 are run
+# a straight duct from here is kept only through D-117's try-once. CARD ONLY: the
+# code already took everything CREATE_DUCT did. One run is the `runs` text with
+# no size and no bar - the same points in millimetres that CREATE_DUCT took as
+# a list; its `created` is this card's `elements`. Its `tooShort` and `refused`
+# counts are, here, a refusal that names each one.
+#
+# THE CONFLICT, AND THE SAFER RULE KEPT: CREATE_DUCT kept the segments that
+# worked and COUNTED the ones Revit refused, so a run that failed at segment
+# nine left eight. This card is all or nothing (Article 8) - any segment too
+# short, refused by Revit or snapped to another size undoes the whole job and
+# names each problem. Half a layout that looks drawn is worse than none, so the
+# keep-the-rest rule is NOT carried.
+
+# VERSION 2 (2026-11-01) - CREATE_PIPE WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same drawing in the other domain: straight pipe between
+# consecutive points, a system type, a pipe type and a level, nothing
+# connected. Widened the way CREATE_FLEX_PIPE was: the type class decides,
+# MEPCurveType and MEPSystemType. Where its inputs and outputs are now: its
+# `pipeType` is `ductType`, holding the pipe type; its `points` (internal feet)
+# are a run's points in millimetres in `runs`; its `created` is `elements`; its
+# `tooShort` and `refused` counts are a refusal naming each one.
+#
+# THE CONFLICTS, AND THE SAFER RULES KEPT: CREATE_PIPE kept the segments that
+# worked and counted the ones Revit refused; this card is all or nothing
+# (Article 8), as it was for CREATE_DUCT. CREATE_PIPE set no size and left the
+# snap to SET_MEP_SIZE; here a size is optional per run and READ BACK - a pipe
+# drawn at its type's own size when none is given, and a snapped size failing
+# the job by name - so the snap is caught where the pipe is made.
+
+# VERSION 3 (2026-11-01) - CREATE_ELECTRICAL_RUN AND CREATE_FLEX_PIPE WERE
+# MERGED INTO THIS CARD on the owner's instruction ("make sure there is no
+# duplicate tools", "in every conflict keep the safer rule"), and both are
+# DEPRECATED. Where their inputs and outputs are now:
+#
+#   CREATE_ELECTRICAL_RUN  runType -> ductType (a cable tray or conduit type);
+#                          runKind -> runKind, now optional and checked against
+#                          the type; points (internal feet) -> a run's points in
+#                          millimetres in `runs`; created -> elements; tooShort
+#                          and refused -> a refusal naming each one; findings ->
+#                          summary. No system type: left out.
+#   CREATE_FLEX_PIPE       flexPipeType -> ductType (a flex duct or flex pipe
+#                          type); systemType -> systemType; points -> ONE run in
+#                          `runs`, drawn as ONE flex curve through every point;
+#                          maxLengthMm -> maxLengthMm, required for flex, the
+#                          route refused before anything is made; created ->
+#                          elements (one per run); lengthMm -> lengthMm;
+#                          refused and findings -> the refusal, or summary.
+#
+# THE CONFLICTS, AND THE SAFER RULES KEPT: CREATE_ELECTRICAL_RUN kept the
+# segments that worked and counted the refused and the too-short ones; this
+# card is all or nothing (Article 8). Both set no size and left Revit's snap to
+# SET_MEP_SIZE; here a size is optional per run and READ BACK, a snap failing
+# the job by name. CREATE_FLEX_PIPE answered a refused route with no exception
+# and `created` null; here it throws, so the caller's transaction rolls back
+# with nothing made - the same outcome, one rule for every kind.
+
+# ROUTING - the neighbours this must not be confused with. Repeated in
+# SPLIT_MEP_RUN, FIT_MEP_JOINTS and SET_MEP_SIZE.
+#
+#   "draw all the ducts"            -> here
+#   "draw the mains and the branches" -> here
+#   "draw a duct from here to there" -> here - one run, its points alone
+#   "add a duct"                    -> here
+#   "change these ducts to 400x250" -> SET_MEP_SIZE - existing ducts
+#   "put the fittings in"           -> FIT_MEP_JOINTS, which follows this
+#   "connect the open ends"         -> CONNECT_OPEN_ENDS, which follows that
+#   "split this duct"               -> SPLIT_MEP_RUN - the run already exists
+#   "join these two"                -> FIT_MEP_JOINTS. Connecting two
+#                                      existing runs is not drawing a new one
+#   "connect these two ducts"       -> FIT_MEP_JOINTS
+#   "put an elbow here"             -> FIT_MEP_JOINTS - the fitting is
+#                                      CHOSEN from the geometry, not named
+#   "add a dimension between these" -> CREATE_DIMENSION
+#   "run a pipe from here to there" -> here - a pipe type and a piping system
+#                                      (CREATE_PIPE until 2026-11-01)
+#   "put a drain line in"           -> here - it is still a pipe
+#   "give it a fall of 1 in 100"    -> SET_MEP_SLOPE - drawn flat, then sloped
+#   "they are touching but not connected" -> CONNECT_OPEN_ENDS
+#   "draw a cable tray"             -> here, with a cable tray type and no
+#                                      system (CREATE_ELECTRICAL_RUN until
+#                                      2026-11-01)
+#   "draw a conduit"                -> here, with a conduit type
+#   "run the containment across"    -> here
+#   "run flex to that diffuser"     -> here, with a FLEX duct type, a duct
+#                                      system and a maximum length
+#                                      (CREATE_FLEX_PIPE until 2026-11-01)
+#   "make the flex drop to the head" -> here, with a FLEX pipe type
+#   "circuit these sockets"         -> CREATE_MEP_SYSTEM - a circuit is the
+#                                      electrical relationship, not containment
+#   "convert this last duct run to the diffuser into flex duct"
+#                                   -> CONVERT_TO_FLEX_DUCT - an existing
+#                                      rigid duct removed and flex put in its
+#                                      place, joined; this draws new flex
+#                                      along points and joins nothing
+#   "change these short ducts to flex" -> CONVERT_TO_FLEX_DUCT
+#   "connect the terminal to the duct" -> CONNECT_AIR_TERMINALS. This makes
+#                                      the flex and does NOT join it up
+#   "is the sprinkler connected"    -> TRACE_CONNECTIVITY
+
+# JUDGED 2026-11-04 (FRAGMENT-ISSUES row 5b-1382, on the owner's yes to the
+# merges with his condition: the impl/ of a PROVEN keeper is never changed)
+# AGAINST CREATE_MEP_PLACEHOLDER (FRG-MEP-074) AND KEPT APART. A card-text note
+# only: nothing under impl/ was touched, so the proof above still describes
+# the code and this card stays PROVEN. That card draws Revit's duct and pipe
+# PLACEHOLDERS (Duct.CreatePlaceholder, Pipe.CreatePlaceholder, read back with
+# IsPlaceholder) - single-line, no fittings, converted to real runs later by
+# CONVERT_MEP_PLACEHOLDERS. This card draws real runs only; taking the
+# placeholder in means a placeholder branch in impl/ and a new proof. The one
+# opposite rule - a refused segment: the rest kept there, the whole job undone
+# here (Article 8) - is recorded on that card; this card's all-or-nothing is
+# the safer and stays.
+#   "draw a duct placeholder from here to here" -> CREATE_MEP_PLACEHOLDER
+#   "rough in the pipe route as placeholders"   -> CREATE_MEP_PLACEHOLDER
+
+utterances:
+  - draw all the ducts
+  - draw every duct run at once
+  - draw the mains and the branches
+  - make all the ducts at one time
+  - draw the whole duct layout
+  # MOVED 2026-11-01 from CREATE_DUCT, merged into this card.
+  - draw straight duct segments along these points
+  - draw a duct from here to there
+  - run a duct across the room
+  - add a duct between these points
+  - draw the duct run
+  - put a supply duct in
+  - add a duct
+  # MOVED 2026-11-01 from CREATE_PIPE, merged into this card.
+  - run a pipe from here to there
+  - draw a pipe between these points
+  - draw the pipe run
+  - add a pipe
+  - put a drain line in
+  - add a drain line
+  - draw the chilled water pipe
+  # MOVED 2026-11-01 from CREATE_ELECTRICAL_RUN, merged into this card.
+  - draw a cable tray
+  - draw a conduit
+  - run the cable tray across the corridor
+  - add a conduit between these points
+  - draw the containment
+  - put a cable tray in here
+  - run the containment across
+  # MOVED 2026-11-01 from CREATE_FLEX_PIPE, merged into this card.
+  - draw a flexible pipe along these points
+  - draw a flex hose down to that sprinkler head
+  - create flex pipe to the sprinkler on this route
+  - draw flex pipe from the branch to the head
+  - make the flex drop to the head
+  - run the flexible drop from the branch to the diffuser, along the points I give
+  - run a flexible duct along these points
+  - make the flex drop to that diffuser
+  - create flexible ductwork on this route
+  - draw a flexible pipe from the sprinkler branch line down to the head, along the points I give
+  # DECLARED 2026-11-02 (row 5b-1396): this card's own routing row above
+  # claims it, and it reached here before CONVERT_TO_FLEX_DUCT was added,
+  # which took it on the model backend.
+  - run flex to that diffuser
+  # DECLARED 2026-11-02 (row 5b-1439): SPLIT_MEP_RUN's routing row claims it
+  # for this card, and it reached here before CREATE_TOPOSURFACE and
+  # CREATE_PROPERTY_LINE were added; with them CONVERT_TO_FLEX_DUCT took it on
+  # the model backend, a coin toss of 0.4 of one rank.
+  - draw a new duct

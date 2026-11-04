@@ -1,0 +1,51 @@
+# NEEDS-CHECKING Group KL - SET_FLOOR_SPAN_DIRECTION, built 2026-11-01 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/set-floor-span-direction-kl-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-floor-span-direction-kl-2026-11-01.yaml
+#
+# THE MODEL is Group HY's scratch project (docs/needs-checking/group-hy.md) -
+# a new project from Revit's metric STRUCTURAL template in
+# %TEMP%\heron-work\rebar-hy, holding S1 (a 200 mm structural concrete floor),
+# W1 (a 200 mm structural concrete wall) and N2 (an architectural,
+# non-structural floor) on Level 1. Never a working model.
+#
+# THE GRIDS HAVE TO BE IN THE MODEL BEFORE THIS RUNS (KL1): a straight grid
+# "1" drawn at 30 degrees from the model's X axis - so a span along it can be
+# told from 0 and 90 - and an arc grid "R1", drawn by hand and SAVED. KL2
+# reads S1's span first; if it already reads 30, turn it by hand to 0 and
+# save, or the positive is "already there" and proves nothing.
+#
+# THE ARRANGEMENT: SELECT_BY_CATEGORY_NAME and SET_SELECTION, as Group KF -
+# Floors in "FloorPlan: Level 1" for the positive (S1 and N2), Walls for the
+# negative (W1): a different set, not an empty one. The positive must change
+# S1 and name N2 as not structural; the negative must change nothing and name
+# W1 as not a floor. Every write here is ROLLED BACK.
+
+model: rebar-hy scratch project (metric structural template) with KL1's grids "1" and "R1" kept, Revit 2020
+
+defaults:
+  write: true
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: set-floor-span-direction
+    expect: changed
+    setup-set:
+      categoryName: Floors
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categoryName: Walls
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      along: "grid 1"
+    negative-set:
+      along: "grid 1"
+    note: >
+      KL3. Positive - changed 1 (S1), spanDegrees 30, N2 in notStructural,
+      report "<S1> (<type>): span <before> deg -> 30 deg (Span Direction
+      parameter: ...)". Record how Revit writes that parameter. Negative - THE
+      FIRST CASE TO RUN: the walls instead of the floors, so changed 0 and W1
+      in notFloors.

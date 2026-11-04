@@ -29,10 +29,10 @@ purpose: >
   | Asking about | Use |
   |---|---|
   | A duct, a pipe, a piece of equipment - **how much space does it take** | here |
-  | A **room** - how big is it | `MEASURE_ROOM_DIMENSIONS`, which measures on the room's own axes |
+  | A **room** - how big is it | `REPORT_ROOM_SPACE_DATA`, which measures on the room's own axes |
   | **How much material** is in it | `MEASURE_ELEMENT_VOLUME` - solid volume and surface area |
 
-  `MEASURE_ROOM_DIMENSIONS` carries this same table and states the case in
+  `REPORT_ROOM_SPACE_DATA` carries this same table and states the case in
   numbers: turn an 8000 x 4000 room thirty degrees and its box becomes roughly
   8900 x 7500. **This fragment is the right answer to "what space does it
   occupy" and the wrong answer to "how big is it".**
@@ -120,14 +120,14 @@ compatibility-note: >
 #   "what is the bounding box of this"  -> here
 #   "how much space does this take up"  -> here
 #   "will this fit through the opening" -> here, the COMBINED box
-#   "how big is this room"              -> MEASURE_ROOM_DIMENSIONS. A rotated
+#   "how big is this room"              -> REPORT_ROOM_SPACE_DATA. A rotated
 #                                          room's box is much bigger than the
 #                                          room, so the box is the WRONG answer
 #                                          to that sentence. That fragment
 #                                          carries this same row
 #   "how much material is in it"        -> MEASURE_ELEMENT_VOLUME - solid volume
 #                                          and surface area, not extent
-#   "how long is this duct run"         -> MEASURE_ELEMENT_LENGTHS
+#   "how long is this duct run"         -> MEASURE_RUN_QUANTITIES
 #   "set the section box round these"   -> SET_VIEW_SECTION_BOX - which CHANGES
 #                                          a view, and is what this question used
 #                                          to reach
@@ -142,7 +142,7 @@ compatibility-note: >
 
 # ROUTING (2026-10-12, the gap fill)
 #
-#   "list the edges of this beam"           -> REPORT_ELEMENT_GEOMETRY
+#   "list the edges of this beam"           -> MEASURE_ELEMENT_VOLUME, detail edges
 utterances:
   - what is the bounding box of this duct
   - how big is the box around these elements

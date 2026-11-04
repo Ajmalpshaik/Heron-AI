@@ -5,11 +5,17 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-119
-semantic-identity: "draw the lines of a profile, detail item, annotation or title block family in its view, locked to the planes they lie on"
+semantic-identity: "draw lines from a typed shape - a 2D family's lines in its view, locked to the planes they lie on, or a project's detail lines in a view or model lines on a plane"
 kind: action
 domain: revit.families
 capability: DRAW_FAMILY_DETAIL_LINES
-version: 1
+# VERSION 2 (2026-11-01) - CREATE_LINE WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools", every conflict
+# to keep the safer rule), and is DEPRECATED: a PROJECT's detail lines in a
+# view and model lines on a plane, from the same millimetre shape language.
+# Version 1's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -36,6 +42,15 @@ purpose: >
   **ON A SUBCATEGORY** of the family's category for its line weight, made when
   new, or "none" for the category itself.
 
+  **AND IN A PROJECT (version 2, 2026-11-01)** - CREATE_LINE was merged into
+  this card and is DEPRECATED. `lineKind` says DETAIL lines, drawn in the view
+  named and printed with it alone, or MODEL lines, real lines in the model on
+  the plane `planeMm` along the view's direction - with no view, a horizontal
+  plane at that height. There is no safe default, so in a project it is asked
+  for; a 3D view holds no detail lines. The style is one of the project's line
+  styles or "none". All or nothing in millimetres: a piece shorter than
+  Revit's shortest line refuses the call.
+
   **A 3D MODEL FAMILY IS REFUSED** - its 2D symbol is DRAW_FAMILY_SYMBOLIC_LINES.
   READ BACK, ALL OR NOTHING: every line's ends, its style and every lock are
   read again. Their ids come back.
@@ -46,34 +61,69 @@ contract:
   needs:
     - name: doc
       type: Document
-    # The family's view, as the Project Browser names it - "Ref. Level".
+    # The family's view, as the Project Browser names it - "Ref. Level". In a
+    # project (version 2) the view a detail line is drawn in, or whose two
+    # coordinates a model line is written in. Left out ("none"): model lines
+    # on a horizontal plane, X,Y; refused for detail lines and in a family.
     - name: view
       type: string
       source: request
+      optional: true
+      absent: none
     # Closed loops and open "path ..." pieces, `|` between. Millimetres.
     - name: shapes
       type: string
       source: request
-    # A subcategory of the family's category, made when new, or "none".
+    # A subcategory of the family's category, made when new, or "none". In a
+    # project (version 2), one of the project's line styles - never made
+    # there, CREATE_LINE_STYLE makes one - or "none" for Revit's default.
     - name: subcategory
       type: string
       source: request
     # True to lock every straight line to the named reference plane it lies
-    # along.
+    # along. A family's only: refused true in a project.
     - name: lockToPlanes
       type: bool
       source: request
+    # VERSION 2, from CREATE_LINE (its asDetail): "detail" - lines in one
+    # view, printed with it - or "model" - real lines in the model, in every
+    # view that sees them. Left out ("auto"): detail in a family, version 1
+    # exactly; REFUSED in a project and asked which, because there is no safe
+    # default. "model" is refused in a family.
+    - name: lineKind
+      type: string
+      source: request
+      optional: true
+      absent: auto
+    # VERSION 2. A project's model lines' plane, in millimetres along the
+    # view's direction from the project's origin - on a plan or with no view,
+    # their height. Asked for, never assumed; refused for detail lines. Left
+    # out ("none"): refused for model lines.
+    - name: planeMm
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: lineIds
       # The new lines' unique ids, commas between.
       role: result
       type: string
+    - name: created
+      # VERSION 2, CREATE_LINE's own: the lines drawn, as elements, for the
+      # next step that takes them - FILLET_LINES, FIND_OVERLAPPING_LINES. The
+      # same lines as lineIds.
+      role: result
+      type: IList<Element>
     - name: drawn
       # How many lines, where, how long in all, their style and their locks -
       # read back.
       role: result
       type: string
     - name: notAFamily
+      # True when the document in front is a project. Since version 2 a
+      # project's lines are drawn too, so this no longer means refused -
+      # refused says that.
       role: accounting
       type: bool
     - name: refused
@@ -84,42 +134,47 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family6, Project1 - active was Family1,
-    Revit 2024, session 32340'
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, category
-    Category, drawn 5 detail line(s) in 2 shape(s) in "Ref. Level", 1200 mm in all, on Revit's
-    default style, "Detail Items", 1 lock(s) to Center (Front/Back) and 4 straight line(s)
-    on no named plane - read back., family Family, findings 1 item(s) [5 detail line(s) in
-    2 shape(s) in "Ref. Level", 1200 mm in a...], halfMillimetre 0.00164041994750656, inPlane
-    3 item(s) [System.Int32[], System.Int32[], System.Int32[]], invariant CultureInfo, isCategory
-    Func`2, lineIds acf0fdea-d4a9-4233-8640-8550d6407a48-000008f2,acf0fdea-d4a9-4233-8640-8550d6407a48-000008f3,acf0fdea-d4a9-4233-8640-8550d6407a48-000008f4,acf0fdea-d4a9-4233-8640-8550d6407a48-000008f5,acf0fdea-d4a9-4233-8640-8550d6407a48-000008f6,
-    lockToPlanes true, loopOf Func`3, mm Func`2, notAFamily false, number Func`2, onCategory
-    true, openOf Func`3, ownName Func`2, pair Func`2, pieces 2 item(s) [(System.Collections.Generic.List`1[System.Double[]],
-    True), (System.Collections.Generic.List`1[System.Double[]], False)], plain Func`2, problems
-    0 item(s), profile false, refused (null), shortest 0.7803686370625, squash Func`2, target
-    ViewPlan, twoD true, wanted Category, wantedName none. inputs came view as given; shapes
-    as given; subcategory as given; lockToPlanes as given. on Family6
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, category (null), drawn ,
-    family (null), findings 1 item(s) [The document in front, "Project1", is a project, not
-    a famil...], halfMillimetre 0.00164041994750656, inPlane 3 item(s) [System.Int32[], System.Int32[],
-    System.Int32[]], invariant CultureInfo, isCategory Func`2, lineIds , lockToPlanes true,
-    loopOf Func`3, mm Func`2, notAFamily true, number Func`2, onCategory true, openOf Func`3,
-    ownName Func`2, pair Func`2, pieces 0 item(s), plain Func`2, problems 0 item(s), profile
-    false, refused The document in front, "Project1", is a project, not a family open in the
-    Family Editor. Lines in a project's view are CREATE_LINE; these are drawn inside a 2D
-    family - open it first., shortest 0.7803686370625, squash Func`2, target (null), twoD
-    false, wanted (null), wantedName none. inputs came view as given; shapes as given; subcategory
-    as given; lockToPlanes as given. on Project1
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 MEP, P1102 Family - active was P1102
+    MEP, Revit 2020, session 59096'
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned along Func`3, asDetail true, asModel
+    false, axisOf Func`2, category (null), created 4 item(s) [DetailLine, DetailLine, DetailLine,
+    ...], drawn 4 detail line(s) in 1 shape(s) in "Callout of Level 1 HVAC WSHP TYP", 200
+    mm in all, on Revit''s default style, "Thin Lines" - read back., family (null), findings
+    2 item(s) [4 detail line(s) in 1 shape(s) in "Callout of Level 1 HVAC W..., These are
+    DETAIL lines: they belong to "Callout of Level 1 H...], halfMillimetre 0.00164041994750656,
+    inPlane 3 item(s) [System.Int32[], System.Int32[], System.Int32[]], inProject true, invariant
+    CultureInfo, isCategory Func`2, kindSaid detail, kindUnsaid false, lineIds a06ea08f-f92a-4353-b52d-fc3053e92b10-000f917a,a06ea08f-f92a-4353-b52d-fc3053e92b10-000f917b,a06ea08f-f92a-4353-b52d-fc3053e92b10-000f917c,a06ea08f-f92a-4353-b52d-fc3053e92b10-000f917d,
+    lockToPlanes false, loopOf Func`3, mm Func`2, noView false, notAFamily true, number Func`2,
+    onCategory true, openOf Func`3, ownName Func`2, pair Func`2, pieces 1 item(s) [(System.Collections.Generic.List`1[System.Double[]],
+    True)], plain Func`2, planeAtMm 0, planeGiven false, planeSaid none, problems 0 item(s),
+    profile false, refused (null), shortest 0.7803686370625, squash Func`2, target ViewPlan,
+    twoD false, wanted (null), wantedName none. inputs came view as given; shapes as given;
+    subcategory as given; lockToPlanes as given; lineKind as given; planeMm not given - "none",
+    the card''s own default (optional). on P1102 MEP'
+  negative_case: run against 'P1102 Family' with lineKind=detail, lockToPlanes=False, shapes=rect
+    -25,0 25,50, subcategory=none, view=Ref. Level instead - chosen because it should not
+    contain what this fragment reports - run inside a transaction, and Revit reported the
+    transaction group ROLLED BACK afterwards. returned along Func`3, asDetail true, asModel
+    false, axisOf Func`2, category Category, created 0 item(s), drawn , family Family, findings
+    1 item(s) [This is a 3D model family (Generic Models). Its 2D symbol is...], halfMillimetre
+    0.00164041994750656, inPlane 3 item(s) [System.Int32[], System.Int32[], System.Int32[]],
+    inProject false, invariant CultureInfo, isCategory Func`2, kindSaid detail, kindUnsaid
+    false, lineIds , lockToPlanes false, loopOf Func`3, mm Func`2, noView false, notAFamily
+    false, number Func`2, onCategory true, openOf Func`3, ownName Func`2, pair Func`2, pieces
+    0 item(s), plain Func`2, planeAtMm 0, planeGiven false, planeSaid none, problems 0 item(s),
+    profile false, refused This is a 3D model family (Generic Models). Its 2D symbol is drawn
+    with DRAW_FAMILY_SYMBOLIC_LINES; detail lines belong to a profile, a detail item, an annotation
+    or a title block. Nothing was drawn., shortest 0.7803686370625, squash Func`2, target
+    (null), twoD false, wanted (null), wantedName none. inputs came view as given; shapes
+    as given; subcategory as given; lockToPlanes as given; lineKind as given; planeMm not
+    given - "none", the card's own default (optional). on P1102 Family
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 4a8b59b8ff1c56b1
-
+  fingerprint: 7f9dd6ceb0471034
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -132,14 +187,46 @@ compatibility-note: >
   reference assemblies and XML remarks, read 2026-10-01). That a profile
   family's lines are detail lines drawn this way is from a published Revit
   API answer read 2026-10-01, and is NEEDS-CHECKING BV11, not a promise.
+  Version 2 adds the calls CREATE_LINE made, unchanged 2020 to 2027:
+  `Document.Create.NewDetailCurve(View, Curve)`, `NewModelCurve(Curve,
+  SketchPlane)`, `Plane.CreateByNormalAndOrigin` and `SketchPlane.Create`,
+  with `Categories.get_Item(BuiltInCategory.OST_Lines)` for a project's line
+  styles. Built on all eight releases on 2026-11-01.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "draw the profile in this profile family"     -> here
 #   "draw the lines of this detail item family"   -> here
 #   "draw the valve symbol in plan"               -> DRAW_FAMILY_SYMBOLIC_LINES -
 #                                                    a 3D family's 2D symbol
-#   "draw a line between these points"            -> CREATE_LINE - a project's view
+#   "draw a line between these points"            -> here since version 2 -
+#                                                    a project's detail or model
+#                                                    lines, lineKind said
+#                                                    (CREATE_LINE until 2026-11-01)
+#   "the lines are drawn twice on top of each other" -> FIND_OVERLAPPING_LINES
+#   "draw a grid line"                            -> CREATE_GRIDS - a datum
+#   "hatch this area"                             -> DRAW_FAMILY_FILLED_REGION
+#                                                    (CREATE_FILLED_REGION until
+#                                                    2026-11-01)
+#   "draw a room separation line across an opening" -> CREATE_ROOM_SEPARATION_LINES -
+#                                                    a line drawn here splits no room
+#
+# VERSION 2 - WHERE CREATE_LINE'S INPUTS AND OUTPUTS ARE NOW:
+#   pointPairs (feet)   shapes, millimetres - "path X,Y; X,Y" per line, `|`
+#                       between; in the view's two coordinates, or X,Y on a
+#                       horizontal plane with no view
+#   asDetail            lineKind detail or model - asked for in a project
+#   view                view, by name; left out only for model lines
+#   (a point's Z)       planeMm - one plane per call; lines at several heights
+#                       are one call each
+#   created             created, the same elements; lineIds their ids
+#   tooShort            NOT CARRIED - see below
+#   refused             refused, one sentence
+# NOT CARRIED, AN OPPOSITE RULE: CREATE_LINE skipped a pair shorter than Revit's
+# shortest line, counted it in tooShort, and drew the rest. This card refuses
+# the whole call and names the piece - all or nothing, the safer rule kept on
+# the owner's instruction. A line leaning through space was never drawn by
+# CREATE_LINE (it threw); here every line lies on one plane.
 #   "what colour are the lines in this family"    -> LIST_CATEGORIES - a question goes to the read
 
 utterances:
@@ -147,3 +234,11 @@ utterances:
   - draw the lines of this detail item family
   - draw the outline of the handrail profile and lock it to the planes
   - draw lines in this annotation symbol family
+  # MOVED 2026-11-01 from CREATE_LINE, merged into this card.
+  - draw a detail line here
+  - draw a line between these points
+  - put a setting out line on this plan
+  - add a model line
+  - draw some reference lines
+  # ...and CREATE_LINE's semantic identity, which nothing else declares:
+  - draw plain model or detail lines between points

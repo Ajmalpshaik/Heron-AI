@@ -1,0 +1,20 @@
+# Round 15, 2026-11-02 - Revit 2024.3, session 59960. "Snowdon Towers Sample Site" = a scratch
+# copy of Revit 2024's own Samples\Snowdon Towers Sample Site.rvt in
+# %TEMP%\heron-work\prove-1102\s2024 - 10 toposolids (read before the run). It opened only after
+# the Structural copy, which loads it as a link, was closed. Every run is ROLLED BACK.
+model: "Snowdon Towers Sample Site (scratch copy, Revit 2024 sample), Revit 2024"
+
+defaults:
+  in: "Snowdon Towers Sample Site"
+  setup: []
+
+jobs:
+  - fragment: edit-toposolid
+    write: true
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: resultIds
+    setup-set: {category: "Toposolid"}
+    negative-setup-set: {category: "Walls"}
+    set: {mode: "simplify", value: "50"}
+    negative-set: {mode: "simplify", value: "50"}

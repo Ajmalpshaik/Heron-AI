@@ -1,0 +1,88 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for an edit, "changed a circuit nobody named".
+# Arrange on MEP NIGHT TEST in Revit 2020 (NEEDS-CHECKING Group JV) - the model
+# REPORT_PANEL_CIRCUITS was proved on, 19 panels and 155 circuits. Its proof
+# read circuit 1 on PP-1B as "Power Technology 28" with 9 devices, and circuit
+# 1 on PP-1A, PP-2B and others besides. JV1 reads them again before anything
+# runs. EVERY RUN ROLLED BACK, so each case starts from the model as saved.
+
+positive:
+  - given: >
+      nothing selected, edit "disconnect", circuitNumber "1", circuitPanel
+      "PP-1B"
+    expect: >
+      changed 1; circuitIds the one circuit; report "circuit 1 on PP-1B
+      (Power Technology 28): taken off PP-1B. IT IS ON NO PANEL NOW";
+      REPORT_PANEL_CIRCUITS in the same rolled-back group lists it among the
+      circuits on no panel, and PP-1B with one circuit fewer
+  - given: >
+      nothing selected, edit "select panel", circuitNumber "1", circuitPanel
+      "PP-1B", panel "PP-1A"
+    expect: >
+      changed 1; report "moved from PP-1B to PP-1A, where it is circuit N" -
+      N as Revit numbered it, RECORDED, not assumed; PP-1B one circuit fewer,
+      PP-1A one more
+  - given: >
+      two of the nine devices of circuit 1 on PP-1B selected by hand in a
+      plan, edit "remove", nothing else named
+    expect: >
+      changed 2; report "9 device(s) before, 7 after - 2 taken off"; the
+      other seven still on it
+  - given: >
+      those two devices again, edit "add", circuitNumber "1", circuitPanel
+      "PP-1B" - after the remove above, in the same rolled-back group, or on
+      two devices of the same system type that are on no circuit
+    expect: >
+      changed 2; report "7 device(s) before, 9 after - 2 added"
+
+negative:
+  - given: >
+      nothing selected, edit "disconnect", circuitNumber "1", NO panel named
+    expect: >
+      changed 0, NOTHING WAS CHANGED, the refusal naming every panel with a
+      circuit 1 - PP-1B, PP-1A, PP-2B and the rest; every one of those
+      circuits still on its panel. THIS IS THE FIRST CASE TO RUN: circuit 1
+      is on most panels, and picking one would disconnect a circuit nobody
+      named
+  - given: >
+      nothing selected, edit "select panel", circuitNumber "1", circuitPanel
+      "PP-1B", panel "PP-1B"
+    expect: >
+      changed 0, "already on PP-1B, so it was left"; its circuit number
+      unchanged - a move onto the panel it is on must not renumber it
+  - given: >
+      all nine devices of circuit 1 on PP-1B selected, edit "remove"
+    expect: >
+      changed 0, NOTHING WAS CHANGED, the finding saying all nine would
+      leave the circuit empty and Revit may delete it; the circuit still
+      there with nine (Article 7)
+  - given: >
+      one device of a circuit on PP-2B left selected in Revit, edit
+      "disconnect", circuitNumber "1", circuitPanel "PP-1B"
+    expect: >
+      changed 1 - circuit 1 on PP-1B ALONE; the finding saying the one
+      element selected was not used; the PP-2B circuit still on PP-2B. A
+      selection left over must never add a circuit nobody named
+  - given: >
+      edit "rewire", circuitNumber "1", circuitPanel "PP-1B"
+    expect: >
+      changed 0, "rewire" named as not one of add, remove, select panel or
+      disconnect
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one operation is one undo entry
+
+second_route:
+  - >
+    The panel schedules of PP-1B and PP-1A, read by eye inside the same
+    rolled-back group: the circuit gone from one and on the other, with the
+    number reported
+  - >
+    REPORT_PANEL_CIRCUITS after the edit, in the same group - the circuit
+    under the panel `report` names, or among those on no panel, with the
+    device count `report` gives
+  - >
+    SELECT_BY_ELECTRICAL_CIRCUIT on the circuit after an add or remove - it
+    returns exactly the devices the read-back counted
+  - one Ctrl+Z takes the whole edit away in a single step (Golden Rule 16)

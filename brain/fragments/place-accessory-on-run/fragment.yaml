@@ -95,7 +95,7 @@ compatibility-note: >
 #
 #   "put a damper in this duct"          -> here. The run is cut and rejoined
 #   "add a valve to the pipe"            -> here
-#   "join these two duct ends"           -> PLACE_MEP_FITTING, which fits an
+#   "join these two duct ends"           -> FIT_MEP_JOINTS, which fits an
 #                                           elbow or a transition between ENDS
 #                                           that already exist
 #   "cut this duct in two"               -> SPLIT_MEP_RUN, the break alone
@@ -103,7 +103,7 @@ compatibility-note: >
 #   "place these families"               -> PLACE_FAMILY_INSTANCES, which puts
 #                                           one at a point and joins nothing
 #   "is this run still connected"        -> TRACE_CONNECTIVITY
-#   "is there a break in this system"    -> FIND_SYSTEM_ISLANDS. This one
+#   "is there a break in this system"    -> TRACE_CONNECTIVITY. This one
 #                                           makes a break deliberately and
 #                                           closes it again
 #   "can i get at that valve"            -> CHECK_VALVE_ACCESSIBILITY, once

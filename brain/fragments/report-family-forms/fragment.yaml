@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-GEO-046
-semantic-identity: "what forms this open family is modelled from, with their ids, sizes and settings"
+semantic-identity: "what forms this open family is modelled from, with their ids, sizes and settings - and those forms picked by id or kind, ready to select or delete"
 kind: action
 domain: revit.families
 capability: REPORT_FAMILY_FORMS
@@ -26,7 +26,14 @@ capability: REPORT_FAMILY_FORMS
 # alone, "all" or nothing answer exactly as version 2. Version 2's proof below
 # no longer describes the code: DRAFT until NEEDS-CHECKING Group IO proves
 # version 3 (D-30).
-version: 3
+#
+# Version 4 (2026-11-01) changed impl/: SELECT_FAMILY_FORMS was merged into
+# this card and is DEPRECATED. The forms read are handed on as `elements`, for
+# SET_SELECTION and DELETE_ELEMENTS; `refused` says why nothing was read;
+# "freeform" is a kind. `which` left out now binds "not named" - every form
+# read, none handed on. DRAFT until proved on a real model (D-30); version 3's
+# proof below is the record.
+version: 4
 source: OFFICIAL
 risk: READ
 
@@ -44,10 +51,19 @@ purpose: >
   entries before anyone reads it.
 
   **`which` NARROWS IT** - "all", or kinds and sides with commas between:
-  "void", "solid, revolve" - or the ids the form tools gave back, commas
-  between, to read just those forms, one form's extents after a flex. Ids and
-  words are not mixed; an id that is not a form of this family is refused by
-  name and nothing is read.
+  "void", "solid, revolve", "swept blend", "freeform" - or the ids the form
+  tools gave back, commas between, to read just those forms, one form's
+  extents after a flex. Ids and words are not mixed; an id that is not a form
+  of this family is refused by name and nothing is read.
+
+  **AND IT HANDS THEM ON (version 4, 2026-11-01).** SELECT_FAMILY_FORMS, which
+  picked forms by the same ids and kinds, was merged into this card and is
+  DEPRECATED. The forms read are left as `elements`, in the order their ids
+  were named: SET_SELECTION highlights them, DELETE_ELEMENTS deletes them, and
+  any tool that takes elements works on them. One id that is not a form here
+  refuses the whole call and hands NOTHING on, so a delete after it can never
+  reach part of a list. Left out, `which` reads every form and hands none on -
+  a delete needs the forms named, or "all" said.
 
   It reads only; nothing is changed.
 
@@ -64,11 +80,18 @@ contract:
     # default exactly as a typed "all", and the binding note says "which not
     # given - "all", the card's own default (optional)". Every call of a
     # fixed-family build had typed which=all.
+    #
+    # VERSION 4 (2026-11-01): left out it binds "not named" - every form READ,
+    # as "all" reads, and NONE handed on as `elements`. SELECT_FAMILY_FORMS
+    # refused a call naming no form, so that a delete could never reach forms
+    # nobody named; this card read them all (row 5b-488). The safer rule is
+    # kept for what is handed on, and the read stays as the owner had it.
+    # "all" typed names every form and hands every one on.
     - name: which
       type: string
       source: request
       optional: true
-      absent: all
+      absent: not named
   provides:
     - name: formCount
       # How many forms matched `which`.
@@ -93,6 +116,24 @@ contract:
       # That the document in front is a project, not a family being edited.
       role: accounting
       type: bool
+    - name: elements
+      # VERSION 4, from SELECT_FAMILY_FORMS: the forms read, handed on - in the
+      # order their ids were named, each once - for SET_SELECTION,
+      # DELETE_ELEMENTS or any tool that takes elements. EMPTY when the call
+      # refused, all or nothing, and when `which` was left out. To DELETE
+      # them, they go on to DELETE_ELEMENTS through revit_change with
+      # expect_from="report-family-forms where which=<the same ids>", once the
+      # modeller has said yes to that delete (Article 7) - the method
+      # delete-by-id has the steps.
+      role: result
+      type: IList<Element>
+    - name: refused
+      # VERSION 4, from SELECT_FAMILY_FORMS: why nothing was read, every bad id
+      # named - a project in front, ids and words mixed, an id that is not a
+      # form here. Empty when the call ran; a kind that matched nothing is an
+      # answer, not a refusal.
+      role: accounting
+      type: string
     - name: findings
       type: IList<string>
 
@@ -101,38 +142,51 @@ contract:
 # IO proves version 3 (D-30). It ran `which` "all" and a project, both of
 # which version 3 answers as version 2 did.
 proof:
-  date: '2026-10-22'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: GIP M_Skylight-Pyramid (1,872 elements), Revit 2020, session 60544
-  positive_case: 'run as it would normally be run. returned combinationList adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008d00:
-    solid extrusion adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008894, void extrusion adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008b34,
-    void extrusion adb89b7a-2040-4618-8ae2-3b66e7c5b964-0000961f  ||  7c60094e-5c63-49f7-a842-9d816e78436e-0000af24:
-    void extrusion adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008b34, void extrusion adb89b7a-2040-4618-8ae2-3b66e7c5b964-0000961f,
-    solid extrusion 7c60094e-5c63-49f7-a842-9d816e78436e-0000aeaf, findings 1 item(s) [1 form(s)
-    of 9 in the family, by id; 2 join(s) or cut(s).], formCount 1, formList void extrusion
-    adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008b34 (on Reference Lines): X -352 to 352, Y 121
-    to 514.8, Z 3960.8 to 4195 mm, subcategory (the family''s own), shows in coarse, medium,
-    fine | plan, front/back, left/right, in adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008d00
-    and 7c60094e-5c63-49f7-a842-9d816e78436e-0000af24, ids 1 item(s) [adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008b34],
-    invariant CultureInfo, joins 2 item(s) [adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008d00:
-    solid extrusi..., 7c60094e-5c63-49f7-a842-9d816e78436e-0000af24: void extrusio...], kindOf
-    Func`2, known 8 item(s) [solid, void, extrusion, ...], mm Func`2, named HashSet`1, notAFamily
-    false, parts 1 item(s) [adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008b34], planeOf Func`2,
-    problems 0 item(s), rows 1 item(s) [void extrusion adb89b7a-2040-4618-8ae2-3b66e7c5b964-00008b34...],
-    scanned 9, squash Func`2, words 0 item(s). inputs came which as given. on GIP M_Skylight-Pyramid'
-  negative_case: run with which=b8cc9e63-4da8-4dd2-9b35-df4c8c3f3d63-00009df9 instead - chosen
-    because it should not contain what this fragment reports. returned combinationList , findings
-    1 item(s) [Nothing was read. "b8cc9e63-4da8-4dd2-9b35-df4c8c3f3d63-0000...], formCount
-    0, formList , ids 1 item(s) [b8cc9e63-4da8-4dd2-9b35-df4c8c3f3d63-00009df9], invariant
-    CultureInfo, joins 0 item(s), kindOf Func`2, known 8 item(s) [solid, void, extrusion,
-    ...], mm Func`2, named HashSet`1, notAFamily false, parts 1 item(s) [b8cc9e63-4da8-4dd2-9b35-df4c8c3f3d63-00009df9],
-    planeOf Func`2, problems 1 item(s) ["b8cc9e63-4da8-4dd2-9b35-df4c8c3f3d63-00009df9" is
-    not an id...], rows 0 item(s), scanned 0, squash Func`2, words 0 item(s). inputs came
-    which as given. on GIP M_Skylight-Pyramid
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 MEP Family, P1102 Family - active
+    was P1102 MEP, Revit 2020, session 59096'
+  positive_case: 'run as it would normally be run. returned combinationList , elements 7 item(s)
+    [Extrusion, Extrusion, Extrusion, ...], findings 2 item(s) [7 form(s) of 7 in the family;
+    0 join(s) or cut(s)., 7 form(s) handed on as elements - SET_SELECTION highlights t...],
+    formCount 7, formList solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009cb (on
+    Ref. Level): X 0 to 539.8, Y 0 to 184.1, Z 0 to 38.1 mm, 3.787 L, subcategory (the family''s
+    own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion
+    a0683e65-4584-4c07-94d1-ebbad3e4649b-000009e2 (on Center (Left/Right)): X 63.6 to 463.6,
+    Y -12.7 to 184.1, Z 38.1 to 222.3 mm, 14.262 L, subcategory (the family''s own), shows
+    in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009f9
+    (on Center (Left/Right)): X 14 to 489, Y 184.1 to 495.3, Z -38.1 to 222.3 mm, 38.479 L,
+    subcategory (the family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a17 (on Center (Front/Back)): X 503.3
+    to 525.5, Y 184.1 to 209.5, Z 7.9 to 30.2 mm, 0.01 L, subcategory (the family''s own),
+    shows in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a23
+    (on Center (Left/Right)): X 463.6 to 489, Y 46 to 61.9, Z 106.4 to 122.2 mm, 0.005 L,
+    subcategory (the family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a2a (on Center (Left/Right)): X 463.6
+    to 489, Y 100 to 115.9, Z 106.4 to 122.2 mm, 0.005 L, subcategory (the family''s own),
+    shows in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a39
+    (on Ref. Level): X 0 to 14, Y 393.7 to 469.9, Z 174.7 to 200.1 mm, 0.027 L, subcategory
+    (the family''s own), shows in coarse, medium, fine | plan, front/back, left/right, ids
+    0 item(s), invariant CultureInfo, joins 0 item(s), kindOf Func`2, known 9 item(s) [solid,
+    void, extrusion, ...], mm Func`2, named HashSet`1, namedInOrder 0 item(s), notAFamily
+    false, notNamed false, parts 0 item(s), planeOf Func`2, problems 0 item(s), refused (null),
+    rows 7 item(s) [solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009c..., solid
+    extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009e..., solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009f...,
+    ...], scanned 7, squash Func`2, words 0 item(s). inputs came which as given. on P1102
+    MEP Family'
+  negative_case: run against 'P1102 Family' with which=all instead - chosen because it should
+    not contain what this fragment reports. returned combinationList , elements 0 item(s),
+    findings 3 item(s) [0 form(s) of 0 in the family; 0 join(s) or cut(s)., This family has
+    no forms yet - nothing has been modelled in ..., 0 form(s) handed on as elements - SET_SELECTION
+    highlights t...], formCount 0, formList , ids 0 item(s), invariant CultureInfo, joins
+    0 item(s), kindOf Func`2, known 9 item(s) [solid, void, extrusion, ...], mm Func`2, named
+    HashSet`1, namedInOrder 0 item(s), notAFamily false, notNamed false, parts 0 item(s),
+    planeOf Func`2, problems 0 item(s), refused (null), rows 0 item(s), scanned 0, squash
+    Func`2, words 0 item(s). inputs came which as given. on P1102 Family
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 5e77ab6d7c862c25
+  fingerprint: fd07c9faafcdd691
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -144,20 +198,42 @@ compatibility-note: >
   `Sketch.SketchPlane` and `GeomCombination.AllMembers` read the same 2020
   through 2027 (the RevitAPI reference assemblies, read 2026-10-01).
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "what forms are in this family"              -> here
 #   "list the voids in this family with their ids" -> here
 #   "what parameters does this family have"      -> REPORT_FAMILY_PARAMETERS
 #   "what is inside this family"                 -> REPORT_NESTED_FAMILIES,
 #                                                   the families nested in it
-#   "select the void forms"                      -> SELECT_FAMILY_FORMS, which
-#                                                   PICKS them for SET_SELECTION
-#                                                   or DELETE_ELEMENTS; this
-#                                                   only reads
+#   "select the void forms"                      -> here, which=void, then
+#                                                   SET_SELECTION with its
+#                                                   `elements`
+#   "select the forms with these ids"            -> here, then SET_SELECTION
+#   "delete these forms"                         -> here when their ids are
+#                                                   given, then DELETE_ELEMENTS
+#                                                   - the method delete-by-id
+#   "delete the ones I selected"                 -> DELETE_ELEMENTS - the
+#                                                   selection is already there
+#   "which forms are made of steel"              -> SELECT_BY_MATERIAL
+#
+# 2026-11-01 - SELECT_FAMILY_FORMS WAS MERGED INTO THIS CARD (version 4) on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same job: the forms of the family in the Family Editor, by
+# the ids the form tools gave back or by kind and side, read the same way. Its
+# outputs now: `elements` and `refused` by the same names, `formList` and
+# `scanned` by the same names; its `forms` input is `which`. An action card's
+# `elements` feeds SET_SELECTION and DELETE_ELEMENTS as a filter card's does:
+# the add-in keeps every element a run leaves on the chain whatever the kind,
+# and composition is read from the contracts.
 
 utterances:
   - what forms are in this family
   - list the voids in this family with their ids
   - show me the extrusions in this family
   - which solids and voids is this family made of
+  # MOVED 2026-11-01 from SELECT_FAMILY_FORMS, merged into this card.
+  - select these forms
+  - select the forms with these ids
+  - select the void forms
+  - get the forms with these ids
+  - delete one form from the family by its id

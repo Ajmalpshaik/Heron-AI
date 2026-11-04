@@ -194,6 +194,27 @@ compatibility-note: >
   which is what D-20 is actually about. Nothing reads an ElementId as a number,
   so the 2024 64-bit change does not reach it.
 
+# ROUTING (2026-11-02) - the same rows are in REPORT_PATHS_OF_TRAVEL and
+# CREATE_PATHS_OF_TRAVEL. A card change only; impl/ untouched, so the proof
+# and its fingerprint stand.
+#
+#   "find the nearest exit"                        -> here - a straight-line or
+#                                                     box-gap search, which may
+#                                                     go through a wall. By
+#                                                     identity: on the keyword
+#                                                     route alone
+#                                                     CREATE_PATHS_OF_TRAVEL
+#                                                     ranks above it since
+#                                                     2026-11-02
+#   "draw the path of travel from this room to the nearest exit"
+#                                                  -> CREATE_PATHS_OF_TRAVEL -
+#                                                     Revit walks the route round
+#                                                     the walls, to a door named
+#   "what is the travel distance from room 204 to the exit"
+#                                                  -> REPORT_PATHS_OF_TRAVEL - the
+#                                                     length of a path of travel
+#                                                     already drawn
+
 utterances:
   - which FCU is nearest to this terminal
   - what is the closest one to each

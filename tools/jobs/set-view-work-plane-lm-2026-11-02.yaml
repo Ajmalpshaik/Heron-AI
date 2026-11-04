@@ -1,0 +1,41 @@
+# NEEDS-CHECKING Group LM - SET_VIEW_WORK_PLANE, built 2026-11-02 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/set-view-work-plane-lm-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-view-work-plane-lm-2026-11-02.yaml
+#
+# THE MODEL (docs/needs-checking/group-lm.md, LM1): the scratch project
+# "workplane-ip", from the default architectural template - levels "Level 1"
+# at 0 and "Level 2" at 4000 mm, a straight grid "B" (6000,0 to 6000,20000
+# mm), a section "Section 1" looking north across it, in it one horizontal
+# reference plane "Ceiling Datum" 2700 mm above Level 1, the floor plan
+# "Level 1" with its work plane Level 1, a sheet "A101", a drafting view
+# "Drafting 1" and the "{3D}" view.
+#
+# THE ARRANGEMENT: the floor plan's work plane set to Level 2 for the
+# positive; the same plane asked for on the sheet A101 for the negative - a
+# different value, not an empty one (fragment-proving, rules 3 and 5): a
+# sheet has no work plane, so nothing may change anywhere. Every write here
+# is ROLLED BACK.
+
+model: "workplane-ip scratch project (metric architectural template), Level 2, grid B, reference plane Ceiling Datum, sheet A101, Revit 2024"
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: set-view-work-plane
+    expect: changed
+    in: "workplane-ip"
+    set:
+      view: "FloorPlan: Level 1"
+      plane: "Level 2"
+    negative-set:
+      view: "Sheet: A101"
+      plane: "Level 2"
+    note: >
+      LM2. Negative - THE FIRST CASE TO RUN: the sheet A101, changed 0,
+      refused naming "A101" as a sheet, which has no work plane ... NOTHING
+      WAS CHANGED; Level 1's work plane still Level 1. Positive - "Level 1":
+      changed 1, before "Level : Level 1 - horizontal at elevation 0 mm",
+      after "Level : Level 2 - horizontal at elevation 4000 mm".

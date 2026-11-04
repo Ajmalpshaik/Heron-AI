@@ -1,0 +1,79 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that draws reference planes, "drew something nobody asked for":
+# a plane from a datum nobody named, a plane in a view it cannot be drawn in,
+# a second plane where one already lies or under a name already used, or a
+# plane that was there moved or renamed.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for CREATE_PROJECT_REFERENCE_PLANES): a scratch
+# project "refplane-ip" made from the default architectural template and
+# saved under %TEMP%\heron-work, never a working model - levels "Level 1" at
+# 0 and "Level 2" at 4000 mm; straight grids "A" from 0,0 to 0,20000 mm (it
+# runs north) and "B" from 6000,0 to 6000,20000 mm; a section "Section 1"
+# looking north across both grids; the floor plan "Level 1" and a "{3D}"
+# view; ONE reference plane already there, named "Existing RP", along grid A.
+# Where the model differs, the job file changes - never the card. EVERY RUN
+# ROLLED BACK, so each case starts from the model as saved.
+
+positive:
+  - given: >
+      view "Level 1", datum "B", planes "0" - "draw a reference plane along
+      grid B in this plan" - the job file's positive
+    expect: >
+      created 1 id; skipped empty; report "Made 1 of 1 reference plane(s) in
+      "Level 1" from grid B, each read back: an unnamed plane along grid B";
+      MEASURED in Revit with a dimension from grid B: 0. THE FIRST POSITIVE TO
+      RUN
+
+  - given: >
+      view "Section 1", datum "Level 1", planes "Ceiling Datum=2700"
+    expect: >
+      created 1; report row ""Ceiling Datum" 2700 mm above level "Level 1"
+      (elevation 2700 mm)"; the plane shows in Section 1 as a horizontal line,
+      its Name in Properties "Ceiling Datum"
+
+  - given: view "Level 1", datum "B", spacingMm 600, count 5
+    expect: >
+      created 5; rows "600 mm east of grid B" ... "3000 mm east of grid B";
+      measured 600 apart in the plan
+
+  - given: >
+      view "Level 1", datum "A", planes "New RP=0; Other=1000" - New RP would
+      lie where "Existing RP" already lies
+    expect: >
+      created 1 (Other, 1000 mm east of grid A); skipped one row ""New RP"
+      along grid A - reference plane "Existing RP" already lies there; not
+      made"; Existing RP not moved or renamed
+
+negative:
+  - given: >
+      the same values as the first positive, view "{3D}" - the job file's
+      negative
+    expect: >
+      created empty; refused ""{3D}" is a ThreeD view. A reference plane along
+      a grid is drawn in a plan - ... NOTHING WAS MADE."; no plane anywhere
+      added. THE FIRST CASE TO RUN
+
+  - given: view "Level 1", planes "0", datum left out
+    expect: >
+      refused "No grid or level was named ... never guessed. NOTHING WAS MADE.
+      Grids in this project: A, B. Levels: Level 1, Level 2."; nothing made
+
+  - given: view "Level 1", datum "Level 1", planes "Ceiling Datum=2700"
+    expect: >
+      refused naming "Level 1" as a FloorPlan view, a height plane drawn in a
+      section or elevation, and listing "Section 1"; nothing made
+
+  - given: view "Level 1", datum "A", planes "Existing RP=3000"
+    expect: >
+      created empty; skipped ""Existing RP" - a reference plane in this
+      project already has that name; not made"; the old plane untouched
+
+  - given: a family open in front, datum "Ref. Level", planes "0"
+    expect: refused naming CREATE_REFERENCE_PLANES, nothing made
+
+second_route:
+  - >
+      Architecture > Work Plane > Ref Plane in "Level 1" by hand, Pick Lines
+      with an offset of 600 on grid B, and the plane made here at 600 measured
+      against it with a dimension - 0 between them

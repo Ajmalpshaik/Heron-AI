@@ -1,0 +1,137 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-168
+semantic-identity: "which work plane a view is on - the level, reference plane or grid the Work Plane dialog names as Current, and where that plane lies"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# FRAGMENT-ISSUES row 5b-1392: "which work plane is this view on" and "what
+# is the work plane of this view" reached CREATE_PROJECT_REFERENCE_PLANES, a
+# write, without the host's question flag, and REPORT_VIEW_SETTINGS - which
+# does not read the work plane - with it. No card read View.SketchPlane.
+#
+# A CARD OF ITS OWN, NOT A WIDENING (2026-11-02). The read was first written
+# into REPORT_VIEW_SETTINGS as its `workPlanes`, on a branch where that card
+# was DRAFT. The same day #790 proved REPORT_VIEW_SETTINGS on Revit 2020
+# against code without it, and any change under its impl/ would make that
+# proof stale - so the read moved here, its C# carried line for line, and the
+# two sentences with it. REPORT_VIEW_SETTINGS answers how a view is shown -
+# detail level, visual style, phase, view range, scale, where it cuts; this
+# answers only which work plane it is on.
+#
+# LOOK-ALIKES, NOT DUPLICATES. SET_VIEW_WORK_PLANE is the write half - it
+# sets and shows a view's work plane and reads it before and after, for the
+# one view it changes; a question never reaches a write (D-86).
+# CREATE_PROJECT_REFERENCE_PLANES draws reference planes and reads no work
+# plane.
+kind: action
+domain: revit.views
+capability: REPORT_VIEW_WORK_PLANE
+version: 1
+source: OFFICIAL
+risk: READ
+
+# HOW IT ANSWERS - a comment, not `purpose`, because `purpose` is searched.
+#
+# **THE DIALOG'S OWN WORDS.** "Level : Level 2", "Reference Plane : Ceiling
+# Datum", "Grid : B" - the form Architecture > Work Plane > Set prints on its
+# Current line - from SketchPlane.GetPlaneReference and the element it names.
+# When Revit names none, the work plane's own name, in quotes.
+#
+# **A VIEW WITH NO WORK PLANE IS NAMED, NEVER GIVEN ONE.** A sheet or a
+# schedule is listed in `findings` as "no work plane" and counted in
+# `noPlane`; `workPlanes` holds only the views that have one, so a sheet asked
+# alone comes back with nothing found.
+#
+# **NO VIEW NAMED, THE VIEW IN FRONT** - "which work plane is this view on"
+# names none - and a finding says so.
+#
+# **WHETHER IT IS SHOWN IS NOT READ.** Revit has no member for it on any
+# release; SET_VIEW_WORK_PLANE says the same of its show and hide.
+#
+# `purpose` HOLDS NO CHANGE VERB - none of set, change, update, adjust,
+# switch, make or apply - so change requests stay with SET_VIEW_WORK_PLANE.
+purpose: >
+  Answers which work plane each view named is on, as the Work Plane dialog
+  names it on its Current line - the level, reference plane or grid it was
+  taken from - and where that plane lies in millimetres: horizontal at an
+  elevation, or vertical and which way it faces. A sheet or a schedule has
+  none and is named as having none. With no view named, the view in front.
+  It only reads.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The views, as the Project Browser names them, several separated by
+    # commas - "Level 1, Section 1". Two views sharing a name are written
+    # "FloorPlan: Level 1". Left out, it binds an empty list
+    # (HeronBindingNote.AbsentValue) and the view in front is read.
+    - name: views
+      type: IList<View>
+      source: request
+      optional: true
+  provides:
+    - name: workPlanes
+      # ONE STRING, a row per view that has a work plane, joined by "  ||  ":
+      # "'Level 1' (FloorPlan) work plane Level : Level 1 - horizontal at
+      # elevation 0 mm", "'Section 1' (Section) work plane Reference Plane :
+      # Ceiling Datum - ...". Empty when none of the views read has one.
+      role: result
+      type: string
+    - name: withPlane
+      # How many views read have a work plane - a count of what it FOUND.
+      role: result
+      type: int
+    - name: noPlane
+      # Views read that have none - a sheet, a schedule - each named in
+      # `findings`. The evidence it looked, never a plane it found (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      # A summary line; a line when the view in front was read because none
+      # was named; and a line per view with no work plane.
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, no #if. View.SketchPlane,
+  SketchPlane.GetPlane and GetPlaneReference, Document.GetElement(Reference),
+  Document.ActiveView and BuiltInParameter DATUM_TEXT - present unchanged
+  2020 to 2027 with tools/api-surface --members on 2026-11-02, the day the
+  read was first written into REPORT_VIEW_SETTINGS. Not seen in Revit.
+
+# ROUTING - the same rows are in SET_VIEW_WORK_PLANE, REPORT_VIEW_SETTINGS
+# and CREATE_PROJECT_REFERENCE_PLANES.
+#
+#   "which work plane is this view on"     -> here, the view in front, with
+#   "what is the work plane of this view"     or without the host's question
+#                                             flag (row 5b-1392), by
+#                                             identity. The keyword route
+#                                             alone ranks SET_VIEW_WORK_PLANE
+#                                             first on both (check-routing,
+#                                             scratch store, 2026-11-02);
+#                                             `find` answers here on every
+#                                             filter, flag or not
+#   "set the work plane to Level 2"        -> SET_VIEW_WORK_PLANE. A change,
+#   "show the work plane in this view"        and this reads (D-86)
+#   "what is the detail level of this view"
+#                                          -> REPORT_VIEW_SETTINGS, how a
+#                                             view is shown
+#   "draw a reference plane along grid B in this plan"
+#                                          -> CREATE_PROJECT_REFERENCE_PLANES
+
+# DECLARED 2026-11-02, FRAGMENT-ISSUES row 5b-1392 - the modeller's own
+# questions for the Work Plane dialog's Current line. Before, on scratch
+# stores, both reached CREATE_PROJECT_REFERENCE_PLANES (earlier
+# ADD_FAMILY_MODEL_TEXT and CREATE_REFERENCE_PLANES), writes, without the
+# host's question flag.
+utterances:
+  - which work plane is this view on
+  - what is the work plane of this view

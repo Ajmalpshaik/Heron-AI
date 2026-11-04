@@ -1,7 +1,7 @@
 positive:
   - given: >
       a new family from the metric Generic Model template with one solid
-      extrusion made by create-family-extrusion; forms = its id, detailLevels
+      extrusion made by create-family-forms; forms = its id, detailLevels
       "medium, fine", views "front, left"
     expect: >
       changed reads the form going from "coarse, medium, fine | plan,

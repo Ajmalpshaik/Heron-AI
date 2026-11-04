@@ -1,5 +1,19 @@
-// NOT STANDALONE. Assumes `doc`, `level`, `floorType` and `boundary` are in
-// scope; leaves `created` and `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `level`, `floorType`, `boundary` and
+// `heightAboveLevel` are in scope; leaves `created`, `edges`, `measuredMm` and
+// `findings` behind.
+//
+// VERSION 3 (2026-11-01) - CREATE_CEILING AND CREATE_ROOF MERGED IN. One closed
+// boundary on a level, at the level's PROJECT elevation, made into whatever
+// the type is: a floor type a floor (versions 1 and 2, word for word), a
+// ceiling type a ceiling - Ceiling.Create, found by name because it arrived in
+// Revit 2022, so 2020 and 2021 are refused with the sentence to draw one by
+// hand; its height above the level set from `heightAboveLevel` in millimetres
+// and read back - and a roof type a FOOTPRINT ROOF, left flat, its edge count
+// and its size and base height measured back off Revit. `floorType` is the
+// TYPE, a floor, ceiling or roof type, resolved by the add-in among them
+// (HostObjAttributes); a wall type is refused by name. The arc writing of
+// version 2 serves all three. SLOPE_ROOF_EDGES still slopes a roof; nothing
+// here sets a pitch.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). Lengths are internal FEET.
 //
@@ -38,6 +52,9 @@
 
 var created = ElementId.InvalidElementId;
 var findings = new List<string>();
+// Version 3, from CREATE_ROOF: a roof's model curves, and the roof measured.
+var edges = 0;
+var measuredMm = "";
 
 var newStyle = typeof(Floor).GetMethod("Create",
     new[] { typeof(Document), typeof(IList<CurveLoop>), typeof(ElementId), typeof(ElementId) });
@@ -185,26 +202,86 @@ for (var i = 0; problem == null && arcs > 0 && i < corners.Count; i++)
                 + "same place.";
 }
 
-// ---- the floor ---------------------------------------------------------------
+// ---- what the type makes ------------------------------------------------------
+//
+// VERSION 3: THE TYPE DECIDES. A floor type makes a floor, a ceiling type a
+// ceiling, a roof type a footprint roof - by the type's class, and for a
+// ceiling its category as well, CREATE_CEILING's check. Anything else - a wall
+// type above all - is refused by name, never made into something strange.
+
+var asFloor = floorType as FloorType;
+var asRoof = floorType as RoofType;
+var ceilingCategory = Category.GetCategory(doc, BuiltInCategory.OST_Ceilings);
+var asCeiling = floorType is CeilingType && floorType.Category != null && ceilingCategory != null
+    && floorType.Category.Id == ceilingCategory.Id;
+var kindWord = asFloor != null ? "floor" : asCeiling ? "ceiling" : asRoof != null ? "roof" : "";
+var typeShown = floorType == null ? "(no type)"
+    : (string.IsNullOrEmpty(floorType.FamilyName) ? floorType.Name : floorType.FamilyName + ": " + floorType.Name);
+
+// CEILING.CREATE ARRIVED IN REVIT 2022, so it is looked up by name and its
+// absence is REPORTED AS AN ANSWER - CREATE_CEILING's rule. Naming the class
+// would break the 2020 build.
+var ceilingClass = typeof(Element).Assembly.GetType(typeof(Document).Namespace + ".Ceiling");
+var ceilingCreate = ceilingClass == null ? null : ceilingClass.GetMethod("Create",
+    new[] { typeof(Document), typeof(IList<CurveLoop>), typeof(ElementId), typeof(ElementId) });
+
+// A CEILING'S HEIGHT ABOVE ITS LEVEL, MILLIMETRES IN (D-71), feet inside. NaN
+// is "not given" - the card's `absent:` - and only a ceiling takes one.
+var heightAsked = !double.IsNaN(heightAboveLevel);
+var heightFeet = heightAsked ? heightAboveLevel / MillimetresPerFoot : 0.0;
+
+// ---- the floor, the ceiling or the roof ----------------------------------------
 
 if (problem != null)
 {
     // The text, not the model, said no - so nothing is made.
     findings.Add(problem + " Nothing was created.");
 }
-else if (newStyle == null && oldStyle == null)
+else if (floorType == null)
+{
+    findings.Add("No type was given - name a floor, ceiling or roof type. Nothing was created");
+}
+else if (kindWord.Length == 0)
+{
+    findings.Add(string.Format("'{0}' is a {1} type, and this makes a floor, a ceiling or a footprint roof from "
+        + "the type it is given - a floor type, a ceiling type or a roof type. Nothing was created",
+        typeShown, floorType.Category == null ? "non-model" : floorType.Category.Name));
+}
+else if (kindWord == "ceiling" && !heightAsked)
+{
+    findings.Add("A ceiling needs its height above the level, in millimetres - heightAboveLevel 2700, for "
+        + "one. Nothing was created");
+}
+else if (kindWord == "ceiling" && (double.IsInfinity(heightAboveLevel) || Math.Abs(heightAboveLevel) > 100000.0))
+{
+    findings.Add(string.Format("A ceiling {0} mm above its level is not a height in any building - the height is "
+        + "MILLIMETRES, so 2.7 m is 2700. Nothing was created", heightAboveLevel));
+}
+else if (kindWord != "ceiling" && heightAsked)
+{
+    findings.Add(string.Format("heightAboveLevel is a ceiling's height above its level, and '{0}' is a {1} "
+        + "type - a {1} is made on its level and this sets no offset for it. Leave the height out. Nothing "
+        + "was created", typeShown, kindWord));
+}
+else if (kindWord == "floor" && newStyle == null && oldStyle == null)
 {
     findings.Add("This Revit has neither Floor.Create nor Document.Create.NewFloor - nothing here can "
         + "make a floor on it");
 }
+else if (kindWord == "ceiling" && ceilingCreate == null)
+{
+    findings.Add("This Revit cannot create a ceiling - the method arrived in Revit 2022 and this "
+        + "release is older. Draw ONE by hand (Architecture, then Ceiling) and everything else here "
+        + "works on it: the height, the grid and the clearance checks all read a ceiling that exists");
+}
 else if (arcs == 0 && corners.Count < 3)
 {
-    findings.Add(string.Format("A floor needs at least three boundary points and {0} were given",
-        corners.Count));
+    findings.Add(string.Format("A {0} needs at least three boundary points and {1} were given",
+        kindWord, corners.Count));
 }
 else
 {
-    // NOT level.Elevation - see the header.
+    // NOT level.Elevation - see the header. The same for all three.
     var z = level.ProjectElevation;
 
     var loopCurves = new List<Curve>();
@@ -237,7 +314,7 @@ else
         findings.Add("Two boundary points are in the same place, so one edge has no length - nothing "
             + "was created");
     }
-    else
+    else if (kindWord == "floor")
     {
         try
         {
@@ -254,7 +331,7 @@ else
                 // The old one wants the TYPE object, not its id, and a bool for
                 // whether the floor is structural.
                 made = (Element)oldStyle.Invoke(creation,
-                    new object[] { arrayCurves, floorType, level, false });
+                    new object[] { arrayCurves, asFloor, level, false });
             }
 
             if (made == null)
@@ -277,6 +354,123 @@ else
         {
             var why = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
             findings.Add(string.Format("Floor creation failed: {0}", why));
+        }
+    }
+    else if (kindWord == "ceiling")
+    {
+        // VERSION 3, from CREATE_CEILING: Ceiling.Create by reflection, then its
+        // height above the level set and READ BACK in millimetres.
+        try
+        {
+            var loops = new List<CurveLoop> { CurveLoop.Create(loopCurves) };
+            var made = (Element)ceilingCreate.Invoke(null,
+                new object[] { doc, (IList<CurveLoop>)loops, floorType.Id, level.Id });
+
+            if (made == null)
+            {
+                findings.Add("Revit returned no ceiling - the usual cause is a boundary that crosses "
+                    + "itself");
+            }
+            else
+            {
+                created = made.Id;
+
+                var heightParameter = made.get_Parameter(BuiltInParameter.CEILING_HEIGHTABOVELEVEL_PARAM);
+                if (heightParameter != null && !heightParameter.IsReadOnly)
+                {
+                    heightParameter.Set(heightFeet);
+                    doc.Regenerate();
+                    // READ IT BACK, in millimetres, because that is the number
+                    // somebody will check on screen.
+                    var got = heightParameter.AsDouble();
+                    var heightSet = Math.Abs(got - heightFeet) * MillimetresPerFoot < 1.0;
+                    findings.Add(string.Format(
+                        "Ceiling created on '{0}' at {1:0} mm above it{2}",
+                        level.Name, got * MillimetresPerFoot,
+                        heightSet ? "" : string.Format(" - ASKED for {0:0} mm and Revit settled on "
+                            + "{1:0} mm", heightAboveLevel, got * MillimetresPerFoot)));
+                }
+                else
+                {
+                    findings.Add(string.Format("Ceiling created on '{0}', but its height above the "
+                        + "level could not be set and is whatever the type gives", level.Name));
+                }
+                if (arcs > 0)
+                    findings.Add(string.Format("{0} of its {1} edges are arcs", through.Count(t => t != null),
+                        corners.Count));
+            }
+        }
+        catch (Exception ex)
+        {
+            // The reflection call wraps whatever Revit threw, and the inner one
+            // is the message worth reading.
+            var why = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+            findings.Add(string.Format("Ceiling creation failed: {0}", why));
+        }
+    }
+    else
+    {
+        // VERSION 3, from CREATE_ROOF: one call on every release - NewFootPrintRoof
+        // did not change at 2022 - and the roof is left FLAT.
+        try
+        {
+            // INSTANTIATED EVEN THOUGH IT IS AN `out` - declared `= null` the
+            // call threw "Value cannot be null" on a model with a real roof type
+            // (CREATE_ROOF, measured 2026-09-19 on `test projject`, Revit 2024).
+            ModelCurveArray madeEdges = new ModelCurveArray();
+            var roof = doc.Create.NewFootPrintRoof(arrayCurves, level, asRoof, out madeEdges);
+
+            if (roof == null)
+            {
+                findings.Add("Revit returned no roof - the usual cause is a "
+                    + "boundary that crosses itself");
+            }
+            else
+            {
+                created = roof.Id;
+                edges = madeEdges == null ? 0 : madeEdges.Size;
+                findings.Add(string.Format(
+                    "Roof created on '{0}' with {1} edge(s). It is FLAT - no "
+                    + "slope has been set on any edge, which is a separate job",
+                    level.Name, edges));
+
+                // WHAT IT ACTUALLY MADE, MEASURED BACK OFF THE ELEMENT AND IN
+                // MILLIMETRES - never recomputed from the input, so a
+                // conversion that went wrong on the way in comes back wrong and
+                // visible (CREATE_ROOF, PR #198's review).
+                try
+                {
+                    var box = roof.get_BoundingBox(null);
+                    if (box != null)
+                    {
+                        measuredMm = string.Format(
+                            "{0:F0} x {1:F0} mm on plan, base at {2:F0} mm, "
+                            + "level '{3}' sits at {4:F0} mm",
+                            (box.Max.X - box.Min.X) * MillimetresPerFoot,
+                            (box.Max.Y - box.Min.Y) * MillimetresPerFoot,
+                            box.Min.Z * MillimetresPerFoot,
+                            level.Name,
+                            level.ProjectElevation * MillimetresPerFoot);
+                        findings.Add("Measured back from Revit - see measuredMm");
+                    }
+                    else
+                    {
+                        measuredMm = "";
+                        findings.Add("Revit returned no bounding box for the new roof, "
+                            + "so its size and height were NOT read back");
+                    }
+                }
+                catch (Exception notMeasured)
+                {
+                    findings.Add(string.Format(
+                        "The roof was created but could not be measured back: {0}",
+                        notMeasured.Message));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            findings.Add(string.Format("Roof creation failed: {0}", ex.Message));
         }
     }
 }

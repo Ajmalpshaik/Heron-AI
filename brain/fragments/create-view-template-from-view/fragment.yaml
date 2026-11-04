@@ -109,7 +109,7 @@ compatibility-note: >
 
   **No ElementId is built from an int**, so 2024's 64-bit ids do not reach here.
 
-# ROUTING - the same rows are in APPLY_VIEW_TEMPLATE and DUPLICATE_VIEW.
+# ROUTING - the same rows are in APPLY_VIEW_TEMPLATE and DUPLICATE_VIEWS.
 #
 #   "save this view's settings as a template" -> here
 #   "make a template from this plan"          -> here
@@ -133,7 +133,7 @@ compatibility-note: >
 #                                                LIBRARY DOES IT - Revit's route
 #                                                is View, View Templates, Manage
 #                                                View Templates, Duplicate
-#   "copy this view"                          -> DUPLICATE_VIEW. A duplicate is
+#   "copy this view"                          -> DUPLICATE_VIEWS. A duplicate is
 #                                                a second view; a template is a
 #                                                rule other views follow
 #   "put the template on these"               -> APPLY_VIEW_TEMPLATE

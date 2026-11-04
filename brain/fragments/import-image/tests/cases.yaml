@@ -1,0 +1,93 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that adds an image, "made something nobody asked for": an image
+# from a file nobody named, an image in a view Revit cannot hold one in, a
+# second copy of an image already loaded.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for IMPORT_IMAGE): a scratch project "images-ip" new
+# from Revit's metric ARCHITECTURAL template, saved under %TEMP%\heron-work,
+# never a working model, with the template's "Level 1" floor plan, its
+# "{3D}" view (made with the 3D button if missing), a sheet "A101" and a room
+# schedule. Beside it, in %TEMP%\heron-work\images: "site.png" (any picture,
+# a few hundred pixels across) and "plans.pdf" with THREE pages. Nothing in
+# Manage Images. Where the model differs, the job file changes - never the
+# card. EVERY RUN ROLLED BACK, so each case starts from the model as saved.
+
+positive:
+  - given: >
+      path "%TEMP%\heron-work\images\plans.pdf" written out in full, view
+      "FloorPlan: Level 1", page 3, the rest left out - the job file's
+      positive
+    expect: >
+      imageInstanceId and imageTypeId valid; reusedType false; report
+      "Imported "plans..." (image <id>, page 3, <w> x <h> px at <dpi> DPI,
+      imported) into "Level 1" as placed image <id>: <w> x <h> mm, centre at
+      0,0 mm in the view, drawn in the background" (on 2020 without the pixel
+      size, DPI and imported); one new row in Manage Images, page 3. THE
+      FIRST POSITIVE TO RUN
+
+  - given: >
+      path the full path of "site.png", view left out with "Level 1" in front,
+      point "5000,2000", anchor "bottom left"
+    expect: >
+      placed in "Level 1"; its bottom left corner at 5000,2000 mm - so the
+      centre reported is 5000 + half its width, 2000 + half its height
+
+  - given: >
+      the first positive KEPT once with try-once in a scratch copy, then run
+      again with the same path and page
+    expect: >
+      reusedType true; report "Placed again ..."; Manage Images still holds
+      ONE row for page 3 - nothing loaded twice
+
+  - given: path "site.png" in full, view "A101" (a sheet), point "420,297"
+    expect: placed on the sheet, centre at 420,297 mm on the sheet
+
+negative:
+  - given: >
+      the same path and page as the first positive, view "{3D}" - the job
+      file's negative
+    expect: >
+      imageInstanceId and imageTypeId invalid; refused ""{3D}" is a 3D view,
+      and Revit does not place images there. Name a plan, section, elevation,
+      drafting view, legend or sheet. NOTHING WAS IMPORTED."; Manage Images
+      unchanged. THE FIRST CASE TO RUN
+
+  - given: the room schedule as the view, the same path
+    expect: refused naming it "a schedule"; nothing imported
+
+  - given: path "%TEMP%\heron-work\images\no-such-file.pdf" in full, view "Level 1"
+    expect: >
+      refused "There is no file at "...no-such-file.pdf" on the PC Revit runs
+      on - the path is read there, not where the chat is. NOTHING WAS
+      IMPORTED."; Manage Images unchanged
+
+  - given: plans.pdf, view "Level 1", page 9 - a page the PDF has not got
+    expect: >
+      refused passing on Revit's words ("Revit says it cannot read page 9 ...
+      the PDF may have fewer pages", or Revit's own message); NOTHING WAS
+      IMPORTED; Manage Images unchanged - nothing left half made
+
+  - given: path the template's own .rte or any .dwg, view "Level 1"
+    expect: refused "is not a PDF, PNG, JPG, BMP or TIFF"; IMPORT_CAD is the tool for a drawing
+
+  - given: path left empty
+    expect: refused "No file was named ... it is never guessed"; nothing imported
+
+  - given: point "here", or anchor "middle left"
+    expect: refused naming the word; nothing imported
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE, AND NOTHING DELETED. Golden Rule 16 - undo
+      is the caller's; the SubTransaction lives inside the caller's
+      transaction. No image that was there before is gone or changed
+
+second_route:
+  - >
+    Manage > Manage Images, read inside the same rolled-back group or after a
+    try-once Keep: one more row, named after the file and page, Count 1
+  - >
+    Revit's own Insert > Import PDF on the same page into the same view,
+    compared side by side: the same page, the same size at the same DPI
+  - one Ctrl+Z takes the image and its row in Manage Images away in a single step (Golden Rule 16)

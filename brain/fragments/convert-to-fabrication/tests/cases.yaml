@@ -1,0 +1,74 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "converted what it was not given": a wall, a placeholder or
+# a part already fabrication touched, or a service guessed.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for CONVERT_TO_FABRICATION): a scratch project new
+# from Revit's metric Mechanical template, saved under %TEMP%\heron-work, never
+# a working model. In Systems > Fabrication > MEP Fabrication Settings choose
+# Autodesk's sample "Revit MEP Imperial Content" (or Metric) configuration and
+# load one ductwork service and one pipework service - write down their exact
+# names. Draw: a rectangular duct run of two straights and an elbow (D1, D2,
+# E1), a copper pipe run of two straights and an elbow (P1, P2, E2), one duct
+# placeholder (PH) and one wall (W). Write down every id. A SECOND scratch
+# project with no configuration chosen, holding one duct, is the
+# no-configuration case. Each case starts from the saved file.
+
+positive:
+  - given: D1, D2 and E1 selected; service the ductwork service's whole name
+    expect: >
+      report "Design to Fabrication with the service \"...\": 3 of 3 design
+      element(s) taken by Revit's conversion (3 ductwork, 0 pipework handed
+      to it); Revit made n fabrication part(s): id ... on \"...\", ...
+      straight ... mm ..."; fabricationParts each a fabrication part with
+      that service in its Properties; the report says how many of D1, D2, E1
+      are no longer in the model and which are still there - write down
+      which, that is what Revit does to the originals
+
+  - given: P1, P2 and E2 selected; service the pipework service's abbreviation
+    expect: >
+      the pipe run converted to the pipework service; the report names the
+      service by its whole name
+
+  - given: >
+      D1, D2, E1, P1, P2 and E2 selected; service the ductwork service
+    expect: >
+      the duct side converted; the pipe side named in notConverted "Revit
+      refused to convert the pipework to \"...\" - ..." with Revit's words,
+      and still pipes - one side refused never stops the other
+
+negative:
+  - given: >
+      W and PH selected with D1; service the ductwork service
+    expect: >
+      notDesign names W "not a design duct, pipe, fitting or accessory" and PH
+      "a placeholder - Convert Placeholder makes it a real duct first"; W and
+      PH unchanged, still a wall and a placeholder. THE FIRST CASE TO RUN
+
+  - given: D1 selected; service "Low" - part of a name, not a whole name
+    expect: >
+      nothing converted; report "No loaded service is called \"Low\". The
+      services loaded in this project are: ..." naming both - D1 still a
+      design duct
+
+  - given: D1 selected; service left blank
+    expect: >
+      nothing converted; report lists the loaded services and asks for one
+
+  - given: the scratch project with no configuration, its duct selected, any service
+    expect: >
+      report "This model has no fabrication configuration - choose one in
+      Systems > Fabrication > MEP Fabrication Settings ..."; nothing changed
+
+second_route:
+  - >
+    Each id in fabricationParts, selected in Revit: Properties shows a
+    fabrication part with the Service the report names, and the Size and
+    Length the report gives
+  - >
+    Revit's own Design to Fabrication on a copy of the same saved file, the
+    same elements and service: the same number of parts, and the same design
+    elements gone or left
+  - >
+    Undo: one entry in Revit's undo list, and Undo puts every design element
+    back as it was

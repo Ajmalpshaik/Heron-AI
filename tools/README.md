@@ -554,7 +554,7 @@ private store through the real search, and proves both are caught.
 git worktree add --detach ../main-wt origin/main
 python tools/score-routing.py --sentences s.yaml --tree ../main-wt --backend all --shortlists --out main.json
 python tools/score-routing.py --sentences s.yaml --backend all --compare main.json --out branch.json
-python tools/score-routing.py --identities ids.txt --card RENAME_ELEMENTS --from main.json
+python tools/score-routing.py --identities ids.txt --card EDIT_TEXT_VALUES --from main.json
 ```
 
 Rows [5b-481, 5b-485 and 5b-510](../docs/fragment-issues/section-5b-rows-401-425.md) each built this kit by hand to measure a

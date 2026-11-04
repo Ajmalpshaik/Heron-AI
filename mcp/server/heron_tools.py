@@ -407,7 +407,8 @@ COMPANION_ACTIONS = {
     "companion_dashboard_reset":   (EXECUTE, "reset_temporary"),
     # Colour the view / Clear colours (docs/40 s21.14): a CHANGE to the active
     # view's graphics - COLOR_BY_PARAMETER or RESET_GRAPHIC_OVERRIDES on what
-    # SELECT_VISIBLE_IN_VIEW found, through revit_change's own body. MODIFY,
+    # FILTER_ELEMENTS_BY_CATEGORY found with inViewOnly (SELECT_VISIBLE_IN_VIEW
+    # until 2026-11-01), through revit_change's own body. MODIFY,
     # exactly revit_change's level and operation; both PROVEN (D-117).
     "companion_dashboard_colour":        (MODIFY, "run_fragment_write"),
     "companion_dashboard_clear_colours": (MODIFY, "run_fragment_write"),
@@ -568,8 +569,10 @@ def door_refusal(door, declared, capability):
     server could put anything through run_fragment_read. What holds for every
     caller is two things, and the first is NOT a guarantee on its own: Revit
     refuses a change made outside a transaction - yet row 5b-350 is a read run
-    of place-nested-family that reported that refusal and still left a real
-    instance in the family, twice, cause not established (NEEDS-CHECKING CP1).
+    of place-nested-family (PLACE_FAMILY_INSTANCES in a family since
+    2026-11-01, when it was merged there) that reported that refusal and still left a
+    real instance in the family, twice, cause not established (NEEDS-CHECKING
+    CP1).
     So the add-in also counts the model before and after every read run and
     answers one that moved it `read_changed_model`, never as a read. That
     second check sees an element that appeared or disappeared and a model newly

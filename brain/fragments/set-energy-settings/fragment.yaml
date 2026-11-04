@@ -1,0 +1,151 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-099
+semantic-identity: "change Analyze > Energy Settings for the whole model - building type, ground plane, project phase, analysis mode, export category and complexity, report type, construction class, the energy model switch"
+kind: action
+domain: revit.mep
+capability: SET_ENERGY_SETTINGS
+version: 1
+source: OFFICIAL
+# ADMIN, BEHIND THE OWNER'S ADMIN SWITCH (D-106) - graded as
+# SET_STRUCTURAL_SETTINGS and SET_PROJECT_UNITS are. Energy Settings are how
+# the project is set up for analysis: the building type, phase, mode and export
+# category are what EVERY energy model, gbXML export and heating and cooling
+# loads run is built from, for everybody who opens the model - D-106's Admin
+# row, "settings other work is built on". No element moves; one Ctrl+Z takes
+# it back.
+risk: ADMIN
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for as a ribbon gap - "Energy settings (Analyze > Energy
+# Settings). Read and set EnergyDataSettings (building type, ground plane,
+# project phase, analytical mode, export category, etc.)". Checked that day
+# with brain/heron_retrieve.py's find() on a scratch store of this tree
+# (Revit 2024): "set the ground plane to Level 1 in the energy settings"
+# reached SET_SUN_SETTINGS, "change the energy settings export category to
+# spaces" LIST_EXPORT_SETUPS and "set the energy settings building type to
+# office" REPORT_ELECTRICAL_SETTINGS - none of which touches Energy Settings.
+# No card set anything on EnergyDataSettings: RUN_HEATING_COOLING_LOADS reads
+# four of them and says on its card that it never sets them.
+#
+# WHY A CARD OF ITS OWN - each near card read in full (the
+# heron-duplicate-checker method; brain/heron_duplicates and the Matcher found
+# no same-capability or same-signature card):
+#   RUN_HEATING_COOLING_LOADS runs the loads with the settings as they are.
+#   SET_SUN_SETTINGS sets a view's sun, not the energy ground plane.
+#   SET_PROJECT_LOCATION sets the location Energy Settings shows - named, not
+#     duplicated: "location" is refused here and sent there.
+#   CREATE_ENERGY_MODEL builds the energy model FROM these settings.
+#   REPORT_ENERGY_SETTINGS READS them - a question goes there.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33). `settings` is a table, "name=value",
+# ";" between, in the dialog's own words. A choice is one of Revit's own on the
+# release that runs, put to Revit's own Check method before anything is
+# written; a level or phase is one the model has, by name; lengths are
+# millimetres.
+#
+# REFUSED BY NAME, NOTHING CHANGED: a name not in the list (the list given);
+# a choice Revit does not offer or its Check rejects (Revit's choices listed);
+# a level or phase the model does not have; a setting named twice; nothing
+# named; a family; the location, operating schedule, HVAC system, outdoor air,
+# shade / sill / skylight targets (obsolete in Revit 2027) and reports folder,
+# which this card does not change.
+#
+# A SETTING REVIT REFUSES is caught with Revit's own words, every setting this
+# call already wrote is put back to the value read before, and `refused` says
+# so - NOTHING WAS CHANGED. A put-back that fails throws, and the caller's
+# transaction rolls back.
+#
+# READ BACK: `before` and `after` are every setting above, read off the model;
+# a value that reads back different throws, so nothing is kept. An energy
+# model already made is NOT rebuilt by a change here - the answer says so.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Changes Analyze > Energy Settings for the whole model: the building type,
+  ground plane level, project phase, analysis mode, export category (rooms or
+  spaces) and export complexity, whether thermal properties are included, how
+  the building envelope is found, the building construction class and service
+  type, the loads report type, the sliver space tolerance, analytical grid cell
+  size, core offset, perimeter zones, target glazing percentage and the energy
+  model switch. Every setting is read back before and after.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # "name=value; name=value" in the dialog's words - "building type=office;
+    # ground plane=Level 1". Lengths in millimetres.
+    - name: settings
+      type: string
+      source: request
+  provides:
+    - name: before
+      # Every setting this card reaches, read before the change - "Energy
+      # Settings - building type ...; ground plane ...; ...". Empty when
+      # refused.
+      role: result
+      type: string
+    - name: after
+      # The same, read back after it.
+      role: result
+      type: string
+    - name: changed
+      # How many settings Revit changed - one already holding the value asked
+      # is not counted. 0 when refused.
+      role: result
+      type: int
+    - name: energyModel
+      # The energy model switch as read after the call - whether
+      # CREATE_ENERGY_MODEL and Revit's own analyses have it on. The state of
+      # a setting, so accounting (D-52).
+      role: accounting
+      type: bool
+    - name: refused
+      # Why NOTHING WAS CHANGED, as one sentence - Revit's own reason when
+      # Revit refused; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Every EnergyDataSettings member
+  REPORT_ENERGY_SETTINGS names has a setter 2020 to 2027 and none is obsolete,
+  read off tools/api-surface --members for all eight on 2026-11-02;
+  UseCurrentViewOnly is 2024 on (`#if REVIT2024_OR_GREATER`, and named as a
+  2024 setting before). GetEnergyDataSettings (2026 on) is used where it
+  exists and GetFromDocument (obsolete in 2027) before it. The static checks
+  CheckBuildingType, CheckAnalysisType, CheckExportCategory,
+  CheckExportComplexity, CheckBuildingEnvelope, CheckBuildingConstructionClass,
+  CheckServiceType, CheckProjectReportType, CheckRangeOfSliverSpaceTolerance,
+  CheckRangeOfPercentageGlazing and the instance CheckGroundPlane and
+  CheckProjectPhase are 2020-2027 and not obsolete. Choices are read with
+  Enum.GetNames on the release that runs, so ConceptualMasses (2020-2023),
+  RoomsOrSpaces (2022 on) and CompactReport (2027) are offered exactly where
+  Revit has them. NOT KNOWN FROM THE ASSEMBLIES and measured in NEEDS-CHECKING
+  Group MM: the glazing percentage's form (asked of
+  CheckRangeOfPercentageGlazing(50)); that the lengths are held in feet; and
+  whether turning the energy model switch on builds or removes a model by
+  itself.
+
+# ROUTING (2026-11-02) - the same rows are in REPORT_ENERGY_SETTINGS and
+# CREATE_ENERGY_MODEL.
+#
+#   "set the energy settings building type"      -> here, building type
+#   "set the ground plane in the energy settings" -> here, ground plane
+#   "read the energy settings"                   -> REPORT_ENERGY_SETTINGS - a question goes to the read (D-86)
+#   "create the energy analytical model"         -> CREATE_ENERGY_MODEL - builds the model from these
+#
+# WHAT MOVED: see NEEDS-CHECKING Group MM.
+utterances:
+  - set the energy settings building type
+  - set the ground plane in the energy settings

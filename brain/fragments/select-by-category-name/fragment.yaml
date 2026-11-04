@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CAT-009
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,32 @@ capability: SELECT_BY_CATEGORY_NAME
 version: 2
 source: OFFICIAL
 risk: READ
+
+# DEPRECATED 2026-11-01 - MERGED INTO FILTER_ELEMENTS_BY_CATEGORY
+# (filter-elements-by-category), on the owner's instruction in conversation:
+# "now merge the other duplicates also". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to FILTER_ELEMENTS_BY_CATEGORY. The
+# proof below is the record of what this card's code did, not a claim about
+# today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: FILTER_ELEMENTS_BY_CATEGORY
+  why: >
+    The same job: the elements of a category the modeller names in words, in
+    the model or in one view, links counted and never selected.
+    FILTER_ELEMENTS_BY_CATEGORY already took the category by the name
+    Visibility/Graphics shows - the add-in's binder reads that name first,
+    localised as the model is - and its version 4 took what this card had and
+    it lacked: an optional view, `found`, `resolvedTo` naming the category the
+    words were read as, and links read through a view on Revit 2023 and later.
+    The safer rule where they differed: a word that is no category is refused
+    before anything runs, never answered with an empty set. This card's near
+    misses were not carried - the binder's refusal does not list them, and
+    LIST_CATEGORIES does.
 
 purpose: >
   Collects a category's elements by the category's plain NAME - "Ducts", "Duct

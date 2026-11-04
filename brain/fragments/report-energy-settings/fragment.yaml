@@ -1,0 +1,112 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-098
+semantic-identity: "what are this model's Energy Settings - which building type, which ground plane, which phase the energy analysis uses, which analysis mode, export category and report type is set - and is there an energy analytical model"
+kind: action
+domain: revit.mep
+capability: REPORT_ENERGY_SETTINGS
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for as a ribbon gap - "Energy settings (Analyze > Energy
+# Settings). Read and set EnergyDataSettings (building type, ground plane,
+# project phase, analytical mode, export category, etc.)". No card read them:
+# RUN_HEATING_COOLING_LOADS (Revit 2027) reads four of them - building type,
+# phase, report type, use current view only - into its report, and only while
+# running the loads; REPORT_PROJECT_INFORMATION (PROVEN) leaves Energy
+# Settings out on purpose. brain/heron_retrieve.py's find() on a scratch store
+# of this tree (Revit 2024, with and without the host's question flag) sent
+# "what are the energy settings" to REPORT_STRUCTURAL_SETTINGS and "what
+# building type is set in the energy settings" to REPORT_ELECTRICAL_SETTINGS
+# - reads of other dialogs.
+#
+# LOOK-ALIKES, NOT DUPLICATES (each read in full; brain/heron_duplicates and
+# the Matcher found no same-capability or same-signature card):
+#   RUN_HEATING_COOLING_LOADS runs the loads and names four settings it ran
+#     with; it is not edited.
+#   REPORT_ANALYTICAL_MODEL reads the STRUCTURAL analytical model, not the
+#     energy one.
+#   REPORT_SPACE_ENVELOPE and READ_SPACE_LOADS read spaces, not the settings.
+#
+# THE READ HALF OF A SET. SET_ENERGY_SETTINGS changes these values and takes
+# every one by the name printed here, and CREATE_ENERGY_MODEL builds the
+# energy model from them; every question about either comes here (D-86).
+#
+# READ ONLY - opens no transaction and needs none.
+purpose: >
+  Answers what this model's Energy Settings are, by reading Analyze > Energy
+  Settings: the building type, ground plane, project phase, analysis mode,
+  export category (rooms or spaces) and export complexity, whether thermal
+  properties are included, how the building envelope is found, the building
+  construction class and service type, the loads report type, the sliver space
+  tolerance, analytical grid cell size, core offset, perimeter zones, target
+  glazing percentage and the energy model switch - and whether the model holds
+  an energy analytical model, with how many analytical spaces, surfaces and
+  openings. Nothing needs to be selected and nothing changes.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: energySettings
+      # Every Energy Setting read, in the names SET_ENERGY_SETTINGS takes:
+      # "Energy Settings - building type office; ground plane \"Level 1\";
+      # project phase \"New Construction\"; analysis mode building elements;
+      # ...". Empty in a family or a document with none.
+      role: result
+      type: string
+    - name: energyModelExists
+      # Whether Revit names a main energy analytical model in this model. Its
+      # id and counts are in findings.
+      role: result
+      type: bool
+    - name: settingsRead
+      # How many settings were read - a count of what it FOUND.
+      role: result
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, read off tools/api-surface --members
+  for all eight on 2026-11-02. EnergyDataSettings.GetEnergyDataSettings is
+  2026-2027 and GetFromDocument 2020-2027, obsolete in 2027 - so
+  `#if REVIT2026_OR_GREATER` picks the first. BuildingType, GroundPlane,
+  ProjectPhase, AnalysisType, ExportCategory, ExportComplexity,
+  IncludeThermalProperties, BuildingEnvelopeDeterminationMethod,
+  BuildingConstructionClass, ServiceType, ProjectReportType,
+  SliverSpaceTolerance, AnalyticalGridCellSize, CoreOffset, DividePerimeter,
+  PercentageGlazing, EnergyModel and UseHeatingCredits are 2020 to 2027 and
+  none is obsolete; UseCurrentViewOnly is 2024 on (`#if REVIT2024_OR_GREATER`).
+  Enum values differ by release - AnalysisMode.ConceptualMasses is 2020-2023,
+  RoomsOrSpaces 2022 on, HVACLoadLoadsReportType.CompactReport 2027 - and are
+  printed by name, so each release prints its own.
+  EnergyAnalysisDetailModel.GetMainEnergyAnalysisDetailModel,
+  GetAnalyticalSpaces, GetAnalyticalSurfaces, GetAnalyticalOpenings and Tier
+  are 2020-2027 and not obsolete. NOT KNOWN FROM THE ASSEMBLIES and measured
+  in NEEDS-CHECKING Group MM: whether Revit holds the glazing percentage as 40
+  or 0.4 - asked of CheckRangeOfPercentageGlazing(50) on the release that runs.
+
+# ROUTING (2026-11-02) - the same rows are in SET_ENERGY_SETTINGS and
+# CREATE_ENERGY_MODEL.
+#
+#   "read the energy settings"                   -> here
+#   "set the energy settings building type"      -> SET_ENERGY_SETTINGS - a change goes to the write (D-86)
+#   "create the energy analytical model"         -> CREATE_ENERGY_MODEL
+#   "run the heating and cooling loads"          -> RUN_HEATING_COOLING_LOADS (Revit 2027)
+#   "read the mechanical settings"               -> REPORT_MECHANICAL_SETTINGS
+#
+# WHAT MOVED: see NEEDS-CHECKING Group MM.
+utterances:
+  - read the energy settings

@@ -25,8 +25,10 @@ negative:
 
   - given: an air terminal, which has no location curve
     expect: >
-      it goes to `notLinear`, kept separate from `refused`. It is a different
-      job needing a face reference, not a failure of this one
+      versions 1 and 2: it goes to `notLinear`, kept separate from `refused`.
+      VERSION 3: it takes the family-instance route - see the version 3 cases
+      below; something with neither a straight run nor a family instance, a
+      text note, still goes to `notLinear`
 
   - given: geometry read without ComputeReferences and IncludeNonVisibleObjects
     expect: >
@@ -34,5 +36,199 @@ negative:
       raised. That is why the refusals are counted and returned - this exact
       silence is what would otherwise read as success
 
+  # VERSION 2 - DIMENSION_MEP_RUNS merged in.
+  - given: three vertical pipe RISERS on a floor plan, axis empty
+    expect: >
+      nothing drawn, all three in `refused`, and `problem` saying they point at
+      the viewer and to name the axis. Version 1 refused them with no sentence
+
+  - given: the same three risers, axis x, offset 500 mm
+    expect: >
+      ONE dimension string along the model's X axis between their centrelines,
+      `dimensionedCount` 3, `problem` empty. What version 1 could not draw at
+      all
+
+  - given: three ducts running east-west, axis x - an axis ALONG the runs
+    expect: >
+      nothing drawn, and `problem` saying the axis runs along them. A dimension
+      measured along parallel runs has nothing to measure between them
+
+  - given: axis left OUT entirely, three parallel ducts on a plan
+    expect: >
+      it runs - bound as "across", the same as version 1 - and draws one string
+      across the ducts. Refused for a missing value would break every call
+      version 1 took
+
+  - given: axis y in a section looking north - the axis points out of the view
+    expect: >
+      nothing drawn, and `problem` saying the axis points out of this view - not
+      Revit's own exception text
+
+  - given: a dimension Revit makes holding fewer than two references
+    expect: >
+      it is DELETED again, `created` null, `dimensionedCount` 0 - never left in
+      the transaction while the runs are reported refused
+
+  - given: axis "diagonal"
+    expect: >
+      nothing looked at, nothing drawn, `problem` naming x, y or empty. A
+      guessed axis measures the wrong direction and still looks plausible
+
+  - given: two air terminals and nothing else, axis left out
+    expect: >
+      VERSION 3: nothing drawn, both in `refused`, and `problem` saying family
+      instances are dimensioned along an axis - name x or y. (Version 2 put
+      them in `notLinear` and named DIMENSION_FAMILY_INSTANCES, now retired
+      into this card.)
+
+  # VERSION 3 (2026-11-01, DIMENSION_FAMILY_INSTANCES merged in). Each FAILS on
+  # version 2, which puts every family instance in notLinear and draws nothing.
+  - given: >
+      VERSION 3. Three supply diffusers in a plan view at a known spacing, axis
+      x, offsetMm 1000
+    expect: >
+      `created` is a real dimension, `dimensionedCount` 3, `noReference`
+      empty. Then READ THE DIMENSION IN REVIT: the segments must show the real
+      spacing in millimetres, and MOVING one diffuser must move the dimension
+      with it - the centre references are why
+
+  - given: VERSION 3. The same three diffusers, axis y
+    expect: the string runs the other way, and the segments read the other spacing
+
+  - given: >
+      VERSION 3. A MIXED set - three parallel ducts and two diffusers - with
+      axis x
+    expect: >
+      NOTHING drawn, all five in `refused`, `created` null, and `problem`
+      saying "3 run(s) and 2 family instance(s) were handed in together" and
+      to dimension them in two calls. Version 2 dimensioned the three ducts
+      and put the diffusers in notLinear - half the set, looking finished.
+      Then run the ducts alone (one string, dimensionedCount 3) and the
+      diffusers alone with axis x (one string, dimensionedCount 2)
+
+  - given: VERSION 3. Duct fittings or duct accessories only, axis x
+    expect: >
+      every id in `noReference`, nothing drawn, and `problem` saying they
+      publish no references and that ducts and pipes dimension by their
+      centrelines - the zero is true of this route, not of MEP
+
+  - given: VERSION 3. Exactly ONE diffuser, axis x
+    expect: nothing drawn and `problem` saying fewer than two references
+
+  - given: >
+      VERSION 3. Two rooms selected in a floor plan - "dimension the rooms"
+      reaching this card
+    expect: >
+      NOTHING drawn, both in `notLinear`, and `problem` saying a room cannot
+      be dimensioned here and naming DIMENSION_ROOMS and
+      MEASURE_ROOM_DIMENSIONS. Version 2 put them in notLinear and said only
+      that nothing was a run
+
+  - given: >
+      VERSION 3. Three parallel ducts and one room, axis left out
+    expect: >
+      ONE string across the three ducts, the room in `notLinear`, and
+      `problem` carrying the room sentence - a room handed in is never left
+      out in silence
+
+  - given: VERSION 3. Two diffusers, axis y, in a section looking north
+    expect: >
+      nothing drawn, and `problem` saying the axis points out of this view.
+      DIMENSION_FAMILY_INSTANCES had no such check and handed Revit a line it
+      could not draw
+
+  # VERSION 5 (2026-11-01): THE GRID AND LEVEL ROUTE WAS GIVEN TO
+  # CREATE_LINEAR_DIMENSION ALONE. Each case below now runs there, with the
+  # datums named ("grid 1 | grid 2 | ..."), and is in that card's cases. Kept
+  # here as the record of version 4; on this card, from version 5, every one
+  # of them is refused whole - see the version 5 cases after them.
+  #
+  # VERSION 4 (2026-11-01, DIMENSION_GRIDS_AND_LEVELS merged in). Each FAILS on
+  # version 3, which puts a grid or a level in notLinear and draws nothing.
+  - given: >
+      VERSION 4. A floor plan showing grids 1 to 6, all parallel, all six
+      handed in, axis left out, offsetMm 2000
+    expect: >
+      `created` is one dimension, `dimensionedCount` 6, `problem` empty, the
+      string 2000 mm clear of the grid ends. Read the segments in Revit
+      against the grid spacing
+
+  - given: >
+      VERSION 4. A section showing Level 00, 01 and 02, all three handed in,
+      axis left out
+    expect: >
+      one string up the elevation, `dimensionedCount` 3, reading floor to
+      floor
+
+  - given: >
+      VERSION 4. The same section on a model whose level type's Elevation Base
+      is the SURVEY POINT, the survey point well away from the project origin
+      vertically (read both elevations off one level first -
+      REPORT_LEVEL_ELEVATIONS gives both)
+    expect: >
+      the same string, beside the levels it measures, with the same floor to
+      floor values. A line built from Elevation sits off by the survey offset
+      (row 5b-179)
+
+  - given: VERSION 4. Six grids handed in, one of them not shown in this view
+    expect: >
+      the five dimensioned, the sixth in `notVisibleInView`, and `problem`
+      saying it was left out. Version 3 drew nothing; the retired card's
+      throw-on-hidden is what the check prevents
+
+  - given: VERSION 4. Three grids and two levels handed in together
+    expect: >
+      NOTHING drawn, all five in `refused`, and `problem` naming "3 grid(s),
+      2 level(s)" and saying they are measured at right angles
+
+  - given: >
+      VERSION 4. Three grids handed in together with two walls - the retired
+      card dimensioned the grids and set the walls aside
+    expect: >
+      NOTHING drawn (the safer rule), all five in `refused`, `problem` naming
+      "2 run(s), 3 grid(s)" and saying to dimension each kind in its own call
+
+  - given: VERSION 4. Two levels handed in while the view is a floor plan
+    expect: >
+      nothing drawn, both in `refused`, `problem` naming a section or an
+      elevation as where floor to floor heights go
+
+  - given: VERSION 4. An arc grid among five straight ones
+    expect: the five dimensioned, the arc in `refused`
+
+  - given: VERSION 4. One grid on its own
+    expect: nothing drawn, `problem` saying one reference is not a dimension
+
+  - given: VERSION 4. Two grids drawn on top of each other
+    expect: nothing drawn, `problem` saying the string would measure zero
+
+  - given: VERSION 4. Three grids with axis x
+    expect: >
+      nothing drawn, all three in `refused`, `problem` saying to leave axis
+      out - a datum string is measured across the datums
+
+  - given: VERSION 4. A reference plane and two grids
+    expect: >
+      the two grids dimensioned and the reference plane in `notLinear` - left
+      out on purpose, usually invisible on the sheet
+
+  # VERSION 5 (2026-11-01) - grids and levels are CREATE_LINEAR_DIMENSION's.
+  # Each FAILS on version 4, which dimensions them. NOT RUN.
+  - given: VERSION 5. A floor plan showing grids 1 to 6, all six handed in, axis left out
+    expect: >
+      NOTHING drawn, `created` null, all six in `refused`, and `problem`
+      naming CREATE_LINEAR_DIMENSION and "grid A | grid B"
+  - given: VERSION 5. Three parallel ducts and two grids handed in together
+    expect: >
+      NOTHING drawn, all five in `refused` - the ducts are not drawn with the
+      grids dropped - and `problem` naming CREATE_LINEAR_DIMENSION
+  - given: VERSION 5. Three parallel ducts alone, after this version
+    expect: one string across them, `dimensionedCount` 3 - the runs route unchanged
+  - given: VERSION 5. Three diffusers alone, axis x, after this version
+    expect: one string, `dimensionedCount` 3 - the family-instance route unchanged
+
 second_route:
   - Revit's own Aligned Dimension tool snapped to the same two centrelines, compared for the value it reports
+  - for family instances, read the dimension's segment values against a tape on the model, and move one instance to confirm the dimension follows
+  - do NOT verify with Dimension.Curve - it throws on a dimension this new
+  - for grids and levels, the Aligned Dimension tool picking each grid or level by hand; picking a grid then a level gives a string along one axis only, which is what the mixing rule refuses

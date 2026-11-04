@@ -1512,7 +1512,7 @@ def test_dashboard_panel():
     check("DASHBOARD_PANEL.colour_hook = _dashboard_colour" in server
           and "with _revit_lock:" in colour_src and "_moved_since(identity)" in colour_src
           and "_through(revit_change" in colour_src and '"COLOR_BY_PARAMETER"' in colour_src
-          and '"RESET_GRAPHIC_OVERRIDES"' in colour_src and '"SELECT_VISIBLE_IN_VIEW"' in colour_src,
+          and '"RESET_GRAPHIC_OVERRIDES"' in colour_src and '"FILTER_ELEMENTS_BY_CATEGORY"' in colour_src,
           "Colour runs under the lock, on the read's model only, through revit_change's own "
           "body - the gate, the switch, one undo entry")
     check("DASHBOARD_PANEL.load3d_hook = _dashboard_load3d" in server
@@ -1762,6 +1762,40 @@ def test_sprinkler_panel():
           "Space names and their results reach the page as text only (Golden Rule 19)")
 
 
+def test_page_frame():
+    """The page's frame (docs/40 s21.16): a sidebar of five workspaces, one shown at a
+    time, desktop only. Read from the page's own files - how it LOOKS is a person's eye."""
+    print()
+    print("The page frame: five workspaces in a sidebar, one at a time, no phone layout")
+    static = os.path.join(ROOT, "mcp", "companion", "static")
+    index = io.open(os.path.join(static, "index.html"), encoding="utf-8").read()
+    css = io.open(os.path.join(static, "companion.css"), encoding="utf-8").read()
+    js = io.open(PAGE_JS, encoding="utf-8").read()
+    shown = re.sub(r"(?s)<template\b.*?</template>", "", index)
+    spaces = ["dashboard", "loads", "sprinkler", "layout", "table"]
+    check(all(('<section class="ws" id="%s"' % w) in shown for w in spaces)
+          and all(('data-ws="%s"' % w) in shown for w in spaces),
+          "each of the five panels is a workspace with its own sidebar button")
+    check(all(("body[data-ws=\"%s\"] #%s" % (w, w)) in css for w in spaces),
+          "and the stylesheet shows exactly the one the page is on")
+    check(re.search(r'<section class="ws" id="(sprinkler|layout)"[^>]*\bhidden\b', shown) is None
+          and "$(\"sprinkler\").hidden" not in js and "$(\"layout\").hidden" not in js,
+          "the Sprinkler workspaces are always there, empty until the chat opens them")
+    check(all(("%s-empty" % k) in shown or ("id=\"%s-empty\"" % k) in shown for k in "dlkyt"),
+          "every workspace keeps its empty state, which the page shows until it holds something")
+    check("viewport" not in index, "no viewport tag: this is not a phone page")
+    queries = re.findall(r"@media\s*([^{]+)\{", css)
+    allowed = ("prefers-color-scheme: dark", "prefers-reduced-motion: reduce", "print", "max-width: 1279px")
+    check(all(any(a in q for a in allowed) for q in queries),
+          "the only media queries are dark mode, reduced motion, print and the half-screen sidebar")
+    check("pointer: coarse" not in css and "touch-action" not in css and "max-width: 560px" not in css,
+          "no touch or phone rule is left")
+    check("function wsShow(" in js and "dispatchEvent(new Event(\"resize\"))" in js,
+          "a workspace shown after its 3D view was drawn tells the view to draw again")
+    check("setInterval" not in js[js.index("// ---------------------------------------------------------------- workspaces"):],
+          "the workspace code runs no interval of its own, and asks Heron for nothing")
+
+
 def main():
     tmp = tempfile.mkdtemp(prefix="heron-companion-")
     test_live_files(tmp)
@@ -1801,6 +1835,7 @@ def main():
         test_layout_panel()
     except Exception as why:                    # noqa: BLE001 - reported, not hidden
         check(False, "the Sprinkler Layout panel checks ran to the end (they raised %r)" % (why,))
+    test_page_frame()
     test_no_way_to_an_ai()
     test_addin_side()
 

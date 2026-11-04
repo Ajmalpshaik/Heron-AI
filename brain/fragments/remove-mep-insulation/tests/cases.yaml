@@ -1,0 +1,65 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a remove, "deleted something nobody asked to delete": the duct, its
+# lining, or insulation on a duct that was not selected.
+# Arrange on Snowdon-scratch_ajmal.al in Revit 2024 (NEEDS-CHECKING Group JX).
+# JX1 reads, with SELECT_BY_INSULATION, which ducts and fittings carry
+# insulation and which room holds a few of them, before anything runs; where
+# the counts differ from those below, the job file changes - never the card.
+# EVERY RUN ROLLED BACK, so each case starts from the model as saved.
+
+positive:
+  - given: >
+      the insulated ducts in the room JX1 names, selected by
+      select-by-insulation (Ducts, wantInsulated true) and filter-elements-in-room
+    expect: >
+      removed equal to the insulation elements on them - one per duct as Revit
+      normally makes it; report a line per duct "N insulation element(s)
+      removed"; SELECT_BY_INSULATION in the same rolled-back group finds those
+      ducts BARE, and the ducts themselves still there at the same size
+  - given: >
+      three insulated ducts and the insulated fittings between them, selected
+      by hand
+    expect: >
+      the fittings' insulation removed as well as the ducts' - a fitting gets a
+      line of its own. SET_MEP_INSULATION refuses fittings; this must not
+  - given: >
+      one piece of duct insulation Tab-selected on its own
+    expect: >
+      removed 1, the line naming the DUCT it wrapped, and the duct still there
+
+negative:
+  - given: >
+      the BARE ducts in the same room, selected by select-by-insulation
+      (Ducts, wantInsulated false) and filter-elements-in-room
+    expect: >
+      removed 0, NOTHING removed, refused saying none of them had insulation,
+      report naming each as having none; the insulated ducts of that room NOT
+      touched - SELECT_BY_INSULATION still finds them insulated. THIS IS THE
+      FIRST CASE TO RUN: a different selection that must leave every
+      insulation element in the model as it was
+  - given: >
+      a duct with internal LINING and no insulation (JX5 makes one with Add
+      Lining if the model has none)
+    expect: >
+      removed 0, the duct named as having no insulation, and its lining still
+      on it - lining is never removed here
+  - given: >
+      four walls and an air terminal selected
+    expect: >
+      removed 0, each named "cannot carry insulation, left alone", and the
+      refusal saying none was a duct, pipe, fitting, accessory or flex
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one operation is one undo entry. The SubTransaction per host lives
+      inside the caller's transaction
+
+second_route:
+  - >
+    Revit's Modify | Ducts tab, read by eye inside the same rolled-back group:
+    on a duct the fragment cleared, Edit Insulation is greyed and Add
+    Insulation is offered; a section through it shows no wrap
+  - >
+    A duct schedule with the Insulation Type and Insulation Thickness fields,
+    blank afterwards for exactly the hosts `report` names as removed
+  - one Ctrl+Z puts every layer back in a single step (Golden Rule 16)

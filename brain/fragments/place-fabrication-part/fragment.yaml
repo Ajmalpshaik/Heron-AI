@@ -1,0 +1,155 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-092
+semantic-identity: "place one fabrication part from a named service's named button - a straight, an elbow, a fitting - at a point on a level, as the MEP Fabrication Parts palette does"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "place a fabrication straight
+# from the Low Pressure service, button Straight, at this point on Level 1"
+# and "add a fabrication elbow from the Copper Plumbing service" - a button of
+# Revit's MEP Fabrication Parts palette placed in free space. No card made a
+# fabrication part from a button: a grep of brain/fragments that day for
+# FabricationPart.Create found nothing, and brain/heron_retrieve.py on the
+# two sentences (Revit 2024) answered CONVERT_TO_FABRICATION first for both.
+#
+# LOOK-ALIKES, NOT DUPLICATES (heron-duplicate-checker's method, 2026-11-02).
+# CREATE_MEP_RUNS (PROVEN) draws DESIGN ducts and pipes from point to point
+# with a type and system; a fabrication part comes from a service's button,
+# not from a type, by a different Revit call. CONVERT_TO_FABRICATION turns
+# design runs into fabrication parts; PLACE_FAMILY_INSTANCES places loadable
+# families. ADD_FABRICATION_HANGERS places a hanger button ON a straight - a
+# hanger button handed here is pointed there.
+#
+# NEVER GUESSED: the service by its whole name or abbreviation among the
+# LOADED services, and the button by its exact name on that service's
+# palettes - else nothing is placed and the loaded services, or that
+# service's buttons, are listed. The level by its name, or the plan view's
+# own level - else the levels are listed.
+#
+# NO FABRICATION CONFIGURATION: refused in Revit words. The part is placed
+# alone and joined to nothing - connecting it to a run is the modeller's, as
+# it is from the palette.
+#
+# RISK MODIFY. It adds one fabrication part and changes nothing else.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: PLACE_FABRICATION_PART
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places one fabrication part from the button named on the loaded
+  fabrication service named - a straight, an elbow or any fitting the MEP
+  Fabrication Parts palette offers - on the level named, at the point given,
+  at a size given or the button's first condition, turned by an angle given,
+  and reports the new part's id, service, button, size, length and where it
+  sits.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The active view - its level is used when no level is named.
+    - name: uidoc
+      type: UIDocument
+    - name: service
+      # The loaded fabrication service, by its whole name or abbreviation as
+      # MEP Fabrication Settings shows it - "Low Pressure Ductwork". Left out
+      # ("none"), nothing is placed and the loaded services are listed.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: button
+      # The button's name exactly as the MEP Fabrication Parts palette shows
+      # it - "Straight", "Elbow" - ignoring capitals. Left out ("none"),
+      # nothing is placed and the service's buttons are listed.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: point
+      # MILLIMETRES - x and y in plan, z the height above the level. The
+      # part's origin is moved there.
+      type: XYZ
+      source: request
+    - name: level
+      # The level's name as Revit spells it, capitals forgiven. Left out
+      # ("none"), the active plan view's level; with neither, the levels are
+      # listed and nothing is placed.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: size
+      # MILLIMETRES: width x depth ("400x300") or one diameter ("150"); Revit
+      # picks the button's condition for that size. Left out ("none"), the
+      # button's first condition.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: rotation
+      # Degrees, anticlockwise in plan about the point. Left out, 0.
+      type: double
+      source: request
+      optional: true
+      absent: 0
+  provides:
+    - name: placed
+      # The fabrication part Revit made, read back after a regenerate.
+      role: result
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING: the service, button, level and point asked; the new part's
+      # id, name, size, length and origin read back; or why nothing was placed
+      # with the names to choose from.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. FabricationPart.Create(Document,
+  FabricationServiceButton, int condition, ElementId levelId) and Create(
+  Document, FabricationServiceButton, double width, double depth, ElementId
+  levelId), FabricationPart Origin, Size, ServiceName, IsAStraight and
+  CenterlineLength; FabricationServiceButton Name, IsAHanger, IsExcluded,
+  ConditionCount and GetConditionName; FabricationService GetButtonCount and
+  GetButton (their first int a group to 2021 and a palette from 2022, the
+  same types); FabricationConfiguration GetFabricationConfiguration
+  (parameter renamed doc to document in 2024, called by position),
+  GetAllLoadedServices and GetAllServices; ElementTransformUtils.MoveElement
+  and RotateElement; ViewPlan.GenLevel; Level.Elevation are present 2020
+  through 2027 - read with tools/api-surface --members on 2026-11-02. A
+  service's button sets are counted by GroupCount and named by GetGroupName
+  to 2021 and by PaletteCount and GetPaletteName from 2022: #if REVIT2020 ||
+  REVIT2021. FabricationPart.AlignPartByInsertionPoint is not used: its
+  justification enum lives in a namespace the executor does not import, so
+  the part is moved by its Origin instead. Millimetres become feet by /
+  304.8. Not seen in Revit.
+
+# ROUTING (2026-11-02) - the same rows are in ADD_FABRICATION_HANGERS.
+#
+#   "place a fabrication straight from the Low Pressure service, button Straight, at this point on Level 1"
+#                                                          -> here
+#   "add a fabrication elbow from the Copper Plumbing service"
+#                                                          -> here
+#   "put a hanger on this fabrication pipe"                -> ADD_FABRICATION_HANGERS -
+#                                                             a hanger goes ON a straight
+#   "convert these ducts to fabrication parts using the Low Pressure service"
+#                                                          -> CONVERT_TO_FABRICATION
+utterances:
+  - place a fabrication straight from the Low Pressure service, button Straight, at this point on Level 1
+  - add a fabrication elbow from the Copper Plumbing service

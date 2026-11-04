@@ -1,0 +1,56 @@
+# NEEDS-CHECKING Group KH - TAG_AREAS, built 2026-11-01 in a cloud session with
+# no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/tag-areas-kh-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/tag-areas-kh-2026-11-01.yaml
+#
+# THE MODEL is the Project2 scratch model in Revit 2020 - where CREATE_AREA_PLAN,
+# PLACE_AREAS and REPORT_AREAS were proved on 2026-10-18. Never a working model.
+#
+# THE AREAS HAVE TO BE IN THE MODEL BEFORE THIS RUNS (KH1). Every proof there
+# was rolled back, so nothing they made is still there, and a setup step that
+# MAKES the areas cannot feed a read that collects them in the same run
+# (fragment-proving: reads before changes). KH1 makes them and KEEPS them: a
+# Gross Building area plan of Level 1 called "Heron Area Plan", area boundary
+# lines on the outside of the walls, two areas A1 and A2, no area tag on either.
+#
+# THE ARRANGEMENT: FILTER_ELEMENTS_BY_CATEGORY collects from the whole model -
+# Areas on Level 1 for the positive, Walls on Level 1 for the negative: a
+# different set, not an empty one. `keep-chain` because `elements` comes only
+# from the chain, as in tag-rooms-project1-2026-09-24.yaml.
+#
+# THE TAG TYPE'S NAME IS NOT KNOWN. KH2 runs this card with tagType left out,
+# which places nothing and lists the area tag types; write the one it lists
+# into `tagType` below, in both legs, before the batch.
+
+model: "Project2 (scratch, never saved) with KH1's Heron Area Plan and areas A1, A2 kept, Revit 2020"
+
+defaults:
+  in: "Project2"
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: tag-areas
+    expect: tagged
+    keep-chain: true
+    setup:
+      - filter-elements-by-category
+    setup-set:
+      category: Areas
+      levelId: Level 1
+    negative-setup-set:
+      category: Walls
+      levelId: Level 1
+    set:
+      view: "Heron Area Plan"
+      tagType: "Area Tag"
+    negative-set:
+      view: "Heron Area Plan"
+      tagType: "Area Tag"
+    note: >
+      KH3. "Area Tag" is a guess at the template's name and is replaced with
+      what KH2 lists. Positive - tagged 2, newTags 2 ids, findings "2 area
+      tag(s) placed in "Heron Area Plan" (Gross Building) ...". Negative - THE
+      FIRST CASE TO RUN: the walls of Level 1, so tagged 0 and every wall in
+      notAreas.

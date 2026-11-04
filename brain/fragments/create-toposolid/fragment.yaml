@@ -116,7 +116,9 @@ compatibility-note: >
 #   "make the terrain from these spot levels"  -> here
 #   "make a toposolid from the survey dwg"     -> here, cadImport
 #   "lay this floor to the terrain"            -> EDIT_SLAB_SHAPE, follow
-#   "add a car park area to the terrain"       -> ADD_TOPOSOLID_SUBDIVISION
+#   "add a car park area to the terrain"       -> EDIT_TOPOSOLID, mode subdivide
+#                                                 (ADD_TOPOSOLID_SUBDIVISION
+#                                                 merged in, 2026-11-01)
 #   "make a floor"                             -> CREATE_FLOOR
 
 utterances:

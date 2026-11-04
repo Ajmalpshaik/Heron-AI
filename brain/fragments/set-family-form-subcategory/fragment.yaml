@@ -111,12 +111,14 @@ compatibility-note: >
   (the RevitAPI reference assemblies and their own XML remarks, read
   2026-10-01).
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "put the insulation on its own subcategory"  -> here
 #   "set the subcategory of these forms"         -> here
-#   "make this family an air terminal"           -> SET_FAMILY_CATEGORY, the
+#   "make this family an air terminal"           -> SET_FAMILY_SETTINGS, the
 #                                                   family's own category
+#                                                   (SET_FAMILY_CATEGORY until
+#                                                   2026-11-01)
 #   "what line weight is the hidden lines subcategory" -> LIST_CATEGORIES - a question goes to the read
 
 utterances:

@@ -63,6 +63,12 @@ approves itself ([Article 20](../../HERON_CONSTITUTION.md)).
   first that **any change under its `impl/` makes its proof stale** and it goes back to DRAFT until it
   is proved again, and wait for the owner's yes before touching it.
 - **Nothing does** - go on.
+- **Two or more already do parts of it** - the job is split across cards. Writing a third makes it
+  worse: hand the cards to `heron-duplicate-checker` for the a/b/c/d list, and once the owner says yes,
+  to `heron-fragment-merger`, which combines them into one. Ask the checker before writing, not after -
+  the library's own signature check missed all five duplicates merged on 2026-11-01.
+- **When it is written**, `heron-fragment-edit-checker` reads the change as a second pair of eyes before
+  it is committed.
 
 **3. Pass the gate.** The Matcher decides on the declared contract, not on the name - equal capability,
 every `source: request` need suppliable, the outcome provided. Run it over the real library, then build

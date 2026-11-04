@@ -24,6 +24,40 @@ positive:
       `elements` unchanged from the host-only run,
       and each link's matched-of-scanned count in `linkedMatches`
 
+  # VERSION 4 - SELECT_BY_FAMILY and SELECT_BY_NUMERIC_PARAMETER merged in.
+  # Each fails on version 3, which refuses the numeric modes and has none of
+  # these inputs or outputs.
+  - given: >
+      parameterName Family, matchText "M_Desk", matchMode contains, exactMatch
+      true, categories empty, in a model with two M_Desk and one M_Desk-Corner
+    expect: >
+      the two M_Desk only, found 2, matchedFamilies {M_Desk: 2},
+      scannedWholeModel true and a finding saying the whole model was scanned.
+      Without exactMatch the corner desk is found too and matchedFamilies
+      names both families
+
+  - given: parameterName Family, matchText "Basic Wall", categories Walls
+    expect: >
+      the basic walls - a SYSTEM family's name read through the type - and
+      scannedWholeModel false
+
+  - given: >
+      parameterName Length, matchMode between, compareValue 30, compareValueMax
+      35 (internal feet), categories Walls, matchText empty
+    expect: >
+      the walls 30 to 35 feet long, and the finding stating it in internal
+      units AND as 9144 to 10668 mm if a length - SELECT_BY_NUMERIC_PARAMETER's
+      proof case, by this card
+
+  - given: parameterName Height, matchMode eq, matchText "1.6404" (500 mm), compareValue left out, Ducts
+    expect: >
+      the 500 mm ducts, tested to a tolerance of 1/304.8 and said so - the
+      number typed as matchText is used when compareValue is not given
+
+  - given: an integer parameter (Number of Poles) with matchMode eq and compareValue 3
+    expect: >
+      the three-pole elements - an integer is compared, never skipped
+
 negative:
   - given: >
       Mark "notcontains" ABC over a whole category where most elements have no
@@ -99,6 +133,30 @@ negative:
   - given: one linked file placed TWICE, with includeLinks true
     expect: >
       linksSearched 1, not 2 - it counts files, not placements
+
+  # VERSION 4.
+  - given: parameterName Family, matchText empty, matchMode contains
+    expect: >
+      NOTHING scanned, elements empty, and the finding that no family name was
+      given - a blank would match every element that has one
+      (SELECT_BY_FAMILY's rule). Version 3 selected every element with a family
+
+  - given: matchMode gt and neither compareValue nor a number as matchText
+    expect: REFUSED before anything is scanned - no number was given
+
+  - given: matchMode between, compareValue 100, compareValueMax 90 (or left out)
+    expect: REFUSED before anything is scanned - not a range
+
+  - given: matchMode gt on Comments, a text parameter
+    expect: >
+      0 matched and notNumeric equal to the elements carrying it, with the
+      finding that a text mode matches those - never compared as a number
+
+  - given: exactMatch true with matchMode begins
+    expect: REFUSED before anything is scanned - two different ways of matching
+
+  - given: matchMode gt, compareValue 1, matchText "2"
+    expect: REFUSED - two different numbers
 
 second_route: >
   A schedule of the same category with that parameter as a field and a Contains

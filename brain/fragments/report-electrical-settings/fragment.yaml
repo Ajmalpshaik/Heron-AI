@@ -1,0 +1,209 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-076
+semantic-identity: "which voltages, distribution systems, wire types, load classifications, demand factors, panel schedule templates and circuit naming schemes this model has set up"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "what voltages and
+# distribution systems are set up in this model" and "list the load
+# classifications and demand factors", beside four additions to the same
+# settings (ADD_ELECTRICAL_DISTRIBUTION, ADD_LOAD_CLASSIFICATION). Revit's
+# Manage > MEP Settings > Electrical Settings (Voltage Definitions,
+# Distribution Systems, Wiring Types) and Manage > MEP Settings > Load
+# Classifications and Demand Factors. No card in the library read them (grep
+# of brain/fragments that day for ElectricalSetting, VoltageType,
+# DistributionSysType and ElectricalDemandFactorDefinition: nothing).
+# SET_FAMILY_CONNECTOR_ROLES picks an existing load classification for a
+# family's connector and lists their names only when the one asked for is
+# missing; REPORT_PANEL_CIRCUITS reads circuits and panel loads; CREATE_WIRES
+# picks a wire type. None reads the settings themselves - look-alikes, not
+# duplicates.
+#
+# THE READ HALF OF A SET. ADD_ELECTRICAL_DISTRIBUTION adds voltages and
+# distribution systems, ADD_LOAD_CLASSIFICATION adds load classifications and
+# demand factors; every question about these settings is answered here, so no
+# question reaches either write (D-86) - which voltages and distribution
+# systems exist and their exact names, a distribution system's phase, wires
+# and voltages, the wire types, each load classification's demand factor, and
+# each demand factor's rule and steps.
+#
+# WIDENED 2026-11-02 WITH THE PANEL SCHEDULE TEMPLATES (Manage > Panel
+# Schedule Templates), asked for in the modeller's words "what panel schedule
+# templates are in this model" beside SET_PANEL_SCHEDULE_TEMPLATE, which makes
+# and switches them. A widening of this DRAFT rather than a second read: the
+# same "what has this project set up for electrical" question, the same
+# `show` and `nameContains`, and the names a write is handed back. Nothing
+# else in the library listed them - CREATE_PANEL_SCHEDULES names the
+# templates only when the one it is given is missing.
+#
+# AND WITH THE CIRCUIT NAMING SCHEMES (Electrical Settings > Circuit Naming,
+# Revit 2021 on), asked for the same day in the modeller's words "which
+# circuit naming scheme is the project using", beside
+# SET_CIRCUIT_NAMING_SCHEME. The card still claims 2020: there the list says
+# schemes arrived in 2021, and every other list reads as before.
+#
+# READ ONLY - opens no transaction and needs none.
+kind: action
+domain: revit.mep
+capability: REPORT_ELECTRICAL_SETTINGS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists the electrical settings set up in the project - the voltage types with
+  their actual, minimum and maximum volts, the distribution systems with phase,
+  wye or delta, number of wires and line-to-line and line-to-ground voltages,
+  and the wire types, as Electrical Settings shows them - the load
+  classifications with the demand factor each uses, every demand factor with
+  its rule and percentages over kVA or quantity, the panel schedule templates
+  with their kind, the default and the panel schedules that use each, and the
+  circuit naming schemes with their parts and the one the project uses.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: show
+      # Which lists: voltages | distribution | wires | loads | demand |
+      # templates (panel schedule templates) | naming (circuit naming
+      # schemes) - one, or several separated by ; - or left out for every
+      # list (`absent: all`). A word that is none of them is named, never
+      # guessed.
+      type: string
+      source: request
+      optional: true
+      absent: all
+    - name: nameContains
+      # Narrows every list read to names containing this, ignoring capitals.
+      # Left out, every name.
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: voltageTypes
+      # Voltage types read. Something the read FOUND; 0 when that list was
+      # not asked for.
+      role: result
+      type: int
+    - name: distributionSystems
+      role: result
+      type: int
+    - name: wireTypes
+      role: result
+      type: int
+    - name: loadClassifications
+      role: result
+      type: int
+    - name: demandFactors
+      role: result
+      type: int
+    - name: panelScheduleTemplates
+      role: result
+      type: int
+    - name: circuitNamingSchemes
+      # 0 in Revit 2020, which has none.
+      role: result
+      type: int
+    - name: report
+      # LIST BY LIST, in words: each voltage in volts, each distribution
+      # system's phase, wires and voltages, each wire type, each load
+      # classification's demand factor, each demand factor's steps in kVA or
+      # quantity and percent, each panel schedule template's kind, whether it
+      # is the default and the panel schedules that use it, by name, each
+      # circuit naming scheme's parts and separators and the project's. A STRING, because a reply cuts a list to three
+      # items and this is the answer.
+      role: accounting
+      type: string
+    - name: names
+      # The exact names read, quoted, each with its kind - what a write is
+      # handed back, so no name is retyped from memory.
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ElectricalSetting.GetElectricalSettings, VoltageTypes, DistributionSysTypes
+  and WireTypes; VoltageType.ActualValue, MinValue, MaxValue and IsInUse;
+  DistributionSysType.ElectricalPhase, ElectricalPhaseConfiguration, NumWires,
+  VoltageLineToLine and VoltageLineToGround; ElectricalLoadClassification
+  .DemandFactorId, Motor and SpaceLoadClass; ElectricalDemandFactorDefinition
+  .RuleType, GetValues, AdditionalLoad and IncludeAdditionalLoad; and
+  ElectricalDemandFactorValue MinRange, MaxRange and Factor carry the same
+  signatures 2020 through 2027 - read with tools/api-surface --members on
+  2026-11-01 - as do PanelScheduleTemplate.GetPanelScheduleType and IsDefault
+  and PanelScheduleView.GetTemplate and IsPanelScheduleTemplate (2026-11-02).
+  CircuitNamingScheme.GetCombinedParameters and CircuitNamingSchemeSettings
+  .GetCircuitNamingSchemeSettings and CircuitNamingSchemeId are 2021 to 2027
+  and absent in 2020 (#if !REVIT2020, 2026-11-02). ElectricalLoadClassification.Abbreviation is 2021 on (#if
+  !REVIT2020). WireType.WireMaterial, Insulation and TemperatureRating are
+  objects to 2025 and ElementIds from 2026, and MaxSize a WireSize to 2025 and
+  a string from 2026 (#if REVIT2026_OR_GREATER). Volts and volt-amperes are
+  internal units / (1 / 0.3048^2), the factor SET_FAMILY_CONNECTOR_ROLES uses,
+  checked against UnitUtils on the release that runs - DisplayUnitType.DUT_VOLTS
+  in 2020, UnitTypeId.Volts from 2021. An ElementId is compared with ==, never
+  read as a number.
+
+# ROUTING (2026-11-01) - the same rows are in ADD_ELECTRICAL_DISTRIBUTION and
+# ADD_LOAD_CLASSIFICATION; the panel schedule template rows (2026-11-02) in
+# SET_PANEL_SCHEDULE_TEMPLATE, the circuit naming rows in
+# SET_CIRCUIT_NAMING_SCHEME.
+#
+#   "what voltages and distribution systems are set up in this model" -> here
+#   "list the load classifications and demand factors"     -> here
+#   "what panel schedule templates are in this model"      -> here, show
+#                                                             templates
+#   "make a new panel schedule template from Branch Panel called DB Standard"
+#                                                          -> SET_PANEL_SCHEDULE_TEMPLATE
+#   "set panel DB-1 to use the DB Standard template"       -> SET_PANEL_SCHEDULE_TEMPLATE
+#   "which circuit naming scheme is the project using"     -> here, show naming
+#   "make a circuit naming scheme Panel-Circuit with a dash" -> SET_CIRCUIT_NAMING_SCHEME
+#   "use the Panel-Circuit naming for this project"        -> SET_CIRCUIT_NAMING_SCHEME
+#   "what wire types are in this model" (2026-11-02)       -> here, show wires
+#   "add a wire type called XLPE 4C with copper conductor and 90 degree
+#    insulation"                                           -> ADD_WIRE_TYPE
+#   "add a 230 V voltage type"                             -> ADD_ELECTRICAL_DISTRIBUTION
+#   "add a 400/230 V 3-phase 4-wire distribution system"   -> ADD_ELECTRICAL_DISTRIBUTION
+#   "add a load classification called Kitchen Equipment"   -> ADD_LOAD_CLASSIFICATION
+#   "add a demand factor of 80% over 10 kVA"               -> ADD_LOAD_CLASSIFICATION
+#   "what circuits are on panel DB-1"                      -> REPORT_PANEL_CIRCUITS -
+#                                                             a panel's circuits and
+#                                                             loads, not the settings
+#
+# WHAT MOVED (2026-11-01, heron_retrieve.find on fresh scratch stores of the
+# tree at 5ab0068 without the three cards, with this one alone, and with all
+# three; `model` backend, re-ranker absent; no Revit filter, 2020, 2024 and
+# 2025; every declared utterance and routing-table sentence in the library).
+# The two questions above reach this card with and without the host's
+# question flag; the four additions reach their write without it and this
+# card with it. Without the flag two sentences moved, neither from a card
+# that claims it:
+#   - "put it back", claimed by SHOW_ELEMENTS' table and reaching it on
+#     neither tree, went from PLACE_FAMILY_INSTANCES to RESET_GRAPHIC_OVERRIDES
+#     - a write to a write, the same flip FRAGMENT-ISSUES row 5b-1375 (OPEN)
+#     records; which card the bare sentence means is the owner's choice.
+#   - "model the ground from these levels", CREATE_TOPOSOLID's own words,
+#     still reaches it by identity wherever it is offered (2024 on); behind a
+#     2020 wall, where no card can make a toposolid, it went from
+#     REMOVE_MASS_FLOORS (a write) to this card (a read).
+# With the flag every sentence that moved now reaches a read - two came from
+# an ANALYZE and an EXECUTE card, the rest from reads. The probe "which
+# demand factor does the lighting load classification use" - nobody's words,
+# so not declared - reaches ADD_LOAD_CLASSIFICATION without the flag and this
+# card with it.
+utterances:
+  - what voltages and distribution systems are set up in this model
+  - list the load classifications and demand factors
+  - what panel schedule templates are in this model
+  - which circuit naming scheme is the project using
+  - what wire types are in this model

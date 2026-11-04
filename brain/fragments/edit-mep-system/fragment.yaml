@@ -1,0 +1,278 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-071
+semantic-identity: "edit the members of a duct or piping system already in the model - Add to System, Remove from System"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "add these diffusers to Supply
+# Air 2", "take this terminal out of the system", "add these sprinklers to the
+# FP system" and "remove this pipe run from Domestic Cold Water 1". Nothing in
+# Heron edited a duct or piping system that already exists (checked that day
+# with brain/heron_retrieve.py on each sentence, Revit 2024: PLACE_FAMILY_
+# INSTANCES, CONNECT_AIR_TERMINALS, CREATE_MEP_SYSTEM, SET_MEP_SYSTEM_TYPE and
+# REPORT_SPRINKLER_NETWORK came back, and none of them changes an existing
+# system's members). The Revit ribbon survey of the same day marked Add /
+# Remove from System PARTIAL for exactly this.
+#
+# A NEW CAPABILITY, NOT A WIDENING. CREATE_MEP_SYSTEM (FRG-MEP-062) makes a
+# NEW system from elements on none - DRAFT since main's #777, version 2, which
+# also makes circuits (CREATE_ELECTRICAL_CIRCUIT merged in); written when it
+# was PROVEN (corrected 2026-11-01). It edits no existing system.
+# SET_MEP_SYSTEM_TYPE changes a run's classification, not which system a
+# terminal is on.
+# EDIT_ELECTRICAL_CIRCUIT (FRG-MEP-070) was the same two buttons for circuits,
+# and its shape and its care were copied here. It was MERGED INTO THIS CARD on
+# 2026-11-04 (version 2, below) and is DEPRECATED - row 5b-1382.
+#
+# ONE FRAGMENT FOR THE TWO BUTTONS. Add to System and Remove from System act
+# on the same element - one duct or piping system that already exists - and
+# need the same things: which system, which elements. `edit` says which.
+#
+# WHICH SYSTEM IS NEVER GUESSED. A name matching no system exactly is taken
+# only when ONE system holds it as a whole word of its name or as its system
+# type's name or abbreviation, and the answer says how it was found. Two or
+# more refuses and names them. An element on two systems is skipped and both
+# are named. One already on ANOTHER system is never moved by an add: it is
+# skipped and the other system named.
+#
+# TAKING EVERY TERMINAL OUT OF A SYSTEM IS REFUSED for that system. Revit's
+# API documentation forbids it on all eight releases, and a system left empty
+# is one to delete, not to edit (Article 7). The base equipment is not taken
+# out here; Revit says the element joined to it cannot be removed.
+#
+# DUCTS, PIPES, FITTINGS AND ACCESSORIES ARE NAMED AND LEFT. They are on a
+# system through what they connect to - MEPSystem.Elements lists terminals
+# and equipment only. "remove this pipe run from Domestic Cold Water 1"
+# reaches here and is answered with that reason and with what does change a
+# run: disconnecting it, or another system type. What Revit itself does with a
+# pipe's id handed to Remove is NOT known from the assemblies - NEEDS-CHECKING
+# Group JW, JW8 - and it is not tried until that is answered.
+#
+# THE IDENTITY AND PURPOSE ARE SHORT ON PURPOSE (2026-11-01). The first
+# wording - "add elements to or remove them from", terminals "go onto it or
+# come off it" - put this card nearest "put them on the screen" (0.403 on
+# the model backend), pushing SET_SELECTION out of the top two and failing
+# tests/test_embed.py. Reworded to 0.309; the modeller's utterances unchanged.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: EDIT_MEP_SYSTEM
+# VERSION 2 (2026-11-04, FRAGMENT-ISSUES row 5b-1382, on the owner's yes to
+# the merge): EDIT_ELECTRICAL_CIRCUIT (FRG-MEP-070) WAS MERGED INTO THIS CARD
+# and is DEPRECATED. Both were DRAFT and on this branch only, never run in
+# Revit. This card was kept for its name - "MEP system" covers a circuit, as
+# CREATE_MEP_SYSTEM's does since it took CREATE_ELECTRICAL_CIRCUIT - and that
+# card's contract was the wider; every part of it is here now. What version 2
+# adds, all of it from EDIT_ELECTRICAL_CIRCUIT: the circuit buttons - Add to
+# Circuit, Remove from Circuit, Select Panel and Disconnect Panel - by `edit`;
+# `circuitNumber`, `circuitPanel` and `panel`; a circuit named by number and by
+# the panel it is on now where numbers repeat, or selected, or the one a
+# device is on; a circuit NAMED for a move or a disconnect the only one
+# changed, a left-over selection set aside and said; a panel named for an add
+# or a remove read only as the panel the circuit is on now; every device
+# taken off a circuit refused; every change read back - its loads or its
+# panel. `elements` is optional now, so a circuit named by number can be moved
+# or disconnected with nothing selected.
+#
+# WHICH HALF IS NEVER GUESSED: a circuit number, a panel, a selected circuit,
+# or select panel / disconnect mean a circuit; a system name or a selected duct
+# or piping system mean a duct or piping system; both at once refuses. With
+# neither, to take out, the one kind of system the elements are on - on both
+# kinds refuses, naming them.
+#
+# THE OPPOSITE RULE, THE SAFER KEPT (row 5b-1382): an element already on
+# another system. Version 1 skipped it and named that system, never moving it
+# by an add; EDIT_ELECTRICAL_CIRCUIT added a device already on another circuit
+# and said afterwards where it had been - Revit could take it off the first.
+# Kept: AN ADD NEVER MOVES AN ELEMENT. A device on a circuit of the same kind
+# (power on power) is skipped and that circuit named - take it off first. One
+# on a circuit of ANOTHER kind (a data circuit, while it joins power) is added,
+# because joining a second circuit moves it off nothing, and findings says so;
+# if Revit takes it off the first anyway, the read-back says so in capitals.
+#
+# Version 1 was never proved; the card stays DRAFT, and NEEDS-CHECKING Groups
+# JW (duct and piping) and JV (circuits, its commands now naming this card)
+# prove version 2 in Revit.
+version: 2
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Edits the membership of an existing duct or piping system, as Revit's Add
+  to System and Remove from System buttons do, and reads the system's members
+  back afterwards.
+
+  Version 2 edits an existing electrical circuit the same way, with the four
+  buttons of Revit's Electrical Circuits tab: Add to Circuit, Remove from
+  Circuit, Select Panel and Disconnect Panel. Nothing already on another
+  system or circuit of the same kind is moved by an add.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The selection: the terminals, fixtures, sprinklers or equipment to add
+    # or take out, and/or the one system picked in the System Browser.
+    # Version 2: also lights, sockets and devices, and/or circuits picked in
+    # Revit - and OPTIONAL, so a circuit named by number can be moved or
+    # disconnected with nothing selected. An add or a remove with nothing
+    # selected still refuses.
+    - name: elements
+      type: IList<Element>
+      optional: true
+    # Which button: "add" or "remove" (also "add to system", "remove from
+    # system", "take out"). Version 2: also "add to circuit", "remove from
+    # circuit", and for a circuit only "select panel" (also "move to panel")
+    # and "disconnect" (also "disconnect panel"). Anything else refuses and
+    # changes nothing.
+    - name: edit
+      type: string
+      source: request
+    # The system's name as the System Browser shows it - "Supply Air 2". Left
+    # out, the system is the one selected, or - to take an element out - the
+    # one system that element is on.
+    - name: systemName
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 2, from EDIT_ELECTRICAL_CIRCUIT. The circuit's number as the
+    # panel schedule shows it - "3". Left out, the circuit is the one
+    # selected, or the one a selected device is on. Given, the edit is on a
+    # circuit.
+    - name: circuitNumber
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 2, from EDIT_ELECTRICAL_CIRCUIT. The panel the circuit is on
+    # NOW, by its Panel Name, to tell circuit 3 on DB-1 from circuit 3 on
+    # DB-2. Never changes a panel.
+    - name: circuitPanel
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 2, from EDIT_ELECTRICAL_CIRCUIT. The panel the sentence names,
+    # by its Panel Name. For "select panel" it is where the circuit goes; for
+    # the other three it can only be the panel the circuit is on now, so it
+    # narrows which circuit is meant and changes no panel.
+    - name: panel
+      type: FamilyInstance
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: systemIds
+      # The systems that read back changed - version 2: circuits too, those
+      # whose loads or panel read back changed (EDIT_ELECTRICAL_CIRCUIT's
+      # circuitIds).
+      role: result
+      type: IList<ElementId>
+    - name: changed
+      # Elements that read back added or taken out - never what was asked.
+      # Version 2: devices added to or taken off a circuit, or circuits that
+      # read back on the new panel or on none.
+      role: result
+      type: int
+    - name: report
+      # ONE STRING, a line per system changed: before and after.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was changed, in the modeller's words - evidence it looked
+      # and said no, never a thing it found (D-52). Null when something was
+      # changed. ONE STRING, because a list reaches the reply cut to sixty
+      # characters an item.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Version 2 adds
+  EDIT_ELECTRICAL_CIRCUIT's calls: ElectricalSystem.AddToCircuit(ElementSet)
+  returning bool, RemoveFromCircuit(ElementSet), SelectPanel(FamilyInstance),
+  DisconnectPanel(), CircuitNumber, PanelName, LoadName and SystemType, and
+  new ElementSet() with Insert - present and unchanged 2020 through 2027
+  (tools/api-surface on 2026-11-01 for that card; SystemType read off every
+  release's RevitAPI.xml on 2026-11-04). Circuit membership is read from each
+  circuit's own Elements, never MEPModel.ElectricalSystems or
+  GetElectricalSystems(), neither of which compiles on all eight.
+  MEPSystem.Add(ConnectorSet),
+  MEPSystem.Remove(ICollection<ElementId>), MEPSystem.Elements and
+  BaseEquipment, MEPSystemType.SystemClassification and Abbreviation,
+  Connector.MEPSystem, Domain, ConnectorType, DuctSystemType and
+  PipeSystemType, and FamilyInstance.MEPModel.ConnectorManager are present and
+  unchanged 2020 through 2027 - read with tools/api-surface on 2026-11-01. The
+  API documentation of all eight says Remove refuses taking every terminal out
+  and refuses the element joined to the base equipment. Categories are
+  compared by ElementId built from the BuiltInCategory and ids are carried as
+  ElementId, never read as numbers.
+
+# ROUTING - repeated in CREATE_MEP_SYSTEM and SET_MEP_SYSTEM_TYPE (2026-11-01),
+# and since 2026-11-04 in SELECT_BY_ELECTRICAL_CIRCUIT, REPORT_PANEL_CIRCUITS
+# and SET_CIRCUIT_NAMING_SCHEME, whose rows named EDIT_ELECTRICAL_CIRCUIT.
+#
+#   "add these diffusers to Supply Air 2"     -> here, edit add
+#   "add these sprinklers to the FP system"   -> here, edit add
+#   "take this terminal out of the system"    -> here, edit remove
+#   "remove this pipe run from Domestic
+#    Cold Water 1"                            -> here, edit remove - answered
+#                                                that a run is changed by
+#                                                disconnecting it or by its
+#                                                system type
+#   "make a supply air system from these"     -> CREATE_MEP_SYSTEM - a NEW
+#                                                system
+#   "put these diffusers on the FCU's system" -> CREATE_MEP_SYSTEM, declared
+#                                                there
+#   "change these ducts to return air"        -> SET_MEP_SYSTEM_TYPE
+#   "add these lights to circuit 3"           -> here, version 2: edit add on
+#                                                a circuit (EDIT_ELECTRICAL_
+#                                                CIRCUIT until 2026-11-04)
+#   "unhook the terminal from the duct"       -> DISCONNECT_CONNECTORS - a
+#                                                physical join, not system
+#                                                membership
+#   "what system is this on"                  -> READ_MEP_SYSTEM
+#
+# MOVED 2026-11-04 from EDIT_ELECTRICAL_CIRCUIT's routing table, merged into
+# this card (row 5b-1382):
+#   "take this socket off its circuit"         -> here, edit remove
+#   "move these circuits to panel DB-2"        -> here, edit select panel
+#   "disconnect this circuit from its panel"   -> here, edit disconnect
+#   "put these devices on one circuit"         -> CREATE_MEP_SYSTEM - a NEW
+#                                                 circuit
+#   "put these lights on a circuit"            -> CREATE_MEP_SYSTEM
+#   "circuit these sockets"                    -> CREATE_MEP_SYSTEM, declared
+#                                                 there (row 5b-1356)
+#   "what is on circuit 3"                     -> SELECT_BY_ELECTRICAL_CIRCUIT -
+#                                                 a question, never this write;
+#                                                 declared there (row 5b-1356)
+#   "what is on this circuit"                  -> SELECT_BY_ELECTRICAL_CIRCUIT,
+#                                                 by identity
+#   "which lights are not on a circuit"        -> SELECT_BY_ELECTRICAL_CIRCUIT,
+#                                                 by identity
+#   "what circuits are on panel DB-1"          -> REPORT_PANEL_CIRCUITS
+#   "disconnect this duct from the fitting"    -> DISCONNECT_CONNECTORS - a
+#                                                 physical join, not a circuit
+
+utterances:
+  - add these diffusers to Supply Air 2
+  - take this terminal out of the system
+  - add these sprinklers to the FP system
+  - remove this pipe run from Domestic Cold Water 1
+  # MOVED 2026-11-04 from EDIT_ELECTRICAL_CIRCUIT, merged into this card
+  # (row 5b-1382).
+  - add these lights to circuit 3
+  - take this socket off its circuit
+  - move these circuits to panel DB-2
+  - disconnect this circuit from its panel

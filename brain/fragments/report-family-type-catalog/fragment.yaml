@@ -102,7 +102,7 @@ compatibility-note: >
   catalog; how it reads Yes/No and integer cells, quoted cells and the file's
   encoding are NEEDS-CHECKING BV10.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "make a type catalog for this family"         -> here
 #   "what parameters does this family have"       -> REPORT_FAMILY_PARAMETERS

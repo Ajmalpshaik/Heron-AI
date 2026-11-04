@@ -30,7 +30,7 @@ purpose: >
   whether an element's BOUNDING BOX overlaps the volume. The exact test asks
   whether its real geometry does. They were two files in the earlier library and
   they answer one question at two accuracies, which is a flag rather than a
-  second fragment - the same call CREATE_ELECTRICAL_RUN makes about tray and
+  second fragment - the same call CREATE_MEP_RUNS makes about tray and
   conduit.
 
   **The difference is not academic and the report always names which ran.** A
@@ -161,8 +161,7 @@ compatibility-note: >
   as plain arithmetic, for the REPORT only - no units API, which is what
   changed shape at 2021.
 
-# ROUTING - repeated in FILTER_ELEMENTS_IN_ROOM, SELECT_TOUCHING and
-# FIND_CLASHES.
+# ROUTING - repeated in FILTER_ELEMENTS_IN_ROOM and FIND_CLASHES.
 #
 #   "what is in this area"           -> here
 #   "everything in this box"         -> here
@@ -170,15 +169,17 @@ compatibility-note: >
 #                                       modelled. It uses the room's real
 #                                       boundary, which an L-shaped room needs
 #                                       and a box cannot express
-#   "what is touching this duct"     -> SELECT_TOUCHING - one element as the
+#   "what is touching this duct"     -> FIND_CLASHES - one element as the
 #                                       target, not a volume
 #   "what clashes with what"         -> FIND_CLASHES - pairs across two sets,
 #                                       not membership of a region
 #   "is there room for this valve"   -> CHECK_MINIMUM_CLEARANCE, which knows
 #                                       what a clearance means. This only says
 #                                       what is inside a box
-#   "select everything in this scope     -> READ_SCOPE_BOX_EXTENT first: it
-#    box"                                   hands back the two corners this
+#   "select everything in this scope     -> SELECT_SCOPE_BOXES, extent true,
+#    box"                                   first (READ_SCOPE_BOX_EXTENT until it
+#                                           was merged there, 2026-11-01): it
+#                                           hands back the two corners this
 #                                           one takes
 
 utterances:

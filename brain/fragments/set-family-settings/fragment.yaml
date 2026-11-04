@@ -5,11 +5,17 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-036
-semantic-identity: "set the family's own Work Plane-Based, Shared, Always Vertical, Room Calculation Point, Cut with Voids When Loaded, Part Type, Profile Usage, Material for Model Behavior, Section Shape, OmniClass Number or Light Source in the family being edited"
+semantic-identity: "set the family's own Category, Work Plane-Based, Shared, Always Vertical, Room Calculation Point, Cut with Voids When Loaded, Part Type, Profile Usage, Material for Model Behavior, Section Shape, OmniClass Number or Light Source in the family being edited"
 kind: action
 domain: revit.families
 capability: SET_FAMILY_SETTINGS
-version: 3
+# VERSION 4 (2026-11-01): SET_FAMILY_CATEGORY was merged into this card on the
+# owner's instruction and is DEPRECATED - "Category=Air Terminals" is one more
+# setting, matched to Revit's own names and never guessed, written FIRST in a
+# combined call, read back with `wasCategory` and `parametersGained`. See the
+# merge block above `utterances`. DRAFT until version 4 is proved (D-30); the
+# version 3 proof below is kept as the record of what was run.
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -63,6 +69,24 @@ purpose: >
   proof is kept below as a record; the fragment is DRAFT until it is proved
   again.
 
+  **VERSION 4 (2026-11-01): THE CATEGORY** - SET_FAMILY_CATEGORY's job,
+  merged here: "Category=Air Terminals" makes a family started from a generic
+  template an Air Terminal or Mechanical Equipment. THE FIRST STEP OF BUILDING
+  A FAMILY, AND THE ONE THAT CANNOT WAIT: the category decides which built-in
+  parameters the family carries, which schedules it lands in and which
+  connectors make sense on it, and switching it adds that category's own
+  parameters - `parametersGained`, read from the family, because that is the
+  part people do not expect. The name is matched to the names Revit shows in
+  Family Category and Parameters, in the language it runs in, and NEVER
+  GUESSED - "Air Terminal" is refused with "Air Terminals" offered (D-33).
+  Revit decides which categories a family may take; when it refuses, its own
+  words are passed on and nothing is kept. IN A COMBINED CALL THE CATEGORY IS
+  WRITTEN FIRST, because Part Type, the OmniClass Number and which switches
+  the family has at all are checked against it; once it is written, a problem
+  with any other setting fails the whole call rather than keeping the
+  category alone. Version 3's proof is kept below as a record; the fragment
+  is DRAFT until it is proved again.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -82,6 +106,10 @@ contract:
     # "=none" or "=clear" empties it. The add-in's NamedValues keeps an empty
     # value as "" (RevitFragment.cs), and none and clear are taken either way.
     # VERSION 3: "Light Source=yes" - yes only, proved by Revit's lighting API.
+    # VERSION 4, from SET_FAMILY_CATEGORY: "Category=Air Terminals" (also
+    # "Family Category") - the category as Revit names it in the Family
+    # Category and Parameters dialog, matched whole and never guessed;
+    # written FIRST, whatever order the settings are given in.
     - name: settings
       type: IDictionary<string, string>
       source: request
@@ -109,50 +137,75 @@ contract:
       # Why nothing changed, in plain words. Empty when the call ran.
       role: accounting
       type: string
+    - name: category
+      # VERSION 4, from SET_FAMILY_CATEGORY: the family's category AFTER, read
+      # back from the family - never the name that was asked for. Read on every
+      # run in a family, so ACCOUNTING: it is never empty there, and `changed`
+      # is the count that says whether anything did (D-52).
+      role: accounting
+      type: string
+    - name: wasCategory
+      # VERSION 4: the family's category before the call. Accounting, as above.
+      role: accounting
+      type: string
+    - name: parametersGained
+      # VERSION 4: how many parameters the family has now minus how many it had
+      # before the category was written - a category switch brings that
+      # category's own built-in parameters, and can take the old one's away.
+      # 0 when the category was not written. A reading of a change `changed`
+      # already counts, never a thing found (D-52).
+      role: accounting
+      type: int
     - name: findings
       type: IList<string>
 
 proof:
-  date: '2026-10-22'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: SettingsScratch (1,501 elements), Revit 2020, session 78736
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 MEP Family, P1102 MEP - active was
+    P1102 MEP, Revit 2020, session 59096'
   positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned alreadySet 0, changed 1, clsAsked
-    false, clsChosen (null), clsClear false, clsCode BuiltInParameter, clsCodeLabel OmniClass
-    Number, clsCodeRow (null), clsFiledUnder Func`3, clsFiledWords Func`2, clsKeys 5 item(s)
-    [omniclassnumber, omniclass, classificationnumber, ...], clsLabelFor Func`3, clsList Func`2,
-    clsLoad Action, clsNewNames false, clsPath (null), clsProblem (null), clsRows 0 item(s),
-    clsSaidCode , clsSample false, clsShown Func`2, clsTidy Func`2, clsTitle BuiltInParameter,
-    clsTitleLabel OmniClass Title, clsTried 0 item(s), family Family, findings 2 item(s) [1
-    setting(s) changed and 0 already as asked, on the family "..., A Work Plane-Based family
-    is placed on a plane or face and m...], listOf Func`3, named 4 entry(ies), namedTypes
-    4 entry(ies), noLightSource Func`1, notAFamily false, plans 1 item(s) [((workplanebased,
-    Work Plane-Based, FAMILY_WORK_PLANE_BASED)...], problems 0 item(s), refused (null), sectionShapeProperty
-    RuntimePropertyInfo, settingReport Work Plane-Based No -> Yes, squash Func`2, stored Func`2,
-    switches 14 item(s) [(workplanebased, Work Plane-Based, FAMILY_WORK_PLANE_BASED), (alwaysvertical,
-    Always Vertical, FAMILY_ALWAYS_VERTICAL), (shared, Shared, FAMILY_SHARED), ...], wordsFor
-    Func`3, yesNo Func`2. inputs came settings as given (1). on SettingsScratch
-  negative_case: run with settings=Work Plane-Based=no instead - chosen because it should
-    not contain what this fragment reports - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned alreadySet 1, changed 0, clsAsked
-    false, clsChosen (null), clsClear false, clsCode BuiltInParameter, clsCodeLabel OmniClass
-    Number, clsCodeRow (null), clsFiledUnder Func`3, clsFiledWords Func`2, clsKeys 5 item(s)
-    [omniclassnumber, omniclass, classificationnumber, ...], clsLabelFor Func`3, clsList Func`2,
-    clsLoad Action, clsNewNames false, clsPath (null), clsProblem (null), clsRows 0 item(s),
-    clsSaidCode , clsSample false, clsShown Func`2, clsTidy Func`2, clsTitle BuiltInParameter,
-    clsTitleLabel OmniClass Title, clsTried 0 item(s), family Family, findings 1 item(s) [0
-    setting(s) changed and 1 already as asked, on the family "...], listOf Func`3, named 4
-    entry(ies), namedTypes 4 entry(ies), noLightSource Func`1, notAFamily false, plans 1 item(s)
-    [((workplanebased, Work Plane-Based, FAMILY_WORK_PLANE_BASED)...], problems 0 item(s),
-    refused (null), sectionShapeProperty RuntimePropertyInfo, settingReport Every setting
-    named already read as asked., squash Func`2, stored Func`2, switches 14 item(s) [(workplanebased,
-    Work Plane-Based, FAMILY_WORK_PLANE_BASED), (alwaysvertical, Always Vertical, FAMILY_ALWAYS_VERTICAL),
-    (shared, Shared, FAMILY_SHARED), ...], wordsFor Func`3, yesNo Func`2. inputs came settings
-    as given (1). on SettingsScratch
+    the transaction group ROLLED BACK afterwards. returned alreadySet 0, catAlready false,
+    catAsked false, catKeys 2 item(s) [category, familycategory], catTarget (null), catWritten
+    false, category Mechanical Equipment, changed 1, clsAsked false, clsChosen (null), clsClear
+    false, clsCode BuiltInParameter, clsCodeLabel OmniClass Number, clsCodeRow (null), clsFiledUnder
+    Func`3, clsFiledWords Func`2, clsKeys 5 item(s) [omniclassnumber, omniclass, classificationnumber,
+    ...], clsLabelFor Func`3, clsList Func`2, clsLoad Action, clsNewNames false, clsPath (null),
+    clsProblem (null), clsRows 0 item(s), clsSaidCode , clsSample false, clsShown Func`2,
+    clsTidy Func`2, clsTitle BuiltInParameter, clsTitleLabel OmniClass Title, clsTried 0 item(s),
+    family Family, findings 2 item(s) [1 setting(s) changed and 0 already as asked, on the
+    family "..., Shared decides whether a copy nested in another family shows...], listOf
+    Func`3, named 4 entry(ies), namedTypes 4 entry(ies), noLightSource Func`1, notAFamily
+    false, parametersGained 0, plans 1 item(s) [((shared, Shared, FAMILY_SHARED), 1)], problems
+    0 item(s), refused (null), sectionShapeProperty RuntimePropertyInfo, settingReport Shared
+    No -> Yes, squash Func`2, stored Func`2, switches 14 item(s) [(workplanebased, Work Plane-Based,
+    FAMILY_WORK_PLANE_BASED), (alwaysvertical, Always Vertical, FAMILY_ALWAYS_VERTICAL), (shared,
+    Shared, FAMILY_SHARED), ...], wasCategory Mechanical Equipment, wordsFor Func`3, yesNo
+    Func`2. inputs came settings as given (1). on P1102 MEP Family
+  negative_case: run against 'P1102 MEP' with settings=Shared=yes instead - chosen because
+    it should not contain what this fragment reports - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned alreadySet 0, catAlready
+    false, catAsked false, catKeys 2 item(s) [category, familycategory], catTarget (null),
+    catWritten false, category , changed 0, clsAsked false, clsChosen (null), clsClear false,
+    clsCode BuiltInParameter, clsCodeLabel OmniClass Number, clsCodeRow (null), clsFiledUnder
+    Func`3, clsFiledWords Func`2, clsKeys 5 item(s) [omniclassnumber, omniclass, classificationnumber,
+    ...], clsLabelFor Func`3, clsList Func`2, clsLoad Action, clsNewNames false, clsPath (null),
+    clsProblem (null), clsRows 0 item(s), clsSaidCode , clsSample false, clsShown Func`2,
+    clsTidy Func`2, clsTitle BuiltInParameter, clsTitleLabel OmniClass Title, clsTried 0 item(s),
+    family (null), findings 1 item(s) [The document in front, "P1102 MEP", is a project, not
+    a fami...], listOf Func`3, named 4 entry(ies), namedTypes 4 entry(ies), noLightSource
+    Func`1, notAFamily true, parametersGained 0, plans 0 item(s), problems 0 item(s), refused
+    The document in front, "P1102 MEP", is a project, not a family open in the Family Editor.
+    A family's own settings are set inside it - open it for editing first (OPEN_FAMILY_FOR_EDITING).
+    Nothing was changed., sectionShapeProperty RuntimePropertyInfo, settingReport , squash
+    Func`2, stored Func`2, switches 14 item(s) [(workplanebased, Work Plane-Based, FAMILY_WORK_PLANE_BASED),
+    (alwaysvertical, Always Vertical, FAMILY_ALWAYS_VERTICAL), (shared, Shared, FAMILY_SHARED),
+    ...], wasCategory , wordsFor Func`3, yesNo Func`2. inputs came settings as given (1).
+    on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: d7d0a6e7a84cbd6c
+  fingerprint: 8c840db1ed78f681
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -217,14 +270,131 @@ compatibility-note: >
   reached by name - the Lighting namespace is not imported). Whether the
   switch is on `Document.OwnerFamily` at all is Revit's to answer
   (NEEDS-CHECKING Group IK); where it is not, the call refuses by name.
+  VERSION 4, THE CATEGORY: `Family.FamilyCategory { get; set; }`,
+  `Document.OwnerFamily`, `Document.Settings.Categories` and
+  `FamilyManager.Parameters` read the same 2020 through 2027 in the cached
+  reference assemblies (api-surface, read 2026-09-24 for SET_FAMILY_CATEGORY,
+  whose code this is). Category names come from `Category.Name`, so they
+  follow the language Revit runs in - the same words the modeller sees.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - the family-building capabilities, each with one job. THE WHOLE
+# TABLE LIVES HERE since 2026-11-01: it was on SET_FAMILY_CATEGORY, which was
+# merged into this card, and that card keeps its copy as the record. Every
+# other family card's "see ... for the whole family-building table" points
+# here.
+#
+#   "make this family an air terminal"       -> here, Category=Air Terminals
+#                                                (SET_FAMILY_CATEGORY until
+#                                                2026-11-01)
+#   "add Width and Depth parameters"          -> ADD_FAMILY_PARAMETERS
+#   "delete the Cap R Start parameter"       -> DELETE_FAMILY_PARAMETERS -
+#                                                only what nothing uses
+#   "make a 600 x 600 type"                   -> SET_FAMILY_TYPE_VALUES
+#   "neck top is height plus neck depth"      -> SET_FAMILY_FORMULA
+#   "add reference planes at 300 each side"   -> CREATE_REFERENCE_PLANES
+#   "label the width with the Width parameter"-> LABEL_FAMILY_DIMENSION
+#   "make a box between these planes"         -> EXTRUDE_BETWEEN_PLANES
+#   "extrude a circle 300 diameter 500 high"  -> CREATE_FAMILY_FORMS -
+#                                                any other shape, solid or void
+#   "make a revolve in the family"            -> CREATE_FAMILY_FORMS
+#   "build all these forms in one go"         -> CREATE_FAMILY_FORMS - many
+#                                                extrusions and revolves, a
+#                                                row each, one undo
+#   "blend a rectangle into a circle"         -> CREATE_FAMILY_FORMS, a
+#                                                kind=blend row
+#   "sweep a profile along a path"            -> CREATE_FAMILY_FORMS, a
+#                                                kind=sweep row
+#   "sweep one shape into another along a path" -> CREATE_FAMILY_FORMS, a
+#                                                kind=swept blend row
+#                                                (CREATE_FAMILY_BLEND,
+#                                                CREATE_FAMILY_SWEEP and
+#                                                CREATE_FAMILY_SWEPT_BLEND
+#                                                until 2026-11-01)
+#   "make a spring as one smooth sweep along a helix" -> CREATE_FAMILY_FREEFORM_SOLID -
+#                                                a fixed shape, not parametric
+#   "loft a smooth body through elliptical sections" -> CREATE_FAMILY_FREEFORM_SOLID
+#   "cut the solid with the void"             -> COMBINE_FAMILY_FORMS - a
+#                                                join too
+#   "align and lock this form to the planes"  -> LOCK_FORM_TO_PLANES - any
+#                                                form's flat faces
+#   "label the neck diameter with Neck Diameter" -> LABEL_FAMILY_RADIUS
+#   "show this form only in fine"             -> SET_FAMILY_FORM_VISIBILITY
+#   "set the subcategory of these forms"      -> SET_FAMILY_FORM_SUBCATEGORY
+#   "link the body material to Body Material" -> LINK_FAMILY_PARAMETER -
+#                                                one form, not every one
+#   "link the handle's visible to Show_Handle" -> LINK_FAMILY_PARAMETER -
+#                                                a form's Visible, angles or
+#                                                extrusion ends, one form
+#   "make this plane the left reference"      -> SET_FAMILY_PLANE_REFERENCE -
+#                                                Is Reference, Defines Origin
+#   "draw the valve symbol in plan"           -> DRAW_FAMILY_SYMBOLIC_LINES -
+#                                                2D lines, no 3D body
+#   "array the blade along X with Blade Count" -> ARRAY_FAMILY_FORMS - one form
+#                                                in a row, its count a parameter
+#   "group these forms in this family"        -> GROUP_ELEMENTS - a group, when
+#                                                asked; a nested family or an
+#                                                array is usually lighter
+#   "put the motor family into this air handler" -> PLACE_FAMILY_INSTANCES -
+#                                                nested, in the family edited
+#   "lock the motor's centre to the centre planes" -> LOCK_NESTED_FAMILY_TO_PLANES
+#   "link the motor type's width to Motor Width" -> LINK_FAMILY_PARAMETER -
+#                                                a nested TYPE's parameter
+#   "add the shared parameter Equipment Tag to this family"
+#                                             -> ADD_FAMILY_PARAMETERS, kind
+#                                                shared
+#   "replace the family parameter Width with the shared parameter Unit_Width"
+#                                             -> ADD_FAMILY_PARAMETERS,
+#                                                replaceExisting true
+#   "put a supply air connector on the neck"  -> ADD_FAMILY_CONNECTOR
+#   "make the connector 3 phase 400 V"        -> SET_FAMILY_CONNECTOR_ROLES -
+#                                                a connector already made
+#   "add text to the family"                  -> ADD_FAMILY_MODEL_TEXT - 3D
+#                                                lettering on a named plane
+#   "delete the pipe connector from this family" -> REMOVE_FAMILY_CONNECTOR
+#   "link the connector flow to a parameter"  -> LINK_FAMILY_PARAMETER - an
+#                                                element already in the family
+#   "flex the family"                         -> FLEX_FAMILY
+#   "start a new family from a template"      -> CREATE_FAMILY_DOCUMENT
+#   "what kind of family is this"             -> REPORT_FAMILY_TEMPLATE - read
+#                                                first, every kind
+#   "let each type choose which motor it uses" -> ADD_FAMILY_TYPE_PARAMETER -
+#                                                a nested TYPE swapped by type
+#   "add flip arrows to this family"          -> ADD_FAMILY_FLIP_CONTROL
+#   "add a solid fill to this detail item family" -> DRAW_FAMILY_FILLED_REGION
+#   "draw the profile in this profile family" -> DRAW_FAMILY_DETAIL_LINES -
+#                                                a 2D family's lines
+#   "cut an opening in the host wall of this family"
+#                                             -> CREATE_OPENING - `shape`, in
+#                                                the template's wall or ceiling
+#   "use the handrail profile family for this sweep"
+#                                             -> SET_FAMILY_SWEEP_PROFILE
+#   "add four adaptive points to this family" -> PLACE_ADAPTIVE_POINTS
+#   "draw lines between the adaptive points"  -> DRAW_FAMILY_POINT_CURVES
+#   "set the adaptive points orientation to host and loop system"
+#                                             -> SET_ADAPTIVE_POINT_ORIENTATION
+#   "make a surface from these lines"         -> CREATE_CONCEPTUAL_FORM - an
+#                                                adaptive or pattern family
+#   "make a type catalog for this family"     -> REPORT_FAMILY_TYPE_CATALOG
+#   "set the primary connector of this family" -> SET_FAMILY_CONNECTOR_ROLES -
+#                                                primary and linked connectors
+#   "divide the surface of this mass into panels"
+#                                             -> DIVIDE_FAMILY_SURFACE
+#
+# THIS CARD'S OWN ROWS:
 #
 #   "make this family work plane based"           -> here
 #   "make the motor family shared"                -> here
 #   "set the part type of this fitting to elbow"  -> here
 #   "turn on cut with voids when loaded"          -> here
-#   "set the family category to air terminal"     -> SET_FAMILY_CATEGORY
+#   "set the family category to air terminal"     -> here (version 4)
+#   "make it mechanical equipment and work plane based"
+#                                                 -> here, one call - the
+#                                                    category first
+#   "change the type of these air terminals to another type"
+#                                                 -> CHANGE_ELEMENT_TYPE - the
+#                                                    TYPE of placed elements in
+#                                                    a project, not the family's
+#                                                    category (row 5b-220)
 #   "tick light source for this family"           -> here (version 3)
 #   "set the light source of this fixture family" -> SET_FAMILY_LIGHT_SOURCE -
 #                                                    its shape, distribution
@@ -242,6 +412,50 @@ compatibility-note: >
 #                                                    set it, then LOAD_FAMILY
 #                                                    back - a reload, asked for
 #                                                    by name (Article 7)
+#
+# VERSION 4 (2026-11-01) - SET_FAMILY_CATEGORY WAS MERGED INTO THIS CARD on
+# the owner's instruction in conversation: "make sure there is no duplicate
+# tools", "merge means ... all area need to be covered", every conflict to
+# keep the safer rule. It is DEPRECATED, never deleted. Where each of its
+# inputs and outputs is now:
+#
+#   SET_FAMILY_CATEGORY                 here, "Category=<name>" in `settings`
+#     categoryName                      the value of Category (or Family
+#                                       Category) - matched whole, never guessed
+#     category                          category - read back, every family run
+#     changed (bool)                    changed (int) - the category counts one
+#     wasCategory, parametersGained     the same names
+#     notAFamily, refused, findings     the same names, its sentences carried
+#
+# THE ORDER: the category is written FIRST, before any other setting is
+# checked, because which switches the family has, which Part Types it takes
+# and which OmniClass codes are filed under it are all the category's. So once
+# it is written, a problem with any other setting throws - nothing kept -
+# where before the write it refuses, as both cards always did.
+# THE SAFER RULE WHERE THEY DIFFERED, both kept from the stricter card: that
+# card REFUSED, with the transaction still open, when Revit did not keep the
+# category; here that read-back failure throws and the whole call is rolled
+# back, as every read-back here is all or nothing. And a category already as
+# asked is counted in `alreadySet` with a sentence saying so, where that card
+# set `refused` - nothing is written either way. Nothing of that card was left
+# out.
+
+# JUDGED 2026-11-01 (a duplicate sweep's look-alike, on the owner's rule "if one
+# tool can safely do both, merge") AGAINST SET_FAMILY_LIGHT_SOURCE AND KEPT APART -
+# the next sweep should not reopen it unless one of these stops being true:
+#   - NOTHING IS CODED TWICE. This card ticks Light Source - one switch in
+#     Family Category and Parameters, the built-in LIGHTING_FIXTURE_LIGHT_EMITTER,
+#     written with the other switches and after Category=Lighting Fixtures in
+#     the same call. That card defines the light the tick makes - LightFamily
+#     and LightType, shape, distribution, position, aim, each type's values -
+#     and never ticks it: it refuses a family without the tick and names
+#     "Light Source=yes" here.
+#   - DIFFERENT OBJECTS IN REVIT: a family parameter here; the light source
+#     element and its lighting API there.
+#   - A SAFETY REASON ONE TOOL CANNOT HOLD: that card already refuses its two
+#     halves in one call because Revit lost type values when the family's
+#     light changed in the same transaction (5b-1297). Ticking the box creates
+#     the light source; defining it in the same call is the untested case.
 
 utterances:
   - make this family work plane based
@@ -255,3 +469,13 @@ utterances:
   - set the omniclass number to 23.65.55.14.14
   - clear the omniclass number
   - tick light source for this family
+  # MOVED 2026-11-01 from SET_FAMILY_CATEGORY, merged into this card.
+  - make this family an air terminal
+  - change the family category to mechanical equipment
+  - set the family category
+  - switch this family to the air terminals category
+  # DECLARED 2026-11-02 (row 5b-1453): this card's own routing table claims it
+  # (-> here, one call - the category first). Unclaimed by any utterance, it
+  # moved to CREATE_MEP_SYSTEM on a scratch store once the Group MM cards
+  # joined the library; declared, it reaches this card by identity.
+  - make it mechanical equipment and work plane based

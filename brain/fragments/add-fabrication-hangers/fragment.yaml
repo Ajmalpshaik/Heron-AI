@@ -1,0 +1,161 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-091
+semantic-identity: "fabrication hangers made from a named hanger button and hosted on fabrication straights, one mid-length or at a maximum spacing in millimetres - Revit's MEP Fabrication hangers"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "add hangers to these
+# fabrication ducts every 1500 mm using the Rod Hanger button" and "put a
+# hanger on this fabrication pipe" - a hanger button of the MEP Fabrication
+# Parts palette placed on fabrication straights. No card made a fabrication
+# hanger: a grep of brain/fragments that day for CreateHanger found nothing,
+# and brain/heron_retrieve.py on the two sentences (Revit 2024) answered
+# CONVERT_TO_FABRICATION first for both.
+#
+# LOOK-ALIKES, NOT DUPLICATES (heron-duplicate-checker's method, 2026-11-02).
+# DISTRIBUTE_ALONG_RUN (PROVEN) places a loadable FAMILY - a hanger family
+# among others - at a spacing along a design duct or pipe's location line; a
+# fabrication hanger is not a family but a fabrication part made from a
+# service's hanger button, hosted on a fabrication straight, by a different
+# Revit call. CONVERT_TO_FABRICATION makes the straights; this hangs them.
+# Different job, different plumbing.
+#
+# NEVER GUESSED: the hanger button by its exact name among the hanger buttons
+# of the service - each straight's own service, or the loaded service named -
+# else nothing is placed and that service's hanger buttons are listed. A
+# button that is not a hanger is refused by name.
+#
+# REFUSED, BY NAME: a model with no fabrication configuration (Revit's words:
+# MEP Fabrication Settings); anything not a fabrication part - a design duct
+# is pointed at Design to Fabrication; a fitting or a hanger handed in - only
+# straights take hangers here. A straight Revit will not hang - RevitAPI.xml:
+# only straight, horizontal segments - is named with Revit's words. A
+# straight borrowed by somebody else is named, never taken (Article 12).
+#
+# RISK MODIFY. It adds hangers and changes nothing else.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: ADD_FABRICATION_HANGERS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Hosts fabrication hangers, made from the hanger button named on a loaded
+  fabrication service's palette, on the horizontal fabrication straights
+  handed in - one at mid-length of each, or spread evenly along each at no
+  more than the spacing given, half a space in from each end - optionally
+  attached to the building structure, and reports every hanger made with its
+  host straight, button, service and distance along the straight, and every
+  straight left without one and why. Each hanger's rods, bearer and
+  condition come from the button's own fabrication pattern, the condition
+  the one Revit matches to the straight's size.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The fabrication straights - the selection or the step before. Anything
+    # else handed in is named and left alone.
+    - name: elements
+      type: IList<Element>
+    - name: button
+      # The hanger button's name exactly as the MEP Fabrication Parts palette
+      # shows it - "Rod Hanger" - ignoring capitals. Left out ("none"),
+      # nothing is placed and the hanger buttons of the straights' services
+      # are listed.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: service
+      # The loaded service to take the button from, by its whole name or
+      # abbreviation. Left out ("none"), each straight's own service.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: spacing
+      # MILLIMETRES - the most from one hanger to the next along a straight.
+      # Each straight gets as many as its length needs at no more than this,
+      # evenly, half a space in from each end. Left out (0), one hanger in
+      # the middle of each straight.
+      type: double
+      source: request
+      optional: true
+      absent: 0
+    - name: attachToStructure
+      # Revit attaches each hanger to the nearest floor, roof, stair or
+      # structural framing above. Not said, off.
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: hangers
+      # The hangers Revit made, read back as fabrication hangers.
+      role: result
+      type: IList<ElementId>
+    - name: notPlaced
+      # Straights that got no hanger, or fewer than asked, and parts that are
+      # not straights - each with the reason, Revit's words where Revit gave
+      # them (D-52).
+      role: accounting
+      type: IList<string>
+    - name: notFabrication
+      # Handed in and not a fabrication part, each by name - left as it was
+      # (D-52).
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING: the button and service, each hanger with its host and
+      # distance, what was left and why.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. FabricationPart.CreateHanger
+  (Document, FabricationServiceButton, ElementId hostId, Connector, double
+  distance, bool attachToStructure) - the form that finds the button's
+  condition itself, its distance in feet from the connector given - is
+  present 2020 through 2027, as are FabricationPart IsAStraight, IsAHanger,
+  CenterlineLength, ServiceId, ServiceName, Size, ConnectorManager and
+  GetHostedInfo().HostId; FabricationServiceButton Name, IsAHanger and
+  IsExcluded; FabricationService GetButtonCount and GetButton (their first
+  int a group to 2021 and a palette from 2022, the same types);
+  FabricationConfiguration GetFabricationConfiguration (parameter renamed doc
+  to document in 2024, called by position), GetService, GetAllLoadedServices
+  and GetAllServices - read with tools/api-surface --members on 2026-11-02.
+  A service's button sets are counted by GroupCount and named by GetGroupName
+  to 2021 and by PaletteCount and GetPaletteName from 2022: #if REVIT2020 ||
+  REVIT2021. Millimetres become feet by / 304.8. Not seen in Revit.
+
+# ROUTING (2026-11-02) - the same rows are in CHANGE_FABRICATION_SERVICE_SIZE
+# and PLACE_FABRICATION_PART.
+#
+#   "add hangers to these fabrication ducts every 1500 mm using the Rod Hanger button"
+#                                                          -> here
+#   "put a hanger on this fabrication pipe"                -> here
+#   "add hangers along this duct run at 2 metre centres"   -> DISTRIBUTE_ALONG_RUN -
+#                                                             a hanger FAMILY along a
+#                                                             design duct
+#   "change these fabrication parts to the High Pressure service"
+#                                                          -> CHANGE_FABRICATION_SERVICE_SIZE
+#   "add a fabrication elbow from the Copper Plumbing service"
+#                                                          -> PLACE_FABRICATION_PART - a
+#                                                             hanger button handed there
+#                                                             is pointed here
+utterances:
+  - add hangers to these fabrication ducts every 1500 mm using the Rod Hanger button
+  - put a hanger on this fabrication pipe

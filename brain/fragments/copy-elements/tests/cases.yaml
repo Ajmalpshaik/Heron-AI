@@ -91,6 +91,66 @@ negative:
   - given: version 3 - toWorkset names a workset that is CLOSED in this session
     expect: refused, nothing copied, and the active workset unchanged
 
+  # VERSION 4 (2026-11-01) - ARRAY_ELEMENTS merged in. Each FAILS on version
+  # 3, which had no `count` or `spacingMm`. NOT RUN.
+  - given: one diffuser, offset "1,0,0" along the corridor, spacingMm 3000, count 8
+    expect: >
+      copies holds 7 ids and copiesEach is 7 - eight diffusers in all, the
+      original included. MEASURED between two of them in Revit at 3000 mm
+  - given: offset as the vector between two points 12 m apart, spacingMm 3000, count 3
+    expect: the pitch still 3000 - the direction is normalised - never 36 m
+  - given: count 1
+    expect: refused, nothing copied - a count of one is an array of nothing
+  - given: a duct and its fitting together, count 3, spacingMm 2000
+    expect: >
+      two copies of the pair, each copy CONNECTED to its fitting - the set is
+      copied together at every step. ARRAY_ELEMENTS copied them one by one
+  - given: count 3 with toLevels named
+    expect: refused - a run is copied by the offset only - nothing copied
+  - given: count and spacingMm left out, an offset of 3000,0,0
+    expect: one copy 3 m over - version 3 exactly, copiesEach 1
+
+  # VERSION 5 (2026-11-01) - ARRAY_ELEMENTS_RADIAL merged in. Each FAILS on
+  # version 4, which had no `sweepDegrees` and refused a turn off the level
+  # path. NOT RUN.
+  - given: one bollard, offset 0,0,0, turnCentreMm the turning head's centre, sweepDegrees 360, count 8
+    expect: >
+      copies holds 7 ids, copiesEach 7, stepDegrees 45 - the sweep divided by
+      the COUNT, because the last gap closes back to the start. MEASURED in
+      Revit: eight bollards at 0, 45 ... 315 degrees, NONE on top of the
+      original, and copiedTo says the full-circle rule ran
+  - given: one seat, sweepDegrees 90, count 8, a centre given
+    expect: >
+      stepDegrees 12.857 - the sweep divided by the count LESS ONE, both ends
+      occupied - seven copies, the last at 90 degrees; copiedTo says the part
+      sweep rule ran
+  - given: four sprinklers as one set, a centre on a column, sweepDegrees 360, count 6
+    expect: >
+      20 copies, copiesEach 5 - the whole set copied and turned together each
+      time, so it keeps its shape
+  - given: two walls joined at a corner, sweepDegrees 360, count 4, a centre given
+    expect: >
+      three turned copies of the pair, no "Can't keep elements joined" -
+      made a kilometre aside and brought back, never copied in place
+  - given: sweepDegrees 720 with count 8
+    expect: >
+      refused, nothing copied - more than one turn stands copies on top of
+      each other. ARRAY_ELEMENTS_RADIAL accepted it and stacked four
+  - given: sweepDegrees 360 with turnCentreMm blank
+    expect: refused, nothing copied - a sweep needs the point to go round
+  - given: sweepDegrees 0
+    expect: refused, nothing copied - every copy would land on the original
+  - given: sweepDegrees 360 with toLevels named, or with turnDegrees 5, or with spacingMm 3000, or offset 3000,0,0
+    expect: refused in each case, nothing copied - one way to say the run
+  - given: pinned elements, sweepDegrees 360, count 4
+    expect: >
+      if Revit will not move or turn a copy the whole call goes back and the
+      element count is unchanged - no copy is left on top of an original
+  - given: somebody who meant "rotate these round the column" and reached this
+    expect: >
+      the originals stay where they are and copies appear - rotating what is
+      there is ROTATE_ELEMENTS
+
 second_route:
   - a count of that category before and after, differing by exactly the number copied
   - version 3 - select the copies and read each one's Workset in the Properties palette, or

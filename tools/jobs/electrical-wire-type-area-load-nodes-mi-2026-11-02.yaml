@@ -1,0 +1,94 @@
+# NEEDS-CHECKING Group MI - ADD_WIRE_TYPE, ADD_AREA_BASED_LOAD and
+# ADD_ELECTRICAL_ANALYTICAL_NODE (all new), built 2026-11-02 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/electrical-wire-type-area-load-nodes-mi-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/electrical-wire-type-area-load-nodes-mi-2026-11-02.yaml
+#
+# THE MODEL (docs/needs-checking/group-mi.md, MI1): the scratch project
+# "electrical-mi", new from Revit's metric Electrical template on Revit 2024 -
+# the first release with every member the two analytical cards use - saved
+# under %TEMP%\heron-work, never a working model. On Level 1: four walls making
+# two rooms and a space placed in each (Analyze > Space); two walls of them
+# are the negative selection below. Nothing else that is a space.
+#
+# THE WIRE NAMES BELOW ARE NOT KNOWN UNTIL MI1 HAS RUN. "Copper", "90 C" and
+# "THWN" are what Revit's templates are believed to hold, not seen: read
+# Electrical Settings > Wiring Types and Wire Sizes and write the exact names
+# here. Left wrong, the positive refuses and lists the names - which is the
+# card refusing a guessed name, not a failure of the card.
+#
+# THE ARRANGEMENT: the wire type and the node take no selection; the
+# area-based load takes the two spaces as `elements`, selected by
+# select-by-category-name and set-selection. Each negative is a different
+# value or selection, not an empty one (fragment-proving, rules 3 and 5): a
+# wire type name the template already has, two walls instead of the spaces,
+# and a node kind that is none of the five. Every write is ROLLED BACK.
+
+model: "electrical-mi scratch project (metric Electrical template), two spaces on Level 1, Revit 2024"
+
+jobs:
+  - fragment: add-wire-type
+    expect: added
+    in: "electrical-mi"
+    write: true
+    setup: []
+    set:
+      name: "XLPE 4C"
+      material: "Copper"
+      temperatureRating: "90 C"
+      insulation: "THWN"
+    negative-set:
+      name: "THE FIRST WIRE TYPE'S EXACT NAME FROM MI1"
+      material: "Copper"
+      temperatureRating: "90 C"
+      insulation: "THWN"
+    note: >
+      MI2. Negative - THE FIRST CASE TO RUN: a name the template has, so
+      added 0, skipped "A wire type is already named \"...\" - left as it
+      is", before and after the same. Positive: added 1, after holds
+      "\"XLPE 4C\" (id ...) Copper, 90 C, THWN, max size ..." and findings
+      names the wire type its neutral settings and conduit were copied from.
+
+  - fragment: add-area-based-load
+    expect: areasAssigned
+    in: "electrical-mi"
+    write: true
+    setup: [select-by-category-name, set-selection]
+    set:
+      categoryName: "Spaces"
+      inViewOnly: "FloorPlan: Level 1"
+      loadType: "Office lighting"
+      density: "25"
+    negative-set:
+      categoryName: "Walls"
+      inViewOnly: "FloorPlan: Level 1"
+      loadType: "Office lighting"
+      density: "25"
+    note: >
+      MI3. Negative - THE FIRST CASE TO RUN: the walls, so loadsAdded 0 and
+      areasAssigned 0, skipped "... is not a space or an electrical load area
+      - left out" for each wall (the type itself IS made: typesAdded 1, read
+      that, and it is rolled back). Positive: typesAdded 1, loadsAdded 1,
+      areasAssigned 2; findings says Level 1 had no electrical load areas and
+      Revit made them; after holds the "Office lighting" area-based load on
+      "Level 1" with 2 load areas and 25 W/m2 on its type.
+
+  - fragment: add-electrical-analytical-node
+    expect: added
+    in: "electrical-mi"
+    write: true
+    setup: []
+    set:
+      name: "TX-1"
+      nodeType: "transformer"
+    negative-set:
+      name: "TX-1"
+      nodeType: "switchboard"
+    note: >
+      MI4. Negative - THE FIRST CASE TO RUN: a kind that is none of the five,
+      so added 0, refused "\"switchboard\" is not a kind of node - powerSource,
+      bus, transformer, transferSwitch or equipmentLoad. Never guessed.", the
+      nodes the same in before and after. Positive: added 1, after holds
+      "\"TX-1\" (transformer, id ...), fed from nothing, feeds 0". The
+      connection cases are MI5, run with `validate --write`.

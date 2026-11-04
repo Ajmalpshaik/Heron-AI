@@ -9,9 +9,74 @@ semantic-identity: "set out a whole grid from bay spacings"
 kind: action
 domain: revit.elements
 capability: CREATE_GRIDS
-version: 1
+version: 3
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-01) - CREATE_GRID WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same job - straight column grids, named - and the only
+# difference was the input: two points, or bay gaps. Both are here now.
+# What CREATE_GRID had and this one lacked: grids between points given
+# (`gridLines`, with `gridNames`); a line whose ends differ in height by more
+# than a millimetre refused, naming the difference; two identical points
+# refused; both ends forced onto one height within that millimetre. Its
+# `created` (one id) is one entry of this card's `created`; its `refused` is
+# a line of this card's `refused`.
+#
+# THE TWO CARDS' NAME RULES WERE OPPOSITE, AND THE SAFER ONE IS KEPT: a name
+# already taken - by a grid in the project or twice in one call, ignoring
+# capitals - is refused BEFORE ANYTHING IS MADE, as CREATE_GRID did and as
+# CREATE_LEVELS version 2 does for levels. Version 1 of this card created a
+# clashing grid anyway under Revit's own name, in the middle of somebody's
+# setting-out, and reported it after. A grid Revit will not make, or a name
+# it will not take, now undoes the whole call (Article 8) where version 1
+# carried on without it.
+#
+# EVERY INPUT BUT A MODE'S OWN MAY BE LEFT OUT (`optional: true`, `absent:`).
+# A spacing list left out reads "0", which is now none that way: version 1
+# put one grid at the origin for an empty list and two on one line for "0"
+# (seen while merging; the case "spacings in one direction only" below always
+# said the other direction is left alone). A gap of 0 or less among real gaps
+# is refused before anything is made.
+#
+# CREATE_RADIAL_GRIDS WAS JUDGED ON THE SAME RULE AND KEPT APART: it names no
+# grid (Revit numbers them), so the name rule does not bear on it, and its
+# inputs - a centre, radii, spoke angles and a sweep - share nothing with a
+# straight grid's. (Reversed the same day - version 3, below.)
+#
+# Version 1's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
+#
+# VERSION 3 (2026-11-01) - CREATE_RADIAL_GRIDS WAS MERGED INTO THIS CARD on
+# the owner's instruction ("make sure there is no duplicate tools"; "check
+# once more"), and is DEPRECATED. The same job - setting-out grids - and, as
+# with CREATE_GRID, the difference was the input: a THIRD one, ARCS AND SPOKES
+# ABOUT ONE CENTRE (`centreMm`, `radiiMm`, `spokeAnglesDegrees`, with the
+# arcs' sweep `startDegrees` and `endDegrees`). All of its rules came with it:
+# a full circle drawn just short of closed (a grid cannot be a closed
+# circle); a spoke outside the arcs' sweep drawn and SAID; refused before
+# anything is made - a centre that is not two or three numbers, a value that
+# is not a number, neither radius nor spoke, a radius of 0 or less, spokes
+# with no radius. Its outputs: made -> the count of `created`; gridIds ->
+# `created` (the grids themselves); gridNames -> `namedAs`; refused and
+# findings -> `refused`, which after a run says what was made.
+#
+# HOW RADIAL GRIDS ARE NAMED: BY REVIT, as they were on that card. Revit gives
+# each new grid the next free name after the last grid made, so one can never
+# take a name already held and the taken-name refusal has nothing to refuse;
+# `gridNames` (which names the `gridLines` grids) is refused with a radial
+# grid. The names are read back into `namedAs`.
+#
+# NOT CARRIED, AND WHY - THE OPPOSITE RULE: CREATE_RADIAL_GRIDS caught a grid
+# Revit refused and KEPT THE REST, a partial setting-out under one undo
+# entry. Here a grid Revit will not make undoes the whole call (Article 8),
+# the safer rule. And its sweep: two required numbers there, two optional
+# words here (left out "none") - so a straight grid need not send them - and
+# a radial grid with no sweep is REFUSED rather than given one: 0 and 360 is
+# typed for a full circle, never assumed.
+#
+# DRAFT until version 3 is proved on a real model (D-30).
 
 purpose: >
   Sets out a whole column grid from a start point and a list of bay dimensions -
@@ -19,12 +84,11 @@ purpose: >
   setting-out job as it is actually described: *"6000, 6000, 7500, 6000 across;
   8000, 8000 up"*.
 
-  **IT EXISTS BESIDE `CREATE_GRID` FOR THE SAME REASON `CREATE_LEVELS` EXISTS
-  BESIDE `CREATE_LEVEL`.** That one takes two explicit points, which is right
-  when the line is already known. For a bay layout it means working out every
-  coordinate by hand first, and for twelve grids in two directions that is where
-  the mistakes come from. Here the bay dimensions are the input, which is how a
-  drawing states one.
+  **TWO INPUTS, ONE TOOL.** Two explicit points are right when the line is
+  already known. For a bay layout they mean working out every coordinate by
+  hand first, and for twelve grids in two directions that is where the
+  mistakes come from - so the bay dimensions are the other input, which is how
+  a drawing states one.
 
   **THEY ARE GAPS, NOT POSITIONS**, and both readings look sensible. Four of them
   make FIVE grids: the first sits at the start point and each gap steps to the
@@ -33,9 +97,16 @@ purpose: >
 
   **THE NAME HAS TO INCREMENT THE WAY A DRAWING DOES.** Letters run A to Z then
   AA, AB - not A to Z and stop, and not A1. Numbers run from whatever the start
-  is. **A name Revit already holds is refused by Revit itself**, so each grid is
-  created and then named, and a clash leaves that one grid carrying Revit's own
-  name rather than losing the whole run - which is reported per grid.
+  is.
+
+  **VERSION 2 DRAWS GRIDS BETWEEN POINTS GIVEN AS WELL** - `gridLines`, named
+  by `gridNames` - each line level, its ends forced onto one height, one whose
+  ends differ in height refused. **A name already taken is refused before any
+  grid is made**, ignoring capitals, and a grid Revit will not make undoes the
+  whole call.
+
+  **VERSION 3 ALSO SETS OUT A RADIAL GRID** - arcs about one centre over a
+  sweep, and spokes out from it - named by Revit and read back.
 
   **The bay dimensions are MILLIMETRES, divided by 304.8 (D-71).** The start
   point is internal FEET, converted from millimetres by the add-in (D-67).
@@ -46,21 +117,88 @@ contract:
   needs:
     - name: doc
       type: Document
+    # Version 2: each of the five below may be left out, so a call that draws
+    # `gridLines` need not send them. Left out: the origin 0,0,0; no spacings
+    # that way ("0" - none); A; 1.
     - name: origin
       type: XYZ
       source: request
+      optional: true
+      absent: 0,0,0
     - name: spacingsAcross
       type: IList<double>
       source: request
+      optional: true
+      absent: '0'
     - name: spacingsUp
       type: IList<double>
       source: request
+      optional: true
+      absent: '0'
     - name: firstLetter
       type: string
       source: request
+      optional: true
+      absent: A
     - name: firstNumber
       type: int
       source: request
+      optional: true
+      absent: '1'
+    # VERSION 2, from CREATE_GRID. Grids between points: two points in
+    # MILLIMETRES per grid, a semicolon between the two ends and a pipe
+    # between grids - "0,0,0; 30000,0,0 | 0,8000,0; 30000,8000,0". Each line
+    # level to a millimetre or refused. Left out ("none"): grids from the bay
+    # spacings, as version 1. Given with spacings as well, refused.
+    - name: gridLines
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 2. The names of the `gridLines` grids, in order, commas between
+    # - one per line, a blank one for Revit's own. Left out ("none"): Revit's
+    # own names. Refused with bay spacings, whose names run from firstLetter
+    # and firstNumber.
+    - name: gridNames
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 3, from CREATE_RADIAL_GRIDS - a RADIAL grid. Each left out
+    # ("none") unless a radial grid is asked; given with gridLines or bay
+    # spacings, refused. The centre, "x,y" or "x,y,z" in millimetres.
+    - name: centreMm
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # Radii in millimetres, commas between - "6000, 12000"; an arc grid at
+    # each, over the sweep.
+    - name: radiiMm
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # Spoke angles in degrees, commas between - "0, 30, 60, 90"; a straight
+    # grid from the centre to the largest radius at each.
+    - name: spokeAnglesDegrees
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # The arcs' sweep, degrees anticlockwise from east, as Revit measures -
+    # one number each. ASKED, never assumed: a radial grid with none is
+    # refused. 0 and 360 is a full circle.
+    - name: startDegrees
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: endDegrees
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: created
       role: result
@@ -71,36 +209,57 @@ contract:
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
-      # "did this come back empty" (D-52).
+      # "did this come back empty" (D-52). Since version 2 a refusal means
+      # NOTHING was created; after a run it holds one line saying what was
+      # made.
       role: accounting
       type: IList<string>
 
 proof:
-  date: '2026-09-13'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: test projject (3,436 elements), Revit 2024, session 40932
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, acrossPositions
-    3 item(s) [0, 19.6850393700787, 39.3700787401575], created 5 item(s) [Grid, Grid, Grid,
-    ...], depth 24.6062992125984, firstNumber 91, namedAs 5 item(s) [P, Q, R, ...], nextLetters
-    Func`2, positionsFrom Func`2, refused 1 item(s) [2 spacing(s) across gave 3 lettered grid(s),
-    and 1 spacing(s...], spacingsAcross 2 item(s) [19.6850393700787, 19.6850393700787], spacingsUp
-    1 item(s) [24.6062992125984], taken HashSet`1, upPositions 2 item(s) [0, 24.6062992125984],
-    width 39.3700787401575. inputs came origin as given; spacingsAcross as given (2); spacingsUp
-    as given (1); firstLetter as given; firstNumber as given. on test projject
-  negative_case: run with origin=0,0,0, spacingsAcross=0, spacingsUp=0, firstLetter=Q, firstNumber=95
-    instead - chosen because it should not contain what this fragment reports - run inside
-    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    MillimetresPerFoot 304.8, acrossPositions 2 item(s) [0, 0], created 0 item(s), depth 0,
-    firstNumber 95, namedAs 0 item(s), nextLetters Func`2, positionsFrom Func`2, refused 1
-    item(s) [no spacings given in either direction - nothing to set out], spacingsAcross 1
-    item(s) [0], spacingsUp 1 item(s) [0], taken HashSet`1, upPositions 2 item(s) [0, 0],
-    width 0. inputs came origin as given; spacingsAcross as given (1); spacingsUp as given
-    (1); firstLetter as given; firstNumber as given. on test projject
+    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, across
+    2 item(s) [6000, 6000], acrossPositions 3 item(s) [0, 19.6850393700787, 39.3700787401575],
+    arcCount 0, badGap false, byLines false, byRadial false, created 6 item(s) [Grid, Grid,
+    Grid, ...], culture CultureInfo, firstNumber 91, namedAs 6 item(s) [Q, R, S, ...], namesGiven
+    false, nextLetters Func`2, noGaps Func`2, notAsked Func`2, numbersIn Func`2, plan 6 item(s)
+    [((0.000000000, -200.787401575, 0.000000000), (0.000000000, -..., ((19.685039370, -200.787401575,
+    0.000000000), (19.685039370,..., ((39.370078740, -200.787401575, 0.000000000), (39.370078740,...,
+    ...], pointMm Func`2, positionsFrom Func`2, radial 0 item(s), radialNotes 0 item(s), refused
+    1 item(s) [2 spacing(s) across gave 3 lettered grid(s), and 2 spacing(s...], spokeCount
+    0, taken 22 entry(ies), up 2 item(s) [6000, 6000], upPositions 3 item(s) [0, 19.6850393700787,
+    39.3700787401575]. inputs came origin as given; spacingsAcross as given (2); spacingsUp
+    as given (2); firstLetter as given; firstNumber as given; gridLines not given - "none",
+    the card's own default (optional); gridNames not given - "none", the card's own default
+    (optional); centreMm not given - "none", the card's own default (optional); radiiMm not
+    given - "none", the card's own default (optional); spokeAnglesDegrees not given - "none",
+    the card's own default (optional); startDegrees not given - "none", the card's own default
+    (optional); endDegrees not given - "none", the card's own default (optional). on P1102
+    MEP
+  negative_case: run with firstLetter=Q, firstNumber=91, origin=0,-60000,0, spacingsAcross=,
+    spacingsUp= instead - chosen because it should not contain what this fragment reports
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned MillimetresPerFoot 304.8, across 1 item(s) [0], acrossPositions 0 item(s), arcCount
+    0, badGap false, byLines false, byRadial false, created 0 item(s), culture CultureInfo,
+    firstNumber 91, namedAs 0 item(s), namesGiven false, nextLetters Func`2, noGaps Func`2,
+    notAsked Func`2, numbersIn Func`2, plan 0 item(s), pointMm Func`2, positionsFrom Func`2,
+    radial 0 item(s), radialNotes 0 item(s), refused 1 item(s) [no spacings given in either
+    direction - nothing to set out], spokeCount 0, taken 22 entry(ies), up 1 item(s) [0],
+    upPositions 0 item(s). inputs came origin as given; spacingsAcross given empty - "0",
+    the card's own default (optional); spacingsUp given empty - "0", the card's own default
+    (optional); firstLetter as given; firstNumber as given; gridLines not given - "none",
+    the card's own default (optional); gridNames not given - "none", the card's own default
+    (optional); centreMm not given - "none", the card's own default (optional); radiiMm not
+    given - "none", the card's own default (optional); spokeAnglesDegrees not given - "none",
+    the card's own default (optional); startDegrees not given - "none", the card's own default
+    (optional); endDegrees not given - "none", the card's own default (optional). on P1102
+    MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 7e38a1770c3c14f2
+  fingerprint: 5e46b7abbe0b4873
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -118,14 +277,26 @@ compatibility-note: >
   until that day.) Names are compared as text against the grids already in the
   document rather than trusted to Revit's own refusal, which throws.
 
-# ROUTING - repeated in CREATE_GRID, LIST_GRIDS and CREATE_LEVELS.
+# ROUTING - repeated in LIST_GRIDS, SNAP_TO_GRID and CREATE_LEVELS.
 #
 #   "make a grid series across the building" -> here
 #   "set out the grid at 6000 bays"      -> here
 #   "put in the whole column grid"       -> here
-#   "draw a grid line here"              -> CREATE_GRID - ONE line between two
-#                                           known points, which is right when
-#                                           the position is already worked out
+#   "draw a grid line here"              -> here, `gridLines` - ONE line
+#                                           between two known points, which
+#                                           CREATE_GRID did until version 2
+#   "add a grid"                         -> here, `gridLines`
+#   "space these out on a grid"          -> SNAP_TO_GRID, which means a LAYOUT
+#                                           grid - an imaginary spacing for
+#                                           placing diffusers - and not the
+#                                           building's setting-out datum
+#   "draw a detail line here"            -> DRAW_FAMILY_DETAIL_LINES - a line is not a
+#                                           datum: no bubble, no name, no view
+#                                           extents
+#   "add a grid line at 1200 from the bottom of this curtain wall",
+#   "divide this curtain wall into six panels" -> ADD_CURTAIN_GRID_LINES - a
+#                                           CURTAIN grid line is the wall's
+#                                           own, not a datum
 #   "what grids are in this model"       -> LIST_GRIDS - a READ
 #   "add four more floor levels"         -> CREATE_LEVELS - the same
 #                                           one-versus-many pair, for levels
@@ -133,9 +304,27 @@ compatibility-note: >
 
 # ROUTING (2026-10-12, the gap fill)
 #
-#   "set out a radial grid"                 -> CREATE_RADIAL_GRIDS
+#   "set out a radial grid"                 -> here since version 3, centreMm,
+#                                              radiiMm, spokeAnglesDegrees (was
+#                                              CREATE_RADIAL_GRIDS)
+#   "arc grids at 6 and 12 m with spokes every 30 degrees" -> here, the same
 utterances:
   - make a grid series across the building
   - set out the grid at 6000 bays
   - put in the whole column grid
   - set out the structural grid
+  # MOVED 2026-11-01 from CREATE_GRID, merged into this card.
+  - add a grid
+  - create a grid line
+  - put a grid here
+  - add another column grid
+  - I need a new grid line
+  # ...and its semantic identity, which nothing else declares:
+  - add a column grid line between these two points
+  # MOVED 2026-11-01 from CREATE_RADIAL_GRIDS, merged into this card.
+  - set out a radial grid about this centre
+  - make arc grids at 6 m and 12 m with spokes every 30 degrees
+  - set out the radial setting-out for the round building
+  - create spoke grids from the centre at 0 30 60 and 90 degrees
+  # ...and its semantic identity, which nothing else declares:
+  - set out a radial grid of arcs and spokes about one centre

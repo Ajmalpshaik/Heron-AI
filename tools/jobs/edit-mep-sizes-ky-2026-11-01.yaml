@@ -1,0 +1,42 @@
+# NEEDS-CHECKING Group KY - EDIT_MEP_SIZES, built 2026-11-01 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/edit-mep-sizes-ky-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/edit-mep-sizes-ky-2026-11-01.yaml
+#
+# THE MODEL is Group KX's scratch project, "mep-sizes-kx"
+# (docs/needs-checking/group-kx.md, KX1), new from Revit's metric SYSTEMS
+# template. Never a working model. By hand before the run (KY1): in Duct
+# Settings > Round, make sure 250 is in the list and 315 is not (delete 315
+# if the template has it); draw one round duct at 250 mm; draw one pipe on a
+# steel segment at that segment's smallest size.
+#
+# THE ARRANGEMENT: this write takes no selection, so `setup: []`. The negative
+# is a DIFFERENT VALUE - 250, a size already in the round list - never an
+# empty one (fragment-proving, rule 5): added 0, skipped naming 250, and the
+# list the same before and after. The size-in-use refusal is row KY3. Every
+# write here is ROLLED BACK.
+
+model: "mep-sizes-kx scratch project from Revit's metric systems template, 250 in the round duct sizes and 315 not, one round duct drawn at 250, Revit 2020"
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: edit-mep-sizes
+    expect: added
+    setup: []
+    set:
+      sizeList: "round"
+      action: "add"
+      sizes: "315"
+    negative-set:
+      sizeList: "round"
+      action: "add"
+      sizes: "250"
+    note: >
+      KY2. Negative - THE FIRST CASE TO RUN: 250, already in the round list,
+      so added 0, skipped "250 mm is already in the round duct size list -
+      left as it is", before and after the same. Positive - added 1, after
+      the round list KX1 wrote down with 315 in its place, and the rectangular
+      and oval lists untouched (REPORT_DUCT_CONDUIT_SIZES after).

@@ -1,0 +1,134 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-142
+semantic-identity: "which rebar numbering partitions this model has, and which rebar numbers each partition uses"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "what rebar numbers are in
+# partition B2", beside four changes to rebar numbering (EDIT_REBAR_NUMBERING).
+# Revit's Structure > Reinforcement > Reinforcement Numbers dialog: rebar,
+# rebar couplers and fabric sheets are numbered in partitions - the Partition
+# parameter on each bar - and identical bars in one partition share a number.
+# No card in the library read it (grep of brain/fragments for NumberingSchema
+# and NUMBER_PARTITION_PARAM that day: nothing). RENUMBER_SEQUENTIAL writes a
+# running sequence into a parameter the modeller names; it knows nothing of
+# Revit's own rebar numbering, which Revit keeps itself and a parameter write
+# cannot change.
+#
+# THE READ HALF OF A PAIR. EDIT_REBAR_NUMBERING (FRG-ELE-143) changes the
+# numbers; every question about them is answered here so no question reaches
+# that write: which partitions exist and their exact names, which numbers each
+# uses, the lowest and highest, the gaps, which partition and number a
+# selected bar has, and which bars in a partition another user owns - the ones
+# a change would skip.
+#
+# NEVER A GUESSED PARTITION. Left out, `partition` reads as "all". A name the
+# model does not have is answered with the names it does have, and one that
+# differs only in capitals is named, never taken for the other.
+#
+# READ ONLY - opens no transaction and needs none.
+kind: action
+domain: revit.elements
+capability: REPORT_REBAR_NUMBERING
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists the rebar numbering partitions in the model - for rebar, rebar couplers
+  and fabric sheets, as Structure > Reinforcement Numbers shows them - with the
+  numbers each partition uses, its lowest and highest number, the gaps between
+  them and how many elements carry them; names the partition and number of each
+  selected bar, and the bars in a partition another user owns.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      # OPTIONAL: nothing selected binds an EMPTY list
+      # (HeronBindingNote.EmptyWhenAbsent) and the answer is the partitions
+      # alone. Selected bars are each named with their partition and number.
+      type: IList<Element>
+      optional: true
+    - name: partition
+      # One partition by its exact name, or left out for every partition
+      # (`absent: all`). Matched exactly; never a near name.
+      type: string
+      source: request
+      optional: true
+      absent: all
+  provides:
+    - name: partitions
+      # Partitions read - every one, or the one asked for. Something the read
+      # FOUND; 0 for a model with no numbered reinforcement, and for a name
+      # the model does not have.
+      role: result
+      type: int
+    - name: numberedElements
+      # Rebar, coupler and fabric sheet elements in those partitions.
+      role: result
+      type: int
+    - name: report
+      # PARTITION BY PARTITION, in words: its numbers as Revit's own ranges,
+      # lowest, highest, gaps, element count, and how many another user owns.
+      # A STRING, because a reply cuts a list to three items and this is the
+      # answer.
+      role: accounting
+      type: string
+    - name: partitionNames
+      # The exact names read, quoted, each with its kind - what a change is
+      # handed back, so no name is retyped from memory.
+      role: accounting
+      type: IList<string>
+    - name: selected
+      # Each selected element with its partition and number, or why it has
+      # none. What was handed in, never a finding (D-52).
+      role: accounting
+      type: IList<string>
+    - name: ownedByOthers
+      # Elements in the partitions read that another user owns on a workshared
+      # model, each with its owner - the ones a change would skip and name.
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. NumberingSchema.GetNumberingSchema
+  (Document, NumberingSchemaType), NumberingSchemaTypes.StructuralNumberingSchemas
+  Rebar, RebarCoupler and ReinforcementFabric, NumberingSchema.GetNumberingSequences,
+  GetNumbers(string) and NumberingParameterId, IntegerRange.Low and High,
+  BuiltInParameter.NUMBER_PARTITION_PARAM, BuiltInCategory OST_Rebar, OST_Coupler
+  and OST_FabricReinforcement, WorksharingUtils.GetCheckoutStatus(Document,
+  ElementId, out string) and CheckoutStatus.OwnedByOtherUser carry the same
+  signatures 2020 through 2027 - read with tools/api-surface --members on
+  2026-11-01. Revit 2027 marks the schema-type route and NumberingSchemaType
+  obsolete in favour of a schema name, and still ships both; NumberingParameterId
+  gains a setter in 2027, unused here. An ElementId is compared with ==, never
+  read as a number.
+
+# ROUTING (2026-11-01) - the same rows are in EDIT_REBAR_NUMBERING.
+#
+#   "what rebar numbers are in partition B2"        -> here
+#   "renumber the rebar in partition P1"            -> EDIT_REBAR_NUMBERING
+#   "start rebar numbering at 100 in this partition" -> EDIT_REBAR_NUMBERING -
+#                                                      which partition "this"
+#                                                      is, is read here first
+#   "compact the rebar numbers"                     -> EDIT_REBAR_NUMBERING
+#   "move these bars to partition Level 3 slab"     -> EDIT_REBAR_NUMBERING
+#   "renumber the doors"                            -> RENUMBER_SEQUENTIAL - a
+#                                                      running sequence in a
+#                                                      parameter, not Revit's
+#                                                      rebar numbering
+#   "what rebar is in these columns"                -> REPORT_HOST_REBAR
+utterances:
+  - what rebar numbers are in partition B2

@@ -22,14 +22,14 @@ purpose: >
   straight, or along an arc where one is written. The plain "put a wall here" -
   the thing rooms are bounded by and MEP has to pass through.
 
-  **Written as a run of points, like CREATE_DUCT and CREATE_PIPE.** Two points
+  **Written as a run of points, like CREATE_MEP_RUNS.** Two points
   is the single-wall case. A room needs four walls and a corridor needs two, so
   making the run the general form saves the caller a loop and keeps the whole
   library one shape.
 
   **AN ARC IS WRITTEN IN THE RUN (version 2, row 5b-1216).** `arc MX,MY X,Y`
   after a point makes the next wall an arc: through MX,MY, ending at X,Y - the
-  writing CREATE_FAMILY_EXTRUSION's loops take, so one writing works for a
+  writing CREATE_FAMILY_FORMS's loops take, so one writing works for a
   family and a project. A full circle is two arcs. Basic and curtain walls
   alike; how a curtain wall's panels sit on the arc is Revit's, and is recorded
   by the first run (NEEDS-CHECKING Group HM), not claimed here. A run with no
@@ -192,7 +192,12 @@ compatibility-note: >
 #    points"                            -> here, with "arc MX,MY X,Y" in the
 #                                          points (version 2, 5b-1216). A
 #                                          wall drawn as many short straight
-#                                          ones reads as flat facets close up
+#                                          ones reads as flat facets close up.
+#                                          DECLARED below since 2026-11-02:
+#                                          CUT_GEOMETRY's new words moved the
+#                                          ranking and this row went to
+#                                          DRAW_FAMILY_POINT_CURVE
+#                                          (FRAGMENT-ISSUES 5b-1416)
 #   "line the walls of every room with  -> CREATE_FROM_ROOM_BOUNDARIES, version 2
 #    plaster"                              (row 5b-1255): a wall type there
 #                                          lines each room's walls on their
@@ -235,8 +240,8 @@ compatibility-note: >
 #                                          nothing is built and nothing changes.
 #                                          Only the sentence with the points a
 #                                          wall needs is declared here
-#   "set the curtain wall grid", "set   -> SET_CURTAIN_WALL_GRID and
-#    the mullions"                         SET_CURTAIN_WALL_MULLIONS. A curtain
+#   "set the curtain wall grid", "set   -> SET_CURTAIN_WALL_GRID, its `grid`
+#    the mullions"                         and its `mullions`. A curtain
 #                                          wall's grid and mullions come from
 #                                          its TYPE, never from here
 #   "what is this curtain wall type set
@@ -256,3 +261,7 @@ utterances:
   - draw a curtain wall between these points
   - draw an arc wall through these points
   - draw a wall starting above its level
+  # DECLARED 2026-11-02 from this card's own routing row (5b-1216), once
+  # CUT_GEOMETRY's words moved the ranking and it reached
+  # DRAW_FAMILY_POINT_CURVE (FRAGMENT-ISSUES 5b-1416). Card text only.
+  - draw a curved wall through these points

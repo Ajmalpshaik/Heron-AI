@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -111,6 +111,42 @@ contract:
     - name: findings
       type: IList<string>
 
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 Tripod1, P1102 Light24 - active was
+    Snowdon Towers Sample Structural, Revit 2024, session 59960'
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned accepted 16 entry(ies), alreadySet
+    0, before 1 entry(ies), changed 1, changedPoints point 1: Host (xyz) -> Host and Loop
+    System (xyz), expanded all, filler HashSet`1, findings 2 item(s) [1 placement point(s)
+    set to Host and Loop System (xyz) and r..., The Orientation shows when the family is placed:
+    each point''...], handles 0 item(s), invariant CultureInfo, meaning 6 entry(ies), notAFamily
+    false, numbersAsked 0 item(s), placement 1 item(s) [(1, Autodesk.Revit.DB.ReferencePoint)],
+    pointOrientations placement point 1 68a9e6ff-eb41-447a-b440-7204f9ada0e6-00000c52: Host
+    and Loop System (xyz), problems 0 item(s), refused (null), said hostandloopsystem, shown
+    6 entry(ies), squash Func`2, strayWords 0 item(s), stripping true, targets 1 item(s) [(1,
+    Autodesk.Revit.DB.ReferencePoint)], tokens 1 item(s) [all], wanted AdaptivePointOrientationType,
+    words Func`2. inputs came orientation as given; points as given. on P1102 Tripod1'
+  negative_case: run against 'P1102 Light24' with orientation=Host and Loop System, points=all
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    accepted 16 entry(ies), alreadySet 0, before 0 entry(ies), changed 0, changedPoints ,
+    expanded all, filler HashSet`1, findings 1 item(s) [Nothing was changed. "P1102 Light24"
+    is not an adaptive comp...], handles 0 item(s), invariant CultureInfo, meaning 6 entry(ies),
+    notAFamily false, numbersAsked 0 item(s), placement 0 item(s), pointOrientations , problems
+    1 item(s) ["P1102 Light24" is not an adaptive component - Revit gives a...], refused Nothing
+    was changed. "P1102 Light24" is not an adaptive component - Revit gives an Orientation
+    only to the placement points of one, started from the Generic Model Adaptive template.
+    REPORT_FAMILY_TEMPLATE says which kind of family this is., said hostandloopsystem, shown
+    6 entry(ies), squash Func`2, strayWords 0 item(s), stripping true, targets 0 item(s),
+    tokens 1 item(s) [all], wanted AdaptivePointOrientationType, words Func`2. inputs came
+    orientation as given; points as given. on P1102 Light24
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 49c92716ec58bc3a
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -129,7 +165,7 @@ compatibility-note: >
   2026-10-28). The remarks on the two orientation calls - placement points
   only - were read in the 2024 RevitAPI.xml only.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table. The
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table. The
 # rows naming the other two adaptive tools are in their cards as well.
 #
 #   "set the adaptive points orientation to host and loop system" -> here

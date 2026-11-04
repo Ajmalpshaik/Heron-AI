@@ -26,5 +26,64 @@ negative:
       moved anyway - which is why the absolute height is verified rather than
       assumed from a successful Set
 
+  # VERSION 2 - SET_WALL_CONSTRAINTS MERGED IN. Every case below FAILS on
+  # version 1, which found no level parameter it knew on a wall and refused it.
+
+  - given: VERSION 2. Walls on Level 1 handed in with newLevel Level 2, which is 3000 mm higher
+    expect: >
+      each wall's Base Constraint reads Level 2, its Base Offset -3000 mm, and
+      the walls in exactly the same place - look at a SECTION, a plan cannot
+      show it. moved counts them, heightChanged empty. On version 1 every wall
+      is in `refused`
+
+  - given: >
+      VERSION 2. Walls whose bases differ, with keepWallBase true and
+      topLevelId the level above, allowUnconnectedToBecomeBound true -
+      building-shell step 4, walls drawn at a typed height
+    expect: >
+      each Base Constraint untouched, each Top Constraint now "Up to level" the
+      one named, its Top Offset re-solved so the top has not moved; the wall's
+      height identical to what it was. On version 1 every wall is refused
+
+  - given: VERSION 2. The same, with allowUnconnectedToBecomeBound left out
+    expect: >
+      every wall whose top was unconnected is in `unconnectedTop` with its top
+      left alone - a typed height made level-bound is a design change, not a
+      re-host
+
+  - given: VERSION 2. topLevelId given as a door's id, or any id that is not a level
+    expect: >
+      EVERY element in `refused`, `problem` saying the top level is not a
+      level, and NOTHING changed - not the walls' bases either
+
+  - given: VERSION 2. A duct and a door in the set with three walls, a top level asked for
+    expect: >
+      the duct and the door in `notAWall`, `notApplicable` saying the top does
+      not apply to them and that they went to newLevel with their height held;
+      the walls re-hosted at both ends. With keepWallBase true as well, the
+      duct and the door are LEFT ALONE and the sentence says so
+
+  - given: >
+      VERSION 2. A wall whose top offset Revit refuses once the top level is
+      set, or throws on
+    expect: >
+      the wall in `refused` and its Top Constraint and Base Constraint back to
+      what they were - NO half-set wall. If even the restore leaves it
+      somewhere else it is in `heightChanged` too
+
+  - given: >
+      VERSION 2, THE DEFECT BOTH CARDS HAD. An element whose offset write
+      throws after its level has been set
+    expect: >
+      the level put back to the old one and the offset to its old value, the
+      element in `refused`, and its absolute height unchanged - read it with a
+      spot elevation. Version 1 left it on the new level with the old offset,
+      moved by the difference between the levels, reported only as refused
+
 second_route:
   - A spot elevation on the element before and after; and a schedule grouped by Level for the data side
+  - >
+    VERSION 2, from SET_WALL_CONSTRAINTS: a section through the walls before
+    and after, or the wall's Base Constraint, Base Offset, Top Constraint and
+    Top Offset in the Properties palette - the four together are the elevations
+    this fragment promises not to change

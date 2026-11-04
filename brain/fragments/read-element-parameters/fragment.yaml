@@ -125,9 +125,9 @@ contract:
     # The parameter's name. Text on a text note reads what the note says:
     # noteWording shows \r at a paragraph end, \v at a Shift+Enter line break
     # and \\ for one backslash - typed the same way into EDIT_TEXT_VALUES. The
-    # text notes of one view: run SELECT_VISIBLE_IN_VIEW with view=<the view>
-    # and categories=Text Notes first, then this with parameterName=Text and
-    # expect_from="select-visible-in-view".
+    # text notes of one view: run FILTER_ELEMENTS_BY_CATEGORY with
+    # category=Text Notes and inViewOnly=<the view> first, then this with
+    # parameterName=Text and expect_from="filter-elements-by-category".
     - name: parameterName
       type: string
       source: request
@@ -235,16 +235,18 @@ compatibility-note: >
 #   "number the paragraphs of this note" / "make the first line bold" ->
 #                                           EDIT_TEXT_VALUES, mode format
 #
-#   THE TEXT NOTES OF ONE VIEW, as a chain: SELECT_VISIBLE_IN_VIEW (PROVEN)
-#   with view=<the view> and categories=Text Notes, then this with
-#   parameterName=Text and expect_from select-visible-in-view. Measured
-#   2026-10-17 on the scratch copy "Heron note scratch", Revit 2020: 109 notes
-#   in the drafting view "Spread Footing", all 109 read. SELECT_BY_CATEGORY_NAME
-#   categoryName=Text Notes inViewOnly=<the view> hands on the same 109 and is
-#   DRAFT. FILTER_ELEMENTS_BY_CATEGORY takes a LEVEL and a note has none.
+#   THE TEXT NOTES OF ONE VIEW, as a chain: FILTER_ELEMENTS_BY_CATEGORY with
+#   category=Text Notes and inViewOnly=<the view>, the level left out - a note
+#   has none - then this with parameterName=Text and expect_from
+#   filter-elements-by-category. That card is version 5 and DRAFT. Measured
+#   2026-10-17 on the scratch copy "Heron note scratch", Revit 2020, through
+#   SELECT_VISIBLE_IN_VIEW (PROVEN then): 109 notes in the drafting view
+#   "Spread Footing", all 109 read. SELECT_BY_CATEGORY_NAME categoryName=Text
+#   Notes inViewOnly=<the view> handed on the same 109. Both were merged into
+#   FILTER_ELEMENTS_BY_CATEGORY on 2026-11-01.
 #   "which level are these walls on"      -> here, Level (5b-468)
 #   "what is the base constraint of these walls" -> here, Base Constraint
-#   "change the walls' base level"        -> SET_WALL_CONSTRAINTS, which
+#   "change the walls' base level"        -> SET_ELEMENT_LEVEL, which
 #                                           re-hosts them without moving them
 #   "show me the global parameters in this model" -> REPORT_GLOBAL_PARAMETERS -
 #                                           a global belongs to the MODEL, not
@@ -255,6 +257,17 @@ compatibility-note: >
 #    number"                                MARK is not the Mark parameter,
 #                                           and its text comes from the view
 #                                           it points at
+
+# JUDGED 2026-11-01 (a duplicate sweep's look-alike, on the owner's rule "if one
+# tool can safely do both, merge") AGAINST READ_ELEMENT_TABLE AND KEPT APART -
+# the next sweep should not reopen it unless one of these stops being true:
+#   - A DIFFERENT RESULT FOR A DIFFERENT READER. This reads ONE named parameter
+#     off every element and says, for each, value, blank or absent - in words,
+#     for the chat. That card builds a TABLE of many parameters for the Heron
+#     Companion page (D-108) as one JSON string - with each cell marked
+#     editable or not, and why - and tells the chat only its row count. The
+#     reading rule is the same on purpose (display string first) and the
+#     outputs share nothing.
 
 utterances:
   - what is the Mark on these
@@ -299,7 +312,12 @@ utterances:
   - what is the flow rate in this pipe
   - what level are they on
   - which level is each duct on
-  - what parameters does this duct have
+  # REMOVED 2026-11-01 - "what parameters does this duct have". This card's
+  # own routing table sends it to REPORT_PARAMETER_INVENTORY, which declares
+  # it too, so the two declarations tied in the identity table and the
+  # sentence fell to ranking. The full list, before any name is known, is
+  # that card's answer; this one reads a parameter already named. Card text
+  # only - impl/ untouched, so the proof still describes the code.
   # ADDED 2026-10-09 - the judgement above, ONE VALUE OFF AN ELEMENT, for two
   # more questions measured reaching a write. "What is the insulation
   # thickness" reached SET_MEP_INSULATION on both backends (FRAGMENT-ISSUES
@@ -392,3 +410,10 @@ utterances:
   - does this note have bullets
   - tell me if this text note has a numbered list
   - is the first line of this note bold
+  # ADDED 2026-11-01, FRAGMENT-ISSUES 5b-1371 - ONE VALUE OFF AN ELEMENT, the
+  # judgement above, for a QUESTION measured on main reaching SET_MEP_SIZE on
+  # lexical and SET_MEP_SYSTEM_TYPE on the trained model, both writes. The
+  # parameter is Diameter. This card's identity was tried naming size,
+  # diameter, mark and level and moved nothing on any frozen set, as twelve
+  # wordings did for row 5b-1007, so it is left as it is.
+  - what diameter are these pipes

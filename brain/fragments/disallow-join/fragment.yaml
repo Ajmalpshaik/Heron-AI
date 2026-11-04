@@ -126,11 +126,19 @@ compatibility-note: >
 #   "join these two elements"            -> JOIN_GEOMETRY, which is geometry
 #                                           joining between elements, NOT the
 #                                           end cleanup of a wall
-#   "unjoin these"                       -> UNJOIN_GEOMETRY
-#   "the wrong one is cutting"           -> SWITCH_JOIN_ORDER
-#   "put these walls on another level"   -> SET_WALL_CONSTRAINTS
+#   "unjoin these"                       -> JOIN_GEOMETRY, join false
+#   "the wrong one is cutting"           -> JOIN_GEOMETRY, join switch
+#   "put these walls on another level"   -> SET_ELEMENT_LEVEL
 #   "is the model clean"                 -> READ_MODEL_WARNINGS, which is
 #                                           Revit's own list
+#
+# ROUTING (2026-11-02, Wall Joins and framing ends) - repeated in
+# SET_WALL_JOIN_TYPE, REPORT_WALL_JOIN_TYPE and SET_FRAMING_END_EXTENSION.
+#
+#   "make this wall corner a miter join"   -> SET_WALL_JOIN_TYPE - the shape of a
+#                                             join that is there, never on/off
+#   "what join type is at this wall corner" -> REPORT_WALL_JOIN_TYPE
+#   "cut back these beams 50 mm at the column" -> SET_FRAMING_END_EXTENSION
 
 utterances:
   - stop the walls joining at the corner
@@ -138,3 +146,6 @@ utterances:
   - the walls are cleaning up into each other
   - the beam is being eaten by the column
   - allow the joins again
+  # ADDED 2026-11-02, row 5b-1419. This card's own routing table claims it;
+  # tools/check-routing.py listed it as reaching JOIN_GEOMETRY instead.
+  - the walls are joining where they should not

@@ -19,7 +19,55 @@ capability: MANAGE_SHEET_SETS
 # in Revit: NEEDS-CHECKING Group FA. Ajmal PS's yes to change the PROVEN card
 # was his starting the task, 2026-10-17. Version 1's proof is kept below as
 # the record it is; its fingerprint no longer matches this code.
-version: 2
+#
+# VERSION 3 (2026-11-01, FRAGMENT-ISSUES 5b-1361): mode "duplicate" ("copy"
+# taken as the same) - a copy of an existing set under `newName`, the original
+# left as it was. No new input: duplicate takes `setName` and `newName`, as
+# rename does. Ajmal PS's "Yes, add it" was relayed 2026-11-01 by the session
+# that asked him, after being told it puts this card back to unproven. BACK TO
+# DRAFT for that reason: the proof below is version 2's (signed 2026-10-18)
+# and its fingerprint no longer matches this code. NEEDS-CHECKING Group KA,
+# rows KA15 and KA16.
+#
+# VERSION 4 (2026-11-01) - SYNC_SHEET_SETS_BY_PARAMETER WAS MERGED INTO THIS
+# CARD on the owner's instruction (Ajmal PS: "if there's duplicate tools you
+# can work for that also merging", "merge means ... all area need to be
+# covered", "in every conflict keep the safer rule"), and is DEPRECATED. Both
+# saved View/Sheet Sets through the print manager's SaveAs, both read the
+# print range first and put it back, both Revert a failed save; that card's
+# own reason for standing apart - "MANAGE_SHEET_SETS is PROVEN" - stopped
+# being true when version 3 made this card DRAFT. What it had and this card
+# lacked is here now: mode "by-parameter" ("by parameter" and "sync" taken as
+# the same) with `parameterName`, `setPrefix`, `values` and `updateExisting` -
+# one set per value of a sheet parameter, many in one call, an existing set
+# left alone unless `updateExisting` and then made to hold exactly its value's
+# sheets and views; a parameter no sheet has, a value no sheet carries and a
+# parameter every carrier has empty refused; a value Revit will not take in
+# `skipped`, the others still made. Where its outputs are now: `done` ->
+# `done`; `created` -> `created`; `updated` -> `updated`; `unchanged` (the
+# sets left as they were, a sentence) -> `setsUnchanged`, because this card's
+# `unchanged` is the ids handed in and left alone; `skipped` -> `skipped`;
+# `refused` -> `refused`; `printRange` -> `printRange`.
+#
+# THE SAFER RULE KEPT IN EACH CONFLICT, FOR EVERY MODE THAT WRITES:
+#   - THE IN-SESSION SWITCH AND RESTORE. Versions 1 to 3 wrote create's views
+#     onto whichever set the Print dialog had current - a saved set, if it was
+#     on one - and left the dialog on whatever set each mode made current.
+#     That card wrote a new set through the In-Session set and put the
+#     In-Session members and the current set back afterwards. Now every mode
+#     does, and refuses before writing when it cannot read them to put back;
+#   - create reads the bool SaveAs returns (row 5b-1361 recorded that version 3
+#     did not) and refuses a name a set already has, as duplicate did and that
+#     card did by never saving over one;
+#   - every set written is found again by its name and read from the element,
+#     never from whichever set is current.
+# Nothing of that card was left out. `setName` and `newName` are optional
+# since version 4 (`absent: none`, read as no name) so by-parameter can be
+# asked with neither; every mode that needs one refuses as before.
+#
+# BACK TO DRAFT for version 4: impl/ changed, and version 2's proof below is
+# kept as the record. NEEDS-CHECKING Group KA, rows KA12 to KA17.
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -67,27 +115,94 @@ purpose: >
   written from the elements given, and what it holds afterwards is read back
   rather than assumed.
 
+  Version 4 makes one set for each value of a sheet parameter, in one call -
+  every sheet and view carrying that value goes into the set named for it,
+  the value itself or with a prefix put in front. A set that already exists is
+  left as it is and reported, unless bringing existing sets back in step was
+  asked for. A parameter no sheet has is refused, naming it, and so is a value
+  asked for that no sheet carries. Every mode writes a new set through the
+  In-Session set, and the Print dialog's current set and In-Session selection
+  are put back afterwards with the range.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
   needs:
     - name: doc
       type: Document
+    # OPTIONAL SINCE 2026-11-01 (FRAGMENT-ISSUES row 5b-1361). Rename and
+    # delete never read it, and Ajmal PS had to run a sheet selection first,
+    # on 4355-BHVD-3D-50S20-BL001A, only so the binder would let them run.
+    # Marked optional, an element list nothing filled binds EMPTY
+    # (HeronBindingNote.EmptyWhenAbsent) - and every mode that reads it already
+    # refuses an empty list: create "No views or sheets to put in the set." (the
+    # proven negative), add and remove "No views or sheets were given". The
+    # contract only: impl/ is untouched, so the proof's fingerprint holds.
+    # Whether rename and delete now bind with nothing selected is NEEDS-CHECKING
+    # Group KA, row KA11.
     - name: elements
       type: IList<Element>
+      optional: true
+    # OPTIONAL SINCE VERSION 4, so by-parameter - which names its sets from the
+    # values - can be asked without one. Left out it binds "none", which the
+    # C# reads as no name: every other mode then refuses "No set name was
+    # given.", as an empty name always was.
     - name: setName
       type: string
       source: request
-    # "create" | "rename" | "delete" | "add" | "remove". Add and remove use
-    # `elements` and `setName`, as create does.
+      optional: true
+      absent: none
+    # "create" | "rename" | "delete" | "add" | "remove" | "duplicate" |
+    # "by-parameter". Add and remove use `elements` and `setName`, as create
+    # does. Duplicate (version 3; "copy" is taken as duplicate) copies
+    # `setName` as `newName`. By-parameter (version 4, from
+    # SYNC_SHEET_SETS_BY_PARAMETER; "by parameter" and "sync" taken as the
+    # same) uses `parameterName`, `setPrefix`, `values` and `updateExisting`.
     - name: mode
       type: string
       source: request
-    # Used by rename only.
+    # Used by rename, and by duplicate as the copy's name. OPTIONAL SINCE
+    # VERSION 4, as setName is: "none" is no name, and rename and duplicate
+    # refuse it as before.
     - name: newName
       type: string
       source: request
+      optional: true
+      absent: none
+    # VERSION 4, from SYNC_SHEET_SETS_BY_PARAMETER - by-parameter only, every
+    # other mode leaves it unread. The parameter's name exactly as the sheet's
+    # Properties show it. Left out ("none"), by-parameter refuses "No
+    # parameter name was given."
+    - name: parameterName
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 4, by-parameter only. Put in front of each value to make the
+    # set's name, or left out.
+    - name: setPrefix
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 4, by-parameter only. Only these values, ";" between them - or
+    # left out for every value.
+    - name: values
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # VERSION 4, by-parameter only. True: an existing set is made to hold
+    # exactly its value's sheets and views. Left out (false): an existing set
+    # is not touched, and is reported in setsUnchanged.
+    - name: updateExisting
+      type: bool
+      source: request
+      optional: true
+      absent: "false"
   provides:
+    # What the set written holds, read back from it. Since version 4, for
+    # by-parameter, what the sets made and brought in step hold together.
     - name: memberCount
       role: result
       type: int
@@ -107,8 +222,8 @@ contract:
       type: string
     - name: changed
       # Version 2. How many sheets and views went into the set (add) or came
-      # out of it (remove). 0 for create, rename and delete, and 0 whenever
-      # nothing was saved.
+      # out of it (remove). 0 for create, rename, delete, duplicate and
+      # by-parameter, and 0 whenever nothing was saved.
       role: result
       type: int
     - name: unchanged
@@ -121,32 +236,66 @@ contract:
       # what it was, already "Selected views/sheets", or NOT put back - with
       # what it was, so the modeller can set it back. Blank when the print
       # manager never opened. A note about Revit's state, never a finding.
+      # Since version 4 it also says when the Print dialog's current set or
+      # In-Session selection could NOT be put back.
+      role: accounting
+      type: string
+    - name: created
+      # VERSION 4, by-parameter. The sets made, "; " between them, each with
+      # how many it holds, read back from the set found by its name.
+      role: result
+      type: string
+    - name: updated
+      # VERSION 4, by-parameter. Existing sets brought back in step, with how
+      # many went in and came out.
+      role: result
+      type: string
+    - name: setsUnchanged
+      # VERSION 4, by-parameter - SYNC_SHEET_SETS_BY_PARAMETER's `unchanged`.
+      # Existing sets already in step, or left alone because updateExisting
+      # was not asked for - each says which. Not a change (D-52).
+      role: accounting
+      type: string
+    - name: skipped
+      # VERSION 4, by-parameter. A value Revit would not make a set for, with
+      # Revit's reason; the others are still made. Not a thing found (D-52).
       role: accounting
       type: string
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project2 (3,035 elements), Revit 2020, session 13520
+  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
   positive_case: run as it would normally be run - the arrangement was re-made first by running
     find-sheets with this phase's own values - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned changed 0, done true, memberCount
-    2, notASheet 0 item(s), operation create, printRange Print range put back to Current window,
-    as it was before., refused , unchanged 0 item(s), wanted HERON SET Z1. inputs came elements
-    from find-sheets (2); setName as given; mode as given; newName as given. on Project2
-  negative_case: 'run with categoryName=Text Notes, inViewOnly=FloorPlan: Level 1, mode=create,
-    newName=, setName=HERON SET Z1 arranged with numberOrNameContains=ZZZ instead - chosen
-    because it should not contain what this fragment reports - the arrangement was re-made
-    first by running find-sheets with this phase''s own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned changed 0, done
-    false, memberCount 0, notASheet 0 item(s), operation create, printRange Print range put
-    back to Current window, as it was before., refused No views or sheets to put in the set.,
-    unchanged 0 item(s), wanted HERON SET Z1. inputs came elements from find-sheets (0); setName
-    as given; mode as given; newName as given. on Project2'
+    the transaction group ROLLED BACK afterwards. returned byValue 0 entry(ies), changed 0,
+    created , done true, findSet Func`2, givenName Func`2, memberCount 1, notASheet 0 item(s),
+    onlyText , onlyValues HashSet`1, operation create, parameterWanted , printRange Print
+    range put back to Current window, as it was before., refused , setsUnchanged , skipped
+    , unchanged 0 item(s), updateExisting false, updated , valuePrefix , wanted HERON SET
+    Z1. inputs came elements from find-sheets (1); setName as given; mode as given; newName
+    not given - "none", the card's own default (optional); parameterName not given - "none",
+    the card's own default (optional); setPrefix not given - "none", the card's own default
+    (optional); values not given - "all", the card's own default (optional); updateExisting
+    not given - "false", the card's own default (optional). on P1102 MEP
+  negative_case: run with mode=create, setName=HERON SET Z1 arranged with numberOrNameContains=ZZZ
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running find-sheets with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned byValue 0 entry(ies),
+    changed 0, created , done false, findSet Func`2, givenName Func`2, memberCount 0, notASheet
+    0 item(s), onlyText , onlyValues HashSet`1, operation create, parameterWanted , printRange
+    Print range put back to Current window, as it was before., refused No views or sheets
+    to put in the set., setsUnchanged , skipped , unchanged 0 item(s), updateExisting false,
+    updated , valuePrefix , wanted HERON SET Z1. inputs came elements from find-sheets (0);
+    setName as given; mode as given; newName not given - "none", the card's own default (optional);
+    parameterName not given - "none", the card's own default (optional); setPrefix not given
+    - "none", the card's own default (optional); values not given - "all", the card's own
+    default (optional); updateExisting not given - "false", the card's own default (optional).
+    on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 8b4bf365b330c5b8
+  fingerprint: e36134e01dfe18ba
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -159,11 +308,17 @@ compatibility-note: >
   `ViewSheetSetting.Save()` and `Revert()`, `IViewSheetSet.Views` read and set,
   `ViewSet.IsEmpty` - were looked up on every release with
   tools/api-surface --members on 2026-10-17: the same signature 2020 through
-  2027. 2023's `OrderedViewList` and `IsAutomatic` order a set and are not
+  2027. Version 3's duplicate uses only `ViewSheetSetting.SaveAs`, which
+  create already uses, and `ViewSheetSet.Views` read - the same 2020 through
+  2027 (tools/api-surface --members, 2026-11-01). 2023's `OrderedViewList` and `IsAutomatic` order a set and are not
   read or written, so where an added sheet lands in a manually ordered set
   is Revit's choice (NEEDS-CHECKING Group FA). Members are compared by
   ElementId's own equality, never as a number, so 2024's 64-bit ids do not
-  reach this code.
+  reach this code. Version 4's members - `ViewSheetSetting.InSession` and
+  `CurrentViewSheetSet` read, `Element.LookupParameter`, `Parameter.HasValue`,
+  `StorageType`, `AsString` and `AsValueString` - are the ones
+  SYNC_SHEET_SETS_BY_PARAMETER called, looked up the same 2020 through 2027
+  with tools/api-surface --members on 2026-11-01 for that card.
 
 # ROUTING - the same rows are in the fragments named here.
 #
@@ -176,7 +331,7 @@ compatibility-note: >
 #   "print these to PDF"                 -> EXPORT_SHEETS_TO_PDF, which prints
 #                                           a set once it exists
 #   "make the sheets"                    -> CREATE_SHEETS
-#   "which sheets are there"             -> LIST_SHEETS
+#   "which sheets are there"             -> FIND_SHEETS
 #   "how many sheet sets are there"      -> LIST_SHEET_SETS. A QUESTION: this
 #                                           fragment makes, renames and
 #                                           deletes a set and reads none back,
@@ -190,11 +345,24 @@ compatibility-note: >
 #                                           (2026-10-17, row 5b-466); before
 #                                           it, CREATE_SHEETS on both backends
 #   "take these sheets out of the set"   -> here, mode remove (row 5b-466)
+#   "duplicate the sheet set"            -> here, mode duplicate (version 3,
+#                                           row 5b-1361)
+#   "make a sheet set for each value of TCM_Project Browser 1"
+#                                        -> here, mode by-parameter (version 4).
+#                                           SYNC_SHEET_SETS_BY_PARAMETER until
+#                                           2026-11-01, merged into this card
+#   "update the sheet sets from the sheet parameter"
+#                                        -> here, mode by-parameter with
+#                                           updateExisting (version 4)
+#   "which sheet sets are out of date"   -> CHECK_SHEET_SETS_BY_PARAMETER. A
+#                                           QUESTION - read, never changed
+#   "copy Setup 1 as MEP Export"         -> MANAGE_EXPORT_SETUPS. An export
+#                                           setup, not a sheet set
 #   "create a view/sheet set with these sheets for DWG export" -> here - the
 #                                           set is made first, and
 #                                           EXPORT_VIEWS_TO_DWG exports from
 #                                           it after. Row 5b-1005
-#   "save these elements as a set"       -> CREATE_SELECTION_FILTER. A
+#   "save these elements as a set"       -> UPDATE_SAVED_SET, mode "create". A
 #                                           selection set and a sheet set are
 #                                           different things with one word
 #   "make a revision for this issue"     -> CREATE_REVISION. A sheet set is
@@ -214,3 +382,15 @@ utterances:
   - rename the sheet set
   - add these sheets to the set
   - take these sheets out of the set
+  # ADDED 2026-11-01, version 3 (row 5b-1361). The second and third were added
+  # after measuring: "duplicate the sheet set HERON A as HERON B" reached
+  # CREATE_LINE_STYLE, and "make a copy of the view/sheet set"
+  # SYNC_SHEET_SETS_BY_PARAMETER, on the trained model with the 2020 filter.
+  - duplicate the sheet set
+  - make a copy of the view/sheet set
+  - duplicate the sheet set as a new set
+  # MOVED 2026-11-01 from SYNC_SHEET_SETS_BY_PARAMETER, merged into this card.
+  - make a sheet set for each value of the sheet parameter
+  - update the sheet sets from the sheet parameter
+  # ...and its semantic identity, which nothing else declares now:
+  - make one View/Sheet Set for each value of a sheet parameter, and bring existing ones back in step

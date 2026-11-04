@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 14
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: PLACE_VIEWS_ON_SHEET
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO PLACE_VIEW_ON_SHEET (place-view-on-sheet), on the owner's instruction
+# in conversation: "now merge the other duplicates also". Constitution
+# Article 1: kept, never deleted, so its record and its proof stay readable
+# and it can be brought back. Nothing offers it now - retrieval leaves
+# DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to PLACE_VIEW_ON_SHEET. The proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: PLACE_VIEW_ON_SHEET
+  why: >
+    The same job: views onto one sheet as viewports, each asked first, a view
+    already on another sheet refused by id and never moved off it.
+    PLACE_VIEW_ON_SHEET also swaps one view for another in the same place. Its
+    version 3 took what this card had and it lacked: a grid of only the views
+    that will place, distinctPositions read back to the millimetre, a
+    placeholder sheet refused by name in sheetProblem, and an int count of what
+    was placed (placedCount). One rule was opposite and the safer was kept:
+    several views go on the grid, and a point given is used for one view only.
+    NOT carried: this card's elements input, so FIND_UNPLACED_VIEWS no longer
+    chains straight in - there the views are named, because the add-in binds no
+    absent view list.
 
 purpose: >
   Places every view handed in onto one sheet, arranged on a grid across the

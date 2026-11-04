@@ -1,0 +1,171 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-083
+semantic-identity: "which fabrication configuration and services this project has loaded, each service's palettes and buttons, and the fabrication parts selected with their service, length and item number"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "which fabrication
+# configuration and services are loaded" and "list the fabrication services
+# and their buttons", beside "convert these ducts to fabrication parts using
+# the Low Pressure service" (CONVERT_TO_FABRICATION) - Revit's Systems >
+# Fabrication > MEP Fabrication Settings and the MEP Fabrication Parts
+# palette. No card read or made a fabrication part: grep of brain/fragments
+# that day for FabricationPart, FabricationConfiguration and
+# DesignToFabricationConverter found nothing, and brain/heron_retrieve.py on
+# the two questions (Revit 2024) answered REPORT_FAMILY_CONNECTORS and
+# EDIT_ELECTRICAL_CIRCUIT.
+#
+# LOOK-ALIKES, NOT DUPLICATES. REPORT_PIPE_SEGMENTS and REPORT_ROUTING_
+# PREFERENCES read the design side - pipe segments, sizes and the fittings a
+# pipe or duct type inserts; fabrication services are a separate catalogue
+# from the fabrication configuration, with their own buttons. MEASURE_RUN_
+# QUANTITIES measures lengths of design ducts and pipes; this reads a
+# fabrication part's own length, service and item number. REPORT_STRUCTURAL_
+# CONNECTIONS names "fabrication parts" only to say steel plates are out of
+# reach. CREATE_ASSEMBLY_VIEWS makes shop drawings of an assembly.
+#
+# THE READ HALF OF A PAIR. CONVERT_TO_FABRICATION turns design ducts and pipes
+# into fabrication parts with a named service; every question about which
+# configuration, which services are loaded and their exact names, and what a
+# fabrication part is on, is answered here, so none reaches the write (D-86).
+#
+# NO CONFIGURATION is said in Revit words - where one is chosen - and nothing
+# else is read. A service named that is in the configuration but not loaded
+# is said so, with where it is loaded.
+#
+# READ ONLY - opens no transaction and needs none.
+kind: action
+domain: revit.mep
+capability: REPORT_FABRICATION_SETUP
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Answers which MEP fabrication configuration the project uses - its name,
+  version, where it is kept, its units and profile - and which of its services
+  are loaded in this project, each with its abbreviation, palettes and the
+  buttons on each palette, as MEP Fabrication Settings and the MEP Fabrication
+  Parts palette show them; and reads the fabrication parts selected, or every
+  one in the model, with each part's service, item number, size and straight
+  length, totalled per service.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      # Fabrication parts to read - a selection or the step before. Left out,
+      # it binds empty and the configuration and services are read; anything
+      # selected that is not a fabrication part is named in `notFabrication`.
+      type: IList<Element>
+      optional: true
+    - name: show
+      # Which lists: configuration | services | buttons | parts - one, or
+      # several separated by ; - or left out (`absent: all`): with nothing
+      # selected, the configuration, the loaded services with each palette's
+      # button count, and how many fabrication parts the model holds; with a
+      # selection, the configuration and the parts selected. `buttons` names
+      # every button; `parts` with nothing selected lists every fabrication
+      # part in the model. A word that is none of them is named, never guessed.
+      type: string
+      source: request
+      optional: true
+      absent: all
+    - name: service
+      # Narrows the services to a name containing this, or an abbreviation
+      # equal to it, ignoring capitals - and names that service's buttons.
+      # Left out, every loaded service.
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: configurationName
+      # The fabrication configuration's name, as MEP Fabrication Settings
+      # shows it; empty when the model has none.
+      role: result
+      type: string
+    - name: loadedServices
+      # Loaded services listed. Something the read FOUND; 0 when services
+      # were not asked for.
+      role: result
+      type: int
+    - name: buttons
+      # Buttons on the palettes of the services listed.
+      role: result
+      type: int
+    - name: fabricationParts
+      # Fabrication parts listed; 0 when parts were not asked for.
+      role: result
+      type: int
+    - name: report
+      # LIST BY LIST, in words: the configuration; each loaded service with
+      # its abbreviation, whether parts use it, each palette and its buttons;
+      # each fabrication part's id, service, item number, size and length,
+      # with totals per service. A STRING, because a reply cuts a list to
+      # three items and this is the answer.
+      role: accounting
+      type: string
+    - name: names
+      # The loaded services' exact names, quoted - what CONVERT_TO_FABRICATION
+      # is handed back, so no service name is retyped from memory.
+      role: accounting
+      type: IList<string>
+    - name: notFabrication
+      # Elements handed in that are not fabrication parts, each by name -
+      # looked at and left (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  FabricationConfiguration.GetFabricationConfiguration (parameter renamed
+  doc to document in 2024, called by position), GetFabricationConfiguration
+  Info, GetAllLoadedServices, GetAllServices, GetAllUsedServices, GetProfile
+  and HasValidConfiguration; FabricationConfigurationInfo Name, Version,
+  Path, IsCloudConfiguration, IsLocked and UnitSystem; FabricationService
+  Name, Abbreviation, ServiceId, FabricationSystemName, GetButtonCount and
+  GetButton; FabricationServiceButton Name, Code, IsStraight, IsAHanger and
+  IsExcluded; FabricationPart ServiceName, ItemNumber, Size, SpoolName,
+  CenterlineLength, IsAStraight and IsAHanger are present 2020 through 2027 -
+  read with tools/api-surface --members on 2026-11-02. A service's button
+  sets are groups to 2021 (GroupCount, GetGroupName, IsGroupExcluded) and
+  palettes from 2022 (PaletteCount, GetPaletteName, IsPaletteExcluded):
+  #if REVIT2020 || REVIT2021. Lengths are feet x 304.8, said in mm. Not seen
+  in Revit.
+
+# ROUTING (2026-11-02) - the same rows are in CONVERT_TO_FABRICATION.
+#
+#   "which fabrication configuration and services are loaded" -> here
+#   "list the fabrication services and their buttons"         -> here, show
+#                                                                services;
+#                                                                buttons
+#   "convert these ducts to fabrication parts using the Low Pressure service"
+#                                                             -> CONVERT_TO_FABRICATION
+#   "convert this pipe run to fabrication using service Copper Plumbing"
+#                                                             -> CONVERT_TO_FABRICATION
+#   "change these fabrication parts to the High Pressure service"
+#                                                             -> CHANGE_FABRICATION_SERVICE_SIZE -
+#                                                                the service and button
+#                                                                names it needs are listed
+#                                                                here (2026-11-02)
+#   "put a hanger on this fabrication pipe"                   -> ADD_FABRICATION_HANGERS
+#   "add a fabrication elbow from the Copper Plumbing service"
+#                                                             -> PLACE_FABRICATION_PART
+#   "convert these placeholders to real ducts"                -> CONVERT_MEP_PLACEHOLDERS -
+#                                                                a placeholder to a
+#                                                                design duct, not to
+#                                                                fabrication
+utterances:
+  - which fabrication configuration and services are loaded
+  - list the fabrication services and their buttons

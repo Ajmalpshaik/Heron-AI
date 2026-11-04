@@ -1,0 +1,163 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-139
+semantic-identity: "place one fabric sheet in this slab or wall at this point - Structure > Reinforcement > Fabric Sheet"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "place one fabric sheet on
+# this slab at this point", "put a single mesh sheet here" and "add a B503
+# sheet to this wall" - Revit's Structure > Reinforcement > Fabric Sheet. Checked
+# that day with brain/heron_retrieve.py on each sentence, Revit 2024: the first
+# two reached PLACE_FABRIC_REINFORCEMENT, the third ADD_CURTAIN_GRID_LINES.
+#
+# WHY A NEW CARD AND NOT A WIDENING OF PLACE_FABRIC_REINFORCEMENT. That card is
+# Revit's Fabric Area: sheets laid by Revit over the WHOLE host to its own
+# boundary, needing a direction, a face and a Fabric Area Type, and nothing
+# about where. This is Revit's other tool, one sheet at one point: it needs a
+# point, takes no Fabric Area Type, and leaves a FabricSheet, not a FabricArea.
+# Widening would have made the point meaningless for one job and the area type
+# meaningless for the other - two jobs on one card.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33):
+#   fabricSheetType  the Fabric Sheet Type by its exact name ("B503"). Left
+#                    out, or not loaded: NOTHING IS PLACED and the loaded
+#                    sheet types come back in `sheetTypes`, with their sizes
+#   pointMm          the sheet's CENTRE in millimetres from the model's
+#                    internal origin - "x,y" on a slab, "x,y,z" on a wall
+#   majorDirection   left out, x: a slab's major direction along the model's
+#                    x axis, a wall's horizontal. y or vertical, or an angle
+#                    in degrees
+#   location         top or bottom on a slab, exterior or interior on a wall;
+#                    left out, Revit's own face is kept - and read back and
+#                    named, so the answer says which face it went on
+#
+# REFUSED, BY NAME: anything but a floor, a wall, a foundation slab or a Part;
+# a floor or wall whose Structural box is off; a host Revit does not take
+# (FabricSheet.IsValidHost); a face word that is not the host's; more than one
+# host - one sheet goes in one host and which is the modeller's to say; a
+# point on a wall with no height, or off the wall.
+#
+# NEVER DOUBLED: a sheet of the same type already centred within 10 mm of the
+# point in that host is named in `alreadyThere` and left as it was.
+#
+# READ BACK after a regenerate: host, sheet type, face, the centre measured
+# from the sheet's own wires, and the major direction. A sheet Revit says
+# does not lie within the host is removed again and named.
+#
+# RISK MODIFY. It adds one sheet and deletes nothing it did not just make.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: PLACE_FABRIC_SHEET
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places one flat fabric (welded mesh) sheet of the fabric sheet type the
+  modeller names, centred on the point they give, in one structural slab,
+  wall, foundation slab or Part - as Revit's Fabric Sheet tool does - and
+  reads back where it sits.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The one slab, wall, foundation slab or Part selected. Anything else
+    # selected is named in `skipped` and left.
+    - name: elements
+      type: IList<Element>
+    # A Fabric Sheet Type by its exact name. Left out, nothing is placed and
+    # the loaded types are listed.
+    - name: fabricSheetType
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # The sheet's centre, millimetres from the internal origin: "x,y" on a
+    # slab, "x,y,z" on a wall.
+    - name: pointMm
+      type: string
+      source: request
+    # x (left out), y, horizontal, vertical, or an angle in degrees.
+    - name: majorDirection
+      type: string
+      source: request
+      optional: true
+      absent: x
+    # top, bottom, exterior or interior. Left out, Revit's face is kept.
+    - name: location
+      type: string
+      source: request
+      optional: true
+      absent: unchanged
+  provides:
+    - name: placed
+      # The fabric sheet made and read back - one, or none.
+      role: result
+      type: IList<ElementId>
+    - name: alreadyThere
+      # A sheet of the same type already at that point, left as it was -
+      # evidence it looked, never work it did (D-52).
+      role: accounting
+      type: IList<string>
+    - name: skipped
+      # Elements given that took no sheet, each with its reason (D-52).
+      role: accounting
+      type: IList<string>
+    - name: sheetTypes
+      # The fabric sheet types loaded, with their sizes - what to name.
+      role: accounting
+      type: IList<string>
+    - name: readBackWrong
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING: the sheet, its size, its centre, direction and face.
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was placed at all, in plain words. Empty when it ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. FabricSheet.Create(Document, Element,
+  ElementId), the static IsValidHost(Element), PlaceInHost(Element,
+  Transform), IsSingleFabricSheetWithinHost(Element, Transform),
+  GetSheetLocation, GetWireCenterlines(), FabricLocation, HostId and
+  FabricAreaOwnerId; FabricSheetType.OverallLength and OverallWidth;
+  FabricLocation's two values; Part.GetSourceElementIds and
+  LinkElementId.HostElementId; Wall.Orientation and Width;
+  BuiltInParameter.FLOOR_PARAM_IS_STRUCTURAL and WALL_STRUCTURAL_SIGNIFICANT;
+  RebarHostData.GetFabricAreasInHost; Transform.CreateTranslation and its
+  settable BasisX, BasisY, BasisZ and Origin are present and unchanged 2020
+  through 2027. Read with tools/api-surface --members on 2026-11-01. NOT
+  KNOWN from the assemblies: what PlaceInHost's transform origin means, and
+  whether GetSheetLocation's x axis is the major direction - the centre is
+  measured and corrected, the direction read back, and Group KF measures both.
+
+# ROUTING (2026-11-01) - the rebar rows are those in every rebar card.
+#
+#   "place one fabric sheet on this slab at
+#    this point"                              -> here
+#   "put a single mesh sheet here"            -> here
+#   "add a B503 sheet to this wall"           -> here
+#   "lay A393 mesh in the bottom of this slab" -> PLACE_FABRIC_REINFORCEMENT,
+#                                                the whole slab
+#   "T12 at 200 both ways in this slab"       -> PLACE_AREA_REINFORCEMENT
+utterances:
+  - place one fabric sheet on this slab at this point
+  - put a single mesh sheet here
+  - add a B503 sheet to this wall

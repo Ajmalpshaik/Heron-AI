@@ -1,0 +1,120 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-166
+semantic-identity: "which dimension types are there - each one's style, text size in mm, font, tick mark, units format, colour and witness line settings, and how many dimensions use it"
+kind: action
+domain: revit.annotation
+capability: REPORT_DIMENSION_TYPES
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: the modeller asked "what dimension types are in this project"
+# and for the changes SET_DIMENSION_TYPE makes. Nothing in Heron read a
+# DIMENSION TYPE (checked that day: grep of brain/fragments for DimensionType
+# and "dimension type", DRAFT and PROVEN, and brain/heron_retrieve.py with his
+# words - the question reached CREATE_ANGULAR_DIMENSION, a write).
+#
+# NO EXISTING READ COULD BE WIDENED - each read in full:
+#   REPORT_TEXT_TYPES (PROVEN) reads TEXT types - TextElementType, the type of
+#     a label or a text note. A dimension type is a DimensionType, another
+#     class with a tick mark, witness lines and a units format a text type has
+#     not got. Same plumbing, different job; and a change under its impl/
+#     would make its proof stale.
+#   REPORT_SPOT_DIMENSIONS (PROVEN) lists the DIMENSIONS in a view and the
+#     value each reads - the placed things, never their type's settings.
+#   REPORT_PROJECT_UNITS (DRAFT) reads the PROJECT's units; a dimension type
+#     can override them, and that override is what this reads.
+#   READ_ELEMENT_PARAMETERS reads one parameter in project units off a
+#     selection; a type cannot be selected in a view, and a text size printed
+#     in project length units is not the paper size Type Properties shows.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Lists the dimension types - Annotate > Dimension > Types - with what Type
+  Properties shows for each: its style (linear, angular, radial, diameter,
+  arc length, spot elevation ...), text size in paper millimetres, font,
+  width factor, text background, tick mark, line weights, colour, witness
+  line gap and extension, and units format - the type's own units and
+  rounding, or that it uses the project's. Counts the dimensions on each.
+  Name a type, or a style, to read only those.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # A type by its name - "Linear - 3mm Arial" - or "Family: Type" when two
+    # styles share a name. Left out, "all".
+    - name: dimensionTypeName
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # A style - linear, angular, radial, diameter, arc length, spot
+    # elevation, spot coordinate, spot slope, linear fixed. Left out, "all".
+    - name: style
+      type: string
+      source: request
+      optional: true
+      absent: all
+  provides:
+    - name: dimensionTypes
+      # ONE STRING, a line per type joined by "  ||  ", because a list reaches
+      # the chat cut to three entries: family: type | style | each setting
+      # under Revit's own name for it | Units Format | used by N dimension(s).
+      role: result
+      type: string
+    - name: typeCount
+      role: result
+      type: int
+    - name: dimensionCount
+      # Dimensions in the document. Work done, never a thing found (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, no #if. DimensionType, StyleType,
+  GetUnitsFormatOptions, ElementType.FamilyName, Dimension, FormatOptions
+  UseDefault and Accuracy, Units, and the parameters TEXT_SIZE, TEXT_FONT,
+  TEXT_WIDTH_SCALE, TEXT_STYLE_BOLD, TEXT_STYLE_ITALIC, TEXT_STYLE_UNDERLINE,
+  DIM_TEXT_BACKGROUND, TEXT_BACKGROUND, TEXT_DIST_TO_LINE,
+  DIM_LEADER_ARROWHEAD, LINE_PEN, TICK_MARK_PEN, LINE_COLOR,
+  DIM_LINE_EXTENSION, DIM_WITNS_LINE_CNTRL, WITNS_LINE_GAP_TO_ELT and
+  WITNS_LINE_EXTENSION are present 2020 through 2027 - read off the shipped
+  RevitAPI.dll for all eight with tools/api-surface --members on 2026-11-02.
+  The units format's unit and symbol are read by reflection: GetSpecTypeId,
+  GetUnitTypeId, GetSymbolTypeId, LabelUtils.GetLabelForUnit and
+  GetLabelForSymbol and Units.GetFormatOptions(ForgeTypeId) where
+  DimensionType.GetSpecTypeId exists (2021 to 2027); the UnitType property,
+  DisplayUnits, UnitSymbol, LabelUtils.GetLabelFor(DisplayUnitType /
+  UnitSymbolType) and Units.GetFormatOptions(UnitType) on 2020 - the 2021
+  units change, as SET_PROJECT_UNITS crosses it. Lengths are read in Revit's
+  internal feet and turned into millimetres by 304.8 (D-20). Dimensions are
+  counted by OfClass(Dimension), as SELECT_DIMENSIONS_BY_VALUE collects them,
+  so the 2025 subclasses are counted with no #if.
+
+# ROUTING - rows for these sentences are in SET_DIMENSION_TYPE too.
+#
+#   "what dimension types are in this project"  -> here
+#   "set the text size of dimension type X to 2.5 mm"
+#                                                -> SET_DIMENSION_TYPE
+#   "which text types are there"                 -> REPORT_TEXT_TYPES - labels
+#                                                   and text notes
+#   "list the dimensions in this view"           -> REPORT_SPOT_DIMENSIONS -
+#                                                   the placed dimensions
+#   "what units is this project in"              -> REPORT_PROJECT_UNITS
+
+# The modeller's words, 2026-11-02.
+utterances:
+  - what dimension types are in this project

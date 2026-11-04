@@ -1,15 +1,31 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-145
-semantic-identity: "make a perspective camera view that frames these elements, from a compass direction and a look-down angle"
+semantic-identity: "make a perspective camera view that frames these elements, from a compass direction and a look-down angle, or from an eye point to a target typed"
 kind: action
 domain: revit.views
 capability: FRAME_ELEMENTS_IN_CAMERA
-version: 4
+version: 5
+# VERSION 5, 2026-11-01 - SET_VIEW_CAMERA was merged into this card on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. Both point a perspective camera; this worked the eye out from
+# elements, that one took it TYPED. Five OPTIONAL inputs, so a version 4 call
+# runs exactly as before: `eyeMm` and `targetMm` ("x,y,z" in millimetres) give
+# the camera directly and nothing is framed; `levelName` measures their
+# heights from a level, with Revit's Eye Elevation and Target Elevation read
+# back; `farClipMm` is off or the Far Clip Offset, read back; `createIfMissing`
+# makes a new perspective view of that name on the typed road - without it a
+# name not found is refused, SET_VIEW_CAMERA's rule. `elements` is optional
+# now, for the typed road. THE SAFER RULE OF THE CONFLICT WAS KEPT: an existing
+# ISOMETRIC view is refused, never turned perspective - SET_VIEW_CAMERA's
+# `perspective` switch, which toggled one for good, was NOT carried. Version
+# 3's proof below no longer describes the code; DRAFT until version 5 is
+# proved.
+#
 # VERSION 4, 2026-10-21 - four faults found making real cinematic views on
 # Revit 2020's sample house after version 3 was signed (Group IF). No input is
 # added or removed; a call that worked before frames as before, but for these:
@@ -86,8 +102,19 @@ risk: MODIFY
 #
 # **ONE JOB WHETHER THE VIEW EXISTS OR IS NEW.** A perspective 3D view of that
 # name is re-aimed; with none, one is made (auto names it after the first
-# element). An isometric view of that name is refused - SET_VIEW_CAMERA turns
-# one perspective.
+# element). An isometric view of that name is refused - and since version 5 no
+# tool here turns one perspective: SET_VIEW_CAMERA did, and its switch was not
+# carried (Revit has no call back to isometric).
+#
+# **VERSION 5 - THE TYPED CAMERA, FROM SET_VIEW_CAMERA.** eyeMm and targetMm
+# set the camera from an eye point to a target, the up direction DERIVED -
+# square to the line of sight in the vertical plane through it, so the camera
+# is level; looking straight up or down, north is up. A perspective view of
+# that name has its camera moved; with none, createIfMissing makes one. The
+# eye, the direction and the projection are read back in millimetres, with a
+# finding when the camera did not read back where it was put. A framing input
+# - shot, side, direction, look-down, distance, margin, lens, composition,
+# level camera, aspect - beside a typed eye is refused: it frames nothing.
 #
 # **WHAT IS MEASURED AND WHAT IS NOT.** `framed` counts the elements whose box
 # lies inside the crop box Revit reads back afterwards, given in the view's own
@@ -211,16 +238,21 @@ purpose: >
   eye-level, low-angle hero, bird's-eye aerial, worm's-eye, three-quarter,
   front, interior, close-up, cinematic - the building's side to stand on, the
   camera height, the lens and the picture's shape, the way a visualiser sets up
-  a cinematic camera.
+  a cinematic camera. Version 5: or an eye point and a target typed in
+  millimetres, as the Camera tool places them.
 
 contract:
   needs:
     - name: doc
       type: Document
+    # Optional since version 5: a typed eye and target frame no element. Left
+    # out it binds an empty list (HeronBindingNote.EmptyWhenAbsent), and the
+    # framing road is refused.
     - name: elements
       type: IList<Element>
+      optional: true
     # The perspective view to make or re-aim; auto names it after the first
-    # element.
+    # element. With a typed eye it must be named.
     - name: viewName
       type: string
       source: request
@@ -305,6 +337,43 @@ contract:
       source: request
       optional: true
       absent: auto
+    # VERSION 5, from SET_VIEW_CAMERA. "x,y,z" in millimetres - where the eye
+    # stands. With targetMm, the camera is set from these and nothing is
+    # framed. Left out: none.
+    - name: eyeMm
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 5, from SET_VIEW_CAMERA. "x,y,z" in millimetres - what the
+    # camera looks at.
+    - name: targetMm
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 5, from SET_VIEW_CAMERA. The typed eye's and target's heights
+    # measured from this level; keep, or not said, means from the project's
+    # origin.
+    - name: levelName
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    # VERSION 5, from SET_VIEW_CAMERA. off, or the far clip in millimetres
+    # from the camera, with a typed eye; keep leaves it as it is.
+    - name: farClipMm
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    # VERSION 5, from SET_VIEW_CAMERA. true makes a new perspective view when
+    # no 3D view has the name - on the typed road; false, or not said, refuses
+    # there. The framing road makes one either way, as version 4 did.
+    - name: createIfMissing
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: camera
       role: result
@@ -424,8 +493,8 @@ compatibility-note: >
   release. Points are millimetres divided by 304.8 (D-20). Version 3 adds
   Element.Location as LocationCurve with Line.Direction and Curve.Length,
   Element.LevelId with Level.ProjectElevation, and BuiltInParameter
-  VIEWER_EYE_ELEVATION and VIEWER_TARGET_ELEVATION - SET_VIEW_CAMERA already
-  calls the level's elevation and both parameters on every release - compiled
+  VIEWER_EYE_ELEVATION and VIEWER_TARGET_ELEVATION - SET_VIEW_CAMERA called
+  the level's elevation and both parameters on every release - compiled
   for all eight by tools/check-fragments-compile.py on 2026-10-20. Version 4
   adds Room.IsPointInRoom, Space.IsPointInSpace and Document.GetRoomAtPoint
   (FILTER_ELEMENTS_IN_ROOM calls the first two), CurveLoop.Create,
@@ -434,13 +503,23 @@ compatibility-note: >
   clash test), Document.ActiveView, Document.Phases, PhaseFilter and
   BuiltInParameter VIEW_PHASE and VIEW_PHASE_FILTER (SET_VIEW_PHASE's) -
   compiled for all eight by tools/check-fragments-compile.py on 2026-10-21.
+  Version 5 adds what SET_VIEW_CAMERA was proved with, present 2020 through
+  2027: ViewOrientation3D(XYZ, XYZ, XYZ) and BuiltInParameter
+  VIEWER_BOUND_ACTIVE_FAR set as an integer - the rest it called this card
+  already calls. View3D.ToggleToPerspective is NOT called: that switch was
+  not carried.
 
 # ROUTING - the same rows are in the render, sun, display and camera cards.
 #
 #   "a close-up camera of this duct heater"     -> here
 #   "frame the selected equipment from the NE"  -> here
-#   "camera from this point to that point"      -> SET_VIEW_CAMERA, an eye and
-#                                                  a target typed in mm
+#   "camera from this point to that point"      -> here since version 5, an
+#                                                  eye and a target typed in
+#                                                  mm (was SET_VIEW_CAMERA)
+#   "move the camera of this 3D view"           -> here, typed - a perspective
+#                                                  view; an isometric one is
+#                                                  refused, never turned
+#   "far clip this camera at 20 m"              -> here, farClipMm
 #   "box the 3D view round these"               -> SET_VIEW_SECTION_BOX - it
 #                                                  cuts the view, a camera
 #                                                  does not
@@ -454,8 +533,9 @@ compatibility-note: >
 #   "wide angle camera"                         -> here
 #   "camera height 1.6 m"                       -> here
 #   "put the camera eye 1600 above level 1 looking at the reception desk"
-#                                               -> SET_VIEW_CAMERA, an eye
-#                                                  point typed, not a shot
+#                                               -> here since version 5, an
+#                                                  eye point typed with
+#                                                  levelName, not a shot
 
 utterances:
   - make a close-up perspective of this duct heater
@@ -472,3 +552,11 @@ utterances:
   - two point perspective at eye level
   - wide angle camera
   - camera height 1.6 m
+  # MOVED 2026-11-01 from SET_VIEW_CAMERA, merged into this card.
+  - make a perspective view from the entrance looking at the lobby
+  - move the camera of the 3D view to look at the plant room
+  - set the eye and target of this 3D view
+  - make a camera view from this point to that point
+  - make a perspective from the entrance looking at the lobby
+  - put the camera eye 1600 above level 1 looking at the reception desk
+  - turn the far clip of this camera on at 15000

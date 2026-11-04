@@ -135,10 +135,13 @@ compatibility-note: >
 #    the template"
 #   "move these lines onto another style"  -> REMAP_LINE_STYLES, which stays
 #                                             inside ONE project
-#   "draw a line"                          -> CREATE_LINE
+#   "draw a line"                          -> DRAW_FAMILY_DETAIL_LINES
 #   "these lines sit on top of each other" -> FIND_OVERLAPPING_LINES
 #   "bring the view filters over"          -> TRANSFER_VIEW_FILTERS_BETWEEN_DOCUMENTS
 #   "bring the schedules over"             -> TRANSFER_VIEWS_BETWEEN_DOCUMENTS
+#   "copy the text types and dimension     -> TRANSFER_PROJECT_STANDARDS (2026-11-02),
+#    types from Office Standard.rvt"         types and patterns - it names this card
+#                                             for line styles and copies none
 
 utterances:
   - bring the line styles over from the template

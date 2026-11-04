@@ -1,0 +1,95 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that makes a view, "made something nobody asked for": a takeoff
+# of a category that was never named, an empty takeoff left in the Project
+# Browser, or an ordinary schedule where a material takeoff was wanted.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE. "test projject", Revit 2024 - where
+# CREATE_SCHEDULE was proved on 2026-09-13. It needs at least one wall of a
+# type with a compound structure (a Basic Wall) in the host model, not in a
+# link, and no schedule already called "HERON TEST TAKEOFF". Every value is
+# typed - category, fields and name - so nothing is selected and nothing has
+# to be made first. The negative leg is the SAME call with category=Grids: a
+# category Revit allows no takeoff of, so a different value, not an empty one
+# (fragment-proving, rules 3 and 5). Where the model differs, the job file
+# changes - never the card. EVERY RUN ROLLED BACK.
+
+positive:
+  - given: >
+      category "Walls", fieldNames ["Material: Name", "Material: Area",
+      "Material: Volume"], scheduleName "HERON TEST TAKEOFF"
+    expect: >
+      created one id; scheduleCalled "HERON TEST TAKEOFF"; addedFields the
+      three names as Revit shows them; missingFields empty; refused empty;
+      findings "Material takeoff "HERON TEST TAKEOFF" of Walls made, with 3
+      field(s) ...". In the Project Browser under Schedules/Quantities, a
+      takeoff listing one row per material per wall - Revit's own View >
+      Schedules > Material Takeoff of Walls, not a plain wall schedule
+
+  - given: >
+      the same, with fieldNames ["material name", "material area"] - the
+      modeller's words, not Revit's spelling - and scheduleName left out
+    expect: >
+      the two fields Revit calls "Material: Name" and "Material: Area" added,
+      if that is what Revit calls them here; scheduleCalled Revit's own
+      default name for a wall takeoff. Record the names Revit used
+
+  - given: category "Floors", fieldNames ["Family and Type", "Area"]
+    expect: >
+      both added as asked - "Area" is the FLOOR'S own area - and a finding
+      naming the material's own area field, if the takeoff has one, to ask for
+      by that name. Nothing swapped behind the modeller's back
+
+  - given: >
+      category "Multi-Category", fieldNames ["Category", "Material: Name"]
+    expect: >
+      a Multi-Category material takeoff, IF Revit lists it as valid; if it does
+      not, refused saying so with validCategories filled and nothing made.
+      Record which - the API's own documentation was not readable here
+
+negative:
+  - given: >
+      category "Grids" instead, with the positive's fields and name "HERON TEST
+      TAKEOFF 2" - a category Revit allows no material takeoff of
+    expect: >
+      created empty; refused "\"Grids\" is not a category Revit allows a
+      material takeoff of ... Nothing was made."; validCategories listing Walls,
+      Floors and the rest. Nothing in the Project Browser. THE FIRST CASE TO RUN
+
+  - given: category left out, with the positive's fields
+    expect: >
+      refused "No category was named, and a material takeoff is a takeoff OF
+      one category - it is never chosen for you. Nothing was made."; the
+      categories listed. A takeoff of Walls made because Walls is first on a
+      list would be the guess D-33 forbids
+
+  - given: >
+      category "Walls", fieldNames ["Material: Name", "Colour Of Moon"]
+    expect: >
+      the takeoff MADE with Material: Name; "Colour Of Moon" in missingFields;
+      fieldsAvailable listing the takeoff's material fields
+
+  - given: category "Walls", fieldNames ["Colour Of Moon"] only
+    expect: >
+      created empty; refused "Not one of the fields asked for is one this
+      takeoff has ..."; the takeoff made and deleted again inside the same
+      undo - no takeoff with no columns left in the Project Browser
+
+  - given: the positive again, after a first run was KEPT, same scheduleName
+    expect: >
+      refused "A schedule called "HERON TEST TAKEOFF" is already in the
+      project. Nothing was made ..." - no second takeoff, no exception
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one takeoff is one undo entry
+
+second_route:
+  - >
+    Revit's own View > Schedules > Material Takeoff, Walls, with the same three
+    fields: the two takeoffs compared row for row and column for column. The
+    same engine, so a difference means this made the wrong kind of schedule
+  - >
+    REPORT_MATERIAL_TAKEOFF on the same walls: its areas and volumes per
+    material match the totals of this takeoff's Material: Area and Material:
+    Volume columns, grouped by Material: Name

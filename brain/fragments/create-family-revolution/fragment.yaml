@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,30 @@ capability: CREATE_FAMILY_REVOLUTION
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO CREATE_FAMILY_FORMS (create-family-forms), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to CREATE_FAMILY_FORMS. The proof below is the record of what this
+# card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: CREATE_FAMILY_FORMS
+  why: >
+    The same building: a half-section turned about an axis on a named family
+    plane, solid or void, read back all or nothing. CREATE_FAMILY_FORMS builds
+    it as a list of one row - kind=revolve with this card's own fields,
+    workPlane, profile, axisLine, startDegrees, endDegrees and solid, written
+    exactly as this card took them, the corner within Revit's shortest line of
+    the axis put on it, a profile crossing its axis refused - or many forms in
+    one undo. Its version 2 took what this card said that it did not: the angles
+    and the axis in the read-back, the plane's facing, the part-turn's warning
+    to look which way it swept, and formId, the first form's id, so every step
+    written for this card's formId binds unchanged. Nothing was opposite.
 
 purpose: >
   Builds a REVOLVE in the family open in the Family Editor - a closed shape
@@ -174,8 +198,10 @@ compatibility-note: >
 #
 #   "make a revolve in the family"               -> here
 #   "revolve this profile around the axis"       -> here
-#   "array these round a circle"                 -> ARRAY_ELEMENTS_RADIAL,
+#   "array these round a circle"                 -> COPY_ELEMENTS, sweepDegrees -
 #                                                   copies, not a turned form
+#                                                   (ARRAY_ELEMENTS_RADIAL until
+#                                                   2026-11-01)
 
 utterances:
   - make a revolve in the family

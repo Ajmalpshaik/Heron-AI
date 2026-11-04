@@ -5,11 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-059
-semantic-identity: "read the lookup tables of every loaded family without opening any of them by hand"
+semantic-identity: "what sizes a family's lookup tables actually hold - the family in front read row by row, or every loaded family from the project without opening any by hand"
 kind: action
 domain: revit.families
 capability: REPORT_FAMILY_TABLES_IN_PROJECT
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -18,9 +18,22 @@ purpose: >
   them out as CSV, and closes it again - so a whole set of fittings can be
   checked in one pass instead of one family at a time by hand.
 
+  **OR THE FAMILY IN FRONT, ROW BY ROW (version 2, 2026-11-01).**
+  REPORT_FAMILY_SIZE_TABLE, which read the lookup table of the family open in
+  the Family Editor, was merged into this card and is DEPRECATED. With a
+  family in front this reads it directly: every table it holds named in
+  `tableNames`, and one table whole - every row in `rows`, the column headers,
+  Revit's own value strings - `tableName` picking it, empty reading the first,
+  and a name the family has not got refused with the ones it has, never a
+  silent fall back. `exportTo` writes that table as CSV. From a project, when
+  `nameContains` narrows to ONE family, its table is read whole the same way.
+  It answers "why does this fitting not appear at my size": a size missing
+  from the lookup table is silent - Revit inserts nothing, or the wrong
+  geometry, and says nothing either way.
+
   **IT EXISTS BECAUSE A SIZE TABLE IS ONLY REACHABLE FROM INSIDE THE FAMILY.**
-  REPORT_FAMILY_SIZE_TABLE reads the family in front, which means opening each
-  one, looking, and closing it. A pipe type references eight fitting families,
+  Reading the family in front means opening each one, looking, and closing
+  it. A pipe type references eight fitting families,
   and every one of them can carry the same stale table - so doing it by hand
   is eight rounds of the same work and the easiest place to stop early.
 
@@ -46,15 +59,39 @@ contract:
     - name: app
       type: Application
     # Narrows to families whose NAME contains this. Empty reads every loaded
-    # family, which on a real project is a long job.
+    # family, which on a real project is a long job. Version 2: optional - left
+    # out it binds "none", read as empty - and not read with a family in front.
     - name: nameContains
       type: string
       source: request
+      optional: true
+      absent: none
     # Folder to write one CSV per table into, named <family>__<table>.csv.
-    # Empty reads without writing anything.
+    # Empty reads without writing anything. Version 2: optional, "none" when
+    # left out.
     - name: exportFolder
       type: string
       source: request
+      optional: true
+      absent: none
+    # VERSION 2, from REPORT_FAMILY_SIZE_TABLE: which table is read whole,
+    # when a family holds more than one. Left out it binds "none", read as
+    # empty - the first. A name the family has not got is refused with the
+    # ones it has.
+    - name: tableName
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 2, from REPORT_FAMILY_SIZE_TABLE: a file path to write the table
+    # read whole to, as CSV. Left out it binds "none" and writes nothing. It
+    # changes NOTHING in the model - and the exported file is the only place
+    # Revit states the header format an import must use.
+    - name: exportTo
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: familiesRead
       role: result
@@ -91,32 +128,81 @@ contract:
       # thing found (D-52).
       role: accounting
       type: int
+    # VERSION 2 (2026-11-01), from REPORT_FAMILY_SIZE_TABLE: ONE table read
+    # whole - the family in front's, or the one family `nameContains`
+    # narrowed to from a project. Empty when no single family was read.
+    - name: tableNames
+      # Every table in that family, on one line - a family may hold several
+      # and reading the wrong one answers a different question.
+      role: result
+      type: string
+    - name: columnHeaders
+      role: result
+      type: string
+    - name: rows
+      # The whole table as text, one row per entry, joined - a list is cut to
+      # three entries before a reader sees it, and which sizes are present is
+      # a question no summary can answer.
+      role: result
+      type: string
+    - name: rowCount
+      role: result
+      type: int
+    - name: columnCount
+      role: result
+      type: int
+    - name: exportedTo
+      # Where that table's CSV was written, empty when none was asked for. A
+      # path, not a promise - set only after the export returned.
+      role: accounting
+      type: string
+    - name: notAFamily
+      # That the document in front is a project, so the loaded families were
+      # read rather than one in front. Never an empty table (D-52).
+      role: accounting
+      type: bool
     - name: findings
       type: IList<string>
 
 proof:
-  date: '2026-09-16'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: PIPE (3,332 elements), Revit 2020, session 8084
-  positive_case: 'run as it would normally be run. returned families 126 item(s) [Rectangular
-    Mullion, Circular Mullion, System Panel, ...], familiesRead 1, findings 1 item(s) [1 family(ies)
-    read of 126 scanned; 1 table(s) found, 0 famil...], folder , leftOpen 0 item(s), needle
-    TRG_Cap, noTable 0 item(s), refused 0 item(s), scanned 126, summary TRG_Cap_Copper: Calotta
-    rame(18 rows), summaryRows 1 item(s) [TRG_Cap_Copper: Calotta rame(18 rows)], tablesFound
-    1, wasOpenBefore HashSet`1. inputs came nameContains as given; exportFolder as given.
-    on PIPE'
-  negative_case: run with nameContains=ZZZNOTAFAMILY, exportFolder= instead - chosen because
-    it should not contain what this fragment reports. returned families 126 item(s) [Rectangular
-    Mullion, Circular Mullion, System Panel, ...], familiesRead 0, findings 1 item(s) [0 family(ies)
-    read of 126 scanned; 0 table(s) found, 0 famil...], folder , leftOpen 0 item(s), needle
-    ZZZNOTAFAMILY, noTable 0 item(s), refused 0 item(s), scanned 126, summary , summaryRows
-    0 item(s), tablesFound 0, wasOpenBefore HashSet`1. inputs came nameContains as given;
-    exportFolder as given. on PIPE
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: 'run as it would normally be run. returned columnCount 0, columnHeaders ,
+    countAll Func`4, exportedTo , familiesRead 15, findings 1 item(s) [15 family(ies) read
+    of 196 scanned; 8 table(s) found, 7 fami...], folder , given Func`2, leftOpen 0 item(s),
+    namesIn Func`2, needle Elbow, noTable 7 item(s) [M_Rectangular Duct Elbow - Mitered, M_Round
+    Duct Elbow, M_Rectangular Elbow - Mitered, ...], notAFamily true, readWhole Action`3,
+    refused 0 item(s), rowCount 0, rows , scanned 196, summary M_Rectangular Duct Elbow -
+    Mitered: NO TABLE  ||  M_Round Duct Elbow: NO TABLE  ||  M_Pipe Elbow: M_Pipe Fitting
+    Sizes(15 rows)  ||  M_Elbow - Generic: M_Pipe Fitting - Generic(30 rows)  ||  Conduit
+    Elbow - Aluminum: Conduit Elbow - Aluminum(12 rows)  ||  Conduit Elbow - Steel: Conduit
+    Elbow - Steel(10 rows)  ||  Conduit Elbow - without Fittings - EMT: Conduit Elbow - without
+    Fittings - EMT(10 rows)  ||  Conduit Elbow - without Fittings - RMC: Conduit Elbow - without
+    Fittings - RMC(12 rows)  ||  Conduit Elbow - without Fittings - RNC: Conduit Elbow - without
+    Fittings - RNC(12 rows)  ||  Conduit Elbow - Plain End - PVC: Conduit Elbow - Plain End
+    - PVC(12 rows)  ||  M_Rectangular Elbow - Mitered: NO TABLE  ||  M_Rectangular Elbow -
+    Radius: NO TABLE  ||  M_Round Elbow: NO TABLE  ||  M_Oval Elbow - Gored: NO TABLE  ||  M_Oval
+    Elbow - Mitered: NO TABLE, summaryRows 15 item(s) [M_Rectangular Duct Elbow - Mitered:
+    NO TABLE, M_Round Duct Elbow: NO TABLE, M_Pipe Elbow: M_Pipe Fitting Sizes(15 rows), ...],
+    tableNames , tablesFound 8, wantedPath , wantedTable . inputs came nameContains as given;
+    exportFolder not given - "none", the card''s own default (optional); tableName not given
+    - "none", the card''s own default (optional); exportTo not given - "none", the card''s
+    own default (optional). on P1102 MEP'
+  negative_case: run with category=Sheets, nameContains=ZZZNOTAFAMILY instead - chosen because
+    it should not contain what this fragment reports. returned columnCount 0, columnHeaders
+    , countAll Func`4, exportedTo , familiesRead 0, findings 1 item(s) [0 family(ies) read
+    of 196 scanned; 0 table(s) found, 0 famil...], folder , given Func`2, leftOpen 0 item(s),
+    namesIn Func`2, needle ZZZNOTAFAMILY, noTable 0 item(s), notAFamily true, readWhole Action`3,
+    refused 0 item(s), rowCount 0, rows , scanned 196, summary , summaryRows 0 item(s), tableNames
+    , tablesFound 0, wantedPath , wantedTable . inputs came nameContains as given; exportFolder
+    not given - "none", the card's own default (optional); tableName not given - "none", the
+    card's own default (optional); exportTo not given - "none", the card's own default (optional).
+    on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: cf7c7be255dd4de5
-
+  fingerprint: 60cb1e9daf6648d7
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -129,7 +215,21 @@ compatibility-note: >
   on 2026-09-15. No number is read or converted here - the CSV carries its own
   units in its header - so the 2021 units move cannot reach it.
 
-# ROUTING - repeated in REPORT_FAMILY_SIZE_TABLE.
+# 2026-11-01 - REPORT_FAMILY_SIZE_TABLE WAS MERGED INTO THIS CARD (version 2)
+# on the owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same job: the lookup tables of a family, which sizes they
+# hold. This card was kept - it covered more (every loaded family, the CSVs,
+# the leftOpen guard), and CHECK_FAMILY_SIZE_TABLES' own C# names it. Its
+# outputs now, by the same names: tableNames, columnHeaders, rows, rowCount,
+# columnCount, exportedTo, notAFamily (true now for a project in front, which
+# is read, not refused), findings; its inputs tableName and exportTo, optional
+# here. A family with no table is in noTable, with its finding, as it said.
+#
+# NOTHING WAS OPPOSITE. Its "a project in front is not a family - open the
+# family" is no refusal here: a project in front reads every loaded family,
+# the job this card did.
+
+# ROUTING - the neighbours this must not be confused with.
 #
 #   "check every fitting family's sizes" -> here, from the project. NOT an
 #                                           utterance, measured (row 5b-387):
@@ -138,8 +238,15 @@ compatibility-note: >
 #                                           and the owner's "Tag the ducts
 #                                           again using this tag family" out of
 #                                           the top five, on lexical
-#   "read THIS family's table"           -> REPORT_FAMILY_SIZE_TABLE, with the
-#                                           family open in front
+#   "what sizes does this family know"   -> here
+#   "read THIS family's table"           -> here, with the family open in
+#                                           front (REPORT_FAMILY_SIZE_TABLE
+#                                           until 2026-11-01)
+#   "why does the fitting not appear at this size" -> a COMPOSITION, all
+#                                         reads: REPORT_ROUTING_PREFERENCES,
+#                                         then this card on the family it
+#                                         names, then REPORT_PIPE_SEGMENTS
+#   "what fitting will this type insert" -> REPORT_ROUTING_PREFERENCES
 #   "write a table back"                 -> WRITE_FAMILY_SIZE_TABLE
 #   "check the lookup tables in this family"
 #                                        -> CHECK_FAMILY_SIZE_TABLES - the
@@ -152,3 +259,14 @@ utterances:
   - export every family size table
   - which families have stale size tables
   - read all the fitting tables
+  # MOVED 2026-11-01 from REPORT_FAMILY_SIZE_TABLE, merged into this card.
+  - what is in this family's lookup table
+  - which sizes does this family know
+  - why does this fitting not appear at my size
+  - read the size table
+  - show me the lookup table rows
+  # And the one row of its routing table that was not an utterance -
+  # "what sizes does this family know" -> here. Measured 2026-11-01: left as
+  # a comment, the model backend sent it to FLEX_FAMILY, a write, once the
+  # retired card no longer answered it.
+  - what sizes does this family know

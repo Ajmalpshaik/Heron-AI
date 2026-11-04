@@ -53,7 +53,104 @@ positive:
       word "leave" hands headingSideways the decision. A version 2 caller sees
       no difference
 
+  # VERSION 5 (row 5b-1367, Group KK).
+  - given: >
+      a duct schedule whose Length column uses project settings (millimetres),
+      fieldName "Length", units "metres, 2 decimal places, m"
+    expect: >
+      appliedAppearance reading "units project settings (Millimeters (mm), 0
+      decimal places) -> Meters (m), 2 decimal places", and in Revit the
+      Formatting tab's Field Format for Length with Use project settings
+      UNTICKED, Meters, 2 decimal places, symbol m - and the lengths printing
+      as 12.35 m. Ajmal PS's own request, 2026-11-01
+
+  - given: the same column afterwards, units "project"
+    expect: >
+      Use project settings ticked again and the lengths back in millimetres;
+      read back "units Meters (m), 2 decimal places -> project settings (...)"
+
+  - given: units "mm, no symbol" on a Length column
+    expect: millimetres with no unit symbol, the rounding kept from the project's format
+
+  - given: >
+      Revit 2022 or later, fieldName "System Type", multipleValues "custom: -"
+    expect: >
+      a row gathering two system types printing "-" rather than <varies>, and
+      the read back saying custom '-'
+
+  - given: fieldName "Length", cellStyle "bold, colour red"
+    expect: >
+      the Length column's values bold and red on THIS schedule only - another
+      schedule using the same body text type unchanged. Read back "style bold,
+      colour 255 0 0"
+
+  - given: cellStyle "size 3 mm" on one column
+    expect: >
+      THE TEXT SIZE ASSUMPTION SETTLED: the Edit Font dialog for the column
+      reading 3 mm means TextSize is a Revit internal length; anything else is
+      recorded with Revit's own number from the read back and the card corrected
+
+  - given: cellStyle "reset" on that column
+    expect: every override off, the column back to the body text type's look
+
+  - given: VERSION 5. fieldName "Length" on a column that totals, calculation "minimum and maximum"
+    expect: >
+      totalled 1, replacedCalculation saying it was calculating totals, and the
+      Formatting tab's drop-down reading "Calculate minimum and maximum"; each
+      footer and the grand total showing the shortest and longest length
+
+  - given: VERSION 5. calculation "none" on a column that totals
+    expect: >
+      totalled 1, appliedTotals saying it now has no calculation, and the
+      footers showing no sum for it
+
+  - given: VERSION 5. calculation left out, calculateTotals on
+    expect: >
+      exactly version 4 - totals, the same answer words as before
+
 negative:
+  # VERSION 5.
+  - given: VERSION 5. fieldName "Family and Type", calculation "maximum"
+    expect: >
+      totalled 0, cannotTotal naming 'Family and Type' from CanDisplayMinMax,
+      and the column's calculation unchanged
+
+  - given: VERSION 5. fieldName "Length", calculation "average", alignment "centre"
+    expect: >
+      refused once naming 'average' and the five calculations accepted, NO
+      column's calculation touched, and the alignment still applied - this
+      card's rule for one bad input
+
+  - given: VERSION 5. calculateTotals on and calculation "minimum"
+    expect: >
+      refused once - a column has one calculation - and no column's
+      calculation touched
+
+  - given: fieldName "Type", units "metres"
+    expect: >
+      refused for that column - "not a number with units" - and NOTHING about
+      its format changed; another column named in the same call still set
+
+  - given: fieldName "Length", units "kilograms"
+    expect: >
+      refused naming every unit Revit offers for a length, the column's format
+      unchanged, and the rest of the call still made
+
+  - given: units "metres", cellStyle "glowing" on fieldName "Length"
+    expect: >
+      the style refused once naming the style words accepted, and the units
+      still set and read back - one bad input does not discard a good one
+
+  - given: Revit 2020 or 2021, multipleValues "varies" with an alignment
+    expect: >
+      multiple values refused as arriving at Revit 2022, the alignment still
+      applied and read back
+
+  - given: cellStyle "bold" on one schedule's Length column
+    expect: >
+      a SECOND schedule sharing the same body text type NOT bold - the text
+      type is never edited
+
   - given: an empty newHeading and columnWidthMm of 0
     expect: >
       NOTHING CHANGED and nothing claimed - not a blanked heading and not a
@@ -73,11 +170,11 @@ negative:
       that refusal named with Revit's own message, and the count reflecting what
       a READ BACK found rather than what was attempted
 
-  - given: a request to make the schedule text bold
+  - given: a request to make the schedule's whole body text type bold
     expect: >
-      NOT DONE BY THIS FRAGMENT AT ALL, and the Revit route named. Bold lives on
-      the schedule's text type, which other schedules share - a fragment that
-      edits it to satisfy one sentence restyles drawings nobody asked about
+      the TEXT TYPE NOT EDITED by this fragment. Version 4 makes a column bold
+      on this schedule only; which text type the schedule uses is
+      SET_SCHEDULE_OPTIONS', and editing a shared type is in no Heron tool
 
   # VERSION 3.
   - given: fieldName "all" and a newHeading
@@ -96,6 +193,53 @@ negative:
       every heading exactly as it was. False never meant horizontal and must not
       start meaning it for a caller who has not asked
 
+  # VERSION 4 (2026-11-01, SET_SCHEDULE_FIELD_TOTALS merged in). Each FAILS on
+  # version 3, which has no totals and takes the first column a name fits.
+  - given: >
+      VERSION 4. An air terminal schedule grouped by room with footers and the
+      grand total on, fieldName "Flow", calculateTotals on, every style input
+      left out
+    expect: >
+      totalled 1, appliedTotals saying 'Flow' now calculates totals and
+      prints in each Room footer and in the grand total - and the heading,
+      width and alignment UNCHANGED. Look at the schedule: a total flow per
+      room and at the bottom
+
+  - given: VERSION 4. The same, run a second time
+    expect: >
+      totalled 0 and 'Flow' in alreadyTotalled - the read-back. Nothing
+      changed
+
+  - given: VERSION 4. fieldName "Type", calculateTotals on
+    expect: >
+      'Type' in cannotTotal - text cannot be added up, asked of Revit FIRST -
+      and nothing set
+
+  - given: VERSION 4. A column showing its maximum, calculateTotals on
+    expect: >
+      switched to totals, and replacedCalculation naming the maximum it
+      showed - one calculation per column, so what went is said
+
+  - given: VERSION 4. A schedule with no footer and the grand total off
+    expect: appliedTotals saying the total PRINTS NOWHERE YET
+
+  - given: VERSION 4. A hidden column, calculateTotals on
+    expect: totals switched on, and appliedTotals saying the column is hidden so its total prints nowhere
+
+  - given: >
+      VERSION 4. A heading renamed to another column's FIELD name - "Size"
+      over the Mark column while a Size column exists - and fieldName "Size"
+      with newHeading "DUCT SIZE"
+    expect: >
+      NEITHER column touched, and 'Size' in ambiguous. Version 3 renamed
+      whichever came first
+
+  - given: VERSION 4. The schedule selected AND its placement on a sheet, columnWidthMm 30
+    expect: changed counts the column ONCE - one schedule, handed in twice
+
+  - given: VERSION 4. Nothing handed in
+    expect: refused saying no schedule was handed in - never changed 0 and silence
+
 second_route:
   - >
     Revit's own schedule Properties - Formatting tab for heading, alignment and
@@ -103,5 +247,7 @@ second_route:
     what the result is checked against
 
   - >
-    For bold, font or text size: select the schedule, Properties, Appearance, and
-    edit the Header or Body text - a shared type, changed deliberately
+    Version 4: the Formatting tab's Field Format button for the column (Use
+    project settings, units, rounding, symbol) and its multiple values text;
+    and for a column's style, select its cells and read Modify Schedule,
+    Font - read by a person after the run

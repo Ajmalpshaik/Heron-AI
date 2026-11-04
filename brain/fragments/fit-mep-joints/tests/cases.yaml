@@ -1,5 +1,14 @@
 positive:
-  - given: a run drawn as CREATE_DUCT segments - a main with three branch points and an end, and four branches each turning down to a terminal
+  - given: >
+      2026-11-01, PLACE_MEP_FITTING's case: two 300 mm round ducts handed in,
+      their ends meeting at a right angle, tolerance 1 mm
+    expect: >
+      ONE elbow, fitted 1, created one id, and both runs trimmed back into it -
+      "join these two" answered by this card. In line and the same size a
+      union, in line and a different size a transition with the larger end
+      first
+
+  - given: a run drawn as CREATE_MEP_RUNS segments (CREATE_DUCT until 2026-11-01) - a main with three branch points and an end, and four branches each turning down to a terminal
     expect: >
       every joint fitted in one call - a tee at each branch point, an elbow at
       the end and at every drop - and the free ends at the unit and the
@@ -28,5 +37,35 @@ negative:
   - given: only walls or air terminals
     expect: nothing fitted, everything in notMepCurve
 
+  # VERSION 3 (2026-11-01), from PLACE_MEP_FITTING. Each of these FAILS on
+  # version 2, which had no `gaps`, `noOpenEnd` or `refused`.
+  - given: two duct ends of two different runs 40 mm apart, nothing else, tolerance 1 mm
+    expect: >
+      fitted 0, both ends in freeEnds as before, AND `gaps` one entry naming
+      both places and "40 mm apart", and `refused` "the nearest open ends are
+      40 mm apart and a fitting is built where they MEET" - nothing moved.
+      Version 2 counted two free ends and said nothing of the gap
+
+  - given: two runs, one of them already fitted at both ends, the other's end not on it
+    expect: >
+      fitted 0; the fitted run's id in `noOpenEnd`, and `refused` saying a run
+      has no open end and nothing here can be joined - version 2 returned an
+      empty summary with no reason
+
+  - given: two levels and a wall handed in, no duct or pipe
+    expect: >
+      fitted 0, all three in notMepCurve, and `refused` "no duct or pipe was
+      handed in" - PLACE_MEP_FITTING's own negative case, which version 2 did
+      not refuse
+
+  - given: five ends of five runs meeting at one point
+    expect: >
+      THROWS naming the point and "no fitting joins more than four" - the two
+      to four rule, now about one joint - and nothing is kept
+
 second_route:
-  - PLACE_MEP_FITTING run once per joint over the same arrangement - the fittings it builds are the ones this builds, joint for joint
+  - >
+      Revit's own: drag one duct end onto the other and see which fitting it
+      inserts by itself, joint for joint over the same arrangement.
+      PLACE_MEP_FITTING, run once per joint, was this route until it was
+      merged into this card on 2026-11-01

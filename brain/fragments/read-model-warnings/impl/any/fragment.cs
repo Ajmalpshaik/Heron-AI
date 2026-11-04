@@ -1,5 +1,26 @@
-// NOT STANDALONE. Assumes `doc` is in scope; leaves `elements`, `findings`,
-// `warningCount` and `notInThisModel` behind.
+// NOT STANDALONE. Assumes `doc`, `errorsOnly` and `descriptionContains` are in
+// scope; leaves `elements`, `findings`, `warningCount`, `notInThisModel`,
+// `matched` and `unresolved` behind.
+//
+// VERSION 2 (2026-11-01) - SELECT_WITH_WARNINGS MERGED IN, AND WHAT IT HAD
+// THAT VERSION 1 LACKED:
+//
+//   `errorsOnly` - only the warnings Revit raises at Error severity, so "isolate
+//   the error level warnings" is one call. Left out it is false: every warning.
+//
+//   `descriptionContains` - only the warnings whose text holds that phrase,
+//   capitals ignored, so the elements of one kind of warning can be handed on.
+//   Left out it binds "none", which is no phrase.
+//
+//   `matched` - how many warnings passed those filters; `warningCount` stays
+//   the model's whole total, so the two can be told apart. `unresolved` - how
+//   many ids in the matched warnings resolve to nothing here, the count beside
+//   `notInThisModel`'s list. A large figure means the warning list is stale.
+//
+//   ITS FINDINGS: how many elements the matched warnings name, each once; that
+//   no warning matched a filter - which is NOT a clean model; and that these
+//   are Revit's own warnings, so a clash, a wrong size, a missing tag or a
+//   naming breach never appears here. An empty answer is not a clean model.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -28,6 +49,12 @@ var findings = new List<string>();
 var elements = new List<Element>();
 var notInThisModel = new List<ElementId>();
 
+// THE FILTERS (version 2, SELECT_WITH_WARNINGS). "none" is the card's
+// `absent:` - no phrase.
+var phrase = (descriptionContains ?? "").Trim();
+if (string.Equals(phrase, "none", StringComparison.OrdinalIgnoreCase)) phrase = "";
+var matched = 0;
+
 var seen = new HashSet<ElementId>();
 var counts = new Dictionary<string, int>();
 var order = new List<string>();
@@ -41,6 +68,11 @@ if (warnings != null)
 
         var text = warning.GetDescriptionText();
         if (string.IsNullOrEmpty(text)) text = "(the warning carries no description)";
+
+        if (errorsOnly && warning.GetSeverity() != FailureSeverity.Error) continue;
+        if (phrase.Length > 0 && text.IndexOf(phrase, StringComparison.OrdinalIgnoreCase) < 0)
+            continue;
+        matched++;
 
         if (!counts.ContainsKey(text))
         {
@@ -88,3 +120,29 @@ foreach (var text in order)
                                counts[text],
                                text));
 }
+
+// ---- version 2: SELECT_WITH_WARNINGS' sentences ----------------------------
+
+var unresolved = notInThisModel.Count;
+var filtered = errorsOnly || phrase.Length > 0;
+
+findings.Insert(0, string.Format("{0} element(s) named by {1} of the model's {2} warning(s){3}{4}. "
+    + "Each element appears once however many warnings name it",
+    elements.Count, matched, warningCount,
+    errorsOnly ? ", error severity only" : "",
+    phrase.Length == 0 ? "" : string.Format(", description containing '{0}'", phrase)));
+
+if (unresolved > 0)
+    findings.Add(string.Format("{0} id(s) in those warnings resolve to no element in this model - "
+        + "deleted since, or a link's id. They are in notInThisModel. A large figure means "
+        + "Revit's warning list is behind the model; reopen the warning dialog before acting on "
+        + "this set", unresolved));
+
+if (matched == 0)
+    findings.Add(!filtered
+        ? "This model has no warnings at all"
+        : "No warning matched that filter - the model may still have others");
+
+findings.Add("These are Revit's own warnings, of THIS document only. A clash, a wrong size, a "
+    + "missing tag or a naming breach is not one of them and will never appear here, and a "
+    + "link's warnings are its own - an empty answer is not a clean model");

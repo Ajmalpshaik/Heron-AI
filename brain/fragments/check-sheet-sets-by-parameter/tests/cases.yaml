@@ -1,0 +1,41 @@
+# D-30: the negative case is what catches "answered, and about another model".
+# The proof plan is tools/jobs/sheet-sets-by-parameter-scratch-2026-11-01.yaml,
+# NEEDS-CHECKING Group KA row KA13. NEVER on a 4355-* job model.
+
+positive:
+  - given: >
+      the scratch project after MANAGE_SHEET_SETS mode by-parameter
+      (SYNC_SHEET_SETS_BY_PARAMETER until 2026-11-01) made its two sets, and
+      then A103's "HERON Browser 1" changed from 01_IAB to 02_IFI
+    expect: >
+      outOfStep 2 - '01_IAB-ISSUED AS-BUILT' OUT OF STEP with "extra A103"
+      and '02_IFI-ISSUED FOR INFORMATION' with "missing A103" - inStep 0,
+      missingSets empty
+
+  - given: a value no set is named for
+    expect: >
+      that value in missingSets and its row reading NO SET
+
+  - given: the sets just brought back in step
+    expect: >
+      inStep 2, outOfStep 0
+
+negative:
+  - given: parameterName "ZZZ NO SUCH PARAMETER"
+    expect: >
+      refused naming it, report empty, inStep 0 and outOfStep 0
+
+  - given: >
+      a second project from the default template with no such parameter,
+      open beside the first - a DIFFERENT model
+    expect: >
+      refused naming the parameter and that model's title - the first
+      project's sets appearing is what a read of the wrong document would show
+
+second_route:
+  - >
+    File - Print - Settings, each set selected, its ticked sheets read by a
+    person against a sheet list showing the parameter
+  - >
+    LIST_SHEET_SETS on the same model: each set's sheets by number, read by a
+    different card

@@ -1,0 +1,118 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-075
+semantic-identity: "turn these duct and pipe placeholders into real ducts and pipes - Revit's Convert Placeholder"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "convert these placeholders to
+# real ducts" and "turn the pipe placeholders into pipes" - Revit's Modify |
+# Duct Placeholders > Convert Placeholder. Checked that day with
+# brain/heron_retrieve.py on each sentence, Revit 2024: the first reached
+# AUTO_SIZE_MEP, the second SET_MEP_SYSTEM_TYPE. Nothing in the library
+# converted a placeholder.
+#
+# WHY APART FROM CREATE_MEP_PLACEHOLDER. That card makes new elements from
+# points; this one changes elements that already exist, from a selection, and
+# needs no type or point at all. Two jobs, two cards (08 B9).
+#
+# DUCT AND PIPE ON ONE CARD: a selection can hold both, and the modeller asks
+# for "these placeholders". Each kind goes to Revit's own convert for it.
+#
+# NOTHING TO NAME. The placeholders are the selection, or what
+# CREATE_MEP_PLACEHOLDER just drew (`elements`).
+#
+# REFUSED, BY NAME: anything that is not a duct or pipe placeholder - a real
+# duct, a real pipe, a fitting, a wall - each named in `notPlaceholders` with
+# its category, type and id and left exactly as it was. A placeholder
+# borrowed by somebody else on a workshared model is named in `notConverted`
+# with who has it, never taken (Article 12).
+#
+# READ BACK after a regenerate: what Revit returned is sorted into real ducts
+# and pipes (`converted`, each with its length) and anything else
+# (`fittingsMade`); every placeholder handed in is looked at again, and one
+# still a placeholder is named in `notConverted`. Whether Revit keeps a
+# converted element's id or replaces it, and whether it returns the fittings,
+# is not known from the assemblies and is not assumed - see the NEEDS-CHECKING
+# group.
+#
+# RISK MODIFY. It changes the placeholders handed in and nothing else.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: CONVERT_MEP_PLACEHOLDERS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Turns the duct placeholders and pipe placeholders handed in into real ducts
+  and pipes, as Revit's Convert Placeholder does, and reports each one
+  converted with its length, any fittings Revit added, and every element left
+  alone and why.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The placeholders - the selection, or CREATE_MEP_PLACEHOLDER's
+    # `elements`. Anything else handed in is named and left alone.
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: converted
+      # The real ducts and pipes standing where the placeholders were, read
+      # back as real after a regenerate.
+      role: result
+      type: IList<ElementId>
+    - name: fittingsMade
+      # Anything else Revit's convert returned - fittings it added.
+      role: result
+      type: IList<ElementId>
+    - name: notPlaceholders
+      # Handed in and not a duct or pipe placeholder, each by name - left as
+      # it was (D-52).
+      role: accounting
+      type: IList<string>
+    - name: notConverted
+      # Placeholders Revit refused, left as placeholders, or borrowed by
+      # somebody else, each with the reason (D-52).
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING: how many, each id and length, what was left and why.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. MechanicalUtils.ConvertDuctPlaceholders
+  and PlumbingUtils.ConvertPipePlaceholders (Document, ICollection<ElementId>,
+  returning ICollection<ElementId>), Duct.IsPlaceholder and Pipe.IsPlaceholder,
+  WorksharingUtils.GetCheckoutStatus(Document, ElementId, out string),
+  CheckoutStatus.OwnedByOtherUser, Document.IsWorkshared and
+  LocationCurve.Curve are present and unchanged 2020 through 2027 - read with
+  tools/api-surface --members on 2026-11-01. IsPlaceholder is declared on Duct
+  and on Pipe, not on MEPCurve, on every release.
+
+# ROUTING (2026-11-01) - repeated in CREATE_MEP_PLACEHOLDER.
+#
+#   "convert these placeholders to real ducts" -> here
+#   "turn the pipe placeholders into pipes"    -> here
+#   "draw a duct placeholder from here to here" -> CREATE_MEP_PLACEHOLDER
+#   "rough in the pipe route as placeholders"  -> CREATE_MEP_PLACEHOLDER
+#   "change these ducts to return air"         -> SET_MEP_SYSTEM_TYPE - the
+#                                                 ducts are already real
+#   "put the fittings in"                      -> FIT_MEP_JOINTS
+utterances:
+  - convert these placeholders to real ducts
+  - turn the pipe placeholders into pipes

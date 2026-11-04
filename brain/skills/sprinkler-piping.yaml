@@ -29,7 +29,9 @@ utterances:
 # CAPABILITIES, never fragment ids. In order: draw the branches, fit the
 # joints on what was drawn, join any end left free, then sweep for loose ends.
 needs:
-  - CREATE_FIXTURE_BRANCHES
+  # CREATE_FIXTURE_BRANCHES until it was merged into this one, 2026-11-01 -
+  # a sprinkler handed in is branched to the pipe main named in `ducts`.
+  - CONNECT_AIR_TERMINALS
   - FIT_MEP_JOINTS
   - CONNECT_OPEN_ENDS
   - SELECT_BY_CONNECTION_STATUS
@@ -46,8 +48,10 @@ note: >
   WRITTEN 2026-10-14 IN A CLOUD SESSION, NOT RUN. It is the pipe twin of
   duct-layout, and that skill's rules were each learned by getting them wrong
   in front of a model; they are carried across here as preconditions and none
-  is measured on pipe yet. Revit has no pipe twin of the duct tap call
-  CONNECT_AIR_TERMINALS uses, so CREATE_FIXTURE_BRANCHES draws the riser and the
-  arm and joins them at the head, and FIT_MEP_JOINTS - handed its `runs` -
-  makes the elbow and the tap. FLEXIBLE drops are CREATE_FLEX_PIPE, a different
-  job: rigid here unless the owner says flex. NEEDS-CHECKING Group EC.
+  is measured on pipe yet. Revit has no pipe twin of the duct tap call, so
+  CONNECT_AIR_TERMINALS - given the heads, with the main named "Pipes" in its
+  `ducts` - draws the riser and the arm and joins them at the head, and
+  FIT_MEP_JOINTS - handed its `runs` - makes the elbow and the tap
+  (CREATE_FIXTURE_BRANCHES did the branch until 2026-11-01). FLEXIBLE drops
+  are CREATE_MEP_RUNS with a flex pipe type, a different job: rigid here
+  unless the owner says flex. NEEDS-CHECKING Group EC.

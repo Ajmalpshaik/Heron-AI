@@ -112,20 +112,20 @@ compatibility-note: >
   present 2020 through 2027, compiled at both ends. Millimetres become feet by
   dividing by 304.8 as plain arithmetic - no units API.
 
-# ROUTING - repeated in ARRAY_ELEMENTS, PLACE_FAMILY_INSTANCES and
-# MEASURE_ELEMENT_LENGTHS.
+# ROUTING - repeated in COPY_ELEMENTS, PLACE_FAMILY_INSTANCES and
+# MEASURE_RUN_QUANTITIES.
 #
 #   "add hangers along this duct run at 2 metre centres" -> here
 #   "set these out evenly along the run" -> here
 #   "put a bracket every 1500 along this" -> here
 #   "copy these across at 600
-#    centres"                        -> ARRAY_ELEMENTS - it repeats elements
+#    centres"                        -> COPY_ELEMENTS, count and spacingMm - it repeats elements
 #                                       that EXIST, along a direction given to
 #                                       it. This creates new ones and takes the
 #                                       direction from the run
 #   "place twelve of these"          -> PLACE_FAMILY_INSTANCES - at points
 #                                       somebody chooses, with no run involved
-#   "how long is this run"           -> MEASURE_ELEMENT_LENGTHS, which is what
+#   "how long is this run"           -> MEASURE_RUN_QUANTITIES, which is what
 #                                       tells you how many will fit
 
 utterances:

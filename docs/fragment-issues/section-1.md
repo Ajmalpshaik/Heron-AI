@@ -26,4 +26,21 @@ list to look at together.
 session — so that if Revit complains again it is unambiguous which one did it. Run READ-only first
 (`fragment <name>` with no `--write`) to see how far the C# gets before the transaction matters.
 
+### Since then — both PROVEN, noted 2026-11-01
+
+*"Neither has been run since"* was true on 2026-09-08 and is not now. Both were run again and
+proved; each proof is in the fragment's own `fragment.yaml`, under `proof:`.
+
+| Fragment | Proved | Model |
+|---|---|---|
+| `create-mep-system-type` | 2026-09-13 | test projject (3,509 elements), Revit 2024, session 40932 |
+| `assign-scope-box-to-view` | 2026-09-14 | Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 33220 |
+
+**What is still not known:** why Revit raised the *"serious error"* dialog on 2026-09-08. Nothing in
+the repository explains it. The rows above stay as they were seen, because this register is
+append-only.
+
+Found because an outside review of the repository read this section as current and called both
+fragments broken.
+
 ---

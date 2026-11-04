@@ -1,0 +1,78 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that draws paths, "drew something nobody asked for": a path to
+# an exit nobody named, a path in a view Revit does not draw them in, a second
+# copy of a path already there, or any path that was there removed.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for CREATE_PATHS_OF_TRAVEL): the same scratch project
+# "travel-ip" as REPORT_PATHS_OF_TRAVEL's, saved under %TEMP%\heron-work,
+# never a working model - on "Level 1" the 20000 x 10000 mm box, its interior
+# wall at x = 10000 with a 1000 mm gap at the north end, rooms "201 Office"
+# and "202 Store", a door Mark "D-EXIT" in the east wall and a second door
+# Mark "D-2" in the interior wall's gap; a "{3D}" view; NO path drawn yet.
+# Where the model differs, the job file changes - never the card. EVERY RUN
+# ROLLED BACK, so each case starts from the model as saved.
+
+positive:
+  - given: >
+      view "Level 1", rooms "201; 202", toDoor "D-EXIT" - the job file's
+      positive
+    expect: >
+      created 2 ids; notFound empty; report "Drew 2 of 2 path(s) of travel in
+      "Level 1" to door "D-EXIT" (...) at <x,y> mm, the longest <n.nn> m: room
+      201 "Office": path <id>, <n.nn> m, from ... || room 202 "Store": path
+      <id>, ..."; the 201 path longer than the straight line to the door,
+      because it goes round the interior wall. THE FIRST POSITIVE TO RUN
+
+  - given: view "Level 1", rooms "all", toPoint the door's x,y in mm read from the report above
+    expect: the same two paths, ending at the point
+
+  - given: view "Level 1", fromPoints "2000,2000; 18000,8000", toDoor "D-EXIT"
+    expect: created 2; each row starts "the point 2000,2000 mm" / "the point 18000,8000 mm"
+
+  - given: >
+      the first positive KEPT once with try-once in a scratch copy, then run
+      again with the same values
+    expect: >
+      created empty; both rows "already a path of travel (<id>) to there -
+      not drawn twice"; the plan still holds two paths, the same ids
+
+  - given: view "Level 1", fromPoints "5000,5000", toPoint "5005,5000"
+    expect: notFound one row with Revit's status (StartAndEndPointsTooClose expected), nothing drawn
+
+negative:
+  - given: >
+      the same rooms and door as the first positive, view "{3D}" - the job
+      file's negative
+    expect: >
+      created empty; refused ""{3D}" is a 3D view. Revit draws paths of
+      travel in floor plans only - name a floor plan. NOTHING WAS DRAWN.";
+      no path anywhere in the model. THE FIRST CASE TO RUN
+
+  - given: view "Level 1", rooms "201", toDoor and toPoint both left out
+    expect: >
+      refused "No exit was named ... the exit is never guessed. NOTHING WAS
+      DRAWN. Doors on level "Level 1": "D-EXIT" ... ; "D-2" ..."; nothing drawn
+
+  - given: view "Level 1", rooms "201", toDoor "D-99"
+    expect: refused "No door on level "Level 1" has the Mark "D-99" ..." with the doors listed; nothing drawn
+
+  - given: view "Level 1", rooms "999", toDoor "D-EXIT"
+    expect: refused naming "999" and listing rooms 201 and 202; nothing drawn
+
+  - given: view "Level 1", rooms "201", toDoor "D-EXIT", toPoint "1000,1000"
+    expect: refused "Both an exit door and an exit point were given; name one."
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE, AND NOTHING DELETED. Golden Rule 16 - undo
+      is the caller's. Every path in the plan before the run is still there,
+      unchanged
+
+second_route:
+  - >
+    Revit's own Analyze > Path of Travel from the same room point to the same
+    door, drawn by hand beside the one this made: the same route, the same
+    Length in the Properties palette
+  - REPORT_PATHS_OF_TRAVEL on "Level 1" after a try-once Keep lists the same ids and lengths
+  - one Ctrl+Z takes every path this run drew away in a single step (Golden Rule 16)

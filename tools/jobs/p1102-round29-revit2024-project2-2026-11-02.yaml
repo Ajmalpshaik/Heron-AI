@@ -1,0 +1,32 @@
+# Round 29, 2026-11-02 - Revit 2024.3, session 57392. "Project2" = the modeller's new, never-saved
+# project from Revit 2024's default template. Kept in it first, by PROVEN creators, for these two:
+# 2 air terminals "Supply Diffuser : 24 x 24 Face 12 x 12 Connection" (the template's own family) at
+# x 70000 and 72000 mm, 2400 mm up on L1, connected to nothing (PLACE_FAMILY_INSTANCES). For
+# connect-air-terminals a duct is drawn over them by CREATE_DUCT_RUNS inside the same run.
+# Every run below is ROLLED BACK.
+# RESULT: create-mep-system PASS. connect-air-terminals - the duct CREATE_DUCT_RUNS drew in the
+# run was handed on as `elements` and outranked the diffusers ("no connector could be read"); it
+# needs a duct already in the model, and no PROVEN tool draws one.
+model: "Project2 (new project from Revit 2024's default template, two free diffusers kept for this work), Revit 2024"
+
+defaults:
+  in: "Project2"
+  write: true
+
+jobs:
+  - fragment: create-mep-system
+    setup: [filter-elements-by-category, set-selection]
+    expect: memberIds
+    set: {category: "Air Terminals", levelId: "L1", systemType: "Supply Air", systemName: "Heron Supply"}
+    negative-set: {category: "Walls", levelId: "L1", systemType: "Supply Air", systemName: "Heron Supply"}
+
+  - fragment: connect-air-terminals
+    setup: [filter-elements-by-category, set-selection]
+    expect: connected
+    set: {category: "Air Terminals", levelId: "L1", ducts: "Ducts", maxDistanceMm: 3000}
+    negative-set: {category: "Air Terminals", levelId: "L1", ducts: "Ducts", maxDistanceMm: 10}
+    note: >
+      Second arrangement. The first drew the duct by CREATE_DUCT_RUNS inside the run, and its
+      `elements` (the duct) outranked the diffusers. After CREATE_DUCT_RUNS was proved (tracked
+      1/2/3 segments) and signed, one 300x200 duct was KEPT 600 mm above the two diffusers, and the
+      run has no change step. The negative allows 10 mm, so nothing is in reach.

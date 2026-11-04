@@ -80,6 +80,45 @@
 //
 // READ BACK: the dimension's references are counted and every segment's value is
 // read, so the reply says what Revit measured rather than what was asked for.
+//
+// VERSION 5 (2026-11-01) - GRIDS AND LEVELS ARE THIS CARD'S ALONE. They were
+// dimensioned by CREATE_DIMENSION too (its version 4, DIMENSION_GRIDS_AND_
+// LEVELS merged in); on the owner's instruction ("make sure there is no
+// duplicate tools", "in every conflict keep the safer rule") the grid and
+// level job is given to this card, and CREATE_DIMENSION keeps runs and
+// family instances. What its datum route had and this lacked, carried here:
+//
+//   NOT SHOWN IN THIS VIEW. A grid or a level of this model the view is not
+//   showing is found BEFORE anything is drawn - a view-scoped collector, the
+//   only honest answer to "will Revit let me dimension to this here" - and
+//   named. Revit throws when asked to dimension to one, and the message it
+//   gives does not say which. A datum inside a link is Revit's to judge, as
+//   before: no collector of this view lists a link's elements.
+//
+//   AN ARC GRID IS REFUSED, named: it has no one direction, so no single axis
+//   a straight string across it measures along. Grids out of parallel are
+//   refused, named: the gap between them is not one number.
+//
+//   LEVELS IN A PLAN ARE REFUSED with the reason - the plan looks straight
+//   down the axis a level's dimension measures.
+//
+//   A LEVEL IS PLACED BY ITS ProjectElevation, never its Elevation
+//   (FRAGMENT-ISSUES 5b-179) - for the one-point string this card works out.
+//   Elevation is measured from the level type's Elevation Base and is off by
+//   it in model coordinates; version 4 used Elevation here.
+//
+//   Grids or levels that all sit at one position draw nothing, with the
+//   reason - the string would measure zero.
+//
+// THE SAFER RULE IN EACH CONFLICT IS KEPT. A GRID WITH A LEVEL in one string
+// is refused, naming both - they measure along axes at right angles, as
+// CREATE_DIMENSION refused them. A grid or a level WITH A FACE, a wall, a
+// family's reference, a line or a plane is still allowed: a builders-work
+// opening is dimensioned from its grid and its level that way (5b-482).
+// CREATE_DIMENSION drew the datums the view shows and set aside the ones it
+// does not; here, as for every reference on this card, one that cannot be
+// used refuses the string and nothing is drawn - the references are the
+// caller's, and a string through some of them reads as the one asked for.
 
 var created = ElementId.InvalidElementId;
 var measured = "";
@@ -181,6 +220,25 @@ Func<string, string> elsewhere = said =>
 // where it cannot be read without guessing: an arc grid, a named family plane.
 XYZ lastNormal = null;
 XYZ lastPoint = null;
+// VERSION 5: which word the last reference was read from - grid, level, or
+// another - inside a link too, so a grid with a level can be refused.
+var lastWord = "";
+
+// VERSION 5: the grids and levels this view shows, asked once, only when one
+// is named. A datum of this model the view does not show is refused before
+// anything is drawn (CREATE_DIMENSION's notVisibleInView).
+HashSet<ElementId> shownDatums = null;
+Func<Element, bool> shownHere = datum =>
+{
+    if (viaLink != null) return true;
+    if (shownDatums == null)
+    {
+        shownDatums = new HashSet<ElementId>();
+        foreach (var shown in new FilteredElementCollector(doc, view.Id).OfClass(typeof(Grid))) shownDatums.Add(shown.Id);
+        foreach (var shown in new FilteredElementCollector(doc, view.Id).OfClass(typeof(Level))) shownDatums.Add(shown.Id);
+    }
+    return shownDatums.Contains(datum.Id);
+};
 
 // ONE TYPED REFERENCE, or null with the reason added to `problems`.
 var problems = new List<string>();
@@ -193,13 +251,27 @@ referenceOf = token =>
     var rest = space < 0 ? "" : text.Substring(space + 1).Trim();
     lastNormal = null;
     lastPoint = null;
+    lastWord = word;
     if (word == "grid")
     {
         var grid = new FilteredElementCollector(source).OfClass(typeof(Grid)).Cast<Grid>()
             .FirstOrDefault(g => string.Equals(g.Name, rest, StringComparison.OrdinalIgnoreCase));
         if (grid == null) { problems.Add("No grid is called \"" + rest + "\"" + inLink + "."); return null; }
+        // VERSION 5, from CREATE_DIMENSION: shown in this view, and straight.
+        if (!shownHere(grid))
+        {
+            problems.Add("Grid " + grid.Name + " is not shown in '" + view.Name + "' - Revit throws when asked to dimension "
+                + "to something the view is not showing, and that throw would lose the whole string.");
+            return null;
+        }
         var gridLine = grid.Curve as Line;
-        if (gridLine != null) { lastNormal = hostVector(gridLine.Direction.CrossProduct(XYZ.BasisZ)); lastPoint = hostPoint(gridLine.GetEndPoint(0)); }
+        if (gridLine == null)
+        {
+            problems.Add("Grid " + grid.Name + inLink + " is an arc - it has no one direction, so no straight string "
+                + "across it measures one distance.");
+            return null;
+        }
+        lastNormal = hostVector(gridLine.Direction.CrossProduct(XYZ.BasisZ)); lastPoint = hostPoint(gridLine.GetEndPoint(0));
         return new Reference(grid);
     }
     if (word == "level")
@@ -207,8 +279,17 @@ referenceOf = token =>
         var level = new FilteredElementCollector(source).OfClass(typeof(Level)).Cast<Level>()
             .FirstOrDefault(l => string.Equals(l.Name, rest, StringComparison.OrdinalIgnoreCase));
         if (level == null) { problems.Add("No level is called \"" + rest + "\"" + inLink + "."); return null; }
+        // VERSION 5, from CREATE_DIMENSION: shown in this view.
+        if (!shownHere(level))
+        {
+            problems.Add("Level " + level.Name + " is not shown in '" + view.Name + "' - Revit throws when asked to dimension "
+                + "to something the view is not showing, and that throw would lose the whole string.");
+            return null;
+        }
         lastNormal = hostVector(XYZ.BasisZ);
-        lastPoint = hostPoint(new XYZ(0, 0, level.Elevation));
+        // ProjectElevation, NOT Elevation (FRAGMENT-ISSUES 5b-179): this point
+        // is in model coordinates, and Elevation is off by the Elevation Base.
+        lastPoint = hostPoint(new XYZ(0, 0, level.ProjectElevation));
         return level.GetPlaneReference();
     }
     if (word == "plane")
@@ -627,14 +708,54 @@ else
     var array = new ReferenceArray();
     var normals = new List<XYZ>();
     var stations = new List<XYZ>();
+    var words = new List<string>();
+    var saidAs = new List<string>();
     foreach (var token in tokens)
     {
         var reference = referenceOf(token);
-        if (reference != null) { array.Append(reference); normals.Add(lastNormal); stations.Add(lastPoint); }
+        if (reference != null) { array.Append(reference); normals.Add(lastNormal); stations.Add(lastPoint); words.Add(lastWord); saidAs.Add(token); }
     }
     if (tokens.Count < 2)
         problems.Add(string.Format("A dimension measures BETWEEN things and {0} was given - two is the minimum, "
             + "and three or more make a chained string.", tokens.Count));
+
+    // VERSION 5, CREATE_DIMENSION'S DATUM RULES. A grid with a level is
+    // refused (the safer rule); a datum with any other reference is allowed.
+    var gridCount = words.Count(w => w == "grid");
+    var levelCount = words.Count(w => w == "level");
+    if (gridCount > 0 && levelCount > 0)
+        problems.Add(string.Format("{0} grid(s) and {1} level(s) were given together - grids are measured across the "
+            + "plan and levels up the elevation, at right angles to each other, so one string across both measures "
+            + "the wrong thing for whichever kind loses. Dimension each in its own call; a grid or a level with a "
+            + "face, a wall or a family's reference is still one string.", gridCount, levelCount));
+    else if (levelCount > 0 && Math.Abs(XYZ.BasisZ.DotProduct(view.ViewDirection)) > 0.001)
+        problems.Add("Levels cannot be dimensioned in '" + view.Name + "' - it looks along the vertical, which is the "
+            + "axis a level's dimension measures. A section or an elevation is where floor to floor heights go.");
+    else if (gridCount > 1)
+    {
+        XYZ firstGrid = null;
+        var outOfLine = new List<string>();
+        for (var i = 0; i < words.Count; i++)
+        {
+            if (words[i] != "grid" || normals[i] == null) continue;
+            if (firstGrid == null) { firstGrid = normals[i].Normalize(); continue; }
+            if (Math.Abs(normals[i].Normalize().DotProduct(firstGrid)) < 0.999) outOfLine.Add(saidAs[i]);
+        }
+        if (outOfLine.Count > 0)
+            problems.Add("Out of parallel with the first grid: " + string.Join(", ", outOfLine) + " - the gap between "
+                + "grids that are not parallel is not one number.");
+    }
+    // Grids alone, or levels alone, all at one position: the string would
+    // measure zero.
+    if (problems.Count == 0 && words.Count >= 2 && (gridCount == words.Count || levelCount == words.Count)
+        && normals[0] != null && stations.All(at => at != null))
+    {
+        var across = normals[0].Normalize();
+        var spread = stations.Max(at => at.DotProduct(across)) - stations.Min(at => at.DotProduct(across));
+        if (spread < 1e-6)
+            problems.Add("Every " + (gridCount > 0 ? "grid" : "level") + " given sits at the same position, so the string "
+                + "would measure zero.");
+    }
 
     // ONE POINT GIVEN TWICE: the string runs through it, square to what it
     // measures. The first reference whose direction can be read sets it, flat

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PHS-032
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -21,9 +21,9 @@ semantic-identity: "make a new phase filter under a given name, and set each pha
 # A NEW CAPABILITY, NOT A WIDENING. SET_VIEW_PHASE (FRG-VIEW-095, PROVEN) puts
 # a phase filter that already exists on views; it changes views, not the
 # project's list of filters, and a change under its impl/ would make its proof
-# stale for a job it does not do. CREATE_VIEW_FILTERS_BY_RULE makes VIEW
-# filters - rules on parameters - which are a different element with a
-# different dialog.
+# stale for a job it does not do. CREATE_VIEW_FILTER makes VIEW filters -
+# rules on parameters - which are a different element with a different dialog
+# (CREATE_VIEW_FILTERS_BY_RULE did until it was merged into it, 2026-11-01).
 #
 # A NAME ALREADY IN USE REFUSES, naming the filter and what it shows. It is
 # never edited instead: "Show Complete" is on most views of most projects.
@@ -94,7 +94,7 @@ contract:
       absent: leave
   provides:
     - name: phaseFilterId
-      # The new filter - for SET_VIEW_PHASE's phaseFilterId. InvalidElementId
+      # The new filter - for SET_VIEW_PROPERTIES's phaseFilterId. InvalidElementId
       # when nothing was made.
       role: result
       type: ElementId
@@ -109,6 +109,41 @@ contract:
     - name: findings
       type: IList<string>
 
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned asked 4 item(s) [By Category, By
+    Category, Not Displayed, ...], created 1, existing 8 item(s) [Show Previous Phase, Show
+    Previous + New, Show Previous + Demo, ...], findings 1 item(s) [Phase filter "As-Built"
+    made and read back - New: By Categor...], lines 4 item(s) [New: By Category, Existing:
+    By Category, Demolished: Not Displayed, ...], name As-Built, phaseFilterId 1 item(s) [id
+    1020304], problems 0 item(s), squash Func`2, statusEnums 4 item(s) [New, Existing, Demolished,
+    ...], statusNames 4 item(s) [New, Existing, Demolished, ...], statusReport New: By Category;
+    Existing: By Category; Demolished: Not Displayed; Temporary: Not Displayed, wanted 4 item(s)
+    [ShowByCategory, ShowByCategory, DontShow, ...], word Func`2. inputs came filterName as
+    given; newDisplay as given; existingDisplay as given; demolishedDisplay as given; temporaryDisplay
+    as given. on P1102 MEP'
+  negative_case: 'run with filterName=Show Complete, newDisplay=Not Displayed instead - chosen
+    because it should not contain what this fragment reports - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned asked 4 item(s)
+    [Not Displayed, leave, leave, ...], created 0, existing 8 item(s) [Show Previous Phase,
+    Show Previous + New, Show Previous + Demo, ...], findings 2 item(s) [NOTHING WAS MADE:
+    A phase filter named "Show Complete" is al..., The phase filters in this project: "Show
+    Previous Phase", "S...], lines 0 item(s), name Show Complete, phaseFilterId (null), problems
+    1 item(s) [A phase filter named "Show Complete" is already in this proj...], squash Func`2,
+    statusEnums 4 item(s) [New, Existing, Demolished, ...], statusNames 4 item(s) [New, Existing,
+    Demolished, ...], statusReport , wanted 4 item(s) [DontShow, (null), (null), ...], word
+    Func`2. inputs came filterName as given; newDisplay as given; existingDisplay not given
+    - "leave", the card''s own default (optional); demolishedDisplay not given - "leave",
+    the card''s own default (optional); temporaryDisplay not given - "leave", the card''s
+    own default (optional). on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: ded1855527ff33f2
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -122,11 +157,11 @@ compatibility-note: >
   through 2027 - read with tools/api-surface on 2026-10-31. Ids are carried as
   ElementId and never read as numbers.
 
-# ROUTING - repeated in REPORT_PHASE_FILTERS and SET_VIEW_PHASE.
+# ROUTING - repeated in REPORT_PHASE_FILTERS and SET_VIEW_PROPERTIES.
 #
 #   "create a phase filter called As-Built"     -> here
 #   "what phase filters are there"              -> REPORT_PHASE_FILTERS
-#   "put the As-Built filter on these views"    -> SET_VIEW_PHASE - this one
+#   "put the As-Built filter on these views"    -> SET_VIEW_PROPERTIES - this one
 #                                                  makes the filter, that one
 #                                                  puts it on views
 #   "create a new phase"                        -> NOTHING HERE CAN - no API
@@ -139,7 +174,7 @@ compatibility-note: >
 #                                                  halftone, material per
 #                                                  status) has no API. Set it
 #                                                  by hand. Row 5b-1350
-#   "make a view filter for the fire dampers"   -> CREATE_VIEW_FILTERS_BY_RULE
+#   "make a view filter for the fire dampers"   -> CREATE_VIEW_FILTER
 #   "what is the phase called"                  -> REPORT_PHASES - a question,
 #                                                  never this write. This card
 #                                                  ranked next to it on the

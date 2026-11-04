@@ -129,12 +129,12 @@ compatibility-note: >
 #
 #   "bring the materials over from the     -> here
 #    template"
-#   "make a material called X"             -> CREATE_MATERIAL, made rather
+#   "make a material called X"             -> CREATE_STARTER_MATERIALS, made rather
 #                                             than moved
 #   "swap this material for that one"      -> REPLACE_MATERIAL, inside ONE
 #                                             project
-#   "what material is this"                -> READ_ELEMENT_MATERIAL
-#   "which materials are unused"           -> FIND_UNUSED_MATERIALS
+#   "what material is this"                -> REPORT_MATERIAL_TAKEOFF
+#   "which materials are unused"           -> FIND_PURGEABLE_ELEMENTS
 #   "list the materials in this family"    -> LIST_MATERIALS, a read. It
 #                                             reached HERE, a write, on the
 #                                             lexical backend until 2026-10-09
@@ -143,6 +143,9 @@ compatibility-note: >
 #                                             did on both
 #   "bring the line styles over"           -> TRANSFER_LINE_STYLES_BETWEEN_DOCUMENTS
 #   "bring the view filters over"          -> TRANSFER_VIEW_FILTERS_BETWEEN_DOCUMENTS
+#   "transfer project standards: wall      -> TRANSFER_PROJECT_STANDARDS (2026-11-02)
+#    types and materials from the            for the wall types, with the materials
+#    template"                               they use; materials alone stay here
 
 
 # ROUTING (2026-10-13, the gap fill)

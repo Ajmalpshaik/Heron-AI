@@ -1,5 +1,24 @@
 // NOT STANDALONE. Assumes `doc`, `elements` and `unload` are in scope; leaves
-// `findings`, `done` and `notLinks` behind.
+// `findings`, `done`, `notLinks`, `unloaded`, `alreadyUnloaded` and `refused`
+// behind.
+//
+// VERSION 2 (2026-11-01) - UNLOAD_LINKS MERGED IN, AND WHAT IT HAD THAT THE
+// UNLOAD HALF HERE LACKED:
+//
+//   A LINK ALREADY UNLOADED IS SKIPPED AND SAID. Asked through
+//   RevitLinkType.IsLoaded - STATIC, the compile gate caught it written as an
+//   instance call - before anything is done; its type id goes to
+//   `alreadyUnloaded` and it is not counted in `done`. Nothing happened, and
+//   the report has to say so.
+//
+//   READ BACK AFTER UNLOADING. The call returning is not the link unloaded:
+//   IsLoaded is asked again, and only a link that now reads unloaded goes to
+//   `unloaded` and counts in `done`. One still loaded goes to `refused`, and so
+//   does an unload Revit refused outright - in the user's words, never only a
+//   line among the findings.
+//
+//   A RELOAD REVIT THREW ON is in `refused` too, beside its FAILED line, so a
+//   caller reading `refused` sees every link this did not do.
 //
 // OPENS NO TRANSACTION (Golden Rule 16), AND THIS ONE NEEDS SAYING TWICE.
 // Reloading is document management rather than a model edit - it reads a file
@@ -24,6 +43,9 @@
 var findings = new List<string>();
 var done = 0;
 var notLinks = new List<ElementId>();
+var unloaded = new List<ElementId>();
+var alreadyUnloaded = new List<ElementId>();
+var refused = new List<string>();
 
 // Distinct link TYPES behind the instances handed in.
 var typeIds = new List<ElementId>();
@@ -48,7 +70,8 @@ foreach (var element in elements)
 
 if (typeIds.Count == 0)
 {
-    findings.Add("Nothing handed in is a linked model, so there is nothing to reload");
+    findings.Add("Nothing handed in is a linked model, so there is nothing to "
+        + (unload ? "unload" : "reload"));
 }
 else
 {
@@ -63,7 +86,38 @@ else
         {
             if (unload)
             {
-                linkType.Unload(null);
+                // UNLOAD_LINKS' rules (version 2): already unloaded is skipped
+                // and said; the unload is read back, never assumed.
+                var loaded = false;
+                try { loaded = RevitLinkType.IsLoaded(doc, linkType.Id); } catch (Exception) { }
+                if (!loaded)
+                {
+                    alreadyUnloaded.Add(linkType.Id);
+                    findings.Add(string.Format("'{0}' was ALREADY unloaded - nothing was done to "
+                        + "it", name));
+                    continue;
+                }
+
+                try { linkType.Unload(null); }
+                catch (Exception ex)
+                {
+                    refused.Add(name + ": Revit refused the unload - " + ex.Message);
+                    findings.Add(string.Format("'{0}' FAILED: Revit refused the unload - {1}",
+                        name, ex.Message));
+                    continue;
+                }
+
+                var stillLoaded = true;
+                try { stillLoaded = RevitLinkType.IsLoaded(doc, linkType.Id); } catch (Exception) { }
+                if (stillLoaded)
+                {
+                    refused.Add(name + ": it is still loaded after the unload call.");
+                    findings.Add(string.Format("'{0}' is STILL LOADED after the unload call - "
+                        + "read back, so it is not counted", name));
+                    continue;
+                }
+
+                unloaded.Add(linkType.Id);
                 findings.Add(string.Format("'{0}' unloaded - it is out of every view until it is "
                     + "reloaded, and nothing has been deleted", name));
                 done++;
@@ -79,10 +133,14 @@ else
         }
         catch (Exception ex)
         {
+            refused.Add(name + ": " + ex.Message);
             findings.Add(string.Format("'{0}' FAILED: {1}", name, ex.Message));
         }
     }
 
-    findings.Add(string.Format("{0} of {1} link(s) {2}", done, typeIds.Count,
-        unload ? "unloaded" : "reloaded"));
+    findings.Add(string.Format("{0} of {1} link(s) {2}{3}", done, typeIds.Count,
+        unload ? "unloaded" : "reloaded",
+        alreadyUnloaded.Count > 0
+            ? string.Format("; {0} already unloaded, left as they were", alreadyUnloaded.Count)
+            : ""));
 }

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -122,36 +122,30 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project1 (3,047 elements), Revit 2020, session 2648
-  positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection, create-opening with this phase's own values -
-    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned byKind 6 entry(ies), collector FilteredElementCollector, elements 1 item(s) [Opening],
-    found 1, includeLinks false, linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s),
-    linkThroughView (null), linkTypes 0 item(s), linkedElementsOf Func`2, linkedMatches 1
-    item(s) [Host model only - links not read], linkedTotal 0, linksSearched 0, nestedLinks
-    0, openingCategories 5 item(s) [OST_ShaftOpening, OST_FloorOpening, OST_SWallRectOpening,
-    ...], unreadPlacements 0. inputs came inViewOnly as given; includeLinks not given - false
-    (optional). on Project1
-  negative_case: 'run with boundary=1000,3500,0; 2000,3500,0; 2000,4500,0; 1000,4500,0, categoryName=Text
-    Notes, host=selected, inViewOnly=FloorPlan: Level 1, perpendicularFace=False instead -
-    chosen because it should not contain what this fragment reports - the arrangement was
-    re-made first by running select-by-category-name, set-selection, create-opening with this
-    phase''s own values - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned byKind 5 entry(ies), collector FilteredElementCollector,
-    elements 0 item(s), found 0, includeLinks false, linkBlocked , linkDocs 0 item(s), linkPlacements
-    0 item(s), linkThroughView (null), linkTypes 0 item(s), linkedElementsOf Func`2, linkedMatches
-    1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched 0, nestedLinks
-    0, openingCategories 5 item(s) [OST_ShaftOpening, OST_FloorOpening, OST_SWallRectOpening,
-    ...], unreadPlacements 0. inputs came inViewOnly as given; includeLinks not given - false
-    (optional). on Project1'
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 ARCH, P1102 Family - active was P1102
+    ARCH, Revit 2020, session 59096'
+  positive_case: run as it would normally be run. returned byKind 6 entry(ies), collector
+    FilteredElementCollector, elements 3 item(s) [Rectangular Straight Wall Opening, Opening
+    Cut, Opening Cut], found 3, inViewOnly (null), includeLinks false, linkBlocked , linkDocs
+    0 item(s), linkPlacements 0 item(s), linkThroughView (null), linkTypes 0 item(s), linkedElementsOf
+    Func`2, linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched
+    0, nestedLinks 0, openingCategories 5 item(s) [OST_ShaftOpening, OST_FloorOpening, OST_SWallRectOpening,
+    ...], unreadPlacements 0. inputs came inViewOnly not given - null (optional); includeLinks
+    not given - false (optional). on P1102 ARCH
+  negative_case: run against 'P1102 Family' instead - chosen because it should not contain
+    what this fragment reports. returned byKind 5 entry(ies), collector FilteredElementCollector,
+    elements 0 item(s), found 0, inViewOnly (null), includeLinks false, linkBlocked , linkDocs
+    0 item(s), linkPlacements 0 item(s), linkThroughView (null), linkTypes 0 item(s), linkedElementsOf
+    Func`2, linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched
+    0, nestedLinks 0, openingCategories 5 item(s) [OST_ShaftOpening, OST_FloorOpening, OST_SWallRectOpening,
+    ...], unreadPlacements 0. inputs came inViewOnly not given - null (optional); includeLinks
+    not given - false (optional). on P1102 Family
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
   fingerprint: d779a84f48f23cd8
-
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -170,8 +164,13 @@ compatibility-note: >
 #                                           the sleeves MEP puts in rather than
 #                                           the holes the building has
 #   "what size should the sleeve be"     -> CHECK_SLEEVE_SIZE
-#   "what is in the way"                 -> CHECK_OBSTRUCTIONS
-#   "all the ductwork"                   -> SELECT_BY_CATEGORIES
+#   "what is in the way"                 -> PROBE_AROUND_ELEMENTS
+#   "all the ductwork"                   -> FILTER_ELEMENTS_BY_CATEGORY
+#   "add a shaft", "make a shaft opening" -> CREATE_SHAFT_OPENING (2026-11-02),
+#                                           a write. Until it existed these
+#                                           change requests ranked HERE, a read
+#                                           that makes no shaft
+#   "cut the hole through this wall or slab" -> CREATE_OPENING
 
 utterances:
   - where are the shafts

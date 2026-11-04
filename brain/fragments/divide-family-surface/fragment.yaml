@@ -128,7 +128,7 @@ compatibility-note: >
   `SpacingRuleJustification` is Center, Beginning or End on every release.
   The pattern is the element's type, from `GetValidTypes` and `ChangeTypeId`.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "divide the surface of this mass into panels" -> here
 #   "make a surface from these lines"             -> CREATE_CONCEPTUAL_FORM -

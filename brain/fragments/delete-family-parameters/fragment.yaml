@@ -13,7 +13,7 @@ semantic-identity: "delete these family parameters from the family being edited,
 # delete - and PROVIDES `added`. A remove mode would have to make all three
 # optional, put its proof back to DRAFT, and leave one card answering both
 # "add a Width parameter" and "delete Width" under one risk declaration.
-# SET_FAMILY_FORMULA, LINK_FAMILY_PARAMETER and LINK_FAMILY_FORM_PARAMETER each
+# SET_FAMILY_FORMULA and LINK_FAMILY_PARAMETER (LINK_FAMILY_FORM_PARAMETER merged in) each
 # act on ONE parameter's wiring, which is exactly what this refuses to touch.
 # DELETE_ELEMENTS takes elements, and a family parameter is not one a view can
 # select. Asked for on 2026-10-04 after two leftover parameters in a PPR check
@@ -182,13 +182,13 @@ compatibility-note: >
   (api-surface, read 2026-10-06). No dimension is deleted, so
   `Document.Delete` is not called.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "delete the Cap R Start parameter from this family" -> here
 #   "delete this parameter even though it labels a dimension" -> here, unlabelFirst
 #   "label the width with the Width parameter" -> LABEL_FAMILY_DIMENSION
 #   "add a Width parameter to this family"   -> ADD_FAMILY_PARAMETERS
-#   "clear the value out of this parameter"  -> REMOVE_PARAMETER_VALUE - a
+#   "clear the value out of this parameter"  -> WRITE_ELEMENT_PARAMETERS clear=true - a
 #                                               value on placed elements; the
 #                                               parameter stays
 #   "delete these elements"                  -> DELETE_ELEMENTS

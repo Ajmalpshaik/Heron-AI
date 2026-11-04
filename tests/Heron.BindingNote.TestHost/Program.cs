@@ -108,10 +108,57 @@ namespace Heron.BindingNote.TestHost
                   "a View NOT marked optional is still refused - the view is the caller's to name");
             Check(HeronBindingNote.AbsentValue("View", "false") == null,
                   "and so is one marked optional: false");
+            // 2026-11-01: AN OPTIONAL VIEW LIST BINDS EMPTY, so PLACE_VIEW_ON_SHEET
+            // can take its views handed on as `elements` when none is named.
+            Check(HeronBindingNote.AbsentValue("IList<View>", "true") == "new List<View>()",
+                  "an absent IList<View> marked optional binds an empty list");
+            Check(HeronBindingNote.AbsentValue(" IList<View> ", " True ") == "new List<View>()",
+                  "however the card spells it");
+            Check(HeronBindingNote.AbsentValue("IList<View>", null) == null,
+                  "a view list NOT marked optional is still refused - the views are the caller's to name");
+            Check(HeronBindingNote.AbsentValue("IList<View>", "false") == null,
+                  "and so is one marked optional: false");
+            // 2026-11-01: AN OPTIONAL ELEMENT BINDS NULL AND AN OPTIONAL POINT
+            // LIST EMPTY, so CREATE_OPENING's family half - the template's own
+            // wall or ceiling, found by the fragment - can be asked at all.
+            Check(HeronBindingNote.AbsentValue("Element", "true") == "null",
+                  "an absent Element marked optional binds null");
+            Check(HeronBindingNote.AbsentValue(" Element ", " True ") == "null",
+                  "however the card spells it");
+            Check(HeronBindingNote.AbsentValue("Element", null) == null,
+                  "an Element NOT marked optional is still refused - the element is the caller's to name");
+            Check(HeronBindingNote.AbsentValue("IList<XYZ>", "true") == "new List<XYZ>()",
+                  "an absent IList<XYZ> marked optional binds an empty list");
+            Check(HeronBindingNote.AbsentValue("IList<XYZ>", "false") == null,
+                  "and a point list marked optional: false is still refused");
+            Check(HeronBindingNote.AbsentValue("XYZ", "true") == null,
+                  "an optional single point is still refused - no point means 'not asked'");
+            Check(HeronBindingNote.AbsentValue("IList<Element>", "true") == null,
+                  "an element list is EmptyWhenAbsent's case, never this one");
+            Check(HeronBindingNote.AbsentValue("IList<string>", "true") == null,
+                  "and an optional list of names is still refused");
             Check(HeronBindingNote.AbsentValue("string", "true") == null,
                   "an optional string is still refused - row 5b-227's other two");
             Check(HeronBindingNote.AbsentValue("double", "true") == null,
                   "an optional number is still refused - no number means 'not asked'");
+            // 2026-11-01: ONE ELEMENT OR ONE DUCT-OR-PIPE SYSTEM TYPE MARKED
+            // OPTIONAL BINDS NULL - TRACE_CONNECTIVITY with no start, ALIGN_ELEMENTS
+            // with a typed height and no reference, CREATE_MEP_RUNS drawing cable
+            // tray, CREATE_MEP_SYSTEM making a circuit. Only when marked.
+            Check(HeronBindingNote.AbsentValue("Element", "true") == "null",
+                  "an absent Element marked optional binds null");
+            Check(HeronBindingNote.AbsentValue(" Element ", " True ") == "null",
+                  "however the card spells it");
+            Check(HeronBindingNote.AbsentValue("Element", null) == null,
+                  "an Element NOT marked optional is still refused - it is the caller's to name");
+            Check(HeronBindingNote.AbsentValue("MEPSystemType", "true") == "null",
+                  "an absent MEPSystemType marked optional binds null");
+            Check(HeronBindingNote.AbsentValue("MEPSystemType", "false") == null,
+                  "and one marked optional: false is still refused");
+            Check(HeronBindingNote.AbsentValue("MechanicalSystemType", "true") == null,
+                  "a narrower system type is not one of the two spellings, so still refused");
+            Check(HeronBindingNote.AbsentValue("FamilyInstance", "true") == null,
+                  "and neither is a family instance - its blank is the resolver's own");
 
             // FRAGMENT-ISSUES row 5b-1320, the other half: A VALUE LEFT EMPTY
             // IS A VALUE LEFT OUT, when the card says it may be. inViewOnly=
@@ -171,10 +218,28 @@ namespace Heron.BindingNote.TestHost
                   "and so is one marked optional: false");
             Check(HeronBindingNote.EmptyWhenAbsent("IList<ElementId>", "true") == null,
                   "a list of ids is not an element list here, as in IsElementList");
+            // 2026-11-01, GROUP_AND_COUNT v2: an optional quantity per element
+            // binds null - "nobody handed one on" - never an empty dictionary.
+            Check(HeronBindingNote.EmptyWhenAbsent("IDictionary<ElementId, double>", "true") == "null",
+                  "a quantity per element marked optional binds null");
+            Check(HeronBindingNote.EmptyWhenAbsent("IDictionary<ElementId, double>", null) == null,
+                  "and NOT marked optional it is still refused");
+            Check(HeronBindingNote.EmptyWhenAbsent("IDictionary<ElementId, string>", "true") == null,
+                  "a dictionary of text is not that case");
             Check(HeronBindingNote.EmptyWhenAbsent("Element", "true") == null,
                   "one element has no empty value, so it is still refused");
             Check(HeronBindingNote.EmptyWhenAbsent("bool", "true") == null,
                   "a bool is AbsentValue's case, not this one");
+            // 2026-11-01: A CURVE LIST MARKED OPTIONAL BINDS EMPTY, so
+            // SET_VIEW_CROP crops to a rectangle when no loop is handed on.
+            Check(HeronBindingNote.EmptyWhenAbsent("IList<Curve>", "true") == "new List<Curve>()",
+                  "a curve list marked optional binds an empty list");
+            Check(HeronBindingNote.EmptyWhenAbsent(" IList< Curve > ", " True ") == "new List<Curve>()",
+                  "however the card spaces it");
+            Check(HeronBindingNote.EmptyWhenAbsent("IList<Curve>", null) == null,
+                  "a curve list NOT marked optional is still refused - nothing was handed on");
+            Check(HeronBindingNote.EmptyWhenAbsent("Curve", "true") == null,
+                  "one curve has no empty value, so it is still refused");
 
             // FRAGMENT-ISSUES row 5b-292: the name SELECT_TYPES prints must be
             // a name the binder takes.

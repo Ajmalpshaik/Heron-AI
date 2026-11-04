@@ -5,11 +5,16 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-002
-semantic-identity: "turns a set of parameter values into a schedule-style table"
+# IDENTITY REWORDED 2026-11-01 (FRAGMENT-ISSUES 5b-1354). It was "turns a set
+# of parameter values into a schedule-style table", which shares no word with
+# "how many doors of each type" - and REPORT_VIEWPORT_TYPES, whose identity ends
+# "how many use each", answered that question on lexical. The identity is read
+# by all three routes, so it now says the modeller's question first.
+semantic-identity: "how many of each type, size or value there are - a set of parameter values turned into a schedule-style table"
 kind: action
 domain: revit.reporting
 capability: GROUP_AND_COUNT
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -17,32 +22,71 @@ purpose: >
   Turns a set of parameter values into a schedule-style table: each distinct
   value, and how many carried it, largest group first.
 
+  **WITH A MEASURED QUANTITY IT TOTALS EACH GROUP TOO** (version 2, when
+  SUM_BY_GROUP was merged in) - the way a bill of quantities reads: "forty
+  lengths of 300x150 totalling 212 metres". `MEASURE_RUN_QUANTITIES` hands on
+  the numbers for MEP runs. An element with no quantity is counted, never
+  skipped and never treated as zero: `missing` carries them per group and
+  `incomplete` says a total rests on partial data. Version 1's proof no longer
+  describes the code and is kept as a record; DRAFT until it is proved again.
+
 contract:
   needs:
     - name: values
       type: IDictionary<ElementId, string>
+    - name: quantities
+      # Version 2, from SUM_BY_GROUP: the number to add up per element, handed
+      # on by a measuring fragment (MEASURE_RUN_QUANTITIES' `quantities`).
+      # Optional: nothing handing it on binds NULL, and this counts as version
+      # 1 did. Handed on EMPTY, every element is missing a quantity.
+      type: IDictionary<ElementId, double>
+      optional: true
   provides:
     - name: groups
       role: result
       type: IList<KeyValuePair<string, int>>
+    - name: counts
+      # Version 2, from SUM_BY_GROUP: `groups` as a dictionary, value -> how
+      # many.
+      role: result
+      type: IDictionary<string, int>
+    - name: totals
+      # Version 2, from SUM_BY_GROUP: the quantity added up per group, in the
+      # unit it was handed on in. Empty when no `quantities` came.
+      role: result
+      type: IDictionary<string, double>
+    - name: missing
+      # Version 2, from SUM_BY_GROUP: elements per group with no quantity to
+      # add - not skipped, and not treated as zero. What the total rests on,
+      # never part of it (D-52).
+      role: accounting
+      type: IDictionary<string, int>
+    - name: incomplete
+      # Version 2, from SUM_BY_GROUP: at least one group had an element with no
+      # quantity, so A TOTAL THAT RESTS ON PARTIAL DATA SAYS SO ON THE SAME
+      # LINE AS THE NUMBER.
+      role: result
+      type: bool
 
 proof:
-  date: '2026-09-13'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: test projject (3,501 elements), Revit 2024, session 40932
-  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-in-region, set-selection, read-element-parameters with this phase''s own values.
-    returned groups 2 item(s) [[Basic Wall: Generic - 200mm, 19], [Rectangular Duct: Radius
-    Elbows / Taps, 6]]. inputs came values from read-element-parameters (25). on test projject'
-  negative_case: run with minMm=-2000,-2000,-2000, maxMm=50000,50000,8000, exact=false, categories=Walls,
-    Ducts, parameterName=ZZZ No Such Parameter instead - chosen because it should not contain
-    what this fragment reports - the arrangement was re-made first by running select-in-region,
-    set-selection, read-element-parameters with this phase's own values. returned groups 0
-    item(s). inputs came values from read-element-parameters (0). on test projject
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, read-element-parameters with this phase's own values. returned
+    counts 2 entry(ies), groups 2 item(s) [[Undefined, 9], [Supply Air, 1]], incomplete false,
+    missing 0 entry(ies), quantities (null), totals 0 entry(ies). inputs came values from
+    read-element-parameters (10); quantities not given - none (optional). on P1102 MEP
+  negative_case: run with category=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP TYP, parameterName=ZZZNOTHINGHERE
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running filter-elements-by-category, read-element-parameters with
+    this phase's own values. returned counts 0 entry(ies), groups 0 item(s), incomplete false,
+    missing 0 entry(ies), quantities (null), totals 0 entry(ies). inputs came values from
+    read-element-parameters (0); quantities not given - none (optional). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 24c77e51d94e98e6
+  fingerprint: 362f4c80a60f8443
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -57,6 +101,16 @@ tests: tests/
 #                                  a drawing. Both are right answers to
 #                                  different sentences
 #   "how many ducts are there"  -> COUNT_ELEMENTS
+#   "total the lengths by size" -> here, fed by MEASURE_RUN_QUANTITIES, which
+#                                  hands on `values` and `quantities` both
+#                                  (version 2, SUM_BY_GROUP merged in)
+#
+# SUM_BY_GROUP WAS MERGED INTO THIS CARD on 2026-11-01, on the owner's
+# instruction ("make sure there is no duplicate tools"), and is DEPRECATED.
+# Its needs and outputs are here under the same names - values, quantities,
+# totals, counts, missing, incomplete - and this card's largest-first `groups`
+# is kept. Nothing not carried. One rule, the same in both: a key that is the
+# empty string is its own group; a null key now joins it.
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search
@@ -65,9 +119,12 @@ tests: tests/
 # that retrieval could not act on, and these resolved elsewhere.
 
 utterances:
+  # THE FIRST EIGHT ARE WHAT THE RE-RANKER READS (D-134), so the order below is
+  # measured, not tidy. "group them and count" was third until 2026-11-01 and
+  # moved last to let a pipe-size sentence in (FRAGMENT-ISSUES 5b-1357); it is
+  # declared whole, so it still answers by its own phrase.
   - what sizes are they
   - break it down by size
-  - group them and count
   - give me a schedule of the types
   - break it down by type
   # ADDED 2026-09-19. Both sentences reached a WRITE: "what sizes are the
@@ -79,3 +136,36 @@ utterances:
   # size" and "give me a schedule of the types"; only the noun differed.
   - what sizes are the ducts
   - duct schedule by size
+  # ADDED 2026-11-01 (FRAGMENT-ISSUES 5b-1354): the question measured reaching
+  # REPORT_VIEWPORT_TYPES. Keep it inside the eight: pushed out, four held-out
+  # door-by-type questions left this card on the re-ranker.
+  - how many doors of each type
+  # ADDED 2026-11-01 (FRAGMENT-ISSUES 5b-1357), the pipe twin of the duct pair
+  # above: "what sizes are these pipes" reached AUTO_SIZE_PIPE or SET_MEP_SIZE -
+  # writes - on every backend, because "size these pipes" (a verb) and "what
+  # sizes are these pipes" (a noun) look alike to both routes. The breakdown
+  # sentence is the size-breakdown skill's, which no card carried; it is the
+  # eighth on purpose - with "what sizes are these pipes" there instead, the
+  # re-ranker moved fewer pipe questions and lost door ones.
+  - give me a breakdown of the pipe sizes
+  # The rest are past the eight, read by the words and nearness routes only.
+  # The two door-free forms of 5b-1354's question - put first, they pushed the
+  # duct-size sentences out of the eight and "give me a breakdown of the duct
+  # sizes" went to AUTO_SIZE_MEP and SET_MEP_SIZE on the re-ranker.
+  - how many of each type are there
+  - count them by type
+  - group them and count
+  - what sizes are these pipes
+  - how many pipes of each size
+  # NOT DECLARED (FRAGMENT-ISSUES 5b-1371): "what is the biggest pipe size",
+  # which reaches AUTO_SIZE_PIPE or SET_MEP_SIZE - writes - on all four
+  # backends on main. Declared here, it took the owner's own request #59,
+  # "Size the pipes.", from AUTO_SIZE_PIPE on lexical and the trained model,
+  # and sent "how big is this pipe" to AUTO_SIZE_PIPE on the re-ranker.
+  # MOVED 2026-11-01 from SUM_BY_GROUP, merged into this card.
+  - total the lengths by size
+  - how many metres of each size
+  - give me a takeoff
+  - add up the areas per system
+  - what is the total per type
+  - a bill of quantities for these

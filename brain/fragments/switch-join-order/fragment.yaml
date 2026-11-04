@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,31 @@ capability: SWITCH_JOIN_ORDER
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO JOIN_GEOMETRY (join-geometry), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools", "in every conflict keep the safer rule". Constitution Article 1:
+# kept, never deleted, so its record stays readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to JOIN_GEOMETRY.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: JOIN_GEOMETRY
+  why: >
+    A third mode of the same tool. JOIN_GEOMETRY version 3 takes join
+    switch, which turns the join between the target and each element round:
+    a pair that is not joined refused, never joined first; the direction read
+    before and after, a call that left it unchanged named and never counted;
+    which one now cuts said for each; and "the overlap has moved" whenever
+    one turned. Not taken, and why: this card's two matched lists and their
+    different-lengths refusal. Both lists bound the chain's one `elements`
+    (binds: elements), so every pair was an element with itself - never
+    joined, nothing switched - and from the selection the add-in refused
+    them as two lists one selection cannot tell apart. This DRAFT card could
+    never have switched a pair; JOIN_GEOMETRY pairs each element with its
+    `target`.
 
 purpose: >
   Reverses the direction of an existing join, so the element that was giving up
@@ -66,8 +91,7 @@ compatibility-note: >
   `AreElementsJoined` and `IsCuttingElementInJoin` are present 2020 through
   2027, compiled at both ends.
 
-# ROUTING - repeated in JOIN_GEOMETRY, UNJOIN_GEOMETRY and
-# REPORT_JOINED_ELEMENTS.
+# ROUTING - repeated in JOIN_GEOMETRY and REPORT_JOINED_ELEMENTS.
 #
 #   "the wrong one is cutting"       -> here
 #   "swap which element cuts"        -> here
@@ -78,7 +102,7 @@ compatibility-note: >
 #   "join these"                     -> JOIN_GEOMETRY - and this refuses a pair
 #                                       that is not joined rather than joining
 #                                       it first
-#   "unjoin these"                   -> UNJOIN_GEOMETRY
+#   "unjoin these"                   -> JOIN_GEOMETRY, join false
 #   "which one is cutting"           -> REPORT_JOINED_ELEMENTS - the read to do
 #                                       first, and the one that shows this
 #                                       worked

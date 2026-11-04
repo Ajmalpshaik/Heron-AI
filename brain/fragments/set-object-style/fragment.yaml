@@ -1,0 +1,200 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-064
+semantic-identity: "change a category's or subcategory's own Object Styles - its projection and cut line weight, line colour, line pattern and material, for the whole model"
+kind: action
+domain: revit.document
+capability: SET_OBJECT_STYLE
+version: 1
+source: OFFICIAL
+# MODIFY, NOT ADMIN - graded as the library grades the writes that touch these
+# same settings. TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS restyles every
+# category in the model at once and is MODIFY; CREATE_LINE_STYLE with
+# updateExisting restyles every line drawn in a style, model-wide, and is
+# MODIFY; SET_TEXT_TYPE changes every text of a type and is MODIFY. ADMIN
+# (D-106) is "how the project is set up" - SET_PROJECT_UNITS, worksets,
+# project and global parameters, the project location - settings other work is
+# built on. Object Styles is how a category draws: no element, value or view
+# changes, a view's own override still wins, and one Ctrl+Z takes it back.
+# Grading one row of Object Styles above the transfer that rewrites all of them
+# would put the smaller change behind the stricter switch.
+risk: MODIFY
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words below - Revit's Manage > Object
+# Styles, per category and per subcategory. Checked that day with
+# brain/heron_retrieve.py's find() on a scratch store built from this tree, with
+# and without the host's question flag: "set the projection line weight of
+# Doors to 3" and "make the Hidden Lines subcategory of Ducts lineweight 1"
+# reached LIST_CATEGORIES, a read; "change the cut line colour of Walls to red"
+# reached CREATE_LINE_STYLE; "set the line pattern of Ducts to Dash" reached
+# CREATE_LINE_PATTERN; "set the material of Generic Models to Concrete" reached
+# SET_MATERIAL_APPEARANCE. None of them changes a category's Object Styles.
+#
+# WHY A CARD OF ITS OWN - each near card read in full (the
+# heron-duplicate-checker method; brain/heron_merge.py and heron_duplicates
+# found no same-signature or same-capability card):
+#   CREATE_LINE_STYLE (PROVEN on main) changes a subcategory of LINES, or in a
+#     family a subcategory of the family's own category; its own card records
+#     that a project's Walls > ... is not reached (row 5b-463). Widening it
+#     means a change under its impl/, which makes its proof stale - so it is
+#     left alone, and the Lines category is refused here by name and sent
+#     there: one job, one card.
+#   TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS copies every row from ANOTHER open
+#     project; this sets one row to values the modeller names.
+#   SET_CATEGORY_GRAPHICS overrides a category IN ONE VIEW (Visibility/Graphics);
+#     this is the category's own style, which every view draws unless it
+#     overrides it.
+#   SET_FAMILY_FORM_SUBCATEGORY / SET_FAMILY_FORM_MATERIAL put a family's forms
+#     on a subcategory or a material; they do not style the subcategory.
+#   LIST_CATEGORIES (PROVEN) READS these rows - the question goes there.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33):
+#   category          the row, as Object Styles names it: "Doors", or
+#                     "Ducts > Hidden Lines" for a subcategory. LOCALISED - the
+#                     names this Revit shows, which LIST_CATEGORIES prints.
+#                     Capitals and extra spaces forgiven; an unknown name is
+#                     refused with the nearest names the model has, an unknown
+#                     subcategory with that category's own subcategories
+#   projectionWeight  1 to 16; left out (0) keeps it
+#   cutWeight         1 to 16; left out (0) keeps it. A category Revit does not
+#                     cut is refused by name
+#   colour            "R,G,B" each 0 to 255, or exactly one of these names:
+#                     black 0,0,0 · white 255,255,255 · red 255,0,0 · green
+#                     0,128,0 · blue 0,0,255 · yellow 255,255,0 · cyan
+#                     0,255,255 · magenta 255,0,255 · orange 255,128,0 · grey
+#                     (or gray) 128,128,128. Anything else is refused, listing
+#                     them. Revit holds ONE line colour per row, for projection
+#                     and cut alike - the answer says so
+#   pattern           a line pattern by its exact name, or "Solid"; one the
+#                     model has not got is refused with the nearest it has
+#   material          a material by its exact name, model categories only; one
+#                     the model has not got is refused with the nearest it has
+#
+# REFUSED BY NAME, NOTHING CHANGED: an internal category (Object Styles does
+# not show it); the Lines category (CREATE_LINE_STYLE's); nothing to change
+# named. Every value is checked before anything is written. A write Revit
+# refuses is thrown, so the caller's transaction rolls back every setting.
+#
+# TOUCHES ONLY THE ROW NAMED. A category's subcategories keep their own
+# settings, and a subcategory named leaves its category alone.
+#
+# READ BACK: `before` and `after` are the row's settings read off the category
+# before and after one regeneration; a value asked for that Revit does not
+# hold is named NOT KEPT in findings.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Changes one row of Manage > Object Styles - a category, or one of its
+  subcategories - for the whole model: its projection line weight, cut line
+  weight, line colour, line pattern and material. What is not named is kept,
+  and the row is read back before and after.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The row: "Doors", or "Ducts > Hidden Lines" for a subcategory - as this
+    # Revit names it in Object Styles.
+    - name: category
+      type: string
+      source: request
+    # 1 to 16. Left out, 0 - the projection line weight is kept.
+    - name: projectionWeight
+      type: int
+      source: request
+      optional: true
+      absent: 0
+    # 1 to 16. Left out, 0 - the cut line weight is kept.
+    - name: cutWeight
+      type: int
+      source: request
+      optional: true
+      absent: 0
+    # "R,G,B", or one of the ten names in the comment above. Left out, kept.
+    - name: colour
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    # A line pattern by name, or "Solid". Left out, kept.
+    - name: pattern
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    # A material by name - model categories only. Left out, kept.
+    - name: material
+      type: string
+      source: request
+      optional: true
+      absent: keep
+  provides:
+    - name: before
+      # The row's settings read before the change - "Walls: projection weight
+      # 1, cut weight 3, line colour 0,0,0, line pattern Solid, material none".
+      role: result
+      type: string
+    - name: after
+      # The same, read back after it.
+      role: result
+      type: string
+    - name: changed
+      # How many settings Revit was asked to change - one asked for that the row
+      # already holds is not counted. 0 when refused.
+      role: result
+      type: int
+    - name: refused
+      # Why NOTHING WAS CHANGED, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Category.GetLineWeight (an int?),
+  SetLineWeight, LineColor, GetLinePatternId, SetLinePatternId, Material,
+  SubCategories, CategoryType, IsCuttable, Name and Id;
+  LinePatternElement.GetSolidPatternId and GetLinePatternElementByName;
+  Color(byte, byte, byte) with IsValid; CategoryType.Internal and Model;
+  GraphicsStyleType.Projection and Cut; Document.Settings, GetElement and
+  Regenerate - each 2020 to 2027 with one signature, read off tools/api-surface
+  --members for all eight releases on 2026-11-02. Category.BuiltInCategory is
+  2023 and later only, so the Lines category is found by
+  Categories.get_Item(BuiltInCategory.OST_Lines), as CREATE_LINE_STYLE does.
+
+# ROUTING (2026-11-02) - the object-style rows are repeated in LIST_CATEGORIES,
+# CREATE_LINE_STYLE and SET_CATEGORY_GRAPHICS.
+#
+#   "set the projection line weight of Doors to 3"    -> here
+#   "change the cut line colour of Walls to red"      -> here - one colour per row
+#   "set the line pattern of Ducts to Dash"           -> here
+#   "set the material of Generic Models to Concrete"  -> here
+#   "make the Hidden Lines subcategory of Ducts lineweight 1" -> here, "Ducts > Hidden Lines"
+#   "what are the object style settings for Pipes"    -> LIST_CATEGORIES - a question goes to the read
+#   "make a red dashed line style"                    -> CREATE_LINE_STYLE - a line style is a Lines subcategory
+#   "change the colour of a subcategory in the family" -> CREATE_LINE_STYLE, familyCategory
+#   "grey the architecture back"                      -> SET_CATEGORY_GRAPHICS - one view, not the model
+#   "bring the object styles over from the template"  -> TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS
+#
+# WHAT MOVED (tools/check-routing.py and heron_retrieve.find on scratch stores,
+# without and with this card, 2026-11-02). Every sentence above reaches the
+# card it names by identity, with and without the host's question flag for the
+# question - declared on LIST_CATEGORIES (row 5b-1425, FIXED). "put it back"
+# flipped between two writes its claiming card does not name, and three
+# made-up probe questions reach this card without the flag (a read with it) -
+# row 5b-1426, OPEN.
+utterances:
+  - set the projection line weight of Doors to 3
+  - change the cut line colour of Walls to red
+  - set the line pattern of Ducts to Dash
+  - set the material of Generic Models to Concrete
+  - make the Hidden Lines subcategory of Ducts lineweight 1

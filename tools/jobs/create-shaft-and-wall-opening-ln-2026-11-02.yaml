@@ -1,0 +1,68 @@
+# NEEDS-CHECKING Group LN - CREATE_SHAFT_OPENING (new) and CREATE_OPENING
+# version 4 (a wall's own opening), built 2026-11-02 in a cloud session with
+# no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/create-shaft-and-wall-opening-ln-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-shaft-and-wall-opening-ln-2026-11-02.yaml
+#
+# THE MODEL (docs/needs-checking/group-ln.md, LN1): the scratch project
+# "shaft-ln", from the default architectural template - levels "Level 1" at
+# 0, "Level 2" at 4000 and "Roof" at 8000 mm; one floor 200 mm thick on
+# "Level 2" and one on "Roof", each 0,0 to 10000,10000 mm; ONE straight basic
+# wall on "Level 1", 200 mm thick, from 0,0 to 6000,0 mm and 3000 mm high
+# (unconnected), no other wall; the floor plan "Level 1"; a section
+# "Section 1" looking north across the middle.
+#
+# THE ARRANGEMENT: the shaft takes no selection. The wall opening takes the
+# wall as `host`, selected first by select-by-category-name and
+# set-selection. Each negative is a different value, not an empty one
+# (fragment-proving, rules 3 and 5): a shaft run downwards, and an opening
+# whose top would run over the wall - nothing may be cut. Every write here is
+# ROLLED BACK.
+
+model: "shaft-ln scratch project (metric architectural template), Level 1 / Level 2 / Roof, two floors and one straight wall, Revit 2024"
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: create-shaft-opening
+    expect: created
+    in: "shaft-ln"
+    set:
+      baseLevel: "Level 1"
+      topLevel: "Roof"
+      corners: "4000,4000,0; 5200,4000,0; 5200,4800,0; 4000,4800,0"
+    negative-set:
+      baseLevel: "Roof"
+      topLevel: "Level 1"
+      corners: "4000,4000,0; 5200,4000,0; 5200,4800,0; 4000,4800,0"
+    note: >
+      LN2. Negative - THE FIRST CASE TO RUN: base "Roof", top "Level 1",
+      refused "Nothing was cut. The top level "Level 1" (0 mm) is not above
+      the base level "Roof" (8000 mm) ...", created invalid, slabsCut empty.
+      Positive: created 1; built "A shaft from "Level 1" (0 mm) to "Roof"
+      (8000 mm), 8000 mm tall; its outline 4 corners, X 4000 to 5200, Y 4000
+      to 4800 mm - 1200 x 800 mm, 0.96 m2 - read back."; slabsCut and the
+      volume each lost RECORDED as Revit says them.
+
+  - fragment: create-opening
+    expect: created
+    in: "shaft-ln"
+    setup: [select-by-category-name, set-selection]
+    set:
+      categoryName: "Walls"
+      inViewOnly: "FloorPlan: Level 1"
+      host: "selected"
+      wallOpening: "1200 x 800 at 900"
+    negative-set:
+      categoryName: "Walls"
+      inViewOnly: "FloorPlan: Level 1"
+      host: "selected"
+      wallOpening: "1200 x 800 at 2500"
+    note: >
+      LN3. Negative - THE FIRST CASE TO RUN: "1200 x 800 at 2500", refused
+      "... it would run off the wall's bottom or top", created invalid.
+      Positive: created 1; built "A 1200 x 800 mm opening in the wall ...,
+      its sill 900 mm above "Level 1", its centre 3000 mm along the wall from
+      its start - read back."; a finding that it was centred.

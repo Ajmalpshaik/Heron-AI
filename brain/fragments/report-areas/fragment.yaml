@@ -20,7 +20,7 @@ purpose: >
 
   **AREAS ARE A THIRD SPATIAL ELEMENT AND NOTHING HERE COVERED THEM.** This
   library has Rooms and Spaces thoroughly - `PLACE_ROOMS`,
-  `MEASURE_ROOM_DIMENSIONS`, `READ_ROOM_GEOMETRY`, `READ_SPACE_LOADS`,
+  `REPORT_ROOM_SPACE_DATA`, `READ_ROOM_GEOMETRY`, `READ_SPACE_LOADS`,
   `FILTER_ELEMENTS_IN_ROOM` - and `OST_Areas` appeared in none of them. Asking a
   room fragment for an area answer gets a confidently wrong number. Measured
   before this batch, *"report the areas in this model"* resolved to
@@ -167,11 +167,11 @@ compatibility-note: >
 #   "what is the gross floor area"     -> here, and read the SCHEME name: gross
 #                                         and rentable are different schemes over
 #                                         the same floor
-#   "how big is this room"             -> MEASURE_ROOM_DIMENSIONS. A ROOM is not
+#   "how big is this room"             -> REPORT_ROOM_SPACE_DATA. A ROOM is not
 #                                         an AREA - they are different elements,
 #                                         placed separately, and a room fragment
 #                                         gives a confidently wrong area answer
-#   "what is the area of these rooms"  -> READ_ROOM_GEOMETRY / MEASURE_ROOM_DIMENSIONS
+#   "what is the area of these rooms"  -> READ_ROOM_GEOMETRY / REPORT_ROOM_SPACE_DATA
 #   "the space loads"                  -> READ_SPACE_LOADS - Spaces, the third
 #                                         kind again, and an MEP element
 #   "make the area schedule"           -> CREATE_SCHEDULE. This reports numbers
@@ -179,7 +179,7 @@ compatibility-note: >
 #   "list the rooms and their areas"     -> REPORT_ROOM_SPACE_DATA. Rooms
 #                                           and Spaces are not Areas, and
 #                                           the numbers do not agree
-#   "place a room in that area"          -> PLACE_ROOM_AT_POINT. An Area is
+#   "place a room in that area"          -> PLACE_ROOMS, `points`. An Area is
 #                                           not a Room and this fragment
 #                                           reports the Area-plan kind
 #   "list the area schemes"              -> REPORT_AREA_VOLUME_COMPUTATIONS,
@@ -193,8 +193,8 @@ compatibility-note: >
 
 # ROUTING (2026-10-12, the gap fill)
 #
-#   "place the areas in the GIA plan"       -> PLACE_AREAS
-#   "trace the exterior walls for the areas" -> CREATE_AREA_BOUNDARY_LINES
+#   "place the areas in the GIA plan"       -> PLACE_ROOMS, placeKind area
+#   "trace the exterior walls for the areas" -> CREATE_ROOM_SEPARATION_LINES, lineKind area
 utterances:
   - report the areas in this model
   - what areas do we have

@@ -9,7 +9,7 @@ semantic-identity: "the sheets in this model, optionally narrowed by sheet numbe
 kind: filter
 domain: revit.sheets
 capability: FIND_SHEETS
-version: 1
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -39,20 +39,72 @@ purpose: >
   | What you meant | Use |
   |---|---|
   | The sheets — to place views on, renumber, export | **this fragment** |
-  | The schedule that lists them — to add a column, export to CSV | `FIND_SCHEDULES` |
+  | The schedule that lists them — to add a column, export to CSV | `FIND_VIEWS`, viewType Schedule |
 
-  `FIND_SCHEDULES` carries the same table, identically. An action that excludes them
+  `FIND_VIEWS` carries the same table, identically. An action that excludes them
   does so visibly; a filter that had already removed them would leave a
   renumbering job reporting success over an incomplete set, which is this
   repository's defining failure and the reason FIND_VIEWS counts what it skips.
+
+  **VERSION 2 reads each sheet back as the drawing list.** One `findings` row
+  per sheet - its number, its name and how many views are on it - with EMPTY
+  on a sheet that holds none and PLACEHOLDER on one that cannot. A sheet VIEW
+  TEMPLATE is not a sheet and is left out. Version 1's proof no longer
+  describes the code and is kept as a record; the card is DRAFT until it is
+  proved again.
+
+  **VERSION 3 picks the sheets of an issue.** By one revision - its Seq., its
+  description or its date - carried ANYWHERE on the sheet, not only as the
+  latest; a description that fits two revisions is refused and both are named.
+  And by a typed list of sheet numbers matched WHOLE: "179, 180" never picks
+  1790, where the part-match above would. Numbers that name no sheet, listed
+  sheets without the revision and sheets Revit would not read are each said.
 
 contract:
   needs:
     - name: doc
       type: Document
     - name: numberOrNameContains
+      # A PART of a sheet number or a sheet name - "M-", "ground floor". Version
+      # 3: optional, and left out it is "all" - not narrowed by it. Typed as
+      # exactly "all" it means every sheet; "wall" is still a part-match.
       type: string
       source: request
+      optional: true
+      absent: all
+    # VERSION 3, from FIND_SHEETS_BY_REVISION_OR_NUMBER. The revision's number
+    # in the Seq. column of Sheet Issues/Revisions - "15", or "Seq. 15". One
+    # number. Left out: "any" - not narrowed by it.
+    - name: revisionSequence
+      type: string
+      source: request
+      optional: true
+      absent: any
+    # VERSION 3. The revision's description, or a part of it - "IAB-ISSUED
+    # AS-BUILT", "as-built". Whole first, then a part; ignoring case. Two
+    # revisions fitting is refused. Left out: "any".
+    - name: revisionDescription
+      type: string
+      source: request
+      optional: true
+      absent: any
+    # VERSION 3. The revision's date exactly as the dialog shows it -
+    # "14.10.2026". Ignoring case and outer spaces; may fit several. Left
+    # out: "any".
+    - name: revisionDate
+      type: string
+      source: request
+      optional: true
+      absent: any
+    # VERSION 3. Sheet numbers with commas, semicolons or new lines between -
+    # "179, 180, 181". Each matched WHOLE, ignoring case - a separate input
+    # from numberOrNameContains, whose "17" also finds 170. No ranges:
+    # "179-186" cannot be told from a sheet numbered 179-186. Left out: "all".
+    - name: sheetNumbers
+      type: string
+      source: request
+      optional: true
+      absent: all
   provides:
     - name: elements
       role: result
@@ -68,23 +120,77 @@ contract:
       # of the match ran, never a sheet it found (D-52).
       role: accounting
       type: int
+    - name: findings
+      # Version 2, from LIST_SHEETS. One row per sheet returned, in sheet
+      # number order: "M-101  Level 1 Plan  (2 views)", with " - EMPTY" on a
+      # sheet holding no view and " - PLACEHOLDER, no titleblock and cannot be
+      # printed" on a placeholder. The count is GetAllPlacedViews - a title
+      # block, a legend component and a schedule are not counted. Prose, so
+      # it carries no role (D-51).
+      type: IList<string>
+    - name: revisionsMatched
+      # Version 3, from FIND_SHEETS_BY_REVISION_OR_NUMBER. Every revision the
+      # revision inputs chose - its sequence, number, date and description,
+      # and how many sheets carry it - with " || " between. What the INPUTS
+      # resolved to, never a sheet found (D-52). A STRING, because a list
+      # reaches the reply cut to three short entries. Empty with no revision
+      # asked for.
+      role: accounting
+      type: string
+    - name: notFound
+      # Version 3. Typed sheet numbers that name no sheet in this model. What
+      # it was GIVEN and could not find, never a thing found (D-52).
+      role: accounting
+      type: string
+    - name: listedWithoutRevision
+      # Version 3. Listed sheets that exist but do not carry the revision -
+      # the check before an issue. Left out of `elements` and named here
+      # (D-52).
+      role: accounting
+      type: string
+    - name: notRead
+      # Version 3. Sheets whose revisions Revit would not hand over, with why.
+      # Counted, never matched and never dropped in silence (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Version 3. Why it declined, in the modeller's words - a sequence that
+      # is not one number, a description fitting two revisions, a revision
+      # that is not in the project (naming the project's revisions), a list
+      # holding no number. Nothing is returned when it is set (D-52).
+      role: accounting
+      type: string
 
 proof:
-  date: '2026-09-08'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
-  positive_case: run as it would normally be run. returned elements 14 item(s) [Plan HVAC
-    L0 Parking, Plan HVAC L1, Plan HVAC L2, ...], matchedOnName 14, placeholders 0 item(s),
-    wanted HVAC. inputs came numberOrNameContains as given. on Snowdon-scratch_ajmal.al
-  negative_case: run with numberOrNameContains=ZZZNOTHINGHERE instead - chosen because it
-    should not contain what this fragment reports. returned elements 0 item(s), matchedOnName
-    0, placeholders 0 item(s), wanted ZZZNOTHINGHERE. inputs came numberOrNameContains as
-    given. on Snowdon-scratch_ajmal.al
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: run as it would normally be run. returned allRevisions 0 item(s), byDate
+    false, byDescription false, byList false, byRevision false, bySequence false, chosen 0
+    item(s), describe Func`2, elements 1 item(s) [North Level 1 - Lighting Plan], everyRevision
+    Func`1, findings 1 item(s) [E301  North Level 1 - Lighting Plan  (3 views)], given Func`3,
+    listed 0 item(s), listedWithoutRevision , matchedOnName 1, notFound , notRead , placeholders
+    0 item(s), refused , revisionsMatched , sameWord Func`3, sequenceWanted -1, squash Func`2,
+    wanted Lighting. inputs came numberOrNameContains as given; revisionSequence not given
+    - "any", the card's own default (optional); revisionDescription not given - "any", the
+    card's own default (optional); revisionDate not given - "any", the card's own default
+    (optional); sheetNumbers not given - "all", the card's own default (optional). on P1102
+    MEP
+  negative_case: run with category=Sheets, numberOrNameContains=ZZZNOTHINGHERE instead - chosen
+    because it should not contain what this fragment reports. returned allRevisions 0 item(s),
+    byDate false, byDescription false, byList false, byRevision false, bySequence false, chosen
+    0 item(s), describe Func`2, elements 0 item(s), everyRevision Func`1, findings 0 item(s),
+    given Func`3, listed 0 item(s), listedWithoutRevision , matchedOnName 0, notFound , notRead
+    , placeholders 0 item(s), refused , revisionsMatched , sameWord Func`3, sequenceWanted
+    -1, squash Func`2, wanted ZZZNOTHINGHERE. inputs came numberOrNameContains as given; revisionSequence
+    not given - "any", the card's own default (optional); revisionDescription not given -
+    "any", the card's own default (optional); revisionDate not given - "any", the card's own
+    default (optional); sheetNumbers not given - "all", the card's own default (optional).
+    on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 63117e5f309b93a9
-
+  fingerprint: fce986acc3d5e35a
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -95,19 +201,100 @@ compatibility-note: >
   `placeholders` carries `ElementId`, whose backing width changed at 2024 - it is
   only collected and returned here, never converted to or from an integer, which
   is what keeps this clear of that break.
-#   "which sheets carry this date"       -> EXTRACT_DATES_FROM_TEXT, which
-#                                           reads the dates typed on them
 
-# ROUTING (2026-10-14, FRAGMENT-ISSUES row 5b-471) - repeated in LIST_SHEETS.
-# The two cards overlap and neither named the other until then.
+  Version 3 adds `ViewSheet.GetAllRevisionIds()` and
+  `Revision.GetAllRevisionIds(Document)`, `SequenceNumber`, `RevisionNumber`,
+  `RevisionDate` and `Description` - unchanged 2020 to 2027, read 2026-10-17
+  off each release's reference assembly with tools/api-surface --members for
+  FIND_SHEETS_BY_REVISION_OR_NUMBER, which called them the same way. Ids are
+  kept and compared as ElementId.
+#   "which sheets carry this date"       -> FIND_DATES_IN_VIEWS, onlySheets
+#                                           on, which reads the dates typed
+#                                           on them (LIST_DATES_ON_SHEETS
+#                                           until it was merged there,
+#                                           2026-11-01)
+
+# VERSION 3 (2026-11-01) - FIND_SHEETS_BY_REVISION_OR_NUMBER WAS MERGED INTO
+# THIS CARD on the owner's instruction ("make sure there is no duplicate
+# tools"), and is DEPRECATED. The same job - the sheets, narrowed, handed to
+# the next step - and its own record already named this card as the natural
+# home, held back only because a change here needed the owner's yes. What it
+# had and this card lacked is here now: the sheets of ONE REVISION, by
+# sequence, description or date, matched against every revision on the sheet
+# (GetAllRevisionIds), not only the latest; a description fitting two
+# revisions refused and both named; a typed list of sheet numbers matched
+# WHOLE, a separate input from the part-match; and revisionsMatched,
+# notFound, listedWithoutRevision, notRead and refused.
 #
-#   "the m series sheets"              -> here - narrowed by number or by name
-#   "which sheets are empty"           -> LIST_SHEETS - every sheet, with how many views
-#                                         each one carries
-#   "these sheets: 179, 180, 181"      -> FIND_SHEETS_BY_REVISION_OR_NUMBER - whole
-#                                         numbers; "17" here also finds 170 and 179
-#   "sheets on revision 15"            -> FIND_SHEETS_BY_REVISION_OR_NUMBER - any
-#                                         revision on the sheet. Row 5b-550
+# ONE RULE WAS OPPOSITE, AND THE SAFER ONE IS KEPT (the owner: "in every
+# conflict keep the safer rule"). That card returned a sheet VIEW TEMPLATE
+# like a sheet; this one leaves it out, as version 2 does. NOT CARRIED: that
+# card refused when nothing at all was given; here nothing given is every
+# sheet, this card's proved job. A revision or a list given that fits nothing
+# is still refused or empty, never widened to every sheet.
+#
+# WHERE ITS OUTPUTS ARE NOW: elements -> elements, placeholders ->
+# placeholders, and revisionsMatched, notFound, listedWithoutRevision, notRead
+# and refused under the same names. Its sentences moved here.
+#
+# ROUTING - FIND_SHEETS_BY_REVISION_OR_NUMBER's rows, moved here with it.
+#
+#   "the sheets with the as-built revision"  -> here - revisionDescription
+#   "sheets on revision 15"                  -> here - revisionSequence
+#   "these sheets: 179, 180, 181"            -> here - sheetNumbers, whole
+#   A match on "Current Revision Description" is SELECT_BY_PARAMETER_VALUE,
+#   and reads the LATEST revision on each sheet only.
+#   "save these sheets as a named set"       -> MANAGE_SHEET_SETS, handed
+#                                               this card's elements
+#   "put that revision on these sheets"      -> SET_SHEET_REVISIONS
+
+# VERSION 2 (2026-11-01) - LIST_SHEETS WAS MERGED INTO THIS CARD on the
+# owner's instruction ("now merge the other duplicates also"), and is
+# DEPRECATED. The same read - the project's sheets in sheet-number order,
+# placeholders returned and flagged - and this card also narrows them by
+# number or by name and hands them to whatever acts on them next. What
+# LIST_SHEETS had and this card lacked is here now: a findings row per sheet
+# with its view count and EMPTY / PLACEHOLDER, and a sheet view template
+# dropped. WHERE LIST_SHEETS' OUTPUTS ARE NOW: elements -> elements,
+# placeholders -> placeholders, findings -> findings, the same wording. Its
+# sentences and its routing rows moved here.
+#
+# ROUTING - repeated in CREATE_SHEETS and PLACE_VIEW_ON_SHEET (LIST_SHEETS'
+# rows, moved here with it).
+#
+#   "list the sheets"            -> here. A QUESTION
+#   "how many sheets are there"  -> here
+#   "which sheets are empty"     -> here - the view count is on every row
+#   "the m series sheets"        -> here - narrowed by number or by name
+#   "what views are on this sheet"
+#                                -> LIST_VIEWS_ON_SHEET. This card only
+#                                   COUNTS a sheet's views; that one NAMES
+#                                   them, with type and scale, and lists the
+#                                   schedules apart (row 146, 2026-10-09)
+#   "put this view on a sheet"   -> PLACE_VIEW_ON_SHEET. A CHANGE
+#   "make a new sheet"           -> CREATE_SHEETS
+#   "which sheets have this revision" -> LIST_REVISIONS - a QUESTION,
+#                                       answered for every revision; this
+#                                       card picks the sheets of one for the
+#                                       next step (version 3)
+#   "how many sheet sets are there"  -> LIST_SHEET_SETS - the saved View/Sheet
+#                                       Sets, which hold views as well as
+#                                       sheets. A set is not a sheet (row
+#                                       5b-465, 2026-10-14)
+#   "make a sheet list schedule" -> CREATE_SCHEDULE, listKind sheets (CREATE_
+#                                   SHEET_LIST until it was merged there,
+#                                   2026-11-01) - a schedule VIEW that
+#                                   prints on the cover. This is a READ that
+#                                   makes nothing
+
+# ROUTING (2026-10-14, FRAGMENT-ISSUES row 5b-471; repointed 2026-11-01 when
+# FIND_SHEETS_BY_REVISION_OR_NUMBER was merged here).
+#
+#   "these sheets: 179, 180, 181"      -> here, sheetNumbers - whole numbers;
+#                                         numberOrNameContains "17" also finds
+#                                         170 and 179
+#   "sheets on revision 15"            -> here, revisionSequence - any revision
+#                                         on the sheet. Row 5b-550
 
 utterances:
   - which sheets are in this model
@@ -116,3 +303,14 @@ utterances:
   - find the ground floor sheets
   - show me the drawing list
   - what sheets do we have
+  # MOVED 2026-11-01 from LIST_SHEETS, merged into this card. Its "what
+  # sheets do we have" and "show me the drawing list" were already here.
+  - list the sheets
+  - how many sheets are there
+  - which sheets are empty
+  - what is on the sheets
+  - give me the sheet numbers
+  # MOVED 2026-11-01 from FIND_SHEETS_BY_REVISION_OR_NUMBER, merged into this card.
+  - the sheets with the as-built revision
+  - sheets on revision 15
+  - "these sheets: 179, 180, 181"

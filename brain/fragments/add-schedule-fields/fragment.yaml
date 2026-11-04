@@ -9,7 +9,26 @@ semantic-identity: "add columns to these schedules, and say which ones could not
 kind: action
 domain: revit.views
 capability: ADD_SCHEDULE_FIELDS
-version: 1
+# VERSION 3 (2026-11-01, on the owner's word in the brief of that day's
+# session - Ajmal PS asked, after a duct length schedule on his Revit 2020 job
+# model could not have its Length column set to metres, for every schedule
+# setting Heron was missing to be built; FRAGMENT-ISSUES row 5b-1367, numbered
+# 5b-1363 until main took that number). `position` with NO columnName now
+# places the PLAIN columns fieldNames adds - version 2 refused that call
+# whole. first, last, after <column>, before <column>, or a place in the
+# Fields tab's list from 1 (hidden fields count, as on that tab and in
+# GetFieldOrder, which InsertField's index counts in); several fields go in in
+# the order given from that place. A place that cannot be found on a schedule
+# adds NOTHING to it (notPlaced) - never the end instead. A field already
+# there is not moved. With a columnName, position is version 2 to the letter;
+# left out it is "keep", version 1's AddField at the end. `notPlaced` and
+# `appliedOrder` (the order read back, new columns marked) are new outputs;
+# every version 2 output is unchanged. The one rule version 2 kept as the
+# safer one - a position with no columnName refused - now holds only when
+# fieldNames is empty too. Version 1's proof below no longer describes the
+# code and is kept as a record; the card is DRAFT until NEEDS-CHECKING Group
+# KK proves version 3 and the owner signs.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -39,6 +58,13 @@ purpose: >
   same failure as two tags on one element: it looks plausible on screen and is
   wrong on the sheet.
 
+  **VERSION 2 ADDS COMBINED COLUMNS, AND EDITS OR MOVES A COLUMN**
+  (ADD_SCHEDULE_COMBINED_FIELD merged in): one column joining several
+  parameters with a separator between each two - *"Type - Mark"* - a real
+  field that follows the model; a part that does not resolve stops that
+  column. With editExisting the column named is rebuilt where it stands, and
+  position puts a column first, last, after or before another.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a batch
   of columns across several schedules is one undo entry.
 
@@ -48,9 +74,57 @@ contract:
       type: Document
     - name: elements
       type: IList<Element>
+    # The plain columns to add. VERSION 2: may be left out ("none") when a
+    # combined column, an edit or a move is asked for instead.
     - name: fieldNames
       type: IList<string>
       source: request
+      optional: true
+      absent: none
+    # VERSION 2, from ADD_SCHEDULE_COMBINED_FIELD. A combined column's heading
+    # - or, with editExisting, the heading of the column already on the
+    # schedule to edit or move (its field name when no heading matches). Left
+    # out ("none"), no combined column, edit or move is made.
+    - name: columnName
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 2. The parameters to join, in order, by the names the schedule
+    # offers. Left out ("keep"), an edited column keeps its parts; a new
+    # combined column needs them, and is refused without.
+    - name: partFields
+      type: IList<string>
+      source: request
+      optional: true
+      absent: keep
+    # VERSION 2. What goes BETWEEN the parts - the first entry between parts 1
+    # and 2, the next between 2 and 3. N parts take N - 1 at most; fewer leave
+    # nothing in the rest; more is refused. Nothing ever follows the last
+    # part (row 5b-1292). Left out ("keep"): none on a new column, the old ones
+    # on an edited one.
+    - name: partSeparators
+      type: IList<string>
+      source: request
+      optional: true
+      absent: keep
+    # VERSION 2. True: edit the column columnName names in place instead of
+    # adding one. Absent binds false (row 5b-227).
+    - name: editExisting
+      type: bool
+      source: request
+      optional: true
+    # VERSION 2. first | last | after <column> | before <column> | a column
+    # number from 1, for the column columnName names. Left out ("keep"): a new
+    # combined column last, an edited one where it is. With editExisting and
+    # neither parts nor separators, the column is MOVED and nothing else
+    # changes. VERSION 3: given with no columnName, it places the plain
+    # columns fieldNames adds, in order from that place; with neither, refused.
+    - name: position
+      type: string
+      source: request
+      optional: true
+      absent: keep
   provides:
     - name: added
       role: result
@@ -79,34 +153,106 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: string
+    - name: edited
+      # VERSION 2. Columns already on a schedule that were edited or moved,
+      # each read back.
+      role: result
+      type: int
+    - name: columnNow
+      # VERSION 2. One line per combined column added or column edited: the
+      # schedule, the heading, its place, and how Revit will draw it -
+      # '[Width]x[Height]' - with what it was before an edit. Read back after
+      # the change. ONE string, lines joined by "  ||  " (row 5b-1290).
+      role: result
+      type: string
+    - name: partMissing
+      # VERSION 2. Schedules where a part of the combined column did not
+      # resolve to a parameter it can show - A PART THAT DOES NOT RESOLVE
+      # STOPS THE WHOLE COLUMN, so nothing was added there. Given and
+      # unusable (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notASchedule
+      # VERSION 2. Handed in but not a schedule, nor a schedule placed on a
+      # sheet. A count of what it was GIVEN and could not use (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: refusedSchedules
+      # VERSION 2. Schedules the combined column, edit or move was refused
+      # on, nothing changed there - ADD_SCHEDULE_COMBINED_FIELD's `refused`,
+      # renamed because this card's `refused` is the sentence (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: refusedWhy
+      # VERSION 2. Those refusals, and a part that did not resolve, as
+      # sentences: which schedule, why, and that nothing was changed on it.
+      # One string, joined by "  ||  ". Never a thing it found (D-52).
+      role: accounting
+      type: string
+    - name: notPlaced
+      # VERSION 3. Schedules a position for plain columns could not be found
+      # on - nothing was added to them - and any column a read back finds
+      # somewhere other than where it was asked. Given and unusable, never a
+      # column it added (D-52).
+      role: accounting
+      type: IList<string>
+    - name: appliedOrder
+      # VERSION 3. With a position for plain columns, each schedule's field
+      # order read back after the change, new columns marked "(new)" and
+      # hidden ones "(hidden)".
+      role: result
+      type: string
 
+# VERSION 1's PROOF, KEPT AS THE RECORD. Version 2 changed impl/, so its
+# fingerprint no longer describes the code and the card is DRAFT until
+# version 2 is proved on a real model (D-30).
 proof:
-  date: '2026-09-09'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 43652
-  positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction
-    and ROLLED BACK, so the model was left exactly as it was. returned added 2, alreadyPresent
-    0, availableFields 256 item(s) [Actual Appliance - Dwelling Unit Load, Actual Cooling
-    Load, Actual Default Load, ...], handed 3, refused (null), scheduleBehind Func`2, schedulesSeen
-    3, unknownField 1 item(s) [Comments], wanted 1 item(s) [Comments]. inputs came elements
-    from the selection (3); fieldNames as given (1). on Snowdon-scratch_ajmal.al
-  negative_case: run with categoryName=Title Blocks, fieldNames=Comments, inViewOnly=Notes,
-    Symbols & Schedules instead - chosen because it should not contain what this fragment
-    reports - the arrangement was re-made first by running select-by-category-name, set-selection
-    with this phase's own values - run inside a transaction and ROLLED BACK, so the model
-    was left exactly as it was. returned added 0, alreadyPresent 0, availableFields 0 item(s),
-    handed 1, refused not one of the 1 element(s) handed in is a schedule, so NOTHING WAS
-    ADDED. A schedule is a VIEW and cannot be selected in the model; what CAN be selected
-    is a schedule PLACED ON A SHEET, which this now reads through to the schedule behind it.
-    Click the schedule on the sheet, or select the category 'Schedule Graphics', scheduleBehind
-    Func`2, schedulesSeen 0, unknownField 0 item(s), wanted 1 item(s) [Comments]. inputs came
-    elements from the selection (1); fieldNames as given (1). on Snowdon-scratch_ajmal.al
+  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    find-views with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned added 2, alreadyPresent 0, appliedOrder
+    ''Level 2 Space Schedule'': 1 Level, 2 Comments (new), 3 Room: Number, 4 Room: Name, 5
+    Number, 6 Name, 7 Space Type, 8 Calculated Cooling Load; ''Space Schedule'': 1 Level,
+    2 Comments (new), 3 Number, 4 Name, 5 Calculated Supply Airflow, 6 Actual Supply Airflow,
+    7 Airflow Delta, availableFields 123 item(s) [Actual Cooling Load, Actual Exhaust Airflow,
+    Actual HVAC Load, ...], columnNow , columnsCalled Func`3, combinedAsked false, drawn Func`4,
+    editExisting false, edited 0, handed 2, headingOf Func`2, keepParts true, keepSeparators
+    true, notASchedule 0 item(s), notPlaced 0 item(s), nowLines 0 item(s), orderParts 2 item(s)
+    [''Level 2 Space Schedule'': 1 Level, 2 Comments (new), 3 Room:..., ''Space Schedule'':
+    1 Level, 2 Comments (new), 3 Number, 4 Nam...], parameterName Func`4, partMissing 0 item(s),
+    positionAnchor , positionForPlain true, positionKind at, positionNumber 2, positionProblem
+    (null), positionText 2, refused (null), refusedSchedules 0 item(s), refusedWhy , saysKeep
+    Func`2, scheduleBehind Func`2, schedulesSeen 2, separatorList 0 item(s), unknownField
+    0 item(s), wanted 1 item(s) [Comments], wantedName , whyLines 0 item(s). inputs came elements
+    from find-views (2); fieldNames as given (1); columnName not given - "none", the card''s
+    own default (optional); partFields not given - "keep", the card''s own default (optional);
+    partSeparators not given - "keep", the card''s own default (optional); editExisting not
+    given - false (optional); position as given. on P1102 MEP'
+  negative_case: run with fieldNames=Comments, position=after ZZZ NO SUCH COLUMN arranged
+    with nameContains=Space Schedule, viewType=Schedule instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    find-views with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned added 0, alreadyPresent 0, appliedOrder
+    , availableFields 123 item(s) [Actual Cooling Load, Actual Exhaust Airflow, Actual HVAC
+    Load, ...], columnNow , columnsCalled Func`3, combinedAsked false, drawn Func`4, editExisting
+    false, edited 0, handed 2, headingOf Func`2, keepParts true, keepSeparators true, notASchedule
+    0 item(s), notPlaced 2 item(s) ['Level 2 Space Schedule' - 'ZZZ NO SUCH COLUMN' is not
+    a col..., 'Space Schedule' - 'ZZZ NO SUCH COLUMN' is not a column in i...], nowLines 0
+    item(s), orderParts 0 item(s), parameterName Func`4, partMissing 0 item(s), positionAnchor
+    ZZZ NO SUCH COLUMN, positionForPlain true, positionKind after, positionNumber 0, positionProblem
+    (null), positionText after ZZZ NO SUCH COLUMN, refused (null), refusedSchedules 0 item(s),
+    refusedWhy , saysKeep Func`2, scheduleBehind Func`2, schedulesSeen 2, separatorList 0
+    item(s), unknownField 0 item(s), wanted 1 item(s) [Comments], wantedName , whyLines 0
+    item(s). inputs came elements from find-views (2); fieldNames as given (1); columnName
+    not given - "none", the card's own default (optional); partFields not given - "keep",
+    the card's own default (optional); partSeparators not given - "keep", the card's own default
+    (optional); editExisting not given - false (optional); position as given. on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 881ab120a0a95f58
-
+  fingerprint: 62e4b904bc1f442e
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -117,9 +263,24 @@ compatibility-note: >
   `ScheduleDefinition.AddField`, `GetFieldOrder` and `GetField` are unchanged
   2020 to 2027 and no units call is made.
 
+  Version 2 adds the calls ADD_SCHEDULE_COMBINED_FIELD made, PROVEN on Revit
+  2020: `TableCellCombinedParameterData`, `InsertCombinedParameterField`,
+  `ScheduleField.IsCombinedParameterField`, `GetCombinedParameters`,
+  `SetCombinedParameters`, `ScheduleDefinition.IsValidCombinedParameters`,
+  `GetFieldIndex` and `SetFieldOrder` - each read off the shipped assemblies
+  for 2020 to 2027 on 2026-10-21 and unchanged on all eight. Formula-based
+  calculated values are NOT used: they have no public API on the older
+  releases in this range.
+
+  Version 3 adds `ScheduleDefinition.InsertField(SchedulableField, int)` and
+  `ScheduleField.IsHidden`, unchanged 2020 to 2027, read off the shipped
+  assemblies of all eight on 2026-11-01.
+
 # ROUTING - the same rows are in the fragments named here.
 #
-#   "make a key schedule"            -> CREATE_KEY_SCHEDULE - and this is how
+#   "make a key schedule"            -> CREATE_SCHEDULE, listKind key (CREATE_
+#                                       KEY_SCHEDULE until it was merged there,
+#                                       2026-11-01) - and this is how
 #                                       its columns get added afterwards
 #   "remove a column"                -> REMOVE_SCHEDULE_FIELDS. THE OPPOSITE
 #                                       OPERATION, and until it was built every
@@ -144,8 +305,52 @@ compatibility-note: >
 #                                       the schedule's Fields tab, the fx
 #                                       "Calculated Value" button
 #   "add a column for the mark"          -> here, for a plain parameter
-#   "one column with two parameters in   -> ADD_SCHEDULE_COMBINED_FIELD
-#    it"
+#   "one column with two parameters in   -> here, VERSION 2, columnName and
+#    it"                                    partFields - since
+#                                           ADD_SCHEDULE_COMBINED_FIELD was
+#                                           merged in, 2026-11-01
+#   "edit the size column to use width   -> here, VERSION 2, editExisting
+#    x height"
+#   "move this column after Equipment    -> here, VERSION 2, editExisting
+#    Tag"                                   with position and no parts - one
+#                                           column moved
+#   "add Length as the second column of the schedule"
+#                                        -> here, VERSION 3: position 2 with no
+#                                           columnName. SET_SCHEDULE_APPEARANCE
+#                                           ranked first for it by nearness on
+#                                           the n-gram backend (2026-11-01);
+#                                           declared here, identity keeps it
+#   "add the comments column after size" -> here, VERSION 3: position after Size
+#   "put the schedule columns in this order Mark Size Length"
+#                                        -> SET_SCHEDULE_FIELD_ORDER - a whole
+#                                           or partial ORDER in one call. One
+#                                           column moved stays here
+#   "what is the size column made of"    -> REPORT_SCHEDULE_DEFINITION - a
+#                                           question, never this write
+
+# VERSION 2 (2026-11-01) - ADD_SCHEDULE_COMBINED_FIELD WAS MERGED INTO THIS
+# CARD on the owner's instruction ("make sure there is no duplicate tools";
+# "merge means ... all area need to be covered"), and is DEPRECATED. The same
+# job - put a column on a schedule, read it back. What that card had and this
+# one lacked is here now, its code carried whole: combined columns (parts
+# with separators BETWEEN them, row 5b-1292; one unresolved part stops that
+# column on that schedule, partMissing); editExisting, a column rebuilt in
+# place with its heading, sort, filter and width kept; position, the one
+# place a column is moved; columnNow read back; refusedWhy; notASchedule.
+# Called with fieldNames alone, version 1 runs unchanged.
+#
+# THE SAFER RULE IN EACH CONFLICT IS KEPT. A position with no columnName, or
+# a combined column with no heading, is refused whole before anything is
+# written - that card's columnName was required, so it could not arise there.
+#
+# NOT CARRIED: nothing; no rule of that card is the opposite of one here.
+# Its `refused` (schedule ids) is `refusedSchedules` here, because this
+# card's `refused` is the sentence that stops the call.
+#
+# WHERE ITS OUTPUTS ARE NOW: added -> added (plain and combined together),
+# edited -> edited, columnNow -> columnNow, partMissing -> partMissing,
+# notASchedule -> notASchedule, refused -> refusedSchedules, refusedWhy ->
+# refusedWhy. Its sentences moved here.
 
 utterances:
   - add a column to the schedule
@@ -154,3 +359,15 @@ utterances:
   - i need another column
   - add a column for the mark
   - show that parameter in the schedule
+  # MOVED 2026-11-01 from ADD_SCHEDULE_COMBINED_FIELD, merged into this card.
+  - one column with the type and the mark together
+  - join two parameters into one column
+  - combine these fields in the schedule
+  - add a combined parameter column
+  - join these two columns
+  - edit the size column to use width x height
+  - change what the combined column is made of
+  - move this column after Equipment Tag
+  # VERSION 3, row 5b-1367.
+  - add Length as the second column of the schedule
+  - add the comments column after size

@@ -22,7 +22,42 @@ positive:
   - given: showGrandTotal on
     expect: a total row at the bottom, with its title and its count
 
+  - given: VERSION 2 - sort by Level then Mark, showFooter on, showFooterCount yes, showFooterTitle no, showBlankLine yes
+    expect: >
+      appliedOrder reading each level "footer on (title off, count on), blank
+      line on", and in Revit each group's footer showing the count with no
+      title and a blank line after each group
+
+  - given: VERSION 2 - levelOptions "descending, header; ascending, no header" for Level then Mark
+    expect: >
+      appliedOrder reading "Level descending with header (grouped) ... then
+      Mark ascending, no header", whatever the flat descending and showHeader
+      say
+
+  - given: VERSION 2 - showGrandTotal on and grandTotalTitle "Total Length", showGrandTotalCount no
+    expect: >
+      appliedOrder reading "grand total ON - title on 'Total Length', count
+      off", and the schedule's last row reading Total Length with no count
+
+  - given: VERSION 2 - every new input left out
+    expect: >
+      exactly version 1 - the blank line not set, and the grand total's title
+      and count forced on. appliedOrder records Revit's own footer title,
+      footer count and blank line on a new level - THE DEFAULT THIS PROOF
+      SETTLES
+
 negative:
+  - given: VERSION 2 - levelOptions "descending; bold" on a schedule sorted by Mark
+    expect: >
+      refused naming 'bold' and the words accepted, NOTHING WAS SORTED, and the
+      Mark sort still there - nothing cleared
+
+  - given: VERSION 2 - three levelOptions entries for two sort fields
+    expect: refused, the schedule's sort unchanged
+
+  - given: VERSION 2 - grandTotalTitle "Total" with showGrandTotal off
+    expect: refused, the schedule's sort and grand total unchanged
+
   - given: a schedule already sorted by Mark, now asked to sort by Level
     expect: >
       sorted BY LEVEL ONLY, with the Mark rule named in replacedRules. THIS IS

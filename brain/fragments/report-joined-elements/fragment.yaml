@@ -28,8 +28,8 @@ purpose: >
   different material takeoffs and a different section. So the direction is
   reported for every pair, not just the fact of the join.
 
-  **It reports and changes nothing.** UNJOIN_GEOMETRY separates a pair and
-  SWITCH_JOIN_ORDER turns one round; both are hard to undo across a model, and
+  **It reports and changes nothing.** JOIN_GEOMETRY separates a pair or
+  turns one round; both are hard to undo across a model, and
   the honest first step is to look.
 
   **An element joined to nothing is a normal answer.** Most elements are, and
@@ -86,18 +86,24 @@ compatibility-note: >
   ends. Ids are resolved to elements and reported by name and id, never read as
   numbers.
 
-# ROUTING - repeated in JOIN_GEOMETRY, UNJOIN_GEOMETRY and SWITCH_JOIN_ORDER.
+# ROUTING - repeated in JOIN_GEOMETRY.
 #
 #   "what is this joined to"         -> here
 #   "why are my quantities short"    -> here. A joined element gives its
 #                                       overlap away, and nothing on screen
 #                                       says so
 #   "which one is cutting which"     -> here - the direction, which is the half
-#                                       that decides the volumes
+#                                       that decides the volumes. Answered by
+#                                       identity; since 2026-11-02 ranking
+#                                       alone puts REPORT_GEOMETRY_CUTS first
+#                                       (FRAGMENT-ISSUES 5b-1416)
 #   "join these"                     -> JOIN_GEOMETRY
-#   "unjoin these two walls"         -> UNJOIN_GEOMETRY
-#   "the wrong one is cutting"       -> SWITCH_JOIN_ORDER - turn the join
-#                                       round rather than lose it
+#   "unjoin these two walls"         -> JOIN_GEOMETRY, join false
+#   "the wrong one is cutting"       -> JOIN_GEOMETRY, join switch - turn
+#                                       the join round rather than lose it
+#   "which elements is this cutting" -> REPORT_GEOMETRY_CUTS (2026-11-02) - a
+#                                       cut made by Cut Geometry is not a join
+#                                       and does not show here
 
 utterances:
   - what is this joined to

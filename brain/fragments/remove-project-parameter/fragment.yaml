@@ -1,0 +1,148 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-036
+semantic-identity: "take a project parameter out of the project - Manage > Project Parameters > Remove - and the data every element held in it"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for as a gap on Revit's ribbon - "remove a project
+# parameter: Manage > Project Parameters > Remove". No card did: a grep of
+# every fragment's C# that day for BindingMap Remove found none - only
+# ADD_PROJECT_PARAMETER's Insert / ReInsert and the Insert of
+# TRANSFER_PROJECT_PARAMETERS_BETWEEN_DOCUMENTS. brain/heron_retrieve.py
+# (Revit 2024, a scratch store) sent "remove the project parameter Fire
+# Rating" to WRITE_ELEMENT_PARAMETERS and "delete a project parameter" to
+# DELETE_FAMILY_PARAMETERS.
+# heron_duplicates.look: 0 already here.
+#
+# LOOK-ALIKES, KEPT SEPARATE (heron-duplicate-checker's method, 2026-11-02):
+#   ADD_PROJECT_PARAMETER (PROVEN)  makes and binds one; never unbinds. Its
+#     own purpose says why this is a different class of change: "un-binding a
+#     parameter discards every value anybody typed into it".
+#   TRANSFER_PROJECT_PARAMETERS_BETWEEN_DOCUMENTS (PROVEN)  copies bindings
+#     from another open project; removes nothing.
+#   DELETE_FAMILY_PARAMETERS (PROVEN)  deletes FAMILY parameters in the
+#     Family Editor. In a family this card refuses, naming that one.
+#   WRITE_ELEMENT_PARAMETERS (PROVEN) with clear  empties one parameter's
+#     values and leaves the parameter in the project.
+#
+# RISK ADMIN, NOT MODIFY, ALTHOUGH EVERY ELEMENT DELETE IN THE LIBRARY IS
+# MODIFY. DELETE_FAMILY_PARAMETERS' card gives the rule: MODIFY for a change
+# inside the document, "and ADMIN is project setup". D-106 names what ADMIN
+# guards in so many words - "changes to how the project is set up: a project
+# or global parameter" - and ADD_PROJECT_PARAMETER and
+# TRANSFER_PROJECT_PARAMETERS_BETWEEN_DOCUMENTS, the two cards that bind one,
+# are both ADMIN.
+# Taking a binding away is the same change backwards and loses data, so it
+# sits behind the same Admin switch.
+#
+# ARTICLE 7 - THE OWNER'S YES FOR THIS PARAMETER. `confirm` repeats the name,
+# as DELETE_REVISION_NUMBERING_SEQUENCE's `confirm` does; the caller passes it
+# only after the owner has said yes for that parameter in the chat. The Admin
+# switch is a standing permission and never says yes on his behalf (D-106).
+# Without it nothing is removed and the answer says what would go - so the
+# question "what would removing it lose" is answered by this card's refusal,
+# never by a run that removes.
+#
+# THE WORDS. "remove a project parameter" is the request's own, Revit's
+# Remove button in Project Parameters. No other sentence is declared until a
+# modeller says one.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.parameters
+capability: REMOVE_PROJECT_PARAMETER
+version: 1
+source: OFFICIAL
+risk: ADMIN
+
+purpose: >
+  Takes one project parameter out of the project by its exact name, as the
+  Remove button in Manage > Project Parameters does - and with it the data
+  every element held in it. Only with `confirm` repeating the name, after the
+  owner has said yes for that parameter; without it nothing goes, and the
+  answer counts what would be lost - the elements holding data in it, the
+  categories it is bound to, the schedules that show it and the view filters
+  that use it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The parameter's exact name as Manage > Project Parameters lists it. No
+    # match, a match only in other capitals, or two parameters of the name
+    # are refused with the names there are.
+    - name: parameterName
+      type: string
+      source: request
+    # The owner's yes for THIS parameter: its name again, exactly. Anything
+    # else removes nothing and says what would go (Article 7).
+    - name: confirm
+      type: string
+      source: request
+  provides:
+    - name: removed
+      # True only when the parameter READS BACK gone from the project's
+      # parameters after the change.
+      role: result
+      type: bool
+    - name: valuesLost
+      # Elements in the bound categories that held a value in it, counted
+      # before anything changed - the size of what goes, said whether or not
+      # it went (D-52).
+      role: accounting
+      type: int
+    - name: alsoAffected
+      # The schedules that show it in a column and the view filters that use
+      # it in a rule - what else changes when it goes (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it removed nothing, in words: a family, no such name, two of the
+      # name, no confirm or a confirm that is not the name, or Revit's own
+      # refusal. Empty when it was removed (D-52).
+      role: accounting
+      type: string
+    - name: report
+      # ONE STRING: what was removed and how - deleted with its binding, or a
+      # shared parameter's binding removed and its definition kept - with the
+      # count lost and the schedules and filters; or the refusal.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read with tools/api-surface --members
+  on 2026-11-02, the same 2020 to 2027: `Document.ParameterBindings`,
+  `BindingMap.Remove(Definition)` and `ForwardIterator`,
+  `DefinitionBindingMapIterator.Reset`, `MoveNext`, `Key` and `Current`;
+  `ElementBinding.Categories`, `InstanceBinding`; `InternalDefinition.Id`;
+  `ParameterElement`, `SharedParameterElement.GuidValue`;
+  `Element.get_Parameter(Definition)`, `Parameter.HasValue`;
+  `ElementMulticategoryFilter(ICollection<ElementId>)`;
+  `ScheduleDefinition.GetFieldCount`, `GetField(int)` and
+  `ScheduleField.ParameterId`; `ParameterFilterElement.
+  GetElementFilterParameters`; `Document.Delete(ElementId)`. RevitAPI.xml says
+  of `BindingMap.Remove` only that it "is used to remove a parameter binding";
+  whether Revit then keeps a parameter that is not shared as an element of its
+  own is not on any page read here, so such a parameter is deleted with
+  `Document.Delete`, which removes its binding with it. Not seen in Revit.
+
+# ROUTING (2026-11-02).
+#
+#   "remove a project parameter"          -> here. Needs confirm
+#   "add a project parameter"             -> ADD_PROJECT_PARAMETER
+#   "delete these family parameters"      -> DELETE_FAMILY_PARAMETERS - in
+#                                            the Family Editor
+#   "bring the project parameters over from the template"
+#      -> TRANSFER_PROJECT_PARAMETERS_BETWEEN_DOCUMENTS
+utterances:
+  - remove a project parameter

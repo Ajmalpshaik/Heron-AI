@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -24,7 +24,7 @@ purpose: >
   when the table it names is not in the family, or the column it asks for is
   not in that table. The family then builds at the default size, Revit says
   nothing, and the first sign is a fitting the wrong size in a project weeks
-  later. Reading the table alone (REPORT_FAMILY_SIZE_TABLE) cannot see this:
+  later. Reading the table alone (REPORT_FAMILY_TABLES_IN_PROJECT) cannot see this:
   the table is fine, it is the formula's way to it that is broken.
 
   **THE TABLE NAME IS READ PER TYPE.** The first argument of size_lookup is a
@@ -77,7 +77,10 @@ contract:
     - name: report
       # Every problem, then every note, on one line each. A string, because a
       # list is abbreviated to three entries before a reader sees it.
-      role: result
+      # ACCOUNTING, NOT RESULT (row 5b-1410): its notes - ROWS NOT CHECKED,
+      # UNUSED TABLE - fill it on a family with no problem at all, so it can
+      # never read empty; problemCount is the result.
+      role: accounting
       type: string
     - name: lookupsChecked
       # size_lookup calls found in the family's formulas. Work DONE, never a
@@ -102,6 +105,42 @@ contract:
       type: bool
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: P1102 Elbow24, Revit 2024, session 59960 - the count is NOT recorded because 1,801
+    elements was measured on P1102 Furn24, the document in front, and this ran against another
+    one (row 15)
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    write-family-size-table with this phase''s own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned findings 1 item(s)
+    [family ''P1102 Elbow24''; 1 size_lookup formula(s) and 1 table...], lookupsChecked 1,
+    notAFamily false, notes 1 item(s) [ROWS NOT CHECKED: ''Fitting Outside Diameter'' - its
+    key ''Nomi...], problemCount 1, problems 2 item(s) [MISSING COLUMN: ''Fitting Outside
+    Diameter'' asks table ''M_Pip..., MISSING COLUMN: ''Fitting Outside Diameter'' asks table
+    ''M_Pip...], report MISSING COLUMN: ''Fitting Outside Diameter'' asks table ''M_Pipe Fitting
+    - Generic'' for "FOD", which it has not got - its columns are  | ND | XOD  ||  ROWS NOT
+    CHECKED: ''Fitting Outside Diameter'' - its key ''Nominal Diameter'' is an instance parameter,
+    whose value is set where the family is placed, rowSearches 0, tablesChecked 1, typesRead
+    2. on P1102 Elbow24'
+  negative_case: 'run with csvPath=C:/Users/ajmal/AppData/Local/Temp/heron-work/prove-1102/fam/p1102-other-table.csv,
+    tableName=P1102 Other Table instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running write-family-size-table with this
+    phase''s own values - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned findings 2 item(s) [family ''P1102 Elbow24''; 1 size_lookup
+    formula(s) and 2 table..., No problem found in the tables or the formulas that read the...],
+    lookupsChecked 1, notAFamily false, notes 2 item(s) [ROWS NOT CHECKED: ''Fitting Outside
+    Diameter'' - its key ''Nomi..., UNUSED TABLE: ''p1102-other-table'' is in the family but
+    no ty...], problemCount 0, problems 0 item(s), report ROWS NOT CHECKED: ''Fitting Outside
+    Diameter'' - its key ''Nominal Diameter'' is an instance parameter, whose value is set
+    where the family is placed  ||  UNUSED TABLE: ''p1102-other-table'' is in the family but
+    no type''s size_lookup names it, rowSearches 0, tablesChecked 2, typesRead 2. on P1102
+    Elbow24'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 1dacdb5181c7e77a
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -135,13 +174,13 @@ compatibility-note: >
   read 6.350000), not on every release; and whether Revit's own match uses
   the same tolerance is not established.
 
-# ROUTING - repeated in REPORT_FAMILY_SIZE_TABLE and
-# REPORT_FAMILY_TABLES_IN_PROJECT. Each sentence below measured through the
+# ROUTING - repeated in REPORT_FAMILY_TABLES_IN_PROJECT (and in
+# REPORT_FAMILY_SIZE_TABLE until it was merged into that card). Each sentence below measured through the
 # host lookup on 2026-10-12.
 #
 #   "check the lookup tables in this family" -> here - formulas against
 #                                               tables, in the family in front
-#   "what is in this family's lookup table"  -> REPORT_FAMILY_SIZE_TABLE - the
+#   "what is in this family's lookup table"  -> REPORT_FAMILY_TABLES_IN_PROJECT - the
 #                                               rows, no verdict
 #   "check the lookup tables of all the families"
 #                                            -> REPORT_FAMILY_TABLES_IN_PROJECT,

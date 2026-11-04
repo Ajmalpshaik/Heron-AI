@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -149,42 +149,79 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family4, Project1 - active was Family1,
-    Revit 2024, session 32340'
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 Light, P1102 Family - active was P1102
+    STR, Revit 2020, session 12404'
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned call Func`4, changed 4 item(s)
-    [Light shape set to point., Light distribution set to spherical., Initial intensity set
-    on 1 type(s)., ...], chosen 1 item(s) [0], distributionArgs 0 item(s), distributionStyle
-    Spherical, findings 2 item(s) [1 type(s), read back: "L1": point, spherical, Luminous
-    Flux ..., What Type Properties shows for each value is what the modell...], intensityArgs
-    1 item(s) [1500], intensityKind InitialFluxIntensity, invariant CultureInfo, kelvin 4000,
-    light LightFamily, lightReport 1 type(s), read back: "L1": point, spherical, Luminous
-    Flux 1500 lm, 4000 K. The light source sits at X 0, Y 0, Z 1400 mm., lightingNamespace
-    Autodesk.Revit.DB.Lighting., lightingType Func`2, make Func`3, notAFamily false, number
-    Func`2, number0f Func`3, plain Func`2, problems 0 item(s), reasonOf Func`2, refused (null),
-    revitAssembly RuntimeAssembly, shapeArgs 0 item(s), shapeStyle Point, shown Func`2, squash
-    Func`2, typeNames 1 item(s) [L1]. inputs came shape as given; distribution as given; intensity
-    as given; colorTemperature as given; typeName as given. on Family4'
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned call Func`4, changed 0 item(s), chosen 0 item(s), distributionArgs
-    (null), distributionStyle (null), findings 1 item(s) [The document in front, "Project1",
-    is a project, not a famil...], intensityArgs (null), intensityKind (null), invariant CultureInfo,
-    kelvin (null), light (null), lightReport , lightingNamespace Autodesk.Revit.DB.Lighting.,
-    lightingType Func`2, make Func`3, notAFamily true, number Func`2, number0f Func`3, plain
-    Func`2, problems 0 item(s), reasonOf Func`2, refused The document in front, "Project1",
-    is a project, not a family open in the Family Editor. A light source is defined inside
-    the lighting fixture family - open it first., revitAssembly RuntimeAssembly, shapeArgs
-    (null), shapeStyle (null), shown Func`2, squash Func`2, typeNames 0 item(s). inputs came
-    shape as given; distribution as given; intensity as given; colorTemperature as given;
-    typeName as given. on Project1
+    the transaction group ROLLED BACK afterwards. returned call Func`4, changed 2 item(s)
+    [Initial intensity set on 6 type(s)., Initial colour set to 4000 K on 6 type(s).], dbNamespace
+    Autodesk.Revit.DB., dimmingName (null), distributionArgs (null), distributionStyle (null),
+    familyTypes 6 item(s) [Autodesk.Revit.DB.FamilyType, Autodesk.Revit.DB.FamilyType, Autodesk.Revit.DB.FamilyType,
+    ...], filterColour (null), findings 2 item(s) [the family''s light source: point, spot,
+    beam 30°, field 90°,..., What Type Properties shows for each value is what the modell...],
+    fm FamilyManager, fromInternal Func`4, heldIn Func`5, heldText Func`3, intensityArgs 1
+    item(s) [4500], intensityKind InitialFluxIntensity, invariant CultureInfo, kelvin 4000,
+    light LightFamily, lightNames 6 item(s) [152mm Incandescent - 120V, 203mm Incandescent
+    - 120V, 152mm Incandescent - 277V, ...], lightReport the family''s light source: point,
+    spot, beam 30°, field 90°, tilt 90°; "203mm Incandescent - 277V": Luminous Flux 4500 lm,
+    4000 K; "203mm Incandescent - 277V" Type Properties now: Initial Intensity 0, Initial
+    Color 0, Light Loss Factor 0, Dimming Lamp Color Temperature Shift 0, Color Filter 16777215;
+    "Fluorescent - 120V": Luminous Flux 4500 lm, 4000 K; "Fluorescent - 120V" Type Properties
+    now: Initial Intensity 0, Initial Color 0, Light Loss Factor 0, Dimming Lamp Color Temperature
+    Shift 0, Color Filter 16777215; "152mm Incandescent - 277V": Luminous Flux 4500 lm, 4000
+    K; "152mm Incandescent - 277V" Type Properties now: Initial Intensity 0, Initial Color
+    0, Light Loss Factor 0, Dimming Lamp Color Temperature Shift 0, Color Filter 16777215;
+    "152mm Incandescent - 120V": Luminous Flux 4500 lm, 4000 K; "152mm Incandescent - 120V"
+    Type Properties now: Initial Intensity 0, Initial Color 0, Light Loss Factor 0, Dimming
+    Lamp Color Temperature Shift 0, Color Filter 16777215; "Fluorescent - 277V": Luminous
+    Flux 4500 lm, 4000 K; "Fluorescent - 277V" Type Properties now: Initial Intensity 0, Initial
+    Color 0, Light Loss Factor 0, Dimming Lamp Color Temperature Shift 0, Color Filter 16777215;
+    "203mm Incandescent - 120V": Luminous Flux 4500 lm, 4000 K; "203mm Incandescent - 120V"
+    Type Properties now: Initial Intensity 0, Initial Color 0, Light Loss Factor 0, Dimming
+    Lamp Color Temperature Shift 0, Color Filter 16777215. The light source sits at X 0, Y
+    0, Z 2514.6 mm, its Z axis pointing (0, 0, 1)., lightingNamespace Autodesk.Revit.DB.Lighting.,
+    lightingType Func`2, lossArgs (null), lossKind (null), lossTotal 1, make Func`3, moveTo
+    (null), moveWords (null), near Func`3, notAFamily false, number Func`2, number0f Func`3,
+    plain Func`2, problems 0 item(s), reasonOf Func`2, refused (null), revitAssembly RuntimeAssembly,
+    rows 13 item(s) [the family''s light source: point, spot, beam 30°, field 90°,..., "203mm
+    Incandescent - 277V": Luminous Flux 4500 lm, 4000 K, "203mm Incandescent - 277V" Type
+    Properties now: Initial Int..., ...], setProperty Action`3, shapeArgs (null), shapeSaid
+    Func`2, shapeStyle (null), showing Func`3, shown Func`2, snapshot Func`2, source (null),
+    spreadSaid Func`2, squash Func`2, targets 6 item(s) [Autodesk.Revit.DB.FamilyType, Autodesk.Revit.DB.FamilyType,
+    Autodesk.Revit.DB.FamilyType, ...], turns 0 item(s), typeProperties Func`2, typeRows 13
+    item(s) [FBX_LIGHT_INITIAL_INTENSITY, FBX_LIGHT_LIMUNOUS_FLUX, FBX_LIGHT_LIMUNOUS_INTENSITY,
+    ...]. inputs came shape as given; distribution as given; intensity as given; colorTemperature
+    as given; typeName as given; lightLossFactor as given; dimming as given; colorFilter as
+    given; position as given; aim as given. on P1102 Light'
+  negative_case: "run against 'P1102 Family' with aim=, colorFilter=, colorTemperature=4000\
+    \ K, dimming=, distribution=, intensity=4500 lm, lightLossFactor=, position=, shape=,\
+    \ typeName= instead - chosen because it should not contain what this fragment reports\
+    \ - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.\
+    \ returned call Func`4, changed 0 item(s), dbNamespace Autodesk.Revit.DB., dimmingName\
+    \ (null), distributionArgs (null), distributionStyle (null), familyTypes 0 item(s), filterColour\
+    \ (null), findings 1 item(s) [This family has no light source to define (The Document\
+    \ is t...], fm FamilyManager, fromInternal Func`4, heldIn Func`5, heldText Func`3, intensityArgs\
+    \ (null), intensityKind (null), invariant CultureInfo, kelvin (null), light (null), lightNames\
+    \ 0 item(s), lightReport , lightingNamespace Autodesk.Revit.DB.Lighting., lightingType\
+    \ Func`2, lossArgs (null), lossKind (null), lossTotal 1, make Func`3, moveTo (null), moveWords\
+    \ (null), near Func`3, notAFamily false, number Func`2, number0f Func`3, plain Func`2,\
+    \ problems 0 item(s), reasonOf Func`2, refused This family has no light source to define\
+    \ (The Document is the argument that is being validated The document is not valid because\
+    \ it is not a light family document.\r\nParameter name: document). Light Source is not\
+    \ ticked in Family Category and Parameters - SET_FAMILY_SETTINGS \"Light Source=yes\"\
+    \ ticks it (a Lighting Fixtures family), then run this again. Nothing was changed., revitAssembly\
+    \ RuntimeAssembly, rows 0 item(s), setProperty Action`3, shapeArgs (null), shapeSaid Func`2,\
+    \ shapeStyle (null), showing Func`3, shown Func`2, snapshot Func`2, source (null), spreadSaid\
+    \ Func`2, squash Func`2, targets 0 item(s), turns 0 item(s), typeProperties Func`2, typeRows\
+    \ 13 item(s) [FBX_LIGHT_INITIAL_INTENSITY, FBX_LIGHT_LIMUNOUS_FLUX, FBX_LIGHT_LIMUNOUS_INTENSITY,\
+    \ ...]. inputs came shape as given; distribution as given; intensity as given; colorTemperature\
+    \ as given; typeName as given; lightLossFactor as given; dimming as given; colorFilter\
+    \ as given; position as given; aim as given. on P1102 Family"
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 01e1cda49ad13f33
-
+  fingerprint: aa01b717099d91c1
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -226,12 +263,15 @@ compatibility-note: >
   leaves a family type out, is not in the reference - the per-type proof is
   how this call finds out (NEEDS-CHECKING Group IK).
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "set the light source of this fixture family" -> here
 #   "add an electrical connector to the family"  -> ADD_FAMILY_CONNECTOR - the
 #                                                   fixture's power
-#   "set the family category"                    -> SET_FAMILY_CATEGORY
+#   "set the family category"                    -> SET_FAMILY_SETTINGS,
+#                                                   Category=Lighting Fixtures
+#                                                   (SET_FAMILY_CATEGORY until
+#                                                   2026-11-01)
 
 # VERSION 2 - asked by the owner on 2026-10-21, building a pendant LED family
 # on Revit 2020: the Light Source tick, placing or aiming the source and the
@@ -245,6 +285,22 @@ compatibility-note: >
 #   "tick light source for this family"             -> SET_FAMILY_SETTINGS -
 #                                                      a Family Category and
 #                                                      Parameters switch
+
+# JUDGED 2026-11-01 (a duplicate sweep's look-alike, on the owner's rule "if one
+# tool can safely do both, merge") AGAINST SET_FAMILY_SETTINGS AND KEPT APART -
+# the next sweep should not reopen it unless one of these stops being true:
+#   - NOTHING IS CODED TWICE. That card ticks Light Source (the family
+#     parameter LIGHTING_FIXTURE_LIGHT_EMITTER, proved by GetLightFamily
+#     succeeding after); this one defines the light - LightFamily and
+#     LightType - and only READS whether the tick is there, refusing with the
+#     route when it is not.
+#   - DIFFERENT OBJECTS IN REVIT: a Family Category and Parameters switch
+#     there; the light source element and its lighting API here.
+#   - A SAFETY REASON ONE TOOL CANNOT HOLD: this card refuses the family's half
+#     and the types' half in one call, because Revit lost type values when they
+#     changed in one transaction with the family's light (5b-1297, Revit 2020).
+#     Ticking the box is what makes the light source; making and defining it in
+#     one transaction is the same risk, untested.
 
 utterances:
   - set the light source of this fixture family

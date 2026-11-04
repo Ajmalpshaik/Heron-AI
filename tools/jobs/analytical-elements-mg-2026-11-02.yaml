@@ -1,0 +1,65 @@
+# NEEDS-CHECKING Group MG - CREATE_ANALYTICAL_ELEMENTS and
+# ADJUST_ANALYTICAL_ELEMENTS, built 2026-11-02 in a cloud session with no
+# Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/analytical-elements-mg-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/analytical-elements-mg-2026-11-02.yaml
+#
+# THE MODEL is a scratch project new from Revit's metric STRUCTURAL template,
+# "Heron MG Analytical", saved under %TEMP%\heron-work, on Revit 2023 to 2027 -
+# the releases the cards claim. Never a working model. It holds Level 1 and
+# Level 2, columns C1 and C2, beam B1 between them on Level 2, floor S1 on
+# Level 2 and one ARCHITECTURAL wall A1 (no analytical element), with the
+# analytical model on (docs/needs-checking/group-mg.md, MG1). Before and after
+# each run, read the analytical model with REPORT_ANALYTICAL_MODEL - the
+# second route.
+#
+# ASSOCIATE_ANALYTICAL_ELEMENTS IS NOT HERE: its positive needs one analytical
+# member and one beam selected together, two categories, which this file's
+# select-by-category setup cannot arrange. It is run by name - MG5 in the
+# group file.
+#
+# Every write here is ROLLED BACK.
+
+model: "Heron MG Analytical scratch project (metric structural template) with C1, C2, B1, S1 and the architectural wall A1, analytical model on, Revit 2024"
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: create-analytical-elements
+    expect: created
+    set:
+      kind: "member"
+      points: "0,0,0; 6000,0,0"
+      level: "Level 2"
+    negative-set:
+      kind: "member"
+      points: "0,0,0; 6000,0,0"
+      level: "Level 9"
+    note: >
+      MG2. Negative - THE FIRST CASE TO RUN: a level that is not there, so
+      created 0 and refused lists every level with its elevation; nothing
+      drawn. Positive - created 1, an analytical member from (0, 0, E2) mm to
+      (6000, 0, E2) mm where E2 is Level 2's elevation, 6000 mm long.
+
+  - fragment: adjust-analytical-elements
+    expect: adjusted
+    setup:
+      - select-by-category-name
+      - set-selection
+    setup-set:
+      categoryName: Structural Framing
+      inViewOnly: "FloorPlan: Level 2"
+    negative-setup-set:
+      categoryName: Walls
+      inViewOnly: "FloorPlan: Level 2"
+    set:
+      offset: "0,0,-200"
+    negative-set:
+      offset: "0,0,-200"
+    note: >
+      MG3. Negative - THE FIRST CASE TO RUN: the wall A1, which has no
+      analytical element, so adjusted 0 and noAnalytical names A1; nothing
+      moved. Positive - B1: adjusted 1, its analytical member 200 mm lower at
+      both ends, read back; B1's own Location line unchanged.

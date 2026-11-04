@@ -1,0 +1,160 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-174
+semantic-identity: "put Revit's area, path or fabric reinforcement symbol on each of these reinforcement systems or fabric sheets in this view"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for as a gap on Revit's ribbon - Annotate > Symbol > Path
+# Reinforcement Symbol, Fabric Reinforcement Symbol and the span symbol of
+# area reinforcement. Checked that day with brain/heron_retrieve.py on a
+# scratch store, Revit 2024: "place path reinforcement symbols" reached
+# PLACE_PATH_REINFORCEMENT (which makes the bars, not the symbol), "place a
+# span symbol on the area reinforcement" REPORT_FLOOR_SPAN_DIRECTION, and "tag
+# the fabric sheets" PLACE_FABRIC_REINFORCEMENT. Nothing places any of the
+# three symbols. Read in full that day:
+#   PLACE_SPAN_DIRECTION_SYMBOLS (DRAFT, this branch only) - the nearest: one
+#     symbol per host in one plan. NOT WIDENED: its host is a FLOOR and its
+#     symbol a SpanDirectionSymbol, which exists only 2025 to 2027, so it
+#     claims those three releases; these three symbol classes are 2020 to
+#     2027, take a reinforcement system or a fabric sheet, and a floor's span
+#     direction is not what they show. Widening it would put a release wall
+#     inside one card and change what it is offered on
+#   PLACE_MULTI_REBAR_ANNOTATION (DRAFT) - a multi-rebar annotation on REBAR,
+#     MultiReferenceAnnotation; no reinforcement system or fabric sheet
+#   TAG_ELEMENTS_IN_VIEW (PROVEN) - TAGS: Revit's Structural Path / Area /
+#     Fabric Reinforcement Tags and Fabric Area tags are worked out from the
+#     category's own name there (OST_PathRein to OST_PathReinTags), so a TAG
+#     on any of them is that card's, not this one's. A symbol is not a tag
+#     category; it is a family of its own symbol category
+#   TAG_MATERIAL_OR_MULTI_CATEGORY (DRAFT) - material and multi-category tags
+# The duplicate check (heron_duplicates.look, 2026-11-02) found no card of
+# this capability or signature.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33):
+#   view        the view, as the Project Browser names it - a floor plan, a
+#               structural plan, a ceiling plan or an elevation (a section is
+#               passed to Revit, which answers). Any other view is refused
+#   elements    the selection: area reinforcement, path reinforcement, fabric
+#               sheets, fabric areas (each of whose sheets gets one)
+#   symbolType  one symbol type by its Project Browser name, used for its own
+#               kind. Left out, or for the other kinds, the type the PROJECT
+#               has set as its default for that symbol - the one Revit's own
+#               button places - and the answer names it. A kind with no
+#               default is named and given nothing
+#
+# NAMED AND LEFT, EACH WITH ITS REASON: not reinforcement, already showing a
+# symbol of its kind in this view, no type, no extent, or refused by Revit.
+# Every symbol is read back - type, view, host - and a wrong one removed
+# inside the same undo.
+#
+# RISK MODIFY. It adds symbols and deletes nothing it did not just make.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.annotation
+capability: PLACE_REINFORCEMENT_SYMBOLS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places Revit's area, path or fabric reinforcement symbol - Annotate > Symbol
+  - on each area reinforcement, path reinforcement and fabric sheet handed in,
+  in one plan or elevation, and says what it placed, which symbol type, and why
+  it left every other element.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The view the symbols go in, BY NAME.
+    - name: view
+      type: View
+      source: request
+    # The reinforcement, from the selection.
+    - name: elements
+      type: IList<Element>
+    # One symbol type by name, for its own kind; the others take the project's
+    # default for their symbol.
+    - name: symbolType
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: placed
+      role: result
+      type: int
+    - name: newSymbols
+      # The symbols this placed, each read back with its type, view and host.
+      role: result
+      type: IList<ElementId>
+    - name: alreadyHere
+      # Hosts already showing a symbol of their kind in this view (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notReinforcement
+      # Handed in and not area or path reinforcement, a fabric sheet or a
+      # fabric area - left alone (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notPlaced
+      # Hosts with no type to use, no extent, refused by Revit or read back
+      # wrong (that symbol removed again) (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: typesLoaded
+      # The area, path and fabric reinforcement symbol types the model has.
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING, host by host: the symbol placed, or why it was left (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was placed at all, in plain words. Empty when it ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE #if, read with tools/api-surface --members on 2026-11-02.
+  RebarSystemSpanSymbol.Create, PathReinSpanSymbol.Create and
+  FabricReinSpanSymbol.Create(Document, ElementId, LinkElementId, XYZ,
+  ElementId) are one signature on every release 2020 to 2027, each class an
+  IndependentTag. The host a symbol reads back on is
+  IndependentTag.TaggedLocalElementId on 2020-2021 (obsolete 2022, gone 2023)
+  and GetTaggedLocalElementIds() from 2022. Unchanged 2020 to 2027:
+  BuiltInCategory.OST_AreaReinSpanSymbol, OST_PathReinSpanSymbol and
+  OST_FabricReinSpanSymbol; Document.GetDefaultFamilyTypeId;
+  FabricArea.GetFabricSheetElementIds; FamilySymbol.IsActive and Activate;
+  Element.get_BoundingBox(View); LinkElementId(ElementId). No ElementId is
+  built from a number or read as one. NOT RUN on any Revit.
+
+# ROUTING (2026-11-02)
+#
+#   "place path reinforcement symbols in
+#    this plan"                              -> here
+#   "add fabric reinforcement symbols to
+#    these fabric sheets"                    -> here
+#   "put the span symbol on this area
+#    reinforcement"                          -> here
+#   "add span direction symbols to these
+#    slabs in this plan"                     -> PLACE_SPAN_DIRECTION_SYMBOLS -
+#                                               a floor's span, 2025 on
+#   "tag the path reinforcement"             -> TAG_ELEMENTS_IN_VIEW - a tag
+#   "bars along this slab edge"              -> PLACE_PATH_REINFORCEMENT
+#   "add a multi-rebar annotation"           -> PLACE_MULTI_REBAR_ANNOTATION
+utterances:
+  - place path reinforcement symbols in this plan
+  - add fabric reinforcement symbols to these fabric sheets
+  - put the span symbol on this area reinforcement

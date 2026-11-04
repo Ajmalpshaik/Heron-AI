@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,31 @@ capability: ROTATE_ELEMENTS_ABOUT_AXIS
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO ROTATE_ELEMENTS (rotate-elements), on
+# the owner's instruction in conversation: "make sure there is no duplicate
+# tools". Constitution Article 1: kept, never deleted, so its record and its
+# proof stay readable and it can be brought back. Nothing offers it now -
+# retrieval leaves DEPRECATED out, and its sentences claim nothing in the
+# identity table (heron_search RETIRED_FRAGMENTS). Its sentences moved to
+# ROTATE_ELEMENTS. A proof below is the record of what this card's code did,
+# not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: ROTATE_ELEMENTS
+  why: >
+    The same job: elements turned and checked that they turned.
+    ROTATE_ELEMENTS turns about a vertical axis and, since its version 2,
+    about any line given (`axisLine`, millimetres) so it can tilt, with this
+    card's rules: Revit's outright refusal kept apart from
+    accepted-and-did-not-move, and a zero angle refused with nothing
+    attempted (the safer rule; it used to count one as rotated). This card
+    counted an element with nothing to compare as turned; ROTATE_ELEMENTS
+    keeps it unverified, the safer rule. This card's position-only check,
+    which called an element turned about a line through its own point
+    unmoved, was fixed in the move. Nothing of this card is left out.
+
 
 purpose: >
   Turns elements about ANY axis the caller gives - a line in space, in any

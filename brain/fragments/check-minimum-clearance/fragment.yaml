@@ -9,7 +9,12 @@ semantic-identity: "every pair of things closer together than they are allowed t
 kind: action
 domain: revit.qa
 capability: CHECK_MINIMUM_CLEARANCE
-version: 2
+# VERSION 3 (2026-11-01): CHECK_INSULATION_CLEARANCE was merged into this card
+# on the owner's instruction - "make sure there is no duplicate tools" - and is
+# DEPRECATED; see the merge block above `utterances`. Version 2's proof below
+# is kept as the record; it no longer describes the code, so the card is DRAFT
+# until version 3 is proved on a real model (D-30).
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -72,6 +77,11 @@ purpose: >
   version 2; version 1's proof no longer describes the code, and the
   fragment is DRAFT until it is proved again.
 
+  **NO INSULATION MODELLED IS SAID FIRST (version 3).** With insulation
+  counted, the insulated and bare elements are counted and a warning leads
+  when some carry none; `assumeThicknessMm` lags them on paper, said on every
+  row. Each pair is measured once. Version 3 is DRAFT until proved.
+
 # A NAME TWO PARAMETERS SHARE IS NEVER READ: a linked element whose Fire Rating
 # two parameters carry - a shared or project "Fire Rating" bound beside the
 # built-in one, on the element or on the type the lookup falls through to -
@@ -98,6 +108,31 @@ contract:
     - name: includeInsulation
       type: bool
       source: request
+    - name: assumeThicknessMm
+      # VERSION 3, from CHECK_INSULATION_CLEARANCE: millimetres of lagging
+      # assumed on every element that carries NO insulation in the model - how
+      # a run is checked against what it is GOING to be lagged with. Every row
+      # it touches says ASSUMED. Above 0 it counts insulation even with
+      # includeInsulation false, and says so. Left out it binds 0: none.
+      type: double
+      source: request
+      optional: true
+      absent: 0
+    - name: ignoreConnected
+      # VERSION 3, from CHECK_INSULATION_CLEARANCE: pass over a pair joined by
+      # a connector - a duct and the fitting on its end are at zero clearance
+      # by construction. Left out it binds false.
+      type: bool
+      source: request
+      optional: true
+    - name: maxRows
+      # VERSION 3, from CHECK_INSULATION_CLEARANCE: how many pair rows
+      # `findings` lists; the counts are complete whatever this is. Left out
+      # it binds 50.
+      type: int
+      source: request
+      optional: true
+      absent: 50
     - name: doc
       type: Document
       source: ambient
@@ -145,45 +180,92 @@ contract:
       # value (D-54 s3, FRAGMENT-ISSUES 5b-203).
       role: accounting
       type: IList<string>
+    - name: tooCloseIds
+      # VERSION 3, from CHECK_INSULATION_CLEARANCE's `tooClose`: every element
+      # in a pair too close, once, so the next step can select or isolate them.
+      # This model's own - nothing from a link.
+      role: result
+      type: IList<ElementId>
+    - name: violations
+      # VERSION 3, from CHECK_INSULATION_CLEARANCE: how many pairs are too
+      # close - each pair once.
+      role: result
+      type: int
+    - name: insulatedCount
+      # VERSION 3, from CHECK_INSULATION_CLEARANCE: how many measurable
+      # elements carry insulation in the model. The size of what it measured,
+      # never a clearance it failed (D-52).
+      role: accounting
+      type: int
+    - name: bareCount
+      # VERSION 3, from CHECK_INSULATION_CLEARANCE: how many carry NONE - the
+      # silent problem, said first when insulation is counted. About the
+      # model, never a pair it failed (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      # VERSION 3: the warning when some carry no insulation, the insulated /
+      # bare split, the pair rows up to maxRows with bare gap, jackets and real
+      # gap, and what was skipped for want of an extent.
+      type: IList<string>
 
 proof:
-  date: '2026-10-21'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: MEP Night Test, Revit 2020, session 68704 - the count is NOT recorded because 5,262
-    elements was measured on Cinematic ID Test, the document in front, and this ran against
-    another one (row 15)
+  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values. returned MillimetresPerFoot
-    304.8, axisGap Func`5, buildingCategories 9 item(s) [OST_Walls, OST_Floors, OST_Roofs,
-    ...], clearances 0 entry(ies), defaultClearance 3.28083989501312, describeLinked Func`3,
-    fireRatingOf Func`2, gapsMm 370 entry(ies), includeInsulation false, includeLinks false,
-    jacketOf Func`2, judgedBy 370 entry(ies), linkBlocked , linkDocs 0 item(s), linkPlacements
-    0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
-    linkedTotal 0, linksSearched 0, nestedLinks 0, pairsChecked 6642, reach 3.28083989501312,
-    targetInfo 82 item(s) [[Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi...,
-    [Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi..., [Autodesk.Revit.DB.Mechanical.Duct,
-    Autodesk.Revit.DB.Boundi..., ...], targetJacket 82 entry(ies), tooClose 370 item(s) [392168
-    -> 392689, 392168 -> 393339, 392168 -> 393357, ...]. inputs came elements from set-selection
-    (82); targets from set-selection as 'elements' (82); defaultClearance as given; rules
-    as given (0); includeInsulation as given; includeLinks not given - false (optional). on
-    MEP Night Test
-  negative_case: 'run with categoryName=Levels, defaultClearance=1000, inViewOnly=Elevation:
-    North - Mech, includeInsulation=False, rules= instead - chosen because it should not contain
-    what this fragment reports - the arrangement was re-made first by running select-by-category-name,
-    set-selection with this phase''s own values. returned MillimetresPerFoot 304.8, axisGap
-    Func`5, buildingCategories 9 item(s) [OST_Walls, OST_Floors, OST_Roofs, ...], clearances
-    0 entry(ies), defaultClearance 3.28083989501312, describeLinked Func`3, fireRatingOf Func`2,
-    gapsMm 0 entry(ies), includeInsulation false, includeLinks false, jacketOf Func`2, judgedBy
-    0 entry(ies), linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0
-    item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched
-    0, nestedLinks 0, pairsChecked 0, reach 3.28083989501312, targetInfo 0 item(s), targetJacket
-    0 entry(ies), tooClose 0 item(s). inputs came elements from set-selection (4); targets
-    from set-selection as ''elements'' (4); defaultClearance as given; rules as given (0);
-    includeInsulation as given; includeLinks not given - false (optional). on MEP Night Test'
+    filter-elements-by-category with this phase's own values. returned MillimetresPerFoot
+    304.8, assumeThicknessMm 0, assumedFeet 0, assumedJacket HashSet`1, axisGap Func`5, bareCount
+    10, buildingCategories 9 item(s) [OST_Walls, OST_Floors, OST_Roofs, ...], clearances 0
+    entry(ies), connectedTo Func`2, defaultClearance 16.4041994750656, describeLinked Func`3,
+    findings 46 item(s) [45 pair(s) too close of 45 checked, bare geometry. Distances...,   Mitered
+    Elbows / Taps (id 404243) to Mitered Elbows / Taps...,   Mitered Elbows / Taps (id 404243)
+    to Mitered Elbows / Taps..., ...], fireRatingOf Func`2, flagged HashSet`1, gapsMm 45 entry(ies),
+    ignoreConnected false, includeInsulation false, includeLinks false, insulatedCount 0,
+    insulationOn false, jacketCache 0 entry(ies), jacketOf Func`2, judgedBy 45 entry(ies),
+    linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches
+    1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched 0, maxRows
+    50, measurable HashSet`1, modelledInsulated HashSet`1, modelledJacketOf Func`2, nestedLinks
+    0, pairsChecked 45, pairsSeen HashSet`1, reach 16.4041994750656, rowLimit 50, rows 45
+    item(s) [  Mitered Elbows / Taps (id 404243) to Mitered Elbows / Taps...,   Mitered Elbows
+    / Taps (id 404243) to Mitered Elbows / Taps...,   Mitered Elbows / Taps (id 404243) to
+    Mitered Elbows / Taps..., ...], targetInfo 10 item(s) [[Autodesk.Revit.DB.Mechanical.Duct,
+    Autodesk.Revit.DB.Boundi..., [Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi...,
+    [Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi..., ...], targetJacket 10
+    entry(ies), tooClose 45 item(s) [404243 -> 411658, 404243 -> 411660, 404243 -> 411724,
+    ...], tooCloseIds 10 item(s) [404243, 411658, 411660, ...], violations 45, withoutBox
+    HashSet`1. inputs came elements from filter-elements-by-category (10); targets from filter-elements-by-category
+    as 'elements' (10); defaultClearance as given; rules as given (0); includeInsulation as
+    given; assumeThicknessMm not given - "0", the card's own default (optional); ignoreConnected
+    not given - false (optional); maxRows not given - "50", the card's own default (optional);
+    includeLinks not given - false (optional). on P1102 MEP
+  negative_case: run with category=Sprinklers, defaultClearance=1, includeInsulation=False,
+    rules= instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running filter-elements-by-category with this phase's
+    own values. returned MillimetresPerFoot 304.8, assumeThicknessMm 0, assumedFeet 0, assumedJacket
+    HashSet`1, axisGap Func`5, bareCount 6, buildingCategories 9 item(s) [OST_Walls, OST_Floors,
+    OST_Roofs, ...], clearances 0 entry(ies), connectedTo Func`2, defaultClearance 0.00328083989501312,
+    describeLinked Func`3, findings 1 item(s) [0 pair(s) too close of 15 checked, bare geometry.
+    Distances ...], fireRatingOf Func`2, flagged HashSet`1, gapsMm 0 entry(ies), ignoreConnected
+    false, includeInsulation false, includeLinks false, insulatedCount 0, insulationOn false,
+    jacketCache 0 entry(ies), jacketOf Func`2, judgedBy 0 entry(ies), linkBlocked , linkDocs
+    0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host
+    model only - links not read], linkedTotal 0, linksSearched 0, maxRows 50, measurable HashSet`1,
+    modelledInsulated HashSet`1, modelledJacketOf Func`2, nestedLinks 0, pairsChecked 15,
+    pairsSeen HashSet`1, reach 0.00328083989501312, rowLimit 50, rows 0 item(s), targetInfo
+    6 item(s) [[Autodesk.Revit.DB.FamilyInstance, Autodesk.Revit.DB.Boundin..., [Autodesk.Revit.DB.FamilyInstance,
+    Autodesk.Revit.DB.Boundin..., [Autodesk.Revit.DB.FamilyInstance, Autodesk.Revit.DB.Boundin...,
+    ...], targetJacket 6 entry(ies), tooClose 0 item(s), tooCloseIds 0 item(s), violations
+    0, withoutBox HashSet`1. inputs came elements from filter-elements-by-category (6); targets
+    from filter-elements-by-category as 'elements' (6); defaultClearance as given; rules as
+    given (0); includeInsulation as given; assumeThicknessMm not given - "0", the card's own
+    default (optional); ignoreConnected not given - false (optional); maxRows not given -
+    "50", the card's own default (optional); includeLinks not given - false (optional). on
+    P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 52cce25fbb3cffe3
+  fingerprint: 594b5a5d7a33c398
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -216,6 +298,41 @@ compatibility-note: >
 #                                        CHECK_SLEEVE_SIZE - a sleeve and its
 #                                        pipe MUST touch; this measures things
 #                                        that must not
+#   "clearance with the lagging on"    -> here since version 3, includeInsulation
+#                                        or assumeThicknessMm - it was
+#                                        CHECK_INSULATION_CLEARANCE's, merged in
+#   "these read clear but both pipes are insulated" -> here, the same
+#   "do these overlap"                 -> FIND_CLASHES - yes or no, no distance
+#   "insulate these"                   -> SET_MEP_INSULATION, which PUTS THE
+#                                        LAGGING ON. This only measures
+#
+# VERSION 3 (2026-11-01) - CHECK_INSULATION_CLEARANCE WAS MERGED INTO THIS
+# CARD on the owner's instruction in conversation: "make sure there is no
+# duplicate tools", every conflict to keep the SAFER rule. It is DEPRECATED.
+# Its own purpose called itself "the same clearance sweep as
+# CHECK_MINIMUM_CLEARANCE" with the jackets taken off, and this card has had
+# that as `includeInsulation` since version 1. Where each retired input and
+# output is now:
+#
+#   CHECK_INSULATION_CLEARANCE          here
+#     elements (one set)                elements, with targets the same set -
+#                                       each pair now measured once
+#     requiredClearanceMm               defaultClearance, the same mm
+#     assumeThicknessMm                 assumeThicknessMm, ASSUMED on each row
+#     ignoreConnected, maxRows          the same
+#     tooClose (element ids)            tooCloseIds
+#     violations                        violations
+#     insulatedCount, bareCount         the same, and the warning first
+#     findings                          findings - rows with bare gap, both
+#                                       jackets and real gap; elements with no
+#                                       extent said; lining not counted
+#
+# THE SAFER RULE WHERE THEY DIFFERED. That card counted insulation always;
+# here it is still `includeInsulation`, and an assumed thickness turns it on
+# rather than being ignored. That card skipped any pair whose bare gap was
+# beyond the clearance plus twice the thickest jacket - a shortcut that cannot
+# change an answer; every pair is measured here. That card's per-category
+# rules did not exist; `rules` is kept. Nothing of it was an opposite rule.
 utterances:
   - is anything too close to the ducts
   - check the clearance between services
@@ -224,3 +341,11 @@ utterances:
   - are the services too close together
   - check the gap to the structure
   - what is too close to what
+  # MOVED 2026-11-01 from CHECK_INSULATION_CLEARANCE, merged into this card.
+  - check the clearance with the insulation on
+  - is there enough room once these are lagged
+  - clearance to the outside of the insulation
+  - these read clear but both pipes are insulated
+  - will these fit with 50mm lagging
+  - insulation aware clearance check
+  - the gap is not big enough once it is insulated

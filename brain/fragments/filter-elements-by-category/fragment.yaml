@@ -19,18 +19,61 @@ capability: FILTER_ELEMENTS_BY_CATEGORY
 # with the first one an element HAD. Three work plane-based diffusers with
 # FAMILY_LEVEL_PARAM empty and SCHEDULE_LEVEL_PARAM on Level 1 were on no
 # level ("matching 3", "elements 0"), so the loads' Finalize gave them no flow.
-version: 3
+# VERSION 4 (2026-11-01): SELECT_BY_CATEGORY_NAME and SELECT_BY_CATEGORIES were
+# merged into this card on the owner's instruction, and are DEPRECATED - see
+# the comment block above `utterances`. Version 3's proof below is kept as the
+# record; it no longer describes the code, so the card is DRAFT until version
+# 4 is proved on a real model (D-30).
+#
+# VERSION 4, THE DETAIL - KEPT HERE BECAUSE `purpose` IS SEARCHED (the lesson
+# of FRAGMENT-ISSUES 5b-1293: a hundred words of mechanics in a purpose moved
+# a card out of the duct shortlists). `resolvedTo` says which categories the
+# words were read as, by Revit's own names. Neither `category` nor
+# `categories` given is refused before anything is read - never an empty set.
+# Review fix of the same day: `categoryName`, a category by the name the model
+# holds - imported CAD categories included - with `nearMisses` when it matches
+# none, both from SELECT_BY_CATEGORY_NAME; exactly one way of naming per call.
+# `levelId` may be left out for the whole model. With `includeLinks` and a
+# view, each link is read through that view on Revit 2023 and later, and
+# refused in words on 2020-2022; the level is matched by name in a link
+# either way.
+#
+# VERSION 5 (2026-11-01): SELECT_BY_LEVEL, SELECT_VISIBLE_IN_VIEW,
+# SELECT_WITHOUT_LEVEL and SELECT_HIDDEN_IN_VIEW were merged into this card on
+# the owner's instruction - "make sure there is no duplicate tools" - and are
+# DEPRECATED; see the second merge block above `utterances`. Version 3's proof
+# below is still kept as the record and still does not describe the code; the
+# card stays DRAFT until version 5 is proved on a real model (D-30).
+#
+# VERSION 5, THE DETAIL. No category with a level is everything on that level;
+# no category with a view is everything that view draws - a view TEMPLATE is
+# refused. `withoutLevel` hands on the elements whose level cannot be found,
+# by this card's own lookup (row 5b-335's fix). `notShowingIn` is the model
+# minus what that view draws, with `inModel` and `showing` beside it; links
+# are not read for it. A levelId that is no level is refused. Refused only when
+# no category, no categoryName, no level and no view is given. `findings` says
+# how many of how many, and warns when no category bounded the read.
+#
+# VERSION 6 (2026-11-01, the review of the merges): `withoutLevel` with nothing
+# else named is ANSWERED again, as SELECT_WITHOUT_LEVEL answered it - and
+# bounded to the MODEL categories: no view, sheet, material, type, project
+# information or view-specific element is looked at, here or in a link, and
+# `findings` and `resolvedTo` say so. Version 5 refused it, which left "what
+# has no level" - that card's own sentence - with no answer at all. Version
+# 3's proof below is still the record and still does not describe the code;
+# the card stays DRAFT until version 6 is proved on a real model (D-30).
+version: 6
 source: OFFICIAL
 risk: READ
 
 purpose: >
-  Answers "which elements" for a single Revit category, in the active document,
-  excluding types, optionally scoped to one level. It is the filter half of
+  Answers "which elements" for one Revit category or several, in the active
+  document, excluding types, optionally scoped to one level. It is the filter half of
   every "select the X" and "how many X" job, which is exactly why it is a
   fragment and not part of either: two questions sharing one filter is D-29's
   design working.
 
-  Pass ElementId.InvalidElementId as levelId for the whole model.
+  Leave levelId out, or pass none, for the whole model.
 
   Reports unresolvedLevel - how many elements had NO level found at all - so a
   broken level lookup reads as "12 found, 12 with no level" instead of as a
@@ -50,16 +93,98 @@ purpose: >
   is version 3 - version 2 read the links - and version 1's proof no longer
   describes the code; version 3's does.
 
+  **SEVERAL CATEGORIES, OR ONE VIEW (version 4).** `categories` names several
+  in one pass, `perCategory` shows each - one asked for and empty at 0 - and
+  `inViewOnly` narrows it to what one view draws. `categoryName` takes a
+  category by the name the model holds - an imported CAD file's too - and a
+  name that matches none comes back with its near misses, nothing read. This is version 4; version
+  3's proof no longer describes the code, and the fragment is DRAFT until it
+  is proved again.
+
+  **A LEVEL OR A VIEW WITHOUT A CATEGORY, AND WHAT IS NOT THERE (version 5).**
+  "What is on level 2" and "what is showing on this view" need no category.
+  `withoutLevel` gives the elements on no level; `notShowingIn` what the model
+  holds that a view does not show. Version 5 is DRAFT until proved.
+
+  **WHAT HAS NO LEVEL, ACROSS THE MODEL (version 6).** `withoutLevel` with no
+  category is answered over the model categories alone - never the views,
+  sheets and materials that rightly have no level. DRAFT until proved.
+
 contract:
   needs:
     - name: doc
       type: Document
     - name: category
+      # ONE category, by the name Visibility/Graphics shows or the API name -
+      # the binder turns the word into the category and refuses one that is
+      # none, before this runs. Optional since version 4, so several can be
+      # named in `categories` instead; left out it binds INVALID, which names
+      # no category and is dropped. Neither given is refused here. The name and
+      # the type are what versions 1 to 3 declared, and stay: the loads'
+      # Finalize, the companion and drawing-set.yaml call `category=`.
       type: BuiltInCategory
       source: request
+      optional: true
+      absent: INVALID
+    - name: categories
+      # VERSION 4, from SELECT_BY_CATEGORIES: several categories, comma
+      # separated, collected in ONE pass - "Ducts, Duct Fittings, Duct
+      # Accessories". Optional; left out it binds INVALID, as `category` does.
+      # A list of its own rather than `category` widened, because a
+      # BuiltInCategory need is one category everywhere else in the binder.
+      type: IList<BuiltInCategory>
+      source: request
+      optional: true
+      absent: INVALID
+    - name: categoryName
+      # VERSION 4 REVIEW FIX, from SELECT_BY_CATEGORY_NAME: ONE category by the
+      # name the MODEL holds, matched here against every category the document
+      # has, capitals ignored - an IMPORTED CAD file's category ("Site
+      # Plan.dwg") included, which no BuiltInCategory names and `category`
+      # cannot take. A name that matches none reads NOTHING and answers with
+      # `nearMisses`. Optional; left out it binds `none`, no name. Given with
+      # `category` or `categories` it is refused - one way of naming per call.
+      type: string
+      source: request
+      optional: true
+      absent: none
     - name: levelId
+      # Optional since version 4: left out reads as `none`, the whole model -
+      # what the binder already made of `levelId=none`
+      # (HeronBindingNote.DeclaredAbsent, then OneIdNamed).
       type: ElementId
       source: request
+      optional: true
+      absent: none
+    - name: inViewOnly
+      # VERSION 4, from SELECT_BY_CATEGORY_NAME and SELECT_BY_CATEGORIES: only
+      # what this view draws. Left out, or given empty, it binds null - the
+      # whole model (HeronBindingNote.AbsentValue, row 5b-1320). A view NAMED
+      # and not found is still refused.
+      type: View
+      source: request
+      optional: true
+    - name: notShowingIn
+      # VERSION 5, from SELECT_HIDDEN_IN_VIEW: the model minus what this view
+      # draws - what is in the model, in the categories named, and NOT showing
+      # there. Left out it binds null, as `inViewOnly` does; given with
+      # `inViewOnly` it is refused - one view per call. A view TEMPLATE is
+      # refused here and in `inViewOnly` alike: it has no elements of its own.
+      # Links are not read for it.
+      type: View
+      source: request
+      optional: true
+    - name: withoutLevel
+      # VERSION 5, from SELECT_WITHOUT_LEVEL: hand on the elements whose level
+      # CANNOT be found - the ones `unresolvedLevel` only counts. This card's
+      # own lookup, row 5b-335's fix. Left out it binds false. Given with
+      # `levelId` it is refused. VERSION 6: given with NOTHING else - no
+      # category, no level, no view - it is answered, over the MODEL
+      # categories only (CategoryType.Model, not a view, material, type,
+      # project information or view-specific element); version 5 refused it.
+      type: bool
+      source: request
+      optional: true
     - name: includeLinks
       # D-59. THE MODELLER DECIDES, JOB BY JOB, and absent means host only -
       # which is what this fragment did before and what its proof measured.
@@ -98,40 +223,105 @@ contract:
       # up in THIS model (FRAGMENT-ISSUES row 75).
       role: accounting
       type: IList<string>
+    - name: perCategory
+      # VERSION 4, from SELECT_BY_CATEGORIES. One entry per category ASKED
+      # FOR, by Revit's own name, with how many of `elements` are in it - one
+      # asked for and empty is there at 0, because the absence is the finding
+      # (no dampers in the model, or a category left out). About the answer,
+      # never an element (D-52).
+      role: accounting
+      type: IDictionary<string, int>
+    - name: found
+      # VERSION 4, from both merged cards: how many are in `elements`.
+      role: result
+      type: int
+    - name: resolvedTo
+      # VERSION 4, from SELECT_BY_CATEGORY_NAME. Which categories the words
+      # were read as, by Revit's own names, comma separated - the guard
+      # against a word binding to a different category than the one meant.
+      # A statement about the LOOKUP, filled in whether anything was found
+      # or not (D-52). For a `categoryName` that matches nothing it says so,
+      # and that nothing was read.
+      role: accounting
+      type: string
+    - name: nearMisses
+      # VERSION 4 REVIEW FIX, from SELECT_BY_CATEGORY_NAME. When `categoryName`
+      # matches no category: the category names that nearly did - one holding
+      # the words, or held in them - so "Duct Accessory" comes back with "Duct
+      # Accessories" to ask about rather than a dead end, and is never guessed
+      # at. Empty otherwise. About the lookup, never an element it found
+      # (D-52).
+      role: accounting
+      type: IList<string>
+    - name: examined
+      # VERSION 5, from SELECT_WITHOUT_LEVEL and SELECT_BY_LEVEL: how many
+      # elements were looked at before the level test, so a small answer can be
+      # told from a small scan. Evidence it looked, never a thing it found
+      # (D-52).
+      role: accounting
+      type: int
+    - name: inModel
+      # VERSION 5, from SELECT_HIDDEN_IN_VIEW: with `notShowingIn`, how many
+      # were in the model in the categories named - the first half of the
+      # subtraction. 0 otherwise. About the answer, never an element (D-52).
+      role: accounting
+      type: int
+    - name: showing
+      # VERSION 5, from SELECT_HIDDEN_IN_VIEW: with `notShowingIn`, how many of
+      # them that view does show - the other half, so the arithmetic can be
+      # checked. 0 otherwise (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      # VERSION 5, the four merged cards' sentences: how many of how many, on
+      # which level or in which view, the warning when no category bounded the
+      # read, and that why something is missing is DIAGNOSE_VISIBILITY's.
+      type: IList<string>
 proof:
-  date: '2026-10-06'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project2, Revit 2024, session 51820 - the count is NOT recorded because 1,790 elements
-    was measured on GM_PipeSupport_HexNut, the document in front, and this ran against another
-    one (row 15)
-  positive_case: run as it would normally be run - the arrangement was re-made first by running
-    load-family, place-family-instances with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned category BuiltInCategory,
-    elements 3 item(s) [FamilyInstance, FamilyInstance, FamilyInstance], hostLevelName Level
-    1, includeLinks false, levelOf Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM,
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: run as it would normally be run. returned askedLevel (null), byName , category
+    BuiltInCategory, categoryOf Func`2, elements 10 item(s) [Mitered Elbows / Taps, Mitered
+    Elbows / Taps, Mitered Elbows / Taps, ...], everyCategory false, examined 10, findings
+    3 item(s) [10 element(s), within Ducts, Read through view 'Callout of Level 1 HVAC WSHP
+    TYP'. This i..., Something expected and missing is a question for DIAGNOSE_VI...], found
+    10, hostLevelName (null), inModel 0, includeLinks false, isModelElement Func`2, levelGiven
+    false, levelOf Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM,
+    LEVEL_PARAM, ...], linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkThroughView
+    (null), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
+    linkedTotal 0, linksSearched 0, matching 10 item(s) [Mitered Elbows / Taps, Mitered Elbows
+    / Taps, Mitered Elbows / Taps, ...], modelOnly false, nameMissed false, namedCategory
+    (null), nearMisses 0 item(s), nestedLinks 0, notShowingIn (null), ofWanted Func`2, perCategory
+    1 entry(ies), resolvedNames 1 item(s) [Ducts], resolvedTo Ducts, safeLevelOf Func`2, scope
+    , within Ducts, showing 0, unresolvedLevel 0, wanted 1 item(s) [OST_DuctCurves], withoutLevel
+    false. inputs came category as given; categories not given - "INVALID", the card's own
+    default (optional); categoryName not given - "none", the card's own default (optional);
+    levelId not given - "none", the card's own default (optional); inViewOnly as given; notShowingIn
+    not given - null (optional); withoutLevel not given - false (optional); includeLinks not
+    given - false (optional). on P1102 MEP
+  negative_case: run with category=Ducts, inViewOnly=Level 1 - Lighting Plan instead - chosen
+    because it should not contain what this fragment reports. returned askedLevel (null),
+    byName , category BuiltInCategory, categoryOf Func`2, elements 0 item(s), everyCategory
+    false, examined 0, findings 3 item(s) [0 element(s), within Ducts, Read through view 'Level
+    1 - Lighting Plan'. This is what th..., Something expected and missing is a question for
+    DIAGNOSE_VI...], found 0, hostLevelName (null), inModel 0, includeLinks false, isModelElement
+    Func`2, levelGiven false, levelOf Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM,
     SCHEDULE_LEVEL_PARAM, LEVEL_PARAM, ...], linkBlocked , linkDocs 0 item(s), linkPlacements
-    0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
-    linkedTotal 0, linksSearched 0, matching 3 item(s) [FamilyInstance, FamilyInstance, FamilyInstance],
-    nestedLinks 0, unresolvedLevel 0. inputs came category as given; levelId as given; includeLinks
-    not given - false (optional). on Project2
-  negative_case: 'run with familyPath=C:/ProgramData/Autodesk/RVT 2020/Libraries/US Metric/Mechanical/MEP/Air-Side
-    Components/Air Terminals/M_Supply Diffuser - Circular - Round Neck - Ceiling Mounted.rfa,
-    symbol=M_Supply Diffuser - Circular - Round Neck - Ceiling Mounted: 250 mm Face 125 mm
-    Neck, points=2000,2000,3000; 4000,2000,3000; 6000,2000,3000, level=Level 1, category=Air
-    Terminals, levelId=Level 2 instead - chosen because it should not contain what this fragment
-    reports - the arrangement was re-made first by running load-family, place-family-instances
-    with this phase''s own values - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned category BuiltInCategory, elements 0 item(s), hostLevelName
-    Level 2, includeLinks false, levelOf Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM,
-    SCHEDULE_LEVEL_PARAM, LEVEL_PARAM, ...], linkBlocked , linkDocs 0 item(s), linkPlacements
-    0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
-    linkedTotal 0, linksSearched 0, matching 3 item(s) [FamilyInstance, FamilyInstance, FamilyInstance],
-    nestedLinks 0, unresolvedLevel 0. inputs came category as given; levelId as given; includeLinks
-    not given - false (optional). on Project2'
+    0 item(s), linkThroughView (null), linkTypes 0 item(s), linkedMatches 1 item(s) [Host
+    model only - links not read], linkedTotal 0, linksSearched 0, matching 0 item(s), modelOnly
+    false, nameMissed false, namedCategory (null), nearMisses 0 item(s), nestedLinks 0, notShowingIn
+    (null), ofWanted Func`2, perCategory 1 entry(ies), resolvedNames 1 item(s) [Ducts], resolvedTo
+    Ducts, safeLevelOf Func`2, scope , within Ducts, showing 0, unresolvedLevel 0, wanted
+    1 item(s) [OST_DuctCurves], withoutLevel false. inputs came category as given; categories
+    not given - "INVALID", the card's own default (optional); categoryName not given - "none",
+    the card's own default (optional); levelId not given - "none", the card's own default
+    (optional); inViewOnly as given; notShowingIn not given - null (optional); withoutLevel
+    not given - false (optional); includeLinks not given - false (optional). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 492d8e1fd3344327
+  fingerprint: c826f2c0535e4652
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -162,13 +352,137 @@ compatibility-note: >
 #                                           read and a count (5b-468)
 #   "which level are these walls on"     -> READ_ELEMENT_PARAMETERS, Level -
 #                                           walls already chosen (5b-468)
-#   "find all the VCDs"                 -> SELECT_BY_FAMILY, when the FAMILY
+#   "find all the VCDs"                 -> SELECT_BY_PARAMETER_VALUE, Family, when the FAMILY
 #                                           name is what is known and the
 #                                           category is not
-#   "all the ductwork"                   -> SELECT_BY_CATEGORIES. Ducts,
-#                                           fittings, accessories, flex and
-#                                           insulation are five categories
-#                                           and one answer
+#   "all the ductwork"                   -> here, with `categories` (version
+#                                           4). Ducts, fittings, accessories,
+#                                           flex and insulation are five
+#                                           categories and one answer
+#   "everything in duct accessories"     -> here, category Duct Accessories -
+#                                           the words are the input
+#   "select all the pipes in this view"  -> here, category Pipes, inViewOnly
+#                                           that view
+#   "what is visible in this view"       -> here since version 5, inViewOnly
+#                                           that view and no category - it was
+#                                           SELECT_VISIBLE_IN_VIEW's, merged in
+#   "what is on level 2"                 -> here since version 5, levelId that
+#                                           level and no category - it was
+#                                           SELECT_BY_LEVEL's, merged in
+#   "what has no level"                  -> here since version 5, withoutLevel
+#                                           - with a category list, or since
+#                                           version 6 with none, over the
+#                                           model categories only. It was
+#                                           SELECT_WITHOUT_LEVEL's
+#   "what is not showing here"           -> here since version 5, notShowingIn
+#                                           that view - it was
+#                                           SELECT_HIDDEN_IN_VIEW's
+#   "why can't I see this duct"          -> DIAGNOSE_VISIBILITY - one element,
+#                                           and which mechanism hid it
+#   "what level is this on"              -> READ_ELEMENT_LEVEL - one element
+#   "move these to level 2"              -> SET_ELEMENT_LEVEL - this only reads
+#   "these are in the wrong category"    -> CHECK_CATEGORY_MISMATCH
+#   "which categories are there"         -> LIST_CATEGORIES - the names a
+#                                           word that was refused here can be
+#                                           checked against
+
+# VERSION 4 (2026-11-01) - SELECT_BY_CATEGORY_NAME AND SELECT_BY_CATEGORIES
+# WERE MERGED INTO THIS CARD on the owner's instruction in conversation: "now
+# merge the other duplicates also", every conflict to keep the SAFER rule.
+# Both are DEPRECATED. The same job - which elements of a category, or of
+# several, in the model or in one view, optionally on one level, links counted
+# and never selected - and this card is the one eleven methods, the loads'
+# Finalize and the companion already call. Where each retired output is now:
+#
+#   SELECT_BY_CATEGORY_NAME             here
+#     categoryName                      categoryName (review fix, same day),
+#                                       matched against doc.Settings.Categories
+#                                       as that card did - imported CAD
+#                                       categories included. `category` and
+#                                       `categories` still take Revit's own
+#                                       categories through the binder
+#     inViewOnly                        inViewOnly
+#     elements, found                   elements, found
+#     resolvedTo                        resolvedTo
+#     nearMisses                        nearMisses (review fix, same day) - the
+#                                       first draft recorded it NOT CARRIED,
+#                                       and with it imported categories, which
+#                                       review found; both are back
+#     linksSearched, linkedMatches      the same, through a view on 2023+
+#
+#   SELECT_BY_CATEGORIES                here
+#     categories                        categories, the same type
+#     inViewOnly                        inViewOnly
+#     elements, perCategory, found      the same
+#     linksSearched, linkedMatches      the same, each link's breakdown too
+#
+# THE SAFER RULE WHERE THEY DIFFERED. SELECT_BY_CATEGORY_NAME answered an
+# unknown name with an empty set and near misses; SELECT_BY_CATEGORIES
+# answered an empty list with an empty set. Here no category named is refused,
+# and a word given as `category` that is no category is refused by the binder
+# - no zero that reads as "there are none". A `categoryName` that matches
+# nothing reads nothing too, and says so in `resolvedTo` beside its
+# `nearMisses`, as SELECT_BY_CATEGORY_NAME did: an answer naming the miss is
+# not the silent zero. categoryName and category/categories together are
+# refused - one way of naming per call.
+#
+# ROUTING - repeated in SELECT_BY_MEP_SYSTEM, SELECT_OPENINGS,
+# SET_CATEGORY_GRAPHICS, DESCRIBE_ELEMENTS and LIST_CATEGORIES.
+#
+# VERSION 5 (2026-11-01) - SELECT_BY_LEVEL, SELECT_VISIBLE_IN_VIEW,
+# SELECT_WITHOUT_LEVEL AND SELECT_HIDDEN_IN_VIEW WERE MERGED INTO THIS CARD on
+# the owner's instruction in conversation: "make sure there is no duplicate
+# tools", "merge means ... all area need to be covered", "in every conflict
+# keep the safer rule". All four are DEPRECATED. The same job - which elements,
+# optionally of which categories, on which level, in which view - and this
+# card already took a category list, a level and a view. Where each retired
+# output is now:
+#
+#   SELECT_BY_LEVEL                     here
+#     levelId, categories               levelId, categories - no category is
+#                                       now a whole-model read, as that card's
+#     elements, unresolvedLevel         the same
+#     findings                          findings - "N of M scanned are on
+#                                       level X", and the whole-model warning
+#     linksSearched, linkedMatches      the same - the level matched by name
+#     its level lookup                  NOT CARRIED: it took the first level
+#                                       parameter an element HAD, empty or
+#                                       not - the drift this card fixed in row
+#                                       5b-335. This card's lookup answers
+#
+#   SELECT_VISIBLE_IN_VIEW              here
+#     view, categories                  inViewOnly, categories
+#     elements, findings                elements, findings - including that
+#                                       why is DIAGNOSE_VISIBILITY's
+#     a view template refused           refused, here too
+#
+#   SELECT_WITHOUT_LEVEL                here
+#     categories, includeLinks          the same
+#     elements                          elements, with withoutLevel
+#     examined                          examined
+#     findings, links                   findings, linksSearched, linkedMatches
+#
+#   SELECT_HIDDEN_IN_VIEW               here
+#     view                              notShowingIn
+#     elements, inModel, showing        the same
+#     findings, a template refused      the same
+#
+# THE SAFER RULE WHERE THEY DIFFERED. SELECT_WITHOUT_LEVEL and
+# SELECT_HIDDEN_IN_VIEW answered with NO category - every view, sheet and
+# material in the model, with a warning; version 4 here refused no category.
+# Here a level or a view alone is enough to read (SELECT_BY_LEVEL's and
+# SELECT_VISIBLE_IN_VIEW's whole-model questions), and the warning travels in
+# `findings` whenever no category bounded the read; refused only when no
+# category, no categoryName, no level and no view is given. `withoutLevel`
+# with nothing else was refused by version 5 rather than answered with the
+# whole model's views and sheets, which SELECT_WITHOUT_LEVEL's own test called
+# "correct and useless" - and that lost the question. VERSION 6 (the review of
+# the merges, 2026-11-01) answers it over the MODEL categories only: the
+# question SELECT_WITHOUT_LEVEL answered, without the views, sheets, materials
+# and types it padded the answer with. SELECT_VISIBLE_IN_VIEW and SELECT_HIDDEN_IN_VIEW answered no view
+# with an empty set and a sentence; here no view means the model, and a view
+# named and not found is refused by the binder. A level id that is not a
+# level, which SELECT_BY_LEVEL refused in a sentence, is refused here too.
 
 utterances:
   - select all ducts
@@ -245,3 +559,54 @@ utterances:
   # Nothing on any frozen set became riskier (retrieval-history.md, that day).
   - how many rooms are on level 1
   - which rooms are on level 2
+  # MOVED 2026-11-01 from SELECT_BY_CATEGORY_NAME, merged into this card.
+  - everything in duct accessories
+  - select the mechanical equipment category
+  - all elements in the category called ducts
+  - i do not know the category code
+  - select all the pipes in this view
+  # MOVED 2026-11-01 from SELECT_BY_CATEGORIES, merged into this card.
+  - all the ductwork
+  - show me all the ductwork
+  - select the whole pipe system
+  - ducts and fittings and accessories together
+  - everything in these categories
+  - all the mep in this view
+  - all the pipework
+  # ADDED 2026-11-01 WITH THE MERGE. Three routing tables send "all the ducts"
+  # here - SELECT_BY_FAMILY's, and the two merged cards' - and a comment is not
+  # indexed (row 5b-387's lesson). SELECT_BY_CATEGORIES answered it by ranking;
+  # with that card retired, lexical sent it to CREATE_MEP_RUNS, a write.
+  - all the ducts
+  # MOVED 2026-11-01 from SELECT_BY_LEVEL, merged into this card.
+  - what is on level 2
+  - select everything on this level
+  - show me everything on the second floor
+  - find all elements on a level
+  - which elements sit on this storey
+  # MOVED 2026-11-01 from SELECT_VISIBLE_IN_VIEW, merged into this card.
+  - what is showing on this view
+  - select everything visible in this view
+  - what will this drawing actually show
+  - find the elements visible in a view
+  - count what is on this drawing
+  - what is showing here
+  # MOVED 2026-11-01 from SELECT_WITHOUT_LEVEL, merged into this card.
+  - select elements without a level
+  - what has no level
+  - find the elements with no level set
+  - detect elements without level
+  - which of these are not on a level
+  # MOVED 2026-11-01 from SELECT_HIDDEN_IN_VIEW, merged into this card.
+  - what is hidden in this view
+  - select hidden elements
+  - which ducts are not showing on this plan
+  - what is missing from this drawing
+  - find elements not visible here
+  - what is not showing here
+  # ADDED 2026-11-01 WITH THE MERGE. This card's own routing table sends it
+  # here since version 5, and a comment is not indexed (row 5b-387's lesson).
+  # SELECT_VISIBLE_IN_VIEW answered it by ranking; with that card retired,
+  # lexical sent it to SET_REBAR_VIEW_STATE, a write, and the trained model to
+  # DIAGNOSE_VISIBILITY.
+  - what is visible in this view

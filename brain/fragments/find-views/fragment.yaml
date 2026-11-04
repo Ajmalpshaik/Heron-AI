@@ -5,11 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-028
-semantic-identity: "the real views in this model, optionally narrowed by type and by name"
+semantic-identity: "the real views or schedules in this model, narrowed by type, by name, by whether they are on a sheet or have a template"
 kind: filter
 domain: revit.views
 capability: FIND_VIEWS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -31,6 +31,15 @@ purpose: >
   does not exist, the second means it does and this fragment refused it. A bare
   zero cannot tell those apart, and the difference changes what the user does next.
 
+  **VERSION 2 ALSO FINDS SCHEDULES, UNPLACED VIEWS AND VIEWS WITH NO TEMPLATE**
+  (FIND_SCHEDULES, FIND_UNPLACED_VIEWS and FIND_VIEWS_WITHOUT_TEMPLATE merged
+  in). viewType Schedule returns the real schedules - only when asked, never
+  by default - with Revit's internal ones counted in skippedInternal.
+  placement unplaced or placed narrows by whether a view is on a sheet, read
+  through viewports AND schedule placements. withoutTemplate keeps the views
+  no template holds, the ones on sheets first with their sheet numbers.
+  byType counts the answer per view type.
+
 contract:
   needs:
     - name: doc
@@ -41,6 +50,23 @@ contract:
     - name: nameContains
       type: string
       source: request
+    # VERSION 2, from FIND_UNPLACED_VIEWS. "unplaced" keeps the views on no
+    # sheet, "placed" the ones on a sheet; left out ("any"), both. On a sheet
+    # means a viewport, a schedule placement or a sheet's placed-view list
+    # shows it - a schedule is not placed through a viewport. Anything else is
+    # refused, nothing returned.
+    - name: placement
+      type: string
+      source: request
+      optional: true
+      absent: any
+    # VERSION 2, from FIND_VIEWS_WITHOUT_TEMPLATE. true keeps only the views
+    # with no view template - sheets, schedules and legends left out, none
+    # takes one - the views on sheets first. Absent binds false (row 5b-227).
+    - name: withoutTemplate
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: elements
       role: result
@@ -60,29 +86,71 @@ contract:
     - name: matchedButExcluded
       # Views that matched the name but are templates or non-drawing views -
       # COUNTED AND REPORTED RATHER THAN SILENTLY DROPPED. Deliberately not in
-      # the answer (D-52).
+      # the answer (D-52). Version 2: and, with viewType Schedule, Revit's
+      # internal schedules.
       role: accounting
       type: int
+    - name: skippedInternal
+      # VERSION 2, from FIND_SCHEDULES. With viewType Schedule, Revit's own
+      # internal schedules passed over - named in angle brackets, a revision
+      # schedule the common one. Recognised by NAME, as Revit exposes no
+      # property that separates them, so the count is reported. Evidence it
+      # looked, not a match (D-52).
+      role: accounting
+      type: int
+    - name: byType
+      # VERSION 2, from FIND_UNPLACED_VIEWS. How many of the answer are of each
+      # view type. A breakdown of `elements`, never more of them (D-52).
+      role: accounting
+      type: IDictionary<string, int>
+    - name: placedCount
+      # VERSION 2, from FIND_UNPLACED_VIEWS. How many views ARE on a sheet, by
+      # all three routes. The evidence it looked (D-52).
+      role: accounting
+      type: int
+    - name: onSheets
+      # VERSION 2, from FIND_VIEWS_WITHOUT_TEMPLATE. The answer's views that are
+      # on a sheet - a part of `elements`, never more of them (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      # VERSION 2. With withoutTemplate, each view on a sheet named with its
+      # sheet number, then a count of the working views on no sheet; with
+      # placement unplaced, the placed count beside it; a placement it cannot
+      # read, the refusal.
+      role: accounting
+      type: IList<string>
 
+# VERSION 1's PROOF, KEPT AS THE RECORD. Version 2 changed impl/, so its
+# fingerprint no longer describes the code and the card is DRAFT until
+# version 2 is proved on a real model (D-30).
 proof:
-  date: '2026-09-08'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
-  positive_case: run as it would normally be run. returned elements 8 item(s) [L1 - Block
-    35, L1 - Block 37, L1 - Block 43, ...], found 8 item(s) [L1 - Block 43, L2, L1 - Block
-    35, ...], matchedButExcluded 50, notDrawings HashSet`1, skippedNonDrawing 40, skippedTemplates
-    18, wantedName L, wantedType FloorPlan. inputs came viewType as given; nameContains as
-    given. on Snowdon-scratch_ajmal.al
-  negative_case: run with viewType=FloorPlan, nameContains=ZZZNOTHINGHERE instead - chosen
-    because it should not contain what this fragment reports. returned elements 0 item(s),
-    found 0 item(s), matchedButExcluded 0, notDrawings HashSet`1, skippedNonDrawing 40, skippedTemplates
-    18, wantedName ZZZNOTHINGHERE, wantedType FloorPlan. inputs came viewType as given; nameContains
-    as given. on Snowdon-scratch_ajmal.al
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: run as it would normally be run. returned byType 1 entry(ies), elements 20
+    item(s) [Callout of Level 1 HVAC WSHP TYP, Level 1 HVAC Duct Plan, Level 1 HVAC Duct Plan_A,
+    ...], findings 0 item(s), found 20 item(s) [Level 1 HVAC Plan, Level 2 HVAC Plan, Level
+    3 HVAC Plan, ...], matchedButExcluded 9, notDrawings HashSet`1, onSheets 1 item(s) [606890],
+    ordered 20 item(s) [Callout of Level 1 HVAC WSHP TYP, Level 1 HVAC Duct Plan, Level 1
+    HVAC Duct Plan_A, ...], placedCount 23, placedOn 23 entry(ies), schedulesAsked false,
+    skippedInternal 0, skippedNonDrawing 23, skippedTemplates 46, wantedName HVAC, wantedPlacement
+    any, wantedType FloorPlan, withoutTemplate false, working 19. inputs came viewType as
+    given; nameContains as given; placement not given - "any", the card's own default (optional);
+    withoutTemplate not given - false (optional). on P1102 MEP
+  negative_case: run with category=Sheets, nameContains=ZZZNOTHINGHERE, viewType=FloorPlan
+    instead - chosen because it should not contain what this fragment reports. returned byType
+    0 entry(ies), elements 0 item(s), findings 0 item(s), found 0 item(s), matchedButExcluded
+    0, notDrawings HashSet`1, onSheets 0 item(s), ordered 0 item(s), placedCount 23, placedOn
+    23 entry(ies), schedulesAsked false, skippedInternal 0, skippedNonDrawing 23, skippedTemplates
+    46, wantedName ZZZNOTHINGHERE, wantedPlacement any, wantedType FloorPlan, withoutTemplate
+    false, working 0. inputs came viewType as given; nameContains as given; placement not
+    given - "any", the card's own default (optional); withoutTemplate not given - false (optional).
+    on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 05cbe732f6e9e265
-
+  fingerprint: 36569e9e277b0352
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -93,10 +161,73 @@ compatibility-note: >
   units call is made. `viewType` is matched by NAME against the enum rather than
   taking a typed enum value, so a release that adds a member needs no change here
   and an unknown name is reported instead of silently matching nothing.
+
+  Version 2 adds the calls the three merged cards made, PROVEN on Revit 2024:
+  `ViewSchedule`, `Viewport.ViewId` and `SheetId`,
+  `ScheduleSheetInstance.ScheduleId` and `OwnerViewId`,
+  `ViewSheet.GetAllPlacedViews`, `ViewSheet.SheetNumber` and
+  `View.ViewTemplateId` - unchanged 2020 to 2027.
+
+# ROUTING - repeated in FIND_SHEETS, APPLY_VIEW_TEMPLATE and
+# PLACE_VIEW_ON_SHEET.
+#
 #   "a 3d view for each workset"         -> CREATE_WORKSET_3D_VIEWS. This one
 #                                           lists views that exist
-#   "which views are not on a sheet"     -> FIND_UNPLACED_VIEWS. This one
-#                                           narrows by type and name
+#   "which views are not on a sheet"     -> here, placement unplaced, since
+#                                           FIND_UNPLACED_VIEWS was merged in
+#                                           (version 2)
+#   "purge the unplaced views"           -> here first, placement unplaced. It
+#                                           reports and deletes nothing
+#   "which schedules are there"          -> here, viewType Schedule, since
+#                                           FIND_SCHEDULES was merged in
+#   "which views have no template"       -> here, withoutTemplate true, since
+#                                           FIND_VIEWS_WITHOUT_TEMPLATE was
+#                                           merged in
+#   "apply the template to these"        -> APPLY_VIEW_TEMPLATE - the fix
+#   "list the sheets"                    -> FIND_SHEETS
+#   "the drawing list"                   -> FIND_SHEETS for the sheets; here,
+#                                           viewType Schedule, for the sheet
+#                                           list schedule
+#   "what columns has it"                -> REPORT_SCHEDULE_DEFINITION
+#   "read me what is in it"              -> READ_SCHEDULE_CONTENTS
+#   "which families are unused"          -> FIND_PURGEABLE_ELEMENTS
+#   "delete these"                       -> DELETE_ELEMENTS, deliberately and
+#                                           with the list in front of you
+
+# VERSION 2 (2026-11-01) - FIND_SCHEDULES, FIND_UNPLACED_VIEWS AND
+# FIND_VIEWS_WITHOUT_TEMPLATE WERE MERGED INTO THIS CARD on the owner's
+# instruction ("make sure there is no duplicate tools"; "merge means ... all
+# area need to be covered"), and are DEPRECATED. The same job - which views
+# are in the model, with the ones nobody means counted and set aside. What
+# they had and this one lacked is here now: schedules, through viewType
+# Schedule, templates and angle-bracketed internal ones counted
+# (skippedInternal); placement unplaced or placed, read by viewports AND
+# schedule placements AND each sheet's own list, placedCount, byType; a view
+# with no template, sheets, schedules and legends left out, the ones on sheets
+# first and named with their sheet numbers in findings, the working ones
+# counted; reporting and deleting nothing.
+#
+# THE SAFER RULE IN EACH CONFLICT IS KEPT (the owner: "in every conflict keep
+# the safer rule"). Schedules come back ONLY when viewType Schedule is asked:
+# never among the drawings by default, so an action that duplicates or
+# applies a template cannot reach one. FIND_UNPLACED_VIEWS counted a view on
+# a sheet by viewports and schedule placements, FIND_VIEWS_WITHOUT_TEMPLATE by
+# each sheet's list; all three are read. The no-template test now also leaves
+# out the browser and internal views this card always set aside, which that
+# card listed as untemplated working views. A placement it cannot read is
+# refused, nothing returned.
+#
+# NOT CARRIED, AS OPPOSITE: FIND_UNPLACED_VIEWS returned unplaced schedules
+# among the views by default - here they come back only with viewType
+# Schedule (placement unplaced, viewType Schedule). FIND_VIEWS_WITHOUT_TEMPLATE
+# and FIND_UNPLACED_VIEWS returned their lists unsorted; here the answer is in
+# this card's name order, views on sheets first with withoutTemplate.
+#
+# WHERE THEIR OUTPUTS ARE NOW: elements -> elements; FIND_SCHEDULES'
+# skippedTemplates, skippedInternal, matchedButExcluded -> the same names;
+# FIND_UNPLACED_VIEWS' byType, placedCount -> the same names;
+# FIND_VIEWS_WITHOUT_TEMPLATE's onSheets, findings -> the same names. Their
+# sentences moved here.
 
 utterances:
   - which views are in this model
@@ -105,3 +236,22 @@ utterances:
   - show me the 3d views
   - all the views with level in the name
   - what plans do we have
+  # MOVED 2026-11-01 from FIND_SCHEDULES, merged into this card.
+  - which schedules are in this model
+  - list the schedules
+  - find the door schedule
+  - show me the schedules
+  - what schedules do we have
+  - the equipment schedule
+  - which schedules are there
+  # MOVED 2026-11-01 from FIND_UNPLACED_VIEWS, merged into this card.
+  - which views are not on a sheet
+  - find the unplaced views
+  - the project browser is full of working views
+  - what would purge unplaced views delete
+  # MOVED 2026-11-01 from FIND_VIEWS_WITHOUT_TEMPLATE, merged into this card.
+  - which views have no template
+  - check the views before issue
+  - are all the views templated
+  - find the views missing a template
+  - which drawings are not on the standard

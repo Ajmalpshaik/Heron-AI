@@ -5,13 +5,29 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-022
-semantic-identity: "add these family parameters to the family being edited, switch existing ones to type or instance, or rename them"
+semantic-identity: "add these family parameters to the family being edited - or the office's shared parameters from its shared parameter file - switch existing ones to type or instance, rename them, or replace them with shared ones"
 kind: action
 domain: revit.families
 capability: ADD_FAMILY_PARAMETERS
-version: 2
+# VERSION 4 (2026-11-01) - ADD_FAMILY_SHARED_PARAMETERS WAS MERGED INTO THIS
+# CARD on the owner's instruction ("make sure there is no duplicate tools",
+# "merge means ... all area need to be covered", every conflict to keep the
+# safer rule), and is DEPRECATED. Its code runs here, unchanged, as the SHARED
+# kind - see "VERSION 4" above `utterances`. The field read 2 while the
+# renaming mode has been called version 3 since 2026-10-07 (its proof below),
+# so 4 is the next number free of both. Version 3's proof is kept as the
+# record; it no longer describes the code (impl/ changed), and the card is
+# DRAFT until version 4 is proved on a real model (D-30).
+version: 4
 source: OFFICIAL
-risk: MODIFY
+# ADMIN FROM VERSION 4 - D-106, ADD_FAMILY_SHARED_PARAMETERS' risk. Its
+# createMissing WRITES the office's shared parameter file, which is outside the
+# model and which Undo does not reach: "a parameter written into the shared
+# parameter file stays in that file". A card carries one risk, so EVERY call
+# of this card - a plain family parameter added, switched or renamed included
+# - now needs the Admin switch as well as Changes. The owner accepted that on
+# 2026-11-01, merging the two; until then this card was MODIFY.
+risk: ADMIN
 
 purpose: >
   Adds one or more FAMILY parameters to the family open in the Family Editor -
@@ -27,12 +43,13 @@ purpose: >
   LABEL_FAMILY_DIMENSION refuses a label whose parameter disagrees with the
   planes.
 
-  **A NAME ALREADY IN THE FAMILY IS LEFT ALONE AND NAMED.** Re-running the same
-  request adds nothing twice. When the one already there is a different kind or
-  scope from what was asked, that is said out loud - it is a different
-  parameter under a familiar name, and quietly carrying on would build the next
-  step on the wrong one. This includes the category's own built-in parameters:
-  an Air Terminal already has its flow fields.
+  **A NAME ALREADY IN THE FAMILY AS THE SAME PARAMETER IS LEFT ALONE AND
+  NAMED.** Re-running the same request adds nothing twice. When the one already
+  there is a different kind or scope from what was asked, or a shared one, it
+  is a different parameter under a familiar name, and since version 4 the
+  whole call is refused - nothing added - rather than carrying on beside it.
+  This includes the category's own built-in parameters: an Air Terminal
+  already has its flow fields.
 
   **THE KIND, THE SCOPE AND THE GROUP ARE ASKED FOR.** Type or instance is a
   decision about the family - sizes that describe the product are type,
@@ -45,6 +62,19 @@ purpose: >
   first parameter is added. If Revit then refuses one - a character it does not
   allow in a name - the call fails and nothing from it is kept, rather than
   half the list being added and the rest reported.
+
+  **SHARED PARAMETERS TOO (version 4, 2026-11-01).**
+  ADD_FAMILY_SHARED_PARAMETERS was merged into this card and is DEPRECATED.
+  `kind` shared adds the office's shared parameters, from the shared parameter
+  file Revit is set to, which is only read: the kind comes from the file, the
+  GUID is the file's, and a project can then schedule and tag the family's
+  value. `replaceExisting` turns family parameters into shared ones in place -
+  "Width=Unit_Width" - every label, formula, association and value kept.
+  `createMissing` writes a definition the file does not have yet, "Group:
+  Name [Data type]", before adding or replacing it - outside the model, so Undo
+  does not take it back: **this card is ADMIN**, and every call of it needs
+  the Admin switch. **A name already in the family as a DIFFERENT parameter
+  refuses the whole call**, for every kind - the safer of the two cards' rules.
 
   **SWITCHING TYPE AND INSTANCE (version 2).** With switchExisting true the
   names are parameters the family already has - or `all` - and instance says
@@ -63,7 +93,10 @@ contract:
       type: IList<string>
       source: request
     # What they hold: Length, Number, Integer, Angle, Area, Volume, YesNo,
-    # Text, Material or Air Flow. Not used when switching - give it empty.
+    # Text, Material or Air Flow - or, since version 4, Shared: the office's
+    # shared parameters, their kind from the file. Not used when switching or
+    # renaming - give it empty. Shared, or empty, with replaceExisting or
+    # createMissing.
     - name: kind
       type: string
       source: request
@@ -74,7 +107,8 @@ contract:
       source: request
     # The Properties palette heading, as Revit names it - "Dimensions",
     # "Mechanical", "Identity Data". Empty files lengths and angles under
-    # Dimensions and the rest under Data. Not used when switching.
+    # Dimensions and the rest under Data. Not used when switching. When
+    # replacing (version 4), empty keeps each parameter under its own heading.
     - name: parameterGroup
       type: string
       source: request
@@ -91,6 +125,26 @@ contract:
     # the pairs. kind, instance and parameterGroup are not used - give kind
     # and parameterGroup empty and instance false. Absent is false.
     - name: renameExisting
+      type: bool
+      source: request
+      optional: true
+    # VERSION 4, from ADD_FAMILY_SHARED_PARAMETERS. true REPLACES family
+    # parameters already in the family with the office's shared ones instead
+    # of adding new ones; each of parameterNames is then Old=SharedName, and
+    # semicolons separate the pairs. instance is not used - give it false, each
+    # keeps its own scope. The shared kind. Absent is false.
+    - name: replaceExisting
+      type: bool
+      source: request
+      optional: true
+    # VERSION 4, from ADD_FAMILY_SHARED_PARAMETERS. true CREATES in the shared
+    # parameter file each name it does not have yet, written "Group: Name
+    # [Data type]" - in parameterNames, or as the SharedName of a pair when
+    # replacing - then adds or replaces it as one found there. The group and
+    # the data type are never defaulted. It WRITES the office's file, which
+    # Undo does not reach - the reason this card is ADMIN. The shared kind.
+    # Absent is false - nothing is written to the file.
+    - name: createMissing
       type: bool
       source: request
       optional: true
@@ -131,6 +185,22 @@ contract:
       # = Pipe CC 1 to 2 + Pipe CC 2 to 3" - as one line.
       role: accounting
       type: string
+    - name: replaced
+      # VERSION 4: each family parameter replaced, Old -> SharedName, read back
+      # with its kind, scope, heading and the file's GUID.
+      role: result
+      type: IList<string>
+    - name: created
+      # VERSION 4: each definition written into the shared parameter file - its
+      # name, data type, group, GUID and the file's own word for the data type
+      # - read back by Revit and in the file's text on disk. Empty unless
+      # createMissing wrote one.
+      role: result
+      type: IList<string>
+    - name: sharedFile
+      # VERSION 4: the shared parameter file that was read, for the shared kind.
+      role: accounting
+      type: string
     - name: notAFamily
       role: accounting
       type: bool
@@ -145,55 +215,39 @@ contract:
 # by Ajmal PS on his word - NEEDS-CHECKING CO. The switching mode of version 2 shares
 # this implementation; its own runs are NEEDS-CHECKING CA.
 proof:
-  date: '2026-10-07'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: HeronRenameProof, Revit 2024, session 51820 - the count is NOT recorded because 3,515
-    elements was measured on Project6, the document in front, and this ran against another
-    one (row 15)
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 Family, P1102 MEP - active was HeronNewFam_P1102,
+    Revit 2020, session 59096'
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned addParameter RuntimeMethodInfo,
-    added 0 item(s), alreadyThere 0 item(s), catalogueColumns 0 item(s), countLabels Func`1,
-    dbNamespace Autodesk.Revit.DB, describe Func`2, describeTied Func`2, findings 3 item(s)
-    [Renamed 2 parameter(s), read back from the family by the new..., Formulas that read them,
-    read back with the new names: Total..., Kept as they were: Pipe CC 1 to 2: 1 labelled
-    dimension(s).], flags BindingFlags, formulasReadBack Total = Pipe CC 1 to 2 + Pipe CC
-    2 to 3, groupInternalNames 124 entry(ies), groupLabel Func`2, groupNamed Func`3, groupType
-    RuntimeType, groupValue (null), groups 124 item(s) [[Cross-Section Definition, Autodesk.Revit.DB.ForgeTypeId],
-    [Visibility, Autodesk.Revit.DB.ForgeTypeId], [Extents, Autodesk.Revit.DB.ForgeTypeId],
-    ...], idText Func`2, instance false, isBuiltIn Func`2, keptLinks Pipe CC 1 to 2: 1 labelled
-    dimension(s), kindKey , kindLabel Func`2, kindNames (null), kinds 10 entry(ies), names
-    1 item(s) [CC 1 to 2=Pipe CC 1 to 2; CC 2 to 3=Pipe CC 2 to 3], namesReadFrom Func`3,
-    notAFamily false, refused (null), renameExisting true, renamed 2 item(s) [CC 1 to 2 ->
-    Pipe CC 1 to 2, CC 2 to 3 -> Pipe CC 2 to 3], repeated 0 item(s), revitAssembly RuntimeAssembly,
-    sameKind Func`3, scopeReadBack , specFor Func`2, specOf Func`2, specType RuntimeType,
-    specValue (null), squash Func`2, switchExisting false, switched 0 item(s), tiedTo Func`2,
-    wantedGroup . inputs came parameterNames as given (1); kind as given; instance as given;
-    parameterGroup as given; switchExisting not given - false (optional); renameExisting as
-    given. on HeronRenameProof'
-  negative_case: run against 'HeronRenameProof' with renameExisting=true, parameterNames=CC
-    1 to 2=cc 2 to 3, kind=, parameterGroup=, instance=false instead - chosen because it should
-    not contain what this fragment reports - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned addParameter RuntimeMethodInfo,
-    added 0 item(s), alreadyThere 0 item(s), catalogueColumns 0 item(s), countLabels Func`1,
-    dbNamespace Autodesk.Revit.DB, describe Func`2, describeTied Func`2, findings 1 item(s)
-    [Nothing was renamed. 'cc 2 to 3' is already a parameter in t...], flags BindingFlags,
-    formulasReadBack , groupInternalNames 124 entry(ies), groupLabel Func`2, groupNamed Func`3,
-    groupType RuntimeType, groupValue (null), groups 124 item(s) [[Cross-Section Definition,
-    Autodesk.Revit.DB.ForgeTypeId], [Visibility, Autodesk.Revit.DB.ForgeTypeId], [Extents,
-    Autodesk.Revit.DB.ForgeTypeId], ...], idText Func`2, instance false, isBuiltIn Func`2,
-    keptLinks , kindKey , kindLabel Func`2, kindNames (null), kinds 10 entry(ies), names 1
-    item(s) [CC 1 to 2=cc 2 to 3], namesReadFrom Func`3, notAFamily false, refused Nothing
-    was renamed. 'cc 2 to 3' is already a parameter in this family (as 'CC 2 to 3') - names
-    are told apart without regard to capitals. Choose another name., renameExisting true,
-    renamed 0 item(s), repeated 0 item(s), revitAssembly RuntimeAssembly, sameKind Func`3,
-    scopeReadBack , specFor Func`2, specOf Func`2, specType RuntimeType, specValue (null),
-    squash Func`2, switchExisting false, switched 0 item(s), tiedTo Func`2, wantedGroup .
-    inputs came parameterNames as given (1); kind as given; instance as given; parameterGroup
-    as given; switchExisting not given - false (optional); renameExisting as given. on HeronRenameProof
+    the transaction group ROLLED BACK afterwards. returned added 1 item(s) [HERON P1102 Width
+    (Length, type, under Dimensions)], alreadyThere 0 item(s), createMissing false, created
+    0 item(s), findings 2 item(s) [Added 1 parameter(s), read back from the family: HERON
+    P1102..., They hold NO value yet - a new length reads 0 in every type....], formulasReadBack
+    , instance false, keptLinks , kindAsked length, notAFamily false, refused (null), renameExisting
+    false, renamed 0 item(s), replaceExisting false, replaced 0 item(s), scopeReadBack , sharedFile
+    , sharedKind false, switchExisting false, switched 0 item(s). inputs came parameterNames
+    as given (1); kind as given; instance as given; parameterGroup as given; switchExisting
+    not given - false (optional); renameExisting not given - false (optional); replaceExisting
+    not given - false (optional); createMissing not given - false (optional). on P1102 Family'
+  negative_case: run against 'P1102 MEP' with parameterNames=HERON P1102 Width, kind=length,
+    instance=false, parameterGroup=Dimensions instead - chosen because it should not contain
+    what this fragment reports - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned added 0 item(s), alreadyThere 0 item(s), createMissing
+    false, created 0 item(s), findings 1 item(s) [The document in front is a project, not
+    a family open in the...], formulasReadBack , instance false, keptLinks , kindAsked length,
+    notAFamily true, refused The document in front is a project, not a family open in the
+    Family Editor, so it takes no family parameters. A project parameter is ADD_PROJECT_PARAMETER's
+    job; to work on a family, open it first., renameExisting false, renamed 0 item(s), replaceExisting
+    false, replaced 0 item(s), scopeReadBack , sharedFile , sharedKind false, switchExisting
+    false, switched 0 item(s). inputs came parameterNames as given (1); kind as given; instance
+    as given; parameterGroup as given; switchExisting not given - false (optional); renameExisting
+    not given - false (optional); replaceExisting not given - false (optional); createMissing
+    not given - false (optional). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 0dde2ad244a2a319
+  fingerprint: fac1d7fd8c8dec21
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -239,20 +293,60 @@ compatibility-note: >
   name, and a new name a formula would read as arithmetic - an operator
   anywhere in it, a digit first, or a word like if or pi.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+  **THE SHARED KIND (version 4)** runs ADD_FAMILY_SHARED_PARAMETERS' code
+  unchanged, with its calls: `Application.SharedParametersFilename`,
+  `OpenSharedParameterFile`, `DefinitionFile.Groups`,
+  `ExternalDefinition.GUID`, `FamilyParameter.IsShared` and `GUID`, 2020 to
+  2027; `FamilyManager.AddParameter(ExternalDefinition, group, bool)` and
+  `ReplaceParameter(FamilyParameter, ExternalDefinition, group, bool)` -
+  BuiltInParameterGroup 2020 to 2024, ForgeTypeId from 2022 - picked by
+  reflection, newest first; `DefinitionGroups.Create`,
+  `DefinitionGroup.Definitions.Create(ExternalDefinitionCreationOptions)` with
+  the options' constructor picked by reflection, ForgeTypeId first; the data
+  types from `ParameterType` and `LabelUtils.GetLabelFor` (2020 to 2022) or
+  `SpecUtils.GetAllSpecs()` and `LabelUtils.GetLabelForSpec` (2021 to 2027);
+  `NamingUtils.IsValidName`. Built on all eight releases on 2026-11-01.
+
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "add a Width parameter to this family"   -> here
 #   "make these family parameters instance"  -> here, switchExisting true
 #   "rename the family parameter CC 1 to 2"  -> here, renameExisting true
-#   "rename these walls / views / sheets"    -> RENAME_ELEMENTS (elements, not
+#   "rename these walls / views / sheets"    -> EDIT_TEXT_VALUES field Name (elements, not
 #                                               a family's parameters)
-#   "rename this family"                     -> RENAME_FAMILY
+#   "rename this family"                     -> EDIT_TEXT_VALUES, field Family (RENAME_FAMILY until 2026-11-01)
 #   "delete these family parameters"         -> DELETE_FAMILY_PARAMETERS
 #   "add a shared parameter to the project"  -> ADD_PROJECT_PARAMETER
+#   "add the shared parameter Equipment Tag to this family" -> here, kind
+#                                               shared (ADD_FAMILY_SHARED_
+#                                               PARAMETERS until 2026-11-01)
 #   "replace the family parameter Width with the shared parameter Unit_Width"
-#                                            -> ADD_FAMILY_SHARED_PARAMETERS,
-#                                               replaceExisting true - a family
-#                                               parameter becomes a shared one
+#                                            -> here, replaceExisting true - a
+#                                               family parameter becomes a
+#                                               shared one
+#   "our shared parameter file has no Gas Pipe Diameter - create it and add it
+#    to this family"                       -> here, createMissing true
+#   "which shared parameter file is Revit using" -> REPORT_SHARED_PARAMETER_FILE,
+#                                               the read - run it FIRST
+#
+# VERSION 4 - WHERE ADD_FAMILY_SHARED_PARAMETERS' INPUTS AND OUTPUTS ARE NOW:
+#   parameterNames, instance,       the same names, read by its own code
+#   parameterGroup, replaceExisting,
+#   createMissing
+#   (no kind)                       kind shared - or empty with replaceExisting
+#                                   or createMissing; another kind is refused,
+#                                   the kind coming from the file
+#   added, alreadyThere, replaced,  the same names
+#   created, formulasReadBack,
+#   keptLinks, sharedFile,
+#   notAFamily, refused, findings
+# RISK: ADMIN, its own (D-106), for every call now. THE SAFER RULE WHERE THEY
+# DIFFERED: a name already in the family as a different parameter - another
+# kind or scope, or shared where a family one was asked - refused that card's
+# whole call, while this card left it alone, said so and added the rest. The
+# refusal is kept, for every kind. NOTHING ELSE WAS OPPOSITE: switching and
+# renaming are this card's; replacing and creating are that card's; asked
+# together, they are refused as two jobs.
 #   "put 600 into Width"                     -> SET_FAMILY_TYPE_VALUES
 #   "what parameters has this family got"    -> REPORT_FAMILY_PARAMETERS
 
@@ -268,3 +362,14 @@ utterances:
   - rename the family parameter CC 1 to 2
   - rename these family parameters
   - call the CC parameter Pipe CC
+  # MOVED 2026-11-01 from ADD_FAMILY_SHARED_PARAMETERS, merged into this card.
+  - add the shared parameter Equipment Tag to this family
+  - add shared parameters from our file to this family
+  - put the office shared parameters into this family
+  - add these shared parameters as type parameters under mechanical
+  - replace the family parameter Width with the shared parameter Unit_Width
+  - make the size parameters the shared parameters from our shared parameter file
+  - make the gas pipe and liquid pipe diameters shared parameters, our shared parameter file does not have them
+  - create the missing shared parameters in our shared parameter file and add them to this family
+  # ...and ADD_FAMILY_SHARED_PARAMETERS's semantic identity, which nothing else declares:
+  - add the office's shared parameters, from its shared parameter file, to the family being edited, or replace family parameters with them - creating in that file the ones it does not have yet

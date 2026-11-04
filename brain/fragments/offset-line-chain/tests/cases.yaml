@@ -1,0 +1,71 @@
+# OFFSET_LINE_CHAIN - built 2026-11-03 in a cloud session with no Revit. NOT
+# RUN. D-30: the negative case is what catches "succeeded and did nothing" -
+# and, for an offset, "copied something nobody selected".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING Group MO, MO1): a
+# scratch project "Heron MO Offset", new from Revit's metric architectural
+# template, saved under %TEMP%\heron-work, never a working model. In the
+# floor plan "Level 1":
+#   C1  three DETAIL LINES drawn as one chain, a U open at the left:
+#       (0,0) -> (3000,0) -> (3000,2000) -> (0,2000), in mm
+#   D1  one detail line on its own, (10000,0) -> (12000,0)
+#   M1  four MODEL LINES on Level 1 drawn as a closed rectangle,
+#       (20000,0) to (24000,3000)
+#   W1  two basic walls joined at a corner, (30000,0) -> (34000,0) -> (34000,3000)
+#   T1  one text note "MO" at (40000,0)
+# Saved.
+
+positive:
+  - given: Heron MO Offset, C1's three lines selected, distance 500, mode left out, towards "1500,1000" (inside the U) - the job's positive
+    expect: >
+      offsetCount 3; results three NEW detail line ids; report "Copied 3 of 3
+      line(s) and wall(s) 500 mm, in 1 chain(s), corners kept joined."; a
+      finding "Chain 1 (3 lines, ...): offset 500 mm towards ..." and "READ
+      BACK: every piece is where it was set". The copies run (0,500) ->
+      (2500,500) -> (2500,1500) -> (0,1500): the bottom and top copies are
+      2500 mm long, the right one 1000 mm, and they MEET at both corners.
+      C1 itself has not moved. MEASURE the corners - a plain copy by one
+      vector would leave them overlapping
+
+  - given: Heron MO Offset, M1's four model lines, distance 300, mode "move", towards left out
+    expect: >
+      offsetCount 4, results the four original ids; a finding naming the
+      direction and "a closed loop"; the rectangle is now 300 mm larger or
+      smaller on every side, still closed. RECORD which way the sign took it,
+      and whether the READ BACK finding names any piece Revit moved (row
+      5b-1458)
+
+  - given: Heron MO Offset, W1's two walls, distance 200, mode left out
+    expect: >
+      offsetCount 2, two new walls of W1's type 200 mm to one side, joined at
+      their corner. RECORD whether the read-back names a piece Revit moved
+      to keep a join (row 5b-1458)
+
+  - given: Heron MO Offset, C1 and D1 selected together, distance -250
+    expect: >
+      offsetCount 4 in 2 chain(s) - D1 a chain of one; each chain's finding
+      names its own direction
+
+negative:
+  - given: Heron MO Offset, T1 (the text note) selected, distance 500 - the job's negative
+    expect: >
+      offsetCount 0; results empty; notOffset T1's id; report "None of the 1
+      element(s) handed in is a model line, a detail line or a wall with a
+      location line. Nothing was offset."; no new element in "Level 1"
+
+  - given: Heron MO Offset, C1's three lines, distance 0
+    expect: refused "The distance must be a length in millimetres other than 0 ... Nothing was offset."; nothing new
+
+  - given: Heron MO Offset, C1's three lines, distance 500, mode "mirror"
+    expect: refused "mode \"mirror\" is not copy or move. Nothing was offset."
+
+  - given: Heron MO Offset, C1's three lines, distance 500, towards "inside"
+    expect: refused "towards \"inside\" is not a point - write it as x,y or x,y,z in millimetres. Nothing was offset."
+
+second_route:
+  - >
+    Revit itself: Modify > Offset, Numerical, 500, Copy ticked, Tab to pick
+    C1 as a chain, cursor inside the U - the same three copies at the same
+    places, measured with Revit's own dimensions
+  - one Ctrl+Z takes each Heron run back as one entry (Golden Rule 16)
+  - CREATE_DIMENSION between C1's bottom line and its copy reads 500 mm

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,87 @@ semantic-identity: "join these walls and floors together so they cut each other"
 kind: action
 domain: revit.elements
 capability: JOIN_GEOMETRY
-version: 1
+version: 3
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-01) - UNJOIN_GEOMETRY WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools"), and is
+# DEPRECATED. The same job from the other side: this card already unjoined
+# (join false), counted pairs already apart in `alreadyRight`, named a pair
+# Revit refused in `wouldNot` and read every pair back. What UNJOIN_GEOMETRY
+# had and this one lacked is here now: the same element on both sides - the
+# target among the elements - REFUSED BY ID in `refused` where version 1
+# skipped it without a word (the safer rule kept), a missing element named the
+# same way, and the "quantities have moved" warning whenever a pair changed.
+# Its `unjoined` is `changed` with join false.
+#
+# NOT CARRIED, AND WHY: UNJOIN_GEOMETRY's two matched lists `first` and
+# `second`, and its refusal of two lists of different lengths. Heron's binder
+# fills ONE element list from the chain or the selection; two unbound element
+# lists are refused as one selection that cannot say which is which
+# (revit/Heron.Revit.Addin/RevitFragment.cs, the selectable count), which is
+# why that card - DRAFT - never ran. Here every element is paired with
+# `target`, the one input that names the other side. Two matched lists wait
+# for a binder that can fill them; the length guard belongs to that input.
+#
+# AND NOT AS TYPED PAIRS EITHER - looked at again on 2026-11-01, in the review
+# of the merges, and again the same day once the binder could bind an optional
+# `Element` to null (HeronBindingNote.AbsentValue). That removed one reason,
+# (1); the pairs are still not carried, for (2) to (4), none of them this
+# card's to change.
+#   (1) GONE: `target` could not be left out. It can now - an `Element`
+#       marked `optional: true` binds null - so a call naming pairs would no
+#       longer have to name a target as well.
+#   (2) TWO LISTS CANNOT ARRIVE APART. A run's chain carries ONE earlier
+#       fragment's outputs by name (RevitFragment.cs, Chain, checked against
+#       expect_from), and FILTER_ELEMENTS_BY_ID - the read typed ids must go
+#       through - leaves one list, `elements`. Run twice, the second list
+#       replaces the first; nothing in the library leaves two element lists
+#       under two names, and the selection fills only one (the selectable
+#       count). `first` and `second` would both be unbound, as they were on
+#       UNJOIN_GEOMETRY, which is why that card never ran.
+#   (3) A STRING OF IDS READ BY THE CARD - "1234:5678; 2345:6789" - would
+#       match ids typed by hand on a WRITE, which the binder refuses: typed ids
+#       are matched only on a read, so what each one is shows before anything
+#       changes (HeronBindingNote.TypedIdsOnAWrite, FRAGMENT-ISSUES 5b-441).
+#   (4) AND ONE LIST SPLIT INTO PAIRS HERE IS A GUESS. With `target` left out,
+#       pairing the set by position assumes an order nothing promises, and
+#       pairing everything with everything is the "much more destructive
+#       operation" UNJOIN_GEOMETRY's own purpose refused - a wrong answer
+#       that looks exactly like a right one.
+# So `target` stays required. Carrying the pairs needs a binder decision - a
+# read that leaves two matched element lists under two names, or the chain
+# keeping one list under a name the caller gives - recorded for the owner.
+#
+# Version 1's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
+#
+# VERSION 3 (2026-11-01) - SWITCH_JOIN_ORDER WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools"; "in every
+# conflict keep the safer rule"), and is DEPRECATED. A third mode beside join
+# and unjoin, on the same target-and-elements shape: `join` switch turns the
+# join between the target and each element round, so the one that was giving
+# up its overlap keeps it. What SWITCH_JOIN_ORDER had, all carried: a pair
+# that is NOT joined refused, never joined first (`refused`); the direction
+# read before and after, a call that left it unchanged named in `wouldNot`
+# and never counted; each turned pair saying which now cuts; and "THE
+# OVERLAP HAS MOVED from one takeoff to the other". Its `switched` is
+# `changed` with join switch.
+#
+# `join` IS A WORD SINCE VERSION 3 - true or join, false or unjoin, or switch.
+# true and false read as version 2's bool did; anything else is refused
+# before anything changes.
+#
+# NOT CARRIED, AND WHY: SWITCH_JOIN_ORDER's two matched lists `first` and
+# `second`, and its different-lengths refusal - the same reason as
+# UNJOIN_GEOMETRY's, above, and worse. Both were `IList<Element>` with
+# `binds: elements`, so BOTH bound the chain's one `elements`: every pair was
+# an element with ITSELF, never joined, so every pair read "not joined" and
+# nothing was ever switched; with nothing in the chain, the add-in refused the
+# two as one selection that cannot say which is which (RevitFragment.cs, the
+# selectable count). That card - DRAFT, never run - could not have switched
+# a pair. Here each element is paired with `target`.
 
 purpose: >
   Joins - or unjoins - the geometry of many elements with one target, so they
@@ -43,6 +121,12 @@ purpose: >
   What it does report is which pairs were ALREADY joined, because re-joining
   them would do nothing and counting them as work would be a lie.
 
+  Version 2 refuses by id the same element on both sides of a pair - the
+  target handed in among the elements - and says that quantities have moved
+  whenever a pair was joined or unjoined.
+
+  Version 3 adds join switch, which reverses an existing join.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -54,10 +138,14 @@ contract:
     - name: target
       type: Element
       source: request
-    # true joins, false unjoins. Asked for, because they are opposite
-    # instructions and a default would be a guess about intent.
+    # true (or join) joins, false (or unjoin) unjoins, and - VERSION 3, from
+    # SWITCH_JOIN_ORDER - switch turns an existing join round. Asked for,
+    # because they are opposite instructions and a default would be a guess
+    # about intent. A WORD since version 3, where version 2 took a bool: true
+    # and false read exactly as they did; anything else is refused before
+    # anything changes.
     - name: join
-      type: bool
+      type: string
       source: request
   provides:
     - name: changed
@@ -73,6 +161,14 @@ contract:
       # Pairs Revit will not join - elements that do not actually touch, and
       # categories it refuses. COUNTED, NOT THROWN, so a batch does not lose
       # the eleven that worked because the twelfth would not (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # VERSION 2, from UNJOIN_GEOMETRY. Pairs refused before Revit was asked:
+      # the target itself among the elements, by id, and a missing element -
+      # and, with join switch (version 3), a pair that is NOT joined, refused
+      # rather than joined first. Why it declined, never a pair it changed
+      # (D-52).
       role: accounting
       type: IList<string>
     - name: findings
@@ -115,22 +211,41 @@ compatibility-note: >
   the reference assemblies at both ends rather than remembered. ElementIds are
   compared as ElementIds and never read as numbers.
 
-# ROUTING - repeated in FIND_CLASHES and CONNECT_OPEN_ENDS.
+# ROUTING - repeated in FIND_CLASHES, CONNECT_OPEN_ENDS and
+# REPORT_JOINED_ELEMENTS (and SWITCH_JOIN_ORDER's, retired into this card).
 #
 #   "join these walls together"      -> here
 #   "the wall and the slab are not
 #    joining"                        -> here
 #   "unjoin these"                   -> here, with join = false
+#   "unjoin these two walls"         -> here, join false - UNJOIN_GEOMETRY's
+#                                       job since version 2
+#   "stop this wall cutting the column" -> here, join false, the column the
+#                                       target
+#   "what is this joined to"         -> REPORT_JOINED_ELEMENTS - read first,
+#                                       because a join nobody knew about is
+#                                       what makes a takeoff wrong
+#   "the wrong one is cutting"       -> here since version 3, join switch
+#                                       (was SWITCH_JOIN_ORDER). The join is
+#                                       right and its direction is not -
+#                                       unjoining there loses the join as well
+#                                       as fixing nothing
+#   "the wall has eaten the column"  -> here, join switch - NOT unjoin
+#   "which one is cutting"           -> REPORT_JOINED_ELEMENTS - the read to do
+#                                       first, and the one that shows a switch
+#                                       worked
+#   "stop them joining at all"       -> DISALLOW_JOIN, which turns the end
+#                                       cleanup off rather than reversing it
 #   "they are touching but not
 #    connected"                      -> CONNECT_OPEN_ENDS - that is MEP
 #                                       CONNECTORS on ducts and pipes, and it
 #                                       can do nothing for a wall
-#   "join these two ducts"           -> PLACE_MEP_FITTING
+#   "join these two ducts"           -> FIT_MEP_JOINTS
 #   "what is clashing"               -> FIND_CLASHES - it REPORTS an overlap.
 #                                       Joining is what makes two elements
 #                                       agree about which one cuts the other
 #   "build a wall between these points" -> CREATE_WALL - it joins nothing
-#   "join these two columns"             -> ADD_SCHEDULE_COMBINED_FIELD if a
+#   "join these two columns"             -> ADD_SCHEDULE_FIELDS, version 2, if a
 #                                           SCHEDULE column is meant. This
 #                                           one joins geometry
 
@@ -138,6 +253,22 @@ compatibility-note: >
 # ROUTING (2026-10-12, the gap fill)
 #
 #   "cope these beams at the columns"       -> COPE_FRAMING
+#
+# ROUTING (2026-11-02, Cut Geometry) - repeated in CUT_GEOMETRY and
+# REPORT_GEOMETRY_CUTS. A cut takes one element's shape out of another; a
+# join shares the overlap. Two Revit commands, two cards.
+#
+#   "cut this beam out of the slab"         -> CUT_GEOMETRY
+#   "uncut these two"                       -> CUT_GEOMETRY, cut false
+#   "which elements is this cutting"        -> REPORT_GEOMETRY_CUTS
+#
+# ROUTING (2026-11-02, Wall Joins) - repeated in SET_WALL_JOIN_TYPE and
+# REPORT_WALL_JOIN_TYPE. The end join of a wall - butt, miter, square off - is
+# not Join Geometry.
+#
+#   "join these walls"                      -> here - declared since row 5b-1419
+#   "make this wall corner a miter join"    -> SET_WALL_JOIN_TYPE
+#   "what join type is at this wall corner" -> REPORT_WALL_JOIN_TYPE
 utterances:
   - join these walls together
   - the wall and the slab are not joining
@@ -145,3 +276,22 @@ utterances:
   - unjoin these
   - join these to the column
   - there is a double line where these meet
+  # MOVED 2026-11-01 from UNJOIN_GEOMETRY, merged into this card.
+  - unjoin these two walls
+  - stop this wall cutting the column
+  - separate these joined elements
+  - undo the join between these
+  - unjoin geometry
+  # ...and its semantic identity, which nothing else declares:
+  - stop these two elements cutting into each other
+  # MOVED 2026-11-01 from SWITCH_JOIN_ORDER, merged into this card.
+  - the wrong one is cutting
+  - swap which element cuts
+  - the wall has eaten the column
+  - turn this join round
+  - switch the join order
+  # ...and its semantic identity, which nothing else declares:
+  - turn this join round so the other one does the cutting
+  # ADDED 2026-11-02, row 5b-1419. COPE_FRAMING's routing table sends this
+  # sentence here; when SET_WALL_JOIN_TYPE was added, ranking moved it there.
+  - join these walls

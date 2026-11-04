@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,33 @@ capability: PLACE_STRUCTURAL_FAMILY
 version: 4
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO PLACE_FAMILY_INSTANCES
+# (place-family-instances), on the owner's instruction in conversation: "make
+# sure there is no duplicate tools". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to PLACE_FAMILY_INSTANCES. A proof
+# below is the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: PLACE_FAMILY_INSTANCES
+  why: >
+    The same job: one point-based family type placed at a list of points on
+    a level, each read back. PLACE_FAMILY_INSTANCES does it and, since its
+    version 4, with this card's rules: `structuralType` column, footing or
+    non-structural, never inferred; a Structural Columns family only as a
+    column and a Structural Foundations one only as a footing; a beam, a
+    brace or any Structural Framing family refused, naming
+    PLACE_LINE_BASED_FAMILY; a column's top level and offset judged before
+    anything is placed, set on the built-ins and read back in `tops`; the
+    no-solid-geometry check. The safer rule is kept where the two differed:
+    one instance landing wrong - no settable top, a top read back wrong, no
+    solid - undoes the whole layout (Article 8), where this card removed
+    that one and kept the rest. Nothing of this card is left out.
+
 
 purpose: >
   Places a point-based family at each point as a REAL STRUCTURAL MEMBER - a

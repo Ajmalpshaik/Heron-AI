@@ -23,6 +23,40 @@ positive:
       `overridden` 1, counted because GetCategoryOverrides reads back
       200,30,30 and 5 - not because the Set was called (5b-453)
 
+  - given: >
+      VERSION 3. Walls, surface-colour=230,230,230 and cut-colour=230,230,230,
+      solidFill true, on a plan where the wall material carries NO surface
+      pattern
+    expect: >
+      the walls come out washed light grey on paper, `solidPattern` names the
+      solid fill ("<Solid fill>"), and `overridden` 1 because the read-back
+      holds the colours AND the stamped pattern on surface and cut. Version 2
+      has no switch, stores the colour against no pattern and paints nothing -
+      LOOK AT IT, because both read back the colour (SET_CATEGORY_SOLID_FILL's
+      case)
+
+  - given: >
+      VERSION 3. the same Walls and surface colour with solidFill NOT given
+    expect: >
+      NO pattern stamped - `solidPattern` empty, the read-back holds no solid
+      fill, and the walls print as before. A surface colour alone never stamps
+      a fill: BUILDERS_WORK_LAYOUT's first step greys the architecture this way
+      and must not paint it solid
+
+  - given: >
+      VERSION 3. a NON-CUTTABLE category - Furniture or Mechanical Equipment -
+      with solidFill true
+    expect: >
+      the surface half lands and is counted, and the category's NAME is in
+      `notCuttable`. Revit stores a cut pattern on a category it never cuts and
+      draws nothing with it, so the cut half is not set there
+
+  - given: VERSION 3. an EMPTY settings object with solidFill true, on Walls
+    expect: >
+      the solid fill alone stamped on surface and cut, read back and counted.
+      The switch is an explicit ask, so it is honoured with nothing beside it;
+      with the switch off the same empty object is still the clear
+
 negative:
   - given: >
       Rooms, the same override, on a floor plan in Revit 2020 - Revit takes it
@@ -46,6 +80,14 @@ negative:
 
   - given: a category that cannot be controlled in this view
     expect: its NAME in `notControllable` - by name, never as a count
+
+  - given: VERSION 3. a model whose solid fill pattern has been PURGED, solidFill true
+    expect: >
+      `refused` carries the sentence, `solidPattern` reads "none found",
+      `overridden` 0 AND NOTHING IS WRITTEN on any category. Writing the
+      colours anyway is the failure the switch exists to prevent, so a partial
+      success here is worse than the refusal. Version 2 has no switch, so this
+      FAILS on it
 
   - given: >
       a category that already has a colour override, then a settings object

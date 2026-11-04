@@ -1,0 +1,43 @@
+# NEEDS-CHECKING Group LL - CREATE_PROJECT_REFERENCE_PLANES, built 2026-11-02
+# in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/create-project-reference-planes-ll-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-project-reference-planes-ll-2026-11-02.yaml
+#
+# THE MODEL (docs/needs-checking/group-ll.md, LL1): the scratch project
+# "refplane-ip", from the default architectural template - levels "Level 1"
+# at 0 and "Level 2" at 4000 mm, straight grids "A" (0,0 to 0,20000 mm) and
+# "B" (6000,0 to 6000,20000 mm), a section "Section 1" looking north across
+# both, the floor plan "Level 1", a "{3D}" view, and one reference plane
+# "Existing RP" along grid A.
+#
+# THE ARRANGEMENT: a plane along grid B in "Level 1" for the positive; the
+# same datum and plane in the "{3D}" view for the negative - a different
+# value, not an empty one (fragment-proving, rules 3 and 5): a plane along a
+# grid is drawn in a plan, so nothing may be made anywhere. Every write here
+# is ROLLED BACK.
+
+model: "refplane-ip scratch project (metric architectural template), grids A and B, one reference plane Existing RP, Revit 2024"
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: create-project-reference-planes
+    expect: created
+    in: "refplane-ip"
+    set:
+      view: "FloorPlan: Level 1"
+      datum: "B"
+      planes: "0"
+    negative-set:
+      view: "{3D}"
+      datum: "B"
+      planes: "0"
+    note: >
+      LL2. Negative - THE FIRST CASE TO RUN: the {3D} view, created empty,
+      refused ""{3D}" is a ThreeD view. A reference plane along a grid is
+      drawn in a plan ... NOTHING WAS MADE.", no plane added anywhere.
+      Positive - "Level 1": created 1, skipped empty, report "Made 1 of 1
+      reference plane(s) in "Level 1" from grid B, each read back: an unnamed
+      plane along grid B".

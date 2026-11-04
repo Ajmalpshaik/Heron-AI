@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -78,7 +78,7 @@ purpose: >
 # placed by PLACE_NESTED_FAMILY on a front reference plane made by
 # CREATE_REFERENCE_PLANES - every plane it makes has normal +Y - came in on
 # the front (-Y) side facing inward and upside down. ROTATE_ELEMENTS_ABOUT_AXIS
-# was refused by Revit ("Can't rotate element into this position"); a
+# (merged into ROTATE_ELEMENTS on 2026-11-01) was refused by Revit ("Can't rotate element into this position"); a
 # rolled-back probe setting IsWorkPlaneFlipped = true put it right - bounding
 # box Y -345..-301 and Z -25..121, following Width. flipHand and flipFacing
 # cannot do that, so the owner flipped it by hand. `flipWorkPlane` (optional,
@@ -155,34 +155,37 @@ contract:
 # NEEDS-CHECKING Group JB proves version 3 (D-30). Version 2's code is still
 # the path every call that leaves flipWorkPlane out takes.
 proof:
-  date: '2026-10-21'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Cinematic ID Test (5,262 elements), Revit 2020, session 68704
+  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name with this phase's own values - run inside a transaction, and Revit
-    reported the transaction group ROLLED BACK afterwards. returned cannotFlip 0 item(s),
-    doorCategory 1 item(s) [id -2000023], flipFacing true, flipHand false, flipped 5, fromToRoomOnly
-    false, isDoor Func`2, labelOf Func`2, notFamilyInstance 0 item(s), roomsLeft 5 item(s)
-    [Door 422466 ('800 x 2100') - no room on either side, so noth..., Door 425292 ('800 x
-    2100') - no room on either side, so noth..., Door 704276 ('Curtain Wall Dbl Glass') -
-    no room on either s..., ...], roomsSwapped 0 item(s), toCheck 5 item(s) [800 x 2100, 800
-    x 2100, Curtain Wall Dbl Glass, ...], windowCategory 1 item(s) [id -2000014]. inputs came
-    elements from select-by-category-name (5); flipHand as given; flipFacing as given; fromToRoomOnly
-    not given - false (optional). on Cinematic ID Test
-  negative_case: 'run with flipFacing=True, flipHand=False arranged with categoryName=Walls,
-    inViewOnly=FloorPlan: Level 1 instead - chosen because it should not contain what this
-    fragment reports - the arrangement was re-made first by running select-by-category-name
-    with this phase''s own values - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned cannotFlip 0 item(s), doorCategory 1 item(s) [id
-    -2000023], flipFacing true, flipHand false, flipped 0, fromToRoomOnly false, isDoor Func`2,
-    labelOf Func`2, notFamilyInstance 24 item(s) [198749, 418079, 422243, ...], roomsLeft
-    0 item(s), roomsSwapped 0 item(s), toCheck 0 item(s), windowCategory 1 item(s) [id -2000014].
-    inputs came elements from select-by-category-name (24); flipHand as given; flipFacing
-    as given; fromToRoomOnly not given - false (optional). on Cinematic ID Test'
+    filter-elements-by-category, set-selection with this phase's own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    boxWas 0 item(s), cannotFlip 4 item(s) [573615, 573637, 573681, ...], cannotFlipWorkPlane
+    0 item(s), doorCategory 1 item(s) [id -2000023], facingWas 0 item(s), flipFacing false,
+    flipHand true, flipWorkPlane false, flipped 40, fromToRoomOnly false, isDoor Func`2, labelOf
+    Func`2, notFamilyInstance 0 item(s), partOf Func`2, planeFlipped 0 item(s), planeOnly
+    0 item(s), planeWas 0 item(s), roomsLeft 0 item(s), roomsSwapped 0 item(s), toCheck 0
+    item(s), windowCategory 1 item(s) [id -2000014], workPlaneFlips 0 item(s). inputs came
+    elements from the selection (44); flipHand as given; flipFacing as given; fromToRoomOnly
+    not given - false (optional); flipWorkPlane not given - false (optional). on P1102 MEP
+  negative_case: run with category=Doors, flipFacing=False, flipHand=False, levelId=Level
+    1 instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running filter-elements-by-category, set-selection with this phase's
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned boxWas 0 item(s), cannotFlip 44 item(s) [573577, 573578, 573579,
+    ...], cannotFlipWorkPlane 0 item(s), doorCategory 1 item(s) [id -2000023], facingWas 0
+    item(s), flipFacing false, flipHand false, flipWorkPlane false, flipped 0, fromToRoomOnly
+    false, isDoor Func`2, labelOf Func`2, notFamilyInstance 0 item(s), partOf Func`2, planeFlipped
+    0 item(s), planeOnly 0 item(s), planeWas 0 item(s), roomsLeft 0 item(s), roomsSwapped
+    0 item(s), toCheck 0 item(s), windowCategory 1 item(s) [id -2000014], workPlaneFlips 0
+    item(s). inputs came elements from the selection (44); flipHand as given; flipFacing as
+    given; fromToRoomOnly not given - false (optional); flipWorkPlane not given - false (optional).
+    on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 437b569d99c81fef
+  fingerprint: 997a071323206d2e
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

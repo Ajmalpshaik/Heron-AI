@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SEL-008
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,12 @@ semantic-identity: "add these to the set i saved, or take them out of it"
 kind: action
 domain: revit.selection
 capability: UPDATE_SAVED_SET
-version: 1
+# VERSION 2 (2026-11-01): CREATE_SELECTION_FILTER was merged into this card on
+# the owner's instruction - "make sure there is no duplicate tools" - and is
+# DEPRECATED; see the merge block above `utterances`. Version 1's proof below
+# is kept as the record; it no longer describes the code, so the card is DRAFT
+# until version 2 is proved on a real model (D-30).
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -29,10 +34,12 @@ purpose: >
   beams, the set still names them, and a set that quietly shrinks looks like it
   was edited by somebody. `missing` is that number, read fresh each time.
 
-  **CREATING IS A DIFFERENT FRAGMENT AND THIS ONE REFUSES TO DO IT.** Asking to
+  **CREATING IS ASKED FOR BY NAME, WITH MODE "create" (version 2).** Asking to
   add to a set that does not exist is almost always the name being wrong -
-  spelled differently, or on another model. Creating one silently would leave
-  two sets a letter apart, both half right, which is worse than the error.
+  spelled differently, or on another model - so it is still refused. Creating
+  one silently would leave two sets a letter apart, both half right. Mode
+  "create" saves the elements as a new set, read back, applied to no view; a
+  name already in use is refused and points at "replace". DRAFT until proved.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -45,7 +52,9 @@ contract:
     - name: setName
       type: string
       source: request
-    # "add" | "remove" | "replace" | "delete"
+    # "add" | "remove" | "replace" | "delete" | "create" - the last since
+    # version 2, from CREATE_SELECTION_FILTER: a NEW set of the elements handed
+    # in, refused when the name is in use, by a saved set or a view filter.
     - name: mode
       type: string
       source: request
@@ -70,6 +79,16 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: string
+    - name: filterId
+      # VERSION 2, from CREATE_SELECTION_FILTER: the set's id - the one made,
+      # or the existing one edited. Invalid when refused.
+      role: result
+      type: ElementId
+    - name: findings
+      # VERSION 2, from CREATE_SELECTION_FILTER: what was done, in words - for
+      # "create", how many it holds, how many were handed in when Revit kept
+      # fewer, and that it is applied to NO view.
+      type: IList<string>
 
 proof:
   date: '2026-09-13'
@@ -117,12 +136,28 @@ compatibility-note: >
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "add these to the saved set"        -> here
-#   "take those out of the set"         -> here
+#   "take those out of the set"         -> here - declared here and answered
+#                                          by identity; since 2026-11-02
+#                                          ranking alone puts CUT_GEOMETRY
+#                                          first on it (FRAGMENT-ISSUES
+#                                          5b-1416). A saved selection set,
+#                                          never a cut
 #   "delete that selection set"         -> here, mode "delete"
-#   "save these as a set"               -> CREATE_SELECTION_FILTER. This one
-#                                          refuses to create, because a
-#                                          mistyped name would leave two sets a
-#                                          letter apart
+#   "save these as a set"               -> here since version 2, mode
+#                                          "create" - it was
+#                                          CREATE_SELECTION_FILTER's, merged in.
+#                                          "add" to a set that is not there is
+#                                          still refused, because a mistyped
+#                                          name would leave two sets a letter
+#                                          apart
+#   "make a selection set"              -> here, mode "create"
+#   "i want to find these again later"  -> here, mode "create"
+#   "make a filter for supply air"      -> CREATE_VIEW_FILTER - a RULE that keeps
+#                                          working as the model changes; a saved
+#                                          set is a LIST
+#   "put that filter on this view"      -> APPLY_VIEW_FILTER - the step that
+#                                          makes a saved set do something to a
+#                                          drawing
 #   "select what is in that set"        -> SELECT_FROM_SAVED_SET
 #   "load a saved selection set and select its elements" -> SELECT_FROM_SAVED_SET
 #                                          - this answered it on the spelling
@@ -134,6 +169,27 @@ compatibility-note: >
 #                                          selection and not saved anywhere
 #   "hide these while i work"           -> ISOLATE_ELEMENTS or HIDE_ELEMENTS,
 #                                          composed after the set is read
+#
+# VERSION 2 (2026-11-01) - CREATE_SELECTION_FILTER WAS MERGED INTO THIS CARD on
+# the owner's instruction in conversation: "make sure there is no duplicate
+# tools", every conflict to keep the SAFER rule. It is DEPRECATED. One saved
+# set, made or changed - the same element, the same SetElementIds and the same
+# read-back. Where each retired input and output is now:
+#
+#   CREATE_SELECTION_FILTER             here, mode "create"
+#     elements                          elements
+#     filterName                        setName
+#     filterId                          filterId
+#     saved                             setSize, read back; changed beside it
+#     findings                          findings
+#
+# THE SAFER RULE WHERE THEY DIFFERED. CREATE_SELECTION_FILTER, given a name
+# that already existed, REPLACED that set's contents and said so after the
+# fact. Here "create" with a name already in use is REFUSED with nothing
+# written, and the refusal names mode "replace" - the word that says the old
+# contents go - and "add". A view filter of that name is refused by name too,
+# where that card met Revit's own error ("The given value for name is already
+# in use"). Not carried: the silent replace on create.
 
 utterances:
   - add these to the saved set
@@ -142,3 +198,9 @@ utterances:
   - delete that selection set
   - the saved set is out of date
   - take those out of the set
+  # MOVED 2026-11-01 from CREATE_SELECTION_FILTER, merged into this card.
+  - save these as a set
+  - make a selection set
+  - save this selection with a name
+  - i want to find these again later
+  - put these in a named filter

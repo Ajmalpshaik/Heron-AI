@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -127,7 +127,11 @@ contract:
     # CHECKED with its fix, joined - a list would arrive cut to three. Empty
     # in a project.
     - name: familyReport
-      role: result
+      # ACCOUNTING, NOT RESULT (row 5b-1410): every check is written here,
+      # PASS lines too, so a family with nothing off standard still fills it;
+      # offStandard and warned are the result. classificationReport says so
+      # for the same reason.
+      role: accounting
       type: string
     - name: warned
       # In a family document, the WARNs - things that may be meant. In a
@@ -162,61 +166,70 @@ contract:
       type: string
       
 proof:
-  date: '2026-10-18'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Project1 (3,047 elements), Revit 2020, session 2648
-  positive_case: 'run as it would normally be run. returned classificationReport OmniClass
-    Number: 43 blank (Rectangular Mullion : 50 x 150mm, Circular Mullion : 50mm Radius, Rectangular
-    Mullion : 30mm Square, Circular Mullion : 25mm Radius, UC-Universal Columns-Column : UC305x305x97,
-    System Panel : Glazed, Empty System Panel : Empty, M_Rectangular Handrail : 50 x 50mm,
-    M_Circular Handrail : 30mm, M_Circular Handrail : 40mm, and 33 more) - counted, not off
-    standard: no code is required unless requiredParameters names it; 0 not in the classification
-    file; 0 filed under another category; 0 filed under no category; 0 not checked; 101 not
-    judged - an annotation, or a category the classification file gives no code. Assembly
-    Code: 0 not in the Assembly Code table; 0 an entry for another category; 0 not checked.
-    Keynote: 0 not in the keynote table, a warning only; 0 not checked. Classification file:
-    C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk Revit 2020\OmniClassTaxonomy.txt.,
-    clsAssembly BuiltInParameter, clsAssemblyLabel Assembly Code, clsAssemblyOther Func`3,
-    clsAssemblyTable 795 entry(ies), clsCode BuiltInParameter, clsCodeLabel OmniClass Number,
-    clsFiledUnder Func`3, clsFiledWords Func`2, clsFirstTen Func`2, clsKeynoteKeys HashSet`1,
-    clsKeynoteLabel Keynote, clsLabelFor Func`3, clsLoad Action, clsNewNames false, clsPath
-    C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk Revit 2020\OmniClassTaxonomy.txt,
-    clsProblem (null), clsRows 2645 item(s) [(23.10.00.00, Site Products, , ), (23.10.05.00,
-    Ground Anchorages, , ), (23.10.05.10, Retaining/Stabilizing Ground Anchors, , ), ...],
-    clsSample false, clsTidy Func`2, clsTried 1 item(s) [C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
-    Revit...], familyReport , findings 376 item(s) [189 family type(s) off standard, 185 not
-    checked for connect..., M_Section Head - Filled : M_Section Head - Filled  - NOT CHE...,
-    M_Section Head - Filled : M_Section Head - Filled  (0 placed..., ...], mustHaveConnectors
-    true, notChecked 185, offStandard 189, warned 0. inputs came namePattern as given; requiredParameters
-    as given (1); mustHaveConnectors as given. on Project1'
-  negative_case: 'run with categoryName=Text Notes, inViewOnly=FloorPlan: Level 1, mustHaveConnectors=False,
-    namePattern=, requiredParameters= instead - chosen because it should not contain what
-    this fragment reports. returned classificationReport OmniClass Number: 43 blank (Rectangular
-    Mullion : 50 x 150mm, Circular Mullion : 50mm Radius, Rectangular Mullion : 30mm Square,
-    Circular Mullion : 25mm Radius, UC-Universal Columns-Column : UC305x305x97, System Panel
-    : Glazed, Empty System Panel : Empty, M_Rectangular Handrail : 50 x 50mm, M_Circular Handrail
-    : 30mm, M_Circular Handrail : 40mm, and 33 more) - counted, not off standard: no code
-    is required unless requiredParameters names it; 0 not in the classification file; 0 filed
-    under another category; 0 filed under no category; 0 not checked; 101 not judged - an
-    annotation, or a category the classification file gives no code. Assembly Code: 0 not
-    in the Assembly Code table; 0 an entry for another category; 0 not checked. Keynote: 0
-    not in the keynote table, a warning only; 0 not checked. Classification file: C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
-    Revit 2020\OmniClassTaxonomy.txt., clsAssembly BuiltInParameter, clsAssemblyLabel Assembly
+  model: P1102 Elbow24, Revit 2024, session 59960 - the count is NOT recorded because 1,801
+    elements was measured on P1102 Furn24, the document in front, and this ran against another
+    one (row 15)
+  positive_case: 'run as it would normally be run. returned classificationReport PASS OmniClass
+    Number 23.60.30.11.14 Pipework Fittings is one of the classification file''s codes for
+    Pipe Fittings. Classification file: C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
+    Revit 2024\OmniClassTaxonomy.txt., clsAssembly BuiltInParameter, clsAssemblyLabel Assembly
     Code, clsAssemblyOther Func`3, clsAssemblyTable 795 entry(ies), clsCode BuiltInParameter,
     clsCodeLabel OmniClass Number, clsFiledUnder Func`3, clsFiledWords Func`2, clsFirstTen
     Func`2, clsKeynoteKeys HashSet`1, clsKeynoteLabel Keynote, clsLabelFor Func`3, clsLoad
     Action, clsNewNames false, clsPath C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
-    Revit 2020\OmniClassTaxonomy.txt, clsProblem (null), clsRows 2645 item(s) [(23.10.00.00,
+    Revit 2024\OmniClassTaxonomy.txt, clsProblem (null), clsRows 2645 item(s) [(23.10.00.00,
     Site Products, , ), (23.10.05.00, Ground Anchorages, , ), (23.10.05.10, Retaining/Stabilizing
     Ground Anchors, , ), ...], clsSample false, clsTidy Func`2, clsTried 1 item(s) [C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
-    Revit...], familyReport , findings 2 item(s) [0 family type(s) off standard, 0 not checked
-    for connectors...., OmniClass Number: 43 blank (Rectangular Mullion : 50 x 150mm...],
-    mustHaveConnectors false, notChecked 0, offStandard 0, warned 0. inputs came namePattern
-    as given; requiredParameters as given (0); mustHaveConnectors as given. on Project1'
+    Revit...], familyReport "P1102 Elbow24" (Pipe Fittings, Part Type Elbow, Work Plane-Based
+    No, 2 connector(s)): 1 FAIL, 0 WARN, 13 PASS, 0 NOT CHECKED. FAIL Name: "P1102 Elbow24"
+    does not contain "TRG_". FIX: rename the family file before it is loaded (RENAME_FAMILY
+    renames it in a project). | PASS Work Plane-Based is No. | PASS Part Type is Elbow. |
+    PASS pipe connector 4709 points out of the family. | PASS pipe connector 4710 points out
+    of the family. | PASS "Nominal Radius", which sizes pipe connector 4709, is an instance
+    parameter with no formula, 6 formula(s) follow it. | PASS Part Type Elbow with 2 pipe
+    connector(s), as that part has. | PASS pipe connector 4709 is Fitting. | PASS pipe connector
+    4710 is Fitting. | PASS pipe connector 4709 is primary and lies on the X axis. | PASS
+    pipe connector 4709''s Angle is driven by the instance parameter "Angle". | PASS pipe
+    connector 4710''s Angle is driven by the instance parameter "Angle". | PASS Every family
+    parameter is used by something. | PASS OmniClass Number 23.60.30.11.14 Pipework Fittings
+    is one of the classification file''s codes for Pipe Fittings., findings 2 item(s) ["P1102
+    Elbow24" (Pipe Fittings, Part Type Elbow, Work Plane-..., Checked in the family, before
+    it is loaded. A copy already i...], mustHaveConnectors false, notChecked 0, offStandard
+    1, warned 0. inputs came namePattern as given; requiredParameters as given (0); mustHaveConnectors
+    as given. on P1102 Elbow24'
+  negative_case: 'run with mustHaveConnectors=False, namePattern=, requiredParameters= instead
+    - chosen because it should not contain what this fragment reports. returned classificationReport
+    PASS OmniClass Number 23.60.30.11.14 Pipework Fittings is one of the classification file''s
+    codes for Pipe Fittings. Classification file: C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
+    Revit 2024\OmniClassTaxonomy.txt., clsAssembly BuiltInParameter, clsAssemblyLabel Assembly
+    Code, clsAssemblyOther Func`3, clsAssemblyTable 795 entry(ies), clsCode BuiltInParameter,
+    clsCodeLabel OmniClass Number, clsFiledUnder Func`3, clsFiledWords Func`2, clsFirstTen
+    Func`2, clsKeynoteKeys HashSet`1, clsKeynoteLabel Keynote, clsLabelFor Func`3, clsLoad
+    Action, clsNewNames false, clsPath C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
+    Revit 2024\OmniClassTaxonomy.txt, clsProblem (null), clsRows 2645 item(s) [(23.10.00.00,
+    Site Products, , ), (23.10.05.00, Ground Anchorages, , ), (23.10.05.10, Retaining/Stabilizing
+    Ground Anchors, , ), ...], clsSample false, clsTidy Func`2, clsTried 1 item(s) [C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
+    Revit...], familyReport "P1102 Elbow24" (Pipe Fittings, Part Type Elbow, Work Plane-Based
+    No, 2 connector(s)): 0 FAIL, 0 WARN, 13 PASS, 0 NOT CHECKED. PASS Work Plane-Based is
+    No. | PASS Part Type is Elbow. | PASS pipe connector 4709 points out of the family. |
+    PASS pipe connector 4710 points out of the family. | PASS "Nominal Radius", which sizes
+    pipe connector 4709, is an instance parameter with no formula, 6 formula(s) follow it.
+    | PASS Part Type Elbow with 2 pipe connector(s), as that part has. | PASS pipe connector
+    4709 is Fitting. | PASS pipe connector 4710 is Fitting. | PASS pipe connector 4709 is
+    primary and lies on the X axis. | PASS pipe connector 4709''s Angle is driven by the instance
+    parameter "Angle". | PASS pipe connector 4710''s Angle is driven by the instance parameter
+    "Angle". | PASS Every family parameter is used by something. | PASS OmniClass Number 23.60.30.11.14
+    Pipework Fittings is one of the classification file''s codes for Pipe Fittings., findings
+    2 item(s) ["P1102 Elbow24" (Pipe Fittings, Part Type Elbow, Work Plane-..., Checked in
+    the family, before it is loaded. A copy already i...], mustHaveConnectors false, notChecked
+    0, offStandard 0, warned 0. inputs came namePattern as given; requiredParameters as given
+    (0); mustHaveConnectors as given. on P1102 Elbow24'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 4c36974d12fb85eb
+  fingerprint: b9a7beb08bb9010e
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -273,21 +286,22 @@ compatibility-note: >
   family document holds an Assembly Code table, are Revit's - an empty read
   is NOT CHECKED, never blank (NEEDS-CHECKING).
 
-# ROUTING - repeated in RENAME_FAMILY, FIND_UNUSED_FAMILIES and
+# ROUTING - repeated in EDIT_TEXT_VALUES, FIND_PURGEABLE_ELEMENTS and
 # READ_ELEMENT_PARAMETERS.
 #
 #   "check the families are named to our standard" -> here - a READ
 #   "audit the family library"           -> here
 #   "why does nothing schedule properly" -> here - a missing parameter on the
 #                                           TYPE is the usual cause
-#   "rename this family"                 -> RENAME_FAMILY - a WRITE, and it must
+#   "rename this family"                 -> EDIT_TEXT_VALUES, field Family
+#                                           (RENAME_FAMILY until 2026-11-01) - a WRITE, and it must
 #                                           not answer a question about whether
 #                                           the names are right
-#   "which families are not used"        -> FIND_UNUSED_FAMILIES - about USAGE,
+#   "which families are not used"        -> FIND_PURGEABLE_ELEMENTS - about USAGE,
 #                                           not about whether they are built
 #                                           correctly
 #   "which families are nested inside this one"
-#                                        -> GROUP_BY_ASSEMBLY, which walks UP to
+#                                        -> REPORT_NESTED_FAMILIES, which walks UP to
 #                                           the host and DOWN to every nested
 #                                           part. That sentence resolved HERE
 #                                           until 2026-09-05, and this fragment

@@ -292,7 +292,9 @@ compatibility-note: >
 #    wall type"                             of the TYPE, every wall of it
 #   "make a floor from these points"     -> CREATE_FLOOR, which takes ONE typed
 #                                           loop and cuts no openings
-#   "make a ceiling from these points"   -> CREATE_CEILING, the same
+#   "make a ceiling from these points"   -> CREATE_FLOOR with a ceiling type,
+#                                           the same (CREATE_CEILING until
+#                                           2026-11-01)
 #   "what shape is this room"            -> READ_ROOM_GEOMETRY, which hands
 #                                           back the outline and the holes
 #                                           separately
@@ -308,3 +310,7 @@ utterances:
   - line the walls of every room with plaster
   - add a tile finish to the room walls up to 2400
   - put wall finishes in these rooms
+  # ADDED 2026-11-01 (row 5b-1372): claimed in the routing table above since
+  # before this date and reached here ranked, until CREATE_FOUNDATION_SLAB's
+  # card took it on 2024 and 2020. Declared so it reaches here by identity.
+  - make a slab under this block of rooms

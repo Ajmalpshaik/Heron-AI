@@ -6,10 +6,84 @@ positive:
       both among the elements, each named with its category, matching what
       Purge Unused lists for them
 
+  # VERSION 2, added 2026-11-01 - FIND_UNUSED_FAMILIES merged in. NONE OF
+  # THESE HAS BEEN RUN. Each FAILS on version 1, which declared 2024 to 2027
+  # only, had no perFamily, wholeFamilyUnused or route, and was never offered
+  # below 2024.
+  - given: >
+      Revit 2024 or later, a project with a diffuser family of 5 types, 2
+      placed, and a second family loaded with none placed, categories empty
+    expect: >
+      route "Revit's own unused-element list", `elements` holding the unused
+      types (and the unplaced family) as before, `perFamily` reading "3 of 5
+      type(s) unused" for the first and "NOTHING used" for the second, and the
+      second named in `wholeFamilyUnused`
+
+  - given: the same project opened in Revit 2020, 2021, 2022 or 2023
+    expect: >
+      route "placed-instance count", `elements` and `purgeableNames` EMPTY,
+      the same two families in `perFamily` and the second in
+      `wholeFamilyUnused`, and the findings saying nothing is handed on for
+      deleting. Version 1 was not offered on that release at all
+
+  - given: >
+      Revit 2020-2023, wall types, duct types and pipe types all placed
+    expect: >
+      none of them reported - the count reads GetTypeId on EVERY placed
+      element, not only FamilyInstances
+
 negative:
   - given: 'categories "No Such Category"'
     expect: >
       refused as no such category; no elements
+
+  # VERSION 2, added 2026-11-01. NOT RUN.
+  - given: >
+      Revit 2020-2023, a family placed only INSIDE another family and never in
+      the project
+    expect: >
+      it IS listed in `perFamily`, and the findings say a family placed only
+      inside another reads as unused here and that nothing is handed on - so
+      no chain can delete it and break the parent. `elements` empty
+
+  - given: 'Revit 2020-2023, categories "No Such Category"'
+    expect: >
+      refused as no such category, as on 2024 and later; nothing listed
+
+  # VERSION 3 - the four FIND_UNUSED_* cards merged in. Each fails on
+  # version 2, which has none of these outputs.
+  - given: a model group placed twice that offers an attached detail group with no instance of its own, and a model group type placed nowhere
+    expect: >
+      the unplaced model group type in `unusedGroupTypeNames`, the attached
+      detail group in `attachedDetailGroupsInUse` and NOT in either list; on
+      2024+ if Revit's list offers the detail group it is in `heldBack`, not
+      in `elements`
+
+  - given: an image placed nowhere but named by a door type's Type Image, and one image used by nothing
+    expect: >
+      only the second in `unusedImageNames`, usedImageCount 1 - and neither
+      image in `elements` on 2020-2023 (nothing is handed on there)
+
+  - given: a view template no view follows that the Floor Plan view type names as its default, and another no one names
+    expect: >
+      the second in `unusedTemplateNames`, templatesKeptAsDefault 1 and the
+      finding that deleting it changes every new plan
+
+  - given: a filter used only in that unused template
+    expect: it in `filtersOnlyInUnusedTemplates`, not in `unusedFilterNames`
+
+  - given: includeMaterials true, a material used ONLY as paint on one wall face
+    expect: >
+      it NOT in `unusedMaterialNames` - the paint read counted it - and
+      scannedInstances and scannedTypes above zero. With includeMaterials left
+      out, `unusedMaterialNames` is empty and the finding says materials were
+      not walked
+
+  - given: categories "filters" alone
+    expect: >
+      only the templates-and-filters report run, `route` saying Revit's list
+      was not asked, `elements` EMPTY - an empty scope must never ask Revit's
+      list for every category
 
 second_route:
   - Revit's Manage > Purge Unused on the same project, its list read

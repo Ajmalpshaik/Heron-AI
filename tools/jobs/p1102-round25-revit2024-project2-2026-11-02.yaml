@@ -1,0 +1,41 @@
+# Round 25, 2026-11-02 - Revit 2024.3, session 57392. "Project2" = a new, never-saved project the
+# modeller made from Revit 2024's default template for this work: levels L1 (0) and L2 (3657.6 mm),
+# 22 sheets, no walls, no rooms, no ducts (read before the run); duct type "Rectangular Duct :
+# Default". What each card needs is made by a PROVEN creator inside the same rolled-back run, at
+# 0..9000 mm. Every run is ROLLED BACK. RESULTS of the first run: place-rooms - CREATE_WALL's
+# `points` (the loop) reached PLACE_ROOMS' own `points` too, so it dropped 5 rooms at the corners in
+# both legs (one value name, two meanings); create-mep-system - ducts join a system only through
+# equipment or terminals; align-elements wants an edge with a height and NO axis (alignZ
+# counts as one) - third run.
+model: "Project2 (new project from Revit 2024's default template, never saved), Revit 2024"
+
+defaults:
+  in: "Project2"
+  setup: []
+  write: true
+
+jobs:
+  - fragment: place-rooms
+    setup: [create-wall]
+    expect: created
+    set: {level: "L1", wallType: "Basic Wall: Exterior - Brick on Mtl. Stud", points: "0,0,0; 6000,0,0; 6000,4000,0; 0,4000,0; 0,0,0", height: 3000, structural: false, levelId: "L1", placeKind: "rooms", phaseId: "New Construction", planViewId: "FloorPlan: L1 - Architectural"}
+    negative-set: {level: "L1", wallType: "Basic Wall: Exterior - Brick on Mtl. Stud", points: "0,0,0; 6000,0,0; 6000,4000,0; 0,4000,0; 0,0,0", height: 3000, structural: false, levelId: "L2", placeKind: "rooms", phaseId: "New Construction", planViewId: "FloorPlan: L2 - Architectural"}
+    note: >
+      The walls stand on L1, 3000 mm high, so they bound nothing at L2 (3657.6 mm).
+
+  - fragment: align-elements
+    setup: [create-duct-runs]
+    keep-chain: true
+    expect: aligned
+    set: {systemType: "Supply Air", ductType: "Rectangular Duct: Default", level: "L1", runs: "400x200: 0,-6000,2700; 4000,-6000,2700 | 300x300: 6000,-6000,2700; 9000,-6000,2700", edge: "centre", targetZ: 3000}
+    negative-set: {systemType: "Supply Air", ductType: "Rectangular Duct: Default", level: "L1", runs: "400x200: 0,-6000,2700; 4000,-6000,2700 | 300x300: 6000,-6000,2700; 9000,-6000,2700", edge: "sideways", targetZ: 3000}
+    note: >
+      The ducts are drawn at 2700. A run already at the height asked counts as aligned by design
+      (impl line 162), so the negative is by value: an edge word the card does not take.
+
+  - fragment: create-mep-system
+    setup: [create-duct-runs]
+    keep-chain: true
+    expect: memberIds
+    set: {ductType: "Rectangular Duct: Default", level: "L1", runs: "400x200: 0,-6000,2700; 4000,-6000,2700", systemType: "Supply Air", systemName: "Heron Supply"}
+    negative-set: {ductType: "Rectangular Duct: Default", level: "L1", runs: "400x200: 0,-6000,2700; 4000,-6000,2700", systemType: "Return Air", systemName: "Heron Return"}

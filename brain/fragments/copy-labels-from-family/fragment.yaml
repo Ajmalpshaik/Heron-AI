@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,34 @@ capability: COPY_LABELS_FROM_FAMILY
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO COPY_ELEMENTS_BETWEEN_DOCUMENTS (copy-elements-between-documents), on the owner's instruction
+# in conversation: "make sure there is no duplicate tools", every conflict to
+# keep the safer rule. Constitution Article 1: kept, never deleted, so its
+# record and its proof stay readable and it can be brought back. Nothing
+# offers it now - retrieval leaves DEPRECATED out, and its sentences claim
+# nothing in the identity table (heron_search RETIRED_FRAGMENTS). Its
+# sentences moved to COPY_ELEMENTS_BETWEEN_DOCUMENTS. The proof below is the record of what this
+# card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: COPY_ELEMENTS_BETWEEN_DOCUMENTS
+  why: >
+    The same copy: elements from another document open in this Revit into the
+    one in front, by CopyElements, read back. COPY_ELEMENTS_BETWEEN_DOCUMENTS
+    copies labels since its version 3 with `labels` true - an explicit mode,
+    because it still leaves view-specific elements out by default - with this
+    card's rules moved whole: view to view from a seed family into the tag,
+    annotation or title block family in front, the same category only (refused
+    before anything is copied, in Revit's own words), picked by label id
+    (elementIds) or labelContains, the first at placeAtMm, each copy read back
+    against its seed - text and type on every release, parameter by parameter
+    on 2027 - a differing copy named and never counted in kept, a label type
+    of the same name named first. The safer rule where they differed is the
+    keeper's: this card skipped a label Revit refused, or one with no view of
+    its kind there, and kept the rest; the keeper copies nothing then and
+    rolls the call back.
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
 # 2026-10-21: Ajmal PS, building the pipe tag TRG_Pipe_Tag on Revit 2020,

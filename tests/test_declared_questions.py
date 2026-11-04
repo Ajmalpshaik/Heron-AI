@@ -38,9 +38,16 @@ WHAT IT PROVES
   5. IT READS THE FILES AND NOT THE STORE, so it holds in CI where there is
      none - and the real library is REPORTED here, never gated on, because a
      finding is a question.
+
+  9. A RETIRED CARD IS PASSED OVER (2026-11-01). A DEPRECATED or ARCHIVED
+     card answers nothing - retrieval offers none, and none claims a phrase
+     by identity (heron_search.RETIRED_FRAGMENTS) - so a question it declares
+     is no finding. SET_VIEW_SCALE's "what scale is this view" was reported
+     as resolving by identity to a write after the card had retired.
 """
 
 import importlib.util
+import io
 import os
 import sys
 
@@ -98,6 +105,11 @@ def _printed_by_main(threshold, ladder):
     finally:
         (TOOL.FRAG.load_all, TOOL.SKILL.load_all, TOOL.GJ.write_threshold,
          sys.stdout, sys.argv) = saved
+
+
+def found_by_capability(found):
+    """{capability: card} over a load_all() answer."""
+    return dict((str(one.data.get("capability")), one) for one in found.values())
 
 
 def main():
@@ -218,6 +230,31 @@ def main():
           not in printed,
           "a SKILL that asks and then tells is counted and listed, not "
           "printed as 'none' under a count of one")
+
+    print("\n9. a retired card answers nothing, so it is passed over")
+    retired = Card("SET_SOMETHING_OLD", "MODIFY", ["what scale is this view"])
+    retired.status = "DEPRECATED"
+    archived = Card("SET_SOMETHING_OLDER", "MODIFY", ["what is the view range"])
+    archived.data["heron-status"] = "ARCHIVED"
+    live = Card("SET_SOMETHING", "MODIFY", ["what scale is this view"])
+    asked, told, unranked = TOOL.questions_on_writes(
+        [retired, archived, live], write, ladder)
+    check([row[0] for row in asked] == ["SET_SOMETHING"],
+          "of three cards declaring a question, the DEPRECATED one and the "
+          "ARCHIVED one are passed over and the live one is the finding - "
+          "got %r" % ([row[0] for row in asked],))
+    check(TOOL.SEARCH.RETIRED_FRAGMENTS == ("DEPRECATED", "ARCHIVED")
+          and "SEARCH.RETIRED_FRAGMENTS" in io.open(
+              os.path.join(ROOT, "tools", "check-declared-questions.py"),
+              encoding="utf-8").read(),
+          "the retired statuses are heron_search's, imported - the list the "
+          "identity table is built by - never a copy")
+    on_disk = [row for row in TOOL.questions_on_writes(
+        list(found.values()), threshold, real_ladder)[0]
+        if TOOL.is_retired(found_by_capability(found).get(row[0]))]
+    check(not on_disk,
+          "and in the real library no finding is a retired card's - %r"
+          % (on_disk,))
 
     print()
     if FAILURES:

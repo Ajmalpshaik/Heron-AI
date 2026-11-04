@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -68,6 +68,45 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-02'
+  by: Ajmal PS
+  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, create-mass-floors with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    allLevels 4 item(s) [Level 1, Level 2, Level 3, ...], alreadySo 0, changed 12, everyFloor
+    (null), findings 7 item(s) [12 mass floor Usage value(s) set and read back; 0 already
+    sa..., mass 579452: Level 1 "" -> "Retail", Level 2 "" -> "Office"., mass 579920: Level
+    1 "" -> "Retail", Level 2 "" -> "Office"., ...], levelNamed Func`2, lines 6 item(s) [mass
+    579452: Level 1 "" -> "Retail", Level 2 "" -> "Office"., mass 579920: Level 1 "" -> "Retail",
+    Level 2 "" -> "Office"., mass 579921: Level 1 "" -> "Retail", Level 2 "" -> "Office".,
+    ...], massCategory 1 item(s) [id -2003400], massList 6 item(s) [Sporthalle, Giebel, Giebel,
+    ...], plan 2 entry(ies), problems 0 item(s), report mass 579452: Level 1 "" -> "Retail",
+    Level 2 "" -> "Office". | mass 579920: Level 1 "" -> "Retail", Level 2 "" -> "Office".
+    | mass 579921: Level 1 "" -> "Retail", Level 2 "" -> "Office". | mass 579922: Level 1
+    "" -> "Retail", Level 2 "" -> "Office". | mass 579923: Level 1 "" -> "Retail", Level 2
+    "" -> "Office". | mass 579943: Level 1 "" -> "Retail", Level 2 "" -> "Office"., text Level
+    1=Retail; Level 2=Office. inputs came elements from create-mass-floors (6); usage as given.
+    on P1102 MEP'
+  negative_case: 'run with category=Mass, levelNames=Level 1, Level 2, usage=Roof Level=Retail
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running filter-elements-by-category, create-mass-floors with this
+    phase''s own values - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned allLevels 4 item(s) [Level 1, Level 2, Level 3, ...],
+    alreadySo 0, changed 0, everyFloor (null), findings 2 item(s) [0 mass floor Usage value(s)
+    set and read back; 0 already sai..., Roof Level: none of these masses has a mass floor
+    there - no...], levelNamed Func`2, lines 1 item(s) [Roof Level: none of these masses has
+    a mass floor there - no...], massCategory 1 item(s) [id -2003400], massList 6 item(s)
+    [Sporthalle, Giebel, Giebel, ...], plan 1 entry(ies), problems 0 item(s), report Roof
+    Level: none of these masses has a mass floor there - nothing set; CREATE_MASS_FLOORS makes
+    one., text Roof Level=Retail. inputs came elements from create-mass-floors (6); usage
+    as given. on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: bf7d7f70f1780b7b
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

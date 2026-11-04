@@ -1,0 +1,50 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+# Arrange on a SCRATCH project (NEEDS-CHECKING Group LR): "Heron Dimension Type
+# Test", made from the shipped metric template, so it holds the template's
+# linear, angular, radial and spot dimension types; with three linear
+# dimensions on "Linear - 3mm Arial" (or the template's nearest) in a floor
+# plan. The counts track the document (D-53).
+
+positive:
+  - given: >
+      the scratch project, dimensionTypeName and style left out ("all")
+    expect: >
+      typeCount the dimension types Annotate > Dimension > Types lists across
+      every style, each line naming its family (Linear Dimension Style,
+      Angular Dimension Style ...) and type, its style, Text Size in mm as
+      Type Properties shows it, Text Font, Tick Mark by the arrowhead's name,
+      Line Weight, Color, the witness line settings and Units Format; the
+      linear type the three dimensions use "used by 3 dimension(s)";
+      dimensionCount 3
+  - given: >
+      the same project, dimensionTypeName "Linear - 3mm Arial"
+    expect: >
+      typeCount 1, Text Size 3 mm, Text Font Arial, the Tick Mark name Type
+      Properties shows, Units Format as Type Properties > Units Format shows
+      it - "Use project settings (...)" when that box is ticked - used by 3
+      dimension(s)
+  - given: >
+      the same project, style "angular"
+    expect: >
+      only the angular dimension types, each line "style Angular", Units
+      Format in degrees
+
+negative:
+  - given: >
+      the scratch project, dimensionTypeName "No Such Dimension Type"
+    expect: >
+      typeCount 0, dimensionTypes empty, a finding naming the dimension types
+      there are - never another type's settings. THIS IS THE FIRST CASE TO RUN
+  - given: >
+      the same project, dimensionTypeName a TEXT type's name - "2.5mm Arial"
+    expect: >
+      typeCount 0, a finding saying it is a text type, not a dimension type,
+      and naming REPORT_TEXT_TYPES
+  - given: >
+      the same project, style "spot slope" where no spot slope type exists
+    expect: >
+      typeCount 0, a finding naming the styles there are
+
+second_route:
+  - Annotate > Dimension > Types, then Type Properties of each type in Revit - each setting, and Units Format
+  - select all instances of the type in Project Browser (Select All Instances > In Entire Project) and compare the count with used by

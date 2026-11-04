@@ -2,11 +2,11 @@ positive:
   - given: a level and planKind "floor"
     expect: a floor plan for that level, named as asked, in the Project Browser
 
-  - given: CREATE_LEVEL followed by this, for four new levels
+  - given: CREATE_LEVELS followed by this, for four new levels
     expect: >
       four levels AND four plans - which is what "add 4 more floors" means.
       Levels on their own give nothing to draw on, and that gap is exactly what
-      CREATE_LEVEL reports and this fixes
+      CREATE_LEVELS reports and this fixes
 
   - given: planKind "rcp"
     expect: a reflected ceiling plan. The word is matched as well as "ceiling", because that is what gets said

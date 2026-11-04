@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LNK-015
 heron-step: 17
-heron-status: PROVEN
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,29 @@ capability: SET_LINK_PATH_TYPE
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-01 - MERGED INTO SET_LINK_ROOM_BOUNDING (set-link-room-bounding), on the
+# owner's instruction in conversation: "make sure there is no duplicate
+# tools", then "ok go ahead merge all". Constitution Article 1: kept, never
+# deleted, so its record and its proof stay readable and it can be brought
+# back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to SET_LINK_ROOM_BOUNDING. A proof below is
+# the record of what this card's code did, not a claim about today.
+deprecated:
+  date: '2026-11-01'
+  by: Ajmal PS
+  superseded-by: SET_LINK_ROOM_BOUNDING
+  why: >
+    The same tool: a Revit link TYPE's own settings, the same links found
+    the same way (`linkName`, the start of a name, empty for every link),
+    an already-set link never written again, every change read back.
+    SET_LINK_ROOM_BOUNDING since its version 2 takes this card's `pathType`
+    - relative or absolute, a Revit Server or cloud link named and left
+    alone, the model regenerated before the read-back - and its `report`;
+    Room Bounding and the path type are each optional, one at least
+    required. No rule of the two was opposite. Nothing of this card is left
+    out.
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.

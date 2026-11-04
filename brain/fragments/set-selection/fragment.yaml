@@ -9,7 +9,7 @@ semantic-identity: "put these elements in the current selection"
 kind: action
 domain: revit.selection
 capability: SET_SELECTION
-version: 1
+version: 2
 source: OFFICIAL
 risk: EXECUTE
 
@@ -19,39 +19,85 @@ purpose: >
   filter - that is the point of it being a separate fragment rather than part
   of a "select ducts" whole.
 
+  **VERSION 2 ALSO TAKES YOU TO THEM** (ZOOM_TO_ELEMENTS merged in). Selecting
+  is not showing: with show, Revit's own Show moves the screen to the
+  elements - and may change the active view, so the view it landed on comes
+  back in viewAfter. With keepSelection too, the camera moves and the
+  selection is left alone - "where is it". Ids that no longer exist are left
+  out and named in missing.
+
 contract:
   needs:
     - name: uidoc
       type: UIDocument
     - name: elements
       type: IList<Element>
+    # VERSION 2, from ZOOM_TO_ELEMENTS. true also runs Revit's own Show - the
+    # screen moves to the elements, and Revit may open another view to do it.
+    # Absent binds false (row 5b-227), version 1 exactly.
+    - name: show
+      type: bool
+      source: request
+      optional: true
+    # VERSION 2. true with show: the camera only, the selection left as it
+    # was - ZOOM_TO_ELEMENTS's alsoSelect=false. Without show it is refused,
+    # nothing touched. Absent binds false: the selection is set, as version 1.
+    - name: keepSelection
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: selectedCount
       role: result
       type: int
+    - name: shown
+      # VERSION 2. How many the screen was moved to; 0 without show.
+      role: result
+      type: int
+    - name: missing
+      # VERSION 2. Ids handed in that resolve to nothing, left out of the
+      # selection and the Show. What it was GIVEN and could not use, never
+      # something it selected (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: viewAfter
+      # VERSION 2. The view Show LANDED ON, which may not be the one that was
+      # on screen - so the jump is explainable. Empty without show. Where the
+      # screen is, not a thing it selected (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      # VERSION 2. What it did to the screen and the selection, and what it
+      # left out.
+      role: accounting
+      type: IList<string>
 
+# VERSION 1's PROOF, KEPT AS THE RECORD. Version 2 changed impl/, so its
+# fingerprint no longer describes the code and the card is DRAFT until
+# version 2 is proved on a real model (D-30).
 proof:
-  date: '2026-09-09'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 17356
-  positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name with this phase's own values - run inside a transaction and ROLLED
-    BACK, so the model was left exactly as it was. returned ids 9 item(s) [1491217, 1491220,
-    1491225, ...], selectedCount 9. inputs came elements from the selection (9). on Snowdon-scratch_ajmal.al
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  positive_case: run with category=Ducts - the first of 3 tracked inputs - the arrangement
+    was re-made first by running filter-elements-by-category with this phase's own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned doc Document, findings 0 item(s), ids 10 item(s) [404243, 411658, 411660, ...],
+    keepSelection false, missing 0 item(s), selectedCount 10, show false, shown 0, viewAfter
+    . inputs came elements from filter-elements-by-category (10); show not given - false (optional);
+    keepSelection not given - false (optional). on P1102 MEP
   negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). set-selection\
     \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
     \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
     \ about a set it was not given - is caught here by the answer following the input exactly\
-    \ across 5 different inputs:\n\n      22 ducts in M1 -> selectedCount 22\n      the duct\
-    \ tags in M1 -> selectedCount 9\n      the air terminals in M1 -> selectedCount 10\n \
-    \     the mechanical equipment in L3 -> selectedCount 10\n      the ducts in L3 -> selectedCount\
-    \ 307\n\n    Different inputs, exact matches every time. A fragment falling back to the\
-    \ active view, the whole model, or a previous run could not do that."
+    \ across 3 different inputs:\n\n      category=Ducts -> selectedCount 10\n      category=Duct\
+    \ Fittings -> selectedCount 9\n      category=Air Terminals -> selectedCount 2\n\n   \
+    \ Different inputs, exact matches every time. A fragment falling back to the active view,\
+    \ the whole model, or a previous run could not do that."
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 6ba8ea08aad3b693
-
+  fingerprint: f5d5f58ca93611c4
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -61,10 +107,30 @@ compatibility-note: >
   2020 to 2027. No ElementId is built from an int, so 2024's move to 64-bit ids
   does not reach this code.
 
-# ROUTING - repeated in READ_SELECTION.
+  Version 2 adds `UIDocument.ShowElements(ICollection<ElementId>)` and
+  `UIDocument.ActiveView`, the calls ZOOM_TO_ELEMENTS made, PROVEN on Revit
+  2024 and unchanged 2020 to 2027. `UIDocument` comes from the Revit UI
+  namespace the fragment wrapper already imports.
+
+# ROUTING - repeated in READ_SELECTION, SHOW_ELEMENTS, HIDE_ELEMENTS and
+# ZOOM_TO_LINKED_ELEMENTS.
 #
 #   "select these"             -> here. A CHANGE to the selection
 #   "highlight what you found" -> here
+#   "where is it"              -> here, show and keepSelection - the camera
+#                                 only, since ZOOM_TO_ELEMENTS was merged in
+#                                 (version 2)
+#   "zoom to these"            -> here, show and keepSelection
+#   "select and show me these" -> here, show
+#   "show me these"            -> HERE, with show, when they are hidden BY
+#                                 DISTANCE - off screen, on another level, in
+#                                 another view. SHOW_ELEMENTS when a VIEW
+#                                 SETTING hides them: it unhides, and moves no
+#                                 camera. The sentence does not say which, so
+#                                 both tables carry both
+#   "zoom to the beams in the structural link" -> ZOOM_TO_LINKED_ELEMENTS. Show
+#                                 takes host ids, and a linked element's id
+#                                 means nothing in the host
 #   "what did I select"        -> READ_SELECTION. A QUESTION about the
 #                                 selection, and it must not be answered by the
 #                                 fragment that overwrites it
@@ -72,13 +138,39 @@ compatibility-note: >
 #   "move what I picked up 200"-> READ_SELECTION, then MOVE_ELEMENTS
 #   "how many ducts are there" -> COUNT_ELEMENTS. Nothing to do with what is
 #                                 picked on screen
-#   "select these forms" (by id)     -> SELECT_FAMILY_FORMS first, in a
+#   "select these forms" (by id)     -> REPORT_FAMILY_FORMS first, in a
 #                                       family; its forms then come here
-#                                       with expect_from select-family-forms
-#   "make a selection set"           -> CREATE_SELECTION_FILTER - a SAVED
+#                                       with expect_from report-family-forms
+#   "make a selection set"           -> UPDATE_SAVED_SET, mode "create" - a SAVED
 #                                       set that survives the model closing.
 #                                       This highlight is gone at the next
 #                                       click
+
+# VERSION 2 (2026-11-01) - ZOOM_TO_ELEMENTS WAS MERGED INTO THIS CARD on the
+# owner's instruction ("make sure there is no duplicate tools"; "merge means
+# ... all area need to be covered"), and is DEPRECATED. SET_SELECTION keeps
+# its name: a great many cards and jobs name it (grep says how many). The same job - put what was found
+# in front of the modeller, changing nothing in the model. What that card had
+# and this one lacked is here now: Revit's Show (`show`), which may change the
+# active view, reported in `viewAfter`; the camera only, selection left alone
+# (`keepSelection`); `missing`, dead ids left out before Show is asked; Show
+# never attempted with nothing left; `findings`.
+#
+# THE SAFER RULE IN EACH CONFLICT IS KEPT. Version 1 handed dead ids to the
+# selection; they are left out of it now as well. An empty set still clears
+# the selection, as version 1 - unless keepSelection asked for it to be left
+# alone. keepSelection without show is refused, nothing touched.
+#
+# NOT CARRIED, AS OPPOSITE: ZOOM_TO_ELEMENTS's `alsoSelect`, false meaning
+# "do not select" - here leaving out a switch never stops the selection that
+# version 1 always made, so the camera-only mode is asked for by
+# keepSelection=true. Its alsoSelect=true is show=true; its alsoSelect=false
+# is show=true with keepSelection=true. Its viewAfter was counted as a
+# result; here it is accounting - where the screen is, not a thing found.
+#
+# WHERE ITS OUTPUTS ARE NOW: shown, missing, viewAfter, findings -> the same
+# names. Its sentences moved here. Risk stays EXECUTE, which revit_show runs:
+# Show acts on the session, not the building.
 
 # risk is EXECUTE and not MODIFY on purpose: changing what is highlighted is
 # not a change to the model, survives no transaction and needs no undo. The
@@ -91,3 +183,10 @@ utterances:
   - show me the ones you found
   - put them in the selection
   - clear the selection
+  # MOVED 2026-11-01 from ZOOM_TO_ELEMENTS, merged into this card.
+  - take me to these on screen
+  - where is it
+  - zoom to these
+  - zoom in on what you found
+  - take me to that element
+  - select and show me these

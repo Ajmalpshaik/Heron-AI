@@ -1,0 +1,50 @@
+# Round 27, 2026-11-02 - Revit 2024.3, session 57392. "Project2" = the modeller's new, never-saved
+# project from Revit 2024's default template, with his 44 walls on L1. Kept in it first, for these
+# proofs, by PROVEN creators: a text note "ISSUED 09 SEP 2026" on the L1 plan (CREATE_TEXT_NOTE), a
+# level "HERON MID" at 1500 mm (CREATE_LEVELS) and 44 parts made from the walls (CREATE_PARTS).
+# A CREATE_TEXT_NOTE setup step could not hand its note on (row 5b-1406), so the note is the
+# model's own here. Every run below is read-only or ROLLED BACK.
+# RESULT: find-dates-in-views and edit-text-values PASS. divide-parts - Revit refused the level as
+# a cutter ("The element id should refer to a..."); merge-parts - the pieces are not touching parts
+# of one material and source. Both stay DRAFT.
+model: "Project2 (new project from Revit 2024's default template, with walls, parts, a note and a level kept for this work), Revit 2024"
+
+defaults:
+  in: "Project2"
+  setup: []
+
+jobs:
+  - fragment: find-dates-in-views
+    expect: datesFound
+    set: {sheetsOnly: false, onlySheetsGiven: false}
+    negative-set: {sheetsOnly: true, onlySheetsGiven: false}
+    note: >
+      The dated note is on a floor plan, so asking for sheets only finds none.
+
+  - fragment: edit-text-values
+    write: true
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: changed
+    setup-set: {category: "Text Notes", inViewOnly: "FloorPlan: L1 - Architectural"}
+    negative-setup-set: {category: "Text Notes", inViewOnly: "FloorPlan: L1 - Architectural"}
+    set: {field: "Text", mode: "replace", text: "SEP", replacement: "OCT"}
+    negative-set: {field: "Text", mode: "replace", text: "ZZZNOTHINGHERE", replacement: "OCT"}
+
+  - fragment: divide-parts
+    write: true
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: divided
+    setup-set: {category: "Parts", levelId: "L1"}
+    negative-setup-set: {category: "Parts", levelId: "L1"}
+    set: {cutterNames: "HERON MID"}
+    negative-set: {cutterNames: "ZZZ No Such Level"}
+
+  - fragment: merge-parts
+    write: true
+    setup: [filter-elements-by-category, divide-parts]
+    keep-chain: true
+    expect: merged
+    set: {category: "Parts", levelId: "L1", cutterNames: "HERON MID"}
+    negative-set: {category: "Walls", levelId: "L1", cutterNames: "HERON MID"}

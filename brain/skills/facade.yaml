@@ -40,7 +40,7 @@ purpose: >
   ROUTE A - CURTAIN WALL. Follow the curtain-wall method: REPORT_CURTAIN_WALL_TYPE
      first, DUPLICATE_TYPE + CHANGE_ELEMENT_TYPE when only this wall must
      change, CREATE_WALL with the curtain type (a curved one is one wall on an
-     arc), SET_CURTAIN_WALL_GRID and SET_CURTAIN_WALL_MULLIONS on the type.
+     arc), SET_CURTAIN_WALL_GRID - its grid and its mullions - on the type.
      Then, on THIS wall only:
      - a bay or a transom the type's spacing does not give, or "divide into
        N equal panels": ADD_CURTAIN_GRID_LINES, with a mullion type when the
@@ -58,14 +58,16 @@ purpose: >
      1. CREATE_CURTAIN_SYSTEM on the mass's faces - its side faces by
         default, all of them or its top only when the modeller says so. The
         grid and mullions come from the CURTAIN SYSTEM TYPE.
-     2. SET_CURTAIN_WALL_GRID and SET_CURTAIN_WALL_MULLIONS on the curtain
+     2. SET_CURTAIN_WALL_GRID - grid and mullions - on the curtain
         system type, named as Revit writes it: its Grid 1 and Grid 2 - a
         layout and a spacing in millimetres - and its Grid 1 and Grid 2
         mullions, never vertical and horizontal, because which way each grid
         runs is the face's. Every curtain system of that type changes, and
         the answer says how many. Proved on Revit 2020 on 2026-11-01
-        (NEEDS-CHECKING Group JP): on a mass's upright faces Grid 1 ran
-        upright and Grid 2 level - read it off each answer, never assume it.
+        (NEEDS-CHECKING Group JP) as the two setters' version 3 and version 2:
+        on a mass's upright faces Grid 1 ran upright and Grid 2 level - read
+        it off each answer, never assume it. The merged setter, version 4, is
+        DRAFT until it is proved again (D-117).
      3. A panel that differs: SELECT_IN_REGION on that panel, then
         CHANGE_ELEMENT_TYPE to a curtain panel type. SET_CURTAIN_PANEL_TYPE
         works on curtain WALLS only and refuses a curtain system; a panel on
@@ -105,8 +107,9 @@ purpose: >
        SET_ADAPTIVE_POINT_ORIENTATION, Host and Loop System.
      - it is a fixed shape on a face (a bracket, a canopy arm): a face-based
        family (hosted-family-creation), PLACE_FAMILY_ON_FACE.
-     - it repeats at an even spacing: place one, then ARRAY_ELEMENTS - or
-       ARRAY_ELEMENTS_RADIAL round a curved facade.
+     - it repeats at an even spacing: place one, then COPY_ELEMENTS with a
+       count and spacingMm - or with sweepDegrees round a curved facade
+       (ARRAY_ELEMENTS_RADIAL until 2026-11-01).
      - its section is a profile swept along a line (a louvre blade, a fin, a
        mullion cap): profile-family-creation builds the profile, and the
        family's sweep takes it with SET_FAMILY_SWEEP_PROFILE. A band round
@@ -160,7 +163,6 @@ needs:
   - CHANGE_ELEMENT_TYPE
   - CREATE_WALL
   - SET_CURTAIN_WALL_GRID
-  - SET_CURTAIN_WALL_MULLIONS
   - ADD_CURTAIN_GRID_LINES
   - SET_CURTAIN_PANEL_TYPE
   - SELECT_IN_REGION
@@ -178,8 +180,7 @@ needs:
   - SET_ADAPTIVE_POINT_ORIENTATION
   - PLACE_ADAPTIVE_COMPONENTS
   - PLACE_FAMILY_ON_FACE
-  - ARRAY_ELEMENTS
-  - ARRAY_ELEMENTS_RADIAL
+  - COPY_ELEMENTS
   - CREATE_EDGE_SWEEPS
   - SET_FAMILY_SWEEP_PROFILE
   # Route E
@@ -211,7 +212,11 @@ note: >
   SET_CURTAIN_WALL_GRID (version 3) and SET_CURTAIN_WALL_MULLIONS (version 2)
   were widened to a curtain system type for route B, on the owner's word; their
   proofs went stale with it, so routes A and B are both refused a kept grid or
-  mullion change until NEEDS-CHECKING Group JP proves them again. The whole
+  mullion change until NEEDS-CHECKING Group JP proves them again. Group JP
+  proved both on Revit 2020 on 2026-11-01. The same day
+  SET_CURTAIN_WALL_MULLIONS was merged into SET_CURTAIN_WALL_GRID (version 4),
+  which sets the grid and the mullions, in one call or two, and is DRAFT until
+  it is proved in its turn. The whole
   method is DRAFT until each route has been run on a scratch model with a
   negative case (D-30). The coverage, route by route, is in
   docs/work-notes/plans/facade-capability.md.

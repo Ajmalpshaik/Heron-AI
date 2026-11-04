@@ -286,12 +286,30 @@ compatibility-note: >
 #                                               This makes the curtain system;
 #                                               that sets the type it is of
 #   "put mullions on the curtain system
-#    type"                                   -> SET_CURTAIN_WALL_MULLIONS, the
-#                                               same way - Grid 1 and Grid 2
-#                                               Mullions (version 2, DRAFT until
-#                                               Group JP)
+#    type"                                   -> SET_CURTAIN_WALL_GRID, `mullions`,
+#                                               the same way - Grid 1 and Grid 2
+#                                               Mullions (SET_CURTAIN_WALL_MULLIONS
+#                                               merged into it 2026-11-01; DRAFT
+#                                               until Group JP)
 #   "put this family on the face of the
 #    mass"                                   -> PLACE_FAMILY_ON_FACE
+
+# JUDGED 2026-11-01 (a duplicate sweep's look-alike, on the owner's rule "if one
+# tool can safely do both, merge") AGAINST CREATE_WALLS_BY_FACE AND KEPT APART -
+# the next sweep should not reopen it unless one of these stops being true:
+#   - A DIFFERENT OBJECT AND A DIFFERENT RESULT IN REVIT: NewCurtainSystem2
+#     makes ONE curtain system ACROSS every face of a host, a
+#     CurtainSystemType; FaceWall.Create makes ONE WALL PER FACE, a WallType.
+#   - THE SAFETY RULE AGAINST A DOUBLED SKIN CANNOT BE HELD FOR BOTH. That card
+#     reads which masses already carry walls by face and skips them; a curtain
+#     system has no host face the API reads back, so this card can only count
+#     one standing in the outline (alreadyNear, NEEDS-CHECKING JM8). One tool
+#     choosing by the type would skip a re-run for walls and double it here.
+#   - THE FACES DIFFER: vertical, top or all here; sides or vertical there.
+#   - THE RECORD: CREATE_ELEMENTS_BY_FACE did both and was narrowed to walls on
+#     2026-10-29 when this card reached main; this card is PROVEN (2026-11-01)
+#     and that one is DRAFT, so a merge would only put a proven tool back to
+#     DRAFT for a job it does not share.
 
 utterances:
   - put a curtain system on the faces of this mass

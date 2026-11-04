@@ -1,0 +1,73 @@
+# NEEDS-CHECKING Group KG - CREATE_MEP_PLACEHOLDER and CONVERT_MEP_PLACEHOLDERS,
+# built 2026-11-01 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/mep-placeholders-kg-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/mep-placeholders-kg-2026-11-01.yaml
+#
+# THE MODEL is the Project2 scratch model (Revit's Systems template, never
+# saved) in Revit 2020 - the model the MEP batches of 2026-10-18 ran on, where
+# Supply Air, "Rectangular Duct: Default", Domestic Cold Water and Level 1 are
+# known (tools/jobs/revit2020-scratch-round4-2026-10-18.yaml and
+# create-flex-pipe-2026-10-14.yaml). Never a working model.
+#
+# CREATE: no selection. The negative is the same values with the same point
+# twice - nothing drawn, tooShort 1, no exception - the negative CREATE_DUCT
+# was proved with. The pipe type's name is NOT known; KG1 reads it (this card
+# with ductOrPipeType left out lists the types) and the pipe rows are KG3.
+#
+# CONVERT: the model has no placeholders until KG4 draws them by hand in the
+# strip from 0,14000 to 6000,16000 mm on Level 1 - P1 and P2 (Supply Air duct
+# placeholders meeting at 3000,15000), P3 (a Domestic Cold Water pipe
+# placeholder) and R1 (one real Supply Air duct), all at 2700 mm. The positive
+# selects all four, so R1 must come back named and untouched while P1 to P3
+# convert; the negative selects the real duct alone. Every write here is
+# ROLLED BACK, so the placeholders are still there for the next phase.
+
+model: "Project2 (Systems template, scratch, never saved), Revit 2020"
+
+defaults:
+  in: "Project2"
+  write: true
+  setup:
+    - select-in-region
+    - set-selection
+
+jobs:
+  - fragment: create-mep-placeholder
+    setup: []
+    expect: elements
+    set:
+      systemType: Supply Air
+      ductOrPipeType: "Rectangular Duct: Default"
+      level: Level 1
+      points: "1000,3000,2700; 4000,3000,2700; 4000,6000,2700"
+    negative-set:
+      systemType: Supply Air
+      ductOrPipeType: "Rectangular Duct: Default"
+      level: Level 1
+      points: "1000,3000,2700; 1000,3000,2700"
+    note: >
+      KG2. Positive - elements 2 duct placeholders, report "2 duct
+      placeholder(s) drawn on Level 1 ... 3000 mm; ... 3000 mm", no "reads
+      back as a real duct" in findings. Negative - THE FIRST CASE TO RUN: the
+      same point twice, so elements empty, tooShort 1, refused empty.
+
+  - fragment: convert-mep-placeholders
+    expect: converted
+    setup-set:
+      minMm: "0,14000,2500"
+      maxMm: "6000,16000,2900"
+      exact: false
+      categories: "Duct Placeholders, Pipe Placeholders, Ducts"
+    negative-setup-set:
+      minMm: "0,14000,2500"
+      maxMm: "6000,16000,2900"
+      exact: false
+      categories: "Ducts"
+    note: >
+      KG5. Needs KG4's placeholders first. Positive - converted holds the
+      real ducts and pipe where P1, P2 and P3 were, each with its length;
+      notPlaceholders names R1 "already a real duct"; notConverted empty.
+      Record whether P1 kept its id and whether fittingsMade holds an elbow at
+      3000,15000. Negative - THE FIRST CASE TO RUN: R1 alone, so converted
+      empty and "Nothing was converted".

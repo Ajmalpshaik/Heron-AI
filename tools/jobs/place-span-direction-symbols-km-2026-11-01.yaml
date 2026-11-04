@@ -1,0 +1,55 @@
+# NEEDS-CHECKING Group KM - PLACE_SPAN_DIRECTION_SYMBOLS, built 2026-11-01 in
+# a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/place-span-direction-symbols-km-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/place-span-direction-symbols-km-2026-11-01.yaml
+#
+# REVIT 2025 OR LATER. SpanDirectionSymbol.Create first exists in 2025; on
+# 2020 to 2024 the card is not offered at all.
+#
+# THE MODEL is a scratch project from Revit's metric STRUCTURAL template made
+# in Revit 2026 or 2027, where Group HY's HY15 runs: S1 (a 200 mm structural
+# concrete floor), W1 (a 200 mm structural concrete wall), N2 (an
+# architectural, non-structural floor) on Level 1, and S2 (a structural floor)
+# on Level 2. KM1 makes it and SAVES it, with any span direction symbol Revit
+# drew on S1 or S2 when they were sketched deleted - so the plan starts with
+# none. Never a working model.
+#
+# THE SYMBOL TYPE'S NAME IS NOT KNOWN. KM2 runs this card with symbolType left
+# out, which places nothing and lists the span direction types the template
+# loads; write the one-way type it lists into `symbolType` below, in both legs,
+# before the batch. Until then no type answers to the name and the run is
+# refused naming the loaded types - expected, NOT RUN.
+#
+# THE ARRANGEMENT: SELECT_BY_CATEGORY_NAME and SET_SELECTION, as Group KF -
+# Floors in "FloorPlan: Level 1" for the positive (S1 and N2), Walls for the
+# negative (W1): a different set, not an empty one. Every write here is ROLLED
+# BACK.
+
+model: scratch project from the metric structural template (KM1), Revit 2026 or 2027
+
+defaults:
+  write: true
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: place-span-direction-symbols
+    expect: placed
+    setup-set:
+      categoryName: Floors
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categoryName: Walls
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      view: "Level 1"
+      symbolType: "THE TYPE KM2 READ"
+    negative-set:
+      view: "Level 1"
+      symbolType: "THE TYPE KM2 READ"
+    note: >
+      KM3. Positive - placed 1 on S1, newSymbols 1 id, N2 in notStructural,
+      report naming S1's span in degrees. Negative - THE FIRST CASE TO RUN:
+      the walls instead of the floors, so placed 0 and W1 in notFloors.

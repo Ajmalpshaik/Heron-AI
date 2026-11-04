@@ -1,0 +1,82 @@
+# NEEDS-CHECKING Group MM - REPORT_MECHANICAL_SETTINGS, REPORT_ENERGY_SETTINGS,
+# CREATE_ENERGY_MODEL and IMPORT_GBXML, built 2026-11-02 in a cloud session
+# with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/mechanical-energy-gbxml-mm-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/mechanical-energy-gbxml-mm-2026-11-02.yaml
+#
+# THE TWO SETTINGS WRITES ARE NOT HERE. SET_MECHANICAL_SETTINGS and
+# SET_ENERGY_SETTINGS are risk ADMIN, and D-106 lets no batch send one
+# (batch-prove's NOT_IN_A_BATCH): each is proved by name with
+# `validate ... --allow-publish --write`, the lines in
+# docs/needs-checking/group-mm.md (MM3, MM5).
+#
+# THE MODELS (docs/needs-checking/group-mm.md, MM1), all scratch, saved under
+# %TEMP%\heron-work, never a working model, any one release 2020 to 2027:
+#   "Heron MM Mechanical"  a new project from the metric mechanical template
+#   "Heron MM Energy"      a new project from the metric architectural
+#                          template with four walls, a floor and a roof
+#                          enclosing one room on Level 1, Energy Settings'
+#                          analysis mode "building elements"
+#   "Heron MM Family"      any family, saved from the same Revit
+#   "Heron MM gbXML"       a new project from the metric mechanical template
+# and two files: %TEMP%\heron-work\heron-mm.xml, "Heron MM Energy" exported
+# with File > Export > gbXML, and %TEMP%\heron-work\not-gbxml.xml, a plain
+# text file renamed. Each path below is written out in full on the PC - the
+# placeholder C:\Users\you\AppData\Local\Temp is replaced, never left.
+#
+# EVERY WRITE HERE IS ROLLED BACK.
+
+model: "scratch projects Heron MM Mechanical, Heron MM Energy, Heron MM gbXML and the family Heron MM Family, Revit 2024"
+
+jobs:
+  - fragment: report-mechanical-settings
+    in: "Heron MM Mechanical"
+    expect: ductSettings
+    set:
+      show: duct
+    negative-set:
+      show: pipe
+    note: >
+      MM2. Positive - show duct: ductSettings opens "Duct Settings - duct use
+      annotation scale for single line fittings ...", every value as Mechanical
+      Settings > Duct Settings shows it. Negative - show pipe: ductSettings
+      EMPTY (the duct page not read) and pipeSettings filled - a reader that
+      ignored `show` shows here.
+
+  - fragment: report-energy-settings
+    in: "Heron MM Energy"
+    negative-in: "Heron MM Family"
+    expect: settingsRead
+    note: >
+      MM4. Positive - energySettings opens "Energy Settings - building type
+      ...", every value as Analyze > Energy Settings shows it; RECORD the
+      glazing percentage beside the dialog's. Negative - the family:
+      settingsRead 0, energySettings empty, a finding that Energy Settings are
+      a project's.
+
+  - fragment: create-energy-model
+    write: true
+    in: "Heron MM Energy"
+    negative-in: "Heron MM Family"
+    expect: analyticalSpaces
+    note: >
+      MM6. Negative - THE FIRST CASE TO RUN: the family - refused "The document
+      in front is a family ...", energyModel invalid, counts 0. Positive: an
+      energy model id, analyticalSpaces 1 or more, analyticalSurfaces 6 or
+      more, report "Energy model created ...". Rolled back.
+
+  - fragment: import-gbxml
+    write: true
+    in: "Heron MM gbXML"
+    expect: imported
+    set:
+      path: 'C:\Users\you\AppData\Local\Temp\heron-work\heron-mm.xml'
+    negative-set:
+      path: 'C:\Users\you\AppData\Local\Temp\heron-work\not-gbxml.xml'
+    note: >
+      MM7. Negative - THE FIRST CASE TO RUN: not-gbxml.xml - Revit refuses
+      ("The GBXml file is not valid for importing!" or its sibling), nothing
+      kept. Positive: heron-mm.xml - imported lists the new elements and the
+      report counts them by category. RECORD whether Revit ran the import
+      inside the host's transaction at all (row 5b-1452). Rolled back.

@@ -9,15 +9,54 @@ semantic-identity: "add the office starter set of twelve materials, each made re
 kind: action
 domain: revit.elements
 capability: CREATE_STARTER_MATERIALS
-version: 3
+version: 4
+# VERSION 4, 2026-11-01 - CREATE_MATERIAL MERGED IN; see the block below.
+#
 # VERSION 3, 2026-10-20 - row 5b-1280. The owner saw Prism-152 in the Asset
 # Browser as "Glass (Clear)"; version 2 listed and matched it as "Glass -
 # clear" and refused the browser's spelling. With no exact match, a library
 # name is now matched with capitals, spaces and punctuation ignored, and the
-# answer names the asset taken. Version 2's proof below no longer describes
-# the code: DRAFT until it is proved again.
+# answer names the asset taken. (This said version 2's proof no longer
+# described the code; the proof below is dated 2026-10-20 and its fingerprint
+# matched version 3's code - it was version 3's. Version 4 changed impl/, so
+# it is now the record, and this card is DRAFT until version 4 is proved.)
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 4 (2026-11-01) - CREATE_MATERIAL WAS MERGED INTO THIS CARD on the
+# owner's instruction ("ok go ahead merge all", after "make sure there is no
+# duplicate tools" and "in every conflict keep the safer rule"), and is
+# DEPRECATED. ON 2026-10-20 THE OWNER HAD CHOSEN TO LEAVE CREATE_MATERIAL AS
+# IT WAS ("CREATE_MATERIAL - PROVEN, and left as it is", below); his
+# 2026-11-01 "merge all" supersedes that choice. The same job - materials
+# made in this document by name, a name already in use left as it is and
+# reported. What that card had and this one lacked, all of it here:
+# `materialNames`, any names, each made with exactly that name (the office
+# prefix is NOT put on them); `colours`, a shading colour each in name order,
+# "R,G,B; R,G,B"; `transparencies`, a percentage each in name order, CLAMPED
+# to 0..100 and the clamp reported; a material with a shading colour only and
+# no appearance asset, said so in the answer. In a family document too.
+#
+# THE OPPOSITE RULE, AND THE SAFER ONE KEPT (Constitution Article 8, all or
+# nothing): CREATE_MATERIAL kept the rest when Revit refused one name, and
+# skipped a blank name and made the others. Here a name Revit refuses fails
+# the call and nothing is kept, and a blank name, a name holding a character
+# Revit refuses, a colour that is not one or a transparency that is not a
+# whole number refuses the call before anything is made. NEW FOR THE MERGE:
+# each material made by name is read back - its name, shading colour and
+# transparency - as the starter set always was.
+#
+# `starterPick` LEFT OUT IS NOW "auto": all twelve when no names are given -
+# version 3's "all", unchanged - and none of them when names are, so "make a
+# material called galvanised steel" makes one material, not thirteen. "none"
+# makes none of the twelve; "all" makes all twelve beside the names.
+#
+# WHERE ITS OUTPUTS ARE NOW: `created` -> `createdMaterialIds`;
+# `alreadyThere` -> `alreadyThere`; `findings` -> `findings` and the line per
+# material in `starterReport`. Its sentences moved here.
+#
+# Version 3's proof below no longer describes the code (impl/ changed) and is
+# kept as the record; DRAFT until version 4 is proved on a real model (D-30).
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.
@@ -25,9 +64,9 @@ risk: MODIFY
 # THE OWNER'S WORDS, 2026-10-20: "for material adding also we need to make it".
 # One call adds a set of materials that read right in every view: a shading
 # colour for Shaded, and an appearance asset of each material's own for
-# Realistic and a rendering. CREATE_MATERIAL - PROVEN, and left as it is -
-# makes a material with a shading colour alone, which draws flat dark grey in
-# Realistic (row 5b-1263).
+# Realistic and a rendering. CREATE_MATERIAL - PROVEN, and on 2026-10-20 left
+# as it is; merged here 2026-11-01, above - made a material with a shading
+# colour alone, which draws flat dark grey in Realistic (row 5b-1263).
 #
 # THE TWELVE, named namePrefix + words, "TRG_" by the owner's naming rule with
 # the words spelled out: Glass Clear, Steel Stainless Satin, Steel Galvanised,
@@ -64,6 +103,9 @@ purpose: >
   and rendered - named with the office prefix; a name already taken is left
   as it is.
 
+  Version 4 makes any materials by name beside them, each with a shading
+  colour and a transparency.
+
 contract:
   needs:
     - name: doc
@@ -74,15 +116,38 @@ contract:
       source: request
       optional: true
       absent: TRG_
-    # Which of the twelve, by their words with ';' between - "glass; copper".
+    # Which of the twelve, by their words with ';' between - "glass; copper",
+    # "all" or "none". Left out ("auto", version 4): all twelve when no
+    # materialNames are given, none of them when names are.
     - name: starterPick
       type: string
       source: request
       optional: true
-      absent: all
+      absent: auto
     # "Starter words=Appearance name" pairs, for a library look instead of
     # Heron's own Generic one.
     - name: libraryLooks
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 4, from CREATE_MATERIAL. Any materials by name, comma
+    # separated, each made with exactly that name - the prefix is not put on.
+    - name: materialNames
+      type: IList<string>
+      source: request
+      optional: true
+      absent: none
+    # VERSION 4, from CREATE_MATERIAL. A shading colour per name, in name
+    # order: "R,G,B; R,G,B", each 0 to 255. One not given leaves Revit's.
+    - name: colours
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 4, from CREATE_MATERIAL. A transparency per name, in name order,
+    # whole percentages: "0, 80". Clamped to 0..100 and the clamp reported.
+    - name: transparencies
       type: string
       source: request
       optional: true
@@ -107,30 +172,38 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-20'
+  date: '2026-11-02'
   by: Ajmal PS
-  model: Materials IA Test (3,804 elements), Revit 2020, session 29012
+  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned alreadyThere 0 item(s), createdMaterialIds
-    1 item(s) [1330483], findings 3 item(s) [1 starter material(s) made, 0 already there and
-    left as they..., Shaded views draw each shading colour; Realistic views and r..., Nothing
-    uses them yet - SET_ELEMENT_MATERIAL gives elements ...], refused , starterReport IA3_Glass
-    Clear: made - Glass, shading 176,205,214 at 80% transparency, the appearance ''Glass -
-    clear'' (''IA3_Glass Clear''). inputs came namePrefix as given; starterPick as given;
-    libraryLooks as given. on Materials IA Test'
-  negative_case: run with namePrefix=IA3_, starterPick=granite instead - chosen because it
-    should not contain what this fragment reports - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned alreadyThere 0 item(s), createdMaterialIds
-    0 item(s), findings 1 item(s) ['granite' is none of the starter materials - Glass Clear,
-    St...], refused 'granite' is none of the starter materials - Glass Clear, Steel Stainless
-    Satin, Steel Galvanised, Aluminium Brushed, Concrete Smooth, Plaster Paint White, Floor
-    Tile Grey, Wood Oak, Carpet Grey, Ceiling Tile White, Duct Galvanised, Pipe Copper. Nothing
-    was made, starterReport . inputs came namePrefix as given; starterPick as given; libraryLooks
-    not given - "none", the card's own default (optional). on Materials IA Test
+    2 item(s) [1020299, 1020301], findings 3 item(s) [2 starter material(s) made, 0 already
+    there and left as they..., Shaded views draw each shading colour; Realistic views and
+    r..., Nothing uses them yet - SET_ELEMENT_MATERIAL gives elements ...], refused , starterReport
+    P1102_Glass Clear: made - Glass, shading 176,205,214 at 80% transparency, its own Generic
+    appearance - colour 176,205,214, glossiness 95, non-metallic, transparency 90, refraction
+    1.52 (''P1102_Glass Clear'')  ||  P1102_Pipe Copper: made - Metal, shading 184,115,51,
+    its own Generic appearance - colour 184,115,51, glossiness 65, metallic (''P1102_Pipe
+    Copper''). inputs came namePrefix as given; starterPick as given; libraryLooks not given
+    - "none", the card''s own default (optional); materialNames not given - "none", the card''s
+    own default (optional); colours not given - "none", the card''s own default (optional);
+    transparencies not given - "none", the card''s own default (optional). on P1102 MEP'
+  negative_case: run with namePrefix=P1102_, starterPick=granite instead - chosen because
+    it should not contain what this fragment reports - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned alreadyThere 0 item(s),
+    createdMaterialIds 0 item(s), findings 1 item(s) ['granite' is none of the starter materials
+    - Glass Clear, St...], refused 'granite' is none of the starter materials - Glass Clear,
+    Steel Stainless Satin, Steel Galvanised, Aluminium Brushed, Concrete Smooth, Plaster Paint
+    White, Floor Tile Grey, Wood Oak, Carpet Grey, Ceiling Tile White, Duct Galvanised, Pipe
+    Copper. Nothing was made, starterReport . inputs came namePrefix as given; starterPick
+    as given; libraryLooks not given - "none", the card's own default (optional); materialNames
+    not given - "none", the card's own default (optional); colours not given - "none", the
+    card's own default (optional); transparencies not given - "none", the card's own default
+    (optional). on P1102 MEP
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 4e2849f21d1086e9
+  fingerprint: b8d585fb720a7e1b
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -145,14 +218,36 @@ compatibility-note: >
   and GenericRefractionIndex are present 2020 through 2027 - read off the
   shipped assemblies with tools/api-surface --members on 2026-10-20.
 
-# ROUTING - the same rows are in CREATE_MATERIAL and SET_MATERIAL_APPEARANCE.
+# ROUTING - the same rows are in SET_MATERIAL_APPEARANCE.
 #
 #   "add a starter set of materials"            -> here
 #   "set up good looking materials for a render" -> here
-#   "make a new material"                       -> CREATE_MATERIAL - one, by name and colour
+#   "make a new material"                       -> here, materialNames - one, by name and
+#                                                  colour, since version 4 (CREATE_MATERIAL
+#                                                  until it was merged here, 2026-11-01)
+#   "add a material for the ductwork"           -> here, materialNames
+#   "change the material on these"              -> REPLACE_MATERIAL - the swap, and it
+#                                                  needs both materials to exist first
+#   "what material is this"                     -> REPORT_MATERIAL_TAKEOFF - a question,
+#                                                  and it must not reach this write
 #   "give these materials a render appearance"  -> SET_MATERIAL_APPEARANCE
 #   "make these columns concrete"               -> SET_ELEMENT_MATERIAL
 utterances:
   - add a starter set of materials
   - set up a library of good looking materials for rendering
   - add the standard TRG materials to this project
+  # MOVED 2026-11-01 from CREATE_MATERIAL, merged into this card. Its note on
+  # the last one, kept: declared 2026-10-09 (row 5b-375) - the sentence a
+  # modeller typed, which had reached SELECT_BY_MATERIAL. Every other was
+  # measured and refused there: any more "material" on that card lifted it
+  # over READ_ELEMENT_MATERIAL (now REPORT_MATERIAL_TAKEOFF) for "what
+  # material is that" and "what material are these", and both questions went
+  # to the write. A new sentence here is measured against those two first.
+  - make a new material
+  - create a material
+  - add a material for the ductwork
+  - i need a material in this colour
+  - set up the materials for this model
+  - create a new material called galvanised steel
+  # ...and its semantic identity, which nothing else declares:
+  - make a new material with this colour

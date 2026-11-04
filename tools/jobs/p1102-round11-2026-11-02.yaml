@@ -1,0 +1,37 @@
+# Round 11, 2026-11-02 - Revit 2020. Scratch copies in %TEMP%\heron-work\prove-1102:
+#   "P1102 MEP"   Samples\rme_advanced_sample_project.rvt - text type "1.5mm Arial" (report-text-types)
+#   "P1102 ARCH"  Samples\rac_advanced_sample_project.rvt
+# Neither sample holds a text note or a part, so CREATE_TEXT_NOTE and CREATE_PARTS make them
+# inside the same rolled-back run. Every run is ROLLED BACK.
+model: "P1102 MEP + P1102 ARCH (scratch copies of the Revit 2020 samples), Revit 2020"
+
+defaults:
+  in: "P1102 MEP"
+  setup: []
+
+jobs:
+  - fragment: find-dates-in-views
+    write: true
+    setup: [create-text-note]
+    expect: datesFound
+    set: {view: "Callout of Level 1 HVAC WSHP TYP", at: "0,0,0", noteText: "ISSUED 09 SEP 2026", textTypeId: "1.5mm Arial", sheetsOnly: false, onlySheetsGiven: false}
+    negative-set: {view: "Callout of Level 1 HVAC WSHP TYP", at: "0,0,0", noteText: "ISSUED 09-09-2026", textTypeId: "1.5mm Arial", sheetsOnly: false, onlySheetsGiven: false}
+    note: >
+      The negative's numeric month is refused by design - 09-09-2026 cannot say which is the day.
+
+  - fragment: edit-text-values
+    write: true
+    setup: [create-text-note]
+    keep-chain: true
+    expect: changed
+    set: {view: "Callout of Level 1 HVAC WSHP TYP", at: "0,0,0", noteText: "ISSUED 09 SEP 2026", textTypeId: "1.5mm Arial", field: "Text", mode: "replace", text: "SEP", replacement: "OCT"}
+    negative-set: {view: "Callout of Level 1 HVAC WSHP TYP", at: "0,0,0", noteText: "ISSUED 09 SEP 2026", textTypeId: "1.5mm Arial", field: "Text", mode: "replace", text: "ZZZNOTHINGHERE", replacement: "OCT"}
+
+  - fragment: divide-parts
+    in: "P1102 ARCH"
+    write: true
+    setup: [filter-elements-by-category, create-parts]
+    keep-chain: true
+    expect: divided
+    set: {category: "Walls", levelId: "01 - Entry Level", cutterNames: "02 - Floor"}
+    negative-set: {category: "Walls", levelId: "01 - Entry Level", cutterNames: "ZZZ No Such Level"}

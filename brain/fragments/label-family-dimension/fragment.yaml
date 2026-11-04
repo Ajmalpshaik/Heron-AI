@@ -228,13 +228,15 @@ compatibility-note: >
   alignment as a `Dimension` with `IsLocked` in every release, and which end
   it moves when both are held, is what NEEDS-CHECKING Group IU has to show.
 
-# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "label the width with the Width parameter"   -> here
 #   "keep it centred as it resizes"               -> here, with a centre plane
 #   "dimension these ducts"                       -> CREATE_DIMENSION - a
 #                                                    project annotation
-#   "dimension the grids and levels"              -> DIMENSION_GRIDS_AND_LEVELS
+#   "dimension the grids and levels"              -> CREATE_LINEAR_DIMENSION, version 5
+#                                                    (CREATE_DIMENSION's version 4
+#                                                    until 2026-11-01)
 #   "delete this parameter even though it labels a dimension"
 #                                                 -> DELETE_FAMILY_PARAMETERS
 #                                                    with unlabelFirst; this

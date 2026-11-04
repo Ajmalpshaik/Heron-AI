@@ -160,20 +160,42 @@ compatibility-note: >
   `Connector.Domain` and `Domain.DomainElectrical` are present 2020 to 2027.
 
 # ROUTING - repeated in SELECT_BY_MEP_SYSTEM, REPORT_CONNECTOR_LOADS and
-# CREATE_ELECTRICAL_RUN.
+# CREATE_MEP_RUNS.
 #
 #   "what is on this circuit"        -> here
+#   "what is on circuit 3"           -> here, a question - never
+#                                       EDIT_MEP_SYSTEM (2026-11-01; it was
+#                                       EDIT_ELECTRICAL_CIRCUIT until merged
+#                                       there, 2026-11-04)
+#   "add these lights to circuit 3"  -> EDIT_MEP_SYSTEM, version 2 - the change
 #   "select all the lighting circuits" -> here, matching the kind
-#   "what is wired to panel A"       -> here, matching the name - and read the
-#                                       panels list, because the panel itself
-#                                       is never among the elements
+#   "what is wired to panel A"       -> REPORT_PANEL_CIRCUITS since
+#                                       2026-11-01. Both cards claimed "what is
+#                                       on panel X"; this one matches
+#                                       circuitName against the CIRCUIT's own
+#                                       name, never the Panel Name, so a panel
+#                                       named in the sentence was not what it
+#                                       matched. That card matches the Panel
+#                                       Name and lists every circuit with its
+#                                       devices. A panel's devices to SELECT
+#                                       are this card, by circuit
+#
+# JUDGED 2026-11-01 AGAINST REPORT_PANEL_CIRCUITS (a duplicate sweep's
+# look-alike) AND KEPT APART: this card hands on a SET OF ELEMENTS - a
+# circuit's loads, or what no circuit carries - for the next step to act on;
+# that card reads a TABLE of circuits per panel - number, load name, rating,
+# poles, load and voltage, and the panel's connected and demand totals - and
+# selects nothing. A different result from different objects (devices vs
+# ElectricalSystem rows); one tool doing both would hand on elements on one
+# call and a table on the next under one name. Only the double sentence claim
+# was a defect, and it is settled above.
 #   "all the supply air"             -> SELECT_BY_MEP_SYSTEM. A duct system
 #                                       type is a document element; a circuit
 #                                       type is a fixed enumeration, and they
 #                                       are read differently
 #   "how much load is on it"         -> REPORT_CONNECTOR_LOADS - the numbers,
 #                                       once the elements are chosen
-#   "draw the containment"           -> CREATE_ELECTRICAL_RUN. Tray and conduit
+#   "draw the containment"           -> CREATE_MEP_RUNS. Tray and conduit
 #                                       are the physical route; a circuit is
 #                                       the electrical one, and a model can
 #                                       have either without the other
@@ -181,7 +203,9 @@ compatibility-note: >
 utterances:
   - what is on this circuit
   - select all the lighting circuits
-  - what is wired to panel A
+  # "what is wired to panel A" MOVED 2026-11-01 to REPORT_PANEL_CIRCUITS -
+  # the panel is named by its Panel Name, which this card never matches. See
+  # the routing row.
   - find elements on a power circuit
   - show me everything on this electrical circuit
   # Version 3, 2026-10-14 (FRAGMENT-ISSUES row 5b-478): "which lights are not
@@ -189,3 +213,9 @@ utterances:
   # model; nothing found what no circuit carries.
   # Declared, not ranked: with "none" built it still ranked to the write.
   - which lights are not on a circuit
+  # ADDED 2026-11-01, FRAGMENT-ISSUES row 5b-1356: EDIT_ELECTRICAL_CIRCUIT
+  # (DRAFT, a write) declares "add these lights to circuit 3", and this
+  # question - routed here by CREATE_ELECTRICAL_CIRCUIT's table - then reached
+  # that write whenever the host did not mark it a question. Declared, not
+  # ranked. Outside impl/, so the proof's fingerprint is unchanged.
+  - what is on circuit 3

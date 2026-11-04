@@ -1,0 +1,86 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that makes a roof, "made something nobody asked for": a roof
+# from a closed or broken profile, on a level, type or plane nobody named, or
+# a reference plane drawn along a grid for a roof that was then refused.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for CREATE_EXTRUSION_ROOF): a scratch project
+# "extroof-ip" made from the default metric architectural template and saved
+# under %TEMP%\heron-work, never a working model - levels "Level 1" at 0 and
+# "Level 2" at 4000 mm, with the floor plan "Level 2"; straight grids "A"
+# from 0,0 to 0,20000 mm (it runs north) and "B" from 6000,0 to 6000,20000 mm;
+# ONE named reference plane, "North Face", drawn in "Level 2" from 0,20000 to
+# 12000,20000 mm (bubble end at 0,20000); a roof type named "Generic - 400mm"
+# (Basic Roof - duplicated and renamed if the template has none). Where the
+# model differs, the job file changes - never the card. EVERY RUN ROLLED
+# BACK, so each case starts from the model as saved.
+
+positive:
+  - given: >
+      level "Level 2", roofType "Generic - 400mm", plane "A", profile "0,0;
+      arc 6000,2000 12000,0", extrusionStartMm 0, extrusionEndMm 6000 -
+      "make an extruded roof along grid A with this profile" - the job
+      file's positive
+    expect: >
+      roof 1 id; planeDrawn 1 id; refused null; report "Roof by extrusion
+      made (id ...), type "Basic Roof: Generic - 400mm", level "Level 2",
+      sketched on a reference plane drawn along grid A in "Level 2" ...: 1
+      edge(s), 1 of them arc(s), extruded from 0 to 6000 mm east of the plane
+      - read back as Extrusion Start ... and End ... - its top ... mm above
+      "Level 2""; in Revit a barrel 12000 mm long running north along grid A,
+      2000 mm high at its middle to the profile line, reaching 6000 mm east
+      of grid A and no further - MEASURED with a dimension. THE FIRST
+      POSITIVE TO RUN
+
+  - given: >
+      level "Level 2", roofType "Basic Roof: Generic - 400mm", plane "North
+      Face", profile "0,0; 6000,2000; 12000,0", extrusionStartMm -3000,
+      extrusionEndMm 0 - "add a gable extrusion roof on reference plane North
+      Face"
+    expect: >
+      roof 1 id; planeDrawn invalid (a named plane was used); report "...
+      sketched on reference plane "North Face": 2 edge(s), extruded from
+      -3000 to 0 mm north of the plane ..."; in Revit a gable whose ridge
+      runs north-south at x 6000, from 3000 mm south of North Face up to it
+
+negative:
+  - given: >
+      the first positive's values with the profile CLOSED - "0,0; arc
+      6000,2000 12000,0; 0,0" - the job file's negative
+    expect: >
+      roof invalid; planeDrawn invalid; refused "The profile ends where it
+      starts, at 0,0. A roof by extrusion is sketched as an OPEN line - Revit
+      refuses a closed one. Leave off the last point. NOTHING WAS MADE."; no
+      roof and no reference plane added anywhere. THE FIRST CASE TO RUN
+
+  - given: the first positive's values with roofType left out
+    expect: >
+      refused "No roof type was named, and it is never guessed. NOTHING WAS
+      MADE. Roof types in this project: ..." listing "Basic Roof: Generic -
+      400mm"; nothing made
+
+  - given: the first positive's values with plane "the entrance"
+    expect: >
+      refused "No named reference plane or grid in this project is called
+      "the entrance". NOTHING WAS MADE. Named reference planes: North Face.
+      Grids: A, B."; nothing made, no plane drawn
+
+  - given: >
+      the first positive's values with a profile that crosses itself, "0,0;
+      6000,2000; 6000,0; 0,2000"
+    expect: >
+      Revit refuses it and the call throws "Revit refused the roof profile on
+      a reference plane drawn along grid A ...: <Revit's words> NOTHING from
+      this call was kept."; neither roof nor plane in the model after. A roof
+      made from it is a finding for the author, never a pass
+
+  - given: a family open in front, any values
+    expect: refused naming CREATE_FAMILY_FORMS, nothing made
+
+second_route:
+  - >
+      Architecture > Roof > Roof by Extrusion by hand in "extroof-ip", work
+      plane North Face, the same gable profile and Level 2, Extrusion Start
+      -3000 and End 0 in Properties; the second positive's roof compared with
+      it - the same ridge, eaves and length, measured with dimensions - and
+      Properties' Extrusion Start and End on both

@@ -1,0 +1,104 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-069
+semantic-identity: "import a gbXML file into this project - Insert > Import gbXML - and name what it brought in"
+kind: action
+domain: revit.document
+capability: IMPORT_GBXML
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for as a ribbon gap - "gbXML import (Insert > Import
+# gbXML). Check whether Document.Import with GBXMLImportOptions exists and on
+# which releases. If it can run inside a fragment that never opens its own
+# transaction, build it." The ribbon coverage note lists Import gbXML as
+# MISSING. brain/heron_retrieve.py's find() on a scratch store of this tree
+# (Revit 2024) sent "import a gbXML file" to IMPORT_IMAGE and "bring in a
+# gbXML file" to LOAD_FAMILY. No card called Document.Import with
+# GBXMLImportOptions.
+#
+# IT EXISTS ON EVERY RELEASE AND NOTHING SAYS IT NEEDS ITS OWN TRANSACTION.
+# Document.Import(string, GBXMLImportOptions) returns bool, one signature 2020
+# to 2027, and GBXMLImportOptions has only a constructor (tools/api-surface
+# --members, 2026-11-02). The refusals RevitAPI.dll carries for it (read with
+# `strings` on 2020, 2024 and 2027) are an empty file name and two about the
+# file's content - no "close the transaction" refusal of the kind
+# Document.EditFamily has in the same file. So it is built to run inside the
+# host's transaction like IMPORT_CAD's Document.Import; whether Revit agrees
+# is NOT SEEN, and is the first thing NEEDS-CHECKING Group MM measures (row
+# 5b-1452, OPEN).
+#
+# WRITTEN NEW, NOT WIDENED (each near card read in full; brain/heron_duplicates
+# and the Matcher found no same-capability or same-signature card):
+#   IMPORT_CAD (PROVEN) imports DWG, DXF and DGN into a view - a drawing,
+#     placed; a gbXML import takes no view and no placement. Widening it would
+#     touch a PROVEN card's impl/ and stale its proof.
+#   IMPORT_IMAGE and LINK_FILES bring in images and links.
+#   CREATE_ENERGY_MODEL builds an energy model from this model, not from a
+#     file.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Imports a gbXML file - the green building XML an energy consultant or
+  another tool exports - into the project in front, as Insert > Import gbXML
+  does, and names what it brought in: every element new in the model after
+  the import, counted by category. A family, no file, a missing file or one
+  that is not .xml or .gbxml is refused before anything is imported. Revit's
+  own refusal, or an import Revit says failed, comes back in its words and
+  nothing is kept.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The full path of the .xml or .gbxml file - "C:\Energy\Level 1.xml".
+    - name: path
+      type: string
+      source: request
+  provides:
+    - name: imported
+      # Every element new in the model after the import - read back by listing
+      # the model before and after. Things it MADE, so a result (D-52).
+      role: result
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING: the file, how many elements are new and how many of each
+      # category.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was imported, in the modeller's words. Null when it ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Document.Import(string,
+  GBXMLImportOptions) returning bool and the GBXMLImportOptions constructor
+  are 2020 to 2027 with one signature, read off tools/api-surface --members on
+  2026-11-02; GBXMLImportOptions has no property to set on any release. NOT
+  SEEN IN REVIT and measured in NEEDS-CHECKING Group MM: whether the import
+  runs inside the host's open transaction; which elements it makes; and what
+  Revit does with a gbXML file in a project that already has content.
+
+# ROUTING (2026-11-02).
+#
+#   "import gbXML"                               -> here
+#   "import these cad drawings into this view only"
+#                                                -> IMPORT_CAD - a drawing, placed in a view
+#   "create the energy analytical model"         -> CREATE_ENERGY_MODEL - built from this model, not a file
+#
+# WHAT MOVED: see NEEDS-CHECKING Group MM.
+utterances:
+  - import gbXML

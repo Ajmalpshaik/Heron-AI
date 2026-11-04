@@ -1,0 +1,68 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this read, "answered with connections it was not asked for": a narrowed
+# read that still lists every connection in the model, or a beam's connection
+# under a column nothing joins.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for REPORT_STRUCTURAL_CONNECTIONS): a scratch project
+# new from Revit's metric STRUCTURAL template, saved under %TEMP%\heron-work,
+# never a working model. On Level 1, by hand: two steel columns C1 and C2
+# standing apart, one steel beam B1 framing into C1, and one structural wall
+# W1 standing away from all three. With Steel > Connection (Structure >
+# Connection on 2020), by hand: one connection of the template's own generic
+# type, or of a loaded type such as "Shear plate", between B1 and C1 - CN1;
+# and one single-element connection, such as "Base plate", on C2's base -
+# CN2. W1 is joined by nothing. Open
+# Steel > Connection > Connection Settings and write down every loaded type,
+# and each connection's Properties - type, approval, code checking status -
+# the second route.
+#
+# The negative leg is a DIFFERENT SELECTION OR VALUE, not an empty one: W1,
+# which no connection joins, and a list name that is neither connections nor
+# types.
+
+positive:
+  - given: nothing selected, show left out
+    expect: >
+      connectionCount 2 - CN1 "joins 2: Structural Columns C1 (primary),
+      Structural Framing B1" or B1 first as Revit holds them, and CN2 "joins
+      1: Structural Columns C2, at its start/end" - each with its type, origin
+      in mm, approval ("none" where unset) and code checking status "not
+      calculated"; a Connection types section naming every type Connection
+      Settings shows, each generic, detailed or custom and its use count;
+      typeCount the number of types loaded; names their exact names quoted
+
+  - given: B1 selected, show "connections"
+    expect: >
+      connectionCount 1 - CN1 only, and not CN2; no Connection types section;
+      typeCount still the number of types loaded; notConnected empty
+
+  - given: CN2 itself selected, show "connections"
+    expect: >
+      connectionCount 1 - CN2, with C2 as what it joins
+
+negative:
+  - given: W1 selected - a structural wall no connection joins
+    expect: >
+      connectionCount 0; notConnected names W1; findings "1 of the 1 member(s)
+      handed in is joined by no connection"; CN1 or CN2 here is the defect.
+      THE FIRST CASE TO RUN
+
+  - given: nothing selected, show "bolts" - neither connections nor types
+    expect: >
+      findings "\"bolts\" is not one of the lists - connections or types.
+      Nothing was guessed for it"; and that bolts, plates and welds are not
+      read
+
+  - given: any run at all
+    expect: >
+      NOTHING IN THE MODEL CHANGES - no transaction opened; every connection's
+      Properties the same before and after
+
+second_route:
+  - >
+    Revit's own Steel > Connection > Connection Settings (the loaded types)
+    and each connection's Properties palette and Edit Type: every connection,
+    type, approval and code checking status in `report` is one Revit shows,
+    and no connection drawn is missing - a Structural Connections schedule
+    (category Structural Connections) counts the same rows

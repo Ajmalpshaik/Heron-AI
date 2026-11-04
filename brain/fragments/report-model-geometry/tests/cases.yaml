@@ -137,8 +137,9 @@ negative:
       the whole model - the link's walls are never drawn
 
 second_route: >
-  Revit's own view, and the readers of one part. SELECT_BY_CATEGORY_NAME
-  with inViewOnly the 3D view and a category - Ducts - selects what the view
+  Revit's own view, and the readers of one part. FILTER_ELEMENTS_BY_CATEGORY
+  with inViewOnly the 3D view and categoryName a category - Ducts - selects
+  what the view
   shows of it: its count must equal that category's elements drawn plus its
   share of noGeometry and leftOut. REPORT_BOUNDING_BOX on the elements drawn
   gives a combined box whose middle is offset, within the few millimetres an

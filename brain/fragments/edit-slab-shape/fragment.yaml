@@ -34,8 +34,9 @@ risk: MODIFY
 # READ BACK: the top is probed again at every point set and how far it moved
 # reported; for follow, how many points sit within 5 mm of the target's top.
 #
-# CREATE_TOPOSOLID makes terrain; ADD_TOPOSOLID_SUBDIVISION paints a region
-# on it; CREATE_FLOOR makes a floor.
+# CREATE_TOPOSOLID makes terrain; EDIT_TOPOSOLID's mode subdivide paints a
+# region on it (ADD_TOPOSOLID_SUBDIVISION until 2026-11-01); CREATE_FLOOR
+# makes a floor.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 purpose: >

@@ -1,0 +1,58 @@
+# PLACE_STAIR_TREAD_NUMBERS - built 2026-11-02 in a cloud session with no
+# Revit. NOT RUN. D-30: the negative case is what catches "succeeded and did
+# nothing" - and, for this card, "numbered something nobody handed in".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING Group ML): a scratch
+# project "stairs-ml", new from Revit's metric ARCHITECTURAL template, saved
+# under %TEMP%\heron-work, never a working model. With Architecture > Stair
+# (component), one straight stair S1 of one run from Level 1 to Level 2, with
+# its railings, and a U-shaped stair S2 of two runs beside it. Nothing
+# numbered. Ids written down with Manage > IDs of Selection, and the runs
+# handed in by FILTER_ELEMENTS_BY_ID; the view is the floor plan "Level 1".
+
+positive:
+  - given: stairs-ml, S1's run handed in, view "Level 1", numbers left out - the job file's positive
+    expect: >
+      placed 1; placedIds one id; report "Run '...' (id <run>) of Stairs '...':
+      Tread numbers placed in 'Level 1' (id <n>) - reference center, justify
+      ..., show All"; the numbers visible on S1 in Level 1, LOOKED AT, and
+      nowhere else
+
+  - given: S2 (the stair) handed in, numbers riser, reference left, displayRule odd
+    expect: >
+      placed 2, one per run; Tag Type reads Riser on both; only the odd riser
+      numbers show, along the left of each run. If Revit offered no choice
+      reading riser, refused "Revit's Tag Type ... offered no choice reading
+      'riser'" and nothing placed on that run - RECORD the words it read
+
+  - given: S1's run, startNumber 5, in a copy where its numbers are not yet placed
+    expect: >
+      placed 1, "starting at 5" - on 2020 to 2026 "the stair's Tread/Riser
+      Start Number set to 5 - it numbers this stair in every view"; on 2027,
+      RECORD whether the numbers' own Start Number was set and whether Level
+      1 shows 5 first
+
+negative:
+  - given: stairs-ml, S1's railing handed in, view "Level 1" - the job file's negative
+    expect: >
+      placed 0; refused "Railing '...' (id <railing>): not a stair or a stair
+      run"; report ends "NOTHING WAS PLACED."; no numbers on S1 or S2 in
+      Level 1. THE FIRST CASE TO RUN
+
+  - given: S1's run again after the positive was kept
+    expect: >
+      placed 0; alreadyNumbered "already numbered in 'Level 1' (id <n>) -
+      left alone" - one set of numbers, never two
+
+  - given: S1's run, view a 3D view
+    expect: refused "'{3D}' is a ThreeD - tread numbers go in a plan, an elevation or a section"
+
+  - given: S1's run, numbers nosing
+    expect: refused "numbers was 'nosing' - say tread or riser" before anything is placed
+
+second_route:
+  - >
+    Revit itself: Annotate > Tread Number in Level 1, pick S1's run - the
+    same numbers in the same place; Properties of the numbers shows the Tag
+    Type, Reference, Justify and Display Rule the report read back
+  - one Ctrl+Z takes the whole request back in a single step (Golden Rule 16)

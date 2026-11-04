@@ -149,7 +149,7 @@ compatibility-note: >
 #   "is this downloaded family any good" -> here, before it goes in the library.
 #                                           The coarse-to-fine gap is the answer
 #   "what warnings is this model carrying"-> READ_MODEL_WARNINGS
-#   "which families are not used"        -> FIND_UNUSED_FAMILIES - a different
+#   "which families are not used"        -> FIND_PURGEABLE_ELEMENTS - a different
 #                                           kind of weight, and cheaper to fix
 #   "how big is this element"            -> REPORT_BOUNDING_BOX for its extent,
 #                                           MEASURE_ELEMENT_VOLUME for its

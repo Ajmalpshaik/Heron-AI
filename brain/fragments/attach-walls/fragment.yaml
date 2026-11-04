@@ -26,7 +26,7 @@ risk: MODIFY
 #
 # READ BACK: each wall's attachments at that end read again.
 #
-# SET_WALL_CONSTRAINTS sets a wall's levels and offsets; this attaches it to an
+# SET_ELEMENT_LEVEL sets a wall's levels and offsets; this attaches it to an
 # element, which follows that element when it moves.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
@@ -84,7 +84,17 @@ compatibility-note: >
 #   "attach these walls to the roof"          -> here
 #   "detach the wall tops"                    -> here, detach
 #   "attach the wall bases to the terrain"    -> here, base
-#   "set the wall top to level 2"             -> SET_WALL_CONSTRAINTS
+#   "set the wall top to level 2"             -> SET_ELEMENT_LEVEL, topLevelId
+#   "attach these columns to the roof"        -> ATTACH_COLUMNS - columns,
+#                                                with the target selected
+#
+# ON 2020 TO 2024 THIS CARD IS NOT OFFERED, so its sentences rank another
+# card there. Measured 2026-11-01 (brain/heron_retrieve.py, scratch store,
+# model backend): four of them now rank ATTACH_COLUMNS first, where before
+# they ranked PLACE_HOSTED_FAMILY, PLACE_AREA_REINFORCEMENT, PAINT_FACES and
+# CREATE_FROM_ROOM_BOUNDARIES - none of which attaches a wall either. Handed walls, ATTACH_COLUMNS changes
+# nothing and says none of them is a column. On those releases a wall is
+# attached by hand.
 
 utterances:
   - attach these walls to the roof above
