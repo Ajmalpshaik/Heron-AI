@@ -659,9 +659,12 @@ def test_a_panel_is_named_by_its_own_panel_name():
     # like the curve-list one: a fragment that starts naming a panel by its
     # Panel Name joins it by name. edit-electrical-circuit joined 2026-11-01 -
     # its `panel` is the one Select Panel moves the circuits to (Group JV).
+    # edit-mep-system joined 2026-11-04: edit-electrical-circuit was merged into
+    # it as its version 2 (row 5b-1382), which asks for the same `panel`; the
+    # retired card still asks for one, as create-electrical-circuit does.
     freed = unblocked_by("FamilyInstance")
     check(freed == ["create-electrical-circuit", "create-mep-system",
-                    "edit-electrical-circuit"],
+                    "edit-electrical-circuit", "edit-mep-system"],
           "it frees the circuit fragments' panel and nothing else: %s" % (freed or "nothing"))
 
 

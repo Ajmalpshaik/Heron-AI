@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -48,6 +48,35 @@ capability: EDIT_ELECTRICAL_CIRCUIT
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-04 - MERGED INTO EDIT_MEP_SYSTEM (edit-mep-system) version
+# 2, on the owner's yes to FRAGMENT-ISSUES row 5b-1382. Both cards were DRAFT
+# and on this branch only, never run in Revit, so no proof stood in the way:
+# EDIT_MEP_SYSTEM's impl/ was widened to carry everything this card did.
+# Constitution Article 1: kept, never deleted, so its record stays readable
+# and it can be brought back. Nothing offers it now - retrieval leaves
+# DEPRECATED out, and its sentences claim nothing in the identity table
+# (heron_search RETIRED_FRAGMENTS). Its sentences moved to EDIT_MEP_SYSTEM.
+# The ROUTING block below is the record of what it answered, not today's.
+deprecated:
+  date: '2026-11-04'
+  by: Ajmal PS
+  superseded-by: EDIT_MEP_SYSTEM
+  why: >
+    The same two buttons on another kind of system - Add and Remove - and the
+    two more a circuit has. EDIT_MEP_SYSTEM version 2 does all four on an
+    existing circuit: Add to Circuit, Remove from Circuit, Select Panel and
+    Disconnect Panel, by `edit`, with this card's circuitNumber, circuitPanel
+    and panel, the circuit named by number and panel or selected or the one a
+    device is on, a named circuit the only one moved or disconnected, every
+    device taken off refused, every change read back. Where its outputs are
+    now: circuitIds -> systemIds; changed, report, refused and findings ->
+    the same names. ONE RULE WAS OPPOSITE and the safer was kept: this card
+    added a device already on another circuit and said afterwards where it had
+    been, so Revit could move it; EDIT_MEP_SYSTEM never moves one by an add -
+    a device on a circuit of the same kind is skipped and that circuit named,
+    and one on a circuit of another kind (data while joining power) is added
+    and said, the read-back shouting if Revit took it off the first.
 
 purpose: >
   Edits an electrical circuit that already exists, the four buttons of

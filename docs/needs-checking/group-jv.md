@@ -13,6 +13,16 @@ Heron edited a circuit that exists - `CREATE_ELECTRICAL_CIRCUIT` makes a new one
 only for the circuit it has just made, and `brain/heron_retrieve.py` on each sentence offered only
 readers, the create, `CREATE_WIRES` and `DISCONNECT_CONNECTORS`.
 
+**MOVED 2026-11-04 - THESE ROWS NOW PROVE `EDIT_MEP_SYSTEM` VERSION 2.** On the owner's yes to
+[FRAGMENT-ISSUES row 5b-1382](../fragment-issues/section-5b-rows-401-425.md), `EDIT_ELECTRICAL_CIRCUIT`
+was merged into [`EDIT_MEP_SYSTEM`](../../brain/fragments/edit-mep-system/fragment.yaml) and is
+DEPRECATED; its circuit half is that card's version 2, with the same inputs (`edit`, `circuitNumber`,
+`circuitPanel`, `panel`) and the same answers, `circuitIds` now `systemIds`. Every command below names
+`edit-mep-system`, and the job file's two jobs do too. One rule changed with the merge, the safer kept:
+**an add never moves a device** - one already on a circuit of the same kind is skipped and that circuit
+named (JV8). Proving the card needs this group's rows AND [Group JW](group-jw.md)'s; sign once both pass.
+The table below is the record of the card as it was written.
+
 | What | Where | What it does |
 |---|---|---|
 | `EDIT_ELECTRICAL_CIRCUIT` (MODIFY) | [`brain/fragments/edit-electrical-circuit`](../../brain/fragments/edit-electrical-circuit/fragment.yaml) | the four buttons of the Electrical Circuits tab on one existing circuit - Add to Circuit, Remove from Circuit, Select Panel, Disconnect Panel - the circuit named by number (and panel), or selected, or the one a selected device is on; every change read back |
@@ -31,7 +41,8 @@ whether it then leaves the first (JV8); what circuit number `SelectPanel` gives 
 (2026-10-21: 19 panels, 155 circuits). Every run rolled back. The job file is
 [`tools/jobs/edit-electrical-circuit-jv-2026-11-01.yaml`](../../tools/jobs/edit-electrical-circuit-jv-2026-11-01.yaml)
 (`--dry-run` reads it back and sends nothing; both of its jobs write
-`brain/proof-drafts/runs/edit-electrical-circuit.json`, so read the first before running the second).
+`brain/proof-drafts/runs/edit-mep-system.json` since 2026-11-04 - as Group JW's job does - so read each
+before running the next).
 Every line below with `HERON_CLIENT_ID=ajmal-pc`, `--session <process id>` when two Revits are
 connected, and `< /dev/null`.
 
@@ -43,15 +54,16 @@ connected, and `< /dev/null`.
 | **JV3** | *Its negative - THE FIRST CASE TO RUN.* `circuitNumber=1`, no panel | `changed` 0, *NOTHING WAS CHANGED*, every panel with a circuit 1 named; none disconnected |
 | **JV4** | *Select Panel, the positive.* The job file's second job, PP-1B to PP-1A | `changed` 1; `report` *moved from PP-1B to PP-1A, where it is circuit N* - **record N** |
 | **JV5** | *Its negative.* `panel=PP-1B`, the panel it is on | `changed` 0, *already on PP-1B*; its circuit number unchanged |
-| **JV6** | *Remove from Circuit.* By hand: select two of circuit 1's devices on PP-1B in a plan, `validate edit-electrical-circuit --write --set edit=remove` with no circuit named | `changed` 2; `report` *9 device(s) before, 7 after* (or the counts JV1 read) |
+| **JV6** | *Remove from Circuit.* By hand: select two of circuit 1's devices on PP-1B in a plan, `validate edit-mep-system --write --set edit=remove` with no circuit named | `changed` 2; `report` *9 device(s) before, 7 after* (or the counts JV1 read) |
 | **JV7** | *Add to Circuit.* Each run rolls back, so JV6's two devices are back on the circuit; select instead two devices of the same system type that are on **no** circuit, `--set edit=add --set circuitNumber=1 --set circuitPanel=PP-1B` | `changed` 2, the counts before and after |
-| **JV8** | *A device already on another circuit.* One device of a PP-2B circuit selected, `edit=add`, circuit 1 on PP-1B | **Record what Revit does** - refused in its own words, moved, or on both; the findings say which, read back |
+| **JV8** | *A device already on another circuit.* One device of a PP-2B circuit selected, `edit=add`, circuit 1 on PP-1B | Since 2026-11-04 (`EDIT_MEP_SYSTEM` version 2): both circuits Power, so `changed` 0, *NOTHING WAS CHANGED*, the device named as on the PP-2B circuit already, to be taken off it first - and still on it. **Record** the two circuits' kinds as Revit reads them; a finding *IS NO LONGER ON* would mean Revit moved one, which the rule forbids |
 | **JV9** | *Every device off - the Article 7 case.* All of circuit 1's devices on PP-1B selected, `edit=remove` | `changed` 0, *NOTHING WAS CHANGED*, the finding saying it would leave the circuit empty; the circuit still there |
 | **JV10** | *A selection left over.* One device of a PP-2B circuit selected, `edit=disconnect`, circuit 1 on PP-1B named | `changed` 1, circuit 1 on PP-1B **alone**; the finding saying the selection was not used |
 | **JV11** | *Kept, through `try-once`, on the modeller's yes.* Disconnect, as JV2, on a saved copy | Keep: PP-1B's panel schedule without the circuit; then `REPORT_PANEL_CIRCUITS` lists it on no panel - the second route |
 
-**Then sign**, on the owner's word only: `python brain/heron_validate.py accept edit-electrical-circuit
---by "Ajmal PS"` once its positive and negative pass, and `heron-status` set to PROVEN in the same
+**Then sign**, on the owner's word only: `python brain/heron_validate.py accept edit-mep-system
+--by "Ajmal PS"` (`edit-electrical-circuit` until 2026-11-04) once its positive and negative pass here
+and in Group JW, and `heron-status` set to PROVEN in the same
 change. A row that fails is recorded here and the card corrected; nothing in a row changes to make it
 pass.
 

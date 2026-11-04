@@ -16,10 +16,12 @@ semantic-identity: "draw duct or pipe placeholders along these points - Revit's 
 # placeholder.
 #
 # WHY A NEW CARD AND NOT A WIDENING. Written when CREATE_DUCT and CREATE_PIPE
-# were PROVEN; main's #777 has since merged both into CREATE_MEP_RUNS, DRAFT
-# (version 3: duct, pipe, tray, conduit and flex, one run or a layout), and
-# retired them (corrected 2026-11-01). CREATE_MEP_RUNS draws no placeholder.
-# Whether this card merges into it is OPEN for the owner - row 5b-1382. A
+# were PROVEN; main's #777 has since merged both into CREATE_MEP_RUNS
+# (version 3: duct, pipe, tray, conduit and flex, one run or a layout; it was
+# CREATE_DUCT_RUNS until main's #796, and is PROVEN again since), and retired
+# them (corrected 2026-11-01). CREATE_MEP_RUNS draws no placeholder. KEPT
+# APART from it on 2026-11-04, on the owner's ruling for row 5b-1382 - see the
+# JUDGED block above the utterances. A
 # placeholder is a different element to a duct: Revit draws it single-line,
 # with no fittings, and it is what CONVERT_MEP_PLACEHOLDERS turns into real
 # duct or pipe later. The run of points is copied from them, so the same
@@ -146,6 +148,27 @@ compatibility-note: >
 #   "run a pipe from here to there"             -> CREATE_MEP_RUNS - real pipe
 #   "convert these placeholders to real ducts"  -> CONVERT_MEP_PLACEHOLDERS
 #   "turn the pipe placeholders into pipes"     -> CONVERT_MEP_PLACEHOLDERS
+# JUDGED 2026-11-04 (FRAGMENT-ISSUES row 5b-1382, on the owner's yes to the
+# merges with his condition: the impl/ of a PROVEN keeper is never changed)
+# AGAINST CREATE_MEP_RUNS AND KEPT APART. CREATE_MEP_RUNS is PROVEN (re-proved
+# on Revit 2020 in main's #796) and draws NO placeholder: it calls
+# Duct.Create, Pipe.Create and their tray, conduit and flex kin, never
+# Duct.CreatePlaceholder or Pipe.CreatePlaceholder, and it reads back no
+# IsPlaceholder. A placeholder is a different element - single-line, no
+# fittings, what CONVERT_MEP_PLACEHOLDERS turns into duct or pipe later - so
+# taking it in means a placeholder branch in that card's impl/ and a new
+# proof. The points are written the same way on both, so one route draws the
+# same either way.
+#
+# ONE RULE IS OPPOSITE AND IS RECORDED, NOT SETTLED HERE: a segment Revit
+# refuses is named in `notMade` and the good ones are kept on this card;
+# CREATE_MEP_RUNS undoes the whole job and names each problem (Article 8 -
+# "half a layout that looks drawn is worse than none", the rule #777 kept when
+# CREATE_DUCT and CREATE_PIPE were merged). That safer rule is CREATE_MEP_RUNS'
+# and is the one to take if this card's code is next changed; it is not
+# changed here, because this ruling touched no impl/. TO MERGE IT FULLY, the
+# owner would give up CREATE_MEP_RUNS' PROVEN status until a placeholder
+# branch was written into its impl/ and proved again in Revit.
 utterances:
   - draw a duct placeholder from here to here
   - rough in the pipe route as placeholders

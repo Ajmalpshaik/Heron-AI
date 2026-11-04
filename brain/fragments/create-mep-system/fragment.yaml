@@ -239,9 +239,10 @@ compatibility-note: >
 #   "assign them to panel DB-1"             -> here, with the panel given
 #   "draw the cable tray"                   -> CREATE_MEP_RUNS - CONTAINMENT,
 #                                              not a circuit
-#   "add these lights to circuit 3"         -> EDIT_ELECTRICAL_CIRCUIT
-#                                              (2026-11-01) - a circuit that
-#                                              already exists
+#   "add these lights to circuit 3"         -> EDIT_MEP_SYSTEM, version 2 -
+#                                              a circuit that already exists
+#                                              (EDIT_ELECTRICAL_CIRCUIT until
+#                                              it was merged there, 2026-11-04)
 #   "what is on circuit 3"                  -> SELECT_BY_ELECTRICAL_CIRCUIT
 #   "what circuits are on panel DB-1"       -> REPORT_PANEL_CIRCUITS
 #   "draw wires between these sockets"      -> CREATE_WIRES - drawn wiring, not

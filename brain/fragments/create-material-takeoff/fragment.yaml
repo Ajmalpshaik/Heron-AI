@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: DEPRECATED
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -52,6 +52,49 @@ capability: CREATE_MATERIAL_TAKEOFF
 version: 1
 source: OFFICIAL
 risk: MODIFY
+
+# DEPRECATED 2026-11-04 - MERGED INTO CREATE_SCHEDULE (create-schedule), on the
+# owner's yes to FRAGMENT-ISSUES row 5b-1382, with his condition: the impl/ of a
+# PROVEN keeper is never changed, so his Revit proofs stay valid. CREATE_SCHEDULE
+# is PROVEN (2026-11-02, P1102 MEP, Revit 2020) at version 3, which makes a
+# Material Takeoff itself - listKind "material takeoff", the category asked
+# about first with IsValidCategoryForMaterialTakeoff - so this card's job was
+# already the keeper's, and nothing under its impl/ was touched. Constitution
+# Article 1: kept, never deleted, so its record stays readable and it can be
+# brought back. Nothing offers it now - retrieval leaves DEPRECATED out, and its
+# sentences claim nothing in the identity table (heron_search
+# RETIRED_FRAGMENTS). Its sentences moved to CREATE_SCHEDULE. This card was
+# never run in Revit (NEEDS-CHECKING Group KJ, closed the same day, not passed).
+# NOTE THE KEEPER'S PROOF RAN A SCHEDULE OF DUCTS, not a material takeoff: its
+# takeoff leg is NEEDS-CHECKING KK31, still owed, so "PROVEN" is the card's
+# status and not a measured takeoff.
+deprecated:
+  date: '2026-11-04'
+  by: Ajmal PS
+  superseded-by: CREATE_SCHEDULE
+  why: >
+    The same job - Revit's View > Schedules > Material Takeoff of one category
+    with the columns named. CREATE_SCHEDULE version 3 makes it with listKind
+    "material takeoff" and the category, refuses a category Revit allows no
+    takeoff of before trying and with no category at all, names every field
+    it cannot carry with the fields it can, and reads back that Revit made a
+    material takeoff (madeAs). Where this card's outputs are now: created ->
+    created; scheduleCalled -> madeAs, which names the view; addedFields ->
+    fieldsAdded; missingFields -> missingFields; fieldsAvailable -> the
+    findings line beside each missing field; refused -> refused. NOT CARRIED,
+    because the keeper's code cannot change while it is PROVEN: a
+    Multi-Category takeoff (the keeper takes one category, and this card's own
+    Group KJ had not established Revit accepts one); the allowed categories
+    listed on a refusal (validCategories); a takeoff left unnamed (the keeper
+    needs scheduleName); a field matched ignoring spaces and colons as well as
+    capitals; the finding when the element's own field shares a name with a
+    material field. Two rules were opposite and the keeper's stands, because
+    its code is proven and cannot change: a name already used is kept as
+    Revit's generated name and said in findings (the rule #777 chose as the
+    safer for every kind of schedule), where this card refused and made
+    nothing; and a takeoff with NO column is kept and said in findings to
+    print as an empty box, where this card deleted it again inside the same
+    undo.
 
 purpose: >
   Creates Revit's Material Takeoff (View > Schedules) for one named category,

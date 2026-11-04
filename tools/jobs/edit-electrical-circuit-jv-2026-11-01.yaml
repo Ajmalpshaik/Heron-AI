@@ -1,6 +1,13 @@
 # NEEDS-CHECKING Group JV - EDIT_ELECTRICAL_CIRCUIT, built 2026-11-01 in a
 # cloud session with no Revit. NOT RUN.
 #
+# MOVED 2026-11-04 TO EDIT_MEP_SYSTEM (edit-mep-system). EDIT_ELECTRICAL_CIRCUIT
+# was merged into it as its version 2 and is DEPRECATED (FRAGMENT-ISSUES row
+# 5b-1382); every job below now names edit-mep-system, with the same values -
+# its circuit half takes edit, circuitNumber, circuitPanel and panel exactly as
+# the retired card did. These are the circuit legs of EDIT_MEP_SYSTEM's proof;
+# tools/jobs/edit-mep-system-jw-2026-11-01.yaml has the duct and piping legs.
+#
 #     python tools/batch-prove.py tools/jobs/edit-electrical-circuit-jv-2026-11-01.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/edit-electrical-circuit-jv-2026-11-01.yaml
 #
@@ -27,7 +34,7 @@ defaults:
   write: true
 
 jobs:
-  - fragment: edit-electrical-circuit
+  - fragment: edit-mep-system
     expect: changed
     set:
       edit: "disconnect"
@@ -46,7 +53,7 @@ jobs:
       changed 0, NOTHING WAS CHANGED, the refusal naming every panel that has
       a circuit 1; none of them disconnected.
 
-  - fragment: edit-electrical-circuit
+  - fragment: edit-mep-system
     expect: changed
     set:
       edit: "select panel"

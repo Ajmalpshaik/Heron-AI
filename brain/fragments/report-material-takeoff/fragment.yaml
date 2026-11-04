@@ -246,9 +246,11 @@ compatibility-note: >
 #   "what is this element"             -> DESCRIBE_ELEMENTS - category and type
 #   "what is the volume"               -> MEASURE_ELEMENT_VOLUME - the whole solid,
 #                                         whatever it is made of
-# ROUTING (2026-11-01) - repeated in CREATE_MATERIAL_TAKEOFF.
+# ROUTING (2026-11-01) - repeated in CREATE_SCHEDULE. Repointed 2026-11-04:
+# CREATE_MATERIAL_TAKEOFF was merged into CREATE_SCHEDULE (row 5b-1382).
 #   "make a wall material takeoff with material name, area and volume"
-#                                      -> CREATE_MATERIAL_TAKEOFF - a schedule VIEW
+#                                      -> CREATE_SCHEDULE, listKind material
+#                                         takeoff - a schedule VIEW
 #                                         of the same numbers, made in the model;
 #                                         this answers in the reply and makes
 #                                         nothing

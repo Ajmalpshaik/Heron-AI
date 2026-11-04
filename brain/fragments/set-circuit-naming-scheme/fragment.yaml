@@ -13,8 +13,9 @@ semantic-identity: "make a new circuit naming scheme from circuit parameters, or
 # project" - Revit's Manage > MEP Settings > Electrical Settings > Circuit
 # Naming. No card in the library made a scheme or set one (grep of
 # brain/fragments that day for CircuitNamingScheme and
-# CircuitNamingSchemeSettings: nothing). EDIT_ELECTRICAL_CIRCUIT changes a
-# circuit's devices and panel, CREATE_MEP_SYSTEM makes a circuit,
+# CircuitNamingSchemeSettings: nothing). EDIT_MEP_SYSTEM changes a
+# circuit's devices and panel (EDIT_ELECTRICAL_CIRCUIT until it was merged
+# there, 2026-11-04), CREATE_MEP_SYSTEM makes a circuit,
 # REPORT_PANEL_CIRCUITS reads circuit numbers - none touches how circuits are
 # named. Look-alikes, not duplicates.
 #
@@ -151,8 +152,10 @@ compatibility-note: >
 #                                                 schemeName Panel-Circuit
 #   "which circuit naming scheme is the project using"
 #                                              -> REPORT_ELECTRICAL_SETTINGS
-#   "move these circuits to panel DB-2"        -> EDIT_ELECTRICAL_CIRCUIT - a
-#                                                 circuit's panel, not its name
+#   "move these circuits to panel DB-2"        -> EDIT_MEP_SYSTEM, version 2 -
+#                                                 a circuit's panel, not its
+#                                                 name (EDIT_ELECTRICAL_CIRCUIT
+#                                                 until 2026-11-04)
 utterances:
   - make a circuit naming scheme Panel-Circuit with a dash
   - use the Panel-Circuit naming for this project

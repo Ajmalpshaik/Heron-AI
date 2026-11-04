@@ -1,6 +1,12 @@
 # NEEDS-CHECKING Group KJ - CREATE_MATERIAL_TAKEOFF, built 2026-11-01 in a cloud
 # session with no Revit. NOT RUN.
 #
+# RETIRED 2026-11-04 - DO NOT RUN. CREATE_MATERIAL_TAKEOFF is DEPRECATED,
+# merged into CREATE_SCHEDULE (FRAGMENT-ISSUES row 5b-1382) and Group KJ is
+# closed, not passed. The takeoff is checked as KK31, in
+# tools/jobs/schedule-settings-kinds-scratch-2026-11-01.yaml. Kept as the
+# record of what this card's proof would have run.
+#
 #     python tools/batch-prove.py tools/jobs/create-material-takeoff-kj-2026-11-01.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/create-material-takeoff-kj-2026-11-01.yaml
 #

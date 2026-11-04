@@ -30,6 +30,40 @@ positive:
     expect: >
       changed 1 - a PIPING system edited through the same card, the system's
       own kind deciding which connector joins
+  # VERSION 2 (2026-11-04, row 5b-1382) - EDIT_ELECTRICAL_CIRCUIT merged in.
+  # Arranged on the same MEP NIGHT TEST, as that card's Group JV wrote them:
+  # REPORT_PANEL_CIRCUITS read circuit 1 on PP-1B as "Power Technology 28"
+  # with 9 devices, and circuit 1 on PP-1A, PP-2B and others besides. Each of
+  # these FAILS ON VERSION 1, which knew no circuit and refused "disconnect"
+  # and "select panel" as edits it did not understand.
+  - given: >
+      nothing selected, edit "disconnect", circuitNumber "1", circuitPanel
+      "PP-1B"
+    expect: >
+      changed 1; systemIds the one circuit; report "circuit 1 on PP-1B
+      (Power Technology 28): taken off PP-1B. IT IS ON NO PANEL NOW";
+      REPORT_PANEL_CIRCUITS in the same rolled-back group lists it among the
+      circuits on no panel, and PP-1B with one circuit fewer
+  - given: >
+      nothing selected, edit "select panel", circuitNumber "1", circuitPanel
+      "PP-1B", panel "PP-1A"
+    expect: >
+      changed 1; report "moved from PP-1B to PP-1A, where it is circuit N" -
+      N as Revit numbered it, RECORDED, not assumed; PP-1B one circuit fewer,
+      PP-1A one more
+  - given: >
+      two of the nine devices of circuit 1 on PP-1B selected by hand in a
+      plan, edit "remove", nothing else named
+    expect: >
+      changed 2; report "9 device(s) before, 7 after - 2 taken off"; the
+      other seven still on it. Nothing named, and the devices on circuits
+      only, so the circuit half answers
+  - given: >
+      those two devices again, edit "add", circuitNumber "1", circuitPanel
+      "PP-1B" - after the remove above, in the same rolled-back group, or on
+      two devices of the same system type that are on no circuit
+    expect: >
+      changed 2; report "7 device(s) before, 9 after - 2 added"
 
 negative:
   - given: >
@@ -61,7 +95,58 @@ negative:
       two supply diffusers selected, edit "rewire", systemName "Mechanical
       Supply Air 2"
     expect: >
-      changed 0, "rewire" named as not one of add or remove
+      changed 0, "rewire" named as not one of add or remove - version 2
+      names select panel and disconnect too, for a circuit
+  # VERSION 2 - each FAILS ON VERSION 1 (no circuit at all), and the first
+  # FAILS ON EDIT_ELECTRICAL_CIRCUIT as it stood, which added the device and
+  # let Revit move it.
+  - given: >
+      two devices of circuit 1 on PP-1A selected, edit "add", circuitNumber
+      "1", circuitPanel "PP-1B" - both circuits Power
+    expect: >
+      changed 0, NOTHING WAS CHANGED, each device named as on circuit 1 on
+      PP-1A already, to be taken off it first; both still on PP-1A's circuit
+      and NOT on PP-1B's - AN ADD NEVER MOVES A DEVICE (row 5b-1382, the
+      safer of the two rules)
+  - given: >
+      nothing selected, edit "disconnect", circuitNumber "1", NO panel named
+    expect: >
+      changed 0, NOTHING WAS CHANGED, the refusal naming every panel with a
+      circuit 1 - PP-1B, PP-1A, PP-2B and the rest; every one of those
+      circuits still on its panel. Circuit 1 is on most panels, and picking
+      one would disconnect a circuit nobody named
+  - given: >
+      nothing selected, edit "select panel", circuitNumber "1", circuitPanel
+      "PP-1B", panel "PP-1B"
+    expect: >
+      changed 0, "already on PP-1B, so it was left"; its circuit number
+      unchanged - a move onto the panel it is on must not renumber it
+  - given: >
+      all nine devices of circuit 1 on PP-1B selected, edit "remove"
+    expect: >
+      changed 0, NOTHING WAS CHANGED, the finding saying all nine would
+      leave the circuit empty and Revit may delete it; the circuit still
+      there with nine (Article 7)
+  - given: >
+      one device of a circuit on PP-2B left selected in Revit, edit
+      "disconnect", circuitNumber "1", circuitPanel "PP-1B"
+    expect: >
+      changed 1 - circuit 1 on PP-1B ALONE; the finding saying the one
+      element selected was not used; the PP-2B circuit still on PP-2B. A
+      selection left over must never add a circuit nobody named
+  - given: >
+      two supply diffusers selected, edit "add", systemName "Mechanical
+      Supply Air 2", circuitNumber "1", circuitPanel "PP-1B"
+    expect: >
+      changed 0, NOTHING WAS CHANGED, the refusal saying a circuit and a duct
+      or piping system were both named; neither gained anything
+  - given: >
+      one supply diffuser of "Mechanical Supply Air 2" and one device of
+      circuit 1 on PP-1B selected together, edit "remove", nothing named
+    expect: >
+      changed 0, NOTHING WAS CHANGED, the refusal saying some are on circuits
+      and some on duct or piping systems - name which; both still where they
+      were
   - given: any run at all
     expect: >
       NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
@@ -75,4 +160,9 @@ second_route:
   - >
     READ_MEP_SYSTEM on the edited elements - the system name `report` gives,
     or none for an element taken out
+  - >
+    Version 2, a circuit: the panel schedules of PP-1B and PP-1A, read by eye
+    inside the same rolled-back group - the circuit gone from one and on the
+    other, with the number reported; REPORT_PANEL_CIRCUITS and
+    SELECT_BY_ELECTRICAL_CIRCUIT after the edit, agreeing with `report`
   - one Ctrl+Z takes the whole edit away in a single step (Golden Rule 16)

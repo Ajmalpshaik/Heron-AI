@@ -21,8 +21,9 @@ semantic-identity: "put an area tag on each of these areas in this area plan - R
 # DRAFT, and retired them, so no proof stands in the way now (corrected
 # 2026-11-01). What still differs: an area tag needs an AREA PLAN of the
 # area's own scheme, where a room tag needs a floor plan - the view rule, the
-# scheme rule and the creation call are all different. Whether this card
-# merges into TAG_ELEMENTS_IN_VIEW is OPEN for the owner - row 5b-1382.
+# scheme rule and the creation call are all different. KEPT APART from
+# TAG_ELEMENTS_IN_VIEW on 2026-11-04, on the owner's ruling for row 5b-1382 -
+# see the JUDGED block above the utterances.
 #
 # EVERY VALUE IS THE MODELLER'S (D-33):
 #   view      the area plan, as the Project Browser names it under Area Plans.
@@ -167,6 +168,22 @@ compatibility-note: >
 #   "tag the rooms"                       -> TAG_ELEMENTS_IN_VIEW - room, space and zone
 #                                            tags, in a floor or ceiling plan
 #   "put tags on these"                   -> TAG_ELEMENTS_IN_VIEW
+# JUDGED 2026-11-04 (FRAGMENT-ISSUES row 5b-1382, on the owner's yes to the
+# merges with his condition: the impl/ of a PROVEN keeper is never changed)
+# AGAINST TAG_ELEMENTS_IN_VIEW AND KEPT APART. TAG_ELEMENTS_IN_VIEW has been
+# PROVEN since 2026-11-02 (P1102 MEP, Revit 2020) at version 7, and it CANNOT
+# place an area tag: it refuses every area by name ("an area takes an area tag
+# in an area plan"), in both of its modes. Merging this card in would mean
+# writing an area branch into its impl/ - NewAreaTag on an area plan of the
+# area's own scheme, the scheme and level rules, the read-back - which makes
+# its proof stale and puts it back to DRAFT. So this card stays, and does the
+# one thing the keeper refuses. Its opposite rules are this card's own and
+# need no choosing while the two are apart: with no tag type named nothing is
+# placed and the loaded area tag types are listed (the keeper takes the
+# project's default per category, for the kinds it tags); a view that is not
+# an area plan refuses the call. TO MERGE IT FULLY, the owner would give up
+# TAG_ELEMENTS_IN_VIEW's PROVEN status until an area branch was proved again
+# on a model with an area plan.
 utterances:
   - tag all the areas in this area plan
   - put area tags on these areas

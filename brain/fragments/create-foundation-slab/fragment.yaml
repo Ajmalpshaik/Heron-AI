@@ -20,11 +20,11 @@ semantic-identity: "make a foundation slab from these corners - Structure > Foun
 # a foundation slab.
 #
 # A NEW CAPABILITY, NOT A WIDENING. Written when CREATE_FLOOR was PROVEN;
-# it is DRAFT since main's #777 (version 3: a floor, a ceiling or a flat roof,
-# the type deciding), so no proof stands in the way now (corrected
-# 2026-11-01). Its creation calls take no foundation flag, and nothing here
-# touches it. Whether this card merges into CREATE_FLOOR is OPEN for the
-# owner - row 5b-1382. Its boundary writing is copied, so one
+# it was DRAFT after main's #777 (version 3: a floor, a ceiling or a flat
+# roof, the type deciding) and is PROVEN again since 2026-11-02. Its creation
+# calls take no foundation flag, and nothing here touches it. KEPT APART from
+# CREATE_FLOOR on 2026-11-04, on the owner's ruling for row 5b-1382 - see the
+# JUDGED block above the utterances. Its boundary writing is copied, so one
 # writing serves both. CREATE_WALL_FOUNDATION makes the strip under a wall;
 # PLACE_STRUCTURAL_FAMILY places an isolated footing family at points.
 #
@@ -163,6 +163,28 @@ compatibility-note: >
 #                                                  points
 #   "reinforce this slab"                        -> PLACE_AREA_REINFORCEMENT
 
+# JUDGED 2026-11-04 (FRAGMENT-ISSUES row 5b-1382, on the owner's yes to the
+# merges with his condition: the impl/ of a PROVEN keeper is never changed)
+# AGAINST CREATE_FLOOR AND KEPT APART. CREATE_FLOOR has been PROVEN since
+# 2026-11-02 at version 3, and what this card does it cannot:
+#   - A STRUCTURAL FOUNDATION. Before 2022 this card calls NewFoundationSlab,
+#     which CREATE_FLOOR never calls - it makes an ordinary floor with
+#     NewFloor or Floor.Create.
+#   - THE CATEGORY READ BACK. The slab made must read back in Structural
+#     Foundations, or it is rolled back and named; CREATE_FLOOR reads no
+#     category and would keep a floor that schedules as a floor.
+#   - THE TYPE GUARDED BOTH WAYS. Only a Foundation Slab type is taken here and
+#     an ordinary floor type is refused by name; CREATE_FLOOR passes a
+#     Foundation Slab type through its plain floor call unchecked (row 5b-1383,
+#     open - its refusal belongs in CREATE_FLOOR's impl/, which this ruling
+#     leaves alone).
+#   - NO TYPE, NOTHING MADE, with the foundation slab types and their
+#     thicknesses listed.
+# The boundary writing is the same on both, copied, so one sentence's corners
+# draw the same outline either way. TO MERGE IT FULLY, the owner would give
+# up CREATE_FLOOR's PROVEN status until a foundation branch - NewFoundationSlab
+# before 2022 and the category read-back - was written into its impl/ and
+# proved again on a model with a Foundation Slab type.
 utterances:
   - make a 600 thick raft under the building
   - add a foundation slab on Level 0 from these corners

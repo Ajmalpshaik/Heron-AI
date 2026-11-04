@@ -506,6 +506,30 @@ compatibility-note: >
 # COPY_TAGS_TO_REPLACEMENTS. "SHOW" IS THE AMBIGUOUS WORD: "show me the sizes"
 # wants an answer in the chat, "show the sizes on the drawing" wants tags.
 
+# JUDGED 2026-11-04 (FRAGMENT-ISSUES row 5b-1382, on the owner's yes to the
+# merges with his condition: the impl/ of a PROVEN keeper is never changed)
+# AGAINST TAG_AREAS AND TAG_MATERIAL_OR_MULTI_CATEGORY, AND BOTH KEPT APART. A
+# card-text note only: nothing under impl/ was touched, so the proof above
+# still describes the code and this card stays PROVEN.
+#   - TAG_AREAS (FRG-VIEW-159) places an AREA tag, in an area plan of the
+#     area's own scheme, through NewAreaTag. This card refuses every area, in
+#     both modes; taking the area in means an area branch in impl/.
+#   - TAG_MATERIAL_OR_MULTI_CATEGORY (FRG-VIEW-160) places a MATERIAL tag on a
+#     face that carries a material, checks a type named is a Material Tags or
+#     Multi-Category Tags type, and places nothing when none is named. This
+#     card tags an element's own reference and places any tag type given. A
+#     Multi-Category tag named with `tagTypeId` is placed here as well - that
+#     half of the overlap is known and left, because the material half needs
+#     the other card.
+# Merging either needs this card's impl/ widened and proved again - the
+# PROVEN status given up meanwhile. Their sentences stay on their own cards:
+#   "tag all the areas in this area plan"  -> TAG_AREAS
+#   "add material tags to these walls"     -> TAG_MATERIAL_OR_MULTI_CATEGORY
+#   "multi-category tag these elements"    -> TAG_MATERIAL_OR_MULTI_CATEGORY -
+#                                             no type named there places
+#                                             nothing; here it would take each
+#                                             category's default
+
 utterances:
   - tag these elements
   - tag everything in this view

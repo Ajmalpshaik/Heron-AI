@@ -54,7 +54,10 @@ runs - expected, NOT RUN. Every line below with `HERON_CLIENT_ID=ajmal-pc`, `--s
 | **JW12** | *Routing, on the owner's PC.* The routing paragraph below, measured again on `model+rerank` | The four sentences reach this card by identity, and *"make a supply air system from these"* reaches `CREATE_MEP_SYSTEM`. Any sentence the re-ranker moves to this card from another is a row of its own |
 
 **Then sign**, on the owner's word only: `python brain/heron_validate.py accept edit-mep-system --by
-"Ajmal PS"` once its positive and negative pass, and `heron-status` set to PROVEN in the same change. A
+"Ajmal PS"` once its positive and negative pass - **and, since 2026-11-04, [Group JV](group-jv.md)'s
+rows too**: `EDIT_ELECTRICAL_CIRCUIT` was merged into this card as its version 2, which edits circuits
+as well ([FRAGMENT-ISSUES row 5b-1382](../fragment-issues/section-5b-rows-401-425.md)); the duct and
+piping half below is version 1 to the word - and `heron-status` set to PROVEN in the same change. A
 row that fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the

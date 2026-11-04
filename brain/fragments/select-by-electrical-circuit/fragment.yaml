@@ -164,8 +164,10 @@ compatibility-note: >
 #
 #   "what is on this circuit"        -> here
 #   "what is on circuit 3"           -> here, a question - never
-#                                       EDIT_ELECTRICAL_CIRCUIT (2026-11-01)
-#   "add these lights to circuit 3"  -> EDIT_ELECTRICAL_CIRCUIT - the change
+#                                       EDIT_MEP_SYSTEM (2026-11-01; it was
+#                                       EDIT_ELECTRICAL_CIRCUIT until merged
+#                                       there, 2026-11-04)
+#   "add these lights to circuit 3"  -> EDIT_MEP_SYSTEM, version 2 - the change
 #   "select all the lighting circuits" -> here, matching the kind
 #   "what is wired to panel A"       -> REPORT_PANEL_CIRCUITS since
 #                                       2026-11-01. Both cards claimed "what is

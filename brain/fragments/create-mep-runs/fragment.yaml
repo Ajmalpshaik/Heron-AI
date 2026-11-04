@@ -331,6 +331,21 @@ compatibility-note: >
 #                                      the flex and does NOT join it up
 #   "is the sprinkler connected"    -> TRACE_CONNECTIVITY
 
+# JUDGED 2026-11-04 (FRAGMENT-ISSUES row 5b-1382, on the owner's yes to the
+# merges with his condition: the impl/ of a PROVEN keeper is never changed)
+# AGAINST CREATE_MEP_PLACEHOLDER (FRG-MEP-074) AND KEPT APART. A card-text note
+# only: nothing under impl/ was touched, so the proof above still describes
+# the code and this card stays PROVEN. That card draws Revit's duct and pipe
+# PLACEHOLDERS (Duct.CreatePlaceholder, Pipe.CreatePlaceholder, read back with
+# IsPlaceholder) - single-line, no fittings, converted to real runs later by
+# CONVERT_MEP_PLACEHOLDERS. This card draws real runs only; taking the
+# placeholder in means a placeholder branch in impl/ and a new proof. The one
+# opposite rule - a refused segment: the rest kept there, the whole job undone
+# here (Article 8) - is recorded on that card; this card's all-or-nothing is
+# the safer and stays.
+#   "draw a duct placeholder from here to here" -> CREATE_MEP_PLACEHOLDER
+#   "rough in the pipe route as placeholders"   -> CREATE_MEP_PLACEHOLDER
+
 utterances:
   - draw all the ducts
   - draw every duct run at once
