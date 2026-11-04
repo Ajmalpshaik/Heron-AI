@@ -1,0 +1,191 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-135
+semantic-identity: "make a foundation slab from these corners - Structure > Foundation > Slab"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "make a 600 thick raft under
+# the building", "add a foundation slab on Level 0 from these corners" and
+# "pour a mat foundation inside these walls" - Revit's Structure > Foundation >
+# Slab. Nothing in Heron made one. Checked that day with
+# brain/heron_retrieve.py on each sentence, Revit 2024: PLACE_AREA_REINFORCEMENT
+# came back first for two of them and CREATE_WALL_FOUNDATION for the third,
+# with READ_CEILING_GRID, CREATE_AREA_PLAN, CREATE_ROOF, FIND_CLASHES,
+# EDIT_SLAB_SHAPE, CREATE_FLOOR, PLACE_FABRIC_REINFORCEMENT, PLACE_WALL_SWEEPS,
+# CREATE_FROM_ROOM_BOUNDARIES and CREATE_ROOM_ELEVATIONS behind them. None makes
+# a foundation slab.
+#
+# A NEW CAPABILITY, NOT A WIDENING. Written when CREATE_FLOOR was PROVEN;
+# it was DRAFT after main's #777 (version 3: a floor, a ceiling or a flat
+# roof, the type deciding) and is PROVEN again since 2026-11-02. Its creation
+# calls take no foundation flag, and nothing here touches it. KEPT APART from
+# CREATE_FLOOR on 2026-11-04, on the owner's ruling for row 5b-1382 - see the
+# JUDGED block above the utterances. Its boundary writing is copied, so one
+# writing serves both. CREATE_WALL_FOUNDATION makes the strip under a wall;
+# PLACE_STRUCTURAL_FAMILY places an isolated footing family at points.
+#
+# THE TYPE IS NEVER GUESSED (D-33). Left out, nothing is made and the model's
+# foundation slab types are named with each one's thickness - even when the
+# model holds only one, and even when the modeller said a thickness only one
+# of them has: "600 thick" is a size, not a type. The type arrives as text and
+# is matched here by its whole name or as "Family: Type", as
+# CREATE_WALL_FOUNDATION matches its type. A name that belongs only to an
+# ordinary floor type is REFUSED, by name, with the foundation slab types listed
+# - an ordinary floor made in its place would schedule as a floor and not as a
+# foundation.
+#
+# THE CORNERS ARE GIVEN, NOT READ. "inside these walls" is the modeller's way of
+# saying where; this card takes the boundary as corners in millimetres and reads
+# no wall. Whoever calls it supplies the corners.
+#
+# RISK MODIFY. It adds one element and deletes nothing, so Article 7's
+# confirmation does not arise.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: CREATE_FOUNDATION_SLAB
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes one foundation slab - a raft or mat foundation, Revit's Structure >
+  Foundation > Slab - of a named foundation slab type, from a closed boundary
+  of corners on one level. An ordinary floor type is refused by name, and with
+  no type named nothing is made and the model's foundation slab types are
+  listed with their thicknesses. Says what was made, in which category, and its
+  area and thickness read back from Revit.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: level
+      type: Level
+      source: request
+    # A Foundation Slab type, by its name or as "Family: Type". Left out it
+    # arrives as "list": nothing is made and the model's foundation slab types
+    # are named with their thicknesses, so the modeller can choose one. Never
+    # the model's first or only type, and never an ordinary floor type.
+    - name: foundationType
+      type: string
+      source: request
+      optional: true
+      absent: list
+    # Millimetres, as typed - CREATE_FLOOR's writing, copied: corners "X,Y,Z"
+    # with semicolons between - the Z is taken from the level - and an arc
+    # "arc MX,MY X,Y" after a corner: a point the edge passes through, then
+    # where it ends. Closed back to the first corner.
+    - name: boundary
+      type: string
+      source: request
+  provides:
+    - name: created
+      # The foundation slab made, read back after a regenerate: still in the
+      # model, in Structural Foundations, of the type asked.
+      role: result
+      type: ElementId
+    - name: report
+      # ONE STRING: what was made - its type, level, category, area and
+      # thickness read back - because a list reaches the reply cut to sixty
+      # characters an item.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was made, in the modeller's words - evidence it looked and
+      # said no, never a thing it found (D-52). Null when the slab was made.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  THE CREATION CALL CHANGES AT 2022, read off the shipped assemblies of all
+  eight releases with tools/api-surface --members on 2026-11-01.
+  Creation.Document.NewFoundationSlab(CurveArray, FloorType, Level, bool, XYZ)
+  is present 2020-2022, OBSOLETE at 2022 ("call Floor.Create()") and gone from
+  2023. Floor.Create(Document, IList<CurveLoop>, ElementId, ElementId, bool,
+  Line, double) is present 2022-2027; its slope arrow is a Line, not a Curve,
+  and RevitAPI.xml says a null one makes a flat floor. So the fragment takes
+  NewFoundationSlab under `#if REVIT2020 || REVIT2021` and Floor.Create
+  otherwise - the house idiom, and the obsolete call is never compiled on
+  2022. WHETHER Floor.Create WITH A FOUNDATION SLAB TYPE MAKES A STRUCTURAL
+  FOUNDATION IS NOT DOCUMENTED - RevitAPI.xml 2022-2027 says only "a new
+  instance of floor" - so the made slab's category is read back, and one that
+  is not in Structural Foundations is rolled back and named, never kept
+  (Group KB measures it). FloorType.IsFoundationSlab,
+  HostObjAttributes.GetCompoundStructure, CompoundStructure.GetWidth,
+  Level.ProjectElevation, CurveLoop.Create, Line.CreateBound, Arc.Create(XYZ,
+  XYZ, XYZ), CurveArray.Append, Application.ShortCurveTolerance,
+  ElementType.FamilyName, Element.Category, Category.Id, new
+  ElementId(BuiltInCategory), BuiltInCategory.OST_StructuralFoundation,
+  BuiltInParameter HOST_AREA_COMPUTED, FLOOR_ATTR_THICKNESS_PARAM and
+  STRUCTURAL_FOUNDATION_THICKNESS, Document.Regenerate and SubTransaction are
+  present and unchanged 2020-2027. Category.BuiltInCategory arrives only at
+  2023, so it is not used. Millimetres become feet by / 304.8 (D-20).
+
+# ROUTING (2026-11-01).
+#
+#   "make a 600 thick raft under the building"   -> here. With no type named
+#                                                  nothing is made and the
+#                                                  foundation slab types are
+#                                                  listed with thicknesses,
+#                                                  so the 600 one is chosen
+#   "add a foundation slab on Level 0 from these
+#    corners"                                    -> here
+#   "pour a mat foundation inside these walls"   -> here, the corners supplied
+#                                                  by the caller - no wall is
+#                                                  read here
+#   "make a floor slab over this area"           -> CREATE_FLOOR - an ordinary
+#                                                  floor, not a foundation
+#   "add a slab here"                            -> CREATE_FLOOR
+#   "make the slab"                              -> CREATE_FLOOR - declared there
+#                                                  2026-11-01 (5b-1372): this
+#                                                  card took it ranked before
+#   "make a slab under these rooms"              -> CREATE_FROM_ROOM_BOUNDARIES
+#   "make a slab under this block of rooms"      -> CREATE_FROM_ROOM_BOUNDARIES -
+#                                                  declared there 2026-11-01
+#                                                  (5b-1372): this card took it
+#                                                  ranked before
+#   "put a wall footing under these walls"       -> CREATE_WALL_FOUNDATION - the
+#                                                  strip under a wall
+#   "place the pad footings"                     -> PLACE_FAMILY_INSTANCES - an
+#                                                  isolated footing family at
+#                                                  points
+#   "reinforce this slab"                        -> PLACE_AREA_REINFORCEMENT
+
+# JUDGED 2026-11-04 (FRAGMENT-ISSUES row 5b-1382, on the owner's yes to the
+# merges with his condition: the impl/ of a PROVEN keeper is never changed)
+# AGAINST CREATE_FLOOR AND KEPT APART. CREATE_FLOOR has been PROVEN since
+# 2026-11-02 at version 3, and what this card does it cannot:
+#   - A STRUCTURAL FOUNDATION. Before 2022 this card calls NewFoundationSlab,
+#     which CREATE_FLOOR never calls - it makes an ordinary floor with
+#     NewFloor or Floor.Create.
+#   - THE CATEGORY READ BACK. The slab made must read back in Structural
+#     Foundations, or it is rolled back and named; CREATE_FLOOR reads no
+#     category and would keep a floor that schedules as a floor.
+#   - THE TYPE GUARDED BOTH WAYS. Only a Foundation Slab type is taken here and
+#     an ordinary floor type is refused by name; CREATE_FLOOR passes a
+#     Foundation Slab type through its plain floor call unchecked (row 5b-1383,
+#     open - its refusal belongs in CREATE_FLOOR's impl/, which this ruling
+#     leaves alone).
+#   - NO TYPE, NOTHING MADE, with the foundation slab types and their
+#     thicknesses listed.
+# The boundary writing is the same on both, copied, so one sentence's corners
+# draw the same outline either way. TO MERGE IT FULLY, the owner would give
+# up CREATE_FLOOR's PROVEN status until a foundation branch - NewFoundationSlab
+# before 2022 and the category read-back - was written into its impl/ and
+# proved again on a model with a Foundation Slab type.
+utterances:
+  - make a 600 thick raft under the building
+  - add a foundation slab on Level 0 from these corners
+  - pour a mat foundation inside these walls

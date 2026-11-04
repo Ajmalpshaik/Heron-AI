@@ -140,6 +140,11 @@ compatibility-note: >
 #                                   nobody meant
 #   "is this duct connected"     -> here - a READ
 #   "what does this connect to"  -> here
+#   "what connects to what"      -> here - a READ. Since 2026-11-02
+#                                   ADD_ELECTRICAL_ANALYTICAL_NODE, which
+#                                   connects analytical nodes, ranks first for
+#                                   it on the keyword route alone; identity
+#                                   answers it here
 #   "connect these two ducts"    -> FIT_MEP_JOINTS. A request to CHANGE
 #                                   the model, and it used to resolve here -
 #                                   a read-only report answering an

@@ -1,0 +1,43 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for an import, "imported something it was told not to": a file that is not
+# gbXML, or a family.
+#
+# THE ARRANGEMENT (NEEDS-CHECKING Group MM, MM1): "Heron MM gbXML", a new
+# project from Revit's metric MECHANICAL template, any release 2020 to 2027,
+# saved under %TEMP%\heron-work, never a working model. The file: export
+# "Heron MM Energy" (the CREATE_ENERGY_MODEL arrangement) with File > Export
+# > gbXML to %TEMP%\heron-work\heron-mm.xml. A plain text file renamed
+# %TEMP%\heron-work\not-gbxml.xml is the negative file. EVERY RUN ROLLED BACK.
+
+positive:
+  - given: path "%TEMP%\heron-work\heron-mm.xml", written out in full - "import gbXML"
+    expect: >
+      refused null; imported a list of new element ids; report
+      "heron-mm.xml imported: N new element(s) - <counts by category>". THE
+      CHECK THAT MATTERS: the elements named are the ones the model shows after
+      the import, and Revit's own Insert > Import gbXML on the same file gives
+      the same categories. RECORD whether Revit ran it inside the host's
+      transaction at all - the first thing this measures
+
+negative:
+  - given: >
+      path "%TEMP%\heron-work\not-gbxml.xml" - a file with the right extension
+      and the wrong content. THE FIRST CASE TO RUN
+    expect: >
+      Revit refuses - "The GBXml file is not valid for importing!" or its
+      sibling - the call throws, nothing is kept, and the model has no new
+      element
+
+  - given: path "%TEMP%\heron-work\heron-mm.dwg"
+    expect: refused - not a gbXML file - nothing imported
+
+  - given: path "C:\no such folder\x.xml"
+    expect: refused - there is no file at that path - nothing imported
+
+  - given: any path, with a family in front
+    expect: refused - a gbXML file is imported into a project - nothing imported
+
+second_route:
+  - >
+    Revit's own Insert > Import gbXML on the same file in a fresh copy of the
+    project: the same categories, the same number of new elements.

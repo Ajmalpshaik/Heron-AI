@@ -215,3 +215,9 @@ utterances:
   - straight diagonal leaders are not our standard
   - put a shoulder on the leaders
   - fix the leader shape on these tags
+  # DECLARED 2026-11-02 (row 5b-1457): this card's own routing table claims it
+  # (-> here). Unclaimed by any utterance, it moved to CREATE_SHAPED_STAIRS on
+  # a scratch store once that card learnt the stair by sketch and
+  # CREATE_REBAR_SHAPE joined the library; declared, it reaches this card by
+  # identity.
+  - make the leaders L-shaped

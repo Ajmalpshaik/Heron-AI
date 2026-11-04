@@ -1,0 +1,56 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a list, "listed something that is not there": a model with no image must
+# come back empty, said in words, never with another model's images.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for LIST_IMAGES): two scratch projects new from
+# Revit's metric ARCHITECTURAL template, saved under %TEMP%\heron-work, never
+# a working model.
+#   "images-list"  with Revit's own Insert > Import PDF, page 2 of a
+#                  three-page "plans.pdf" placed TWICE - once in "Level 1",
+#                  once on a sheet "A101"; with Insert > Import Image,
+#                  "site.png" loaded and placed once in "Level 1"; and from
+#                  2021, Insert > Link Image, "logo.png" linked and NOT
+#                  placed (deleted from the view after placing, so its row
+#                  stays in Manage Images). All three files in
+#                  %TEMP%\heron-work\images. Save, close, then RENAME
+#                  "logo.png" so the linked image cannot be found on reopen
+#   "images-none"  the template untouched - nothing in Manage Images
+# Where the models differ, the job file changes - never the card.
+
+positive:
+  - given: images-list in front - the job file's positive
+    expect: >
+      imageCount 3 (2 on Revit 2020, which has no Link Image); placedCount 3;
+      the plans row "page 2, imported, ... placed 2 time(s) in "Level 1",
+      "A101""; the site.png row "imported ... placed 1 time(s) in "Level 1"";
+      the logo.png row "linked ... FILE NOT FOUND - could not be loaded ...
+      placed 0 times"; names holds all three quoted. On 2020 every row says
+      "Revit 2020 does not say imported or linked" and has no pixel size.
+      THE FIRST POSITIVE TO RUN
+
+  - given: images-list after a rendering is saved to the project (Render, Save to Project)
+    expect: one more row, "saved in the project (a rendering)", with its pixel size
+
+negative:
+  - given: images-none in front - the job file's negative-in
+    expect: >
+      imageCount 0, placedCount 0, names empty; report "No image or PDF page
+      is in this model's Manage Images." - and not one of images-list's rows,
+      though both are open. THE FIRST CASE TO RUN
+
+  - given: images-list in front
+    expect: >
+      the logo.png row says "placed 0 times" and NEVER "unused" - whether an
+      image is unused is the purge list's rule (FIND_PURGEABLE_ELEMENTS)
+
+  - given: any run at all
+    expect: NO TRANSACTION OPENED, NOTHING CHANGED - the undo list is the same afterwards
+
+second_route:
+  - >
+    Manage > Manage Images on images-list: the same names, the same Count
+    column (placements), the same Link or Import, Path and page
+  - >
+    FIND_PURGEABLE_ELEMENTS on images-list: logo.png among its unused image
+    names, plans and site.png among its usedImageCount

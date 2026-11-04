@@ -1,0 +1,189 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-154
+semantic-identity: "make a roof by extrusion - a profile sketched on a vertical reference plane or grid, extruded between a start and an end - Architecture > Roof > Roof by Extrusion"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "make an extruded roof along
+# grid A with this profile", "add a curved extrusion roof from 0 to 12000 mm,
+# rise 2000", "make a barrel roof over the entrance" and "add a gable
+# extrusion roof on reference plane North Face" - Revit's Roof by Extrusion.
+# No card made one: a grep of every fragment's C# that day for
+# NewExtrusionRoof found none (ExtrusionRoof appears only where
+# SLOPE_ROOF_EDGES and COPY_ELEMENTS name one to leave it alone), and
+# brain/heron_retrieve.py on the four sentences (a scratch store, model
+# backend) answered CREATE_CONCEPTUAL_FORM, SLOPE_ROOF_EDGES and
+# LOCK_FORM_TO_PLANES.
+#
+# WRITTEN NEW, NOT WIDENED INTO CREATE_FLOOR (heron-duplicate-checker's
+# method, 2026-11-02). CREATE_FLOOR (DRAFT, version 3) makes a FOOTPRINT
+# roof: one CLOSED outline on PLAN at a level, left flat. A roof by
+# extrusion is the other contract - an OPEN profile in a VERTICAL plane,
+# with a start and an end along that plane's normal, on a named reference
+# plane or grid. Widening would make `boundary` mean a closed loop on plan
+# for three types and an open line upright for one, and add three inputs a
+# floor, a ceiling and a footprint roof must refuse - one tool made as two
+# inside one card. LOOK-ALIKE, kept separate. SLOPE_ROOF_EDGES (PROVEN)
+# slopes the edges of a footprint roof and refuses an extrusion roof by name
+# in its own C#. CREATE_FAMILY_FORMS and CREATE_CONCEPTUAL_FORM extrude
+# forms in a family; this refuses a family. CREATE_PROJECT_REFERENCE_PLANES
+# draws planes and makes no roof - this one draws a plane only along a grid
+# it is told to sketch on, and says so.
+#
+# NOTHING IS GUESSED (D-33). Level, roof type, plane and both extents are
+# the modeller's; with one missing or a name nothing has, nothing is made
+# and what the project has is listed.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: CREATE_EXTRUSION_ROOF
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes a roof by extrusion, Revit's Architecture > Roof > Roof by Extrusion:
+  a profile drawn as an open line of straight and curved edges on a vertical
+  plane - a named reference plane, or a straight grid, along which a
+  reference plane is drawn - extruded between a start and an end in
+  millimetres from that plane. A barrel roof, a gable or a mono-pitch seen
+  end on. The level, the roof type and the plane are named, never guessed;
+  with one missing, the levels, roof types or planes and grids are listed. A
+  closed profile, two points in one place or an arc in a line is refused by
+  name, and a profile Revit will not make is refused with Revit's own words.
+  The roof's id, type, level, Extrusion Start and End and the height of its
+  top are read back off Revit.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The roof's level, by name - "Level 2". The profile's heights are
+    # measured up from its PROJECT elevation. Left out, nothing is made and
+    # the levels are listed.
+    - name: level
+      type: string
+      source: request
+      optional: true
+      absent: ""
+    # The roof type, by name - "Generic - 400mm", or "Basic Roof: Generic -
+    # 400mm" when two families share a type name. Left out, nothing is made
+    # and the roof types are listed.
+    - name: roofType
+      type: string
+      source: request
+      optional: true
+      absent: ""
+    # The vertical plane the profile is sketched on: a named reference plane
+    # - "North Face" - or a straight grid - "A" - along which a reference
+    # plane is drawn in a floor plan of the level. Left out, nothing is made
+    # and the named reference planes and grids are listed.
+    - name: plane
+      type: string
+      source: request
+      optional: true
+      absent: ""
+    # MILLIMETRES, in the plane's own two directions: "U,V" with ";" between
+    # - U along the plane from its start (a reference plane's bubble end, a
+    # grid's first end), V up from the level - and "arc MU,MV U,V" after a
+    # point for an arc through MU,MV ending at U,V. An OPEN line: a barrel
+    # 12 m across rising 2 m is "0,0; arc 6000,2000 12000,0", a gable
+    # "0,0; 6000,2000; 12000,0".
+    - name: profile
+      type: string
+      source: request
+      optional: true
+      absent: ""
+    # Where the roof starts and ends, in MILLIMETRES from the plane: positive
+    # to the east, or to the north when the plane faces north-south. Both are
+    # needed; left out, nothing is made.
+    - name: extrusionStartMm
+      type: double
+      source: request
+      optional: true
+      absent: NaN
+    - name: extrusionEndMm
+      type: double
+      source: request
+      optional: true
+      absent: NaN
+  provides:
+    - name: roof
+      # The roof by extrusion made, read back before it was kept.
+      role: result
+      type: ElementId
+    - name: planeDrawn
+      # The reference plane drawn along a grid to sketch on - invalid when a
+      # named reference plane was used. A thing it MADE, so a result (D-52).
+      role: result
+      type: ElementId
+    - name: report
+      # ONE STRING, read off Revit: the roof's id, type, level, the plane it
+      # is sketched on, its edges and arcs, the extents east (or north) of
+      # the plane and its Extrusion Start and End as Properties shows them,
+      # and its top's height above the level.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was made, in the modeller's words - with the levels, roof
+      # types or planes and grids listed when one was not clear. Null when it
+      # ran (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The creation Document's
+  NewExtrusionRoof(CurveArray, ReferencePlane, Level, RoofType, double,
+  double), ItemFactoryBase.NewReferencePlane(XYZ, XYZ, XYZ, View),
+  ExtrusionRoof.GetProfile, ReferencePlane.Normal / Direction / BubbleEnd,
+  Grid.Curve / IsCurved, Level.ProjectElevation, ElementType.FamilyName,
+  Element.LevelId, Arc.Create(XYZ, XYZ, XYZ), Line.CreateBound,
+  CurveArray.Append and BuiltInParameter EXTRUSION_START_PARAM /
+  EXTRUSION_END_PARAM / DATUM_TEXT read the same 2020 through 2027 with
+  tools/api-surface --members on 2026-11-02. ExtrusionRoof has no
+  ExtrusionStart or ExtrusionEnd property on any release, so the extents
+  are read off the two parameters. Which way Revit measures Extrusion Start
+  along the plane's normal, and whether it keeps the two in the order given,
+  is not seen in Revit: the read-back accepts either order and throws on
+  anything else.
+
+# ROUTING (2026-11-02) - the same rows are in CREATE_FLOOR and
+# SLOPE_ROOF_EDGES.
+#
+#   "make an extruded roof along grid A with this profile"
+#                                  -> here, plane A - a reference plane is
+#                                     drawn along the grid
+#   "add a curved extrusion roof from 0 to 12000 mm, rise 2000"
+#                                  -> here, an arc profile; whether 0 to
+#                                     12000 is the span or the extents is
+#                                     the modeller's to say, and the level,
+#                                     type and plane are asked for
+#   "make a barrel roof over the entrance"
+#                                  -> here; "the entrance" is no plane, so
+#                                     the planes and grids are listed
+#   "add a gable extrusion roof on reference plane North Face"
+#                                  -> here, a two-edge profile
+#   "put a roof over this", "add a flat roof here"
+#                                  -> CREATE_FLOOR, a footprint roof from a
+#                                     closed outline on plan, left flat
+#   "slope this roof"              -> SLOPE_ROOF_EDGES - a footprint roof's
+#                                     edges; it refuses an extrusion roof
+#   "draw a reference plane along grid B in this plan"
+#                                  -> CREATE_PROJECT_REFERENCE_PLANES
+
+utterances:
+  - make an extruded roof along grid A with this profile
+  - add a curved extrusion roof from 0 to 12000 mm, rise 2000
+  - make a barrel roof over the entrance
+  - add a gable extrusion roof on reference plane North Face

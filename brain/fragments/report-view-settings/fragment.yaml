@@ -274,6 +274,13 @@ compatibility-note: >
 #   "what does the view template control"    -> REPORT_VIEW_TEMPLATE_CONTROL,
 #                                               which names everything the
 #                                               template holds
+#   "which work plane is this view on"       -> REPORT_VIEW_WORK_PLANE (since
+#   "what is the work plane of this view"       2026-11-02, row 5b-1392), a
+#                                               read of its own: this card,
+#                                               proved, does not read the
+#                                               work plane
+#   "set the work plane to Level 2"          -> SET_VIEW_WORK_PLANE. A change,
+#   "show the work plane in this view"          and this reads (D-86)
 
 utterances:
   - what is the detail level of this view

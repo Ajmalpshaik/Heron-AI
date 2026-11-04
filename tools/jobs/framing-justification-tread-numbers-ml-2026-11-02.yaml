@@ -1,0 +1,93 @@
+# NEEDS-CHECKING Group ML - SET_FRAMING_JUSTIFICATION, REPORT_FRAMING_JUSTIFICATION
+# and PLACE_STAIR_TREAD_NUMBERS, built 2026-11-02 in a cloud session with no
+# Revit. NOT RUN. REMOVE_PROJECT_PARAMETER, the group's fourth card, is risk
+# ADMIN and no batch sends one (D-106, batch-prove's NOT_IN_A_BATCH): it is
+# proved by name with `validate ... --allow-publish --write`, ML6 in
+# docs/needs-checking/group-ml.md.
+#
+#     python tools/batch-prove.py tools/jobs/framing-justification-tread-numbers-ml-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/framing-justification-tread-numbers-ml-2026-11-02.yaml
+#
+# TWO SCRATCH PROJECTS on Revit 2024, saved under %TEMP%\heron-work, never a
+# working model (docs/needs-checking/group-ml.md, ML1):
+#   "framing-ml"  new from Revit's default STRUCTURAL template. On Level 2:
+#                 two structural columns with a steel beam B1 framing between
+#                 them, left at Revit's defaults (yz Justification Uniform, y
+#                 Center, z Top, offsets 0); a beam B2 set to yz Justification
+#                 Independent by hand; a structural column C1.
+#   "stairs-ml"   new from Revit's metric ARCHITECTURAL template. A component
+#                 stair S1 of one straight run from Level 1 to Level 2, with
+#                 its railings; nothing numbered.
+# Every id written down with Manage > IDs of Selection and typed below in
+# place of the placeholders 0000011 (B1), 0000013 (C1), 0000021 (S1's run)
+# and 0000022 (S1's railing).
+#
+# THE ARRANGEMENT. The members and the run come from FILTER_ELEMENTS_BY_ID - a
+# read, so each shows before anything changes - kept in the chain
+# (keep-chain). Each negative is a DIFFERENT SELECTION that must not be
+# touched, not an empty one (fragment-proving, rules 3 and 5): the column
+# where the beam was, and the railing where the run was. Every write here is
+# ROLLED BACK.
+
+model: "framing-ml (beam B1 between two columns, beam B2 independent, column C1) and stairs-ml (stair S1, one run, nothing numbered) - scratch projects, Revit 2024"
+
+jobs:
+  - fragment: set-framing-justification
+    write: true
+    keep-chain: true
+    in: "framing-ml"
+    expect: changed
+    setup: [filter-elements-by-id]
+    setup-set:
+      elementIds: "0000011"
+    negative-setup-set:
+      elementIds: "0000013"
+    set:
+      zJustification: bottom
+    negative-set:
+      zJustification: bottom
+    note: >
+      ML2. Negative - THE FIRST CASE TO RUN: column C1 - changed 0, refused
+      "Structural Columns ... not structural framing - only beams and braces
+      have a yz justification", C1 and B1 unchanged. Positive: beam B1 -
+      changed 1, settings "... z Justification: Top -> Bottom, read back".
+      RECORD the word Revit shows; if it refused "Revit shows '...' for the
+      number Heron took to mean bottom", the card's numbers are corrected
+      before any proof.
+
+  - fragment: report-framing-justification
+    keep-chain: true
+    in: "framing-ml"
+    expect: justifications
+    setup: [filter-elements-by-id]
+    set:
+      elementIds: "0000011"
+    negative-set:
+      elementIds: "0000013"
+    note: >
+      ML3. Positive: B1 - one line, "yz Justification Uniform; y
+      Justification Center; z Justification Top; ... Start Level Offset 0 mm;
+      End Level Offset 0 mm", the same words as Properties. Negative: C1 -
+      justifications empty, notFraming names C1.
+
+  - fragment: place-stair-tread-numbers
+    write: true
+    keep-chain: true
+    in: "stairs-ml"
+    expect: placedIds
+    setup: [filter-elements-by-id]
+    setup-set:
+      elementIds: "0000021"
+    negative-setup-set:
+      elementIds: "0000022"
+    set:
+      view: "Level 1"
+    negative-set:
+      view: "Level 1"
+    note: >
+      ML4. Negative - THE FIRST CASE TO RUN: S1's railing - placed 0, refused
+      "Railing ... not a stair or a stair run", report ending "NOTHING WAS
+      PLACED.", no numbers in Level 1. Positive: S1's run - placed 1, report
+      "... Tread numbers placed in 'Level 1' (id <n>) - reference center ...",
+      the numbers visible on S1. Riser numbers, the start number and the
+      multistorey stair are ML5, by hand.

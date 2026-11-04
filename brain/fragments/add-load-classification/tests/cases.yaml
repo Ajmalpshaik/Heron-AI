@@ -1,0 +1,79 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "changed a setting nobody asked for": a load classification
+# already present given a new demand factor, or a demand factor's steps
+# replaced under its own name.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE - the same scratch project as
+# REPORT_ELECTRICAL_SETTINGS' group (docs/NEEDS-CHECKING.md names it): new from
+# Revit's metric ELECTRICAL template, saved under %TEMP%\heron-work, never a
+# working model. Before the run, read Manage > MEP Settings > Load
+# Classifications and Demand Factors and write down what the template has -
+# in particular one load classification's name and its demand factor (the
+# metric template's "Lighting" is assumed below; use whatever it has).
+# REPORT_ELECTRICAL_SETTINGS is run before and after every case, and both
+# dialogs read - the second route.
+#
+# Every run below is ROLLED BACK (validate --write) except the one try-once,
+# which the modeller keeps or discards.
+#
+# The negative leg is a DIFFERENT VALUE, not an empty one: a name the template
+# already has. It must come back with `added` 0 and that classification's
+# demand factor unchanged.
+
+positive:
+  - given: >
+      add loadClassification, name Kitchen Equipment, demandFactor left out
+    expect: >
+      added 1; after holds "\"Kitchen Equipment\", demand factor ..." and
+      every name before; the Load Classifications dialog shows it
+
+  - given: >
+      add demandFactor, name "Kitchen 80 over 10", rule load, steps
+      "0-10:100; 10-:80"
+    expect: >
+      added 1; after holds "\"Kitchen 80 over 10\" by load - 0 kVA to 10 kVA:
+      100%, 10 kVA and over: 80%"; the Demand Factors dialog shows Calculation
+      Method By Load, the two rows at 0-10 kVA 100% and over 10 kVA 80% - NOT
+      0.8% and NOT 10,000 kVA
+
+  - given: >
+      after the two above are kept: add loadClassification, name Kitchen
+      Equipment 2, demandFactor "Kitchen 80 over 10"
+    expect: >
+      added 1; after "\"Kitchen Equipment 2\", demand factor \"Kitchen 80
+      over 10\"" - the dialog shows that demand factor against it
+
+  - given: add demandFactor, name Flat 70, percent 70
+    expect: >
+      added 1; after holds "\"Flat 70\" constant - 70%"
+
+negative:
+  - given: >
+      add loadClassification, name Lighting (a name the template has),
+      demandFactor "Kitchen 80 over 10" or any other the template has
+    expect: >
+      added 0; skipped "A load classification is already named \"Lighting\"
+      - left as it is"; Lighting's demand factor the same in before and
+      after. THE FIRST CASE TO RUN
+
+  - given: add demandFactor, name Kitchen 2, steps "0-10:100; 10-:80", rule left out
+    expect: >
+      added 0; refused "Steps were given but no rule - by load ..., loadPortion
+      ... Which one is never guessed."
+
+  - given: add loadClassification, name Kitchen 3, demandFactor ZZNOFACTOR
+    expect: >
+      added 0; refused "No demand factor is named \"ZZNOFACTOR\". The model's
+      demand factors are: ..."
+
+  - given: add demandFactor, name left out, percent 80
+    expect: >
+      added 0; refused "No name was given for the new demand factor - it is
+      never made up."
+
+second_route:
+  - >
+    Revit's own Manage > MEP Settings > Load Classifications and Demand
+    Factors dialogs: the item added, with the name, demand factor, calculation
+    method, ranges and percentages in `after` - and nothing else in either
+    list different from `before`

@@ -1,0 +1,135 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-079
+semantic-identity: "which sizes are available - set up for round, rectangular and oval ducts, in each conduit standard, and for cable tray"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "what duct sizes are available
+# for round ducts", beside "list the sizes in the copper pipe segment" and
+# four additions and removals (EDIT_MEP_SIZES). Revit's Manage > MEP Settings
+# > Mechanical Settings > Duct Settings (Rectangular, Oval, Round) and
+# Electrical Settings > Conduit Settings > Size and Cable Tray Settings > Size.
+# No card read them (grep of brain/fragments that day for DuctSizeSettings,
+# ConduitSizeSettings and CableTraySizes: nothing). AUTO_SIZE_MEP and
+# SET_MEP_SIZE size duct runs in the model; SELECT_BY_CONNECTOR_SIZE selects
+# by size - none reads the size lists themselves. Look-alikes, not duplicates.
+#
+# PIPE SEGMENTS ARE NOT HERE, ON PURPOSE. REPORT_PIPE_SEGMENTS (PROVEN) already
+# answers "list the sizes in the copper pipe segment": named down to one
+# segment it returns that segment's whole size table, nominal, OD and wall.
+# Reading them again here would be a second tool for one question.
+#
+# THE READ HALF OF A PAIR. EDIT_MEP_SIZES adds and removes sizes in these
+# lists and in a pipe segment; every question about which sizes a duct shape,
+# a conduit standard or the cable tray list holds is answered here, so none
+# reaches that write (D-86).
+#
+# READ ONLY - opens no transaction and needs none.
+kind: action
+domain: revit.mep
+capability: REPORT_DUCT_CONDUIT_SIZES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Answers which sizes are available, and whether a size is there, for ducts,
+  conduit and cable tray - the sizes set up in Mechanical Settings and
+  Electrical Settings, listed as those dialogs show them: the round,
+  rectangular and oval duct size lists, each conduit standard's sizes with
+  inside diameter, outside diameter and bend radius, and the cable tray size
+  list - every size in millimetres, smallest first, with any size hidden from
+  the size list or left out of sizing marked.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: show
+      # Which lists: round | rectangular | oval | duct (all three) | conduit |
+      # tray - one, or several separated by ; - or left out for every list
+      # (`absent: all`). A word that is none of them is named, never guessed.
+      type: string
+      source: request
+      optional: true
+      absent: all
+    - name: standard
+      # Narrows the conduit standards read to names containing this, ignoring
+      # capitals. Left out, every standard.
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: tables
+      # Size lists read - a duct shape, a conduit standard or the cable tray
+      # list each count one. Something the read FOUND.
+      role: result
+      type: int
+    - name: sizeCount
+      # Sizes across every list read.
+      role: result
+      type: int
+    - name: report
+      # LIST BY LIST, in millimetres: "Round duct sizes (n): 100, 125, ... mm",
+      # each conduit standard's sizes with ID, OD and bend radius, the cable
+      # tray sizes; a size kept out of the dropdown marked "(hidden)". A
+      # STRING, because a reply cuts a list to three items and this is the
+      # answer.
+      role: accounting
+      type: string
+    - name: names
+      # The conduit standards' exact names, quoted - what EDIT_MEP_SIZES is
+      # handed back, so no name is retyped from memory.
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. DuctSizeSettings.GetDuctSizeSettings
+  and its DuctShape indexer, DuctSizes, MEPSize.NominalDiameter,
+  InnerDiameter, OuterDiameter, UsedInSizeLists and UsedInSizing,
+  ConduitSizeSettings.GetConduitSizeSettings and its enumeration of standard
+  and ConduitSizes, ConduitSize.BendRadius, and CableTraySizes.GetCableTraySizes
+  and its enumeration carry the same signatures 2020 through 2027 - read with
+  tools/api-surface --members on 2026-11-01. Sizes are Revit's feet x 304.8
+  as plain arithmetic, never a units call.
+
+# ROUTING (2026-11-01) - the same rows are in EDIT_MEP_SIZES.
+#
+#   "what duct sizes are available for round ducts"  -> here, show round
+#   "list the sizes in the copper pipe segment"      -> REPORT_PIPE_SEGMENTS -
+#                                                       a pipe segment's sizes
+#                                                       are read there, named
+#                                                       down to one segment
+#   "add 315 mm to the round duct sizes"             -> EDIT_MEP_SIZES
+#   "add DN 65 to the steel pipe segment"            -> EDIT_MEP_SIZES
+#   "remove 125 mm from the duct sizes"              -> EDIT_MEP_SIZES
+#   "add a 32 mm conduit size"                       -> EDIT_MEP_SIZES
+#   "size the ducts from the flow"                   -> AUTO_SIZE_MEP - the ducts
+#                                                       in the model, not the
+#                                                       size list
+#
+# WHAT MOVED (2026-11-01, heron_retrieve.find on fresh scratch stores of the
+# tree at b1a892d without the two size cards, with this one alone, and with
+# both; `model` backend, re-ranker absent; no Revit filter, 2020, 2024, 2025;
+# every declared utterance and routing-table sentence of a live card). The
+# question above reaches this card with and without the host's question flag
+# (AUTO_SIZE_MEP, a write, without the flag before); "list the sizes in the
+# copper pipe segment" still reaches REPORT_PIPE_SEGMENTS. Without the flag no
+# other declared or claimed sentence moved. With it, 32 writes' own sentences
+# moved, each to a read, none from a card that declares or claims it. The
+# probes "is 315 in the round duct sizes" and "which sizes does the EMT conduit
+# standard have" - nobody's words, so not declared - reach EDIT_MEP_SIZES
+# without the flag (another write before) and this card with it.
+utterances:
+  - what duct sizes are available for round ducts

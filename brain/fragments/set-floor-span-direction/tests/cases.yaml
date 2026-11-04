@@ -1,0 +1,86 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that turns a value, "turned something nobody asked for": a span
+# set on a wall, on a floor that is not structural, or a direction guessed when
+# the grid named does not run one way.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE. Group HY's scratch project
+# (docs/needs-checking/group-hy.md) - a new project from Revit's metric
+# STRUCTURAL template, Revit 2020, holding S1 (a 200 mm structural concrete
+# floor), W1 (a 200 mm structural concrete wall) and N2 (an architectural,
+# non-structural floor) on Level 1. Added by hand and SAVED before the run
+# (Group KL, KL1): a straight grid "1" drawn at 30 degrees from the model's X
+# axis, so a span along it cannot be mistaken for 0 or 90; and an arc grid
+# "R1". S1's span direction is read first (KL2) - the positive's angle must
+# differ from it, or the run is "already there" and proves nothing.
+#
+# The floors are collected by SELECT_BY_CATEGORY_NAME with Floors in
+# "FloorPlan: Level 1" - S1 and N2 - and SET_SELECTION, as Group KF does. The
+# negative leg is the SAME call with Walls: a different set, not an empty one
+# (fragment-proving, rules 3 and 5). Where the model differs, the job file
+# changes - never the card. EVERY RUN ROLLED BACK.
+
+positive:
+  - given: >
+      the floors of Level 1 (S1 and N2) from SELECT_BY_CATEGORY_NAME with
+      Floors and SET_SELECTION, along "grid 1", angleDegrees left out
+    expect: >
+      changed 1 - S1; spanDegrees 30; S1 in changedIds; N2 in notStructural,
+      named "not structural - Revit keeps a span direction only for a floor
+      with Structural ticked"; refused empty; report "S1's id (its type): span
+      <before> deg -> 30 deg", followed by "(Span Direction parameter: ...)"
+      in whatever form Revit writes that value - KL3 records it. Every floor
+      handed in named in exactly one list
+
+  - given: the same floors, angleDegrees 90, along left out
+    expect: >
+      changed 1 - S1 spans 90 deg from the model's X axis, read back 90; N2
+      in notStructural
+
+  - given: the same floors, along "grid 1" and angleDegrees 90
+    expect: changed 1 - S1 spans 120 deg, perpendicular to grid 1
+
+  - given: the first positive run again, after it was KEPT
+    expect: >
+      changed 0, S1 in alreadyThere - nothing turned twice. And angleDegrees
+      210 alone also leaves S1 in alreadyThere: 30 and 210 are the same span
+
+negative:
+  - given: >
+      the walls of Level 1 instead - SELECT_BY_CATEGORY_NAME with Walls - with
+      the same along "grid 1"
+    expect: >
+      changed 0, changedIds empty, W1 in notFloors. No span direction changed
+      anywhere. This is the leg D-30 exists for: a fragment that set whatever
+      it was handed shows here. THE FIRST CASE TO RUN
+
+  - given: N2 alone, angleDegrees 90
+    expect: >
+      changed 0, N2 in notStructural, nothing changed - the floor whose
+      Structural box is clear is named, never given a span or ticked structural
+
+  - given: the floors with along "grid R1", the arc grid
+    expect: >
+      changed 0; refused "Grid R1 is curved, and an arc runs no one way ...
+      Nothing was changed." - no direction guessed from the arc
+
+  - given: the floors with along "grid 99", a grid the model does not have
+    expect: refused "No grid is called \"99\" ..." - nothing changed
+
+  - given: the floors with angleDegrees and along both left out
+    expect: >
+      refused "No angle and no grid, reference plane or line was given, and a
+      span direction is never guessed ..." - nothing changed
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one call is one undo entry
+
+second_route:
+  - >
+    In Revit, after a KEPT run, place a span direction symbol on S1 by hand
+    (Annotate > Symbol > Span Direction) in "FloorPlan: Level 1": its arrow
+    lies along grid 1. Revit's own drawing, not another Heron read
+  - >
+    Revit's own Structure > Span Direction on S1, aligned to grid 1 by hand in
+    a saved copy, then this card along "grid 1": S1 in alreadyThere

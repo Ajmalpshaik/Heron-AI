@@ -165,3 +165,7 @@ utterances:
   - revit says these are not connected
   - the system is split in two
   - fix the connections on this run
+  # ADDED 2026-11-02, row 5b-1419. Two routing tables send this sentence
+  # here (CHECK_EQUIPMENT_CONNECTORS, REPORT_CONNECTORS); it reached
+  # DISALLOW_JOIN, and FIT_MEP_JOINTS once the wall join cards were added.
+  - join these open ends up

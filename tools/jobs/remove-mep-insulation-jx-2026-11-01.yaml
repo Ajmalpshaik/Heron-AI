@@ -1,0 +1,60 @@
+# NEEDS-CHECKING Group JX - REMOVE_MEP_INSULATION, built 2026-11-01 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/remove-mep-insulation-jx-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/remove-mep-insulation-jx-2026-11-01.yaml
+#
+# THE MODEL: Snowdon-scratch_ajmal.al, open and in front in Revit 2024 - the
+# owner's scratch copy of the sample HVAC model REMOVE_TAGS was proved on.
+# Whether its ducts carry insulation is NOT KNOWN here and is not guessed.
+#
+# THE ROOM BELOW IS NOT KNOWN YET EITHER. JX1 in
+# docs/needs-checking/group-jx.md reads, with SELECT_BY_INSULATION, which ducts
+# are insulated and which bare, and finds a room holding a FEW of each; its
+# name goes in place of the marked value. Until then no room answers to it and
+# the setup should stop there, before the remove runs - expected, NOT RUN. If
+# the model has no insulated ducts, JX1 says so and the job is not run here.
+#
+# THE ARRANGEMENT, RE-MADE BEFORE EACH PHASE: the insulated ducts (positive)
+# or the BARE ducts (negative) of that room, then selected. A rolled-back
+# write clears Revit's selection, which is why it is a chain and not a hand
+# selection. The negative is a DIFFERENT SELECTION, not an empty one: the bare
+# ducts of the same room, which must come back with nothing removed while the
+# insulated ducts beside them keep their insulation.
+#
+# Fittings, insulation picked directly, lining and a wrong selection are rows
+# JX4 to JX7 of the group, run with `validate --write` on selections made by
+# hand. Every write here is ROLLED BACK.
+
+model: Snowdon-scratch_ajmal.al, Revit 2024
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: remove-mep-insulation
+    expect: removed
+    setup:
+      - select-by-insulation
+      - filter-elements-in-room
+      - set-selection
+    setup-set:
+      categories: Ducts
+      wantInsulated: "true"
+      countLiningAsInsulated: "false"
+      room: "THE ROOM JX1 READ"
+    negative-setup-set:
+      categories: Ducts
+      wantInsulated: "false"
+      countLiningAsInsulated: "false"
+      room: "THE ROOM JX1 READ"
+    set: {}
+    negative-set: {}
+    note: >
+      JX2 and JX3. Positive - removed equal to the insulation elements on
+      the insulated ducts of that room, report a line per duct "N
+      insulation element(s) removed". Negative - THE FIRST CASE TO RUN: the
+      bare ducts of the same room, so removed 0, refused "None of the N
+      duct, pipe, fitting, accessory or flex element(s) selected had
+      insulation on it", report naming each as having none; the insulated
+      ducts of that room not touched.

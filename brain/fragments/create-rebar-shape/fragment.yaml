@@ -1,0 +1,172 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-168
+semantic-identity: "make a new rebar shape type from bar segment lengths and corner bends, for the Rebar Shape Browser"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for as a gap on Revit's ribbon, Structure > Reinforcement
+# > Rebar Shape and the Rebar Shape Browser: "make a new RebarShape from a list
+# of segment lengths/angles". Checked that day with brain/heron_retrieve.py on
+# a scratch store, Revit 2024: "create a new rebar shape from segment lengths
+# and angles" and "make a rebar shape" reached CREATE_REBAR_BAR_TYPE,
+# PLACE_REBAR, SET_REINFORCEMENT_SETTINGS, LIST_REBAR_TYPES and
+# CREATE_REBAR_HOOK_TYPE. None makes a rebar shape. Read in full that day:
+#   CREATE_REBAR_BAR_TYPE, CREATE_REBAR_HOOK_TYPE (PROVEN) - a bar type and a
+#     hook type, the two siblings of this one; neither makes a shape, and each
+#     is PROVEN, so neither was widened
+#   PLACE_REBAR (DRAFT) - places a BAR of a shape already loaded; its sketched
+#     route lets Rebar.CreateFromCurves pick or make a shape as a side effect,
+#     unnamed. A named shape of chosen segments, with no bar placed, is a job
+#     of its own: different values, no host, a type rather than an element
+#   LIST_REBAR_TYPES (PROVEN) - lists the shapes loaded, which is how a
+#     modeller sees this one afterwards
+# The duplicate check (heron_duplicates.look, 2026-11-02) found no card of
+# this capability or signature.
+#
+# THE VALUES, every one the modeller's (D-33):
+#   shapeName   the new shape's name. One already in the model is refused,
+#               naming it
+#   segments    the lengths, in mm, in order from the bar's start - "300,
+#               600, 300". Each is driven by the model's own rebar shape
+#               parameter A, B, C ... in order (the letters Revit's shapes
+#               use), its default value the length given
+#   bends       the degrees turned at each corner walking from the start,
+#               left or right - "90 left, 90 left", or +90, -90. One fewer
+#               than the segments; left out only for one straight segment.
+#               More than 0 and less than 180
+#   shapeStyle  standard (main bars) or stirrup/tie (links)
+#   attachment  stirrup/tie only: interior or exterior face of cover. Never
+#               chosen for you
+#   startHook,  "none", or whole degrees and a turn - "135 left". Left out,
+#   endHook     no hook
+#
+# REFUSED BEFORE ANYTHING IS MADE: no name, a name in use, no lengths or a
+# length that is not more than 0, the wrong number of bends, a bend of 0 or
+# 180 or more, a style that is not one of the two, a stirrup with no
+# attachment, a hook with no turn, a model without the letters A, B, C ...
+# (Heron adds no shared parameters), and a shape Revit's own solver cannot
+# solve (RebarShapeDefinition.CheckDefaultParameterValues). A shape Revit
+# refuses at Create is removed again inside the same undo, with its words.
+#
+# READ BACK after a regenerate: name, style and attachment, the number of
+# segments and each letter's length, the bends, both hooks, and how many bar
+# types the shape is allowed for - so PLACE_REBAR can be pointed at it.
+#
+# NOT DONE HERE, AND SAID: arcs and spirals (RebarShapeDefinitionByArc), 180
+# degree bends, 3D shapes (RebarShapeMultiplanarDefinition), a shape from
+# curves (PLACE_REBAR's sketched bar does that, with a bar).
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: CREATE_REBAR_SHAPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+purpose: >
+  Makes a new rebar shape for the Rebar Shape Browser from the segment lengths
+  and the bend at each corner the modeller gives - standard or stirrup/tie,
+  with or without hooks - and reads back what Revit made.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: shapeName
+      type: string
+      source: request
+    # MILLIMETRES, in order from the start: "300, 600, 300".
+    - name: segments
+      type: string
+      source: request
+    # Degrees turned at each corner, left or right: "90 left, 90 left".
+    - name: bends
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # "standard" or "stirrup/tie".
+    - name: shapeStyle
+      type: string
+      source: request
+    # Stirrup/tie only: "interior" or "exterior".
+    - name: attachment
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # "none", or "135 left".
+    - name: startHook
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: endHook
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: created
+      role: result
+      type: IList<ElementId>
+    - name: readBack
+      # The new shape as Revit now holds it (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  TWO CREATE ROUTES, ONE #if, read with tools/api-surface --members on
+  2026-11-02. RebarShape.Create(Document, RebarShapeDefinition,
+  RebarShapeMultiplanarDefinition, RebarStyle, StirrupTieAttachmentType, int,
+  RebarHookOrientation, int, RebarHookOrientation, int) is 2020-2026, obsolete
+  at 2026 and gone at 2027 (2021-2026 also carry a longer form with hook
+  rotations and end treatments, not used); 2026-2027 take
+  Create(Document, RebarShapeDefinition, RebarShapeMultiplanarDefinition,
+  RebarStyle, StirrupTieAttachmentType, int, RebarShapeTerminationsData), the
+  terminations type 2026-2027 only. Read back the same way:
+  GetDefaultHookAngle(int) 2020-2026, GetTerminationsData() 2026-2027.
+  RebarHookOrientation is 2020-2026, RebarTerminationOrientation 2026-2027.
+  One signature on all eight: RebarShapeDefinitionBySegments(Document, int),
+  AddParameter, AddConstraintParallelToSegment, SetSegmentFixedDirection,
+  AddBendDefaultRadius, MajorSegmentIndex, NumberOfSegments, Complete,
+  CheckDefaultParameterValues, HasParameter, GetParameterDefaultValue;
+  RebarShapeParameters.GetAllRebarShapeParameters; RebarShapeBendAngle
+  (Acute, Right, Obtuse), RebarShapeVertexTurn, StirrupTieAttachmentType;
+  RebarShape.RebarStyle, StirrupTieAttachment, GetAllowed,
+  GetRebarShapeDefinition; ParameterElement.GetDefinition; Parameter.IsShared.
+  Ids are compared as ElementId, never read as numbers. NOT RUN on any Revit.
+
+# ROUTING (2026-11-02) - the rebar rows are those in every rebar card.
+#
+#   "make a new rebar shape from a list of
+#    segment lengths and angles"            -> here
+#   "create a rebar shape for the rebar
+#    shape browser"                         -> here
+#   "make a 135 degree stirrup hook"        -> CREATE_REBAR_HOOK_TYPE
+#   "make a T16 bar type"                   -> CREATE_REBAR_BAR_TYPE
+#   "place a T16 bar of shape 21 along this
+#    wall at 200 spacing"                   -> PLACE_REBAR - a bar of a
+#                                              shape already loaded
+#   "what rebar shapes are loaded"          -> LIST_REBAR_TYPES
+#   "what shape is this element"            -> MEASURE_ELEMENT_VOLUME - a
+#                                              question; it reached here on
+#                                              the search once this card
+#                                              joined, and is declared there
+#                                              (row 5b-1457)
+utterances:
+  - make a new rebar shape from a list of segment lengths and angles
+  - create a rebar shape for the rebar shape browser

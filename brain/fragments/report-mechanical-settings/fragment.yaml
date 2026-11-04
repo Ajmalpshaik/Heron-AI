@@ -1,0 +1,118 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-096
+semantic-identity: "what are this model's Mechanical Settings - the connector separator, size prefix and suffix text, flat on top and flat on bottom, set up and set down, fitting symbol size, air density and viscosity"
+kind: action
+domain: revit.mep
+capability: REPORT_MECHANICAL_SETTINGS
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for as a ribbon gap - "Mechanical Settings: read and set
+# DuctSettings values: connector separator, flat-on-top/bottom annotations,
+# duct fitting annotation size, air density/viscosity, rise/drop symbols", and
+# the pipe settings beside them. Revit's Manage > MEP Settings > Mechanical
+# Settings > Duct Settings and Pipe Settings. No card read them (grep of
+# brain/fragments that day for DuctSettings, PipeSettings, ConnectorSeparator
+# and AirDensity: only the sizes cards below), and brain/heron_retrieve.py's
+# find() on a scratch store of this tree (Revit 2024, with and without the
+# host's question flag) sent "what are the duct settings" to
+# REPORT_DUCT_CONDUIT_SIZES, "what is the duct connector separator" to
+# REPORT_CONNECTORS and "what is the air density in the duct settings" to
+# REPORT_DUCT_WEIGHT - none of which reads these values.
+#
+# LOOK-ALIKES, NOT DUPLICATES (each read in full, the heron-duplicate-checker
+# method; brain/heron_duplicates and the Matcher found no same-capability or
+# same-signature card):
+#   REPORT_DUCT_CONDUIT_SIZES lists the SIZES set up on the Duct Settings
+#     Rectangular / Oval / Round pages and the conduit and cable tray sizes -
+#     size lists, not these annotation and air values. EDIT_MEP_SIZES changes
+#     those lists.
+#   REPORT_CONNECTORS reads connectors on elements, not the separator text.
+#   REPORT_ELECTRICAL_SETTINGS reads Electrical Settings - the pattern this
+#     card follows, another dialog.
+#
+# THE READ HALF OF A SET. SET_MECHANICAL_SETTINGS changes these values and
+# takes every one by the name printed here; every question about them comes
+# here, so no question reaches the write (D-86).
+#
+# READ ONLY - opens no transaction and needs none.
+purpose: >
+  Answers what the project-wide Mechanical Settings dialog holds on its Duct
+  Settings and Pipe Settings pages - the connector separator, the size
+  prefix, separator and suffix text, the flat on top, flat on bottom, set up
+  and set down abbreviations, the centerline text, the single line fitting
+  and rise/drop symbol size, and the air density and viscosity used for
+  pressure loss. Millimetres, kg/m3 and Pa-s. Nothing needs to be selected
+  and nothing changes.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: show
+      # Which page: duct | pipe | all - or left out for both (`absent: all`).
+      # A word that is none of them is named, never guessed.
+      type: string
+      source: request
+      optional: true
+      absent: all
+  provides:
+    - name: ductSettings
+      # Every Duct Setting read, in the names SET_MECHANICAL_SETTINGS takes:
+      # "Duct Settings - duct use annotation scale for single line fittings
+      # yes; duct fitting annotation size 3 mm; air density 1.2 kg/m3; ...".
+      # Empty when not asked for or the document has none.
+      role: result
+      type: string
+    - name: pipeSettings
+      # The same for Pipe Settings.
+      role: result
+      type: string
+    - name: settingsRead
+      # How many settings were read - a count of what it FOUND.
+      role: result
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, read off tools/api-surface --members
+  for all eight on 2026-11-02. DuctSettings.GetDuctSettings, AirDensity,
+  ConnectorSeparator, FlatOnTop, FlatOnBottom, SetUp, SetDown,
+  SetUpFromBottom, SetDownFromBottom, Centerline, FittingAnnotationSize,
+  RiseDropAnnotationSize, UseAnnotationScaleForSingleLineFittings and the
+  Rectangular / Round / Oval duct size prefix, separator and suffix are 2020
+  to 2027 with one signature, and so are PipeSettings.GetPipeSettings and its
+  same-named members with SizePrefix and SizeSuffix. Air viscosity is
+  AirViscosity 2020-2024 (obsolete in 2025) and AirDynamicViscosity 2025 on,
+  behind `#if REVIT2025_OR_GREATER`. Density and viscosity are converted by
+  UnitUtils - DisplayUnitType DUT_KILOGRAMS_PER_CUBIC_METER and
+  DUT_PASCAL_SECONDS on 2020 (`#if REVIT2020`), UnitTypeId
+  KilogramsPerCubicMeter and PascalSeconds from 2021. NOT KNOWN FROM THE
+  ASSEMBLIES and measured in NEEDS-CHECKING Group MM: that the annotation
+  sizes are held in feet, as every Revit length is, so that / 304.8 prints
+  what the dialog shows.
+
+# ROUTING (2026-11-02) - the same rows are in SET_MECHANICAL_SETTINGS.
+#
+#   "read the mechanical settings"               -> here
+#   "set the connector separator"                -> SET_MECHANICAL_SETTINGS - a change goes to the write
+#   "what duct sizes are available for round ducts"
+#                                                -> REPORT_DUCT_CONDUIT_SIZES - the size lists
+#   "read the energy settings"                   -> REPORT_ENERGY_SETTINGS - another dialog
+#
+# WHAT MOVED: see NEEDS-CHECKING Group MM - one measurement for the six cards
+# of that group, before and after, with and without the host's question flag.
+utterances:
+  - read the mechanical settings

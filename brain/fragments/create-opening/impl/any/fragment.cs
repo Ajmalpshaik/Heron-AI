@@ -1,7 +1,24 @@
-// NOT STANDALONE. Assumes `doc`, `host`, `boundary`, `perpendicularFace` and
-// `shape`; leaves `created`, `openingId`, `built`, `refused` and `findings`.
+// NOT STANDALONE. Assumes `doc`, `host`, `boundary`, `perpendicularFace`,
+// `shape` and `wallOpening`; leaves `created`, `openingId`, `built`, `refused`
+// and `findings`.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). Lengths are internal FEET.
+//
+// VERSION 4 (2026-11-02) - A WALL TAKES THE WALL'S OWN CALL, Revit's
+// Architecture > Opening > Wall. Until now a wall went to the call that takes a
+// host element, a profile and a bool, which Revit answers "The hostElement is
+// not a floor, ceiling or roof" (this card's own proof, 2026-10-18, on a text
+// note; NEEDS-CHECKING AJ9 asked for the wall). A wall now goes to
+// `Document.Create.NewOpening(Wall, XYZ, XYZ)` - a RECTANGLE from two opposite
+// corners in the wall's plane - either from `wallOpening`, "1200 x 800 at 900"
+// (width, height and sill above the wall's base level, in millimetres; "along
+// 2500" puts its centre that far from the wall's start, else it is centred on
+// the wall and the findings say so), or from `boundary` points that are the
+// corners of one upright rectangle on the wall. A curved wall is REFUSED:
+// whether the wall call cuts one has not been checked, and refusing is the
+// safer rule. A curtain wall is refused by name. READ BACK from the opening's
+// own rectangle - width, height and sill to a millimetre; one that does not
+// read back as asked is deleted again and the run refused, so nothing is left.
 //
 // VERSION 3 (2026-11-01) took in CREATE_FAMILY_HOST_OPENING, merged into this
 // card and DEPRECATED: an opening in the TEMPLATE'S OWN WALL OR CEILING of a
@@ -36,6 +53,10 @@ string refused = null;
 
 var shapeSaid = (shape ?? "").Trim();
 var shapeGiven = shapeSaid.Length > 0 && !string.Equals(shapeSaid, "none", StringComparison.OrdinalIgnoreCase);
+// VERSION 4: a wall's rectangle in words - "1200 x 800 at 900", optionally
+// "along 2500". Left out ("none"): a wall's opening comes from `boundary`.
+var wallSaid = (wallOpening ?? "").Trim();
+var wallGiven = wallSaid.Length > 0 && !string.Equals(wallSaid, "none", StringComparison.OrdinalIgnoreCase);
 
 if (doc.IsFamilyDocument)
 {
@@ -259,6 +280,9 @@ if (doc.IsFamilyDocument)
     if (boundary != null && boundary.Count > 0)
         problems.Add("In a family the opening is drawn by `shape` in millimetres; `boundary` is a project's, and is "
             + "left out here.");
+    if (wallGiven)
+        problems.Add("`wallOpening` is a project wall's rectangular opening; in a family the opening is drawn by "
+            + "`shape`, and `wallOpening` is left out here.");
 
     if (walls.Count + ceilings.Count == 0)
         problems.Add(floorsOrRoofs > 0
@@ -401,6 +425,202 @@ else if (host == null)
     refused = "No host was given. An opening is cut THROUGH something - a "
         + "wall, a floor, a roof or a ceiling";
     findings.Add(refused);
+}
+else if (wallGiven && !(host is Wall))
+{
+    refused = "`wallOpening` is a wall's rectangular opening, and the host given is "
+        + (host.Category == null ? "not a wall" : "in " + host.Category.Name)
+        + ". A floor, roof, ceiling, beam or column takes boundary points - nothing was cut";
+    findings.Add(refused);
+}
+else if (host is Wall)
+{
+    // ---- VERSION 4: A WALL - THE WALL'S OWN CALL, A RECTANGLE -----------------
+    var wall = (Wall)host;
+    var invariantW = System.Globalization.CultureInfo.InvariantCulture;
+    Func<double, string> mmW = feet => Math.Round(feet * 304.8, 0).ToString(invariantW);
+    var oneMm = 1.0 / 304.8;
+    var shortestW = doc.Application.ShortCurveTolerance;
+    var wallLocation = wall.Location as LocationCurve;
+    var wallLine = wallLocation == null ? null : wallLocation.Curve as Line;
+    var wallLevel = doc.GetElement(wall.LevelId) as Level;
+    var wallBox = wall.get_BoundingBox(null);
+    var wallWords = "the wall \"" + wall.Name + "\"";
+    var wallProblems = new List<string>();
+
+    if (wall.WallType != null && wall.WallType.Kind == WallKind.Curtain)
+        wallProblems.Add(wallWords + " is a curtain wall, and Revit's wall opening does not cut one - a curtain "
+            + "wall's panel is changed instead.");
+    else if (wallLine == null)
+        wallProblems.Add(wallWords + " is curved. Whether Revit's wall opening call cuts a curved wall has not been "
+            + "checked, so it is refused rather than tried.");
+    else if (wallLevel == null || wallBox == null)
+        wallProblems.Add("The base level or the extent of " + wallWords + " could not be read.");
+
+    if (wallGiven && boundary != null && boundary.Count > 0)
+        wallProblems.Add("Both `wallOpening` and boundary points were given; a wall's opening is one or the other.");
+    else if (!wallGiven && (boundary == null || boundary.Count < 3))
+        wallProblems.Add(string.Format("An opening needs at least three boundary points and {0} were given - or, "
+            + "in a wall, `wallOpening` such as \"1200 x 800 at 900\".", boundary == null ? 0 : boundary.Count));
+
+    // The rectangle, along the wall from its start (t) and up (z), in feet.
+    double t0 = 0, t1 = 0, z0 = 0, z1 = 0;
+    var centred = false;
+    XYZ start = null, along = null;
+    var length = 0.0;
+
+    if (wallProblems.Count == 0)
+    {
+        var e0 = wallLine.GetEndPoint(0);
+        var e1 = wallLine.GetEndPoint(1);
+        start = new XYZ(e0.X, e0.Y, 0);
+        var run = new XYZ(e1.X - e0.X, e1.Y - e0.Y, 0);
+        length = run.GetLength();
+        along = run.Normalize();
+        var across = along.CrossProduct(XYZ.BasisZ);
+        var floorAt = wallLevel.ProjectElevation;
+
+        if (wallGiven)
+        {
+            var words = System.Text.RegularExpressions.Regex.Replace(wallSaid, @"(?<=\d)\s*mm\b", "",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            var match = System.Text.RegularExpressions.Regex.Match(words,
+                @"^\s*([0-9]+(?:\.[0-9]+)?)\s*[xX*]\s*([0-9]+(?:\.[0-9]+)?)\s+(?:at|sill)\s+(-?[0-9]+(?:\.[0-9]+)?)"
+                + @"(?:\s+along\s+([0-9]+(?:\.[0-9]+)?))?\s*$",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (!match.Success)
+                wallProblems.Add("`wallOpening` is written \"WIDTH x HEIGHT at SILL\", in millimetres, the sill above "
+                    + "the wall's base level - as in \"1200 x 800 at 900\" - with \"along 2500\" after it for its "
+                    + "centre's distance from the wall's start. It reads \"" + wallSaid + "\".");
+            else
+            {
+                var width = double.Parse(match.Groups[1].Value, invariantW) / 304.8;
+                var height = double.Parse(match.Groups[2].Value, invariantW) / 304.8;
+                var sill = double.Parse(match.Groups[3].Value, invariantW) / 304.8;
+                centred = !match.Groups[4].Success;
+                var centre = centred ? length / 2 : double.Parse(match.Groups[4].Value, invariantW) / 304.8;
+                if (width < shortestW || height < shortestW)
+                    wallProblems.Add("An opening " + mmW(width) + " x " + mmW(height) + " mm is too small to cut.");
+                t0 = centre - width / 2;
+                t1 = centre + width / 2;
+                z0 = floorAt + sill;
+                z1 = z0 + height;
+            }
+        }
+        else
+        {
+            var ts = new List<double>();
+            var zs = new List<double>();
+            foreach (var point in boundary)
+            {
+                if (point == null) { wallProblems.Add("A boundary point is missing."); break; }
+                var offset = new XYZ(point.X - start.X, point.Y - start.Y, 0);
+                if (Math.Abs(offset.DotProduct(across)) > wall.Width / 2 + oneMm)
+                {
+                    wallProblems.Add("A boundary point lies " + mmW(Math.Abs(offset.DotProduct(across)))
+                        + " mm off the centre of " + wallWords + ", which is " + mmW(wall.Width) + " mm thick - "
+                        + "the boundary is not on the wall.");
+                    break;
+                }
+                ts.Add(offset.DotProduct(along));
+                zs.Add(point.Z);
+            }
+            if (wallProblems.Count == 0)
+            {
+                t0 = ts.Min(); t1 = ts.Max(); z0 = zs.Min(); z1 = zs.Max();
+                for (var i = 0; i < ts.Count; i++)
+                {
+                    var atCorner = (Math.Abs(ts[i] - t0) <= oneMm || Math.Abs(ts[i] - t1) <= oneMm)
+                        && (Math.Abs(zs[i] - z0) <= oneMm || Math.Abs(zs[i] - z1) <= oneMm);
+                    if (!atCorner)
+                    {
+                        wallProblems.Add("Revit's wall opening is an upright RECTANGLE, and boundary point "
+                            + (i + 1) + " is not at one of its corners.");
+                        break;
+                    }
+                }
+                if (t1 - t0 < shortestW || z1 - z0 < shortestW)
+                    wallProblems.Add("The boundary points do not span a rectangle up the wall - they are in a line.");
+            }
+        }
+
+        if (wallProblems.Count == 0)
+        {
+            if (t0 < -oneMm || t1 > length + oneMm)
+                wallProblems.Add("The opening runs " + mmW(t0) + " to " + mmW(t1) + " mm along " + wallWords
+                    + ", which is " + mmW(length) + " mm long - it would run off the wall's end.");
+            if (z0 < wallBox.Min.Z - oneMm || z1 > wallBox.Max.Z + oneMm)
+                wallProblems.Add("The opening runs " + mmW(z0 - floorAt) + " to " + mmW(z1 - floorAt) + " mm above \""
+                    + wallLevel.Name + "\", and " + wallWords + " runs " + mmW(wallBox.Min.Z - floorAt) + " to "
+                    + mmW(wallBox.Max.Z - floorAt) + " mm - it would run off the wall's bottom or top.");
+        }
+    }
+
+    if (wallProblems.Count > 0)
+    {
+        refused = "Nothing was cut. " + string.Join(" ", wallProblems);
+        findings.Add(refused);
+    }
+    else
+    {
+        var pointStart = new XYZ(start.X + along.X * t0, start.Y + along.Y * t0, z0);
+        var pointEnd = new XYZ(start.X + along.X * t1, start.Y + along.Y * t1, z1);
+        Opening opening = null;
+        try { opening = doc.Create.NewOpening(wall, pointStart, pointEnd); }
+        catch (Exception ex)
+        {
+            refused = string.Format("Opening failed: {0}", ex.Message);
+            findings.Add(refused);
+        }
+        if (refused == null && opening == null)
+        {
+            refused = "Revit returned no opening in " + wallWords + " - nothing was cut";
+            findings.Add(refused);
+        }
+        if (refused == null)
+        {
+            doc.Regenerate();
+            // READ BACK from the opening's own rectangle. A miss deletes it
+            // again, so a refused run leaves nothing behind.
+            var rect = opening.IsRectBoundary ? opening.BoundaryRect : null;
+            string miss = null;
+            double rt0 = 0, rt1 = 0, rz0 = 0, rz1 = 0;
+            if (rect == null || rect.Count < 2)
+                miss = "the opening does not read back as a rectangle";
+            else
+            {
+                var ra = new XYZ(rect[0].X - start.X, rect[0].Y - start.Y, 0).DotProduct(along);
+                var rb = new XYZ(rect[1].X - start.X, rect[1].Y - start.Y, 0).DotProduct(along);
+                rt0 = Math.Min(ra, rb); rt1 = Math.Max(ra, rb);
+                rz0 = Math.Min(rect[0].Z, rect[1].Z); rz1 = Math.Max(rect[0].Z, rect[1].Z);
+                if (Math.Abs(rt0 - t0) > oneMm || Math.Abs(rt1 - t1) > oneMm
+                    || Math.Abs(rz0 - z0) > oneMm || Math.Abs(rz1 - z1) > oneMm)
+                    miss = "the opening reads " + mmW(rt0) + " to " + mmW(rt1) + " mm along the wall and "
+                        + mmW(rz0 - wallLevel.ProjectElevation) + " to " + mmW(rz1 - wallLevel.ProjectElevation)
+                        + " mm up, not where it was asked - " + mmW(t0) + " to " + mmW(t1) + " and "
+                        + mmW(z0 - wallLevel.ProjectElevation) + " to " + mmW(z1 - wallLevel.ProjectElevation);
+            }
+            if (miss != null)
+            {
+                doc.Delete(opening.Id);
+                refused = "Nothing was kept: " + miss + ". The opening was deleted again";
+                findings.Add(refused);
+            }
+            else
+            {
+                created = opening.Id;
+                openingId = opening.UniqueId;
+                built = "A " + mmW(rt1 - rt0) + " x " + mmW(rz1 - rz0) + " mm opening in " + wallWords + ", its sill "
+                    + mmW(rz0 - wallLevel.ProjectElevation) + " mm above \"" + wallLevel.Name + "\", its centre "
+                    + mmW((rt0 + rt1) / 2) + " mm along the wall from its start - read back.";
+                findings.Add(built);
+                if (centred)
+                    findings.Add("No place along the wall was given, so the opening is centred on the wall's "
+                        + mmW(length) + " mm length - \"along 2500\" puts its centre 2500 mm from the start.");
+                findings.Add("The wall is now penetrated - check it in a section or elevation before relying on it.");
+            }
+        }
+    }
 }
 else if (boundary == null || boundary.Count < 3)
 {

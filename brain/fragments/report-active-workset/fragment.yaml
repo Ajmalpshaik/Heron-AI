@@ -1,0 +1,115 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-060
+semantic-identity: "which workset is active - the one new elements are placed on - and whether this model is workshared"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "which workset is active",
+# "what is the active workset" and "am I on the right workset" - Revit's Active
+# Workset box on the status bar, and Collaborate > Active Workset. No card in
+# the library reported it (grep of brain/fragments for GetActiveWorksetId that
+# day: only COPY_ELEMENTS and SET_ACTIVE_WORKSET, both writes). FRAGMENT-ISSUES
+# row 5b-1370 recorded the first sentence reaching SET_ACTIVE_WORKSET, a write,
+# when the host did not flag it as a question, and SELECT_BY_WORKSET, a read
+# that does not answer it, when it did.
+#
+# A NEW READ, NOT A WIDENING OF LIST_WORKSETS (FRG-DOC-002, PROVEN). That card
+# answers "which worksets does this model have, and which are open"; naming the
+# active one there would change its impl/ and make its proof stale until it is
+# proved again, which waits for the owner's yes. The contracts differ: that one
+# provides worksetCount and closedCount; this one provides the active
+# workset's name and whether it is editable. The user worksets are listed here
+# too, each with its open and editable state, only so "am I on the right
+# workset" can be answered against the choices - the count of closed worksets,
+# and what a closed one hides, stay LIST_WORKSETS' job.
+#
+# WHETHER IT IS THE RIGHT WORKSET IS THE MODELLER'S CALL. Nothing here judges
+# it; the answer names the active workset and the ones it could be instead.
+#
+# NOT WORKSHARED IS A THIRD ANSWER, as in LIST_WORKSETS: such a model has no
+# worksets and no active one, and saying "none" would read as a workshared
+# model with nothing active.
+#
+# READ ONLY - opens no transaction and needs none.
+kind: action
+domain: revit.document
+capability: REPORT_ACTIVE_WORKSET
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports the active workset - the one new elements are placed on, shown in
+  the Active Workset box on Revit's status bar - with whether it is open,
+  editable and owned by somebody, and lists the model's user worksets with
+  their open and editable state. A model that is not workshared is said to
+  have no worksets and no active workset, never reported as empty.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: activeWorkset
+      # The active workset's name exactly as Revit shows it. Empty when the
+      # model is not workshared.
+      role: result
+      type: string
+    - name: workshared
+      # NOT WORKSHARED IS A THIRD ANSWER, NOT AN EMPTY ONE - a single-user file
+      # has no worksets and no active workset.
+      role: result
+      type: bool
+    - name: activeEditable
+      # The active workset's Editable state, as Collaborate > Worksets shows
+      # it - true when this user has taken it for editing (D-52).
+      role: accounting
+      type: bool
+    - name: userWorksets
+      # Every user workset by name, each open or closed, editable or not, its
+      # owner when somebody has it, and the active one marked - the choices
+      # beside the answer (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Document.IsWorkshared,
+  Document.GetWorksetTable, WorksetTable.GetActiveWorksetId,
+  WorksetTable.GetWorkset(WorksetId), the FilteredWorksetCollector(Document)
+  constructor, OfKind and ToWorksets, WorksetKind.UserWorkset, Workset.Name,
+  Id, Kind, IsOpen, IsEditable and Owner, WorksetId.InvalidWorksetId and
+  WorksetId's == carry the same signatures 2020 through 2027 - read with
+  tools/api-surface --members on 2026-11-01. A WorksetId is compared with ==,
+  never read as a number.
+
+# ROUTING (2026-11-01) - the same rows are in SET_ACTIVE_WORKSET and
+# LIST_WORKSETS.
+#
+#   "which workset is active"               -> here
+#   "what is the active workset"            -> here
+#   "am I on the right workset"             -> here - names the active one and
+#                                              the others; which is right is
+#                                              the modeller's call
+#   "make Mechanical the active workset"    -> SET_ACTIVE_WORKSET - a WRITE,
+#                                              and this one only reads
+#   "list the worksets"                     -> LIST_WORKSETS - every workset,
+#                                              and what a closed one hides
+#   "which workset is this on"              -> REPORT_ELEMENT_OWNERSHIP - an
+#                                              ELEMENT's workset, not the
+#                                              active one
+#   "what is on the linked models workset"  -> SELECT_BY_WORKSET
+#   "add a new workset"                     -> CREATE_WORKSET
+utterances:
+  - which workset is active
+  - what is the active workset
+  - am I on the right workset

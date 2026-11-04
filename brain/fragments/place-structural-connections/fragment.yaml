@@ -1,0 +1,165 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-149
+semantic-identity: "place a steel connection of a named connection type between these beams and columns, or on each of these members alone - Steel > Connection"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "add a base plate connection to
+# these column bases" and "put a shear plate connection between this beam and
+# column" - Revit's Steel > Connection (Structure > Connection on 2020). No card
+# placed one: grep of every fragment's C# that day for StructuralConnection
+# found nothing, and brain/heron_retrieve.py on the two sentences (Revit 2024)
+# answered ATTACH_COLUMNS and PLACE_STRUCTURAL_LOADS. COPE_FRAMING cuts a beam
+# end round a column - geometry, not a connection element; ATTACH_COLUMNS
+# attaches a column to a roof or floor; CONNECT_OPEN_ENDS and
+# CONNECT_AIR_TERMINALS join pipes and ducts. Look-alikes, not duplicates.
+#
+# CHANGING A CONNECTION'S TYPE IS NOT HERE. "change these connections to Clip
+# angle" is CHANGE_ELEMENT_TYPE's job - a connection is an element with a type
+# like any other, and that card names the type, reads it back and refuses what
+# Revit will not take. A connection handed in here is named and left alone.
+# REPORT_STRUCTURAL_CONNECTIONS answers every question about which connections
+# and connection types there are (D-86).
+#
+# THE TYPE IS NEVER GUESSED (D-33). Left out, nothing is placed and the
+# model's connection types are named - even when the model holds only one.
+# "Base plate", "Shear plate", "Clip angle" are what the modeller calls a
+# connection; whether the model has a type of that name is what the list
+# answers. Matched by its whole name or as "Family: Type".
+#
+# TWO LAYOUTS, BECAUSE THE TWO SENTENCES ASK FOR TWO SHAPES. "between this beam
+# and column" is ONE connection joining everything handed in (`together`, the
+# way Revit's own tool works); "to these column bases" is one connection on
+# EACH member alone (`each`). Together, the members must touch one another, or
+# nothing is placed and the one touching none is named - five columns standing
+# apart are not one joint, and a connection made of them would be a guess.
+#
+# PLATES, BOLTS, WELDS AND CUTS ARE NOT MADE HERE, AND CANNOT BE. Revit's API
+# places the connection element of a type; a detailed type's fabrication parts
+# come from the type itself, through Revit's Steel Connections, and are edited
+# only through the Advance Steel API, which Heron does not load. A detailed
+# type Revit cannot generate is refused with Revit's own reason.
+#
+# RISK MODIFY. It adds connections and deletes nothing - never a connection,
+# never a member - so Article 7's confirmation does not arise.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: PLACE_STRUCTURAL_CONNECTIONS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places a structural steel connection of a named connection type - Revit's
+  Steel > Connection - joining the beams and columns given, or on each member
+  alone such as a base plate on each column. With no connection type named
+  nothing is placed and the loaded types are listed. A member Revit will not
+  connect is named with Revit's reason; members already joined by a connection
+  are skipped and named. Says per connection its type and what it joins, read
+  back.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      # The structural framing, columns, walls, floors or foundations to
+      # connect - a selection or the step before.
+      type: IList<Element>
+    # A connection type, by its name or as "Family: Type". Left out it arrives
+    # as "list": nothing is placed and the model's connection types are named,
+    # so the modeller can choose one. Never the model's first or only type.
+    - name: connectionType
+      type: string
+      source: request
+      optional: true
+      absent: list
+    # together - ONE connection joining every member handed in, which must
+    # touch one another ("between this beam and column"); each - one
+    # connection on EACH member alone ("on these column bases"). Left out,
+    # together, as Revit's own tool works. Any other word is named and nothing
+    # is placed.
+    - name: layout
+      type: string
+      source: request
+      optional: true
+      absent: together
+  provides:
+    - name: created
+      # The connections placed, each read back after a regenerate - still in
+      # the model, of the type asked, joining what was asked - before it was
+      # kept.
+      role: result
+      type: IList<ElementId>
+    - name: alreadyConnected
+      # Members, or groups of members, a connection already joined - looked at
+      # and left alone, never placed twice (D-52).
+      role: accounting
+      type: int
+    - name: report
+      # ONE STRING, a line per connection asked for: placed with its id, type
+      # and the members it joins, or skipped and why.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was placed, in the modeller's words - evidence it looked
+      # and said no, never a thing it found (D-52). Null when anything was
+      # placed.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. StructuralConnectionHandler.Create(
+  Document, IList<ElementId>, ElementId typeId) is present 2020 through 2027
+  and is the only overload used. The overload without a type was deprecated in
+  2021 and is gone from 2022; the overload taking input points is 2021 on; and
+  the overload taking a type NAME as a string makes a custom type and DELETES
+  the elements handed in (RevitAPI.xml, 2020 and 2027) - never called here.
+  GetConnectedElementIds, SingleElementEndIndex, GetTypeId,
+  StructuralConnectionHandlerType (FamilyName, IsDetailed), Element
+  get_BoundingBox, BoundingBoxXYZ Min and Max, Document.Regenerate and
+  SubTransaction Start, Commit and RollBack are the same 2020 through 2027 -
+  read with tools/api-surface --members on 2026-11-01. RevitAPI.xml names the
+  categories a connection joins - structural framing, structural columns,
+  walls, floors and structural foundations - and makes the first id the
+  primary member. Not seen in Revit.
+
+# ROUTING (2026-11-01) - the same rows are in REPORT_STRUCTURAL_CONNECTIONS and
+# CHANGE_ELEMENT_TYPE.
+#
+#   "add a base plate connection to these column bases"
+#                                                -> here, layout each
+#   "put a shear plate connection between this beam and column"
+#                                                -> here
+#   "change these connections to Clip angle"     -> CHANGE_ELEMENT_TYPE, the
+#                                                   connections selected
+#   "what steel connections are in this model"   -> REPORT_STRUCTURAL_CONNECTIONS
+#   "list the connection types loaded"           -> REPORT_STRUCTURAL_CONNECTIONS
+#   "cope these beams at the columns"            -> COPE_FRAMING - a cut, not a
+#                                                   connection
+#   "attach column base to the footing"          -> ATTACH_COLUMNS
+#   "what does this connect to"                  -> TRACE_CONNECTIVITY, which
+#                                                   declares it - a question,
+#                                                   never this write
+#   "join these two columns"                     -> ADD_SCHEDULE_FIELDS, which
+#                                                   declares it - schedule
+#                                                   columns, not steel ones
+#
+# Those two reach their own cards by identity. On the keyword route alone this
+# card ranks above them since 2026-11-01 (tools/check-routing.py, measured on
+# a scratch store); `find` answers them before any ranking runs.
+utterances:
+  - add a base plate connection to these column bases
+  - put a shear plate connection between this beam and column

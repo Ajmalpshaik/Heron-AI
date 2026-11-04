@@ -225,6 +225,13 @@ compatibility-note: >
 #   "slope this roof"                  -> SLOPE_ROOF_EDGES - the edges of a
 #                                         footprint roof that exists, gable or
 #                                         hip at the modeller's pitch
+#   "make a barrel roof over the entrance",
+#   "add a gable extrusion roof on reference plane North Face"
+#                                      -> CREATE_EXTRUSION_ROOF (2026-11-02) -
+#                                         an open profile on a vertical plane,
+#                                         extruded between a start and an end;
+#                                         this card's roof is a closed outline
+#                                         on plan
 #   "how high is the ceiling"          -> MEASURE_CEILING_HEIGHT - a READ, and it
 #                                         must not answer a request to build one
 #   "where is the ceiling grid"        -> READ_CEILING_GRID
@@ -240,11 +247,39 @@ compatibility-note: >
 #   "make a slab under these rooms"      -> CREATE_FROM_ROOM_BOUNDARIES. This
 #                                           one takes one typed loop and cuts
 #                                           no openings
+#   "make the slab"                      -> here (declared 2026-11-01, 5b-1372)
+#   "add a foundation slab on Level 0
+#    from these corners"                 -> CREATE_FOUNDATION_SLAB - the same
+#                                           boundary writing, a Foundation Slab
+#                                           type, Structural Foundations
+#   "put a ceiling at 2700"              -> here, a ceiling at that height -
+#                                           by identity. Since 2026-11-02 the
+#                                           keyword route alone ranks
+#                                           CREATE_PROJECT_REFERENCE_PLANES
+#                                           first on "2700" and "ceiling"
+#                                           (check-routing, scratch store); a
+#                                           reference plane is a line to set
+#                                           out from, not a ceiling
 
 
 # ROUTING (2026-10-13, the gap fill)
 #
 #   "lay this floor to follow the terrain"   -> EDIT_SLAB_SHAPE, follow
+
+# JUDGED 2026-11-04 (FRAGMENT-ISSUES row 5b-1382, on the owner's yes to the
+# merges with his condition: the impl/ of a PROVEN keeper is never changed)
+# AGAINST CREATE_FOUNDATION_SLAB (FRG-ELE-135) AND KEPT APART. A card-text
+# note only: nothing under impl/ was touched, so the proof above still
+# describes the code and this card stays PROVEN. That card makes a STRUCTURAL
+# FOUNDATION - NewFoundationSlab before 2022, its category read back in
+# Structural Foundations and rolled back if it is not, a Foundation Slab type
+# only - and this card makes an ordinary floor, ceiling or roof and reads no
+# category. Taking the foundation in means a foundation branch in impl/ and
+# a new proof. Still open here, and not changed by this ruling: a Foundation
+# Slab type handed to this card goes through the plain floor call unchecked
+# (row 5b-1383).
+#   "make a 600 thick raft under the building" -> CREATE_FOUNDATION_SLAB
+#   "pour a mat foundation inside these walls" -> CREATE_FOUNDATION_SLAB
 utterances:
   - make a floor slab over this area
   - add a slab here
@@ -264,3 +299,8 @@ utterances:
   - create a roof
   - make the roof on this level
   - add a flat roof here
+  # ADDED 2026-11-01 (row 5b-1372): claimed for this card in CREATE_ROOF's
+  # routing table (CREATE_ROOF is merged into this card since), and reached PLACE_AREA_REINFORCEMENT ranked - then
+  # CREATE_FOUNDATION_SLAB once that card came, on 2024 and 2020. Declared so
+  # it reaches here by identity. Outside impl/, so the proof is not stale.
+  - make the slab

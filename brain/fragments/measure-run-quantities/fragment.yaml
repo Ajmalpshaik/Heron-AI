@@ -223,3 +223,8 @@ utterances:
   # The identity this card had until 2026-11-01, kept as a sentence so it is
   # still answered by its exact words now the identity is wider than MEP runs.
   - how long each duct or pipe is, and how much metal is in it
+  # DECLARED 2026-11-02 (row 5b-1439): REPORT_BOUNDING_BOX's routing row
+  # claims it for this card, and it reached here until CREATE_MEP_RUNS
+  # declared "draw a new duct" in the same change; it then went to that
+  # write, a question answered by a change.
+  - how long is this duct run

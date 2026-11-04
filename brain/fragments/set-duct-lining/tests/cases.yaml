@@ -1,0 +1,81 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that can delete, "touched something nobody asked to touch": the
+# duct, its insulation, or lining on a duct that was not selected.
+# Arrange on Snowdon-scratch_ajmal.al in Revit 2024 (NEEDS-CHECKING Group JY).
+# JY1 reads, with SELECT_BY_INSULATION (countLiningAsInsulated true, then
+# false), which ducts carry lining and which room holds a few lined and a few
+# bare ones, and lists the model's Duct Lining types, before anything runs.
+# Where the counts differ from those below, the job file changes - never the
+# card. EVERY RUN ROLLED BACK, so each case starts from the model as saved.
+
+positive:
+  - given: >
+      the BARE (unlined) ducts in the room JY1 names, selected by
+      select-by-insulation and filter-elements-in-room, thicknessMm 25,
+      liningType the type JY1 names
+    expect: >
+      added equal to the number of ducts; report a line per duct "lining added,
+      25 mm of <type>"; SELECT_BY_INSULATION with countLiningAsInsulated true,
+      in the same rolled-back group, finds them lined; their insulation, if
+      any, still as it was
+  - given: >
+      three ducts and the duct fittings between them, selected by hand,
+      thicknessMm 25, liningType the type JY1 names
+    expect: >
+      each fitting a line of its own, lined as well as the ducts - "line this
+      supply duct and its fittings"
+  - given: >
+      the LINED ducts of the same room, thicknessMm 50, liningType left out
+      (keep)
+    expect: >
+      changed equal to the lined ducts; each line "lining changed from 25 mm of
+      <type> to 50 mm of <type>", the type unchanged; the lining elements are
+      the SAME ids as before - edited in place, never deleted and made again
+  - given: >
+      the LINED ducts of the same room, thicknessMm 0
+    expect: >
+      removed equal to their lining elements; each line "lining removed"; the
+      ducts themselves still there at the same size, and their insulation, if
+      any, still on them
+
+negative:
+  - given: >
+      the BARE ducts of the same room, thicknessMm 0
+    expect: >
+      removed 0, added 0, changed 0; refused saying none of them had lining;
+      each named "had no lining - nothing removed"; the LINED ducts of that
+      room NOT touched - SELECT_BY_INSULATION still finds them lined. THIS IS
+      THE FIRST CASE TO RUN: a different selection that must leave every
+      lining element in the model as it was
+  - given: >
+      a few pipes and a pipe fitting, selected by hand, thicknessMm 25
+    expect: >
+      added 0, changed 0, removed 0; each named "A pipe has no lining in Revit
+      - left alone"; refused saying pipes have no lining; their insulation not
+      touched
+  - given: >
+      an insulated duct with no lining, its INSULATION Tab-selected on its own,
+      thicknessMm 0
+    expect: >
+      removed 0; the insulation named "Insulation, not lining - left alone",
+      and still on the duct - insulation is never removed here
+  - given: >
+      the BARE ducts of the same room, thicknessMm 25, liningType a name the
+      model has no Duct Lining type called
+    expect: >
+      added 0; refused naming the model's lining types; nothing lined
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one operation is one undo entry. The SubTransaction per host lives
+      inside the caller's transaction
+
+second_route:
+  - >
+    Revit's Modify | Ducts tab, read by eye inside the same rolled-back group:
+    on a duct the fragment lined, Edit Lining and Remove Lining are offered and
+    Add Lining is not; on one it cleared, Add Lining is offered again
+  - >
+    A duct schedule with the Lining Type and Lining Thickness fields, showing
+    the thickness `report` names for exactly the hosts it names
+  - one Ctrl+Z puts every lining back as it was in a single step (Golden Rule 16)

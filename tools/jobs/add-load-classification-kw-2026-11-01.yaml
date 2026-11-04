@@ -1,0 +1,40 @@
+# NEEDS-CHECKING Group KW - ADD_LOAD_CLASSIFICATION, built 2026-11-01 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/add-load-classification-kw-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/add-load-classification-kw-2026-11-01.yaml
+#
+# THE MODEL is Group KU's scratch project, "electrical-settings-ku"
+# (docs/needs-checking/group-ku.md, KU1), new from Revit's metric ELECTRICAL
+# template. Never a working model. By hand before the run (KW1): write down
+# the template's load classifications with the demand factor each uses - the
+# negative below assumes it has "Lighting"; use whatever name it has.
+#
+# THE ARRANGEMENT: this write takes no selection, so `setup: []`. The negative
+# is a DIFFERENT VALUE - a load classification name already there - never an
+# empty one (fragment-proving, rule 5): added 0, and that classification's
+# demand factor unchanged. Every write here is ROLLED BACK.
+
+model: "electrical-settings-ku scratch project from Revit's metric electrical template, Revit 2020"
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: add-load-classification
+    expect: added
+    setup: []
+    set:
+      add: "loadClassification"
+      name: "Kitchen Equipment"
+    negative-set:
+      add: "loadClassification"
+      name: "Lighting"
+    note: >
+      KW2. Negative - THE FIRST CASE TO RUN: a load classification named
+      Lighting, which the template has, so added 0, skipped "A load
+      classification is already named \"Lighting\" - left as it is", and
+      Lighting's demand factor the same in before and after. Positive - added
+      1, after holds "\"Kitchen Equipment\", demand factor ..." beside every
+      name before. The demand factor cases are rows KW3 and KW4, run with
+      `validate --write`.

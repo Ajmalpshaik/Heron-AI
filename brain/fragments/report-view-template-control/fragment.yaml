@@ -160,3 +160,9 @@ utterances:
   # REMOVE_VIEW_TEMPLATE, a write, on both backends. Nothing on any frozen set
   # became riskier (brain/retrieval-history.md, 2026-10-17).
   - what is the view template of this view
+  # ADDED 2026-11-02, row 5b-1394 (FIXED). APPLY_VIEW_TEMPLATE's and
+  # COMPARE_VIEW_TEMPLATES' routing tables send this sentence here, and a
+  # comment is not indexed. With the fabrication cards added it went, without
+  # the host's question flag, from REPORT_CATEGORY_OVERRIDES (a read) to
+  # OVERRIDE_GRAPHICS_IN_VIEW - a question answered by a write.
+  - why is this setting greyed out

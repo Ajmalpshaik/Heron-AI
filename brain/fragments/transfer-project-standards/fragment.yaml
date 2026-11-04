@@ -1,0 +1,163 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-161
+semantic-identity: "transfer project standards from another open project - fill patterns, line patterns, text types, dimension types, wall, floor, roof, ceiling, filled region, grid and level types - keeping this project's where a name is already here"
+kind: action
+domain: revit.elements
+capability: TRANSFER_PROJECT_STANDARDS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# Revit's Manage > Transfer Project Standards: the modeller picks kinds, and
+# every type of those kinds in the other OPEN project that is not already here
+# is copied in. One document-to-document copy per kind
+# (ElementTransformUtils.CopyElements), each copy read back by id here.
+#
+# A FIXED LIST, NEVER "EVERYTHING". Fill patterns, line patterns, text types,
+# dimension types, wall, floor, roof, ceiling, filled region, grid and level
+# types. "all", "everything" or "project standards" alone is refused with the
+# list. A word outside it refuses the whole call - a misheard kind copies
+# nothing rather than something else.
+#
+# THE KINDS OTHER CARDS OWN ARE NAMED, NOT COPIED. Materials, line styles,
+# object styles, view filters, views and project parameters each have a
+# TRANSFER_*_BETWEEN_DOCUMENTS card with checks this one does not make - the
+# material's appearance asset read back property by property, the line style
+# built as a subcategory with its pattern matched by name. Asked here, each is
+# one line in the report naming its card, counted refused, and the other kinds
+# still go through. A material a copied wall type USES comes with it, as
+# Revit's paste brings it.
+#
+# DUPLICATES: THIS PROJECT'S IS KEPT. Each kind's names here are read first,
+# and a source type whose name is already here is never handed to the copy -
+# counted skipped, this project's left exactly as it was. A fill pattern's name
+# is unique per target (drafting or model), so the target is part of its name
+# here. Revit's API answers a duplicate type name only "use the destination's"
+# or "abort" (DuplicateTypeAction, 2020 to 2027) and has NO overwrite, so
+# `duplicates` "overwrite" is refused, pointing at Revit's own dialog - whose
+# Overwrite replaces each type's settings and is taken back only by Undo.
+#
+# THE ONE QUESTION A FRAGMENT CANNOT ANSWER. CopyPasteOptions'
+# IDuplicateTypeNamesHandler needs a class, which a snippet cannot declare,
+# and the add-in supplies none (FRAGMENT-ISSUES 5b-1429). A copied type that
+# USES another type already named here - an arrowhead, a profile, a stacked
+# wall's members - meets Revit's "Duplicate Types" dialog; Heron declines it
+# and THE WHOLE RUN IS ROLLED BACK. Nothing of this project is replaced, and
+# the answer says to bring the kinds over one at a time.
+#
+# THE SOURCE IS NAMED EXACTLY: "Office Standard.rvt", "Office Standard" and
+# "office standard" are one name, "Office" is not. Not open - the open
+# projects are listed and nothing is attempted. A family or a link of that
+# name is never the source, and is said. Two open projects of one name are
+# both named, and nothing is copied.
+#
+# THE SOURCE IS ONLY READ. ASSUMES AN OPEN TRANSACTION and does not open one
+# (Golden Rule 16); the undo is THIS project's, one entry.
+purpose: >
+  Revit's Transfer Project Standards for chosen kinds: copies fill patterns,
+  line patterns, text types, dimension types, and wall, floor, roof, ceiling,
+  filled region, grid and level types from another project open in the same
+  Revit into this one. A name already here is kept, never overwritten; the
+  report says per kind how many were copied, skipped and refused.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: app
+      type: Application
+    # The other project's name EXACTLY, with or without ".rvt" / ".rte".
+    - name: sourceDocumentTitle
+      type: string
+      source: request
+    # Kinds from the card's fixed list, commas or "and" between: "fill
+    # patterns", "text types, dimension types". Never "all".
+    - name: kinds
+      type: string
+      source: request
+    # Part of a type's name - "Diagonal"; left out, "all": every name.
+    - name: nameContains
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # What to do with a name already here: "keep" - this project's stays.
+    # "overwrite" is refused: Revit's API has none.
+    - name: duplicates
+      type: string
+      source: request
+      optional: true
+      absent: keep
+  provides:
+    - name: copied
+      role: result
+      type: int
+    - name: copiedIds
+      role: result
+      type: IList<ElementId>
+    - name: skipped
+      # Names already here, left exactly as they were. Given and not acted
+      # on, never a type it copied (D-52).
+      role: accounting
+      type: int
+    - name: refusedCount
+      # Types Revit refused, and kinds named that another card carries.
+      role: accounting
+      type: int
+    - name: refused
+      # Why the whole call declined, in Revit words; empty when it ran.
+      role: accounting
+      type: string
+    - name: report
+      # ONE STRING: per kind, copied, skipped and refused, with names (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      role: accounting
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. ElementTransformUtils.CopyElements(
+  Document, ICollection<ElementId>, Document, Transform, CopyPasteOptions),
+  new CopyPasteOptions(), DuplicateTypeAction (UseDestinationTypes, Abort -
+  no overwrite), Application.Documents, Document.IsLinked, IsFamilyDocument,
+  Title, PathName, GetElement(ElementId), FilteredElementCollector.OfClass,
+  FillPatternElement.GetFillPattern, FillPattern.Target, and the classes
+  FillPatternElement, LinePatternElement, TextNoteType, DimensionType,
+  WallType, FloorType, RoofType, CeilingType, FilledRegionType, GridType and
+  LevelType are present 2020 through 2027 - read with tools/api-surface
+  --members on 2026-11-02. No ElementId is turned into an int.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "transfer the fill patterns from the template project"    -> here
+#   "copy the text types and dimension types from Office      -> here
+#    Standard.rvt"
+#   "transfer project standards: wall types and materials     -> here for the
+#    from the template"                                          wall types;
+#                                         materials alone -> TRANSFER_MATERIALS_BETWEEN_DOCUMENTS
+#   "bring the line styles and object styles over from the    -> NOT here: two
+#    other open project"                  calls, TRANSFER_LINE_STYLES_BETWEEN_DOCUMENTS
+#                                         and TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS
+#   "bring the view filters over"         -> TRANSFER_VIEW_FILTERS_BETWEEN_DOCUMENTS
+#   "bring the schedules over"            -> TRANSFER_VIEWS_BETWEEN_DOCUMENTS
+#   "copy the furniture over from the other project" -> COPY_ELEMENTS_BETWEEN_DOCUMENTS,
+#                                         model elements rather than types
+#   "make a fill pattern"                 -> CREATE_FILL_PATTERN, made rather than moved
+#   "which projects are open"             -> REPORT_OPEN_DOCUMENTS
+utterances:
+  - transfer the fill patterns from the template project
+  - copy the text types and dimension types from Office Standard.rvt
+  - "transfer project standards: wall types and materials from the template"

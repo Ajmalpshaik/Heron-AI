@@ -1,0 +1,66 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that cuts a shaft through every slab between two levels, "cut
+# something nobody asked for": a shaft between levels nobody named, one run
+# downwards, one whose outline is not the corners given.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for CREATE_SHAFT_OPENING): a scratch project
+# "shaft-ln" made from the default architectural template and saved under
+# %TEMP%\heron-work, never a working model - levels "Level 1" at 0, "Level 2"
+# at 4000 and "Roof" at 8000 mm; one floor 200 mm thick on "Level 2" and one
+# on "Roof", each covering 0,0 to 10000,10000 mm; the floor plan "Level 2"
+# and a section "Section 1" looking north across the middle. Where the model
+# differs, the job file changes - never the card. EVERY RUN ROLLED BACK, so
+# each case starts from the model as saved.
+
+positive:
+  - given: >
+      baseLevel "Level 1", topLevel "Roof", corners "4000,4000,0; 5200,4000,0;
+      5200,4800,0; 4000,4800,0" - "cut a shaft opening from Level 1 to Roof
+      through all the slabs here" - the job file's positive. THE FIRST
+      POSITIVE TO RUN
+    expect: >
+      created one shaft; built "A shaft from "Level 1" (0 mm) to "Roof" (8000
+      mm), 8000 mm tall; its outline 4 corners, X 4000 to 5200, Y 4000 to 4800
+      mm - 1200 x 800 mm, 0.96 m2 - read back."; slabsCut naming the Level 2
+      floor, about 0.19 m3 taken out; LOOKED AT in Section 1: the hole through
+      the Level 2 floor. Whether the Roof floor - its top AT the shaft's top -
+      is cut is the thing to record, not to assume
+
+  - given: >
+      baseLevel "Level 1", topLevel "Level 2", corners "1000,1000,0;
+      2000,1000,0; 1500,2000,0" (a triangle, the last corner not repeated)
+    expect: a three-corner shaft, closed by itself, read back X 1000 to 2000, Y 1000 to 2000
+
+negative:
+  - given: >
+      baseLevel "Roof", topLevel "Level 1", the same corners as the first
+      positive - a different value, not an empty one. THE NEGATIVE TO RUN
+      BESIDE THE FIRST POSITIVE
+    expect: >
+      refused "... The top level "Level 1" (0 mm) is not above the base level
+      "Roof" (8000 mm) ...", created invalid, slabsCut empty, no shaft in the
+      model (SELECT_OPENINGS counts the same shafts before and after)
+
+  - given: baseLevel "Level 0", topLevel "Level 6" in shaft-ln, which has neither
+    expect: >
+      refused naming both missing names, and listing "Level 1" (0 mm),
+      "Level 2" (4000 mm) and "Roof" (8000 mm) - nothing cut, no level guessed
+
+  - given: corners "0,0,0; 1000,0,0"
+    expect: refused - at least three corners, 2 given - nothing cut
+
+  - given: corners "0,0,0; 1000,1000,0; 1000,0,0; 0,1000,0" (a bow tie)
+    expect: refused - the outline crosses itself - nothing cut
+
+  - given: corners "0,0,0; 1000,0,0; 2000,0,0"
+    expect: refused - the corners enclose no area - nothing cut
+
+  - given: the family editor in front, any levels and corners
+    expect: refused - a shaft is a project's - naming CREATE_OPENING - nothing cut
+
+second_route:
+  - >
+      Revit's own Architecture > Opening > Shaft drawn by hand from "Level 1"
+      to "Roof" over the same four corners beside the one made here; the two
+      compared in Section 1, and both counted by SELECT_OPENINGS as shafts

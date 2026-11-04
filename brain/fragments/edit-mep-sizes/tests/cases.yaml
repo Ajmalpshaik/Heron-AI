@@ -1,0 +1,71 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "touched a list nobody named" or "removed a size the model
+# still uses".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for EDIT_MEP_SIZES): a scratch project new from
+# Revit's metric Systems (or Mechanical) template, saved under
+# %TEMP%\heron-work, never a working model. In it, by hand: one round duct
+# drawn at 250 mm, and one pipe drawn on a steel segment at that segment's
+# smallest size. Before every run, open Manage > MEP Settings > Mechanical
+# Settings > Duct Settings > Round and Pipe Settings > Segments and Sizes, and
+# Electrical Settings > Conduit Settings > Size, and write down each list - the
+# second route.
+#
+# The negative legs are DIFFERENT VALUES, not empty ones: a size a drawn duct
+# carries, a size already in the list, a list word that is not one.
+
+positive:
+  - given: sizeList round, action add, sizes "315" - a size the template's round list does not hold
+    expect: >
+      added 1; before the round list as written down; after the same list
+      with 315 in its place; Duct Settings > Round now shows 315; the
+      Rectangular and Oval lists unchanged
+
+  - given: sizeList round, action remove, sizes "315" - the size just added, which no duct carries
+    expect: >
+      removed 1; after the round list without 315 - as it was before the add
+
+  - given: >
+      sizeList pipe, name the exact name of a steel segment, action add,
+      sizes "65", outsideMm 76.1, insideMm 70.3 - a nominal that segment does
+      not hold
+    expect: >
+      added 1; Segments and Sizes for that segment shows nominal 65, ID 70.3,
+      OD 76.1; every other segment unchanged
+
+negative:
+  - given: sizeList round, action add, sizes "250" - already in the list
+    expect: >
+      added 0; skipped "250 mm is already in the round duct size list - left
+      as it is"; before and after the same. THE FIRST CASE TO RUN - the job
+      file's negative
+
+  - given: sizeList round, action remove, sizes "250" - the size the drawn duct carries
+    expect: >
+      removed 0; refused "250 mm was NOT removed - 1 element(s) in the model
+      carry it"; before and after the same list, 250 still in it
+
+  - given: sizeList pipe, name a steel segment, action add, sizes "65", no outsideMm or insideMm
+    expect: >
+      added 0; refused naming the outside diameter and inside diameter as
+      needed and never guessed; the segment unchanged
+
+  - given: sizeList pipe, action add, sizes "65", outsideMm 76.1, insideMm 70.3, name left out
+    expect: >
+      added 0; refused asks which pipe segment - none is chosen for you -
+      and the name left out is never read as a value called "none" (row 5b-1432); every segment unchanged
+
+  - given: sizeList "segments-and-ducts" - not a size list
+    expect: >
+      refused naming it as not a size list; nothing changed anywhere
+
+second_route:
+  - >
+    Revit's own Manage > MEP Settings > Mechanical Settings > Duct Settings >
+    Round, Rectangular and Oval, Pipe Settings > Segments and Sizes, and
+    Electrical Settings > Conduit Settings > Size and Cable Tray Settings >
+    Size: the list named shows exactly `after`, and every other list is as it
+    was written down before the run
+  - REPORT_DUCT_CONDUIT_SIZES (or REPORT_PIPE_SEGMENTS for a segment) before and after - the two agree with `before` and `after`
+  - one Ctrl+Z puts the list back as it was (Golden Rule 16)

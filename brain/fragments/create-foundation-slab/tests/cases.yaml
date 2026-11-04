@@ -1,0 +1,76 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that adds an element, "made something nobody asked for": an
+# ordinary floor where a foundation slab was asked, or a slab of a type nobody
+# chose.
+# Arrange on a scratch copy of Revit 2020's rst_advanced_sample_project.rvt
+# (NEEDS-CHECKING Group KB), then the same on a Revit 2024 copy - the two
+# releases take different creation calls. KB1 reads, before anything runs, the
+# model's foundation slab types (Revit's Type Selector under Structure >
+# Foundation > Slab), one ORDINARY floor type (Architecture > Floor), a level,
+# and an open patch of plan on it for a 20 m by 12 m rectangle. Where the model
+# differs from that, the job file changes - never the card. EVERY RUN ROLLED
+# BACK, so each case starts from the model as saved.
+
+positive:
+  - given: >
+      level the level KB1 names, foundationType the foundation slab type KB1
+      names, boundary "0,0,0; 20000,0,0; 20000,12000,0; 0,12000,0" shifted to
+      the open patch KB1 found
+    expect: >
+      created one id; report "Foundation slab made (<id>), type "<type>", on
+      "<level>", in Structural Foundations: Area 240 m2, Thickness <the type's
+      thickness> mm"; its top at the level. On Revit 2020 the findings say the
+      pre-2022 call. THIS IS THE FIRST POSITIVE TO RUN
+  - given: the same, on the Revit 2024 copy (KB3)
+    expect: >
+      the same slab through the Revit 2022 and later call - OR, if Floor.Create
+      makes it in another category, nothing kept and refused "Revit made the
+      slab in "<category>", not in Structural Foundations, so it was taken
+      back". Either is the card working; which one is what KB3 measures
+  - given: the 20 m by 12 m rectangle with its far side an arc, "0,0,0; 20000,0,0; arc 26000,6000 20000,12000; 0,12000,0"
+    expect: one slab of Area 296.55 m2 (240 plus a half circle of radius 6 m, 56.55)
+  - given: >
+      the positive again, foundationType written as "Family: Type" from the
+      list the card itself gave
+    expect: the same slab - both spellings name one type
+
+negative:
+  - given: >
+      the same level and boundary, foundationType the ORDINARY floor type KB1
+      names
+    expect: >
+      created none; refused ""<that type>" is an ordinary floor type ..., not a
+      foundation slab type, so nothing was made" naming every foundation slab
+      type with its thickness; the count of floors and of structural
+      foundations in the model unchanged. THIS IS THE FIRST CASE TO RUN
+  - given: the same level and boundary, foundationType left out
+    expect: >
+      created none; refused "No foundation slab type was named, so nothing was
+      made - the model's foundation slab types are ..." - every type named with
+      its thickness, none chosen, even when the model holds only one
+  - given: the same level and boundary, foundationType "600" - a thickness the modeller said, not a type
+    expect: created none; refused "No foundation slab type called "600"" with the list
+  - given: >
+      a boundary of two corners, "0,0,0; 20000,0,0"
+    expect: created none; refused "A foundation slab needs at least three corners and 2 were given"
+  - given: '"0,0,0; 6000,0,0; arc 6000,0 6000,4000; 0,4000,0" - an arc through its own start'
+    expect: >
+      created none; the arc from 6000,0 through 6000,0 to 6000,4000 named as not
+      an arc - before Revit is asked for anything
+  - given: a boundary that crosses itself, "0,0,0; 10000,10000,0; 10000,0,0; 0,10000,0"
+    expect: created none; refused with Revit's own words, nothing left in the model
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one operation is one undo entry. The SubTransaction lives inside the
+      caller's transaction
+
+second_route:
+  - >
+    A Structural Foundation schedule, read inside the same rolled-back group:
+    one more row, of the type asked, Area 240 m2 - and no new row in a Floor
+    schedule
+  - >
+    Revit's own Structure > Foundation > Slab on the same rectangle, the two
+    compared in a section: the same top, the same thickness
+  - one Ctrl+Z takes the slab away in a single step (Golden Rule 16)

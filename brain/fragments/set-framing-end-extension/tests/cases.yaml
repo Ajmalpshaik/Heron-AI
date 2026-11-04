@@ -1,0 +1,46 @@
+# SET_FRAMING_END_EXTENSION - built 2026-11-02 in a cloud session with no Revit.
+# NOT RUN. Arranged as docs/needs-checking/group-ly.md says: the beams are
+# selected; setting, whichEnd and lengthMm are typed.
+positive:
+  - given: >
+      a steel beam framing between two structural columns, both ends joined,
+      selected; setting cutback, whichEnd joined, lengthMm 50
+    expect: >
+      changed 2; ends "... Start Join Cutback (at <column>): 0 mm -> 50 mm,
+      read back" and the same for End; the gap at each column visible in plan,
+      LOOKED AT. Revit's Properties shows 50 for both
+
+  - given: >
+      a beam with one end free (cantilever), selected; setting extension,
+      whichEnd end, lengthMm 150
+    expect: >
+      changed 1, "End Extension: 0 mm -> 150 mm, read back"; the beam drawn
+      150 longer at that end
+
+  - given: the first beam again, cutback 50 a second time
+    expect: changed 0 and both ends in alreadyRight - never counted twice
+
+negative:
+  - given: >
+      THE FIRST CASE TO RUN. A free-standing beam touching nothing, selected;
+      setting cutback, whichEnd joined, lengthMm 50
+    expect: >
+      changed 0; refused "neither end is joined to another member"; the beam's
+      length unchanged. An end changed here would mean the end was guessed
+
+  - given: the same free beam, setting cutback, whichEnd start, lengthMm 50
+    expect: >
+      refused "Revit has Start Join Cutback greyed out" if Revit keeps it
+      read-only at an unjoined end - or, if Revit lets it be set, changed 1;
+      record which, it is Revit's rule
+
+  - given: a wall and a duct selected with a beam
+    expect: >
+      the wall and the duct refused "not structural framing"; the beam handled
+
+  - given: setting sideways, or whichEnd middle
+    expect: refused before anything changes
+
+second_route: >
+  Revit itself: select the beam and read Start / End Extension and Start / End
+  Join Cutback in Properties; the plan shows the gap or the extension

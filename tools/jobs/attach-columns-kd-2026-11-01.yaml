@@ -1,0 +1,62 @@
+# NEEDS-CHECKING Group KD - ATTACH_COLUMNS, built 2026-11-01 in a cloud session
+# with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/attach-columns-kd-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/attach-columns-kd-2026-11-01.yaml
+#
+# THE MODEL: KD Structure, a scratch copy of Revit 2020's
+# rst_advanced_sample_project.rvt in %TEMP%\heron-work\columns-kd, open and in
+# front in Revit 2020 - never the library file and never a working model.
+# Which of its views shows columns and the floor over them together is NOT
+# KNOWN here and is not guessed.
+#
+# THE VIEW BELOW IS NOT KNOWN YET. KD1 in docs/needs-checking/group-kd.md reads
+# it: a plan or section box in which a handful of structural columns (fewer
+# than twenty - rule 1) and exactly ONE floor over them both show, and in which
+# the columns are not attached at the top already. It goes in place of the
+# marked value in both places. Until then no view answers to it and the run
+# should stop at the setup - expected, NOT RUN. If the floor over them is a
+# roof, KD1 writes Roofs for Floors in the positive.
+#
+# THE SELECTION IS THE COLUMNS AND THEIR TARGET TOGETHER - the card reads the
+# target out of the selection, so the setup selects both categories in one
+# view and set-selection puts them in Revit's selection.
+#
+# THE NEGATIVE IS THE SAME COLUMNS WITH THE DOORS IN THAT VIEW AS THE TARGET:
+# Revit does not take a door as a column's target, so it must be refused BY
+# NAME and nothing attached. KD1 confirms the view shows at least one door;
+# if it shows none, KD1 names another category Revit will refuse that the view
+# does show - never an empty selection.
+#
+# No target, two beams over one column, "both" on an attach, a second run and
+# a detach are rows KD3 to KD5, run with `validate --write`. Every write here
+# is ROLLED BACK.
+
+model: KD Structure (scratch copy of Revit 2020's rst_advanced_sample_project), Revit 2020
+
+defaults:
+  write: true
+  setup:
+    - select-by-categories
+    - set-selection
+
+jobs:
+  - fragment: attach-columns
+    expect: changed
+    setup-set:
+      categories: "Structural Columns, Floors"
+      inViewOnly: "THE VIEW KD1 READ"
+    negative-setup-set:
+      categories: "Structural Columns, Doors"
+      inViewOnly: "THE VIEW KD1 READ"
+    set:
+      where: top
+    negative-set:
+      where: top
+    note: >
+      KD2. Positive - changed equal to the number of columns; report "column
+      Structural Columns <id> "<type>": top attached to Floors <id> "<type>"."
+      for each. Negative - THE FIRST CASE TO RUN: the doors as the target, so
+      changed 0 and the report "Revit does not accept Doors <id> ... as
+      something a column attaches to. ... NOTHING WAS CHANGED."; no column
+      attached to anything.

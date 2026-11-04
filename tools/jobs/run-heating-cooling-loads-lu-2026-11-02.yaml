@@ -1,0 +1,47 @@
+# NEEDS-CHECKING Group LU - RUN_HEATING_COOLING_LOADS, built 2026-11-02 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/run-heating-cooling-loads-lu-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/run-heating-cooling-loads-lu-2026-11-02.yaml
+#
+# REVIT 2027 ONLY - the one release whose API can run the analysis
+# (ViewHVACLoadsReport). On any other Revit the card is not offered.
+#
+# THE MODEL (docs/needs-checking/group-lu.md, LU1): a scratch copy of the
+# Snowdon Towers Sample HVAC model, opened and saved in Revit 2027 under
+# %TEMP%\heron-work - its spaces placed and bounded, Area and Volume
+# Computations on, Analyze > Energy Settings as the sample ships them, and
+# its floor plan "M1". Three Level 1 spaces' Calculated Cooling and Heating
+# Load noted from Properties before the first run.
+#
+# THE ARRANGEMENT: the analysis takes no selection - it runs on the whole
+# model - so the two cases differ by the report's NAME. Positive: a name no
+# view has. Negative: "M1", the floor plan the model already has - a
+# different value, not an empty one (fragment-proving, rules 3 and 5):
+# nothing may run, no view may be made and no space's loads may change.
+# Every write here is ROLLED BACK.
+
+model: "Snowdon Towers Sample HVAC, a scratch copy saved in Revit 2027"
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: run-heating-cooling-loads
+    expect: coolingW
+    in: "Snowdon Towers Sample HVAC"
+    set:
+      reportName: "Heron Loads Report LU"
+    negative-set:
+      reportName: "M1"
+    note: >
+      LU2. Negative - THE FIRST CASE TO RUN: refused "A view called "M1" is
+      already in this model. Name the loads report something else. NOTHING
+      WAS RUN - no report was made and no space's loads were changed.",
+      reportView invalid, coolingW and heatingW empty. Positive: reportView
+      1 id, analysisCompleted true, coolingW and heatingW one entry per
+      placed bounded space, report "Heating and cooling loads run. Loads
+      report view "Heron Loads Report LU" made ... Ran with this model's
+      Energy Settings, unchanged: ...". A positive that comes back with
+      analysisCompleted false, or that times out, is a finding to record
+      (LU3), never a pass.

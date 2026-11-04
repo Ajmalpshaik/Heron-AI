@@ -173,6 +173,9 @@ compatibility-note: >
 #                                             and run it BEFORE this one
 #   "what overrides are on this view"      -> REPORT_CATEGORY_OVERRIDES
 #   "turn this category off"               -> SET_CATEGORY_VISIBILITY
+#   "transfer the fill patterns from the   -> TRANSFER_PROJECT_STANDARDS (2026-11-02),
+#    template project"                       types and patterns - it names this card
+#                                             for object styles and copies none
 
 utterances:
   - bring the object styles over from the template

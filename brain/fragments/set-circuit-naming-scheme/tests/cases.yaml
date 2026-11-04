@@ -1,0 +1,84 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "changed something nobody asked for": a scheme already
+# there replaced under its own name, or the project's scheme changed when it
+# should have been left alone.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for SET_CIRCUIT_NAMING_SCHEME): Group KU's scratch
+# project made again in Revit 2024 (circuit naming schemes are 2021 on), new
+# from Revit's metric ELECTRICAL template, saved under %TEMP%\heron-work -
+# never a working model. By hand before the run: open Manage > MEP Settings >
+# Electrical Settings > Circuit Naming and write down every scheme, its parts,
+# and the one the project uses - "Standard" is assumed below for a scheme the
+# template ships; use whatever name it has. Place one branch panelboard DB-1
+# and one circuit on it, so the circuit's name shows the scheme.
+# REPORT_ELECTRICAL_SETTINGS with show "naming" is run before and after every
+# case - the second route.
+#
+# Every run below is ROLLED BACK (validate --write) except the one try-once,
+# which the modeller keeps or discards.
+#
+# The negative leg is a DIFFERENT VALUE, not an empty one: a scheme name the
+# model already has. It must come back with `changed` 0 and the scheme list
+# the same before and after.
+
+positive:
+  - given: >
+      action make, schemeName "Panel-Circuit", parts "panel; circuit number",
+      separator "-"
+    expect: >
+      changed 1; after holds "\"Panel-Circuit\": Panel \"-\" + Circuit
+      Number" (Revit's own labels) beside every scheme in before; the Circuit
+      Naming dialog shows it, Panel then Circuit Number with a dash between
+      them
+
+  - given: >
+      after the one above is kept: action use, schemeName "Panel-Circuit"
+    expect: >
+      changed 1; after marks "\"Panel-Circuit\" ... - THE PROJECT'S"; the
+      Circuit Naming dialog shows it as the project's, and DB-1's circuit
+      reads DB-1-1 where the panel follows the project setting
+
+  - given: >
+      action make, schemeName "PanelCircuit", parts "panel; circuit number",
+      separator left out
+    expect: >
+      changed 1; after holds "\"PanelCircuit\": Panel \"\" + Circuit
+      Number" - nothing between the parts - the separator left out is
+      never read as a value called "none" (row 5b-1432); a "none" between
+      them is the defect
+
+negative:
+  - given: >
+      action make, schemeName "Standard" - a name the model already has -
+      parts "panel; circuit number", separator "-"
+    expect: >
+      changed 0; skipped "A circuit naming scheme is already named
+      \"Standard\" - left as it is, nothing made."; before and after the
+      same list, Standard's parts unchanged. THE FIRST CASE TO RUN
+
+  - given: action make, schemeName "Panel Only", parts "panel; colour"
+    expect: >
+      changed 0; refused "\"colour\" is not a circuit parameter Heron can
+      name ... The parts Heron knows: ..."
+
+  - given: action make, schemeName "No Parts", parts left out
+    expect: >
+      changed 0; refused - which parameters it is made of is never guessed;
+      the parts left out are never read as a value called "none" (row 5b-1432)
+
+  - given: action use, schemeName "ZZNOSCHEME"
+    expect: >
+      changed 0; refused "No circuit naming scheme is named \"ZZNOSCHEME\".
+      The model's schemes are: ..."; the project's scheme the same before and
+      after
+
+  - given: action use, schemeName the project's scheme already
+    expect: >
+      changed 0; skipped "The project already uses ... - left as it is."
+
+second_route:
+  - >
+    Revit's own Manage > MEP Settings > Electrical Settings > Circuit Naming:
+    every scheme, its parameters and separators, and the project's scheme the
+    same as `after`, and nothing else different from `before`

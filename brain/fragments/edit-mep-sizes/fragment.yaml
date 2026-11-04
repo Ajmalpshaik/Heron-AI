@@ -1,0 +1,187 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-080
+semantic-identity: "add sizes to, or remove sizes from, a duct size list, an existing pipe segment, a conduit standard or the cable tray size list"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "add 315 mm to the round duct
+# sizes", "add DN 65 to the steel pipe segment", "remove 125 mm from the duct
+# sizes" and "add a 32 mm conduit size" - Revit's Manage > MEP Settings >
+# Mechanical Settings > Duct Settings (Rectangular, Oval, Round) and Pipe
+# Settings > Segments and Sizes, and Electrical Settings > Conduit Settings >
+# Size and Cable Tray Settings > Size. No card added or removed a size in an
+# existing list (grep of brain/fragments that day for DuctSizeSettings,
+# ConduitSizeSettings, CableTraySizes and RemoveSize: nothing).
+# CREATE_PIPE_SEGMENT (PROVEN) makes a NEW segment, copying sizes into it and
+# adding more at creation - it never changes a segment that exists, which is
+# this card's job. SET_MEP_SIZE and AUTO_SIZE_MEP change the size of ducts and
+# pipes in the model, not the list they choose from. Look-alikes, not
+# duplicates.
+#
+# ONE OF A PAIR. REPORT_DUCT_CONDUIT_SIZES (FRG-MEP-079) answers which sizes a
+# duct shape, a conduit standard or the cable tray list holds, and
+# REPORT_PIPE_SEGMENTS (PROVEN) a pipe segment's - so no question reaches this
+# write (D-86). WHY ONE WRITE FOR FOUR DIALOGS: the job is the same - put a
+# size in a list, or take one out - and the contract is the same but for the
+# outside and inside diameter (and a conduit's bend radius) an added pipe or
+# conduit size needs; those three are optional and refused by name when a
+# pipe or conduit size arrives without them.
+#
+# NEVER GUESSED (D-33). A pipe size's outside and inside diameter and a
+# conduit size's bend radius are the modeller's. A size already there is
+# skipped and named; a size in use is never removed (it is refused with the
+# count of ducts, pipes, conduits or trays carrying it); no other list,
+# segment or standard is touched; before and after are reported.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: EDIT_MEP_SIZES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Adds sizes to, or removes sizes from, one size list the project offers -
+  the round, rectangular or oval duct sizes, an existing pipe segment's
+  sizes, one conduit standard's sizes, or the cable tray sizes - in
+  millimetres, reporting the list before and after. A size already there is
+  skipped and named; a size that ducts, pipes, conduits or cable trays in the
+  model still carry is not removed.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: sizeList
+      # round | rectangular | oval (duct sizes) | pipe (a segment, named in
+      # `name`) | conduit (a standard, named in `name`) | tray. A word that is
+      # none of them is refused, never guessed.
+      type: string
+      source: request
+    - name: action
+      # add | remove.
+      type: string
+      source: request
+    - name: sizes
+      # The nominal sizes in millimetres, separated by commas - "315" or
+      # "315, 355". "DN" and "mm" are read past. An added pipe or conduit size
+      # is one per run.
+      type: string
+      source: request
+    - name: name
+      # The pipe segment or conduit standard - its exact name, or a part that
+      # only one name holds. Required for pipe and conduit; not used for the
+      # others.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: outsideMm
+      # An added pipe or conduit size: its outside diameter in mm. Never
+      # guessed - left out (0) for one of those, refused.
+      type: double
+      source: request
+      optional: true
+      absent: "0"
+    - name: insideMm
+      # An added pipe or conduit size: its inside diameter in mm. Never
+      # guessed.
+      type: double
+      source: request
+      optional: true
+      absent: "0"
+    - name: bendRadiusMm
+      # An added conduit size: its minimum bend radius in mm. Never guessed.
+      type: double
+      source: request
+      optional: true
+      absent: "0"
+  provides:
+    - name: added
+      # Sizes added, counted from the list read back after the change -
+      # something the write DID (D-52).
+      role: result
+      type: int
+    - name: removed
+      # Sizes removed, counted from the list read back.
+      role: result
+      type: int
+    - name: before
+      # The named list before, every size in mm. A STRING, because a reply
+      # cuts a list to three items (D-52).
+      role: accounting
+      type: string
+    - name: after
+      # The same list after (D-52).
+      role: accounting
+      type: string
+    - name: skipped
+      # A size already in the list (add), or not in it (remove), named - left
+      # as it is (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in Revit words: a size still carried by elements in
+      # the model (with the count), a pipe or conduit size without its
+      # diameters or bend radius, a list or name that is not there, a number
+      # that could not be read, Revit's own refusal. Never a thing done (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. DuctSizeSettings.GetDuctSizeSettings,
+  its DuctShape indexer, AddSize(DuctShape, MEPSize) and RemoveSize(DuctShape,
+  double); Segment.GetSizes, AddSize(MEPSize) and RemoveSize(double);
+  ConduitSizeSettings.GetConduitSizeSettings, AddSize(string, ConduitSize),
+  RemoveSize(string, double) and its enumeration; CableTraySizes
+  .GetCableTraySizes, AddSize(MEPSize) and RemoveSize(MEPSize); the MEPSize
+  and ConduitSize constructors; Pipe.PipeSegment and MEPCurveType.Shape;
+  and the RBS_CURVE_DIAMETER/WIDTH/HEIGHT, RBS_PIPE_DIAMETER,
+  RBS_CONDUIT_DIAMETER, CONDUIT_STANDARD_TYPE and RBS_CABLETRAY_WIDTH/HEIGHT
+  parameters carry the same signatures 2020 through 2027 - read with
+  tools/api-surface --members on 2026-11-01. Millimetres are divided by 304.8
+  as plain arithmetic, never a units call. An ElementId is compared with
+  .Equals, never read as a number.
+
+# ROUTING (2026-11-01) - the same rows are in REPORT_DUCT_CONDUIT_SIZES.
+#
+#   "add 315 mm to the round duct sizes"             -> here, sizeList round,
+#                                                       action add, sizes 315
+#   "add DN 65 to the steel pipe segment"            -> here, sizeList pipe,
+#                                                       name steel - the
+#                                                       outside and inside
+#                                                       diameter asked, never
+#                                                       guessed
+#   "remove 125 mm from the duct sizes"              -> here, action remove,
+#                                                       sizes 125 - which duct
+#                                                       shape is asked
+#   "add a 32 mm conduit size"                       -> here, sizeList conduit -
+#                                                       the standard, diameters
+#                                                       and bend radius asked
+#   "what duct sizes are available for round ducts"  -> REPORT_DUCT_CONDUIT_SIZES
+#   "list the sizes in the copper pipe segment"      -> REPORT_PIPE_SEGMENTS
+#   "make a new pipe segment"                        -> CREATE_PIPE_SEGMENT - a new
+#                                                       segment, not a size in
+#                                                       one that exists
+#
+# WHAT MOVED (2026-11-01, measured as in REPORT_DUCT_CONDUIT_SIZES). The four
+# requests above reach this card without the host's question flag (before:
+# AUTO_SIZE_MEP, REPORT_PIPE_SEGMENTS, SET_DUCT_LINING, CREATE_PIPE_SEGMENT)
+# and a read with it - REPORT_DUCT_CONDUIT_SIZES, or REPORT_PIPE_SEGMENTS for
+# the pipe segment. No other sentence moved to or from this card.
+utterances:
+  - add 315 mm to the round duct sizes
+  - add DN 65 to the steel pipe segment
+  - remove 125 mm from the duct sizes
+  - add a 32 mm conduit size

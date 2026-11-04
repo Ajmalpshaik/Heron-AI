@@ -1,0 +1,68 @@
+# CUT_GEOMETRY - built 2026-11-02 in a cloud session with no Revit. NOT RUN.
+# Arranged as docs/needs-checking/group-lw.md says: the cutter is the ONE
+# element selected and passed as "selected"; the elements to cut come from
+# FILTER_ELEMENTS_BY_ID with their ids typed (a read, so each shows first).
+positive:
+  - given: >
+      a floor and a beam running through it in a scratch project, neither cut;
+      the beam selected alone as the cutter ("selected"), the floor's id typed
+      into FILTER_ELEMENTS_BY_ID, cut true
+    expect: >
+      changed 1; pairs "<floor> : cut by <beam> (solid cut) - read back: cut";
+      the floor's outline round the beam in a section, LOOKED AT; a finding
+      QUANTITIES HAVE MOVED. REPORT_GEOMETRY_CUTS on the floor afterwards says
+      it is CUT BY the beam
+
+  - given: >
+      a wall and a placed opening family whose void cuts when loaded, not yet
+      cutting; the opening family the cutter, the wall the element, cut true
+    expect: >
+      changed 1 by the void route - pairs "(void cut)"; the wall shows the
+      hole in elevation; Revit's own Uncut Geometry would offer to take it away
+
+  - given: the same pair, cut true a second time
+    expect: >
+      changed 0, the wall in alreadyRight, pairs "already cut by ... - left
+      alone", and NO quantities warning. A second run counting the cut again
+      would be counting work it did not do
+
+  - given: the floor and beam of the first case, now cut, cut false
+    expect: >
+      changed 1, pairs "uncut from ... - read back: not cut"; the floor whole
+      again in section
+
+negative:
+  - given: >
+      THE FIRST CASE TO RUN. The same beam as the cutter and, as the element,
+      a wall the beam does not reach - a different element, not an empty set -
+      cut true
+    expect: >
+      changed 0; the wall named in wouldNot with Revit's reason in words
+      ("Revit says these two elements cannot be cut one by the other
+      (CutNotAppropriateForElements)", or that Revit does not let the beam cut
+      it), and the wall untouched in section
+
+  - given: >
+      a floor already cutting the beam (made by hand the other way round), the
+      beam the cutter, cut true
+    expect: >
+      refused names the floor - "the cut already runs THE OTHER WAY ... NOT
+      turned round"; changed 0; the cut still the floor's, read with
+      REPORT_GEOMETRY_CUTS
+
+  - given: the cutter itself among the elements
+    expect: refused by id - "the cutting element itself"; nothing cut
+
+  - given: two elements selected and cutter "selected"
+    expect: >
+      the add-in refuses before this runs - two are selected and a selection
+      has no order, so which one cuts would be a guess
+
+  - given: cut "sideways"
+    expect: refused before anything changes - "say cut (true) or uncut (false)"; changed 0
+
+  - given: a wall and beam that were never cut, cut false
+    expect: changed 0, the wall in alreadyRight - "not cut by ... - left alone"
+
+second_route:
+  - Revit's own Modify > Cut Geometry on the same pair, picking the floor then the beam, compared in the same section; and Modify > Uncut Geometry for cut false

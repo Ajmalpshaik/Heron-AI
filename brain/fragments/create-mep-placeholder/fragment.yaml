@@ -1,0 +1,174 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-074
+semantic-identity: "draw duct or pipe placeholders along these points - Revit's Duct Placeholder and Pipe Placeholder"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "draw a duct placeholder from
+# here to here" and "rough in the pipe route as placeholders" - Revit's Systems
+# > Duct Placeholder and Pipe Placeholder. Checked that day with
+# brain/heron_retrieve.py on each sentence, Revit 2024: the first reached
+# CREATE_DUCT, the second CREATE_FLEX_PIPE. Nothing in the library drew a
+# placeholder.
+#
+# WHY A NEW CARD AND NOT A WIDENING. Written when CREATE_DUCT and CREATE_PIPE
+# were PROVEN; main's #777 has since merged both into CREATE_MEP_RUNS
+# (version 3: duct, pipe, tray, conduit and flex, one run or a layout; it was
+# CREATE_DUCT_RUNS until main's #796, and is PROVEN again since), and retired
+# them (corrected 2026-11-01). CREATE_MEP_RUNS draws no placeholder. KEPT
+# APART from it on 2026-11-04, on the owner's ruling for row 5b-1382 - see the
+# JUDGED block above the utterances. A
+# placeholder is a different element to a duct: Revit draws it single-line,
+# with no fittings, and it is what CONVERT_MEP_PLACEHOLDERS turns into real
+# duct or pipe later. The run of points is copied from them, so the same
+# points draw the same route either way.
+#
+# DUCT AND PIPE ON ONE CARD, as CREATE_ELECTRICAL_RUN carries tray and conduit:
+# the same job and the same Revit shape in two disciplines. Which is wanted is
+# never guessed - the system type the modeller names decides it.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33):
+#   systemType      a duct or piping system type by its Project Browser name -
+#                   "Supply Air", "Domestic Cold Water". Left out, or not in the
+#                   model: NOTHING IS DRAWN and the loaded system types and
+#                   duct and pipe types come back in `typesLoaded`
+#   ductOrPipeType  the duct type or pipe type, as "Radius Elbows / Taps" or
+#                   "Rectangular Duct: Radius Elbows / Taps". Left out, not in
+#                   the model, or of the other discipline: nothing is drawn and
+#                   that discipline's types are listed
+#   level           the level the placeholders are drawn on
+#   points          the run, millimetres, x,y,z each, separated by ; - one
+#                   placeholder between each consecutive pair
+#
+# REFUSED, BY NAME: a duct type with a piping system type, or a pipe type with
+# a duct system type; a system type name both disciplines carry; fewer than two
+# points. A segment too short to exist is skipped and counted in `tooShort`; a
+# segment Revit refuses is named in `notMade` with Revit's words, and the rest
+# are still drawn - as CREATE_DUCT does.
+#
+# READ BACK after a regenerate: each one made is asked whether it is a
+# placeholder, and its length is measured from its own line.
+#
+# RISK MODIFY. It adds placeholders and deletes nothing.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: CREATE_MEP_PLACEHOLDER
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws duct placeholders or pipe placeholders - Revit's single-line rough-in -
+  between consecutive points, of the system type and duct or pipe type the
+  modeller names, and reports each one made with its length.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # A duct or piping system type by its Project Browser name. Left out,
+    # nothing is drawn and the loaded types are listed.
+    - name: systemType
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # The duct type or pipe type, of the system type's discipline. Left out,
+    # nothing is drawn and that discipline's types are listed.
+    - name: ductOrPipeType
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: level
+      type: Level
+      source: request
+    # Millimetres as typed, read into feet once by the add-in (D-20).
+    - name: points
+      type: IList<XYZ>
+      source: request
+  provides:
+    - name: elements
+      # The placeholders made, named `elements` so CONVERT_MEP_PLACEHOLDERS
+      # can take them straight from here.
+      role: result
+      type: IList<Element>
+    - name: tooShort
+      # Point pairs closer than Revit's own tolerance - given and unusable,
+      # never a placeholder it drew (D-52).
+      role: accounting
+      type: int
+    - name: notMade
+      # Segments Revit refused, each with Revit's words (D-52).
+      role: accounting
+      type: IList<string>
+    - name: typesLoaded
+      # The system types and duct or pipe types the model has - what to name.
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING: how many, each id and length, what was skipped and why.
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was drawn at all, in plain words. Empty when it ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Duct.CreatePlaceholder and
+  Pipe.CreatePlaceholder (Document, system type ElementId, duct or pipe type
+  ElementId, level ElementId, XYZ, XYZ), Duct.IsPlaceholder and
+  Pipe.IsPlaceholder, MechanicalSystemType, PipingSystemType, DuctType,
+  PipeType, ElementType.FamilyName, Application.ShortCurveTolerance and
+  LocationCurve.Curve are present and unchanged 2020 through 2027 - read with
+  tools/api-surface --members on 2026-11-01. IsPlaceholder is declared on Duct
+  and on Pipe, not on MEPCurve, on every release, so it is asked of each.
+
+# ROUTING (2026-11-01) - repeated in CONVERT_MEP_PLACEHOLDERS. Checked that
+# day on a scratch store: every CREATE_DUCT and CREATE_PIPE utterance still
+# reaches its own card, and so do "draw a duct from here to here" and "draw a
+# pipe from here to here", which neither card declares.
+#
+#   "draw a duct placeholder from here to here" -> here
+#   "rough in the pipe route as placeholders"   -> here
+#   "draw a duct from here to there"            -> CREATE_MEP_RUNS - real duct
+#   "run a pipe from here to there"             -> CREATE_MEP_RUNS - real pipe
+#   "convert these placeholders to real ducts"  -> CONVERT_MEP_PLACEHOLDERS
+#   "turn the pipe placeholders into pipes"     -> CONVERT_MEP_PLACEHOLDERS
+# JUDGED 2026-11-04 (FRAGMENT-ISSUES row 5b-1382, on the owner's yes to the
+# merges with his condition: the impl/ of a PROVEN keeper is never changed)
+# AGAINST CREATE_MEP_RUNS AND KEPT APART. CREATE_MEP_RUNS is PROVEN (re-proved
+# on Revit 2020 in main's #796) and draws NO placeholder: it calls
+# Duct.Create, Pipe.Create and their tray, conduit and flex kin, never
+# Duct.CreatePlaceholder or Pipe.CreatePlaceholder, and it reads back no
+# IsPlaceholder. A placeholder is a different element - single-line, no
+# fittings, what CONVERT_MEP_PLACEHOLDERS turns into duct or pipe later - so
+# taking it in means a placeholder branch in that card's impl/ and a new
+# proof. The points are written the same way on both, so one route draws the
+# same either way.
+#
+# ONE RULE IS OPPOSITE AND IS RECORDED, NOT SETTLED HERE: a segment Revit
+# refuses is named in `notMade` and the good ones are kept on this card;
+# CREATE_MEP_RUNS undoes the whole job and names each problem (Article 8 -
+# "half a layout that looks drawn is worse than none", the rule #777 kept when
+# CREATE_DUCT and CREATE_PIPE were merged). That safer rule is CREATE_MEP_RUNS'
+# and is the one to take if this card's code is next changed; it is not
+# changed here, because this ruling touched no impl/. TO MERGE IT FULLY, the
+# owner would give up CREATE_MEP_RUNS' PROVEN status until a placeholder
+# branch was written into its impl/ and proved again in Revit.
+utterances:
+  - draw a duct placeholder from here to here
+  - rough in the pipe route as placeholders

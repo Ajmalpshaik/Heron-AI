@@ -1,0 +1,38 @@
+# NEEDS-CHECKING Group MF - REPORT_STRUCTURAL_SETTINGS, SET_STRUCTURAL_SETTINGS
+# and SET_REINFORCEMENT_SETTINGS, built 2026-11-02 in a cloud session with no
+# Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/structural-settings-mf-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/structural-settings-mf-2026-11-02.yaml
+#
+# ONLY THE READ IS HERE. The two writes are risk ADMIN, and D-106 lets no batch
+# send one (batch-prove's NOT_IN_A_BATCH): each is proved by name with
+# `validate ... --allow-publish --write`, the lines in
+# docs/needs-checking/group-mf.md (MF3, MF4).
+#
+# THE MODEL is a scratch project from Revit's metric STRUCTURAL template, any
+# release 2020 to 2027, named "Heron MF Structure" and SAVED (MF1), and a beam
+# family opened from the same Revit's library, "Heron MF Beam Family" (any
+# concrete or steel beam family, saved under that name). Never a working model.
+#
+# THE NEGATIVE IS A DIFFERENT DOCUMENT: a family, which has no project
+# settings. Whether Revit hands a family a Structural Settings or Reinforcement
+# Settings element is NOT KNOWN from the assemblies - if the read returns
+# values there, that is a FINDING to record, not a proof (NEG_NOT_EMPTY), and
+# the tracking negative in MF5 is the one that stands.
+
+model: Heron MF Structure (scratch, metric structural template) and Heron MF Beam Family, Revit 2024
+
+jobs:
+  - fragment: report-structural-settings
+    in: "Heron MF Structure"
+    negative-in: "Heron MF Beam Family"
+    expect: settingsRead
+    note: >
+      MF2. Positive - structuralSettings opens "Structural Settings - Symbolic
+      cutback distance: brace cutback ...", reinforcementSettings opens
+      "Reinforcement Settings - General: include hooks in rebar shape
+      definition ...", and settingsRead counts them; compare by eye with
+      Manage > Structural Settings and Structure > Reinforcement Settings.
+      Negative - the family: settingsRead 0 and both strings empty expected;
+      RECORD what Revit gives.

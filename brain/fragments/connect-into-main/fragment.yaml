@@ -1,0 +1,186 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-089
+semantic-identity: "Revit's Connect Into - connect a terminal or a fixture into the one main handed in, a fixture by the connector whose system is the main's, every new element named by id"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked in the modeller's words "connect this diffuser into the
+# main duct" and "connect this sink into the waste pipe" - Revit's Connect
+# Into (NEEDS-CHECKING Group LP). Revit has no API call for it.
+#
+# A CARD OF ITS OWN, NOT A WIDENING (2026-11-02). It was first written as
+# CONNECT_AIR_TERMINALS version 3, on a branch where that card was DRAFT. The
+# same day main's #795 proved CONNECT_AIR_TERMINALS' version 2 on Revit 2024
+# against code without it, and any change under its impl/ would make that
+# proof stale - so version 3 moved here, its C# carried line for line, with
+# its two sentences and its cases. What version 3 adds to version 2: a
+# fixture with more than one open pipe connector - a sink's waste, cold and
+# hot - uses only the connector whose system classification is the main's,
+# where version 2 took the first open one; and `created`, every element made,
+# by id. Once this is proved, folding it back into CONNECT_AIR_TERMINALS as
+# its version 3 is the owner's call (heron-fragment-merger), and until then
+# the two stay one job's two versions, never two ways of choosing.
+#
+# LOOK-ALIKES. CONNECT_AIR_TERMINALS (PROVEN, version 2) taps terminals into
+# the duct handed in and branches sprinklers and single-connector fixtures to
+# the pipe handed in - everything here but the right connector of several and
+# `created`. CONNECT_OPEN_ENDS and FIT_MEP_JOINTS (PROVEN) join pieces already
+# drawn. NOT YET, here or anywhere: Connect Into from EQUIPMENT ("tap this
+# equipment into the main") - a duct connector on mechanical equipment still
+# goes to the air-terminal tap call, and a sideways pipe connector is still
+# refused. That sentence is declared on no card.
+kind: action
+domain: revit.mep
+capability: CONNECT_INTO_MAIN
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Revit's Connect Into for the main handed in: taps an air terminal into the
+  one duct handed in, or draws a riser and arm from a sprinkler or plumbing
+  fixture to the one straight pipe handed in. A fixture with several pipe
+  connectors - a sink's waste, cold and hot - uses only the connector whose
+  system classification is the main's; none or more than one matching, nothing
+  is drawn and its connectors are named. The main is never searched for in the
+  model. Every element made - the tap fitting, each riser and arm - is named by
+  id, and a terminal or head Revit declines is taken back whole.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The air terminals - and, version 2, the sprinklers or plumbing fixtures
+    # (CREATE_FIXTURE_BRANCHES' `elements`). A duct connector makes an element
+    # an air terminal; a pipe connector and no duct one, a head to branch.
+    - name: elements
+      type: IList<Element>
+    # The ducts to tap into. Handing them in rather than searching the model
+    # keeps the choice with whoever knows which system is which. Version 2:
+    # the PIPE mains a head branches to go here too - CREATE_FIXTURE_BRANCHES'
+    # `pipes` - named "Pipes", or "Ducts, Pipes" with terminals. A terminal
+    # never taps a pipe, and a head branches only to a straight pipe.
+    - name: ducts
+      type: IList<Element>
+      source: request
+    # For a terminal, how far its connector may be from the duct; for a head
+    # (version 2), the longest branch allowed, riser and arm together. A head
+    # with no main this close is listed, never connected by a long pipe.
+    - name: maxDistanceMm
+      type: double
+      source: request
+  provides:
+    - name: connected
+      role: result
+      type: int
+    - name: findings
+      type: IList<string>
+    - name: alreadyConnected
+      # Elements that were ALREADY in the state asked for, so there was
+      # nothing to do. The evidence it looked, never a change it made
+      # (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: noDuctNear
+      # Terminals with no duct within reach, so it could not be tapped in. The
+      # evidence it looked, never a thing it found (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND, so it must not count toward
+      # "did this come back empty" (D-52).
+      role: accounting
+      type: IList<string>
+    - name: moved
+      # Every terminal handed in whose point or facing changed while this ran,
+      # with how far in millimetres and on which axis. A tap that dragged a
+      # diffuser out of its ceiling still counts in `connected`, so this is
+      # the only place that says so. No distance is called acceptable here.
+      role: result
+      type: IList<string>
+    - name: notMeasured
+      # Terminals whose position could not be read before or after, so
+      # whether they moved is NOT known. Never counted as unmoved (D-52).
+      role: accounting
+      type: IList<ElementId>
+    # VERSION 2 - CREATE_FIXTURE_BRANCHES' answers, under its own names.
+    - name: branched
+      # How many sprinkler or fixture heads got a branch drawn AND joined at
+      # the head, read back off the head's connector.
+      role: result
+      type: int
+    - name: runs
+      # The new branch pipes and the mains they land on - what FIT_MEP_JOINTS
+      # takes next as its `elements`. Empty when only terminals were handed in.
+      role: result
+      type: IList<Element>
+    - name: noMainNear
+      # Heads with no straight pipe main within reach in the direction they
+      # face, clear of its ends. The evidence it looked, never a thing it
+      # found (D-52).
+      role: accounting
+      type: IList<ElementId>
+    # VERSION 3 - Connect Into's new elements, by id.
+    - name: created
+      # Every element this made: the tap fitting Revit cut for each terminal,
+      # read off the terminal's connector after the tap, and each riser and
+      # arm drawn for a head. Nothing made is never a refusal hidden here.
+      role: result
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release.
+  `MechanicalUtils.ConnectAirTerminalOnDuct(Document, ElementId, ElementId)` is
+  present 2020 through 2027 - read off the reference assemblies at both ends
+  rather than remembered. It lives in the mechanical namespace, which the
+  wrapper already carries.
+
+  Version 2, from CREATE_FIXTURE_BRANCHES: `Pipe.Create(Document, ElementId,
+  ElementId, ElementId, XYZ, XYZ)`, `MEPCurve.ReferenceLevel`,
+  `Connector.ConnectTo`, `Connector.Radius` / `Shape` / `Domain` /
+  `CoordinateSystem`, `RBS_PIPE_DIAMETER_PARAM`, `RBS_PIPING_SYSTEM_TYPE_PARAM`
+  and `SubTransaction` (`Start`, `Commit`, `RollBack`, `HasStarted`,
+  `HasEnded`) are present 2020 through 2027.
+
+  Version 3: `Connector.PipeSystemType`, `Connector.AllRefs`,
+  `Connector.Owner` and `MEPSystemType.SystemClassification` are present and
+  unchanged 2020 through 2027 - read with tools/api-surface --members on
+  2026-11-02. The two enums are compared by name: PipeSystemType and
+  MEPSystemClassification share the names of the piping classifications
+  (Sanitary, DomesticColdWater, ...). The connector overload of
+  Pipe.Create is NOT used: RevitAPI.xml says that when it cannot join it still
+  creates the pipe and THROWS, which leaves a pipe nothing here can name.
+
+
+# ROUTING - the same rows are in CONNECT_AIR_TERMINALS.
+#
+#   "connect this diffuser into the main duct" -> here - the main handed in
+#   "connect this sink into the waste pipe"    -> here - the sink's waste
+#                                                connector, matched to the
+#                                                pipe's system
+#   "connect the diffusers to the duct"        -> CONNECT_AIR_TERMINALS
+#   "pipe these sprinklers to the main"        -> CONNECT_AIR_TERMINALS
+#   "convert this last duct run to the diffuser into flex duct"
+#                                              -> CONVERT_TO_FLEX_DUCT - the
+#                                                duct is there already and
+#                                                becomes flex
+#   "tap this equipment into the main"         -> NOTHING DOES IT YET - Connect
+#                                                Into from equipment is not
+#                                                built (Group LP)
+
+# DECLARED 2026-11-02 - the modeller's words for Revit's Connect Into (Group
+# LP), moved here from CONNECT_AIR_TERMINALS with version 3.
+utterances:
+  - connect this diffuser into the main duct
+  - connect this sink into the waste pipe

@@ -1,0 +1,191 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-166
+semantic-identity: "beam and brace justification - where structural framing sits on its line: yz, y and z, their offset values, and the start and end level offsets"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for as a gap on Revit's ribbon - "beam / brace
+# justification: set and read the structural framing yz-justification, y/z
+# offsets and start/end level offsets", Modify > Justification and the
+# Properties values. No card set them: a grep of every fragment's C# that day
+# for YZ_JUSTIFICATION, Y_JUSTIFICATION, Z_JUSTIFICATION, the *_OFFSET_VALUE
+# parameters and STRUCTURAL_BEAM_END0_ELEVATION found only COPY_ELEMENTS
+# (which reads the level offsets to copy a beam). brain/heron_retrieve.py on
+# "set beam justification to top" (a scratch store, Revit 2024) answered
+# PLACE_BEAM_REBAR, and "change the z justification of the selected braces"
+# PLACE_LINE_BASED_FAMILY. heron_duplicates.look: 0 already here.
+#
+# LOOK-ALIKES, KEPT SEPARATE (heron-duplicate-checker's method, 2026-11-02):
+#   SET_FRAMING_END_EXTENSION  Start / End Extension and Join Cutback - how far
+#     (DRAFT)                  the member runs past or stops short of its ends.
+#                              Never touched here; this is where it sits
+#                              across its section and how high each end is.
+#   SET_MEP_JUSTIFICATION      the offsets of ducts and pipes in their section.
+#     (DRAFT)                  Another category with other parameters.
+#   WRITE_ELEMENT_PARAMETERS   writes ONE parameter named exactly, as text. It
+#     (PROVEN)                 cannot read a choice back in Revit's words, nor
+#                              pick Start / End or the uniform value by the
+#                              member's own yz Justification.
+#   SET_ELEMENT_LEVEL (PROVEN) moves an element to another reference level
+#                              without moving it; this sets the offsets from
+#                              the level it already has.
+#
+# THE READ IS REPORT_FRAMING_JUSTIFICATION'S (FRG-ELE-167, made the same day
+# for the request's "set and read"). A question about a member's justification
+# never reaches this write (D-86); every value this card sets is read back in
+# its answer, before and after.
+#
+# THE WORDS. The two declared are the request's own: the justification (Modify
+# > Justification) and the start and end level offsets. No other sentence is
+# declared until a modeller says one.
+#
+# THE CHOICES ARE NUMBERS UNDERNEATH. yz, y and z Justification are stored as
+# whole numbers whose meaning is not on any page read here: Uniform 0,
+# Independent 1; y Left 0, Center 1, Origin 2, Right 3; z Top 0, Center 1,
+# Origin 2, Bottom 3 is assumed, and every write is checked against the word
+# Revit then shows - a different word of the same choice puts the old value
+# back and refuses. Group ML's ML2 records what Revit shows.
+#
+# RISK MODIFY. It moves members within their own line and deletes nothing;
+# Undo takes the whole request back as one entry.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: SET_FRAMING_JUSTIFICATION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets where structural beams and braces sit on their own line, as the
+  Justification tool on the Modify tab and Properties do - yz uniform or
+  independent, y origin, left, center or right, z origin, top, center or
+  bottom, and the y and z offset values, at both ends or one - and the start
+  and end level offsets, in millimetres. Each value is read back after the
+  change; a value left out is left as it is.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Structural framing - the selection, or the chain. Anything else is
+    # refused by name.
+    - name: elements
+      type: IList<Element>
+    # "uniform" (one y and z for the whole member) or "independent" (a start
+    # and an end of each). Left out, each member keeps its own.
+    - name: yzJustification
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # "start", "end" or "both" - only on a member whose yz Justification is
+    # Independent. Left out, both. On a Uniform member start or end is
+    # refused, naming yzJustification independent.
+    - name: whichEnd
+      type: string
+      source: request
+      optional: true
+      absent: both
+    # "origin", "left", "center" or "right". Left out, unchanged.
+    - name: yJustification
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # "origin", "top", "center" or "bottom". Left out, unchanged.
+    - name: zJustification
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # y Offset Value in millimetres; / 304.8 to feet (D-20). Left out,
+    # unchanged.
+    - name: yOffsetMm
+      type: double
+      source: request
+      optional: true
+      absent: NaN
+    # z Offset Value in millimetres. Left out, unchanged.
+    - name: zOffsetMm
+      type: double
+      source: request
+      optional: true
+      absent: NaN
+    # Start Level Offset in millimetres. Left out, unchanged.
+    - name: startLevelOffsetMm
+      type: double
+      source: request
+      optional: true
+      absent: NaN
+    # End Level Offset in millimetres. Left out, unchanged.
+    - name: endLevelOffsetMm
+      type: double
+      source: request
+      optional: true
+      absent: NaN
+  provides:
+    - name: changed
+      # Settings changed and READ BACK - one per parameter per member.
+      role: result
+      type: int
+    - name: settings
+      # Each setting changed: the member, the parameter as Properties names
+      # it, and the value before and after - a choice in Revit's own word.
+      # Describes the run (D-52).
+      role: accounting
+      type: IList<string>
+    - name: alreadyRight
+      # Settings already at the value asked for - left alone. The evidence
+      # it looked, never a change it made (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in words: not structural framing, a setting the
+      # member does not have or Revit has greyed out, one end asked of a
+      # Uniform member, Revit showing another word for the number written,
+      # Revit refusing the value, or a read-back that did not change (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read with tools/api-surface --members
+  on the reference assemblies of 2020 to 2027 on 2026-11-02, every one present
+  in all eight: `BuiltInParameter.YZ_JUSTIFICATION`, `Y_JUSTIFICATION`,
+  `Z_JUSTIFICATION`, `Y_OFFSET_VALUE`, `Z_OFFSET_VALUE`, `START_Y_JUSTIFICATION`,
+  `END_Y_JUSTIFICATION`, `START_Z_JUSTIFICATION`, `END_Z_JUSTIFICATION`,
+  `START_Y_OFFSET_VALUE`, `END_Y_OFFSET_VALUE`, `START_Z_OFFSET_VALUE`,
+  `END_Z_OFFSET_VALUE`, `STRUCTURAL_BEAM_END0_ELEVATION` ("Start Level
+  Offset") and `STRUCTURAL_BEAM_END1_ELEVATION` ("End Level Offset");
+  `Parameter.AsInteger`, `AsValueString`, `Set(int)`, `Set(double)`,
+  `IsReadOnly`; `Document.Regenerate`. `StructuralFramingUtils` has no
+  justification member on any release - its ten methods are end joins, end
+  references and FlipEnds - so the parameters are the API. ElementIds are
+  compared as ElementIds and never read as numbers. Not seen in Revit.
+
+# ROUTING (2026-11-02) - the same rows are in SET_FRAMING_END_EXTENSION and
+# REPORT_FRAMING_JUSTIFICATION.
+#
+#   "set the justification of these beams"    -> here
+#   "set the start and end level offsets of these beams" -> here
+#   "read the justification of these beams"   -> REPORT_FRAMING_JUSTIFICATION -
+#                                                a question, never this write
+#   "set the beam end extension to 150 mm"    -> SET_FRAMING_END_EXTENSION -
+#                                                the length past the end, not
+#                                                where the member sits
+#   "line these runs up on their tops"        -> SET_MEP_JUSTIFICATION - ducts
+#                                                and pipes
+utterances:
+  - set the justification of these beams
+  - set the start and end level offsets of these beams

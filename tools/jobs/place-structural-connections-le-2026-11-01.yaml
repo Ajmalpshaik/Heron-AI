@@ -1,0 +1,51 @@
+# NEEDS-CHECKING Group LE - PLACE_STRUCTURAL_CONNECTIONS, built 2026-11-01 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/place-structural-connections-le-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/place-structural-connections-le-2026-11-01.yaml
+#
+# THE MODEL is Group LD's copy saved before any connection was drawn,
+# "steel-le" (docs/needs-checking/group-ld.md, LD1): C1, C2, B1, W1 and the
+# template's grids on Level 1, no connection. Never a working model. Before
+# the run, read the loaded connection types with REPORT_STRUCTURAL_CONNECTIONS
+# (show types) and load a base plate type in Connection Settings if there is
+# none - the job's connectionType below is "Base plate"; where the model's
+# type is called otherwise, this file changes, never the card.
+#
+# THE ARRANGEMENT: the structural columns of "FloorPlan: Level 1" (C1 and C2),
+# layout each, for the positive; the grids of the same plan for the negative
+# - a different selection, not an empty one (fragment-proving, rules 3 and
+# 5). Every write here is ROLLED BACK; the read-only setup comes before the
+# write (rule on write proofs).
+
+model: "steel-le scratch project (metric structural template) with C1, C2, B1 and W1 and no connection, Revit 2020"
+
+defaults:
+  write: true
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: place-structural-connections
+    expect: created
+    setup-set:
+      categoryName: Structural Columns
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categoryName: Grids
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      connectionType: "Base plate"
+      layout: "each"
+    negative-set:
+      connectionType: "Base plate"
+      layout: "each"
+    note: >
+      LE2. Negative - THE FIRST CASE TO RUN: the grids, so created none;
+      each grid named "not a structural framing, column, wall, floor or
+      foundation - Revit connects only those"; refused "Nothing handed in is
+      a structural framing, column, wall, floor or foundation"; no
+      connection in the model afterwards. Positive - created 2: one base
+      plate connection on C1 alone and one on C2 alone, each "joins 1" with
+      the end Revit put it at, read back of type "Base plate".

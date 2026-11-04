@@ -1,0 +1,78 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this read, "answered with a list it was not asked for": a narrowed read
+# that still returns every service, or a design duct read as a fabrication
+# part.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for REPORT_FABRICATION_SETUP): a scratch project new
+# from Revit's metric Mechanical template, saved under %TEMP%\heron-work, never
+# a working model. In Systems > Fabrication > MEP Fabrication Settings choose
+# Autodesk's sample "Revit MEP Imperial Content" (or Metric) configuration and
+# load two services - one ductwork, one pipework - then from the MEP
+# Fabrication Parts palette place one straight and one elbow of each, and draw
+# one ordinary (design) duct beside them. Write down the configuration's name
+# and version, the services loaded, each one's palettes and button counts as
+# the palette shows them - the second route. A SECOND scratch project from the
+# same template, with no configuration chosen, is the no-configuration case.
+
+positive:
+  - given: nothing selected; show and service left out
+    expect: >
+      configurationName the name MEP Fabrication Settings shows; report
+      "Fabrication configuration \"...\", version ..., kept at \"...\",
+      Imperial units, profile Global. Services loaded in this project: 2 of
+      the n the configuration has. \"...\" (...) ... - k palette(s): \"...\"
+      m button(s) | ... Fabrication parts in this model: 4 - ask for parts,
+      or select some, to list them"; loadedServices 2; names the two services
+      quoted; the service left out narrows nothing - never read as a value called "none" (row 5b-1432)
+
+  - given: show "services; buttons", service the ductwork service's name
+    expect: >
+      loadedServices 1; every button of that service named per palette, the
+      straight marked "straight"; buttons the count the MEP Fabrication Parts
+      palette shows for it
+
+  - given: the four fabrication parts and the design duct selected; show left out
+    expect: >
+      fabricationParts 4; each part with its id, its service, its item number
+      (or "none"), its size, the straights with their length in mm, the
+      elbows "fitting"; totals per service; notFabrication names the design
+      duct "not a fabrication part - a design duct; Design to Fabrication is
+      what turns one into fabrication parts"
+
+negative:
+  - given: >
+      service "ZZNOTASERVICE" - a name no service has, show services
+    expect: >
+      loadedServices 0; findings "No loaded service has a name or
+      abbreviation matching \"ZZNOTASERVICE\". The loaded services are: ..."
+      with both services named - a full list of services under the name is
+      the defect. THE FIRST CASE TO RUN
+
+  - given: only the design duct selected; show parts
+    expect: >
+      fabricationParts 0; notFabrication names the duct; findings "None of
+      the 1 element(s) selected is a fabrication part" - the duct never read
+      as a part
+
+  - given: the scratch project with no fabrication configuration, nothing selected
+    expect: >
+      configurationName empty; report "This model has no fabrication
+      configuration - one is chosen in Systems > Fabrication > MEP
+      Fabrication Settings ..."; every count 0
+
+  - given: any run at all
+    expect: >
+      NOTHING IN THE MODEL CHANGES - no transaction opened; MEP Fabrication
+      Settings and every part the same before and after
+
+second_route:
+  - >
+    Systems > Fabrication > MEP Fabrication Settings: the configuration name,
+    the profile and the loaded services are the ones `report` names
+  - >
+    The MEP Fabrication Parts palette, each loaded service chosen in turn:
+    every palette and button `report` names is there, with the same counts
+  - >
+    Each selected fabrication part's Properties: Service, Item Number, Size
+    and Length match the values `report` gives it

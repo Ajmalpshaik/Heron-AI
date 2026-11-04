@@ -102,6 +102,10 @@ compatibility-note: >
 #   "lay a mesh sheet in this slab"             -> here
 #   "A393 mesh bottom of the ground slab"       -> here
 #   "T12 at 200 both ways in this slab"         -> PLACE_AREA_REINFORCEMENT
+#   "place one fabric sheet on this slab at
+#    this point"                                -> PLACE_FABRIC_SHEET (2026-11-01:
+#                                                  one sheet at a point, ranked
+#                                                  here before that card)
 utterances:
   - lay A393 mesh in the bottom of this slab
   - add fabric reinforcement to these walls

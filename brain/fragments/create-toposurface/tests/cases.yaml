@@ -1,0 +1,63 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "made something nobody asked for": a pad of a guessed type,
+# a subregion on a guessed host.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE - a scratch project on Revit 2023 (the
+# last release with the toposurface tools), new from Revit's metric
+# architectural template, saved under %TEMP%\heron-work, never a working
+# model. Massing & Site > Toposurface by hand: four points at 0,0 / 60000,0 /
+# 60000,40000 / 0,40000 mm, elevation 0 - toposurface A, its id written down
+# with Manage > IDs of Selection. One wall drawn anywhere on Level 1 - wall W,
+# its id written down. A site plan in front.
+#
+# Every run below is ROLLED BACK (validate --write). The negative leg is a
+# DIFFERENT VALUE, not an empty one.
+
+positive:
+  - given: >
+      mode toposurface, pointsMm "100000,0,0; 130000,0,0; 130000,20000,1500;
+      100000,20000,1500; 115000,10000,2500"
+    expect: >
+      resultIds holds one toposurface; report "toposurface ...: 5 point(s), 4
+      on its edge, heights 0 to 2500 mm, projected area 600 m2, ..."
+
+  - given: >
+      mode pad, pointsMm "10000,10000; 30000,10000; 30000,25000; 10000,25000",
+      level "Level 1", typeName left out (the template's one pad type)
+    expect: >
+      resultIds holds one building pad; report "building pad ... on \"Level
+      1\" ..., cut into toposurface <A>, 1 loop(s) of 4 edge(s), area 300 m2".
+      typeName left out is never read as a type called "none" (row 5b-1432)
+
+  - given: >
+      mode subregion, pointsMm "35000,5000; 55000,5000; 55000,20000;
+      35000,20000", host the id of toposurface A
+    expect: >
+      resultIds holds one subregion; report "subregion ... on toposurface
+      <A>, 4 edge(s), projected area 300 m2, listed among the toposurface's
+      subregions"
+
+negative:
+  - given: >
+      mode subregion, the same corners, host the id of wall W
+    expect: >
+      resultIds empty; refused "No toposurface has the id ... - the
+      toposurfaces here are toposurface <A> (4 points). NOTHING WAS MADE."
+      THE FIRST CASE TO RUN
+
+  - given: >
+      mode pad, the same corners, level "Level 1", typeName "No Such Pad"
+    expect: >
+      resultIds empty; refused naming the pad types the model has
+
+  - given: mode toposurface, pointsMm "0,0,0; 1000,0,0; 1000,0,500"
+    expect: >
+      refused - two points at the same x,y - nothing made
+
+second_route:
+  - >
+    Revit's own Massing & Site tools by hand on a copy of the same saved file -
+    Toposurface, Building Pad and Subregion with the same points - and their
+    Properties: the projected areas and the pad's level and type as the
+    report gave
+  - one Ctrl+Z removes each run in a single step (Golden Rule 16)

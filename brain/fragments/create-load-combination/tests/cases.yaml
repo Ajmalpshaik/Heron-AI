@@ -1,0 +1,59 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "overwrote a load combination that was there", "made a load
+# case nobody asked for" or "took a case by a name it was not given".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for CREATE_LOAD_COMBINATION): the scratch project
+# REPORT_STRUCTURAL_LOADS is proved on - new from Revit's metric STRUCTURAL
+# template, saved under %TEMP%\heron-work, never a working model - with its
+# load cases DL1 and LL1, and ONE load combination made by hand in Analyze >
+# Load Combinations: ULS-A = 1.2 x DL1, Ultimate, Combination. Before every
+# run, write down every load combination (name, state, type, factors and load
+# cases) and every load case - the second route.
+#
+# The negative legs are DIFFERENT VALUES, not empty ones: a name already used
+# in other capitals, a load case name no case has.
+
+positive:
+  - given: combinations "ULS-T1 = 1.2 DL1 + 1.6 LL1", state "ultimate", combinationType and usage left out
+    expect: >
+      added 1; after holds every combination of before and one more,
+      "ULS-T1" - Ultimate, its type Revit's default as findings name it:
+      1.2 x "DL1" + 1.6 x "LL1", read back; Analyze > Load Combinations now
+      lists ULS-T1 with those two factors
+
+  - given: combinations "SLS-T1 = 1.0DL1 + 1.0LL1; 1.4DL1", state "serviceability", combinationType "envelope"
+    expect: >
+      added 2; "SLS-T1" - Serviceability, Envelope: 1 x "DL1" + 1 x "LL1";
+      and "1.4DL1", named after its formula as findings say - Serviceability,
+      Envelope: 1.4 x "DL1"
+
+negative:
+  - given: >
+      combinations "uls-a = 1.4 DL1" - ULS-A in other capitals - state
+      "ultimate"
+    expect: >
+      added 0; skipped names "uls-a" and ULS-A it matched; before and after
+      the same; ULS-A still 1.2 x DL1, Ultimate. A second combination, or
+      ULS-A changed to 1.4, is the defect. THE FIRST CASE TO RUN
+
+  - given: combinations "ULS-T2 = 1.4 Dead" - no load case is called Dead
+    expect: >
+      added 0; refused says no load case is called "Dead" and lists DL1, LL1
+      and every other case; Analyze > Load Cases unchanged - no case Dead made
+
+  - given: combinations "ULS-T3 = 1.2 dl1 + 1.6 LL1" - DL1 in other capitals
+    expect: >
+      added 0; refused says "dl1" differs only in capitals from DL1 and was
+      NOT taken - nothing half made with LL1 alone
+
+  - given: combinations "ULS-T4 = 1.2 DL1 + 1.6 LL1", state "permanent" - not a state
+    expect: >
+      added 0; refused names "permanent" and the states this Revit has;
+      nothing made
+
+second_route:
+  - >
+    Revit's own Analyze > Load Combinations: each combination added is listed
+    with the name, state, type, factors and load cases `after` gives, and
+    every combination of `before` is still there unchanged

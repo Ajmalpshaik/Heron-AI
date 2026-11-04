@@ -1,0 +1,53 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "moved the beam itself" or "moved something nobody selected".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for ADJUST_ANALYTICAL_ELEMENTS): the scratch project
+# CREATE_ANALYTICAL_ELEMENTS is proved on - new from Revit's metric STRUCTURAL
+# template, saved under %TEMP%\heron-work, never a working model, on Revit 2023
+# to 2027 - with columns C1 and C2, beam B1 between them on Level 2, floor S1 on
+# Level 2, and the architectural wall A1 (no analytical element). Every run is
+# ROLLED BACK unless the modeller keeps it. Before and after each run, read the
+# analytical model with REPORT_ANALYTICAL_MODEL - the second route.
+#
+# The negative legs are DIFFERENT SELECTIONS OR VALUES, not empty ones: the
+# wall A1, which has no analytical element; both an offset and points; points
+# for two elements.
+
+positive:
+  - given: B1 selected, offset "0,0,-200"
+    expect: >
+      adjusted 1; report "analytical member ... of Structural Framing ... (B1):
+      was (x1, y1, z) mm to (x2, y2, z) mm, now (x1, y1, z-200) mm to (x2, y2,
+      z-200) mm"; B1 itself is where it was (its Location line unchanged)
+
+  - given: S1 selected, offset "0,0,-100"
+    expect: >
+      adjusted 1; the analytical panel of S1, every corner 100 mm lower; S1
+      itself unchanged
+
+  - given: B1's analytical member selected, points "0,0,3000; 6000,0,3000"
+    expect: >
+      adjusted 1; the member now from (0, 0, 3000) mm to (6000, 0, 3000) mm
+
+negative:
+  - given: A1 selected - the architectural wall with no analytical element - offset "0,0,-200"
+    expect: >
+      adjusted 0; noAnalytical names A1; A1 and every analytical element as
+      they were. Anything moved is the defect. THE FIRST CASE TO RUN
+
+  - given: B1 selected, offset "0,0,-200", points "0,0,0; 6000,0,0"
+    expect: >
+      adjusted 0; refused says both an offset and points were given;
+      nothing changed
+
+  - given: B1 and C1 selected, points "0,0,0; 6000,0,0"
+    expect: >
+      adjusted 0; refused says new points redraw one analytical element and
+      2 were found; nothing changed
+
+second_route:
+  - >
+    Revit's own 3D view with the analytical model shown, the member's or
+    panel's Properties and its grips: the ends or corners as `report` gives
+    them; the physical element's own Location unchanged

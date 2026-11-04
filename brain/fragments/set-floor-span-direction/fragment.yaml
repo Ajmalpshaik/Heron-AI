@@ -1,0 +1,188 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-140
+semantic-identity: "set the span direction of these structural floors - an angle in degrees, or along a grid, a reference plane or a line"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "set the span direction of this
+# slab to run along grid 1" and "change the floor span to 90 degrees". Checked
+# that day with brain/heron_retrieve.py on a scratch store, Revit 2024: the
+# first reached MAXIMIZE_DATUM_EXTENTS and the second ROTATE_ELEMENTS - neither
+# touches a span direction. CREATE_FLOOR makes a floor and EDIT_SLAB_SHAPE
+# edits its shape points; nothing in the library set the direction a
+# structural floor spans.
+#
+# WHY TWO CARDS AND NOT ONE WITH TWO ACTIONS. Turning the span (this card) and
+# drawing Revit's span direction symbol in a plan (PLACE_SPAN_DIRECTION_SYMBOLS)
+# need different values - an angle or a datum here, a plan and a symbol type
+# there - change different things - the floor itself here, an annotation in one
+# view there - and run on different releases: Floor.SpanDirectionAngle is
+# settable 2020 to 2027, and SpanDirectionSymbol.Create exists only from 2025.
+# One card would have had to claim the smaller release list for both.
+#
+# A NON-STRUCTURAL FLOOR HAS NO SPAN DIRECTION. Revit's own API documentation
+# for Floor.SpanDirectionAngle, the same sentence in all eight releases 2020 to
+# 2027 (RevitAPI.xml in the Nice3point reference packages, read 2026-11-01):
+# "An exception will be thrown if the floor is non structural." So a floor whose
+# Structural box is clear is refused BY NAME and left alone - ticking that box
+# is a different change with consequences of its own (analytical model,
+# rebar), never made here as a side effect.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33), AND A DIRECTION IS READ, NEVER GUESSED:
+#   elements      the floors - the selection
+#   angleDegrees  degrees. Alone, measured anticlockwise from the model's X
+#                 axis; with `along`, measured anticlockwise from that element's
+#                 own direction ("perpendicular to grid A" is along grid A, 90)
+#   along         "grid NAME", "plane NAME" (a named reference plane) or
+#                 "line ID" (a straight model or detail line) - the convention
+#                 CREATE_RADIAL_DIMENSION uses. A bare name is tried as a grid,
+#                 then a reference plane. The direction is read off that
+#                 element's own line in plan; a curved grid, an arc line, a
+#                 multi-segment grid or one that runs straight up is refused by
+#                 name, never approximated
+#   Neither given: NOTHING IS CHANGED.
+#
+# READ BACK: every floor's span direction is read again after the change, in
+# the API's angle and in the floor's own Span Direction parameter; one
+# that did not take is put back as it was and named. A span is an axis, so 90
+# and 270 degrees are the same span and a floor already on it is left alone.
+#
+# RISK MODIFY. It changes one value on each floor handed in, nothing else; any
+# span direction symbol already drawn on the floor turns with it.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: SET_FLOOR_SPAN_DIRECTION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets the span direction of structural floors - to an angle in degrees, or
+  along a named grid, reference plane or line, read off that element - and
+  reads each floor's span direction back. A floor that is not structural has
+  no span direction in Revit and is named and left alone.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The floors, from the selection. Anything that is not a floor is named and
+    # left alone.
+    - name: elements
+      type: IList<Element>
+    # Degrees, as text so it can be left out: "90", "45.5". Alone, from the
+    # model's X axis anticlockwise; with `along`, from that element's direction.
+    - name: angleDegrees
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # "grid 1", "plane Slab Edge", "line 412233" - the element whose direction
+    # the span runs along. Left out, the angle alone decides.
+    - name: along
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: changed
+      role: result
+      type: int
+    - name: changedIds
+      # The floors whose span direction now reads back as asked.
+      role: result
+      type: IList<ElementId>
+    - name: spanDegrees
+      # The span direction asked for, in degrees from the model's X axis,
+      # 0 up to 180 - what every changed floor reads back. 0 when refused.
+      role: result
+      type: double
+    - name: alreadyThere
+      # Floors already spanning that way - nothing to do. Evidence it looked,
+      # never a floor it changed (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notFloors
+      # Handed in and not a floor - a wall, a roof - and left alone (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notStructural
+      # Floors with the Structural box clear, which Revit gives no span
+      # direction, and left alone (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notChanged
+      # Floors Revit refused, or whose span read back otherwise and was put
+      # back, and floors of another model (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, floor by floor, before and after, as the API and as the
+      # floor's Span Direction parameter read it (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was changed at all, in plain words. Empty when it ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Floor.SpanDirectionAngle (double,
+  get and set, radians), Floor.GetSpanDirectionSymbolIds, Floor.FloorType,
+  Grid.Curve, Grid.IsCurved, MultiSegmentGrid, ReferencePlane.BubbleEnd and
+  FreeEnd, CurveElement.GeometryCurve, Line.Direction, Parameter.AsInteger and
+  BuiltInParameter.FLOOR_PARAM_IS_STRUCTURAL and FLOOR_PARAM_SPAN_DIRECTION carry
+  the same signatures 2020 through 2027 - read with tools/api-surface --members
+  on 2026-11-01. No ElementId is built from a number or read as one.
+
+# ROUTING (2026-11-01) - the same rows are in PLACE_SPAN_DIRECTION_SYMBOLS.
+#
+# MEASURED 2026-11-01 through heron_retrieve.find on two scratch stores, one
+# built from the tree before these two cards and one after, no Revit filter,
+# `model` backend: every declared utterance and every routing-table sentence in
+# the library reaches the card it reached before. On the keyword route alone
+# "set out the structural grid" (CREATE_GRIDS' own) now ranks this card
+# first; the host answers it by identity, so CREATE_GRIDS keeps it.
+#
+# A QUESTION RANKS HERE, AND THIS WRITES. "what is the span direction of this
+# slab" and its like, declared nowhere, reached other writes before these cards
+# (PLACE_AREA_REINFORCEMENT, CREATE_PARTS, CREATE_FOUNDATION_SLAB) and reach
+# one of these two after. With the host's question:true (D-128) they reach a
+# read instead - never either card - but a read that does not answer them: no
+# card in the library reports a floor's span direction. Recorded for the owner
+# (FRAGMENT-ISSUES 5b-1369), not repaired by declaring words nobody said.
+#
+# REPAIRED 2026-11-01 by REPORT_FLOOR_SPAN_DIRECTION (FRG-ELE-141), a read that
+# reports each floor's span direction and its symbols and declares "what is the
+# span direction of this slab" and "which way does this floor span" - this
+# card's own words untouched (FRAGMENT-ISSUES 5b-1369, FIXED).
+#
+#   "set the span direction of this slab   -> here, along "grid 1"
+#    to run along grid 1"
+#   "change the floor span to 90 degrees"  -> here, angleDegrees 90
+#   "what is the span direction of this    -> REPORT_FLOOR_SPAN_DIRECTION -
+#    slab"                                    a question, and this writes
+#   "which way does this floor span"       -> REPORT_FLOOR_SPAN_DIRECTION
+#   "add span direction symbols to these   -> PLACE_SPAN_DIRECTION_SYMBOLS -
+#    slabs in this plan"                      draws the symbol, turns nothing
+#   "rotate these floors 90 degrees"       -> ROTATE_ELEMENTS - turns the floor
+#                                             itself, outline and all
+#   "make a floor"                         -> CREATE_FLOOR
+#   "add a low point to this floor"        -> EDIT_SLAB_SHAPE
+#   "set out the structural grid"          -> CREATE_GRIDS - draws grids; a
+#                                             span only runs along one
+utterances:
+  - set the span direction of this slab to run along grid 1
+  - change the floor span to 90 degrees

@@ -1,0 +1,176 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-146
+semantic-identity: "put point, line or area loads in a load case - on these beams, columns, walls or floors, or at points"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "put a 10 kN point load on
+# this beam end", "add a 5 kN/m line load along this beam" and "add a 2.5 kPa
+# area load on this slab" - Revit's Analyze > Loads (point, line, area; hosted
+# or free). No card placed a load (grep of every fragment's C# that day for
+# PointLoad, LineLoad and AreaLoad: nothing). PLACE_AREA_REINFORCEMENT also
+# goes "on this slab", but it places rebar, not a load - a look-alike in
+# words only.
+#
+# ONE WRITE FOR THREE KINDS, ON PURPOSE. A point, line and area load share
+# every rule - a named load case, a value and its direction, the analytical
+# host, the read-back, never doubling a load - and differ only in which
+# Create is called. Three cards would be one tool written three times.
+#
+# ONE OF A SET. REPORT_STRUCTURAL_LOADS (FRG-ELE-144) answers every question -
+# which loads, cases and natures there are, and what a beam carries - so no
+# question reaches this write (D-86). CREATE_LOAD_CASE makes the load case
+# this needs; PLACE_BOUNDARY_CONDITIONS places supports.
+#
+# NEVER CHANGES OR DELETES A LOAD. Every load placed is new. One that would
+# repeat a load already on that host, in that case, of that kind and force, is
+# skipped and named.
+#
+# NEVER GUESSED (D-33). The load case is named exactly - left out or not
+# found, refused with every case listed. A point load on a member names its
+# end; left out, refused with both ends' coordinates. Left out, the direction
+# is DOWN (project -Z, gravity) and the answer says so. Moments are not
+# placed.
+#
+# HOSTED ONLY ON THE ANALYTICAL ELEMENT OF THE ELEMENT NAMED. An element with
+# none is named in noAnalytical and gets nothing - never a free load in its
+# place.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: PLACE_STRUCTURAL_LOADS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places structural loads as Analyze > Loads does - a point load in kN at a
+  member's start or end, a line load in kN/m along a beam, brace or column, or
+  an area load in kPa over a floor, wall or foundation, on each element
+  selected, or free at points on releases that allow it - in one named load
+  case, reading each load back with its values.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      # The beams, braces, columns, walls or floors to load - a selection or
+      # the step before. Left out, it binds empty and `points` is read.
+      type: IList<Element>
+      optional: true
+    - name: kind
+      # point | line | area.
+      type: string
+      source: request
+    - name: loadCase
+      # The load case, by its exact name (REPORT_STRUCTURAL_LOADS lists them).
+      # Left out, refused with every case listed - never guessed.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: value
+      # More than 0: kN for a point load, kN/m for a line load, kPa (kN/m2)
+      # for an area load.
+      type: double
+      source: request
+    - name: direction
+      # down | up | x | -x | y | -y, along the project's axes. Left out, down.
+      type: string
+      source: request
+      optional: true
+      absent: down
+    - name: at
+      # A point load on a member: start (or base) | end (or top). Left out,
+      # refused with both ends' coordinates.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: points
+      # A FREE load, with no element handed in: "x,y,z; x,y,z" in millimetres -
+      # one load per point for a point load, two points for a line load, three
+      # or more corners for an area load. 2020 to 2023 only.
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: placed
+      # Loads placed. Something the write DID.
+      role: result
+      type: int
+    - name: placedIds
+      # The loads placed.
+      role: accounting
+      type: IList<ElementId>
+    - name: report
+      # ONE LINE PER LOAD PLACED, read back from the model: its kind, point or
+      # ends in mm, force in kN, kN/m or kPa, load case, host element and
+      # orientation.
+      role: accounting
+      type: string
+    - name: noAnalytical
+      # Elements handed in with no analytical element - given no load (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: skipped
+      # Elements not loaded, each with why: a load already there, a host of the
+      # wrong kind, Revit's refusal (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined the whole run, in Revit words: no load case, no end,
+      # a value of 0, a free load on 2024 or later. Never a thing done (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Hosted loads on every release, through two branches read with
+  tools/api-surface --members on 2026-11-01. 2020 to 2022 (#if REVIT2020 ||
+  REVIT2021 || REVIT2022): Element.GetAnalyticalModel(), and
+  PointLoad.Create(Document, AnalyticalModelStick, AnalyticalElementSelector,
+  XYZ, XYZ, PointLoadType), LineLoad.Create(Document, AnalyticalModelStick,
+  XYZ, XYZ, LineLoadType), AreaLoad.Create(Document, AnalyticalModelSurface,
+  XYZ, AreaLoadType). 2023 to 2027: AnalyticalToPhysicalAssociationManager,
+  AnalyticalMember, AnalyticalPanel and the same three Creates taking the
+  analytical ElementId. FREE LOADS 2020 TO 2023 ONLY: the Creates taking a
+  point, two points or curve loops and no host are present 2020-2023 and gone
+  at 2024, and RevitAPI.xml 2024 to 2027 documents no unhosted route, so from
+  2024 a free load is refused with that reason. Values go in through
+  UnitUtils.ConvertToInternalUnits - DisplayUnitType.DUT_KILONEWTONS,
+  DUT_KILONEWTONS_PER_METER and DUT_KILONEWTONS_PER_SQUARE_METER in 2020
+  (#if REVIT2020), UnitTypeId.Kilonewtons, KilonewtonsPerMeter and
+  KilonewtonsPerSquareMeter from 2021. LoadBase.LoadCaseId (get; set),
+  OrientTo and IsOrientToPermitted are alike 2020-2027. Whether a point load
+  on a column's base or top lands where Revit's own tool puts it has not been
+  seen in Revit.
+
+# ROUTING (2026-11-01) - the same rows are in REPORT_STRUCTURAL_LOADS,
+# CREATE_LOAD_CASE and PLACE_BOUNDARY_CONDITIONS.
+#
+#   "put a 10 kN point load on this beam end"    -> here, kind point, value
+#                                                   10, at end; the load case
+#                                                   asked
+#   "add a 5 kN/m line load along this beam"     -> here, kind line, value 5
+#   "add a 2.5 kPa area load on this slab"       -> here, kind area, value 2.5
+#   "list the loads on this beam"                -> REPORT_STRUCTURAL_LOADS
+#   "add a load case called Wind X"              -> CREATE_LOAD_CASE
+#   "add a pinned boundary condition at these column bases"
+#                                                -> PLACE_BOUNDARY_CONDITIONS
+utterances:
+  - put a 10 kN point load on this beam end
+  - add a 5 kN/m line load along this beam
+  - add a 2.5 kPa area load on this slab

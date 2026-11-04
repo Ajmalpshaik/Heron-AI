@@ -1,0 +1,49 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+# Arranged on the scratch project "workplane-ip" (NEEDS-CHECKING Group LM, LM1):
+# levels "Level 1" at 0 and "Level 2" at 4000 mm, a straight grid "B", a
+# section "Section 1" with a horizontal reference plane "Ceiling Datum" 2700 mm
+# above Level 1, a sheet "A101". The read was first written into
+# REPORT_VIEW_SETTINGS' cases on 2026-11-02 and moved here with it.
+
+positive:
+  - given: >
+      "FloorPlan: Level 1", its work plane set by hand in Architecture > Work
+      Plane > Set to Level 2 (4000 mm above Level 1)
+    expect: >
+      `workPlanes` "'Level 1' (FloorPlan) work plane Level : Level 2 -
+      horizontal at elevation 4000 mm", `withPlane` 1 - the Work Plane
+      dialog's Current line says Level : Level 2
+
+  - given: >
+      no view named, "FloorPlan: Level 1" in front
+    expect: >
+      `workPlanes` holds that one row for the view in front, and `findings`
+      says the work plane was read for the view in front
+
+negative:
+  - given: >
+      the sheet "A101" named alone. THIS IS THE FIRST CASE TO RUN
+    expect: >
+      `workPlanes` empty, `withPlane` 0, `noPlane` 1, and `findings` names
+      'A101' (DrawingSheet) with no work plane - never a plane. A reader that
+      fell back to the view in front, or to any plan's plane, would give the
+      sheet one
+
+  - given: >
+      the sheet "A101" and "FloorPlan: Level 1" named together, the plan's
+      work plane Level 1
+    expect: >
+      `workPlanes` one row, the plan's, naming Level : Level 1; the sheet in
+      `findings` as having none
+
+  - given: >
+      tracking (D-53). the same plan after its work plane is set by hand to
+      reference plane "Ceiling Datum" at 2700 mm
+    expect: >
+      its row reads Reference Plane : Ceiling Datum - horizontal at elevation
+      2700 mm, and nothing else in the answer changes
+
+second_route:
+  - >
+    Architecture > Work Plane > Set in each view named: the dialog's Current
+    line is the plane `workPlanes` names

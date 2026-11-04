@@ -474,3 +474,8 @@ utterances:
   - change the family category to mechanical equipment
   - set the family category
   - switch this family to the air terminals category
+  # DECLARED 2026-11-02 (row 5b-1453): this card's own routing table claims it
+  # (-> here, one call - the category first). Unclaimed by any utterance, it
+  # moved to CREATE_MEP_SYSTEM on a scratch store once the Group MM cards
+  # joined the library; declared, it reaches this card by identity.
+  - make it mechanical equipment and work plane based

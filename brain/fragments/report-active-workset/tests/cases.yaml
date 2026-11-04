@@ -1,0 +1,53 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this read, "named a workset when the model has none": a model that is
+# not workshared answered with a name, or with a confident empty that reads as
+# a workshared model with nothing active.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE - the same scratch models as
+# SET_ACTIVE_WORKSET's Group KN (NEEDS-CHECKING Group KO, KO1): a NEW project
+# from Revit's metric architectural template, made workshared, with user
+# worksets "Shared Levels and Grids" and "Workset1" (Revit's own) and
+# "Mechanical" and "Architecture" added by hand, saved as a central and opened
+# as a LOCAL; and a second new project, never workshared. The active workset is
+# chosen by hand in the status bar's Active Workset box before the run, and
+# read off it - the second route.
+#
+# The negative leg is a DIFFERENT MODEL, not an empty value: this read takes no
+# value at all, so what changes between the legs is the model (`negative-in:`
+# in the job file). It must come back with `activeWorkset` empty and
+# `workshared` false, and SAY the model has no worksets.
+
+positive:
+  - given: >
+      the workshared local, "Mechanical" chosen in the status bar's Active
+      Workset box
+    expect: >
+      activeWorkset "Mechanical", workshared true; findings' first line "The
+      active workset is \"Mechanical\" (open, ...)"; userWorksets lists
+      Architecture, Mechanical (marked ACTIVE), Shared Levels and Grids and
+      Workset1, each open or closed and editable or not
+
+  - given: the same local, "Workset1" chosen in the Active Workset box instead
+    expect: >
+      activeWorkset "Workset1", and the ACTIVE mark moves to Workset1 - the
+      answer follows the model, not a value it remembers
+
+negative:
+  - given: >
+      the second project, never workshared
+    expect: >
+      activeWorkset empty, workshared false, userWorksets empty, and findings
+      says "This model is not workshared, so it has no worksets and no active
+      workset". A name here, or a bare empty with no reason, is the defect.
+      THE FIRST CASE TO RUN
+
+  - given: any run at all
+    expect: >
+      NOTHING IN THE MODEL CHANGES - no transaction opened, the active
+      workset in the status bar the same before and after
+
+second_route:
+  - >
+    Revit's own status bar: the Active Workset box names the same workset as
+    activeWorkset - and Collaborate > Worksets shows the same open and Editable
+    state for every user workset in userWorksets

@@ -137,7 +137,10 @@ compatibility-note: >
 # ROUTING - cross-referenced in CONNECT_AIR_TERMINALS and FIT_MEP_JOINTS.
 #
 #   "draw the drops from the sprinklers to the branch line" -> here
-#   "pipe these sprinklers to the main"     -> here, then FIT_MEP_JOINTS on
+#   "pipe these sprinklers to the main"     -> CONNECT_AIR_TERMINALS, which
+#                                              this card merged into and where
+#                                              the sentence is declared (row
+#                                              5b-1384), then FIT_MEP_JOINTS on
 #                                              `runs` for the elbows and taps
 #   "connect these diffusers to the duct"   -> CONNECT_AIR_TERMINALS - a duct
 #                                              tap Revit makes in one call

@@ -215,9 +215,18 @@ compatibility-note: >
 
 # ROUTING - the same rows are in the fragments named here.
 #
-#   "make a supply air system from these"   -> here
+#   "make a supply air system from these"   -> here. DECLARED below since
+#                                              2026-11-01: ranked, it reached
+#                                              CREATE_VIEW_FILTERS_BY_RULE, and
+#                                              then EDIT_MEP_SYSTEM once that
+#                                              card was written (FRAGMENT-ISSUES
+#                                              row 5b-1359)
 #   "create a system for this pump"         -> here
 #   "put these diffusers on the FCU's system" -> here
+#   "add these diffusers to Supply Air 2"   -> EDIT_MEP_SYSTEM - a system that
+#                                              already exists, Add to System
+#   "take this terminal out of the system"  -> EDIT_MEP_SYSTEM, Remove from
+#                                              System
 #   "make a new system type"                -> CREATE_MEP_SYSTEM_TYPE - a type
 #                                              in the Project Browser, not a
 #                                              system of elements
@@ -230,6 +239,10 @@ compatibility-note: >
 #   "assign them to panel DB-1"             -> here, with the panel given
 #   "draw the cable tray"                   -> CREATE_MEP_RUNS - CONTAINMENT,
 #                                              not a circuit
+#   "add these lights to circuit 3"         -> EDIT_MEP_SYSTEM, version 2 -
+#                                              a circuit that already exists
+#                                              (EDIT_ELECTRICAL_CIRCUIT until
+#                                              it was merged there, 2026-11-04)
 #   "what is on circuit 3"                  -> SELECT_BY_ELECTRICAL_CIRCUIT
 #   "what circuits are on panel DB-1"       -> REPORT_PANEL_CIRCUITS
 #   "draw wires between these sockets"      -> CREATE_WIRES - drawn wiring, not
@@ -247,3 +260,13 @@ utterances:
   - create a power circuit from this selection
   - make a fire alarm circuit
   - put these lights on a circuit
+  # ADDED 2026-11-01, row 5b-1359. The routing table above claims it and a
+  # comment is not indexed, so ranking decided: CREATE_VIEW_FILTERS_BY_RULE
+  # took it, and EDIT_MEP_SYSTEM after that card was written.
+  - make a supply air system from these
+  # ADDED 2026-11-01, FRAGMENT-ISSUES row 5b-1356: EDIT_ELECTRICAL_CIRCUIT
+  # (DRAFT) declares "take this socket off its circuit", and this sentence -
+  # claimed in the ROUTING table above - then reached that edit on a coin toss.
+  # Declared on CREATE_ELECTRICAL_CIRCUIT first; that card is merged into this
+  # one, so the declaration is here. Outside impl/.
+  - circuit these sockets

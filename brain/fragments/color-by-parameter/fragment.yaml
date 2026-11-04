@@ -212,6 +212,14 @@ compatibility-note: >
 #   "colour the rooms by name"       -> APPLY_COLOR_FILL_SCHEME - the view's
 #                                     colour SCHEME, which follows a renamed
 #                                     room, with Revit's own legend
+#   "colour the ducts by system in this plan and add a legend" /
+#   "add a duct colour fill legend" /
+#   "colour the pipes by flow and place a pipe legend here"
+#                                    -> APPLY_COLOR_FILL_SCHEME - Revit's Duct
+#                                       Legend and Pipe Legend are a colour
+#                                       SCHEME and its legend. "colour code
+#                                       the ducts by system" with no legend
+#                                       asked stays here (2026-11-02)
 
 #   "make a filter for every different system type" ->
 #                                        CREATE_VIEW_FILTER - real

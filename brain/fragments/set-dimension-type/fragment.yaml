@@ -1,0 +1,167 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-167
+semantic-identity: "change a dimension type - its text size in mm, font, tick mark, units format and colour - or copy it under a new type name first"
+kind: action
+domain: revit.annotation
+capability: SET_DIMENSION_TYPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: the modeller asked to make a new linear dimension type from
+# another, and to set a named dimension type's text size, tick mark and units.
+# Nothing in Heron changed a DIMENSION TYPE (checked that day: grep of
+# brain/fragments for DimensionType, DRAFT and PROVEN, and
+# brain/heron_retrieve.py with his words - they reached SET_TEXT_TYPE,
+# CREATE_DIMENSION, CREATE_LINEAR_DIMENSION and SET_FAMILY_TYPE_VALUES, each a
+# write that does something else).
+#
+# WHY NOTHING WAS WIDENED - each candidate read in full:
+#   SET_TEXT_TYPE (PROVEN) is the same job for TEXT types - TextElementType -
+#     and this card copies its shape on purpose: the settings checked first,
+#     the copy and the change in one call, every value read back. A dimension
+#     type is a DimensionType: a tick mark, witness lines and its own units
+#     format, none of which a text type has, and no labels or notes to switch.
+#     Widening it would make its proof stale for a job it does not do.
+#   DUPLICATE_TYPE (PROVEN) copies the type behind a SELECTION and sets
+#     nothing on the copy; a dimension type named in words is not a selection,
+#     and copy-then-set as two calls is two undo entries for one request
+#     (Article 8).
+#   WRITE_ELEMENT_PARAMETERS (DRAFT) writes one parameter on selected
+#     elements through Revit's own text, in project units - "2.5" would be
+#     2.5 of the model's length units, not paper mm - and makes no copy and
+#     no units format.
+#   SET_PROJECT_UNITS (PROVEN) sets the PROJECT's units, and its own routing
+#     table sends "change a dimension style's units" away from it.
+#
+# EVERYTHING IS CHECKED FIRST, AND READ BACK AFTER. The type (named, never
+# guessed), each setting (known, on this type, writable, held as expected),
+# each value (mm above zero, yes/no, opaque/transparent, R,G,B, line weight
+# 1-16, a tick mark by its exact name, a unit Revit offers for the type's
+# kind and a rounding it takes), the new name free. After one regeneration
+# every value is read back; a value other than asked or a refusal from Revit
+# THROWS, so the copy and the settings go back together - Article 8.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Changes a dimension type as its Type Properties does - for every dimension
+  of that type at once. Sizes are paper millimetres. The tick mark is named
+  exactly as an arrowhead type; the units format takes a unit, a rounding
+  and a symbol, or the project's settings. Can copy the type under a new
+  name first and change the copy. Only the type named is touched, and every
+  value is read back before and after.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # A type by its name - "Linear - 3mm Arial" - or "Family: Type" when two
+    # styles share a name. Never guessed: a name matching none, or two, is
+    # refused with the dimension types listed.
+    - name: dimensionTypeName
+      type: string
+      source: request
+    # "Text Size=2.5; Tick Mark=Diagonal 3mm; Units Format=Millimeters, 0
+    # decimal places" - each setting as Type Properties names it, then "="
+    # and the value, ";" or a new line between. Sizes are paper mm; Color
+    # R,G,B, #RRGGBB, black or white; Line Weight and Tick Mark Line Weight
+    # 1-16; Text Background opaque/transparent; Units Format a unit, a
+    # rounding ("0 decimal places", "rounding 5") and "no symbol" or a symbol,
+    # or "project". Left out, "none" - only a copy.
+    - name: changes
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # A new name: the type is copied first and the copy changed. A name a
+    # dimension type of that style already has is refused, named, and nothing
+    # is made. Left out, "none" - the type itself is changed.
+    - name: duplicateAs
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: changedTypeId
+      # The type changed - the copy, or the type named. Invalid when refused.
+      role: result
+      type: ElementId
+    - name: typeAfter
+      # ONE STRING: the type as read back after the change - family: type |
+      # style | each setting under Revit's own name | Units Format.
+      role: result
+      type: string
+    - name: typeBefore
+      # The type changed or copied, as it read before - context for the
+      # answer, never a thing found (D-52).
+      role: accounting
+      type: string
+    - name: usedBy
+      # How many dimensions are on the changed type afterwards - what changed
+      # with it (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, no #if. DimensionType, StyleType,
+  GetUnitsFormatOptions and SetUnitsFormatOptions(FormatOptions),
+  ElementType.Duplicate(string) and FamilyName, the FormatOptions(FormatOptions)
+  copy constructor, UseDefault, Accuracy and IsValidAccuracy(double),
+  Parameter.Set(double / int / string / ElementId), IsReadOnly and
+  Definition.Name, and the parameters REPORT_DIMENSION_TYPES reads plus
+  ARROW_TYPE are present 2020 through 2027 - read off the shipped RevitAPI.dll
+  for all eight with tools/api-surface --members on 2026-11-02. The units
+  format's unit and symbol go by reflection, as SET_PROJECT_UNITS crosses the
+  2021 units change: GetSpecTypeId, UnitUtils.GetValidUnits(ForgeTypeId),
+  FormatOptions.GetValidSymbols(ForgeTypeId), SetUnitTypeId and
+  SetSymbolTypeId where DimensionType.GetSpecTypeId exists (2021 to 2027);
+  the UnitType property, UnitUtils.GetValidDisplayUnits(UnitType),
+  FormatOptions.GetValidUnitSymbols(DisplayUnitType) and the DisplayUnits and
+  UnitSymbol setters on 2020. Sizes are written in Revit's internal feet from
+  millimetres by 304.8 (D-20).
+
+# ROUTING - rows for these sentences are in REPORT_DIMENSION_TYPES too.
+#
+#   "make a new linear dimension type called 2.5mm Arial from Linear - 3mm
+#    Arial"                                -> here, duplicateAs 2.5mm Arial
+#   "set the text size of dimension type X to 2.5 mm"
+#                                          -> here, changes Text Size=2.5
+#   "change the tick mark of dimension type X to Diagonal 3mm"
+#                                          -> here, Tick Mark=Diagonal 3mm
+#   "set dimension type X units to millimetres with no decimals"
+#                                          -> here, Units Format=Millimeters,
+#                                             0 decimal places
+#   "what dimension types are in this project"
+#                                          -> REPORT_DIMENSION_TYPES, the read
+#   "change the label text height to 5 mm" -> SET_TEXT_TYPE - a text type
+#   "add a dimension between these"        -> CREATE_DIMENSION - draws a
+#                                             dimension; the type is not edited
+#   "swap them to a different type"        -> CHANGE_ELEMENT_TYPE - dimensions
+#                                             onto a type that exists already
+#   "set the project length units to millimeters"
+#                                          -> SET_PROJECT_UNITS - the
+#                                             project's, not a type's
+
+# The modeller's words, 2026-11-02, with X as he wrote it.
+utterances:
+  - make a new linear dimension type called 2.5mm Arial from Linear - 3mm Arial
+  - set the text size of dimension type X to 2.5 mm
+  - change the tick mark of dimension type X to Diagonal 3mm
+  - set dimension type X units to millimetres with no decimals

@@ -344,6 +344,37 @@ compatibility-note: >
 # was made, findings otherwise; CREATE_KEY_SCHEDULE's created -> created,
 # findings -> findings. Their sentences moved here.
 
+# ROUTING (2026-11-01, repointed 2026-11-04) - repeated in REPORT_MATERIAL_TAKEOFF.
+#   "create a material takeoff schedule for floors" -> here, listKind material
+#                                        takeoff, the category Floors. It was
+#                                        CREATE_MATERIAL_TAKEOFF's until that
+#                                        card was merged in (below)
+#   "material takeoff of all the concrete" -> here, a takeoff of the category
+#                                        named, then SET_SCHEDULE_FILTERS on
+#                                        Material: Name - "concrete" is never a
+#                                        category
+#   "give me a material takeoff"     -> REPORT_MATERIAL_TAKEOFF - the numbers in
+#                                        the reply, nothing made
+
+# MERGED 2026-11-04 (FRAGMENT-ISSUES row 5b-1382, on the owner's yes, with his
+# condition that the impl/ of a PROVEN keeper is never changed) - CREATE_MATERIAL_
+# TAKEOFF (FRG-VIEW-161) is DEPRECATED, superseded by this card. A CARD-TEXT
+# CHANGE ONLY: nothing under impl/ was touched, so the proof above still
+# describes the code and this card stays PROVEN. Version 3 already made
+# Revit's Material Takeoff (listKind "material takeoff"), so the job was
+# this card's. Where the retired card's outputs are now: created -> created;
+# scheduleCalled -> madeAs, which names the view; addedFields -> fieldsAdded;
+# missingFields -> missingFields; fieldsAvailable -> the findings line beside
+# each missing field; validCategories -> not given - refused names the
+# category Revit declined; refused -> refused. NOT CARRIED, because this
+# card's code is proven and does not change: a Multi-Category takeoff (this
+# card takes one category; whether Revit accepts one was never established -
+# Group KJ), a takeoff left unnamed, fields matched ignoring spaces and
+# colons, and an empty takeoff deleted again. Opposite rules, this card's
+# kept: a name already used is Revit's generated name, said in findings (the
+# retired card refused), and a takeoff with no column is kept and said in
+# findings (the retired card deleted it). Its three sentences moved here; the
+# takeoff leg of this card is NEEDS-CHECKING KK31, still owed.
 utterances:
   - make a schedule
   - create a schedule of the ducts
@@ -383,3 +414,8 @@ utterances:
   - make a keynote legend
   - make a note block
   - make an area schedule for the gross building scheme
+  # MOVED 2026-11-04 from CREATE_MATERIAL_TAKEOFF, merged into this card
+  # (row 5b-1382).
+  - make a wall material takeoff with material name, area and volume
+  - create a material takeoff schedule for floors
+  - material takeoff of all the concrete

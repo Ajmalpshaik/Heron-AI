@@ -1,0 +1,107 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-080
+semantic-identity: "draw a property line through these points, or from a table of distances and bearings"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "draw the property line
+# through these points" and "add a property line from this bearing table" -
+# Massing & Site > Property Line. No card made one (grep of brain/fragments
+# that day for PropertyLine: only REPORT_MASSES, which READS the property
+# lines' area for a plot ratio). CREATE_ROOM_SEPARATION_LINES and
+# DRAW_FAMILY_POINT_CURVES draw other lines through points - look-alikes by
+# word, neither a property line.
+#
+# BOTH WAYS IN ONE CARD, as Revit's own dialog offers them: by sketching
+# (points) or by distances and bearings (a table). One of the two per run.
+#
+# THE BEARING'S CONVENTION IN THE API IS NOT MEASURED: RevitAPI.xml says only
+# "an angle in 0 to 2*PI". The read-back puts what Revit holds beside what was
+# typed, and NEEDS-CHECKING says how to compare it with Revit's own table.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.geometry
+capability: CREATE_PROPERTY_LINE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws a property line through points in millimetres, or from a table of
+  distances and bearings with arcs, and reads back its id, whether it closes,
+  its area and the bearings Revit holds.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: pointsMm
+      # "x,y; x,y; ..." in millimetres, in order; open unless the last point
+      # repeats the first. Left out, the table is used.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: table
+      # Rows "distance, bearing" separated by semicolons - millimetres, and a
+      # quadrant bearing (N45-30-00E) or degrees clockwise from north; an arc
+      # row is "distance, bearing, arc, radius, left|right". Left out, the
+      # points are used. One of the two, never both.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: startMm
+      # A table's start point "x,y" in millimetres. Left out, Revit's own.
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: propertyLine
+      # The property line made, read back. Something the write DID.
+      role: result
+      type: PropertyLine
+    - name: report
+      # Its id, sketched or from a table, closed with its area or open, its
+      # start point, and each row's distance and bearing as Revit holds them
+      # beside what was typed (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why NOTHING WAS MADE, as one sentence - neither or both ways given, a
+      # point or a row not read, Revit's own check failed; null otherwise
+      # (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2027"]
+runtime: [net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  PropertyLine.Create(Document, IList<CurveLoop>) and Create(Document,
+  IList<PropertyTableEntry>), IsValidBoundary, IsValidPropertyTable,
+  IsSketchBased, IsClosedLoop, Area, GetStart, SetStart, GetBoundary and
+  GetPropertyTable, and PropertyTableEntry with its Create,
+  IsValidPropertyTableEntry and the PropertyTableEntryCurveType and
+  PropertyTableEntryArcDirection enumerations are present in 2027 and absent
+  2020 to 2026 - read with tools/api-surface --members on 2026-11-02 - so the
+  card claims 2027 only. Before 2027 the API offers no way to make a property
+  line.
+
+# ROUTING (2026-11-02)
+#
+#   "draw the property line through these points" -> here, pointsMm
+#   "add a property line from this bearing table" -> here, table
+#   "draw a room separation line across this opening" -> CREATE_ROOM_SEPARATION_LINES
+utterances:
+  - draw the property line through these points
+  - add a property line from this bearing table

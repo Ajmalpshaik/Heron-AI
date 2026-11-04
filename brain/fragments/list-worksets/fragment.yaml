@@ -116,6 +116,9 @@ compatibility-note: >
 #                                   workset - a question about an ELEMENT
 #   "put these on the MEP workset" -> SET_ELEMENT_WORKSET
 #   "who owns this"              -> REPORT_ELEMENT_OWNERSHIP
+#   "which workset is active"    -> REPORT_ACTIVE_WORKSET - the active one, a
+#                                   read of its own since 2026-11-01 so that
+#                                   this card's proof stays good (5b-1370)
 #   "is this model workshared"   -> here (declared) and answered by
 #                                   REPORT_ELEMENT_OWNERSHIP, which is left alone
 #                                   deliberately: it PROVIDES `notWorkshared`

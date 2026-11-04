@@ -271,3 +271,7 @@ utterances:
   - connect them together
   - add a tee here
   - join these two ducts
+  # ADDED 2026-11-02, row 5b-1419. FILLET_LINES' routing table sends this
+  # sentence here; it reached AUTO_SIZE_MEP, and FILLET_LINES once the wall
+  # join cards were added.
+  - round off this duct corner

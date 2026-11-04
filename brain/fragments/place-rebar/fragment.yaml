@@ -1,0 +1,196 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-157
+semantic-identity: "place one rebar bar or set of a chosen shape and bar type at chosen points in this concrete host - Structure > Rebar, standard shape or sketched"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "place a T16 bar of shape 21
+# along this wall at 200 spacing", "draw a T12 L-bar in this slab through
+# these points", "add bars of shape 00 in this column face" and "sketch a
+# rebar along this line in the wall" - Revit's Structure > Rebar, a standard
+# shape or a sketched one, in any concrete host. Checked that day with
+# brain/heron_retrieve.py on each sentence, Revit 2024: PLACE_BEAM_REBAR,
+# PLACE_COLUMN_REBAR, PLACE_FOOTING_REBAR, PLACE_AREA_REINFORCEMENT,
+# PLACE_PATH_REINFORCEMENT, REPORT_HOST_REBAR and CREATE_REBAR_BAR_TYPE came
+# back. The column, beam and footing cards each compute a whole LAYOUT from
+# one kind of host's own solid; the area and path cards make a reinforcement
+# SYSTEM, not a bar. None puts a bar of a named shape where the modeller says,
+# in any host - and widening one would hang a second job off a card built for
+# one host's layout. Read in full against PLACE_COLUMN_REBAR, PLACE_BEAM_REBAR,
+# PLACE_FOOTING_REBAR and PLACE_PATH_REINFORCEMENT that day: LOOK-ALIKE each.
+#
+# THE VALUES, every one the modeller's (D-33):
+#   elements      exactly ONE host - a structural concrete wall, floor,
+#                 foundation, beam or column. None or two is refused, and a
+#                 host Revit will not take is refused with Revit's answer
+#   barType       a Rebar Bar Type by its exact name, or a diameter in mm
+#                 matched to the ONE type of that diameter (D-71). "T16" is a
+#                 bar type only if one is named "T16" (D-34)
+#   shape         a Rebar Shape by its EXACT name - "21", "M_00" - or left
+#                 out: the bar is sketched. A name not loaded is refused,
+#                 listing the shapes whose name holds what was typed
+#   box           with a shape: two points (a straight shape's start and end)
+#                 or three (the corner, the end of the first side, the end of
+#                 the second side at a right angle), in mm. The shape's x and
+#                 y run along the two sides and it is scaled to fit
+#   through       with no shape: two or more points in mm, in one plane, the
+#                 bar's centre line drawn straight between them
+#   spreadToward  a direction x, y, z - which way a SET spreads from the
+#                 first bar. Required for a set; never guessed. It must be
+#                 square to the bar's plane
+#   spacing, count, setLength - two of the three make a set: spacing and
+#                 length is Revit's Maximum Spacing, spacing and count Number
+#                 with Spacing, count and length Fixed Number. None is one bar
+#
+# POINTS ARRIVE IN FEET: the binder reads an IList<XYZ> in millimetres and
+# converts it (RevitFragment.OnePoint). Spacing and set length are text in
+# millimetres and are divided by 304.8 here (D-20).
+#
+# COVER IS REVIT'S. The host's Rebar Cover on each face is read and reported,
+# never changed. The bar goes where the points say; a first bar that runs
+# outside the host's extents is named in `readBackWrong`, not hidden.
+#
+# A SKETCHED BAR HAS NO HOOKS in this version, and is Standard style -
+# CreateFromCurves picks a loaded shape that fits it or makes one, and the
+# shape it read back is reported. A straight two-point bar with no
+# spreadToward is laid in a plane square to the bar - that plane does not move
+# a straight bar with no hooks, and the answer says which.
+#
+# REFUSED BEFORE ANYTHING IS PLACED: no host or more than one; a host Revit
+# will not take; a bar type or shape not in the model; no rebar shapes loaded;
+# a shape AND sketch points; a box that is not two or three points at a right
+# angle; a bent shape with two points; points not in one plane; a set with no
+# spreadToward, or one not square to the bar's plane; one or three of the
+# layout values. A bar Revit refuses is removed again inside the same undo,
+# with Revit's own reason.
+#
+# READ BACK after a regenerate: the bar's id, host, shape, bar type, number of
+# bars, layout and spacing, the bar plane, total length and the host's cover.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: PLACE_REBAR
+version: 1
+source: OFFICIAL
+risk: MODIFY
+purpose: >
+  Places one rebar bar or rebar set in one concrete host - a standard Rebar
+  Shape fitted into a box, or a bar sketched through points - of the bar type,
+  shape, spacing and count the modeller names.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      # The ONE host, selected.
+      type: IList<Element>
+    - name: barType
+      type: string
+      source: request
+    - name: shape
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: box
+      # MILLIMETRES, "x,y,z; x,y,z[; x,y,z]" - with a shape only.
+      type: IList<XYZ>
+      source: request
+      optional: true
+    - name: through
+      # MILLIMETRES, "x,y,z; x,y,z; ..." - with no shape only.
+      type: IList<XYZ>
+      source: request
+      optional: true
+    - name: spreadToward
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: spacing
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: count
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: setLength
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: placed
+      # The one rebar - bar or set - made and read back in its host.
+      role: result
+      type: IList<ElementId>
+    - name: readBackWrong
+      # Host, shape, bar type, count or spacing reading other than asked, or a
+      # first bar outside the host's extents.
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING: the bar's id, shape, bar type, count, spacing, plane,
+      # length and the host's cover, as read back (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was placed, in plain words. Empty when it ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  TWO ROUTES FOR THE SKETCH, ONE #if, read with tools/api-surface --members on
+  2026-11-02, as PLACE_COLUMN_REBAR's. Rebar.CreateFromCurves with two
+  RebarHookTypes and two RebarHookOrientations is 2020-2026 and gone at 2027;
+  2026 on take the form with a BarTerminationsData (2026-2027 only). The bar
+  diameter is BarDiameter on 2020-2021 and BarNominalDiameter /
+  BarModelDiameter from 2022. One signature on all eight:
+  Rebar.CreateFromRebarShape(Document, RebarShape, RebarBarType, Element, XYZ,
+  XYZ, XYZ); RebarShapeDrivenAccessor.ScaleToBox, Normal,
+  SetLayoutAsMaximumSpacing, SetLayoutAsNumberWithSpacing and
+  SetLayoutAsFixedNumber; Rebar.Quantity, MaxSpacing, LayoutRule, GetHostId,
+  GetShapeId, TotalLength; RebarShape.SimpleLine; RebarHostData.IsValidHost;
+  RebarCoverType.CoverDistance; the CLEAR_COVER_* parameters,
+  WALL_STRUCTURAL_SIGNIFICANT and FLOOR_PARAM_IS_STRUCTURAL;
+  FamilyInstance.StructuralMaterialType. Rebar.GetCenterlineCurves renamed a
+  parameter at 2026 with the same types, so one positional call serves all
+  eight. Ids are compared as ElementId, never read as numbers.
+
+# ROUTING (2026-11-02) - the rebar rows are those in every rebar card.
+#
+#   "place a T16 bar of shape 21 along this
+#    wall at 200 spacing"                       -> here, one shape-driven set
+#   "draw a T12 L-bar in this slab through
+#    these points"                              -> here, sketched
+#   "sketch a rebar along this line in the
+#    wall"                                      -> here, sketched
+#   "add bars of shape 00 in this column face"  -> here - a named shape at a
+#                                                  place, not a column layout
+#   "put 4 T16 and T8 links at 150 in these
+#    columns"                                   -> PLACE_COLUMN_REBAR
+#   "put bars and stirrups in these beams"      -> PLACE_BEAM_REBAR
+#   "bottom mesh in these pad footings"         -> PLACE_FOOTING_REBAR
+#   "T12 at 200 both ways in this slab"         -> PLACE_AREA_REINFORCEMENT
+#   "bars along this slab edge"                 -> PLACE_PATH_REINFORCEMENT
+#   "what rebar is in these columns"            -> REPORT_HOST_REBAR
+utterances:
+  - place a T16 bar of shape 21 along this wall at 200 spacing
+  - draw a T12 L-bar in this slab through these points
+  - add bars of shape 00 in this column face
+  - sketch a rebar along this line in the wall

@@ -1,0 +1,69 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that adds a sheet, "added it to something nobody chose": a sheet
+# in a column, in a non-structural floor, of a type nobody named, or a second
+# sheet on top of the first.
+# Arrange on the Group HY scratch project (docs/needs-checking/group-hy.md):
+# S1 the 200 mm structural concrete floor, W1 the 200 mm structural concrete
+# wall, N2 the architectural (non-structural) floor - NEEDS-CHECKING Group KF.
+# KF1 reads, before anything runs, which fabric sheet types are loaded (this
+# card run with fabricSheetType left out lists them and places nothing) and a
+# point well inside S1 and one on W1's face. Where the model differs, the job
+# file changes - never the card. EVERY RUN ROLLED BACK, so each case starts
+# from the model as saved.
+
+positive:
+  - given: >
+      the Floors in FloorPlan: Level 1 - S1 and N2 - fabricSheetType the type
+      KF1 read, pointMm the point inside S1 KF1 read, majorDirection and
+      location left out
+    expect: >
+      placed 1 - "fabric sheet id <id> of '<type>' (<length> x <width> mm),
+      centred at <the point> mm, major direction 0 deg from the model's x
+      axis, <face> face" - in S1; N2 skipped by name as "not structural";
+      readBackWrong empty; in Level 1 at Detail Level Fine one sheet,
+      centred on the point. THIS IS THE FIRST POSITIVE TO RUN
+  - given: the same selection and values run a second time, without rolling back between
+    expect: >
+      placed 0; alreadyThere naming the sheet the first run made - nothing
+      doubled
+  - given: >
+      W1 selected, fabricSheetType the type KF1 read, pointMm the point on
+      W1 KF1 read with its height, location exterior
+    expect: >
+      placed 1 in W1, exterior face, major direction 0 deg from horizontal
+
+negative:
+  - given: >
+      the Structural Columns in FloorPlan: Level 1 instead of the floors, the
+      same fabricSheetType and pointMm
+    expect: >
+      placed 0; every column in skipped - "not a floor, a wall, a foundation
+      slab or a Part"; refused "None of the ... element(s) given is a host a
+      fabric sheet can go in. Nothing was placed". THIS IS THE FIRST CASE TO RUN
+  - given: N2 alone - the architectural floor - the same values
+    expect: >
+      placed 0; N2 skipped by name, "not structural - its Structural box is
+      off in Properties"
+  - given: the positive's selection, fabricSheetType left out
+    expect: >
+      placed 0; refused "No fabric sheet type was named - Heron never chooses
+      one. Loaded: ..." and sheetTypes listing every loaded sheet type
+  - given: the positive's selection, fabricSheetType a name no sheet type has
+    expect: placed 0; refused naming the loaded fabric sheet types
+  - given: S1, a point outside S1's edge
+    expect: >
+      placed 0; S1 skipped - Revit says the sheet does not lie within it, or
+      Revit's own refusal - and nothing left in S1
+  - given: W1, pointMm with no height
+    expect: placed 0; W1 skipped - "a wall needs the height too"
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one operation is one undo entry
+
+second_route:
+  - >
+    Revit's own Structure > Reinforcement > Fabric Sheet, the same sheet type
+    placed by hand in S1, compared with this one in Level 1 at Fine: the same
+    size and turn, and Properties naming the same Host and Location
+  - one Ctrl+Z takes the sheet back in a single step (Golden Rule 16)

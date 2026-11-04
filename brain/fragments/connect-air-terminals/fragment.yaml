@@ -259,6 +259,16 @@ compatibility-note: >
 #   "make the flex drop to that diffuser" -> CREATE_MEP_RUNS - it makes flex
 #                                          and does NOT join it up
 #   "is every sprinkler actually piped" -> CHECK_FIXTURE_CONNECTIVITY
+#   "connect this diffuser into the main duct" -> CONNECT_INTO_MAIN - Revit's
+#                                          Connect Into, the main handed in,
+#                                          every new element by id
+#   "connect this sink into the waste pipe" -> CONNECT_INTO_MAIN - the sink's
+#                                          waste connector, matched to the
+#                                          pipe's system; this card takes a
+#                                          fixture's first open connector
+#   "convert this last duct run to the diffuser into flex duct"
+#                                       -> CONVERT_TO_FLEX_DUCT - the duct is
+#                                          there already and becomes flex
 
 utterances:
   - connect the diffusers to the duct
@@ -269,5 +279,9 @@ utterances:
   # MOVED 2026-11-01 from CREATE_FIXTURE_BRANCHES, merged into this card.
   - draw the drops from the sprinklers to the branch line
   - pipe these sprinklers to the main above
+  # DECLARED 2026-11-01 (row 5b-1384): this card's own routing row above
+  # claims it, and it reached here on origin/main; EDIT_MEP_SYSTEM, new on
+  # this branch, took it on the model backend.
+  - pipe these sprinklers to the main
   - run branch pipes from these heads to the pipe
   - draw the branch from each floor drain down to the drain line

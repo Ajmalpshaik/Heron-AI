@@ -1,0 +1,177 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-173
+semantic-identity: "place tread or riser numbers on a stair run in a plan or elevation - Annotate > Tread Number"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for as a gap on Revit's ribbon - "stair tread/riser
+# numbers: place tread or riser numbers on a stair run in a view via
+# NumberSystem.Create, and set start number and justification if the API
+# allows". No card did: a grep of every fragment's C# that day for
+# NumberSystem found none, and brain/heron_retrieve.py (Revit 2024, a scratch
+# store) sent "add tread numbers to the stair" and "number the risers on this
+# stair run" to CREATE_STAIRS. heron_duplicates.look: 0 already here.
+#
+# LOOK-ALIKES, KEPT SEPARATE (heron-duplicate-checker's method, 2026-11-02):
+#   CREATE_STAIRS, CREATE_SHAPED_STAIRS, ADD_STAIRS_LANDING  make the stair;
+#     this annotates one already there, in one view, and changes no step.
+#   TAG_ELEMENTS_IN_VIEW (PROVEN)  one tag per element from a tag family.
+#     Tread numbers are not a tag: Revit makes one NumberSystem per run with
+#     its own numbering rules, and the tag tool cannot place it.
+#   RENUMBER_SEQUENTIAL           writes a parameter in sequence; tread
+#     numbers are counted by Revit off the run itself.
+#
+# THE WORDS. Revit's own tool is Tread Number, and the request named tread or
+# riser numbers on a stair run; the two declared are those. No other sentence
+# is declared until a modeller says one.
+#
+# START NUMBER AND JUSTIFICATION. Justify (front, center, back), Reference
+# (left, center, right, left or right quarter) and Display Rule (all, odd, even,
+# start and end) are NumberSystem's own properties on every release. The start
+# number is the stair's "Tread/Riser Start Number"
+# (STAIRS_TRISER_NUMBER_BASE_INDEX) on 2020 to 2027 - it numbers that stair in
+# every view - and Revit 2027 adds a Start Number on the numbers themselves
+# (NUMBER_SYSTEM_START_NUMBER), used where it can be set. Which of the two Revit 2027 honours is
+# for Group ML's ML4 to record.
+#
+# TREAD OR RISER IS TAG TYPE, set by Revit's own word. Its numbers are not on
+# any page read here, so each is tried until Revit shows "Riser" (or
+# "Tread"); a run where none does is rolled back in its SubTransaction and
+# named.
+#
+# RISK MODIFY. It adds an annotation to one view and deletes nothing, except
+# that a start number set on the stair before 2027 changes the stair's own
+# value; Undo takes the request back as one entry.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.annotation
+capability: PLACE_STAIR_TREAD_NUMBERS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places tread numbers - or riser numbers - on component stair runs in one
+  plan, elevation or section, as Annotate > Tread Number does: one set per
+  run, on the runs handed in or every run of a stair, with its reference
+  across the run, its justify, which numbers show and the number it starts
+  from. A run already numbered in that view is left alone and named, and each
+  set placed is read back on its run.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The plan, elevation or section, by name. Left out, the active view. A
+    # 3D view, a sheet, a schedule or a template is refused by name.
+    - name: view
+      type: View
+      source: request
+      optional: true
+    # Stair runs, or stairs (every run of each) - the selection or the chain.
+    # A sketch-based stair is refused by name; Revit numbers component stairs
+    # only.
+    - name: elements
+      type: IList<Element>
+    # "tread" or "riser". Left out, tread numbers.
+    - name: numbers
+      type: string
+      source: request
+      optional: true
+      absent: tread
+    # The first number, from 1. Left out (0), Revit's own start is kept.
+    - name: startNumber
+      type: int
+      source: request
+      optional: true
+      absent: 0
+    # Across the run: "left", "center", "right", "left quarter" or "right
+    # quarter". Left out, center.
+    - name: reference
+      type: string
+      source: request
+      optional: true
+      absent: center
+    # Along each tread: "front", "center" or "back". Left out, Revit's own.
+    - name: justify
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # Which numbers show: "all", "odd", "even" or "start and end". Left out,
+    # Revit's own.
+    - name: displayRule
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: placed
+      # Runs numbered and READ BACK on that run in that view.
+      role: result
+      type: int
+    - name: placedIds
+      # The tread number sets made, one per run.
+      role: result
+      type: IList<ElementId>
+    - name: alreadyNumbered
+      # Runs that already had numbers in that view - left alone. The evidence
+      # it looked, never a set it made (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why a run was not numbered, in words: not a stair, a sketch-based
+      # stair, a multistorey stair with no level to choose, Tag Type with no
+      # choice reading tread or riser, a start number Revit has greyed out, or
+      # Revit's own refusal (D-52).
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING, run by run: the run and stair, tread or riser as Revit
+      # shows it, the view, the id, reference, justify, display rule and the
+      # start read back - or the refusal. A string because a reply cuts a
+      # list to three.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read with tools/api-surface --members
+  on 2026-11-02, the same 2020 to 2027: `NumberSystem.Create(Document,
+  ElementId, LinkElementId, Reference)` and `Create(Document, ElementId,
+  LinkElementId, StairsNumberSystemReferenceOption, LinkElementId)`,
+  `JustifyOption`, `NumberDisplayRule`, `NumberedElementId`; the enums
+  `NumberSystemJustifyOption` (Front, Center, Back), `NumberSystemDisplayRule`
+  (All, Odd, Even, StartAndEnd) and `StairsNumberSystemReferenceOption` (Center,
+  Left, Right, LeftQuarter, RightQuarter); `StairsRun.GetNumberSystemReference`
+  and `GetStairs`; `Stairs.IsByComponent`, `GetStairsRuns` and
+  `MultistoryStairsId`; `MultistoryStairs.GetStairsPlacementLevels`;
+  `BuiltInParameter.NUMBER_SYSTEM_TAG_TYPE` and
+  `STAIRS_TRISER_NUMBER_BASE_INDEX`; `SubTransaction`. `BuiltInParameter.NUMBER_SYSTEM_START_NUMBER` is
+  2027 only, so it is looked up by name at run time and the code compiles on
+  every release. RevitAPI.xml: only floor plans and elevations are valid
+  views, only StairsRun elements are valid hosts, sketch-based stairs are not
+  supported, and a run that already has numbers is refused - a section is
+  passed on and Revit's own refusal reported. Not seen in Revit.
+
+# ROUTING (2026-11-02).
+#
+#   "place tread numbers on this stair run"   -> here
+#   "place riser numbers on this stair run"   -> here, numbers riser
+#   "add a stair from level 1 to level 2"     -> CREATE_STAIRS - the stair
+#                                                itself
+#   "tag these elements"                      -> TAG_ELEMENTS_IN_VIEW - a tag
+#                                                family, never tread numbers
+utterances:
+  - place tread numbers on this stair run
+  - place riser numbers on this stair run

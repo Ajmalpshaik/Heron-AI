@@ -253,6 +253,22 @@ compatibility-note: >
 # ROUTING (2026-10-12, the gap fill)
 #
 #   "cope these beams at the columns"       -> COPE_FRAMING
+#
+# ROUTING (2026-11-02, Cut Geometry) - repeated in CUT_GEOMETRY and
+# REPORT_GEOMETRY_CUTS. A cut takes one element's shape out of another; a
+# join shares the overlap. Two Revit commands, two cards.
+#
+#   "cut this beam out of the slab"         -> CUT_GEOMETRY
+#   "uncut these two"                       -> CUT_GEOMETRY, cut false
+#   "which elements is this cutting"        -> REPORT_GEOMETRY_CUTS
+#
+# ROUTING (2026-11-02, Wall Joins) - repeated in SET_WALL_JOIN_TYPE and
+# REPORT_WALL_JOIN_TYPE. The end join of a wall - butt, miter, square off - is
+# not Join Geometry.
+#
+#   "join these walls"                      -> here - declared since row 5b-1419
+#   "make this wall corner a miter join"    -> SET_WALL_JOIN_TYPE
+#   "what join type is at this wall corner" -> REPORT_WALL_JOIN_TYPE
 utterances:
   - join these walls together
   - the wall and the slab are not joining
@@ -276,3 +292,6 @@ utterances:
   - switch the join order
   # ...and its semantic identity, which nothing else declares:
   - turn this join round so the other one does the cutting
+  # ADDED 2026-11-02, row 5b-1419. COPE_FRAMING's routing table sends this
+  # sentence here; when SET_WALL_JOIN_TYPE was added, ranking moved it there.
+  - join these walls

@@ -1,0 +1,79 @@
+# D-30: the negative case is what catches "made something and called it the
+# answer". Arrange on the SCRATCH project of NEEDS-CHECKING Group LS, "Heron
+# Shaped Stair Test": the shipped metric template, Level 1 at 0 and Level 2 at
+# 3000, its stair types loaded and one set as the default, a floor plan of
+# Level 1 in front and nothing near 0,0,0 or 10000,0,0. Every run is rolled
+# back unless the modeller presses Keep.
+
+positive:
+  - given: >
+      shape L, baseLevel "Level 1", topLevel "Level 2", stairType left out,
+      startPoint 0,0,0, direction north, turn left, runWidth 1000
+    expect: >
+      one stair of Revit's default type, named as the default in the answer,
+      with two runs and one landing; risers the fewest that keep each at or
+      under that type's Maximum Riser Height, read back; run 1 climbs north
+      from 0,0, the landing at its top, run 2 leaves it to the west; the 3D view
+      and Level 1 plan show an L; railings as Revit added them, named
+  - given: >
+      shape U, the same levels, a named type, startPoint 0,0,0, direction
+      east, turn left, runWidth 1100, landingDepth 1200
+    expect: >
+      two runs side by side - run 2 to the north of run 1, coming back west -
+      one landing across their east end, landingDepthMm 1200 read back off the
+      landing's footprint; measured in the plan, the landing is 1200 mm deep
+  - given: >
+      shape spiral, the same levels, startPoint 10000,0,0, direction east,
+      turn right, runWidth 1000, radius 1500
+    expect: >
+      one curved run round 10000,0, its first riser east of the centre, turning
+      clockwise; no landing; risers read back as reaching Level 2; the answer
+      gives the angle turned and the 1500 mm radius
+  - given: >
+      VERSION 2 (Group MN, MN6). shape sketch, the same levels, stairType left
+      out, startPoint 20000,0,0, leftBoundary "0,0,0; 0,4000,0",
+      rightBoundary "1000,0,0; 1000,4000,0", riserLines left out
+    expect: >
+      one stair with ONE sketched run and no landing, between x 20000 and
+      21000; risers the fewest at or under the default type's Maximum Riser
+      Height, read back as reaching Level 2; the finding "Sketched stair ...
+      1000 mm run width, 0 landing(s), N riser line(s) spread evenly along the
+      boundaries". RECORD whether the riser count read back equals the riser
+      lines drawn (row 5b-1456)
+
+negative:
+  - given: >
+      the first positive case with stairType "Spiral Feature Stair", a name the
+      scratch project does not have
+    expect: >
+      refused by name with the loaded stair types listed - NOTHING WAS MADE,
+      created empty, no new stair in the model. THE PROOF'S NEGATIVE: the same
+      levels and point, a value that must not be built. THIS IS THE FIRST CASE
+      TO RUN
+  - given: shape spiral, radius left out
+    expect: refused - a spiral's radius is never guessed - nothing made
+  - given: shape spiral, radius 400, runWidth 1000
+    expect: >
+      refused before the model is touched - the run's inside edge would cross
+      the centre - nothing made
+  - given: the first positive case with baseLevel "Level 2" and topLevel "Level 1"
+    expect: refused - 'Level 1' is not above 'Level 2' - nothing made
+  - given: shape L, landingDepth 600, runWidth 1000
+    expect: refused - an L landing must be at least as deep as the run is wide - nothing made
+  - given: >
+      VERSION 2. The sketch positive with riserLines "0,0,0; 1000,0,0 |
+      0,2000,0; 1000,2000,0 | 0,4000,0; 1000,4000,0" - three riser lines for
+      a 3000 mm climb
+    expect: >
+      refused before the model is touched - "3 riser lines make risers of
+      1000 mm, over the Maximum Riser Height of ..." - nothing made
+  - given: the first positive case (an L) with leftBoundary "0,0,0; 0,4000,0" as well
+    expect: >
+      refused - boundary points and riser lines are for a sketched stair -
+      nothing made; an L with none of them is made exactly as version 1 made it
+  - given: run as a read (no --write)
+    expect: refused by the add-in, D-112 - an edit-mode fragment never runs on the read path
+
+second_route:
+  - the stair after a Keep, selected in Revit - Properties shows the type, Desired Number of Risers and Actual Riser Height the answer gave; the plan shows the L, U or spiral turning the way asked
+  - Revit's own Stair by Component tool, the same levels, type and run width, drawn by hand along the same path, its riser count compared with this one

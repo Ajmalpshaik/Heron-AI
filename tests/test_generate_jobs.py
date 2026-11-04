@@ -558,9 +558,13 @@ def test_the_second_set_is_named_by_category():
     # set joins it by name, and the check above has already asked that it
     # brings a first set too. create-fixture-branches joined 2026-10-14 - its
     # `pipes` are the mains, named by category; its heads are the selection.
+    # connect-into-main joined 2026-11-02 - CONNECT_AIR_TERMINALS' version 3,
+    # moved to a card of its own: its `ducts` are the main, its terminals or
+    # fixtures the selection.
     freed = unblocked_by("IList<Element>")
     check(freed == ["check-room-mep-completeness", "connect-air-terminals",
-                    "create-fixture-branches", "propose-mep-openings"],
+                    "connect-into-main", "create-fixture-branches",
+                    "propose-mep-openings"],
           "it frees the second-set fragments: %s" % (freed or "nothing"))
 
 
@@ -607,17 +611,21 @@ def test_a_line_is_two_points_and_curves_are_pairs_of_them():
     still = GJ.blockers(found["create-linear-dimension"], supply, ordinal, ladder)
     check(not still,
           "a linear dimension takes typed references now and is not blocked: %s" % (still or "nothing"))
+    # create-arc-length-dimension joined this roll-call 2026-11-02: it takes the
+    # arc typed or selected too, never a Reference (NEEDS-CHECKING Group MA).
     dims = sorted(slug for slug in ("create-linear-dimension", "create-angular-dimension",
-                                    "create-radial-dimension")
+                                    "create-radial-dimension", "create-arc-length-dimension")
                   if any("Reference" in (need.get("type") or "") for need in found[slug].needs()))
     check(dims == [], "and no dimension fragment asks for a Reference: %s" % (dims or "none"))
 
     # A ROLL-CALL, like the second-set one above: a fragment that starts asking
     # for a curve list joins it by name. place-path-reinforcement joined
     # 2026-10-19 - its `path` is the run the bars are laid across (row 5b-1257).
+    # create-truss joined 2026-11-01 - its `curves` are the lines each truss is
+    # laid along, written as place-line-based-family's (NEEDS-CHECKING Group KC).
     freed = unblocked_by("IList<Curve>")
-    check(freed == ["place-line-based-family", "place-path-reinforcement"],
-          "a curve list frees the line-based family and the path reinforcement: %s"
+    check(freed == ["create-truss", "place-line-based-family", "place-path-reinforcement"],
+          "a curve list frees the truss, the line-based family and the path reinforcement: %s"
           % (freed or "nothing"))
 
 
@@ -647,11 +655,17 @@ def test_a_panel_is_named_by_its_own_panel_name():
 
     # THE FACT MOVED ON 2026-11-01: create-electrical-circuit was merged into
     # create-mep-system, whose version 2 asks for the same `panel` by its Panel
-    # Name, so both the retired card and its keeper ask for one. Still the
-    # circuit's panel and nothing else.
+    # Name, so both the retired card and its keeper ask for one. A ROLL-CALL,
+    # like the curve-list one: a fragment that starts naming a panel by its
+    # Panel Name joins it by name. edit-electrical-circuit joined 2026-11-01 -
+    # its `panel` is the one Select Panel moves the circuits to (Group JV).
+    # edit-mep-system joined 2026-11-04: edit-electrical-circuit was merged into
+    # it as its version 2 (row 5b-1382), which asks for the same `panel`; the
+    # retired card still asks for one, as create-electrical-circuit does.
     freed = unblocked_by("FamilyInstance")
-    check(freed == ["create-electrical-circuit", "create-mep-system"],
-          "it frees the circuit's panel and nothing else: %s" % (freed or "nothing"))
+    check(freed == ["create-electrical-circuit", "create-mep-system",
+                    "edit-electrical-circuit", "edit-mep-system"],
+          "it frees the circuit fragments' panel and nothing else: %s" % (freed or "nothing"))
 
 
 def test_an_arc_was_left_unwritten_and_the_reason_still_holds():

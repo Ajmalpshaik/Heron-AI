@@ -375,6 +375,13 @@ compatibility-note: >
 # one is meant shows in the rest of the sentence: a direction or a spacing is
 # spacingMm, a centre or a circle is sweepDegrees.
 #   "line them up on the grid"       -> SNAP_TO_GRID
+#   "copy this conduit run 4 times side by side at 50 mm"
+#                                    -> CREATE_PARALLEL_RUNS (2026-11-02) -
+#                                       a pipe or conduit run copied at right
+#                                       angles to each piece, its bends
+#                                       re-mitred and elbows re-made. Copied
+#                                       here by one offset, a run that bends
+#                                       lands its own leg inside the original
 
 # ROUTING - the same rows are in the fragments named here.
 #

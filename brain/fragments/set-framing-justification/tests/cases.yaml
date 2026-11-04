@@ -1,0 +1,64 @@
+# SET_FRAMING_JUSTIFICATION - built 2026-11-02 in a cloud session with no
+# Revit. NOT RUN. D-30: the negative case is what catches "succeeded and did
+# nothing" - and, for this card, "moved a member nobody handed in".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING Group ML): a scratch
+# project "framing-ml", new from Revit's default structural template, saved
+# under %TEMP%\heron-work, never a working model. On Level 2: two structural
+# columns with a steel beam B1 framing between them (Revit's default: yz
+# Justification Uniform, y Center, z Top, offsets 0); a second beam B2 whose
+# yz Justification is set to Independent by hand in Properties; and a
+# structural column C1. Ids written down with Manage > IDs of Selection, and
+# the members handed in by FILTER_ELEMENTS_BY_ID. Where the model differs,
+# the job file changes - never the card.
+
+positive:
+  - given: framing-ml, B1 handed in, zJustification bottom - the job file's positive
+    expect: >
+      changed 1; settings "Structural Framing '...' (id <B1>), z Justification:
+      Top -> Bottom, read back"; in a section through B1 the beam hangs
+      below its line, its top now on it. Properties shows z Justification
+      Bottom. If Revit shows another word for the number written, refused
+      "Revit shows '...' for the number Heron took to mean bottom, so it was
+      put back" - RECORD it, the card's numbers are corrected
+
+  - given: B1, yzJustification independent, whichEnd start, zOffsetMm -100
+    expect: >
+      changed 2 - yz Justification Uniform -> Independent and Start z Offset
+      Value 0 mm -> -100 mm, read back; the beam slopes down to its start end
+      in an elevation
+
+  - given: B1, startLevelOffsetMm 300, endLevelOffsetMm 300
+    expect: >
+      changed 2 - Start Level Offset and End Level Offset 0 mm -> 300 mm,
+      read back; the beam 300 mm higher in a section
+
+  - given: B1 a second time with zJustification bottom, after the first case was kept
+    expect: changed 0 and alreadyRight "already Bottom - left alone" - never counted twice
+
+negative:
+  - given: framing-ml, column C1 handed in, zJustification bottom - the job file's negative
+    expect: >
+      changed 0; refused "Structural Columns '...' (id <C1>): not structural
+      framing - only beams and braces have a yz justification"; C1 and B1
+      unchanged in Properties. THE FIRST CASE TO RUN
+
+  - given: B1 (Uniform), zJustification bottom, whichEnd start
+    expect: >
+      changed 0; refused "its yz Justification is Uniform, so both ends share
+      one y and z - say yzJustification independent to set the start alone";
+      B1's z Justification unchanged
+
+  - given: B1 with nothing but the beam - every value left out
+    expect: refused "No setting was given ... NOTHING WAS CHANGED"
+
+  - given: B1, zJustification left
+    expect: refused "zJustification was 'left' - say origin, top, center or bottom" before anything changes
+
+second_route:
+  - >
+    Revit itself: select B1, Modify > Justification > z Justification Bottom,
+    or set it in Properties - the same section; Properties reads the values the
+    card read back
+  - one Ctrl+Z takes the whole request back in a single step (Golden Rule 16)
+  - REPORT_FRAMING_JUSTIFICATION on B1, before and after

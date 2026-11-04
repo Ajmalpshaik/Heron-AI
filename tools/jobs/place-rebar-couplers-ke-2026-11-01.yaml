@@ -1,0 +1,55 @@
+# NEEDS-CHECKING Group KE - PLACE_REBAR_COUPLERS, built 2026-11-01 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/place-rebar-couplers-ke-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/place-rebar-couplers-ke-2026-11-01.yaml
+#
+# THE MODEL is Group HY's scratch project (docs/needs-checking/group-hy.md) -
+# a new project from Revit's metric STRUCTURAL template in
+# %TEMP%\heron-work\rebar-hy - AFTER HY6 IS KEPT, so column C1 holds two sets
+# of main bars and one set of ties. Never a working model.
+#
+# THE COUPLER TYPE BELOW IS NOT KNOWN YET. KE1 in
+# docs/needs-checking/group-ke.md reads it: this card run with couplerType
+# left out makes nothing and lists the loaded coupler types. Whether the
+# metric structural template loads any is NOT KNOWN here and is not guessed;
+# if none is loaded, KE1 loads one coupler family into the scratch copy and
+# saves it. The type goes in place of the marked value in both places. Until
+# then no type answers to it and the run is refused naming the loaded types -
+# expected, NOT RUN.
+#
+# THE NEGATIVE IS THE COLUMNS THEMSELVES, NOT THEIR BARS: the same view, the
+# same coupler type, top - a column is not rebar, so nothing is made. The
+# second run, couplerType left out, a hooked end and "between" on two bars
+# drawn end to end are rows KE3 to KE5, run with `validate --write`. Every
+# write here is ROLLED BACK.
+
+model: rebar-hy scratch project (metric structural template) after HY6 kept, Revit 2020
+
+defaults:
+  write: true
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: place-rebar-couplers
+    expect: placed
+    setup-set:
+      categoryName: Structural Rebar
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categoryName: Structural Columns
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      couplerType: "THE TYPE KE1 READ"
+      barEnd: top
+    negative-set:
+      couplerType: "THE TYPE KE1 READ"
+      barEnd: top
+    note: >
+      KE2. Positive - placed 2, one coupler at the top of each of C1's main
+      bar sets ("2 couplers, one per bar in the set"), the tie set skipped as
+      having no top end. Negative - THE FIRST CASE TO RUN: the columns instead
+      of their bars, so placed 0, every column skipped as "not a rebar bar or
+      rebar set" and "NOTHING WAS MADE."

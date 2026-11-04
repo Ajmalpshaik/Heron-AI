@@ -1,0 +1,39 @@
+# NEEDS-CHECKING Group MD - TRANSFER_PROJECT_STANDARDS, built 2026-11-02 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/transfer-project-standards-md-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/transfer-project-standards-md-2026-11-02.yaml
+#
+# THE MODELS are two SCRATCH projects, Revit 2024, both open in one Revit:
+# "Heron Standards Target.rvt" in front - a new project from the default
+# metric template, saved - and "Heron Standards Source.rvt" beside it, a copy
+# of the same template holding, added by hand, a DRAFTING fill pattern "Heron
+# Hatch 45", a text type "Heron 2.5mm Arial", a linear dimension type "Heron
+# Dim 2.5mm" and a basic wall type "Heron Block 190", none of them in the
+# target. MD1 makes them. Never a working model.
+#
+# NO SELECTION: every value is the caller's. The negative is a DIFFERENT NAME,
+# not an empty one - "Diagonal up", a drafting pattern BOTH projects hold, so
+# it is skipped as already here and nothing is copied. Every write here is
+# ROLLED BACK.
+
+model: Heron Standards Target (scratch, default metric template) with Heron Standards Source open, Revit 2024
+
+jobs:
+  - fragment: transfer-project-standards
+    write: true
+    expect: copiedIds
+    set:
+      sourceDocumentTitle: Heron Standards Source
+      kinds: fill patterns
+      nameContains: Heron
+    negative-set:
+      sourceDocumentTitle: Heron Standards Source
+      kinds: fill patterns
+      nameContains: Diagonal up
+    note: >
+      MD3. Negative - THE FIRST CASE TO RUN: copied 0, copiedIds empty,
+      skipped 1 or more, report "fill patterns: 0 copied, 1 skipped (already
+      here, this project's kept), 0 refused" - the target's own Diagonal up
+      exactly as it was. Positive: copied 1, copiedIds one id read back,
+      report naming "Heron Hatch 45 (drafting)" copied.

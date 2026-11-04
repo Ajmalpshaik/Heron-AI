@@ -163,6 +163,11 @@ compatibility-note: >
 # CREATE_MEP_RUNS.
 #
 #   "what is on this circuit"        -> here
+#   "what is on circuit 3"           -> here, a question - never
+#                                       EDIT_MEP_SYSTEM (2026-11-01; it was
+#                                       EDIT_ELECTRICAL_CIRCUIT until merged
+#                                       there, 2026-11-04)
+#   "add these lights to circuit 3"  -> EDIT_MEP_SYSTEM, version 2 - the change
 #   "select all the lighting circuits" -> here, matching the kind
 #   "what is wired to panel A"       -> REPORT_PANEL_CIRCUITS since
 #                                       2026-11-01. Both cards claimed "what is
@@ -208,3 +213,9 @@ utterances:
   # model; nothing found what no circuit carries.
   # Declared, not ranked: with "none" built it still ranked to the write.
   - which lights are not on a circuit
+  # ADDED 2026-11-01, FRAGMENT-ISSUES row 5b-1356: EDIT_ELECTRICAL_CIRCUIT
+  # (DRAFT, a write) declares "add these lights to circuit 3", and this
+  # question - routed here by CREATE_ELECTRICAL_CIRCUIT's table - then reached
+  # that write whenever the host did not mark it a question. Declared, not
+  # ranked. Outside impl/, so the proof's fingerprint is unchanged.
+  - what is on circuit 3

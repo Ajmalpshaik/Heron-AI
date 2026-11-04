@@ -1,0 +1,92 @@
+# NEEDS-CHECKING Group MO - OFFSET_LINE_CHAIN, INSERT_VIEWS_FROM_FILE and
+# RUN_SYSTEMS_ANALYSIS, built 2026-11-03 in a cloud session with no Revit.
+# NOT RUN. PUBLISH_COORDINATES is ADMIN and is left out: it is proved by name
+# with `validate ... --allow-publish --write` (D-106), MO6.
+#
+#     python tools/batch-prove.py tools/jobs/offset-insert-views-systems-analysis-mo-2026-11-03.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/offset-insert-views-systems-analysis-mo-2026-11-03.yaml
+#
+# THE MODELS (docs/needs-checking/group-mo.md, MO1), all scratch, saved under
+# %TEMP%\heron-work, never a working model, any one release 2021 to 2027
+# (Revit 2020 needs its 2020.1 update for the systems analysis):
+#   "Heron MO Offset"   metric architectural; in "Level 1" the detail-line
+#                       chain C1, the detail line D1, the model-line
+#                       rectangle M1, the two walls W1 and the text note T1
+#                       (the offset card's tests/cases.yaml)
+#   "Heron MO Source"   drafting view "MO Detail" (three detail lines and a
+#                       text note) and legend "MO Legend"; saved and CLOSED
+#   "Heron MO Insert"   an empty drafting view "MO Target"
+#   "Heron MO Systems"  one room with a space and an HVAC zone, a site
+#                       location, an energy model, and a plan duplicated as
+#                       "MO Report"
+#
+# THE ARRANGEMENT: each negative is the SAME call with one value that must not
+# be acted on - the text note instead of the lines, a floor plan instead of a
+# drafting view, a report name a view already has - never an empty input
+# (fragment-proving, rules 3 and 5). EVERY WRITE HERE IS ROLLED BACK.
+
+model: "scratch projects Heron MO Offset, Heron MO Insert and Heron MO Systems, Revit 2024"
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: offset-line-chain
+    in: "Heron MO Offset"
+    expect: results
+    setup:
+      - select-by-category-name
+      - set-selection
+    setup-set:
+      categoryName: Lines
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categoryName: "Text Notes"
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      distance: 500
+    negative-set:
+      distance: 500
+    note: >
+      MO2. RUN THE NEGATIVE FIRST. Negative - the text note T1 instead of the
+      lines: offsetCount 0, results empty, T1 in notOffset, "Nothing was
+      offset", nothing new in Level 1. Positive - every line in Level 1 (C1,
+      D1 and M1 together): offsetCount 8 in 3 chain(s), each chain's
+      direction named, the copies' corners meeting, "READ BACK: every piece
+      is where it was set". RECORD any piece the read-back names (row
+      5b-1458). Rolled back.
+
+  - fragment: insert-views-from-file
+    in: "Heron MO Insert"
+    expect: newViews
+    set:
+      filePath: "C:/Users/<you>/AppData/Local/Temp/heron-work/Heron MO Source.rvt"
+      viewNames: "MO Detail; MO Legend"
+    negative-set:
+      filePath: "C:/Users/<you>/AppData/Local/Temp/heron-work/Heron MO Source.rvt"
+      viewNames: "Level 1"
+    note: >
+      MO3. Write the real path in both before running. RUN THE NEGATIVE
+      FIRST. Negative - "Level 1", a floor plan in the file: newViews empty,
+      notFound "Level 1 (a FloorPlan view, ...)", NOTHING WAS COPIED, Heron
+      MO Source not left open. Positive: newViews 2, copied "MO Detail (4 of
+      4 element(s))" and "MO Legend (2 of 2 element(s))", "the file was
+      closed without saving"; its file time on disk unchanged. RECORD whether
+      the legend component arrived (row 5b-1459). Rolled back.
+
+  - fragment: run-systems-analysis
+    in: "Heron MO Systems"
+    expect: reportView
+    set:
+      reportName: "MO Systems Report"
+    negative-set:
+      reportName: "MO Report"
+    note: >
+      MO4. RUN THE NEGATIVE FIRST. Negative - "MO Report", a name a view
+      already has: reportView null, requested false, "A view is already
+      named ... NOTHING WAS MADE". Positive: reportView a new view "MO
+      Systems Report", requested true, analysisCompleted false or true as
+      Revit says, workflowFileUsed ending "HVAC Systems Loads and
+      Sizing.osw", outputFolder under TEMP. Rolled back - then RECORD whether
+      files still appear in outputFolder after the rollback (row 5b-1460).

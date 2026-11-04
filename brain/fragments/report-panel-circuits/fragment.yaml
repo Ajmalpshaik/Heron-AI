@@ -295,6 +295,11 @@ compatibility-note: >
 # for the next step to act on. A different result from different objects.
 # The two shared one sentence, "what is on panel X" - it is this card's now.
 #   "circuit these sockets"                   -> CREATE_MEP_SYSTEM
+#   "move these circuits to panel DB-2"       -> EDIT_MEP_SYSTEM, version 2 - moves
+#                                                a circuit; this card only reads where
+#                                                it is (2026-11-01; EDIT_ELECTRICAL_
+#                                                CIRCUIT until it was merged there,
+#                                                2026-11-04)
 #   "what is the load on these connectors"    -> REPORT_CONNECTOR_LOADS
 #   "make the panel schedules"                -> CREATE_PANEL_SCHEDULES - the schedule
 #                                                VIEW a sheet carries; this card only

@@ -4,12 +4,27 @@
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One call is one undo entry.
 //
-// LINK FILES INTO THE MODEL - a Revit model, or CAD drawings - one file, a
-// list, or every linkable file in a folder. The file's extension decides:
+// LINK FILES INTO THE MODEL - a Revit model, CAD drawings or a point cloud -
+// one file, a list, or every Revit and CAD file in a folder. The file's
+// extension decides:
 //
 //   .rvt                    a Revit link: its type made, then one instance
 //   .dwg .dxf               a CAD link, in the model (not this view only)
 //   .dgn                    a CAD link, likewise
+//   .rcp .rcs               a point cloud (VERSION 2, 2026-11-02): its type
+//                           made, then one instance, origin to origin
+//
+// A POINT CLOUD IS LINKED WHEN ITS FILE IS NAMED. A folder still gathers only
+// .rvt, .dwg, .dxf and .dgn files, exactly as version 1 did, so a folder
+// linked before links the same files now. A point cloud by shared
+// coordinates is not built - the transform from the project's shared
+// coordinates is not on any page read for it - and is named, not linked,
+// rather than placed origin to origin when shared was asked (row 5b-1441).
+//
+// AN IFC FILE IS NAMED, NOT LINKED. Revit links an IFC through its IFC
+// add-in, which first writes a Revit file from it; RevitLinkType.CreateFromIFC
+// only links that file once it exists, and a fragment cannot make it (row
+// 5b-1440).
 //
 // PLACEMENT: "origin" (the default) puts internal origin on internal origin;
 // "shared" places by shared coordinates, which the files must already agree
@@ -23,7 +38,14 @@
 // is imported: a link stays a link, which is what keeps the model small.
 //
 // READ BACK: every new link is looked up again by its id after a
-// regeneration; a Revit link's load status is read off its type.
+// regeneration; a Revit link's load status is read off its type, and a point
+// cloud's found status off its type.
+//
+// RELEASES (tools/api-surface --members, 2026-11-02): PointCloudType.Create(
+// Document, string, string), PointCloudType.GetPath and FoundStatus,
+// PointCloudInstance.Create(Document, ElementId, Transform) and SubTransaction
+// are the same 2020 to 2027. PointCloudFoundStatus gains Invalid in 2025, so
+// it is written out by name, never matched value by value.
 
 var linked = 0;
 var linkedIds = new List<ElementId>();
@@ -55,6 +77,17 @@ var place = how == "shared" ? ImportPlacement.Shared : ImportPlacement.Origin;
 var present = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 foreach (var element in new FilteredElementCollector(doc).WhereElementIsElementType())
 {
+    var cloudType = element as PointCloudType;
+    if (cloudType != null)
+    {
+        try
+        {
+            var cloudPath = cloudType.GetPath();
+            if (cloudPath != null) present.Add(System.IO.Path.GetFileName(ModelPathUtils.ConvertModelPathToUserVisiblePath(cloudPath)));
+        }
+        catch { }
+        continue;
+    }
     if (!(element is RevitLinkType) && !(element is CADLinkType)) continue;
     try
     {
@@ -123,6 +156,29 @@ foreach (var file in files)
             if (!ok) { lines.Add(name + ": Revit returned no link."); continue; }
             made = linkId;
         }
+        else if (ext == ".rcp" || ext == ".rcs")
+        {
+            if (place == ImportPlacement.Shared) { lines.Add(name + ": a point cloud is linked origin to origin only - by shared coordinates is not built here, so it was not linked."); continue; }
+            // The type and its one instance together: an instance Revit
+            // refuses takes the type it had just made away with it.
+            using (var sub = new SubTransaction(doc))
+            {
+                sub.Start();
+                try
+                {
+                    var cloudType = PointCloudType.Create(doc, ext.Substring(1), file);
+                    var cloud = PointCloudInstance.Create(doc, cloudType.Id, Transform.Identity);
+                    made = cloud.Id;
+                    sub.Commit();
+                }
+                catch
+                {
+                    if (sub.HasStarted() && !sub.HasEnded()) sub.RollBack();
+                    throw;
+                }
+            }
+        }
+        else if (ext == ".ifc") { lines.Add(name + ": an IFC file is not linked here - Revit links an IFC through its IFC add-in (Insert > Link IFC), which first writes a Revit file from it."); continue; }
         else { lines.Add(name + ": not a Revit or CAD file this links."); continue; }
 
         doc.Regenerate();
@@ -137,6 +193,22 @@ foreach (var file in files)
         {
             var type = doc.GetElement(revitInstance.GetTypeId()) as RevitLinkType;
             try { status = type == null ? "" : ", " + type.GetLinkedFileStatus(); } catch { }
+        }
+        var cloudInstance = back as PointCloudInstance;
+        if (cloudInstance != null)
+        {
+            var cloudType = doc.GetElement(cloudInstance.GetTypeId()) as PointCloudType;
+            try
+            {
+                if (cloudType != null)
+                {
+                    var found = cloudType.FoundStatus;
+                    status = found == PointCloudFoundStatus.FoundOK ? ", a point cloud, its file found"
+                        : found == PointCloudFoundStatus.NotFound ? ", a point cloud, ITS FILE NOT FOUND"
+                        : ", a point cloud, file status " + found;
+                }
+            }
+            catch { }
         }
         lines.Add(name + ": linked, " + (place == ImportPlacement.Shared ? "by shared coordinates" : "origin to origin") + status + ".");
     }

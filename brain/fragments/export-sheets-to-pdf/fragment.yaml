@@ -116,6 +116,19 @@ compatibility-note: >
   fallback would be a print job, and the printer list on a real machine holds
   physical copiers.
 
+# ROUTING (2026-11-02) - the same rows are in IMPORT_IMAGE.
+#
+#   "export these sheets to pdf"                 -> here
+#   "make a pdf of the drawings"                 -> here. IMPORT_IMAGE, which
+#                                                 imports a PDF page INTO a
+#                                                 view, ranks above this card
+#                                                 for it on the keyword route
+#                                                 alone since 2026-11-02
+#                                                 (tools/check-routing.py, a
+#                                                 scratch store); `find`
+#                                                 answers it here by identity
+#   "import this PDF page into the current view" -> IMPORT_IMAGE - a PDF in,
+#                                                 not out
 utterances:
   - export these sheets to pdf
   - make a pdf of the drawings

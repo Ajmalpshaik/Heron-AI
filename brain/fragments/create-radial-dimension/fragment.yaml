@@ -101,6 +101,9 @@ compatibility-note: >
 #   "dimension the diameter"   -> here, isDiameter true, Revit 2025+
 #   "dimension between these"  -> CREATE_LINEAR_DIMENSION - every release
 #   "dimension this angle"     -> CREATE_ANGULAR_DIMENSION - every release
+#   "dimension the length of   -> CREATE_ARC_LENGTH_DIMENSION, Revit 2025+ -
+#    this arc"                    a different call with three references, not
+#                                 a flag on this one (2026-11-02)
 
 utterances:
   - dimension the radius

@@ -1,0 +1,37 @@
+# NEEDS-CHECKING Group LA - CREATE_LOAD_CASE, built 2026-11-01 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/create-load-case-la-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-load-case-la-2026-11-01.yaml
+#
+# THE MODEL is Group KZ's scratch project, "loads-kz"
+# (docs/needs-checking/group-kz.md, KZ1), with its load cases DL1 and LL1.
+# Never a working model. Before the run, open Analyze > Load Cases and write
+# down every load case (number, nature, category) - the second route.
+#
+# THE ARRANGEMENT: this write takes no selection, so `setup: []`. The negative
+# is a DIFFERENT VALUE - "dl1", DL1 in other capitals - never an empty one
+# (fragment-proving, rule 5): added 0, skipped naming DL1, before and after
+# the same. Every write here is ROLLED BACK.
+
+model: "loads-kz scratch project (metric structural template) with load cases DL1 and LL1, Revit 2020"
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: create-load-case
+    expect: added
+    setup: []
+    set:
+      name: "Wind X"
+      category: "wind"
+    negative-set:
+      name: "dl1"
+      category: "dead"
+    note: >
+      LA2. Negative - THE FIRST CASE TO RUN: "dl1", DL1 in other capitals, so
+      added 0, skipped names "dl1" and the case DL1, before and after the
+      same. Positive - added 1, after holds every case before and "Wind X" -
+      nature Wind, category as Analyze > Load Cases shows Wind, Revit's next
+      number; findings say the nature Wind was used because none was named.

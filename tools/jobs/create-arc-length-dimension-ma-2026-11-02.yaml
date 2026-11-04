@@ -1,0 +1,43 @@
+# NEEDS-CHECKING Group MA - CREATE_ARC_LENGTH_DIMENSION, built 2026-11-02 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/create-arc-length-dimension-ma-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-arc-length-dimension-ma-2026-11-02.yaml
+#
+# THE MODEL is a scratch project from Revit's metric ARCHITECTURAL template, on
+# Revit 2025 or later - the card claims 2025, 2026 and 2027 only, because
+# ArcLengthDimension.Create is not in 2020 to 2024. MA1 makes it and SAVES it:
+# on Level 1, W1 (a curved wall, Wall > Arc, radius 5000 mm to its location
+# line, 90 degrees, unjoined), W2 (a straight wall, unjoined), L1 (an arc detail
+# line in "FloorPlan: Level 1", radius 3000 mm, 60 degrees) and B1 (a curved
+# beam). No dimension in the plan. Never a working model.
+#
+# THE IDS ARE NOT KNOWN until MA1 has drawn them. Read L1's and W2's ids off
+# Revit (Manage > IDs of Selection) and write them below, in place of the
+# capitals. Until then no element answers to the id and both legs are refused
+# naming it - expected, NOT RUN.
+#
+# THE ARRANGEMENT is typed, not selected: the positive the arc line L1, the
+# negative the STRAIGHT wall W2 - a different element, not an empty one, and
+# one with no arc to measure. Every write here is ROLLED BACK.
+
+model: scratch project from the metric architectural template (MA1), Revit 2025
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: create-arc-length-dimension
+    expect: created
+    set:
+      view: "Level 1"
+      arc: "line L1'S ID"
+    negative-set:
+      view: "Level 1"
+      arc: "wall W2'S ID"
+    note: >
+      MA2. Negative - THE FIRST CASE TO RUN: the straight wall, so created
+      none and refused "... is straight. An arc length is measured along a
+      CURVED wall". Positive - created one id, measured "arc length 3141.6 mm"
+      (3000 x pi / 3, the line's own length), typeUsed the project's default
+      arc length type, named as the default in findings.

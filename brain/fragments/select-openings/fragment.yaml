@@ -166,6 +166,11 @@ compatibility-note: >
 #   "what size should the sleeve be"     -> CHECK_SLEEVE_SIZE
 #   "what is in the way"                 -> PROBE_AROUND_ELEMENTS
 #   "all the ductwork"                   -> FILTER_ELEMENTS_BY_CATEGORY
+#   "add a shaft", "make a shaft opening" -> CREATE_SHAFT_OPENING (2026-11-02),
+#                                           a write. Until it existed these
+#                                           change requests ranked HERE, a read
+#                                           that makes no shaft
+#   "cut the hole through this wall or slab" -> CREATE_OPENING
 
 utterances:
   - where are the shafts

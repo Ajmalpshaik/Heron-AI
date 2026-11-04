@@ -5,11 +5,13 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-043
-semantic-identity: "link this Revit model or these CAD drawings, or every one in this folder"
+semantic-identity: "link this Revit model, these CAD drawings or this point cloud, or every model and drawing in this folder"
 kind: action
 domain: revit.document
 capability: LINK_FILES
-version: 1
+# VERSION 2 (2026-11-02), AT DRAFT: a point cloud (.rcp, .rcs) is linked too -
+# see the WIDENED block below.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -32,21 +34,42 @@ risk: MODIFY
 #
 # RELOAD_LINKS acts on links already there - it reloads them, or unloads them.
 #
+# WIDENED 2026-11-02, AT DRAFT (it was DRAFT on main), for Revit's Insert >
+# Point Cloud - a gap on the Insert tab no card filled: a grep of every
+# fragment's C# that day found no PointCloudType or PointCloudInstance, and
+# brain/heron_retrieve.py sent "link this point cloud" to ADD_REVISION_CLOUD.
+# A second card that links files would be a second card for one job, so this
+# one gains the extension: .rcp or .rcs makes a point cloud type and one
+# instance, origin to origin, read back with its file's found status.
+# EVERYTHING VERSION 1 DID IS UNCHANGED - the needs, the outputs, the folder
+# (which still gathers only Revit and CAD files, so a point cloud is linked
+# when its file is named), and every sentence of the report for a Revit or
+# CAD file.
+#
+# NOT BUILT, AND SAID RATHER THAN FAKED. A point cloud by SHARED coordinates
+# is named and not linked (row 5b-1441). An IFC file is named and not linked:
+# Revit links an IFC through its IFC add-in, which writes a Revit file from it
+# first, and RevitLinkType.CreateFromIFC only links that file once it exists
+# (row 5b-1440).
+#
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 purpose: >
   Links a Revit model or CAD drawings into the model - one file, several, or
   every linkable file in a folder - origin to origin or by shared
-  coordinates.
+  coordinates, and a point cloud (.rcp or .rcs) origin to origin.
 
 contract:
   needs:
     - name: doc
       type: Document
-    # Full paths separated by semicolons, or a folder.
+    # Full paths separated by semicolons, or a folder. A folder gathers its
+    # .rvt, .dwg, .dxf and .dgn files; a point cloud is linked when its
+    # .rcp or .rcs file is named (version 2).
     - name: paths
       type: string
       source: request
-    # "origin" or "shared"; an EMPTY value means origin.
+    # "origin" or "shared"; an EMPTY value means origin. A point cloud is
+    # linked origin to origin only; with shared it is named, not linked.
     - name: placement
       type: string
       source: request
@@ -84,11 +107,22 @@ compatibility-note: >
   ThisViewOnly on BaseImportOptions), CADLinkType, GetExternalFileReference
   and ModelPathUtils are present 2020 through 2027 - read off RevitAPI.xml in
   the Nice3point reference packages for all eight releases on 2026-10-12.
+  Version 2's PointCloudType.Create(Document, string, string), GetPath and
+  FoundStatus, PointCloudInstance.Create(Document, ElementId, Transform) and
+  SubTransaction are the same 2020 through 2027; PointCloudFoundStatus gains
+  Invalid in 2025 and is written out by name - read with tools/api-surface
+  --members on 2026-11-02. RevitLinkType.CreateFromIFC is present 2020
+  through 2027 but takes the Revit file the IFC add-in writes, so it is not
+  used (row 5b-1440). Not seen in Revit.
 
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "link the architect's model"              -> here
 #   "link every dwg in this folder"           -> here
+#   "link a point cloud"                      -> here, the .rcp or .rcs named
+#   "link this ifc file"                      -> NOTHING HERE LINKS AN IFC -
+#                                                Revit's Insert > Link IFC
+#                                                (row 5b-1440)
 #   "reload the links"                        -> RELOAD_LINKS
 #   "unload the architecture link"            -> RELOAD_LINKS, unload true
 #   "which models are linked"                 -> LIST_LINKED_MODELS
@@ -99,3 +133,6 @@ utterances:
   - link this cad drawing into the model
   - link these Revit models origin to origin
   - link every dwg in this folder
+  # ADDED 2026-11-02 WITH VERSION 2: Revit's own command, Insert > Point
+  # Cloud, in the request that asked for it ("link point cloud").
+  - link a point cloud

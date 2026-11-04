@@ -1,0 +1,69 @@
+# NEEDS-CHECKING Group LW - CUT_GEOMETRY and REPORT_GEOMETRY_CUTS, built
+# 2026-11-02 in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/cut-geometry-lw-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/cut-geometry-lw-2026-11-02.yaml
+#
+# THE MODEL (docs/needs-checking/group-lw.md, LW1): a scratch project from
+# Revit's default structural template, saved under %TEMP%\heron-work, never a
+# working model. Drawn by hand: a floor on Level 1; ONE beam passing through
+# that floor's thickness; and a wall the beam does not reach, standing on the
+# floor and JOINED to it with Join Geometry (never cut). A floor plan "LW
+# Cutter" with every category but Structural Framing hidden, so the one beam
+# is the only framing it shows.
+# The floor's and the wall's ids written down with Manage > IDs of Selection
+# and typed below in place of 0000001 and 0000002.
+#
+# THE ARRANGEMENT. The cutter is the ONE element selected - the setup selects
+# the beam (the only framing in "LW Cutter") and the run passes "selected".
+# The elements to cut come from FILTER_ELEMENTS_BY_ID with their ids typed,
+# kept in the chain (keep-chain). Positive: the floor the beam passes
+# through. Negative: the wall the beam does not reach - a different element,
+# not an empty set (fragment-proving, rules 3 and 5). Every write here is
+# ROLLED BACK.
+
+model: "a scratch project from Revit's default structural template - one floor, one beam through it, one wall clear of it"
+
+jobs:
+  - fragment: cut-geometry
+    write: true
+    keep-chain: true
+    expect: changed
+    setup: [filter-elements-by-category, set-selection, filter-elements-by-id]
+    # The setup's own values: the beam selected, then the element to cut by
+    # its typed id - the floor for the positive, the wall for the negative.
+    setup-set:
+      categories: Structural Framing
+      inViewOnly: "FloorPlan: LW Cutter"
+      elementIds: "0000001"
+    negative-setup-set:
+      categories: Structural Framing
+      inViewOnly: "FloorPlan: LW Cutter"
+      elementIds: "0000002"
+    set:
+      cutter: selected
+      cut: "true"
+    negative-set:
+      cutter: selected
+      cut: "true"
+    note: >
+      LW2. Negative - THE FIRST CASE TO RUN: the wall named in wouldNot with
+      Revit's reason in words, changed 0, pairs naming the wall and the beam;
+      the binding note "elements from filter-elements-by-id (1)" and the
+      cutter the beam. Positive: changed 1, pairs "<floor>: cut by <beam>
+      (solid cut) - read back: cut", QUANTITIES HAVE MOVED.
+
+  - fragment: report-geometry-cuts
+    keep-chain: true
+    expect: cuts
+    setup: [filter-elements-by-id]
+    set:
+      elementIds: "0000003"
+    negative-set:
+      elementIds: "0000002"
+    note: >
+      LW4, after LW3 has KEPT a cut by hand (Modify > Cut Geometry, the floor
+      then the beam); 0000003 is that floor. Positive: "<floor> is CUT BY
+      <beam> - solid from solid". Negative: the wall - JOINED to the floor by
+      hand with Join Geometry in LW1, never cut - no rows, withoutCuts 1. A row
+      there would mean this reads joins.

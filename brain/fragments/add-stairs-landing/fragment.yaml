@@ -1,0 +1,79 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-153
+semantic-identity: "add a landing between two runs of a stair that is already in the model"
+kind: action
+domain: revit.elements
+capability: ADD_STAIRS_LANDING
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: the modeller asked to "add a landing between these two runs".
+# brain/heron_retrieve.py with those words reached OFFSET_MEP_SECTION first and
+# CREATE_STAIRS fifth; nothing in the library edits a stair already made.
+# CREATE_STAIRS and CREATE_SHAPED_STAIRS make a whole new stair with its
+# landing; this changes one that is there, through the same edit-scope pattern
+# (D-112), started on the existing stair - StairsEditScope.Start(stairsId).
+# The duplicate check (2026-11-02) found nothing else that touches a landing.
+
+purpose: >
+  Adds a landing between two runs of a stair by component already in the
+  model - Revit's own landing between two picked runs, of the landing type the
+  stair type names. The two runs must be of one stair; a pair Revit says it
+  cannot join is refused before the stair is opened, and nothing changes. The
+  new landing's depth, thickness and height are read back in mm, with the
+  stair's riser count before and after.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: editScopeFailures
+      type: IFailuresPreprocessor
+      source: ambient
+    - name: elements
+      # The two stair runs, selected - Tab onto a run inside the stair.
+      type: IList<Element>
+  provides:
+    - name: landings
+      role: result
+      type: IList<ElementId>
+    - name: stairs
+      # The stair the landing was added to; none when refused.
+      role: result
+      type: ElementId
+    - name: risersBefore
+      role: result
+      type: int
+    - name: risersAfter
+      role: result
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, no #if. Read off the reference
+  assemblies for 2020 to 2027 with tools/api-surface on 2026-11-02, the same
+  signature throughout: StairsEditScope.Start(ElementId), Commit,
+  Cancel, IsPermitted and IsActive; StairsLanding.CanCreateAutomaticLanding,
+  CreateAutomaticLanding, Thickness, BaseElevation and GetFootprintBoundary;
+  StairsRun.GetStairs, BaseElevation and GetStairsPath; Stairs.GetStairsLandings
+  and ActualRisersNumber. NOT RUN on any Revit.
+
+# ROUTING
+#
+#   "add a landing between these two runs"            -> here
+#   "add a U-shaped stair with a 1200 landing here"   -> CREATE_SHAPED_STAIRS
+#   "make the stair"                                  -> CREATE_STAIRS
+utterances:
+  - add a landing between these two runs

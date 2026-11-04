@@ -1,0 +1,125 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-072
+semantic-identity: "take the insulation off these ducts, pipes and their fittings - Remove Insulation"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "remove the insulation from
+# these ducts", "take the insulation off these pipes and fittings" and "strip
+# lagging from this run". Nothing in Heron removed insulation (checked that
+# day with brain/heron_retrieve.py on each sentence, Revit 2024:
+# SET_MEP_INSULATION, SELECT_BY_INSULATION, CHECK_INSULATION_CLEARANCE,
+# OFFSET_ELEMENTS and SELECT_BY_CATEGORIES came back first, and none of them
+# takes insulation off).
+#
+# A NEW CAPABILITY, NOT A WIDENING. SET_MEP_INSULATION (FRG-MEP-007, PROVEN)
+# deletes existing insulation only as the first half of putting new insulation
+# on, takes ducts and pipes alone, and needs an insulation type and a thickness
+# this job has no use for; a change under its impl/ would make its proof stale
+# for a job it does not do. SELECT_BY_INSULATION only reads. DELETE_ELEMENTS
+# deletes what it is handed - the duct itself, given the duct - which is
+# exactly what this must never do.
+#
+# RISK MODIFY, as every delete in the library is graded (DELETE_ELEMENTS,
+# REMOVE_TAGS, DELETE_REVISION). ARTICLE 7'S CONFIRMATION IS REVIT'S (D-142):
+# anything a kept change deletes is asked in Revit in a box of its own, Ask to
+# Keep on or off, so this card takes no `confirm`. DELETE_REVISION carries one
+# because a find picks its revision; here the modeller picked the ducts.
+#
+# ONLY INSULATION, NEVER THE HOST, NEVER LINING. Each host's delete runs in a
+# SubTransaction and is put back if Revit would take anything but its
+# insulation and the tags on it. Lining is a different element doing a
+# different job; removing it is a separate request, and a lining handed in is
+# named and left.
+#
+# PER HOST. `report` has a line for every duct, pipe, fitting, accessory or
+# flex selected: how many insulation elements went, or that it had none. An
+# element of any other category is named as unable to carry insulation, so a
+# wrong selection does not read the same as a bare duct.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: REMOVE_MEP_INSULATION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Removes the insulation from the selected ducts, pipes, fittings, accessories
+  and flex, as Revit's Remove Insulation button does, and says per element how
+  many insulation layers went. The duct or pipe itself is never deleted.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The selection: ducts, pipes, their fittings, accessories and flex -
+    # or the insulation itself, Tab-selected, which is taken as its host's.
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: removed
+      # Insulation elements that read back gone - never what was asked.
+      role: result
+      type: int
+    - name: report
+      # ONE STRING, a line per host: how many insulation elements were
+      # removed, or that it had none.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was removed, in the modeller's words - evidence it looked
+      # and said no, never a thing it found (D-52). Null when something was
+      # removed. ONE STRING, because a list reaches the reply cut to sixty
+      # characters an item.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. InsulationLiningBase.GetInsulationIds
+  and HostElementId, DuctInsulation, PipeInsulation and DuctLining,
+  Document.Delete(ICollection<ElementId>), Element.GetDependentElements and
+  ViewSpecific, SubTransaction's Start, Commit and RollBack, and the eight
+  duct and pipe BuiltInCategory values are present and unchanged 2020
+  through 2027 - read with tools/api-surface on 2026-11-01. Categories are
+  compared by ElementId built from the BuiltInCategory and ids are carried as
+  ElementId, never read as numbers.
+
+# ROUTING (2026-11-01).
+#
+#   "remove the insulation from these ducts"  -> here
+#   "take the insulation off these pipes and
+#    fittings"                                -> here
+#   "strip lagging from this run"             -> here
+#   "insulate these" / "change the insulation
+#    thickness"                               -> SET_MEP_INSULATION - it
+#                                                replaces, never leaves a
+#                                                duct bare
+#   "which ducts still need insulating"       -> SELECT_BY_INSULATION - run
+#                                                it first to see what is
+#                                                insulated
+#   "delete these"                            -> DELETE_ELEMENTS - the
+#                                                elements themselves
+#   "will the insulation fit"                 -> CHECK_MINIMUM_CLEARANCE
+#   "remove the lining from this duct"        -> SET_DUCT_LINING, at a
+#                                                thickness of 0 - lining is
+#                                                never removed here; this
+#                                                card reached it ranked until
+#                                                that one declared it
+#                                                (2026-11-01, Group JY)
+
+utterances:
+  - remove the insulation from these ducts
+  - take the insulation off these pipes and fittings
+  - strip lagging from this run

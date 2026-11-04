@@ -1,0 +1,40 @@
+# NEEDS-CHECKING Group KR - EDIT_REBAR_NUMBERING, built 2026-11-01 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/edit-rebar-numbering-kr-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/edit-rebar-numbering-kr-2026-11-01.yaml
+#
+# THE MODEL is Group KQ's scratch copy, "rebar-numbering-kq"
+# (docs/needs-checking/group-kq.md, KQ1): Group HY's project after HY6 and HY8
+# kept, C1's three rebar sets in partition "P1" with one number changed to 9 so
+# P1 has a GAP, B1's three sets in partition "B2" with no gap. Never a working
+# model.
+#
+# THE ARRANGEMENT: compact takes no selection (`elements` is optional and binds
+# empty), so `setup: []`. The negative is a DIFFERENT VALUE - B2, the
+# partition with no gap - never an empty one (fragment-proving, rule 5):
+# changed 0, and P1, not named, keeps its gap. Every write here is ROLLED BACK.
+# start, change, rename, merge and move are rows KR3 to KR6, run with
+# `validate --write`.
+
+model: "rebar-numbering-kq scratch copy of rebar-hy (metric structural template) after HY6 and HY8 kept, C1 in partition P1 with a gap, B1 in partition B2, Revit 2020"
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: edit-rebar-numbering
+    expect: changed
+    setup: []
+    set:
+      action: compact
+      partition: "P1"
+    negative-set:
+      action: compact
+      partition: "B2"
+    note: >
+      KR2. Negative - THE FIRST CASE TO RUN: compact B2, which has no gap, so
+      changed 0, before and after the same numbers for B2. Positive - compact
+      P1: changed above 0, before with the gap, after with none. Then
+      REPORT_REBAR_NUMBERING (Group KQ) with partition left out: P1's gap is
+      back - both runs were rolled back - and B2 as it was.

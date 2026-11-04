@@ -1,0 +1,65 @@
+# NEEDS-CHECKING Group LR - REPORT_DIMENSION_TYPES and SET_DIMENSION_TYPE
+# (new): Annotate > Dimension > Types read, and a dimension type changed or
+# copied under a new name - built 2026-11-02 in a cloud session with no Revit.
+# NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/dimension-types-lr-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/dimension-types-lr-2026-11-02.yaml
+#
+# THE MODEL (docs/needs-checking/group-lr.md, LR1): "Heron Dimension Type
+# Test", a scratch project from Revit's metric Architectural template, saved
+# under %TEMP%\heron-work, never a working model. It keeps the template's
+# dimension types; in the floor plan "Level 1", three linear dimensions on
+# "Linear - 3mm Arial" (or the template's nearest linear type - write its
+# name into both jobs below before running), and "Diagonal 3mm" among its
+# arrowhead types.
+#
+# THE ARRANGEMENT: neither fragment takes a selection - the type is named in
+# words. Each negative is the SAME type with a value that must not be read or
+# written, not an empty input (fragment-proving, rules 3 and 5). Every write
+# is ROLLED BACK.
+
+model: "Heron Dimension Type Test (scratch, metric Architectural template), Revit 2024"
+
+defaults:
+  setup: []
+
+jobs:
+  # The read. Positive: the one linear type the dimensions use. Negative: a
+  # name that is no dimension type here - typeCount 0, and the finding names
+  # the types there are.
+  - fragment: report-dimension-types
+    write: false                       # risk READ
+    expect: dimensionTypes
+    set:
+      dimensionTypeName: "Linear - 3mm Arial"
+    negative-set:
+      dimensionTypeName: "No Such Dimension Type"
+    note: >
+      LR2. Positive: typeCount 1, dimensionTypes "Linear Dimension Style:
+      Linear - 3mm Arial | style Linear | ... | Text Size 3 mm | ... | Units
+      Format ... | used by 3 dimension(s)" - each setting under Revit's own
+      name for it. RECORD which name the tick mark is printed under (LR3).
+      Negative: typeCount 0, dimensionTypes empty, the finding listing the
+      dimension types.
+
+  # The change, rolled back. Positive: a copy as "2.5mm Arial", Text Size
+  # 2.5. Negative: the same type, a tick mark that does not exist - refused,
+  # nothing changed, no copy made.
+  - fragment: set-dimension-type
+    write: true
+    expect: changedTypeId
+    set:
+      dimensionTypeName: "Linear - 3mm Arial"
+      duplicateAs: "2.5mm Arial"
+      changes: "Text Size=2.5"
+    negative-set:
+      dimensionTypeName: "Linear - 3mm Arial"
+      changes: "Tick Mark=No Such Tick"
+    note: >
+      LR4 and LR5. Positive: changedTypeId the new type, typeAfter
+      "Linear Dimension Style: 2.5mm Arial | ... | Text Size 2.5 mm | ...",
+      typeBefore the original at 3 mm, usedBy 0 dimension(s). Negative:
+      refused "Tick Mark "No Such Tick" is not the arrowhead types here -
+      they are: ... NOTHING WAS CHANGED", changedTypeId invalid. Both rolled
+      back - a kept run is through try-once, on the modeller's yes.

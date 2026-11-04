@@ -1,0 +1,141 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-068
+semantic-identity: "reload images in Manage Images from their files - Manage Images > Reload, or Reload From a new file"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for as "Reload images (Manage Images > Reload)", a gap on
+# Revit's ribbon no card filled. A grep of every fragment's C# that day for
+# ImageType Reload, ReloadFrom and CanReload found none; brain/heron_retrieve.py
+# (Revit 2024, a scratch store) sent "reload the images" to LOAD_FAMILY and
+# "reload the site plan image from its file" to LOAD_FAMILY as well.
+#
+# LOOK-ALIKES, NOT DUPLICATES (heron-duplicate-checker's method, 2026-11-02;
+# heron_duplicates.look: 0 already here). RELOAD_LINKS reloads or unloads
+# Revit links - RevitLinkType, Manage Links - and never an image; an image
+# has no unload, and its file, page and resolution are none of a link's.
+# Revit keeps Manage Links and Manage Images as two dialogs. LOAD_FAMILY and
+# LOAD_KEYNOTE_FILE load other files. IMPORT_IMAGE brings a NEW image in and
+# places it; this changes what an image already in Manage Images shows, in
+# every view it is placed in, and places nothing.
+#
+# THE QUESTIONS ARE LIST_IMAGES'. Which images there are, their names, files,
+# pages and whether a file is found are answered there, so none reaches this
+# write (D-86). It says nothing about which images are unused - that is
+# FIND_PURGEABLE_ELEMENTS'.
+#
+# THE WORDS. "reload the images" and "reload this image from another file"
+# are Revit's own two buttons in Manage Images, Reload and Reload From, as the
+# request named them; no other sentence is declared until a modeller says one.
+#
+# REVIT 2020 RELOADS, AND DOES NOT RELOAD FROM. ImageType Resolution is 2021
+# on, so on 2020 the image's DPI cannot be read and Reload From would load the
+# new file at Revit's default 72 DPI - possibly another size. It is refused
+# there by name rather than guessed; Reload itself keeps the image's own page
+# and resolution on every release.
+#
+# RISK MODIFY. It changes what an image shows and deletes nothing; Undo takes
+# it back as one entry. A file not found leaves the image as it was (Revit's
+# own rule) and is named.
+#
+# `purpose` SAYS "CAME FROM A FILE", NOT "LOADED FROM A FILE" (row 5b-1442):
+# the word "loaded" took LIST_IMAGES' "what images are loaded in this model"
+# on the keyword route in the first draft.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.document
+capability: RELOAD_IMAGES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Reloads images and PDF pages in Manage Images from their files - every
+  image that came from a file, or the ones named - as Revit's Reload button
+  does, or reloads one named image from another file and page, as Reload
+  From does. An image whose file is not found is left as it was and named.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The images' exact names as Manage Images shows them, separated by ";".
+    # Left out (`absent: all`), every image in Manage Images that was loaded
+    # from a file. A name with no image is named, with the names there are.
+    - name: names
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # RELOAD FROM: the full path of the new PDF or picture ON THE PC REVIT
+    # RUNS ON. Only with exactly one image named; never guessed. Left out
+    # (`absent: none`), each image reloads from its own file.
+    - name: fromPath
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # RELOAD FROM a PDF: the page, counted from 1. Left out (0), the image's
+    # own page. Not used for a picture, and the answer says so.
+    - name: page
+      type: int
+      source: request
+      optional: true
+      absent: 0
+  provides:
+    - name: reloaded
+      # Images Revit reloaded and that read back loaded - asked, never assumed
+      # from the call returning.
+      role: result
+      type: int
+    - name: reloadedIds
+      # Their ids in Manage Images.
+      role: result
+      type: IList<ElementId>
+    - name: skipped
+      # Every image this did not reload, by name, with why: a saved rendering
+      # with no file, a file not found, Revit's refusal. Never a thing it
+      # FOUND (D-52).
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING, image by image: its name and id, the file and page it
+      # reloaded from, and on 2021 on its status and pixel size before and
+      # after - or the refusal. A string because a reply cuts a list to three.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation, with one fork at 2020. ImageType Reload, ReloadFrom(
+  ImageTypeOptions), CanReload, Path, PathType and PageNumber, and
+  ImageTypeOptions PageNumber, Resolution and IsValid are the same 2020
+  through 2027. ImageType Source, Status, Resolution, WidthInPixels and
+  HeightInPixels, the enums ImageTypeSource and ImageTypeStatus, and the
+  ImageTypeOptions constructor (string, bool, ImageTypeSource) are 2021 on, so
+  2020 reloads without reading status or size, and refuses Reload From by
+  name. All read with tools/api-surface --members on 2026-11-02. Not seen in
+  Revit.
+
+# ROUTING (2026-11-02) - the same rows are in LIST_IMAGES and IMPORT_IMAGE.
+#
+#   "reload the images"                          -> here, every image from its file
+#   "reload this image from another file"        -> here, one image named, fromPath
+#   "what images are loaded in this model"       -> LIST_IMAGES - a question,
+#                                                   never this write
+#   "import this PDF page into the current view" -> IMPORT_IMAGE - a new image
+#   "reload the links"                           -> RELOAD_LINKS - Revit links,
+#                                                   never images
+utterances:
+  - reload the images
+  - reload this image from another file

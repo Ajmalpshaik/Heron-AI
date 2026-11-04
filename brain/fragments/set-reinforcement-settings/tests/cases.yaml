@@ -1,0 +1,67 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write to a project-wide dialog, "changed a setting nobody named".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE. Two scratch projects from Revit's
+# metric STRUCTURAL template, any release 2020 to 2027, both SAVED and never a
+# working model (NEEDS-CHECKING Group MF, MF1):
+#   EMPTY   no rebar placed - the hook and end-treatment settings can change
+#   REBAR   one concrete beam with one bar placed (PLACE_BEAM_REBAR), so Revit
+#           holds rebar and is expected to refuse the shape-definition settings
+# Before each run REPORT_STRUCTURAL_SETTINGS records every Reinforcement
+# Setting - the values the cases below are checked against. EVERY RUN ROLLED
+# BACK.
+
+positive:
+  - given: EMPTY, settings "include hooks in rebar shape definition=<the opposite of MF1's value>"
+    expect: >
+      changed 1; after reads the new value and every other setting exactly as
+      before; REPORT_STRUCTURAL_SETTINGS in the same run reads it
+
+  - given: EMPTY, settings "rebar rounding=5"
+    expect: >
+      after reads "rebar total length rounding 5 mm" and "segment length
+      rounding 5 mm" (changed 2, fewer if one already held it); the fabric
+      rounding unchanged. RECORD the unit REPORT_STRUCTURAL_SETTINGS names for
+      the rounding
+
+  - given: EMPTY, settings "rebar presentation in view=first and last"
+    expect: after reads "rebar presentation in view show first and last"
+
+  - given: EMPTY, settings "rebar shape defines hooks=yes"
+    expect: the hooks setting - the API's name is the same setting
+
+negative:
+  - given: >
+      EMPTY, settings "rebar rounding=5 in". THE FIRST CASE TO RUN: a fragment
+      that wrote whatever number it was handed shows here
+    expect: >
+      changed 0; refused "rebar rounding "5 in" is not a rounding in
+      millimetres. NOTHING WAS CHANGED."; before and after empty; the
+      settings read exactly as MF1 recorded
+
+  - given: REBAR, settings "include hooks in rebar shape definition=<the opposite of MF1's value>"
+    expect: >
+      RECORD what Revit does. Expected: refused "Revit refused include hooks in
+      rebar shape definition = ...: <Revit's own words> NOTHING WAS
+      CHANGED"; the setting reads as before
+
+  - given: EMPTY, settings "rebar rounding=5; rebar total length rounding=10"
+    expect: refused - rebar total length rounding named twice - nothing changed
+
+  - given: EMPTY, settings "rebar presentation in view=select"
+    expect: refused - show all, show first and last or show middle - nothing changed
+
+  - given: EMPTY, settings "rebar colour=red"
+    expect: refused with the list of settings this card takes; nothing changed
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      the whole table is one undo entry
+
+second_route:
+  - >
+    Revit's own Structure > Reinforcement Settings, opened after the positive
+    run is KEPT: General shows "Include hooks in Rebar Shape definition" as
+    after reads it, and Rounding > Rebar shows 5 mm for Total Bar Length and
+    Segment Length.

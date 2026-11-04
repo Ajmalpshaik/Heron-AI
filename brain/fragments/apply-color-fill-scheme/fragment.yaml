@@ -347,6 +347,29 @@ compatibility-note: >
 #                                        picture, with its legend in the reply
 #   "make these red"                  -> OVERRIDE_GRAPHICS_IN_VIEW
 #   "make a legend view"              -> DUPLICATE_VIEWS
+#   "colour the ducts by system in this plan and add a legend" /
+#   "add a duct colour fill legend" /
+#   "colour the pipes by flow and place a pipe legend here"
+#                                     -> here, category Ducts or Pipes. This
+#                                        is Revit's Analyze > Duct Legend and
+#                                        Pipe Legend: the view's colour SCHEME
+#                                        for the category plus its legend,
+#                                        which this card already does for any
+#                                        category the view takes. Added
+#                                        2026-11-02, card only - impl/ and the
+#                                        fingerprint unchanged. Before it, the
+#                                        pipe sentence reached AUTO_SIZE_PIPE,
+#                                        a write that RESIZES pipes. The words
+#                                        "add a legend" or "pipe legend" are
+#                                        what make it this card's rather than
+#                                        COLOR_BY_PARAMETER's "colour code the
+#                                        ducts by system", which paints
+#                                        overrides and places no legend
+#   "make a legend"                   -> DUPLICATE_VIEWS, declared there and
+#                                        answered by identity - a legend VIEW.
+#                                        The keyword route alone has ranked
+#                                        this card first for it since the
+#                                        three sentences above were added
 utterances:
   - add a colour fill legend
   - colour the rooms by name
@@ -357,3 +380,6 @@ utterances:
   - colour fill the zones
   - remove the colour scheme from this view
   - make the kitchen red in the colour scheme
+  - colour the ducts by system in this plan and add a legend
+  - add a duct colour fill legend
+  - colour the pipes by flow and place a pipe legend here

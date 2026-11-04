@@ -1,0 +1,224 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-172
+semantic-identity: "annotate each beam in this plan in one go: a beam tag at its start, middle or end and spot elevations on its top or bottom at its ends"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "annotate all the beams in
+# this plan with tags and top-of-steel spot elevations", "add beam annotations
+# to these beams - tag at the middle, elevation at both ends" and "put beam
+# tags at mid-span on every beam in this view" - Revit's Annotate > Beam
+# Annotations. Checked that day with brain/heron_retrieve.py on a scratch
+# store, Revit 2024: the first reached REPORT_SPOT_DIMENSIONS (a read), the
+# second COPE_FRAMING, the third CREATE_BEAM_SYSTEM - two writes that change
+# beams, not annotate them. Nothing in the library placed annotations at a
+# position along a beam.
+#
+# WHY A CARD OF ITS OWN, AND NOT TAG_ELEMENTS_IN_VIEW AND ADD_SPOT_ELEVATIONS
+# WIDENED. Both are PROVEN, and any change under either's impl/ makes its
+# proof stale. They are also not the two halves of this job run one after
+# the other: TAG_ELEMENTS_IN_VIEW puts a tag at an element's own point and
+# knows no start, middle or end; ADD_SPOT_ELEVATIONS puts ONE spot at the
+# middle of the face chosen, never at a beam's ends, and takes no type. Beam
+# Annotations is one Revit command that places both, per beam, at positions
+# measured along the beam's line - so it is one card. The way a face
+# reference is taken is copied from ADD_SPOT_ELEVATIONS: every candidate face
+# collected first, never first-wins, chosen by a POSITIVE test on its normal.
+# Checked by tools/heron_duplicates and brain/heron_merge.py on 2026-11-02:
+# nothing in the library shares this capability or contract.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33):
+#   view       the plan, as the Project Browser names it - a floor plan, a
+#              structural (framing) plan or a reflected ceiling plan. Any
+#              other view - a section, an elevation, a 3D view, a sheet, a
+#              template - is refused BY NAME and nothing is placed
+#   elements   the beams - the selection, or every structural framing
+#              element in the plan from a filter. Anything not a beam (a
+#              brace, a column, a duct) is named and left alone
+#   tagType    the beam tag type, by its Project Browser name - a Structural
+#              Framing Tag or a Multi-Category Tag. Left out, the PROJECT'S
+#              DEFAULT structural framing tag, and the answer says so. Named
+#              and not loaded, or no default: NOTHING IS PLACED and the loaded
+#              tag types come back in `typesLoaded`
+#   spotType   the spot elevation type, the same way - left out, the
+#              project's default spot elevation type, said
+#   tagAt      "start", "middle" (left out) or "end" - or "none" for spots only
+#   spotsAt    "both" (left out), "start", "end" - or "none" for tags only
+#   face       "top" (left out - top of steel) or "bottom"
+#
+# A START OR AN END IS 5% OF THE BEAM'S LENGTH IN FROM IT, never more than
+# 300 mm, so a tag or a spot does not land on the column the beam meets.
+#
+# THE FACE: at each end, the face directly over (or under) the beam's line
+# there whose normal points up (or down) - the highest such top, the lowest
+# such bottom, so a steel beam's top flange and never its bottom flange's
+# upper face. A beam with no such face - one sloped more than 45 degrees -
+# is named and gets no spot, never a spot on some other face.
+#
+# A BEAM ALREADY TAGGED IN THIS PLAN IS LEFT ALONE, no tag and no spot, and
+# named in `alreadyTagged` - so a re-run stacks nothing. A spot elevation
+# already within 1 mm of the point is left alone too.
+#
+# EVERYTHING PLACED IS READ BACK: each tag's type (IndependentTag.Create does
+# not reliably honour the type it is given - TAG_ELEMENTS_IN_VIEW measured
+# it) and view; each spot's type, view and the value Revit shows
+# (Dimension.ValueString). One that reads back wrong is removed again inside
+# the same undo. The tag has no leader and is horizontal on every release
+# (TagOrientation.Horizontal).
+#
+# RISK MODIFY. It adds tags and spot elevations and deletes nothing it did
+# not just make.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.annotation
+capability: ADD_BEAM_ANNOTATIONS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Revit's Annotate > Beam Annotations: on each beam handed in, in one plan, a
+  beam tag at its start, middle or end, and spot elevations on its top (top of
+  steel) or bottom at one or both ends, of the tag and spot types named or the
+  project's defaults. Beams already tagged in that plan are left alone and
+  named. Says per beam what it placed - the tag, each spot and the level it
+  shows - and why it left anything else.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The plan, BY NAME. Any other kind of view is refused by name and nothing
+    # is placed.
+    - name: view
+      type: View
+      source: request
+    # The beams - the selection, or the structural framing in the plan.
+    - name: elements
+      type: IList<Element>
+    # The beam tag type, by its Project Browser name. Left out, the project's
+    # default structural framing tag.
+    - name: tagType
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # The spot elevation type, by its Project Browser name. Left out, the
+    # project's default spot elevation type.
+    - name: spotType
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # "start", "middle" or "end" - or "none". Left out, the middle.
+    - name: tagAt
+      type: string
+      source: request
+      optional: true
+      absent: middle
+    # "both", "start" or "end" - or "none". Left out, both ends.
+    - name: spotsAt
+      type: string
+      source: request
+      optional: true
+      absent: both
+    # "top" or "bottom". Left out, the top.
+    - name: face
+      type: string
+      source: request
+      optional: true
+      absent: top
+  provides:
+    - name: tagged
+      role: result
+      type: int
+    - name: newTags
+      # The beam tags this placed, each read back carrying the type asked for,
+      # in this plan.
+      role: result
+      type: IList<ElementId>
+    - name: newSpots
+      # The spot elevations this placed, each read back carrying the type
+      # asked for, in this plan.
+      role: result
+      type: IList<ElementId>
+    - name: alreadyTagged
+      # Beams that already carry a tag in this plan - left alone, no tag and
+      # no spot (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notAnnotated
+      # Elements handed in that got nothing - not a beam, not shown in the
+      # plan, of another model, no line, or every placement refused or read
+      # back wrong (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: typesLoaded
+      # The beam tag types and spot elevation types the model has - what to
+      # name.
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING, beam by beam: the tag and each spot placed, with the value
+      # it shows, or why it was left (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was placed at all, in plain words. Empty when it ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release but one line. IndependentTag.Create
+  (Document, ElementId symId, ElementId ownerDBViewId, Reference, bool,
+  TagOrientation, XYZ), Document.Create.NewSpotElevation(View, Reference, XYZ,
+  XYZ, XYZ, XYZ, bool), Document.GetDefaultFamilyTypeId,
+  Document.GetDefaultElementTypeId with ElementTypeGroup.SpotElevationType,
+  SpotDimension.SpotDimensionType (get and set), SpotDimensionType.StyleType,
+  DimensionStyleType.SpotElevation, Dimension.ValueString and Origin,
+  FamilyInstance.StructuralType, LocationCurve.Curve, Curve.Evaluate(double,
+  bool) and Length, Face.Project, Face.IsInside(UV), IntersectionResult,
+  PlanarFace.FaceNormal, Element.ChangeTypeId, View.Scale and
+  GetCategoryHidden, and BuiltInCategory OST_StructuralFraming,
+  OST_StructuralFramingTags, OST_MultiCategoryTags and OST_SpotElevations are
+  present with these signatures 2020 through 2027 - tools/api-surface
+  --members on 2026-11-02. THE ONE SPLIT: what an existing tag points at is
+  IndependentTag.TaggedLocalElementId on 2020 and 2021 (gone after 2022) and
+  GetTaggedLocalElementIds from 2022, written with #if as TAG_ELEMENTS_IN_VIEW
+  writes it. Millimetres become feet by dividing by 304.8 (D-20). No
+  ElementId is built from a number or read as one.
+
+# ROUTING (2026-11-02) - the same rows are in TAG_ELEMENTS_IN_VIEW and
+# ADD_SPOT_ELEVATIONS.
+#
+#   "annotate all the beams in this plan with   -> here
+#    tags and top-of-steel spot elevations"
+#   "add beam annotations to these beams - tag  -> here, tagAt middle, spotsAt
+#    at the middle, elevation at both ends"        both
+#   "put beam tags at mid-span on every beam    -> here, spotsAt none
+#    in this view"
+#   "tag these"                                 -> TAG_ELEMENTS_IN_VIEW - a tag
+#                                                  at each element's own point,
+#                                                  any category
+#   "add spot levels to these"                  -> ADD_SPOT_ELEVATIONS - one
+#                                                  spot at the face's middle,
+#                                                  any element
+#   "what do the spot levels say"               -> REPORT_SPOT_DIMENSIONS - a
+#                                                  read
+#   "put secondary beams in this bay"           -> CREATE_BEAM_SYSTEM - places
+#                                                  beams, annotates none
+utterances:
+  - annotate all the beams in this plan with tags and top-of-steel spot elevations
+  - add beam annotations to these beams - tag at the middle, elevation at both ends
+  - put beam tags at mid-span on every beam in this view

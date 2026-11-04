@@ -1,0 +1,61 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this read, "gave something a span it does not have": a non-structural
+# floor or a wall answered with an angle of 0, or a symbol listed that is not
+# on the floors handed in.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE - the scratch project SET_FLOOR_SPAN_
+# DIRECTION's Group KL already uses (NEEDS-CHECKING Group KP, KP1): Group HY's
+# new project from Revit's metric structural template, never a working model,
+# holding S1 (a structural concrete floor), W1 (a structural wall) and N2 (an
+# architectural floor, Structural clear) on Level 1, with KL1's straight grid 1
+# at 30 degrees from the model's X axis. For this card a span direction symbol
+# is placed on S1 by hand in "FloorPlan: Level 1" (Annotate > Symbol > Span
+# Direction) and kept; where its arrow points is read before the run - the
+# second route.
+#
+# The negative leg is a DIFFERENT SELECTION, not an empty one (fragment-
+# proving, rules 3 and 5): the walls of the same plan instead of its floors,
+# which must come back read 0, spans empty, symbolIds empty - and, run by hand
+# with N2 alone selected, the floor that is not structural, the same, named in
+# notStructural with the reason.
+
+positive:
+  - given: >
+      the floors of "FloorPlan: Level 1" selected - S1 and N2
+    expect: >
+      read 1; spans holds S1 alone, at the angle its symbol's arrow shows (or
+      that plus 180 - the same span); symbolIds holds S1's one symbol, and the
+      report names its type and "Level 1" as its view; the Span Direction
+      parameter beside it, in whatever form Revit writes it; N2 in
+      notStructural, named "not structural", never given an angle
+
+  - given: >
+      the same, after SET_FLOOR_SPAN_DIRECTION's KL5 run was KEPT (S1 along
+      grid 1)
+    expect: >
+      spans gives S1 30 (or 210, "the same span as 30") - the answer follows
+      the model, and agrees with the card that set it
+
+negative:
+  - given: >
+      the walls of "FloorPlan: Level 1" selected - W1
+    expect: >
+      read 0, spans empty, symbolIds empty, W1 in notFloors. THE FIRST CASE TO
+      RUN
+
+  - given: N2 alone selected by hand - a floor with Structural clear
+    expect: >
+      read 0, spans empty, symbolIds empty; N2 in notStructural and the report
+      says "not structural - Revit keeps a span direction only for a floor with
+      Structural ticked". An angle of 0 here is the defect
+
+  - given: any run at all
+    expect: >
+      NOTHING IN THE MODEL CHANGES - no transaction opened, every span and
+      symbol as it was
+
+second_route:
+  - >
+    Revit's own drawing: S1's span direction symbol in "FloorPlan: Level 1"
+    points at the angle spans gives - checked against grid 1, or with an angular
+    dimension to it - and Modify | Floors shows S1's span arrow the same way

@@ -1,0 +1,49 @@
+# NEEDS-CHECKING Group MC - ADD_BEAM_ANNOTATIONS, built 2026-11-02 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/add-beam-annotations-mc-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/add-beam-annotations-mc-2026-11-02.yaml
+#
+# THE MODEL is a scratch project from Revit's metric STRUCTURAL template,
+# Revit 2024: steel columns C1 and C2 6 m apart from Level 1 to Level 2, beam
+# B1 (a W-shape, top of steel at Level 2) between their tops, beam B2 parallel
+# to it 3 m away, and the structural plan "Level 2" showing all four. MC1
+# makes it and SAVES it, with no tag and no spot elevation in the plan. Never a
+# working model.
+#
+# NO TYPE IS NAMED: the template's default structural framing tag and spot
+# elevation type are used, and the answer says which. MC2 reads them back.
+#
+# THE ARRANGEMENT: SELECT_BY_CATEGORY_NAME and SET_SELECTION, as Group KM -
+# Structural Framing in "EngineeringPlan: Level 2" for the positive (B1, B2),
+# Structural Columns for the negative (C1, C2): a different set, not an empty
+# one, and one that holds no beam. Every write here is ROLLED BACK.
+
+model: scratch project from the metric structural template (MC1), Revit 2024
+
+defaults:
+  write: true
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: add-beam-annotations
+    expect: newSpots
+    setup-set:
+      categoryName: Structural Framing
+      inViewOnly: "EngineeringPlan: Level 2"
+    negative-setup-set:
+      categoryName: Structural Columns
+      inViewOnly: "EngineeringPlan: Level 2"
+    set:
+      view: "EngineeringPlan: Level 2"
+    negative-set:
+      view: "EngineeringPlan: Level 2"
+    note: >
+      MC3. Negative - THE FIRST CASE TO RUN: the columns instead of the beams,
+      so tagged 0, newTags and newSpots empty, C1 and C2 in notAnnotated with
+      "not structural framing - beam annotations go on beams only". Positive -
+      tagged 2 at the middle, newSpots 4 (both ends of each beam, the top
+      face), alreadyTagged and notAnnotated empty, report quoting the level
+      each spot shows - Level 2's height for a beam whose top is at Level 2.

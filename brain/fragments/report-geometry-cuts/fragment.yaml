@@ -1,0 +1,87 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-156
+semantic-identity: "which elements is this cutting, and what is cutting it"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "which elements is this
+# cutting", beside CUT_GEOMETRY's four. brain/heron_retrieve.py on it (a
+# scratch store, Revit 2024) answered REPORT_DIVIDED_SURFACES, with
+# REPORT_JOINED_ELEMENTS second.
+#
+# NOT A WIDENING OF REPORT_JOINED_ELEMENTS, AND WHY. That card reads joins
+# (JoinGeometryUtils) - a cut made by Cut Geometry is not a join and does not
+# show there. It is PROVEN, so any change under its impl/ would make its proof
+# stale and send it back to DRAFT; a small read of its own is the change that
+# costs nothing proven. heron-duplicate-checker's verdict, 2026-11-02:
+# LOOK-ALIKE - joins against cuts, two Revit commands.
+#
+# Changes nothing, needs no transaction.
+kind: filter
+domain: revit.elements
+capability: REPORT_GEOMETRY_CUTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports, for each element handed in, what it cuts and what cuts it - void
+  family cuts and cuts between solids - and changes nothing.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: cuts
+      role: result
+      type: IList<string>
+    - name: withoutCuts
+      # An element that cuts nothing and is cut by nothing is the ordinary
+      # answer. Counted so an empty list cannot be read as a failed read:
+      # evidence it ran (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read with tools/api-surface --members
+  on the reference assemblies of 2020 to 2027 on 2026-11-02, every one present
+  with the same signature in all eight: `InstanceVoidCutUtils.IsVoidInstanceCuttingElement`,
+  `GetElementsBeingCut`, `CanBeCutWithVoid`, `GetCuttingVoidInstances`;
+  `SolidSolidCutUtils.IsElementFromAppropriateContext`, `IsAllowedForSolidCut`,
+  `GetSolidsBeingCut`, `GetCuttingSolids`; `Document.GetElement(ElementId)`,
+  `Element.Category`, `Element.Name`, `Category.Name`. Ids are resolved to
+  elements and reported by name and id, never read as numbers.
+
+# ROUTING - repeated in CUT_GEOMETRY.
+#
+#   "which elements is this cutting"         -> here
+#   "what is this joined to"                 -> REPORT_JOINED_ELEMENTS - joins,
+#                                               not cuts
+#   "which one is cutting which"             -> REPORT_JOINED_ELEMENTS - the
+#                                               direction of a JOIN. Declared
+#                                               there and answered by identity;
+#                                               ranking alone puts this card
+#                                               first (FRAGMENT-ISSUES 5b-1416)
+#   "which one is cutting"                   -> REPORT_JOINED_ELEMENTS by
+#                                               JOIN_GEOMETRY's table, and NOT
+#                                               REACHED: it reached
+#                                               REPORT_DIVIDED_SURFACES before
+#                                               this card and reaches this card
+#                                               now (FRAGMENT-ISSUES 5b-1417)
+#   "uncut these two"                        -> CUT_GEOMETRY, cut false
+
+utterances:
+  - which elements is this cutting

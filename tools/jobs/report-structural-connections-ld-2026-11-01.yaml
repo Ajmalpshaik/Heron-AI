@@ -1,0 +1,49 @@
+# NEEDS-CHECKING Group LD - REPORT_STRUCTURAL_CONNECTIONS, built 2026-11-01 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/report-structural-connections-ld-2026-11-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-structural-connections-ld-2026-11-01.yaml
+#
+# THE MODEL is a scratch project new from Revit's metric STRUCTURAL template,
+# saved as "steel-ld" under %TEMP%\heron-work - never a working model. By hand
+# before the run (LD1): on Level 1, steel columns C1 and C2 standing apart,
+# steel beam B1 framing into C1, and a structural wall W1 away from all three.
+# Saved as a copy "steel-le" here, for Group LE. Then with Steel > Connection,
+# connection CN1 between B1 and C1 (a shear plate type, or the template's
+# generic one) and CN2, a single-member connection such as a base plate, on
+# C2's base. Write down every loaded type from Steel > Connection > Connection
+# Settings and each connection's Properties - the second route.
+#
+# THE ARRANGEMENT: the structural framing of "FloorPlan: Level 1" (B1) for the
+# positive, the walls of the same plan (W1) for the negative - a different
+# selection, not an empty one (fragment-proving, rules 3 and 5).
+#
+# READ ONLY: nothing to roll back, and the model must be the same afterwards.
+
+model: "steel-ld scratch project (metric structural template) with C1, C2, B1, W1 and connections CN1 (B1-C1) and CN2 (C2 alone) placed by hand, Revit 2020"
+
+defaults:
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: report-structural-connections
+    expect: connectionCount
+    setup-set:
+      categoryName: Structural Framing
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categoryName: Walls
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      show: "connections"
+    negative-set:
+      show: "connections"
+    note: >
+      LD2. Negative - THE FIRST CASE TO RUN: the wall instead of the beam,
+      so connectionCount 0, notConnected names W1, and findings "1 of the 1
+      member(s) handed in is joined by no connection". Positive -
+      connectionCount 1: CN1, its type, "joins 2" naming B1 and C1 with the
+      primary first, origin in mm, approval and code checking status - and
+      not CN2.

@@ -1,0 +1,92 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this read, "answered with a list it was not asked for": a narrowed read
+# that still returns every voltage, or a name read under the wrong list.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for REPORT_ELECTRICAL_SETTINGS): a scratch project new
+# from Revit's metric ELECTRICAL template (or Systems template), saved under
+# %TEMP%\heron-work, never a working model. Before the run, open Manage > MEP
+# Settings > Electrical Settings and Load Classifications / Demand Factors and
+# write down every voltage, distribution system, load classification and
+# demand factor the template has - the second route.
+#
+# The negative leg is a DIFFERENT VALUE, not an empty one: a name no item in
+# the model has. It must come back with every count 0 and say so - never the
+# whole list under a filter that matched nothing.
+
+positive:
+  - given: show and nameContains left out
+    expect: >
+      every list: voltageTypes, distributionSystems, wireTypes,
+      loadClassifications and demandFactors each the number the dialogs show;
+      report "Voltages (n): \"...\" 230 V (min ..., max ...) ..." with every
+      voltage in volts as Electrical Settings shows it, each distribution
+      system with its phase, wires and both voltages, each load
+      classification with its demand factor's name, each demand factor with
+      its rule and percentages; nameContains left out narrows nothing -
+      never read as a value called "none" (row 5b-1432)
+
+  - given: show "loads; demand"
+    expect: >
+      loadClassifications and demandFactors as the dialogs show;
+      voltageTypes, distributionSystems and wireTypes 0, and no Voltages,
+      Distribution systems or Wire types section in report
+
+  - given: show voltages, nameContains "230"
+    expect: >
+      voltageTypes is the count of voltage types whose name holds 230; names
+      lists only those, each "(voltage)"
+
+  - given: show templates (added 2026-11-02)
+    expect: >
+      panelScheduleTemplates is the number Manage > Panel Schedule Templates
+      > Manage Templates lists; report "Panel schedule templates (n):
+      \"Branch Panel\" branch panel, default, used by n panel schedule(s):
+      ..." with each template's kind and the schedules on it by name; every
+      other count 0
+
+  - given: show naming, Revit 2021 or later (added 2026-11-02)
+    expect: >
+      circuitNamingSchemes is the number Electrical Settings > Circuit Naming
+      lists; report "Circuit naming schemes (n): \"...\": Panel \"-\" +
+      Circuit Number ... - the project's ... The project uses \"...\"." with
+      each scheme's parameters and separators in order; every other count 0
+
+  - given: show naming, Revit 2020
+    expect: >
+      circuitNamingSchemes 0; report says circuit naming schemes arrived in
+      Revit 2021 - nothing else read for that list
+
+negative:
+  - given: >
+      nameContains "ZZNOTASETTING" - a name nothing in the model has
+    expect: >
+      every count 0; findings "Nothing in the lists read has a name
+      containing \"ZZNOTASETTING\" ..." - a full list here is the defect. THE
+      FIRST CASE TO RUN
+
+  - given: show "panels" - not one of the lists
+    expect: >
+      findings name "panels" as not one of the lists; every count 0 and
+      report empty - nothing guessed
+
+  - given: any run at all
+    expect: >
+      NOTHING IN THE MODEL CHANGES - no transaction opened; Electrical
+      Settings, Load Classifications and Demand Factors the same before and
+      after
+
+second_route:
+  - >
+    Revit's own Manage > MEP Settings > Electrical Settings (Voltage
+    Definitions, Distribution Systems, Wiring Types), Load Classifications and
+    Demand Factors dialogs: every name, voltage, phase, wire count, demand
+    factor and percentage in `report` is the one the dialogs show
+  - >
+    Manage > Panel Schedule Templates > Manage Templates: every template, its
+    kind and the default as `report` names them; each panel schedule opened
+    shows the template `report` counts it under
+  - >
+    Electrical Settings > Circuit Naming (2021 on): every scheme, its
+    parameters and separators, and the project's scheme as `report` names
+    them

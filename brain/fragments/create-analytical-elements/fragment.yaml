@@ -1,0 +1,145 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-163
+semantic-identity: "draw a structural analytical member between two points, an analytical panel from corners, or an analytical link between two analytical nodes"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-02: asked for in the modeller's words "add an analytical member
+# between these two points", "create an analytical panel from these corners on
+# Level 2" and "link these two analytical nodes with an analytical link" -
+# Revit's Analyze > Analytical Model tools. No card drew one (grep of every
+# fragment's C# that day for AnalyticalMember.Create, AnalyticalPanel.Create and
+# AnalyticalLink.Create: nothing). REPORT_ANALYTICAL_MODEL (FRG-ELE-089) reads
+# the analytical model and answers every question about it, so no question
+# reaches this write (D-86). PLACE_STRUCTURAL_LOADS and PLACE_BOUNDARY_CONDITIONS
+# put loads and supports ON analytical elements; this draws the elements.
+#
+# ONE OF A SET. ADJUST_ANALYTICAL_ELEMENTS (FRG-ELE-164) moves or reshapes an
+# analytical member's line or a panel's outline; ASSOCIATE_ANALYTICAL_ELEMENTS
+# (FRG-ELE-165) ties an analytical element to its physical one.
+#
+# ONE ELEMENT A RUN. A member from exactly two points, a panel from three or
+# more corners (closed back to the first), a link between exactly two
+# analytical nodes SELECTED. Anything else is refused with what was given.
+#
+# NEVER GUESSED (D-33). A level is used only when named - and a name that is
+# not a level is refused with every level's name. A link's type is named -
+# left out, refused with every analytical link type's name.
+#
+# NEVER DELETES OR CHANGES AN ELEMENT ALREADY THERE, physical or analytical.
+#
+# 2023 TO 2027 ONLY - see compatibility-note. Heron refuses it by name on 2020
+# to 2022, where the card is not claimed.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: CREATE_ANALYTICAL_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws one structural analytical element as Analyze > Analytical Model does -
+  a member between two points, a panel from its corners, or a link between two
+  analytical nodes - and reads its id and geometry back from the model.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      # For a link: the two analytical nodes selected. Not read for a member
+      # or a panel; nothing selected binds empty.
+      type: IList<Element>
+      optional: true
+    - name: kind
+      # member | panel | link.
+      type: string
+      source: request
+    - name: points
+      # "x,y,z; x,y,z" in MILLIMETRES - two for a member, three or more corners
+      # for a panel. Not read for a link.
+      type: IList<XYZ>
+      source: request
+      optional: true
+    - name: level
+      # A level's name. Named, every point's height is measured up from it, so
+      # "on Level 2" with heights of 0 sits on Level 2. Left out ("none"), the
+      # heights are as typed.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: type
+      # For a link: the analytical link type's name. Left out ("none") for a
+      # link, refused with every type's name - never guessed. A member or a
+      # panel takes none, and one given there is refused.
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: created
+      # Analytical elements drawn - 0 or 1. Something the write DID.
+      role: result
+      type: int
+    - name: createdIds
+      # The analytical element drawn.
+      role: accounting
+      type: IList<ElementId>
+    - name: report
+      # ONE LINE, read back from the model after it is drawn: the element's
+      # id and kind, a member's two ends or a panel's corners in mm, or a
+      # link's two ends and its two nodes.
+      role: accounting
+      type: string
+    - name: refused
+      # Why it declined the whole run, in Revit words: no kind, the wrong
+      # number of points or nodes, a level or type that is not there, Revit's
+      # own refusal. Never a thing done (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2023", "2024", "2025", "2026", "2027"]
+runtime: [net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Read with tools/api-surface --members on 2026-11-02, all eight releases
+  2020-2027. AnalyticalMember (Create(Document, Curve), IsValidCurve,
+  GetCurve) and AnalyticalPanel (Create(Document, CurveLoop),
+  GetOuterContour) are present 2023-2027 and absent 2020-2022, where the
+  analytical model was a property of the physical element. AnalyticalLink
+  (Create(Document, ElementId, ElementId, ElementId), IsValidHub, Start, End,
+  StartHubId, EndHubId), AnalyticalLinkType, Hub and Level.ProjectElevation are
+  present 2020-2027 in the same form. The card claims 2023-2027 because a
+  member and a panel exist only there; the link alone is not claimed on 2020 to
+  2022 until a run there shows what an analytical node is on those releases.
+
+# ROUTING (2026-11-02) - the same rows are in ADJUST_ANALYTICAL_ELEMENTS,
+# ASSOCIATE_ANALYTICAL_ELEMENTS and REPORT_ANALYTICAL_MODEL.
+#
+#   "add an analytical member between these two points"
+#                                                -> here, kind member, points
+#   "create an analytical panel from these corners on Level 2"
+#                                                -> here, kind panel, points,
+#                                                   level Level 2
+#   "link these two analytical nodes with an analytical link"
+#                                                -> here, kind link, the two
+#                                                   nodes selected, type named
+#   "move the analytical line of this beam 200 mm down"
+#                                                -> ADJUST_ANALYTICAL_ELEMENTS
+#   "associate this analytical member with that beam"
+#                                                -> ASSOCIATE_ANALYTICAL_ELEMENTS
+#   "which analytical members have no beam"      -> REPORT_ANALYTICAL_MODEL
+utterances:
+  - add an analytical member between these two points
+  - create an analytical panel from these corners on Level 2
+  - link these two analytical nodes with an analytical link

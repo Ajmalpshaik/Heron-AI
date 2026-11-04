@@ -1,0 +1,75 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that deletes as part of a replace, "removed what it was not
+# given or could not replace": a duct with an open end, a rectangular duct
+# under a round flex type, or a guessed flex type must come back named and
+# untouched, still rigid.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for CONVERT_TO_FLEX_DUCT): a scratch project new from
+# Revit's metric Mechanical template, saved under %TEMP%\heron-work, never a
+# working model. In the floor plan "Level 1", on a Supply Air system: a round
+# 300 mm supply main with a takeoff to a round 200 mm branch straight D1 of
+# about 1200 mm ending in a round-neck supply diffuser (D1 joins the takeoff
+# and the diffuser); a round 200 mm straight D2 of about 800 mm between two
+# elbows; a rectangular 300x200 straight D3 between two elbows; and a round
+# 200 mm straight D4 joined at one end only, the other end open. Write down
+# every id, and the exact names of the round and rectangular flex duct types
+# the template loads ("Flex - Round", "Flex - Rectangular" in Revit's own
+# metric template). Each case starts from the saved file; every run is ROLLED
+# BACK.
+
+positive:
+  - given: D1 selected; flexDuctType the round flex type's name
+    expect: >
+      removed holds D1's id and flexDucts one new id; report "Convert to flex
+      duct with \"...\": 1 of 1 converted - Ducts '...' (id D1) (1200 mm)
+      removed and replaced by flex duct id ..., d200 on \"Supply Air\", joined
+      at both ends. Rigid duct(s) removed: D1"; selected in Revit the flex is
+      200 mm, on Supply Air, joined to the takeoff and to the diffuser (no
+      open-end mark at either), and the takeoff and the diffuser are still
+      there. THIS IS THE FIRST POSITIVE TO RUN
+
+  - given: >
+      D1 and D2 selected; flexDuctType the round flex type written as family,
+      colon, type
+    expect: >
+      2 of 2 converted; removed holds D1 and D2; each flex between the same
+      two fittings its rigid duct joined
+
+  - given: D2 selected; flexDuctType the round type; maxLengthMm 600
+    expect: >
+      0 of 1 converted; notConverted "Ducts '...' (id D2): 800 mm long, over
+      the maximum length of 600 mm. Left as it is"; removed empty
+
+negative:
+  - given: D3 and D4 selected; flexDuctType the round flex type
+    expect: >
+      0 of 2 converted; removed and flexDucts empty; notConverted names D3 "a
+      rectangular duct, and \"...\" is round - name a rectangular flex duct
+      type. Left as it is" and D4 "an end is not joined to anything - Convert
+      to Flex Duct needs both ends joined. Left as it is"; D3 and D4 still
+      rigid ducts with their ids. THE FIRST CASE TO RUN
+
+  - given: D1 selected; flexDuctType "Flex" - part of a name, not a whole one
+    expect: >
+      nothing changed; report "No flex duct type is called \"Flex\". The flex
+      duct types in this project are: ..." naming both with their shapes; D1
+      still a rigid duct
+
+  - given: D1 selected; flexDuctType left blank
+    expect: >
+      nothing changed; report lists the loaded flex duct types and asks for one
+
+second_route:
+  - >
+    Each id in flexDucts, selected in Revit: Properties shows a Flex Duct of
+    the type named, its Diameter (or Width and Height) the rigid duct's, its
+    System Type the rigid duct's; each id in removed no longer selectable
+    (Manage > Select by ID finds nothing)
+  - >
+    Revit's own Systems > Convert to Flex Duct on a copy of the same saved
+    file, on D1 with the same type: the same two fittings joined, and the
+    takeoff and the diffuser still in place
+  - >
+    Undo: one entry in Revit's undo list, and Undo puts every rigid duct back
+    as it was, joined

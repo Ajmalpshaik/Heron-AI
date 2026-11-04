@@ -1,0 +1,61 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this write, "hung what it was not given": a design duct, a fitting or a
+# wall given a hanger, or a button guessed.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for ADD_FABRICATION_HANGERS): the scratch project
+# "fabrication-mh" of CHANGE_FABRICATION_SERVICE_SIZE's cases, saved under
+# %TEMP%\heron-work, never a working model, with one structural floor above
+# Level 1. In MEP Fabrication Settings write down the hanger buttons of the
+# low pressure ductwork service (one of them, "Rod Hanger" or what the sample
+# calls it, is the HANGER below) and one of its buttons that is not a hanger
+# (NOTHANGER). From the MEP Fabrication Parts palette: a horizontal
+# rectangular run of two straights about 3000 mm long and an elbow (F1, F2,
+# FE) at 2700 mm above Level 1; one design duct (D) and one wall (W). Write
+# down every id. Each case starts from the saved file.
+
+positive:
+  - given: F1 and F2 selected; button HANGER; spacing 1500
+    expect: >
+      report "Hangers at no more than 1500 mm apart of each of 2 fabrication
+      straight(s). ... 3000 mm long: 2 of 2 hanger(s) from \"HANGER\" on
+      \"...\" ..."; hangers holds four ids, each a fabrication hanger at 750
+      and 2250 mm along its straight, read back hosted on it
+
+  - given: F1 selected; button HANGER; spacing left out; attachToStructure true
+    expect: >
+      one hanger at the middle of F1, its rods reaching the floor above
+
+negative:
+  - given: D, W and FE selected with F1; button HANGER
+    expect: >
+      notFabrication names D "not a fabrication part - a design duct ..."
+      and W; notPlaced names FE "a fitting, not a straight"; D, W and FE
+      have no hanger; F1 has one in the middle. THE FIRST CASE TO RUN
+
+  - given: F1 selected; button left out
+    expect: >
+      no hanger placed; notPlaced "no hanger button was named. The hanger
+      buttons of \"...\" are: ..." listing them
+
+  - given: F1 selected; button NOTHANGER
+    expect: >
+      no hanger placed; notPlaced "the button \"NOTHANGER\" on \"...\" is not
+      a hanger. Its hanger buttons are: ..."
+
+  - given: F1 selected; button HANGER; service "ZZNOTASERVICE"
+    expect: >
+      nothing placed; report "No loaded service is called
+      \"ZZNOTASERVICE\". The services loaded in this project are: ..."
+
+second_route:
+  - >
+    Each id in hangers, selected in Revit: Properties shows a fabrication
+    hanger of the button and service the report names, on the straight the
+    report gives, at the distance given - measured with Revit's Measure tool
+    from the straight's end
+  - >
+    The same button placed by hand from the MEP Fabrication Parts palette
+    onto a copy of F1: the same hanger part
+  - >
+    Undo: one entry in Revit's undo list, and Undo takes every hanger away

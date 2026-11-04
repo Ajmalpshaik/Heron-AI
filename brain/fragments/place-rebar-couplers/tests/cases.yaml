@@ -1,0 +1,66 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that adds couplers, "added them to something nobody chose": a
+# coupler on a column, a coupler of a type nobody named, or a second coupler
+# on an end that already had one.
+# Arrange on the Group HY scratch project (docs/needs-checking/group-hy.md)
+# once HY6 is KEPT, so column C1 holds two sets of main bars and one set of
+# ties - NEEDS-CHECKING Group KE. KE1 reads, before anything runs, which
+# coupler type is loaded (this card run with couplerType left out lists them
+# and makes nothing) and that C1's bars show in FloorPlan: Level 1. Where the
+# model differs from that, the job file changes - never the card. EVERY RUN
+# ROLLED BACK, so each case starts from the model as saved.
+
+positive:
+  - given: >
+      the Structural Rebar in FloorPlan: Level 1 - C1's two main bar sets and
+      its tie set - couplerType the type KE1 read, barEnd top
+    expect: >
+      placed 2 - one coupler per main bar set, at its top end, each "coupler
+      <id> "<Family: Type>" placed - 2 couplers, one per bar in the set"; the
+      tie set skipped - "both ends are at the same height, so it has no top
+      end"; in a section the couplers sit at the bars' upper ends. THIS IS
+      THE FIRST POSITIVE TO RUN
+  - given: the same selection run a second time, without rolling back between
+    expect: >
+      placed 0 and both main bar sets in alreadyCoupled - "already has
+      coupler <id> - left as it was". A second coupler on the same end would
+      be counting work twice
+  - given: >
+      two straight bars drawn end to end in one host so that one's End meets
+      the other's Start, both selected, couplerType the type KE1 read,
+      between true
+    expect: >
+      placed 1 - one coupler joining the two, reading back on both bar ends
+
+negative:
+  - given: >
+      the Structural Columns in FloorPlan: Level 1 instead of their rebar,
+      the same couplerType and barEnd top
+    expect: >
+      placed 0; every column in skipped - "not a rebar bar or rebar set";
+      "None of the ... element(s) given is a rebar bar or set. NOTHING WAS
+      MADE." THIS IS THE FIRST CASE TO RUN
+  - given: the positive's selection, couplerType left out
+    expect: >
+      placed 0; refused "No coupler type was named - Heron never chooses
+      one. Loaded: ..." and couplerTypes listing every loaded coupler type -
+      nothing chosen for the modeller
+  - given: the positive's selection, couplerType a name no loaded type has
+    expect: placed 0; refused naming the loaded coupler types
+  - given: a bar end with a hook, barEnd at that end
+    expect: >
+      placed 0 for that end; skipped "this bar end has a hook - a coupler
+      goes only on an end with no hook" - Revit's IncorrectEndTreatmentHook,
+      in Revit's words
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED HERE. Golden Rule 16 - undo is the caller's, and
+      one operation is one undo entry. The SubTransactions live inside the
+      caller's transaction
+
+second_route:
+  - >
+    Revit's own Structure > Reinforcement > Rebar Coupler, Coupler at bar end,
+    on the top of one of the same bars, compared with this in a section: the
+    same coupler at the same end, and the bar's Properties naming it
+  - one Ctrl+Z takes every coupler back in a single step (Golden Rule 16)

@@ -1,0 +1,160 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-078
+semantic-identity: "add a load classification or a demand factor to the project - by name, with its demand factor or its percentages"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-01: asked for in the modeller's words "add a load classification
+# called Kitchen Equipment" and "add a demand factor of 80% over 10 kVA" -
+# Revit's Manage > MEP Settings > Load Classifications and Demand Factors. No
+# card in the library made either (grep of brain/fragments that day for
+# ElectricalLoadClassification.Create and ElectricalDemandFactorDefinition:
+# nothing). SET_FAMILY_CONNECTOR_ROLES gives a family's electrical connector a
+# load classification the project already has; it never makes one.
+#
+# ONE OF A SET. REPORT_ELECTRICAL_SETTINGS (FRG-MEP-076) answers every question
+# - which load classifications and demand factors exist, their exact names,
+# which demand factor each classification uses and each factor's steps - so
+# no question reaches this write (D-86). ADD_ELECTRICAL_DISTRIBUTION
+# (FRG-MEP-077) adds voltages and distribution systems; why they are two
+# writes is on that card.
+#
+# NEVER OVERWRITES, RENAMES OR DELETES. A name already present, in any
+# capitals, is skipped and named.
+#
+# NEVER GUESSED (D-33). A name is never made up - left out, refused. Steps
+# with no rule are refused: "80% over 10 kVA" is either a table of the whole
+# load (load) or of each portion of it (loadPortion), and the two give
+# different demand loads. A demand factor named for a load classification is
+# matched exactly; one differing only in capitals is named, never taken.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.mep
+capability: ADD_LOAD_CLASSIFICATION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Adds one load classification - using a demand factor the project already
+  has - or one demand factor, constant or a table of percentages over kVA or
+  over a quantity, for the whole load or for each portion of it, reporting the
+  load classifications or demand factors before and after. A name already
+  present is skipped, never overwritten.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: add
+      # loadClassification | demandFactor - which of the two is added.
+      type: string
+      source: request
+    - name: name
+      # The new item's name. Never made up - the modeller's.
+      type: string
+      source: request
+    - name: demandFactor
+      # loadClassification only: the demand factor it uses, by its exact name
+      # (REPORT_ELECTRICAL_SETTINGS lists them). Left out, Revit's own default.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: rule
+      # demandFactor only: constant | load | loadPortion | quantity |
+      # quantityPortion. Left out with no steps, constant; left out WITH
+      # steps, refused - never guessed.
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: percent
+      # demandFactor, constant only: its percentage. Left out, 100.
+      type: double
+      source: request
+      optional: true
+      absent: "0"
+    - name: steps
+      # demandFactor, a table rule: "0-10:100; 10-:80" - from-to in kVA for
+      # load and loadPortion, as a count for quantity and quantityPortion,
+      # then the percentage; an empty "to" is "and over".
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: added
+      # 1 when the load classification or demand factor was added, else 0.
+      # Something the write DID.
+      role: result
+      type: int
+    - name: before
+      # The load classifications with their demand factors, or the demand
+      # factors with their steps, before (D-52).
+      role: accounting
+      type: IList<string>
+    - name: after
+      # The same list after, read back from the model (D-52).
+      role: accounting
+      type: IList<string>
+    - name: skipped
+      # A name already present, named - left as it is (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in Revit words: no name, steps with no rule, a step
+      # that does not read, a demand factor the model does not have, a name
+      # Revit will not take. Never a thing done (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release but the unit check.
+  ElectricalLoadClassification.Create(Document, string) and DemandFactorId;
+  ElectricalDemandFactorDefinition.Create(Document, string), RuleType,
+  SetValues and GetValues; ElectricalDemandFactorValue(double, double, double),
+  Factor, MinRange, MaxRange and SetMaxRangeToUnlimited; and
+  ElectricalDemandFactorRule Constant, QuantityTable, LoadTable,
+  QuantityTablePerPortion and LoadTablePerPortion carry the same signatures
+  2020 through 2027 - read with tools/api-surface --members on 2026-11-01;
+  neither Create differs before 2021. kVA are written as kVA x 1000 x
+  1 / 0.3048^2 internal units, the factor SET_FAMILY_CONNECTOR_ROLES uses for
+  volt-amperes, checked against UnitUtils on the release that runs -
+  DisplayUnitType.DUT_VOLT_AMPERES in 2020 (#if REVIT2020),
+  UnitTypeId.VoltAmperes from 2021 - and nothing is written if they disagree.
+  A percentage is written as its fraction, 80% as 0.8: whether Revit's dialog
+  shows that as 80% has not been seen in Revit. An ElementId is compared with
+  ==, never read as a number.
+
+# ROUTING (2026-11-01) - the same rows are in REPORT_ELECTRICAL_SETTINGS and
+# ADD_ELECTRICAL_DISTRIBUTION.
+#
+#   "add a load classification called Kitchen Equipment"   -> here, add
+#                                                             loadClassification,
+#                                                             name Kitchen
+#                                                             Equipment
+#   "add a demand factor of 80% over 10 kVA"               -> here, add
+#                                                             demandFactor, steps
+#                                                             "0-10:100; 10-:80" -
+#                                                             load or loadPortion,
+#                                                             and its name, asked
+#   "list the load classifications and demand factors"     -> REPORT_ELECTRICAL_SETTINGS
+#   "add a 230 V voltage type"                             -> ADD_ELECTRICAL_DISTRIBUTION
+#   a family connector's load classification               -> SET_FAMILY_CONNECTOR_ROLES -
+#                                                             it picks one the project
+#                                                             has, in the Family Editor
+utterances:
+  - add a load classification called Kitchen Equipment
+  - add a demand factor of 80% over 10 kVA

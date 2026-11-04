@@ -182,6 +182,9 @@ compatibility-note: >
 #                                   only be tinted where it already hatches -
 #                                   and it is now this card's switch
 #   "turn the ceilings off"      -> SET_CATEGORY_VISIBILITY
+#   "change the cut line colour of Walls to red" -> SET_OBJECT_STYLE - the
+#                                category's own Object Styles, for the whole
+#                                model; this card is one view (2026-11-02)
 #   "colour by system"           -> CREATE_VIEW_FILTER - it tests a PARAMETER,
 #                                   so work drawn next week is coloured too
 #   "make these red"             -> OVERRIDE_GRAPHICS_IN_VIEW - stuck to the ids

@@ -136,7 +136,12 @@ compatibility-note: >
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "add these to the saved set"        -> here
-#   "take those out of the set"         -> here
+#   "take those out of the set"         -> here - declared here and answered
+#                                          by identity; since 2026-11-02
+#                                          ranking alone puts CUT_GEOMETRY
+#                                          first on it (FRAGMENT-ISSUES
+#                                          5b-1416). A saved selection set,
+#                                          never a cut
 #   "delete that selection set"         -> here, mode "delete"
 #   "save these as a set"               -> here since version 2, mode
 #                                          "create" - it was
