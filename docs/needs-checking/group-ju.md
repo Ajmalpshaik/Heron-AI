@@ -82,3 +82,28 @@ no other card's declared sentence, and one new contest - *"model geometry for th
 triangle - roughly 5 MB at the default budget and 17 MB at 500000. A provided string crosses whole, with no
 cap on the way back (`REPORT_MODEL_DASHBOARD`'s notes, JT). **Asked through `revit_read`, all of it is
 printed into the chat**: the Companion's model view is the reader this is for.
+
+### Results - Revit 2024, 2026-11-01
+
+The same copy as Group JT's results above, its six links loaded; `Heron empty box` duplicated from `{3D}` by the
+owner and active. `batch-prove --unattended --session 15400` on the job file, code fingerprint
+`8bb18c685e11efdc`; the run record names Snowdon for both legs.
+
+| # | Result | What it read |
+|---|---|---|
+| JU0 | NOT DONE | The view made and active (`revit_views`: active view *Heron empty box*, ThreeD). Its Section Box was not confirmed on and clear, and the copy was not saved - see JU2 |
+| JU1 | PASS | `triangles` 19988, at most 20000; `scope` `"whole model"`; one `capped` line, *"triangles: the budget of 20000 was reached; 4226 element(s) left out - the largest were drawn first"*; `stopped` `"triangles"`; 219 elements + `noGeometry` 238 + `leftOut` 4226 = `elementsRead` 4683; every `c` indexes `categories` (["Ducts"]) and every `t` is below its `v` length / 3; *"Read in 0.1 s of the 40 s limit"* |
+| JU2 | NOT JUDGED - arrangement | batch-prove `NEG NOT EMPTY`: `triangles` 19988, `scope` `"active 3D view 'Heron empty box'"`, `elementsRead` 4631, the same 219 ids as JU1, and **no** line *"... lie wholly outside its section box and were not drawn"*. The card writes that line whenever its box test leaves anything out, and here it left nothing out - so the view's Section Box was off or still held the building. Run again with the box ticked and dragged clear: **if the owner confirms it was on and clear for this run, this row is a FAIL** and a FRAGMENT-ISSUES row |
+| JU3 | NOT RUN | Revit was closed before `{3D}` was made active |
+
+Still owed: JU0 with the box confirmed, then JU2, JU3 and JU15. The run's draft
+(`brain/proof-drafts/report-model-geometry.yaml`, on the PC) carries the failed negative - **not to be signed**.
+
+### Later - 2026-11-02: proved and signed, on another model
+
+`REPORT_MODEL_GEOMETRY` was proved on 2026-11-02 and signed by Ajmal PS - Revit 2024, session 57392, on
+*Project2*, the negative a category the model has none of (`OST_Planting`) rather than an empty section box -
+with the same code fingerprint `8bb18c685e11efdc` as the run above ([#795](https://github.com/Ajmalpshaik/Heron-AI/pull/795));
+the card's `proof:` block holds that run. So the *not to be signed* line above is about the 2026-11-01 draft only,
+and is kept as that day's record. The section-box half of JU2 - whether the *"outside its section box"* line is
+written when the box is clear of the building - was not read by that proof and is still unmeasured.

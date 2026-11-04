@@ -87,3 +87,41 @@ paraphrases of it, with `REPORT_CONNECTOR_LOADS` (a third, *"what airflow is on 
 client reads to the newline with no cap. The bridge's one size limit is on the REQUEST -
 `BridgeServer.MaxRequestChars`, 1 MiB a line, which the fragment's own source travels in. What bounds a big
 model is the run's time (JT3), and the JSON's size is bounded by its caps - at most 500 ids or names a list.
+
+### Results - Revit 2024, 2026-11-01
+
+Run by a session with the owner at the PC. Revit 2024.3, session 15400. A fresh copy of
+`Snowdon Towers Sample HVAC.rvt` from Revit 2024's `Samples` folder, in a scratch folder under `%TEMP%\heron-work`,
+with the six linked sample models copied beside it and reloaded; `Family1` - Metric Generic Model, made by
+`CREATE_FAMILY_DOCUMENT` and saved in the same folder - open behind it. `batch-prove --unattended --session 15400`
+on the job file, code fingerprint `26e34c5fe86c31a2`; the run record names Snowdon for the positive and `Family1`
+for the negative. **JT10 was not arranged**: no Mark was typed or cleared.
+
+**A copy of the sample away from its links is a different case.** The first run used the copy before its
+links were beside it: every link came back `loaded` false, all 67 spaces `notEnclosed`, and `warnings.total`
+211 - 67 *Space is not in a properly enclosed region* in place of 1 *Space volumes overlap*. The dashboard read
+that copy as it was; the arrangement was wrong. A fresh copy for this group needs the six linked models in the
+same folder, or the reading of 145 does not apply.
+
+| # | Result | What it read |
+|---|---|---|
+| JT0 | PASS | `REPORT_OPEN_DOCUMENTS`: Snowdon active, `Family1` open in the Family Editor |
+| JT1 | PASS, second run | `elementTotal` 4750 = the categories' `instances` 4750 = the levels' 4623 + `noLevel` 127; `notRead` []; `warnings.total` 145, 0 errors, 5 kinds; `links` six rows, each loaded; spaces 67, `notEnclosed` 0. Three of the categories are named *Center line* - [row 5b-1355](../fragment-issues/section-5b-rows-401-425.md) |
+| JT1, first run | NOT JUDGED - arrangement | The links not found, as above: `elementTotal` 4682, `warnings.total` 211. Not a reading of the card |
+| JT2 | PASS | `Family1`: `model` {title `Family1`, `isFamily` true, `isWorkshared` false}; provided `elementTotal` 0, `sectionsNotRead` 15; every other part null, `fill` and `breakdowns` among them; `capped` []; neither 4750 nor 145 anywhere in its JSON |
+| JT3 | NOT RUN | The reply's time was not read |
+| JT11 | NOT JUDGED | Rides on JT1: `fill.parameters` ["Mark"]; 14 rows, each row's four counts equal to its own category's `instances` (three rows are *Center line*, row 5b-1355); Mechanical Equipment 37 populated, 0 empty. JT10 was not arranged, so the AHU-01 and cleared-Mark halves have nothing to be judged against |
+| JT17 | PART - the schedule half owed | `breakdowns` one entry, `ducts-system`, unit `m`: Supply Air 633 ducts 721.629 m, Exhaust Air 250 ducts 292.576 m, Return Air 170 ducts 266.247 m, most first; 633 + 250 + 170 = 1053, the Ducts `instances`; `noSum` 0 on each. The Duct schedule grouped by System Type NOT RUN |
+| JT22 | PART | Asked from the chat with the Companion on, on the first run's copy: *"Model Dashboard for Snowdon Towers Sample HVAC: 4682 model elements in 13 categories; 211 warnings; 6 things worth a look ... Nothing was changed."*; the owner confirmed the page opened with tiles, bars and *Worth a look*. Refresh NOT RUN |
+
+Still owed before the signature: JT10 then JT11, and JT17's schedule half. The draft from the second run is
+on the PC (`brain/proof-drafts/report-model-dashboard.yaml`, not in the repository) - **not signed**.
+
+### Later - 2026-11-02: proved and signed, on another model
+
+`REPORT_MODEL_DASHBOARD` was proved on 2026-11-02 and signed by Ajmal PS - Revit 2020, session 12404, positive
+on *P1102 STR*, negative on *P1102 Light* - with the same code fingerprint `26e34c5fe86c31a2` as the run above
+([#791](https://github.com/Ajmalpshaik/Heron-AI/pull/791)); the card's `proof:` block holds that run. So the
+*not signed* and *still owed* lines above describe 2026-11-01 and are kept as that day's record. Which of JT10, JT11
+and JT17's schedule half that proof covered is not judged here; its `proof:` block is the record. [Row 5b-1355](../fragment-issues/section-5b-rows-401-425.md)
+(three categories named *Center line*) is untouched by it and stays OPEN.
