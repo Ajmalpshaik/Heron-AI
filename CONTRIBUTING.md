@@ -259,3 +259,11 @@ left. Please do not open a pull request implementing forty of them.
 The project is built one working vertical slice at a time — see [docs/ROADMAP.md](docs/ROADMAP.md).
 A contribution that makes one real thing work end-to-end is worth more than one that adds ten
 components nobody has exercised.
+
+## People
+
+| Name | Role |
+|---|---|
+| Ajmal PS | Owner and maintainer |
+| Rizwan Zahid | Contributor |
+| Sruthina | Contributor |
