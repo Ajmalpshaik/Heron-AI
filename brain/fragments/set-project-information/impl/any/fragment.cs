@@ -187,7 +187,13 @@ var findings = new List<string>();
                 continue;
             }
             var p = matches[0];
-            if (p.IsReadOnly || !p.UserModifiable)
+            // VERSION 2 (row 5b-1476): UserModifiable is asked of a SHARED
+            // parameter only - it is the lock a shared parameter's definition
+            // can carry. Version 1 asked it of every parameter, and Revit's own
+            // Project Name and Client Name were refused as read-only on Test for
+            // Issue, Revit 2024, 2026-11-07, though both are typed into in the
+            // Project Information dialog.
+            if (p.IsReadOnly || (p.IsShared && !p.UserModifiable))
             {
                 problems.Add("'" + name + "' is read-only - Revit fills it, or it is locked, and it cannot be typed into");
                 continue;

@@ -32,3 +32,19 @@ at version 3 and are DRAFT at version 4 until this group proves them.
 | **MQ3** | *APPLY_VISUAL_PRESET - D-30 pair, through Keep or Discard.* Negative: preset "Studio Glow". Positive: the 3D view, preset Exterior Day, renderFor issue | Negative: refused, nothing changed. Positive: the same absence as MQ1; Render Quality High and the output DPI read back as set. Keep or Discard is the modeller's |
 | **MQ4** | *APPLY_VISUAL_PRESET on the floor plan* | The render settings skipped, each naming the reason, as MQ2 |
 | **MQ5** | *APPLY_VISUAL_PRESET after a hand-set value, through Keep or Discard.* SET_GRAPHIC_DISPLAY_OPTIONS Sun Intensity 60 on the 3D view, then preset Exterior Day | A finding *"Replaced what '<view>' had:"* naming Sun Intensity 60 -> 80, and each other setting it changed from and to. Version 3 said only the count |
+
+**Run on 2026-11-07**, on the scrap test copy `Test for Issue` (Revit 2024, session 30316; not a job model), 3D view `{3D}` and
+floor plan `MP Plan S1` - `L1 - Architectural` could not be named, because a floor plan and a ceiling plan share the name and
+`FloorPlan: L1 - Architectural` is refused ([row 5b-1468](../fragment-issues/section-5b-rows-401-425.md)). **MQ1 and MQ2 held**:
+neither sentence on the 3D view, the reason named on the floor plan; the negative refused. **MQ3's negative and MQ4 held**,
+rolled back. **MQ3's positive** (`try-once`, KEPT by the owner): neither sentence, Render Quality High read back - but the output
+stayed Screen, not 300 DPI ([row 5b-1472](../fragment-issues/section-5b-rows-401-425.md)). **MQ5 not confirmed**: the
+*"Replaced what '{3D}' had:"* finding is there, cut at 60 characters before it leaves Revit
+([row 5b-1467](../fragment-issues/section-5b-rows-401-425.md)). `REPORT_VISUAL_PRESET`'s draft is built and waits for the owner;
+`APPLY_VISUAL_PRESET` stays DRAFT.
+
+**MQ5 re-run on 2026-11-07, after [row 5b-1467](../fragment-issues/section-5b-rows-401-425.md)'s fix was deployed** (Revit 2024, session 41844, `Test for Issue`, rolled back): `SET_GRAPHIC_DISPLAY_OPTIONS` sunIntensity 60 on `{3D}` as the setup, then Exterior Day renderFor issue - *"Replaced what '{3D}' had: Sun Intensity 60 -> 80"*. **MQ5 held**; the negative refused. The same run quoted Revit for the DPI: *"Render Output (reads Screen) - Revit: The resolution target is not printer."* ([row 5b-1472](../fragment-issues/section-5b-rows-401-425.md)). `APPLY_VISUAL_PRESET` stays DRAFT on that row alone.
+
+**Signed 2026-11-07:** `REPORT_VISUAL_PRESET` v4 by Ajmal PS on his own terminal, from the MQ1 run (`Test for Issue`, Revit 2024, session 30316) - PROVEN. `APPLY_VISUAL_PRESET` v4 stays DRAFT until [row 5b-1472](../fragment-issues/section-5b-rows-401-425.md) is fixed and re-run.
+
+**MQ3 re-run after [row 5b-1472](../fragment-issues/section-5b-rows-401-425.md)'s fix, 2026-11-07** (Revit 2024, session 48052, rolled back): Render Output read back *"300 DPI (as the preset)"*, "2 of 2 setting(s) changed", neither wrong sentence. **Every MQ row has now held.** `APPLY_VISUAL_PRESET` v5's draft waits for the owner's signature.
