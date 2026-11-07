@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,14 @@ semantic-identity: "number these elements one after another, in the order given"
 kind: action
 domain: revit.parameters
 capability: RENUMBER_SEQUENTIAL
-version: 2
+# VERSION 3, BACK TO DRAFT ON 2026-11-07 (FRAGMENT-ISSUES row 5b-215), on the
+# owner's word ("fix RENUMBER_SEQUENTIAL zero-pad too"), AND THE PROOF BLOCK
+# BELOW IS KEPT ON PURPOSE - version 2's record and the arrangement to re-prove
+# from; its fingerprint no longer matches. Version 2 wrote the bare number, so
+# "Office 01" to "Office 14" took two passes. Version 3 adds an optional
+# `width`: the number zero-padded to that many digits, never cut; left out, 0,
+# the bare number, exactly as version 2. NEEDS-CHECKING Group MR owes it (MR8).
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -61,6 +68,15 @@ contract:
     - name: existingValues
       type: ICollection<string>
       source: request
+    # VERSION 3 (row 5b-215). How many digits the number has at least, padded
+    # with zeros on the left and never cut - 2 gives 01 ... 09, 10 ... 14, and
+    # 100 stays 100. Left out, 0: the bare number, version 2's job. Below 0 or
+    # above 9 is refused, nothing renumbered.
+    - name: width
+      type: int
+      source: request
+      optional: true
+      absent: "0"
   provides:
     - name: renumbered
       role: result
@@ -84,7 +100,14 @@ contract:
       # renumbered set nobody can unpick. Never a renumber it made (D-52).
       role: accounting
       type: IList<string>
+    - name: widthRefused
+      # VERSION 3. Null, or why the width given was refused and nothing was
+      # renumbered. The evidence it said no, never a thing it made (D-52).
+      role: accounting
+      type: string
 
+# VERSION 2's PROOF, KEPT AS THE RECORD - version 3 changed impl/ (see the
+# note at `version:`).
 proof:
   date: '2026-10-18'
   by: Ajmal PS

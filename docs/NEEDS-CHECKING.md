@@ -1390,7 +1390,7 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-mq.md`](needs-checking/group-mq.md)
 
-## Group MR - renaming views on as-built sheets: a placed floor plan `FIND_VIEWS` could not find, and a done rename `EDIT_TEXT_VALUES` called unverified - `FIND_VIEWS` v3, `EDIT_TEXT_VALUES` v9, `OPEN_VIEW` v4, and the add-in's "Floor Plan: name" (2026-11-07)
+## Group MR - renaming views on as-built sheets: a placed floor plan `FIND_VIEWS` could not find, and a done rename `EDIT_TEXT_VALUES` called unverified - `FIND_VIEWS` v3, `EDIT_TEXT_VALUES` v9, `OPEN_VIEW` v4, `RENUMBER_SEQUENTIAL` v3, and the add-in's "Floor Plan: name" (2026-11-07)
 
 **Its own file:** [`needs-checking/group-mr.md`](needs-checking/group-mr.md)
 
