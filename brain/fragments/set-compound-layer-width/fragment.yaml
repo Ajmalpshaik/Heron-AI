@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -15,7 +15,12 @@ capability: SET_COMPOUND_LAYER_WIDTH
 # every caller of version 1 still finds it; the two new values are blank for
 # "leave it", and its old inputs mean what they meant - except widthMm 0, which
 # version 1 refused and version 2 reads as "keep the width".
-version: 2
+# Version 3 (2026-11-07, FRAGMENT-ISSUES 5b-1469, issue #799 item 9): `material`
+# and `layerFunction` may be LEFT OUT - absent is "keep", the same as blank -
+# and "keep" typed for either is read as blank. Version 2 refused a call
+# without them although its own comment said blank leaves each as it is, and
+# refused "keep" as "not a layer function" (Villa 1, Revit 2024).
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -77,15 +82,21 @@ contract:
       # project does not hold is refused, naming the closest it does - nothing
       # is ever made here. A string and not a Material, because a Material
       # cannot be left blank: an absent or unbindable value stops the call.
+      # VERSION 3: optional - left out it is "keep", read as blank.
       type: string
       source: request
+      optional: true
+      absent: keep
     - name: layerFunction
       # Version 2. Structure, Substrate, Thermal/Air Layer (or Insulation),
       # Finish 1, Finish 2, Membrane Layer or Structural Deck - the dialog's
       # words or the API's, the [n] optional. BLANK LEAVES IT. With layerIndex
-      # -1 it FINDS the layer and is not written.
+      # -1 it FINDS the layer and is not written. VERSION 3: optional - left
+      # out it is "keep", read as blank; "keep" typed is read as blank too.
       type: string
       source: request
+      optional: true
+      absent: keep
     - name: checkOnly
       # Version 2. Compare the layer with the values given and change nothing.
       # Absent is false, so a caller of version 1 changes the layer as before

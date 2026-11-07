@@ -416,7 +416,34 @@ def verdict_line(reply, batch):
     if reply.get("verdictKind") != "kept":
         return str(verdict)
     line = str(verdict) if not brief or batch.whole_kept() else str(brief)
-    return _with_asking(_with_asking(line, reply.get("asking")), reply.get("deleteAsking"))
+    line = _with_asking(_with_asking(line, reply.get("asking")), reply.get("deleteAsking"))
+    if nothing_written(reply):
+        line = NOTHING_WRITTEN + " " + line
+    return line
+
+
+# WHAT A KEPT RUN THAT WROTE NOTHING IS CALLED (FRAGMENT-ISSUES 5b-1469, issue
+# #799 item 9). A check-only SET_COMPOUND_LAYER_WIDTH on Villa 1 came back
+# "'set-compound-layer-width' was KEPT" - true of the transaction group, and
+# read by the modeller as a change made. Said only where Revit WAS seen to
+# report and its count for the job itself is zero: a job that saw no change
+# event at all is "not counted", never "nothing", as change_lines says.
+NOTHING_WRITTEN = ("CHECKED, NOTHING WRITTEN - Revit reported no change from this job, "
+                   "so nothing was kept and there is no new undo entry for it.")
+
+
+def nothing_written(reply):
+    """True when Revit was seen to report on this job and its own part - the
+    fragment's, not its setup's - added, modified and deleted nothing."""
+    changes = reply.get("changes") if isinstance(reply, dict) else None
+    if not isinstance(changes, dict) or not changes.get("witnessed"):
+        return False
+    part = changes.get("fragment")
+    if part is None:
+        return True
+    if not isinstance(part, dict):
+        return False
+    return not any(part.get(key) for key in ("added", "modified", "deleted"))
 
 
 def _with_asking(line, asking):
