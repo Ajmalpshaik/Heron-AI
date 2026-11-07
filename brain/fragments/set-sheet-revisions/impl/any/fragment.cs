@@ -235,6 +235,17 @@ else
                 findings.Add("sheet " + sheet.SheetNumber + " refused the change: " + failure.Message);
                 continue;
             }
+
+            // REBUILD BEFORE READING BACK (row 5b-1471). Without it the sheet
+            // answered as it stood BEFORE the write - a ticked-only revision
+            // read "still printed, why is not known", the new one not on.
+            try { doc.Regenerate(); }
+            catch (Exception notRebuilt)
+            {
+                throw new InvalidOperationException("Revit could not rebuild sheet " + sheet.SheetNumber
+                    + " after its revisions were written - " + notRebuilt.Message
+                    + ". Nothing this call did is kept");
+            }
         }
 
         // READ BACK WHAT THE SHEET PRINTS, NOT WHAT WAS SENT (row 5b-1463).
