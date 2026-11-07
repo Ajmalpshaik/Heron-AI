@@ -16,8 +16,9 @@ desktop it is drawn on (the Recycle Bin, the taskbar, Teams) and are not Heron's
 
 | File | What it is | Use it for |
 |---|---|---|
-| [`heron-logo-ink.svg`](heron-logo-ink.svg) | The heron with "Heron AI - Design Automate Deliver", near-black, transparent background | Anywhere light: the README in GitHub's light theme, documents, a white page |
-| [`heron-logo-white.svg`](heron-logo-white.svg) | The same logo in white | Anywhere dark: the README in GitHub's dark theme, a dark slide |
+| [`heron-readme-banner.png`](heron-readme-banner.png) | The ink logo on a Mist card with rounded corners and an orange line, 960 x 300 px | The top of the README. **One picture that reads on any page:** a README cannot be sure whether the page is light or dark - a `<picture>` switching on `prefers-color-scheme` follows the computer's setting, not GitHub's theme, and showed the white logo on a white page (2026-11-07) |
+| [`heron-logo-ink.svg`](heron-logo-ink.svg) | The heron with "Heron AI - Design Automate Deliver", near-black, transparent background | Anywhere known to be light: documents, a white page |
+| [`heron-logo-white.svg`](heron-logo-white.svg) | The same logo in white | Anywhere known to be dark: a dark slide |
 | [`heron-mark-ink.svg`](heron-mark-ink.svg) | The heron alone, near-black | A small place where the words would be unreadable |
 | [`heron-mark-white.svg`](heron-mark-white.svg) | The heron alone, white | The same, on a dark background |
 | [`heron-app-icon-ink.png`](heron-app-icon-ink.png) | White heron on a near-black square, 512 px | An app or program icon |
