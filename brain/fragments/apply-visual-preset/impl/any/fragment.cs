@@ -232,9 +232,15 @@ Func<View, string> noCueingWhy = cueView =>
             + ", and Revit 2020 offered depth cueing in an elevation only once that was Architectural (Properties, View Discipline)";
     return "'" + cueView.Name + "' cannot use depth cueing - Revit offers it in elevations and sections only";
 };
-var noDisplay = inputProblem == null ? "'" + view.Name + "' has no Graphic Display Options - Revit gives them to views with "
+// BUILT ONLY WHEN THEY ARE TRUE (version 4, row 5b-1464). These two were
+// strings, filled on every run, and every local is handed back with the
+// answer - so a 3D view's answer printed "is not a 3D view" and "has no
+// Graphic Display Options" beside readings that showed both (issue #799
+// item 7, Villa 1, Revit 2024). As a Func the answer names them as code and
+// prints no sentence; the sentence is made only where a setting is skipped.
+Func<string> noDisplay = () => inputProblem == null ? "'" + view.Name + "' has no Graphic Display Options - Revit gives them to views with "
     + "a visual style" : "";
-var noRender = inputProblem == null ? "'" + view.Name + "' is not a 3D view, and only a 3D view has Rendering Settings" : "";
+Func<string> noRender = () => inputProblem == null ? "'" + view.Name + "' is not a 3D view, and only a 3D view has Rendering Settings" : "";
 
 // ---- the words each setting is read in ----
 // Visual styles by NAME at run time, as SET_VIEW_PROPERTIES finds them: value 9
@@ -301,7 +307,7 @@ Func<string, string[]> settingNow = key =>
         }
         if (key.StartsWith("Render") || key == "Exposure")
         {
-            if (view3D == null) return new[] { "", noRender };
+            if (view3D == null) return new[] { "", noRender() };
             var s = view3D.GetRenderingSettings();
             if (key == "Render Quality") return new[] { qualityWord(s.GetRenderingQualitySettings().RenderingQuality), null };
             if (key == "Render Output")
@@ -316,7 +322,7 @@ Func<string, string[]> settingNow = key =>
             var e = s.GetRenderingImageExposureSettings();
             return new[] { "value=" + show(e.ExposureValue) + "; white point=" + show(e.WhitePoint), null };
         }
-        if (!hasDisplay) return new[] { "", noDisplay };
+        if (!hasDisplay) return new[] { "", noDisplay() };
         if (key == "Visual Style") return new[] { barWord(view.DisplayStyle), null };
         if (key == "Sun Intensity") return new[] { view.SunlightIntensity.ToString(culture), null };
         if (key == "Shadow Intensity") return new[] { view.ShadowIntensity.ToString(culture), null };
@@ -638,6 +644,18 @@ if (refused == null)
     findings.Add(changed + " of " + differed + " setting(s) changed and read back as " + presetName + " says on '" + view.Name
         + "'; " + alreadySo + " already so, " + skipped + " skipped"
         + (notTaken.Count == 0 ? "" : " - not taken: " + string.Join("; ", notTaken)));
+    // WHAT EACH CHANGED SETTING WAS BEFORE (version 4, row 5b-1465). A preset
+    // sets a whole look, so it moves settings the modeller may have chosen on
+    // purpose - on Villa 1 it put Sun Intensity back from 60 to 80 and the
+    // answer did not say so (issue #799 item 8). Every value it replaced is
+    // named, from and to, so nothing chosen by hand is lost unseen.
+    var moved = new List<string>();
+    for (var i = 0; i < before.Count; i++)
+        if (before[i][3] == "differs" && after[i][3] == "same")
+            moved.Add(before[i][0] + " " + before[i][1] + " -> " + after[i][1]);
+    if (moved.Count > 0)
+        findings.Add("Replaced what '" + view.Name + "' had: " + string.Join("; ", moved)
+            + ". To change one setting alone, its own tool sets it and leaves the rest");
     var byHand = before.Where(r => r[3] == "by hand").Select(r => r[0]).ToList();
     if (byHand.Count > 0)
         findings.Add(presetName + " also wants " + string.Join(" and ", byHand) + " on. Revit's API has no member for "

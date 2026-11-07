@@ -1661,16 +1661,41 @@ def _by_words(request, door, values):
     is close. Only a brain that cannot be read is a failure.
     """
     revit, _how = _revit_version()
+
+    # THE READ DOOR LOOKS UP ITS WORDS AS A QUESTION (D-128, issue #799). The
+    # host chose revit_read, which refuses anything above its own risk, so a
+    # write ranked first was refused AFTER ranking and the read that would
+    # have answered was lost: on Villa 1, "read parameter values of the
+    # elements" ranked SET_PARAMETER_VALUES_BY_ID first and READ_ELEMENT_TABLE
+    # second. Leaving the writes out BEFORE ranking is D-128 as heron_lookup
+    # has it. Only this door: revit_change is for changes, and revit_show is
+    # outside what the report asked for.
+    question = door == "revit_read"
     try:
-        found = brain.lookup(request, revit=revit)
+        found = brain.lookup(request, revit=revit, question=question)
     except brain.BrainUnavailable as why:
         return None, _ended("failed", str(why))
 
+    # D-128 item 4: what was not offered is said, found or not.
+    asked = []
+    if found.get("question"):
+        asked = ["  Looked up as a question, because revit_read changes "
+                 "nothing, so the %d fragments that change the model (above "
+                 "%s) were not offered (D-128). For a change, use "
+                 "revit_change." % (found.get("left_out") or 0,
+                                    found.get("ceiling"))]
+
     capability = found.get("capability")
     if not capability:
+        first = ("Heron has no way of doing \"%s\"" % request
+                 if not found.get("question") else
+                 "Nothing in Heron that leaves the model unchanged matches "
+                 "\"%s\"" % request)
         return None, _ended("handed_back", "\n".join(
-            ["Heron has no way of doing \"%s\", so nothing has been sent to "
-             "Revit. Run heron_capabilities to see what it does know." % request]
+            [first + ", so nothing has been sent to Revit. Run "
+             "heron_capabilities to see what it does know."]
+            + [line.strip() for line in asked]
+            + _other_release_lines(found, indent="")
             + _drift_lines(found, indent="", gap=False)))
 
     exact = found.get("route") == "identity" and found.get("autorun")
@@ -1702,6 +1727,8 @@ def _by_words(request, door, values):
                      "so this is a ranked guess - and which one the user meant "
                      "is yours to decide, not Heron's (D-01).")
 
+    lines.extend(asked)
+    lines.extend(_other_release_lines(found))
     lines.extend(_drift_lines(found))
     lines.extend(_method_lines(found))
     lines.append("")
@@ -4569,6 +4596,21 @@ def _drift_lines(found, indent="  ", gap=True):
     return ([""] if gap else []) + [indent + said]
 
 
+def _other_release_lines(found, indent="  "):
+    """The one line naming the tool these words reach first when the version
+    wall left it out - heron_brain.lookup's `other_release`, issue #799 item
+    2. Named so the nearest tool for THIS release is not read as the answer;
+    never offered, so nothing here can run it. Nothing when there is none."""
+    other = found.get("other_release")
+    if not other:
+        return []
+    return [indent + "%s matches these words best, but it is declared for "
+            "Revit %s and this is Revit %s, so it is not offered. Check the "
+            "tools below do what the user asked before using one."
+            % (other["capability"], ", ".join(other["revit"]) or "no release",
+               found.get("revit"))]
+
+
 def _contract_lines(capability, separator=True, notes=True):
     """
     What the CALLER has to type to run this capability, and how to write each.
@@ -4823,6 +4865,7 @@ def heron_lookup(request: str, question: bool = False) -> str:
                          "declared for Revit %s. They exist - they are just "
                          "not for this release." % (len(blocked), revit))
         lines.extend(line.strip() for line in asked)
+        lines.extend(_other_release_lines(found, indent=""))
         lines.extend(_drift_lines(found, indent="", gap=False))
         lines.append("Run heron_capabilities to see what it does know.")
         return "\n".join(lines)
@@ -4837,6 +4880,7 @@ def heron_lookup(request: str, question: bool = False) -> str:
              "",
              "  %s" % found["note"]]
     lines.extend(asked)
+    lines.extend(_other_release_lines(found))
     # BEFORE EVERYTHING BELOW, because it qualifies all of it: an answer from
     # a store that is not this checkout's library - row 5b-233.
     lines.extend(_drift_lines(found))

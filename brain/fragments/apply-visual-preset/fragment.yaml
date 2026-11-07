@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,19 @@ semantic-identity: "give a view a whole ready-made look in one call - a named vi
 kind: action
 domain: revit.views
 capability: APPLY_VISUAL_PRESET
-version: 3
+version: 4
+# VERSION 4, 2026-11-07 - row 5b-1464, issue #799 item 7, found by Sruthina on
+# Villa 1, Revit 2024: every answer on the 3D view "Exterior - Day" printed
+# noRender "is not a 3D view" and noDisplay "has no Graphic Display Options"
+# beside readings that showed it was a 3D view with Render Quality High. The
+# two sentences were strings filled on every run, and every local is handed
+# back with the answer. They are now built only where a setting is skipped,
+# byte for byte the same change in APPLY_ and REPORT_VISUAL_PRESET. Nothing
+# the card reads, writes or counts changed. Version 3's proof below no longer
+# describes the code. DRAFT until NEEDS-CHECKING Group MQ proves it.
+# VERSION 4 ALSO, row 5b-1465, issue #799 item 8: a run that replaced a value
+# the view had - Sun Intensity 60 put back to 80 on Villa 1 - did not say so.
+# A finding now names every setting it changed, from and to.
 # VERSION 3, 2026-10-21 - row 5b-1306, found 2026-10-21 making interior
 # renders for the owner on Revit 2020: a Still sun's time was written and read
 # through the SITE's time zone (SiteLocation.ConvertFromProjectTime /
