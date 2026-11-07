@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -68,6 +68,41 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-07'
+  by: Ajmal PS
+  model: Attach Walls Scratch 2026 (3,332 elements), Revit 2026, session 35148
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-in-region with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned attached 4, attachedIds 4 item(s)
+    [354975, 354976, 354977, ...], detach false, end top, findings 5 item(s) [4 wall(s) attached
+    at the top and read back; 0 with nothing ..., wall 354975: top attached to Roofs 354983.,
+    wall 354976: top attached to Roofs 354983., ...], hosts 1 item(s) [(Autodesk.Revit.DB.FootPrintRoof,
+    Autodesk.Revit.DB.Bounding...], lines 4 item(s) [wall 354975: top attached to Roofs 354983.,
+    wall 354976: top attached to Roofs 354983., wall 354977: top attached to Roofs 354983.,
+    ...], location AttachmentLocation, noTarget 0 item(s), refusal (null), report wall 354975:
+    top attached to Roofs 354983. | wall 354976: top attached to Roofs 354983. | wall 354977:
+    top attached to Roofs 354983. | wall 354978: top attached to Roofs 354983., tried 4 item(s)
+    [(Autodesk.Revit.DB.Wall, 354983), (Autodesk.Revit.DB.Wall, 354983), (Autodesk.Revit.DB.Wall,
+    354983), ...]. inputs came elements from select-in-region (4); where as given; detach
+    not given - false (optional). on Attach Walls Scratch 2026'
+  negative_case: 'run with minMm=19500,-500,-100, maxMm=26500,4500,3500, categories=Walls,
+    exact=false, includeLinks=false, where=top instead - chosen because it should not contain
+    what this fragment reports - the arrangement was re-made first by running select-in-region
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned attached 0, attachedIds 0 item(s), detach false,
+    end top, findings 2 item(s) [0 wall(s) attached at the top and read back; 2 with nothing
+    ..., Nothing to attach to above: 354979, 354980], hosts 1 item(s) [(Autodesk.Revit.DB.FootPrintRoof,
+    Autodesk.Revit.DB.Bounding...], lines 1 item(s) [Nothing to attach to above: 354979, 354980],
+    location AttachmentLocation, noTarget 2 item(s) [354979, 354980], refusal (null), report
+    Nothing to attach to above: 354979, 354980, tried 0 item(s). inputs came elements from
+    select-in-region (2); where as given; detach not given - false (optional). on Attach Walls
+    Scratch 2026'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 00aa6ad7173600ca
 
 revit: ["2025", "2026", "2027"]
 runtime: [net8.0-windows, net10.0-windows]
