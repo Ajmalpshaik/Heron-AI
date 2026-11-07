@@ -1335,3 +1335,31 @@ fixed:** a 3D view drawn while its workspace was hidden had no size, so it staye
 was opened; showing a workspace now tells the views to draw again. The Loads and Sprinkler 3D views were
 then seen drawing (software WebGL, sample buildings). **Not seen:** the Model Dashboard's own 3D view in
 the new frame (it needs a real 3D read), and anything in Revit's browser or on the owner's PC.
+
+### 21.17 The 3D view's own tools (2026-11-07)
+
+On the owner's word - *"you can update like also like this [BIMLens] ... in the companion it need to come
+like this also 3D views dashboards like this"*. The 3D view of §21.13 gets the tools BIMLens's viewer has,
+re-made Heron's way. **All of them are the page's alone: nothing is read from Revit, nothing in Revit
+changes, and no new route or `COMPANION_ACTIONS` row was added.**
+
+- **A toolbar over the view** - **Fit**; **Top** (looks down, like a plan), **Front** (from the south),
+  **Side** (from the east) and **3D** (the usual corner view); **Zoom to lit** frames whatever a row, a bar
+  or a click lit up.
+- **Cut** - a slider that hides everything above a height, to look inside a storey. The height it shows
+  is in metres from Revit's internal origin (the read's `offset` added back). *off* draws everything.
+- **Categories on and off** - the legend under the view is now a switch: a click hides or shows that
+  category, **Only** shows it alone, **Show all categories** brings them back. A hidden category is
+  neither drawn nor picked - both the draw and the pick pass honour it.
+- **Save picture** - a PNG of exactly what is on screen, made in the browser and saved on this PC.
+- **Full screen** - the view fills the screen; Esc comes back.
+- The duplicate **Fit** beside *Load 3D* went to the toolbar; *Clear highlight* stays there.
+
+A new 3D read starts with every category shown and no cut. The colours are still the brain's
+(`heron_model_view`); the page only hides, cuts and frames.
+
+**Proved without Revit:** `tests/test_companion.py`'s Dashboard group (the tools are there, the view
+fetches only its own shapes, a hidden category is honoured by both passes, the legend is the switch);
+and the page driven in headless Chromium against an invented three-storey model - Top, the cut at 6.00 m,
+walls hidden, ducts alone, show all, zoom to one lit element, and a picture saved (`Heron 3D view.png`),
+no page error. **Not seen** in Revit's browser or on the owner's PC, nor on a real model's 3D read.

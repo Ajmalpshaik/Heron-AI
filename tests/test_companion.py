@@ -1645,7 +1645,22 @@ def test_dashboard_panel():
     shown.set_view({"view": None})
     check(shown.view() is None and "view3d" not in shown.current(),
           "a failed 3D read leaves no stale view behind")
+    # THE 3D VIEW'S OWN TOOLS (docs/40 s21.17): the page's alone - cameras,
+    # zoom to what is lit, a cut height, categories hidden, a picture saved on
+    # the PC, full screen. None of them reaches Revit or fetches anything new.
+    m3d = io.open(os.path.join(os.path.dirname(PAGE_JS), "model3d.js"), encoding="utf-8").read()
+    check(all(word in m3d for word in ("function preset(", "function zoomLit(", "function setHidden(",
+                                       "function savePicture(", "requestFullscreen", "uCut")),
+          "the 3D view has Top/Front/Side/3D, Zoom to lit, a cut height, category hiding, "
+          "Save picture and Full screen")
+    check(re.findall(r'fetch\(\s*"([^"]+)"', m3d) == ["/api/dashboard/view"]
+          and "innerHTML" not in m3d and "XMLHttpRequest" not in m3d,
+          "and it fetches only its own shapes, and puts text in as text")
+    check("aVis > 0.5" in m3d and m3d.count("aVis") >= 4,
+          "a hidden category is neither drawn nor picked - both passes honour it")
     page = io.open(PAGE_JS, encoding="utf-8").read()
+    check("window.HeronModel3D.setHidden(" in page and "d-legend-switch" in page,
+          "the 3D legend is the category switch")
     dash = page[page.index("// ---------------------------------------------------------------- dashboard"):
                 page.index("// ---------------------------------------------------------------- sprinkler")]
     check('"/api/dashboard/refresh"' in dash and "setInterval" not in dash

@@ -965,4 +965,22 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
 #dashboard .m3d-stage canvas:active { cursor: grabbing; }
 #dashboard .d-3d-tools { margin: 0 0 14px; }
 #dashboard .d-picked { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; font-size: 13px; }
+/* The 3D view's own tools (docs/40 s21.17): a toolbar over the canvas, and the
+   legend as a category switch. */
+#dashboard .m3d-tools { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; pointer-events: none; }
+#dashboard .m3d-tools > * { pointer-events: auto; }
+#dashboard .m3d-btn { font: inherit; font-size: 12px; padding: 4px 9px; border-radius: 6px; border: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--ink); cursor: pointer; }
+#dashboard .m3d-btn:hover { border-color: var(--primary); color: var(--primary); }
+#dashboard .m3d-cut { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--ink); }
+#dashboard .m3d-cut input { width: 120px; accent-color: var(--primary); }
+#dashboard .m3d-cut-value { min-width: 52px; font-family: Consolas, monospace; color: var(--faint); }
+#dashboard .m3d-stage:fullscreen { border-radius: 0; border: none; }
+#dashboard .m3d-stage:fullscreen canvas { height: 100vh; }
+#dashboard .d-legend-switch { margin: 6px 0; }
+#dashboard .d-legend-switch li { gap: 2px; }
+#dashboard .d-cat { display: inline-flex; gap: 6px; align-items: center; font: inherit; font-size: 12px; padding: 2px 6px; border-radius: 6px; border: 1px solid transparent; background: none; color: var(--ink); cursor: pointer; }
+#dashboard .d-cat:hover { border-color: var(--line); }
+#dashboard .d-cat-off { opacity: .45; text-decoration: line-through; }
+#dashboard .d-cat-only { font: inherit; font-size: 11px; padding: 1px 5px; border-radius: 5px; border: 1px solid var(--line); background: none; color: var(--faint); cursor: pointer; }
+#dashboard .d-cat-only:hover { color: var(--primary); border-color: var(--primary); }
 @media print { #dashboard .m3d, #dashboard .d-3d-tools .d-tools { display: none !important; } }

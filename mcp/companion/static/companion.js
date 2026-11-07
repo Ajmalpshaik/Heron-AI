@@ -2115,13 +2115,10 @@ function dash3dControls(D) {
   whole.addEventListener("click", load(true, whole));
   row.append(active, whole);
   if (D.view3d) {
-    const fit = el("button", "btn-lite", "Fit");
-    fit.type = "button";
-    fit.addEventListener("click", () => { if (window.HeronModel3D) window.HeronModel3D.fit(); });
     const clear = el("button", "btn-lite", "Clear highlight");
     clear.type = "button";
     clear.addEventListener("click", () => { if (window.HeronModel3D) window.HeronModel3D.highlight(null); });
-    row.append(fit, clear);
+    row.append(clear);
   }
   row.append(said);
   sec.append(row);
@@ -2137,17 +2134,55 @@ function dash3dControls(D) {
         (V.stopped === "time" ? "the read stopped itself before Revit's time limit" : "the triangle limit") : "") +
       (V.noGeometry ? " · " + num(V.noGeometry, 0) + " with nothing to draw" : "")));
     ((V.notRead || []).concat(V.capped || [])).forEach(n => sec.append(el("p", "d-notread", n)));
-    const legend = el("ul", "d-legend");
+    // The legend is also the 3D view's category switch (docs/40 s21.17): a
+    // click hides or shows that category on the page, Only shows it alone.
+    // Nothing is read from Revit and nothing in Revit changes.
+    sec.append(el("p", "muted small", "Click a category to hide or show it in the 3D view; Only shows it alone. " +
+      "The toolbar on the view has Top, Front, Side, 3D, Zoom to lit, a Cut height, Save picture and Full screen."));
+    const legend = el("ul", "d-legend d-legend-switch");
+    const names = (V.legend || []).map(c => c.name);
+    const hiddenNow = () => new Set(window.HeronModel3D ? window.HeronModel3D.hidden() : []);
+    const paint = () => {
+      const off = hiddenNow();
+      legend.querySelectorAll("button.d-cat").forEach(b => {
+        const on = !off.has(b.dataset.name);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+        b.classList.toggle("d-cat-off", !on);
+      });
+      all.hidden = off.size === 0;
+    };
     (V.legend || []).forEach(c => {
       const li = el("li");
       const sw = el("i", "d-swatch");
       sw.style.background = dashColour(c.colour, "#9e9e9e");
-      li.append(sw, el("span", null, c.name + " (" + num(c.count, 0) + ")"));
+      const b = el("button", "d-cat");
+      b.type = "button";
+      b.dataset.name = c.name;
+      b.title = "Hide or show " + c.name + " in the 3D view";
+      b.append(sw, el("span", null, c.name + " (" + num(c.count, 0) + ")"));
+      b.addEventListener("click", () => {
+        if (!window.HeronModel3D) return;
+        const off = hiddenNow();
+        if (off.has(c.name)) off.delete(c.name); else off.add(c.name);
+        window.HeronModel3D.setHidden([...off]);
+      });
+      const only = el("button", "d-cat-only", "Only");
+      only.type = "button";
+      only.title = "Show only " + c.name + " in the 3D view";
+      only.addEventListener("click", () => {
+        if (window.HeronModel3D) window.HeronModel3D.setHidden(names.filter(n => n !== c.name));
+      });
+      li.append(b, only);
       legend.append(li);
     });
+    const all = el("button", "btn-lite", "Show all categories");
+    all.type = "button";
+    all.addEventListener("click", () => { if (window.HeronModel3D) window.HeronModel3D.setHidden([]); });
+    if (window.HeronModel3D) window.HeronModel3D.onTools(paint);
     const picked = el("div", "d-picked");
     picked.id = "d-picked";
-    sec.append(legend, picked);
+    sec.append(legend, all, picked);
+    paint();
   }
   box.append(sec);
   dashPick(dashPicked);

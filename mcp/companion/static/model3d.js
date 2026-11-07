@@ -10,6 +10,11 @@
 // Revit is Z up, so this is too. Flat shading, one light from the viewer's
 // side, and a second pass that paints each element in its own colour code
 // for picking: the pixel under the click names the element.
+//
+// The view's own tools (docs/40 s21.17) are the page's alone and read nothing
+// from Revit: Top, Front, Side and 3D cameras, zoom to what is lit, a cut
+// height that hides everything above it, categories hidden and shown, a
+// picture of the view saved to the PC, and full screen.
 "use strict";
 
 (function () {
@@ -25,9 +30,15 @@
   let ids = [];                            // per element: its id, as text
   let cats = [];                           // per element: its category index
   let hi = null;                           // Float32Array, 1 where highlighted
+  let vis = null;                          // Float32Array, 0 where its category is hidden
   let lit = false;                         // anything highlighted
+  let hidden = new Set();                  // category indexes hidden by the modeller
+  let zmin = 0, zmax = 1;                  // the drawing's lowest and highest point
+  let cut = null;                          // the cut height, or null for no cut
+  let onTools = null;                      // told when hidden categories or the cut change
   let radius = 10;
   let shownKey = null;
+  let tools = null;                        // the toolbar over the canvas
   let onPick = null;
   let pending = false;
   const cam = { yaw: 35, pitch: 28, dist: 30, target: [0, 0, 0] };
@@ -81,21 +92,26 @@
 
   // ---------------------------------------------------------------- shaders
   const DRAW_VS = [
-    "attribute vec3 aPos; attribute vec3 aNor; attribute vec3 aCol; attribute float aHi;",
+    "attribute vec3 aPos; attribute vec3 aNor; attribute vec3 aCol; attribute float aHi; attribute float aVis;",
     "uniform mat4 uMvp; uniform vec3 uLight; uniform float uLit; uniform vec3 uHi; uniform vec3 uDim;",
-    "varying vec3 vCol;",
+    "varying vec3 vCol; varying float vZ;",
     "void main() {",
     "  float l = 0.42 + 0.58 * abs(dot(normalize(aNor), uLight));",
     "  vec3 base = aCol;",
     "  if (uLit > 0.5) base = aHi > 0.5 ? uHi : uDim;",
     "  vCol = base * l;",
-    "  gl_Position = uMvp * vec4(aPos, 1.0);",
+    "  vZ = aPos.z;",
+    // A hidden category's corners go behind the far plane, so nothing of it is drawn or picked.
+    "  gl_Position = aVis > 0.5 ? uMvp * vec4(aPos, 1.0) : vec4(0.0, 0.0, 2.0, 1.0);",
     "}"].join("\n");
-  const DRAW_FS = "precision mediump float; varying vec3 vCol; void main() { gl_FragColor = vec4(vCol, 1.0); }";
+  const DRAW_FS = "precision mediump float; varying vec3 vCol; varying float vZ; uniform float uCut;" +
+    " void main() { if (vZ > uCut) discard; gl_FragColor = vec4(vCol, 1.0); }";
   const PICK_VS = [
-    "attribute vec3 aPos; attribute vec3 aPick; uniform mat4 uMvp; varying vec3 vPick;",
-    "void main() { vPick = aPick; gl_Position = uMvp * vec4(aPos, 1.0); }"].join("\n");
-  const PICK_FS = "precision mediump float; varying vec3 vPick; void main() { gl_FragColor = vec4(vPick, 1.0); }";
+    "attribute vec3 aPos; attribute vec3 aPick; attribute float aVis; uniform mat4 uMvp; varying vec3 vPick; varying float vZ;",
+    "void main() { vPick = aPick; vZ = aPos.z;",
+    "  gl_Position = aVis > 0.5 ? uMvp * vec4(aPos, 1.0) : vec4(0.0, 0.0, 2.0, 1.0); }"].join("\n");
+  const PICK_FS = "precision mediump float; varying vec3 vPick; varying float vZ; uniform float uCut;" +
+    " void main() { if (vZ > uCut) discard; gl_FragColor = vec4(vPick, 1.0); }";
 
   function program(vs, fs) {
     const make = (kind, src) => {
@@ -119,7 +135,8 @@
     stage = el("div", "m3d-stage");
     canvas = el("canvas");
     canvas.setAttribute("aria-label", "3D view of the model - drag to turn, right-drag to pan, wheel to zoom, click an element");
-    stage.append(canvas);
+    tools = toolbar();
+    stage.append(canvas, tools);
     info = el("div", "m3d-info");
     root.append(stage, info);
     gl = canvas.getContext("webgl", { antialias: true, preserveDrawingBuffer: false });
@@ -145,6 +162,7 @@
     const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3);
     const col = new Float32Array(n * 3), pck = new Float32Array(n * 3);
     hi = new Float32Array(n);
+    vis = new Float32Array(n).fill(1);
     ranges = []; ids = []; cats = [];
     let k = 0;
     let min = [Infinity, Infinity, Infinity], max = [-Infinity, -Infinity, -Infinity];
@@ -168,12 +186,17 @@
       }
     });
     if (!isFinite(min[0])) { min = [0, 0, 0]; max = [1, 1, 1]; }
+    zmin = min[2]; zmax = max[2];
+    hidden = new Set();
+    cut = null;
     cam.target = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
     radius = Math.max(1, Math.hypot(max[0] - min[0], max[1] - min[1], max[2] - min[2]) / 2);
     if (buf) Object.values(buf).forEach(b => gl.deleteBuffer(b));
     const upload = arr => { const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, arr, gl.STATIC_DRAW); return b; };
-    buf = { pos: upload(pos), nor: upload(nor), col: upload(col), pck: upload(pck), hi: upload(hi) };
+    buf = { pos: upload(pos), nor: upload(nor), col: upload(col), pck: upload(pck), hi: upload(hi),
+            vis: upload(vis) };
     lit = false;
+    syncTools();
   }
 
   function fit() {
@@ -214,7 +237,8 @@
     gl.enable(gl.DEPTH_TEST);
     gl.useProgram(draw);
     attrib(draw, "aPos", buf.pos, 3); attrib(draw, "aNor", buf.nor, 3);
-    attrib(draw, "aCol", buf.col, 3); attrib(draw, "aHi", buf.hi, 1);
+    attrib(draw, "aCol", buf.col, 3); attrib(draw, "aHi", buf.hi, 1); attrib(draw, "aVis", buf.vis, 1);
+    gl.uniform1f(gl.getUniformLocation(draw, "uCut"), cutAt());
     gl.uniformMatrix4fv(gl.getUniformLocation(draw, "uMvp"), false, mvp(w, h));
     const e = eye();
     gl.uniform3fv(gl.getUniformLocation(draw, "uLight"), norm([e[0] - cam.target[0], e[1] - cam.target[1], e[2] - cam.target[2] + cam.dist * 0.6]));
@@ -258,7 +282,8 @@
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
     gl.useProgram(pick);
-    attrib(pick, "aPos", buf.pos, 3); attrib(pick, "aPick", buf.pck, 3);
+    attrib(pick, "aPos", buf.pos, 3); attrib(pick, "aPick", buf.pck, 3); attrib(pick, "aVis", buf.vis, 1);
+    gl.uniform1f(gl.getUniformLocation(pick, "uCut"), cutAt());
     gl.uniformMatrix4fv(gl.getUniformLocation(pick, "uMvp"), false, mvp(w, h));
     gl.drawArrays(gl.TRIANGLES, 0, count);
     const px = new Uint8Array(4);
@@ -313,6 +338,127 @@
     window.addEventListener("resize", redraw);
   }
 
+  // ---------------------------------------------------------------- tools
+  // The cut height in metres, or far above everything when there is no cut.
+  function cutAt() { return cut == null ? zmax + radius * 10 + 1 : cut; }
+
+  function button(text, title, act) {
+    const b = el("button", "m3d-btn", text);
+    b.type = "button";
+    b.title = title;
+    b.addEventListener("click", act);
+    return b;
+  }
+
+  // Revit's own named views, as a modeller reads them: Top looks down, Front
+  // looks north from the south, Side looks west from the east, 3D is the
+  // usual corner view.
+  const PRESETS = { top: [0, 89.9], front: [0, 0], side: [90, 0], iso: [35, 28] };
+  function preset(name) {
+    const p = PRESETS[name];
+    if (!p || !view) return;
+    cam.yaw = p[0]; cam.pitch = p[1];
+    fit();
+  }
+
+  function toolbar() {
+    const bar = el("div", "m3d-tools");
+    bar.setAttribute("role", "toolbar");
+    bar.setAttribute("aria-label", "3D view tools");
+    bar.append(
+      button("Fit", "Show the whole drawing", () => { if (view) fit(); }),
+      button("Top", "Look down from above, like a plan", () => preset("top")),
+      button("Front", "Look from the south, like an elevation", () => preset("front")),
+      button("Side", "Look from the east, like a side elevation", () => preset("side")),
+      button("3D", "The usual corner view", () => preset("iso")),
+      button("Zoom to lit", "Zoom to the elements lit up from a row, a bar or a click", zoomLit));
+    const cutBox = el("label", "m3d-cut");
+    cutBox.title = "Hide everything above this height - look inside a storey. The height is from Revit's internal origin. Nothing in Revit changes";
+    cutBox.append(el("span", null, "Cut"));
+    const range = el("input");
+    range.type = "range"; range.min = "0"; range.max = "1000"; range.value = "1000";
+    range.setAttribute("aria-label", "Cut height - hide everything above it");
+    const shown = el("span", "m3d-cut-value", "off");
+    range.addEventListener("input", () => {
+      const f = Number(range.value) / 1000;
+      cut = f >= 1 ? null : zmin + (zmax - zmin) * f;
+      shown.textContent = cut == null ? "off" : (cut + (view && view.offset ? Number(view.offset[2]) || 0 : 0)).toFixed(2) + " m";
+      redraw();
+      if (onTools) onTools();
+    });
+    cutBox.append(range, shown);
+    bar.append(cutBox,
+      button("Save picture", "Save this view as a PNG picture on this PC", savePicture),
+      button("Full screen", "Fill the screen with the 3D view - Esc comes back", () => {
+        if (document.fullscreenElement) document.exitFullscreen();
+        else if (stage.requestFullscreen) stage.requestFullscreen().catch(() => {});
+      }));
+    bar._range = range; bar._shown = shown;
+    return bar;
+  }
+
+  function syncTools() {
+    if (!tools) return;
+    tools._range.value = cut == null ? "1000" : String(Math.round(1000 * (cut - zmin) / Math.max(zmax - zmin, 1e-6)));
+    tools._shown.textContent = "off";
+  }
+
+  // The camera framed on the lit elements' extent; nothing lit, the whole drawing.
+  function zoomLit() {
+    if (!view || !hi) return;
+    const els = view.elements || [];
+    let min = [Infinity, Infinity, Infinity], max = [-Infinity, -Infinity, -Infinity];
+    ranges.forEach(([first], index) => {
+      if (!hi[first] || !vis[first]) return;
+      const v = els[index].v;
+      for (let i = 0; i < v.length; i += 3)
+        for (let a = 0; a < 3; a++) { if (v[i + a] < min[a]) min[a] = v[i + a]; if (v[i + a] > max[a]) max[a] = v[i + a]; }
+    });
+    if (!isFinite(min[0])) { fit(); return; }
+    cam.target = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
+    const r = Math.max(0.5, Math.hypot(max[0] - min[0], max[1] - min[1], max[2] - min[2]) / 2);
+    cam.dist = r / Math.sin(FOV / 2) * 1.2;
+    redraw();
+  }
+
+  // A picture of exactly what is on screen: drawn and read back in the same
+  // task, so the drawing buffer is still there to read.
+  function savePicture() {
+    if (!gl || !view) return;
+    frame();
+    canvas.toBlob(blob => {
+      if (!blob) return;
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "Heron 3D view.png";
+      document.body.append(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }, "image/png");
+  }
+
+  // Hide or show categories by name. Hidden ones are neither drawn nor picked.
+  function setHidden(names) {
+    if (!gl || !buf || !vis || !view) return;
+    const index = new Map((view.categories || []).map((c, i) => [c.name, i]));
+    hidden = new Set();
+    (names || []).forEach(n => { if (index.has(n)) hidden.add(index.get(n)); });
+    vis.fill(1);
+    cats.forEach((c, i) => {
+      if (!hidden.has(c)) return;
+      const [first, n] = ranges[i];
+      vis.fill(0, first, first + n);
+    });
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf.vis);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, vis);
+    redraw();
+    if (onTools) onTools();
+  }
+
+  function hiddenNames() {
+    return [...hidden].map(i => ((view && view.categories) || [])[i]).filter(Boolean).map(c => c.name);
+  }
+
   function highlight(list) {
     if (!gl || !buf || !hi) return 0;
     hi.fill(0);
@@ -359,5 +505,13 @@
     // Returns how many of them are in the view.
     highlight,
     fit() { if (view) fit(); },
+    // Camera presets: "top", "front", "side", "iso".
+    preset,
+    zoomLit,
+    // The categories hidden, by name; set it with a list of names.
+    setHidden,
+    hidden: hiddenNames,
+    // Told whenever the hidden categories or the cut change.
+    onTools(fn) { onTools = fn || null; },
   };
 })();
