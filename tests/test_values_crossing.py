@@ -135,6 +135,35 @@ def main():
     check(len(junk) == 1 and junk[0].get("name") == "a",
           "blank lines and a line with no equals sign are dropped")
 
+    # ROW 5b-215 / 5b-1475, DECIDED 2026-11-07 BY THE OWNER ("fix the wire
+    # strip with double quotes too"): an unquoted value is stripped as before,
+    # and a value written in double quotes keeps every character inside them.
+    # On 2026-11-07 text="Warehouse - " typed through revit_change arrived as
+    # "Warehouse -", and a rename that was done was reported unverified.
+    print()
+    print("a value in double quotes keeps its own spaces (row 5b-215)")
+    kept = pack('text="Warehouse - "')
+    check(len(kept) == 1 and kept[0].get("value") == "Warehouse - ",
+          'text="Warehouse - " arrives as `Warehouse - `, the trailing space kept')
+    lead = pack('prefix=  " L1"  ')
+    check(len(lead) == 1 and lead[0].get("value") == " L1",
+          "spaces outside the quotes go, the leading space inside stays")
+    empty = pack('replacement=""')
+    check(len(empty) == 1 and empty[0].get("value") == "",
+          'replacement="" arrives empty - not as two quote marks')
+    plain = pack("text=Warehouse - ")
+    check(len(plain) == 1 and plain[0].get("value") == "Warehouse -",
+          "an UNQUOTED value is stripped exactly as before")
+    inner = pack('note=say "hi" here')
+    check(len(inner) == 1 and inner[0].get("value") == 'say "hi" here',
+          "quotes inside a value, not around it, are left alone")
+    lone = pack('text="unfinished')
+    check(len(lone) == 1 and lone[0].get("value") == '"unfinished',
+          "one quote mark alone is text, not a quote")
+    twice = pack('text=""Level 1""')
+    check(len(twice) == 1 and twice[0].get("value") == '"Level 1"',
+          "a value that must carry its own quotes is written in a second pair")
+
     print()
     if FAILURES:
         print("FAILED")

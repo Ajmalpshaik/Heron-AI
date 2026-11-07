@@ -32,5 +32,28 @@ negative:
       have taken go to the next elements. Before version 2 one of each pair,
       which Revit's reference calls random, took a number
 
+  # VERSION 3 (2026-11-07, row 5b-215). Each FAILS on version 2, which had no
+  # width and wrote the bare number.
+  - given: >
+      VERSION 3 - THE FIELD CASE. 14 rooms, parameterName Name, prefix
+      "Office " written in double quotes, startAt 1, width 2
+    expect: >
+      Office 01 to Office 09, then Office 10 to Office 14, in one call;
+      renumbered 14, collisions empty. On 2026-09-24 this took two passes and
+      a one-room fix
+
+  - given: VERSION 3. 8 doors, prefix "D-", startAt 98, width 2
+    expect: >
+      D-98, D-99, D-100, D-101 ... - the number padded and NEVER CUT; a cut
+      100 would read 00 and clash
+
+  - given: VERSION 3. width left out
+    expect: the bare number, exactly as version 2 - D-1 to D-8
+
+  - given: VERSION 3 - NEGATIVE. width -1, then width 12
+    expect: >
+      renumbered 0, nothing written, widthRefused naming the width and the
+      range it takes
+
 second_route:
   - A Revit schedule of the category showing the parameter, sorted - duplicates and gaps both show at a glance

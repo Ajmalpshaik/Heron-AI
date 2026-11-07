@@ -1299,6 +1299,17 @@ def _values_array(values):
 
     The tool's own docstring has always said one "name=value" per line. This
     makes the code agree with it.
+
+    A VALUE IN DOUBLE QUOTES KEEPS ITS OWN SPACES (rows 5b-215 and 5b-1475,
+    decided by the owner on 2026-11-07). Every value is stripped, which is
+    right for "view = Level 1" and wrong for a prefix or a find-and-replace
+    whose space is the point: text="Warehouse - " arrived as "Warehouse -",
+    the rename it drove left a leading space Revit dropped, and a rename that
+    was done came back unverified. So a value written whole in one pair of
+    double quotes arrives as exactly what is inside them - `replacement=""` is
+    empty, `prefix=" L1"` keeps its space. Unquoted values are stripped as
+    before, a quote inside a value or a lone quote is text, and a value that
+    must carry its own quotes is written in a second pair: `""Level 1""`.
     """
     out = []
     for piece in (values or "").splitlines():
@@ -1306,8 +1317,11 @@ def _values_array(values):
         if not piece or "=" not in piece:
             continue
         name, text = piece.split("=", 1)
+        text = text.strip()
+        if len(text) >= 2 and text[0] == '"' and text[-1] == '"':
+            text = text[1:-1]
         if name.strip():
-            out.append({"name": name.strip(), "value": text.strip()})
+            out.append({"name": name.strip(), "value": text})
     return out
 
 
@@ -1828,13 +1842,14 @@ def revit_change(capability: str = "", values: str = "",
     call again with the `capability` the user meant, or ask them. `capability`,
     when given, always wins.
 
-    `values` is one "name=value" per line, e.g. newTypeName=TRG_PIP_Copper_CDP.
-    `expect_from` names the earlier fragment whose result this acts on, and
-    Heron refuses if something else left it; empty, the call starts clean.
+    `values` is one "name=value" per line, trimmed unless in double quotes:
+    text="Warehouse - ". `expect_from` names the earlier fragment whose
+    result this acts on, and Heron refuses if something else left it; empty,
+    the call starts clean.
 
     It runs only while the owner has Changes ON in Revit's ribbon, and a
-    Publish or Admin capability needs the owner's Publish or Admin switch on
-    as well. Only a PROVEN capability runs (Article 11, D-117): a DRAFT one,
+    Publish or Admin capability needs the Publish or Admin switch on as
+    well. Only a PROVEN capability runs (Article 11, D-117): a DRAFT one,
     or one whose proof is older than its code, is refused before anything is
     sent. A refusal names the switch or the status: tell the user, and never
     try another capability to get round it. Revit may ask Keep/Discard (D-126):
