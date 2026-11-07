@@ -416,6 +416,44 @@ async def exercise(server):
           "with it, the write is not the answer and the reply says what was "
           "not offered")
 
+    # THE TOOL FOR ANOTHER RELEASE IS NAMED, NEVER OFFERED (issue #799 item
+    # 2). On Villa 1, Revit 2024, "attach wall tops to roof" was offered
+    # ATTACH_COLUMNS and nothing said ATTACH_WALLS exists from 2025. Asked in
+    # the card's own words, read off its file, so no backend can rank it
+    # anywhere but first once the version wall is lifted.
+    print()
+    print("  a tool the version wall left out is named, never offered")
+    walls = os.path.join(ROOT, "brain", "fragments", "attach-walls",
+                         "fragment.yaml")
+    said = None
+    if os.path.isfile(walls):
+        with open(walls, encoding="utf-8") as handle:
+            got = re.search(r'^semantic-identity:\s*"(.+)"\s*$', handle.read(),
+                            re.MULTILINE)
+        said = got.group(1) if got else None
+    check(said is not None, "ATTACH_WALLS states what it does, to ask with")
+    if said:
+        old = BRAIN.lookup(said, revit="2024")
+        new = BRAIN.lookup(said, revit="2025")
+        other = old.get("other_release") or {}
+        check(other.get("capability") == "ATTACH_WALLS"
+              and old.get("capability") != "ATTACH_WALLS"
+              and "2024" not in other.get("revit", []),
+              "on Revit 2024 the answer names ATTACH_WALLS and its releases, "
+              "and does not offer it - found %r, offered %s"
+              % (other, old.get("capability")))
+        check(new.get("other_release") is None
+              and new.get("capability") == "ATTACH_WALLS",
+              "on Revit 2025 it is offered, with nothing named beside it - "
+              "found %s, %r" % (new.get("capability"), new.get("other_release")))
+        module = sys.modules["heron_mcp_server"]
+        line = " ".join(module._other_release_lines(old))
+        check("ATTACH_WALLS" in line and "not offered" in line
+              and "Revit 2024" in line,
+              "and the reply says it in one line: %r" % line[:120])
+        check(module._other_release_lines(new) == [],
+              "and says nothing when there is nothing to name")
+
     print()
     print("  the HVAC engine, called through the SDK's own dispatch")
     try:

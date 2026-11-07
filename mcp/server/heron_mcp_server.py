@@ -1695,6 +1695,7 @@ def _by_words(request, door, values):
             [first + ", so nothing has been sent to Revit. Run "
              "heron_capabilities to see what it does know."]
             + [line.strip() for line in asked]
+            + _other_release_lines(found, indent="")
             + _drift_lines(found, indent="", gap=False)))
 
     exact = found.get("route") == "identity" and found.get("autorun")
@@ -1727,6 +1728,7 @@ def _by_words(request, door, values):
                      "is yours to decide, not Heron's (D-01).")
 
     lines.extend(asked)
+    lines.extend(_other_release_lines(found))
     lines.extend(_drift_lines(found))
     lines.extend(_method_lines(found))
     lines.append("")
@@ -4594,6 +4596,21 @@ def _drift_lines(found, indent="  ", gap=True):
     return ([""] if gap else []) + [indent + said]
 
 
+def _other_release_lines(found, indent="  "):
+    """The one line naming the tool these words reach first when the version
+    wall left it out - heron_brain.lookup's `other_release`, issue #799 item
+    2. Named so the nearest tool for THIS release is not read as the answer;
+    never offered, so nothing here can run it. Nothing when there is none."""
+    other = found.get("other_release")
+    if not other:
+        return []
+    return [indent + "%s matches these words best, but it is declared for "
+            "Revit %s and this is Revit %s, so it is not offered. Check the "
+            "tools below do what the user asked before using one."
+            % (other["capability"], ", ".join(other["revit"]) or "no release",
+               found.get("revit"))]
+
+
 def _contract_lines(capability, separator=True, notes=True):
     """
     What the CALLER has to type to run this capability, and how to write each.
@@ -4848,6 +4865,7 @@ def heron_lookup(request: str, question: bool = False) -> str:
                          "declared for Revit %s. They exist - they are just "
                          "not for this release." % (len(blocked), revit))
         lines.extend(line.strip() for line in asked)
+        lines.extend(_other_release_lines(found, indent=""))
         lines.extend(_drift_lines(found, indent="", gap=False))
         lines.append("Run heron_capabilities to see what it does know.")
         return "\n".join(lines)
@@ -4862,6 +4880,7 @@ def heron_lookup(request: str, question: bool = False) -> str:
              "",
              "  %s" % found["note"]]
     lines.extend(asked)
+    lines.extend(_other_release_lines(found))
     # BEFORE EVERYTHING BELOW, because it qualifies all of it: an answer from
     # a store that is not this checkout's library - row 5b-233.
     lines.extend(_drift_lines(found))

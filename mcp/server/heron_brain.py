@@ -801,6 +801,30 @@ def lookup(request, revit=None, question=False):
         left_out = sum(1 for e in excluded
                        if e.reason.startswith(RETRIEVE.QUESTION_REASON))
 
+        # THE TOOL THESE WORDS REACH FIRST, WHEN IT IS FOR ANOTHER RELEASE
+        # (issue #799 item 2). The version wall stays as it is: the wrong
+        # release is not ranked lower, it is not offered. But on Villa 1, on
+        # Revit 2024, "attach wall tops to roof" was offered ATTACH_COLUMNS
+        # and nothing said that ATTACH_WALLS exists from Revit 2025 - the
+        # release that opened wall attachment to add-ins - so the modeller
+        # read the column tool as Heron's answer for walls. Ranked again
+        # without the wall, under the same ceiling: when the first is a
+        # fragment the wall left out, it is NAMED, never offered. An exact
+        # declared phrasing is its own answer and is not asked about.
+        other_release = None
+        walled = set(e.id for e in excluded
+                     if e.reason.startswith("declared for Revit"))
+        if revit is not None and walled and answer.route != "identity":
+            wider, _all = RETRIEVE.retrieve(store, request, revit=None,
+                                            limit=1, ceiling=ceiling)
+            if wider and wider[0].id in walled:
+                row = wider[0].row
+                other_release = {
+                    "capability": row["capability"],
+                    "provider": wider[0].id,
+                    "revit": [v for v in (row["revit"] or "").split(",") if v],
+                }
+
         # THE JOBS THIS IS ONE STEP OF - see heron_skill.methods_for. Not for
         # an exact declared phrasing that may run on its own: that request IS
         # one step, and naming a longer job beside it is noise.
@@ -868,6 +892,11 @@ def lookup(request, revit=None, question=False):
             "question": bool(question),
             "ceiling": ceiling,
             "left_out": left_out,
+            # None, or the fragment these words reach first that the version
+            # wall left out: {capability, provider, revit} - so a reply can
+            # say it exists for another release instead of letting the
+            # nearest tool for THIS release read as the answer (issue #799).
+            "other_release": other_release,
         }
 
 
