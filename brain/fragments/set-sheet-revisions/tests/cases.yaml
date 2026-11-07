@@ -19,11 +19,53 @@ positive:
     expect: >
       no change counted for that sheet
 
+  - given: >
+      VERSION 2, replaceWith - two sheets carrying Seq. A ticked, revisionIds
+      Seq. A, replaceWith "Seq. B", and a third sheet that never carried A
+    expect: >
+      on the two, A gone and B on, every other revision still listed, one undo
+      entry, sheetsChanged 2; the third sheet untouched and in `notOnSheet`
+
 negative:
   - given: attach false on a revision that a CLOUD puts on the sheet
     expect: >
       the sheet id in `cloudDriven` and the revision still there. That list
       holds only revisions with no cloud; the cloud is what has to go
+
+  - given: >
+      ROW 5b-1463 - the owner's run, 2026-11-07, 4355-BHVD-3D-60A10-BL007A,
+      Revit 2020: attach false, Seq. 20, on three sheets where on two of them
+      Seq. 20 is BOTH ticked and held by revision clouds
+    expect: >
+      the two sheets in `cloudDriven`, each line in `cloudsHolding` naming
+      Seq. 20 and the cloud ids, NOT counted in `sheetsChanged` (1, not 3) -
+      and LIST_REVISIONS read back agreeing sheet for sheet. Version 1 answered
+      sheetsChanged 3, cloudDriven 0 here
+
+  - given: >
+      replaceWith "Seq. B" on a sheet where Seq. A is ticked AND held by a cloud
+    expect: >
+      Seq. B ticked on, Seq. A still printed: the sheet in `cloudDriven`, the
+      cloud in `cloudsHolding`, NOT counted, and a finding saying B went on
+      while A is still printed
+
+  - given: attach true for a revision a cloud already prints on the sheet
+    expect: >
+      ticked, but NOT counted in `sheetsChanged` - the title block does not
+      change - and a finding saying so
+
+  - given: replaceWith "21" where Seq. 21 prints "22" and another revision prints "21"
+    expect: >
+      nothing changed, and a finding naming both revisions - "21" points at two
+
+  - given: attach false on a sheet the revision was never on
+    expect: >
+      the sheet in `notOnSheet`, NOT in `cloudDriven` - version 1 called it
+      cloud-driven
+
+  - given: replaceWith naming a revision that does not exist, or two of them
+    expect: >
+      nothing changed on any sheet, one finding naming the revisions it matched
 
   - given: a project revision on no sheet and in no cloud
     expect: >

@@ -1,0 +1,145 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-036
+semantic-identity: "every revision cloud, its revision, the view it is drawn in and the sheets it prints on"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# On 2026-11-07 the owner unticked Seq. 20 off three sheets, SET_SHEET_REVISIONS
+# said done, and two sheets still printed it - revision clouds held it there
+# (FRAGMENT-ISSUES row 5b-1463). No card in the library listed revision clouds:
+# LIST_REVISIONS answers per revision and never reads a cloud;
+# FILTER_ELEMENTS_BY_CATEGORY finds the clouds drawn in ONE view, misses the
+# ones in views placed on a sheet, and cannot filter by revision;
+# READ_ELEMENT_PARAMETERS reads Comments and Mark but not the revision, the
+# sheet or the tag; MERGE_REVISION and DELETE_REVISION collect one revision's
+# clouds only to report what they touched. The duplicate check found no card
+# that reads a cloud's tag. So this is new, and it hands the clouds on rather
+# than acting on them: SET_SELECTION, EDIT_REVISION_CLOUDS and
+# WRITE_ELEMENT_PARAMETERS do the acting.
+kind: filter
+domain: revit.sheets
+capability: LIST_REVISION_CLOUDS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists the project's revision clouds - each one's revision (sequence, date,
+  description), the view it is drawn in, the sheets it prints on, its Comments
+  and Mark, and its tag - narrowed by sheet, by view and by revision.
+
+  **A CLOUD IS DRAWN IN ONE VIEW AND PRINTS ON EVERY SHEET THAT VIEW IS ON.**
+  Both are reported: the sheet is where it shows, the view is where to go to
+  move it.
+
+  **THIS IS WHY A REVISION CANNOT BE UNTICKED.** A sheet prints every revision
+  a cloud on it carries, whatever its tick says. Narrowed to one sheet and one
+  revision, this names the clouds that hold it there.
+
+  **IT HANDS THE CLOUDS ON.** Its answer is the clouds themselves, so the next
+  step acts on exactly what was listed - SET_SELECTION to select and zoom to
+  them, EDIT_REVISION_CLOUDS to move them to another revision or delete them,
+  WRITE_ELEMENT_PARAMETERS to set their Comments or Mark.
+
+  **A FILTER THAT MATCHES NOTHING LISTS NOTHING**, and says which word missed -
+  never every cloud in the project instead. Sheets or views handed in by the
+  step before narrow a typed filter and never widen it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # What the step before found, or the selection - clouds keep those clouds,
+    # sheets and views act as `sheets` and `views`. Nothing handed in, the
+    # whole project.
+    - name: elements
+      type: IList<Element>
+      optional: true
+    # Sheet numbers (or titles), commas between. Left out, every sheet.
+    - name: sheets
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # View names, or "FloorPlan: Level 2" when a name repeats. Left out, every
+    # view.
+    - name: views
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # "Seq. 20", 20, a description or a date - commas between for several.
+    # Two revisions matching one word is refused with both named.
+    - name: revision
+      type: string
+      source: request
+      optional: true
+      absent: all
+  provides:
+    - name: elements
+      # The clouds that matched - for SET_SELECTION, EDIT_REVISION_CLOUDS or
+      # WRITE_ELEMENT_PARAMETERS next.
+      role: result
+      type: IList<Element>
+    - name: cloudTable
+      # One line per cloud, " || " between, in sheet order: its id, revision,
+      # the view it is drawn in, the sheets it prints on, Comments, Mark and
+      # tag. A STRING, because a list reaches the reply cut to three entries
+      # and this list is the answer.
+      role: result
+      type: string
+    - name: findings
+      # A filter word that matched nothing, a word that matched two
+      # revisions, the count. Never a cloud (D-52).
+      role: accounting
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `RevisionCloud.RevisionId` and `GetSheetIds()`, `Element.OwnerViewId`,
+  `Viewport.SheetId` and `ViewId`, and `ViewSheet` are unchanged 2020 to 2027 -
+  read with tools/api-surface --members on each release on 2026-11-07.
+
+  THE TAG IS WHERE THE RELEASES PART. `IndependentTag.TaggedLocalElementId` is
+  2020 to 2022 and `GetTaggedLocalElementIds()` 2022 on. The add-in compiles
+  fragments with no release symbol defined, so a `#if` would take one branch on
+  every release; both are reached by name and the one this Revit has is used.
+
+  No ElementId is built from an int, so 2024's 64-bit ids do not reach this
+  code.
+
+# ROUTING - the rows naming this card are repeated in LIST_REVISIONS,
+# SET_SHEET_REVISIONS and EDIT_REVISION_CLOUDS; the select row is here alone.
+#
+#   "which revision is this cloud"       -> here, the cloud selected
+#   "list the revision clouds on these sheets" -> here, sheets
+#   "why can't I untick this revision"   -> here, sheets and revision - the
+#                                           clouds named are why. A question:
+#                                           never SET_SHEET_REVISIONS
+#   "select the clouds of revision 20 on these sheets" -> here, then
+#                                           SET_SELECTION (revit_show), show
+#   "move these clouds to revision 21"   -> EDIT_REVISION_CLOUDS, handed what
+#                                           this found
+#   "set the comment on these clouds"    -> WRITE_ELEMENT_PARAMETERS, handed
+#                                           what this found
+#   "which sheets have this revision"    -> LIST_REVISIONS - every way a
+#                                           revision gets on a sheet, not only
+#                                           clouds
+#   "what is the current revision on each sheet" -> LIST_REVISIONS, sheetTable
+
+utterances:
+  - which revision is this cloud
+  - list the revision clouds on these sheets
+  - which clouds are on revision 20
+  - where are the revision clouds for this revision
+  - why can't I untick this revision
+  - which clouds keep this revision on the sheet
+  - why does the sheet still show that revision
+  - select the revision clouds of this revision on these sheets

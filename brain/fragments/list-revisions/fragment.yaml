@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -20,10 +20,19 @@ semantic-identity: "every revision in the project and which sheets carry each on
 # makes a negative case possible at all: a PROJECT always keeps at least one
 # revision (Revit refuses to delete the last), so `elements` and
 # `revisionTable` can never come back empty from one.
+#
+# VERSION 2, BACK TO DRAFT ON 2026-11-07, AND THE PROOF BLOCK IS KEPT - the
+# 2026-10-17 arrangement is still the one to re-prove the table from; its
+# fingerprint no longer matches. Version 2 adds the SHEET-BY-SHEET check:
+# each sheet's revisions in sequence with what each prints and whether it is
+# ticked, clouded or both, its current (last) revision, the sheets that do not
+# end on `expectedLast`, and the revisions only clouds hold. Asked for after
+# FRAGMENT-ISSUES row 5b-1463, where an untick "succeeded" on sheets whose
+# clouds kept the revision printing.
 kind: filter
 domain: revit.sheets
 capability: LIST_REVISIONS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -42,6 +51,14 @@ purpose: >
   cloud anywhere. Revit reports both together and so does this - because both
   print, and a sheet that shows a revision is issued whichever way it got there.
 
+  **And sheet by sheet (version 2).** Every sheet in register order with its
+  revisions in sequence, the letter or number each PRINTS, whether each is
+  ticked on the sheet, held by a cloud, or both, and its CURRENT revision - the
+  last one. With `expectedLast` ("Seq. 21") the sheets that do not end on it
+  come back in `lastDiffers`. `cloudOnly` names every revision that only a
+  cloud keeps on a sheet - **which is why it cannot be unticked**; the clouds
+  themselves are LIST_REVISION_CLOUDS'.
+
   **It also reads the Sheet Issues/Revisions dialog row by row**: each
   revision's numbering, date, description, issued tick, issued to, issued by
   and show setting, the number it actually prints on each sheet, the Per
@@ -52,6 +69,13 @@ contract:
   needs:
     - name: doc
       type: Document
+    # VERSION 2. The revision every sheet should end on - "Seq. 21", 21, its
+    # description or date. Left out ("none"), no sheet is compared.
+    - name: expectedLast
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: elements
       role: result
@@ -70,6 +94,24 @@ contract:
       # show, and what it PRINTS on each sheet carrying it. A STRING, because
       # a list reaches the reply cut to three entries of sixty characters and
       # this list is the answer.
+      role: result
+      type: string
+    - name: sheetTable
+      # VERSION 2. One line per sheet in register order, " || " between: each
+      # revision in sequence with what it prints and "ticked", "clouded only"
+      # or "ticked and clouded", then CURRENT and the last revision. A string
+      # for revisionTable's reason - this list is the answer.
+      role: result
+      type: string
+    - name: lastDiffers
+      # VERSION 2. Sheets whose current revision is not `expectedLast` -
+      # including a sheet with no revision. Empty when none was named. The
+      # sheets to hand to SET_SHEET_REVISIONS' replaceWith next.
+      role: result
+      type: IList<ElementId>
+    - name: cloudOnly
+      # VERSION 2. Per sheet, the revisions it prints that are NOT ticked - only
+      # a cloud holds them, so unticking cannot take them off (row 5b-1463).
       role: result
       type: string
     - name: numbering
@@ -162,6 +204,11 @@ compatibility-note: >
   No ElementId is built from an int, so 2024's 64-bit ids do not reach this
   code.
 
+  VERSION 2's members - `ViewSheet.GetCurrentRevision()`,
+  `GetAdditionalRevisionIds()`, `RevisionCloud.GetSheetIds()`, `RevisionId` and
+  `Element.OwnerViewId` - are unchanged 2020 to 2027, read with
+  tools/api-surface --members on 2026-11-07.
+
 # ROUTING - repeated in CREATE_REVISION, ADD_REVISION_CLOUD and FIND_SHEETS.
 #
 #   "which sheets have this revision"  -> here
@@ -196,6 +243,15 @@ compatibility-note: >
 #                                         dates are in revisionTable. Row 5b-1005
 #   "find the revision with date 04-Jun-2026" -> here - a question; it
 #                                         changes no revision. Row 5b-1005
+#   "what is the current revision on each sheet" -> here, sheetTable
+#                                         (version 2)
+#   "which sheets do not have revision 21 as the last one" -> here, with
+#                                         expectedLast; then SET_SHEET_REVISIONS
+#                                         replaceWith on lastDiffers
+#   "why can't I untick this revision" -> LIST_REVISION_CLOUDS names the clouds;
+#                                         cloudOnly here says which revisions
+#                                         only clouds hold. Row 5b-1463
+#   "which revision is this cloud"     -> LIST_REVISION_CLOUDS
 
 utterances:
   - which sheets have this revision
@@ -222,3 +278,8 @@ utterances:
   # both, and they are declared here (rows 116 and 146: on the read).
   - list the revisions in the project with their dates
   - find the revision with date 04-Jun-2026
+  # VERSION 2, 2026-11-07 - the sheet-by-sheet check (row 5b-1463).
+  - what is the current revision on each sheet
+  - which sheets do not have revision 21 as the last one
+  - which revisions are only on the sheets because of clouds
+  - show the revisions on each sheet in order

@@ -20,7 +20,27 @@ positive:
       `numberingSequences` 'Custom' alphanumeric A to Z and 'Numeric' numeric,
       minimum digits 1, start 1; `arcLength` 20 mm - the dialog's 20.0
 
+  - given: >
+      VERSION 2 - three sheets: one with Seq. 20 ticked only, one with Seq. 20
+      ticked AND clouded, one with Seq. 20 clouded only; expectedLast "Seq. 21"
+      while all three end on Seq. 20
+    expect: >
+      `sheetTable` naming each way ("ticked", "ticked and clouded", "clouded
+      only") and CURRENT Seq. 20 on each; `cloudOnly` naming only the third
+      sheet; `lastDiffers` all three
+
 negative:
+  - given: >
+      VERSION 2 - expectedLast naming the revision every sheet already ends on
+    expect: >
+      `lastDiffers` EMPTY and a finding that every sheet ends on it. A sheet
+      ticked only must never appear in `cloudOnly`
+
+  - given: expectedLast naming no revision, or a description two revisions share
+    expect: >
+      `lastDiffers` empty and one finding saying why no sheet was compared -
+      never a guess at which revision was meant
+
   - given: >
       a revision clouded only on a view that is on no sheet
     expect: >
