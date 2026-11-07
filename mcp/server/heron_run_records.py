@@ -168,6 +168,8 @@ def entries(record):
     # each under the value, so the record holds what the chat was shown.
     sent = reply.get("providesEntries")
     sent = sent if isinstance(sent, dict) else {}
+    items = reply.get("providesItems")
+    items = items if isinstance(items, dict) else {}
     if isinstance(provides, dict):
         for name in sorted(provides):
             lines.append("value     %s  %s" % (name, provides[name]))
@@ -175,6 +177,12 @@ def entries(record):
             if isinstance(held, dict):
                 for key in held:
                     lines.append("entry     %s  %s: %s" % (name, key, held[key]))
+            # A list of sentences in full, where the add-in sent it beside its
+            # summary (`providesItems`, 2026-11-07, FRAGMENT-ISSUES 5b-1467).
+            whole = items.get(str(name))
+            if isinstance(whole, dict):
+                for number in whole:
+                    lines.append("item      %s  %s. %s" % (name, number, whole[number]))
 
     for one in record.get("elements") or []:
         if not isinstance(one, dict):

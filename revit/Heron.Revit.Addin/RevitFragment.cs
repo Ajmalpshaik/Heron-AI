@@ -2109,6 +2109,58 @@ namespace Heron.Revit.Addin
             if (entries.Count > 0)
                 parts.Add("\"providesEntries\":{" + string.Join(",", entries) + "}");
 
+            // WHAT A LIST OF SENTENCES SAYS, IN FULL, BESIDE ITS SUMMARY (row
+            // 5b-1467). `Describe` renders a list as "N item(s) [a, b, c, ...]",
+            // its first three items each cut at 60 characters, and it stays
+            // byte for byte what it is - every proof record carries that shape
+            // and heron_validate._as_count reads it. So a list of TEXT whose
+            // summary hid something - more than three items, or one longer
+            // than 60 - travels whole in a field of its own, as numbered
+            // entries, and the server prints each under the count. Measured
+            // 2026-11-07, Revit 2024: APPLY_VISUAL_PRESET's finding "Replaced
+            // what '{3D}' had: Visual Style Hidden Line -> Realis..." - the one
+            // sentence MQ5 checks - never left Revit. Only lists of strings:
+            // a list of elements or ids is a quantity, and sending every name
+            // would carry the model in bulk (D-26).
+            const int itemsSentPerList = 100;
+            const int itemTextLimit = 2000;
+            var itemLists = new List<string>();
+            foreach (var variable in state)
+            {
+                object current = null;
+                try { current = variable.Value; } catch { continue; }
+
+                if (bound != null && bound.Contains(variable.Name)
+                    && StillTheHosts(handedIn, variable.Name, current)) continue;
+
+                if (current is string || current is IDictionary) continue;
+                var list = current as ICollection;
+                if (list == null || list.Count == 0) continue;
+
+                // Run after the fragment, on other people's objects, as the
+                // entries above are: a list that will not be read is left out.
+                try
+                {
+                    var rows = new List<string>();
+                    var hidden = list.Count > 3;
+                    var allText = true;
+                    foreach (var item in list)
+                    {
+                        var text = item as string;
+                        if (text == null) { allText = false; break; }
+                        if (text.Length > 60) hidden = true;
+                        if (rows.Count < itemsSentPerList)
+                            rows.Add(Json.Str((rows.Count + 1).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                text.Length > itemTextLimit ? text.Substring(0, itemTextLimit) + "..." : text));
+                    }
+                    if (allText && hidden && rows.Count > 0)
+                        itemLists.Add("\"" + variable.Name + "\":" + Json.Obj(rows.ToArray()));
+                }
+                catch { }
+            }
+            if (itemLists.Count > 0)
+                parts.Add("\"providesItems\":{" + string.Join(",", itemLists) + "}");
+
             return Json.Ok(parts.ToArray());
         }
 
