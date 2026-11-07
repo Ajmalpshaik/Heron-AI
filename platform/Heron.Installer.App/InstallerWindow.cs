@@ -293,6 +293,14 @@ namespace Heron.Installer.App
 
             foreach (var row in _screen.Products)
             {
+                // ONLY WHAT CAN BE INSTALLED - the owner's word of 2026-11-07:
+                // "what we have in Heron, only that we need for the installation".
+                // A product not offered yet (ComingSoon) is left out of the list,
+                // UNLESS it is already on this PC: unticking is how it comes off
+                // (R-21), so a row that is installed is never hidden.
+                if (row.ComingSoon && (string.IsNullOrEmpty(row.State) || row.State == "--"))
+                    continue;
+
                 var line = new Grid { Margin = new Thickness(row.IsPiece ? 26 : 0, 3, 0, 3) };
                 line.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 line.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
