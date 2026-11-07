@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -131,26 +131,38 @@ contract:
       type: int
 
 proof:
-  date: '2026-09-13'
+  date: '2026-11-07'
   by: Ajmal PS
-  model: test projject (3,509 elements), Revit 2024, session 40932
-  positive_case: run as it would normally be run - the arrangement was re-made first by running
-    list-sheets with this phase's own values - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned attach true, cloudDriven 0 item(s),
-    notASheet 0 item(s), revisionsRemaining 2, sheetsChanged 2, wanted 1 item(s) [49030].
-    inputs came elements from list-sheets (2); revisionIds as given (1); attach as given.
-    on test projject
-  negative_case: run with revisionIds=Seq. 1 - Revision 1, attach=false instead - chosen because
-    it should not contain what this fragment reports - the arrangement was re-made first by
-    running list-sheets with this phase's own values - run inside a transaction, and Revit
-    reported the transaction group ROLLED BACK afterwards. returned attach false, cloudDriven
-    2 item(s) [926022, 926119], notASheet 0 item(s), revisionsRemaining 2, sheetsChanged 0,
-    wanted 1 item(s) [49030]. inputs came elements from list-sheets (2); revisionIds as given
-    (1); attach as given. on test projject
+  model: Test for Issue (6,120 elements), Revit 2024, session 30316
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    find-sheets with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned DescribeRevision Func`2, allClouds
+    3 item(s) [1 - Revision 1, 1 - Revision 1, 1 - Revision 1], attach false, cloudDriven
+    2 item(s) [1593964, 1593970], cloudsHolding sheet S1: Seq. 1 ''Revision 1'' Date 1 still
+    printed, held by 1 cloud(s) 1594056. EDIT_REVISION_CLOUDS moves or deletes them || sheet
+    S2: Seq. 1 ''Revision 1'' Date 1 still printed, held by 1 cloud(s) 1594071. EDIT_REVISION_CLOUDS
+    moves or deletes them, cloudsOn Func`3, findings 2 item(s) [sheet S1: Seq. 2 ''Revision
+    2'' Date 2 was put on, but the rev..., sheet S2: Seq. 2 ''Revision 2'' Date 2 was put
+    on, but the rev...], holdingLines 2 item(s) [sheet S1: Seq. 1 ''Revision 1'' Date 1 still
+    printed, held by ..., sheet S2: Seq. 1 ''Revision 1'' Date 1 still printed, held by ...],
+    label Func`2, notASheet 0 item(s), notOnSheet 0 item(s), refusal (null), replacement Revision,
+    replacing true, revisionsRemaining 2, said Seq. 2, sheetsChanged 1, wanted 1 item(s) [75715].
+    inputs came elements from find-sheets (3); revisionIds as given (1); attach as given;
+    replaceWith as given. on Test for Issue'
+  negative_case: run with attach=false, replaceWith=Seq. 2, revisionIds=Seq. 1 - Revision
+    1, sheetNumbers=S5 instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running find-sheets with this phase's own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned DescribeRevision Func`2, allClouds (null), attach false, cloudDriven 0 item(s),
+    cloudsHolding , cloudsOn Func`3, findings 0 item(s), holdingLines 0 item(s), label Func`2,
+    notASheet 0 item(s), notOnSheet 1 item(s) [1593988], refusal (null), replacement Revision,
+    replacing true, revisionsRemaining 2, said Seq. 2, sheetsChanged 0, wanted 1 item(s) [75715].
+    inputs came elements from find-sheets (1); revisionIds as given (1); attach as given;
+    replaceWith as given. on Test for Issue
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 8629c43e77e3836c
+  fingerprint: dc9b3bf54701338e
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
