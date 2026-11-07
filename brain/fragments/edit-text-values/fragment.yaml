@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -16,7 +16,14 @@ semantic-identity: "change the text that is already there rather than replacing 
 kind: action
 domain: revit.parameters
 capability: EDIT_TEXT_VALUES
-version: 8
+# VERSION 9, BACK TO DRAFT ON 2026-11-07 (FRAGMENT-ISSUES row 5b-1475), AND
+# THE PROOF BLOCK BELOW IS KEPT ON PURPOSE - it is version 8's record and the
+# arrangement to re-prove from; its fingerprint no longer matches. On the
+# owner's model 4355-BHVD-3D-60A10-BL007A (Revit 2020) version 8 renamed four
+# section views correctly and answered changed 0, unverified 4: the replace
+# left a leading space, Revit kept the name without it, and the read-back
+# compared exactly. A name is now planned and read back trimmed.
+version: 9
 source: OFFICIAL
 risk: MODIFY
 
@@ -311,7 +318,26 @@ contract:
       # found (D-52).
       role: accounting
       type: string
+    - name: nameNote
+      # Version 9 (row 5b-1475). For field Name, one sentence when any new
+      # name would have started or ended with a space Revit does not keep: how
+      # many, and that each was written and read back without it. Null
+      # otherwise. A sentence about the edit, never a thing it found (D-52).
+      role: accounting
+      type: string
 
+# NOT IN THE PURPOSE ON PURPOSE (2026-11-07): written there it moved routing on
+# the model backend, so the card's routing words stay version 8's.
+# **A NAME IS PLANNED AND READ BACK AS REVIT KEEPS IT** (version 9). Revit
+# keeps no space at the start or end of a view's, sheet's or type's name, so
+# a new name is trimmed before it is checked for a clash, written and read
+# back, and `nameNote` says how many lost a space. A parameter keeps its
+# spaces and is compared exactly.
+
+# VERSION 8's PROOF (signed 2026-11-02), KEPT AS THE RECORD. Version 9 changed
+# impl/, so its fingerprint no longer describes the code and the card is DRAFT
+# until version 9 is proved on a real model (D-30) - NEEDS-CHECKING Group MR
+# owes it.
 proof:
   date: '2026-11-02'
   by: Ajmal PS
