@@ -32,6 +32,14 @@ positive:
       transaction and Revit refused every view there: "Cannot change the
       active view of a modifiable document" (5b-456)
 
+  - given: >
+      VERSION 4, row 5b-1470 (a): viewName "Floor Plan: L1 - Architectural" on
+      a model where a floor plan and a ceiling plan share that name
+    expect: >
+      the FLOOR plan opened, not the ceiling plan - and "Ceiling Plans: L1 -
+      Architectural" opens the ceiling plan. Version 3 opened neither: it read
+      the kind only in the enum's spelling, "FloorPlan"
+
 negative:
   - given: the name of a VIEW TEMPLATE
     expect: >
@@ -65,6 +73,13 @@ negative:
       a sheet's number, or Revit's title-bar spelling "Sheet: OV1 - name"
     expect: >
       "no view called" - neither is a name this reads. Measured 2026-10-13
+
+  - given: >
+      VERSION 4, row 5b-1470 (a): viewName "Section: L1 - Architectural" where
+      no section has that name
+    expect: >
+      nothing opened, and the answer naming the kinds that name IS under -
+      the browser's words never widen a match onto another kind of view
 
 second_route:
   - >

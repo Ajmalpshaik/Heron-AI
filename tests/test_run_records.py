@@ -480,6 +480,41 @@ def declared(runs):
           "and takes the time it STARTED before anything else, for the batch rule")
 
 
+def nothing_written(runs):
+    print("\n6b. a KEPT run that wrote nothing says so (5b-1469)")
+    # Villa 1, Revit 2024, issue #799 item 9: a check-only
+    # SET_COMPOUND_LAYER_WIDTH answered "was KEPT" and changed nothing.
+    if not hasattr(runs, "nothing_written"):
+        check(False, "heron_run_records has nothing_written")
+        return
+    b = runs.Batch(gap=3.0)
+    b.turn(200.0, 200.1)
+    quiet = reply_with(changes={"witnessed": True, "events": 1, "total": 0,
+                                "fragment": part(), "setup": part(modified=2)})
+    line = runs.verdict_line(quiet, b) or ""
+    check(line.startswith("CHECKED, NOTHING WRITTEN") and quiet["verdict"] in line,
+          "Revit seen to report, the job's own count zero - CHECKED, NOTHING WRITTEN, "
+          "then the add-in's verdict whole: %r" % line[:80])
+    b = runs.Batch(gap=3.0)
+    b.turn(300.0, 300.1)
+    wrote = reply_with(changes={"witnessed": True, "events": 1, "total": 1,
+                                "fragment": part(modified=1), "setup": part()})
+    check(not (runs.verdict_line(wrote, b) or "").startswith("CHECKED"),
+          "a job that modified one element is never said to have written nothing")
+    b = runs.Batch(gap=3.0)
+    b.turn(400.0, 400.1)
+    unseen = reply_with(changes={"witnessed": False})
+    check(not (runs.verdict_line(unseen, b) or "").startswith("CHECKED"),
+          "and a job Revit was not seen to report on is not counted as nothing")
+    b = runs.Batch(gap=3.0)
+    b.turn(500.0, 500.1)
+    rolled = reply_with(verdict="NOTHING WAS KEPT ...", verdictKind="rolledBack",
+                        verdictShort=None,
+                        changes={"witnessed": True, "fragment": part()})
+    check(runs.verdict_line(rolled, b) == rolled["verdict"],
+          "a rollback's verdict is left as it is - it already says nothing was kept")
+
+
 def main():
     runs = load()
     if runs is None:
@@ -493,6 +528,7 @@ def main():
         newest(runs, folder)
         change_lines(runs)
         batching(runs)
+        nothing_written(runs)
         asked(runs)
         declared(runs)
     finally:

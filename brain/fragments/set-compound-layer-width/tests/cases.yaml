@@ -30,7 +30,33 @@ positive:
       matches false, differences naming both materials, nothing changed. The same
       with the material it does hold: matches true
 
+  - given: >
+      VERSION 3, row 5b-1469 (issue #799 item 9, Villa 1, Revit 2024): a basic
+      wall type, a layer index and a new widthMm, with material and
+      layerFunction LEFT OUT
+    expect: >
+      applied, the width changed and the material and function as they were -
+      read back with REPORT_COMPOUND_STRUCTURE. Version 2 refused this call:
+      neither value was optional in its contract
+
+  - given: version 3, the same with material "keep" and layerFunction "keep" typed
+    expect: >
+      the same as blank - applied, both kept. Version 2 refused "'keep' is not a
+      layer function"
+
 negative:
+  - given: >
+      VERSION 3, row 5b-1469: checkOnly true with material "keep" and
+      layerFunction "keep" and widthMm 0 - nothing to check
+    expect: >
+      refused as a check against nothing, exactly as with both blank - "keep"
+      is read as blank, never as a material or a function to compare
+
+  - given: version 3, layerFunction "keeping" - a word that is not "keep"
+    expect: >
+      refused as not a layer function, naming the functions, nothing changed -
+      only the exact word "keep" means leave it
+
   - given: >
       version 2: a material name the project does not hold -
       "TRG_Material_White_Render" in a project that has no such material

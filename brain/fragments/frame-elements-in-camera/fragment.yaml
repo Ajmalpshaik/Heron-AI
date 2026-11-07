@@ -557,6 +557,9 @@ compatibility-note: >
 #                                                  levelName, not a shot
 
 utterances:
+  # ADDED 2026-11-07, issue #799 item 1 and routing table: ranked
+  # SET_GRAPHIC_DISPLAY_OPTIONS (a write) first on Villa 1, Revit 2024.
+  - turn a 3D view into a perspective camera view at eye level
   - make a close-up perspective of this duct heater
   - frame the selected equipment in a camera view from the north-east
   - set up a camera looking down at these elements so they fill the view

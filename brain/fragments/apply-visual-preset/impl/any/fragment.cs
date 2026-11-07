@@ -575,7 +575,15 @@ if (refused == null)
                         // The DPI is FOUND, as SET_RENDER_SETTINGS finds it: the
                         // printer level whose ResolutionValue reads it.
                         var dpi = int.Parse(new string(want.Where(char.IsDigit).ToArray()), culture);
-                        var levelBefore = settings.PrinterResolution;
+                        // THE PRINTER LEVEL IS READ ONLY WHEN THE OUTPUT IS ALREADY
+                        // PRINTER (version 5, row 5b-1472 - row 5b-1278's fix in
+                        // SET_RENDER_SETTINGS, line for line). Version 4 read it
+                        // first, and on a view whose output was Screen Revit refused:
+                        // "The resolution target is not printer." - Test for Issue,
+                        // Revit 2024, 2026-11-07: Render Output stayed Screen.
+                        var targetBefore = settings.ResolutionTarget;
+                        PrinterResolution? levelBefore = null;
+                        if (targetBefore == ResolutionTarget.Printer) levelBefore = settings.PrinterResolution;
                         var offered = new List<string>();
                         var found = false;
                         settings.ResolutionTarget = ResolutionTarget.Printer;
@@ -587,7 +595,8 @@ if (refused == null)
                         }
                         if (!found)
                         {
-                            settings.PrinterResolution = levelBefore;
+                            if (levelBefore.HasValue) settings.PrinterResolution = levelBefore.Value;
+                            settings.ResolutionTarget = targetBefore;
                             throw new InvalidOperationException("its printer output offers " + string.Join(", ", offered)
                                 + ", not " + dpi + " DPI");
                         }

@@ -686,6 +686,12 @@ def revit_health() -> str:
             else:
                 detail = "  Revit %s, session %s - %s" % (
                     b.revit_version, b.pid, bridge.availability(b))
+                # AND WHICH MODEL IT HAS IN FRONT, from the same lease-exempt
+                # `info` (5b-1470 c) - a title only, so naming it still claims
+                # nothing. An older add-in sends none, and nothing is added.
+                named = bridge.open_model_named(b) if hasattr(bridge, "open_model_named") else None
+                if named:
+                    detail += " - open model: %s" % named
 
             lines.append("  %d)%s%s" % (index, detail, mark))
             b.close()
@@ -747,9 +753,9 @@ def revit_select_by_category(category: str = "ducts") -> str:
     across three of them hides the one that returned nothing - usually the
     interesting one.
 
-    Heron currently understands ducts and pipes. Other categories arrive as
-    each one is tried against a real model - pipes were added on 2026-09-16
-    after being counted in one.
+    Any category, by the name Revit shows - "walls", "doors", "Mechanical
+    Equipment" - and the MEP words a modeller says for ducts and pipes:
+    "ductwork", "dampers", "valves", "flex ducts".
     """
     try:
         session = binding.resolve()
@@ -1335,7 +1341,7 @@ def _ignored_lines(undeclared, takeable):
     ]
 
 
-def _provides_lines(provides, entries=None):
+def _provides_lines(provides, entries=None, items=None):
     """
     What a fragment left behind, one aligned line each - both doors, one copy.
 
@@ -1385,6 +1391,16 @@ def _provides_lines(provides, entries=None):
     card does not declare is still printed when it holds data - 317 fragments'
     proofs show undeclared values that are real results (ids, counts, members),
     so "declared only" would have hidden answers.
+
+    A LIST OF SENTENCES ARRIVES WHOLE BESIDE ITS SUMMARY, SINCE 2026-11-07.
+    `Describe` shows a list as "N item(s) [a, b, c, ...]" - three items, each
+    cut at 60 characters - and that line stays as it is. Where it hid
+    something, the add-in sends `providesItems`: that list's text items,
+    numbered, each in full (to 2,000 characters, the first 100). `items` is
+    that field, and each prints on its own line under the count. Measured
+    2026-11-07 on Revit 2024: APPLY_VISUAL_PRESET's finding "Replaced what
+    '{3D}' had: Visual Style Hidden Line -> Realis..." - the sentence group
+    MQ's MQ5 checks - could not be read anywhere (FRAGMENT-ISSUES 5b-1467).
     """
     if not isinstance(provides, dict) or not provides:
         return []
@@ -1423,6 +1439,24 @@ def _provides_lines(provides, entries=None):
             return int(words[0])
         return None
 
+    def list_size(value):
+        """How many items a value's "N item(s)" summary says, or None."""
+        text = str(value).strip()
+        head = text.split(" ", 1)[0]
+        if head.isdecimal() and text[len(head):].startswith(" item(s)"):
+            return int(head)
+        return None
+
+    def items_arrived(name):
+        """The text items the add-in sent whole for this list, in order - or
+        None when none came."""
+        if not isinstance(items, dict):
+            return None
+        sent = items.get(str(name))
+        if not isinstance(sent, dict) or not sent:
+            return None
+        return sent
+
     def arrived(name):
         """The entries the add-in sent for this dictionary, in the order it
         sent them - or None when none came."""
@@ -1438,6 +1472,14 @@ def _provides_lines(provides, entries=None):
         width = max(len(str(name)) for name in data)
         for name in sorted(data):
             lines.append("  %-*s  %s" % (width, name, data[name]))
+            whole = items_arrived(name)
+            if whole:
+                for number in whole:
+                    lines.append("    %s. %s" % (number, whole[number]))
+                count = list_size(data[name])
+                if count and count > len(whole):
+                    lines.append("    ... and %d more: the first %d of %d are shown."
+                                 % (count - len(whole), len(whole), count))
             size = dictionary_size(data[name])
             sent = arrived(name) if size else None
             if not sent:
@@ -2102,7 +2144,7 @@ def revit_change(capability: str = "", values: str = "",
     # NOT PRINTED AGAIN (5b-407) - only within a batch, only word for word, and
     # only when the reply names a run record, where every value can be read.
     shown, same = runs.shown_values(reply, capability, _BATCH)
-    lines.extend(_provides_lines(shown, reply.get("providesEntries"))
+    lines.extend(_provides_lines(shown, reply.get("providesEntries"), reply.get("providesItems"))
                  or ([""] if same else []))
     lines.extend(runs.unchanged_line(same))
 
@@ -3164,7 +3206,7 @@ def revit_read(capability: str = "", values: str = "",
 
     lines.extend(_ignored_lines(undeclared, takeable))
 
-    left = _provides_lines(reply.get("provides"), reply.get("providesEntries"))
+    left = _provides_lines(reply.get("provides"), reply.get("providesEntries"), reply.get("providesItems"))
     lines.extend(left or ["", "  It left nothing behind to report."])
 
     lines.append("")
@@ -3368,7 +3410,7 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
 
     lines.extend(_ignored_lines(undeclared, takeable))
 
-    left = _provides_lines(reply.get("provides"), reply.get("providesEntries"))
+    left = _provides_lines(reply.get("provides"), reply.get("providesEntries"), reply.get("providesItems"))
     lines.extend(left or ["", "  It left nothing behind to report."])
 
     lines.append("")

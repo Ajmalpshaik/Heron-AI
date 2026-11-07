@@ -194,6 +194,34 @@ def main():
     check(declares("select-in-region", "IList<BuiltInCategory>"),
           "select-in-region declares an IList<BuiltInCategory>")
 
+    # ROW 5b-1470 (b), issue #799: revit_select_by_category refused every word
+    # but its duct-and-pipe table. It now asks the same resolver for a word the
+    # table does not hold - and ONLY the select path does; the move tool keeps
+    # the table alone.
+    print()
+    print("The select tool reaches any category by the name Revit shows (5b-1470 b)")
+    ops_path = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitOperations.cs")
+    write_path = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitWrite.cs")
+    try:
+        ops = io.open(ops_path, encoding="utf-8").read()
+        write = io.open(write_path, encoding="utf-8").read()
+    except (IOError, OSError) as exc:
+        check(False, "RevitOperations.cs and RevitWrite.cs can be read - %s" % exc)
+        ops = write = ""
+    wrapper = body_of(text, "internal static bool CategoryByShownName(")
+    check(wrapper is not None
+          and "return OneBuiltInCategory(doc, text, out found);" in code_only(wrapper),
+          "CategoryByShownName is OneBuiltInCategory itself - one resolver, not a copy")
+    select = code_only(body_of(ops, "private static string SelectByCategory(") or "")
+    table_at = select.find("ResolveCategory(name, out one)")
+    shown_at = select.find("RevitFragment.CategoryByShownName(")
+    check(table_at >= 0 and shown_at >= 0 and table_at < shown_at,
+          "SelectByCategory asks its table first, then the name Revit shows")
+    check("return refusal;" in select,
+          "and a word neither knows still refuses the whole request")
+    check("CategoryByShownName" not in code_only(write),
+          "the move tool does not widen - RevitWrite keeps the table alone")
+
     print()
     if FAILED:
         print("FAILED - %d check(s)." % len(FAILED))
