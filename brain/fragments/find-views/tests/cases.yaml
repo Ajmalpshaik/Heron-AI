@@ -33,8 +33,9 @@ negative:
 
   - given: viewType set to a string that is not a Revit view type at all
     expect: >
-      elements empty rather than an exception, and the caller can tell it asked
-      for something that does not exist because skipped counts are unchanged
+      elements empty rather than an exception, and - VERSION 3 - a finding
+      refusing it, "NOTHING WAS RETURNED", with the words it takes. Version 2
+      matched nothing in silence, which read as "no such view"
 
   - given: a model where the only views are schedules and sheets
     expect: >
@@ -107,9 +108,60 @@ negative:
   - given: VERSION 2. withoutTemplate true, the result handed to APPLY_VIEW_TEMPLATE
     expect: the fix applied to exactly the views that needed it
 
+  # VERSION 3 (2026-11-07, row 5b-1472). Each FAILS on version 2, which
+  # compared viewType with the enum's spelling alone, took "any" as a type
+  # name, and had no skippedOtherType and no passed-over line.
+  - given: >
+      VERSION 3 - THE FIELD CASE. A floor plan placed on a sheet, made with
+      Duplicate as Dependent so its name ends "(Battery Room) Copy 1"; viewType
+      "Floor Plan" (with the space), nameContains "Enlarge Layout (Battery Room)"
+    expect: >
+      the plan returned, its id in onSheets. Then viewType "any", nameContains
+      "Battery Room": the same plan. Version 2 found 0 both ways (2026-11-07,
+      4355-BHVD-3D-60A10-BL007A, Revit 2020)
+      Second route: the plan in the Project Browser under Floor Plans, and LIST_VIEWS_ON_SHEET
+      on its sheet listing it
+
+  - given: VERSION 3. viewType "floor plans", "FLOOR-PLAN" and "FloorPlan" in turn
+    expect: the same views, the same count, every time
+
+  - given: VERSION 3. viewType "3D View", "Reflected Ceiling Plan", "Structural Plan", "Drafting View"
+    expect: >
+      the 3D views, the ceiling plans, the structural plans and the drafting
+      views, each matching the Project Browser's branch of that name
+
+  - given: VERSION 3. viewType "", then "any", then "all", with nameContains "level"
+    expect: the same views all three times - every view type
+
+  - given: VERSION 3. Any call that runs
+    expect: >
+      a finding "Read viewType as ...; returned N; passed over ..." naming each
+      reason with its count - view templates, the non-drawing views by type
+      (Schedule, DrawingSheet, ProjectBrowser ...), another view type, the
+      placement asked, a template held - and the counts agreeing with
+      skippedTemplates, skippedNonDrawing and skippedOtherType
+
+  - given: >
+      VERSION 3 - NEGATIVE. viewType "Floor Plan", nameContains the name of a
+      section that exists and of no floor plan
+    expect: >
+      elements empty, skippedOtherType at least 1, and a finding naming the
+      section "a Section, and FloorPlan was asked". A bare zero never again
+
+  - given: VERSION 3 - NEGATIVE. viewType "Flor Plan" (misspelt)
+    expect: >
+      elements empty and a finding refusing it, NOTHING WAS RETURNED - never
+      every view, never a silent zero
+
+  - given: VERSION 3 - NEGATIVE. nameContains "ZZZNOTHINGHERE", viewType any
+    expect: >
+      elements empty, matchedButExcluded 0, and the finding "No view, template
+      or schedule in this model has 'ZZZNOTHINGHERE' in its name"
+
 second_route:
   - count the drawing views in the Project Browser by eye and compare
   - make a view template, name it after a real view, and confirm which one comes back
   - open one returned view - it must open as a drawing, never as a schedule or a sheet
   - for placement, the sheet column beside each view in the project browser
   - for withoutTemplate, a view list schedule with a View Template column, sorted by whether the view is on a sheet
+  - for viewType, the Project Browser's branch of that type, counted by eye

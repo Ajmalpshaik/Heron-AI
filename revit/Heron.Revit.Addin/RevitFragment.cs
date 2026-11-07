@@ -4388,12 +4388,17 @@ namespace Heron.Revit.Addin
             {
                 var kind = text.Substring(0, mark).Trim();
                 var rest = text.Substring(mark + 1).Trim();
+                // THE PROJECT BROWSER'S SPELLING TOO (row 5b-1472): "Floor
+                // Plan: L2" is the same type as "FloorPlan: L2". Compared with
+                // spaces and hyphens taken out, so the type a modeller reads
+                // in the browser is never "no view called".
+                var kindKey = kind.Replace(" ", "").Replace("-", "");
                 if (rest.Length > 0)
                 {
                     var narrowed = new List<View>();
                     foreach (var candidate in ViewsNamed(doc, rest))
                     {
-                        if (string.Equals(candidate.ViewType.ToString(), kind,
+                        if (string.Equals(candidate.ViewType.ToString(), kindKey,
                                           StringComparison.OrdinalIgnoreCase))
                             narrowed.Add(candidate);
                     }

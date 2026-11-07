@@ -1,7 +1,8 @@
 // NOT STANDALONE. Assumes `doc`, `viewType`, `nameContains`, `placement` and
 // `withoutTemplate` are in scope, and leaves `elements`, `skippedTemplates`,
-// `skippedNonDrawing`, `skippedInternal`, `matchedButExcluded`, `byType`,
-// `placedCount`, `onSheets` and `findings` behind.
+// `skippedNonDrawing`, `skippedInternal`, `skippedOtherType` (version 3),
+// `matchedButExcluded`, `byType`, `placedCount`, `onSheets` and `findings`
+// behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -73,6 +74,34 @@
 //   `byType` - how many of the answer are of each view type, on every call.
 //   Twenty unplaced 3D views and eight sections are different conversations.
 //   `onSheets` - the answer's views that are on a sheet.
+//
+// VERSION 3 (2026-11-07, row 5b-1472) - `viewType` IS READ THE WAY A MODELLER
+// TYPES IT, AND EVERY VIEW PASSED OVER IS ACCOUNTED FOR BY REASON.
+//
+//   Version 2 compared `viewType` with the enum's own spelling and nothing
+//   else, so "Floor Plan" - the Project Browser's words - matched no view,
+//   because the enum says FloorPlan; and "any" was taken as the name of a view
+//   type, so it matched none either. On a real as-built model (2026-11-07,
+//   Revit 2020) a floor plan that WAS on a sheet came back 0 both ways, while
+//   this card's own placedOn listed it - the view was never excluded, it was
+//   compared with a type that does not exist. And the promise above, that an
+//   unrecognised name is REPORTED, was never kept: it matched nothing in
+//   silence. Not a dependent view (it is still ViewType.FloorPlan) and not the
+//   parentheses in the name (IndexOf takes them as text).
+//
+//   So: spaces, hyphens and capitals are ignored ("Floor Plan", "floor-plan",
+//   "FLOORPLAN"), a plural is read as its singular ("sections"), the browser's
+//   words map to the enum ("3D View" -> ThreeD, "Reflected Ceiling Plan" ->
+//   CeilingPlan, "Structural Plan" -> EngineeringPlan, "Drafting View" ->
+//   DraftingView), and "", "any" or "all" is no type at all. A word that is
+//   still none of them is REFUSED, NOTHING RETURNED, with the words it takes.
+//
+//   `skippedOtherType` counts the drawings passed over for being another view
+//   type, and the answer always says how many views were passed over and why,
+//   each reason by name - templates, each kind of non-drawing view by its
+//   type, another view type, the placement asked, a template held. When the
+//   answer is empty, the views whose NAME matched are named with the reason
+//   each was passed over, so "found it and refused it" names what it refused.
 
 var wantedType = (viewType ?? "").Trim();
 var wantedName = (nameContains ?? "").Trim();
@@ -86,12 +115,53 @@ else if (wantedPlacement == "placed" || wantedPlacement == "onasheet" || wantedP
          || wantedPlacement == "onsheets") wantedPlacement = "placed";
 else wantedPlacement = "unknown";
 
-bool schedulesAsked = string.Equals(wantedType, "Schedule", StringComparison.OrdinalIgnoreCase);
+// VERSION 3 - THE VIEW TYPE AS A MODELLER TYPES IT. Letters and digits only,
+// lower case: "Floor Plan", "floor-plan" and "FloorPlan" are one word.
+Func<string, string> squash = s => new string((s ?? "").Where(char.IsLetterOrDigit).ToArray())
+    .ToLowerInvariant();
+var typeWords = new Dictionary<string, string>();
+foreach (var enumName in Enum.GetNames(typeof(ViewType))) typeWords[squash(enumName)] = enumName;
+// The Project Browser's words, where they are not the enum's.
+var browserWords = new Dictionary<string, string>
+{
+    { "3d", "ThreeD" }, { "3dview", "ThreeD" }, { "threedview", "ThreeD" },
+    { "reflectedceilingplan", "CeilingPlan" }, { "rcp", "CeilingPlan" },
+    { "structuralplan", "EngineeringPlan" },
+    { "drafting", "DraftingView" },
+    { "sectionview", "Section" }, { "elevationview", "Elevation" }, { "detailview", "Detail" },
+    { "schedulequantities", "Schedule" }, { "schedulesquantities", "Schedule" },
+};
+foreach (var pair in browserWords) if (!typeWords.ContainsKey(pair.Key)) typeWords[pair.Key] = pair.Value;
+
+var typeKey = squash(wantedType);
+string resolvedType = null;     // the enum's name, or null for every type
+bool typeUnknown = false;
+if (typeKey == "" || typeKey == "any" || typeKey == "all" || typeKey == "allviews"
+    || typeKey == "anyview" || typeKey == "views" || typeKey == "view")
+    resolvedType = null;
+else if (typeWords.ContainsKey(typeKey)) resolvedType = typeWords[typeKey];
+else if (typeKey.EndsWith("s") && typeWords.ContainsKey(typeKey.Substring(0, typeKey.Length - 1)))
+    resolvedType = typeWords[typeKey.Substring(0, typeKey.Length - 1)];
+else typeUnknown = true;
+
+bool schedulesAsked = resolvedType == "Schedule";
 
 int skippedTemplates = 0;
 int skippedNonDrawing = 0;
 int skippedInternal = 0;
 int matchedButExcluded = 0;
+int skippedOtherType = 0;
+// VERSION 3 - why each view was passed over, for the answer to say by name.
+int skippedByPlacement = 0;
+int skippedHasTemplate = 0;
+int skippedTakesNoTemplate = 0;
+var nonDrawingByType = new SortedDictionary<string, int>();
+var refusedByName = new List<string>();   // views whose NAME matched, and why each was passed over
+Action<View, string> refusedOne = (view, why) =>
+{
+    if (refusedByName.Count < 10) refusedByName.Add("'" + view.Name + "' (id " + view.Id + ") - " + why);
+    else if (refusedByName.Count == 10) refusedByName.Add("and more");
+};
 var byType = new Dictionary<string, int>();
 var onSheets = new List<ElementId>();
 var findings = new List<string>();
@@ -160,7 +230,16 @@ int placedCount = placedOn.Count;
 
 var found = new List<View>();
 
-if (wantedPlacement == "unknown")
+if (typeUnknown)
+{
+    // VERSION 3 - REFUSED, nothing returned. Version 2 matched nothing in
+    // silence, which read as "this model has no such view".
+    findings.Add("viewType '" + viewType + "' is not a view type this reads, so NOTHING WAS RETURNED. "
+        + "Say it as the Project Browser does - Floor Plan, Ceiling Plan, Structural Plan, Area Plan, "
+        + "3D View, Section, Elevation, Detail View, Drafting View, Legend, Schedule - or leave it out, "
+        + "or say any, for every view type.");
+}
+else if (wantedPlacement == "unknown")
 {
     // REFUSED, nothing returned: a misspelt placement answering every view
     // would read as "all of these are unplaced".
@@ -187,7 +266,7 @@ else
         if (v.IsTemplate)
         {
             skippedTemplates++;
-            if (nameMatches) matchedButExcluded++;
+            if (nameMatches) { matchedButExcluded++; refusedOne(v, "a view template"); }
             continue;
         }
 
@@ -198,41 +277,70 @@ else
             if (v.Name.StartsWith("<"))
             {
                 skippedInternal++;
-                if (nameMatches) matchedButExcluded++;
+                if (nameMatches) { matchedButExcluded++; refusedOne(v, "one of Revit's internal schedules"); }
                 continue;
             }
         }
         else if (notDrawings.Contains(v.ViewType))
         {
             skippedNonDrawing++;
-            if (nameMatches) matchedButExcluded++;
+            var kindName = v.ViewType.ToString();
+            nonDrawingByType[kindName] = (nonDrawingByType.ContainsKey(kindName) ? nonDrawingByType[kindName] : 0) + 1;
+            if (nameMatches)
+            {
+                matchedButExcluded++;
+                refusedOne(v, "a " + kindName + ", not a drawing"
+                    + (v.ViewType == ViewType.Schedule ? " - ask with viewType Schedule" : ""));
+            }
             continue;
         }
         else if (schedulesAsked)
         {
             // Schedules were asked for and this is a drawing.
+            skippedOtherType++;
+            if (nameMatches) refusedOne(v, "a " + v.ViewType + ", and Schedule was asked");
             continue;
         }
 
-        if (!schedulesAsked && wantedType.Length > 0
-            && !string.Equals(v.ViewType.ToString(), wantedType, StringComparison.OrdinalIgnoreCase))
+        // VERSION 3: against the type READ, never the raw word - see the header.
+        if (!schedulesAsked && resolvedType != null
+            && !string.Equals(v.ViewType.ToString(), resolvedType, StringComparison.Ordinal))
+        {
+            skippedOtherType++;
+            if (nameMatches) refusedOne(v, "a " + v.ViewType + ", and " + resolvedType + " was asked");
             continue;
+        }
 
         if (!nameMatches) continue;
 
         bool onASheet = placedOn.ContainsKey(v.Id);
-        if (wantedPlacement == "unplaced" && onASheet) continue;
-        if (wantedPlacement == "placed" && !onASheet) continue;
+        if ((wantedPlacement == "unplaced" && onASheet) || (wantedPlacement == "placed" && !onASheet))
+        {
+            skippedByPlacement++;
+            refusedOne(v, onASheet ? "on sheet " + placedOn[v.Id] + ", and unplaced was asked"
+                                   : "on no sheet, and placed was asked");
+            continue;
+        }
 
         if (withoutTemplate)
         {
             // NONE OF THESE TAKES A VIEW TEMPLATE, and all are routinely on
             // sheets. (Schedules cannot reach here with withoutTemplate; a
             // sheet is in notDrawings; a legend is left out here.)
-            if (v is ViewSheet || v is ViewSchedule || v.ViewType == ViewType.Legend) continue;
+            if (v is ViewSheet || v is ViewSchedule || v.ViewType == ViewType.Legend)
+            {
+                skippedTakesNoTemplate++;
+                refusedOne(v, "a " + v.ViewType + ", which takes no view template");
+                continue;
+            }
             ElementId templateId = ElementId.InvalidElementId;
             try { templateId = v.ViewTemplateId; } catch { }
-            if (templateId != ElementId.InvalidElementId) continue;
+            if (templateId != ElementId.InvalidElementId)
+            {
+                skippedHasTemplate++;
+                refusedOne(v, "it has a view template");
+                continue;
+            }
         }
 
         found.Add(v);
@@ -286,4 +394,37 @@ if (wantedPlacement == "unplaced")
         : ordered.Count + " view(s) are on no sheet, against " + placedCount + " that are placed. "
           + "Nothing was deleted - an unplaced view today is on a sheet tomorrow."
           + (schedulesAsked ? "" : " Schedules are not in this list; ask with viewType Schedule for them."));
+}
+
+// VERSION 3 - EVERY VIEW PASSED OVER, BY REASON, ON EVERY CALL THAT RAN. A
+// bare zero cannot say whether the view is missing or was set aside, and
+// which reason set it aside changes what the modeller asks next.
+if (!typeUnknown && wantedPlacement != "unknown" && !(withoutTemplate && schedulesAsked))
+{
+    var reasons = new List<string>();
+    if (skippedTemplates > 0) reasons.Add(skippedTemplates + " view template(s)");
+    if (skippedNonDrawing > 0)
+        reasons.Add(skippedNonDrawing + " that are not drawings ("
+            + string.Join(", ", nonDrawingByType.Select(p => p.Key + " " + p.Value).ToArray()) + ")");
+    if (skippedInternal > 0) reasons.Add(skippedInternal + " of Revit's internal schedules");
+    if (skippedOtherType > 0)
+        reasons.Add(skippedOtherType + " of another view type than "
+            + (schedulesAsked ? "Schedule" : resolvedType ?? "asked"));
+    if (skippedByPlacement > 0)
+        reasons.Add(skippedByPlacement + " matching the name but " + (wantedPlacement == "unplaced"
+            ? "on a sheet" : "on no sheet"));
+    if (skippedHasTemplate > 0) reasons.Add(skippedHasTemplate + " that have a view template");
+    if (skippedTakesNoTemplate > 0) reasons.Add(skippedTakesNoTemplate + " legend(s) that take no view template");
+
+    findings.Add("Read viewType as " + (resolvedType ?? "any view type")
+        + (wantedName.Length > 0 ? ", name containing '" + wantedName + "'" : "")
+        + "; returned " + ordered.Count + "; passed over "
+        + (reasons.Count == 0 ? "nothing" : string.Join("; ", reasons.ToArray())) + ".");
+
+    if (ordered.Count == 0 && wantedName.Length > 0)
+    {
+        findings.Add(refusedByName.Count == 0
+            ? "No view, template or schedule in this model has '" + wantedName + "' in its name."
+            : "The name matched, but each was passed over: " + string.Join("; ", refusedByName.ToArray()));
+    }
 }

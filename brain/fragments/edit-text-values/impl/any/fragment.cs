@@ -1,8 +1,30 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `field`, `mode`, `text` and
 // `replacement` are in scope, and leaves `changed`, `untouched`, `blank`,
 // `readOnly`, `absent`, `ambiguous`, `unverified`, `refused`,
-// `noteFormatting`, `typesEdited`, `collisions`, `notMatched` and
-// `familyRename` behind.
+// `noteFormatting`, `typesEdited`, `collisions`, `notMatched`, `familyRename`
+// and `nameNote` (version 9) behind.
+//
+// VERSION 9 (2026-11-07, row 5b-1473) - A NAME IS PLANNED AND READ BACK THE WAY
+// REVIT KEEPS IT: WITHOUT A SPACE AT EITHER END.
+//
+// Version 8 compared a renamed element's name with the transform's output
+// exactly. Revit keeps no space at the start or end of a view's, sheet's or
+// type's name, so a replace that left one - "Warehouse - HVAC Air ducts
+// Sections-1" with "Warehouse -" taken out leaves " HVAC Air ducts Sections-1"
+// - was written, saved by Revit as "HVAC Air ducts Sections-1", read back as
+// that, and put in `unverified`: on a real as-built model (2026-11-07, Revit
+// 2020) four views were renamed correctly and the answer said changed 0,
+// unverified 4. The space came from the request: "Warehouse - " was typed, and
+// the MCP side strips every value's own spaces on the way in (row 5b-215, an
+// open decision), so "Warehouse -" arrived. A run with no space at either end
+// of the result answered changed 1 the same day.
+//
+// So for field Name the new name is TRIMMED BEFORE it is planned, checked for
+// a clash and written - the name Revit will keep is the name planned, so the
+// read-back compares like with like and a clash is judged on the real name.
+// Every name a space was taken off is counted in `nameNote`, which says so. A
+// name that reads back as anything else is still `unverified`. Parameters and
+// a note's wording are compared exactly, as before: Revit keeps their spaces.
 //
 // VERSION 8 (2026-11-01) - RENAME_FAMILY MERGED IN: field "Family" renames the
 // LOADED FAMILY behind what is handed in - a family, one of its types or an
@@ -188,6 +210,9 @@ string refused = null;
 // indent and text style, read back after the write. A string, because a list
 // in the reply is cut to three items of 60 characters.
 string noteFormatting = null;
+// VERSION 9 - names Revit keeps without a space at either end, counted.
+string nameNote = null;
+int namesTrimmed = 0;
 
 bool editingName = string.Equals((field ?? "").Trim(), "Name",
                                  StringComparison.OrdinalIgnoreCase);
@@ -457,6 +482,10 @@ Func<IList<Element>, string> namesOnHand = given =>
             : "");
 };
 
+// VERSION 9 - the name as Revit will keep it; anything else as given.
+Func<string, string> asKept = proposed =>
+    editingName && proposed != null ? proposed.Trim() : proposed;
+
 Func<string, string> transform = current =>
 {
     // VERSION 6 - A PREFIX OR SUFFIX ALREADY THERE IS NOT ADDED AGAIN, so a
@@ -662,7 +691,7 @@ if (refused == null && editingName)
         string was = null;
         try { was = element.Name; } catch { was = null; }
         if (string.IsNullOrEmpty(was)) continue;
-        var wanted = transform(was);
+        var wanted = asKept(transform(was));
         if (wanted == was) continue;
 
         if (wanted.Trim().Length == 0)
@@ -1423,8 +1452,10 @@ foreach (var element in elements)
     if (current == null) current = "";
     if (how == "set") { land(absent); continue; }
 
-    string wanted = transform(current);
+    string transformed = transform(current);
+    string wanted = asKept(transformed);
     if (wanted == current) { land(untouched); continue; }
+    bool spaceTaken = editingName && transformed != wanted;
 
     bool accepted = false;
     try
@@ -1451,8 +1482,17 @@ foreach (var element in elements)
     {
         land(changed);
         if (heldType != null) typesEdited.Add(heldType);
+        if (spaceTaken) namesTrimmed++;
     }
     else land(unverified);
+}
+
+if (namesTrimmed > 0)
+{
+    nameNote = string.Format("{0} name(s) would have started or ended with a space, which Revit does "
+        + "not keep in a name, so each was written and read back without it. If a space was meant "
+        + "to stay between two words, check the text given: a space typed at the end of a value "
+        + "can be lost on its way in", namesTrimmed);
 }
 
 // AFTER THE LOOP, AND ONLY BECAUSE NOTHING WAS WRITTEN ON EITHER PATH. Both

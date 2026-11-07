@@ -1390,6 +1390,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-mq.md`](needs-checking/group-mq.md)
 
+## Group MR - renaming views on as-built sheets: a placed floor plan `FIND_VIEWS` could not find, and a done rename `EDIT_TEXT_VALUES` called unverified - `FIND_VIEWS` v3, `EDIT_TEXT_VALUES` v9, and the add-in's "Floor Plan: name" (2026-11-07)
+
+**Its own file:** [`needs-checking/group-mr.md`](needs-checking/group-mr.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

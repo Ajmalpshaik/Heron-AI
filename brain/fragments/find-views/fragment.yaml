@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,14 @@ semantic-identity: "the real views or schedules in this model, narrowed by type,
 kind: filter
 domain: revit.views
 capability: FIND_VIEWS
-version: 2
+# VERSION 3, BACK TO DRAFT ON 2026-11-07 (FRAGMENT-ISSUES row 5b-1472), AND
+# THE PROOF BLOCK BELOW IS KEPT ON PURPOSE - it is version 2's record and the
+# arrangement to re-prove from; its fingerprint no longer matches. On the
+# owner's model 4355-BHVD-3D-60A10-BL007A (Revit 2020) version 2 found 0 for
+# viewType "Floor Plan" and 0 for viewType "any", while the floor plan asked
+# for was on a sheet and in this card's own placedOn. viewType was compared
+# with the enum's spelling alone - FloorPlan - and "any" taken as a type name.
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -40,6 +47,19 @@ purpose: >
   no template holds, the ones on sheets first with their sheet numbers.
   byType counts the answer per view type.
 
+# NOT IN THE PURPOSE ON PURPOSE (2026-11-07): written there it moved routing on
+# the model backend - "which schedules are there" went to CREATE_PANEL_SCHEDULES,
+# a write. So the card's routing words stay version 2's, and this is a comment.
+# **VERSION 3 READS viewType THE WAY A MODELLER TYPES IT, AND SAYS WHAT IT
+# PASSED OVER.** "Floor Plan", "floor plans", "3D View", "Reflected Ceiling
+# Plan", "Structural Plan" and "Drafting View" are each the view type they
+# name; "", "any" or "all" is every type; a word that is none is refused, with
+# the words it takes, never a silent zero. Every answer says how many views
+# were passed over and why - templates, each kind of non-drawing view by its
+# type, another view type (skippedOtherType), the placement asked, a template
+# held - and an empty answer names the views whose name matched with the
+# reason each was passed over.
+
 contract:
   needs:
     - name: doc
@@ -47,6 +67,11 @@ contract:
     - name: viewType
       type: string
       source: request
+      # VERSION 3. Read as the Project Browser says it - spaces, hyphens,
+      # capitals and a plural ignored, "3D View" ThreeD, "Reflected Ceiling
+      # Plan" CeilingPlan, "Structural Plan" EngineeringPlan - or as the enum
+      # spells it. "", "any" or "all" is every type. Anything else is refused,
+      # nothing returned (row 5b-1472).
     - name: nameContains
       type: string
       source: request
@@ -113,17 +138,26 @@ contract:
       # on a sheet - a part of `elements`, never more of them (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: skippedOtherType
+      # VERSION 3. Drawings passed over for being another view type than the
+      # one asked. What it passed over, never a thing it FOUND (D-52).
+      role: accounting
+      type: int
     - name: findings
       # VERSION 2. With withoutTemplate, each view on a sheet named with its
       # sheet number, then a count of the working views on no sheet; with
       # placement unplaced, the placed count beside it; a placement it cannot
+      # read, the refusal. VERSION 3: on every call, how many views were passed
+      # over and why, each reason by name; an empty answer names the views
+      # whose name matched and why each was passed over; a viewType it cannot
       # read, the refusal.
       role: accounting
       type: IList<string>
 
-# VERSION 1's PROOF, KEPT AS THE RECORD. Version 2 changed impl/, so its
-# fingerprint no longer describes the code and the card is DRAFT until
-# version 2 is proved on a real model (D-30).
+# VERSION 2's PROOF (signed 2026-11-02), KEPT AS THE RECORD. Version 3
+# changed impl/, so its fingerprint no longer describes the code and the card
+# is DRAFT until version 3 is proved on a real model (D-30) - NEEDS-CHECKING
+# Group MR owes it.
 proof:
   date: '2026-11-02'
   by: Ajmal PS
@@ -167,6 +201,11 @@ compatibility-note: >
   `ScheduleSheetInstance.ScheduleId` and `OwnerViewId`,
   `ViewSheet.GetAllPlacedViews`, `ViewSheet.SheetNumber` and
   `View.ViewTemplateId` - unchanged 2020 to 2027.
+
+  Version 3 adds `Enum.GetNames(typeof(ViewType))` - plain .NET - and no new
+  Revit call. The browser words map to members present on every release
+  2020 to 2027 (ThreeD, CeilingPlan, EngineeringPlan, DraftingView, Section,
+  Elevation, Detail, Schedule).
 
 # ROUTING - repeated in FIND_SHEETS, APPLY_VIEW_TEMPLATE and
 # PLACE_VIEW_ON_SHEET.

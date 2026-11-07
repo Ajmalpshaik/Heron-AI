@@ -265,6 +265,47 @@ negative:
   - given: VERSION 8. The family renamed, then reloaded from its .rfa
     expect: the OLD name back - nothing here touches the file on disk
 
+  # VERSION 9 (2026-11-07, row 5b-1473). Each FAILS on version 8, which
+  # compared a name read back with the transform's output exactly, so a name
+  # Revit saved without its leading space went in `unverified`.
+  - given: >
+      VERSION 9 - THE FIELD CASE. Four section views named "Warehouse - HVAC
+      Air ducts Sections-1" to "-4"; field Name, mode replace, text "Warehouse -"
+      (what arrives when "Warehouse - " is typed - row 5b-215), replacement empty
+    expect: >
+      `changed` 4, `unverified` 0, the four read back "HVAC Air ducts
+      Sections-1" to "-4", and `nameNote` saying 4 names would have started
+      with a space Revit does not keep. Version 8 answered changed 0,
+      unverified 4 with all four renamed (2026-11-07,
+      4355-BHVD-3D-60A10-BL007A, Revit 2020)
+      Second route: the four names in the Project Browser, and READ_ELEMENT_PARAMETERS
+      parameterName View Name on the four
+
+  - given: >
+      VERSION 9. The same four, text "Warehouse - " with the space kept (the
+      command line keeps it), replacement empty
+    expect: changed 4, unverified 0, and NO nameNote - nothing was trimmed
+
+  - given: VERSION 9. One view, field Name, mode replace, a non-empty replacement leaving no edge space
+    expect: changed 1, no nameNote - version 8's answer, unchanged
+
+  - given: >
+      VERSION 9 - NEGATIVE. A text parameter (Comments) holding "Warehouse - A"
+      on one element; field Comments, mode replace, text "Warehouse -",
+      replacement empty
+    expect: >
+      changed 1 with the value read back " A" - the leading space KEPT, and no
+      nameNote. The trim is for names only: Revit keeps a parameter's spaces,
+      and taking one off would be an edit nobody asked for
+
+  - given: >
+      VERSION 9 - NEGATIVE. Two views, "X - Plan A" and "Plan A"; field Name,
+      mode replace on the first, text "X -", replacement empty
+    expect: >
+      REFUSED, NOTHING WAS RENAMED, `collisions` naming "Plan A" as already the
+      name of the second view - the clash judged on the name Revit would keep.
+      Version 8 planned " Plan A", saw no clash, and left it to Revit
+
 second_route:
   - >
     open a schedule of that parameter in Revit before and after - the column is
