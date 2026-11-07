@@ -67,6 +67,11 @@ var findings = new List<string>();
 
 var materialAsked = (material ?? "").Trim();
 var functionAsked = (layerFunction ?? "").Trim();
+// VERSION 3 (row 5b-1469): "keep" - the card's absent value, and what a
+// modeller types for "leave it" - is blank. Version 2 refused it as "not a
+// layer function".
+if (string.Equals(materialAsked, "keep", StringComparison.OrdinalIgnoreCase)) materialAsked = "";
+if (string.Equals(functionAsked, "keep", StringComparison.OrdinalIgnoreCase)) functionAsked = "";
 var byFunction = layerIndex == -1;
 
 const string FunctionWords = "Structure, Substrate, Thermal/Air Layer (or Insulation), "

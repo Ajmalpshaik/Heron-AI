@@ -250,7 +250,12 @@ namespace Heron.Revit.Addin
         /// </summary>
         public void NoteActiveModel(string title)
         {
-            lock (_modelLock) { _activeModel = string.IsNullOrEmpty(title) ? null : title; }
+            lock (_modelLock)
+            {
+                _activeModel = string.IsNullOrEmpty(title) ? null : title;
+                // The same title for the bridge's lease-free `info` (5b-1470 c).
+                BridgeActiveModel.Title = _activeModel;
+            }
         }
 
         /// <summary>
@@ -279,7 +284,10 @@ namespace Heron.Revit.Addin
             lock (_modelLock)
             {
                 if (string.Equals(_activeModel, title, StringComparison.Ordinal))
+                {
                     _activeModel = null;
+                    BridgeActiveModel.Title = null;
+                }
             }
         }
 

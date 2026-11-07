@@ -643,7 +643,11 @@ namespace Heron.Bridge
                     // remember and say so.
                     Json.Bool("inUse", holder != null),
                     Json.Bool("mine", holder != null && holder == Json.ReadString(request, "client")),
-                    Json.Num("leaseSecondsRemaining", (long)HeronLease.SecondsRemaining));
+                    Json.Num("leaseSecondsRemaining", (long)HeronLease.SecondsRemaining),
+                    // The model in front, as the add-in last saw it on Revit's
+                    // thread - a title only, read without the lease and without
+                    // Revit (5b-1470 c). Null before any view was activated.
+                    Json.Str("activeModel", BridgeActiveModel.Title));
             }
 
             // HANDING IT BACK, WHICH IS THE HALF THAT WAS MISSING.

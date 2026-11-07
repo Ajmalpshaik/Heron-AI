@@ -171,6 +171,22 @@ def main():
     check(bridge.availability(Reply({"ok": True})) == "(availability unknown)",
           "an older add-in that cannot report it says UNKNOWN, never (free)")
 
+    # --- which model a free session has in front (5b-1470 c, issue #799) -----
+    # From the same lease-exempt `info`: a title only, so naming it claims
+    # nothing. An add-in from before the field sends none.
+    named = getattr(bridge, "open_model_named", None)
+    check(named is not None, "the client can ask which model a session has in front")
+    if named is not None:
+        check(named(Reply({"ok": True, "inUse": False, "activeModel": "Test for Issue"}))
+              == "Test for Issue",
+              "a free session's info names the model in front")
+        check(named(Reply({"ok": True, "inUse": False})) is None
+              and named(Reply({"ok": True, "activeModel": None})) is None
+              and named(Reply({"ok": True, "activeModel": "  "})) is None,
+              "no title, an empty one or an older add-in names nothing - never a guess")
+        check(named(Reply({"ok": False, "activeModel": "X"})) is None,
+              "and a failed info names nothing")
+
     # --- nothing connected --------------------------------------------------
     binding = SessionBinding()
     stage(binding, [])

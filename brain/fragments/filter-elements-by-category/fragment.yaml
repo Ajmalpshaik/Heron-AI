@@ -485,6 +485,11 @@ compatibility-note: >
 # level, which SELECT_BY_LEVEL refused in a sentence, is refused here too.
 
 utterances:
+  # ADDED 2026-11-07, issue #799 routing table (Villa 1, Revit 2024): "select
+  # all windows and doors in the model" ranked SELECT_BY_DESIGN_OPTION first;
+  # this card, with categories Windows, Doors, did the job.
+  - select all windows and doors in the model
+  - select all the doors and windows
   - select all ducts
   - how many ducts are there
   - list every duct in the model

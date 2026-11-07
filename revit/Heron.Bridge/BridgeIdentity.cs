@@ -185,4 +185,28 @@ namespace Heron.Bridge
             catch (UnauthorizedAccessException) { }
         }
     }
+
+    /// <summary>
+    /// The title of the model in front in this Revit, as the add-in last saw
+    /// it from Revit's own thread - so `info`, which is answered OFF that
+    /// thread and must never claim the lease, can still name it.
+    ///
+    /// FRAGMENT-ISSUES 5b-1470 (c), issue #799: revit_health listed a free
+    /// session as "(free)" with no model, because a session the chat does not
+    /// hold is asked only `info`, and `info` could not read a document. The
+    /// add-in's dispatcher already notes the model in front for its banner
+    /// (NoteActiveModel / ForgetActiveModel); it now writes the same title
+    /// here. A title, never a Document - nothing here can reach the model.
+    /// Null when no model is in front, or before any view was activated.
+    /// </summary>
+    public static class BridgeActiveModel
+    {
+        private static volatile string _title;
+
+        public static string Title
+        {
+            get { return _title; }
+            set { _title = string.IsNullOrEmpty(value) ? null : value; }
+        }
+    }
 }

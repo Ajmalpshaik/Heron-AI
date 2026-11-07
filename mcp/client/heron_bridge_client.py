@@ -635,6 +635,20 @@ def availability(bridge):
     return "(in use by another chat, ~%d min left)" % minutes
 
 
+def open_model_named(bridge):
+    """
+    The title of the model in front in this Revit, from `info` - lease-exempt,
+    so asking never claims the Revit - or None when the add-in does not say
+    (an add-in from before 2026-11-07, or no model in front). FRAGMENT-ISSUES
+    5b-1470 (c), issue #799: a free session was listed with no model named.
+    """
+    reply = bridge.request("info")
+    if reply is None or not reply.get("ok"):
+        return None
+    title = reply.get("activeModel")
+    return title if isinstance(title, str) and title.strip() else None
+
+
 def refuse_off_windows():
     """
     True when this machine cannot reach a bridge, having said so.
@@ -1832,11 +1846,27 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
             print("    left nothing behind")
         for key in sorted(provides):
             print("    %-22s %s" % (key, provides[key]))
+            print_items(key, reply)
 
     for bridge in live:
         bridge.release()
         bridge.close()
     return 1 if failures else 0
+
+
+def print_items(name, reply):
+    """
+    A list of sentences in full, under its "N item(s) [a, b, c, ...]" line -
+    where the add-in sent it whole as `providesItems` (FRAGMENT-ISSUES 5b-1467,
+    2026-11-07). The summary cuts each item at 60 characters; a proof read on
+    this command line needs the sentence itself.
+    """
+    items = reply.get("providesItems")
+    whole = items.get(str(name)) if isinstance(items, dict) else None
+    if not isinstance(whole, dict):
+        return
+    for number in whole:
+        print("        %s. %s" % (number, whole[number]))
 
 
 # ---- D-119 / D-120: a DRAFT's ONE run on the live model ------------------
@@ -2066,6 +2096,7 @@ def cmd_try_once(name, values=None, session=None, in_document=None):
             "kept": kept,
             "source_hash": version,
             "provides": reply.get("provides") or {},
+            "providesItems": reply.get("providesItems") or {},
             "bound": reply.get("bound"),
             "document": reply.get("document"),
             "arranged": told,
@@ -2083,6 +2114,7 @@ def cmd_try_once(name, values=None, session=None, in_document=None):
     provides = reply.get("provides") or {}
     for key in sorted(provides):
         print("    %-22s %s" % (key, provides[key]))
+        print_items(key, reply)
     print("")
     print("Recorded %s" % record_path)
     if kept:
@@ -2866,6 +2898,7 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
                              "report the outcome, and nothing here re-read the model")
             record = {"phase": phase, "ok": True,
                       "provides": reply.get("provides") or {},
+                      "providesItems": reply.get("providesItems") or {},
                       "bound": reply.get("bound"),
                       "document": reply.get("document"),
                       "arranged": told}

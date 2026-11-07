@@ -296,7 +296,8 @@ def show_door(text, cs, door_refusal):
           "it aims at the pin, classifies a failure by its own registry row, and "
           "marks a run that consumes the chain not safe to ask twice")
     check("undeclared_values(" in body and "_ignored_lines(undeclared, takeable)" in body
-          and '_provides_lines(reply.get("provides"), reply.get("providesEntries"))' in body,
+          and ('_provides_lines(reply.get("provides"), reply.get("providesEntries"), '
+               'reply.get("providesItems"))') in body,
           "it names an ignored value and what a fragment did not send, through the "
           "one copy each door uses - with the entries the add-in sent beside the counts")
     check("_proof_line(capability, folder)" in body
@@ -626,9 +627,10 @@ def main():
     # `provides` (5b-1325), so a dictionary's entries print under its count.
     printed_through = {
         "revit_read": ('_provides_lines(reply.get("provides"), '
-                       'reply.get("providesEntries"))',),
+                       'reply.get("providesEntries"), reply.get("providesItems"))',),
         "revit_change": ("runs.shown_values(reply, capability, _BATCH)",
-                         '_provides_lines(shown, reply.get("providesEntries"))'),
+                         '_provides_lines(shown, reply.get("providesEntries"), '
+                         'reply.get("providesItems"))'),
     }
     for door in ("revit_read", "revit_change"):
         door_body = body_of(text, door) or ""
@@ -731,6 +733,51 @@ def main():
         check(not any("NOT SENT" in line for line in none)
               and not any(":" in line.strip() and line.startswith("    ") for line in none),
               "an empty dictionary prints no entries and is not said to be withheld")
+
+        # A LIST OF SENTENCES IN FULL, since 2026-11-07 (5b-1467): the reply
+        # APPLY_VISUAL_PRESET gave on {3D} in Test for Issue, Revit 2024 -
+        # `findings 4 item(s) [..., Replaced what '{3D}' had: Visual Style
+        # Hidden Line -> Realis..., ...]` - with the `providesItems` the
+        # add-in now sends beside it. A formatter from before the field takes
+        # two arguments: ONE clean failure, and the checks below still run.
+        takes_items = provides_lines.__code__.co_argcount >= 3
+        check(takes_items,
+              "_provides_lines takes the list items the add-in sent whole, beside the summary")
+
+        def with_items(provides, items):
+            if not takes_items:
+                return provides_lines(provides)
+            return provides_lines(provides, None, items)
+
+        summary = ("4 item(s) [6 of 7 setting(s) changed and read back as Exterior Day says..., "
+                   "Replaced what '{3D}' had: Visual Style Hidden Line -> Realis..., "
+                   "Exterior Day also wants Cast Shadows and Ambient Shadows on...., ...]")
+        replaced = ("Replaced what '{3D}' had: Visual Style Hidden Line -> Realistic, "
+                    "Sun Intensity 60 -> 80, Smooth Lines off -> on")
+        sent = {"1": "6 of 7 setting(s) changed and read back as Exterior Day says.",
+                "2": replaced,
+                "3": "Exterior Day also wants Cast Shadows and Ambient Shadows on.",
+                "4": "Render Output did not take."}
+        full = [line.strip() for line in with_items({"findings": summary}, {"findings": sent})]
+        at = [i for i, line in enumerate(full) if line.startswith("findings") and summary in line]
+        check(len(at) == 1,
+              "the summary line is as it was - every proof record carries that shape")
+        check(at and full[at[0] + 1:at[0] + 5] == ["%s. %s" % (k, sent[k]) for k in sent],
+              "and under it every item that arrived prints whole, numbered, in the "
+              "order the add-in sent them - %s" % (full[at[0] + 1:at[0] + 5] if at else None))
+        check(any("Sun Intensity 60 -> 80" in line for line in full),
+              "so the part the 60-character cut hid is read")
+        more = with_items({"findings": "150 item(s) [a, b, c, ...]"},
+                          {"findings": dict(("%d" % i, "line %d" % i) for i in range(1, 101))})
+        check(any("and 50 more" in line and "first 100 of 150" in line for line in more),
+              "a list longer than what arrived shows what came and says how many more")
+        bare = with_items({"findings": summary}, None)
+        check(not any("Sun Intensity" in line for line in bare)
+              and not any(line.strip().startswith("1. ") for line in bare),
+              "with no items - an add-in from before the field - only the summary prints")
+        stray_items = with_items({"findings": summary}, {"other": {"1": "x"}})
+        check(not any(line.strip() == "1. x" for line in stray_items),
+              "items for a name the reply does not carry print nowhere")
 
         # WHAT CREATE_FAMILY_EXTRUSION LEFT on 2026-10-09, cut to one of each
         # shape: 29% of a 107-form family's replies were helpers like these,
