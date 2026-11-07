@@ -4445,8 +4445,7 @@ namespace Heron.Revit.Addin
                     var narrowed = new List<View>();
                     foreach (var candidate in ViewsNamed(doc, rest))
                     {
-                        if (string.Equals(candidate.ViewType.ToString(), kind,
-                                          StringComparison.OrdinalIgnoreCase))
+                        if (TypeWordNames(candidate.ViewType, kind))
                             narrowed.Add(candidate);
                     }
                     if (narrowed.Count == 1) return narrowed[0];
@@ -4486,6 +4485,46 @@ namespace Heron.Revit.Addin
                           : "")
                     + ". Say which: " + string.Join(", or ", choices.ToArray()) + ".";
             return null;
+        }
+
+        /// <summary>
+        /// Does the word before the colon in "Floor Plan: Level 3" name this
+        /// view type?
+        ///
+        /// THE API'S WORD AND THE MODELLER'S. Until 2026-11-07 only the enum's
+        /// own spelling matched - "FloorPlan", "CeilingPlan", "EngineeringPlan"
+        /// - so "Floor Plan: Level 3-FF", as the Project Browser writes it, was
+        /// "No view called", and a structural plan could be named only by a
+        /// word no modeller uses (FRAGMENT-ISSUES 5b-1468, issue #799 item 6:
+        /// APPLY_VIEW_TEMPLATE templated 1 of 23 views on Villa 1, where one
+        /// plan name was a floor, a ceiling and a structural plan). Spaces and
+        /// capitals are ignored and a plural is read as one - "Ceiling Plans"
+        /// is the browser's heading - and the browser's own words map onto the
+        /// enum. The enum's spelling still matches, so nothing that worked stops.
+        /// </summary>
+        private static bool TypeWordNames(ViewType type, string word)
+        {
+            var said = new string((word ?? "").Where(char.IsLetterOrDigit).ToArray())
+                .ToLowerInvariant();
+            if (said.Length == 0) return false;
+            var enumWord = type.ToString().ToLowerInvariant();
+            foreach (var form in new[] { said, said.EndsWith("s") ? said.Substring(0, said.Length - 1) : null })
+            {
+                if (form == null || form.Length == 0) continue;
+                if (form == enumWord) return true;
+                switch (form)
+                {
+                    case "structuralplan": if (type == ViewType.EngineeringPlan) return true; break;
+                    case "reflectedceilingplan":
+                    case "rcp": if (type == ViewType.CeilingPlan) return true; break;
+                    case "3d":
+                    case "3dview": if (type == ViewType.ThreeD) return true; break;
+                    case "drafting": if (type == ViewType.DraftingView) return true; break;
+                    case "detailview": if (type == ViewType.Detail) return true; break;
+                    case "sheet": if (type == ViewType.DrawingSheet) return true; break;
+                }
+            }
+            return false;
         }
 
         /// <summary>
