@@ -24,7 +24,7 @@
 # The proof is the owner's, run on his Revit - never by the session that wrote
 # this.
 
-model: a saved TEST COPY shaped like 4355-BHVD-3D-60A10-BL007A, Revit 2020
+model: Test for Issue - a saved scrap TEST COPY arranged as group MP's MP1 (sheets S1-S5, Seq. 1 and Seq. 2), Revit 2024
 
 defaults:
   setup: []
@@ -59,6 +59,8 @@ jobs:
   # in cloudDriven with their cloud in cloudsHolding. Negative: the same on S5,
   # which carries neither - notOnSheet, nothing changed.
   - fragment: set-sheet-revisions
+    write: true
+    keep-chain: true
     setup:
       - find-sheets
     set:
@@ -80,6 +82,8 @@ jobs:
   # Seq. A cloud untouched. Negative: fromRevision Seq. B against Seq. A
   # clouds - every one skipped, nothing changed.
   - fragment: edit-revision-clouds
+    write: true
+    keep-chain: true
     setup:
       - list-revision-clouds
     set:
