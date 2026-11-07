@@ -126,6 +126,9 @@ compatibility-note: >
 #                                               read "set the project number
 #                                               -> nothing in Heron yet"
 #   "change the client name to Ashghal"      -> SET_PROJECT_INFORMATION
+#   "set the Project Name to Villa 1"         -> SET_PROJECT_INFORMATION (issue
+#                                               #799: on Villa 1 it ranked
+#                                               SET_SUN_SETTINGS first)
 
 utterances:
   - what does project information say

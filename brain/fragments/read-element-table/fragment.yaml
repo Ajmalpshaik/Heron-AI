@@ -125,3 +125,5 @@ utterances:
   - show these elements with their parameters in the Companion
   - put the selected units in a table I can edit
   - let me edit these parameters in a table
+  - read parameter values of the elements
+  - describe the selected roofs with their level, base offset, slope and thickness
