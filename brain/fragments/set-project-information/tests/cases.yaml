@@ -48,6 +48,15 @@ positive:
       Owner - not changed"; refused null. A second run changes nothing and
       says so
 
+  - given: >
+      VERSION 2, row 5b-1476: values "Project Name=Villa 1|Client Name=Heron
+      Test" on a project whose Project Information carries both, Revit 2024
+    expect: >
+      written 2, changes naming both from and to - the request Sruthina's
+      field run asked for (issue #799, Low). Version 1 refused both as
+      "read-only - Revit fills it, or it is locked": it asked UserModifiable of
+      built-in parameters, where it does not mean locked
+
 negative:
   - given: >
       values "Project Number=QA-2026-114|Client Nme=Ashghal" - the second name
@@ -71,6 +80,13 @@ negative:
     expect: >
       notAProject true; refused "The document in front, ... is a family, and
       Project Information belongs to a project - nothing was written."
+
+  - given: >
+      VERSION 2, row 5b-1476: a SHARED parameter on Project Information whose
+      definition is not user-modifiable
+    expect: >
+      still refused as locked, nothing written - UserModifiable is asked of a
+      shared parameter, where it is the lock the definition carries
 
 second_route:
   - >

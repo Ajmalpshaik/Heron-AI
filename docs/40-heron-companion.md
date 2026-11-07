@@ -1319,7 +1319,7 @@ page's frame, not what any panel does or says it does:** every route, hook, numb
 - **Long workspaces get a "Jump to" row** of links to their own headings (built from what is on screen).
 - **Activity** is a button in the sidebar that opens a drawer on the right (Esc closes it), no longer a
   bubble over the page.
-- **Look:** soft cards on a pale page, one neon-blue accent (`#00AEEF`; buttons and links use a darker blue
+- **Look** (*replaced by §21.19, the brand's colours*)**:** soft cards on a pale page, one neon-blue accent (`#00AEEF`; buttons and links use a darker blue
   so white text on them reads), orange for warnings only, red for danger only, green for done. Segoe UI,
   Consolas for ids. Light and dark, from Windows or the sidebar switch.
 - **Desktop only.** Every phone and tablet rule is gone (the `max-width` and `pointer: coarse` queries, the
@@ -1335,3 +1335,187 @@ fixed:** a 3D view drawn while its workspace was hidden had no size, so it staye
 was opened; showing a workspace now tells the views to draw again. The Loads and Sprinkler 3D views were
 then seen drawing (software WebGL, sample buildings). **Not seen:** the Model Dashboard's own 3D view in
 the new frame (it needs a real 3D read), and anything in Revit's browser or on the owner's PC.
+
+### 21.17 The 3D view's own tools (2026-11-07)
+
+On the owner's word - *"you can update like also like this [BIMLens] ... in the companion it need to come
+like this also 3D views dashboards like this"*. The 3D view of §21.13 gets the tools BIMLens's viewer has,
+re-made Heron's way. **All of them are the page's alone: nothing is read from Revit, nothing in Revit
+changes, and no new route or `COMPANION_ACTIONS` row was added.**
+
+- **A toolbar over the view** - **Fit**; **Top** (looks down, like a plan), **Front** (from the south),
+  **Side** (from the east) and **3D** (the usual corner view); **Zoom to lit** frames whatever a row, a bar
+  or a click lit up.
+- **Cut** - a slider that hides everything above a height, to look inside a storey. The height it shows
+  is in metres from Revit's internal origin (the read's `offset` added back). *off* draws everything.
+- **Categories on and off** - the legend under the view is now a switch: a click hides or shows that
+  category, **Only** shows it alone, **Show all categories** brings them back. A hidden category is
+  neither drawn nor picked - both the draw and the pick pass honour it.
+- **Save picture** - a PNG of exactly what is on screen, made in the browser and saved on this PC.
+- **Full screen** - the view fills the screen; Esc comes back.
+- The duplicate **Fit** beside *Load 3D* went to the toolbar; *Clear highlight* stays there.
+
+A new 3D read starts with every category shown and no cut. The colours are still the brain's
+(`heron_model_view`); the page only hides, cuts and frames.
+
+**Proved without Revit:** `tests/test_companion.py`'s Dashboard group (the tools are there, the view
+fetches only its own shapes, a hidden category is honoured by both passes, the legend is the switch);
+and the page driven in headless Chromium against an invented three-storey model - Top, the cut at 6.00 m,
+walls hidden, ducts alone, show all, zoom to one lit element, and a picture saved (`Heron 3D view.png`),
+no page error. **Not seen** in Revit's browser or on the owner's PC, nor on a real model's 3D read.
+
+### 21.18 Rooms as volumes, colour by material, and a tidier dashboard (2026-11-07)
+
+On the owner's word - *"add rooms as volumes and material colours also and make the model dashbord also
+good"*. The two 3D ideas left over from BIMLens's viewer, and the dashboard page made easier to read.
+
+**The read changed, so it is DRAFT again.** `REPORT_MODEL_GEOMETRY` version 3 (group JU, rows JU18 to JU22):
+
+- **Rooms as volumes** - an optional `rooms` draws placed Rooms and MEP Spaces as the closed shell Revit
+  computes for each (`ClosedShell`), from the whole model because a 3D view shows no rooms, left out by the
+  section box like everything else. An unplaced or unenclosed room has no shell and is counted, never drawn.
+- **Each face's material** - every triangle carries its face's material, or the category's where the face
+  has none (Revit's *By Category*), listed once with its **shading colour** (Graphics > Shading in the
+  Material Browser - what a Shaded view shows) and its transparency.
+
+The C# moved, so the 2026-11-02 proof is stale: the card is back at DRAFT until JU18, JU20 and JU21 pass on a
+named model, with the earlier rows run again. It compiles on all eight releases, 2020 to 2027.
+
+**The brain** (`heron_model_view`) checks every material index names one the read listed - a damaged read is
+refused whole - keeps a damaged colour in its place with a grey stand-in, and makes the material legend
+(by triangles covered) and the rooms count. A version-2 read still draws, by category only.
+
+**The page:**
+- **Rooms and spaces as volumes** - a tick box beside *Load 3D*, on by default; the rooms are drawn
+  see-through in the brand's Accent orange (D-149 - spaces too, kept apart in the legend), so what stands inside them still shows. They appear in the
+  category legend marked *see-through* and can be hidden or shown alone like any category.
+- **Colour by Category | Material** - Material colours every face in its material's shading colour, glass
+  and other transparent materials see-through, with a material legend. Greyed out for a read with no
+  materials.
+- **See-through drawing** - a solid pass, then a see-through pass that writes no depth. A click picks the
+  solid element under it first; a room answers only where nothing solid is. The near plane now follows the
+  model, so faces a few centimetres apart no longer flicker (some browsers give only 16 bits of depth).
+- **The dashboard, reordered** - the 3D view now comes right under the tiles and charts, not under the
+  long *Worth a look* list; the canvas sits inside its own section, under its buttons. *Worth a look* opens
+  with one line of counts (worth a look, counts only, not read, found nothing) - counts of rows, never a
+  verdict - lays its rows in two columns, and folds the checks that found nothing under one line (the
+  filter opens it). Each part has a clear heading; the subtitle said twice is said once.
+
+**Proved without Revit:** `tests/test_model_view.py` (materials and volumes read, a material the read did
+not list refused, a damaged colour kept in place, the room's volume not counted as a material) and
+`tests/test_companion.py` (the rooms option reaches the hook only as an exact `true`; the page state carries
+the material legend, never each element's materials). Driven in headless Chromium against an invented
+three-storey model with brick, concrete, glass and six rooms: category and material colouring, rooms and
+glass see-through with no stripes, a cut into the ground floor, picks of a window, a wall and a floor, and
+the reordered page, with no page error. **A fault found that way and fixed:** the page's 3D summary did not
+carry the material fields, so *Material* stayed greyed out. **Not run in Revit**, and not seen on a real
+model's read.
+
+**Later the same day - brand colours for rooms and spaces.** On the owner's *"use brand colours for rooms
+and spaces"* (D-149): the soft green and blue were not in the brand palette, so rooms and spaces are now
+drawn in **Accent** (`#FD641A`), see-through - a see-through brand colour is in the palette, a new hex is
+not. Success, Warning and Error mean a state and Accent Light is only a gradient's end, so none of them;
+Ink and Mist each vanish on one of the page's two themes. Rooms and spaces share the colour and stay apart
+in the legend, each hidden or shown alone. `tools/check-brand.py` no longer names either colour.
+
+### 21.19 The Companion page in the brand's colours (2026-11-07)
+
+On the owner's word - *"use brand colours for the whole companion page"* ([D-149](decisions/D-149.md),
+[`docs/brand`](brand/README.md)). It replaces §21.16's *Look* line (a neon-blue accent on a pale blue-grey
+page): every colour the page itself draws is now one of the brand kit's, or one of them see-through.
+
+- **Light page:** Mist background, White cards, Ink text (secondary text Ink at 72 %, quiet text 55 %,
+  lines 14 %, as the brand's status design sets them). **Dark page:** Ink background, Surface cards, Mist
+  text at the same strengths.
+- **The sidebar is Ink** in both themes, with Mist text; the workspace you are in is marked in Accent.
+- **The logo** in the sidebar is the brand's heron mark (`docs/brand/heron-mark-white.svg`, inlined - the
+  page loads nothing from elsewhere), White on an Accent tile like the brand's orange app icon; the home-made
+  "H" is gone.
+- **Accent** (`#FD641A`) is the one highlight - the main buttons (White text on them, as the kit says),
+  focus rings, links, "you are here", the logo mark. **Success**, **Warning** and **Error** only mean done,
+  needs attention and failed. On the light page a status colour used for *text* is mixed with Ink so it
+  stays readable; on the dark page it is drawn as the kit draws it.
+- **The Model Dashboard's charts** draw their bars in Ink (the theme's text colour), *Others* fainter and a
+  bar of errors in Error, so Accent stays the one highlight. *Worth a look* is Warning, *none found*
+  Success, a plain count and a part not read see-through Ink. The page draws Ink as the theme's own text
+  colour - Ink on the light page, Mist on the dark one - because that is what the brand says Ink is for.
+- **The 3D views:** the pick highlight is Accent, pass / fail / missing are Success / Error / Warning,
+  labels are Ink on White, and the Model Dashboard 3D background is Mist (Ink on the dark page).
+- **Kept outside the palette, on the owner's answer** - asked before the work: the 3D views' category
+  colours (ducts blue, pipes green...), treated as the model's colours; the default paint colour; and the
+  renderers' grey fallbacks. Listed in [`docs/brand` - Not the brand](brand/README.md).
+
+**Proved without Revit:** every Companion and brain test passes; `tools/check-brand.py` names nothing in the
+Companion's page files but the colours listed as outside the palette; and the page was looked at in
+headless Chromium, light and dark. **Not seen** in Revit's browser or on the owner's PC.
+
+### 21.20 Tabs instead of one long page - the page made easy to use (2026-11-07)
+
+On the owner's word - *"it is not user friendly ... make it a powerful, user friendly thing ... everything you
+can rearrange"*. **What the page does is unchanged: every route, hook, number and rule is as before.** What
+changed is how it is laid out, after looking at every workspace full of sample data:
+
+| Workspace | Before | After |
+|---|---|---|
+| Model Dashboard | one scroll of about 3,000 px | **Overview · Issues · 3D view · Parameters** - the Overview fits a screen |
+| HVAC Loads | about 2,000 px | **Results · 3D take-off · Inputs · Checks** |
+| Sprinkler Hydraulics | about 5,000 px, a two-line *Jump to* row, tables cut off at the right | **Design inputs · Remote area & spacing · Fire water · 3D · Checks** |
+
+- **A workspace's header stays** - its title, which model and when, the steps (Calculate, Check, Report...),
+  the key figures and the main buttons - and the rest is in tabs, one job each. The tab bar sticks under the
+  top bar while a long tab scrolls. A tab says when something needs a look: *Issues 11*, *Checks 1* (a
+  failed check). The tab you were on is remembered per workspace, in this browser only. *Jump to* is gone
+  from these three; Sprinkler Layout and the Element Table are short and keep it.
+- **The tabs only show and hide what each panel already drew** (`TABS` and `tabsSync` in `companion.js`):
+  nothing is read from Heron or Revit, they run on no timer of their own, and they hide with a class so a
+  panel's own `hidden` is never touched. A panel that redraws gets its tabs back before the next paint.
+- **The Model Dashboard, rearranged:** the header row keeps Refresh, Reset isolate, Print / PDF and Download
+  CSV. *Extra charts* (the board) moved under the charts it adds and reads the model at once when chosen - the
+  modeller's own press, never a timer. The parameters to check moved into **Parameters**, with their own
+  *Check these* button, beside *Colour Revit's active view*. The search moved into **Issues** and searches the
+  rows there; the *11 worth a look · 3 counts only · 3 found nothing* chips are buttons that filter the list.
+  **Show in 3D** opens the 3D tab.
+- **The 3D tab is laid out as a viewer:** the drawing takes the room - the height of the window - and its
+  controls sit in a panel beside it: *Colour by*, the categories as a list (hide, show, Only), what was
+  picked, and the read's figures.
+- **Input tables wrap like a form:** in Sprinkler Hydraulics and Sprinkler Layout a long *Why* or *A standard
+  offers* wraps in its column; only a box to type in keeps its width. Before, the last column was squeezed
+  to a few letters and every row stood a dozen lines tall.
+- **HVAC Loads:** clicking a Space's name opens the 3D take-off tab with that Space alone.
+
+**Proved without Revit:** `tests/test_companion.py` passes with a new group for the tabs (each workspace's
+tabs, nothing read and no timer, the bar never counted as a part, Show in 3D opens the 3D tab, no *Jump to*
+where there are tabs). The page was driven in headless Chromium with sample data in the dashboard, loads and
+sprinkler workspaces - every tab of each opened and measured, the tab bar seen sticking, a chip filtering the
+rows, light and dark, 1440 and 1000 px wide - with no page error. **Faults found that way and fixed:** the tab
+bar counted itself as part of the Overview and hid with it; and drawn inside a panel's box it stopped
+sticking at that box's end, so the boxes now take no part in the layout. **Not seen** in Revit's browser or on
+the owner's PC.
+
+### 21.21 Sprinkler Layout, the Element Table and the frame made easy to use (2026-11-07)
+
+On the owner's word - *"make sprinkler layout and element table user friendly too ... all whatever inside the
+companion app"*. The rest of §21.20's work: the two workspaces it left as they were, and the page's frame.
+**Every route, hook, number and rule is as before.**
+
+- **Sprinkler Layout - one card a room.** The rooms were a table, with their plans in a separate row of
+  drawings underneath, matched up by name. Now each room is a card: its name, level and heads already there,
+  its result (*asked*, *skipped*, a pass or a fail, and how many new heads) with an edge in Success, Warning
+  or Error; its plan beside its three answers - hazard class, ceiling height, branch angle - each with what
+  the model holds under it; why it was skipped; and *Each head, as NFPA 13 measures it*. The fields and what
+  they are bound to are unchanged.
+- **Element Table - an action bar.** Pinned under the top bar: **Find** (an element id or any value - it hides
+  the rows that do not hold the words, reading nothing), how many rows show, **Discard edits** (puts every
+  cell back; nothing is sent) and **Apply N change(s)** - no longer a long scroll down. The bar's edge turns
+  Accent while there are edits. The header row sticks inside the table, which is now the height of the
+  window. A *Category*, *Family* or *Type* column no row fills is left out; the element id always shows.
+  **Fill-down never fills a row the search hides** - what is changed is what is seen; an edit made before a
+  search is kept and still applied.
+- **The frame:** with no Revit connected the top bar says *No Revit connected* in one line, not four dashes;
+  and the *Jump to* row is gone from every workspace - the big ones have tabs (§21.20), the rest are short.
+
+**Proved without Revit:** `tests/test_companion.py` passes with a new group (the bar, Find and Discard read
+and send nothing - only Apply reaches Revit; fill-down skips hidden rows; empty fixed columns left out; one
+card a room with its bindings kept; the one-line top bar). Driven in headless Chromium with sample data: a
+cell edited, *access* found - 5 of 14 rows, *Apply 1 change(s)*; three room cards with their plans; no page
+error. **Not seen** in Revit's browser or on the owner's PC.

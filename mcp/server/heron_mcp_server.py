@@ -686,6 +686,12 @@ def revit_health() -> str:
             else:
                 detail = "  Revit %s, session %s - %s" % (
                     b.revit_version, b.pid, bridge.availability(b))
+                # AND WHICH MODEL IT HAS IN FRONT, from the same lease-exempt
+                # `info` (5b-1470 c) - a title only, so naming it still claims
+                # nothing. An older add-in sends none, and nothing is added.
+                named = bridge.open_model_named(b) if hasattr(bridge, "open_model_named") else None
+                if named:
+                    detail += " - open model: %s" % named
 
             lines.append("  %d)%s%s" % (index, detail, mark))
             b.close()
@@ -747,9 +753,9 @@ def revit_select_by_category(category: str = "ducts") -> str:
     across three of them hides the one that returned nothing - usually the
     interesting one.
 
-    Heron currently understands ducts and pipes. Other categories arrive as
-    each one is tried against a real model - pipes were added on 2026-09-16
-    after being counted in one.
+    Any category, by the name Revit shows - "walls", "doors", "Mechanical
+    Equipment" - and the MEP words a modeller says for ducts and pipes:
+    "ductwork", "dampers", "valves", "flex ducts".
     """
     try:
         session = binding.resolve()
@@ -1293,6 +1299,17 @@ def _values_array(values):
 
     The tool's own docstring has always said one "name=value" per line. This
     makes the code agree with it.
+
+    A VALUE IN DOUBLE QUOTES KEEPS ITS OWN SPACES (rows 5b-215 and 5b-1475,
+    decided by the owner on 2026-11-07). Every value is stripped, which is
+    right for "view = Level 1" and wrong for a prefix or a find-and-replace
+    whose space is the point: text="Warehouse - " arrived as "Warehouse -",
+    the rename it drove left a leading space Revit dropped, and a rename that
+    was done came back unverified. So a value written whole in one pair of
+    double quotes arrives as exactly what is inside them - `replacement=""` is
+    empty, `prefix=" L1"` keeps its space. Unquoted values are stripped as
+    before, a quote inside a value or a lone quote is text, and a value that
+    must carry its own quotes is written in a second pair: `""Level 1""`.
     """
     out = []
     for piece in (values or "").splitlines():
@@ -1300,8 +1317,11 @@ def _values_array(values):
         if not piece or "=" not in piece:
             continue
         name, text = piece.split("=", 1)
+        text = text.strip()
+        if len(text) >= 2 and text[0] == '"' and text[-1] == '"':
+            text = text[1:-1]
         if name.strip():
-            out.append({"name": name.strip(), "value": text.strip()})
+            out.append({"name": name.strip(), "value": text})
     return out
 
 
@@ -1335,7 +1355,7 @@ def _ignored_lines(undeclared, takeable):
     ]
 
 
-def _provides_lines(provides, entries=None):
+def _provides_lines(provides, entries=None, items=None):
     """
     What a fragment left behind, one aligned line each - both doors, one copy.
 
@@ -1385,6 +1405,16 @@ def _provides_lines(provides, entries=None):
     card does not declare is still printed when it holds data - 317 fragments'
     proofs show undeclared values that are real results (ids, counts, members),
     so "declared only" would have hidden answers.
+
+    A LIST OF SENTENCES ARRIVES WHOLE BESIDE ITS SUMMARY, SINCE 2026-11-07.
+    `Describe` shows a list as "N item(s) [a, b, c, ...]" - three items, each
+    cut at 60 characters - and that line stays as it is. Where it hid
+    something, the add-in sends `providesItems`: that list's text items,
+    numbered, each in full (to 2,000 characters, the first 100). `items` is
+    that field, and each prints on its own line under the count. Measured
+    2026-11-07 on Revit 2024: APPLY_VISUAL_PRESET's finding "Replaced what
+    '{3D}' had: Visual Style Hidden Line -> Realis..." - the sentence group
+    MQ's MQ5 checks - could not be read anywhere (FRAGMENT-ISSUES 5b-1467).
     """
     if not isinstance(provides, dict) or not provides:
         return []
@@ -1423,6 +1453,24 @@ def _provides_lines(provides, entries=None):
             return int(words[0])
         return None
 
+    def list_size(value):
+        """How many items a value's "N item(s)" summary says, or None."""
+        text = str(value).strip()
+        head = text.split(" ", 1)[0]
+        if head.isdecimal() and text[len(head):].startswith(" item(s)"):
+            return int(head)
+        return None
+
+    def items_arrived(name):
+        """The text items the add-in sent whole for this list, in order - or
+        None when none came."""
+        if not isinstance(items, dict):
+            return None
+        sent = items.get(str(name))
+        if not isinstance(sent, dict) or not sent:
+            return None
+        return sent
+
     def arrived(name):
         """The entries the add-in sent for this dictionary, in the order it
         sent them - or None when none came."""
@@ -1438,6 +1486,14 @@ def _provides_lines(provides, entries=None):
         width = max(len(str(name)) for name in data)
         for name in sorted(data):
             lines.append("  %-*s  %s" % (width, name, data[name]))
+            whole = items_arrived(name)
+            if whole:
+                for number in whole:
+                    lines.append("    %s. %s" % (number, whole[number]))
+                count = list_size(data[name])
+                if count and count > len(whole):
+                    lines.append("    ... and %d more: the first %d of %d are shown."
+                                 % (count - len(whole), len(whole), count))
             size = dictionary_size(data[name])
             sent = arrived(name) if size else None
             if not sent:
@@ -1786,13 +1842,14 @@ def revit_change(capability: str = "", values: str = "",
     call again with the `capability` the user meant, or ask them. `capability`,
     when given, always wins.
 
-    `values` is one "name=value" per line, e.g. newTypeName=TRG_PIP_Copper_CDP.
-    `expect_from` names the earlier fragment whose result this acts on, and
-    Heron refuses if something else left it; empty, the call starts clean.
+    `values` is one "name=value" per line, trimmed unless in double quotes:
+    text="Warehouse - ". `expect_from` names the earlier fragment whose
+    result this acts on, and Heron refuses if something else left it; empty,
+    the call starts clean.
 
     It runs only while the owner has Changes ON in Heron's Settings, and a
-    Publish or Admin capability needs the owner's Publish or Admin switch on
-    as well. Only a PROVEN capability runs (Article 11, D-117): a DRAFT one,
+    Publish or Admin capability needs the Publish or Admin switch on as
+    well. Only a PROVEN capability runs (Article 11, D-117): a DRAFT one,
     or one whose proof is older than its code, is refused before anything is
     sent. A refusal names the switch or the status: tell the user, and never
     try another capability to get round it. Revit may ask Keep/Discard (D-126):
@@ -2102,7 +2159,7 @@ def revit_change(capability: str = "", values: str = "",
     # NOT PRINTED AGAIN (5b-407) - only within a batch, only word for word, and
     # only when the reply names a run record, where every value can be read.
     shown, same = runs.shown_values(reply, capability, _BATCH)
-    lines.extend(_provides_lines(shown, reply.get("providesEntries"))
+    lines.extend(_provides_lines(shown, reply.get("providesEntries"), reply.get("providesItems"))
                  or ([""] if same else []))
     lines.extend(runs.unchanged_line(same))
 
@@ -3164,7 +3221,7 @@ def revit_read(capability: str = "", values: str = "",
 
     lines.extend(_ignored_lines(undeclared, takeable))
 
-    left = _provides_lines(reply.get("provides"), reply.get("providesEntries"))
+    left = _provides_lines(reply.get("provides"), reply.get("providesEntries"), reply.get("providesItems"))
     lines.extend(left or ["", "  It left nothing behind to report."])
 
     lines.append("")
@@ -3368,7 +3425,7 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
 
     lines.extend(_ignored_lines(undeclared, takeable))
 
-    left = _provides_lines(reply.get("provides"), reply.get("providesEntries"))
+    left = _provides_lines(reply.get("provides"), reply.get("providesEntries"), reply.get("providesItems"))
     lines.extend(left or ["", "  It left nothing behind to report."])
 
     lines.append("")
@@ -4136,16 +4193,19 @@ def _dashboard_colour(parameter, clear=False, identity=None):
     ok = out.get("ended") == "ok"
     _note(tool, started, time.time() - clock, reply=said, outcome=None if ok else "refused")
     return {"ok": ok, "said": said}
-def _read_view3d(companion_page, whole=False, origin="chat", ctx=None):
+def _read_view3d(companion_page, whole=False, origin="chat", ctx=None, rooms=False):
     """
     One read of the model's shapes for the Model Dashboard's 3D view (docs/40
     s21.13): READ REPORT_MODEL_GEOMETRY through revit_read - the active 3D
-    view, or the whole model - check it in the brain, and hold it on the page.
+    view, or the whole model; with `rooms`, placed rooms and spaces as volumes
+    too (s21.18) - check it in the brain, and hold it on the page.
     Returns (ended, said), as _read_dashboard does.
     """
     out = {}
+    asked = NEWLINE.join(line for line in ("wholeModel=true" if whole else "",
+                                           "rooms=true" if rooms else "") if line)
     said = _through(revit_read, reply_out=out, origin=origin)(
-        "REPORT_MODEL_GEOMETRY", "wholeModel=true" if whole else "", "", ctx=ctx)
+        "REPORT_MODEL_GEOMETRY", asked, "", ctx=ctx)
     reply = out.get("reply")
     if not isinstance(reply, dict) or not reply.get("ok"):
         return out.get("ended"), said
@@ -4162,13 +4222,13 @@ def _read_view3d(companion_page, whole=False, origin="chat", ctx=None):
     return "ok", answer["said"]
 
 
-def _dashboard_load3d(whole=False):
+def _dashboard_load3d(whole=False, rooms=False):
     """The 3D view's Load, pressed on the page: under the lock every tool
     call holds, never on a timer. Returns {"ok", "said"}."""
     started, clock = time.strftime("%H:%M:%S"), time.time()
     companion_page = _companion_module()
     with _revit_lock:
-        ended, said = _read_view3d(companion_page, whole=whole, origin="companion")
+        ended, said = _read_view3d(companion_page, whole=whole, origin="companion", rooms=rooms)
     _note("companion_dashboard_3d", started, time.time() - clock, reply=said,
           outcome=None if ended == "ok" else "refused")
     return {"ok": ended == "ok", "said": said}

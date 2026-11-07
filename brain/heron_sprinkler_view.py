@@ -38,14 +38,14 @@ SIZES = ("#9e9e9e", "#4f9fd1", "#3ba86b", "#e0a030", "#c0503a", "#8a5a44", "#6b4
          "#2c7a7b")
 OPERATING = (("on", "#c53030", "operating - in the remote area"),
              ("off", "#9fb3c8", "not operating"))
-CHECKS = (("ok", "#5aa469", "within the limits given"),
-          ("fail", "#d9534f", "above the velocity limit given"),
+CHECKS = (("ok", "#3ecf8e", "within the limits given"),
+          ("fail", "#ff5a4e", "above the velocity limit given"),
           ("none", "#cfcac0", "no limit given, or not solved"))
-SPACING_MARKS = (("ok", "#5aa469", "within its Space's limits"),
-                 ("fail", "#d9534f", "breaks a spacing limit - see its Space"),
+SPACING_MARKS = (("ok", "#3ecf8e", "within its Space's limits"),
+                 ("fail", "#ff5a4e", "breaks a spacing limit - see its Space"),
                  ("check", "#8e6bbf", "within the limits, but its Space has separation lines "
                   "held as walls - check by eye"),
-                 ("not checked", "#e0a030", "not checked - its Space has no hazard class or limits"),
+                 ("not checked", "#f5a524", "not checked - its Space has no hazard class or limits"),
                  ("no Space", "#9e9e9e", "in no Space - not checked"))
 OUTLINE = "#7a8796"
 DRY = "#cfcac0"

@@ -1,6 +1,17 @@
-// NOT STANDALONE. Assumes `elements`, `parameterName`, `prefix`, `startAt` and
-// `existingValues` are in scope; leaves `renumbered`, `refused`, `ambiguous`
-// and `collisions` behind.
+// NOT STANDALONE. Assumes `elements`, `parameterName`, `prefix`, `startAt`,
+// `existingValues` and `width` (version 3) are in scope; leaves `renumbered`,
+// `refused`, `ambiguous`, `collisions` and `widthRefused` (version 3) behind.
+//
+// VERSION 3 (2026-11-07, row 5b-215) - THE NUMBER CAN BE ZERO-PADDED. Version 2
+// wrote the bare number, so one call could not give "Office 01" to "Office 09"
+// and "Office 10" to "Office 14": on 2026-09-24 that took two passes and a
+// one-room fix. `width` is how many digits the number has at least - 2 gives
+// 01..09 then 10..14 - padded with zeros on the left, NEVER CUT: 100 with
+// width 2 stays 100, because a cut number is a duplicate waiting to happen.
+// Left out it is 0, the bare number, version 2's job. A width below 0 or above
+// 9 is refused before anything is worked out, and `widthRefused` says so.
+// (The prefix's own trailing space - "Office " - arrives since 2026-11-07 when
+// it is written in double quotes, prefix="Office ".)
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
@@ -34,13 +45,23 @@ var collisions = new List<string>();
 
 var taken = new HashSet<string>(existingValues ?? new List<string>());
 
+// VERSION 3 - the digits, zero-padded to `width`, never cut.
+string widthRefused = null;
+if (width < 0 || width > 9)
+{
+    widthRefused = "width " + width + " is not a number of digits this pads to - say 0 (the bare "
+        + "number) up to 9, e.g. 2 for 01, 02 ... 10. NOTHING WAS RENUMBERED.";
+}
+Func<int, string> digits = n =>
+    width > 0 && n >= 0 ? n.ToString().PadLeft(width, '0') : n.ToString();
+
 // What each element currently holds, so it can be discounted from the clash
 // check, and so an unchanged value is not rewritten for nothing.
 var current = new Dictionary<ElementId, string>();
 var planned = new List<KeyValuePair<Element, string>>();
 var next = startAt;
 
-foreach (var element in elements)
+foreach (var element in (widthRefused == null ? elements : new List<Element>()))
 {
     if (element == null) continue;
 
@@ -69,7 +90,7 @@ foreach (var element in elements)
     var was = parameter.AsString();
     current[element.Id] = was ?? string.Empty;
 
-    var value = (prefix ?? string.Empty) + next.ToString();
+    var value = (prefix ?? string.Empty) + digits(next);
     next++;
 
     planned.Add(new KeyValuePair<Element, string>(element, value));

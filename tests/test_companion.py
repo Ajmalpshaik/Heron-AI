@@ -1624,17 +1624,23 @@ def test_dashboard_panel():
     import heron_brain as brain3d
     import test_model_view as VIEW
     check(demo.load3d({})["ok"] is False, "no 3D read with no chat connected")
-    demo.load3d_hook = lambda whole: {"ok": True, "said": "read"}
+    demo.load3d_hook = lambda whole, rooms: {"ok": True, "said": "read"}
     check(demo.load3d({})["ok"] is False and "DEMO" in demo.load3d({})["said"],
           "no 3D read while the dashboard shows the demo")
     whole_asked = []
-    shown.load3d_hook = lambda whole: (whole_asked.append(whole) or {"ok": True, "said": "read"})
+    shown.load3d_hook = lambda whole, rooms: (whole_asked.append((whole, rooms))
+                                              or {"ok": True, "said": "read"})
     check(shown.load3d({"whole": True})["ok"] and shown.load3d({"whole": "yes"})["ok"]
-          and whole_asked == [True, False],
+          and [w for w, _ in whole_asked] == [True, False],
           "Load 3D asks for the whole model only when the page says exactly true")
+    check(shown.load3d({"rooms": True})["ok"] and shown.load3d({"rooms": 1})["ok"]
+          and [r for _, r in whole_asked[2:]] == [True, False],
+          "and for rooms as volumes only when the page says exactly true (s21.18)")
     got3d = brain3d.model_view(VIEW.sample())
     shown.set_view(got3d, ("Tower MEP", "", "11"))
     small = shown.current()["view3d"]
+    check("materials" not in small and "hasMaterials" in small and "materialLegend" in small,
+          "it carries the material legend, never each element's materials (s21.18)")
     check(small["drawn"] == 4 and "elements" not in small and shown.view()["elements"],
           "the panel's state carries the 3D summary, never the shapes - those come from "
           "/api/dashboard/view")
@@ -1645,7 +1651,22 @@ def test_dashboard_panel():
     shown.set_view({"view": None})
     check(shown.view() is None and "view3d" not in shown.current(),
           "a failed 3D read leaves no stale view behind")
+    # THE 3D VIEW'S OWN TOOLS (docs/40 s21.17): the page's alone - cameras,
+    # zoom to what is lit, a cut height, categories hidden, a picture saved on
+    # the PC, full screen. None of them reaches Revit or fetches anything new.
+    m3d = io.open(os.path.join(os.path.dirname(PAGE_JS), "model3d.js"), encoding="utf-8").read()
+    check(all(word in m3d for word in ("function preset(", "function zoomLit(", "function setHidden(",
+                                       "function savePicture(", "requestFullscreen", "uCut")),
+          "the 3D view has Top/Front/Side/3D, Zoom to lit, a cut height, category hiding, "
+          "Save picture and Full screen")
+    check(re.findall(r'fetch\(\s*"([^"]+)"', m3d) == ["/api/dashboard/view"]
+          and "innerHTML" not in m3d and "XMLHttpRequest" not in m3d,
+          "and it fetches only its own shapes, and puts text in as text")
+    check("aVis > 0.5" in m3d and m3d.count("aVis") >= 4,
+          "a hidden category is neither drawn nor picked - both passes honour it")
     page = io.open(PAGE_JS, encoding="utf-8").read()
+    check("window.HeronModel3D.setHidden(" in page and "d-legend-switch" in page,
+          "the 3D legend is the category switch")
     dash = page[page.index("// ---------------------------------------------------------------- dashboard"):
                 page.index("// ---------------------------------------------------------------- sprinkler")]
     check('"/api/dashboard/refresh"' in dash and "setInterval" not in dash
@@ -1762,6 +1783,87 @@ def test_sprinkler_panel():
           "Space names and their results reach the page as text only (Golden Rule 19)")
 
 
+def test_page_is_in_the_brand():
+    """The page's own colours are the brand kit's (D-149, docs/40 s21.19). The palette
+    is read from docs/brand/README.md, as tools/check-brand.py reads it; the paint
+    colour is the model's and stays outside, on the owner's word (docs/brand)."""
+    print()
+    print("The page in the brand's colours")
+    brand = io.open(os.path.join(ROOT, "docs", "brand", "README.md"), encoding="utf-8").read()
+    section = brand[brand.index("## The colours"):brand.index("## Not the brand")]
+    palette = {h.upper() for h in re.findall(r"`#([0-9A-Fa-f]{6})`", section)}
+    check(len(palette) >= 8, "the palette is read from docs/brand (%d colours)" % len(palette))
+    static = os.path.join(ROOT, "mcp", "companion", "static")
+    css = io.open(os.path.join(static, "companion.css"), encoding="utf-8").read()
+    found = []
+    for line in css.splitlines():
+        if "var(--paint," in line:
+            continue                      # the model's paint colour (docs/brand, "not the brand")
+        for h in re.findall(r"#([0-9A-Fa-f]{6})(?:[0-9A-Fa-f]{2})?\b", line):
+            found.append(h.upper())
+        for r, g, b in re.findall(r"rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)", line):
+            found.append("%02X%02X%02X" % (int(r), int(g), int(b)))
+    outside = sorted(set(found) - palette)
+    check(found and not outside, "every colour the stylesheet types is a brand colour, or one see-through"
+          + (" - outside: %s" % ", ".join(outside) if outside else ""))
+    index = io.open(os.path.join(static, "index.html"), encoding="utf-8").read()
+    check("heron-mark-white.svg" in index, "the sidebar's logo is the brand's heron mark")
+    print()
+
+
+def test_workspace_tabs():
+    """A workspace full of data is split into tabs (docs/40 s21.20): its header stays,
+    one job per tab, and the tabs only show and hide what the panel drew - they read
+    nothing from Heron or Revit and run on no timer of their own."""
+    print()
+    print("Workspace tabs instead of one long page")
+    js = io.open(PAGE_JS, encoding="utf-8").read()
+    css = io.open(os.path.join(ROOT, "mcp", "companion", "static", "companion.css"), encoding="utf-8").read()
+    tabs = js[js.index("const TABS = {"):js.index("function tabGo(")]
+    for ws, labels in (("dashboard", ["Overview", "Issues", "3D view", "Parameters"]),
+                       ("loads", ["Results", "3D take-off", "Inputs", "Checks"]),
+                       ("sprinkler", ["Design inputs", "Remote area & spacing", "Fire water", "3D", "Checks"])):
+        check(("  %s: [" % ws) in tabs and all(('label: "%s"' % l) in tabs for l in labels),
+              "%s has its tabs: %s" % (ws, ", ".join(labels)))
+    engine = js[js.index("function tabsSync()"):js.index("function workspaces()")]
+    check("fetch(" not in tabs + engine and "setInterval" not in engine and "setTimeout" not in engine,
+          "the tabs read nothing and run on no timer of their own")
+    check(".tab-off { display: none !important; }" in css and "classList.toggle(\"tab-off\"" in engine,
+          "a tab hides with a class, never with the panel's own `hidden`")
+    check('n.classList.contains("ws-tabs")' in engine, "the tab bar is never counted as a part it switches")
+    check("tabGo(\"dashboard\", \"3d\")" in js and "tabGo(\"loads\", \"3d\")" in js,
+          "Show in 3D and a Space's name open the 3D tab")
+    index = io.open(os.path.join(ROOT, "mcp", "companion", "static", "index.html"), encoding="utf-8").read()
+    check("jumpSync" not in js and 'id="jump"' not in index and ".jump" not in css,
+          "the old Jump to row is gone from every workspace (s21.21)")
+    print()
+
+
+def test_table_and_layout_friendly():
+    """The Element Table and Sprinkler Layout made easy to use (docs/40 s21.21): the
+    table's action bar, find and Discard; the layout's one card a room. Read from the
+    page's own files - how it looks is a person's eye."""
+    print()
+    print("The Element Table's action bar, and the Sprinkler Layout's room cards")
+    js = io.open(PAGE_JS, encoding="utf-8").read()
+    table = js[js.index("function renderTable(t)"):js.index("async function table_()")]
+    check('"t-bar"' in table and '"t-find"' in table and "Discard edits" in table,
+          "the table has a bar with Find, the row count, Discard edits and Apply")
+    check("/api/table/apply" in table and table.count("fetch(") == 1,
+          "Find and Discard read nothing and send nothing - only Apply reaches Revit")
+    fill = js[js.index("function fillDown(tbody)"):js.index("function fillDown(tbody)") + 900]
+    check("tbody.rows[i].hidden) continue" in fill, "fill-down never fills a row the search hides")
+    check("FIXED" in table and 'i === 0 ||' in table, "an empty Category, Family or Type column is left out; the id always shows")
+    rooms = js[js.index("function layoutRooms(Y, state)"):js.index("function renderLayout(Y)")]
+    check('"y-cards"' in rooms and '"y-card"' in rooms and "layoutPlan(v)" in rooms,
+          "each room is one card holding its plan, its fields and its result")
+    check("mine.hazard = haz.value" in rooms and "mine.ceiling_mm" in rooms and "mine.angle_deg" in rooms,
+          "the room's fields keep their bindings")
+    check('classList.add("off")' in js and 'classList.remove("off")' in js,
+          "with no Revit the top bar says so in one line")
+    print()
+
+
 def test_page_frame():
     """The page's frame (docs/40 s21.16): a sidebar of five workspaces, one shown at a
     time, desktop only. Read from the page's own files - how it LOOKS is a person's eye."""
@@ -1836,6 +1938,9 @@ def main():
     except Exception as why:                    # noqa: BLE001 - reported, not hidden
         check(False, "the Sprinkler Layout panel checks ran to the end (they raised %r)" % (why,))
     test_page_frame()
+    test_page_is_in_the_brand()
+    test_workspace_tabs()
+    test_table_and_layout_friendly()
     test_no_way_to_an_ai()
     test_addin_side()
 

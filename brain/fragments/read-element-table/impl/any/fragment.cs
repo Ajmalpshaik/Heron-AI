@@ -1,5 +1,11 @@
-// NOT STANDALONE. Assumes `elements`, `parameterNames` and `maxRows` are in
-// scope, and leaves `tableJson`, `rowCount`, `truncated` and `findings` behind.
+// NOT STANDALONE. Assumes `elements`, `parameterNames`, `maxRows` and
+// `compact` are in scope, and leaves `tableJson`, `rowCount`, `truncated` and
+// `findings` behind.
+//
+// VERSION 2 (2026-11-07, FRAGMENT-ISSUES 5b-1466): `compact` true writes
+// format 2 - the columns once, then each row's id and its values in column
+// order - for a table read in a chat. Format 1 is unchanged and stays the
+// default, because the Companion's editable table is built from it.
 //
 // READS ONLY. No transaction is opened and nothing is set.
 //
@@ -148,6 +154,7 @@ foreach (var e in elements)
         family = instance.Symbol.Family.Name;
 
     var cells = new List<string>();
+    var valuesOnly = new List<string>();
     foreach (var name in names)
     {
         string value = null;
@@ -202,6 +209,14 @@ foreach (var e in elements)
                   + esc("noCopy") + ": " + (noCopy ? "true" : "false") + ", "
                   + esc("editable") + ": " + (editable ? "true" : "false") + ", "
                   + esc("why") + ": " + esc(why) + "}");
+        valuesOnly.Add(esc(value));
+    }
+
+    if (compact)
+    {
+        rows.Add("{" + esc("id") + ": " + esc(e.Id.ToString()) + ", "
+                 + esc("values") + ": [" + string.Join(", ", valuesOnly.ToArray()) + "]}");
+        continue;
     }
 
     rows.Add("{" + esc("id") + ": " + esc(e.Id.ToString()) + ", "
@@ -217,7 +232,7 @@ rowCount = rows.Count;
 var columnList = new List<string>();
 foreach (var name in names) columnList.Add(esc(name));
 
-tableJson = "{" + esc("format") + ": 1, "
+tableJson = "{" + esc("format") + ": " + (compact ? "2" : "1") + ", "
           + esc("columns") + ": [" + string.Join(", ", columnList.ToArray()) + "], "
           + esc("rows") + ": [" + string.Join(", ", rows.ToArray()) + "], "
           + esc("truncated") + ": " + truncated + "}";

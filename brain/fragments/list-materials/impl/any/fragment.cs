@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `withAssets`, `withAllTabs`,
-// `withLibraryAppearances`, `namePattern`, `withTextures` and `onlyMissing`
-// are in scope; leaves `materialCount`, `materialList`, `materialClasses`,
+// `withLibraryAppearances`, `namePattern`, `libraryPattern`, `withTextures`
+// and `onlyMissing` are in scope; leaves `materialCount`, `materialList`, `materialClasses`,
 // `materialIds`, `libraryAppearances`, `textures`, `missing` and `findings`
 // behind.
 //
@@ -316,10 +316,22 @@ var findings = new List<string>();
     // shares ("Generic material." on 557), so it is listed by its code alone
     // and the finding says how many. Assets Revit marks Hidden (1,162 of
     // 3,088 there) are left out, counted - the tools still take one by code.
-    if (withLibraryAppearances)
+    // ONLY THE LIBRARY ASSETS A PATTERN MATCHES (version 6, row 5b-1466) - by
+    // the name listed or the code, "*grass*" or a plain word matched anywhere.
+    // Given, it turns the library list on by itself; "all" or left out lists
+    // the library whole, as version 5 did.
+    var libraryAsked = (libraryPattern ?? "").Trim();
+    System.Text.RegularExpressions.Regex libraryWanted = null;
+    if (libraryAsked.Length > 0 && !string.Equals(libraryAsked, "all", StringComparison.OrdinalIgnoreCase))
+    {
+        var shape = libraryAsked.IndexOf('*') >= 0 || libraryAsked.IndexOf('?') >= 0 ? libraryAsked : "*" + libraryAsked + "*";
+        libraryWanted = new System.Text.RegularExpressions.Regex("^" + System.Text.RegularExpressions.Regex.Escape(shape)
+            .Replace("\\*", ".*").Replace("\\?", ".") + "$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    }
+    if (withLibraryAppearances || libraryWanted != null)
     {
         var shown = new List<string>();
-        int byName = 0, byCode = 0, hiddenCount = 0;
+        int byName = 0, byCode = 0, hiddenCount = 0, notMatched = 0;
         foreach (var asset in doc.Application.GetAssets(AssetType.Appearance) ?? new List<Asset>())
         {
             var hidden = asset.FindByName(SchemaCommon.Hidden) as AssetPropertyBoolean;
@@ -332,6 +344,11 @@ var findings = new List<string>();
                     && schema.Value.StartsWith("Prism", StringComparison.OrdinalIgnoreCase) ? description.Value
                 : null;
             var assetKind = asset.FindByName(Generic.GenericDiffuse) != null ? "Generic" : schema == null ? "?" : schema.Value;
+            if (libraryWanted != null && !libraryWanted.IsMatch(code) && (name == null || !libraryWanted.IsMatch(name)))
+            {
+                notMatched++;
+                continue;
+            }
             if (name == null || string.Equals(name, code, StringComparison.OrdinalIgnoreCase)) { byCode++; shown.Add(code + " (" + assetKind + ")"); }
             else { byName++; shown.Add(name + " [" + code + "] (" + assetKind + ")"); }
         }
@@ -341,5 +358,8 @@ var findings = new List<string>();
             + "most often the name the Asset Browser shows but not always, with Revit's code in [ ]; {2} by Revit's code alone, because this "
             + "Revit gives no other name for them; {3} Revit marks hidden are left out. SET_MATERIAL_APPEARANCE takes the description or the "
             + "code - the code is the sure one", shown.Count, byName, byCode, hiddenCount));
+        if (libraryWanted != null)
+            findings.Add(string.Format("libraryPattern '{0}' kept {1} and left out {2} library asset(s) it does not match, "
+                + "by the name listed or the code", libraryAsked, shown.Count, notMatched));
     }
 }

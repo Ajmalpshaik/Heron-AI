@@ -24,7 +24,7 @@
 # The proof is the owner's, run on his Revit - never by the session that wrote
 # this.
 
-model: a saved TEST COPY shaped like 4355-BHVD-3D-60A10-BL007A, Revit 2020
+model: Test for Issue - a saved scrap TEST COPY arranged as group MP's MP1 (sheets S1-S5, Seq. 1 and Seq. 2), Revit 2024
 
 defaults:
   setup: []
@@ -46,12 +46,21 @@ jobs:
 
   # THE SHEET-BY-SHEET CHECK. Positive: expectedLast Seq. B while S1 to S4
   # end on Seq. A - S1 to S5 in lastDiffers (S5 has no revision), S2 and S4
-  # in cloudOnly. Negative: expectedLast Seq. A - only S5 in lastDiffers.
+  # in cloudOnly. MP3's negative - expectedLast Seq. A, only the sheets with
+  # no revision in lastDiffers - is read by eye: it can never come back EMPTY,
+  # because sheetTable, revisionTable and elements are role: result and always
+  # filled (row 5b-1471). The signable negative runs in a FAMILY DOCUMENT open
+  # in the same Revit, as version 1's proof did - "a family holds no
+  # revisions". Make one with CREATE_FAMILY_DOCUMENT (Metric Generic Model,
+  # saved under %TEMP%\heron-work), bring it up with ACTIVATE_DOCUMENT, and
+  # name both documents: in: is the test copy, negative-in: the family.
   - fragment: list-revisions
+    in: "Test for Issue"
+    negative-in: "mp-negative-blank"
     set:
       expectedLast: "Seq. 2"
     negative-set:
-      expectedLast: "Seq. 1"
+      expectedLast: "Seq. 2"
     expect: [sheetTable, lastDiffers]
 
   # THE FIX AND THE SWAP. Positive: replace Seq. A with Seq. B on S1, S2, S3.
@@ -59,6 +68,8 @@ jobs:
   # in cloudDriven with their cloud in cloudsHolding. Negative: the same on S5,
   # which carries neither - notOnSheet, nothing changed.
   - fragment: set-sheet-revisions
+    write: true
+    keep-chain: true
     setup:
       - find-sheets
     set:
@@ -80,6 +91,8 @@ jobs:
   # Seq. A cloud untouched. Negative: fromRevision Seq. B against Seq. A
   # clouds - every one skipped, nothing changed.
   - fragment: edit-revision-clouds
+    write: true
+    keep-chain: true
     setup:
       - list-revision-clouds
     set:

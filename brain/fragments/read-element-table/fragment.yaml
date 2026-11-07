@@ -9,7 +9,13 @@ semantic-identity: "these elements and the named parameters, as rows the Compani
 kind: action
 domain: revit.parameters
 capability: READ_ELEMENT_TABLE
-version: 1
+# Version 2 (2026-11-07, FRAGMENT-ISSUES 5b-1466, issue #799 item 4): an
+# optional `compact` - values only, one short row per element, format 2 - for
+# a table READ in a chat. 53 walls x 6 parameters came back 59,018 characters
+# on Villa 1, Revit 2024, every cell carrying its raw value, its edit flags and
+# the reason. Left out it is false, and the table is format 1 as before - what
+# the Companion's editable table is built from.
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -53,6 +59,14 @@ contract:
     - name: maxRows
       type: int
       source: request
+    - name: compact
+      # Version 2. true: format 2 - "columns" once, then each row its id and
+      # its values in column order, nothing else; what a chat reads. Absent is
+      # false: format 1, every cell with its raw value, edit flags and reason -
+      # what revit_edit_table opens. A compact table cannot be edited.
+      type: bool
+      source: request
+      optional: true
   provides:
     # The whole table as one JSON string, format 1 - the rows the page shows.
     - name: tableJson
@@ -72,23 +86,21 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-07'
   by: Ajmal PS
-  model: Project1 (3,067 elements), Revit 2020, session 2648
+  model: Test for Issue (6,120 elements), Revit 2024, session 28560
   positive_case: 'run with maxRows=1 - the first of 3 tracked inputs - the arrangement was
-    re-made first by running select-by-category-name, set-selection with this phase''s own
-    values. returned backslash \, cap 1, columnList 2 item(s) ["Length", "Area"], esc Func`2,
-    findings 1 item(s) [Only the first 1 elements are in the table; 5 more were left...],
-    groupLocked Func`3, isMark Func`2, maxRows 1, names 2 item(s) [Length, Area], quote ",
-    readValue Func`2, rowCount 1, rows 1 item(s) [{"id": "345432", "uniqueId": "69a466b6-3244-45f2-bf6b-ccb3b0...],
-    storedValue Func`2, tableJson {"format": 1, "columns": ["Length", "Area"], "rows": [{"id":
-    "345432", "uniqueId": "69a466b6-3244-45f2-bf6b-ccb3b0733dc9-00054558", "category": "Walls",
-    "family": null, "type": "Generic - 200mm", "cells": {"Length": {"value": "10000", "raw":
-    "32.808398950131235", "noCopy": false, "editable": false, "why": "read-only - Revit sets
-    it"}, "Area": {"value": "28 m²", "raw": "305.34415235497153", "noCopy": false, "editable":
-    false, "why": "read-only - Revit sets it"}}}], "truncated": 5}, theOne Func`3, truncated
-    5. inputs came elements from the selection (6); parameterNames as given; maxRows as given.
-    on Project1'
+    re-made first by running filter-elements-by-category with this phase''s own values. returned
+    backslash \, cap 1, columnList 6 item(s) ["Sheet Number", "Sheet Name", "Drawn By", ...],
+    compact true, esc Func`2, findings 1 item(s) [Only the first 1 elements are in the table;
+    26 more were lef...], groupLocked Func`3, isMark Func`2, maxRows 1, names 6 item(s) [Sheet
+    Number, Sheet Name, Drawn By, ...], quote ", readValue Func`2, rowCount 1, rows 1 item(s)
+    [{"id": "359502", "values": ["A101", "Architectural Floor Pla...], storedValue Func`2,
+    tableJson {"format": 2, "columns": ["Sheet Number", "Sheet Name", "Drawn By", "Checked
+    By", "Sheet Issue Date", "Current Revision"], "rows": [{"id": "359502", "values": ["A101",
+    "Architectural Floor Plans", "Author", "Checker", "03/31/22", ""]}], "truncated": 26},
+    theOne Func`3, truncated 26. inputs came elements from filter-elements-by-category (27);
+    parameterNames as given; maxRows as given; compact as given. on Test for Issue'
   negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). read-element-table\
     \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
     \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
@@ -100,7 +112,7 @@ proof:
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 011218548b5d5720
+  fingerprint: 64b7eedee0b7c65b
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
