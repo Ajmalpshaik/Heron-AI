@@ -5,18 +5,20 @@
 > this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py) reads it back
 > into the register for every tool that reads it, so a row here is seen exactly as it was seen there.
 
-## Group MQ - the visualiser's answer no longer says a 3D view is not one: `APPLY_VISUAL_PRESET` v4, `REPORT_VISUAL_PRESET` v4 (2026-11-07)
+## Group MQ - the visualiser's answer no longer says a 3D view is not one, and names what a preset replaced: `APPLY_VISUAL_PRESET` v4, `REPORT_VISUAL_PRESET` v4 (2026-11-07)
 
 On 2026-11-06, on Villa 1 in Revit 2024, Sruthina found every answer from both preset tools on the 3D view
 `Exterior - Day` printing *"is not a 3D view"* and *"has no Graphic Display Options"* beside readings that showed
 both ([issue #799](https://github.com/Ajmalpshaik/Heron-AI/issues/799) item 7,
 [row 5b-1464](../fragment-issues/section-5b-rows-401-425.md)). The two sentences were built on every run; they are
-now built only where a setting is skipped. Nothing either card reads, writes or counts changed. Both were PROVEN
+now built only where a setting is skipped. `APPLY_VISUAL_PRESET` also names every setting it replaced, from and to
+([issue #799](https://github.com/Ajmalpshaik/Heron-AI/issues/799) item 8, [row 5b-1465](../fragment-issues/section-5b-rows-401-425.md)) - it had put a Sun Intensity
+of 60, set on purpose, back to 80 without saying so. Nothing either card writes or counts changed. Both were PROVEN
 at version 3 and are DRAFT at version 4 until this group proves them.
 
 | What | Where | What changed |
 |---|---|---|
-| `APPLY_VISUAL_PRESET` v4 (MODIFY) | [`brain/fragments/apply-visual-preset`](../../brain/fragments/apply-visual-preset/fragment.yaml) | `noRender` and `noDisplay` are `Func<string>`, called where a render or display setting is skipped |
+| `APPLY_VISUAL_PRESET` v4 (MODIFY) | [`brain/fragments/apply-visual-preset`](../../brain/fragments/apply-visual-preset/fragment.yaml) | `noRender` and `noDisplay` are `Func<string>`, called where a render or display setting is skipped; a finding *"Replaced what '<view>' had:"* names each setting changed, from and to |
 | `REPORT_VISUAL_PRESET` v4 (READ) | [`brain/fragments/report-visual-preset`](../../brain/fragments/report-visual-preset/fragment.yaml) | The same two lines, byte for byte |
 
 **What is done and what is not.** Both compile for all eight releases, 2020 to 2027
@@ -29,3 +31,4 @@ at version 3 and are DRAFT at version 4 until this group proves them.
 | **MQ2** | *REPORT_VISUAL_PRESET on the floor plan, preset Exterior Day* | Each render setting skipped still says *"is not a 3D view, and only a 3D view has Rendering Settings"* - the sentence is made where it is true |
 | **MQ3** | *APPLY_VISUAL_PRESET - D-30 pair, through Keep or Discard.* Negative: preset "Studio Glow". Positive: the 3D view, preset Exterior Day, renderFor issue | Negative: refused, nothing changed. Positive: the same absence as MQ1; Render Quality High and the output DPI read back as set. Keep or Discard is the modeller's |
 | **MQ4** | *APPLY_VISUAL_PRESET on the floor plan* | The render settings skipped, each naming the reason, as MQ2 |
+| **MQ5** | *APPLY_VISUAL_PRESET after a hand-set value, through Keep or Discard.* SET_GRAPHIC_DISPLAY_OPTIONS Sun Intensity 60 on the 3D view, then preset Exterior Day | A finding *"Replaced what '<view>' had:"* naming Sun Intensity 60 -> 80, and each other setting it changed from and to. Version 3 said only the count |
