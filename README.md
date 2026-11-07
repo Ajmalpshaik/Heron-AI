@@ -1,8 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/heron-logo-white.svg">
-    <img src="docs/brand/heron-logo-ink.svg" alt="Heron AI - Design Automate Deliver" width="440">
-  </picture>
+  <img src="docs/brand/heron-readme-banner.png" alt="Heron AI - Design Automate Deliver" width="520">
 </p>
 
 <p align="center">
