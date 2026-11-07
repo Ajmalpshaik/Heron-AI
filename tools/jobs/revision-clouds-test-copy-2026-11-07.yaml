@@ -46,12 +46,21 @@ jobs:
 
   # THE SHEET-BY-SHEET CHECK. Positive: expectedLast Seq. B while S1 to S4
   # end on Seq. A - S1 to S5 in lastDiffers (S5 has no revision), S2 and S4
-  # in cloudOnly. Negative: expectedLast Seq. A - only S5 in lastDiffers.
+  # in cloudOnly. MP3's negative - expectedLast Seq. A, only the sheets with
+  # no revision in lastDiffers - is read by eye: it can never come back EMPTY,
+  # because sheetTable, revisionTable and elements are role: result and always
+  # filled (row 5b-1471). The signable negative runs in a FAMILY DOCUMENT open
+  # in the same Revit, as version 1's proof did - "a family holds no
+  # revisions". Make one with CREATE_FAMILY_DOCUMENT (Metric Generic Model,
+  # saved under %TEMP%\heron-work), bring it up with ACTIVATE_DOCUMENT, and
+  # name both documents: in: is the test copy, negative-in: the family.
   - fragment: list-revisions
+    in: "Test for Issue"
+    negative-in: "mp-negative-blank"
     set:
       expectedLast: "Seq. 2"
     negative-set:
-      expectedLast: "Seq. 1"
+      expectedLast: "Seq. 2"
     expect: [sheetTable, lastDiffers]
 
   # THE FIX AND THE SWAP. Positive: replace Seq. A with Seq. B on S1, S2, S3.
