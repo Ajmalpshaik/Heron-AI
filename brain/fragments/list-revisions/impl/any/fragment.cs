@@ -418,7 +418,18 @@ else
         {
             var r = doc.GetElement(revisionId) as Revision;
             if (r == null) continue;
-            if (string.Equals(r.SequenceNumber.ToString(invariant), bare, StringComparison.Ordinal)
+
+            // THE NUMBER IT PRINTS COUNTS TOO. "revision 21" may mean the sequence or
+            // the printed number; where they point at two revisions the match below
+            // finds both and is refused with both named. "Seq. 21" is the sequence
+            // alone. RevisionNumber throws under Per Sheet numbering.
+            string printedNumber = null;
+            if (!expectedText.StartsWith("Seq", StringComparison.OrdinalIgnoreCase))
+            {
+                try { printedNumber = r.RevisionNumber; } catch { printedNumber = null; }
+            }
+            if ((printedNumber != null && string.Equals(printedNumber, expectedText, StringComparison.OrdinalIgnoreCase))
+                || string.Equals(r.SequenceNumber.ToString(invariant), bare, StringComparison.Ordinal)
                 || string.Equals(r.Id.ToString(), expectedText, StringComparison.Ordinal)
                 || string.Equals(r.Name ?? "", expectedText, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(r.Description ?? "", expectedText, StringComparison.OrdinalIgnoreCase)
@@ -477,7 +488,7 @@ else
             string how = isTicked && isClouded ? "ticked and clouded"
                        : isTicked ? "ticked"
                        : isClouded ? "clouded only"
-                       : "clouded only (on a view placed here)";
+                       : "not ticked, and no cloud found showing here";
             if (!isTicked) onlyClouds.Add(label(r));
             string mark;
             try { mark = sheet.GetRevisionNumberOnSheet(r.Id); }

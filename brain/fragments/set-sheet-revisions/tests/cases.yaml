@@ -42,6 +42,22 @@ negative:
       and LIST_REVISIONS read back agreeing sheet for sheet. Version 1 answered
       sheetsChanged 3, cloudDriven 0 here
 
+  - given: >
+      replaceWith "Seq. B" on a sheet where Seq. A is ticked AND held by a cloud
+    expect: >
+      Seq. B ticked on, Seq. A still printed: the sheet in `cloudDriven`, the
+      cloud in `cloudsHolding`, NOT counted, and a finding saying B went on
+      while A is still printed
+
+  - given: attach true for a revision a cloud already prints on the sheet
+    expect: >
+      ticked, but NOT counted in `sheetsChanged` - the title block does not
+      change - and a finding saying so
+
+  - given: replaceWith "21" where Seq. 21 prints "22" and another revision prints "21"
+    expect: >
+      nothing changed, and a finding naming both revisions - "21" points at two
+
   - given: attach false on a sheet the revision was never on
     expect: >
       the sheet in `notOnSheet`, NOT in `cloudDriven` - version 1 called it

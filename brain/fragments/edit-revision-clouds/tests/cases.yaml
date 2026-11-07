@@ -2,12 +2,13 @@
 #
 # ARRANGE ON A TEST COPY - the shape of the owner's 2026-11-07 job (row
 # 5b-1463): revisions Seq. A and Seq. B. Sheets S1 and S2 each carry a cloud on
-# Seq. A (S1's drawn in a plan placed on it); sheet S3 also carries a cloud on
-# Seq. A and must KEEP it. Clouds found by LIST_REVISION_CLOUDS with sheets
+# Seq. A (S1's drawn in a plan placed on it); sheet S4 also carries a cloud on
+# Seq. A and must KEEP it. `revisionId` is the revision's name, "Seq. B -
+# <its description>" - the add-in resolves it by name. Clouds found by LIST_REVISION_CLOUDS with sheets
 # "S1, S2", revision "Seq. A".
 
 positive:
-  - given: action reassign, revisionId "Seq. B", fromRevision "Seq. A", the S1 and S2 clouds
+  - given: action reassign, revisionId "Seq. B - <its description>", fromRevision "Seq. A", the S1 and S2 clouds
     expect: >
       both clouds on Seq. B, read back; `sheetEffect` saying S1 and S2 now
       print Seq. B and no longer print Seq. A (where no tick or other cloud
@@ -21,7 +22,7 @@ positive:
 negative:
   - given: the reassign above
     expect: >
-      S3's Seq. A cloud UNTOUCHED and S3 still printing Seq. A - the whole
+      S4's Seq. A cloud UNTOUCHED and S4 still printing Seq. A - the whole
       reason this is not MERGE_REVISION
 
   - given: action delete, confirm "3" (or none) for two clouds

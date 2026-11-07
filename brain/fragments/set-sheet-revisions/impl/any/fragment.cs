@@ -73,7 +73,18 @@ if (replacing)
     {
         var r = doc.GetElement(revisionId) as Revision;
         if (r == null) continue;
-        if (string.Equals(r.SequenceNumber.ToString(), text, StringComparison.Ordinal)
+
+        // THE NUMBER IT PRINTS COUNTS TOO. "revision 21" may mean the sequence or
+        // the printed number; where they point at two revisions the match below
+        // finds both and is refused with both named. "Seq. 21" is the sequence
+        // alone. RevisionNumber throws under Per Sheet numbering.
+        string printedNumber = null;
+        if (!said.StartsWith("Seq", StringComparison.OrdinalIgnoreCase))
+        {
+            try { printedNumber = r.RevisionNumber; } catch { printedNumber = null; }
+        }
+        if ((printedNumber != null && string.Equals(printedNumber, said, StringComparison.OrdinalIgnoreCase))
+            || string.Equals(r.SequenceNumber.ToString(), text, StringComparison.Ordinal)
             || string.Equals(r.Id.ToString(), said, StringComparison.Ordinal)
             || string.Equals(r.Name ?? "", said, StringComparison.OrdinalIgnoreCase)
             || string.Equals(r.Description ?? "", said, StringComparison.OrdinalIgnoreCase)
@@ -105,6 +116,12 @@ if (replacing)
         findings.Add("replaceWith was given, so this is a swap: " + label(replacement)
                    + " goes on where the other comes off, and attach=true was not used.");
 }
+
+Func<ElementId, string> DescribeRevision = id =>
+{
+    var r = doc.GetElement(id) as Revision;
+    return r == null ? "revision " + id : label(r);
+};
 
 // ---- the clouds, read once and only if a sheet needs explaining -----------
 
@@ -168,6 +185,7 @@ else
 
         bool touched = false;
         bool carriesA = false;
+        bool newlyPrinted = false;   // an attach that puts a revision on the print
 
         foreach (var id in wanted)
         {
@@ -177,6 +195,13 @@ else
                 if (next.Contains(id)) continue;   // already ticked: not a change
                 next.Add(id);
                 touched = true;
+                // ALREADY PRINTED BY A CLOUD: ticked as asked, so it stays when
+                // the cloud goes - but the title block does not change, so the
+                // sheet is not counted (D-52) and the finding says why.
+                if (printed.Contains(id))
+                    findings.Add("sheet " + sheet.SheetNumber + ": a cloud already prints "
+                        + DescribeRevision(id) + "; it is now ticked as well, and the title block is unchanged.");
+                else newlyPrinted = true;
             }
             else
             {
@@ -194,10 +219,12 @@ else
 
         // THE SWAP: B goes on only where A was. A sheet that never carried A is
         // named in notOnSheet and left alone.
+        var replacementTicked = false;
         if (replacing && carriesA && !printed.Contains(replacement.Id) && !next.Contains(replacement.Id))
         {
             next.Add(replacement.Id);
             touched = true;
+            replacementTicked = true;
         }
 
         if (touched)
@@ -222,6 +249,7 @@ else
             if (attach && !replacing)
             {
                 if (touched && !after.Contains(id)) asked = false;
+                if (!newlyPrinted) asked = false;
                 continue;
             }
             if (!after.Contains(id)) continue;
@@ -235,12 +263,20 @@ else
             foreach (var c in held) ids.Add(c.ToString());
             holdingLines.Add("sheet " + sheet.SheetNumber + ": "
                 + (rev == null ? "revision " + id : label(rev))
-                + " still printed, held by " + (held.Count == 0
-                    ? "a cloud this read could not find"
-                    : held.Count + " cloud(s) " + string.Join(", ", ids.ToArray()))
-                + ". EDIT_REVISION_CLOUDS moves or deletes them");
+                + " still printed" + (held.Count == 0
+                    ? " - no cloud on this revision was found showing on this sheet, so why "
+                      + "Revit still prints it is not known here. LIST_REVISION_CLOUDS and "
+                      + "Sheet Issues/Revisions are where to look"
+                    : ", held by " + held.Count + " cloud(s) " + string.Join(", ", ids.ToArray())
+                      + ". EDIT_REVISION_CLOUDS moves or deletes them"));
         }
         if (replacing && carriesA && !after.Contains(replacement.Id)) asked = false;
+
+        // THE SWAP ON A CLOUD-HELD SHEET IS HALF DONE, AND SAYS SO: the new
+        // revision was ticked on, the old one is still printed by its clouds.
+        if (replacementTicked && !asked && after.Contains(replacement.Id))
+            findings.Add("sheet " + sheet.SheetNumber + ": " + label(replacement)
+                + " was put on, but the revision it replaces is still printed - see cloudsHolding.");
 
         if (asked) sheetsChanged++;
     }

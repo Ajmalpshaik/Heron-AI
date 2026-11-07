@@ -72,7 +72,18 @@ if (fromSaid.Length > 0 && !string.Equals(fromSaid, "none", StringComparison.Ord
     {
         var r = doc.GetElement(id) as Revision;
         if (r == null) continue;
-        if (string.Equals(r.SequenceNumber.ToString(), bare, StringComparison.Ordinal)
+
+        // THE NUMBER IT PRINTS COUNTS TOO. "revision 21" may mean the sequence or
+        // the printed number; where they point at two revisions the match below
+        // finds both and is refused with both named. "Seq. 21" is the sequence
+        // alone. RevisionNumber throws under Per Sheet numbering.
+        string printedNumber = null;
+        if (!fromSaid.StartsWith("Seq", StringComparison.OrdinalIgnoreCase))
+        {
+            try { printedNumber = r.RevisionNumber; } catch { printedNumber = null; }
+        }
+        if ((printedNumber != null && string.Equals(printedNumber, fromSaid, StringComparison.OrdinalIgnoreCase))
+            || string.Equals(r.SequenceNumber.ToString(), bare, StringComparison.Ordinal)
             || string.Equals(r.Id.ToString(), fromSaid, StringComparison.Ordinal)
             || string.Equals(r.Name ?? "", fromSaid, StringComparison.OrdinalIgnoreCase)
             || string.Equals(r.Description ?? "", fromSaid, StringComparison.OrdinalIgnoreCase)

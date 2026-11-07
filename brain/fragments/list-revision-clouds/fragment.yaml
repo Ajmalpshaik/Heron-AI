@@ -46,7 +46,8 @@ purpose: >
   WRITE_ELEMENT_PARAMETERS to set their Comments or Mark.
 
   **A FILTER THAT MATCHES NOTHING LISTS NOTHING**, and says which word missed -
-  never every cloud in the project instead.
+  never every cloud in the project instead. Sheets or views handed in by the
+  step before narrow a typed filter and never widen it.
 
 contract:
   needs:
@@ -114,8 +115,8 @@ compatibility-note: >
   No ElementId is built from an int, so 2024's 64-bit ids do not reach this
   code.
 
-# ROUTING - repeated in LIST_REVISIONS, SET_SHEET_REVISIONS and
-# EDIT_REVISION_CLOUDS.
+# ROUTING - the rows naming this card are repeated in LIST_REVISIONS,
+# SET_SHEET_REVISIONS and EDIT_REVISION_CLOUDS; the select row is here alone.
 #
 #   "which revision is this cloud"       -> here, the cloud selected
 #   "list the revision clouds on these sheets" -> here, sheets

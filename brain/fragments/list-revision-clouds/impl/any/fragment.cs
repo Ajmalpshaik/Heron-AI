@@ -118,7 +118,18 @@ else
         {
             var r = doc.GetElement(id) as Revision;
             if (r == null) continue;
-            if (string.Equals(r.SequenceNumber.ToString(), bare, StringComparison.Ordinal)
+
+            // THE NUMBER IT PRINTS COUNTS TOO. "revision 21" may mean the sequence or
+            // the printed number; where they point at two revisions the match below
+            // finds both and is refused with both named. "Seq. 21" is the sequence
+            // alone. RevisionNumber throws under Per Sheet numbering.
+            string printedNumber = null;
+            if (!word.StartsWith("Seq", StringComparison.OrdinalIgnoreCase))
+            {
+                try { printedNumber = r.RevisionNumber; } catch { printedNumber = null; }
+            }
+            if ((printedNumber != null && string.Equals(printedNumber, word, StringComparison.OrdinalIgnoreCase))
+                || string.Equals(r.SequenceNumber.ToString(), bare, StringComparison.Ordinal)
                 || string.Equals(r.Id.ToString(), word, StringComparison.Ordinal)
                 || string.Equals(r.Name ?? "", word, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(r.Description ?? "", word, StringComparison.OrdinalIgnoreCase)
@@ -138,24 +149,51 @@ else
         }
     }
 
-    // What was handed in narrows it too.
+    // WHAT WAS HANDED IN NARROWS - IT NEVER WIDENS. Handed sheets and views
+    // are a filter of their own, and where a word was typed as well only the
+    // sheets or views in BOTH count: FIND_SHEETS' fifty sheets plus a typed
+    // "S3" is S3, never fifty-one sheets of clouds handed to an edit.
+    //
+    // THE STEP BEFORE BEATS THE SELECTION. The add-in fills `elements` from the
+    // chain when the step before left any, and from Revit's selection only when
+    // nothing did - so "which revision is this cloud" with a cloud selected
+    // reads the selected cloud only when no earlier step is being carried.
     var cloudFilter = new HashSet<ElementId>();
+    var handedSheets = new HashSet<ElementId>();
+    var handedViews = new HashSet<ElementId>();
     var ignored = 0;
     foreach (var e in handed)
     {
         if (e == null) continue;
         if (e is RevisionCloud) cloudFilter.Add(e.Id);
-        else if (e is ViewSheet) sheetFilter.Add(e.Id);
-        else if (e is View) viewFilter.Add(e.Id);
+        else if (e is ViewSheet) handedSheets.Add(e.Id);
+        else if (e is View) handedViews.Add(e.Id);
         else ignored++;
     }
     if (ignored > 0)
         findings.Add(ignored + " element(s) handed in are not clouds, sheets or views, and did not narrow the list.");
 
+    var sheetTyped = words(sheets).Count > 0;
+    var viewTyped = viewWords.Count > 0;
+    if (handedSheets.Count > 0)
+    {
+        if (sheetTyped) sheetFilter.IntersectWith(handedSheets);
+        else sheetFilter = handedSheets;
+        if (sheetTyped && sheetFilter.Count == 0)
+            findings.Add("None of the sheets typed is among the " + handedSheets.Count + " sheet(s) handed in.");
+    }
+    if (handedViews.Count > 0)
+    {
+        if (viewTyped) viewFilter.IntersectWith(handedViews);
+        else viewFilter = handedViews;
+        if (viewTyped && viewFilter.Count == 0)
+            findings.Add("None of the views typed is among the " + handedViews.Count + " view(s) handed in.");
+    }
+
     // A FILTER WHOSE EVERY WORD MISSED IS NOT "NO FILTER". A typed sheet that
     // does not exist must not widen the answer to every cloud in the project.
-    var sheetAsked = words(sheets).Count > 0 || sheetFilter.Count > 0;
-    var viewAsked = viewWords.Count > 0 || viewFilter.Count > 0;
+    var sheetAsked = sheetTyped || handedSheets.Count > 0;
+    var viewAsked = viewTyped || handedViews.Count > 0;
 
     if (refusedRevision || (sheetAsked && sheetFilter.Count == 0) || (viewAsked && viewFilter.Count == 0))
     {

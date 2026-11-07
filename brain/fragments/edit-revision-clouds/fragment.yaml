@@ -72,7 +72,9 @@ contract:
     - name: action
       type: string
       source: request
-    # The revision to move the clouds to - "Seq. 21". Not used by delete.
+    # The revision to move the clouds to, by its NAME as the add-in resolves a
+    # revision - "Seq. 21 - <its description>"; "Seq. 21" alone is refused.
+    # Not used by delete.
     - name: revisionId
       type: ElementId
       source: request
@@ -137,8 +139,8 @@ compatibility-note: >
   read off the assemblies and is for the proof to show. A refusal is caught,
   named with the revision's issued state, and the whole call rolled back.
 
-# ROUTING - repeated in LIST_REVISION_CLOUDS, SET_SHEET_REVISIONS and
-# MERGE_REVISION.
+# ROUTING - the rows naming this card are repeated in LIST_REVISION_CLOUDS and
+# SET_SHEET_REVISIONS.
 #
 #   "move the clouds on these sheets to today's revision" -> here, reassign,
 #                                          handed LIST_REVISION_CLOUDS' clouds

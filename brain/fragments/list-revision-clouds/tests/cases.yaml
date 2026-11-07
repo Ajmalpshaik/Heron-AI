@@ -28,6 +28,13 @@ negative:
       carries. A sheet filter that leaked would move another sheet's clouds in
       the next step
 
+  - given: >
+      FIND_SHEETS' S1, S2 and S3 handed in, and sheets "S2" typed, revision
+      "Seq. A"
+    expect: >
+      ONLY S2's cloud - the handed sheets and the typed one INTERSECT. A union
+      would list S1's clouds too and hand them to an edit
+
   - given: sheets "NO-SUCH-SHEET"
     expect: >
       NOTHING listed, `elements` empty, and a finding naming the sheet that
