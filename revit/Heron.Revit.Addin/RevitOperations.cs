@@ -585,7 +585,17 @@ namespace Heron.Revit.Addin
                         && shown != BuiltInCategory.INVALID)
                         one = shown;
                     else
+                    {
+                        // THE REFUSAL SAYS BOTH ROUTES (5b-1470 b). The table's
+                        // own sentence listed only its duct-and-pipe words, so a
+                        // modeller read that nothing else could be selected.
+                        refusal = Json.Error("unknown_category",
+                            "Heron does not know the category '" + name + "'. Type it as "
+                            + "Visibility/Graphics shows it - Walls, Doors, Mechanical Equipment - "
+                            + "or one of the words it knows for ducts and pipes: "
+                            + string.Join(", ", Known()) + ". Nothing was selected.");
                         return refusal;
+                    }
                 }
 
                 // A NAME REPEATED, OR TWO WORDS FOR ONE CATEGORY ("pipe" and

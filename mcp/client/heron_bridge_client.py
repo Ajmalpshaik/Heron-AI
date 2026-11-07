@@ -635,6 +635,20 @@ def availability(bridge):
     return "(in use by another chat, ~%d min left)" % minutes
 
 
+def open_model_named(bridge):
+    """
+    The title of the model in front in this Revit, from `info` - lease-exempt,
+    so asking never claims the Revit - or None when the add-in does not say
+    (an add-in from before 2026-11-07, or no model in front). FRAGMENT-ISSUES
+    5b-1470 (c), issue #799: a free session was listed with no model named.
+    """
+    reply = bridge.request("info")
+    if reply is None or not reply.get("ok"):
+        return None
+    title = reply.get("activeModel")
+    return title if isinstance(title, str) and title.strip() else None
+
+
 def refuse_off_windows():
     """
     True when this machine cannot reach a bridge, having said so.

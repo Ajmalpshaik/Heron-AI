@@ -686,6 +686,12 @@ def revit_health() -> str:
             else:
                 detail = "  Revit %s, session %s - %s" % (
                     b.revit_version, b.pid, bridge.availability(b))
+                # AND WHICH MODEL IT HAS IN FRONT, from the same lease-exempt
+                # `info` (5b-1470 c) - a title only, so naming it still claims
+                # nothing. An older add-in sends none, and nothing is added.
+                named = bridge.open_model_named(b) if hasattr(bridge, "open_model_named") else None
+                if named:
+                    detail += " - open model: %s" % named
 
             lines.append("  %d)%s%s" % (index, detail, mark))
             b.close()

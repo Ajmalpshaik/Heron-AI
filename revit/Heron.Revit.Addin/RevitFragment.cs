@@ -2119,9 +2119,10 @@ namespace Heron.Revit.Addin
             // entries, and the server prints each under the count. Measured
             // 2026-11-07, Revit 2024: APPLY_VISUAL_PRESET's finding "Replaced
             // what '{3D}' had: Visual Style Hidden Line -> Realis..." - the one
-            // sentence MQ5 checks - never left Revit. Only lists of strings:
-            // a list of elements or ids is a quantity, and sending every name
-            // would carry the model in bulk (D-26).
+            // sentence MQ5 checks - never left Revit. Lists of strings, and
+            // lists of elements by name while they hold 100 or fewer; a longer
+            // list of elements, or any list of ids, is a quantity, and sending
+            // every name would carry the model in bulk (D-26).
             const int itemsSentPerList = 100;
             const int itemTextLimit = 2000;
             var itemLists = new List<string>();
@@ -2147,6 +2148,19 @@ namespace Heron.Revit.Addin
                     foreach (var item in list)
                     {
                         var text = item as string;
+                        // A LIST OF ELEMENTS BY NAME TOO, ONLY WHILE IT IS SHORT
+                        // (2026-11-07, issue #799 item 5): FIND_VIEWS leaves its
+                        // views as elements, so "14 item(s) [L1 - Architectural,
+                        // ...]" stopped at three names. Up to 100 elements send
+                        // their names whole; a longer list is a quantity and
+                        // stays its count, so a 6,000-element selection never
+                        // floods a reply (D-26).
+                        var element = item as Element;
+                        if (text == null && element != null && list.Count <= itemsSentPerList)
+                        {
+                            try { text = element.Name; } catch { text = null; }
+                            if (string.IsNullOrEmpty(text)) text = element.GetType().Name;
+                        }
                         if (text == null) { allText = false; break; }
                         if (text.Length > 60) hidden = true;
                         if (rows.Count < itemsSentPerList)

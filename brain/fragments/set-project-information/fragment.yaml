@@ -40,7 +40,12 @@ semantic-identity: "change the values in Manage > Project Information - project 
 kind: action
 domain: revit.document
 capability: SET_PROJECT_INFORMATION
-version: 1
+# Version 2 (2026-11-07, FRAGMENT-ISSUES 5b-1476, found proving it for issue
+# #799): Parameter.UserModifiable is asked of a SHARED parameter only. Version 1
+# asked it of every parameter, and Revit's own Project Name and Client Name came
+# back "read-only" on Test for Issue, Revit 2024, though both are typed into in
+# the Project Information dialog. Nothing else changed.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 

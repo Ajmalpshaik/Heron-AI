@@ -56,6 +56,14 @@ positive:
       among the settings it changed, each from and to. Version 3 changed it
       and said nothing
 
+  - given: >
+      VERSION 5, row 5b-1472: preset Exterior Day, renderFor issue, on a 3D view
+      whose Render Output is Screen (Test for Issue's {3D}, Revit 2024)
+    expect: >
+      Render Output read back as 300 DPI and counted changed, with nothing
+      "not taken". Version 4 left it at Screen: "not taken: Render Output
+      (reads Screen) - Revit: The resolution target is not printer."
+
 negative:
   - given: the schedule "Heron Render Schedule", preset Exterior Day
     expect: >
@@ -69,6 +77,12 @@ negative:
     expect: refused, saying check or issue, nothing changed
   - given: the camera view, preset Exterior Day, sunTime "teatime"
     expect: refused, "not a time Heron can read", nothing changed
+
+  - given: >
+      VERSION 5, row 5b-1472: the same with renderFor check (left out)
+    expect: >
+      Render Output Screen, as a check preset says - no printer level read,
+      nothing refused; the fix touches only a request for a DPI
 
 second_route:
   - the Rendering dialog (View Control Bar teapot), Sun Settings and Graphic Display Options on the same view, read before and after

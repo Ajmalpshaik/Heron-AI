@@ -9,7 +9,13 @@ semantic-identity: "give a view a whole ready-made look in one call - a named vi
 kind: action
 domain: revit.views
 capability: APPLY_VISUAL_PRESET
-version: 4
+version: 5
+# VERSION 5, 2026-11-07 - row 5b-1472, found running Group MQ's MQ3 on Test for
+# Issue, Revit 2024: renderFor issue left Render Output at Screen - the branch
+# read PrinterResolution before switching the target to Printer, and Revit
+# refused "The resolution target is not printer." Now read only when the output
+# is already Printer, as row 5b-1278 fixed SET_RENDER_SETTINGS. Version 4's
+# kept try-once run describes the old code.
 # VERSION 4, 2026-11-07 - row 5b-1464, issue #799 item 7, found by Sruthina on
 # Villa 1, Revit 2024: every answer on the 3D view "Exterior - Day" printed
 # noRender "is not a 3D view" and noDisplay "has no Graphic Display Options"
