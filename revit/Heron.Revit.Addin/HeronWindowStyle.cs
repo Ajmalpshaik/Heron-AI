@@ -28,12 +28,15 @@ namespace Heron.Revit.Addin
     /// on whichever one somebody forgets. Same argument as HeronPaths: one
     /// place per fact.
     ///
-    /// THE COLOURS ARE HeronActivityBanner'S, TO THE BYTE. The banner came
-    /// first and is the only other thing Heron draws inside Revit; two Heron
-    /// surfaces using two different darks read as two products. What the
-    /// accents MEAN is the house rule rather than the banner's: blue is
-    /// active and primary, amber is a warning and nothing else, red is danger
-    /// and nothing else, grey is the quiet default.
+    /// THE COLOURS ARE THE BRAND'S - D-149, docs/brand/README.md's table, and
+    /// nothing else. Surface is the card, Ink the header and insets, text is
+    /// Mist at the status design's three opacities (92, 72 and 55 per cent).
+    /// What the accents MEAN: orange (Accent) is active and primary and never
+    /// danger, Warning is a warning and nothing else, Error is danger and
+    /// nothing else, Success is a rail that still holds, Mist at 55 per cent is
+    /// the quiet default. Until 2026-11-07 these were the activity banner's
+    /// blue-grey palette, copied to the byte; the banner follows the brand in
+    /// its own change, from the designer's status-notification design.
     ///
     /// NOTHING HERE TOUCHES THE REVIT API, deliberately, and that is what
     /// lets every window built on it be compiled into a bare WPF host and
@@ -43,22 +46,27 @@ namespace Heron.Revit.Addin
     /// </summary>
     internal static class HeronWindowStyle
     {
-        internal static readonly Color CardColour = Color.FromRgb(0x23, 0x26, 0x29);
-        internal static readonly Color HeaderColour = Color.FromRgb(0x1A, 0x1D, 0x20);
-        internal static readonly Color InsetColour = Color.FromRgb(0x1B, 0x1F, 0x22);
-        internal static readonly Color TextPrimary = Color.FromRgb(0xF2, 0xF5, 0xF7);
-        internal static readonly Color TextSecondary = Color.FromRgb(0x9A, 0xA5, 0xAD);
-        internal static readonly Color TextMuted = Color.FromRgb(0x6F, 0x7A, 0x82);
-        internal static readonly Color AccentColour = Color.FromRgb(0x2F, 0x9B, 0xE3);
-        internal static readonly Color WarnColour = Color.FromRgb(0xF0, 0xA3, 0x2C);
-        internal static readonly Color DangerColour = Color.FromRgb(0xE5, 0x53, 0x4B);
-        internal static readonly Color QuietColour = Color.FromRgb(0x7E, 0x8A, 0x93);
+        // Brand Surface, Ink, Ink.
+        internal static readonly Color CardColour = Color.FromRgb(0x1B, 0x1B, 0x1F);
+        internal static readonly Color HeaderColour = Color.FromRgb(0x0F, 0x0F, 0x10);
+        internal static readonly Color InsetColour = Color.FromRgb(0x0F, 0x0F, 0x10);
+
+        // Brand Mist at 92, 72 and 55 per cent - the status design's text levels.
+        internal static readonly Color TextPrimary = Color.FromArgb(0xEB, 0xF7, 0xF5, 0xF2);
+        internal static readonly Color TextSecondary = Color.FromArgb(0xB8, 0xF7, 0xF5, 0xF2);
+        internal static readonly Color TextMuted = Color.FromArgb(0x8C, 0xF7, 0xF5, 0xF2);
+
+        // Brand Accent, Warning, Error; the quiet default is Mist at 55 per cent.
+        internal static readonly Color AccentColour = Color.FromRgb(0xFD, 0x64, 0x1A);
+        internal static readonly Color WarnColour = Color.FromRgb(0xF5, 0xA5, 0x24);
+        internal static readonly Color DangerColour = Color.FromRgb(0xFF, 0x5A, 0x4E);
+        internal static readonly Color QuietColour = Color.FromArgb(0x8C, 0xF7, 0xF5, 0xF2);
 
         /// <summary>
-        /// For a rail that HOLDS - the preview, the single undo. Green means
-        /// "this still protects you", never "this is a good idea".
+        /// For a rail that HOLDS - the preview, the single undo. Brand Success.
+        /// Green means "this still protects you", never "this is a good idea".
         /// </summary>
-        internal static readonly Color SafeColour = Color.FromRgb(0x4C, 0xC3, 0x8A);
+        internal static readonly Color SafeColour = Color.FromRgb(0x3E, 0xCF, 0x8E);
 
         internal const double Gutter = 22;
 
@@ -222,7 +230,7 @@ namespace Heron.Revit.Addin
                     FontFamily = new FontFamily(BodyFont),
                     FontSize = 14,
                     FontWeight = FontWeights.Bold,
-                    Foreground = new SolidColorBrush(Color.FromRgb(0x0E, 0x17, 0x1D)),
+                    Foreground = new SolidColorBrush(Color.FromRgb(0x0F, 0x0F, 0x10)),
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
                 },
@@ -362,11 +370,12 @@ namespace Heron.Revit.Addin
                 FontSize = 13,
                 FontWeight = FontWeights.SemiBold,
 
-                // Dark text on a lit button, not white. Both the blue and the
+                // Dark text (brand Ink) on a lit button, not white, as the status
+                // design does. Both the orange and the
                 // amber are light enough that white on them fails to separate
                 // at 13px, and the amber is the one that matters - it is the
                 // button that grants Heron permission to edit.
-                Foreground = new SolidColorBrush(Color.FromRgb(0x0B, 0x14, 0x1A)),
+                Foreground = new SolidColorBrush(Color.FromRgb(0x0F, 0x0F, 0x10)),
                 Padding = new Thickness(18, 9, 18, 10),
                 Margin = new Thickness(9, 0, 0, 0),
                 Cursor = Cursors.Hand,

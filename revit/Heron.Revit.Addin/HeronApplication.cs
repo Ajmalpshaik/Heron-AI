@@ -63,15 +63,16 @@ namespace Heron.Revit.Addin
         // The Admin and Publish switches (D-106). The Changes padlock with a
         // mark where its keyhole was - a gear for Admin, an arrow leaving a
         // tray for Publish - in the same two colours, so all three read as
-        // one family: blue and closed is off, red and open is on.
+        // one family: Mist and closed is off, Error red and open is on (the
+        // brand's colours, D-149; blue and red until 2026-11-07).
         internal const string AdminLockedIcon = "AdminLocked.png";
         internal const string AdminUnlockedIcon = "AdminUnlocked.png";
         internal const string PublishLockedIcon = "PublishLocked.png";
         internal const string PublishUnlockedIcon = "PublishUnlocked.png";
 
         // The Ask to Keep switch (D-138): the same padlock family, with a
-        // question mark where the keyhole was. Blue and closed is the safe
-        // side - Revit asks before a change is kept - and red and open is
+        // question mark where the keyhole was. Mist and closed is the safe
+        // side - Revit asks before a change is kept - and Error red and open is
         // kept without asking, whether by the switch or by one job's grant.
         internal const string KeepAskingIcon = "KeepAsking.png";
         internal const string KeepNotAskingIcon = "KeepNotAsking.png";
@@ -81,7 +82,8 @@ namespace Heron.Revit.Addin
         // request, and the log says what each press freed.
         internal const string FreeModelIcon = "FreeModel.png";
 
-        // The Companion button (D-109): lit while the Companion is on.
+        // The Companion button (D-109): lit in the brand's orange while the
+        // Companion is on, grey while it is off.
         internal const string CompanionOnIcon = "CompanionOn.png";
         internal const string CompanionOffIcon = "CompanionOff.png";
 
