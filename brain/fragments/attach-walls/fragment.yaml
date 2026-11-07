@@ -97,6 +97,10 @@ compatibility-note: >
 # attached by hand.
 
 utterances:
+  # ADDED 2026-11-07, issue #799 routing table: ranked DIMENSION_ELEMENT_FACES
+  # first on Villa 1. On Revit 2024 this card is not offered (no API for it
+  # before 2025) and the answer names it as another release's (#801).
+  - extend wall height up to the underside of the roof
   - attach these walls to the roof above
   - attach the wall tops to the slab
   - detach the tops of these walls
