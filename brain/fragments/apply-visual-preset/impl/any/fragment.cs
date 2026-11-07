@@ -644,6 +644,18 @@ if (refused == null)
     findings.Add(changed + " of " + differed + " setting(s) changed and read back as " + presetName + " says on '" + view.Name
         + "'; " + alreadySo + " already so, " + skipped + " skipped"
         + (notTaken.Count == 0 ? "" : " - not taken: " + string.Join("; ", notTaken)));
+    // WHAT EACH CHANGED SETTING WAS BEFORE (version 4, row 5b-1465). A preset
+    // sets a whole look, so it moves settings the modeller may have chosen on
+    // purpose - on Villa 1 it put Sun Intensity back from 60 to 80 and the
+    // answer did not say so (issue #799 item 8). Every value it replaced is
+    // named, from and to, so nothing chosen by hand is lost unseen.
+    var moved = new List<string>();
+    for (var i = 0; i < before.Count; i++)
+        if (before[i][3] == "differs" && after[i][3] == "same")
+            moved.Add(before[i][0] + " " + before[i][1] + " -> " + after[i][1]);
+    if (moved.Count > 0)
+        findings.Add("Replaced what '" + view.Name + "' had: " + string.Join("; ", moved)
+            + ". To change one setting alone, its own tool sets it and leaves the rest");
     var byHand = before.Where(r => r[3] == "by hand").Select(r => r[0]).ToList();
     if (byHand.Count > 0)
         findings.Add(presetName + " also wants " + string.Join(" and ", byHand) + " on. Revit's API has no member for "

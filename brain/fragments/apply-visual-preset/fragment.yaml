@@ -19,6 +19,9 @@ version: 4
 # byte for byte the same change in APPLY_ and REPORT_VISUAL_PRESET. Nothing
 # the card reads, writes or counts changed. Version 3's proof below no longer
 # describes the code. DRAFT until NEEDS-CHECKING Group MQ proves it.
+# VERSION 4 ALSO, row 5b-1465, issue #799 item 8: a run that replaced a value
+# the view had - Sun Intensity 60 put back to 80 on Villa 1 - did not say so.
+# A finding now names every setting it changed, from and to.
 # VERSION 3, 2026-10-21 - row 5b-1306, found 2026-10-21 making interior
 # renders for the owner on Revit 2020: a Still sun's time was written and read
 # through the SITE's time zone (SiteLocation.ConvertFromProjectTime /

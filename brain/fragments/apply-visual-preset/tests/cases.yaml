@@ -48,6 +48,13 @@ positive:
     expect: >
       each render setting skipped still says "is not a 3D view, and only a 3D
       view has Rendering Settings" - the sentence is made where it is true
+  - given: >
+      version 4, row 5b-1465 - the 3D view with Sun Intensity set to 60 by
+      SET_GRAPHIC_DISPLAY_OPTIONS first, then preset Exterior Day
+    expect: >
+      a finding "Replaced what '<view>' had:" naming Sun Intensity 60 -> 80
+      among the settings it changed, each from and to. Version 3 changed it
+      and said nothing
 
 negative:
   - given: the schedule "Heron Render Schedule", preset Exterior Day
