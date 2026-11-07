@@ -122,11 +122,11 @@
       if (d.kind === "pipe") {
         ctx.beginPath(); ctx.moveTo(d.a[0], d.a[1]); ctx.lineTo(d.b[0], d.b[1]);
         ctx.lineWidth = hit ? 6 : 3; ctx.lineCap = "round";
-        ctx.strokeStyle = hit ? "#ff2d95" : colour(d.item); ctx.stroke();
+        ctx.strokeStyle = hit ? "#fd641a" : colour(d.item); ctx.stroke();
       } else {
         ctx.beginPath(); ctx.arc(d.s[0], d.s[1], hit ? 7 : 5, 0, 2 * Math.PI);
         ctx.fillStyle = colour(d.item); ctx.fill();
-        ctx.lineWidth = hit ? 3 : 1; ctx.strokeStyle = hit ? "#ff2d95" : "rgba(0,0,0,0.5)"; ctx.stroke();
+        ctx.lineWidth = hit ? 3 : 1; ctx.strokeStyle = hit ? "#fd641a" : "rgba(0,0,0,0.5)"; ctx.stroke();
       }
     }
     if (view.source && view.source.at) {

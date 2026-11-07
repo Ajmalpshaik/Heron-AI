@@ -13,6 +13,15 @@ positive:
       the reason "a type parameter - changing it changes every element of this
       type". The instance cell stays editable
 
+  - given: >
+      VERSION 2, row 5b-1466 (issue #799 item 4, Villa 1, Revit 2024): the
+      same walls and parameters with compact true
+    expect: >
+      tableJson format 2 - "columns" once and each row only its id and its
+      values in column order - a small part of format 1's length for the same
+      rows. Version 1 had no compact: 53 walls x 6 parameters came back
+      59,018 characters
+
 negative:
   - given: the same 3 units, parameterNames "ZZZNOTHINGHERE"
     expect: >
@@ -23,3 +32,10 @@ negative:
     expect: >
       rowCount 0 and a finding saying no parameter was named - never a table
       of rows with no columns
+
+  - given: >
+      VERSION 2, row 5b-1466: compact left out - what revit_edit_table sends
+    expect: >
+      format 1 exactly as version 1 wrote it, every cell with value, raw,
+      noCopy, editable and why - the Companion's editable table is built from
+      it, and a compact table there would lose every edit flag

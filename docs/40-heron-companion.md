@@ -1319,7 +1319,7 @@ page's frame, not what any panel does or says it does:** every route, hook, numb
 - **Long workspaces get a "Jump to" row** of links to their own headings (built from what is on screen).
 - **Activity** is a button in the sidebar that opens a drawer on the right (Esc closes it), no longer a
   bubble over the page.
-- **Look:** soft cards on a pale page, one neon-blue accent (`#00AEEF`; buttons and links use a darker blue
+- **Look** (*replaced by §21.19, the brand's colours*)**:** soft cards on a pale page, one neon-blue accent (`#00AEEF`; buttons and links use a darker blue
   so white text on them reads), orange for warnings only, red for danger only, green for done. Segoe UI,
   Consolas for ids. Light and dark, from Windows or the sidebar switch.
 - **Desktop only.** Every phone and tablet rule is gone (the `max-width` and `pointer: coarse` queries, the
@@ -1417,3 +1417,77 @@ drawn in **Accent** (`#FD641A`), see-through - a see-through brand colour is in 
 not. Success, Warning and Error mean a state and Accent Light is only a gradient's end, so none of them;
 Ink and Mist each vanish on one of the page's two themes. Rooms and spaces share the colour and stay apart
 in the legend, each hidden or shown alone. `tools/check-brand.py` no longer names either colour.
+
+### 21.19 The Companion page in the brand's colours (2026-11-07)
+
+On the owner's word - *"use brand colours for the whole companion page"* ([D-149](decisions/D-149.md),
+[`docs/brand`](brand/README.md)). It replaces §21.16's *Look* line (a neon-blue accent on a pale blue-grey
+page): every colour the page itself draws is now one of the brand kit's, or one of them see-through.
+
+- **Light page:** Mist background, White cards, Ink text (secondary text Ink at 72 %, quiet text 55 %,
+  lines 14 %, as the brand's status design sets them). **Dark page:** Ink background, Surface cards, Mist
+  text at the same strengths.
+- **The sidebar is Ink** in both themes, with Mist text; the workspace you are in is marked in Accent.
+- **The logo** in the sidebar is the brand's heron mark (`docs/brand/heron-mark-white.svg`, inlined - the
+  page loads nothing from elsewhere), White on an Accent tile like the brand's orange app icon; the home-made
+  "H" is gone.
+- **Accent** (`#FD641A`) is the one highlight - the main buttons (White text on them, as the kit says),
+  focus rings, links, "you are here", the logo mark. **Success**, **Warning** and **Error** only mean done,
+  needs attention and failed. On the light page a status colour used for *text* is mixed with Ink so it
+  stays readable; on the dark page it is drawn as the kit draws it.
+- **The Model Dashboard's charts** draw their bars in Ink (the theme's text colour), *Others* fainter and a
+  bar of errors in Error, so Accent stays the one highlight. *Worth a look* is Warning, *none found*
+  Success, a plain count and a part not read see-through Ink. The page draws Ink as the theme's own text
+  colour - Ink on the light page, Mist on the dark one - because that is what the brand says Ink is for.
+- **The 3D views:** the pick highlight is Accent, pass / fail / missing are Success / Error / Warning,
+  labels are Ink on White, and the Model Dashboard 3D background is Mist (Ink on the dark page).
+- **Kept outside the palette, on the owner's answer** - asked before the work: the 3D views' category
+  colours (ducts blue, pipes green...), treated as the model's colours; the default paint colour; and the
+  renderers' grey fallbacks. Listed in [`docs/brand` - Not the brand](brand/README.md).
+
+**Proved without Revit:** every Companion and brain test passes; `tools/check-brand.py` names nothing in the
+Companion's page files but the colours listed as outside the palette; and the page was looked at in
+headless Chromium, light and dark. **Not seen** in Revit's browser or on the owner's PC.
+
+### 21.20 Tabs instead of one long page - the page made easy to use (2026-11-07)
+
+On the owner's word - *"it is not user friendly ... make it a powerful, user friendly thing ... everything you
+can rearrange"*. **What the page does is unchanged: every route, hook, number and rule is as before.** What
+changed is how it is laid out, after looking at every workspace full of sample data:
+
+| Workspace | Before | After |
+|---|---|---|
+| Model Dashboard | one scroll of about 3,000 px | **Overview · Issues · 3D view · Parameters** - the Overview fits a screen |
+| HVAC Loads | about 2,000 px | **Results · 3D take-off · Inputs · Checks** |
+| Sprinkler Hydraulics | about 5,000 px, a two-line *Jump to* row, tables cut off at the right | **Design inputs · Remote area & spacing · Fire water · 3D · Checks** |
+
+- **A workspace's header stays** - its title, which model and when, the steps (Calculate, Check, Report...),
+  the key figures and the main buttons - and the rest is in tabs, one job each. The tab bar sticks under the
+  top bar while a long tab scrolls. A tab says when something needs a look: *Issues 11*, *Checks 1* (a
+  failed check). The tab you were on is remembered per workspace, in this browser only. *Jump to* is gone
+  from these three; Sprinkler Layout and the Element Table are short and keep it.
+- **The tabs only show and hide what each panel already drew** (`TABS` and `tabsSync` in `companion.js`):
+  nothing is read from Heron or Revit, they run on no timer of their own, and they hide with a class so a
+  panel's own `hidden` is never touched. A panel that redraws gets its tabs back before the next paint.
+- **The Model Dashboard, rearranged:** the header row keeps Refresh, Reset isolate, Print / PDF and Download
+  CSV. *Extra charts* (the board) moved under the charts it adds and reads the model at once when chosen - the
+  modeller's own press, never a timer. The parameters to check moved into **Parameters**, with their own
+  *Check these* button, beside *Colour Revit's active view*. The search moved into **Issues** and searches the
+  rows there; the *11 worth a look · 3 counts only · 3 found nothing* chips are buttons that filter the list.
+  **Show in 3D** opens the 3D tab.
+- **The 3D tab is laid out as a viewer:** the drawing takes the room - the height of the window - and its
+  controls sit in a panel beside it: *Colour by*, the categories as a list (hide, show, Only), what was
+  picked, and the read's figures.
+- **Input tables wrap like a form:** in Sprinkler Hydraulics and Sprinkler Layout a long *Why* or *A standard
+  offers* wraps in its column; only a box to type in keeps its width. Before, the last column was squeezed
+  to a few letters and every row stood a dozen lines tall.
+- **HVAC Loads:** clicking a Space's name opens the 3D take-off tab with that Space alone.
+
+**Proved without Revit:** `tests/test_companion.py` passes with a new group for the tabs (each workspace's
+tabs, nothing read and no timer, the bar never counted as a part, Show in 3D opens the 3D tab, no *Jump to*
+where there are tabs). The page was driven in headless Chromium with sample data in the dashboard, loads and
+sprinkler workspaces - every tab of each opened and measured, the tab bar seen sticking, a chip filtering the
+rows, light and dark, 1440 and 1000 px wide - with no page error. **Faults found that way and fixed:** the tab
+bar counted itself as part of the Overview and hid with it; and drawn inside a panel's box it stopped
+sticking at that box's end, so the boxes now take no part in the layout. **Not seen** in Revit's browser or on
+the owner's PC.

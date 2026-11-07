@@ -65,6 +65,16 @@ positive:
       "relative - looked up in Revit's texture folders, not checked here"; a
       relative path is never in `missing`
 
+  - given: >
+      VERSION 6, row 5b-1466 (issue #799 item 4, Villa 1, Revit 2024):
+      libraryPattern "grass" with withLibraryAppearances left out
+    expect: >
+      the library listed BY ITSELF, holding only assets whose listed name or
+      code contains "grass", and a finding saying how many it kept and left
+      out. Version 5 had no such input: namePattern filtered the project's
+      materials only, and the library came back whole - 1,942 assets, 87,931
+      characters - or not at all
+
 negative:
   - given: >
       "Heron Materials Annotation", a family new from Metric Generic
@@ -104,6 +114,14 @@ negative:
     expect: >
       `missing` empty and `textures` empty - a found file is never listed as
       missing
+
+  - given: >
+      VERSION 6, row 5b-1466: libraryPattern "zzqx-no-such-asset" - a word no
+      library asset carries
+    expect: >
+      libraryAppearances empty and the finding saying 0 kept and every visible
+      asset left out - never the whole library. The same run's project
+      materials still listed, because libraryPattern filters the library alone
 
 second_route:
   - >

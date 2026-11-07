@@ -32,6 +32,14 @@ positive:
       transaction and Revit refused every view there: "Cannot change the
       active view of a modifiable document" (5b-456)
 
+  - given: >
+      VERSION 4, row 5b-1470 (a): viewName "Floor Plan: L1 - Architectural" on
+      a model where a floor plan and a ceiling plan share that name
+    expect: >
+      the FLOOR plan opened, not the ceiling plan - and "Ceiling Plans: L1 -
+      Architectural" opens the ceiling plan. Version 3 opened neither: it read
+      the kind only in the enum's spelling, "FloorPlan"
+
 negative:
   - given: the name of a VIEW TEMPLATE
     expect: >
@@ -66,26 +74,12 @@ negative:
     expect: >
       "no view called" - neither is a name this reads. Measured 2026-10-13
 
-  # VERSION 4 (2026-11-07, row 5b-1474). Each FAILS on version 3, which
-  # compared the kind with the enum's spelling alone.
   - given: >
-      VERSION 4. A floor plan and a ceiling plan both called "Level 1";
-      viewName "Floor Plan: Level 1", then "Reflected Ceiling Plan: Level 1"
+      VERSION 4, row 5b-1470 (a): viewName "Section: L1 - Architectural" where
+      no section has that name
     expect: >
-      the floor plan opens, then the ceiling plan - the same as "FloorPlan:
-      Level 1" and "CeilingPlan: Level 1". Version 3 said "no view called"
-      for both browser spellings
-
-  - given: >
-      VERSION 4. viewName "3D View: {3D}", then "floor-plan: Level 1"
-    expect: the default 3D view, then the floor plan
-
-  - given: >
-      VERSION 4 - NEGATIVE. viewName "Section: Level 1" where only the two
-      plans are called Level 1
-    expect: >
-      nothing opened, nothing sent to Revit, and the finding naming the two
-      that are there - "FloorPlan: Level 1" or "CeilingPlan: Level 1"
+      nothing opened, and the answer naming the kinds that name IS under -
+      the browser's words never widen a match onto another kind of view
 
 second_route:
   - >

@@ -5,7 +5,7 @@
 > this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py) reads it back
 > into the register for every tool that reads it, so a row here is seen exactly as it was seen there.
 
-## Group MR - renaming views on as-built sheets: a placed floor plan `FIND_VIEWS` could not find, and a done rename `EDIT_TEXT_VALUES` called unverified - `FIND_VIEWS` v3, `EDIT_TEXT_VALUES` v9, `OPEN_VIEW` v4, `RENUMBER_SEQUENTIAL` v3, and the add-in's "Floor Plan: name" (2026-11-07)
+## Group MR - renaming views on as-built sheets: a placed floor plan `FIND_VIEWS` could not find, and a done rename `EDIT_TEXT_VALUES` called unverified - `FIND_VIEWS` v3, `EDIT_TEXT_VALUES` v9, `RENUMBER_SEQUENTIAL` v3, and quoted values keep their spaces (2026-11-07)
 
 On 2026-11-07, on `4355-BHVD-3D-60A10-BL007A` in Revit 2020, the owner renamed views on as-built sheets. Every
 rename landed and was read back, but two tools misreported. `FIND_VIEWS` found 0 for a floor plan that was on a
@@ -18,14 +18,10 @@ a saved test copy only.
 |---|---|---|
 | `FIND_VIEWS` v3 (READ) | [`brain/fragments/find-views`](../../brain/fragments/find-views/fragment.yaml) | `viewType` read the Project Browser's way - spaces, hyphens, capitals and plurals ignored, "3D View", "Reflected Ceiling Plan", "Structural Plan", "Drafting View" mapped; "", "any", "all" every type; anything else refused. `skippedOtherType`, and a finding on every call naming how many views were passed over and why; an empty answer names the views whose name matched and why each was passed over |
 | `EDIT_TEXT_VALUES` v9 (MODIFY) | [`brain/fragments/edit-text-values`](../../brain/fragments/edit-text-values/fragment.yaml) | For field Name, the new name trimmed before it is planned, checked for a clash, written and read back - Revit keeps no space at either end of a name. `nameNote` counts the names that lost one. Parameters compared exactly, as before |
-| `OPEN_VIEW` v4 (EXECUTE) | [`brain/fragments/open-view`](../../brain/fragments/open-view/fragment.yaml) | The kind in "kind: name" read the Project Browser's way - "Floor Plan: Level 1", "3D View: {3D}", "Reflected Ceiling Plan: Level 1", "Sheet: name" - as the add-in's lookup below. Fixed on the owner's word the same day; was PROVEN at v3 |
 | `RENUMBER_SEQUENTIAL` v3 (MODIFY) | [`brain/fragments/renumber-sequential`](../../brain/fragments/renumber-sequential/fragment.yaml) | Optional `width`: the number zero-padded, never cut; left out, the bare number as v2. Fixed on the owner's word the same day, row 5b-215's first repair; was PROVEN at v2 |
-| The add-in's view lookup | [`revit/Heron.Revit.Addin/RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) `OneView` | "Floor Plan: Level 1" is read as "FloorPlan: Level 1" for every tool that takes a view by name - spaces and hyphens taken out of the type before it is compared |
 
-**What is done and what is not.** All four cards compile for all eight releases, 2020 to 2027
-(`tools/check-fragments-compile.py`, 2026-11-07, a Linux container), and the add-in builds for all eight
-(`tools/check-compile.py`, same day). All four cards' purpose and utterances are their old ones word for word, the new rules written as comments, because a purpose paragraph moved routing on the model backend; `check-routing` (model) prints the same as on main and a 22-sentence lexical `score-routing` set changes 0 answers. **None of the four has met a Revit model at its new version**, and the add-in
-change has not been deployed. **Not settled by reading:** that Revit 2020 to 2027 all keep a view name without its
+**What is done and what is not.** All three cards compile for all eight releases, 2020 to 2027
+(`tools/check-fragments-compile.py`, 2026-11-07, a Linux container). All three cards' purpose and utterances are their old ones word for word, the new rules written as comments, because a purpose paragraph moved routing on the model backend; `check-routing` (model) prints the same as on main and a 22-sentence lexical `score-routing` set changes 0 answers. **None of the three has met a Revit model at its new version.** **Not settled by reading:** that Revit 2020 to 2027 all keep a view name without its
 edge spaces. The field run says Revit 2020 does - the four names read back without the space - and MR4 checks it.
 
 | # | Run | Look for |
@@ -36,9 +32,9 @@ edge spaces. The field run says Revit 2020 does - the four names read back witho
 | **MR3** | *FIND_VIEWS spellings.* viewType "floor plans", "FLOOR-PLAN", "FloorPlan", "3D View", "Reflected Ceiling Plan" | The first three the same views; the last two the 3D views and ceiling plans, as the browser's branches |
 | **MR4** | *EDIT_TEXT_VALUES - D-30 pair, through Keep or Discard.* Positive: the four "Warehouse - ..." sections, field Name, mode replace, text "Warehouse - ", replacement empty, through `revit_change` - once typed bare (`text=Warehouse - `, the space stripped, row 5b-215) and once quoted (`text="Warehouse - "`, the space kept since 2026-11-07). Negative: the wall, field Comments, mode replace, text "Warehouse -", replacement empty | Positive: `changed` 4, `unverified` 0, the names read back "HVAC Air ducts Sections-1" to "-4", `nameNote` naming 4 for the bare run; the quoted run the same with NO `nameNote` - nothing to trim. **Row 5b-1475's case** - version 8 said changed 0, unverified 4. Negative: changed 1, Comments read back " A" with its space, no `nameNote` |
 | **MR5** | *EDIT_TEXT_VALUES clash on the kept name, rolled back.* "X - Plan A", field Name, mode replace, text "X -", replacement empty | REFUSED, NOTHING WAS RENAMED, `collisions` naming "Plan A" as the other view's name |
-| **MR6** | *The add-in's view lookup.* Any tool that takes a view by name - `OPEN_VIEW` aside, below - given "Floor Plan: PLAN TEST (Battery Room)" where a ceiling plan of the same name exists | The floor plan, not "no view called". Before: "no view called" |
-| **MR6a** | *OPEN_VIEW - D-30 pair.* A ceiling plan made beside "PLAN TEST (Battery Room)" with the same name. Negative: viewName "Section: PLAN TEST (Battery Room)". Positive: "Floor Plan: PLAN TEST (Battery Room)", then "Reflected Ceiling Plan: PLAN TEST (Battery Room)" | Negative: nothing opened, the finding naming the two that are there. Positive: the floor plan on screen, then the ceiling plan. Version 3 said "no view called" for both |
 | **MR8** | *RENUMBER_SEQUENTIAL - D-30 pair, through Keep or Discard.* Fourteen rooms, parameterName Name, prefix `"Office "` (quoted), startAt 1, width 2. Negative: the same with width 12 | Positive: Office 01 ... Office 09, Office 10 ... Office 14 in ONE call, renumbered 14 - **row 5b-215's case**, two passes and a one-room fix on 2026-09-24. Negative: renumbered 0, nothing written, `widthRefused` naming 12 |
-| **MR7** | *Sign.* Ajmal PS signs the four proof drafts and says whether each goes back to PROVEN | — |
+| **MR7** | *Sign.* Ajmal PS signs the three proof drafts and says whether each goes back to PROVEN | — |
 
 **The wire strip (row 5b-215) is fixed in the same pull request**: a value in double quotes keeps its spaces through `revit_change` and `revit_read`. MR4's quoted run is its first check through a live chat.
+
+**`OPEN_VIEW` and the add-in's view lookup are not this group's.** Both were fixed here first, then by PR #804 the same day ([row 5b-1468](../fragment-issues/section-5b-rows-401-425.md)'s `TypeWordNames`, and `OPEN_VIEW` version 4 for row 5b-1470 (a)) with the same reading plus plurals. At the merge this branch took #804's code for both, so their proof is #804's, and "Floor Plan: name" for any tool is checked there.

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,14 +9,12 @@ semantic-identity: "put the Level 2 ceiling plan on screen"
 kind: action
 domain: revit.views
 capability: OPEN_VIEW
-# VERSION 4, BACK TO DRAFT ON 2026-11-07 (FRAGMENT-ISSUES row 5b-1474), on the
-# owner's word ("fix OPEN_VIEW too"), AND THE PROOF BLOCK BELOW IS KEPT ON
-# PURPOSE - version 3's record and the arrangement to re-prove from; its
-# fingerprint no longer matches. Version 3 compared the kind in "kind: name"
-# with the enum's spelling alone, so "Floor Plan: Level 1" was "no view
-# called" while "FloorPlan: Level 1" opened - the same raw compare that made
-# FIND_VIEWS find 0 on the owner's as-built model. Version 4 reads the kind the
-# Project Browser's way; nothing else changed. NEEDS-CHECKING Group MR owes it.
+# Version 4 (2026-11-07, FRAGMENT-ISSUES 5b-1470 (a), issue #799): "Kind:
+# name" takes the kind as the Project Browser writes it - "Floor Plan: Level
+# 1", "Ceiling Plans: Level 1", "Structural Plan: Level 1" - as the add-in's
+# binder does for every other card's view since row 5b-1468. Version 3 took
+# only the enum's spelling. The input keeps its name, `viewName`, so no caller
+# breaks.
 version: 4
 source: OFFICIAL
 risk: EXECUTE
@@ -99,6 +97,8 @@ contract:
     - name: viewName
       # The view's name as the Project Browser shows it, or "Kind: name" when
       # two views share it - "FloorPlan: Level 1", "DrawingSheet: Level 1".
+      # Version 4: the kind as the Project Browser writes it works too -
+      # "Floor Plan: Level 1", "Ceiling Plan: Level 1", "Sheet: Level 1".
       type: string
       source: request
   provides:
@@ -125,35 +125,32 @@ contract:
     - name: findings
       type: IList<string>
 
-# VERSION 3's PROOF (version 4 changed impl/ - see the note at `version:`).
 # VERSION 2'S PROOF, signed 2026-10-13. Its positive was a sheet asked for with
 # ANOTHER view in front, so RequestViewChange ran. Version 1's proof (2026-09-08,
 # Snowdon-scratch, Revit 2024, fingerprint cc31a7cd4123b951) had as its positive
 # the view ALREADY on screen, which answers before that call - and that call is
 # the one Revit refused through revit_change (5b-456).
 proof:
-  date: '2026-10-13'
+  date: '2026-11-07'
   by: Ajmal PS
-  model: Project1 (2,953 elements), Revit 2020, session 33484
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned asked HERON TEST - OPEN_VIEW, findings
-    2 item(s) [Asked Revit to open "HERON TEST - OPEN_VIEW" (DrawingSheet),..., THE CHANGE
-    IS REQUESTED, NOT YET DONE. Revit performs it whe...], matches 1 item(s) [HERON TEST -
-    OPEN_VIEW  -  DrawingSheet], opened true, requestedView HERON TEST - OPEN_VIEW, viewBefore
-    Site. inputs came editScopeFailures - Heron's failure discipline, for the fragment's own
-    edit mode; viewName as given. on Project1
-  negative_case: run with viewName=Architectural Plan instead - chosen because it should not
-    contain what this fragment reports - run inside a transaction, and Revit reported the
-    transaction group ROLLED BACK afterwards. returned asked Architectural Plan, findings
-    1 item(s) ["Architectural Plan" names 1 thing(s) in this project and no...], matches 1
-    item(s) [Architectural Plan  -  FloorPlan  [view template, cannot be ...], opened false,
-    requestedView Architectural Plan, viewBefore HERON TEST - OPEN_VIEW. inputs came editScopeFailures
-    - Heron's failure discipline, for the fragment's own edit mode; viewName as given. on
-    Project1
+  model: Test for Issue (6,120 elements), Revit 2024, session 48052
+  positive_case: 'run as it would normally be run. returned asked Floor Plan: L1 - Architectural,
+    findings 2 item(s) [Asked Revit to open "L1 - Architectural" (FloorPlan), leavin..., THE
+    CHANGE IS REQUESTED, NOT YET DONE. Revit performs it whe...], matches 2 item(s) [L1 -
+    Architectural  -  FloorPlan, L1 - Architectural  -  CeilingPlan], noTransactionOpen true,
+    opened true, requestedView Floor Plan: L1 - Architectural, viewBefore MP Sheet 1. inputs
+    came noTransactionOpen - run with no transaction open (D-125); viewName as given. on Test
+    for Issue'
+  negative_case: 'run with viewName=Section: L1 - Architectural instead - chosen because it
+    should not contain what this fragment reports. returned asked Section: L1 - Architectural,
+    findings 1 item(s) [Say "FloorPlan: L1 - Architectural" or "CeilingPlan: L1 - Ar...],
+    matches 0 item(s), noTransactionOpen true, opened false, requestedView Section: L1 - Architectural,
+    viewBefore L1 - Architectural. inputs came noTransactionOpen - run with no transaction
+    open (D-125); viewName as given. on Test for Issue'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 76a244c127041638
+  fingerprint: 0d86178e35407482
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

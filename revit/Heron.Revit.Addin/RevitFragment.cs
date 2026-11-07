@@ -2109,6 +2109,72 @@ namespace Heron.Revit.Addin
             if (entries.Count > 0)
                 parts.Add("\"providesEntries\":{" + string.Join(",", entries) + "}");
 
+            // WHAT A LIST OF SENTENCES SAYS, IN FULL, BESIDE ITS SUMMARY (row
+            // 5b-1467). `Describe` renders a list as "N item(s) [a, b, c, ...]",
+            // its first three items each cut at 60 characters, and it stays
+            // byte for byte what it is - every proof record carries that shape
+            // and heron_validate._as_count reads it. So a list of TEXT whose
+            // summary hid something - more than three items, or one longer
+            // than 60 - travels whole in a field of its own, as numbered
+            // entries, and the server prints each under the count. Measured
+            // 2026-11-07, Revit 2024: APPLY_VISUAL_PRESET's finding "Replaced
+            // what '{3D}' had: Visual Style Hidden Line -> Realis..." - the one
+            // sentence MQ5 checks - never left Revit. Lists of strings, and
+            // lists of elements by name while they hold 100 or fewer; a longer
+            // list of elements, or any list of ids, is a quantity, and sending
+            // every name would carry the model in bulk (D-26).
+            const int itemsSentPerList = 100;
+            const int itemTextLimit = 2000;
+            var itemLists = new List<string>();
+            foreach (var variable in state)
+            {
+                object current = null;
+                try { current = variable.Value; } catch { continue; }
+
+                if (bound != null && bound.Contains(variable.Name)
+                    && StillTheHosts(handedIn, variable.Name, current)) continue;
+
+                if (current is string || current is IDictionary) continue;
+                var list = current as ICollection;
+                if (list == null || list.Count == 0) continue;
+
+                // Run after the fragment, on other people's objects, as the
+                // entries above are: a list that will not be read is left out.
+                try
+                {
+                    var rows = new List<string>();
+                    var hidden = list.Count > 3;
+                    var allText = true;
+                    foreach (var item in list)
+                    {
+                        var text = item as string;
+                        // A LIST OF ELEMENTS BY NAME TOO, ONLY WHILE IT IS SHORT
+                        // (2026-11-07, issue #799 item 5): FIND_VIEWS leaves its
+                        // views as elements, so "14 item(s) [L1 - Architectural,
+                        // ...]" stopped at three names. Up to 100 elements send
+                        // their names whole; a longer list is a quantity and
+                        // stays its count, so a 6,000-element selection never
+                        // floods a reply (D-26).
+                        var element = item as Element;
+                        if (text == null && element != null && list.Count <= itemsSentPerList)
+                        {
+                            try { text = element.Name; } catch { text = null; }
+                            if (string.IsNullOrEmpty(text)) text = element.GetType().Name;
+                        }
+                        if (text == null) { allText = false; break; }
+                        if (text.Length > 60) hidden = true;
+                        if (rows.Count < itemsSentPerList)
+                            rows.Add(Json.Str((rows.Count + 1).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                                text.Length > itemTextLimit ? text.Substring(0, itemTextLimit) + "..." : text));
+                    }
+                    if (allText && hidden && rows.Count > 0)
+                        itemLists.Add("\"" + variable.Name + "\":" + Json.Obj(rows.ToArray()));
+                }
+                catch { }
+            }
+            if (itemLists.Count > 0)
+                parts.Add("\"providesItems\":{" + string.Join(",", itemLists) + "}");
+
             return Json.Ok(parts.ToArray());
         }
 
@@ -4388,18 +4454,12 @@ namespace Heron.Revit.Addin
             {
                 var kind = text.Substring(0, mark).Trim();
                 var rest = text.Substring(mark + 1).Trim();
-                // THE PROJECT BROWSER'S SPELLING TOO (row 5b-1474): "Floor
-                // Plan: L2" is the same type as "FloorPlan: L2". Compared with
-                // spaces and hyphens taken out, so the type a modeller reads
-                // in the browser is never "no view called".
-                var kindKey = kind.Replace(" ", "").Replace("-", "");
                 if (rest.Length > 0)
                 {
                     var narrowed = new List<View>();
                     foreach (var candidate in ViewsNamed(doc, rest))
                     {
-                        if (string.Equals(candidate.ViewType.ToString(), kindKey,
-                                          StringComparison.OrdinalIgnoreCase))
+                        if (TypeWordNames(candidate.ViewType, kind))
                             narrowed.Add(candidate);
                     }
                     if (narrowed.Count == 1) return narrowed[0];
@@ -4439,6 +4499,46 @@ namespace Heron.Revit.Addin
                           : "")
                     + ". Say which: " + string.Join(", or ", choices.ToArray()) + ".";
             return null;
+        }
+
+        /// <summary>
+        /// Does the word before the colon in "Floor Plan: Level 3" name this
+        /// view type?
+        ///
+        /// THE API'S WORD AND THE MODELLER'S. Until 2026-11-07 only the enum's
+        /// own spelling matched - "FloorPlan", "CeilingPlan", "EngineeringPlan"
+        /// - so "Floor Plan: Level 3-FF", as the Project Browser writes it, was
+        /// "No view called", and a structural plan could be named only by a
+        /// word no modeller uses (FRAGMENT-ISSUES 5b-1468, issue #799 item 6:
+        /// APPLY_VIEW_TEMPLATE templated 1 of 23 views on Villa 1, where one
+        /// plan name was a floor, a ceiling and a structural plan). Spaces and
+        /// capitals are ignored and a plural is read as one - "Ceiling Plans"
+        /// is the browser's heading - and the browser's own words map onto the
+        /// enum. The enum's spelling still matches, so nothing that worked stops.
+        /// </summary>
+        private static bool TypeWordNames(ViewType type, string word)
+        {
+            var said = new string((word ?? "").Where(char.IsLetterOrDigit).ToArray())
+                .ToLowerInvariant();
+            if (said.Length == 0) return false;
+            var enumWord = type.ToString().ToLowerInvariant();
+            foreach (var form in new[] { said, said.EndsWith("s") ? said.Substring(0, said.Length - 1) : null })
+            {
+                if (form == null || form.Length == 0) continue;
+                if (form == enumWord) return true;
+                switch (form)
+                {
+                    case "structuralplan": if (type == ViewType.EngineeringPlan) return true; break;
+                    case "reflectedceilingplan":
+                    case "rcp": if (type == ViewType.CeilingPlan) return true; break;
+                    case "3d":
+                    case "3dview": if (type == ViewType.ThreeD) return true; break;
+                    case "drafting": if (type == ViewType.DraftingView) return true; break;
+                    case "detailview": if (type == ViewType.Detail) return true; break;
+                    case "sheet": if (type == ViewType.DrawingSheet) return true; break;
+                }
+            }
+            return false;
         }
 
         /// <summary>
@@ -6019,6 +6119,17 @@ namespace Heron.Revit.Addin
         /// first, so FILTER_ELEMENTS_BY_CATEGORY and SELECT_IN_REGION answered
         /// 0 for two railings SELECT_BY_CATEGORY_NAME found.
         /// </summary>
+        /// <summary>
+        /// OneBuiltInCategory for the add-in's own operations - the select tool
+        /// asks it for a word its duct-and-pipe table does not hold
+        /// (FRAGMENT-ISSUES 5b-1470 (b)), so "walls" reaches what the fragments'
+        /// binder already reaches. One resolver, not a second copy of it.
+        /// </summary>
+        internal static bool CategoryByShownName(Document doc, string text, out BuiltInCategory found)
+        {
+            return OneBuiltInCategory(doc, text, out found);
+        }
+
         private static bool OneBuiltInCategory(Document doc, string text, out BuiltInCategory found)
         {
             found = BuiltInCategory.INVALID;

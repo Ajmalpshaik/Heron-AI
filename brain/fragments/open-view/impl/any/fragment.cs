@@ -73,35 +73,41 @@ else
     // like the plan it carries, a floor plan and a ceiling plan of one level.
     // The PLAIN NAME IS TRIED FIRST and wins when it names one openable view,
     // so a view genuinely called "FloorPlan: L2" stays reachable by its name.
+    // VERSION 4 (2026-11-07, FRAGMENT-ISSUES 5b-1470 (a), with 5b-1468): the
+    // kind is read as the Project Browser writes it too - "Floor Plan",
+    // "Ceiling Plans", "Structural Plan" - spaces and capitals dropped, a plural
+    // as one, the browser's words mapped onto the enum - the same reading the
+    // add-in's binder gives every other card's view. Version 3 took only the
+    // enum's spelling, so "Floor Plan: Level 1" opened nothing.
+    Func<ViewType, string, bool> kindNames = (type, word) =>
+    {
+        var said = new string((word ?? "").Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
+        if (said.Length == 0) return false;
+        var enumWord = type.ToString().ToLowerInvariant();
+        foreach (var form in new[] { said, said.EndsWith("s") ? said.Substring(0, said.Length - 1) : null })
+        {
+            if (form == null || form.Length == 0) continue;
+            if (form == enumWord) return true;
+            if ((form == "structuralplan" && type == ViewType.EngineeringPlan)
+                || ((form == "reflectedceilingplan" || form == "rcp") && type == ViewType.CeilingPlan)
+                || ((form == "3d" || form == "3dview") && type == ViewType.ThreeD)
+                || (form == "drafting" && type == ViewType.DraftingView)
+                || (form == "detailview" && type == ViewType.Detail)
+                || (form == "sheet" && type == ViewType.DrawingSheet))
+                return true;
+        }
+        return false;
+    };
     var mark = asked.IndexOf(':');
     var otherKinds = new List<string>();
     if (openable.Count != 1 && mark > 0)
     {
         var kind = asked.Substring(0, mark).Trim();
         var rest = asked.Substring(mark + 1).Trim();
-        // VERSION 4 (2026-11-07, row 5b-1474) - THE KIND AS THE PROJECT
-        // BROWSER SAYS IT. Version 3 compared it with the enum's own spelling,
-        // so "Floor Plan: Level 1" matched nothing while "FloorPlan: Level 1"
-        // worked. Spaces, hyphens and capitals are ignored now, and the
-        // browser's words map to the enum: "3D View" ThreeD, "Sheet"
-        // DrawingSheet, "Reflected Ceiling Plan" CeilingPlan, "Structural Plan"
-        // EngineeringPlan, "Drafting View" DraftingView.
-        var kindKey = new string(kind.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
-        var browserKinds = new Dictionary<string, string>
-        {
-            { "3d", "ThreeD" }, { "3dview", "ThreeD" }, { "threedview", "ThreeD" },
-            { "sheet", "DrawingSheet" },
-            { "reflectedceilingplan", "CeilingPlan" }, { "rcp", "CeilingPlan" },
-            { "structuralplan", "EngineeringPlan" },
-            { "drafting", "DraftingView" },
-            { "sectionview", "Section" }, { "elevationview", "Elevation" }, { "detailview", "Detail" },
-        };
-        if (browserKinds.ContainsKey(kindKey)) kindKey = browserKinds[kindKey].ToLowerInvariant();
         if (rest.Length > 0)
         {
             var sameName = viewsCalled(rest);
-            var ofKind = sameName.Where(v => canOpen(v)
-                && string.Equals(v.ViewType.ToString().ToLowerInvariant(), kindKey, StringComparison.Ordinal))
+            var ofKind = sameName.Where(v => canOpen(v) && kindNames(v.ViewType, kind))
                 .ToList();
             if (ofKind.Count > 0)
             {

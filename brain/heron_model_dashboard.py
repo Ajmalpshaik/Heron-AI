@@ -59,13 +59,19 @@ CHART_BARS = 12
 IDS_MAX = 500
 
 #: What each state means and how it is coloured. Decided here, drawn there.
-STATES = (("look", "#d9822b", "worth a look - usually costs time later"),
-          ("ok", "#5aa469", "none found"),
-          ("info", "#7a8796", "a count only - nothing to judge"),
-          ("not read", "#9e9e9e", "not read from the model - see why"))
-BAR = "#4f7fd1"
-BAR_OTHERS = "#9fb3c8"
-BAR_ERROR = "#c53030"
+#: THE BRAND'S COLOURS (D-149, docs/brand/README.md): Warning for a row worth a
+#: look, Success for none found, and Ink - the text colour - see-through for a
+#: plain count and for a part not read. The page draws Ink in the theme's own
+#: text colour, as the brand does (Ink on light, Mist on dark).
+STATES = (("look", "#f5a524", "worth a look - usually costs time later"),
+          ("ok", "#3ecf8e", "none found"),
+          ("info", "#0f0f108c", "a count only - nothing to judge"),
+          ("not read", "#0f0f1059", "not read from the model - see why"))
+#: Bars in Ink, so Accent stays the one highlight; Others fainter; a bar of
+#: errors in Error.
+BAR = "#0f0f10b8"
+BAR_OTHERS = "#0f0f1059"
+BAR_ERROR = "#ff5a4e"
 #: Each part of the read, and the key its value comes under - the fragment
 #: sends null for a part it could not read and names the part in notRead.
 PARTS = (("elements", "elementTotal"), ("categories", "categories"), ("levels", "levels"),
