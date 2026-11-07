@@ -194,6 +194,16 @@ else
     }
 
     // ---- the sheets, read AFTER ---------------------------------------------
+    // REBUILT FIRST (row 5b-1471): without it every sheet read back as it was
+    // before the move or the delete - "revision block unchanged" on a sheet
+    // whose only cloud had just gone.
+    try { doc.Regenerate(); }
+    catch (Exception notRebuilt)
+    {
+        throw new InvalidOperationException("Revit could not rebuild the sheets after the clouds were "
+            + (verb == "reassign" ? "moved" : "deleted") + " - " + notRebuilt.Message
+            + ". Nothing this call did is kept");
+    }
     var effects = new List<string>();
     var ordered = new List<ViewSheet>();
     foreach (var id in before.Keys) { var s = doc.GetElement(id) as ViewSheet; if (s != null) ordered.Add(s); }
