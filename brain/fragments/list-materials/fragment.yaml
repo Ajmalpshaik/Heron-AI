@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "every material this project or family holds, by name, with i
 kind: filter
 domain: revit.elements
 capability: LIST_MATERIALS
-version: 5
+version: 6
 source: OFFICIAL
 risk: READ
 
@@ -188,6 +188,18 @@ contract:
       optional: true
     # Version 3. Only the names this matches - "TRG_*". Left out, every one.
     - name: namePattern
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # Version 6 (2026-11-07, FRAGMENT-ISSUES 5b-1466, issue #799 item 4). Only
+    # the library appearances whose name or code it matches - "*grass*", or a
+    # word with no * or ?, which matches anywhere in the name. Given, it lists
+    # the library by itself. Left out it reads "all", and the library is listed
+    # whole as before - namePattern never filtered it, so `namePattern=1.GRASS`
+    # with withLibraryAppearances returned all 1,942 assets (87,931 characters)
+    # on Villa 1, Revit 2024.
+    - name: libraryPattern
       type: string
       source: request
       optional: true

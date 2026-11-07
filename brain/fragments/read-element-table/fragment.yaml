@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,13 @@ semantic-identity: "these elements and the named parameters, as rows the Compani
 kind: action
 domain: revit.parameters
 capability: READ_ELEMENT_TABLE
-version: 1
+# Version 2 (2026-11-07, FRAGMENT-ISSUES 5b-1466, issue #799 item 4): an
+# optional `compact` - values only, one short row per element, format 2 - for
+# a table READ in a chat. 53 walls x 6 parameters came back 59,018 characters
+# on Villa 1, Revit 2024, every cell carrying its raw value, its edit flags and
+# the reason. Left out it is false, and the table is format 1 as before - what
+# the Companion's editable table is built from.
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -53,6 +59,14 @@ contract:
     - name: maxRows
       type: int
       source: request
+    - name: compact
+      # Version 2. true: format 2 - "columns" once, then each row its id and
+      # its values in column order, nothing else; what a chat reads. Absent is
+      # false: format 1, every cell with its raw value, edit flags and reason -
+      # what revit_edit_table opens. A compact table cannot be edited.
+      type: bool
+      source: request
+      optional: true
   provides:
     # The whole table as one JSON string, format 1 - the rows the page shows.
     - name: tableJson
