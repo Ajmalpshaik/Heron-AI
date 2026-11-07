@@ -627,7 +627,7 @@ async function changes() {
     for (const [id, item] of shown) {
       if (ids.has(id) || item.replaced) continue;
       // A card the chat replaced while the modeller had unsent values in it
-      // stays, saying so, so nothing typed is lost (Codex review of #362).
+      // stays, saying so, so nothing typed is lost (Codex review of PR 362).
       if (item.el.edited()) { replacedHere(item.el, () => shown.delete(id)); item.replaced = true; continue; }
       item.el.remove(); shown.delete(id);
     }
@@ -664,7 +664,7 @@ async function changes() {
 let tableShown = null;     // "<id>/<last.at>" of what is on screen
 // Edits the modeller typed that Revit has NOT taken - kept when a stale row
 // refuses the whole Apply, so the table redraws with them still in it and
-// the stale cells marked (Codex review of #362). {id, map}, or null.
+// the stale cells marked (Codex review of PR 362). {id, map}, or null.
 let keptEdits = null;
 
 function tableCell(row, name, cell, edits, count) {
@@ -1346,7 +1346,7 @@ function loadsResults(L, project, profiles, overrides) {
     const go = el("button", "linkish", ((s.number || "") + " " + (s.name || "")).trim());
     go.type = "button";
     go.title = "Show this Space alone in the 3D view";
-    go.addEventListener("click", () => { if (window.HeronLoads3D) window.HeronLoads3D.focus(String(s.id)); });
+    go.addEventListener("click", () => { tabGo("loads", "3d"); if (window.HeronLoads3D) window.HeronLoads3D.focus(String(s.id)); });
     // This Space's own values - its people, lights, equipment, outdoor air and
     // set points - beside its Space type's, kept as a change for this Space only.
     const sid = String(s.id);
@@ -1543,9 +1543,20 @@ async function loads_() {
 
 let dashShown = null;
 let dashBusy = false;
-const HEX = /^#[0-9a-fA-F]{6}$/;
+const HEX = /^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/;
 
-function dashColour(c, fallback) { return HEX.test(String(c || "")) ? c : fallback; }
+// A colour the brain sent, checked. INK IS THE TEXT COLOUR (D-149): the brand
+// draws text in Ink on a light page and Mist on a dark one, so Ink - with any
+// see-through - becomes the theme's own text colour at that strength.
+function dashColour(c, fallback) {
+  const text = String(c || "");
+  if (!HEX.test(text)) return fallback;
+  if (/^#0f0f10/i.test(text)) {
+    const alpha = text.length === 9 ? Math.round(parseInt(text.slice(7), 16) / 2.55) : 100;
+    return "color-mix(in srgb, var(--ink) " + alpha + "%, transparent)";
+  }
+  return text;
+}
 
 async function dashRefresh(button, said, parameters, board) {
   if (dashBusy) return;
@@ -1639,7 +1650,7 @@ function dashTiles(D, colours) {
   const grid = el("div", "d-tiles");
   (D.tiles || []).forEach(t => {
     const tile = el("div", "d-tile");
-    tile.style.borderLeftColor = dashColour(colours[t.state], "#7a8796");
+    tile.style.borderLeftColor = dashColour(colours[t.state], "#0f0f108c");
     tile.title = t.state === "not read" ? "Not read from the model" : "";
     tile.append(el("span", "d-tile-label", t.label),
                 el("span", "d-tile-value", t.value == null ? "—" : num(t.value, 0)),
@@ -1661,7 +1672,7 @@ function dashChart(c) {
     const track = el("span", "d-bar-track");
     const fill = el("i", "d-bar-fill");
     fill.style.width = Math.max(1, Math.round(100 * (Number(b.value) || 0) / most)) + "%";
-    fill.style.background = dashColour(b.colour, "#4f7fd1");
+    fill.style.background = dashColour(b.colour, "#0f0f10b8");
     track.append(fill);
     li.append(label, track, el("span", "d-bar-value", num(b.value, 0)));
     list.append(li);
@@ -1689,11 +1700,11 @@ function dashFill(F, colours) {
     const body = el("tbody");
     (p.rows || []).forEach(r => {
       const tr = el("tr");
-      tr.style.borderLeft = "4px solid " + dashColour(colours[r.state], "#7a8796");
+      tr.style.borderLeft = "4px solid " + dashColour(colours[r.state], "#0f0f108c");
       const track = el("span", "d-bar-track");
       const fill = el("i", "d-bar-fill");
       fill.style.width = Math.max(0, Math.min(100, Number(r.share) || 0)) + "%";
-      fill.style.background = dashColour(colours.ok, "#5aa469");
+      fill.style.background = dashColour(colours.ok, "#3ecf8e");
       track.append(fill);
       const bar = el("td");
       bar.append(track);
@@ -1804,7 +1815,7 @@ function dashBoard(B) {
       const track = el("span", "d-bar-track");
       const fill = el("i", "d-bar-fill");
       fill.style.width = Math.max(1, Math.round(100 * (Number(b.value) || 0) / most)) + "%";
-      fill.style.background = dashColour(b.colour, "#4f7fd1");
+      fill.style.background = dashColour(b.colour, "#0f0f10b8");
       track.append(fill);
       li.append(label, track, el("span", "d-bar-value", num(b.value, c.unit ? 1 : 0)));
       list.append(li);
@@ -1879,9 +1890,6 @@ function dashColourBox() {
 
 function dashFilter(text, state) {
   const words = String(text || "").trim().toLowerCase();
-  document.querySelectorAll("#dashboard .d-bar, #dashboard .d-fill-table tbody tr").forEach(n => {
-    n.hidden = !!words && !n.textContent.toLowerCase().includes(words);
-  });
   document.querySelectorAll("#dashboard .d-look-row").forEach(n => {
     const byWords = !words || n.textContent.toLowerCase().includes(words);
     const byState = !state || n.dataset.state === state;
@@ -1904,9 +1912,21 @@ function dashLook(D, colours) {
   [["look", "worth a look"], ["info", "counts only"], ["not read", "not read"], ["ok", "found nothing"]]
     .forEach(([k, t]) => {
       if (!tally[k]) return;
-      const chip = el("span", "d-chip");
-      chip.style.borderLeftColor = dashColour(colours[k], "#7a8796");
+      // A chip is also a filter: a press shows only those rows; a second, all.
+      const chip = el("button", "d-chip");
+      chip.type = "button";
+      chip.title = "Show only the rows that are " + t + " - press again for every row";
+      chip.style.borderLeftColor = dashColour(colours[k], "#0f0f108c");
       chip.append(el("b", null, num(tally[k], 0)), el("span", null, " " + t));
+      chip.addEventListener("click", () => {
+        const states = document.querySelector("#dashboard .d-filter select");
+        const words = document.querySelector("#dashboard .d-filter input");
+        if (!states) return;
+        states.value = states.value === k ? "" : k;
+        dashFilter(words ? words.value : "", states.value);
+        sum.querySelectorAll(".d-chip").forEach(c => c.setAttribute("aria-pressed", "false"));
+        chip.setAttribute("aria-pressed", states.value === k ? "true" : "false");
+      });
       sum.append(chip);
     });
   sec.append(sum);
@@ -1919,7 +1939,7 @@ function dashLook(D, colours) {
   rows.forEach(r => {
     const li = el("li", "d-look-row");
     li.dataset.state = r.state || "";
-    li.style.borderLeftColor = dashColour(colours[r.state], "#7a8796");
+    li.style.borderLeftColor = dashColour(colours[r.state], "#0f0f108c");
     const head = el("div", "d-look-head");
     head.append(el("span", "d-look-title", r.title),
                 el("span", "d-look-count", r.count == null ? "not read" : num(r.count, 0)));
@@ -1945,7 +1965,7 @@ function dashLook(D, colours) {
           const s3 = $("d-3d-said");
           if (s3) { s3.className = "result"; s3.textContent = found + " of " + r.ids.length + " shown in the 3D view" +
             (found < r.ids.length ? " - the rest are not in what the 3D read covers." : "."); }
-          $("d-3d").scrollIntoView({ behavior: "smooth", block: "nearest" });
+          tabGo("dashboard", "3d");
         });
         tools.append(in3d);
       }
@@ -1983,16 +2003,18 @@ function renderDashboard(D) {
   if (!D) return;
   const colours = {};
   (D.states || []).forEach(s => { colours[s.key] = s.colour; });
-  if (D.demo) box.append(el("p", "d-notread", "DEMO - an invented model, for trying the dashboard. " +
+  if (D.demo) box.append(el("p", "d-notread ws-keep", "DEMO - an invented model, for trying the dashboard. " +
     "Nothing here is from your model, and Select and Isolate are off. Ask the chat for a model dashboard to read yours."));
-  const meta = el("div", "l-meta");
+  // THE HEADER (docs/40 s21.20): which model, when, and the actions for the whole
+  // dashboard - always in sight, whichever tab is open.
+  const meta = el("div", "l-meta ws-keep");
   [["Model", D.document || (D.model && D.model.title) || "—"], ["Read from Revit", D.at || "—"]]
     .forEach(([k, v]) => {
       const item = el("span", "l-meta-item");
       item.append(el("span", "l-meta-label", k), el("span", "l-meta-value", v));
       meta.append(item);
     });
-  const tools = el("div", "d-tools");
+  const tools = el("div", "d-tools d-head-tools ws-keep");
   const refresh = el("button", "btn", D.busy ? "Reading…" : "Refresh");
   refresh.type = "button";
   refresh.disabled = !!D.busy;
@@ -2002,11 +2024,13 @@ function renderDashboard(D) {
   said.setAttribute("role", "status");
   said.setAttribute("aria-live", "polite");
   const params = el("input", "d-params");
+  params.id = "d-params-in";
   params.type = "text";
   params.value = D.parameters || "";
   params.placeholder = "Parameters to check filled, e.g. Mark, Fire Rating";
   params.setAttribute("aria-label", "Parameters to check filled, comma separated");
   const pick = el("select", "d-states");
+  pick.id = "d-board";
   pick.setAttribute("aria-label", "Board");
   const none = el("option", null, "No board");
   none.value = "";
@@ -2017,9 +2041,15 @@ function renderDashboard(D) {
     if (b.key === D.board_key) o.selected = true;
     pick.append(o);
   });
-  pick.title = "A board adds its charts at the next Refresh";
+  pick.title = "Pick a board - the model is read again with its charts. Nothing in the model changes";
+  // Choosing a board is the modeller's own press: it reads the model again at once.
+  pick.addEventListener("change", () => dashRefresh(refresh, said, params.value, pick.value));
   params.addEventListener("keydown", e => { if (e.key === "Enter") dashRefresh(refresh, said, params.value, pick.value); });
   refresh.addEventListener("click", () => dashRefresh(refresh, said, params.value, pick.value));
+  const check = el("button", "btn-lite", "Check these");
+  check.type = "button";
+  check.title = "Read the model again, counting how many elements have each of these parameters filled";
+  check.addEventListener("click", () => dashRefresh(refresh, said, params.value, pick.value));
   const reset = el("button", "btn-lite", "Reset isolate");
   reset.type = "button";
   reset.title = "End the Temporary Hide/Isolate in Revit's active view";
@@ -2036,14 +2066,14 @@ function renderDashboard(D) {
   csv.type = "button";
   csv.title = "The rows worth a look and the parameters filled, as a spreadsheet file - made on this PC";
   csv.addEventListener("click", () => dashCsv(D));
-  tools.append(params, pick, refresh, reset, print, csv, said);
+  tools.append(refresh, reset, print, csv, said);
   // THE FILTER is the page's own: it hides rows and bars whose words do not
   // match, on what the brain already sent - nothing is read from Revit.
   const filterBox = el("div", "d-filter");
   const filter = el("input", "d-params");
   filter.type = "search";
-  filter.placeholder = "Filter the bars and rows - a category, a level, a word";
-  filter.setAttribute("aria-label", "Filter the bars and rows");
+  filter.placeholder = "Search the rows - a word, a category, a level";
+  filter.setAttribute("aria-label", "Search the rows worth a look");
   const states = el("select", "d-states");
   states.setAttribute("aria-label", "Show rows");
   [["", "Every row"], ["look", "Worth a look only"], ["info", "Counts only"], ["ok", "None found"],
@@ -2056,7 +2086,10 @@ function renderDashboard(D) {
   filter.addEventListener("input", apply);
   states.addEventListener("change", apply);
   filterBox.append(filter, states);
-  box.append(meta, tools, dashTiles(D, colours), filterBox);
+  box.append(meta, tools, dashTiles(D, colours));
+  // THE BOARD - which extra charts the Overview shows - beside the charts it adds.
+  const boardRow = el("div", "d-tools d-board-pick");
+  boardRow.append(el("span", "d-seg-label", "Extra charts"), pick);
   if ((D.notRead || []).length) {
     const nr = el("div", "d-notread");
     nr.append(el("strong", null, "Not read from the model: "));
@@ -2072,16 +2105,25 @@ function renderDashboard(D) {
   if (D.since) box.append(dashSince(D.since));
   const charts = el("div", "d-charts");
   (D.charts || []).forEach(c => charts.append(dashChart(c)));
-  box.append(charts);
+  box.append(charts, boardRow);
   if (D.board) box.append(dashBoard(D.board));
-  if (!D.demo) below.append(dashColourBox());
+  // PARAMETERS: which parameters are filled, and colour the view by one.
+  const paramBox = el("section", "d-param-pick");
+  paramBox.append(el("h3", "d-sub", "Check parameters are filled"));
+  const prow = el("div", "d-tools");
+  prow.append(params, check);
+  paramBox.append(prow, el("p", "muted small", "Type the parameters as Revit shows them, commas between - Mark, Fire Rating. " +
+    "Heron counts, per category, how many elements have each one filled, left empty, or do not have it at all."));
+  below.append(paramBox);
   if (D.fill) below.append(dashFill(D.fill, colours));
-  below.append(dashLook(D, colours));
+  if (!D.demo) below.append(dashColourBox());
+  // ISSUES: the search sits with the rows it searches.
+  below.append(filterBox, dashLook(D, colours));
   const legend = el("ul", "d-legend");
   (D.states || []).forEach(s => {
     const li = el("li");
     const sw = el("i", "d-swatch");
-    sw.style.background = dashColour(s.colour, "#7a8796");
+    sw.style.background = dashColour(s.colour, "#0f0f108c");
     li.append(sw, el("span", null, s.means));
     legend.append(li);
   });
@@ -2162,19 +2204,26 @@ function dash3dControls(D) {
   }
   row.append(said);
   sec.append(row);
-  if (canvasBox) sec.append(canvasBox);
+  // A VIEWER'S LAYOUT (docs/40 s21.20): the drawing takes the room, its controls
+  // sit in a panel beside it - colour, categories, what was picked.
+  const layout = el("div", "d-3d-layout");
+  const side = el("aside", "d-3d-side");
+  const facts = [];
+  if (canvasBox) layout.append(canvasBox);
+  layout.append(side);
+  sec.append(layout);
   if (D.demo) {
-    sec.append(el("p", "muted small", "The DEMO has no shapes - ask the chat for a model dashboard to read your model, then load the 3D view."));
+    side.append(el("p", "muted small", "The DEMO has no shapes - ask the chat for a model dashboard to read your model, then load the 3D view."));
   } else if (!D.view3d) {
-    sec.append(el("p", "muted small", "Drag to turn, right-drag (or Shift) to pan, wheel to zoom, click an element to see what it is. " +
+    side.append(el("p", "muted small", "Drag to turn, right-drag (or Shift) to pan, wheel to zoom, click an element to see what it is. " +
       "Open a 3D view in Revit first; a section box keeps the read small."));
   } else {
     const V = D.view3d;
-    sec.append(el("p", "muted small", (V.scope || "") + " · " + num(V.drawn, 0) + " element(s), " + num(V.triangles, 0) +
+    facts.push(el("p", "muted small", (V.scope || "") + " · " + num(V.drawn, 0) + " element(s), " + num(V.triangles, 0) +
       " triangle(s)" + (V.leftOut ? " · " + num(V.leftOut, 0) + " left out - " +
         (V.stopped === "time" ? "the read stopped itself before Revit's time limit" : "the triangle limit") : "") +
       (V.noGeometry ? " · " + num(V.noGeometry, 0) + " with nothing to draw" : "")));
-    ((V.notRead || []).concat(V.capped || [])).forEach(n => sec.append(el("p", "d-notread", n)));
+    ((V.notRead || []).concat(V.capped || [])).forEach(n => facts.push(el("p", "d-notread", n)));
     // COLOUR BY (docs/40 s21.18): category, or each face's material with the
     // shading colour Revit's Shaded view uses. Both arrive from the brain.
     const by = el("div", "d-seg");
@@ -2190,7 +2239,7 @@ function dash3dControls(D) {
     byCat.addEventListener("click", () => { if (window.HeronModel3D) window.HeronModel3D.setMode("category"); });
     byMat.addEventListener("click", () => { if (window.HeronModel3D) window.HeronModel3D.setMode("material"); });
     by.append(byCat, byMat);
-    sec.append(by);
+    side.append(by);
     const matBox = el("div", "d-matlegend");
     const matList = el("ul", "d-legend");
     (V.materialLegend || []).forEach(m => {
@@ -2204,12 +2253,11 @@ function dash3dControls(D) {
     matBox.append(matList);
     if (V.materialsMore) matBox.append(el("p", "muted small", "… and " + num(V.materialsMore, 0) + " more material(s)."));
     if (V.unknownTriangles) matBox.append(el("p", "muted small", "Grey: faces with no material Heron could read a colour from."));
-    sec.append(matBox);
+    side.append(matBox);
     // The legend is also the 3D view's category switch (docs/40 s21.17): a
     // click hides or shows that category on the page, Only shows it alone.
     // Nothing is read from Revit and nothing in Revit changes.
-    sec.append(el("p", "muted small", "Click a category to hide or show it in the 3D view; Only shows it alone. " +
-      "The toolbar on the view has Top, Front, Side, 3D, Zoom to lit, a Cut height, Save picture and Full screen."));
+    side.append(el("h4", "d-side-title", "Categories"), el("p", "muted small", "Click one to hide or show it; Only shows it alone."));
     const legend = el("ul", "d-legend d-legend-switch");
     const names = (V.legend || []).map(c => c.name);
     const hiddenNow = () => new Set(window.HeronModel3D ? window.HeronModel3D.hidden() : []);
@@ -2256,7 +2304,8 @@ function dash3dControls(D) {
     if (window.HeronModel3D) window.HeronModel3D.onTools(paint);
     const picked = el("div", "d-picked");
     picked.id = "d-picked";
-    sec.append(legend, all, picked);
+    side.append(legend, all, el("h4", "d-side-title", "Picked"), picked);
+    facts.forEach(n => side.append(n));
     paint();
   }
   box.append(sec);
@@ -3187,7 +3236,113 @@ function wsSync() {
     }
   });
   wsLooked = true;
+  tabsSync();
   jumpSync();
+}
+
+// ---------------------------------------------------------------- tabs
+// TABS INSTEAD OF ONE LONG PAGE (docs/40 s21.20). A workspace full of data was
+// one scroll of thousands of pixels with a "Jump to" row. Now its header - the
+// model, the steps, the key figures and the main buttons - stays, and the rest
+// is split into tabs, one job each. The tabs only show and hide what the panel
+// already drew: nothing is read from Heron or Revit, and each panel's own code
+// is unchanged. Which tab is open is remembered per workspace, in this browser.
+const q = (root, sel) => Array.from(root.querySelectorAll(sel));
+const headWords = el => { const h = el && (el.tagName === "H3" ? el : el.querySelector("h3")); return h ? h.textContent : ""; };
+// A heading's badge ("1 FAIL", "2 INFO") becomes the tab's - only what needs a look.
+const badgeOf = sel => sec => {
+  const h = sec.querySelector(sel + " h3");
+  const words = h ? Array.from(h.querySelectorAll("span, b, i")).map(n => n.textContent.trim()).join(" ") : "";
+  const bad = words.match(/(\d+)\s*(FAIL|WARN|ERROR)/i);
+  return bad ? { text: bad[1], tone: "bad" } : null;
+};
+const TABS = {
+  dashboard: [
+    { key: "overview", label: "Overview", pick: sec => q(sec, "#d-box > :not(.ws-keep)") },
+    { key: "issues", label: "Issues", pick: sec => q(sec, "#d-box3 > .d-filter, #d-box3 > .d-look, #d-box3 > .d-legend"),
+      badge: sec => { const n = q(sec, '.d-look-row[data-state="look"]').length; return n ? { text: String(n), tone: "warn" } : null; } },
+    { key: "3d", label: "3D view", pick: sec => q(sec, "#d-box2") },
+    { key: "params", label: "Parameters", pick: sec => q(sec, "#d-box3 > .d-param-pick, #d-box3 > .d-fill, #d-box3 > .d-colour") },
+  ],
+  loads: [
+    { key: "results", label: "Results", pick: sec => q(sec, "#l-box2 > .l-results, #l-box2 > .l-extra") },
+    { key: "3d", label: "3D take-off", pick: sec => q(sec, "#l-box > .l-3d-title, #l-3d") },
+    { key: "inputs", label: "Inputs", pick: sec => q(sec, "#l-box2 > .l-inputs") },
+    { key: "checks", label: "Checks", pick: sec => q(sec, "#l-box > .l-qa"), badge: badgeOf("#l-box > .l-qa") },
+  ],
+  sprinkler: [
+    { key: "design", label: "Design inputs", pick: sec => q(sec, "#k-box2 > div:first-child") },
+    { key: "remote", label: "Remote area & spacing",
+      pick: sec => q(sec, "#k-box2 > :not(:first-child)").filter(n => !/^Fire water/.test(headWords(n).trim())) },
+    { key: "water", label: "Fire water", pick: sec => q(sec, "#k-box2 > :not(:first-child)").filter(n => /^Fire water/.test(headWords(n).trim())) },
+    { key: "3d", label: "3D", pick: sec => q(sec, "#k-box > .l-3d-title, #k-3d") },
+    { key: "checks", label: "Checks", pick: sec => q(sec, "#k-box > .l-qa"), badge: badgeOf("#k-box > .l-qa") },
+  ],
+};
+const tabNow = {};
+const tabBars = {};
+try { Object.assign(tabNow, JSON.parse(localStorage.getItem("heron-companion-tabs") || "{}")); } catch (e) { /* not kept */ }
+
+function tabGo(ws, key) {
+  tabNow[ws] = key;
+  try { localStorage.setItem("heron-companion-tabs", JSON.stringify(tabNow)); } catch (e) { /* not kept */ }
+  if (wsNow !== ws) wsShow(ws); else tabsSync();
+  // A 3D view shown after being hidden draws again at its new size.
+  requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
+  const bar = tabBars[ws];
+  if (bar && bar.getBoundingClientRect().top < 0) bar.scrollIntoView({ block: "start" });
+}
+
+function tabsSync() {
+  Object.keys(TABS).forEach(ws => {
+    const sec = $(ws);
+    const tabs = TABS[ws];
+    const empty = !wsHas(ws);
+    // The bar sits among the parts it switches: never count it as one of them.
+    const groups = tabs.map(t => t.pick(sec).filter(n => !n.classList.contains("ws-tabs")));
+    const any = groups.some(g => g.length);
+    let bar = tabBars[ws];
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.className = "ws-tabs";
+      bar.setAttribute("role", "tablist");
+      bar.setAttribute("aria-label", "Parts of this workspace");
+      tabBars[ws] = bar;
+    }
+    if (empty || !any) { bar.remove(); groups.flat().forEach(n => n.classList.remove("tab-off")); return; }
+    let now = tabNow[ws];
+    if (!tabs.some(t => t.key === now)) now = tabs[0].key;
+    groups.forEach((g, i) => g.forEach(n => n.classList.toggle("tab-off", tabs[i].key !== now)));
+    // The bar goes just before the first part a tab holds, wherever the panel drew it.
+    const first = groups.flat().sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1)[0];
+    if (first && bar.nextSibling !== first) first.before(bar);
+    // Redraw the buttons only when what they say has changed.
+    const key = tabs.map((t, i) => {
+      const b = t.badge ? t.badge(sec) : null;
+      return t.key + ":" + (t.key === now ? 1 : 0) + ":" + (groups[i].length ? 1 : 0) + ":" + (b ? b.text + b.tone : "");
+    }).join("|");
+    if (bar.dataset.key === key) return;
+    bar.dataset.key = key;
+    bar.replaceChildren();
+    tabs.forEach((t, i) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "ws-tab";
+      btn.setAttribute("role", "tab");
+      btn.setAttribute("aria-selected", t.key === now ? "true" : "false");
+      btn.textContent = t.label;
+      if (!groups[i].length) { btn.classList.add("ws-tab-empty"); btn.title = "Nothing here yet"; }
+      const b = t.badge ? t.badge(sec) : null;
+      if (b) {
+        const pill = document.createElement("span");
+        pill.className = "ws-tab-badge " + b.tone;
+        pill.textContent = b.text;
+        btn.append(pill);
+      }
+      btn.addEventListener("click", () => tabGo(ws, t.key));
+      bar.append(btn);
+    });
+  });
 }
 
 // A long workspace gets a row of links to its own headings.
@@ -3203,7 +3358,7 @@ function jumpSync() {
   if (key === jumpKey) return;
   jumpKey = key;
   bar.replaceChildren();
-  if (heads.length < 3) { bar.hidden = true; return; }
+  if (heads.length < 3 || TABS[wsNow]) { bar.hidden = true; return; }
   bar.hidden = false;
   const label = document.createElement("span");
   label.className = "jump-label";
@@ -3225,6 +3380,14 @@ function jumpSync() {
 
 function workspaces() {
   document.querySelectorAll(".nav-item").forEach(b => b.addEventListener("click", () => wsShow(b.dataset.ws)));
+  // A panel that redraws gets its tabs back before the next paint, not at the
+  // next 400 ms check - so a hidden part never flashes into view.
+  let tabPending = false;
+  Object.keys(TABS).forEach(ws => new MutationObserver(() => {
+    if (tabPending) return;
+    tabPending = true;
+    requestAnimationFrame(() => { tabPending = false; tabsSync(); });
+  }).observe($(ws), { childList: true, subtree: true }));
   document.addEventListener("keydown", e => {
     if (!e.altKey || e.ctrlKey || e.metaKey) return;
     const hit = document.querySelector('.nav-item[data-key="' + e.key + '"]');

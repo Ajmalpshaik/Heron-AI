@@ -1783,6 +1783,60 @@ def test_sprinkler_panel():
           "Space names and their results reach the page as text only (Golden Rule 19)")
 
 
+def test_page_is_in_the_brand():
+    """The page's own colours are the brand kit's (D-149, docs/40 s21.19). The palette
+    is read from docs/brand/README.md, as tools/check-brand.py reads it; the paint
+    colour is the model's and stays outside, on the owner's word (docs/brand)."""
+    print()
+    print("The page in the brand's colours")
+    brand = io.open(os.path.join(ROOT, "docs", "brand", "README.md"), encoding="utf-8").read()
+    section = brand[brand.index("## The colours"):brand.index("## Not the brand")]
+    palette = {h.upper() for h in re.findall(r"`#([0-9A-Fa-f]{6})`", section)}
+    check(len(palette) >= 8, "the palette is read from docs/brand (%d colours)" % len(palette))
+    static = os.path.join(ROOT, "mcp", "companion", "static")
+    css = io.open(os.path.join(static, "companion.css"), encoding="utf-8").read()
+    found = []
+    for line in css.splitlines():
+        if "var(--paint," in line:
+            continue                      # the model's paint colour (docs/brand, "not the brand")
+        for h in re.findall(r"#([0-9A-Fa-f]{6})(?:[0-9A-Fa-f]{2})?\b", line):
+            found.append(h.upper())
+        for r, g, b in re.findall(r"rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)", line):
+            found.append("%02X%02X%02X" % (int(r), int(g), int(b)))
+    outside = sorted(set(found) - palette)
+    check(found and not outside, "every colour the stylesheet types is a brand colour, or one see-through"
+          + (" - outside: %s" % ", ".join(outside) if outside else ""))
+    index = io.open(os.path.join(static, "index.html"), encoding="utf-8").read()
+    check("heron-mark-white.svg" in index, "the sidebar's logo is the brand's heron mark")
+    print()
+
+
+def test_workspace_tabs():
+    """A workspace full of data is split into tabs (docs/40 s21.20): its header stays,
+    one job per tab, and the tabs only show and hide what the panel drew - they read
+    nothing from Heron or Revit and run on no timer of their own."""
+    print()
+    print("Workspace tabs instead of one long page")
+    js = io.open(PAGE_JS, encoding="utf-8").read()
+    css = io.open(os.path.join(ROOT, "mcp", "companion", "static", "companion.css"), encoding="utf-8").read()
+    tabs = js[js.index("const TABS = {"):js.index("function tabGo(")]
+    for ws, labels in (("dashboard", ["Overview", "Issues", "3D view", "Parameters"]),
+                       ("loads", ["Results", "3D take-off", "Inputs", "Checks"]),
+                       ("sprinkler", ["Design inputs", "Remote area & spacing", "Fire water", "3D", "Checks"])):
+        check(("  %s: [" % ws) in tabs and all(('label: "%s"' % l) in tabs for l in labels),
+              "%s has its tabs: %s" % (ws, ", ".join(labels)))
+    engine = js[js.index("function tabsSync()"):js.index("// A long workspace gets a row of links")]
+    check("fetch(" not in tabs + engine and "setInterval" not in engine and "setTimeout" not in engine,
+          "the tabs read nothing and run on no timer of their own")
+    check(".tab-off { display: none !important; }" in css and "classList.toggle(\"tab-off\"" in engine,
+          "a tab hides with a class, never with the panel's own `hidden`")
+    check('n.classList.contains("ws-tabs")' in engine, "the tab bar is never counted as a part it switches")
+    check("tabGo(\"dashboard\", \"3d\")" in js and "tabGo(\"loads\", \"3d\")" in js,
+          "Show in 3D and a Space's name open the 3D tab")
+    check("TABS[wsNow]" in js, "a workspace with tabs has no Jump to row")
+    print()
+
+
 def test_page_frame():
     """The page's frame (docs/40 s21.16): a sidebar of five workspaces, one shown at a
     time, desktop only. Read from the page's own files - how it LOOKS is a person's eye."""
@@ -1857,6 +1911,8 @@ def main():
     except Exception as why:                    # noqa: BLE001 - reported, not hidden
         check(False, "the Sprinkler Layout panel checks ran to the end (they raised %r)" % (why,))
     test_page_frame()
+    test_page_is_in_the_brand()
+    test_workspace_tabs()
     test_no_way_to_an_ai()
     test_addin_side()
 

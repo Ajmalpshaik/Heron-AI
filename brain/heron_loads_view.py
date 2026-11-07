@@ -65,9 +65,9 @@ FACING = (("N", "#3b6fb6", "faces north (315 to 45 degrees)"),
           ("S", "#e0a030", "faces south (135 to 225)"),
           ("W", "#c0503a", "faces west (225 to 315)"))
 NOT_FACING = ("#cfcac0", "roof, floor or ceiling - no facing")
-STATUS = (("ok", "#5aa469", "calculated"),
-          ("refused", "#d9534f", "refused - see why in the table"),
-          ("missing", "#e0a030", "an input is still missing"),
+STATUS = (("ok", "#3ecf8e", "calculated"),
+          ("refused", "#ff5a4e", "refused - see why in the table"),
+          ("missing", "#f5a524", "an input is still missing"),
           ("left out", "#9e9e9e", "not placed - left out"))
 NO_U = ("#c03ad6", "no U-value in the model - its Space is refused")
 NOT_LOADED = ("#c9c9c9", "no load worked out for this Space")

@@ -53,6 +53,27 @@ faint fill. Any colour above at any opacity is in the palette; a hex value that 
 department or sets a material writes the *model's* colours, chosen by the modeller and the project's
 standard. `brain/fragments/` is outside this rule and outside the checker.
 
+## Not the brand - the Companion's 3D views, on the owner's word
+
+Asked on 2026-11-07, when the Companion page was moved to this palette, and answered by the owner: **the 3D
+views keep their category colours**, treated as the model's colours, like the rule above. A 3D view has to
+tell some forty categories apart at a glance - ducts blue, pipes green, sprinklers red - and the palette has
+about five colours a drawing can use. So these stay outside the table, on purpose, and
+`tools/check-brand.py` still names them:
+
+| Where | What |
+|---|---|
+| [`brain/heron_model_view.py`](../../brain/heron_model_view.py) | The Model Dashboard 3D view's colour for each Revit category (`KNOWN` and the even hue step after it), the faded colour behind a highlight, and the grey for a face with no material |
+| [`brain/heron_loads_view.py`](../../brain/heron_loads_view.py) | The HVAC Loads 3D view's colour for each kind of face (wall, roof, window...), what lies beyond it, the way it faces, and the colour ramp |
+| [`brain/heron_sprinkler_view.py`](../../brain/heron_sprinkler_view.py) | The Sprinkler 3D view's colour for each pipe size, the colour ramp, the outline, the dry pipe and the source |
+| [`mcp/companion/static/companion.css`](../../mcp/companion/static/companion.css), [`index.html`](../../mcp/companion/static/index.html) | The default paint colour - the colour the modeller paints Revit elements with |
+| The renderers' fallbacks (`model3d.js`, `loads3d.js`, `sprinkler3d.js`, two in `companion.js`) | The grey drawn when a category or material colour is missing |
+
+**Everything else in those views is the brand:** the highlight on a picked element is Accent; a pass, a
+fail and a missing input are Success, Error and Warning; labels are Ink on White; the 3D view's background
+is Mist, or Ink on the dark page. "Colour by Material" draws each material's own shading colour - the
+model's, so outside this table too.
+
 ## The font
 
 **Manrope**, in ExtraBold, SemiBold, Medium and Regular. It is not kept in this folder yet: it comes in

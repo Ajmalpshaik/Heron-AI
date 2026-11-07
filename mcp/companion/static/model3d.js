@@ -266,7 +266,8 @@
     const [w, h] = size();
     gl.viewport(0, 0, w, h);
     const dark = document.documentElement.dataset.theme === "dark";
-    gl.clearColor(dark ? 0.07 : 0.97, dark ? 0.09 : 0.976, dark ? 0.13 : 0.984, 1);
+    // The page behind: Mist, or Ink on the dark page (D-149).
+    gl.clearColor(dark ? 0.059 : 0.969, dark ? 0.059 : 0.961, dark ? 0.063 : 0.949, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
     gl.useProgram(draw);
