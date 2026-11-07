@@ -68,8 +68,9 @@ KNOWN = {
     # Rooms and Spaces share it; the legend keeps them apart, each hideable.
     "Rooms": "#fd641a", "Spaces": "#fd641a",
 }
-#: The highlight the page paints a picked or looked-at element in.
-HIGHLIGHT = "#ff7a00"
+#: The highlight the page paints a picked or looked-at element in - the
+#: brand's Accent, the one colour for "look here" (D-149).
+HIGHLIGHT = "#fd641a"
 #: What everything else fades to while something is highlighted.
 DIMMED = "#dfe3e8"
 #: How see-through a room's volume is drawn, 0 clear to 1 solid.

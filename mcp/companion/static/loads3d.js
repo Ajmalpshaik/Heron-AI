@@ -159,7 +159,7 @@
         Math.round(rgb[2] * shade) + "," + alpha + ")";
       ctx.fill("evenodd");
       ctx.lineWidth = 1;
-      ctx.strokeStyle = item.ghost ? "rgba(90,90,90,0.12)" : "rgba(40,40,40,0.35)";
+      ctx.strokeStyle = item.ghost ? "rgba(15,15,16,0.12)" : "rgba(15,15,16,0.35)";
       ctx.stroke();
     }
     if (selected) {
@@ -171,7 +171,7 @@
           for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
           ctx.closePath();
         }
-        ctx.lineWidth = 3; ctx.strokeStyle = "#ff2d95"; ctx.stroke();
+        ctx.lineWidth = 3; ctx.strokeStyle = "#fd641a"; ctx.stroke();
       }
     }
     drawn = list;
@@ -191,7 +191,7 @@
       const width = ctx.measureText(text).width + 8;
       ctx.fillStyle = "rgba(255,255,255,0.85)";
       ctx.fillRect(s[0] - width / 2, s[1] - 8, width, 16);
-      ctx.fillStyle = "#1f2328";
+      ctx.fillStyle = "#0f0f10";
       ctx.fillText(text, s[0], s[1]);
     }
   }
@@ -210,8 +210,8 @@
     ctx.moveTo(cx + x * r, cy - y * r);
     ctx.lineTo(cx - y * 6, cy - x * 6);
     ctx.lineTo(cx + y * 6, cy + x * 6);
-    ctx.closePath(); ctx.fillStyle = "#c0392b"; ctx.fill();
-    ctx.fillStyle = "#1f2328"; ctx.font = "bold 10px system-ui, sans-serif";
+    ctx.closePath(); ctx.fillStyle = "#fd641a"; ctx.fill();
+    ctx.fillStyle = "#0f0f10"; ctx.font = "bold 10px system-ui, sans-serif";
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("N", cx + x * (r + 9), cy - y * (r + 9));
   }

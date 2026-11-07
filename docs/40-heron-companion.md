@@ -1319,7 +1319,7 @@ page's frame, not what any panel does or says it does:** every route, hook, numb
 - **Long workspaces get a "Jump to" row** of links to their own headings (built from what is on screen).
 - **Activity** is a button in the sidebar that opens a drawer on the right (Esc closes it), no longer a
   bubble over the page.
-- **Look:** soft cards on a pale page, one neon-blue accent (`#00AEEF`; buttons and links use a darker blue
+- **Look** (*replaced by §21.19, the brand's colours*)**:** soft cards on a pale page, one neon-blue accent (`#00AEEF`; buttons and links use a darker blue
   so white text on them reads), orange for warnings only, red for danger only, green for done. Segoe UI,
   Consolas for ids. Light and dark, from Windows or the sidebar switch.
 - **Desktop only.** Every phone and tablet rule is gone (the `max-width` and `pointer: coarse` queries, the
@@ -1417,3 +1417,34 @@ drawn in **Accent** (`#FD641A`), see-through - a see-through brand colour is in 
 not. Success, Warning and Error mean a state and Accent Light is only a gradient's end, so none of them;
 Ink and Mist each vanish on one of the page's two themes. Rooms and spaces share the colour and stay apart
 in the legend, each hidden or shown alone. `tools/check-brand.py` no longer names either colour.
+
+### 21.19 The Companion page in the brand's colours (2026-11-07)
+
+On the owner's word - *"use brand colours for the whole companion page"* ([D-149](decisions/D-149.md),
+[`docs/brand`](brand/README.md)). It replaces §21.16's *Look* line (a neon-blue accent on a pale blue-grey
+page): every colour the page itself draws is now one of the brand kit's, or one of them see-through.
+
+- **Light page:** Mist background, White cards, Ink text (secondary text Ink at 72 %, quiet text 55 %,
+  lines 14 %, as the brand's status design sets them). **Dark page:** Ink background, Surface cards, Mist
+  text at the same strengths.
+- **The sidebar is Ink** in both themes, with Mist text; the workspace you are in is marked in Accent.
+- **The logo** in the sidebar is the brand's heron mark (`docs/brand/heron-mark-white.svg`, inlined - the
+  page loads nothing from elsewhere), White on an Accent tile like the brand's orange app icon; the home-made
+  "H" is gone.
+- **Accent** (`#FD641A`) is the one highlight - the main buttons (White text on them, as the kit says),
+  focus rings, links, "you are here", the logo mark. **Success**, **Warning** and **Error** only mean done,
+  needs attention and failed. On the light page a status colour used for *text* is mixed with Ink so it
+  stays readable; on the dark page it is drawn as the kit draws it.
+- **The Model Dashboard's charts** draw their bars in Ink (the theme's text colour), *Others* fainter and a
+  bar of errors in Error, so Accent stays the one highlight. *Worth a look* is Warning, *none found*
+  Success, a plain count and a part not read see-through Ink. The page draws Ink as the theme's own text
+  colour - Ink on the light page, Mist on the dark one - because that is what the brand says Ink is for.
+- **The 3D views:** the pick highlight is Accent, pass / fail / missing are Success / Error / Warning,
+  labels are Ink on White, and the Model Dashboard 3D background is Mist (Ink on the dark page).
+- **Kept outside the palette, on the owner's answer** - asked before the work: the 3D views' category
+  colours (ducts blue, pipes green...), treated as the model's colours; the default paint colour; and the
+  renderers' grey fallbacks. Listed in [`docs/brand` - Not the brand](brand/README.md).
+
+**Proved without Revit:** every Companion and brain test passes; `tools/check-brand.py` names nothing in the
+Companion's page files but the colours listed as outside the palette; and the page was looked at in
+headless Chromium, light and dark. **Not seen** in Revit's browser or on the owner's PC.

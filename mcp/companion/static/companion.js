@@ -627,7 +627,7 @@ async function changes() {
     for (const [id, item] of shown) {
       if (ids.has(id) || item.replaced) continue;
       // A card the chat replaced while the modeller had unsent values in it
-      // stays, saying so, so nothing typed is lost (Codex review of #362).
+      // stays, saying so, so nothing typed is lost (Codex review of PR 362).
       if (item.el.edited()) { replacedHere(item.el, () => shown.delete(id)); item.replaced = true; continue; }
       item.el.remove(); shown.delete(id);
     }
@@ -664,7 +664,7 @@ async function changes() {
 let tableShown = null;     // "<id>/<last.at>" of what is on screen
 // Edits the modeller typed that Revit has NOT taken - kept when a stale row
 // refuses the whole Apply, so the table redraws with them still in it and
-// the stale cells marked (Codex review of #362). {id, map}, or null.
+// the stale cells marked (Codex review of PR 362). {id, map}, or null.
 let keptEdits = null;
 
 function tableCell(row, name, cell, edits, count) {
@@ -1543,9 +1543,20 @@ async function loads_() {
 
 let dashShown = null;
 let dashBusy = false;
-const HEX = /^#[0-9a-fA-F]{6}$/;
+const HEX = /^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/;
 
-function dashColour(c, fallback) { return HEX.test(String(c || "")) ? c : fallback; }
+// A colour the brain sent, checked. INK IS THE TEXT COLOUR (D-149): the brand
+// draws text in Ink on a light page and Mist on a dark one, so Ink - with any
+// see-through - becomes the theme's own text colour at that strength.
+function dashColour(c, fallback) {
+  const text = String(c || "");
+  if (!HEX.test(text)) return fallback;
+  if (/^#0f0f10/i.test(text)) {
+    const alpha = text.length === 9 ? Math.round(parseInt(text.slice(7), 16) / 2.55) : 100;
+    return "color-mix(in srgb, var(--ink) " + alpha + "%, transparent)";
+  }
+  return text;
+}
 
 async function dashRefresh(button, said, parameters, board) {
   if (dashBusy) return;
@@ -1639,7 +1650,7 @@ function dashTiles(D, colours) {
   const grid = el("div", "d-tiles");
   (D.tiles || []).forEach(t => {
     const tile = el("div", "d-tile");
-    tile.style.borderLeftColor = dashColour(colours[t.state], "#7a8796");
+    tile.style.borderLeftColor = dashColour(colours[t.state], "#0f0f108c");
     tile.title = t.state === "not read" ? "Not read from the model" : "";
     tile.append(el("span", "d-tile-label", t.label),
                 el("span", "d-tile-value", t.value == null ? "—" : num(t.value, 0)),
@@ -1661,7 +1672,7 @@ function dashChart(c) {
     const track = el("span", "d-bar-track");
     const fill = el("i", "d-bar-fill");
     fill.style.width = Math.max(1, Math.round(100 * (Number(b.value) || 0) / most)) + "%";
-    fill.style.background = dashColour(b.colour, "#4f7fd1");
+    fill.style.background = dashColour(b.colour, "#0f0f10b8");
     track.append(fill);
     li.append(label, track, el("span", "d-bar-value", num(b.value, 0)));
     list.append(li);
@@ -1689,11 +1700,11 @@ function dashFill(F, colours) {
     const body = el("tbody");
     (p.rows || []).forEach(r => {
       const tr = el("tr");
-      tr.style.borderLeft = "4px solid " + dashColour(colours[r.state], "#7a8796");
+      tr.style.borderLeft = "4px solid " + dashColour(colours[r.state], "#0f0f108c");
       const track = el("span", "d-bar-track");
       const fill = el("i", "d-bar-fill");
       fill.style.width = Math.max(0, Math.min(100, Number(r.share) || 0)) + "%";
-      fill.style.background = dashColour(colours.ok, "#5aa469");
+      fill.style.background = dashColour(colours.ok, "#3ecf8e");
       track.append(fill);
       const bar = el("td");
       bar.append(track);
@@ -1804,7 +1815,7 @@ function dashBoard(B) {
       const track = el("span", "d-bar-track");
       const fill = el("i", "d-bar-fill");
       fill.style.width = Math.max(1, Math.round(100 * (Number(b.value) || 0) / most)) + "%";
-      fill.style.background = dashColour(b.colour, "#4f7fd1");
+      fill.style.background = dashColour(b.colour, "#0f0f10b8");
       track.append(fill);
       li.append(label, track, el("span", "d-bar-value", num(b.value, c.unit ? 1 : 0)));
       list.append(li);
@@ -1905,7 +1916,7 @@ function dashLook(D, colours) {
     .forEach(([k, t]) => {
       if (!tally[k]) return;
       const chip = el("span", "d-chip");
-      chip.style.borderLeftColor = dashColour(colours[k], "#7a8796");
+      chip.style.borderLeftColor = dashColour(colours[k], "#0f0f108c");
       chip.append(el("b", null, num(tally[k], 0)), el("span", null, " " + t));
       sum.append(chip);
     });
@@ -1919,7 +1930,7 @@ function dashLook(D, colours) {
   rows.forEach(r => {
     const li = el("li", "d-look-row");
     li.dataset.state = r.state || "";
-    li.style.borderLeftColor = dashColour(colours[r.state], "#7a8796");
+    li.style.borderLeftColor = dashColour(colours[r.state], "#0f0f108c");
     const head = el("div", "d-look-head");
     head.append(el("span", "d-look-title", r.title),
                 el("span", "d-look-count", r.count == null ? "not read" : num(r.count, 0)));
@@ -2081,7 +2092,7 @@ function renderDashboard(D) {
   (D.states || []).forEach(s => {
     const li = el("li");
     const sw = el("i", "d-swatch");
-    sw.style.background = dashColour(s.colour, "#7a8796");
+    sw.style.background = dashColour(s.colour, "#0f0f108c");
     li.append(sw, el("span", null, s.means));
     legend.append(li);
   });
