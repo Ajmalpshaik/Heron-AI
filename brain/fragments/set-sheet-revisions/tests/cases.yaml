@@ -26,7 +26,26 @@ positive:
       on the two, A gone and B on, every other revision still listed, one undo
       entry, sheetsChanged 2; the third sheet untouched and in `notOnSheet`
 
+  - given: >
+      ROW 5b-1471 - group MP's MP4 on the test copy `Test for Issue`, Revit
+      2024: Seq. 1 off S1, S2, S3 with replaceWith "Seq. 2", attach false, where
+      S3 has Seq. 1 TICKED ONLY and no cloud anywhere
+    expect: >
+      S3 counted - sheetsChanged 1 - Seq. 1 gone from what it prints and Seq. 2
+      on, and S3 NOT in `cloudDriven`. The same with replaceWith left out:
+      S3 counted, Seq. 1 gone. The code before the rebuild answered
+      sheetsChanged 0 and put S3 in `cloudDriven` - "still printed, why is not
+      known" - because it read the sheet back as it was before the write
+
 negative:
+  - given: >
+      ROW 5b-1471, the same run - S1, where Seq. 1 is ticked AND held by a cloud
+      in a plan placed on it, and S5, which carries no revision
+    expect: >
+      after the rebuild S1 still in `cloudDriven` with its cloud in
+      `cloudsHolding` and NOT counted; S5 in `notOnSheet`, nothing changed. A
+      rebuild that let a cloud-held sheet count would be row 5b-1463 again
+
   - given: attach false on a revision that a CLOUD puts on the sheet
     expect: >
       the sheet id in `cloudDriven` and the revision still there. That list

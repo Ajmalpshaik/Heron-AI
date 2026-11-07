@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -123,6 +123,41 @@ contract:
       # Why nothing was changed, in the modeller's words (D-52).
       role: accounting
       type: string
+
+proof:
+  date: '2026-11-07'
+  by: Ajmal PS
+  model: Test for Issue (6,120 elements), Revit 2024, session 30316
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    list-revision-clouds with this phase''s own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned alsoDeleted 0 item(s),
+    changed 2 item(s) [1594056, 1594071], clouds 2 item(s) [1 - Revision 1, 1 - Revision 1],
+    deleted 0 item(s), fromSaid Seq. 1, label Func`2, notACloud 0, problems 0 item(s), quoted
+    Func`2, refused , sheetEffect sheet S1: now prints Seq. 2 ''Revision 2'' ''Date 2''; current
+    Seq. 2 ''Revision 2'' ''Date 2'' || sheet S2: now prints Seq. 2 ''Revision 2'' ''Date
+    2''; no longer prints Seq. 1 ''Revision 1'' ''Date 1''; current Seq. 2 ''Revision 2''
+    ''Date 2'', skipped , skippedLines 0 item(s), target Revision, verb reassign. inputs came
+    elements from list-revision-clouds (2); action as given; revisionId as given; fromRevision
+    as given; confirm not given - "none", the card''s own default (optional). on Test for
+    Issue'
+  negative_case: run with action=reassign, fromRevision=Seq. 2, revision=Seq. 1, revisionId=Seq.
+    2 - Revision 2, sheets=S1, S2 instead - chosen because it should not contain what this
+    fragment reports - the arrangement was re-made first by running list-revision-clouds with
+    this phase's own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned alsoDeleted 0 item(s), changed 0 item(s), clouds
+    0 item(s), deleted 0 item(s), fromSaid Seq. 2, label Func`2, notACloud 0, problems 1 item(s)
+    [no revision cloud to act on. LIST_REVISION_CLOUDS finds them...], quoted Func`2, refused
+    no revision cloud to act on. LIST_REVISION_CLOUDS finds them by sheet, view and revision,
+    or select them in Revit. NOTHING WAS CHANGED., sheetEffect , skipped 2 cloud(s) handed
+    in are not on Seq. 2 'Revision 2' 'Date 2' and were left alone, skippedLines 1 item(s)
+    [2 cloud(s) handed in are not on Seq. 2 'Revision 2' 'Date 2'...], target Revision, verb
+    reassign. inputs came elements from list-revision-clouds (2); action as given; revisionId
+    as given; fromRevision as given; confirm not given - "none", the card's own default (optional).
+    on Test for Issue
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 0b96236e1236ea56
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
