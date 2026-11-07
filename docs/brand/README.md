@@ -20,6 +20,8 @@ desktop it is drawn on (the Recycle Bin, the taskbar, Teams) and are not Heron's
 | [`heron-logo-white.svg`](heron-logo-white.svg) | The same logo in white | Anywhere dark: the README in GitHub's dark theme, a dark slide |
 | [`heron-mark-ink.svg`](heron-mark-ink.svg) | The heron alone, near-black | A small place where the words would be unreadable |
 | [`heron-mark-white.svg`](heron-mark-white.svg) | The heron alone, white | The same, on a dark background |
+| [`heron-3d-orange.png`](heron-3d-orange.png) | The heron in glossy 3D orange, transparent background, 1124 px | The main **Heron** button on the Revit ribbon when Revit is connected (`revit/Heron.Revit.Addin/Resources/BridgeConnected.png` is this, cropped to the bird, 96 px) |
+| [`heron-3d-ink.png`](heron-3d-ink.png) | The same heron in glossy 3D black | The **Heron** button when Revit is not connected (`BridgeDisconnected.png`, cropped the same way). Faint on Revit's dark theme, as the icon it replaced was |
 | [`heron-app-icon-ink.png`](heron-app-icon-ink.png) | White heron on a near-black square, 512 px | An app or program icon |
 | [`heron-app-icon-orange.png`](heron-app-icon-orange.png) | White heron on an orange square, 512 px | An app icon that has to stand out |
 | [`heron-social-preview.png`](heron-social-preview.png) | The logo on Mist with an orange line, 1280 x 640 px | The picture GitHub shows when the repository's link is shared. It is uploaded by hand under the repository's **Settings - Social preview**, because GitHub offers no other way |
