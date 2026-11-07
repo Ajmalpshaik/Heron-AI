@@ -1887,13 +1887,36 @@ function dashFilter(text, state) {
     const byState = !state || n.dataset.state === state;
     n.hidden = !(byWords && byState);
   });
+  // A filter that asks for the rows that found nothing, or words, opens their fold.
+  const quiet = document.querySelector("#dashboard .d-look-quiet");
+  if (quiet && (state === "ok" || words)) quiet.open = true;
 }
 
 function dashLook(D, colours) {
   const sec = el("section", "d-look");
   sec.append(el("h3", "d-sub", "Worth a look"));
+  const rows = D.look || [];
+  const tally = { look: 0, info: 0, ok: 0, "not read": 0 };
+  rows.forEach(r => { if (r.state in tally) tally[r.state]++; });
+  // ONE LINE FIRST: how many rows are worth a look, how many are counts, how
+  // many found nothing - counts of rows, never a verdict on the model.
+  const sum = el("p", "d-look-sum");
+  [["look", "worth a look"], ["info", "counts only"], ["not read", "not read"], ["ok", "found nothing"]]
+    .forEach(([k, t]) => {
+      if (!tally[k]) return;
+      const chip = el("span", "d-chip");
+      chip.style.borderLeftColor = dashColour(colours[k], "#7a8796");
+      chip.append(el("b", null, num(tally[k], 0)), el("span", null, " " + t));
+      sum.append(chip);
+    });
+  sec.append(sum);
   const list = el("ol", "d-look-list");
-  (D.look || []).forEach(r => {
+  // Rows that found nothing fold away under one line; the filter opens them.
+  const quiet = el("details", "d-look-quiet");
+  quiet.append(el("summary", null, num(tally.ok, 0) + " check(s) found nothing - show them"));
+  const quietList = el("ol", "d-look-list");
+  quiet.append(quietList);
+  rows.forEach(r => {
     const li = el("li", "d-look-row");
     li.dataset.state = r.state || "";
     li.style.borderLeftColor = dashColour(colours[r.state], "#7a8796");
@@ -1942,15 +1965,20 @@ function dashLook(D, colours) {
       tools.append(more);
     }
     if (tools.childNodes.length) li.append(tools);
-    list.append(li);
+    (r.state === "ok" ? quietList : list).append(li);
   });
   sec.append(list);
+  if (tally.ok) sec.append(quiet);
   return sec;
 }
 
 function renderDashboard(D) {
   const box = $("d-box");
   box.replaceChildren();
+  // BELOW THE 3D VIEW (docs/40 s21.18): the counts and charts come first, then
+  // the 3D view, then the colour box, the parameters filled and Worth a look.
+  const below = $("d-box3");
+  below.replaceChildren();
   $("d-empty").hidden = !!D;
   if (!D) return;
   const colours = {};
@@ -1964,7 +1992,6 @@ function renderDashboard(D) {
       item.append(el("span", "l-meta-label", k), el("span", "l-meta-value", v));
       meta.append(item);
     });
-  meta.append(el("span", "l-meta-note", "Counts of what the model holds - never a verdict. Nothing here changes the model."));
   const tools = el("div", "d-tools");
   const refresh = el("button", "btn", D.busy ? "Reading…" : "Refresh");
   refresh.type = "button";
@@ -2047,9 +2074,9 @@ function renderDashboard(D) {
   (D.charts || []).forEach(c => charts.append(dashChart(c)));
   box.append(charts);
   if (D.board) box.append(dashBoard(D.board));
-  if (!D.demo) box.append(dashColourBox());
-  if (D.fill) box.append(dashFill(D.fill, colours));
-  box.append(dashLook(D, colours));
+  if (!D.demo) below.append(dashColourBox());
+  if (D.fill) below.append(dashFill(D.fill, colours));
+  below.append(dashLook(D, colours));
   const legend = el("ul", "d-legend");
   (D.states || []).forEach(s => {
     const li = el("li");
@@ -2058,7 +2085,7 @@ function renderDashboard(D) {
     li.append(sw, el("span", null, s.means));
     legend.append(li);
   });
-  box.append(legend);
+  below.append(legend);
   dash3dControls(D);
 }
 
@@ -2066,9 +2093,14 @@ function renderDashboard(D) {
 // what each redraw replaces, so turning the model survives a Refresh; these
 // buttons, the legend and the picked element go in #d-box2.
 let dashPicked = null;
+let dashRooms = true;
 
 function dash3dControls(D) {
   const box = $("d-box2");
+  // The canvas keeps its WebGL drawing across redraws: park it beside the box
+  // before the box is emptied, then put it back under the 3D view's buttons.
+  const canvasBox = $("d-3d");
+  if (canvasBox && box.contains(canvasBox)) box.after(canvasBox);
   box.replaceChildren();
   if (!D) return;
   const sec = el("section", "d-3d-tools");
@@ -2088,7 +2120,7 @@ function dash3dControls(D) {
         method: "POST",
         headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
         credentials: "same-origin",
-        body: JSON.stringify({ whole: whole }),
+        body: JSON.stringify({ whole: whole, rooms: !!(roomsBox && roomsBox.checked) }),
       });
       const answer = await res.json();
       said.className = answer.ok ? "result ok" : "result failed";
@@ -2113,7 +2145,15 @@ function dash3dControls(D) {
   whole.type = "button";
   whole.title = "Read the shapes of the whole model, coarse - slower on a big model. Nothing in the model changes";
   whole.addEventListener("click", load(true, whole));
-  row.append(active, whole);
+  // ROOMS AS VOLUMES (docs/40 s21.18): asked for with the read, drawn see-through.
+  const roomsLabel = el("label", "d-check");
+  const roomsBox = el("input");
+  roomsBox.type = "checkbox";
+  roomsBox.checked = dashRooms;
+  roomsBox.addEventListener("change", () => { dashRooms = roomsBox.checked; });
+  roomsLabel.title = "Read placed rooms and spaces too, and draw them as see-through volumes. Nothing in the model changes";
+  roomsLabel.append(roomsBox, el("span", null, "Rooms and spaces as volumes"));
+  row.append(active, whole, roomsLabel);
   if (D.view3d) {
     const clear = el("button", "btn-lite", "Clear highlight");
     clear.type = "button";
@@ -2122,6 +2162,7 @@ function dash3dControls(D) {
   }
   row.append(said);
   sec.append(row);
+  if (canvasBox) sec.append(canvasBox);
   if (D.demo) {
     sec.append(el("p", "muted small", "The DEMO has no shapes - ask the chat for a model dashboard to read your model, then load the 3D view."));
   } else if (!D.view3d) {
@@ -2134,6 +2175,36 @@ function dash3dControls(D) {
         (V.stopped === "time" ? "the read stopped itself before Revit's time limit" : "the triangle limit") : "") +
       (V.noGeometry ? " · " + num(V.noGeometry, 0) + " with nothing to draw" : "")));
     ((V.notRead || []).concat(V.capped || [])).forEach(n => sec.append(el("p", "d-notread", n)));
+    // COLOUR BY (docs/40 s21.18): category, or each face's material with the
+    // shading colour Revit's Shaded view uses. Both arrive from the brain.
+    const by = el("div", "d-seg");
+    by.setAttribute("role", "group");
+    by.setAttribute("aria-label", "Colour the 3D view by");
+    by.append(el("span", "d-seg-label", "Colour by"));
+    const byCat = el("button", "d-seg-btn", "Category");
+    const byMat = el("button", "d-seg-btn", "Material");
+    [byCat, byMat].forEach(b => { b.type = "button"; });
+    byMat.disabled = !V.hasMaterials;
+    byMat.title = V.hasMaterials ? "Each face in its material's shading colour - as Revit's Shaded view shows it"
+      : "This read has no materials - press Read again (the add-in needs this release of Heron)";
+    byCat.addEventListener("click", () => { if (window.HeronModel3D) window.HeronModel3D.setMode("category"); });
+    byMat.addEventListener("click", () => { if (window.HeronModel3D) window.HeronModel3D.setMode("material"); });
+    by.append(byCat, byMat);
+    sec.append(by);
+    const matBox = el("div", "d-matlegend");
+    const matList = el("ul", "d-legend");
+    (V.materialLegend || []).forEach(m => {
+      const li = el("li");
+      const sw = el("i", "d-swatch");
+      sw.style.background = dashColour(m.colour, "#c9c9c9");
+      li.title = m.name + (m.transparency ? " - " + m.transparency + "% transparent" : "");
+      li.append(sw, el("span", null, m.name + (m.transparency ? " (see-through)" : "")));
+      matList.append(li);
+    });
+    matBox.append(matList);
+    if (V.materialsMore) matBox.append(el("p", "muted small", "… and " + num(V.materialsMore, 0) + " more material(s)."));
+    if (V.unknownTriangles) matBox.append(el("p", "muted small", "Grey: faces with no material Heron could read a colour from."));
+    sec.append(matBox);
     // The legend is also the 3D view's category switch (docs/40 s21.17): a
     // click hides or shows that category on the page, Only shows it alone.
     // Nothing is read from Revit and nothing in Revit changes.
@@ -2143,6 +2214,10 @@ function dash3dControls(D) {
     const names = (V.legend || []).map(c => c.name);
     const hiddenNow = () => new Set(window.HeronModel3D ? window.HeronModel3D.hidden() : []);
     const paint = () => {
+      const m = window.HeronModel3D ? window.HeronModel3D.mode() : "category";
+      byCat.setAttribute("aria-pressed", m === "category" ? "true" : "false");
+      byMat.setAttribute("aria-pressed", m === "material" ? "true" : "false");
+      matBox.hidden = m !== "material";
       const off = hiddenNow();
       legend.querySelectorAll("button.d-cat").forEach(b => {
         const on = !off.has(b.dataset.name);
@@ -2159,7 +2234,7 @@ function dash3dControls(D) {
       b.type = "button";
       b.dataset.name = c.name;
       b.title = "Hide or show " + c.name + " in the 3D view";
-      b.append(sw, el("span", null, c.name + " (" + num(c.count, 0) + ")"));
+      b.append(sw, el("span", null, c.name + " (" + num(c.count, 0) + ")" + (c.volume ? " · see-through" : "")));
       b.addEventListener("click", () => {
         if (!window.HeronModel3D) return;
         const off = hiddenNow();

@@ -15,6 +15,11 @@
 // from Revit: Top, Front, Side and 3D cameras, zoom to what is lit, a cut
 // height that hides everything above it, categories hidden and shown, a
 // picture of the view saved to the PC, and full screen.
+//
+// Rooms and spaces read as volumes, and glass, are drawn see-through
+// (docs/40 s21.18): a solid pass first, then a see-through pass that writes no
+// depth, so what is inside a room still shows. Colour by category or by
+// material - the brain sends both; the page only swaps which one is drawn.
 "use strict";
 
 (function () {
@@ -36,6 +41,8 @@
   let zmin = 0, zmax = 1;                  // the drawing's lowest and highest point
   let cut = null;                          // the cut height, or null for no cut
   let onTools = null;                      // told when hidden categories or the cut change
+  let mode = "category";                   // "category" or "material"
+  let colBy = null, alpBy = null;          // per mode: Float32Array colours and alphas
   let radius = 10;
   let shownKey = null;
   let tools = null;                        // the toolbar over the canvas
@@ -93,9 +100,11 @@
   // ---------------------------------------------------------------- shaders
   const DRAW_VS = [
     "attribute vec3 aPos; attribute vec3 aNor; attribute vec3 aCol; attribute float aHi; attribute float aVis;",
+    "attribute float aAlp;",
     "uniform mat4 uMvp; uniform vec3 uLight; uniform float uLit; uniform vec3 uHi; uniform vec3 uDim;",
-    "varying vec3 vCol; varying float vZ;",
+    "varying vec3 vCol; varying float vZ; varying float vAlp;",
     "void main() {",
+    "  vAlp = (uLit > 0.5 && aHi > 0.5) ? 1.0 : aAlp;",
     "  float l = 0.42 + 0.58 * abs(dot(normalize(aNor), uLight));",
     "  vec3 base = aCol;",
     "  if (uLit > 0.5) base = aHi > 0.5 ? uHi : uDim;",
@@ -104,14 +113,20 @@
     // A hidden category's corners go behind the far plane, so nothing of it is drawn or picked.
     "  gl_Position = aVis > 0.5 ? uMvp * vec4(aPos, 1.0) : vec4(0.0, 0.0, 2.0, 1.0);",
     "}"].join("\n");
-  const DRAW_FS = "precision mediump float; varying vec3 vCol; varying float vZ; uniform float uCut;" +
-    " void main() { if (vZ > uCut) discard; gl_FragColor = vec4(vCol, 1.0); }";
+  // uPass 0 draws only what is solid, uPass 1 only what is see-through.
+  const DRAW_FS = "precision mediump float; varying vec3 vCol; varying float vZ; varying float vAlp;" +
+    " uniform float uCut; uniform float uPass;" +
+    " void main() { if (vZ > uCut) discard; bool solid = vAlp > 0.99;" +
+    " if ((uPass < 0.5) != solid) discard; gl_FragColor = vec4(vCol, solid ? 1.0 : vAlp); }";
   const PICK_VS = [
-    "attribute vec3 aPos; attribute vec3 aPick; attribute float aVis; uniform mat4 uMvp; varying vec3 vPick; varying float vZ;",
-    "void main() { vPick = aPick; vZ = aPos.z;",
+    "attribute vec3 aPos; attribute vec3 aPick; attribute float aVis; attribute float aAlp;",
+    "uniform mat4 uMvp; varying vec3 vPick; varying float vZ; varying float vAlp;",
+    "void main() { vPick = aPick; vZ = aPos.z; vAlp = aAlp;",
     "  gl_Position = aVis > 0.5 ? uMvp * vec4(aPos, 1.0) : vec4(0.0, 0.0, 2.0, 1.0); }"].join("\n");
-  const PICK_FS = "precision mediump float; varying vec3 vPick; varying float vZ; uniform float uCut;" +
-    " void main() { if (vZ > uCut) discard; gl_FragColor = vec4(vPick, 1.0); }";
+  const PICK_FS = "precision mediump float; varying vec3 vPick; varying float vZ; varying float vAlp;" +
+    " uniform float uCut; uniform float uPass;" +
+    " void main() { if (vZ > uCut) discard; if ((uPass < 0.5) != (vAlp > 0.99)) discard;" +
+    " gl_FragColor = vec4(vPick, 1.0); }";
 
   function program(vs, fs) {
     const make = (kind, src) => {
@@ -156,11 +171,16 @@
   function prepare() {
     const els = view.elements || [];
     const palette = (view.categories || []).map(c => rgb(c.colour));
+    const mats = (view.materials || []).map(m => ({ rgb: rgb(m.colour), alpha: Math.max(0.1, Math.min(1, Number(m.alpha) || 0)) }));
+    const none = rgb(view.noMaterial);
+    const volumes = new Set(view.volumes || []);
+    const volumeAlpha = Math.max(0.05, Math.min(0.9, Number(view.volumeAlpha) || 0.18));
     let n = 0;
     els.forEach(e => { n += e.t.length; });
     count = n;
     const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3);
     const col = new Float32Array(n * 3), pck = new Float32Array(n * 3);
+    const colM = new Float32Array(n * 3), alpC = new Float32Array(n), alpM = new Float32Array(n);
     hi = new Float32Array(n);
     vis = new Float32Array(n).fill(1);
     ranges = []; ids = []; cats = [];
@@ -170,16 +190,24 @@
       const code = index + 1;
       const pc = [(code & 255) / 255, ((code >> 8) & 255) / 255, ((code >> 16) & 255) / 255];
       const c = palette[e.c] || [0.6, 0.6, 0.6];
+      const isVolume = volumes.has(e.c);
+      const m = Array.isArray(e.m) ? e.m : null;
       ranges.push([k, e.t.length]);
       ids.push(String(e.id));
       cats.push(e.c);
       for (let t = 0; t < e.t.length; t += 3) {
+        const mi = m ? m[t / 3] : (typeof e.m === "number" ? e.m : -1);
+        const mat = mi >= 0 ? mats[mi] : null;
+        const mc = isVolume ? c : (mat ? mat.rgb : none);
+        const ma = isVolume ? volumeAlpha : (mat ? mat.alpha : 1);
+        const ca = isVolume ? volumeAlpha : 1;
         const a = e.t[t] * 3, b = e.t[t + 1] * 3, d = e.t[t + 2] * 3;
         const A = [e.v[a], e.v[a + 1], e.v[a + 2]], B = [e.v[b], e.v[b + 1], e.v[b + 2]];
         const D = [e.v[d], e.v[d + 1], e.v[d + 2]];
         const N = norm(cross([B[0] - A[0], B[1] - A[1], B[2] - A[2]], [D[0] - A[0], D[1] - A[1], D[2] - A[2]]));
         [A, B, D].forEach(P => {
           pos.set(P, k * 3); nor.set(N, k * 3); col.set(c, k * 3); pck.set(pc, k * 3);
+          colM.set(mc, k * 3); alpC[k] = ca; alpM[k] = ma;
           for (let i = 0; i < 3; i++) { if (P[i] < min[i]) min[i] = P[i]; if (P[i] > max[i]) max[i] = P[i]; }
           k++;
         });
@@ -193,8 +221,11 @@
     radius = Math.max(1, Math.hypot(max[0] - min[0], max[1] - min[1], max[2] - min[2]) / 2);
     if (buf) Object.values(buf).forEach(b => gl.deleteBuffer(b));
     const upload = arr => { const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, arr, gl.STATIC_DRAW); return b; };
-    buf = { pos: upload(pos), nor: upload(nor), col: upload(col), pck: upload(pck), hi: upload(hi),
-            vis: upload(vis) };
+    colBy = { category: col, material: colM };
+    alpBy = { category: alpC, material: alpM };
+    if (mode === "material" && !view.hasMaterials) mode = "category";
+    buf = { pos: upload(pos), nor: upload(nor), col: upload(colBy[mode]), pck: upload(pck), hi: upload(hi),
+            vis: upload(vis), alp: upload(alpBy[mode]) };
     lit = false;
     syncTools();
   }
@@ -222,7 +253,10 @@
   }
 
   function mvp(w, h) {
-    const near = Math.max(cam.dist / 1000, 0.01), far = cam.dist + radius * 4;
+    // The near plane as far out as the model allows: depth resolution is spent
+    // near the eye, and some browsers give only 16 bits of it, so a near plane
+    // too close makes faces a few centimetres apart flicker against each other.
+    const near = Math.max(cam.dist / 100, cam.dist - radius * 2.2, 0.01), far = cam.dist + radius * 4;
     return multiply(perspective(FOV, w / Math.max(h, 1), near, far), lookAt(eye(), cam.target, [0, 0, 1]));
   }
 
@@ -238,6 +272,7 @@
     gl.useProgram(draw);
     attrib(draw, "aPos", buf.pos, 3); attrib(draw, "aNor", buf.nor, 3);
     attrib(draw, "aCol", buf.col, 3); attrib(draw, "aHi", buf.hi, 1); attrib(draw, "aVis", buf.vis, 1);
+    attrib(draw, "aAlp", buf.alp, 1);
     gl.uniform1f(gl.getUniformLocation(draw, "uCut"), cutAt());
     gl.uniformMatrix4fv(gl.getUniformLocation(draw, "uMvp"), false, mvp(w, h));
     const e = eye();
@@ -245,7 +280,22 @@
     gl.uniform1f(gl.getUniformLocation(draw, "uLit"), lit ? 1 : 0);
     gl.uniform3fv(gl.getUniformLocation(draw, "uHi"), rgb(view.highlight));
     gl.uniform3fv(gl.getUniformLocation(draw, "uDim"), rgb(view.dimmed));
+    // Solid first; then see-through on top, blended, writing no depth, so a
+    // room never hides what stands inside it.
+    gl.uniform1f(gl.getUniformLocation(draw, "uPass"), 0);
     gl.drawArrays(gl.TRIANGLES, 0, count);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.depthMask(false);
+    // A room's face lies on the wall it is bounded by: pushed back a hair, the
+    // wall wins cleanly instead of the two flickering in stripes.
+    gl.enable(gl.POLYGON_OFFSET_FILL);
+    gl.polygonOffset(1, 2);
+    gl.uniform1f(gl.getUniformLocation(draw, "uPass"), 1);
+    gl.drawArrays(gl.TRIANGLES, 0, count);
+    gl.disable(gl.POLYGON_OFFSET_FILL);
+    gl.depthMask(true);
+    gl.disable(gl.BLEND);
   }
 
   function redraw() {
@@ -283,12 +333,22 @@
     gl.enable(gl.DEPTH_TEST);
     gl.useProgram(pick);
     attrib(pick, "aPos", buf.pos, 3); attrib(pick, "aPick", buf.pck, 3); attrib(pick, "aVis", buf.vis, 1);
+    attrib(pick, "aAlp", buf.alp, 1);
     gl.uniform1f(gl.getUniformLocation(pick, "uCut"), cutAt());
     gl.uniformMatrix4fv(gl.getUniformLocation(pick, "uMvp"), false, mvp(w, h));
-    gl.drawArrays(gl.TRIANGLES, 0, count);
+    // A solid element under the click wins; only where there is none does a
+    // see-through one - a room, glass - answer.
     const px = new Uint8Array(4);
     const dpr = window.devicePixelRatio || 1;
-    gl.readPixels(Math.round(x * dpr), Math.round(h - y * dpr), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    for (let pass = 0; pass < 2; pass++) {
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.uniform1f(gl.getUniformLocation(pick, "uPass"), pass);
+      if (pass) { gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(1, 2); }
+      gl.drawArrays(gl.TRIANGLES, 0, count);
+      gl.disable(gl.POLYGON_OFFSET_FILL);
+      gl.readPixels(Math.round(x * dpr), Math.round(h - y * dpr), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      if (px[0] + (px[1] << 8) + (px[2] << 16) > 0) break;
+    }
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.deleteFramebuffer(fb); gl.deleteTexture(tex); gl.deleteRenderbuffer(depth);
     const code = px[0] + (px[1] << 8) + (px[2] << 16);
@@ -455,6 +515,20 @@
     if (onTools) onTools();
   }
 
+  // Colour by "category" or "material": the brain made both, this swaps them.
+  function setMode(next) {
+    const want = next === "material" && view && view.hasMaterials ? "material" : "category";
+    mode = want;
+    if (!gl || !buf || !colBy) return mode;
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf.col);
+    gl.bufferData(gl.ARRAY_BUFFER, colBy[mode], gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf.alp);
+    gl.bufferData(gl.ARRAY_BUFFER, alpBy[mode], gl.STATIC_DRAW);
+    redraw();
+    if (onTools) onTools();
+    return mode;
+  }
+
   function hiddenNames() {
     return [...hidden].map(i => ((view && view.categories) || [])[i]).filter(Boolean).map(c => c.name);
   }
@@ -511,7 +585,10 @@
     // The categories hidden, by name; set it with a list of names.
     setHidden,
     hidden: hiddenNames,
-    // Told whenever the hidden categories or the cut change.
+    // Told whenever the hidden categories, the cut or the colouring change.
     onTools(fn) { onTools = fn || null; },
+    // "category" or "material"; a read with no materials stays on category.
+    setMode,
+    mode() { return mode; },
   };
 })();

@@ -1624,17 +1624,23 @@ def test_dashboard_panel():
     import heron_brain as brain3d
     import test_model_view as VIEW
     check(demo.load3d({})["ok"] is False, "no 3D read with no chat connected")
-    demo.load3d_hook = lambda whole: {"ok": True, "said": "read"}
+    demo.load3d_hook = lambda whole, rooms: {"ok": True, "said": "read"}
     check(demo.load3d({})["ok"] is False and "DEMO" in demo.load3d({})["said"],
           "no 3D read while the dashboard shows the demo")
     whole_asked = []
-    shown.load3d_hook = lambda whole: (whole_asked.append(whole) or {"ok": True, "said": "read"})
+    shown.load3d_hook = lambda whole, rooms: (whole_asked.append((whole, rooms))
+                                              or {"ok": True, "said": "read"})
     check(shown.load3d({"whole": True})["ok"] and shown.load3d({"whole": "yes"})["ok"]
-          and whole_asked == [True, False],
+          and [w for w, _ in whole_asked] == [True, False],
           "Load 3D asks for the whole model only when the page says exactly true")
+    check(shown.load3d({"rooms": True})["ok"] and shown.load3d({"rooms": 1})["ok"]
+          and [r for _, r in whole_asked[2:]] == [True, False],
+          "and for rooms as volumes only when the page says exactly true (s21.18)")
     got3d = brain3d.model_view(VIEW.sample())
     shown.set_view(got3d, ("Tower MEP", "", "11"))
     small = shown.current()["view3d"]
+    check("materials" not in small and "hasMaterials" in small and "materialLegend" in small,
+          "it carries the material legend, never each element's materials (s21.18)")
     check(small["drawn"] == 4 and "elements" not in small and shown.view()["elements"],
           "the panel's state carries the 3D summary, never the shapes - those come from "
           "/api/dashboard/view")

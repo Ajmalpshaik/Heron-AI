@@ -1363,3 +1363,50 @@ fetches only its own shapes, a hidden category is honoured by both passes, the l
 and the page driven in headless Chromium against an invented three-storey model - Top, the cut at 6.00 m,
 walls hidden, ducts alone, show all, zoom to one lit element, and a picture saved (`Heron 3D view.png`),
 no page error. **Not seen** in Revit's browser or on the owner's PC, nor on a real model's 3D read.
+
+### 21.18 Rooms as volumes, colour by material, and a tidier dashboard (2026-11-07)
+
+On the owner's word - *"add rooms as volumes and material colours also and make the model dashbord also
+good"*. The two 3D ideas left over from BIMLens's viewer, and the dashboard page made easier to read.
+
+**The read changed, so it is DRAFT again.** `REPORT_MODEL_GEOMETRY` version 3 (group JU, rows JU18 to JU22):
+
+- **Rooms as volumes** - an optional `rooms` draws placed Rooms and MEP Spaces as the closed shell Revit
+  computes for each (`ClosedShell`), from the whole model because a 3D view shows no rooms, left out by the
+  section box like everything else. An unplaced or unenclosed room has no shell and is counted, never drawn.
+- **Each face's material** - every triangle carries its face's material, or the category's where the face
+  has none (Revit's *By Category*), listed once with its **shading colour** (Graphics > Shading in the
+  Material Browser - what a Shaded view shows) and its transparency.
+
+The C# moved, so the 2026-11-02 proof is stale: the card is back at DRAFT until JU18, JU20 and JU21 pass on a
+named model, with the earlier rows run again. It compiles on all eight releases, 2020 to 2027.
+
+**The brain** (`heron_model_view`) checks every material index names one the read listed - a damaged read is
+refused whole - keeps a damaged colour in its place with a grey stand-in, and makes the material legend
+(by triangles covered) and the rooms count. A version-2 read still draws, by category only.
+
+**The page:**
+- **Rooms and spaces as volumes** - a tick box beside *Load 3D*, on by default; the rooms are drawn
+  see-through in a soft green (spaces blue), so what stands inside them still shows. They appear in the
+  category legend marked *see-through* and can be hidden or shown alone like any category.
+- **Colour by Category | Material** - Material colours every face in its material's shading colour, glass
+  and other transparent materials see-through, with a material legend. Greyed out for a read with no
+  materials.
+- **See-through drawing** - a solid pass, then a see-through pass that writes no depth. A click picks the
+  solid element under it first; a room answers only where nothing solid is. The near plane now follows the
+  model, so faces a few centimetres apart no longer flicker (some browsers give only 16 bits of depth).
+- **The dashboard, reordered** - the 3D view now comes right under the tiles and charts, not under the
+  long *Worth a look* list; the canvas sits inside its own section, under its buttons. *Worth a look* opens
+  with one line of counts (worth a look, counts only, not read, found nothing) - counts of rows, never a
+  verdict - lays its rows in two columns, and folds the checks that found nothing under one line (the
+  filter opens it). Each part has a clear heading; the subtitle said twice is said once.
+
+**Proved without Revit:** `tests/test_model_view.py` (materials and volumes read, a material the read did
+not list refused, a damaged colour kept in place, the room's volume not counted as a material) and
+`tests/test_companion.py` (the rooms option reaches the hook only as an exact `true`; the page state carries
+the material legend, never each element's materials). Driven in headless Chromium against an invented
+three-storey model with brick, concrete, glass and six rooms: category and material colouring, rooms and
+glass see-through with no stripes, a cut into the ground floor, picks of a window, a wall and a floor, and
+the reordered page, with no page error. **A fault found that way and fixed:** the page's 3D summary did not
+carry the material fields, so *Material* stayed greyed out. **Not run in Revit**, and not seen on a real
+model's read.
