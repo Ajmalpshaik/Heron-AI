@@ -1,0 +1,43 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+#
+# ARRANGE ON A TEST COPY: two revisions, Seq. A and Seq. B. Sheet S1 with a
+# plan placed on it; one cloud on Seq. A drawn in that plan, one cloud on
+# Seq. A drawn straight on S1, one cloud on Seq. B in the plan, a Comments
+# value and a Mark on the first, and a revision cloud tag on it. Sheet S2 with
+# a cloud on Seq. A of its own.
+
+positive:
+  - given: sheets "S1", revision "Seq. A"
+    expect: >
+      the two Seq. A clouds on S1 and nothing else - the one in the plan named
+      "drawn in" the plan and "prints on" S1, the other drawn in sheet S1; the
+      first with its Comments, Mark and tag id. `elements` the same two clouds
+
+  - given: one cloud selected in Revit, nothing else asked
+    expect: >
+      that one cloud only, with its revision - "which revision is this cloud"
+
+  - given: nothing asked at all
+    expect: >
+      every cloud in the project, all four, in sheet order
+
+negative:
+  - given: sheets "S2", revision "Seq. A"
+    expect: >
+      ONLY S2's own cloud - none of S1's Seq. A clouds, which the same revision
+      carries. A sheet filter that leaked would move another sheet's clouds in
+      the next step
+
+  - given: sheets "NO-SUCH-SHEET"
+    expect: >
+      NOTHING listed, `elements` empty, and a finding naming the sheet that
+      matched nothing - never every cloud in the project
+
+  - given: revision naming a description two revisions share
+    expect: >
+      nothing listed, and the finding naming both revisions by sequence
+
+second_route:
+  - >
+    Revit's own Properties palette on each cloud listed - Revision, Comments
+    and Mark - and Visibility/Graphics on the sheet, compared cloud for cloud

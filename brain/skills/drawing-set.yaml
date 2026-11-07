@@ -170,6 +170,16 @@ utterances:
 # MANAGE_SHEET_SETS when that print-set step is added - the find first, the
 # set from its elements.
 #
+# NOT NAMED EITHER (2026-11-07, row 5b-1463): the revision steps of an issue.
+# This method still stops before the issue, so none is a step here; when an
+# issue step is added - a change to the method, the owner's call - they go in
+# this order: LIST_REVISIONS with expectedLast (which sheets do not end on the
+# issue's revision; cloudOnly says which revisions only clouds hold), then
+# SET_SHEET_REVISIONS with replaceWith on those sheets, then for any sheet
+# its cloudDriven names LIST_REVISION_CLOUDS (sheets and the old revision) and
+# EDIT_REVISION_CLOUDS (reassign, expect_from naming that find), and
+# LIST_REVISIONS again to read the result back. All four DRAFT on 2026-11-07.
+#
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 needs:
   # Step 0's check that the model has a file to go back to.

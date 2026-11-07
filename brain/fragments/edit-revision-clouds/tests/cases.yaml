@@ -1,0 +1,43 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+#
+# ARRANGE ON A TEST COPY - the shape of the owner's 2026-11-07 job (row
+# 5b-1463): revisions Seq. A and Seq. B. Sheets S1 and S2 each carry a cloud on
+# Seq. A (S1's drawn in a plan placed on it); sheet S3 also carries a cloud on
+# Seq. A and must KEEP it. Clouds found by LIST_REVISION_CLOUDS with sheets
+# "S1, S2", revision "Seq. A".
+
+positive:
+  - given: action reassign, revisionId "Seq. B", fromRevision "Seq. A", the S1 and S2 clouds
+    expect: >
+      both clouds on Seq. B, read back; `sheetEffect` saying S1 and S2 now
+      print Seq. B and no longer print Seq. A (where no tick or other cloud
+      keeps it) with current Seq. B; one undo entry
+
+  - given: action delete, confirm "2", the same two clouds
+    expect: >
+      both gone, their tags in `alsoDeleted`, `sheetEffect` naming what each
+      sheet's revision block lost
+
+negative:
+  - given: the reassign above
+    expect: >
+      S3's Seq. A cloud UNTOUCHED and S3 still printing Seq. A - the whole
+      reason this is not MERGE_REVISION
+
+  - given: action delete, confirm "3" (or none) for two clouds
+    expect: >
+      NOTHING deleted, and `refused` naming the count 2 that confirm must be
+
+  - given: fromRevision "Seq. B" with the two Seq. A clouds handed in
+    expect: >
+      nothing changed, both named in `skipped` as not on Seq. B
+
+  - given: action reassign with revisionId left out
+    expect: >
+      nothing changed, `refused` saying there is no revision to move them to
+
+second_route:
+  - >
+    select each cloud in Revit and read Revision in Properties; open each sheet
+    and read its revision schedule - Manage > Sheet Issues/Revisions shows the
+    same sequence

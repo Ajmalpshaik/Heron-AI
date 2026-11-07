@@ -1,6 +1,7 @@
-// NOT STANDALONE. Assumes `doc` is in scope; leaves `elements`, `findings`,
-// `onNoSheets`, `revisionTable`, `numbering`, `numberingSequences` and
-// `arcLength` behind.
+// NOT STANDALONE. Assumes `doc` and `expectedLast` are in scope; leaves
+// `elements`, `findings`, `onNoSheets`, `revisionTable`, `numbering`,
+// `numberingSequences`, `arcLength`, `sheetTable`, `lastDiffers` and
+// `cloudOnly` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -15,6 +16,14 @@
 // revision is issued under it however it got there, so both are counted, and
 // separating them would answer a question nobody asked while getting the
 // printed set wrong.
+//
+// AND YET THE MODELLER DOES ASK, SO IT IS ANSWERED ON THE SIDE (version 2,
+// 2026-11-07). "Why can't I untick this revision" has one answer: a cloud
+// holds it on the sheet. The revision table still counts both ways together;
+// `sheetTable` says, sheet by sheet and revision by revision, which way each
+// got there - ticked, clouded, or both - and `cloudOnly` lists the ones only a
+// cloud holds. FRAGMENT-ISSUES row 5b-1463 is the day it was needed: a detach
+// "succeeded" on sheets whose clouds kept the revision printing.
 //
 // A REVISION ON NO SHEETS IS THE ONE WORTH FINDING. It is either not yet
 // clouded, or clouded on a view that is on no sheet - and the second is
@@ -44,6 +53,9 @@ var revisionTable = "";
 var numbering = "";
 var numberingSequences = "";
 var arcLength = "";
+var sheetTable = "";
+var lastDiffers = new List<ElementId>();
+var cloudOnly = "";
 
 // A FAMILY HOLDS NO REVISIONS. Sheet Issues/Revisions belongs to a project, and
 // RevisionSettings.GetRevisionSettings throws on a family document with words
@@ -365,4 +377,136 @@ else
     }
 
     numberingSequences = string.Join(" || ", sequenceLines.ToArray());
+
+    // ---- sheet by sheet: version 2 ---------------------------------------------
+    //
+    // Every sheet in register order, its revisions in sequence with what each
+    // prints, how each got there, and its CURRENT revision - the last one, the
+    // one the title block's current-revision field shows. The clouds are read
+    // once, and each asked which sheets it shows on.
+
+    var cloudHeld = new Dictionary<ElementId, HashSet<ElementId>>();   // sheet -> revisions
+    foreach (var e in new FilteredElementCollector(doc).OfClass(typeof(RevisionCloud)))
+    {
+        var cloud = e as RevisionCloud;
+        if (cloud == null) continue;
+        var on = new HashSet<ElementId>();
+        try { foreach (var id in cloud.GetSheetIds()) on.Add(id); } catch { }
+        if (doc.GetElement(cloud.OwnerViewId) is ViewSheet) on.Add(cloud.OwnerViewId);
+        foreach (var sheetId in on)
+        {
+            if (!cloudHeld.ContainsKey(sheetId)) cloudHeld[sheetId] = new HashSet<ElementId>();
+            cloudHeld[sheetId].Add(cloud.RevisionId);
+        }
+    }
+
+    Func<Revision, string> label = r =>
+        "Seq. " + r.SequenceNumber + " " + quoted(r.Description) + " " + quoted(r.RevisionDate);
+
+    // `expectedLast`: the revision every sheet should end on. Read the way the
+    // dialog shows a revision - "Seq. 21", 21, its description, its date, or
+    // its id written out. Two matches are refused with both named.
+    Revision expected = null;
+    var expectedText = (expectedLast ?? "").Trim();
+    if (expectedText.Length > 0 && !string.Equals(expectedText, "none", StringComparison.OrdinalIgnoreCase))
+    {
+        var bare = expectedText;
+        if (bare.StartsWith("Seq.", StringComparison.OrdinalIgnoreCase)) bare = bare.Substring(4).Trim();
+        else if (bare.StartsWith("Seq", StringComparison.OrdinalIgnoreCase)) bare = bare.Substring(3).Trim();
+        var hits = new List<Revision>();
+        foreach (var revisionId in Revision.GetAllRevisionIds(doc))
+        {
+            var r = doc.GetElement(revisionId) as Revision;
+            if (r == null) continue;
+            if (string.Equals(r.SequenceNumber.ToString(invariant), bare, StringComparison.Ordinal)
+                || string.Equals(r.Id.ToString(), expectedText, StringComparison.Ordinal)
+                || string.Equals(r.Name ?? "", expectedText, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(r.Description ?? "", expectedText, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(r.RevisionDate ?? "", expectedText, StringComparison.OrdinalIgnoreCase))
+                hits.Add(r);
+        }
+        if (hits.Count == 1) expected = hits[0];
+        else if (hits.Count == 0)
+            findings.Add("expectedLast='" + expectedText + "' names no revision in this project, so "
+                       + "no sheet was compared. Give its sequence, like Seq. 21.");
+        else
+        {
+            var names = new List<string>();
+            foreach (var r in hits) names.Add(label(r));
+            findings.Add("expectedLast='" + expectedText + "' matches " + hits.Count + " revisions ("
+                       + string.Join("; ", names.ToArray()) + "), so no sheet was compared. Give "
+                       + "its sequence.");
+        }
+    }
+
+    var ordered = new List<ViewSheet>(sheets);
+    ordered.Sort(delegate (ViewSheet a, ViewSheet b)
+    {
+        return string.Compare(a.SheetNumber ?? "", b.SheetNumber ?? "", StringComparison.OrdinalIgnoreCase);
+    });
+
+    var sheetLines = new List<string>();
+    var cloudOnlyLines = new List<string>();
+
+    foreach (var sheet in ordered)
+    {
+        var printed = new List<Revision>();
+        ICollection<ElementId> all = null;
+        ICollection<ElementId> ticked = null;
+        try { all = sheet.GetAllRevisionIds(); ticked = sheet.GetAdditionalRevisionIds(); }
+        catch (Exception failure)
+        {
+            sheetLines.Add(sheet.SheetNumber + ": could not be read (" + failure.Message + ")");
+            continue;
+        }
+        if (all != null)
+            foreach (var id in all)
+            {
+                var r = doc.GetElement(id) as Revision;
+                if (r != null) printed.Add(r);
+            }
+        printed.Sort(delegate (Revision a, Revision b) { return a.SequenceNumber.CompareTo(b.SequenceNumber); });
+
+        var held = cloudHeld.ContainsKey(sheet.Id) ? cloudHeld[sheet.Id] : new HashSet<ElementId>();
+        var parts = new List<string>();
+        var onlyClouds = new List<string>();
+        foreach (var r in printed)
+        {
+            var isTicked = ticked != null && ticked.Contains(r.Id);
+            var isClouded = held.Contains(r.Id);
+            string how = isTicked && isClouded ? "ticked and clouded"
+                       : isTicked ? "ticked"
+                       : isClouded ? "clouded only"
+                       : "clouded only (on a view placed here)";
+            if (!isTicked) onlyClouds.Add(label(r));
+            string mark;
+            try { mark = sheet.GetRevisionNumberOnSheet(r.Id); }
+            catch (Exception failure) { mark = "unreadable (" + failure.Message + ")"; }
+            parts.Add(label(r) + " prints " + quoted(mark) + ", " + how);
+        }
+
+        ElementId currentId = ElementId.InvalidElementId;
+        try { currentId = sheet.GetCurrentRevision(); } catch { currentId = ElementId.InvalidElementId; }
+        var current = currentId == ElementId.InvalidElementId ? null : doc.GetElement(currentId) as Revision;
+
+        sheetLines.Add(sheet.SheetNumber + " " + quoted(sheet.Name) + ": "
+            + (parts.Count == 0 ? "no revisions" : string.Join("; ", parts.ToArray()))
+            + " - CURRENT " + (current == null ? "none" : label(current)));
+
+        if (onlyClouds.Count > 0)
+            cloudOnlyLines.Add(sheet.SheetNumber + ": " + string.Join("; ", onlyClouds.ToArray())
+                + " - held by clouds only, so unticking cannot take it off");
+
+        if (expected != null && (current == null || current.Id != expected.Id))
+            lastDiffers.Add(sheet.Id);
+    }
+
+    sheetTable = string.Join(" || ", sheetLines.ToArray());
+    cloudOnly = string.Join(" || ", cloudOnlyLines.ToArray());
+
+    if (expected != null)
+        findings.Add(lastDiffers.Count == 0
+            ? "Every sheet ends on " + label(expected) + "."
+            : lastDiffers.Count + " sheet(s) do not end on " + label(expected)
+              + " - they are in lastDiffers, and sheetTable says what each ends on.");
 }

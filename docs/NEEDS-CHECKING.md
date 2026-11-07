@@ -1382,6 +1382,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-mo.md`](needs-checking/group-mo.md)
 
+## Group MP - Manage > Sheet Issues/Revisions and revision clouds - swap a sheet's last revision, read every cloud, move or delete clouds of one revision on chosen sheets, and check each sheet's revisions: `SET_SHEET_REVISIONS` fixed and widened, `LIST_REVISIONS` widened, `LIST_REVISION_CLOUDS`, `EDIT_REVISION_CLOUDS` (2026-11-07)
+
+**Its own file:** [`needs-checking/group-mp.md`](needs-checking/group-mp.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

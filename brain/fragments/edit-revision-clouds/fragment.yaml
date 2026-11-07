@@ -1,0 +1,163 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-037
+semantic-identity: "change the revision of these revision clouds to another revision, or delete the clouds"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# On 2026-11-07 the owner needed Seq. 21 to be the last revision on four
+# sheets. Two of them kept Seq. 20 because revision clouds carried it
+# (FRAGMENT-ISSUES row 5b-1463), and nothing in the library could move those
+# clouds - so they were done by hand in Properties. What was searched, and why
+# none of it does this:
+#   MERGE_REVISION moves EVERY cloud of a revision, on every sheet, and
+#     deletes the revision - another sheet keeping Seq. 20 would lose it.
+#   WRITE_ELEMENT_PARAMETERS refuses a revision reference (it writes a
+#     material, a level or a family type), so it cannot set a cloud's Revision.
+#     It DOES set Comments and Mark, so this card does not - hand it the
+#     clouds LIST_REVISION_CLOUDS found.
+#   DELETE_ELEMENTS deletes any element but takes no count to confirm, and
+#     says nothing about what a sheet's revision block loses. Widening it would
+#     send every delete in Heron back to DRAFT, where revit_change refuses it.
+#     The cloud delete is here, with `confirm` naming the count as
+#     DELETE_REVISION's names the revision, and the sheets' before and after.
+#   ADD_REVISION_CLOUD draws new clouds around elements; it never touches an
+#     existing one.
+# The duplicate check (heron-duplicate-checker, 2026-11-07) found no card that
+# changes an existing cloud's revision.
+kind: action
+domain: revit.sheets
+capability: EDIT_REVISION_CLOUDS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Moves revision clouds from one revision to another - only the clouds handed
+  in, so another sheet keeping the old revision is left alone - or deletes
+  them. One call is one undo entry.
+
+  **THE CLOUDS COME FROM A FIND OR THE SELECTION.** LIST_REVISION_CLOUDS finds
+  them by sheet, view and revision; this changes exactly those.
+  `fromRevision` is a guard: a handed cloud not on it is skipped and named.
+
+  **WHAT THE SHEETS PRINT, BEFORE AND AFTER.** A cloud is what puts a revision
+  on a sheet. Every sheet the clouds print on is read before and after, and
+  `sheetEffect` names each revision that came onto or went off its revision
+  block, and the sheet's current revision.
+
+  **DELETE IS DESTRUCTIVE: `confirm` MUST BE THE COUNT.** Asked to delete,
+  nothing goes unless `confirm` is the number of clouds that will go - the
+  number the modeller was shown and agreed. Their tags go with them, named in
+  `alsoDeleted`.
+
+  **ALL OR NOTHING.** A cloud Revit will not move, or a delete that loses one,
+  throws - and the whole call is rolled back rather than leaving half a set
+  moved.
+
+  Comments and Mark on clouds are WRITE_ELEMENT_PARAMETERS', handed the same
+  clouds. ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The revision clouds - from LIST_REVISION_CLOUDS, or the selection.
+    - name: elements
+      type: IList<Element>
+    # reassign (move to `revisionId`) or delete.
+    - name: action
+      type: string
+      source: request
+    # The revision to move the clouds to - "Seq. 21". Not used by delete.
+    - name: revisionId
+      type: ElementId
+      source: request
+      optional: true
+      absent: none
+    # A guard: only clouds now on this revision are changed - "Seq. 20".
+    # Left out, every handed cloud.
+    - name: fromRevision
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # For delete: the NUMBER of clouds that will go, after the modeller has
+    # agreed to it. Not used by reassign.
+    - name: confirm
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: changed
+      # Clouds now on `revisionId`, read back.
+      role: result
+      type: IList<ElementId>
+    - name: deleted
+      # Clouds deleted.
+      role: result
+      type: IList<ElementId>
+    - name: alsoDeleted
+      # What Revit deleted with them - their tags. Never a cloud asked for
+      # (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: sheetEffect
+      # One line per sheet the clouds print on, " || " between: revisions that
+      # came onto or went off its revision block, and its current revision.
+      # Accounting - the consequence, read back, not the change (D-52).
+      role: accounting
+      type: string
+    - name: skipped
+      # Handed in and left alone, with why: not a cloud, not on fromRevision,
+      # already on the revision asked for (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was changed, in the modeller's words (D-52).
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `RevisionCloud.RevisionId { get; set; }` and `GetSheetIds()`,
+  `ViewSheet.GetAllRevisionIds()` and `GetCurrentRevision()`, and
+  `Document.Delete(ICollection<ElementId>)` are unchanged 2020 to 2027 - read
+  with tools/api-surface --members on each release on 2026-11-07. No ElementId
+  is built from an int.
+
+  WHETHER REVIT LETS A CLOUD OF AN ISSUED REVISION MOVE through the API is not
+  read off the assemblies and is for the proof to show. A refusal is caught,
+  named with the revision's issued state, and the whole call rolled back.
+
+# ROUTING - repeated in LIST_REVISION_CLOUDS, SET_SHEET_REVISIONS and
+# MERGE_REVISION.
+#
+#   "move the clouds on these sheets to today's revision" -> here, reassign,
+#                                          handed LIST_REVISION_CLOUDS' clouds
+#                                          for those sheets
+#   "change the revision of these clouds" -> here, reassign, the selection
+#   "delete the revision clouds on these sheets" -> here, delete, confirm the
+#                                          count after the modeller agrees
+#   "merge revision 20 into 21"          -> MERGE_REVISION - every sheet, and
+#                                          the revision goes
+#   "set the comment on these clouds"    -> WRITE_ELEMENT_PARAMETERS
+#   "which revision is this cloud"       -> LIST_REVISION_CLOUDS - a question
+#   "replace the last revision on these sheets" -> SET_SHEET_REVISIONS,
+#                                          replaceWith; then here for the
+#                                          sheets its cloudDriven names
+#   "cloud this change"                  -> ADD_REVISION_CLOUD - a NEW cloud
+
+utterances:
+  - move the clouds on these sheets to today's revision
+  - change the revision of these clouds
+  - reassign these revision clouds to another revision
+  - put these revision clouds on the new revision
+  - delete the revision clouds on these sheets

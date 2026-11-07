@@ -1,29 +1,45 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-SHT-018
-semantic-identity: "put that revision on these sheets, or take it off"
+semantic-identity: "put that revision on these sheets, take it off, or swap it for another"
+
+# VERSION 2, BACK TO DRAFT ON 2026-11-07, AND THE PROOF BLOCK BELOW IS KEPT ON
+# PURPOSE - it is the arrangement to re-prove from; its fingerprint no longer
+# matches. Version 1 answered `sheetsChanged 3, cloudDriven 0` on the owner's
+# model 4355-BHVD-3D-60A10-BL007A (Revit 2020) for a detach that left Seq. 20
+# on two of the three sheets: there the revision was ticked AND clouded, and
+# the code counted the ticked list shrinking as success (FRAGMENT-ISSUES row
+# 5b-1463). Version 2 judges every sheet on what it PRINTS afterwards, names
+# the clouds that keep a revision on, and gained `replaceWith` - one revision
+# off, another on, in one undo entry. Left out, it is version 1's job.
 kind: action
 domain: revit.sheets
 capability: SET_SHEET_REVISIONS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Attaches a revision to sheets, or detaches it - the revision list that prints
-  in a title block, without drawing a cloud.
+  Attaches a revision to sheets, detaches it, or SWAPS it for another - the
+  revision list that prints in a title block, without drawing a cloud.
+
+  **REPLACE: "make today's revision the last one on these sheets instead of
+  28-Oct".** With `replaceWith` naming revision B, the revisions handed in are
+  taken off and B is put on - only on the sheets that carried them, all in one
+  undo entry. Every other revision on the sheet stays.
 
   **A SHEET CARRIES REVISIONS TWO WAYS AND THIS IS THE OTHER ONE.** A cloud on
   a sheet puts its revision in the schedule automatically. A revision can also
   be listed on a sheet with no cloud anywhere - which is how a whole-drawing
   issue is recorded - and that list is what this writes.
 
-  **IT ADDS TO WHAT IS THERE, OR REMOVES FROM IT - IT NEVER REPLACES.**
-  Overwriting the list would silently drop every earlier issue off a title
+  **IT ADDS TO WHAT IS THERE, OR REMOVES FROM IT - IT NEVER OVERWRITES THE
+  LIST.** A swap moves one revision for another and keeps the rest. Overwriting
+  the list would silently drop every earlier issue off a title
   block, and nobody reads a revision block to check that last month's entries
   are still in it.
 
@@ -32,9 +48,12 @@ purpose: >
   revisions are written. That is Revit's behaviour, not this fragment's, and it
   is why the revisions that still exist afterwards are read back and counted.
 
-  **A CLOUD-DRIVEN REVISION CANNOT BE REMOVED THIS WAY.** It is on the sheet
-  because a cloud puts it there; the cloud is what has to go. Those are named
-  rather than reported as removed.
+  **A CLOUD-DRIVEN REVISION CANNOT BE REMOVED THIS WAY - AND A REVISION CAN BE
+  ON A SHEET BOTH WAYS AT ONCE.** After the write every sheet is read back for
+  what it PRINTS. A sheet that still prints a revision taken off is named in
+  `cloudDriven`, with the clouds that hold it in `cloudsHolding`, and is not
+  counted as changed. Those clouds are moved to another revision, or deleted,
+  by EDIT_REVISION_CLOUDS. A sheet the revision was never on is `notOnSheet`.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -47,20 +66,47 @@ contract:
     - name: revisionIds
       type: IList<ElementId>
       source: request
-    # true attaches, false detaches.
+    # true attaches, false detaches. With replaceWith given it is a swap and
+    # this is not used.
     - name: attach
       type: bool
       source: request
+    # VERSION 2. The revision to put on where `revisionIds` come off - "Seq. 21",
+    # 21, its description or its date. Left out ("none"), version 1's attach or
+    # detach. Text, because only `revisionId(s)` are resolved to a revision by
+    # the add-in; the fragment resolves this one and refuses two matches.
+    - name: replaceWith
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: sheetsChanged
       role: result
       type: int
     - name: cloudDriven
-      # Sheets whose revision comes from a cloud, which this list cannot
-      # remove - A SHEET CARRIES REVISIONS TWO WAYS AND THIS IS THE OTHER ONE.
-      # Never a sheet it changed (D-52).
+      # Sheets that STILL PRINT a revision taken off, read back after the
+      # write - a cloud holds it there, whether or not it was also ticked
+      # (row 5b-1463). Never a sheet it counted changed (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: cloudsHolding
+      # One line per sheet in `cloudDriven`: the revision and the ids of the
+      # clouds that keep it on that sheet, " || " between lines - the input
+      # EDIT_REVISION_CLOUDS needs. Accounting, never a change (D-52).
+      role: accounting
+      type: string
+    - name: notOnSheet
+      # Sheets the revision to take off was never on. Version 1 put these in
+      # cloudDriven, which sent the modeller looking for clouds that are not
+      # there. Handed in and not acted on (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      # A refused replaceWith in the modeller's words, a sheet Revit would not
+      # read or write, and the note that attach was not used in a swap.
+      role: accounting
+      type: IList<string>
     - name: notASheet
       # Handed in but not sheets, so there was nothing here to act on. A count
       # of what it was GIVEN and could not use, never a thing it found (D-52).
@@ -112,14 +158,25 @@ tests: tests/
 
 compatibility-note: >
   One implementation for every release. Reading and writing a sheet's
-  additional revisions is unchanged 2020 to 2027, and so is the fact that the
-  list holds only the revisions NOT put there by a cloud - which is why a
+  additional revisions, `ViewSheet.GetAllRevisionIds()`, and
+  `RevisionCloud.RevisionId` and `GetSheetIds()` are unchanged 2020 to 2027 -
+  read with tools/api-surface --members on each release on 2026-11-07. No
+  ElementId is built from an int. So is the fact that the ticked list holds only the revisions NOT put there by a cloud - which is why a
   cloud-driven one cannot be removed through it.
 
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "put that revision on these sheets"  -> here
 #   "take that revision off the sheets"  -> here, with attach false
+#   "replace the last revision on these sheets" -> here, with replaceWith
+#                                           (version 2). A sheet whose clouds
+#                                           keep the old one is named
+#   "move the clouds on these sheets to today's revision"
+#                                        -> EDIT_REVISION_CLOUDS. This list
+#                                           cannot move a cloud
+#   "why can't I untick this revision"   -> LIST_REVISION_CLOUDS - a question:
+#                                           the clouds that hold it on the
+#                                           sheet are the answer
 #   "cloud this change"                  -> ADD_REVISION_CLOUD, which puts the
 #                                           revision on the sheet as a side
 #                                           effect and is the other way in
@@ -135,3 +192,7 @@ utterances:
   - add the revision to the drawing list
   - take that revision off these sheets
   - the revision is missing from the title block
+  # VERSION 2, 2026-11-07 - the owner's own words that day (row 5b-1463).
+  - replace the last revision on these sheets
+  - make today's revision the last one on these sheets instead of 28-Oct
+  - swap revision 20 for revision 21 on these sheets
