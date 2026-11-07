@@ -76,6 +76,13 @@ namespace Heron.Installer
         /// </summary>
         public string WhyNot { get; internal set; }
 
+        /// <summary>
+        /// The product is not offered to anybody yet - being tested, or only
+        /// planned. The window shows this as a short label and keeps WhyNot
+        /// for the hover; heron-install prints WhyNot itself.
+        /// </summary>
+        public bool ComingSoon { get; internal set; }
+
         /// <summary>`Installed`, `Installed for Revit 2024`, or `--`.</summary>
         public string State { get; internal set; }
 
@@ -522,6 +529,7 @@ namespace Heron.Installer
             row.Chosen = row.CanBeTicked && row.InstalledFor.Count > 0;
 
             if (!row.CanBeTicked) row.WhyNot = WhyNotOffered(product, releases);
+            row.ComingSoon = !product.MayBeOffered;
             row.IfYouInstallAgain = Replaces(row.State);
             return row;
         }
@@ -723,9 +731,10 @@ namespace Heron.Installer
 
         private static string Warning(IEnumerable<RunningRevit> openRevits)
         {
+            // SHORT, the owner's word of 2026-11-07: "no one will read this
+            // much". What it must still say: close Revit, and Heron waits.
             const string always =
-                "Close Revit before installing. Heron cannot replace a file that " +
-                "Revit has open, so it waits for you rather than working around it.";
+                "Close Revit before installing - Heron waits until it is closed.";
 
             if (openRevits == null) return always;
 

@@ -69,7 +69,21 @@
       NOT Windows.
     -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <!--
+      THE HERON ON THE PROGRAM ITSELF (D-149): the brand's orange app icon, in
+      the Downloads folder, the taskbar and Alt+Tab.
+    -->
+    <ApplicationIcon>Resources\Heron.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <!--
+    PACKED INSIDE THE .exe as WPF resources, because the installer is published
+    as one single file and has no folder beside it to read a picture from.
+  -->
+  <ItemGroup>
+    <Resource Include="Resources\heron-logo.png" />
+    <Resource Include="Resources\Heron.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Heron.Installer\Heron.Installer.csproj" />
