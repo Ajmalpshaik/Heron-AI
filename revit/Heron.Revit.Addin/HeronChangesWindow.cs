@@ -207,8 +207,8 @@ namespace Heron.Revit.Addin
             };
 
             var note = HeronWindowStyle.Body(
-                "The padlock on the ribbon always shows which state you are in, so a session left "
-                + "writable never looks like a safe one.",
+                "Heron's Settings window shows which state you are in. Turn Changes off there "
+                + "when you are done.",
                 HeronWindowStyle.TextMuted, 12);
             note.Margin = new Thickness(HeronWindowStyle.Gutter + 2, 13, HeronWindowStyle.Gutter, 0);
 

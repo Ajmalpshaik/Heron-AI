@@ -820,8 +820,8 @@ namespace Heron.Kernel.TestHost
             Check(HeronPermissions.RefusedBy(HeronRisk.Admin, adminOff)
                   == HeronPermissions.AdminEnabledKey,
                   "Admin off, Changes on: refused by admin.enabled");
-            Check(adminSaid.Contains("turn on Admin in Revit's Heron ribbon")
-                  && adminSaid.Contains("Heron > AI Bridge > Admin"),
+            Check(adminSaid.Contains("turn on Admin in Heron's Settings")
+                  && adminSaid.Contains("Heron > AI Bridge > Settings"),
                   "and the refusal names the switch and where it is: \"" + adminSaid + "\"");
             Check(adminSaid.Contains("nothing was sent to Revit"),
                   "and says nothing was sent to Revit");
@@ -834,8 +834,8 @@ namespace Heron.Kernel.TestHost
             Check(HeronPermissions.RefusedBy(HeronRisk.Publish, publishOff)
                   == HeronPermissions.PublishEnabledKey,
                   "Publish off, Changes on: refused by publish.enabled");
-            Check(publishSaid.Contains("turn on Publish in Revit's Heron ribbon")
-                  && publishSaid.Contains("Heron > AI Bridge > Publish")
+            Check(publishSaid.Contains("turn on Publish in Heron's Settings")
+                  && publishSaid.Contains("Heron > AI Bridge > Settings")
                   && publishSaid.Contains("nothing was sent to Revit"),
                   "and the refusal names Publish and where it is: \"" + publishSaid + "\"");
 
@@ -873,7 +873,7 @@ namespace Heron.Kernel.TestHost
                   "and what refused them is Changes - the switch that is actually off");
             var needsChanges = HeronPermissions.Explain(HeronRisk.Admin, changesOff, FakePath) ?? "";
             Check(needsChanges.Contains("Admin is on, but Changes is off")
-                  && needsChanges.Contains("turn on Changes in Revit's Heron ribbon")
+                  && needsChanges.Contains("turn on Changes in Heron's Settings")
                   && needsChanges.Contains("nothing was sent to Revit"),
                   "and the refusal says so in those words: \"" + needsChanges + "\"");
 

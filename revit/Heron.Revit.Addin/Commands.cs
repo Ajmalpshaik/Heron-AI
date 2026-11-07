@@ -194,7 +194,7 @@ namespace Heron.Revit.Addin
 
                 var now = HeronPermissions.SetWriteEnabled(!enabled);
                 HeronApplication.SetWriteIcon(now);
-                HeronApplication.Log("Write permission set to " + now + " from the ribbon.");
+                HeronApplication.Log("Write permission set to " + now + " from Heron's Settings.");
                 return Result.Succeeded;
             }
             catch (Exception ex)
@@ -237,10 +237,10 @@ namespace Heron.Revit.Addin
                 MainInstruction = "Allow Heron to change models?",
                 MainContent =
                     "Heron will be able to move, edit and create elements when you ask it to. "
-                    + "Every change is one Ctrl+Z, and Ask to Keep on the ribbon shows each "
+                    + "Every change is one Ctrl+Z, and Ask to Keep in Heron's Settings shows each "
                     + "change first for Keep or Discard when it is on.\n\n"
                     + "This stays on until you turn it off, including after Revit restarts. "
-                    + "The ribbon padlock shows which state you are in.",
+                    + "Heron's Settings window shows which state you are in.",
                 CommonButtons = TaskDialogCommonButtons.None,
                 AllowCancellation = true
             };
@@ -301,7 +301,7 @@ namespace Heron.Revit.Addin
 
                 var now = write(!enabled);
                 paint(now);
-                HeronApplication.Log(name + " switch set to " + now + " from the ribbon.");
+                HeronApplication.Log(name + " switch set to " + now + " from Heron's Settings.");
                 return Result.Succeeded;
             }
             catch (Exception ex)
@@ -345,7 +345,7 @@ namespace Heron.Revit.Addin
             if (!string.IsNullOrEmpty(asked.Caution)) content += "\n\n" + asked.Caution;
             if (!string.IsNullOrEmpty(asked.ChangesOff)) content += "\n\n" + asked.ChangesOff;
             content += "\n\nThis stays on until you turn it off, including after Revit restarts. " +
-                       "The " + asked.Name + " button on the ribbon shows which state you are in.";
+                       "Heron's Settings window shows which state " + asked.Name + " is in.";
 
             var ask = new TaskDialog("Heron - " + asked.Name)
             {
@@ -515,7 +515,7 @@ namespace Heron.Revit.Addin
 
                 var now = HeronPermissions.SetAsksBeforeKeeping(!asks);
                 HeronApplication.SetAskToKeepIcon(now);
-                HeronApplication.Log("Ask to Keep switch set to " + now + " from the ribbon.");
+                HeronApplication.Log("Ask to Keep switch set to " + now + " from Heron's Settings.");
                 return Result.Succeeded;
             }
             catch (Exception ex)
@@ -577,7 +577,7 @@ namespace Heron.Revit.Addin
                 MainContent = asked.What + "\n\n" + asked.Caution + "\n\n" +
                               "Ctrl+Z still takes each change to the model back as one step. " +
                               "This stays off until you turn it on again, including after Revit " +
-                              "restarts. The Ask to Keep button on the ribbon shows which state " +
+                              "restarts. Heron's Settings window shows which state " +
                               "you are in.",
                 CommonButtons = TaskDialogCommonButtons.None,
                 AllowCancellation = true
@@ -755,6 +755,117 @@ namespace Heron.Revit.Addin
                 "Add-in:    " + id.AddinVersion + "\n" +
                 "Protocol:  " + Heron.Bridge.BridgeIdentity.ProtocolVersion + "\n\n" +
                 "Announced in:\n" + id.DiscoveryFilePath);
+        }
+    }
+
+    /// <summary>
+    /// Heron's Settings - D-150. Opens the window that holds the four switches
+    /// the ribbon used to carry: Changes, Admin, Publish and Ask to Keep.
+    ///
+    /// EACH ROW RUNS ITS SWITCH'S OWN COMMAND, unchanged: WriteToggleCommand,
+    /// AdminToggleCommand, PublishToggleCommand, AskToKeepToggleCommand. They
+    /// read nothing from commandData, so they are called here as they were
+    /// called from the ribbon - the same question on the way to the risky
+    /// side, the same plain fallback when a window cannot draw, the same file.
+    /// The window is modal, so every toggle still runs on Revit's thread,
+    /// inside this command.
+    ///
+    /// NO TRANSACTION and no element. When the window will not draw, a plain
+    /// TaskDialog says where each switch stands, so the press is never answered
+    /// with nothing.
+    /// </summary>
+    [Transaction(TransactionMode.Manual)]
+    [Regeneration(RegenerationOption.Manual)]
+    public sealed class SettingsCommand : IExternalCommand
+    {
+        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        {
+            var icons = new IconLoader(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            var shown = HeronSettingsWindow.Show(Settings(), icons, HeronApplication.Log);
+            if (!shown) ShowPlain();
+            return Result.Succeeded;
+        }
+
+        /// <summary>The four switches, in the order the ribbon carried them.</summary>
+        internal static HeronSetting[] Settings()
+        {
+            return new[]
+            {
+                new HeronSetting
+                {
+                    Name = "Changes",
+                    Line = () => "Heron can change your model when you ask.",
+                    IsOn = HeronPermissions.WriteEnabled,
+                    OnIsRisky = true,
+                    Icon = () => HeronPermissions.WriteEnabled()
+                        ? HeronApplication.WriteUnlockedIcon : HeronApplication.WriteLockedIcon,
+                    Toggle = () => Run(new WriteToggleCommand()),
+                },
+                new HeronSetting
+                {
+                    Name = "Admin",
+                    Line = () => "Heron can add parameters, worksets and new families.",
+                    IsOn = HeronPermissions.AdminEnabled,
+                    OnIsRisky = true,
+                    Icon = () => HeronPermissions.AdminEnabled()
+                        ? HeronApplication.AdminUnlockedIcon : HeronApplication.AdminLockedIcon,
+                    Toggle = () => Run(new AdminToggleCommand()),
+                },
+                new HeronSetting
+                {
+                    Name = "Publish",
+                    Line = () => "Heron can export, print, save and sync with central.",
+                    IsOn = HeronPermissions.PublishEnabled,
+                    OnIsRisky = true,
+                    Icon = () => HeronPermissions.PublishEnabled()
+                        ? HeronApplication.PublishUnlockedIcon : HeronApplication.PublishLockedIcon,
+                    Toggle = () => Run(new PublishToggleCommand()),
+                },
+                new HeronSetting
+                {
+                    Name = "Ask to Keep",
+                    Line = () => KeepHeldForJob()
+                        ? "On, but this job's changes are kept without asking."
+                        : "Revit asks Keep or Discard before a change is kept.",
+                    IsOn = HeronPermissions.AsksBeforeKeeping,
+                    OnIsRisky = false,
+                    Icon = () => HeronPermissions.AsksBeforeKeeping() && !KeepHeldForJob()
+                        ? HeronApplication.KeepAskingIcon : HeronApplication.KeepNotAskingIcon,
+                    Toggle = () => Run(new AskToKeepToggleCommand()),
+                },
+            };
+        }
+
+        /// <summary>A job's grant is held: Ask to Keep is on, and this job is kept unasked (D-138).</summary>
+        private static bool KeepHeldForJob()
+        {
+            return HeronPermissions.AsksBeforeKeeping() && HeronKeepGrant.Session.Active(DateTime.UtcNow);
+        }
+
+        /// <summary>
+        /// The switch's own command, as the ribbon ran it. Null when it went
+        /// through or the person declined; the command's own message when it
+        /// failed, for the window to show.
+        /// </summary>
+        private static string Run(IExternalCommand command)
+        {
+            string message = null;
+            var result = command.Execute(null, ref message, null);
+            return result == Result.Failed ? (message ?? "That switch could not be changed.") : null;
+        }
+
+        private static void ShowPlain()
+        {
+            var lines = "";
+            foreach (var setting in Settings())
+            {
+                bool on;
+                try { on = setting.IsOn(); } catch { on = false; }
+                lines += setting.Name + ":  " + (on ? "ON" : "off") + "\n";
+            }
+            TaskDialog.Show("Heron - Settings",
+                "The Settings window could not open.\n\n" + lines + "\n" +
+                "The switches are also in " + HeronConfig.FilePath + ".");
         }
     }
 

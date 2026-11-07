@@ -495,8 +495,8 @@ def revit_side():
         "Revit asks Keep or Discard before a change is kept; the box can keep "
         "the rest of a job" if asks else
         "changes are kept without asking; Ctrl+Z still takes each one back"))
-    print("         These are your switches on the Heron ribbon tab. They start "
-          "off on a")
+    print("         These are your switches in Heron's Settings (Heron tab). They "
+          "start off on a")
     print("         new PC; turn on what the job needs before you ask - a refusal "
           "costs a turn.")
 

@@ -66,7 +66,7 @@ namespace Heron.Revit.Addin
         public string DiscoveryFilePath { get; set; }
         public string LogFolder { get; set; }
 
-        /// <summary>Whether Heron may change the model right now - the ribbon padlock.</summary>
+        /// <summary>Whether Heron may change the model right now - Changes, in Settings (D-150).</summary>
         public bool WriteEnabled { get; set; }
     }
 
@@ -512,8 +512,8 @@ namespace Heron.Revit.Addin
 
             _writeExplain.Text = on
                 ? "Heron may move, edit and create elements when you ask it to. Every change is "
-                  + "one Ctrl+Z, and Ask to Keep on the ribbon shows each one first when it is on."
-                : "Heron can read this model and nothing else. The padlock on the ribbon changes it.";
+                  + "one Ctrl+Z, and Ask to Keep in Settings shows each one first when it is on."
+                : "Heron can read this model and nothing else. Changes in Settings turns it on.";
 
             _writeCard.BorderBrush = new SolidColorBrush(
                 on ? Color.FromArgb(0x59, colour.R, colour.G, colour.B)

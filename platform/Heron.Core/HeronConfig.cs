@@ -94,7 +94,7 @@ namespace Heron.Core
                 // global parameters, a new family file - and Publish one
                 // declared PUBLISH - export, print, save, sync with central.
                 // Off by default, like write.enabled, and for the same reason:
-                // each is turned on by the owner in Revit's ribbon or not at
+                // each is turned on by the owner in Heron's Settings or not at
                 // all. Neither does anything while write.enabled is false.
                 // Declared here for the reason write.enabled's comment gives:
                 // a key missing from this table is silently ignored.

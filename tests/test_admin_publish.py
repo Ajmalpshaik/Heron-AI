@@ -353,7 +353,7 @@ def main():
         if not said:
             not_refused.append(name)
             continue
-        if ("turn on %s in Revit's Heron ribbon" % switch not in said
+        if ("turn on %s in Heron's Settings" % switch not in said
                 or "Nothing was sent to Revit" not in said):
             unnamed.append(name)
         allowed, _ = refusal_of(name, switched=True)
@@ -546,19 +546,25 @@ def main():
 
     # ------------------------------------------------------------------
     print()
-    print("6. The ribbon: two switches beside Changes, drawn from the setting")
+    print("6. Settings: two switches after Changes, drawn from the setting (D-150)")
     app = read(os.path.join(ADDIN, "HeronApplication.cs"))
-    changes_at = app.find('"HeronWriteToggle"')
-    admin_at = app.find('"HeronAdminToggle"')
-    publish_at = app.find('"HeronPublishToggle"')
+    settings_src = read(os.path.join(ADDIN, "Commands.cs"))
+    settings_src = settings_src[settings_src.find("class SettingsCommand"):]
+    changes_at = settings_src.find('Name = "Changes"')
+    admin_at = settings_src.find('Name = "Admin"')
+    publish_at = settings_src.find('Name = "Publish"')
     check(changes_at > 0 and admin_at > changes_at and publish_at > admin_at,
-          "BuildRibbon adds Admin and then Publish, after Changes")
-    check("typeof(AdminToggleCommand)" in app and "typeof(PublishToggleCommand)" in app,
-          "each button runs its own command")
-    check("SetAdminIcon(HeronPermissions.AdminEnabled());" in app
-          and "SetPublishIcon(HeronPermissions.PublishEnabled());" in app,
-          "and each starts from what heron.config SAYS, so the picture is true "
-          "when Revit starts")
+          "the Settings window lists Admin and then Publish, after Changes")
+    check("Run(new AdminToggleCommand())" in settings_src
+          and "Run(new PublishToggleCommand())" in settings_src,
+          "each row runs its switch's own command - the same question as before")
+    check("IsOn = HeronPermissions.AdminEnabled," in settings_src
+          and "IsOn = HeronPermissions.PublishEnabled," in settings_src,
+          "and each row is drawn from what heron.config SAYS, read fresh")
+    check('"HeronSettings"' in app and "typeof(SettingsCommand)" in app
+          and '"HeronAdminToggle"' not in app and '"HeronPublishToggle"' not in app
+          and '"HeronWriteToggle"' not in app,
+          "the ribbon carries one Settings button, and the padlocks are not on it")
     for icon in ("AdminLocked.png", "AdminUnlocked.png",
                  "PublishLocked.png", "PublishUnlocked.png"):
         path = os.path.join(ADDIN, "Resources", icon)

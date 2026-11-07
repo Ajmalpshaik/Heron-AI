@@ -402,8 +402,8 @@ def wiring():
 
 
 def switch():
-    """D-138's first half: the Ask to Keep button on the ribbon."""
-    print("\n8. the owner's switch is on the ribbon - Ask to Keep (D-138)")
+    """D-138's first half: the Ask to Keep switch - in Settings since D-150."""
+    print("\n8. the owner's switch is in Settings - Ask to Keep (D-138, D-150)")
     permissions = code(PERMISSIONS)
     setter = NOTE_SUITE.body_of(permissions, "public static bool SetAsksBeforeKeeping(bool asks)")
     check("return SetSwitch(AskBeforeKeepingKey, asks);" in setter,
@@ -412,24 +412,25 @@ def switch():
 
     application = code(APPLICATION)
     raw_application = read(APPLICATION) or ""
-    check("typeof(AskToKeepToggleCommand).FullName" in application
-          and '"Ask to Keep"' in raw_application,
-          "a ribbon button labelled Ask to Keep runs AskToKeepToggleCommand")
-    check(before(application, "PublishButton = panel.AddItem(publish) as PushButton;",
-                 "AskToKeepButton = panel.AddItem(askToKeep) as PushButton;"),
-          "beside Changes, Admin and Publish - after Publish")
-    check("SetAskToKeepIcon(HeronPermissions.AsksBeforeKeeping());" in application,
-          "its picture starts from the setting itself, read fresh")
+    raw_commands = read(COMMANDS) or ""
+    settings = raw_commands[raw_commands.find("class SettingsCommand"):]
+    check('Name = "Ask to Keep"' in settings
+          and "Run(new AskToKeepToggleCommand())" in settings,
+          "a Settings row named Ask to Keep runs AskToKeepToggleCommand")
+    check(0 < settings.find('Name = "Publish"') < settings.find('Name = "Ask to Keep"'),
+          "after Changes, Admin and Publish - after Publish")
+    check("IsOn = HeronPermissions.AsksBeforeKeeping," in settings,
+          "its state is the setting itself, read fresh")
     for icon in ("KeepAsking.png", "KeepNotAsking.png"):
         check('"%s"' % icon in raw_application
               and os.path.isfile(os.path.join(ADDIN, "Resources", icon)),
               "the %s picture is named and is in Resources" % icon)
-    paint = NOTE_SUITE.body_of(application, "internal static void SetAskToKeepIcon(bool asks)")
-    check("HeronKeepGrant.Session.Active(" in paint and "PaintSwitch(AskToKeepButton" in paint,
+    held = settings[settings.find("private static bool KeepHeldForJob()"):]
+    check("HeronKeepGrant.Session.Active(" in held[:held.find("}")]
+          and "HeronApplication.KeepNotAskingIcon" in settings,
           "the picture shows the switch AND a job's grant while one is held")
-    check(re.search(r'"Ask to Keep off"', raw_application) is not None
-          and '"Ask to Keep ON"' in raw_application and '"Keep: rest of job"' in raw_application,
-          "in words too - on, off, and the rest of a job kept without asking")
+    check("this job's changes are kept without asking" in settings,
+          "in words too - on, and the rest of a job kept without asking")
 
     commands = code(COMMANDS)
     # ITS Execute, cut from the class name to its own Question(): the other

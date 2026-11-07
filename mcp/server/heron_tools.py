@@ -600,7 +600,7 @@ def door_refusal(door, declared, capability):
                    "open." % NAMES[level])
     elif level <= MODIFY:
         instead = ("A change belongs to revit_change, and that needs Changes "
-                   "switched on in Revit's ribbon.")
+                   "switched on in Heron's Settings in Revit.")
         # THE ONE MODIFY JOB A SHOW REQUEST IS USUALLY AFTER. Revit's temporary
         # isolate needs a transaction, so ISOLATE_ELEMENTS is MODIFY (D-125);
         # the fixed operation does it with Changes off. Said only for an
@@ -614,7 +614,7 @@ def door_refusal(door, declared, capability):
         # the whole of the way forward.
         switch = "Admin" if level == ADMIN else "Publish"
         instead = ("A capability declared %s belongs to revit_change, and that "
-                   "needs %s switched on in Revit's Heron ribbon, with Changes."
+                   "needs %s switched on in Heron's Settings in Revit, with Changes."
                    % (NAMES[level], switch))
     return ("'%s' is declared %s, and %s runs nothing above %s - %s only. "
             "Nothing has been sent to Revit. %s"

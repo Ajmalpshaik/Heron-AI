@@ -218,6 +218,7 @@ an edit.
 | [D-147](#d-147--the-add-in-counts-each-models-changes-so-the-companion-can-say-the-model-has-changed-since-its-read) | The add-in counts each model's changes, so the Companion can say the model has changed since its read | ✅ Accepted · 2026-11-01 |
 | [D-148](#d-148--revit_read-looks-up-the-users-words-as-a-question-so-a-write-is-never-ranked-ahead-of-the-read) | revit_read looks up the user's words as a question, so a write is never ranked ahead of the read | ✅ Accepted · 2026-11-07 |
 | [D-149](#d-149--every-colour-font-and-icon-heron-shows-comes-from-the-brand-kit-in-docsbrand) | Every colour, font and icon Heron shows comes from the brand kit in docs/brand | ✅ Accepted · 2026-11-07 |
+| [D-150](#d-150--herons-four-switches-move-from-the-ribbon-into-a-settings-window-and-the-ribbon-keeps-heron-settings-and-companion) | Heron's four switches move from the ribbon into a Settings window, and the ribbon keeps Heron, Settings and Companion | ✅ Accepted · 2026-11-07 |
 
 ## Format
 
@@ -1300,3 +1301,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`docs/brand/README.md`](brand/README.md) (the one palette) · [`tools/check-brand.py`](../tools/check-brand.py) · [`revit-ribbon-and-windows`](../.claude/skills/revit-ribbon-and-windows/SKILL.md) · every window, icon, page, report and the installer - not the colours a fragment writes into a model
 
 **Full record:** [`decisions/D-149.md`](decisions/D-149.md)
+
+## D-150 — Heron's four switches move from the ribbon into a Settings window, and the ribbon keeps Heron, Settings and Companion
+
+**Status:** Accepted · **Date:** 2026-11-07 · **Accepted:** Ajmal PS, 2026-11-07, in conversation: the switches *"inside that settings window"*, each state *"change it to button"*, hover texts *"very simple, understandable"*, then *"you can continue the work and build it"*
+**Amends:** where D-106's, D-138's and D-141's buttons are drawn - not what they do
+**Affects:** [`HeronApplication.cs`](../revit/Heron.Revit.Addin/HeronApplication.cs) (`BuildRibbon`) · [`HeronSettingsWindow.cs`](../revit/Heron.Revit.Addin/HeronSettingsWindow.cs) · [`Commands.cs`](../revit/Heron.Revit.Addin/Commands.cs) (`SettingsCommand`) · the refusal sentences, which now name Settings
+
+**Full record:** [`decisions/D-150.md`](decisions/D-150.md)
