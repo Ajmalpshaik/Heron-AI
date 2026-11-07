@@ -299,19 +299,6 @@ h2 .ico { color: var(--primary); }
 .ask-text { flex: 1 1 auto; font-family: var(--mono); font-size: 13.5px; color: var(--ink); background: var(--head); padding: 5px 10px; border-radius: 7px; }
 .welcome-or { margin: 18px 0 0; color: var(--muted); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 
-/* "Jump to": links to the headings of a long workspace. */
-.jump {
-  position: sticky; top: 56px; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px;
-  padding: 8px 12px; margin: -4px 0 0; border: 1px solid var(--line); border-radius: 999px;
-  background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(8px); box-shadow: var(--shadow);
-  width: fit-content; max-width: 100%;
-}
-.jump-label { font-size: 11px; font-weight: 650; letter-spacing: .6px; text-transform: uppercase; color: var(--faint); padding: 0 4px; }
-.jump-link {
-  padding: 3px 11px; border: 0; border-radius: 999px; background: none; color: var(--muted); font-size: 12.5px; font-weight: 600; cursor: pointer;
-  transition: background-color .15s, color .15s;
-}
-.jump-link:hover { background: var(--head); color: var(--primary); }
 .ws h3 { scroll-margin-top: 120px; }
 
 /* ------------------------------------------------------------ notice */
@@ -879,9 +866,8 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
 :is(#loads, #sprinkler, #layout) .warn { color: var(--warn); }
 /* The Sprinkler Layout panel's plans (docs/47 s7) - drawn by companion.js in SVG.
    Brand colours (D-149): Success for a head that passes, Error for one that fails. */
-#layout .y-plans { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
-#layout .y-fig { margin: 0; width: 260px; max-width: 100%; }
-#layout .y-plan { width: 100%; height: 220px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; }
+#layout .y-fig { margin: 0; width: 220px; flex: none; }
+#layout .y-plan { width: 100%; height: 190px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; }
 #layout .y-room { fill: var(--surface-2); stroke: var(--muted); }
 #layout .y-hole { fill: var(--line-strong); stroke: var(--muted); }
 #layout .y-old { fill: var(--faint); }
@@ -963,7 +949,7 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
 #dashboard .d-since .d-fill-table td:nth-child(2) { width: auto; }
 /* Print / PDF: the Model Dashboard alone, without its buttons. */
 @media print {
-  body.printing-dashboard .side, body.printing-dashboard .bar, body.printing-dashboard .jump, body.printing-dashboard main > *:not(#dashboard) { display: none !important; }
+  body.printing-dashboard .side, body.printing-dashboard .bar, body.printing-dashboard main > *:not(#dashboard) { display: none !important; }
   body.printing-dashboard .app { display: block; }
   body.printing-dashboard { min-width: 0; background: #ffffff; }
   #dashboard button, #dashboard input, #dashboard select, #dashboard .d-filter, #dashboard .d-look-tools { display: none !important; }
@@ -1066,3 +1052,46 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
 /* The panels' wrapper boxes take no part in the layout, so the tab bar - drawn
    inside one of them - sticks for the whole workspace, not only that box. */
 #d-box, #d-box3, #l-box, #l-box2, #k-box, #k-box2 { display: contents; }
+
+/* ------------------------------------------------------------ docs/40 s21.21
+   No Revit: one line in the top bar instead of four dashes. */
+.statusbar .facts-off { display: none; margin: 0; font-size: 13.5px; font-weight: 600; color: var(--muted); }
+.statusbar.off .facts { display: none; }
+.statusbar.off .facts-off { display: block; }
+
+/* The Element Table's action bar: find, how many rows, Discard and Apply -
+   pinned under the top bar. */
+#table .t-bar {
+  position: sticky; top: 53px; z-index: 4; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin: 0 0 10px; padding: 10px 0; background: var(--bg); border-bottom: 1px solid var(--line);
+}
+#table .t-find {
+  flex: 1 1 320px; max-width: 520px; padding: 7px 11px; border: 1px solid var(--line-strong); border-radius: 8px;
+  background: var(--field); color: var(--ink); font-size: 13.5px;
+}
+#table .t-count { font-size: 13px; color: var(--muted); }
+#table .t-bar-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+#table .t-bar-dirty { border-bottom-color: var(--accent); }
+#table .grid { max-height: calc(100vh - 260px); }
+#table .grid thead th { position: sticky; top: 0; z-index: 1; }
+
+/* Sprinkler Layout: one card a room - its plan beside its answers and its result. */
+#layout .y-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); gap: 12px; }
+#layout .y-card {
+  padding: 12px 14px; border: 1px solid var(--line); border-left: 4px solid var(--line-strong);
+  border-radius: 10px; background: var(--surface);
+}
+#layout .y-card[data-status="ok"] { border-left-color: #3ecf8e; }
+#layout .y-card[data-status="fail"] { border-left-color: #ff5a4e; }
+#layout .y-card[data-status="asked"] { border-left-color: #f5a524; }
+#layout .y-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+#layout .y-card-title { display: flex; flex-direction: column; gap: 1px; }
+#layout .y-card-title strong { font-size: 15px; }
+#layout .y-card-result { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+#layout .y-card-body { display: flex; gap: 14px; align-items: flex-start; }
+#layout .y-fields { display: grid; gap: 10px; flex: 1; min-width: 0; }
+#layout .y-field { display: grid; gap: 3px; }
+#layout .y-field-label { font-size: 12px; font-weight: 650; color: var(--muted); }
+#layout .y-field select, #layout .y-field input { max-width: 220px; }
+#layout .y-card-why { margin: 10px 0 0; color: var(--muted); }
+#layout .y-more { margin-top: 8px; }
