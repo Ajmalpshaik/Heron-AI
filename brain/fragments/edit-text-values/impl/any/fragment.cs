@@ -15,8 +15,9 @@
 // that, and put in `unverified`: on a real as-built model (2026-11-07, Revit
 // 2020) four views were renamed correctly and the answer said changed 0,
 // unverified 4. The space came from the request: "Warehouse - " was typed, and
-// the MCP side strips every value's own spaces on the way in (row 5b-215, an
-// open decision), so "Warehouse -" arrived. A run with no space at either end
+// the MCP side strips every value's own spaces on the way in (row 5b-215), so
+// "Warehouse -" arrived. Since 2026-11-07 a value written in double quotes
+// keeps its spaces - text="Warehouse - " - and an unquoted one is stripped. A run with no space at either end
 // of the result answered changed 1 the same day.
 //
 // So for field Name the new name is TRIMMED BEFORE it is planned, checked for
@@ -1491,8 +1492,8 @@ if (namesTrimmed > 0)
 {
     nameNote = string.Format("{0} name(s) would have started or ended with a space, which Revit does "
         + "not keep in a name, so each was written and read back without it. If a space was meant "
-        + "to stay between two words, check the text given: a space typed at the end of a value "
-        + "can be lost on its way in", namesTrimmed);
+        + "to stay between two words, check the text given: a value is trimmed on its way in "
+        + "unless it is written in double quotes - text=\"Warehouse - \"", namesTrimmed);
 }
 
 // AFTER THE LOOP, AND ONLY BECAUSE NOTHING WAS WRITTEN ON EITHER PATH. Both
