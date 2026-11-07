@@ -73,6 +73,7 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 | [`check-reachable.py`](check-reachable.py) | code built, tested, and called by nothing but a test | CI's *reports* job; after adding a module |
 | [`check-revit-gate.py`](check-revit-gate.py) | the fourteen Revit questions, per fragment | CI's *reports* job; before arranging a proof |
 | [`check-declared-questions.py`](check-declared-questions.py) | a fragment or skill that writes, declaring a question | CI's *reports* job; after adding utterances |
+| [`check-brand.py`](check-brand.py) | every colour a window, page, report or the installer shows that the brand palette does not have ([D-149](../docs/decisions/D-149.md)) | before calling a window, icon, page or report done |
 | [`check-risk-crossings.py`](check-risk-crossings.py) | a written-down list of ordinary questions, and any that lands on a write - needs the store | after a card's words change |
 | [`check-skill-routing.py`](check-skill-routing.py) | whether a skill's own words reach the capabilities it declares - needs the store | after changing a skill |
 | [`module-reach.py`](module-reach.py) | who imports each `brain/` module, and which a conversation can reach | when wiring a module in |
@@ -2660,3 +2661,28 @@ a journal with no box, which leaves Revit's own time as it was. Run on the owner
 2026-10-17 ([docs/04 §8.7](../docs/04-heron-mcp.md)) - the run that found rows 5b-1030 and 5b-1031 - and
 again the same day with both fixes and that build's real journal: 10 Keep boxes, 80.9 s, Revit's own time
 less the boxes 20.7 s of 101.6 s, 44 forms ([row 5b-1031](../docs/FRAGMENT-ISSUES.md) names the run).
+
+## `check-brand.py` - a colour the brand does not have
+
+```bash
+python tools/check-brand.py             # every finding, file and line
+python tools/check-brand.py --summary   # one line per file
+python tools/check-brand.py --strict    # exit 1 on a finding
+```
+
+**Every colour Heron shows comes from the brand kit's palette ([D-149](../docs/decisions/D-149.md))**, and
+this names each one that does not: a hex value, a CSS `rgb()`/`rgba()` or a C# `Color.FromRgb`/`FromArgb`,
+with its file and line, in the add-in, the Companion page, the reports and the installer.
+
+**It reads the palette from the colour table in [`docs/brand/README.md`](../docs/brand/README.md)** and
+holds no copy of its own, so the page and the check cannot disagree. A palette colour at any opacity is in
+the palette. `brain/fragments/` is left out on purpose: a fragment writes the model's colours, which follow
+the project's standard, not the brand.
+
+**A report, not a gate, while the existing parts are brought into line:** it exits 0 whatever it finds,
+and 2 when it cannot read the palette table or is not in a checkout. `--strict` exits 1 on a finding, for
+the day it becomes a gate. It cannot see a PNG icon's pixels, a named colour (`Colors.Red`) or a colour
+built at run time, so a clean run is not a substitute for looking at the window in Revit.
+[`tests/test_check_brand.py`](../tests/test_check_brand.py) builds its own repositories: palette colours in
+every notation pass, colours outside are named with their line, a fragment's colour and a `#123` in Python
+are not findings, and a missing table is exit 2.
