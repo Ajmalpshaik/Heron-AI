@@ -138,6 +138,8 @@ compatibility-note: >
 #   "fill in the project address and building name" -> here, two pairs
 #   "set the project status to Issued for Construction" -> here
 #   "set the shared parameter Project Code on project information to PRJ-77" -> here
+#   "set the Project Name to Villa 1"         -> here (issue #799: on Villa 1
+#                                               it ranked SET_SUN_SETTINGS first)
 #   "what is the project number", "who is the client", "what is the project
 #   status"                                  -> REPORT_PROJECT_INFORMATION -
 #                                               a question, nothing changed
@@ -154,3 +156,5 @@ utterances:
   - fill in the project address and building name
   - set the project status to Issued for Construction
   - set the shared parameter Project Code on project information to PRJ-77
+  - set the Project Name to Villa 1
+  - change the project name on Project Information
