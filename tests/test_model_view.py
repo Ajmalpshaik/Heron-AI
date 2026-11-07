@@ -128,6 +128,15 @@ def test_materials_and_room_volumes_v3():
         json.dumps(_with_materials()))["said"]
 
 
+def test_rooms_and_spaces_are_drawn_in_a_brand_colour():
+    # D-149: the owner's "use brand colours for rooms and spaces". The palette
+    # is read from docs/brand/README.md, as tools/check-brand.py reads it.
+    import re
+    brand = open(os.path.join(ROOT, "docs", "brand", "README.md"), encoding="utf-8").read()
+    palette = {h.lower() for h in re.findall(r"`(#[0-9A-Fa-f]{6})`", brand)}
+    assert V.KNOWN["Rooms"] in palette and V.KNOWN["Spaces"] in palette
+
+
 def test_a_material_the_read_did_not_list_refuses_the_read():
     bad = _with_materials()
     bad["elements"][1]["m"] = 7
