@@ -1,0 +1,100 @@
+# Heron-Agent:  none
+# Heron-Step:   17
+# Heron-Status: DRAFT
+# Heron-Since:  0.1.0
+# Heron-Layer:  tool
+# See docs/29-metadata-standard.md
+#
+# The proof plan for NEEDS-CHECKING group MP - FRAGMENT-ISSUES row 5b-1463.
+#
+#     python tools/batch-prove.py tools/jobs/revision-clouds-test-copy-2026-11-07.yaml --dry-run
+#
+# RUN ON A SAVED TEST COPY, NEVER ON THE JOB MODEL. Arrange it the way the
+# owner's 2026-11-07 job was: revisions Seq. A and Seq. B (the values below say
+# Seq. 1 and Seq. 2 - change them to the copy's own). On S1 Seq. A is BOTH
+# ticked and held by ONE cloud drawn in a plan placed on S1; on S2 only ONE
+# cloud holds it (drawn straight on the sheet); S3 has it ticked only, no
+# cloud; S4 has ONE Seq. A cloud of its own that must be left alone; S5
+# carries neither. Put a Comments value, a Mark and a revision cloud tag on
+# S1's cloud. Sheet numbers
+# below are placeholders for the copy's own. `revisionIds` and `revisionId` are
+# resolved by the add-in by the revision's NAME, "Seq. 1 - <description>" (the
+# name ADD_REVISION_CLOUD's proof used); the text inputs take "Seq. 1".
+#
+# The proof is the owner's, run on his Revit - never by the session that wrote
+# this.
+
+model: a saved TEST COPY shaped like 4355-BHVD-3D-60A10-BL007A, Revit 2020
+
+defaults:
+  setup: []
+
+jobs:
+  # THE READ. Positive: S1 and S2, Seq. A - S1's one cloud and S2's one.
+  # Negative: S3 alone, Seq. B - S3 has no cloud at all, so nothing.
+  - fragment: list-revision-clouds
+    set:
+      sheets: "S1, S2"
+      revision: "Seq. 1"
+    negative-set:
+      sheets: "S3"
+      revision: "Seq. 2"
+    expect: [cloudTable, elements]
+    note: >
+      Read each listed cloud in Properties - Revision, Comments, Mark - and
+      check S4's Seq. A cloud is NOT in the positive's list.
+
+  # THE SHEET-BY-SHEET CHECK. Positive: expectedLast Seq. B while S1 to S4
+  # end on Seq. A - S1 to S5 in lastDiffers (S5 has no revision), S2 and S4
+  # in cloudOnly. Negative: expectedLast Seq. A - only S5 in lastDiffers.
+  - fragment: list-revisions
+    set:
+      expectedLast: "Seq. 2"
+    negative-set:
+      expectedLast: "Seq. 1"
+    expect: [sheetTable, lastDiffers]
+
+  # THE FIX AND THE SWAP. Positive: replace Seq. A with Seq. B on S1, S2, S3.
+  # S3 (ticked only) swaps and is counted - sheetsChanged 1; S1 and S2 stay
+  # in cloudDriven with their cloud in cloudsHolding. Negative: the same on S5,
+  # which carries neither - notOnSheet, nothing changed.
+  - fragment: set-sheet-revisions
+    setup:
+      - find-sheets
+    set:
+      sheetNumbers: "S1, S2, S3"
+      revisionIds: "Seq. 1 - Revision 1"
+      attach: "false"
+      replaceWith: "Seq. 2"
+    negative-set:
+      sheetNumbers: "S5"
+      revisionIds: "Seq. 1 - Revision 1"
+      attach: "false"
+      replaceWith: "Seq. 2"
+    expect: sheetsChanged
+    note: >
+      Row 5b-1463's case. Version 1 counted S1 changed while it still printed
+      Seq. A. Read each sheet's revision block afterwards, and LIST_REVISIONS.
+
+  # THE CLOUD MOVE. Positive: S1 and S2's Seq. A clouds to Seq. B - S4's
+  # Seq. A cloud untouched. Negative: fromRevision Seq. B against Seq. A
+  # clouds - every one skipped, nothing changed.
+  - fragment: edit-revision-clouds
+    setup:
+      - list-revision-clouds
+    set:
+      sheets: "S1, S2"
+      revision: "Seq. 1"
+      action: reassign
+      revisionId: "Seq. 2 - Revision 2"
+      fromRevision: "Seq. 1"
+    negative-set:
+      sheets: "S1, S2"
+      revision: "Seq. 1"
+      action: reassign
+      revisionId: "Seq. 2 - Revision 2"
+      fromRevision: "Seq. 2"
+    expect: changed
+    note: >
+      The delete is proved separately, once the move is: confirm must be the
+      count, and a wrong count must delete nothing.
