@@ -217,6 +217,7 @@ an edit.
 | [D-146](#d-146--a-fragment-may-name-revits-appearance-asset-namespace-so-a-materials-render-appearance-can-be-edited) | A fragment may name Revit's appearance-asset namespace, so a material's render appearance can be edited | 🕐 Proposed - **owner has not read this back** |
 | [D-147](#d-147--the-add-in-counts-each-models-changes-so-the-companion-can-say-the-model-has-changed-since-its-read) | The add-in counts each model's changes, so the Companion can say the model has changed since its read | ✅ Accepted · 2026-11-01 |
 | [D-148](#d-148--revit_read-looks-up-the-users-words-as-a-question-so-a-write-is-never-ranked-ahead-of-the-read) | revit_read looks up the user's words as a question, so a write is never ranked ahead of the read | ✅ Accepted · 2026-11-07 |
+| [D-149](#d-149--every-colour-font-and-icon-heron-shows-comes-from-the-brand-kit-in-docsbrand) | Every colour, font and icon Heron shows comes from the brand kit in docs/brand | ✅ Accepted · 2026-11-07 |
 
 ## Format
 
@@ -1292,3 +1293,10 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`_by_words`), [`tests/test_mcp_serves.py`](../tests/test_mcp_serves.py)
 
 **Full record:** [`decisions/D-148.md`](decisions/D-148.md)
+
+## D-149 — Every colour, font and icon Heron shows comes from the brand kit in docs/brand
+
+**Status:** Accepted · **Date:** 2026-11-07 · **Accepted:** Ajmal PS, 2026-11-07, in conversation: *"from now on color combo all the things will be with this"*, then *"yes"* to recording it, listing the palette and adding a checker · **Source:** the designer's brand kit and status-notification design, 2026-11-07
+**Affects:** [`docs/brand/README.md`](brand/README.md) (the one palette) · [`tools/check-brand.py`](../tools/check-brand.py) · [`revit-ribbon-and-windows`](../.claude/skills/revit-ribbon-and-windows/SKILL.md) · every window, icon, page, report and the installer - not the colours a fragment writes into a model
+
+**Full record:** [`decisions/D-149.md`](decisions/D-149.md)

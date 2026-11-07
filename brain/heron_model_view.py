@@ -23,6 +23,13 @@ page only projects and paints; what each colour MEANS is decided here
                  damaged read is refused whole rather than drawn wrong.
     WHAT WAS NOT DRAWN IS SAID - elements left out by the triangle budget,
                  elements with nothing drawable, and anything not read.
+    MATERIALS    (the read's version 3, docs/40 s21.18) each face's material
+                 with the shading colour Revit's Shaded view uses, checked: an
+                 element's material index must name one the read listed, or
+                 be -1. A read with none - version 2 - still draws, by
+                 category only.
+    VOLUMES      the categories the read drew as volumes - rooms and spaces -
+                 which the page draws see-through.
 
 Standard library only.
 """
@@ -55,11 +62,22 @@ KNOWN = {
     "Cable Trays": "#9b7fc8", "Cable Tray Fittings": "#8d70bb", "Conduits": "#b39ddb",
     "Generic Models": "#9e9e9e", "Furniture": "#c8a27a", "Casework": "#b08b65",
     "Specialty Equipment": "#d08a50", "Topography": "#9fb38a", "Toposolid": "#9fb38a",
+    # Drawn see-through as volumes (s21.18), in the brand's Accent (D-149,
+    # docs/brand/README.md) on the owner's word, "use brand colours for rooms
+    # and spaces": a see-through Accent is in the palette, a new hex is not.
+    # Rooms and Spaces share it; the legend keeps them apart, each hideable.
+    "Rooms": "#fd641a", "Spaces": "#fd641a",
 }
 #: The highlight the page paints a picked or looked-at element in.
 HIGHLIGHT = "#ff7a00"
 #: What everything else fades to while something is highlighted.
 DIMMED = "#dfe3e8"
+#: How see-through a room's volume is drawn, 0 clear to 1 solid.
+VOLUME_ALPHA = 0.18
+#: A face with no material known, when the view is coloured by material.
+NO_MATERIAL = "#c9c9c9"
+#: The most materials the legend lists; the rest are counted.
+LEGEND_MATERIALS = 40
 
 
 def _hue(i, n):
@@ -107,6 +125,9 @@ def read(text):
                          "and Heron are from different releases."
                          % (data.get("format"), READS))
     categories = _names(data.get("categories"), most=10000)
+    materials = _materials(data.get("materials"))
+    volumes = sorted({v for v in data.get("volumes") or [] if isinstance(v, int)
+                      and not isinstance(v, bool) and 0 <= v < len(categories)})
     elements = []
     raw = data.get("elements")
     for e in raw if isinstance(raw, list) else []:
@@ -135,8 +156,22 @@ def read(text):
         if any(x != x or x in (float("inf"), float("-inf")) for x in coords):
             raise ValueError("element %s's geometry holds a point that is not a number. "
                              "Nothing was drawn." % ident)
+        # Its material: one index, or one a triangle; -1 is none known. Left
+        # out (a version-2 read) it is -1.
+        m = e.get("m", -1)
+        ok_index = lambda i: isinstance(i, int) and not isinstance(i, bool) \
+            and -1 <= i < len(materials)
+        if isinstance(m, list):
+            if len(m) != len(corners) // 3 or not all(ok_index(i) for i in m):
+                raise ValueError("element %s's materials do not match its triangles. "
+                                 "Nothing was drawn." % ident)
+            if len(set(m)) == 1:
+                m = m[0]
+        elif not ok_index(m):
+            raise ValueError("element %s names a material the read did not list. "
+                             "Nothing was drawn." % ident)
         if corners:
-            elements.append({"id": ident, "c": c, "v": coords, "t": corners})
+            elements.append({"id": ident, "c": c, "v": coords, "t": corners, "m": m})
         if len(elements) > ELEMENTS_MAX:
             raise ValueError("the geometry holds more than %d elements - more than the page can "
                              "draw. Read the active 3D view instead of the whole model."
@@ -146,6 +181,7 @@ def read(text):
         offset = [0.0, 0.0, 0.0]
     return {"scope": str(data.get("scope") or ""), "offset": [float(x) for x in offset],
             "categories": categories, "elements": elements,
+            "materials": materials, "volumes": volumes,
             "triangles": sum(len(e["t"]) // 3 for e in elements),
             "elementsRead": _int(data.get("elementsRead")),
             "noGeometry": _int(data.get("noGeometry")), "leftOut": _int(data.get("leftOut")),
@@ -154,6 +190,32 @@ def read(text):
             # it read everything (REPORT_MODEL_GEOMETRY v2). Anything else is
             # not believed.
             "stopped": data.get("stopped") if data.get("stopped") in ("triangles", "time") else None}
+
+
+def _colour(text):
+    text = str(text or "")
+    if len(text) == 7 and text[0] == "#":
+        try:
+            int(text[1:], 16)
+            return text.lower()
+        except ValueError:
+            pass
+    return None
+
+
+def _materials(values):
+    """The read's materials, each {name, colour, transparency}; a damaged
+    entry is kept in its place (indexes must not move) with no colour."""
+    out = []
+    for m in values if isinstance(values, list) else []:
+        m = m if isinstance(m, dict) else {}
+        try:
+            seen = int(m.get("transparency") or 0)
+        except (TypeError, ValueError):
+            seen = 0
+        out.append({"name": str(m.get("name") or "")[:200], "colour": _colour(m.get("colour")),
+                    "transparency": max(0, min(100, seen))})
+    return out
 
 
 def colours(categories):
@@ -171,10 +233,41 @@ def build(data):
     legend = [{"name": n, "colour": palette[i], "count": counts[i]}
               for i, n in enumerate(data["categories"]) if counts[i]]
     legend.sort(key=lambda r: (-r["count"], r["name"]))
+    volumes = set(data.get("volumes") or [])
+    for row in legend:
+        row["volume"] = data["categories"].index(row["name"]) in volumes
+    # BY MATERIAL: how many triangles each material covers, for its legend.
+    materials = data.get("materials") or []
+    covered = [0] * len(materials)
+    unknown = 0
+    for e in data["elements"]:
+        if e["c"] in volumes:
+            continue
+        m = e.get("m", -1)
+        for i in (m if isinstance(m, list) else [m] * (len(e["t"]) // 3)):
+            if 0 <= i < len(materials) and materials[i]["colour"]:
+                covered[i] += 1
+            else:
+                unknown += 1
+    by_material = [{"name": materials[i]["name"] or "(no name)", "colour": materials[i]["colour"],
+                    "transparency": materials[i]["transparency"], "triangles": covered[i]}
+                   for i in range(len(materials)) if covered[i]]
+    by_material.sort(key=lambda r: (-r["triangles"], r["name"]))
+    rooms = sum(1 for e in data["elements"] if e["c"] in volumes)
     return {"format": FORMAT, "scope": data["scope"], "offset": data["offset"],
             "categories": [{"name": n, "colour": palette[i]}
                            for i, n in enumerate(data["categories"])],
             "legend": legend, "elements": data["elements"],
+            # Every material in its place (an element's m indexes this list),
+            # its colour checked; NO_MATERIAL stands in for one with none.
+            "materials": [{"name": m["name"], "colour": m["colour"] or NO_MATERIAL,
+                           "alpha": round(1.0 - m["transparency"] / 100.0, 3)}
+                          for m in materials],
+            "materialLegend": by_material[:LEGEND_MATERIALS],
+            "materialsMore": max(0, len(by_material) - LEGEND_MATERIALS),
+            "noMaterial": NO_MATERIAL, "unknownTriangles": unknown,
+            "hasMaterials": bool(by_material),
+            "volumes": sorted(volumes), "volumeAlpha": VOLUME_ALPHA, "rooms": rooms,
             "triangles": data["triangles"], "drawn": len(data["elements"]),
             "noGeometry": data["noGeometry"], "leftOut": data["leftOut"],
             "stopped": data.get("stopped"),
@@ -193,6 +286,10 @@ def summary(data):
             data.get("stopped"), "a limit was reached")
         said += (" %d element(s) were left out - %s; read the active 3D view with a section "
                  "box, or fewer categories, to see them." % (data["leftOut"], why))
+    volumes = set(data.get("volumes") or [])
+    rooms = sum(1 for e in data["elements"] if e["c"] in volumes)
+    if rooms:
+        said += " %d room(s) or space(s) drawn as see-through volumes." % rooms
     if data["noGeometry"]:
         said += " %d had nothing to draw." % data["noGeometry"]
     if data["notRead"]:

@@ -1,6 +1,6 @@
 ---
 name: revit-ribbon-and-windows
-description: Use when adding, changing, reviewing or fixing anything the user sees inside Revit - a ribbon tab, panel, push button, icon, tooltip or its wording, and any tool window whether modal or modeless. Covers the ribbon build order and why a button appears greyed out or missing, the ExternalEvent pattern that a modeless window must use to reach the Revit API without crashing, keeping API calls out of code-behind, dockable panes, and the wording and confirmation rules for a button that does something risky. Trigger on "add a button", "my button is greyed out", "the ribbon did not appear", "build a window for this tool", "my window crashes Revit", or "outside API context".
+description: Use when adding, changing, reviewing or fixing anything the user sees inside Revit - a ribbon tab, panel, push button, icon, tooltip or its wording, and any tool window whether modal or modeless. Covers the ribbon build order and why a button appears greyed out or missing, the ExternalEvent pattern that a modeless window must use to reach the Revit API without crashing, keeping API calls out of code-behind, dockable panes, the wording and confirmation rules for a button that does something risky, and the brand every colour, font and icon must come from (D-149). Trigger on "add a button", "my button is greyed out", "the ribbon did not appear", "build a window for this tool", "what colour should this be", "draw an icon", "my window crashes Revit", or "outside API context".
 ---
 
 # Ribbon and Windows
@@ -163,6 +163,28 @@ event handler where they will crash.
 
 Registered in `OnStartup` and never after — Revit will not accept one later. Same threading rule: a
 dockable pane is modeless.
+
+## Colours, font and icons - the brand
+
+**Every colour, the font and every icon come from [`docs/brand/README.md`](../../../docs/brand/README.md)**
+([D-149](../../../docs/decisions/D-149.md)). Its colour table is the whole palette: Ink, Mist, Accent,
+Accent Light (a gradient's end only), Surface, Success, Warning, Error, White and a see-through Shadow -
+every one taken from the owner's brand kit, none chosen by a developer. A shade is one of those at an opacity.
+**A colour that is not in that table is never typed into a window, banner or icon.** If one is missing,
+ask the owner and add it to the table first.
+
+- **Windows take their colours from `HeronWindowStyle`,** and `HeronWindowStyle` takes them from the
+  table. A window that builds its own `Color.FromRgb` is the drift D-149 was written to stop.
+- **Accent (orange) is the highlight, never the danger.** A padlock that is open - Heron may change the
+  model - is Error. Closed and safe is Ink, Mist or a quiet shade. A state icon keeps its meaning when it
+  is redrawn: only its colours move to the palette.
+- **The font is Manrope,** with Segoe UI as the fallback until a window carries it.
+- **Logos come from `docs/brand/`.** The main Heron button carries the heron mark; nobody draws a new one.
+- **A Revit model's colours are not the brand.** What a fragment writes into a model follows the
+  project's standard, not this table.
+
+Before you call a window or icon done, run `python tools/check-brand.py`: it names every colour outside
+the table, with the file and line.
 
 ## Wording and safety
 

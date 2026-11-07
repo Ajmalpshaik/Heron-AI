@@ -1624,17 +1624,23 @@ def test_dashboard_panel():
     import heron_brain as brain3d
     import test_model_view as VIEW
     check(demo.load3d({})["ok"] is False, "no 3D read with no chat connected")
-    demo.load3d_hook = lambda whole: {"ok": True, "said": "read"}
+    demo.load3d_hook = lambda whole, rooms: {"ok": True, "said": "read"}
     check(demo.load3d({})["ok"] is False and "DEMO" in demo.load3d({})["said"],
           "no 3D read while the dashboard shows the demo")
     whole_asked = []
-    shown.load3d_hook = lambda whole: (whole_asked.append(whole) or {"ok": True, "said": "read"})
+    shown.load3d_hook = lambda whole, rooms: (whole_asked.append((whole, rooms))
+                                              or {"ok": True, "said": "read"})
     check(shown.load3d({"whole": True})["ok"] and shown.load3d({"whole": "yes"})["ok"]
-          and whole_asked == [True, False],
+          and [w for w, _ in whole_asked] == [True, False],
           "Load 3D asks for the whole model only when the page says exactly true")
+    check(shown.load3d({"rooms": True})["ok"] and shown.load3d({"rooms": 1})["ok"]
+          and [r for _, r in whole_asked[2:]] == [True, False],
+          "and for rooms as volumes only when the page says exactly true (s21.18)")
     got3d = brain3d.model_view(VIEW.sample())
     shown.set_view(got3d, ("Tower MEP", "", "11"))
     small = shown.current()["view3d"]
+    check("materials" not in small and "hasMaterials" in small and "materialLegend" in small,
+          "it carries the material legend, never each element's materials (s21.18)")
     check(small["drawn"] == 4 and "elements" not in small and shown.view()["elements"],
           "the panel's state carries the 3D summary, never the shapes - those come from "
           "/api/dashboard/view")
@@ -1645,7 +1651,22 @@ def test_dashboard_panel():
     shown.set_view({"view": None})
     check(shown.view() is None and "view3d" not in shown.current(),
           "a failed 3D read leaves no stale view behind")
+    # THE 3D VIEW'S OWN TOOLS (docs/40 s21.17): the page's alone - cameras,
+    # zoom to what is lit, a cut height, categories hidden, a picture saved on
+    # the PC, full screen. None of them reaches Revit or fetches anything new.
+    m3d = io.open(os.path.join(os.path.dirname(PAGE_JS), "model3d.js"), encoding="utf-8").read()
+    check(all(word in m3d for word in ("function preset(", "function zoomLit(", "function setHidden(",
+                                       "function savePicture(", "requestFullscreen", "uCut")),
+          "the 3D view has Top/Front/Side/3D, Zoom to lit, a cut height, category hiding, "
+          "Save picture and Full screen")
+    check(re.findall(r'fetch\(\s*"([^"]+)"', m3d) == ["/api/dashboard/view"]
+          and "innerHTML" not in m3d and "XMLHttpRequest" not in m3d,
+          "and it fetches only its own shapes, and puts text in as text")
+    check("aVis > 0.5" in m3d and m3d.count("aVis") >= 4,
+          "a hidden category is neither drawn nor picked - both passes honour it")
     page = io.open(PAGE_JS, encoding="utf-8").read()
+    check("window.HeronModel3D.setHidden(" in page and "d-legend-switch" in page,
+          "the 3D legend is the category switch")
     dash = page[page.index("// ---------------------------------------------------------------- dashboard"):
                 page.index("// ---------------------------------------------------------------- sprinkler")]
     check('"/api/dashboard/refresh"' in dash and "setInterval" not in dash

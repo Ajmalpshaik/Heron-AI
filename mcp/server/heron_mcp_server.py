@@ -4178,16 +4178,19 @@ def _dashboard_colour(parameter, clear=False, identity=None):
     ok = out.get("ended") == "ok"
     _note(tool, started, time.time() - clock, reply=said, outcome=None if ok else "refused")
     return {"ok": ok, "said": said}
-def _read_view3d(companion_page, whole=False, origin="chat", ctx=None):
+def _read_view3d(companion_page, whole=False, origin="chat", ctx=None, rooms=False):
     """
     One read of the model's shapes for the Model Dashboard's 3D view (docs/40
     s21.13): READ REPORT_MODEL_GEOMETRY through revit_read - the active 3D
-    view, or the whole model - check it in the brain, and hold it on the page.
+    view, or the whole model; with `rooms`, placed rooms and spaces as volumes
+    too (s21.18) - check it in the brain, and hold it on the page.
     Returns (ended, said), as _read_dashboard does.
     """
     out = {}
+    asked = NEWLINE.join(line for line in ("wholeModel=true" if whole else "",
+                                           "rooms=true" if rooms else "") if line)
     said = _through(revit_read, reply_out=out, origin=origin)(
-        "REPORT_MODEL_GEOMETRY", "wholeModel=true" if whole else "", "", ctx=ctx)
+        "REPORT_MODEL_GEOMETRY", asked, "", ctx=ctx)
     reply = out.get("reply")
     if not isinstance(reply, dict) or not reply.get("ok"):
         return out.get("ended"), said
@@ -4204,13 +4207,13 @@ def _read_view3d(companion_page, whole=False, origin="chat", ctx=None):
     return "ok", answer["said"]
 
 
-def _dashboard_load3d(whole=False):
+def _dashboard_load3d(whole=False, rooms=False):
     """The 3D view's Load, pressed on the page: under the lock every tool
     call holds, never on a timer. Returns {"ok", "said"}."""
     started, clock = time.strftime("%H:%M:%S"), time.time()
     companion_page = _companion_module()
     with _revit_lock:
-        ended, said = _read_view3d(companion_page, whole=whole, origin="companion")
+        ended, said = _read_view3d(companion_page, whole=whole, origin="companion", rooms=rooms)
     _note("companion_dashboard_3d", started, time.time() - clock, reply=said,
           outcome=None if ended == "ok" else "refused")
     return {"ok": ended == "ok", "said": said}
