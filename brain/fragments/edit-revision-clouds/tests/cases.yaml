@@ -19,7 +19,25 @@ positive:
       both gone, their tags in `alsoDeleted`, `sheetEffect` naming what each
       sheet's revision block lost
 
+  - given: >
+      ROW 5b-1471 - group MP's MP5 and MP6 on the test copy `Test for Issue`,
+      Revit 2024: S2's only cloud (drawn on the sheet, Seq. 1) moved to Seq. 2,
+      and separately deleted with confirm "1"
+    expect: >
+      the move: `sheetEffect` "sheet S2: now prints Seq. 2 ... no longer prints
+      Seq. 1"; the delete: "sheet S2: no longer prints Seq. 1". The code before
+      the rebuild answered "sheet S2: revision block unchanged" both times,
+      because it read the sheet back as it was before the change
+
 negative:
+  - given: >
+      ROW 5b-1471, the same move - S1, where Seq. 1 is ticked AND its one cloud
+      is moved to Seq. 2
+    expect: >
+      `sheetEffect` for S1 says it now prints Seq. 2 and does NOT say it no
+      longer prints Seq. 1 - the tick still holds it. A rebuild that dropped a
+      ticked revision from the read-back would be a new lie
+
   - given: the reassign above
     expect: >
       S4's Seq. A cloud UNTOUCHED and S4 still printing Seq. A - the whole
